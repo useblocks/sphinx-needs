@@ -1,0 +1,39 @@
+Metadata-Version: 1.1
+Name: sphinxcontrib-needs
+Version: 0.1
+Summary: Sphinx "needs" extension
+Home-page: http://github.com/useblocks/sphinxcontrib-needs
+Author: team useblocks
+Author-email: info@useblocks.com
+License: BSD
+Download-URL: http://pypi.python.org/pypi/sphinxcontrib-needs
+Description: 
+        This package contains the needs Sphinx extension.
+        
+        It allows the definition of needs/requirements, the listing of defined needs in lists and the reference of defined
+        needs in doc strings of implementation code or tests.
+        
+        A need is described by the following attributes:
+        
+         * id: unique identifier
+         * need: Short description of the need
+         * status: A status of the need, like open, in discussion, implemented (optional)
+         * category: A category for the need, e.g. to separate needs of different libraries, function, ...
+        
+        This extension provides the following directives:
+        
+         * *need*: Define a single need
+         * *needlist*: Shows a list of defined needs. Can be filtered by name, status, category
+         * *needref*: Defines a reference to a defined need, e.g. to link to the implementation or test case of the need.
+        
+        
+Platform: any
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Console
+Classifier: Environment :: Web Environment
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Topic :: Documentation
+Classifier: Topic :: Utilities
