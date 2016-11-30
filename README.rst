@@ -55,9 +55,40 @@ If **:show_status:** / **:show_tags:** is given, the related information will be
 
 To show the used filter under a list, set **:show_filters:**
 
+conf.py
+=======
+
+Activation
+----------
+
+Add **sphinxcontrib.needs** to your extensions::
+
+    extensions = ["sphinxcontrib.needs",]
+
+Options
+-------
+
+need_include_needs
+~~~~~~~~~~~~~~~~~~
+
+Set this option on False, if no needs should be documented inside the generated documentation::
+
+    need_include_needs = False
+
+need_name
+~~~~~~~~~
+
+If a need is printed somewhere with its name, in front of the name the word "need" is added. Example:
+
+Need **User needs to login** (ID123):
+
+This word can be replaced by any other string like "Requirement", "Req." or even ""::
+
+    need_name = "Req."
+
 Missing functions
 =================
 
 * references to needs, like :ref:need-ID123
-* need_updates, to update tags and status of a need on other pages as its definition
+* need_updates, to update tags and status of a need on any other pages
 
