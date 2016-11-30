@@ -29,7 +29,8 @@ id will be stable for all upcoming documentation generations.
 
 **Tags** must be separated by "**;**", like tag1; tag2;tag3. Whitespaces get removed.
 
-The is an additional option **:hide:**, if this is set (no value is needed), this need will not shown in documentation.
+There is an additional option **:hide:**, if this is set (no value is needed), the need will not be printed in
+documentation.
 But it will show up in need lists!
 
 needlist
@@ -46,7 +47,7 @@ Example::
 
 This prints a list with all found needs, which match the filters for status and tags.
 
-For **:status:** and **:tags:** values are separated by "**;**". The logis is as followed::
+For **:status:** and **:tags:** values are separated by "**;**". The logic is as followed::
 
     status = (open OR in_progress) AND tags = (user OR login)
 
