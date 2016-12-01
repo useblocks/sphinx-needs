@@ -15,7 +15,7 @@ setup(
     author='team useblocks',
     author_email='info@useblocks.com',
     description='Sphinx needs extension for managing needs/requirements',
-    long_description=open(os.path.join(os.path.dirname(__file__), "README")).read(),
+    long_description=open(os.path.join(os.path.dirname(__file__), "README.rst")).read(),
     zip_safe=False,
     classifiers=[
         'Development Status :: 4 - Beta',

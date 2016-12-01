@@ -1,6 +1,4 @@
-MANIFEST.in
 README.rst
-setup.cfg
 setup.py
 sphinxcontrib/__init__.py
 sphinxcontrib/needs.py
