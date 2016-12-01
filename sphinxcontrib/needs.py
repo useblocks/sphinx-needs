@@ -11,7 +11,7 @@ from sphinx.util import nested_parse_with_titles
 
 
 def setup(app):
-    app.add_config_value('need_include_needs', False, 'html')
+    app.add_config_value('need_include_needs', True, 'html')
     app.add_config_value('need_name', "Need", 'html')
 
     # Define nodes
@@ -193,6 +193,13 @@ def process_need_nodes(app, doctree, fromdocname):
     # NEEDLIST
     for node in doctree.traverse(needlist):
         if not app.config.need_include_needs:
+            # Ok, this is really dirty.
+            # If we replace a node, docutils checks, if it will not lose any attributes.
+            # But this is here the case, because we are using the attribute "ids" of a node.
+            # However, I do not understand, why losing an attribute is such a big deal, so we delete everything
+            # before docutils claims about it.
+            for att in ('ids', 'names', 'classes', 'dupnames'):
+                node[att] = []
             node.replace_self([])
             continue
 
