@@ -122,15 +122,13 @@ class NeedDirective(Directive):
         name = self.arguments[0]
         status = self.options.get("status", None)
         tags = self.options.get("tags", [])
-        tags = [tag.strip() for tag in tags.split(";")]
+        if len(tags) > 0:
+            tags = [tag.strip() for tag in tags.split(";")]
 
         #############################################################################################
         # Define Layout of a need
         #############################################################################################
         title_text = '%s **%s** (%s)' % (need_name, name, id)
-        status_text = "Status: **%s**\n\r" % status if status is not None else ""
-        tags_text = "Tags: *%s*" % ", ".join(tags) if len(tags) > 0 else ""
-
 
         ad = make_admonition(need, self.name, [title_text], self.options,
                              self.content, self.lineno, self.content_offset,
