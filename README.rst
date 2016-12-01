@@ -58,6 +58,22 @@ To show the used filter under a list, set **:show_filters:**
 conf.py
 =======
 
+Installation
+------------
+
+Using pip
+~~~~~~~~~
+::
+
+    pip install sphinxcontrib-needs
+
+Using sources
+~~~~~~~~~~~~~
+::
+
+    git clone https://github.com/useblocks/sphinxcontrib-needs
+    python setup.py install
+
 Activation
 ----------
 
@@ -90,5 +106,5 @@ Missing functions
 =================
 
 * references to needs, like :ref:need-ID123
-* need_updates, to update tags and status of a need on any other pages
+* need_updates, to update tags and status of a need on any other page
 
