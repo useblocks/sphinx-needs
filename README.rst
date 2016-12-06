@@ -44,6 +44,7 @@ Example::
        :show_status:
        :show_tags:
        :show_filters:
+       :sort_by: id
 
 This prints a list with all found needs, which match the filters for status and tags.
 
@@ -53,7 +54,11 @@ For **:status:** and **:tags:** values are separated by "**;**". The logic is as
 
 If **:show_status:** / **:show_tags:** is given, the related information will be shown after the name of the need.
 
-To show the used filter under a list, set **:show_filters:**
+To show the used filters under a list, set **:show_filters:**
+
+The showed list is unsorted as long as the parameter **:sort_by:: is not used.
+Valid options for **:sort_by:** are **id** and **status**
+
 
 conf.py
 =======

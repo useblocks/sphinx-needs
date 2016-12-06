@@ -49,11 +49,16 @@ def depart_need_node(self, node):
 
 
 class NeedlistDirective(Directive):
+
+    def sort_by(argument):
+        return directives.choice(argument, ("status", "id"))
+
     option_spec = {'status': directives.unicode_code,
                    'tags': directives.unicode_code,
                    'show_status': directives.flag,
                    'show_tags': directives.flag,
-                   'show_filters': directives.flag}
+                   'show_filters': directives.flag,
+                   'sort_by': sort_by}
 
     def run(self):
         env = self.state.document.settings.env
@@ -77,7 +82,8 @@ class NeedlistDirective(Directive):
             'tags': tags,
             'show_tags': True if self.options.get("show_tags", False) is None else False,
             'show_status': True if self.options.get("show_status", False) is None else False,
-            'show_filters': True if self.options.get("show_filters", False) is None else False
+            'show_filters': True if self.options.get("show_filters", False) is None else False,
+            'sort_by': self.options.get("sort_by", None)
         }
 
         return [targetnode] + [needlist('')]
@@ -206,7 +212,16 @@ def process_need_nodes(app, doctree, fromdocname):
         content = []
         id = node.attributes["ids"][0]
         nodelist = env.need_all_needlists[id]
-        for need_info in env.need_all_needs:
+
+        all_needs = env.need_all_needs
+
+        if nodelist["sort_by"] is not None:
+            if nodelist["sort_by"] == "id":
+                all_needs = sorted(all_needs, key=lambda node: node["id"])
+            elif nodelist["sort_by"] == "status":
+                all_needs = sorted(all_needs, key=status_sorter)
+
+        for need_info in all_needs:
             status_filter_passed = False
             if need_info["status"] in nodelist["status"] or len(nodelist["status"]) == 0:
                 status_filter_passed = True
@@ -259,3 +274,14 @@ def process_need_nodes(app, doctree, fromdocname):
             content.append(para)
 
         node.replace_self(content)
+
+
+def status_sorter(a):
+    """
+    Helper function to sort string elements, which can be None, too.
+    :param a: element, which gets sorted
+    :return:
+    """
+    if not a["status"]:
+        return ""
+    return a["status"]
