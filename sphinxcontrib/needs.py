@@ -523,7 +523,11 @@ def process_spec_nodelists(app, doctree, fromdocname):
             if len(set(spec_info["tags"]) & set(nodelist["tags"])) > 0 or len(nodelist["tags"]) == 0:
                 tags_filter_passed = True
 
-            if status_filter_passed and tags_filter_passed:
+            needs_filter_passed = False
+            if len(set(spec_info["needs"]) & set(nodelist["needs"])) > 0 or len(nodelist["needs"]) == 0:
+                needs_filter_passed = True
+
+            if status_filter_passed and tags_filter_passed and needs_filter_passed:
                 para = nodes.line()
                 description = "%s: %s" % (spec_info["id"], spec_info["name"])
 
@@ -559,9 +563,15 @@ def process_spec_nodelists(app, doctree, fromdocname):
             para = nodes.paragraph()
             filter_text = "Used filter:"
             filter_text += " status(%s)" % " OR ".join(nodelist["status"]) if len(nodelist["status"]) > 0 else ""
+
             if len(nodelist["status"]) > 0 and len(nodelist["tags"]) > 0:
                 filter_text += " AND "
             filter_text += " tags(%s)" % " OR ".join(nodelist["tags"]) if len(nodelist["tags"]) > 0 else ""
+
+            if len(nodelist["needs"]) > 0 and (len(nodelist["status"]) > 0 or len(nodelist["tags"]) > 0):
+                filter_text += " AND "
+            filter_text += " needs(%s)" % " OR ".join(nodelist["needs"]) if len(nodelist["needs"]) > 0 else ""
+
             filter_node = nodes.emphasis(filter_text, filter_text)
             para += filter_node
             content.append(para)
