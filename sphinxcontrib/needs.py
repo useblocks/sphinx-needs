@@ -241,10 +241,10 @@ class SpecDirective(Directive):
         # Get environment
         #############################################################################################
         env = self.state.document.settings.env
-        if not hasattr(env.app.config, "spec_name"):
+        if not hasattr(env.app.config, "needs_spec_name"):
             spec_name = "Specification"
         else:
-            spec_name = env.app.config.spec_name
+            spec_name = env.app.config.needs_spec_name
 
         # Calculate target id, to be able to set a link back
         targetid = "spec-%d" % env.new_serialno('spec')
@@ -384,7 +384,7 @@ def purge_needs(app, env, docname):
 def purge_specs(app, env, docname):
     if not hasattr(env, 'need_all_specs'):
         return
-    env.need_all_specs = [spec for spec in env.need_all_specs if spec['docname'] != docname]
+    env.need_all_specs = {key: spec for key, spec in env.need_all_specs.items() if spec['docname'] != docname}
 
 
 def process_need_nodes(app, doctree, fromdocname):
