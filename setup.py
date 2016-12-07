@@ -8,13 +8,13 @@ requires = ['Sphinx>=0.6']
 
 setup(
     name='sphinxcontrib-needs',
-    version='0.1.4',
+    version='0.1.5',
     url='http://github.com/useblocks/sphinxcontrib-needs',
     download_url='http://pypi.python.org/pypi/sphinxcontrib-needs',
     license='BSD',
     author='team useblocks',
     author_email='info@useblocks.com',
-    description='Sphinx needs extension for managing needs/requirements',
+    description='Sphinx needs extension for managing needs/requirements and specifications',
     long_description=open(os.path.join(os.path.dirname(__file__), "README.rst")).read(),
     zip_safe=False,
     classifiers=[
