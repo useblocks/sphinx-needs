@@ -10,6 +10,8 @@ This extension provides the following directives:
  * **speclist**: Shows a list of defined specifications (incl. linked needs). Can be filters by status and tags
 
 
+.. contents::
+
 Installation
 ============
 
