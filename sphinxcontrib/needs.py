@@ -583,6 +583,9 @@ def process_spec_nodes(app, doctree, fromdocname):
     # Specs are showing the linked needs. We need so set a backref link for this needs.
 
     env = app.builder.env
+    if not hasattr(env, "need_all_specs"):
+        return
+
     all_specs = env.need_all_specs
 
     for spec_node in doctree.traverse(spec):
