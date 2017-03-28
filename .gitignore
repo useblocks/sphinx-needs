@@ -3,5 +3,7 @@
 *.egg-info
 *egg-info/
 dist
+build
+_build
 
 *.pyc
