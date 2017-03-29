@@ -14,15 +14,16 @@ from textwrap import dedent
 DEFAULT_TEMPLATE = """
 .. _{{id}}:
 
+{% if hide == false -%}
 {{type_name}}: **{{title}}** ({{id}})
 
     {{content|indent(4) }}
 
-    {% if status -%}
+    {% if status and not hide_status -%}
     **status**: {{status}}
     {% endif %}
 
-    {% if tags -%}
+    {% if tags and not hide_tags -%}
     **tags**: {{"; ".join(tags)}}
     {% endif %}
 
@@ -31,7 +32,8 @@ DEFAULT_TEMPLATE = """
     {% for link in links -%}
         :ref:`{{link}} <{{link}}>` {%if loop.index < links|length -%}; {% endif -%}
     {% endfor -%}
-    {% endif %}
+    {% endif -%}
+{% endif -%}
 """
 
 
@@ -56,7 +58,7 @@ def setup(app):
 
     # Define nodes
     app.add_node(need)
-    app.add_node(needlist)
+    app.add_node(needfilter)
     app.add_directive("need", NeedDirective)
 
     # Define directives
@@ -70,12 +72,12 @@ def setup(app):
         app.add_directive("{0}_list".format(type_directive), NeedDirective)
 
     # app.add_directive('need', NeedDirective)
-    app.add_directive('needlist', NeedlistDirective)
+    app.add_directive('needfilter', NeedfilterDirective)
 
     # Make connections to events
     app.connect('env-purge-doc', purge_needs)
     app.connect('doctree-resolved', process_need_nodes)
-    app.connect('doctree-resolved', process_need_nodelists)
+    app.connect('doctree-resolved', process_needfilters)
 
     return {'version': '0.1'}  # identifies the version of our extension
 
@@ -84,7 +86,7 @@ class need(nodes.General, nodes.Element):
     pass
 
 
-class needlist(nodes.General, nodes.Element):
+class needfilter(nodes.General, nodes.Element):
     pass
 
 
@@ -136,6 +138,8 @@ class NeedDirective(Directive):
                                         hashlib.sha1(self.arguments[0].encode("UTF-8")).hexdigest().upper()
                                         [:env.app.config.needs_id_length]))
 
+        id = id.upper()
+
         # Calculate target id, to be able to set a link back
         targetid = id
         targetnode = nodes.target('', '', ids=[targetid])
@@ -153,7 +157,7 @@ class NeedDirective(Directive):
         # Get links
         links = self.options.get("links", [])
         if len(links) > 0:
-            links = [link.strip() for link in links.split(";") if link != ""]
+            links = [link.strip().upper() for link in links.split(";") if link != ""]
 
         show_linked_titles = True if "show_linked_titles" in self.options.keys() else False
 
@@ -201,9 +205,12 @@ class NeedDirective(Directive):
         return [targetnode]
 
 
-class NeedlistDirective(Directive):
+class NeedfilterDirective(Directive):
     def sort_by(argument):
         return directives.choice(argument, ("status", "id"))
+
+    def layout(argument):
+        return directives.choice(argument, ("list", "table", "diagram"))
 
     option_spec = {'status': directives.unicode_code,
                    'tags': directives.unicode_code,
@@ -211,7 +218,8 @@ class NeedlistDirective(Directive):
                    'show_tags': directives.flag,
                    'show_filters': directives.flag,
                    'show_links': directives.flag,
-                   'sort_by': sort_by}
+                   'sort_by': sort_by,
+                   'layout': layout}
 
     def run(self):
         env = self.state.document.settings.env
@@ -236,10 +244,11 @@ class NeedlistDirective(Directive):
             'show_tags': True if self.options.get("show_tags", False) is None else False,
             'show_status': True if self.options.get("show_status", False) is None else False,
             'show_filters': True if self.options.get("show_filters", False) is None else False,
-            'sort_by': self.options.get("sort_by", None)
+            'sort_by': self.options.get("sort_by", None),
+            'layout': self.options.get("layout", "list"),
         }
 
-        return [targetnode] + [needlist('')]
+        return [targetnode] + [needfilter('')]
 
 
 def purge_needs(app, env, docname):
@@ -254,13 +263,13 @@ def process_need_nodes(app, doctree, fromdocname):
             node.parent.remove(node)
 
 
-def process_need_nodelists(app, doctree, fromdocname):
+def process_needfilters(app, doctree, fromdocname):
     # Replace all needlist nodes with a list of the collected needs.
     # Augment each need with a backlink to the original location.
     env = app.builder.env
 
-    # NEEDLIST
-    for node in doctree.traverse(needlist):
+    # NEEDFILTER
+    for node in doctree.traverse(needfilter):
         if not app.config.needs_include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
@@ -272,11 +281,50 @@ def process_need_nodelists(app, doctree, fromdocname):
             node.replace_self([])
             continue
 
-        content = []
         id = node.attributes["ids"][0]
         nodelist = env.need_all_needlists[id]
 
         all_needs = env.need_all_needs
+
+        if nodelist["layout"] == "list":
+            content = []
+        elif nodelist["layout"] == "diagram":
+            pass
+            # content = []
+            # text = """"
+            #         .. plantuml::
+            #
+            #            @startuml
+            #            node Test
+            #            @enduml
+            #         """
+            # diagram = nodes.Text(text.split("\n"), text.split("\n"))
+            # content.append(diagram)
+            # node.replace_self(content)
+            # return
+
+        elif nodelist["layout"] == "table":
+            content = nodes.table()
+            tgroup = nodes.tgroup()
+            id_colspec = nodes.colspec(colwidth=5)
+            title_colspec = nodes.colspec(colwidth=15)
+            type_colspec = nodes.colspec(colwidth=5)
+            status_colspec = nodes.colspec(colwidth=5)
+            links_colspec = nodes.colspec(colwidth=5)
+            tags_colspec = nodes.colspec(colwidth=5)
+            tgroup += [id_colspec, title_colspec, type_colspec, status_colspec, links_colspec, tags_colspec]
+            tgroup += nodes.thead('', nodes.row(
+                '',
+                nodes.entry('', nodes.paragraph('', 'ID')),
+                nodes.entry('', nodes.paragraph('', 'Title')),
+                nodes.entry('', nodes.paragraph('', 'Type')),
+                nodes.entry('', nodes.paragraph('', 'Status')),
+                nodes.entry('', nodes.paragraph('', 'Links')),
+                nodes.entry('', nodes.paragraph('', 'Tags'))
+            ))
+            tbody = nodes.tbody()
+            tgroup += tbody
+            content += tgroup
 
         all_needs = list(all_needs.values())
         if nodelist["sort_by"] is not None:
@@ -295,30 +343,42 @@ def process_need_nodelists(app, doctree, fromdocname):
                 tags_filter_passed = True
 
             if status_filter_passed and tags_filter_passed:
-                para = nodes.line()
-                description = "%s: %s" % (need_info["id"], need_info["title"])
+                if nodelist["layout"] == "list":
+                    para = nodes.line()
+                    description = "%s: %s" % (need_info["id"], need_info["title"])
 
-                if nodelist["show_status"] and need_info["status"] is not None:
-                    description += " (%s)" % need_info["status"]
+                    if nodelist["show_status"] and need_info["status"] is not None:
+                        description += " (%s)" % need_info["status"]
 
-                if nodelist["show_tags"] and need_info["tags"] is not None:
-                    description += " [%s]" % "; ".join(need_info["tags"])
+                    if nodelist["show_tags"] and need_info["tags"] is not None:
+                        description += " [%s]" % "; ".join(need_info["tags"])
 
-                title = nodes.Text(description, description)
+                    title = nodes.Text(description, description)
 
-                # Create a reference
-                if not need_info["hide"]:
-                    ref = nodes.reference('', '')
-                    ref['refdocname'] = need_info['docname']
-                    ref['refuri'] = app.builder.get_relative_uri(
-                        fromdocname, need_info['docname'])
-                    ref['refuri'] += '#' + need_info['target']['refid']
-                    ref.append(title)
-                    para += ref
-                else:
-                    para += title
+                    # Create a reference
+                    if not need_info["hide"]:
+                        ref = nodes.reference('', '')
+                        ref['refdocname'] = need_info['docname']
+                        ref['refuri'] = app.builder.get_relative_uri(
+                            fromdocname, need_info['docname'])
+                        ref['refuri'] += '#' + need_info['target']['refid']
+                        ref.append(title)
+                        para += ref
+                    else:
+                        para += title
 
-                content.append(para)
+                    content.append(para)
+                elif nodelist["layout"] == "table":
+                    row = nodes.row()
+                    row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "id", make_ref=True)
+                    row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "title")
+                    row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "type_name")
+                    row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "status")
+                    row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "links", ref_lookup=True)
+                    row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "tags")
+                    tbody += row
+                elif nodelist["layout"] == "diagram":
+                    pass
 
         if len(content) == 0:
             nothing_found = "No needs passed the filters"
@@ -338,6 +398,56 @@ def process_need_nodelists(app, doctree, fromdocname):
             content.append(para)
 
         node.replace_self(content)
+
+
+def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=False, ref_lookup=False):
+    """
+    Creates and returns a column.
+
+    :param app: current sphinx app
+    :param fromdocname: current document
+    :param all_needs: Dictionary of all need objects
+    :param need_info: need_info object, which stores all related need data
+    :param need_key: The key to access the needed data from need_info
+    :param make_ref: If true, creates a reference for the given data in need_key
+    :param ref_lookup: If true, it uses the data to lookup for a related need and uses its data to create the reference
+    :return: column object (nodes.entry)
+    """
+    row_col = nodes.entry()
+    para_col = nodes.paragraph()
+
+    if need_info[need_key] is not None:
+        if not isinstance(need_info[need_key], list):
+            data = [need_info[need_key]]
+        else:
+            data = need_info[need_key]
+
+        for index, datum in enumerate(data):
+            text_col = nodes.Text(datum, datum)
+            if make_ref or ref_lookup:
+                try:
+                    ref_col = nodes.reference("", "")
+                    if not ref_lookup:
+                        ref_col['refuri'] = app.builder.get_relative_uri(fromdocname, need_info['docname'])
+                        ref_col['refuri'] += "#" + datum
+                    else:
+                        temp_need = all_needs[datum]
+                        ref_col['refuri'] = app.builder.get_relative_uri(fromdocname, temp_need['docname'])
+                        ref_col['refuri'] += "#" + temp_need["id"]
+
+                except KeyError:
+                    para_col += text_col
+                else:
+                    ref_col.append(text_col)
+                    para_col += ref_col
+            else:
+                para_col += text_col
+
+            if index+1 < len(data):
+                para_col += nodes.emphasis("; ", "; ")
+
+        row_col += para_col
+    return row_col
 
 
 def status_sorter(a):

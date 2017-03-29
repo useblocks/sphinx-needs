@@ -1,14 +1,52 @@
 This package contains the needs Sphinx extension.
 
-It allows the definition of needs and specification and their listing.
+It allows the definition, linking and filtering of need-objects, which are by default:
 
-This extension provides the following directives:
+* requirements
+* specifications
+* implementations
+* test cases.
 
- * **need**: Define a single need
- * **needlist**: Shows a list of defined needs. Can be filtered by status and tags
- * **spec**: Define a specification and link it to several needs
- * **speclist**: Shows a list of defined specifications (incl. linked needs). Can be filters by status and tags
+This list can be easily customized via configuration (for instance to support bugs or user stories).
 
+.. code-block:: rst
+
+    .. req:: My first requirement
+       :status: open
+       :tags: requirement; test; awesome
+
+       This is my **first** requirement!!
+       .. note:: It's awesome :)
+
+    .. spec:: Specification of a requirement
+       :id: OWN_ID_123
+
+    .. impl:: Implementation for specification
+       :id: impl_01
+       :links: OWN_ID_123
+
+    .. test:: Test for XY
+       :status: implemented
+       :tags: test; user_interface; python27
+       :links: OWN_ID_123; impl_01
+
+       This test checks the implementation of :ref:`impl_01` for spec :ref:`OWN_ID_123` inside a
+       Python 2.7 environment.
+
+Each need can contain:
+
+* a title (required)
+* an unique id (optional. Gets calculated based on title if not given)
+* a description, which supports fully rst and sphinx extensions (optional)
+* a status (optional)
+* several tags (optional)
+* several links to other needs (optional)
+
+You can create filterable overviews of defined needs by using the needlist directive::
+
+    .. needlist::
+       :status: open;in_progress
+       :tags: tests; test; test_case;
 
 .. contents::
 
@@ -51,55 +89,6 @@ Default: **True**::
 
     needs_include_needs = False
 
-needs_include_specs
-~~~~~~~~~~~~~~~~~~~
-Set this option on False, if no specifications should be documented inside the generated documentation.
-
-Default: **True**::
-
-    needs_include_specs = False
-
-needs_need_name
-~~~~~~~~~~~~~~~
-If a need is printed somewhere with its name, in front of the name the word "Need" is added. Example:
-
-Need **User needs to login** (ID123):
-
-This word can be replaced by any other string like "Requirement", "Req." or even "".
-
-Default: **Need**::
-
-    needs_need_name = "Req."
-
-needs_spec_name
-~~~~~~~~~~~~~~~
-If a spec is printed somewhere with its name, in front of the name the word "Specification" is added. Example:
-
-Specification **Using flask-security** (ID567):
-
-This word can be replaced by any other string like "Spec.", "Implementation" or even "".
-
-Default: **Specification**::
-
-    needs_spec_name = "Implementation"
-
-needs_id_prefix_needs / needs_id_prefix_specs
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Each need or specification gets an unique ID during documentation generation.
-
-In most cases you should define IDs by the option **id** inside the directive by your own.
-If this is not the case, a hash is used as ID, which is based on the related title (Example: A5CJFF).
-
-**needs_id_prefix_needs** and **needs_id_prefix_specs** allows you to set a prefix in front of this hash value. (E.g.
-NeedA5CJFF)
-
-Default needs_id_prefix_needs: **""** (Empty)
-
-Default needs_id_prefix_specs: **""** (Empty)::
-
-    needs_id_prefix_needs = "Ne"
-    needs_id_prefix_specs = "Spec"
-
 needs_id_length
 ~~~~~~~~~~~~~~~
 This option defines the length of an automated generated ID (the length of the prefix does not count).
@@ -108,18 +97,70 @@ Default: **5**::
 
     needs_id_length = 3
 
-needs_specs_show_needlist
-~~~~~~~~~~~~~~~~~~~~~~~~~
-By default a specifications shows the linked needs as a single line. Example: *needs: ID123; AB54D; MYID7*.
+needs_types
+~~~~~~~~~~~
 
-By using the option **:show_needlist:** you can activate a table view of needs (including need id and need title)
-inside a **speclist::** directive.
+The option allows the setup of own need types like bugs, user_stories and more.
 
-The **needs_specs_show_needlist** option allows you to activate this table view by default for all specification lists.
+By default it is set to::
 
-Default: **False**::
+    needs_types = [dict(directive="req", title="Requirement", prefix="R_"),
+               dict(directive="spec", title="Specification", prefix="S_"),
+               dict(directive="impl", title="Implementation", prefix="I_"),
+               dict(directive="test", title="Test Case", prefix="T_"),
+               ]
 
-    needs_specs_show_needlist = True
+needs_types must be a list of dictionaries, where each dictionary **must** contain the following items:
+
+* **directive**: Name of the directive. For instance "req", which can be used via `.. req::` in documents
+* **title** Title, which is used as human readable name in lists
+* **prefix** A prefix for generated IDs, to easily identify that an ID belongs to a specific type. Can Also be ""
+
+needs_template
+~~~~~~~~~~~~~~
+
+The layout of needs can be fully customized by using `jinja <http://jinja.pocoo.org/>`_.
+
+If nothing is set, the following default template is used::
+
+    .. _{{id}}:
+
+    {{type_name}}: **{{title}}** ({{id}})
+
+       {{content|indent(4) }}
+
+       {% if status -%}
+       **status**: {{status}}
+       {% endif %}
+
+       {% if tags -%}
+       **tags**: {{"; ".join(tags)}}
+       {% endif %}
+
+       {% if links -%}
+       **links**:
+       {% for link in links -%}
+           :ref:`{{link}} <{{link}}>` {%if loop.index < links|length -%}; {% endif -%}
+       {% endfor -%}
+       {% endif %}
+
+Available jinja variables are:
+
+* type
+* type_name
+* type_prefix
+* status
+* tags
+* id
+* links
+* title
+* content
+* hide
+* hide_tags
+* hide_status
+
+
+
 
 
 Directives

@@ -12,10 +12,12 @@ Welcome to needs test docs's documentation!
    This is a **requirement**.
 
 .. spec:: Test my spec
-   :id: OWN_ID
+   :id: OwN_iD
    :status: open
    :tags: test; req; awesome
    :links: OWN_IMPL_ID;
+   :hide_status:
+   :hide_tags:
 
    It's a *spec*.
 
@@ -39,25 +41,25 @@ Welcome to needs test docs's documentation!
    :caption: Contents:
 
 
-NEEDLIST
-========
+NEEDFILTER
+==========
 
-.. needlist::
+.. needfilter::
    :show_status:
    :show_tags:
    :show_filters:
    :sort_by: id
 
-NEEDLIST 2
-==========
+NEEDFILTER 2
+============
 
-.. needlist::
+.. needfilter::
    :status: open
 
-NEEDLIST 2
-==========
+NEEDFILTER 3
+============
 
-.. needlist::
+.. needfilter::
    :status: open
    :tags: test
    :show_status:
@@ -66,7 +68,17 @@ NEEDLIST 2
    :sort_by: id
 
 
+NEEDFILTER TABLE
+================
 
+.. needfilter::
+   :layout: table
+
+NEEDFILTER DIAGRAM
+==================
+
+.. needfilter::
+   :layout: diagram
 
 Indices and tables
 ==================

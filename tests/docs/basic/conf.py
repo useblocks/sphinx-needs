@@ -81,7 +81,7 @@ NOTE_TEMPLATE = """
    {% endif %}
 """
 
-needs_template = TITLE_TEMPLATE
+# needs_template = TITLE_TEMPLATE
 
 needs_types = [dict(directive="req", title="Requirement", prefix="R_"),
                dict(directive="spec", title="Specification", prefix="S_"),

@@ -5,5 +5,5 @@
 dist
 build
 _build
-
-*.pyc
+.cache/
+*pycache*
