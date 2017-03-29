@@ -10,6 +10,7 @@ from docutils.statemachine import ViewList
 from sphinx.util import nested_parse_with_titles
 from jinja2 import Template
 from textwrap import dedent
+import os
 
 DEFAULT_TEMPLATE = """
 .. _{{id}}:
@@ -36,18 +37,21 @@ DEFAULT_TEMPLATE = """
 {% endif -%}
 """
 
+DEFAULT_DIAGRAM_TEMPLATE = "<size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>"
+
 
 def setup(app):
     app.add_config_value('needs_types',
-                         [dict(directive="req", title="Requirement", prefix="r_"),
-                          dict(directive="spec", title="Specification", prefix="s_"),
-                          dict(directive="impl", title="Implementation", prefix="i_"),
-                          dict(directive="test", title="Test Case", prefix="t_"),
+                         [dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2"),
+                          dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2"),
+                          dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A"),
+                          dict(directive="test", title="Test Case", prefix="T_", color="#DCB239")
                           ],
                          'html')
     app.add_config_value('needs_template',
                          DEFAULT_TEMPLATE,
                          'html')
+
     app.add_config_value('needs_include_needs', True, 'html')
     app.add_config_value('needs_need_name', "Need", 'html')
     app.add_config_value('needs_spec_name', "Specification", 'html')
@@ -55,6 +59,10 @@ def setup(app):
     app.add_config_value('needs_id_prefix_specs', "", 'html')
     app.add_config_value('needs_id_length', 5, 'html')
     app.add_config_value('needs_specs_show_needlist', False, 'html')
+
+    app.add_config_value('needs_diagram_template',
+                         DEFAULT_DIAGRAM_TEMPLATE,
+                         'html')
 
     # Define nodes
     app.add_node(need)
@@ -123,10 +131,12 @@ class NeedDirective(Directive):
         types = env.app.config.needs_types
         type_name = ""
         type_prefix = ""
+        type_color = ""
         for type in types:
             if type["directive"] == self.name:
                 type_name = type["title"]
                 type_prefix = type["prefix"]
+                type_color = type["color"]
                 break
 
         # Get the id or generate a random string/hash string, which is hopefully unique
@@ -176,6 +186,7 @@ class NeedDirective(Directive):
             'type': self.name,
             'type_name': type_name,
             'type_prefix': type_prefix,
+            'type_color': type_color,
             'status': status,
             'tags': tags,
             'id': id,
@@ -227,7 +238,9 @@ class NeedfilterDirective(Directive):
         if not hasattr(env, 'need_all_needlists'):
             env.need_all_needlists = {}
 
-        targetid = "need-%d" % env.new_serialno('need')
+        targetid = "needfilter-{docname}-{id}".format(
+            docname=env.docname,
+            id=env.new_serialno('needfilter'))
         targetnode = nodes.target('', '', ids=[targetid])
 
         tags = self.options.get("tags", [])
@@ -244,6 +257,9 @@ class NeedfilterDirective(Directive):
 
         # Add the need and all needed information
         env.need_all_needlists[targetid] = {
+            'docname': env.docname,
+            'lineno': self.lineno,
+            'target': targetnode,
             'status': status,
             'tags': tags,
             'types': types,
@@ -288,28 +304,24 @@ def process_needfilters(app, doctree, fromdocname):
             continue
 
         id = node.attributes["ids"][0]
-        nodelist = env.need_all_needlists[id]
-
+        current_needlist = env.need_all_needlists[id]
         all_needs = env.need_all_needs
 
-        if nodelist["layout"] == "list":
+        if current_needlist["layout"] == "list":
             content = []
-        elif nodelist["layout"] == "diagram":
-            pass
-            # content = []
-            # text = """"
-            #         .. plantuml::
-            #
-            #            @startuml
-            #            node Test
-            #            @enduml
-            #         """
-            # diagram = nodes.Text(text.split("\n"), text.split("\n"))
-            # content.append(diagram)
-            # node.replace_self(content)
-            # return
 
-        elif nodelist["layout"] == "table":
+        elif current_needlist["layout"] == "diagram":
+            content = []
+            from sphinxcontrib.plantuml import plantuml
+            plantuml_block_text = ".. plantuml::\n" \
+                                  "\n" \
+                                  "   @startuml" \
+                                  "   @enduml"
+            puml_node = plantuml(plantuml_block_text, **dict())
+            puml_node["uml"] = "@startuml\n"
+            puml_connections = ""
+
+        elif current_needlist["layout"] == "table":
             content = nodes.table()
             tgroup = nodes.tgroup()
             id_colspec = nodes.colspec(colwidth=5)
@@ -333,34 +345,36 @@ def process_needfilters(app, doctree, fromdocname):
             content += tgroup
 
         all_needs = list(all_needs.values())
-        if nodelist["sort_by"] is not None:
-            if nodelist["sort_by"] == "id":
+        if current_needlist["sort_by"] is not None:
+            if current_needlist["sort_by"] == "id":
                 all_needs = sorted(all_needs, key=lambda node: node["id"])
-            elif nodelist["sort_by"] == "status":
+            elif current_needlist["sort_by"] == "status":
                 all_needs = sorted(all_needs, key=status_sorter)
 
         for need_info in all_needs:
             status_filter_passed = False
-            if need_info["status"] in nodelist["status"] or len(nodelist["status"]) == 0:
+            if need_info["status"] in current_needlist["status"] or len(current_needlist["status"]) == 0:
                 status_filter_passed = True
 
             tags_filter_passed = False
-            if len(set(need_info["tags"]) & set(nodelist["tags"])) > 0 or len(nodelist["tags"]) == 0:
+            if len(set(need_info["tags"]) & set(current_needlist["tags"])) > 0 or len(current_needlist["tags"]) == 0:
                 tags_filter_passed = True
 
             type_filter_passed = False
-            if need_info["type"] in nodelist["types"] or len(nodelist["types"]) == 0:
+            if need_info["type"] in current_needlist["types"] \
+                    or need_info["type_name"] in current_needlist["types"] \
+                    or len(current_needlist["types"]) == 0:
                 type_filter_passed = True
 
             if status_filter_passed and tags_filter_passed and type_filter_passed:
-                if nodelist["layout"] == "list":
+                if current_needlist["layout"] == "list":
                     para = nodes.line()
                     description = "%s: %s" % (need_info["id"], need_info["title"])
 
-                    if nodelist["show_status"] and need_info["status"] is not None:
+                    if current_needlist["show_status"] and need_info["status"] is not None:
                         description += " (%s)" % need_info["status"]
 
-                    if nodelist["show_tags"] and need_info["tags"] is not None:
+                    if current_needlist["show_tags"] and need_info["tags"] is not None:
                         description += " [%s]" % "; ".join(need_info["tags"])
 
                     title = nodes.Text(description, description)
@@ -378,7 +392,7 @@ def process_needfilters(app, doctree, fromdocname):
                         para += title
 
                     content.append(para)
-                elif nodelist["layout"] == "table":
+                elif current_needlist["layout"] == "table":
                     row = nodes.row()
                     row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "id", make_ref=True)
                     row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "title")
@@ -387,8 +401,29 @@ def process_needfilters(app, doctree, fromdocname):
                     row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "links", ref_lookup=True)
                     row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "tags")
                     tbody += row
-                elif nodelist["layout"] == "diagram":
-                    pass
+                elif current_needlist["layout"] == "diagram":
+                    # Link calculation
+                    # All links we can get from docutils functions will be relative.
+                    # But the generated link in the svg will be relative to the svg-file location
+                    # (e.g. server.com/docs/_images/sqwxo499cnq329439dfjne.svg)
+                    # and not to current documentation. Tehrefore we need to add ../ to get out of the _image folder.
+                    link = "../" + app.builder.get_target_uri(need_info['docname']) \
+                           + "#"\
+                           + need_info['target']['refid']
+
+                    diagram_template = Template(env.config.needs_diagram_template)
+                    node_text = diagram_template.render(**need_info)
+
+                    puml_node["uml"] += 'node "{node_text}" as {id} [[{link}]] {color}\n'.format(
+                        id=need_info["id"], node_text=node_text, link=link, color=need_info["type_color"])
+                    for link in need_info["links"]:
+                        puml_connections += '{id} --> {link}\n'.format(id=need_info["id"], link=link)
+
+        if current_needlist["layout"] == "diagram":
+            puml_node["uml"] += puml_connections
+            puml_node["uml"] += "@enduml"
+            puml_node["incdir"] = os.path.dirname(current_needlist["docname"])
+            content.append(puml_node)
 
         if len(content) == 0:
             nothing_found = "No needs passed the filters"
@@ -396,16 +431,16 @@ def process_needfilters(app, doctree, fromdocname):
             nothing_found_node = nodes.Text(nothing_found, nothing_found)
             para += nothing_found_node
             content.append(para)
-        if nodelist["show_filters"]:
+        if current_needlist["show_filters"]:
             para = nodes.paragraph()
             filter_text = "Used filter:"
-            filter_text += " status(%s)" % " OR ".join(nodelist["status"]) if len(nodelist["status"]) > 0 else ""
-            if len(nodelist["status"]) > 0 and len(nodelist["tags"]) > 0:
+            filter_text += " status(%s)" % " OR ".join(current_needlist["status"]) if len(current_needlist["status"]) > 0 else ""
+            if len(current_needlist["status"]) > 0 and len(current_needlist["tags"]) > 0:
                 filter_text += " AND "
-            filter_text += " tags(%s)" % " OR ".join(nodelist["tags"]) if len(nodelist["tags"]) > 0 else ""
-            if (len(nodelist["status"]) > 0 or len(nodelist["tags"]) > 0) and len(nodelist["types"]) > 0:
+            filter_text += " tags(%s)" % " OR ".join(current_needlist["tags"]) if len(current_needlist["tags"]) > 0 else ""
+            if (len(current_needlist["status"]) > 0 or len(current_needlist["tags"]) > 0) and len(current_needlist["types"]) > 0:
                 filter_text += " AND "
-            filter_text += " types(%s)" % " OR ".join(nodelist["types"]) if len(nodelist["types"]) > 0 else ""
+            filter_text += " types(%s)" % " OR ".join(current_needlist["types"]) if len(current_needlist["types"]) > 0 else ""
 
             filter_node = nodes.emphasis(filter_text, filter_text)
             para += filter_node
@@ -457,7 +492,7 @@ def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=Fal
             else:
                 para_col += text_col
 
-            if index+1 < len(data):
+            if index + 1 < len(data):
                 para_col += nodes.emphasis("; ", "; ")
 
         row_col += para_col

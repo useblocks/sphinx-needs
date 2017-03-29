@@ -18,8 +18,8 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../../sphinxcontrib'))
 
+sys.path.insert(0, os.path.abspath('../../../sphinxcontrib'))
 
 # -- General configuration ------------------------------------------------
 
@@ -30,8 +30,7 @@ sys.path.insert(0, os.path.abspath('../../../sphinxcontrib'))
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ["sphinxcontrib.needs"]
-
+extensions = ["sphinxcontrib.needs", 'sphinxcontrib.plantuml']
 
 # NEEDS CONFIGURATION
 
@@ -80,14 +79,28 @@ NOTE_TEMPLATE = """
    {% endfor -%}
    {% endif %}
 """
+DEFAULT_DIAGRAM_TEMPLATE = "<size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>"
 
 # needs_template = TITLE_TEMPLATE
 
-needs_types = [dict(directive="req", title="Requirement", prefix="R_"),
-               dict(directive="spec", title="Specification", prefix="S_"),
-               dict(directive="impl", title="Implementation", prefix="I_"),
-               dict(directive="test", title="Test Case", prefix="T_"),
+needs_diagram_template = DEFAULT_DIAGRAM_TEMPLATE
+
+needs_types = [dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2"),
+               dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2"),
+               dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A"),
+               dict(directive="test", title="Test Case", prefix="T_", color="#DCB239")
                ]
+
+cwd = os.getcwd()
+plantuml = 'java -jar %s' % os.path.join(cwd, "utils/plantuml_beta.jar")
+
+# If we are running on windows, we need to manipulate the path,
+# otherwise plantuml will have problems.
+if os.name == "nt":
+    plantuml = plantuml.replace("/", "\\")
+    plantuml = plantuml.replace("\\", "\\\\")
+
+plantuml_output_format = 'svg'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -133,7 +146,6 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
-
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -152,12 +164,10 @@ html_theme = 'alabaster'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'needstestdocsdoc'
-
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -187,7 +197,6 @@ latex_documents = [
      'team useblocks', 'manual'),
 ]
 
-
 # -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
@@ -196,7 +205,6 @@ man_pages = [
     (master_doc, 'needstestdocs', 'needs test docs Documentation',
      [author], 1)
 ]
-
 
 # -- Options for Texinfo output -------------------------------------------
 
@@ -208,6 +216,3 @@ texinfo_documents = [
      author, 'needstestdocs', 'One line description of project.',
      'Miscellaneous'),
 ]
-
-
-

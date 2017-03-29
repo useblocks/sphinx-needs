@@ -6,11 +6,6 @@
 Welcome to needs test docs's documentation!
 ===========================================
 
-.. req:: Test my requirement
-   :tags: test;requirement; another_tag
-
-   This is a **requirement**.
-
 .. spec:: Test my spec
    :id: OwN_iD
    :status: open
@@ -39,6 +34,8 @@ Welcome to needs test docs's documentation!
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+   req
 
 
 NEEDFILTER
@@ -77,12 +74,29 @@ NEEDFILTER 4 (types)
    :show_filters:
    :sort_by: id
 
+NEEDFILTER 5 (types)
+====================
+
+.. needfilter::
+   :types: spec;impl
+   :show_status:
+   :show_tags:
+   :show_filters:
+   :sort_by: id
+
 
 NEEDFILTER TABLE
 ================
 
 .. needfilter::
    :layout: table
+
+NEEDFILTER DIAGRAM
+==================
+
+.. needfilter::
+   :layout: diagram
+
 
 
 Indices and tables
