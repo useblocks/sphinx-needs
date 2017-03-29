@@ -214,6 +214,7 @@ class NeedfilterDirective(Directive):
 
     option_spec = {'status': directives.unicode_code,
                    'tags': directives.unicode_code,
+                   'types': directives.unicode_code,
                    'show_status': directives.flag,
                    'show_tags': directives.flag,
                    'show_filters': directives.flag,
@@ -237,10 +238,15 @@ class NeedfilterDirective(Directive):
         if isinstance(status, str):
             status = [stat.strip() for stat in status.split(";")]
 
+        types = self.options.get("types", [])
+        if isinstance(types, str):
+            types = [typ.strip() for typ in types.split(";")]
+
         # Add the need and all needed information
         env.need_all_needlists[targetid] = {
             'status': status,
             'tags': tags,
+            'types': types,
             'show_tags': True if self.options.get("show_tags", False) is None else False,
             'show_status': True if self.options.get("show_status", False) is None else False,
             'show_filters': True if self.options.get("show_filters", False) is None else False,
@@ -342,7 +348,11 @@ def process_needfilters(app, doctree, fromdocname):
             if len(set(need_info["tags"]) & set(nodelist["tags"])) > 0 or len(nodelist["tags"]) == 0:
                 tags_filter_passed = True
 
-            if status_filter_passed and tags_filter_passed:
+            type_filter_passed = False
+            if need_info["type"] in nodelist["types"] or len(nodelist["types"]) == 0:
+                type_filter_passed = True
+
+            if status_filter_passed and tags_filter_passed and type_filter_passed:
                 if nodelist["layout"] == "list":
                     para = nodes.line()
                     description = "%s: %s" % (need_info["id"], need_info["title"])
@@ -393,6 +403,10 @@ def process_needfilters(app, doctree, fromdocname):
             if len(nodelist["status"]) > 0 and len(nodelist["tags"]) > 0:
                 filter_text += " AND "
             filter_text += " tags(%s)" % " OR ".join(nodelist["tags"]) if len(nodelist["tags"]) > 0 else ""
+            if (len(nodelist["status"]) > 0 or len(nodelist["tags"]) > 0) and len(nodelist["types"]) > 0:
+                filter_text += " AND "
+            filter_text += " types(%s)" % " OR ".join(nodelist["types"]) if len(nodelist["types"]) > 0 else ""
+
             filter_node = nodes.emphasis(filter_text, filter_text)
             para += filter_node
             content.append(para)

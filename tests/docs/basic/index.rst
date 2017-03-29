@@ -67,6 +67,16 @@ NEEDFILTER 3
    :show_filters:
    :sort_by: id
 
+NEEDFILTER 4 (types)
+====================
+
+.. needfilter::
+   :types: req;test
+   :show_status:
+   :show_tags:
+   :show_filters:
+   :sort_by: id
+
 
 NEEDFILTER TABLE
 ================
@@ -74,11 +84,6 @@ NEEDFILTER TABLE
 .. needfilter::
    :layout: table
 
-NEEDFILTER DIAGRAM
-==================
-
-.. needfilter::
-   :layout: diagram
 
 Indices and tables
 ==================
