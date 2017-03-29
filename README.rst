@@ -215,6 +215,7 @@ Example::
     .. needfilter::
        :status: open;in_progress
        :tags: user; login
+       :types: req;spec
        :show_status:
        :show_tags:
        :show_filters:
@@ -223,9 +224,9 @@ Example::
 
 This prints a list with all found needs, which match the filters for status and tags.
 
-For **:status:** and **:tags:** values are separated by "**;**". The logic is as followed::
+For **:status:**, **:tags:** and **:types:** values are separated by "**;**". The logic is as followed::
 
-    status = (open OR in_progress) AND tags = (user OR login)
+    status = (open OR in_progress) AND tags = (user OR login) AND types = (req OR spec)
 
 If **:show_status:** / **:show_tags:** is given, the related information will be shown after the name of the need.
 
