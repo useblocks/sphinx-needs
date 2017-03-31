@@ -324,6 +324,8 @@ def process_needfilters(app, doctree, fromdocname):
         elif current_needlist["layout"] == "diagram":
             content = []
             try:
+                if "sphinxcontrib.plantuml" not in app.config.extensions:
+                    raise ImportError
                 from sphinxcontrib.plantuml import plantuml
             except ImportError:
                 content = nodes.error()

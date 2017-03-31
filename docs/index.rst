@@ -356,6 +356,7 @@ If nothing is set, the following default template is used:
 
     .. _{{id}}:
 
+    {% raw -%}
     {% if hide == false -%}
     {{type_name}}: **{{title}}** ({{id}})
 
@@ -376,6 +377,7 @@ If nothing is set, the following default template is used:
         {% endfor -%}
         {% endif -%}
     {% endif -%}
+    {% endraw %}
 
 Available jinja variables are:
 
