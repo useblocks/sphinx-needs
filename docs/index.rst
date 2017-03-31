@@ -32,7 +32,7 @@ Example
        :links: R_F4722
 
     .. impl:: Implementation for specification
-       :id: impl_01
+       :id: IMPL_01
        :links: OWN_ID_123
 
     .. test:: Test for XY
@@ -40,15 +40,21 @@ Example
        :tags: test; user_interface; python27
        :links: OWN_ID_123; impl_01
 
-       This test checks the implementation of :ref:`impl_01` for spec :ref:`OWN_ID_123` inside a
+       This test checks :need:`impl_01` for :need:`OWN_ID_123` inside a
        Python 2.7 environment.
 
+    **Linking inside text**
+
+    As :need:IMPL_01 shows, the linked :need:OWN_ID_123 is realisable.
+
     **Filter result as list**
+
     .. needfilter::
        :tags: test
        :show_filters:
 
     **Filter result as table**
+
     .. needfilter::
        :tags: test
        :status: implemented; open
@@ -56,8 +62,11 @@ Example
        :layout: table
 
     **Filter result as diagram**
+
     .. needfilter::
        :layout: diagram
+
+
 
 This will be rendered to:
 
@@ -86,8 +95,12 @@ This will be rendered to:
    :tags: test; user_interface; python27
    :links: OWN_ID_123; impl_01
 
-   This test checks the implementation of :ref:`impl_01` for spec :ref:`OWN_ID_123` inside a
+   This test checks :need:`impl_01` for :need:`OWN_ID_123` inside a
    Python 2.7 environment.
+
+**Linking inside text**
+
+As :need:`impl_01` shows, the linked :need:`OWN_ID_123` is realisable.
 
 **Filter result as list**
 

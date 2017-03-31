@@ -63,7 +63,6 @@ def setup(app):
     # Define nodes
     app.add_node(need)
     app.add_node(needfilter)
-    app.add_directive("need", NeedDirective)
 
     # Define directives
     types = app.config.needs_types
@@ -502,22 +501,25 @@ def process_need_refs(app, doctree, fromdocname):
                                     node_need_ref['reftarget'] + '?')
 
         # If need target exists, let's create the reference
-        if node_need_ref['target'] in env.need_all_needs:
-            target_need = env.need_all_needs[node_need_ref['target']]
+        if node_need_ref['reftarget'].upper() in env.need_all_needs:
+            target_need = env.need_all_needs[node_need_ref['reftarget'].upper()]
             try:
+                link_text = "{title} ({id})".format(title=target_need["title"], id=target_need["id"])
+                node_need_ref[0].children[0] = nodes.Text(link_text, link_text)
+
                 new_node_ref = make_refnode(app.builder,
                                             fromdocname,
                                             target_need['docname'],
                                             target_need['target']['refid'],
                                             node_need_ref[0].deepcopy(),
-                                            node_need_ref['target'])
+                                            node_need_ref['reftarget'].upper())
             except NoUri:
                 # Irf the given need id can not be found, we must pass here....
                 pass
 
         else:
             env.warn_node(
-                'Needs: need %s not found' % node_need_ref['target'], node_need_ref)
+                'Needs: need %s not found' % node_need_ref['reftarget'], node_need_ref)
 
         node_need_ref.replace_self(new_node_ref)
 
@@ -581,6 +583,7 @@ def status_sorter(a):
     if not a["status"]:
         return ""
     return a["status"]
+
 
 def rstjinja(app, docname, source):
     """
