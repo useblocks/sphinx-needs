@@ -30,10 +30,12 @@ sys.path.insert(0, os.path.abspath('../sphinxcontrib'))
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-# Config outside readthedocs:
-# extensions = ['sphinxcontrib.plantuml', 'sphinxcontrib.needs']
 
-extensions = ['sphinxcontrib.needs']
+on_rtd = os.environ.get('READTHEDOCS') == 'True'
+if on_rtd:
+    extensions = ['sphinxcontrib.needs']
+else:
+    extensions = ['sphinxcontrib.plantuml', 'sphinxcontrib.needs']
 
 # NEEDS CONFIGURATION
 

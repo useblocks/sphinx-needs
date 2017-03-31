@@ -105,6 +105,7 @@ This will be rendered to:
 
 **Filter result as diagram**
 
+{% if READTHEDOCS %}
 ..
     ReadTheDocs does not support plantuml.
     Therefore diagram generation is not possible on the server and we show an image here.
@@ -113,6 +114,13 @@ This will be rendered to:
        :layout: diagram
 
 .. image:: _static/diagram.png
+
+{% else %}
+
+.. needfilter::
+       :layout: diagram
+
+{% endif %}
 
 ----
 
@@ -140,7 +148,17 @@ You can create filterable overviews of defined needs by using the needfilter dir
        :tags: tests; test; test_case;
        :layout: table
 
+One more thing ...
+------------------
 
+This extensions also activates the usage of jinja statements inside your rst files.
+The statements get executed before sphinx starts handling their content.
+
+The idea and code is coming from
+`Eric Holscher <http://ericholscher.com/blog/2016/jul/25/integrating-jinja-rst-sphinx/>`_.
+
+It was integrated for dynamic error handling, if needed libraries like PlantUML are not available
+(for instance on readthedocs.io).
 
 Installation
 ============

@@ -88,6 +88,9 @@ def setup(app):
     app.connect('doctree-resolved', process_needfilters)
     app.connect('doctree-resolved', process_need_refs)
 
+    # Allows jinja statements in rst files
+    app.connect("source-read", rstjinja)
+
     return {'version': '0.1'}  # identifies the version of our extension
 
 
@@ -578,3 +581,16 @@ def status_sorter(a):
     if not a["status"]:
         return ""
     return a["status"]
+
+def rstjinja(app, docname, source):
+    """
+    Render our pages as a jinja template for fancy templating goodness.
+    """
+    # Make sure we're outputting HTML
+    if app.builder.format != 'html':
+        return
+    src = source[0]
+    rendered = app.builder.templates.render_string(
+        src, app.config.html_context
+    )
+    source[0] = rendered
