@@ -105,8 +105,14 @@ This will be rendered to:
 
 **Filter result as diagram**
 
-.. needfilter::
-   :layout: diagram
+..
+    ReadTheDocs does not support plantuml.
+    Therefore diagram generation is not possible on the server and we show an image here.
+
+    .. needfilter::
+       :layout: diagram
+
+.. image:: _static/diagram.png
 
 ----
 
