@@ -119,7 +119,7 @@ needs_types must be a list of dictionaries, where each dictionary **must** conta
 * **title**: Title, which is used as human readable name in lists
 * **prefix**: A prefix for generated IDs, to easily identify that an ID belongs to a specific type. Can Also be ""
 * **color**: A color as hex value. Used in diagrams and some days maybe in other representations as well.
-* **style**: A plantuml node type, like node, artifact, frame, storage or database. See `plantuml doucmentation <http://plantuml.com/deployment-diagram>`_ for more.
+* **style**: A plantuml node type, like node, artifact, frame, storage or database. See `plantuml documentation <http://plantuml.com/deployment-diagram>`_ for more.
 
 needs_template
 ~~~~~~~~~~~~~~

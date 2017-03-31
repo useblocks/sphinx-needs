@@ -19,7 +19,7 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath('../../../sphinxcontrib'))
+sys.path.insert(0, os.path.abspath('../sphinxcontrib'))
 
 # -- General configuration ------------------------------------------------
 
@@ -81,15 +81,16 @@ NOTE_TEMPLATE = """
 """
 DEFAULT_DIAGRAM_TEMPLATE = "<size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>"
 
+# To not use the default configuration for sphinx needs, uncomment some of the following lines.
+
 # needs_template = TITLE_TEMPLATE
+# needs_diagram_template = DEFAULT_DIAGRAM_TEMPLATE
 
-needs_diagram_template = DEFAULT_DIAGRAM_TEMPLATE
-
-needs_types = [dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),
-               dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="artifact"),
-               dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="storage"),
-               dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="agent")
-               ]
+# needs_types = [dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),
+#                dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="artifact"),
+#                dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="storage"),
+#                dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="agent")
+#                ]
 
 cwd = os.getcwd()
 plantuml = 'java -jar %s' % os.path.join(cwd, "utils/plantuml_beta.jar")

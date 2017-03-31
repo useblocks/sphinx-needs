@@ -1,16 +1,12 @@
-import random
 import hashlib
-import string
 from docutils import nodes
 from docutils.parsers.rst import directives
 from docutils.parsers.rst import Directive
-from sphinx.util.compat import make_admonition
-from sphinx.locale import _
-from docutils.statemachine import ViewList
-from sphinx.util import nested_parse_with_titles
 from jinja2 import Template
-from textwrap import dedent
 import os
+from sphinx.roles import XRefRole
+from sphinx.environment import NoUri
+from sphinx.util.nodes import make_refnode
 
 DEFAULT_TEMPLATE = """
 .. _{{id}}:
@@ -79,6 +75,10 @@ def setup(app):
         app.add_directive(type_directive, NeedDirective)
         app.add_directive("{0}_list".format(type_directive), NeedDirective)
 
+    app.add_role('need', XRefRole(nodeclass=need_ref,
+                                  innernodeclass=nodes.emphasis,
+                                  warn_dangling=True))
+
     # app.add_directive('need', NeedDirective)
     app.add_directive('needfilter', NeedfilterDirective)
 
@@ -86,6 +86,7 @@ def setup(app):
     app.connect('env-purge-doc', purge_needs)
     app.connect('doctree-resolved', process_need_nodes)
     app.connect('doctree-resolved', process_needfilters)
+    app.connect('doctree-resolved', process_need_refs)
 
     return {'version': '0.1'}  # identifies the version of our extension
 
@@ -95,6 +96,10 @@ class need(nodes.General, nodes.Element):
 
 
 class needfilter(nodes.General, nodes.Element):
+    pass
+
+
+class need_ref(nodes.Inline, nodes.Element):
     pass
 
 
@@ -410,10 +415,14 @@ def process_needfilters(app, doctree, fromdocname):
                     # All links we can get from docutils functions will be relative.
                     # But the generated link in the svg will be relative to the svg-file location
                     # (e.g. server.com/docs/_images/sqwxo499cnq329439dfjne.svg)
-                    # and not to current documentation. Tehrefore we need to add ../ to get out of the _image folder.
-                    link = "../" + app.builder.get_target_uri(need_info['docname']) \
-                           + "#"\
-                           + need_info['target']['refid']
+                    # and not to current documentation. Therefore we need to add ../ to get out of the _image folder.
+                    try:
+                        link = "../" + app.builder.get_target_uri(need_info['docname']) \
+                               + "#" \
+                               + need_info['target']['refid']
+                    # Gets mostly called during latex generation
+                    except NoUri:
+                        link = ""
 
                     diagram_template = Template(env.config.needs_diagram_template)
                     node_text = diagram_template.render(**need_info)
@@ -449,19 +458,55 @@ def process_needfilters(app, doctree, fromdocname):
         if current_needlist["show_filters"]:
             para = nodes.paragraph()
             filter_text = "Used filter:"
-            filter_text += " status(%s)" % " OR ".join(current_needlist["status"]) if len(current_needlist["status"]) > 0 else ""
+            filter_text += " status(%s)" % " OR ".join(current_needlist["status"]) if len(
+                current_needlist["status"]) > 0 else ""
             if len(current_needlist["status"]) > 0 and len(current_needlist["tags"]) > 0:
                 filter_text += " AND "
-            filter_text += " tags(%s)" % " OR ".join(current_needlist["tags"]) if len(current_needlist["tags"]) > 0 else ""
-            if (len(current_needlist["status"]) > 0 or len(current_needlist["tags"]) > 0) and len(current_needlist["types"]) > 0:
+            filter_text += " tags(%s)" % " OR ".join(current_needlist["tags"]) if len(
+                current_needlist["tags"]) > 0 else ""
+            if (len(current_needlist["status"]) > 0 or len(current_needlist["tags"]) > 0) and len(
+                    current_needlist["types"]) > 0:
                 filter_text += " AND "
-            filter_text += " types(%s)" % " OR ".join(current_needlist["types"]) if len(current_needlist["types"]) > 0 else ""
+            filter_text += " types(%s)" % " OR ".join(current_needlist["types"]) if len(
+                current_needlist["types"]) > 0 else ""
 
             filter_node = nodes.emphasis(filter_text, filter_text)
             para += filter_node
             content.append(para)
 
         node.replace_self(content)
+
+
+def process_need_refs(app, doctree, fromdocname):
+    for node_need_ref in doctree.traverse(need_ref):
+        env = app.builder.env
+        # Let's create a dummy node, for the case we will not be able to create a real reference
+        new_node_ref = make_refnode(app.builder,
+                                    fromdocname,
+                                    fromdocname,
+                                    'Unknown need',
+                                    node_need_ref[0].deepcopy(),
+                                    node_need_ref['reftarget'] + '?')
+
+        # If need target exists, let's create the reference
+        if node_need_ref['target'] in env.need_all_needs:
+            target_need = env.need_all_needs[node_need_ref['target']]
+            try:
+                new_node_ref = make_refnode(app.builder,
+                                            fromdocname,
+                                            target_need['docname'],
+                                            target_need['target']['refid'],
+                                            node_need_ref[0].deepcopy(),
+                                            node_need_ref['target'])
+            except NoUri:
+                # Irf the given need id can not be found, we must pass here....
+                pass
+
+        else:
+            env.warn_node(
+                'Needs: need %s not found' % node_need_ref['target'], node_need_ref)
+
+        node_need_ref.replace_self(new_node_ref)
 
 
 def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=False, ref_lookup=False):
