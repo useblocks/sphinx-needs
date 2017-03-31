@@ -321,7 +321,17 @@ def process_needfilters(app, doctree, fromdocname):
 
         elif current_needlist["layout"] == "diagram":
             content = []
-            from sphinxcontrib.plantuml import plantuml
+            try:
+                from sphinxcontrib.plantuml import plantuml
+            except ImportError:
+                content = nodes.error()
+                para = nodes.paragraph()
+                text = nodes.Text("PlantUML is not available!", "PlantUML is not available!")
+                para += text
+                content.append(para)
+                node.replace_self(content)
+                continue
+
             plantuml_block_text = ".. plantuml::\n" \
                                   "\n" \
                                   "   @startuml" \
