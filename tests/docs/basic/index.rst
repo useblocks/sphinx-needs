@@ -97,6 +97,13 @@ NEEDFILTER DIAGRAM
 .. needfilter::
    :layout: diagram
 
+NEEDFILTER DIAGRAM
+==================
+
+.. needfilter::
+   :layout: diagram
+   :show_legend:
+
 
 
 Indices and tables

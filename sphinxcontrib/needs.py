@@ -42,10 +42,10 @@ DEFAULT_DIAGRAM_TEMPLATE = "<size:12>{{type_name}}</size>\\n**{{title|wordwrap(1
 
 def setup(app):
     app.add_config_value('needs_types',
-                         [dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2"),
-                          dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2"),
-                          dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A"),
-                          dict(directive="test", title="Test Case", prefix="T_", color="#DCB239")
+                         [dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),
+                          dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="node"),
+                          dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="node"),
+                          dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="node")
                           ],
                          'html')
     app.add_config_value('needs_template',
@@ -137,6 +137,7 @@ class NeedDirective(Directive):
                 type_name = type["title"]
                 type_prefix = type["prefix"]
                 type_color = type["color"]
+                type_style = type["style"]
                 break
 
         # Get the id or generate a random string/hash string, which is hopefully unique
@@ -187,6 +188,7 @@ class NeedDirective(Directive):
             'type_name': type_name,
             'type_prefix': type_prefix,
             'type_color': type_color,
+            'type_style': type_style,
             'status': status,
             'tags': tags,
             'id': id,
@@ -230,6 +232,7 @@ class NeedfilterDirective(Directive):
                    'show_tags': directives.flag,
                    'show_filters': directives.flag,
                    'show_links': directives.flag,
+                   'show_legend': directives.flag,
                    'sort_by': sort_by,
                    'layout': layout}
 
@@ -266,6 +269,7 @@ class NeedfilterDirective(Directive):
             'show_tags': True if self.options.get("show_tags", False) is None else False,
             'show_status': True if self.options.get("show_status", False) is None else False,
             'show_filters': True if self.options.get("show_filters", False) is None else False,
+            'show_legend': True if self.options.get("show_legend", False) is None else False,
             'sort_by': self.options.get("sort_by", None),
             'layout': self.options.get("layout", "list"),
         }
@@ -414,13 +418,24 @@ def process_needfilters(app, doctree, fromdocname):
                     diagram_template = Template(env.config.needs_diagram_template)
                     node_text = diagram_template.render(**need_info)
 
-                    puml_node["uml"] += 'node "{node_text}" as {id} [[{link}]] {color}\n'.format(
-                        id=need_info["id"], node_text=node_text, link=link, color=need_info["type_color"])
+                    puml_node["uml"] += '{style} "{node_text}" as {id} [[{link}]] {color}\n'.format(
+                        id=need_info["id"], node_text=node_text, link=link, color=need_info["type_color"],
+                        style=need_info["type_style"])
                     for link in need_info["links"]:
                         puml_connections += '{id} --> {link}\n'.format(id=need_info["id"], link=link)
 
         if current_needlist["layout"] == "diagram":
             puml_node["uml"] += puml_connections
+
+            # Create a legend
+
+            if current_needlist["show_legend"]:
+                puml_node["uml"] += "legend\n"
+                puml_node["uml"] += "|= Color |= Type |\n"
+                for need in app.config.needs_types:
+                    puml_node["uml"] += "|<back:{color}> {color} </back>| {name} |\n".format(
+                        color=need["color"], name=need["title"])
+                puml_node["uml"] += "endlegend\n"
             puml_node["uml"] += "@enduml"
             puml_node["incdir"] = os.path.dirname(current_needlist["docname"])
             content.append(puml_node)

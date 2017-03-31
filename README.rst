@@ -107,10 +107,10 @@ The option allows the setup of own need types like bugs, user_stories and more.
 
 By default it is set to::
 
-    needs_types = [dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2"),
-                   dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2"),
-                   dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A"),
-                   dict(directive="test", title="Test Case", prefix="T_", color="#DCB239")
+    needs_types = [dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),
+                   dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="node"),
+                   dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="node"),
+                   dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="node")
                ]
 
 needs_types must be a list of dictionaries, where each dictionary **must** contain the following items:
@@ -119,6 +119,7 @@ needs_types must be a list of dictionaries, where each dictionary **must** conta
 * **title**: Title, which is used as human readable name in lists
 * **prefix**: A prefix for generated IDs, to easily identify that an ID belongs to a specific type. Can Also be ""
 * **color**: A color as hex value. Used in diagrams and some days maybe in other representations as well.
+* **style**: A plantuml node type, like node, artifact, frame, storage or database. See `plantuml <http://plantuml.com/deployment-diagram>`_ for more.
 
 needs_template
 ~~~~~~~~~~~~~~
@@ -237,6 +238,7 @@ Example::
        :show_status:
        :show_tags:
        :show_filters:
+       :show_legend:
        :sort_by: id
        :layout: list
 
@@ -252,7 +254,9 @@ If **:show_status:** / **:show_tags:** is given, the related information will be
 
 To show the used filters under a list, set **:show_filters:**
 
-The showed list is unsorted as long as the parameter **:sort_by::** is not used.
+**:show_legend:** is supported only by **:layout:diagram**. It adds a legend with colors to the generated diagram.
+
+The showed list is unsorted as long as the parameter **:sort_by:** is not used.
 Valid options for **:sort_by:** are **id** and **status**.
 
 `:layout:`

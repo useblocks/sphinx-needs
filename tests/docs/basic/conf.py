@@ -85,10 +85,10 @@ DEFAULT_DIAGRAM_TEMPLATE = "<size:12>{{type_name}}</size>\\n**{{title|wordwrap(1
 
 needs_diagram_template = DEFAULT_DIAGRAM_TEMPLATE
 
-needs_types = [dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2"),
-               dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2"),
-               dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A"),
-               dict(directive="test", title="Test Case", prefix="T_", color="#DCB239")
+needs_types = [dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),
+               dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="artifact"),
+               dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="storage"),
+               dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="agent")
                ]
 
 cwd = os.getcwd()

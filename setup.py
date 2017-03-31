@@ -8,7 +8,7 @@ requires = ['Sphinx>=0.6']
 
 setup(
     name='sphinxcontrib-needs',
-    version='0.1.14',
+    version='0.1.15',
     url='http://github.com/useblocks/sphinxcontrib-needs',
     download_url='http://pypi.python.org/pypi/sphinxcontrib-needs',
     license='BSD',
