@@ -396,7 +396,7 @@ Available jinja variables are:
 
 .. warning::
 
-   You must add a reference like `.. _{{id}}:` to the template. Otherwise linking will not work!
+   You must add a reference like `.. _{{ '{{id}}' }}:` to the template. Otherwise linking will not work!
 
 needs_diagram_template
 ~~~~~~~~~~~~~~~~~~~~~~
