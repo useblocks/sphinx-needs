@@ -7,6 +7,7 @@ import os
 from sphinx.roles import XRefRole
 from sphinx.environment import NoUri
 from sphinx.util.nodes import make_refnode
+from sphinx.errors import SphinxError
 
 DEFAULT_TEMPLATE = """
 .. _{{id}}:
@@ -41,7 +42,9 @@ def setup(app):
                          [dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),
                           dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="node"),
                           dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="node"),
-                          dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="node")
+                          dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="node"),
+                          # Kept for backwards compatibility
+                          dict(directive="need", title="Need", prefix="N_", color="#9856a5", style="node")
                           ],
                          'html')
     app.add_config_value('needs_template',
@@ -55,6 +58,7 @@ def setup(app):
     app.add_config_value('needs_id_prefix_specs', "", 'html')
     app.add_config_value('needs_id_length', 5, 'html')
     app.add_config_value('needs_specs_show_needlist', False, 'html')
+    app.add_config_value('needs_id_required', False, 'html')
 
     app.add_config_value('needs_diagram_template',
                          DEFAULT_DIAGRAM_TEMPLATE,
@@ -78,8 +82,10 @@ def setup(app):
                                   innernodeclass=nodes.emphasis,
                                   warn_dangling=True))
 
-    # app.add_directive('need', NeedDirective)
     app.add_directive('needfilter', NeedfilterDirective)
+
+    # Kept for backwards compatibility
+    app.add_directive('needlist', NeedfilterDirective)
 
     # Make connections to events
     app.connect('env-purge-doc', purge_needs)
@@ -151,6 +157,10 @@ class NeedDirective(Directive):
         # TODO: Check, if id was already given. If True, recalculate id
         # id = self.options.get("id", ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for
         #  _ in range(5)))
+        if "id" not in self.options.keys() and env.app.config.needs_id_required:
+            raise NeedsNoIdException("An id is missing for this need and must be set, because 'needs_id_required' "
+                                "is set to True in conf.py")
+
         id = self.options.get("id",
                               "%s%s" % (type_prefix,
                                         hashlib.sha1(self.arguments[0].encode("UTF-8")).hexdigest().upper()
@@ -599,3 +609,7 @@ def rstjinja(app, docname, source):
         src, app.config.html_context
     )
     source[0] = rendered
+
+
+class NeedsNoIdException(SphinxError):
+    pass

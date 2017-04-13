@@ -1,4 +1,4 @@
-Complete documentation: http://sphinxcontrib-needs.readthedocs.io/en/latest/
+*Complete, rendered documentation*: http://sphinxcontrib-needs.readthedocs.io/en/latest/
 
 This package contains the needs Sphinx extension.
 

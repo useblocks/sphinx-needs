@@ -1,5 +1,6 @@
 from sphinx_testing import with_app
-
+from nose.tools import raises
+from sphinxcontrib.needs import NeedsNoIdException
 
 @with_app(buildername='html', srcdir='../docs')
 def test_build_html(app, status, warning):
@@ -23,4 +24,11 @@ def test_build_epub(app, status, warning):
 
 @with_app(buildername='json', srcdir='../docs')
 def test_build_json(app, status, warning):
+    app.builder.build_all()
+
+
+# Test with needs_id_required=True and missing ids in docs.
+@raises(NeedsNoIdException)
+@with_app(buildername='html', srcdir='../docs', confoverrides={"needs_id_required": True})
+def test__id_required_build_html(app, status, warning):
     app.builder.build_all()
