@@ -251,13 +251,13 @@ Example::
        :sort_by: id
        :layout: list
 
-This prints a list with all found needs, which match the filters for status and tags.
+This prints a list with all found needs, which match the filters for status, tags and types.
 
 For **:status:**, **:tags:** and **:types:** values are separated by "**;**". The logic is as followed::
 
     status = (open OR in_progress) AND tags = (user OR login) AND types = (req OR spec)
 
-For **:types:** the type itself and the human-readable type_name can be used as filter value.
+For **:types:** the type itself and the human-readable type_title can be used as filter value.
 
 If **:show_status:** / **:show_tags:** is given, the related information will be shown after the name of the need.
 
@@ -358,9 +358,9 @@ If nothing is set, the following default template is used:
 
 .. code-block:: jinja
 
+    {% raw -%}
     .. _{{id}}:
 
-    {% raw -%}
     {% if hide == false -%}
     {{type_name}}: **{{title}}** ({{id}})
 
@@ -422,7 +422,9 @@ By default the following template is used:
 
 .. code-block:: jinja
 
+    {% raw -%}
     <size:12>{{type_name}}</size>\\n**{{title}}**\\n<size:10>{{id}}</size>
+    {% endraw %}
 
 .. _needs_id_required:
 
