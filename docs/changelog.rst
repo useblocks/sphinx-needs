@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.1.20
+------
+
+* Bugfix for custom needs_types: Parameter in conf.py was not taken into account.
+
 0.1.19
 ------
 

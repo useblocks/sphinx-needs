@@ -69,14 +69,19 @@ def setup(app):
     app.add_node(needfilter)
 
     # Define directives
-    types = app.config.needs_types
-    for type in types:
-        type_directive = type["directive"]
-        type_name = type["title"]
-        type_prefix = type["prefix"]
+    # As values from conf.py are not available during setup phase, we have to import and read them by our own.
+    # Otherwise this "app.config.needs_types" would always return the default values only.
+    try:
+        import imp
+        config = imp.load_source("needs.app_conf", os.path.join(app.confdir, "conf.py"))
+        types = getattr(config, "needs_types", app.config.needs_types)
+    except Exception as e:
+        types = app.config.needs_types
 
-        app.add_directive(type_directive, NeedDirective)
-        app.add_directive("{0}_list".format(type_directive), NeedDirective)
+    for type in types:
+        # Register requested types of needs
+        app.add_directive( type["directive"], NeedDirective)
+        app.add_directive("{0}_list".format(type["directive"]), NeedDirective)
 
     app.add_role('need', XRefRole(nodeclass=need_ref,
                                   innernodeclass=nodes.emphasis,
@@ -94,7 +99,7 @@ def setup(app):
     app.connect('doctree-resolved', process_need_refs)
 
     # Allows jinja statements in rst files
-    app.connect("source-read", rstjinja)
+    # app.connect("source-read", rstjinja)
 
     return {'version': '0.1'}  # identifies the version of our extension
 
@@ -257,6 +262,10 @@ class NeedfilterDirective(Directive):
         env = self.state.document.settings.env
         if not hasattr(env, 'need_all_needlists'):
             env.need_all_needlists = {}
+
+        # be sure, global var is available. If not, create it
+        if not hasattr(env, 'need_all_needs'):
+            env.need_all_needs = {}
 
         targetid = "needfilter-{docname}-{id}".format(
             docname=env.docname,
