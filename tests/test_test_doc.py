@@ -1,7 +1,7 @@
 from sphinx_testing import with_app
 
 
-@with_app(buildername='html', srcdir='doc_test/')
+@with_app(buildername='html', srcdir='doc_test/generic_doc')
 def test_doc_build_html(app, status, warning):
     #app.builder.build_all()
     app.build()

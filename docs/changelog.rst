@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.1.22
+------
+
+* Improvement: needfilter directives supports complex filter-logic by using parameter :ref:`filter`.
+
 0.1.21
 ------
 

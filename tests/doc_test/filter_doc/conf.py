@@ -35,6 +35,7 @@ extensions = ['sphinxcontrib.needs']
 
 
 needs_types = [
+    dict(directive="req", title="Requirement", prefix="RE_", color="#BFD8D2", style="node"),
     dict(directive="story", title="User Story", prefix="US_", color="#BFD8D2", style="node"),
     dict(directive="spec", title="Specification", prefix="SP_", color="#FEDCD2", style="node"),
     dict(directive="impl", title="Implementation", prefix="IM_", color="#DF744A", style="node"),
@@ -42,7 +43,7 @@ needs_types = [
 ]
 
 cwd = os.getcwd()
-plantuml = 'java -jar %s' % os.path.join(cwd, "utils/plantuml_beta.jar")
+plantuml = 'java -jar %s' % os.path.join(cwd, "../utils/plantuml_beta.jar")
 
 # If we are running on windows, we need to manipulate the path,
 # otherwise plantuml will have problems.

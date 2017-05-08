@@ -244,6 +244,7 @@ Example::
        :status: open;in_progress
        :tags: user; login
        :types: req;Specification
+       :filter: "my_tag" in tags and ("another_tag" in tags or "closed" in status)
        :show_status:
        :show_tags:
        :show_filters:
@@ -253,9 +254,12 @@ Example::
 
 This prints a list with all found needs, which match the filters for status, tags and types.
 
-For **:status:**, **:tags:** and **:types:** values are separated by "**;**". The logic is as followed::
+For **:status:**, **:tags:** and **:types:** values are separated by "**;**".
+**:filter:** gets evaluated.
 
-    status = (open OR in_progress) AND tags = (user OR login) AND types = (req OR spec)
+The logic, if a need belongs to the needfilter result list, is as followed::
+
+    status = (open OR in_progress) AND tags = (user OR login) AND types = (req OR spec) AND eval(filter) is True
 
 For **:types:** the type itself and the human-readable type_title can be used as filter value.
 
@@ -267,6 +271,75 @@ To show the used filters under a list, set **:show_filters:**
 
 The showed list is unsorted as long as the parameter **:sort_by:** is not used.
 Valid options for **:sort_by:** are **id** and **status**.
+
+.. _filter:
+
+`:filter:`
+~~~~~~~~~~
+
+The filter option allows the definition of a complex query string, which gets evaluated via eval() in Python.
+So each valid Python expression is supported. The following variables are available:
+
+* tags
+* type
+* status
+
+If your expression is valid and it's True, the related need is added to the filter result list.
+If it is invalid or return False, the related need is not taken into account for the current filter.
+
+**Examples**::
+
+    .. req:: Requirement A
+       :tags: A;
+       :status: open
+
+    .. req:: Requirement B
+       :tags: B;
+       :status: closed
+
+    .. spec:: Specification A
+       :tags: A;
+       :status: closed
+
+    .. spec:: Specification B
+       :tags: B;
+       :status: open
+
+    .. test:: Test 1
+
+    .. needfilter::
+       :filter: ("B" in tags or ("spec" in type and "closed" in status)) or "test" == type
+
+
+This will have the following result:
+
+.. req:: Requirement A
+   :tags: A;
+   :status: open
+   :hide:
+
+.. req:: Requirement B
+   :tags: B;
+   :status: closed
+   :hide:
+
+.. spec:: Specification A
+   :tags: A;
+   :status: closed
+   :hide:
+
+.. spec:: Specification B
+   :tags: B;
+   :status: open
+   :hide:
+
+.. test:: Test 1
+   :tags: awesome
+   :hide:
+
+.. needfilter::
+       :filter: ("B" in tags or ("spec" == type and "closed" == status)) or ("test" == type and "awesome" in tags)
+
 
 `:layout:`
 ~~~~~~~~~~

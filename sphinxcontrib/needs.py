@@ -251,6 +251,7 @@ class NeedfilterDirective(Directive):
     option_spec = {'status': directives.unicode_code,
                    'tags': directives.unicode_code,
                    'types': directives.unicode_code,
+                   'filter': directives.unicode_code,
                    'show_status': directives.flag,
                    'show_tags': directives.flag,
                    'show_filters': directives.flag,
@@ -293,6 +294,7 @@ class NeedfilterDirective(Directive):
             'status': status,
             'tags': tags,
             'types': types,
+            'filter': self.options.get("filter", None),
             'show_tags': True if self.options.get("show_tags", False) is None else False,
             'show_status': True if self.options.get("show_status", False) is None else False,
             'show_filters': True if self.options.get("show_filters", False) is None else False,
@@ -409,7 +411,21 @@ def process_needfilters(app, doctree, fromdocname):
                     or len(current_needlist["types"]) == 0:
                 type_filter_passed = True
 
-            if status_filter_passed and tags_filter_passed and type_filter_passed:
+            if current_needlist["filter"] is None:
+                python_filter_passed = True
+            else:
+                python_filter_passed = False
+                filter_context = {
+                    "tags": need_info["tags"],
+                    "status": need_info["status"],
+                    "type": need_info["type"],
+                }
+                try:
+                    python_filter_passed = eval(current_needlist["filter"], globals(), filter_context)
+                except Exception as e:
+                    print("Filter {0} not valid: Error: {1}".format(current_needlist["filter"], e))
+
+            if status_filter_passed and tags_filter_passed and type_filter_passed and python_filter_passed:
                 if current_needlist["layout"] == "list":
                     para = nodes.line()
                     description = "%s: %s" % (need_info["id"], need_info["title"])
