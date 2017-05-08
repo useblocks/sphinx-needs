@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.1.21
+------
+
+* Improvement: Added word highlighting of need titles in linked pages of svg diagram boxes.
+
 0.1.20
 ------
 

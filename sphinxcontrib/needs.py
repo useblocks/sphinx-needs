@@ -8,6 +8,7 @@ from sphinx.roles import XRefRole
 from sphinx.environment import NoUri
 from sphinx.util.nodes import make_refnode
 from sphinx.errors import SphinxError
+import urllib
 
 DEFAULT_TEMPLATE = """
 .. _{{id}}:
@@ -451,9 +452,10 @@ def process_needfilters(app, doctree, fromdocname):
                     # and not to current documentation. Therefore we need to add ../ to get out of the _image folder.
                     try:
                         link = "../" + app.builder.get_target_uri(need_info['docname']) \
+                               + "?highlight={0}".format(urllib.parse.quote_plus(need_info['title'])) \
                                + "#" \
-                               + need_info['target']['refid']
-                    # Gets mostly called during latex generation
+                               + need_info['target']['refid'] \
+                        # Gets mostly called during latex generation
                     except NoUri:
                         link = ""
 
