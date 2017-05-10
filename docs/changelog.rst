@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.1.23
+------
+
+* Improvement: :ref:`complex filter <filter>` for needfilter directive supports :ref:`regex searches <re_search>`.
+* Improvement: :ref:`complex filter <filter>` has access to nearly all need variables (id, title, content, ...)`.
+* Bugfix: If a duplicated ID is detected an error gets thrown.
+
 0.1.22
 ------
 

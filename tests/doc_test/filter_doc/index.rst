@@ -5,6 +5,7 @@ TEST DOCUMENT
 
     filter_tags_or
     filter_all
+    filter_search
 
 Testing simple filter
 ---------------------

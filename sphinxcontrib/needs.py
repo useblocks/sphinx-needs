@@ -9,6 +9,7 @@ from sphinx.environment import NoUri
 from sphinx.util.nodes import make_refnode
 from sphinx.errors import SphinxError
 import urllib
+import re
 
 DEFAULT_TEMPLATE = """
 .. _{{id}}:
@@ -201,6 +202,9 @@ class NeedDirective(Directive):
         # be sure, global var is available. If not, create it
         if not hasattr(env, 'need_all_needs'):
             env.need_all_needs = {}
+
+        if id in env.need_all_needs.keys():
+            raise NeedsDuplicatedId("A need with ID {0} already exists! This is not allowed".format(id))
 
         # Add the need and all needed information
         env.need_all_needs[id] = {
@@ -419,9 +423,15 @@ def process_needfilters(app, doctree, fromdocname):
                     "tags": need_info["tags"],
                     "status": need_info["status"],
                     "type": need_info["type"],
+                    "id": need_info["id"],
+                    "title": need_info["type"],
+                    "links": need_info["links"],
+                    "content": need_info["content"],
+                    "search": re.search
                 }
                 try:
-                    python_filter_passed = eval(current_needlist["filter"], globals(), filter_context)
+                    # python_filter_passed = eval(current_needlist["filter"], globals(), filter_context)
+                    python_filter_passed = eval(current_needlist["filter"], None, filter_context)
                 except Exception as e:
                     print("Filter {0} not valid: Error: {1}".format(current_needlist["filter"], e))
 
@@ -639,4 +649,8 @@ def rstjinja(app, docname, source):
 
 
 class NeedsNoIdException(SphinxError):
+    pass
+
+
+class NeedsDuplicatedId(SphinxError):
     pass

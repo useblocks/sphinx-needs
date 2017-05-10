@@ -278,11 +278,16 @@ Valid options for **:sort_by:** are **id** and **status**.
 ~~~~~~~~~~
 
 The filter option allows the definition of a complex query string, which gets evaluated via eval() in Python.
-So each valid Python expression is supported. The following variables are available:
+So each valid Python expression is supported. The following variables/functions are available:
 
-* tags
-* type
-* status
+* tags, as Python list (compare like ``"B" in tags``)
+* type, as Python string (compare like ``"story" == type``)
+* status, as Python string (compare like ``"opened" != status``)
+* id, as Python string (compare like ``"MY_ID_" in id``)
+* title, as Python string (compare like ``len(title.split(" ")) > 5``)
+* links, as Python list (compare like ``"ID_123" not in links``)
+* content, as Python string (compare like ``len(content) == 0``)
+* :ref:`re_search`, as Python function for performing searches with a regular expression
 
 If your expression is valid and it's True, the related need is added to the filter result list.
 If it is invalid or return False, the related need is not taken into account for the current filter.
@@ -308,7 +313,7 @@ If it is invalid or return False, the related need is not taken into account for
     .. test:: Test 1
 
     .. needfilter::
-       :filter: ("B" in tags or ("spec" in type and "closed" in status)) or "test" == type
+       :filter: ("B" in tags or ("spec" == type and "closed" == status)) or "test" == type
 
 
 This will have the following result:
@@ -340,6 +345,23 @@ This will have the following result:
 .. needfilter::
        :filter: ("B" in tags or ("spec" == type and "closed" == status)) or ("test" == type and "awesome" in tags)
 
+.. _re_search:
+
+search
+++++++
+
+search(pattern, variable) is based on
+`Pythons re.search() function <https://docs.python.org/3/library/re.html#re.search>`_
+
+The first parameter must be a regular expression pattern.
+The second parameter should be on of the above variables(status, id, content, ..)
+
+Example::
+
+    .. Returns True, if a email address is inside the need content.
+
+    .. needfilter::
+       :filter: search("(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", content)
 
 `:layout:`
 ~~~~~~~~~~

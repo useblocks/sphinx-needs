@@ -1,7 +1,7 @@
 from sphinx_testing import with_app
 
 
-@with_app(buildername='html', srcdir='doc_test/filter_doc')
+@with_app(buildername='html', srcdir='doc_test/filter_doc', warningiserror=True)
 def test_filter_build_html(app, status, warning):
     #app.builder.build_all()
     app.build()
@@ -26,3 +26,13 @@ def test_filter_build_html(app, status, warning):
     assert 'req_d_found' in html_3
     assert 'story_1_not' not in html_3
     assert 'story_2_found' in html_3
+    assert 'my_test' in html_3
+
+    html_4 = (app.outdir / 'filter_search.html').read_text()
+    assert 'search_a' in html_4
+    assert 'search_b' not in html_4
+    assert 'search_c' not in html_4
+    assert 'search_d' not in html_4
+    assert 'search_2_1' in html_4
+    assert 'search_2_2' in html_4
+    assert 'test_email' in html_4
