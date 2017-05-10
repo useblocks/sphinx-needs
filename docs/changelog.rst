@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.1.24
+------
+
+* Bugfix: Reactivated jinja execution for documentation.
+
 0.1.23
 ------
 

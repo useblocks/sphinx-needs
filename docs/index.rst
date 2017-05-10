@@ -126,11 +126,13 @@ As :need:`impl_01` shows, the linked :need:`OWN_ID_123` is realisable.
     .. needfilter::
        :layout: diagram
 
+
 .. image:: _static/diagram.png
 
 {% else %}
 
 .. needfilter::
+       :filter: "filter" not in tags
        :layout: diagram
 
 {% endif %}
@@ -319,27 +321,27 @@ If it is invalid or return False, the related need is not taken into account for
 This will have the following result:
 
 .. req:: Requirement A
-   :tags: A;
+   :tags: A; filter
    :status: open
    :hide:
 
 .. req:: Requirement B
-   :tags: B;
+   :tags: B; filter
    :status: closed
    :hide:
 
 .. spec:: Specification A
-   :tags: A;
+   :tags: A; filter
    :status: closed
    :hide:
 
 .. spec:: Specification B
-   :tags: B;
+   :tags: B; filter
    :status: open
    :hide:
 
 .. test:: Test 1
-   :tags: awesome
+   :tags: awesome; filter
    :hide:
 
 .. needfilter::

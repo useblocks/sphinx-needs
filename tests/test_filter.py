@@ -1,9 +1,8 @@
 from sphinx_testing import with_app
 
 
-@with_app(buildername='html', srcdir='doc_test/filter_doc', warningiserror=True)
+@with_app(buildername='html', srcdir='doc_test/filter_doc')  # , warningiserror=True)
 def test_filter_build_html(app, status, warning):
-    #app.builder.build_all()
     app.build()
     html = (app.outdir / 'index.html').read_text()
     assert 'story_a' in html
