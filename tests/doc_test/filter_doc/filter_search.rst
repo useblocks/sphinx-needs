@@ -5,7 +5,6 @@ filter_search
    :id: AAAA
    :tags: filter_search;
    :status: open
-   :hide:
 
 .. req:: search_b
    :id: BBB
@@ -29,19 +28,16 @@ filter_search
    :id: ABC
    :tags: filter_search;
    :status: none
-   :hide:
 
 .. story:: search_2_2
    :id: CBA
    :tags: filter_search;
    :status: none
-   :hide:
 
 .. test:: test_email
    :id: TEST_123
    :tags: filter_search;
    :status: none
-   :hide:
 
    me@myemail.com
 

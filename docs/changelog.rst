@@ -1,6 +1,14 @@
 Changelog
 =========
 
+0.1.25
+------
+
+ * Restructured code
+ * Restructured documentation
+ * Improvement: Role :ref:`role_need_outgoingt` was added to print outgoing links from a given need
+ * Improvement: Role :ref:`role_need_incoming` was added to print incoming links to a given need
+
 0.1.24
 ------
 

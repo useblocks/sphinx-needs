@@ -1,6 +1,6 @@
 from sphinx_testing import with_app
 from nose.tools import raises
-from sphinxcontrib.needs import NeedsNoIdException
+from sphinxcontrib.need import NeedsNoIdException
 
 #OFFICIAL DOCUMENTATION BUILDS
 

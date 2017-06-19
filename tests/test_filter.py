@@ -5,13 +5,13 @@ from sphinx_testing import with_app
 def test_filter_build_html(app, status, warning):
     app.build()
     html = (app.outdir / 'index.html').read_text()
-    assert 'story_a' in html
-    assert 'story_b' not in html
-    assert 'story_a_b' in html
+    assert 'story_a_1' in html
+    assert 'story_b_1' not in html
+    assert 'story_a_b_1' in html
 
-    assert 'req_a' not in html
-    assert 'req_b' not in html
-    assert 'req_c' in html
+    assert 'req_a_1' not in html
+    assert 'req_b_1' not in html
+    assert 'req_c_1' in html
 
     html_2 = (app.outdir / 'filter_tags_or.html').read_text()
     assert 'req_a' in html_2

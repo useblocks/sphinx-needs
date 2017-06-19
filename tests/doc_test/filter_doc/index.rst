@@ -10,17 +10,15 @@ TEST DOCUMENT
 Testing simple filter
 ---------------------
 
-.. story:: story_a
+.. story:: story_a_1
    :tags: a;
-   :hide:
 
-.. story:: story_b
+.. story:: story_b_1
    :tags: b;
    :hide:
 
-.. story:: story_a_b
+.. story:: story_a_b_1
    :tags: a;b;
-   :hide:
 
 .. needfilter::
    :filter: "a" in tags
@@ -29,17 +27,16 @@ Testing simple filter
 Testing filter with and or
 --------------------------
 
-.. req:: req_a
+.. req:: req_a_1
    :tags: 1;
    :hide:
 
-.. req:: req_b
+.. req:: req_b_1
    :tags: 2;
    :hide:
 
-.. req:: req_c
+.. req:: req_c_1
    :tags: 1;2;
-   :hide:
 
 .. needfilter::
    :filter: "1" in tags and "2" in tags

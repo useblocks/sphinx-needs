@@ -9,7 +9,6 @@ filter_all
 .. req:: req_b_found
    :tags: 2;
    :status: closed
-   :hide:
 
 .. req:: req_c_not
    :tags: 1;2;
@@ -19,7 +18,6 @@ filter_all
 .. req:: req_d_found
    :tags: 1;2;
    :status: closed
-   :hide:
 
 .. story:: story_1_not
    :tags: 3;
@@ -29,13 +27,11 @@ filter_all
 .. story:: story_2_found
    :tags: 2;
    :status: none
-   :hide:
 
 .. test:: my_test
    :id: my_test_id
    :tags: my_test_tag
    :status: tested
-   :hide:
 
    My test content
 
