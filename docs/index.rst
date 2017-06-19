@@ -12,16 +12,6 @@ It allows the definition, linking and filtering of need-objects, which are by de
 
 This list can be easily customized via configuration (for instance to support bugs or user stories).
 
-.. toctree::
-   :maxdepth: 2
-
-   installation
-   directives
-   roles
-   configuration
-   examples
-   changelog
-
 What is a need?
 ---------------
 
@@ -39,12 +29,94 @@ Each need can contain:
 * several **tags** (optional)
 * several **links** to other needs (optional)
 
-You can create filterable overviews of defined needs by using the needfilter directive::
 
-    .. needfiler::
-       :status: open;in_progress
-       :tags: tests; test; test_case;
-       :layout: table
+Example
+-------
+
+Input
+~~~~~
+
+.. code-block:: rst
+
+   **Some data**
+
+   .. req:: My first requirement
+      :id: req_001
+      :tags: example
+
+      This is an awesome requirement and it includes a nice title,
+      a given id, a tag and this text as description.
+
+   .. spec:: Spec for a requirement
+      :links: req_001
+      :status: done
+      :tags: important; example
+
+      We haven't set an **ID** here, so sphinxcontrib-needs
+      will generated one for us.
+
+      But we have **set a link** to our first requirement and
+      also a *status* is given.
+
+   **Some text**
+
+   Wohooo, we have created :need:`req_001`,
+   which is linked by :need_incoming:`req_001`.
+
+   **A filter**
+
+   .. needfilter::
+      :tags: example
+      :layout: table
+
+Result
+~~~~~~
+
+**Some data**
+
+.. req:: My first requirement
+   :id: req_001
+   :tags: example
+
+   This is an awesome requirement and it includes a nice title,
+   a given id, a tag and this text as description.
+
+.. spec:: Spec for a requirement
+   :links: req_001
+   :status: done
+   :tags: important; example
+
+   We haven't set an **ID** here, so sphinxcontrib-needs
+   will generated one for us.
+
+   But we have **set a link** to our first requirement and
+   also a *status* is given.
+
+**Some text**
+
+Wohooo, we have created :need:`req_001`,
+which is linked by :need_incoming:`req_001`.
+
+**A filter**
+
+.. needfilter::
+  :tags: example
+  :show_filters:
+  :layout: table
+
+
+Content
+-------
+
+.. toctree::
+   :maxdepth: 2
+
+   installation
+   directives
+   roles
+   configuration
+   examples
+   changelog
 
 One more thing ...
 ------------------

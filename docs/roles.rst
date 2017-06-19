@@ -35,6 +35,7 @@ Example
 
 need_outgoing
 -------------
+.. versionadded:: 0.1.25
 
 ``:need_outgoing:`` adds a list of all outgoing links of the given need.
 The list contains the need IDs only, no title or any other information is printed.
@@ -56,6 +57,8 @@ Example
 
 need_incoming
 -------------
+.. versionadded:: 0.1.25
+
 ``:need_incoming:`` prints a list IDs of needs, which have set outgoing links to the given need.
 
 Example
