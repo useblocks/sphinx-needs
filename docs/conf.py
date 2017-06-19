@@ -98,6 +98,9 @@ needs_types = [dict(directive="req", title="Requirement", prefix="R_", color="#B
                dict(directive="mytest", title="My Test Case", prefix="MT_", color="#CCCCCC", style="agent")
                ]
 
+needs_show_link_type = False
+needs_show_link_title = False
+
 cwd = os.getcwd()
 plantuml = 'java -jar %s' % os.path.join(cwd, "utils/plantuml_beta.jar")
 

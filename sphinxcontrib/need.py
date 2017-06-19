@@ -27,7 +27,6 @@ class NeedDirective(Directive):
                    'hide_tags': directives.flag,
                    'hide_status': directives.flag,
                    'hide_links': directives.flag,
-                   'show_linked_titles': directives.flag
                    }
 
     # add configured link types
@@ -86,8 +85,6 @@ class NeedDirective(Directive):
         if len(links) > 0:
             links = [link.strip().upper() for link in links.split(";") if link != ""]
 
-        show_linked_titles = True if "show_linked_titles" in self.options.keys() else False
-
         #############################################################################################
         # Add need to global need list
         #############################################################################################
@@ -117,7 +114,6 @@ class NeedDirective(Directive):
             'hide': hide,
             'hide_tags': hide_tags,
             'hide_status': hide_status,
-            'show_linked_titles': show_linked_titles
         }
 
         template = Template(env.config.needs_template)

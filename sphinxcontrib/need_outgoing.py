@@ -27,10 +27,15 @@ def process_need_outgoing(app, doctree, fromdocname):
                 target_need = env.need_all_needs[node_need_ref['reftarget'].upper()]
                 try:
                     target_need = env.need_all_needs[link]
-                    if index+1 < len(ref_need["links"]):
-                        link_text = "{0}, ".format(link)
+                    if getattr(env.config, "needs_show_link_title", False) is True:
+                        link_text = "{title} ({id})".format(title=target_need["title"], id=target_need["id"])
                     else:
-                        link_text = "{0}".format(link)
+                        link_text = target_need["id"]
+                    if getattr(env.config, "needs_show_link_type", False) is True:
+                        link_text += " [{type}]".format(type=target_need["type_name"])
+
+                    if index+1 < len(ref_need["links"]):
+                        link_text += ", "
                     node_need_ref[0].children[0] = nodes.Text(link_text, link_text)
 
                     new_node_ref = make_refnode(app.builder,

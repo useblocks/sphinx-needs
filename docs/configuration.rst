@@ -163,3 +163,34 @@ If an ID is missing sphinx throws the exception "NeedsNoIdException" and stops t
     # With needs_id_required = False
 
     .. req:: This works now!
+
+.. _needs_show_link_type:
+
+needs_show_link_type
+~~~~~~~~~~~~~~~~~~~~
+.. versionadded:: 0.1.27
+
+This option mostly effects the roles :ref:`role_need_outgoing` and :ref:`role_need_incoming` by showing
+the *type* beside the ID the linked need.
+
+Can be combined with **needs_show_link_title**.
+
+Activate it by setting it on True in your conf.py::
+
+    needs_show_link_type = True
+
+
+.. _needs_show_link_title:
+
+needs_show_link_title
+~~~~~~~~~~~~~~~~~~~~~
+.. versionadded:: 0.1.27
+
+This option mostly effects the roles :ref:`role_need_outgoing` and :ref:`role_need_incoming` by showing
+the *title* beside the ID the linked need.
+
+Can be combined with **needs_show_link_type**.
+
+Activate it by setting it on True in your conf.py::
+
+    needs_show_link_title = True

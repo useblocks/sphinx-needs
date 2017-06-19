@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.1.27
+------
+
+ * New config: :ref:`needs_show_link_type`
+ * New config: :ref:`needs_show_link_title`
+
 0.1.26
 ------
 

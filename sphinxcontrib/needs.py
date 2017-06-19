@@ -61,6 +61,8 @@ def setup(app):
     app.add_config_value('needs_id_length', 5, 'html')
     app.add_config_value('needs_specs_show_needlist', False, 'html')
     app.add_config_value('needs_id_required', False, 'html')
+    app.add_config_value('needs_show_link_type', False, 'html')
+    app.add_config_value('needs_show_link_title', False, 'html')
 
     app.add_config_value('needs_diagram_template',
                          DEFAULT_DIAGRAM_TEMPLATE,
