@@ -2,6 +2,9 @@
 
 from docutils import nodes
 import os
+import random
+import string
+
 from sphinx.roles import XRefRole
 
 from sphinxcontrib.need import Need, NeedDirective, process_need_nodes, purge_needs
@@ -81,7 +84,22 @@ def setup(app):
     # Otherwise this "app.config.needs_types" would always return the default values only.
     try:
         import imp
-        config = imp.load_source("needs.app_conf", os.path.join(app.confdir, "conf.py"))
+        # If sphinx gets started multiple times inside a python process, the following module gets also
+        # loaded several times. This has a drawback, as the config from the current build gets somehow merged
+        # with the config from the previous builds.
+        # So if the current config does not define a parameter, which was set in build before, the "old" value is
+        # taken. This is dangerous, because a developer may simply want to use the defaults (like the predefined types)
+        # and therefore does not set this specific value. But instead he would get the value from a previous build.
+        # So we generate a random module name for our configuration, so that this is loaded for the first time.
+        # Drawback: The old modules will still exist (but are not used).
+        #
+        # From https://docs.python.org/2.7/library/functions.html#reload
+        # "When a module is reloaded, its dictionary (containing the module’s global variables) is retained.
+        # Redefinitions of names will override the old definitions, so this is generally not a problem.
+        # If the new version of a module does not define a name that was defined by the old version,
+        # the old definition remains"
+        module_name = "needs_app_conf_" + ''.join(random.choice(string.ascii_uppercase) for _ in range(5))
+        config = imp.load_source(module_name, os.path.join(app.confdir, "conf.py"))
         types = getattr(config, "needs_types", app.config.needs_types)
     except Exception as e:
         types = app.config.needs_types

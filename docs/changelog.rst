@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.1.28
+------
+
+ * Bugfix: Added support for multiple sphinx projects initialisations/builds during a single python process call.
+           (Reliable sphinxcontrib-needs configuration separation)
+
 0.1.27
 ------
 
