@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.1.29
+------
+
+ * Bugfix: Build has crashed, if sphinxcontrib-needs was loaded but not a single need was defined.
+
 0.1.28
 ------
 

@@ -135,9 +135,14 @@ def process_need_nodes(app, doctree, fromdocname):
         for node in doctree.traverse(Need):
             node.parent.remove(node)
     else:
-        # Wen need to get the back_links/incoming_links and store them
+        # We need to get the back_links/incoming_links and store them
         # inside each need
         env = app.builder.env
+
+        # If no needs were defined, we do not need to do anything
+        if not hasattr(env, "need_all_needs"):
+            return
+
         needs = env.need_all_needs
         for key, current_need in needs.items():
             current_need["links_back"] = []
