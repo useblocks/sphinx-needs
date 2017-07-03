@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.1.31
+------
+
+  * Bugfix: Added missing dependency to setup.py: Sphinx>=1.6
+
 0.1.30
 ------
  * Improvement: Builder :ref:`needs_builder` added, which exports all needs to a json file.

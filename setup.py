@@ -4,11 +4,11 @@
 import os
 from setuptools import setup, find_packages
 
-requires = ['Sphinx>=0.6']
+requires = ['Sphinx>=1.6']
 
 setup(
     name='sphinxcontrib-needs',
-    version='0.1.30',
+    version='0.1.31',
     url='http://github.com/useblocks/sphinxcontrib-needs',
     download_url='http://pypi.python.org/pypi/sphinxcontrib-needs',
     license='BSD',
