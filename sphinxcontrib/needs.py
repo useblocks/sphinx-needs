@@ -11,7 +11,8 @@ from sphinxcontrib.need import Need, NeedDirective, process_need_nodes, purge_ne
 from sphinxcontrib.needfilter import Needfilter, NeedfilterDirective, process_needfilters
 from sphinxcontrib.need_ref import Need_ref, process_need_ref
 from sphinxcontrib.need_incoming import Need_incoming, process_need_incoming
-from sphinxcontrib.need_outgoing import  Need_outgoing, process_need_outgoing
+from sphinxcontrib.need_outgoing import Need_outgoing, process_need_outgoing
+from sphinxcontrib.builder import NeedsBuilder
 
 from sphinxcontrib.utils import rstjinja
 
@@ -43,6 +44,9 @@ DEFAULT_DIAGRAM_TEMPLATE = \
 
 
 def setup(app):
+    app.add_builder(NeedsBuilder)
+    app.add_config_value('needs_file', "needs.json", 'html')
+
     app.add_config_value('needs_types',
                          [dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),
                           dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="node"),

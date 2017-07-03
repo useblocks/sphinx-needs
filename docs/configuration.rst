@@ -194,3 +194,12 @@ Can be combined with **needs_show_link_type**.
 Activate it by setting it on True in your conf.py::
 
     needs_show_link_title = True
+
+.. _needs_file:
+
+needs_file
+~~~~~~~~~~
+.. versionadded:: 0.1.30
+
+Defines the location of a json file, which is used by the builder :ref:`needs_builder`.
+Default value: *needs.json*.

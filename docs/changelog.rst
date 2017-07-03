@@ -1,6 +1,10 @@
 Changelog
 =========
 
+0.1.30
+------
+ * Improvement: Builder :ref:`needs_builder` added, which exports all needs to a json file.
+
 0.1.29
 ------
 

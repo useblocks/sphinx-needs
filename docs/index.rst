@@ -115,6 +115,7 @@ Content
    directives
    roles
    configuration
+   builders
    examples
    changelog
 

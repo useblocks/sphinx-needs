@@ -1,4 +1,8 @@
 from docutils import nodes
+import json
+from datetime import datetime
+import os
+import logging
 
 
 def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=False, ref_lookup=False):
@@ -74,3 +78,64 @@ def rstjinja(app, docname, source):
         src, app.config.html_context
     )
     source[0] = rendered
+
+
+class NeedsList:
+    def __init__(self, config, ):
+        self.log = logging.getLogger(__name__)
+        self.config = config
+        current_version = config.version
+        project = config.project
+        self.needs_list = {
+            "project": project,
+            "current_version": current_version,
+            "created": "",
+            "versions": {}}
+
+    def add_need(self, version, title, need_id, need_type, need_type_name=None,
+                 description=None, status=None, tags=None, links=None):
+        if version not in self.needs_list["versions"].keys():
+            self.needs_list["versions"][version] = {"created": "",
+                                                    "needs_amount": 0,
+                                                    "needs": {}}
+
+        if "needs" not in self.needs_list["versions"][version].keys():
+            self.needs_list["versions"][version]["needs"] = {}
+
+        self.needs_list["versions"][version]["created"] = datetime.now().isoformat()
+        self.needs_list["versions"][version]["needs_amount"] = len(self.needs_list["versions"][version]["needs"])
+        self.needs_list["versions"][version]["needs"][need_id] = {"title": title,
+                                                                  "id": need_id,
+                                                                  "type": need_type,
+                                                                  "type_name": need_type_name,
+                                                                  "description": description,
+                                                                  "status": status,
+                                                                  "tags": tags,
+                                                                  "links": links}
+
+    def wipe_version(self, version):
+        if version in self.needs_list["versions"].keys():
+            del (self.needs_list["versions"][version])
+
+    def write_json(self, file=None):
+        self.needs_list["created"] = datetime.now().isoformat()
+        needs_json = json.dumps(self.needs_list, indent=4, sort_keys=True)
+        if file is None:
+            file = getattr(self.config, "needs_file", "needs.json")
+        with open(file, "w") as needs_file:
+            needs_file.write(needs_json)
+
+    def load_json(self, file=None):
+        if file is None:
+            file = getattr(self.config, "needs_file", "needs.json")
+        if not os.path.exists(file):
+            self.log.warning("Could not load needs json file {0}".format(file))
+        else:
+            with open(file, "r") as needs_file:
+                needs_file_content = needs_file.read()
+            try:
+                needs_list = json.loads(needs_file_content)
+            except json.JSONDecodeError:
+                self.log.warning("Could not decode json file {0}".format(file))
+            else:
+                self.needs_list = needs_list
