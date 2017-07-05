@@ -52,8 +52,11 @@ def process_need_outgoing(app, doctree, fromdocname):
                     pass
 
             else:
-                env.warn_node(
-                    'Needs: need %s not found' % node_need_ref['reftarget'], node_need_ref)
+                # This seems not to work anymore in sphinx 1.6
+                # The used self._warnfunc inside warn_node() is None
+                # env.warn_node(
+                #     'Needs: need %s not found' % node_need_ref.attributes['reftarget'], node_need_ref)
+                pass
 
         if len(node_link_container.children) == 0:
             node_link_container += nodes.Text("None", "None")

@@ -43,13 +43,23 @@ class NeedDirective(Directive):
         type_name = ""
         type_prefix = ""
         type_color = ""
+        found = False
         for type in types:
             if type["directive"] == self.name:
                 type_name = type["title"]
                 type_prefix = type["prefix"]
                 type_color = type["color"]
                 type_style = type["style"]
+                found = True
                 break
+        if not found:
+            # This should never happen. But it may happen, if Sphinx is called multiples times
+            # inside one ongoing python process.
+            # In this case the configuration from a prior sphinx run may be active, which has requisterd a direcitve,
+            # which is reused inside a current document, but no type was defined for the current run...
+            # Yeeeh, this really may happen...
+            return [nodes.Text('', '')]
+
 
         # Get the id or generate a random string/hash string, which is hopefully unique
         # TODO: Check, if id was already given. If True, recalculate id

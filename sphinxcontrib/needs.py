@@ -6,6 +6,7 @@ import random
 import string
 
 from sphinx.roles import XRefRole
+from sphinx.util import logging
 
 from sphinxcontrib.need import Need, NeedDirective, process_need_nodes, purge_needs
 from sphinxcontrib.needfilter import Needfilter, NeedfilterDirective, process_needfilters
@@ -44,6 +45,7 @@ DEFAULT_DIAGRAM_TEMPLATE = \
 
 
 def setup(app):
+    log = logging.getLogger(__name__)
     app.add_builder(NeedsBuilder)
     app.add_config_value('needs_file', "needs.json", 'html')
 
@@ -102,10 +104,21 @@ def setup(app):
         # Redefinitions of names will override the old definitions, so this is generally not a problem.
         # If the new version of a module does not define a name that was defined by the old version,
         # the old definition remains"
+
+        # Be sure, our current working directory is the folder, which stores the conf.py.
+        # Inside the conf.py there may be relatives pathes, which would be correct, if our cwd is wrong.
+        old_cwd = os.getcwd()
+        os.chdir(app.confdir)
         module_name = "needs_app_conf_" + ''.join(random.choice(string.ascii_uppercase) for _ in range(5))
         config = imp.load_source(module_name, os.path.join(app.confdir, "conf.py"))
+        os.chdir(old_cwd)  # Lets switch back the cwd, otherwise other stuff may not run...
         types = getattr(config, "needs_types", app.config.needs_types)
+    except FileExistsError:
+
+        types = app.config.needs_types
     except Exception as e:
+        log.error("Error during sphinxcontrib-needs setup: {0}".format(
+            os.path.join(app.confdir, "conf.py")))
         types = app.config.needs_types
 
     for type in types:

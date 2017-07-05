@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.1.32
+------
+   * Bugfix: Setting correct working directory during conf.py import
+   * Bugfix: Better config handling, if Sphinx builds gets called multiple times during one single python process. (Configs from prio sphinx builds may still be active.)
+   * Bugifx: Some cleanups for using Sphinx >= 1.6
+
 0.1.31
 ------
 
