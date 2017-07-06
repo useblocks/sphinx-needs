@@ -20,7 +20,7 @@ A requirement, a test case, a user story, a bug, an employee, a product or anyth
 
 But whatever you chose it shall be and how many of them you need, each need is handled the same way.
 
-Each need can contain:
+Each need contains:
 
 * a **title** (required)
 * an **unique id** (optional. Gets calculated based on title if not given)
