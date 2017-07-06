@@ -1,6 +1,8 @@
 Requirements, Bugs, Test cases, ... inside Sphinx
 =================================================
 
+.. image:: _static/needs_logo_big.png
+
 Sphinx-Needs allows the definition, linking and filtering of need-objects, which are by default:
 
 * requirements
@@ -129,6 +131,8 @@ The idea and code is coming from
 
 It was integrated for dynamic error handling, if needed libraries like PlantUML are not available
 (for instance on readthedocs.io).
+
+The sphinx-needs logo was designed by `j4p4n <https://openclipart.org/detail/281179/engineers>`_.
 
 Content
 -------
