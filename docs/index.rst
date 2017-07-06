@@ -1,5 +1,5 @@
-Requirements, Bugs, Test cases, ... Management inside Sphinx
-============================================================
+Requirements, Bugs, Test cases, ... inside Sphinx
+=================================================
 
 Sphinx-Needs allows the definition, linking and filtering of need-objects, which are by default:
 
@@ -8,9 +8,7 @@ Sphinx-Needs allows the definition, linking and filtering of need-objects, which
 * implementations
 * test cases.
 
-This list can be easily customized via :ref:`configuration <need_types>`  (for instance to support bugs or user stories).
-
-
+This list can be easily customized via :ref:`configuration <need_types>` (for instance to support bugs or user stories).
 
 What is a need?
 ---------------
