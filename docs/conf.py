@@ -134,7 +134,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'needs test docs'
+project = 'Sphinx-Needs'
 copyright = '2017, team useblocks'
 author = 'team useblocks'
 
@@ -168,6 +168,24 @@ html_theme = 'alabaster'
 # documentation.
 #
 # html_theme_options = {}
+
+#html_logo = "_static/needs_logo.png"
+# html_sidebars = {'**': ['about.html', 'navigation.html', 'sourcelink.html', 'searchbox.html'], }
+html_sidebars = {'**': ['about.html', 'navigation.html'], }
+
+html_theme_options = {
+    'logo': 'needs_logo.png',
+    'logo_name': True,
+    # 'description': "an extension for sphinx",
+    'logo_text_align': "center",
+    'github_user': 'useblocks',
+    'github_repo': 'sphinxcontrib-needs',
+    'github_banner': True,
+    'github_button': False,
+    'fixed_sidebar': True,
+    'extra_nav_links': {'needs@PyPi': "https://pypi.python.org/pypi/sphinxcontrib-needs/",
+                        'needs@github': "https://github.com/useblocks/sphinxcontrib-needs"}
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

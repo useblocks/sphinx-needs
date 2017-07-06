@@ -34,7 +34,7 @@ You can also use **:hide_status:** and **:hide_tags:** to hide the related infor
 .. note::
 
     By default the above example works also with `.. spec::`, `.. impl::`, `.. test::` and all other need types,
-    which are configured via **needs_types**.
+    which are configured via :ref:`need_types`.
 
 .. _needfilter:
 

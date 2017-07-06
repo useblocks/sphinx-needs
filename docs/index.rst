@@ -1,16 +1,16 @@
 Requirements, Bugs, Test cases, ... Management inside Sphinx
 ============================================================
 
-This package contains the needs Sphinx extension.
-
-It allows the definition, linking and filtering of need-objects, which are by default:
+Sphinx-Needs allows the definition, linking and filtering of need-objects, which are by default:
 
 * requirements
 * specifications
 * implementations
 * test cases.
 
-This list can be easily customized via configuration (for instance to support bugs or user stories).
+This list can be easily customized via :ref:`configuration <need_types>`  (for instance to support bugs or user stories).
+
+
 
 What is a need?
 ---------------
@@ -29,9 +29,15 @@ Each need can contain:
 * several **tags** (optional)
 * several **links** to other needs (optional)
 
+Needs can be :ref:`easily filtered <needfilter>` and presented in list, tables and diagrams.
+
+For external synchronization (e.g. with JIRA, a spreadsheet, ...)
+a :ref:`builder "needs"<needs_builder>` is available to export all created needs to a single json file.
 
 Example
 -------
+
+For more complex examples, please visit :ref:`examples`.
 
 Input
 ~~~~~
@@ -104,6 +110,27 @@ which is linked by :need_incoming:`req_001`.
   :show_filters:
   :layout: table
 
+Motivation
+----------
+
+This sphinx extension is based on the needs of a software development team inside
+a german automotive company.
+
+The project team was searching for a small and practical way of managing requirements and more to
+fulfill the parameters of the `ISO26262 <https://en.wikipedia.org/wiki/ISO_26262>`_
+standard for safety critical software.
+
+One more thing ...
+------------------
+
+This extensions also activates the usage of jinja statements inside your rst files.
+The statements get executed before sphinx starts handling their content.
+
+The idea and code is coming from
+`Eric Holscher <http://ericholscher.com/blog/2016/jul/25/integrating-jinja-rst-sphinx/>`_.
+
+It was integrated for dynamic error handling, if needed libraries like PlantUML are not available
+(for instance on readthedocs.io).
 
 Content
 -------
@@ -118,20 +145,6 @@ Content
    builders
    examples
    changelog
-
-One more thing ...
-------------------
-
-This extensions also activates the usage of jinja statements inside your rst files.
-The statements get executed before sphinx starts handling their content.
-
-The idea and code is coming from
-`Eric Holscher <http://ericholscher.com/blog/2016/jul/25/integrating-jinja-rst-sphinx/>`_.
-
-It was integrated for dynamic error handling, if needed libraries like PlantUML are not available
-(for instance on readthedocs.io).
-
-
 
 
 
