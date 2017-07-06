@@ -106,7 +106,7 @@ def setup(app):
         # the old definition remains"
 
         # Be sure, our current working directory is the folder, which stores the conf.py.
-        # Inside the conf.py there may be relatives pathes, which would be correct, if our cwd is wrong.
+        # Inside the conf.py there may be relatives paths, which would be incorrect, if our cwd is wrong.
         old_cwd = os.getcwd()
         os.chdir(app.confdir)
         module_name = "needs_app_conf_" + ''.join(random.choice(string.ascii_uppercase) for _ in range(5))
@@ -114,7 +114,6 @@ def setup(app):
         os.chdir(old_cwd)  # Lets switch back the cwd, otherwise other stuff may not run...
         types = getattr(config, "needs_types", app.config.needs_types)
     except FileExistsError:
-
         types = app.config.needs_types
     except Exception as e:
         log.error("Error during sphinxcontrib-needs setup: {0}".format(

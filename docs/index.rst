@@ -29,7 +29,7 @@ Each need contains:
 * several **tags** (optional)
 * several **links** to other needs (optional)
 
-Needs can be :ref:`easily filtered <needfilter>` and presented in list, tables and diagrams.
+Needs can be :ref:`easily filtered <needfilter>` and presented in lists, tables and diagrams.
 
 For external synchronization (e.g. with JIRA, a spreadsheet, ...)
 a :ref:`builder "needs"<needs_builder>` is available to export all created needs to a single json file.
