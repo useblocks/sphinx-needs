@@ -115,7 +115,7 @@ This sphinx extension is based on the needs of a software development team insid
 a german automotive company.
 
 The project team was searching for a small and practical way of managing requirements and more to
-fulfill the parameters of the `ISO26262 <https://en.wikipedia.org/wiki/ISO_26262>`_
+fulfill the parameters of the `ISO 26262 <https://en.wikipedia.org/wiki/ISO_26262>`_
 standard for safety critical software.
 
 One more thing ...
