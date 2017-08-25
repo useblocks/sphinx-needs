@@ -1,17 +1,14 @@
 from sphinxcontrib.utils import NeedsList
-from sphinx.builders.text import TextBuilder
+from sphinx.builders import Builder
 from sphinx.util import logging
 # import logging
 
 
-class NeedsBuilder(TextBuilder):
+class NeedsBuilder(Builder):
     name = 'needs'
     format = 'json'
     file_suffix = '.txt'
     links_suffix = None
-
-    def init(self):
-        pass
 
     def write_doc(self, docname, doctree):
         pass
@@ -21,7 +18,7 @@ class NeedsBuilder(TextBuilder):
         needs = self.env.need_all_needs
         config = self.env.config
         version = config.version
-        needs_list = NeedsList(config)
+        needs_list = NeedsList(config, self.outdir)
 
         needs_list.load_json()
 
@@ -35,4 +32,17 @@ class NeedsBuilder(TextBuilder):
         else:
             log.info("Needs successfully exported")
 
+    def get_outdated_docs(self):
+        return ""
 
+    def prepare_writing(self, docnames):
+        pass
+
+    def write_doc_serialized(self, docname, doctree):
+        pass
+
+    def cleanup(self):
+        pass
+
+    def get_target_uri(self, docname, typ=None):
+        return ""

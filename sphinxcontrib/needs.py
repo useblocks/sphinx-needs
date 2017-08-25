@@ -47,8 +47,6 @@ DEFAULT_DIAGRAM_TEMPLATE = \
 def setup(app):
     log = logging.getLogger(__name__)
     app.add_builder(NeedsBuilder)
-    app.add_config_value('needs_file', "needs.json", 'html')
-
     app.add_config_value('needs_types',
                          [dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),
                           dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="node"),

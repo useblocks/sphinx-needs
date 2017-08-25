@@ -3,6 +3,7 @@ import json
 from datetime import datetime
 import os
 import logging
+import shutil
 
 
 def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=False, ref_lookup=False):
@@ -81,9 +82,10 @@ def rstjinja(app, docname, source):
 
 
 class NeedsList:
-    def __init__(self, config):
+    def __init__(self, config, outdir):
         self.log = logging.getLogger(__name__)
         self.config = config
+        self.outdir = outdir
         self.current_version = config.version
         self.project = config.project
         self.needs_list = {
@@ -124,10 +126,16 @@ class NeedsList:
         self.needs_list["project"] = self.project
 
         needs_json = json.dumps(self.needs_list, indent=4, sort_keys=True)
-        if file is None:
-            file = getattr(self.config, "needs_file", "needs.json")
+        file = os.path.join(self.outdir, "needs.json")
+
+        # if file is None:
+        #     file = getattr(self.config, "needs_file", "needs.json")
         with open(file, "w") as needs_file:
             needs_file.write(needs_json)
+
+        doc_tree_folder = os.path.join(self.outdir, ".doctrees")
+        if os.path.exists(doc_tree_folder):
+            shutil.rmtree(doc_tree_folder)
 
     def load_json(self, file=None):
         if file is None:

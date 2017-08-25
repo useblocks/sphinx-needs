@@ -201,5 +201,5 @@ needs_file
 ~~~~~~~~~~
 .. versionadded:: 0.1.30
 
-Defines the location of a json file, which is used by the builder :ref:`needs_builder`.
+Defines the location of a json file, which is used by the builder :ref:`needs_builder` as input source.
 Default value: *needs.json*.

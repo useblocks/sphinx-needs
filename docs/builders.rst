@@ -11,8 +11,7 @@ needs
 
 The **needs** builder exports all found needs to a single json file.
 
-By default, the used file is called **needs.json** and is stored beside your conf.py file.
-This can be changed by setting :ref:`needs_file`.
+The build creates a folder **needs** and a file called **needs.json** inside a given build-folder.
 
 Usage
 +++++
@@ -26,7 +25,7 @@ History data
 
 The builder stores the needs under a version, which is taken from your conf.py.
 
-If a **needs.json** already exists and you raise the documentation version, the new version is stored beside the old
+If a **needs.json** is imported (see :ref:`needs_file`) and you raise the documentation version, the new version is stored beside the old
 version(s) inside the **needs.json**.
 
 .. hint::
