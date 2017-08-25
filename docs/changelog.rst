@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.1.33
+------
+   * Bugfix: Wrong version in needs.json, if an existing needs.json got imported
+   * Bugfix: Wrong need amount in initial needs.json fixed
+
 0.1.32
 ------
    * Bugfix: Setting correct working directory during conf.py import

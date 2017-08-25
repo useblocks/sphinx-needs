@@ -81,14 +81,14 @@ def rstjinja(app, docname, source):
 
 
 class NeedsList:
-    def __init__(self, config, ):
+    def __init__(self, config):
         self.log = logging.getLogger(__name__)
         self.config = config
-        current_version = config.version
-        project = config.project
+        self.current_version = config.version
+        self.project = config.project
         self.needs_list = {
-            "project": project,
-            "current_version": current_version,
+            "project": self.project,
+            "current_version": self.current_version,
             "created": "",
             "versions": {}}
 
@@ -103,7 +103,6 @@ class NeedsList:
             self.needs_list["versions"][version]["needs"] = {}
 
         self.needs_list["versions"][version]["created"] = datetime.now().isoformat()
-        self.needs_list["versions"][version]["needs_amount"] = len(self.needs_list["versions"][version]["needs"])
         self.needs_list["versions"][version]["needs"][need_id] = {"title": title,
                                                                   "id": need_id,
                                                                   "type": need_type,
@@ -112,13 +111,18 @@ class NeedsList:
                                                                   "status": status,
                                                                   "tags": tags,
                                                                   "links": links}
+        self.needs_list["versions"][version]["needs_amount"] = len(self.needs_list["versions"][version]["needs"])
 
     def wipe_version(self, version):
         if version in self.needs_list["versions"].keys():
             del (self.needs_list["versions"][version])
 
     def write_json(self, file=None):
+        # We need to rewrite some data, because this kind of data gets overwritten during needs.json import.
         self.needs_list["created"] = datetime.now().isoformat()
+        self.needs_list["current_version"] = self.current_version
+        self.needs_list["project"] = self.project
+
         needs_json = json.dumps(self.needs_list, indent=4, sort_keys=True)
         if file is None:
             file = getattr(self.config, "needs_file", "needs.json")
