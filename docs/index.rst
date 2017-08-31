@@ -32,7 +32,8 @@ Each need contains:
 Needs can be :ref:`easily filtered <needfilter>` and presented in lists, tables and diagrams.
 
 For external synchronization (e.g. with JIRA, a spreadsheet, ...)
-a :ref:`builder "needs"<needs_builder>` is available to export all created needs to a single json file.
+the builder :ref:`needs_builder` is available to export all created needs to a single json file.
+And also importing needs from external files is supported by using :ref:`needimport`.
 
 Example
 -------

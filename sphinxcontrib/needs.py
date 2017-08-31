@@ -10,6 +10,7 @@ from sphinx.util import logging
 
 from sphinxcontrib.need import Need, NeedDirective, process_need_nodes, purge_needs
 from sphinxcontrib.needfilter import Needfilter, NeedfilterDirective, process_needfilters
+from sphinxcontrib.needimport import Needimport, NeedimportDirective
 from sphinxcontrib.need_ref import Need_ref, process_need_ref
 from sphinxcontrib.need_incoming import Need_incoming, process_need_incoming
 from sphinxcontrib.need_outgoing import Need_outgoing, process_need_outgoing
@@ -78,6 +79,7 @@ def setup(app):
     # Define nodes
     app.add_node(Need)
     app.add_node(Needfilter)
+    app.add_node(Needimport)
 
     ########################################################################
     # DIRECTIVES
@@ -127,6 +129,8 @@ def setup(app):
 
     # Kept for backwards compatibility
     app.add_directive('needlist', NeedfilterDirective)
+
+    app.add_directive('needimport', NeedimportDirective)
 
     ########################################################################
     # ROLES
