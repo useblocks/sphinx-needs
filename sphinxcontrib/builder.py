@@ -18,7 +18,7 @@ class NeedsBuilder(Builder):
         needs = self.env.need_all_needs
         config = self.env.config
         version = config.version
-        needs_list = NeedsList(config, self.outdir)
+        needs_list = NeedsList(config, self.outdir, self.confdir)
 
         needs_list.load_json()
 

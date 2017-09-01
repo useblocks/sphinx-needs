@@ -82,10 +82,11 @@ def rstjinja(app, docname, source):
 
 
 class NeedsList:
-    def __init__(self, config, outdir):
+    def __init__(self, config, outdir, confdir):
         self.log = logging.getLogger(__name__)
         self.config = config
         self.outdir = outdir
+        self.confdir = confdir
         self.current_version = config.version
         self.project = config.project
         self.needs_list = {
@@ -140,6 +141,9 @@ class NeedsList:
     def load_json(self, file=None):
         if file is None:
             file = getattr(self.config, "needs_file", "needs.json")
+        if not os.path.isabs(file):
+            file = os.path.join(self.confdir, file)
+
         if not os.path.exists(file):
             self.log.warning("Could not load needs json file {0}".format(file))
         else:
