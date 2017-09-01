@@ -4,13 +4,13 @@ Changelog
 0.1.35
 ------
  * Improvement/Bug: Updated default node_template to use less space for node parameter representation
- * Improvement: Added **:filter:** option to **needimport** directive
+ * Improvement: Added **:filter:** option to :ref:`needimport` directive
  * Bugfix: Set correct default value for **need_list** option. So no more warnings should be thrown during build.
- * Bugfix: Imported needs gets sortedf by id before adding them to the related document.
+ * Bugfix: Imported needs gets sorted by id before adding them to the related document.
 
 0.1.34
 ------
- * Improvement: New option **tags** for **needimport** directive
+ * Improvement: New option **tags** for :ref:`needimport` directive
  * Bugfix: Handling of relative paths in needs builder
 
 0.1.33
