@@ -42,6 +42,25 @@ needs_types = [
     dict(directive="test", title="Test Case", prefix="TC_", color="#DCB239", style="node")
 ]
 
+needs_template = """
+.. _{{id}}:
+
+{% if hide == false -%}
+{{type_name}}: **{{title}}** ({{id}})
+    {%- if status and  status|upper != "NONE" and not hide_status %}
+    | status: {{status}}
+    {%- endif -%}
+    {%- if tags and not hide_tags %}
+    | tags: {{tags|join("; ")}}
+    {%- endif %}
+    | links incoming: :need_incoming:`{{id}}`
+    | links outgoing: :need_outgoing:`{{id}}`
+
+    {{content|indent(4) }}
+
+{% endif -%}
+"""
+
 cwd = os.getcwd()
 plantuml = 'java -jar %s' % os.path.join(cwd, "../utils/plantuml_beta.jar")
 

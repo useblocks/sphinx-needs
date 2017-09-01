@@ -1,4 +1,4 @@
-{% for key, need in needs_list.items() -%}
+{% for key, need in needs_list|dictsort -%}
 
 .. {{need.type}}:: {{need.title}}
    :id: {{id_prefix}}{{need.id}}

@@ -1,28 +1,35 @@
 Changelog
 =========
 
+0.1.35
+------
+ * Improvement/Bug: Updated default node_template to use less space for node parameter representation
+ * Improvement: Added **:filter:** option to **needimport** directive
+ * Bugfix: Set correct default value for **need_list** option. So no more warnings should be thrown during build.
+ * Bugfix: Imported needs gets sortedf by id before adding them to the related document.
+
 0.1.34
 ------
-   * Improvement: New option **tags** for **needimport** directive
-   * Bugfix: Handling of relative paths in needs builder
+ * Improvement: New option **tags** for **needimport** directive
+ * Bugfix: Handling of relative paths in needs builder
 
 0.1.33
 ------
-   * New feature: Directive :ref:`needimport` implemented
-   * Improvement: needs-builder stores needs.json for all cases in the build directory (like _build/needs/needs.json) (See `issue comment <https://github.com/useblocks/sphinxcontrib-needs/issues/9#issuecomment-325010790>`_)
-   * Bugfix: Wrong version in needs.json, if an existing needs.json got imported
-   * Bugfix: Wrong need amount in initial needs.json fixed
+ * New feature: Directive :ref:`needimport` implemented
+ * Improvement: needs-builder stores needs.json for all cases in the build directory (like _build/needs/needs.json) (See `issue comment <https://github.com/useblocks/sphinxcontrib-needs/issues/9#issuecomment-325010790>`_)
+ * Bugfix: Wrong version in needs.json, if an existing needs.json got imported
+ * Bugfix: Wrong need amount in initial needs.json fixed
 
 0.1.32
 ------
-   * Bugfix: Setting correct working directory during conf.py import
-   * Bugfix: Better config handling, if Sphinx builds gets called multiple times during one single python process. (Configs from prio sphinx builds may still be active.)
-   * Bugifx: Some cleanups for using Sphinx >= 1.6
+ * Bugfix: Setting correct working directory during conf.py import
+ * Bugfix: Better config handling, if Sphinx builds gets called multiple times during one single python process. (Configs from prio sphinx builds may still be active.)
+ * Bugifx: Some cleanups for using Sphinx >= 1.6
 
 0.1.31
 ------
 
-  * Bugfix: Added missing dependency to setup.py: Sphinx>=1.6
+ * Bugfix: Added missing dependency to setup.py: Sphinx>=1.6
 
 0.1.30
 ------

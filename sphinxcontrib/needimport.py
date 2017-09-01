@@ -1,5 +1,6 @@
 import os
 import json
+import re
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -66,6 +67,33 @@ class NeedimportDirective(Directive):
             raise VersionNotFound("Version {0} not found in needs import file {1}".format(version, need_import_path))
 
         needs_list = needs_import_list["versions"][version]["needs"]
+
+        # Filter imported needs
+        needs_list_filtered = {}
+        for key, need in needs_list.items():
+            if filter is None:
+                needs_list_filtered[key] = need
+            else:
+                filter_context = {
+                    "tags": need["tags"],
+                    "status": need["status"],
+                    "type": need["type"],
+                    "id": need["id"],
+                    "title": need["title"],
+                    "links": need["links"],
+                    "search": re.search,
+                    # Support both ways of addressing the description, as "description" is used in json file, but
+                    # "content" is the sphinx internal name for this kind of information
+                    "content": need["description"],
+                    "description": need["description"]
+                }
+                try:
+                    if eval(filter, None, filter_context):
+                        needs_list_filtered[key] = need
+                except Exception as e:
+                    print("Filter {0} not valid: Error: {1}".format(filter, e))
+
+        needs_list = needs_list_filtered
 
         # If we need to set an id prefix, we also need to manipulate all used ids in the imported data.
         if id_prefix != "":

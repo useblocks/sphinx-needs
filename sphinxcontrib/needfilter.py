@@ -182,7 +182,7 @@ def process_needfilters(app, doctree, fromdocname):
                     "status": need_info["status"],
                     "type": need_info["type"],
                     "id": need_info["id"],
-                    "title": need_info["type"],
+                    "title": need_info["title"],
                     "links": need_info["links"],
                     "content": need_info["content"],
                     "search": re.search

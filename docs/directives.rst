@@ -204,6 +204,7 @@ The directive **.. needimport::** can be used in all rst-documents. Simply write
       :version: 1.0
       :tags: imported;external
       :hide:
+      :filter: "test" in tags
 
 The directive needs an absolute or relative path as argument.
 If the path is relative, an absolute path gets calculated with the folder of the **conf.py** as basedir.
@@ -220,6 +221,9 @@ In most cases this should be the latest available version.
 
 **:tags:** are attached to the already existing ones of imported needs. This may be useful to mark easily imported
 needs and to create specialised filters for them.
+
+**:filter** imports needs only, which pass the filter criteria. Please read the :ref:`filter` documentation of the
+**needfilter** directive for more.
 
 **:hide:** can be used to set the **:hide:** tag for all imported needs. So they do not show up but are available
 in :ref:`needfilter`.

@@ -23,23 +23,42 @@ DEFAULT_TEMPLATE = """
 
 {% if hide == false -%}
 {{type_name}}: **{{title}}** ({{id}})
+    {%- if status and  status|upper != "NONE" and not hide_status %}
+    | status: {{status}}
+    {%- endif -%}
+    {%- if tags and not hide_tags %}
+    | tags: {{tags|join("; ")}}
+    {%- endif %}
+    | links incoming: :need_incoming:`{{id}}`
+    | links outgoing: :need_outgoing:`{{id}}`
 
     {{content|indent(4) }}
 
-    {% if status and not hide_status -%}
-    **status**: {{status}}
-    {% endif %}
-
-    {% if tags and not hide_tags -%}
-    **tags**: {{"; ".join(tags)}}
-    {% endif %}
-
-    **links incoming**: :need_incoming:`{{id}}`
-
-    **links outgoing**: :need_outgoing:`{{id}}`
-
 {% endif -%}
 """
+# Old node template
+# DEFAULT_TEMPLATE = """
+# .. _{{id}}:
+#
+# {% if hide == false -%}
+# {{type_name}}: **{{title}}** ({{id}})
+#
+#     {{content|indent(4) }}
+#
+#     {% if status and not hide_status -%}
+#     **status**: {{status}}
+#     {% endif %}
+#
+#     {% if tags and not hide_tags -%}
+#     **tags**: {{"; ".join(tags)}}
+#     {% endif %}
+#
+#     **links incoming**: :need_incoming:`{{id}}`
+#
+#     **links outgoing**: :need_outgoing:`{{id}}`
+#
+# {% endif -%}
+# """
 
 DEFAULT_DIAGRAM_TEMPLATE = \
     "<size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>"
