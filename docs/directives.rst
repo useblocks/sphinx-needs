@@ -202,6 +202,7 @@ The directive **.. needimport::** can be used in all rst-documents. Simply write
    .. needimport:: needs.json
       :id_prefix: imp_
       :version: 1.0
+      :tags: imported;external
       :hide:
 
 The directive needs an absolute or relative path as argument.
@@ -216,6 +217,9 @@ This may be useful to avoid duplicated ids.
 **:version:** allows to specify a specific version for the import. This version must exist inside the imported file.
 If no version is given, the **current_version** attribute from the json file is used.
 In most cases this should be the latest available version.
+
+**:tags:** are attached to the already existing ones of imported needs. This may be useful to mark easily imported
+needs and to create specialised filters for them.
 
 **:hide:** can be used to set the **:hide:** tag for all imported needs. So they do not show up but are available
 in :ref:`needfilter`.

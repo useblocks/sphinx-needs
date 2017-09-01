@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.1.34
+------
+   * Improvement: New option **tags** for **needimport** directive
+   * Bugfix: Handling of relative paths in needs builder
+
 0.1.33
 ------
    * New feature: Directive :ref:`needimport` implemented

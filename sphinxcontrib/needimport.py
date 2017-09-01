@@ -20,7 +20,8 @@ class NeedimportDirective(Directive):
     option_spec = {'version': directives.nonnegative_int,
                    'hide': directives.flag,
                    'filter': directives.unicode_code,
-                   'id_prefix': directives.unicode_code
+                   'id_prefix': directives.unicode_code,
+                   'tags': directives.unicode_code
                    }
 
     final_argument_whitespace = True
@@ -31,6 +32,10 @@ class NeedimportDirective(Directive):
         filter = self.options.get("filter", None)
         id_prefix = self.options.get("id_prefix", "")
         hide = True if "hide" in self.options.keys() else False
+
+        tags = self.options.get("tags", [])
+        if len(tags) > 0:
+            tags = [tag.strip() for tag in tags.split(";")]
 
         env = self.state.document.settings.env
 
@@ -76,6 +81,10 @@ class NeedimportDirective(Directive):
                     # Manipulate descriptions
                     # ToDo: Use regex for better matches.
                     need["description"] = need["description"].replace(id, "".join([id_prefix, id]))
+
+        # tags update
+        for key, need in needs_list.items():
+            need["tags"] = need["tags"] + tags
 
         template_location = os.path.join(os.path.dirname(os.path.abspath(__file__)), "needimport_template.rst")
         with open(template_location, "r") as template_file:

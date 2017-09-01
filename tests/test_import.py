@@ -10,3 +10,5 @@ def test_import_json(app, status, warning):
     assert 'TEST_01' in html
 
     assert 'TEST_TEST_01' in html
+
+    assert 'new_tag' in html

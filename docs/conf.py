@@ -106,7 +106,6 @@ needs_types = [dict(directive="req", title="Requirement", prefix="R_", color="#B
                dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="agent"),
                dict(directive="mytest", title="My Test Case", prefix="MT_", color="#CCCCCC", style="agent")
                ]
-
 needs_show_link_type = False
 needs_show_link_title = False
 
