@@ -48,28 +48,28 @@ else:
 
 # NEEDS CONFIGURATION
 
-TITLE_TEMPLATE = """
-.. _{{id}}:
-
-{{type_name}}: **{{title}}** ({{id}})
-
-    {{content|indent(4) }}
-
-    {% if status -%}
-    **status**: {{status}}
-    {% endif %}
-
-    {% if tags -%}
-    **tags**: {{"; ".join(tags)}}
-    {% endif %}
-
-    {% if links -%}
-    **links**:
-    {% for link in links -%}
-        :ref:`{{link}} <{{link}}>` {%if loop.index < links|length -%}; {% endif -%}
-    {% endfor -%}
-    {% endif %}
-"""
+# TITLE_TEMPLATE = """
+# .. _{{id}}:
+#
+# {{type_name}}: **{{title}}** ({{id}})
+#
+#     {{content|indent(4) }}
+#
+#     {% if status -%}
+#     **status**: {{status}}
+#     {% endif %}
+#
+#     {% if tags -%}
+#     **tags**: {{"; ".join(tags)}}
+#     {% endif %}
+#
+#     {% if links -%}
+#     **links**:
+#     {% for link in links -%}
+#         :ref:`{{link}} <{{link}}>` {%if loop.index < links|length -%}; {% endif -%}
+#     {% endfor -%}
+#     {% endif %}
+# """
 
 NOTE_TEMPLATE = """
 .. _{{id}}:
