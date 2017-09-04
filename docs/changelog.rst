@@ -1,10 +1,13 @@
 Changelog
 =========
 
+0.1.37
+------
+ * Bugfix: Implemented 0.1.36 bugfix also for :ref:`needfilter`and :ref:`needimport`.
+
 0.1.36
 ------
- * Bugfix: Empty **:links:** and **:tags:** options for :ref:`need`, :ref:`needfilter`and :ref:`needimport` raise
-   no error during build.
+ * Bugfix: Empty **:links:** and **:tags:** options for :ref:`need` raise no error during build.
 
 0.1.35
 ------
