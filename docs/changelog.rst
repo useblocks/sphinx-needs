@@ -3,7 +3,7 @@ Changelog
 
 0.1.37
 ------
- * Bugfix: Implemented 0.1.36 bugfix also for :ref:`needfilter`and :ref:`needimport`.
+ * Bugfix: Implemented 0.1.36 bugfix also for :ref:`needfilter` and :ref:`needimport`.
 
 0.1.36
 ------

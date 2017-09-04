@@ -1,6 +1,8 @@
 Directives
 ==========
 
+.. _need:
+
 need/ req (or any other defined need type)
 ------------------------------------------
 
