@@ -19,10 +19,10 @@ class NeedDirective(Directive):
 
     required_arguments = 1
     optional_arguments = 0
-    option_spec = {'id': directives.unicode_code,
-                   'status': directives.unicode_code,
-                   'tags': directives.unicode_code,
-                   'links': directives.unicode_code,
+    option_spec = {'id': directives.unchanged_required,
+                   'status': directives.unchanged_required,
+                   'tags': directives.unchanged_required,
+                   'links': directives.unchanged_required,
                    'hide': directives.flag,
                    'hide_tags': directives.flag,
                    'hide_status': directives.flag,
