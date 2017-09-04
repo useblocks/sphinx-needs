@@ -20,9 +20,9 @@ class NeedimportDirective(Directive):
 
     option_spec = {'version': directives.nonnegative_int,
                    'hide': directives.flag,
-                   'filter': directives.unicode_code,
-                   'id_prefix': directives.unicode_code,
-                   'tags': directives.unicode_code
+                   'filter': directives.unchanged_required,
+                   'id_prefix': directives.unchanged_required,
+                   'tags': directives.unchanged_required
                    }
 
     final_argument_whitespace = True

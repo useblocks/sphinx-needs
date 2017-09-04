@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.1.36
+------
+ * Bugfix: Empty **:links:** and **:tags:** options for :ref:`need`, :ref:`needfilter`and :ref:`needimport` raise
+   no error during build.
+
 0.1.35
 ------
  * Improvement/Bug: Updated default node_template to use less space for node parameter representation

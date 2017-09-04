@@ -22,10 +22,10 @@ class NeedfilterDirective(Directive):
     def layout(argument):
         return directives.choice(argument, ("list", "table", "diagram"))
 
-    option_spec = {'status': directives.unicode_code,
-                   'tags': directives.unicode_code,
-                   'types': directives.unicode_code,
-                   'filter': directives.unicode_code,
+    option_spec = {'status': directives.unchanged_required,
+                   'tags': directives.unchanged_required,
+                   'types': directives.unchanged_required,
+                   'filter': directives.unchanged_required,
                    'show_status': directives.flag,
                    'show_tags': directives.flag,
                    'show_filters': directives.flag,
