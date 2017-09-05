@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.1.38
+------
+ * Improvement: **:links:**, **:tags:** and other list-based options can handle "," as delimiter
+   (beside documented ";"). No spooky errors are thrown anymore if "," is used accidentally.
+
 0.1.37
 ------
  * Bugfix: Implemented 0.1.36 bugfix also for :ref:`needfilter` and :ref:`needimport`.

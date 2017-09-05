@@ -50,15 +50,15 @@ class NeedfilterDirective(Directive):
 
         tags = self.options.get("tags", [])
         if isinstance(tags, str):
-            tags = [tag.strip() for tag in tags.split(";")]
+            tags = [tag.strip() for tag in re.split(";|,", tags)]
 
         status = self.options.get("status", [])
         if isinstance(status, str):
-            status = [stat.strip() for stat in status.split(";")]
+            status = [stat.strip() for stat in re.split(";|,", status)]
 
         types = self.options.get("types", [])
         if isinstance(types, str):
-            types = [typ.strip() for typ in types.split(";")]
+            types = [typ.strip() for typ in re.split(";|,", types)]
 
         # Add the need and all needed information
         env.need_all_needlists[targetid] = {

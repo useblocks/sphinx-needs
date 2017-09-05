@@ -36,7 +36,7 @@ class NeedimportDirective(Directive):
 
         tags = self.options.get("tags", [])
         if len(tags) > 0:
-            tags = [tag.strip() for tag in tags.split(";")]
+            tags = [tag.strip() for tag in re.split(";|,", tags)]
 
         env = self.state.document.settings.env
 

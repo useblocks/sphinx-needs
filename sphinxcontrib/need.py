@@ -7,6 +7,7 @@ from sphinx.errors import SphinxError
 from jinja2 import Template
 
 import hashlib
+import re
 
 
 class Need(nodes.General, nodes.Element):
@@ -88,12 +89,13 @@ class NeedDirective(Directive):
         status = self.options.get("status", None)
         tags = self.options.get("tags", [])
         if len(tags) > 0:
-            tags = [tag.strip() for tag in tags.split(";")]
+            tags = [tag.strip() for tag in re.split(";|,", tags)]
 
         # Get links
         links = self.options.get("links", [])
         if len(links) > 0:
-            links = [link.strip().upper() for link in links.split(";") if link != ""]
+            # links = [link.strip().upper() for link in links.split(";") if link != ""]
+            links = [link.strip().upper() for link in re.split(";|,", links) if link != ""]
 
         #############################################################################################
         # Add need to global need list
