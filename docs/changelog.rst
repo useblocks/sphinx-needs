@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.1.39
+------
+ * Bugfix: Added missing needimport_template.rst to package
+ * Bugfix: Corrected version param of needimport
+
 0.1.38
 ------
  * Improvement: **:links:**, **:tags:** and other list-based options can handle "," as delimiter
