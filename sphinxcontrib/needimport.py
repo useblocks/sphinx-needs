@@ -18,7 +18,7 @@ class NeedimportDirective(Directive):
     required_arguments = 1
     optional_arguments = 0
 
-    option_spec = {'version': directives.nonnegative_int,
+    option_spec = {'version': directives.unchanged_required,
                    'hide': directives.flag,
                    'filter': directives.unchanged_required,
                    'id_prefix': directives.unchanged_required,
