@@ -124,15 +124,6 @@ standard for safety critical software.
 One more thing ...
 ------------------
 
-This extensions also activates the usage of jinja statements inside your rst files.
-The statements get executed before sphinx starts handling their content.
-
-The idea and code is coming from
-`Eric Holscher <http://ericholscher.com/blog/2016/jul/25/integrating-jinja-rst-sphinx/>`_.
-
-It was integrated for dynamic error handling, if needed libraries like PlantUML are not available
-(for instance on readthedocs.io).
-
 The sphinx-needs logo was designed by `j4p4n <https://openclipart.org/detail/281179/engineers>`_.
 
 Content
