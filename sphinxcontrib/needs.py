@@ -179,7 +179,8 @@ def setup(app):
     app.connect('doctree-resolved', process_need_incoming)
     app.connect('doctree-resolved', process_need_outgoing)
 
+    # Removed with version 0.1.40
     # Allows jinja statements in rst files
-    app.connect("source-read", rstjinja)
+    # app.connect("source-read", rstjinja)
 
     return {'version': '0.1'}  # identifies the version of our extension

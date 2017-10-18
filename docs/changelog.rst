@@ -1,6 +1,10 @@
 Changelog
 =========
 
+0.1.40
+------
+ * Bugfix: Removed jinja activation
+
 0.1.39
 ------
  * Bugfix: Added missing needimport_template.rst to package
