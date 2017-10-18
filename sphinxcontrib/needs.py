@@ -183,4 +183,4 @@ def setup(app):
     # Allows jinja statements in rst files
     # app.connect("source-read", rstjinja)
 
-    return {'version': '0.1'}  # identifies the version of our extension
+    return {'version': '0.1.40'}  # identifies the version of our extension
