@@ -1,0 +1,41 @@
+/* whole NEED */
+dl.need {
+    background-color: #eee;
+    padding: 5px 10px 5px 10px;
+    margin: 5px 0px;
+    border-radius: 3px;
+}
+
+span.needs-type {
+    color: #444;
+}
+
+span.needs-title {
+    font-weight: bold;
+}
+
+span.needs-id {
+    font-size: 80%;
+    color: #aaa;
+}
+
+span.needs-tag {
+    background-color: #ccc;
+    border-radius: 5px;
+    padding: 0 5px;
+}
+
+span.needs-status {
+    background-color: #004b6b;
+    color: #fff;
+    border-radius: 5px;
+    padding: 0 5px;
+}
+
+em.need_outgoing {
+
+}
+
+em.need_incoming {
+
+}

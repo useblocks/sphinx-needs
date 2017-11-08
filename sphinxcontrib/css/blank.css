@@ -1,0 +1,54 @@
+/* whole NEED */
+dt.need {
+
+}
+
+/*
+Styles based on need type
+*************************
+The name depends on the type name.
+If a type like "story" was configured in conf.py,
+span.needs-story can be used for custom styles for this type.
+*/
+
+span.needs-specification {
+
+}
+
+span.needs-requirement {
+
+}
+
+/*
+Single elements
+***************
+*/
+
+span.needs-type {
+
+}
+
+span.needs-title {
+
+}
+
+span.needs-id {
+
+}
+
+span.needs-tag {
+
+}
+
+span.needs-status {
+
+}
+
+
+em.need_outgoing {
+
+}
+
+em.need_incoming {
+
+}

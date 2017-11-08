@@ -62,6 +62,8 @@ needs_types must be a list of dictionaries, where each dictionary **must** conta
 * **color**: A color as hex value. Used in diagrams and some days maybe in other representations as well.
 * **style**: A plantuml node type, like node, artifact, frame, storage or database. See `plantuml documentation <http://plantuml.com/deployment-diagram>`_ for more.
 
+.. _needs_template:
+
 needs_template
 ~~~~~~~~~~~~~~
 
@@ -75,12 +77,21 @@ If nothing is set, the following default template is used:
     .. _{{id}}:
 
     {% if hide == false -%}
-    {{type_name}}: **{{title}}** ({{id}})
+    .. role:: needs_tag
+    .. role:: needs_status
+    .. role:: needs_type
+    .. role:: needs_id
+    .. role:: needs_title
+
+    .. rst-class:: need
+    .. rst-class:: need_{{type_name}}
+
+    :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
         {%- if status and  status|upper != "NONE" and not hide_status %}
-        | status: {{status}}
+        | status: :needs_status:`{{status}}`
         {%- endif -%}
         {%- if tags and not hide_tags %}
-        | tags: {{tags|join("; ")}}
+        | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`
         {%- endif %}
         | links incoming: :need_incoming:`{{id}}`
         | links outgoing: :need_outgoing:`{{id}}`
@@ -248,3 +259,38 @@ Activate it by setting it like this::
 If parameter is not set or set to *False*, no checks will be performed.
 
 Default value: *False*.
+
+
+.. _needs_css:
+
+needs_css
+~~~~~~~~~
+
+.. versionadded:: 0.1.42
+
+Defines the location of a css file, which will be added during documentation build.
+
+If path is relative, sphinx-needs will search for related file in its own css-folder only!
+Currently supported css files:
+
+* **blank.css** : css file with empty styles
+* **modern.css**: modern styles for a need (default)
+
+Use it like this::
+
+    needs_css = "blank.css"
+
+
+To provide your own css file, the path must be absolute. Example::
+
+    import os
+
+    conf_py_folder = os.path.dirname(__file__)
+    needs_css =  os.path.join(conf_py_folder, "my_styles.css")
+
+See :ref:`styles_css` for available css selectors and more.
+
+
+
+
+

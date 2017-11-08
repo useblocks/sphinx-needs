@@ -15,6 +15,7 @@ from sphinxcontrib.need_ref import Need_ref, process_need_ref
 from sphinxcontrib.need_incoming import Need_incoming, process_need_incoming
 from sphinxcontrib.need_outgoing import Need_outgoing, process_need_outgoing
 from sphinxcontrib.builder import NeedsBuilder
+from sphinxcontrib.environment import install_backend_static_files
 
 from sphinxcontrib.utils import rstjinja
 
@@ -22,12 +23,21 @@ DEFAULT_TEMPLATE = """
 .. _{{id}}:
 
 {% if hide == false -%}
-{{type_name}}: **{{title}}** ({{id}})
+.. role:: needs_tag
+.. role:: needs_status
+.. role:: needs_type
+.. role:: needs_id
+.. role:: needs_title
+
+.. rst-class:: need
+.. rst-class:: need_{{type_name}}
+
+:needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
     {%- if status and  status|upper != "NONE" and not hide_status %}
-    | status: {{status}}
+    | status: :needs_status:`{{status}}`
     {%- endif -%}
     {%- if tags and not hide_tags %}
-    | tags: {{tags|join("; ")}}
+    | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`
     {%- endif %}
     | links incoming: :need_incoming:`{{id}}`
     | links outgoing: :need_outgoing:`{{id}}`
@@ -36,6 +46,9 @@ DEFAULT_TEMPLATE = """
 
 {% endif -%}
 """
+
+
+
 # Old node template
 # DEFAULT_TEMPLATE = """
 # .. _{{id}}:
@@ -109,6 +122,9 @@ def setup(app):
     # * description
     # Example: [{"name": "new", "description": "new needs"}, {...}, {...}]
     app.add_config_value('needs_tags', False, 'html')
+
+    # Path of css file, which shall be used for need style
+    app.add_config_value('needs_css', "modern.css", 'html')
 
     # Define nodes
     app.add_node(Need)
@@ -192,9 +208,10 @@ def setup(app):
     app.connect('doctree-resolved', process_need_ref)
     app.connect('doctree-resolved', process_need_incoming)
     app.connect('doctree-resolved', process_need_outgoing)
+    app.connect('env-updated', install_backend_static_files)
 
     # Removed with version 0.1.40
     # Allows jinja statements in rst files
     # app.connect("source-read", rstjinja)
 
-    return {'version': '0.1.41'}  # identifies the version of our extension
+    return {'version': '0.1.42'}  # identifies the version of our extension

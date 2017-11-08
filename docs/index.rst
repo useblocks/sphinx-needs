@@ -137,6 +137,7 @@ Content
    roles
    configuration
    builders
+   styles
    examples
    changelog
    license

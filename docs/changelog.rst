@@ -1,11 +1,17 @@
 Changelog
 =========
 
+0.1.42
+------
+ * Improvement: Added config parameter :ref:`needs_css`, which allows to set a css file.
+ * Improvement: Most need-elements (title, id, tags, status, ...) got their own html class attribute to support custom styles.
+ * Improvement: Set default style "modern.css" for all projects without configured :ref:`needs_css` parameter.
+
 0.1.41
 ------
 
-  * Improvement: Added config parameters :ref:`needs_statuses` and :ref:`needs_tags` to allow only configured statuses/tags inside documentation.
-  * Bugfix: Added LICENSE file (MIT)
+ * Improvement: Added config parameters :ref:`needs_statuses` and :ref:`needs_tags` to allow only configured statuses/tags inside documentation.
+ * Bugfix: Added LICENSE file (MIT)
 
 0.1.40
 ------
