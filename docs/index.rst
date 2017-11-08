@@ -139,6 +139,7 @@ Content
    builders
    examples
    changelog
+   license
 
 
 
