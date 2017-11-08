@@ -4,6 +4,7 @@ Changelog
 0.1.41
 ------
 
+  * Improvement: Added config parameters :ref:`needs_statuses` and :ref:`needs_tags` to allow only configured statuses/tags inside documentation.
   * Bugfix: Added LICENSE file (MIT)
 
 0.1.40

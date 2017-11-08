@@ -5,6 +5,10 @@ Configuration
 
 All configurations take place in your project's conf.py file.
 
+
+.. contents::
+
+
 Activation
 ----------
 
@@ -200,6 +204,8 @@ needs_file
 Defines the location of a json file, which is used by the builder :ref:`needs_builder` as input source.
 Default value: *needs.json*.
 
+.. _needs_statuses:
+
 needs_statuses
 ~~~~~~~~~~~~~~
 
@@ -215,6 +221,28 @@ Activate it by setting it like this::
         dict(name="open", description="Nothing done yet"),
         dict(name="in progress", description="Someone is working on it"),
         dict(name="implemented", description="Work is done and implemented"),
+    ]
+
+If parameter is not set or set to *False*, no checks will be performed.
+
+Default value: *False*.
+
+.. _needs_tags:
+
+needs_tags
+~~~~~~~~~~
+
+.. versionadded:: 0.1.41
+
+Defines a set of valid tags, which are allowed to be used inside documentation.
+If a not defined tag is detected, an error is thrown and the build stops.
+The checks are case sensitive.
+
+Activate it by setting it like this::
+
+    needs_tags = [
+        dict(name="new", description="new needs"),
+        dict(name="security", description="tag for security needs"),
     ]
 
 If parameter is not set or set to *False*, no checks will be performed.

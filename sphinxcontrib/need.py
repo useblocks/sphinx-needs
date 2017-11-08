@@ -61,7 +61,6 @@ class NeedDirective(Directive):
             # Yeeeh, this really may happen...
             return [nodes.Text('', '')]
 
-
         # Get the id or generate a random string/hash string, which is hopefully unique
         # TODO: Check, if id was already given. If True, recalculate id
         # id = self.options.get("id", ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for
@@ -98,6 +97,13 @@ class NeedDirective(Directive):
         tags = self.options.get("tags", [])
         if len(tags) > 0:
             tags = [tag.strip() for tag in re.split(";|,", tags)]
+
+            # Check if tag is in needs_tags. If not raise an error.
+            if env.app.config.needs_tags:
+                for tag in tags:
+                    if tag not in [tag["name"] for tag in env.app.config.needs_tags]:
+                        raise NeedsTagNotAllowed("Tag {0} of need id {1} is not allowed "
+                                                 "by config value 'needs_tags'.".format(tag, id))
 
         # Get links
         links = self.options.get("links", [])
@@ -180,4 +186,8 @@ class NeedsDuplicatedId(SphinxError):
 
 
 class NeedsStatusNotAllowed(SphinxError):
+    pass
+
+
+class NeedsTagNotAllowed(SphinxError):
     pass

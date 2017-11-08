@@ -103,6 +103,13 @@ def setup(app):
     # Example: [{"name": "open", "description": "open status"}, {...}, {...}]
     app.add_config_value('needs_statuses', False, 'html')
 
+    # If given, only the defined tags are allowed.
+    # Values needed for each tag:
+    # * name
+    # * description
+    # Example: [{"name": "new", "description": "new needs"}, {...}, {...}]
+    app.add_config_value('needs_tags', False, 'html')
+
     # Define nodes
     app.add_node(Need)
     app.add_node(Needfilter)
