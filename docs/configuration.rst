@@ -199,3 +199,24 @@ needs_file
 
 Defines the location of a json file, which is used by the builder :ref:`needs_builder` as input source.
 Default value: *needs.json*.
+
+needs_statuses
+~~~~~~~~~~~~~~
+
+.. versionadded:: 0.1.41
+
+Defines a set of valid statuses, which are allowed to be used inside documentation.
+If a not defined status is detected, an error is thrown and the build stops.
+The checks are case sensitive.
+
+Activate it by setting it like this::
+
+    needs_statuses = [
+        dict(name="open", description="Nothing done yet"),
+        dict(name="in progress", description="Someone is working on it"),
+        dict(name="implemented", description="Work is done and implemented"),
+    ]
+
+If parameter is not set or set to *False*, no checks will be performed.
+
+Default value: *False*.

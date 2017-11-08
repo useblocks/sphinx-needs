@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.1.41
+------
+
+  * Bugfix: Added LICENSE file (MIT)
+
 0.1.40
 ------
  * Bugfix: Removed jinja activation

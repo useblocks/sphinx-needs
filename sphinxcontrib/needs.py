@@ -96,6 +96,13 @@ def setup(app):
                          DEFAULT_DIAGRAM_TEMPLATE,
                          'html')
 
+    # If given, only the defined status are allowed.
+    # Values needed for each status:
+    # * name
+    # * description
+    # Example: [{"name": "open", "description": "open status"}, {...}, {...}]
+    app.add_config_value('needs_statuses', False, 'html')
+
     # Define nodes
     app.add_node(Need)
     app.add_node(Needfilter)
@@ -183,4 +190,4 @@ def setup(app):
     # Allows jinja statements in rst files
     # app.connect("source-read", rstjinja)
 
-    return {'version': '0.1.40'}  # identifies the version of our extension
+    return {'version': '0.1.41'}  # identifies the version of our extension

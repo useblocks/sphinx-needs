@@ -86,7 +86,15 @@ class NeedDirective(Directive):
         hide_status = True if "hide_status" in self.options.keys() else False
         title = self.arguments[0]
         content = "\n".join(self.content)
+
+        # Handle status
         status = self.options.get("status", None)
+        # Check if status is in needs_statuses. If not raise an error.
+        if env.app.config.needs_statuses:
+            if status not in [status["name"] for status in env.app.config.needs_statuses]:
+                raise NeedsStatusNotAllowed("Status {0} of need id {1} is not allowed "
+                                            "by config value 'needs_statuses'.".format(status, id))
+
         tags = self.options.get("tags", [])
         if len(tags) > 0:
             tags = [tag.strip() for tag in re.split(";|,", tags)]
@@ -168,4 +176,8 @@ class NeedsNoIdException(SphinxError):
 
 
 class NeedsDuplicatedId(SphinxError):
+    pass
+
+
+class NeedsStatusNotAllowed(SphinxError):
     pass
