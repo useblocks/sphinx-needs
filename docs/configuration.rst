@@ -275,6 +275,7 @@ Currently supported css files:
 
 * **blank.css** : css file with empty styles
 * **modern.css**: modern styles for a need (default)
+* **dark.css**: styles for dark page backgrounds
 
 Use it like this::
 
