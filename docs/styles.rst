@@ -11,12 +11,12 @@ There are three ways to do this:
 * Provide a css file by using :ref:`needs_css`
 * Set own css on sphinx level
 
-.. _styles_css:
-
 Need jinja template
 -------------------
 
 Please see :ref:`needs_template` on the configuration page.
+
+.. _styles_css:
 
 Sphinx-needs CSS option
 -----------------------
