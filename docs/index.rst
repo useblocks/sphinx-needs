@@ -141,6 +141,7 @@ Content
    examples
    changelog
    license
+   contributors
 
 
 

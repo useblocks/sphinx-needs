@@ -36,9 +36,9 @@ sys.path.insert(0, os.path.abspath('../sphinxcontrib'))
 # built documents.
 #
 # The short X.Y version.
-version = '0.1.42'
+version = '0.1.43'
 # The full version, including alpha/beta/rc tags.
-release = '0.1.42'
+release = '0.1.43'
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 if on_rtd:
@@ -108,6 +108,8 @@ needs_types = [dict(directive="req", title="Requirement", prefix="R_", color="#B
                ]
 needs_show_link_type = False
 needs_show_link_title = False
+
+# needs_css = "dark.css"
 
 cwd = os.getcwd()
 plantuml = 'java -jar %s' % os.path.join(cwd, "utils/plantuml_beta.jar")

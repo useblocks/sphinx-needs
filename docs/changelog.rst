@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.1.43
+------
+ * Improvement: Added "dark.css" as style
+ * Bugfix: Removed "," as as separator of links in need presentation.
+
 0.1.42
 ------
  * Improvement: Added config parameter :ref:`needs_css`, which allows to set a css file.

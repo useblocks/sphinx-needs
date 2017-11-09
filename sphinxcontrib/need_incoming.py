@@ -33,8 +33,8 @@ def process_need_incoming(app, doctree, fromdocname):
                     if getattr(env.config, "needs_show_link_type", False) is True:
                         link_text += " [{type}]".format(type=target_need["type_name"])
 
-                    if index + 1 < len(ref_need["links_back"]):
-                        link_text += ", "
+                    # if index + 1 < len(ref_need["links_back"]):
+                    #     link_text += ", "
                     node_need_backref[0].children[0] = nodes.Text(link_text, link_text)
 
                     new_node_ref = make_refnode(app.builder,
@@ -45,6 +45,11 @@ def process_need_incoming(app, doctree, fromdocname):
                                                 node_need_backref['reftarget'].upper())
 
                     node_link_container += new_node_ref
+
+                    # If we have several links, we add an empty text between them
+                    if index + 1 < len(ref_need["links_back"]):
+                        node_link_container += nodes.Text(" ", " ")
+
                 except NoUri:
                     # Irf the given need id can not be found, we must pass here....
                     pass

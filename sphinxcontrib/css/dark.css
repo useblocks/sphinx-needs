@@ -1,0 +1,56 @@
+/* whole NEED */
+dl.need {
+    background-color: #333;
+    padding: 5px 10px 5px 10px;
+    margin: 5px 0px;
+    border-radius: 3px;
+    color: #eeeeee;
+}
+
+span.needs-type {
+    color: #aaa;
+}
+
+span.needs-title {
+    font-weight: bold;
+}
+
+span.needs-id {
+    font-size: 80%;
+    color: #aaa;
+}
+
+span.needs-tag {
+    background-color: #ccc;
+    border-radius: 5px;
+    padding: 0 5px;
+    color: #333333;
+}
+
+span.needs-status {
+    background-color: #004b6b;
+    color: #fff;
+    border-radius: 5px;
+    padding: 0 5px;
+}
+
+em.need_outgoing {
+    background-color: #517918;
+    color: #fff;
+    border-radius: 5px;
+    padding: 0 5px;
+}
+
+em.need_incoming {
+    background-color: #c65d09;
+    color: #fff;
+    border-radius: 5px;
+    padding: 0 5px;
+}
+
+em.need {
+    background-color: #333;
+    color: #fff;
+    border-radius: 5px;
+    padding: 0 5px;
+}
