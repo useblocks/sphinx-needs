@@ -3,12 +3,20 @@ from docutils.parsers.rst import directives
 from docutils.parsers.rst import Directive
 
 import os
+
 import urllib
+import sys
+
 from sphinx.environment import NoUri
 from jinja2 import Template
 import re
 
 from sphinxcontrib.utils import row_col_maker, status_sorter
+
+if sys.version_info.major < 3:
+    urlParse = urllib.quote_plus
+else:
+    urlParse = urllib.parse.quote_plus
 
 
 class Needfilter(nodes.General, nodes.Element):
@@ -236,7 +244,7 @@ def process_needfilters(app, doctree, fromdocname):
                     # and not to current documentation. Therefore we need to add ../ to get out of the _image folder.
                     try:
                         link = "../" + app.builder.get_target_uri(need_info['docname']) \
-                               + "?highlight={0}".format(urllib.parse.quote_plus(need_info['title'])) \
+                               + "?highlight={0}".format(urlParse(need_info['title'])) \
                                + "#" \
                                + need_info['target']['refid'] \
                             # Gets mostly called during latex generation
