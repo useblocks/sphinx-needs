@@ -1,6 +1,10 @@
 Changelog
 =========
 
+0.1.44
+------
+ * Bugfix: Import statements are checked, if Python 2 or 3 is used.
+
 0.1.43
 ------
  * Improvement: Added "dark.css" as style
