@@ -168,7 +168,9 @@ def process_needfilters(app, doctree, fromdocname):
 
         for need_info in all_needs:
             status_filter_passed = False
-            if need_info["status"] in current_needlist["status"] or len(current_needlist["status"]) == 0:
+            if need_info["status"] is None or \
+                            need_info["status"] in current_needlist["status"] or \
+                            len(current_needlist["status"]) == 0:
                 status_filter_passed = True
 
             tags_filter_passed = False
