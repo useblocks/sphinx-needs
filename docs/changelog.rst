@@ -1,6 +1,10 @@
 Changelog
 =========
 
+0.1.45
+------
+ * Bugfix: needs with no status are handled the correct way now.
+
 0.1.44
 ------
  * Bugfix: Import statements are checked, if Python 2 or 3 is used.

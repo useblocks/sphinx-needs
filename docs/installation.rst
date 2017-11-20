@@ -23,3 +23,13 @@ For final activation, please add `sphinxcontrib.needs` to the project's extensio
    extensions = ["sphinxcontrib.needs",]
 
 For the full configuration, please read :ref:`config`.
+
+
+Using docker
+------------
+
+Sphinx-Needs got also dockerized by Till Witt.
+
+See https://github.com/tlwt/sphinxneeds-docker for actual documentation and hints how to use it.
+
+
