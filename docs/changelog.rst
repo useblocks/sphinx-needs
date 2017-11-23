@@ -1,6 +1,10 @@
 Changelog
 =========
 
+0.1.46
+------
+ * Bugfix: Added python2/3 compatibility for needs_import
+
 0.1.45
 ------
  * Bugfix: needs with no status are handled the correct way now.

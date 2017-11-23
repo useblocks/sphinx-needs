@@ -36,9 +36,9 @@ sys.path.insert(0, os.path.abspath('../sphinxcontrib'))
 # built documents.
 #
 # The short X.Y version.
-version = '0.1.45'
+version = '0.1.46'
 # The full version, including alpha/beta/rc tags.
-release = '0.1.45'
+release = '0.1.46'
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 if on_rtd:
