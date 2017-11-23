@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import six
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -59,7 +60,7 @@ class NeedimportDirective(Directive):
         if version is None:
             try:
                 version = needs_import_list["current_version"]
-                if not isinstance(version, str):
+                if not isinstance(version, six.string_types):
                     raise KeyError
             except KeyError:
                 raise CorruptedNeedsFile("Key 'current_version' missing or corrupted in {0}".format(need_import_path))
