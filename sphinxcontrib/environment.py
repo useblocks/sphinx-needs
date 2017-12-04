@@ -25,6 +25,7 @@ def install_backend_static_files(app, env):
 
         if not os.path.exists(source_file_path):
             source_file_path = os.path.join(os.path.dirname(__file__), "css", "blank.css")
+            print("{0} not found. Copying sphinx-internal blank.css".format(source_file_path))
 
         dest_file_path = os.path.join(dest_path, os.path.basename(source_file_path))
 
