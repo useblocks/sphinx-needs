@@ -1,9 +1,14 @@
 Changelog
 =========
 
+0.1.47
+------
+ * Bugfix: dark.css was missing in MANIFEST.in.
+ * Improvement: Better output, if configured needs_css file can not be found during build.
+
 0.1.46
 ------
- * Bugfix: Added python2/3 compatibility for needs_import
+ * Bugfix: Added python2/3 compatibility for needs_import.
 
 0.1.45
 ------
