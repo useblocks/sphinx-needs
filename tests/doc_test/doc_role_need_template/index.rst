@@ -1,5 +1,5 @@
-BROKEN LINKS DOCUMENT
-=====================
+ROLE NEED TEMPLATE
+==================
 
 .. spec:: Command line interface
     :id: SP_TOO_001
@@ -12,11 +12,8 @@ BROKEN LINKS DOCUMENT
 .. spec:: Test spec
     :id: SP_TOO_002
     :status: open
-    :links: NOT_WORKING_LINK
 
     Test test
 
-Working: :need:`SP_TOO_001`
-
-Not working: :need:`BROKEN_LINK`
+Reference: :need:`SP_TOO_001`
 

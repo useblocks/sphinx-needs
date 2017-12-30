@@ -3,10 +3,10 @@ Changelog
 
 0.1.48
 ------
+ * Improvement: Added configuration option :ref:`needs_role_need_template`.
+ * Bugfix: Referencing not existing needs will result in build warnings instead of a build crash.
  * Refactoring: needs development files are stored internally under *sphinxcontrib/needs*, which is in sync with
    most other sphinxcontrib-packages.
- * Bugfix: Referencing not existing needs will result in build warnings instead of a build crash.
-
 
 0.1.47
 ------

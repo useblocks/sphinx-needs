@@ -102,6 +102,8 @@ def setup(app):
     app.add_config_value('needs_show_link_title', False, 'html')
     app.add_config_value('needs_file', "needs.json", 'html')
 
+    app.add_config_value('needs_role_need_template', "{title} ({id})", 'html')
+
     app.add_config_value('needs_diagram_template',
                          DEFAULT_DIAGRAM_TEMPLATE,
                          'html')

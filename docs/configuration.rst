@@ -292,6 +292,48 @@ To provide your own css file, the path must be absolute. Example::
 See :ref:`styles_css` for available css selectors and more.
 
 
+.. _needs_role_need_template:
+
+needs_role_need_template
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.1.48
+
+Provides a way of changing the text representation of a referenced need.
+
+If the role :ref:`role_need` is used, sphinx-needs will create a text representation of the referenced need.
+By default a referenced need is described by the following string::
+
+    {title} ({id})
+
+By using ``needs_role_need_template`` this representation can be easily adjusted to own requirements.
+
+Here are some examples::
+
+    [{id}]: {title}
+    -{id}-
+    {type}: {title} ({status})
+    {title} ({tags})
+    {title:*^20s} - {content:.30}
+    [{id}] {title} ({status}) {type_name}/{type} - {tags} - {links} - {links_back} - {content}
+
+``needs_role_need_template`` must be a string, which supports the following placeholders:
+
+* id
+* type (short version)
+* type_name (long, human readable version)
+* title
+* status
+* tags, joined by ";"
+* links, joined by ";"
+* links_back, joined by ";"
+* content
+
+All options of Python's `.format() <https://docs.python.org/3.4/library/functions.html#format>`_ function are supported. Please see https://pyformat.info/ for more information.
+
+RST-attributes like ``**bold**`` are **not** supported.
+
+
 
 
 

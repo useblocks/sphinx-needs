@@ -30,6 +30,11 @@ Example
 
 **Result**: The requirement :need:`roles_req_1` is the most important one.
 
+.. note::
+
+   The string representation can be easily customized by using the
+   configuration parameter :ref:`needs_role_need_template`.
+
 
 .. _role_need_outgoing:
 
@@ -52,6 +57,7 @@ Example
    To get butter on our bread, we need to fulfill :need_outgoing:`roles_req_2`
 
 **Result**: To get butter on our bread, we need to fulfill :need_outgoing:`roles_req_2`
+
 
 .. _role_need_incoming:
 

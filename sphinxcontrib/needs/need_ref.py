@@ -1,7 +1,9 @@
+import sys
 from docutils import nodes
 from sphinx.environment import NoUri
 from sphinx.util.nodes import make_refnode
 from sphinx.util import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -24,7 +26,16 @@ def process_need_ref(app, doctree, fromdocname):
         if node_need_ref['reftarget'].upper() in env.need_all_needs:
             target_need = env.need_all_needs[node_need_ref['reftarget'].upper()]
             try:
-                link_text = "{title} ({id})".format(title=target_need["title"], id=target_need["id"])
+                link_text = app.config.needs_role_need_template.format(title=target_need["title"],
+                                                                       id=target_need["id"],
+                                                                       type=target_need["type"],
+                                                                       type_name=target_need["type_name"],
+                                                                       status=target_need["status"],
+                                                                       content=target_need["content"],
+                                                                       tags=";".join(target_need["tags"]),
+                                                                       links=";".join(target_need["links"]),
+                                                                       links_back=";".join(target_need["links_back"]))
+
                 node_need_ref[0].children[0] = nodes.Text(link_text, link_text)
 
                 new_node_ref = make_refnode(app.builder,
@@ -36,6 +47,9 @@ def process_need_ref(app, doctree, fromdocname):
             except NoUri:
                 # If the given need id can not be found, we must pass here....
                 pass
+            except KeyError as e:
+                log.warning('Needs: the config parameter needs_role_need_template uses not supported placeholders: %s '
+                            % e)
 
         else:
             log.warning('Needs: linked need %s not found (Line %i of file %s)' % (
