@@ -41,6 +41,8 @@ needs_types = [
     dict(directive="test", title="Test Case", prefix="TC_", color="#DCB239", style="node")
 ]
 
+needs_css = "blank.css"
+
 cwd = os.getcwd()
 plantuml = 'java -jar %s' % os.path.join(cwd, "../utils/plantuml_beta.jar")
 

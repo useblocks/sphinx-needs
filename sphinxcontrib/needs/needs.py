@@ -1,23 +1,20 @@
 # -*- coding: utf-8 -*-
 
-from docutils import nodes
 import os
 import random
 import string
 
+from docutils import nodes
 from sphinx.roles import XRefRole
 from sphinx.util import logging
-
-from sphinxcontrib.need import Need, NeedDirective, process_need_nodes, purge_needs
-from sphinxcontrib.needfilter import Needfilter, NeedfilterDirective, process_needfilters
-from sphinxcontrib.needimport import Needimport, NeedimportDirective
-from sphinxcontrib.need_ref import Need_ref, process_need_ref
-from sphinxcontrib.need_incoming import Need_incoming, process_need_incoming
-from sphinxcontrib.need_outgoing import Need_outgoing, process_need_outgoing
-from sphinxcontrib.builder import NeedsBuilder
-from sphinxcontrib.environment import install_backend_static_files
-
-from sphinxcontrib.utils import rstjinja
+from sphinxcontrib.needs.builder import NeedsBuilder
+from sphinxcontrib.needs.environment import install_backend_static_files
+from sphinxcontrib.needs.need import Need, NeedDirective, process_need_nodes, purge_needs
+from sphinxcontrib.needs.need_incoming import Need_incoming, process_need_incoming
+from sphinxcontrib.needs.need_ref import Need_ref, process_need_ref
+from sphinxcontrib.needs.needfilter import Needfilter, NeedfilterDirective, process_needfilters
+from sphinxcontrib.needs.needimport import Needimport, NeedimportDirective
+from sphinxcontrib.needs.need_outgoing import Need_outgoing, process_need_outgoing
 
 DEFAULT_TEMPLATE = """
 .. _{{id}}:

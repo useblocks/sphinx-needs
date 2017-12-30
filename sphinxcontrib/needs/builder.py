@@ -1,6 +1,8 @@
-from sphinxcontrib.utils import NeedsList
 from sphinx.builders import Builder
 from sphinx.util import logging
+from sphinxcontrib.needs.utils import NeedsList
+
+
 # import logging
 
 

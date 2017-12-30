@@ -1,17 +1,14 @@
-from docutils import nodes
-from docutils.parsers.rst import directives
-from docutils.parsers.rst import Directive
-
 import os
-
-import urllib
-import sys
-
-from sphinx.environment import NoUri
-from jinja2 import Template
 import re
+import sys
+import urllib
 
-from sphinxcontrib.utils import row_col_maker, status_sorter
+from docutils import nodes
+from docutils.parsers.rst import Directive
+from docutils.parsers.rst import directives
+from jinja2 import Template
+from sphinx.environment import NoUri
+from sphinxcontrib.needs.utils import row_col_maker, status_sorter
 
 if sys.version_info.major < 3:
     urlParse = urllib.quote_plus
