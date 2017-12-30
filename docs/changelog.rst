@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.1.48
+------
+ * Refactoring: needs development files are stored internally under *sphinxcontrib/needs*, which is in sync with
+   most other sphinxcontrib-packages.
+
+
 0.1.47
 ------
  * Bugfix: dark.css was missing in MANIFEST.in.
