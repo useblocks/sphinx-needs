@@ -1,6 +1,8 @@
 from docutils import nodes
 from sphinx.environment import NoUri
 from sphinx.util.nodes import make_refnode
+from sphinx.util import logging
+log = logging.getLogger(__name__)
 
 
 class Need_outgoing(nodes.Inline, nodes.Element):
@@ -56,11 +58,8 @@ def process_need_outgoing(app, doctree, fromdocname):
                     pass
 
             else:
-                # This seems not to work anymore in sphinx 1.6
-                # The used self._warnfunc inside warn_node() is None
-                # env.warn_node(
-                #     'Needs: need %s not found' % node_need_ref.attributes['reftarget'], node_need_ref)
-                pass
+                log.warning('Needs: linked need %s not found (Line %i of file %s)' % (
+                    node_need_ref['reftarget'], node_need_ref.line, node_need_ref.source))
 
         if len(node_link_container.children) == 0:
             node_link_container += nodes.Text("None", "None")

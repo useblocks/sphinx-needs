@@ -5,6 +5,7 @@ Changelog
 ------
  * Refactoring: needs development files are stored internally under *sphinxcontrib/needs*, which is in sync with
    most other sphinxcontrib-packages.
+ * Bugfix: Referencing not existing needs will result in build warnings instead of a build crash.
 
 
 0.1.47
