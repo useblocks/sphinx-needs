@@ -308,14 +308,14 @@ By default a referenced need is described by the following string::
 
 By using ``needs_role_need_template`` this representation can be easily adjusted to own requirements.
 
-Here are some examples::
+Here are some ideas, how it could be used inside the **conf.py** file::
 
-    [{id}]: {title}
-    -{id}-
-    {type}: {title} ({status})
-    {title} ({tags})
-    {title:*^20s} - {content:.30}
-    [{id}] {title} ({status}) {type_name}/{type} - {tags} - {links} - {links_back} - {content}
+    needs_role_need_template = "[{id}]: {title}"
+    needs_role_need_template = "-{id}-"
+    needs_role_need_template = "{type}: {title} ({status})"
+    needs_role_need_template = "{title} ({tags})"
+    needs_role_need_template = "{title:*^20s} - {content:.30}"
+    needs_role_need_template = "[{id}] {title} ({status}) {type_name}/{type} - {tags} - {links} - {links_back} - {content}"
 
 ``needs_role_need_template`` must be a string, which supports the following placeholders:
 
@@ -329,7 +329,8 @@ Here are some examples::
 * links_back, joined by ";"
 * content
 
-All options of Python's `.format() <https://docs.python.org/3.4/library/functions.html#format>`_ function are supported. Please see https://pyformat.info/ for more information.
+All options of Python's `.format() <https://docs.python.org/3.4/library/functions.html#format>`_ function are supported.
+Please see https://pyformat.info/ for more information.
 
 RST-attributes like ``**bold**`` are **not** supported.
 

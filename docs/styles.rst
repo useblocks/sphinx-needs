@@ -40,15 +40,15 @@ Sphinx-needs provides the following css styles:
 
 blank.css
 ~~~~~~~~~
-.. literalinclude:: ../sphinxcontrib/css/blank.css
+.. literalinclude:: ../sphinxcontrib/needs/css/blank.css
 
 modern.css
 ~~~~~~~~~~
-.. literalinclude:: ../sphinxcontrib/css/modern.css
+.. literalinclude:: ../sphinxcontrib/needs/css/modern.css
 
 dark.css
 ~~~~~~~~
-.. literalinclude:: ../sphinxcontrib/css/dark.css
+.. literalinclude:: ../sphinxcontrib/needs/css/dark.css
 
 Own CSS file on sphinx level
 ----------------------------
