@@ -273,6 +273,7 @@ def process_needfilters(app, doctree, fromdocname):
                 puml_node["uml"] += "endlegend\n"
             puml_node["uml"] += "@enduml"
             puml_node["incdir"] = os.path.dirname(current_needlist["docname"])
+            puml_node["filename"] = os.path.split(current_needlist["docname"])[1]  # Needed for plantuml >= 0.9
             content.append(puml_node)
 
         if len(content) == 0:

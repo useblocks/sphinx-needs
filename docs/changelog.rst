@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.1.49
+------
+ * Bugfix: Supporting plantnuml >= 0.9 (`#38 <https://github.com/useblocks/sphinxcontrib-needs/issues/38>`_)
+ * Bugfix: need_outgoing does not crash, if given need-id does not exist (`#32 <https://github.com/useblocks/sphinxcontrib-needs/issues/32>`_ )
+
 0.1.48
 ------
  * Improvement: Added configuration option :ref:`needs_role_need_template`.
