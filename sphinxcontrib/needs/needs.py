@@ -8,7 +8,7 @@ from docutils import nodes
 from sphinx.roles import XRefRole
 from sphinx.util import logging
 from sphinxcontrib.needs.builder import NeedsBuilder
-from sphinxcontrib.needs.environment import install_backend_static_files
+from sphinxcontrib.needs.environment import install_styles_static_files, install_datatables_static_files
 from sphinxcontrib.needs.need import Need, NeedDirective, process_need_nodes, purge_needs
 from sphinxcontrib.needs.need_incoming import Need_incoming, process_need_incoming
 from sphinxcontrib.needs.need_ref import Need_ref, process_need_ref
@@ -207,7 +207,10 @@ def setup(app):
     app.connect('doctree-resolved', process_need_ref)
     app.connect('doctree-resolved', process_need_incoming)
     app.connect('doctree-resolved', process_need_outgoing)
-    app.connect('env-updated', install_backend_static_files)
+    app.connect('env-updated', install_datatables_static_files)
+
+    # This should be called last, so that need-styles can override styles from use libraries
+    app.connect('env-updated', install_styles_static_files)
 
     # Removed with version 0.1.40
     # Allows jinja statements in rst files

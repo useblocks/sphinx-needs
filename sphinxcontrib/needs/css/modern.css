@@ -39,3 +39,27 @@ em.need_outgoing {
 em.need_incoming {
 
 }
+
+
+/* DataTable layout*/
+table.dataTable {
+    border-collapse: collapse;
+    border: none;
+}
+
+div.dataTables_length {
+    margin-bottom: 10px;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    padding: 0.15em 0.75em;
+    background: none;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    background: none;
+}
+
+div.dataTables_length select {
+    background: none;
+}
