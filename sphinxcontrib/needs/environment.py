@@ -71,5 +71,7 @@ def install_datatables_static_files(app, env):
 
     # Add the needed datatables js and css file
     app.add_javascript("sphinx-needs/libs/html/datatables.min.js")
+
     app.add_javascript("sphinx-needs/libs/html/datatables_loader.js")
+
     app.add_stylesheet("sphinx-needs/libs/html/datatables.min.css")

@@ -63,3 +63,21 @@ div.dataTables_length {
 div.dataTables_length select {
     background: none;
 }
+
+/*DataTables Download Buttons*/
+div.dt-buttons {
+   margin-left: 10%;
+}
+
+div.dt-buttons button {
+    padding: 0.1em 1em;
+    border: 1px solid #999;
+    border-radius: 2px;
+    font-size: 0.88em;
+    line-height: inherit;
+    color: inherit;
+    white-space: nowrap;
+    overflow: hidden;
+    background-color: inherit;
+    background-image: none;
+}

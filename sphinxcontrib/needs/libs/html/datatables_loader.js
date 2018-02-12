@@ -1,5 +1,19 @@
 $(document).ready(function() {
-    $('table.docutils').DataTable();
+    $('table.docutils').DataTable( {
+        dom: 'lBfrtip',
+        colReorder: true,
+        buttons: [
+            {
+                extend: 'colvis',
+                text: 'Columns'
+            },
+            'copy', 'excel', 'pdf'
+        ],
+        responsive: false,
+        // scroller: true,
+        // scrollY: 400,
+        // scrollCollapse: true,
+    });
 } );
 
 // Code if more than one jquery lib would be available
