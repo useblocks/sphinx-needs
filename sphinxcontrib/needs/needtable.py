@@ -1,11 +1,9 @@
-import os
 import sys
 import urllib
+import re
 
 from docutils import nodes
 from docutils.parsers.rst import directives
-from jinja2 import Template
-from sphinx.environment import NoUri
 from sphinxcontrib.needs.utils import row_col_maker, status_sorter
 
 from sphinxcontrib.needs.filter_base import FilterBase, procces_filters
@@ -24,11 +22,9 @@ class NeedtableDirective(FilterBase):
     """
     Directive present filtered needs inside a table.
     """
-    option_spec = {'show_status': directives.flag,
-                   'show_tags': directives.flag,
-                   'show_filters': directives.flag,
-                   'show_links': directives.flag,
-                   'show_legend': directives.flag}
+    option_spec = {'show_filters': directives.flag,
+                   'columns': directives.unchanged_required,
+                   }
 
     # Update the options_spec with values defined in the FilterBase class
     option_spec.update(FilterBase.base_option_spec)
@@ -47,16 +43,21 @@ class NeedtableDirective(FilterBase):
             id=env.new_serialno('needtable'))
         targetnode = nodes.target('', '', ids=[targetid])
 
+        columns = self.options.get("columns", [])
+        if len(columns) == 0:
+            env.app.config.needs_table_layout
+            columns = "ID;TITLE;STATUS;TYPE;OUTGOING;TAGS"
+        if isinstance(columns, str):
+            columns = [col.strip() for col in re.split(";|,", columns)]
+        columns = [col.upper() for col in columns if col.upper() in ["ID", "TITLE", "TAGS", "STATUS", "TYPE",
+                                                                     "INCOMING", "OUTGOING"]]
         # Add the need and all needed information
         env.need_all_needtables[targetid] = {
             'docname': env.docname,
             'lineno': self.lineno,
             'target': targetnode,
-            'show_tags': True if self.options.get("show_tags", False) is None else False,
-            'show_status': True if self.options.get("show_status", False) is None else False,
-            'show_filters': True if self.options.get("show_filters", False) is None else False,
-            'show_legend': True if self.options.get("show_legend", False) is None else False,
-            'layout': self.options.get("layout", "list"),
+            'columns': columns,
+            'show_filters': True if self.options.get("show_filters", False) is None else False
         }
         env.need_all_needtables[targetid].update(self.collect_filter_attributes())
 
@@ -96,23 +97,31 @@ def process_needtables(app, doctree, fromdocname):
 
         # Define Table column width
         # ToDo: Find a way to chosen to perfect width automatically.
-        id_colspec = nodes.colspec(colwidth=5)
-        title_colspec = nodes.colspec(colwidth=15)
-        type_colspec = nodes.colspec(colwidth=5)
-        status_colspec = nodes.colspec(colwidth=5)
-        links_colspec = nodes.colspec(colwidth=5)
-        tags_colspec = nodes.colspec(colwidth=5)
-        tgroup += [id_colspec, title_colspec, type_colspec, status_colspec, links_colspec, tags_colspec]
+        for col in current_needtable["columns"]:
+            if col == "TITLE":
+                tgroup += nodes.colspec(colwidth=15)
+            else:
+                tgroup += nodes.colspec(colwidth=5)
+
+        node_columns = []
+        for col in current_needtable["columns"]:
+            if col == "ID":
+                node_columns.append(nodes.entry('', nodes.paragraph('', 'ID')))
+            elif col == "TITLE":
+                node_columns.append(nodes.entry('', nodes.paragraph('', 'Title')))
+            elif col == "STATUS":
+                node_columns.append(nodes.entry('', nodes.paragraph('', 'Status')))
+            elif col == "TYPE":
+                node_columns.append(nodes.entry('', nodes.paragraph('', 'Type')))
+            elif col == "TAGS":
+                node_columns.append(nodes.entry('', nodes.paragraph('', 'Tags')))
+            elif col == "INCOMING":
+                node_columns.append(nodes.entry('', nodes.paragraph('', 'Incoming')))
+            elif col == "OUTGOING":
+                node_columns.append(nodes.entry('', nodes.paragraph('', 'Outgoing')))
 
         tgroup += nodes.thead('', nodes.row(
-            '',
-            nodes.entry('', nodes.paragraph('', 'ID')),
-            nodes.entry('', nodes.paragraph('', 'Title')),
-            nodes.entry('', nodes.paragraph('', 'Type')),
-            nodes.entry('', nodes.paragraph('', 'Status')),
-            nodes.entry('', nodes.paragraph('', 'Links')),
-            nodes.entry('', nodes.paragraph('', 'Tags'))
-        ))
+            '', *node_columns))
         tbody = nodes.tbody()
         tgroup += tbody
         content += tgroup
@@ -130,12 +139,21 @@ def process_needtables(app, doctree, fromdocname):
 
         for need_info in found_needs:
             row = nodes.row()
-            row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "id", make_ref=True)
-            row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "title")
-            row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "type_name")
-            row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "status")
-            row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "links", ref_lookup=True)
-            row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "tags")
+            for col in current_needtable["columns"]:
+                if col == "ID":
+                    row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "id", make_ref=True)
+                elif col == "TITLE":
+                    row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "title")
+                elif col == "STATUS":
+                    row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "status")
+                elif col == "TYPE":
+                    row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "type_name")
+                elif col == "TAGS":
+                    row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "tags")
+                elif col == "INCOMING":
+                    row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "links_back", ref_lookup=True)
+                elif col == "OUTGOING":
+                    row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "links", ref_lookup=True)
             tbody += row
 
         if len(found_needs) == 0:

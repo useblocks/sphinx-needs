@@ -103,6 +103,7 @@ def setup(app):
     app.add_config_value('needs_show_link_type', False, 'html')
     app.add_config_value('needs_show_link_title', False, 'html')
     app.add_config_value('needs_file', "needs.json", 'html')
+    app.add_config_value('needs_table_layout', "ID;TITLE;STATUS;TYPE;OUTGOING;TAGS", 'html')
 
     app.add_config_value('needs_role_need_template', "{title} ({id})", 'html')
 
