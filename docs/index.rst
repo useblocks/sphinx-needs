@@ -133,7 +133,7 @@ Content
    :maxdepth: 2
 
    installation
-   directives
+   directives/index
    roles
    configuration
    builders

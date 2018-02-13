@@ -3,6 +3,7 @@ import sys
 from sphinx.util.osutil import copyfile
 from sphinx.util.osutil import ensuredir
 from sphinx.util.console import brown
+from sphinx.util import  status_iterator
 
 STATICS_DIR_NAME = '_static'
 
@@ -15,7 +16,8 @@ def install_styles_static_files(app, env):
 
     files_to_copy = [env.app.config.needs_css]
 
-    for source_file_path in app.builder.status_iterator(
+    # for source_file_path in app.builder.status_iterator(
+    for source_file_path in status_iterator(
         files_to_copy,
         'Copying static files for sphinx-needs custom style support...',
         brown, len(files_to_copy)):
@@ -51,7 +53,8 @@ def install_datatables_static_files(app, env):
         for single_file in files:
             files_to_copy.append(os.path.join(root, single_file))
 
-    for source_file_path in app.builder.status_iterator(
+    # for source_file_path in app.builder.status_iterator(
+    for source_file_path in status_iterator(
         files_to_copy,
         'Copying static files for sphinx-needs datatables support...',
         brown, len(files_to_copy)):

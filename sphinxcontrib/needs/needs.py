@@ -15,6 +15,8 @@ from sphinxcontrib.needs.need_ref import Need_ref, process_need_ref
 from sphinxcontrib.needs.needfilter import Needfilter, NeedfilterDirective, process_needfilters
 from sphinxcontrib.needs.needimport import Needimport, NeedimportDirective
 from sphinxcontrib.needs.need_outgoing import Need_outgoing, process_need_outgoing
+from sphinxcontrib.needs.needtable import Needtable, NeedtableDirective, process_needtables
+
 
 DEFAULT_TEMPLATE = """
 .. _{{id}}:
@@ -129,6 +131,7 @@ def setup(app):
     app.add_node(Need)
     app.add_node(Needfilter)
     app.add_node(Needimport)
+    app.add_node(Needtable)
 
     ########################################################################
     # DIRECTIVES
@@ -175,6 +178,7 @@ def setup(app):
         app.add_directive("{0}_list".format(type["directive"]), NeedDirective)
 
     app.add_directive('needfilter', NeedfilterDirective)
+    app.add_directive('needtable', NeedtableDirective)
 
     # Kept for backwards compatibility
     app.add_directive('needlist', NeedfilterDirective)
@@ -204,6 +208,7 @@ def setup(app):
     app.connect('env-purge-doc', purge_needs)
     app.connect('doctree-resolved', process_need_nodes)
     app.connect('doctree-resolved', process_needfilters)
+    app.connect('doctree-resolved', process_needtables)
     app.connect('doctree-resolved', process_need_ref)
     app.connect('doctree-resolved', process_need_incoming)
     app.connect('doctree-resolved', process_need_outgoing)
