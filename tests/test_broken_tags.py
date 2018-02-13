@@ -10,3 +10,17 @@ def test_doc_build_html(app, status, warning):
     html = (app.outdir / 'index.html').read_text()
     assert '<h1>BROKEN DOCUMENT' in html
     assert 'SP_TOO_003' in html
+
+
+@with_app(buildername='html', srcdir='doc_test/broken_tags_2')
+def test_doc_build_html_unneeded_chars(app, status, warning):
+    """
+    Test for https://github.com/useblocks/sphinxcontrib-needs/issues/36
+    ; at the end of tags needs to be removed #36
+    """
+    app.build()
+    html = (app.outdir / 'index.html').read_text()
+    assert '<h1>BROKEN DOCUMENT' in html
+    assert 'SP_TOO_004' in html
+    assert ':needs_tag:' not in html
+    assert '``' not in html

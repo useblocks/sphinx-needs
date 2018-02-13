@@ -14,8 +14,9 @@ BROKEN DOCUMENT
 
     Test test
 
-.. spec:: Test spec BROKEN
-    :id: SP_TOO_003
-    :tags: new; security; BROKEN
+.. spec:: Test unneeded ;
+    :id: SP_TOO_004
+    :tags: new; security;
 
     Test test
+

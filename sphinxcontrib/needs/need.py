@@ -97,7 +97,9 @@ class NeedDirective(Directive):
         tags = self.options.get("tags", [])
         if len(tags) > 0:
             tags = [tag.strip() for tag in re.split(";|,", tags)]
-
+            for i in range(len(tags)):
+                if len(tags[i]) == 0:
+                    del(tags[i])
             # Check if tag is in needs_tags. If not raise an error.
             if env.app.config.needs_tags:
                 for tag in tags:
