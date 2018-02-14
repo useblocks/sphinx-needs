@@ -1,4 +1,4 @@
 sphinx>=1.6
-sphinxcontrib-needs>=0.1.32
+sphinxcontrib-needs>=0.2.0
 sphinxcontrib-websupport
 sphinxcontrib-plantuml
