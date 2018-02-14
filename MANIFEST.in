@@ -1,5 +1,8 @@
 include sphinxcontrib/needs/needimport_template.rst
 
+include sphinxcontrib/needs/css/common.css
 include sphinxcontrib/needs/css/blank.css
 include sphinxcontrib/needs/css/modern.css
 include sphinxcontrib/needs/css/dark.css
+
+include sphinxcontrib/needs/libs/*
