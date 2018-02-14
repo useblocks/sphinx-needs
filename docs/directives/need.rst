@@ -3,15 +3,31 @@
 need/ req (or any other defined need type)
 ==========================================
 
-Example::
+Creates a need with specified type. The type is defined by using the correct directive, like
+``.. req::`` or ``.. test::``.
 
-    .. req:: User needs to login
-       :id: ID123
-       :status: open
-       :tags: user;login
-       :links: ID444; ID_555
 
-       Our users needs to get logged in via our login forms on **/login.php**.
+.. container:: toggle
+
+   .. container:: header
+
+      **Show example**
+
+   .. code-block:: rst
+
+       .. req:: User needs to login
+          :id: ID123
+          :status: open
+          :tags: user;login
+
+          Our users needs to get logged in via our login forms on **/login.php**.
+
+   .. req:: User needs to login
+      :id: ID123
+      :status: open
+      :tags: user;login
+
+      Our users needs to get logged in via our login forms on **/login.php**.
 
 This creates a new requirement, with a title, content, given id, a status and several tags.
 
@@ -34,3 +50,55 @@ You can also use **:hide_status:** and **:hide_tags:** to hide the related infor
 
     By default the above example works also with `.. spec::`, `.. impl::`, `.. test::` and all other need types,
     which are configured via :ref:`need_types`.
+
+Options
+-------
+
+.. _need_collapse:
+
+collapse
+~~~~~~~~
+If set to **True**, details like status, links or tags are collapsed and viewable only after a click on the need title.
+
+If set to **False**, details are shown directly.
+
+If not set, the config parameter :ref:`needs_collapse_details` decides about the needed behavior.
+
+Allowed values:
+
+ * true; yes; 1
+ * false; no; 0
+
+
+.. container:: toggle
+
+   .. container:: header
+
+      **Show example**
+
+   .. code-block:: rst
+
+      .. req:: Collapse is set to True
+         :tags: collapse; example
+         :collapse: True
+
+         Only title and content are shown
+
+      .. req:: Collapse is set to False
+         :tags: collapse; example
+         :collapse: False
+
+         Title, tags, links and everything else is shown directly.
+
+   .. req:: Collapse is set to True
+      :tags: collapse; example
+      :collapse: True
+
+      Only title and content are shown
+
+   .. req:: Collapse is set to False
+      :tags: collapse; example
+      :collapse: False
+
+      Title, tags, links and everything else is shown directly.
+

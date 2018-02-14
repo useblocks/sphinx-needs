@@ -1,0 +1,27 @@
+.toggle .header {
+    display: block;
+    clear: both;
+}
+
+.toggle .header:after {
+    content: " ▷";
+}
+
+.toggle .header.open:after {
+    content: " ▽";
+}
+
+div.toggle {
+    /*border: 2px solid #ddd;*/
+    /*padding: 5px;*/
+    /*border-radius: 5px;*/
+}
+
+dl.need div.toggle {
+    margin-top: -15px;
+}
+
+div.need div.toggle div.line-block {
+    margin-top: 0px;
+    margin-left: 30px;
+}

@@ -24,6 +24,7 @@ class NeedtableDirective(FilterBase):
     """
     option_spec = {'show_filters': directives.flag,
                    'columns': directives.unchanged_required,
+                   'style': directives.unchanged_required,
                    }
 
     # Update the options_spec with values defined in the FilterBase class
@@ -45,18 +46,21 @@ class NeedtableDirective(FilterBase):
 
         columns = self.options.get("columns", [])
         if len(columns) == 0:
-            env.app.config.needs_table_layout
-            columns = "ID;TITLE;STATUS;TYPE;OUTGOING;TAGS"
+            columns = env.app.config.needs_table_columns
         if isinstance(columns, str):
             columns = [col.strip() for col in re.split(";|,", columns)]
         columns = [col.upper() for col in columns if col.upper() in ["ID", "TITLE", "TAGS", "STATUS", "TYPE",
                                                                      "INCOMING", "OUTGOING"]]
+
+        style = self.options.get("style", "").upper()
+
         # Add the need and all needed information
         env.need_all_needtables[targetid] = {
             'docname': env.docname,
             'lineno': self.lineno,
             'target': targetnode,
             'columns': columns,
+            'style': style,
             'show_filters': True if self.options.get("show_filters", False) is None else False
         }
         env.need_all_needtables[targetid].update(self.collect_filter_attributes())
@@ -91,8 +95,17 @@ def process_needtables(app, doctree, fromdocname):
         current_needtable = env.need_all_needtables[id]
         all_needs = env.need_all_needs
 
+        if current_needtable["style"] == "" or current_needtable["style"].upper() not in ["TABLE", "DATATABLES"]:
+            if app.config.needs_table_style == "":
+                style = "DATATABLES"
+            else:
+                style = app.config.needs_table_style.upper()
+        else:
+            style = current_needtable["style"].upper()
+
         # Prepare table
-        content = nodes.table()
+        classes = ["NEEDS_{style}".format(style=style)]
+        content = nodes.table(classes=classes)
         tgroup = nodes.tgroup()
 
         # Define Table column width

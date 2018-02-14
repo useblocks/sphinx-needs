@@ -33,6 +33,8 @@ sys.path.insert(0, os.path.abspath('../../sphinxcontrib'))
 
 extensions = ['sphinxcontrib.needs']
 
+needs_table_style = "TABLE"
+
 
 needs_types = [
     dict(directive="story", title="User Story", prefix="US_", color="#BFD8D2", style="node"),

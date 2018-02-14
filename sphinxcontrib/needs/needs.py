@@ -8,7 +8,8 @@ from docutils import nodes
 from sphinx.roles import XRefRole
 from sphinx.util import logging
 from sphinxcontrib.needs.builder import NeedsBuilder
-from sphinxcontrib.needs.environment import install_styles_static_files, install_datatables_static_files
+from sphinxcontrib.needs.environment import install_styles_static_files, install_datatables_static_files, \
+    install_collapse_static_files
 from sphinxcontrib.needs.need import Need, NeedDirective, process_need_nodes, purge_needs
 from sphinxcontrib.needs.need_incoming import Need_incoming, process_need_incoming
 from sphinxcontrib.needs.need_ref import Need_ref, process_need_ref
@@ -17,6 +18,41 @@ from sphinxcontrib.needs.needimport import Needimport, NeedimportDirective
 from sphinxcontrib.needs.need_outgoing import Need_outgoing, process_need_outgoing
 from sphinxcontrib.needs.needtable import Needtable, NeedtableDirective, process_needtables
 
+
+DEFAULT_TEMPLATE_COLLAPSE = """
+.. _{{id}}:
+
+{% if hide == false -%}
+.. role:: needs_tag
+.. role:: needs_status
+.. role:: needs_type
+.. role:: needs_id
+.. role:: needs_title
+
+.. rst-class:: need
+.. rst-class:: need_{{type_name}}
+
+.. container:: need
+
+    .. container:: toggle
+
+        .. container:: header
+
+            :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
+
+        {%- if status and  status|upper != "NONE" and not hide_status %}
+        | status: :needs_status:`{{status}}`
+        {%- endif -%}
+        {%- if tags and not hide_tags %}
+        | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`
+        {%- endif %}
+        | links incoming: :need_incoming:`{{id}}`
+        | links outgoing: :need_outgoing:`{{id}}`
+
+    {{content|indent(4) }}
+
+{% endif -%}
+"""
 
 DEFAULT_TEMPLATE = """
 .. _{{id}}:
@@ -31,22 +67,24 @@ DEFAULT_TEMPLATE = """
 .. rst-class:: need
 .. rst-class:: need_{{type_name}}
 
-:needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
-    {%- if status and  status|upper != "NONE" and not hide_status %}
-    | status: :needs_status:`{{status}}`
-    {%- endif -%}
-    {%- if tags and not hide_tags %}
-    | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`
-    {%- endif %}
-    | links incoming: :need_incoming:`{{id}}`
-    | links outgoing: :need_outgoing:`{{id}}`
+.. container:: need
+
+    :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
+
+
+        {%- if status and  status|upper != "NONE" and not hide_status %}
+        | status: :needs_status:`{{status}}`
+        {%- endif -%}
+        {%- if tags and not hide_tags %}
+        | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`
+        {%- endif %}
+        | links incoming: :need_incoming:`{{id}}`
+        | links outgoing: :need_outgoing:`{{id}}`
 
     {{content|indent(4) }}
 
 {% endif -%}
 """
-
-
 
 # Old node template
 # DEFAULT_TEMPLATE = """
@@ -88,9 +126,8 @@ def setup(app):
                           dict(directive="need", title="Need", prefix="N_", color="#9856a5", style="node")
                           ],
                          'html')
-    app.add_config_value('needs_template',
-                         DEFAULT_TEMPLATE,
-                         'html')
+    app.add_config_value('needs_template', DEFAULT_TEMPLATE, 'html')
+    app.add_config_value('needs_template_collapse', DEFAULT_TEMPLATE_COLLAPSE, 'html')
 
     app.add_config_value('needs_include_needs', True, 'html')
     app.add_config_value('needs_need_name', "Need", 'html')
@@ -103,7 +140,10 @@ def setup(app):
     app.add_config_value('needs_show_link_type', False, 'html')
     app.add_config_value('needs_show_link_title', False, 'html')
     app.add_config_value('needs_file', "needs.json", 'html')
-    app.add_config_value('needs_table_layout', "ID;TITLE;STATUS;TYPE;OUTGOING;TAGS", 'html')
+    app.add_config_value('needs_table_columns', "ID;TITLE;STATUS;TYPE;OUTGOING;TAGS", 'html')
+    app.add_config_value('needs_table_style', "DATATABLES", 'html')
+
+    app.add_config_value('needs_collapse_details', True, 'html')
 
     app.add_config_value('needs_role_need_template', "{title} ({id})", 'html')
 
@@ -214,8 +254,9 @@ def setup(app):
     app.connect('doctree-resolved', process_need_incoming)
     app.connect('doctree-resolved', process_need_outgoing)
     app.connect('env-updated', install_datatables_static_files)
+    app.connect('env-updated', install_collapse_static_files)
 
-    # This should be called last, so that need-styles can override styles from use libraries
+    # This should be called last, so that need-styles can override styles from used libraries
     app.connect('env-updated', install_styles_static_files)
 
     # Removed with version 0.1.40

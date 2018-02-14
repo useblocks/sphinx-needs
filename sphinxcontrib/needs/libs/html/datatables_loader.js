@@ -1,5 +1,5 @@
 $(document).ready(function() {
-    $('table.docutils').DataTable( {
+    $('table.NEEDS_DATATABLES').DataTable( {
         dom: 'lBfrtip',
         colReorder: true,
         buttons: [
@@ -9,19 +9,6 @@ $(document).ready(function() {
             },
             'copy', 'excel', 'pdf'
         ],
-        responsive: false,
-        // scroller: true,
-        // scrollY: 400,
-        // scrollCollapse: true,
+        responsive: false
     });
 } );
-
-// Code if more than one jquery lib would be available
-// $(document).ready(function() {
-//     jquery_datatable = jQuery.noConflict(true);
-//     jquery_datatable('table.docutils').DataTable();
-//
-//     alert("active:" + $.fn.jquery)
-//     alert("behind:" + jquery_datatable.fn.jquery)
-// } );
-

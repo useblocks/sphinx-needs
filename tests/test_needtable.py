@@ -10,7 +10,7 @@ def test_doc_build_html(app, status, warning):
 
 
 @with_app(buildername='html', srcdir='doc_test/doc_needtable')
-def test_doc_build_html(app, status, warning):
+def test_doc_needtable_options(app, status, warning):
     app.build()
     html = (app.outdir / 'test_options.html').read_text()
     assert 'SP_TOO_003' in html
@@ -24,3 +24,12 @@ def test_doc_build_html(app, status, warning):
 <th class="head">Title</th>
 """
     assert column_order in html
+
+
+@with_app(buildername='html', srcdir='doc_test/doc_needtable')
+def test_doc_needtable_styles(app, status, warning):
+    app.build()
+    html = (app.outdir / 'test_styles.html').read_text()
+    assert 'style_1' in html
+    assert 'NEEDS_TABLE' in html
+    assert 'NEEDS_DATATABLES' in html

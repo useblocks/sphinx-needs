@@ -122,6 +122,10 @@ if os.name == "nt":
 
 plantuml_output_format = 'svg'
 
+needs_collapse_details = True
+needs_table_style = "datatables"
+needs_table_columns = "ID;TITLE;STATUS;OUTGOING"
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 

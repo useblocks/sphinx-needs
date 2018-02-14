@@ -24,6 +24,7 @@ class NeedDirective(Directive):
                    'status': directives.unchanged_required,
                    'tags': directives.unchanged_required,
                    'links': directives.unchanged_required,
+                   'collapse': directives.unchanged_required,
                    'hide': directives.flag,
                    'hide_tags': directives.flag,
                    'hide_status': directives.flag,
@@ -79,6 +80,15 @@ class NeedDirective(Directive):
         # Calculate target id, to be able to set a link back
         targetid = id
         targetnode = nodes.target('', '', ids=[targetid])
+
+        collapse = self.options.get("collapse", None)
+        if isinstance(collapse, str):
+            if collapse.upper() in ["TRUE", 1, "YES"]:
+                collapse = True
+            elif collapse.upper() in ["FALSE", 0, "NO"]:
+                collapse = False
+            else:
+                raise Exception("collapse attribute must be true or false")
 
         hide = True if "hide" in self.options.keys() else False
         hide_tags = True if "hide_tags" in self.options.keys() else False
@@ -139,12 +149,22 @@ class NeedDirective(Directive):
             'links': links,
             'title': title,
             'content': content,
+            'collapse': collapse,
             'hide': hide,
             'hide_tags': hide_tags,
             'hide_status': hide_status,
         }
 
-        template = Template(env.config.needs_template)
+        if collapse is None:
+            if env.config.needs_collapse_details:
+                template = Template(env.config.needs_template_collapse)
+            else:
+                template = Template(env.config.needs_template)
+        elif collapse:
+            template = Template(env.config.needs_template_collapse)
+        else:
+            template = Template(env.config.needs_template)
+
         self.state_machine.insert_input(
             template.render(**env.need_all_needs[id]).split('\n'),
             self.state_machine.document.attributes['source'])

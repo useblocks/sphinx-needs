@@ -73,33 +73,37 @@ If nothing is set, the following default template is used:
 
 .. code-block:: jinja
 
-    {% raw -%}
-    .. _{{id}}:
+   {% raw -%}
 
-    {% if hide == false -%}
-    .. role:: needs_tag
-    .. role:: needs_status
-    .. role:: needs_type
-    .. role:: needs_id
-    .. role:: needs_title
+   .. _{{id}}:
 
-    .. rst-class:: need
-    .. rst-class:: need_{{type_name}}
+   {% if hide == false -%}
+   .. role:: needs_tag
+   .. role:: needs_status
+   .. role:: needs_type
+   .. role:: needs_id
+   .. role:: needs_title
 
-    :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
-        {%- if status and  status|upper != "NONE" and not hide_status %}
-        | status: :needs_status:`{{status}}`
-        {%- endif -%}
-        {%- if tags and not hide_tags %}
-        | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`
-        {%- endif %}
-        | links incoming: :need_incoming:`{{id}}`
-        | links outgoing: :need_outgoing:`{{id}}`
+   .. rst-class:: need
+   .. rst-class:: need_{{type_name}}
 
-        {{content|indent(4) }}
+   .. container:: need
 
-    {% endif -%}
-    {% endraw %}
+       :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
+           {%- if status and  status|upper != "NONE" and not hide_status %}
+           | status: :needs_status:`{{status}}`
+           {%- endif -%}
+           {%- if tags and not hide_tags %}
+           | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`
+           {%- endif %}
+           | links incoming: :need_incoming:`{{id}}`
+           | links outgoing: :need_outgoing:`{{id}}`
+
+           {{content|indent(8) }}
+
+   {% endif -%}
+
+   {% endraw %}
 
 Available jinja variables are:
 
@@ -119,6 +123,55 @@ Available jinja variables are:
 .. warning::
 
    You must add a reference like `.. _{{ '{{id}}' }}:` to the template. Otherwise linking will not work!
+
+.. _needs_template_collapse:
+
+needs_template_collapse
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Defines a template, which is used for need with active option **collapse**.
+
+Default value:
+
+.. code-block:: jinja
+
+    {% raw -%}
+
+    .. _{{id}}:
+
+    {% if hide == false -%}
+   .. role:: needs_tag
+   .. role:: needs_status
+   .. role:: needs_type
+   .. role:: needs_id
+   .. role:: needs_title
+   .. rst-class:: need
+   .. rst-class:: need_{{type_name}}
+
+   .. container:: need
+
+       .. container:: toggle
+
+           .. container:: header
+
+               :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
+               :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
+           {%- if status and  status|upper != "NONE" and not hide_status %}
+           | status: :needs_status:`{{status}}`
+           {%- endif -%}
+           {%- if tags and not hide_tags %}
+           | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`
+           {%- endif %}
+           | links incoming: :need_incoming:`{{id}}`
+           | links outgoing: :need_outgoing:`{{id}}`
+
+       {{content|indent(4) }}
+
+   {% endif -%}
+   {% endraw %}
+
+For more details please see :ref:`needs_template`.
+
 
 needs_diagram_template
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -334,7 +387,67 @@ Please see https://pyformat.info/ for more information.
 
 RST-attributes like ``**bold**`` are **not** supported.
 
+.. _needs_table_style:
+
+needs_table_style
+~~~~~~~~~~~~~~~~~
+.. versionadded:: 0.2.0
+
+.. code-block:: python
+
+    # conf.py
+    needs_table_style = "datatables"
+
+Default value: datatables
+
+Supported values:
+
+* **table**: Default sphinx table
+* **datatables**: Table with activated DataTables functions (Sort, search, export, ...).
+
+Can be overridden for each single table by setting :ref:`needtable_style`.
 
 
 
+.. _needs_table_columns:
 
+needs_table_columns
+~~~~~~~~~~~~~~~~~~~
+.. versionadded:: 0.2.0
+
+.. code-block:: python
+
+    # conf.py
+    needs_table_columns = "title;status;tags"
+
+Default value: id;title;status;type;outgoing;tags
+
+Supported values:
+
+* id
+* title
+* status
+* type
+* tags
+* incoming
+* outgoing
+
+Can be overwritten for each single table by setting :ref:`needtable_columns`.
+
+.. _needs_collapse_details:
+
+needs_collapse_details
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.2.0
+
+If true, need details like status, tags or links are collapsed and shown only after a click on the need title.
+
+.. code-block:: python
+
+    # conf.py
+    needs_collapse_details = False
+
+Default value: True
+
+Can be overwritten for each single need by setting :ref:`need_collapse`.

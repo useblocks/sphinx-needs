@@ -72,9 +72,10 @@ Input
 
    **A filter**
 
-   .. needfilter::
+   .. needtable::
       :tags: example
-      :layout: table
+      :show_filters:
+
 
 Result
 ~~~~~~
@@ -106,10 +107,9 @@ which is linked by :need_incoming:`req_001`.
 
 **A filter**
 
-.. needfilter::
+.. needtable::
   :tags: example
   :show_filters:
-  :layout: table
 
 Motivation
 ----------
