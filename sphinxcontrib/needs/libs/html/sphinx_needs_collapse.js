@@ -1,4 +1,5 @@
-$(document).ready(function() {
+// $(document).ready(function() {
+$(window).on('load', function() {
     $(".toggle > *").hide();
     $(".toggle .header").show();
     $(".toggle .header").click(function() {
