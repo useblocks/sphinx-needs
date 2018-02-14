@@ -253,8 +253,8 @@ def setup(app):
     app.connect('doctree-resolved', process_need_ref)
     app.connect('doctree-resolved', process_need_incoming)
     app.connect('doctree-resolved', process_need_outgoing)
-    app.connect('env-updated', install_datatables_static_files)
     app.connect('env-updated', install_collapse_static_files)
+    app.connect('env-updated', install_datatables_static_files)
 
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect('env-updated', install_styles_static_files)
