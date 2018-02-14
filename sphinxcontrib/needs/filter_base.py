@@ -27,6 +27,12 @@ class FilterBase(Directive):
     def collect_filter_attributes(self):
         tags = self.options.get("tags", [])
         if isinstance(tags, str):
+
+            # Be sure our strings end with a separator. Otherwise in python2 our string will be cut in
+            # single pieces.
+            if tags[-1] not in [";", ","]:
+                tags += ";"
+
             tags = [tag.strip() for tag in re.split(";|,", tags)]
 
         status = self.options.get("status", [])
