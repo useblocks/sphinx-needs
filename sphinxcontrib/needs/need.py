@@ -155,7 +155,7 @@ class NeedDirective(Directive):
             'hide_status': hide_status,
         }
 
-        if collapse is None:
+        if collapse == "":
             if env.config.needs_collapse_details:
                 template = Template(env.config.needs_template_collapse)
             else:
