@@ -25,15 +25,15 @@ class FilterBase(Directive):
                         'sort_by': sort_by}
 
     def collect_filter_attributes(self):
-        tags = self.options.get("tags", [])
-        if isinstance(tags, str):
+        tags = str(self.options.get("tags", ""))
+        if isinstance(tags, str) and len(tags) > 0:
 
             # Be sure our strings end with a separator. Otherwise in python2 our string will be cut in
             # single pieces.
             if tags[-1] not in [";", ","]:
                 tags += ";"
 
-            tags = [tag.strip() for tag in re.split(";|,", tags)]
+            tags = [tag.strip() for tag in re.split(";|,", tags) if len(tag) > 0]
 
         status = self.options.get("status", [])
         if isinstance(status, str):

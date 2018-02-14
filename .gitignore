@@ -1,5 +1,5 @@
 .idea
-.pyc
+*.pyc
 *.egg-info
 *egg-info/
 dist

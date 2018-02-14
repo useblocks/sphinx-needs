@@ -81,8 +81,8 @@ class NeedDirective(Directive):
         targetid = id
         targetnode = nodes.target('', '', ids=[targetid])
 
-        collapse = self.options.get("collapse", None)
-        if isinstance(collapse, str):
+        collapse = str(self.options.get("collapse", ""))
+        if isinstance(collapse, str) and len(collapse) > 0:
             if collapse.upper() in ["TRUE", 1, "YES"]:
                 collapse = True
             elif collapse.upper() in ["FALSE", 0, "NO"]:

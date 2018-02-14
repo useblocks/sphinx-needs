@@ -44,7 +44,7 @@ class NeedtableDirective(FilterBase):
             id=env.new_serialno('needtable'))
         targetnode = nodes.target('', '', ids=[targetid])
 
-        columns = self.options.get("columns", [])
+        columns = str(self.options.get("columns", ""))
         if len(columns) == 0:
             columns = env.app.config.needs_table_columns
         if isinstance(columns, str):

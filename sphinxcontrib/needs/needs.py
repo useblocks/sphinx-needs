@@ -206,7 +206,7 @@ def setup(app):
         config = imp.load_source(module_name, os.path.join(app.confdir, "conf.py"))
         os.chdir(old_cwd)  # Lets switch back the cwd, otherwise other stuff may not run...
         types = getattr(config, "needs_types", app.config.needs_types)
-    except FileExistsError:
+    except IOError:
         types = app.config.needs_types
     except Exception as e:
         log.error("Error during sphinxcontrib-needs setup: {0}".format(
@@ -253,8 +253,11 @@ def setup(app):
     app.connect('doctree-resolved', process_need_ref)
     app.connect('doctree-resolved', process_need_incoming)
     app.connect('doctree-resolved', process_need_outgoing)
-    app.connect('env-updated', install_collapse_static_files)
     app.connect('env-updated', install_datatables_static_files)
+
+    # Call this after all JS files, which perform DOM manipulation, have been called.
+    # Otherwise newly added dom objects can not be collapsed
+    app.connect('env-updated', install_collapse_static_files)
 
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect('env-updated', install_styles_static_files)

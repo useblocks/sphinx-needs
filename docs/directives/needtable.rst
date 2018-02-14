@@ -35,6 +35,8 @@ This will show the columns *id*, *title* and *tags* in the given order.
    .. needtable::
       :tags: test
       :columns: id;title;tags
+      :style: table
+
 
 Supported columns are:
 

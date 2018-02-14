@@ -6,4 +6,3 @@ $(document).ready(function() {
         $(this).parent().children(".header").toggleClass("open");
     })
 });
-
