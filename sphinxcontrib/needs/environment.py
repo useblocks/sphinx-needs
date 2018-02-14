@@ -107,10 +107,10 @@ def install_datatables_static_files(app, env):
         brown, len(files_to_copy)):
 
         if not os.path.isabs(source_file_path):
-            raise FileNotFoundError("Path must be absolute. Got: {}".format(source_file_path))
+            raise IOError("Path must be absolute. Got: {}".format(source_file_path))
 
         if not os.path.exists(source_file_path):
-            raise FileNotFoundError("File not found: {}".format(source_file_path))
+            raise IOError("File not found: {}".format(source_file_path))
 
         dest_file_path = os.path.join(dest_path, os.path.relpath(source_file_path, source_folder))
 
@@ -139,10 +139,10 @@ def install_collapse_static_files(app, env):
             brown, len(files_to_copy)):
 
         if not os.path.isabs(source_file_path):
-            raise FileNotFoundError("Path must be absolute. Got: {}".format(source_file_path))
+            raise IOError("Path must be absolute. Got: {}".format(source_file_path))
 
         if not os.path.exists(source_file_path):
-            raise FileNotFoundError("File not found: {}".format(source_file_path))
+            raise IOError("File not found: {}".format(source_file_path))
 
         dest_file_path = os.path.join(dest_path, os.path.relpath(source_file_path, source_folder))
 
