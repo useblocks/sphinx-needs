@@ -28,10 +28,10 @@ div.need div.toggle div.line-block {
 
 /* Readthedocs fixes for tables */
 /* **************************** */
-div.toogle div.wy-table-responsive {
+div.toggle div.wy-table-responsive {
     display: none;
 }
 
-div.toogle div.wy-table-responsive table {
+div.toggle div.wy-table-responsive table {
     display: block;
 }
