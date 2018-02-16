@@ -1,5 +1,4 @@
 $(document).ready(function() {
-// $(window).on('load', function() {
     $(".toggle > *").hide();
     $(".toggle .header").show();
     $(".toggle .header").click(function() {
@@ -13,7 +12,7 @@ $(document).ready(function() {
 // This display attribute does not work with the collapse function, so that we need to
 // correct this. Additionally we also need to set our needs-table on display:block, because it is no longer a
 // direct child of div.toggle and our script only manipulates direct children.
-$(window).on('load', function() {
+$(document).ready(function() {
     $(".toggle > .wy-table-responsive").hide();
     $(".wy-table-responsive > table").show();
 });
