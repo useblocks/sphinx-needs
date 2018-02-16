@@ -25,13 +25,3 @@ div.need div.toggle div.line-block {
     margin-top: 0px;
     margin-left: 30px;
 }
-
-/* Readthedocs fixes for tables */
-/* **************************** */
-div.toggle div.wy-table-responsive {
-    display: none;
-}
-
-div.toggle div.wy-table-responsive table {
-    display: block;
-}
