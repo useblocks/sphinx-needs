@@ -14,6 +14,6 @@ $(document).ready(function() {
 // correct this. Additionally we also need to set our needs-table on display:block, because it is no longer a
 // direct child of div.toggle and our script only manipulates direct children.
 $(window).on('load', function() {
-    $(".toggle > .wy-table-responsivewy-table-responsive").hide();
-    $(".wy-table-responsivewy-table-responsive > table").show();
+    $(".toggle > .wy-table-responsive").hide();
+    $(".wy-table-responsive > table").show();
 });
