@@ -1,7 +1,14 @@
 from docutils import nodes
 from sphinx.environment import NoUri
 from sphinx.util.nodes import make_refnode
-from sphinx.util import logging
+import sphinx
+from pkg_resources import parse_version
+sphinx_version = sphinx.__version__
+if parse_version(sphinx_version) >= parse_version("1.6"):
+    from sphinx.util import logging
+else:
+    import logging
+
 log = logging.getLogger(__name__)
 
 

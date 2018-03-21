@@ -1,9 +1,14 @@
 import os
-import sys
 from sphinx.util.osutil import copyfile
 from sphinx.util.osutil import ensuredir
 from sphinx.util.console import brown
-from sphinx.util import  status_iterator
+
+import sphinx
+from pkg_resources import parse_version
+
+sphinx_version = sphinx.__version__
+if parse_version(sphinx_version) >= parse_version("1.6"):
+    from sphinx.util import status_iterator  # NOQA Sphinx 1.5
 
 STATICS_DIR_NAME = '_static'
 
@@ -58,7 +63,7 @@ def install_styles_static_files(app, env):
     STATICS_DIR_PATH = os.path.join(app.builder.outdir, STATICS_DIR_NAME)
     dest_path = os.path.join(STATICS_DIR_PATH, 'sphinx-needs')
 
-    files_to_copy = ["common.css", env.app.config.needs_css]
+    files_to_copy = ["common.css", app.config.needs_css]
 
     # Be sure no "old" css layout is already set
     safe_remove_file("sphinx-needs/common.css", app)
@@ -66,11 +71,14 @@ def install_styles_static_files(app, env):
     safe_remove_file("sphinx-needs/modern.css", app)
     safe_remove_file("sphinx-needs/dark.css", app)
 
-    # for source_file_path in app.builder.status_iterator(
+    if parse_version(sphinx_version) < parse_version("1.6"):
+        global status_iterator
+        status_iterator = app.status_iterator
+
     for source_file_path in status_iterator(
-        files_to_copy,
-        'Copying static files for sphinx-needs custom style support...',
-        brown, len(files_to_copy)):
+            files_to_copy,
+            'Copying static files for sphinx-needs custom style support...',
+            brown, len(files_to_copy)):
 
         if not os.path.isabs(source_file_path):
             source_file_path = os.path.join(os.path.dirname(__file__), "css", source_file_path)
@@ -100,11 +108,14 @@ def install_datatables_static_files(app, env):
         for single_file in files:
             files_to_copy.append(os.path.join(root, single_file))
 
-    # for source_file_path in app.builder.status_iterator(
+    if parse_version(sphinx_version) < parse_version("1.6"):
+        global status_iterator
+        status_iterator = app.status_iterator
+
     for source_file_path in status_iterator(
-        files_to_copy,
-        'Copying static files for sphinx-needs datatables support...',
-        brown, len(files_to_copy)):
+            files_to_copy,
+            'Copying static files for sphinx-needs datatables support...',
+            brown, len(files_to_copy)):
 
         if not os.path.isabs(source_file_path):
             raise IOError("Path must be absolute. Got: {}".format(source_file_path))
@@ -132,7 +143,10 @@ def install_collapse_static_files(app, env):
     source_folder = os.path.join(os.path.dirname(__file__), "libs/html")
     files_to_copy = [os.path.join(source_folder, "sphinx_needs_collapse.js")]
 
-    # for source_file_path in app.builder.status_iterator(
+    if parse_version(sphinx_version) < parse_version("1.6"):
+        global status_iterator
+        status_iterator = app.status_iterator
+
     for source_file_path in status_iterator(
             files_to_copy,
             'Copying static files for sphinx-needs collapse support...',

@@ -1,1 +1,1 @@
-from sphinxcontrib.needs.needs import *
+from sphinxcontrib.needs.needs import setup  # NOQA

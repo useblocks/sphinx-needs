@@ -47,7 +47,7 @@ class NeedimportDirective(Directive):
             need_import_path = os.path.join(env.app.confdir, need_import_path)
 
         if not os.path.exists(need_import_path):
-            raise FileNotFoundError("Could not load needs import file {0}".format(need_import_path))
+            raise ReferenceError("Could not load needs import file {0}".format(need_import_path))
 
         with open(need_import_path, "r") as needs_file:
             needs_file_content = needs_file.read()

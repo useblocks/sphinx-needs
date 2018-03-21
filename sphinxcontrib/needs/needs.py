@@ -6,7 +6,9 @@ import string
 
 from docutils import nodes
 from sphinx.roles import XRefRole
-from sphinx.util import logging
+
+import sphinx
+
 from sphinxcontrib.needs.builder import NeedsBuilder
 from sphinxcontrib.needs.environment import install_styles_static_files, install_datatables_static_files, \
     install_collapse_static_files
@@ -17,6 +19,13 @@ from sphinxcontrib.needs.needfilter import Needfilter, NeedfilterDirective, proc
 from sphinxcontrib.needs.needimport import Needimport, NeedimportDirective
 from sphinxcontrib.needs.need_outgoing import Need_outgoing, process_need_outgoing
 from sphinxcontrib.needs.needtable import Needtable, NeedtableDirective, process_needtables
+
+from pkg_resources import parse_version
+sphinx_version = sphinx.__version__
+if parse_version(sphinx_version) >= parse_version("1.6"):
+    from sphinx.util import logging
+else:
+    import logging
 
 
 DEFAULT_TEMPLATE_COLLAPSE = """
@@ -209,8 +218,8 @@ def setup(app):
     except IOError:
         types = app.config.needs_types
     except Exception as e:
-        log.error("Error during sphinxcontrib-needs setup: {0}".format(
-            os.path.join(app.confdir, "conf.py")))
+        log.error("Error during sphinxcontrib-needs setup: {0}, {1}".format(
+            os.path.join(app.confdir, "conf.py"), e))
         types = app.config.needs_types
 
     for type in types:

@@ -2,7 +2,6 @@ import re
 import sys
 import urllib
 
-from docutils import nodes
 from docutils.parsers.rst import Directive
 from docutils.parsers.rst import directives
 
@@ -73,9 +72,8 @@ def procces_filters(all_needs, current_needlist):
     found_needs = []
     for need_info in all_needs:
         status_filter_passed = False
-        if need_info["status"] is None or \
-                        need_info["status"] in current_needlist["status"] or \
-                        len(current_needlist["status"]) == 0:
+        if need_info["status"] is None or need_info["status"] in current_needlist["status"] or \
+           len(current_needlist["status"]) == 0:
             status_filter_passed = True
 
         tags_filter_passed = False

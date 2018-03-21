@@ -93,7 +93,8 @@ NOTE_TEMPLATE = """
    {% endfor -%}
    {% endif %}
 """
-DEFAULT_DIAGRAM_TEMPLATE = "<size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>"
+DEFAULT_DIAGRAM_TEMPLATE = \
+    "<size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>"
 
 # To not use the default configuration for sphinx needs, uncomment some of the following lines.
 
@@ -174,7 +175,7 @@ html_theme = 'alabaster'
 #
 # html_theme_options = {}
 
-#html_logo = "_static/needs_logo.png"
+# html_logo = "_static/needs_logo.png"
 # html_sidebars = {'**': ['about.html', 'navigation.html', 'sourcelink.html', 'searchbox.html'], }
 html_sidebars = {'**': ['about.html', 'navigation.html'], }
 

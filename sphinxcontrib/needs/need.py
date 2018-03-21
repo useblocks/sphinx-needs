@@ -100,7 +100,7 @@ class NeedDirective(Directive):
         status = self.options.get("status", None)
         # Check if status is in needs_statuses. If not raise an error.
         if env.app.config.needs_statuses:
-            if status not in [status["name"] for status in env.app.config.needs_statuses]:
+            if status not in [stat["name"] for stat in env.app.config.needs_statuses]:
                 raise NeedsStatusNotAllowed("Status {0} of need id {1} is not allowed "
                                             "by config value 'needs_statuses'.".format(status, id))
 
