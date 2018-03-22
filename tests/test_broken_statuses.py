@@ -1,6 +1,7 @@
 from nose.tools import raises
 from sphinx_testing import with_app
-from sphinxcontrib.needs.need import NeedsStatusNotAllowed
+
+from sphinxcontrib.needs.directives.need import NeedsStatusNotAllowed
 
 
 @raises(NeedsStatusNotAllowed)

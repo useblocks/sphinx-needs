@@ -451,3 +451,20 @@ If true, need details like status, tags or links are collapsed and shown only af
 Default value: True
 
 Can be overwritten for each single need by setting :ref:`need_collapse`.
+
+.. _needs_id_regex:
+
+needs_id_regex
+~~~~~~~~~~~~~~
+
+.. versionadded:: 0.2.0
+
+Defines a regular expression, which is used to validate all manual set IDs and to generate valid IDs for needs
+without a given ID.
+
+Default value: ^[A-Z0-9_]{3,}
+
+By default an ID is allowed to contain upper characters, numbers and underscore only.
+The ID length must be at least 3 characters.
+
+

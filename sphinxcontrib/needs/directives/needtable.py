@@ -5,8 +5,9 @@ import re
 from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinxcontrib.needs.utils import row_col_maker, status_sorter
-
 from sphinxcontrib.needs.filter_base import FilterBase, procces_filters
+from sphinxcontrib.needs.directives.utils import no_needs_found_paragraph, used_filter_paragraph
+
 
 if sys.version_info.major < 3:
     urlParse = urllib.quote_plus
@@ -170,11 +171,7 @@ def process_needtables(app, doctree, fromdocname):
             tbody += row
 
         if len(found_needs) == 0:
-            nothing_found = "No needs passed the filters"
-            para = nodes.line()
-            nothing_found_node = nodes.Text(nothing_found, nothing_found)
-            para += nothing_found_node
-            content.append(para)
+            content.append(no_needs_found_paragraph())
 
         # add filter information to output
         if current_needtable["show_filters"]:

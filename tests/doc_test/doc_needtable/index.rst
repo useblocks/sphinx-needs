@@ -1,5 +1,5 @@
-TEST DOCUMENT NEEDLIST
-======================
+TEST DOCUMENT NEEDTABLE
+=======================
 
 .. spec:: Command line interface
     :id: SP_TOO_001
@@ -11,9 +11,5 @@ TEST DOCUMENT NEEDLIST
 .. story:: A story
    :tags: 1
 
-.. needlist::
+.. needtable::
    :tags: test;my_test
-   :show_filters:
-
-.. needlist::
-   :tags: invalid_tag

@@ -8,6 +8,20 @@ needtable
 Options
 -------
 
+.. note:: **needtable** supports the full filtering possibilities of sphinx-needs.
+          Please see :ref:`filter` for more information.
+
+Supported options:
+
+ * :ref:`needtable_columns`
+ * :ref:`needtable_show_filters`
+ * :ref:`needtable_style`
+ * :ref:`option_status`
+ * :ref:`option_tags`
+ * :ref:`option_types`
+ * :ref:`option_filter`
+
+
 .. _needtable_columns:
 
 columns
@@ -51,6 +65,7 @@ Supported columns are:
 If **:columns:** is set, the value of config parameter :ref:`needs_table_columns` is not used for the current table.
 
 
+.. _needtable_show_filters:
 
 show_filters
 ~~~~~~~~~~~~

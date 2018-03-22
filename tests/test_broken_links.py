@@ -1,8 +1,6 @@
-from nose.tools import raises
-from sphinx_testing import with_app
-from sphinxcontrib.needs.need import NeedsStatusNotAllowed
-
 import sys
+
+from sphinx_testing import with_app
 try:
     from StringIO import StringIO  # Python 2
 except ImportError:

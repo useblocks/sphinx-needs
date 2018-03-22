@@ -137,6 +137,7 @@ Content
    roles
    configuration
    builders
+   filter
    styles
    examples
    changelog

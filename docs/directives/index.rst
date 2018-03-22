@@ -5,7 +5,9 @@ Directives
 	:maxdepth: 2
 
 	need
+	needlist
 	needtable
+	needflow
 	needimport
 
 **Deprecated**:
