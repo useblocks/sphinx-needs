@@ -192,7 +192,8 @@ html_theme_options = {
     'github_button': False,
     'fixed_sidebar': True,
     'extra_nav_links': {'needs@PyPi': "https://pypi.python.org/pypi/sphinxcontrib-needs/",
-                        'needs@github': "https://github.com/useblocks/sphinxcontrib-needs"}
+                        'needs@github': "https://github.com/useblocks/sphinxcontrib-needs",
+                        'needs@travis': "https://travis-ci.org/useblocks/sphinxcontrib-needs"}
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,

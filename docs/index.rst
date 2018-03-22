@@ -1,3 +1,18 @@
+.. image:: https://img.shields.io/pypi/l/sphinxcontrib-needs.svg
+    :target: https://pypi.python.org/pypi/sphinxcontrib-needs
+    :alt: License
+.. image:: https://img.shields.io/pypi/pyversions/sphinxcontrib-needs.svg
+    :target: https://pypi.python.org/pypi/sphinxcontrib-needs
+    :alt: Supported versions
+.. image:: https://readthedocs.org/projects/sphinxcontrib-needs/badge/?version=latest
+    :target: https://readthedocs.org/projects/sphinxcontrib-needs/
+.. image:: https://travis-ci.org/useblocks/sphinxcontrib-needs.svg?branch=master
+    :target: https://travis-ci.org/useblocks/sphinxcontrib-needs
+    :alt: Travis-CI Build Status
+.. image:: https://img.shields.io/pypi/v/sphinxcontrib-needs.svg
+    :target: https://pypi.python.org/pypi/sphinxcontrib-needs
+    :alt: PyPI Package latest release
+
 Requirements, Bugs, Test cases, ... inside Sphinx
 =================================================
 
@@ -29,7 +44,7 @@ Each need contains:
 * several **tags** (optional)
 * several **links** to other needs (optional)
 
-Needs can be :ref:`easily filtered <needfilter>` and presented in lists, tables and diagrams.
+Needs can be :ref:`easily filtered <filter>` and presented in lists, tables and diagrams.
 
 For external synchronization (e.g. with JIRA, a spreadsheet, ...)
 the builder :ref:`needs_builder` is available to export all created needs to a single json file.
