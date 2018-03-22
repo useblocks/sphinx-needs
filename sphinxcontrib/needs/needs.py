@@ -4,23 +4,23 @@ import os
 import random
 import string
 
-from docutils import nodes
-from sphinx.roles import XRefRole
-
 import sphinx
+from docutils import nodes
+from pkg_resources import parse_version
+from sphinx.roles import XRefRole
+from sphinxcontrib.needs.directives.need import Need, NeedDirective, process_need_nodes, purge_needs
+from sphinxcontrib.needs.directives.needimport import Needimport, NeedimportDirective
+from sphinxcontrib.needs.directives.needtable import Needtable, NeedtableDirective, process_needtables
+from sphinxcontrib.needs.directives.needlist import Needlist, NeedlistDirective, process_needlist
 
 from sphinxcontrib.needs.builder import NeedsBuilder
+from sphinxcontrib.needs.directives.needfilter import Needfilter, NeedfilterDirective, process_needfilters
 from sphinxcontrib.needs.environment import install_styles_static_files, install_datatables_static_files, \
     install_collapse_static_files
-from sphinxcontrib.needs.need import Need, NeedDirective, process_need_nodes, purge_needs
-from sphinxcontrib.needs.need_incoming import Need_incoming, process_need_incoming
-from sphinxcontrib.needs.need_ref import Need_ref, process_need_ref
-from sphinxcontrib.needs.needfilter import Needfilter, NeedfilterDirective, process_needfilters
-from sphinxcontrib.needs.needimport import Needimport, NeedimportDirective
-from sphinxcontrib.needs.need_outgoing import Need_outgoing, process_need_outgoing
-from sphinxcontrib.needs.needtable import Needtable, NeedtableDirective, process_needtables
+from sphinxcontrib.needs.roles.need_incoming import Need_incoming, process_need_incoming
+from sphinxcontrib.needs.roles.need_outgoing import Need_outgoing, process_need_outgoing
+from sphinxcontrib.needs.roles.need_ref import Need_ref, process_need_ref
 
-from pkg_resources import parse_version
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
     from sphinx.util import logging
@@ -182,6 +182,7 @@ def setup(app):
     app.add_node(Needfilter)
     app.add_node(Needimport)
     app.add_node(Needtable)
+    app.add_node(Needlist)
 
     ########################################################################
     # DIRECTIVES
@@ -229,9 +230,7 @@ def setup(app):
 
     app.add_directive('needfilter', NeedfilterDirective)
     app.add_directive('needtable', NeedtableDirective)
-
-    # Kept for backwards compatibility
-    app.add_directive('needlist', NeedfilterDirective)
+    app.add_directive('needlist', NeedlistDirective)
 
     app.add_directive('needimport', NeedimportDirective)
 
@@ -259,6 +258,7 @@ def setup(app):
     app.connect('doctree-resolved', process_need_nodes)
     app.connect('doctree-resolved', process_needfilters)
     app.connect('doctree-resolved', process_needtables)
+    app.connect('doctree-resolved', process_needlist)
     app.connect('doctree-resolved', process_need_ref)
     app.connect('doctree-resolved', process_need_incoming)
     app.connect('doctree-resolved', process_need_outgoing)
@@ -275,4 +275,4 @@ def setup(app):
     # Allows jinja statements in rst files
     # app.connect("source-read", rstjinja)
 
-    return {'version': '0.1.49'}  # identifies the version of our extension
+    return {'version': '0.2.0'}  # identifies the version of our extension

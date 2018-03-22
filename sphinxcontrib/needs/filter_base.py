@@ -1,3 +1,8 @@
+"""
+filter_base is used to provide common filter functionality for directives
+like needtable, needlist and needflow.
+"""
+
 import re
 import sys
 import urllib
@@ -72,7 +77,7 @@ def procces_filters(all_needs, current_needlist):
     found_needs = []
     for need_info in all_needs:
         status_filter_passed = False
-        if need_info["status"] is None or need_info["status"] in current_needlist["status"] or \
+        if need_info["status"] in current_needlist["status"] or \
            len(current_needlist["status"]) == 0:
             status_filter_passed = True
 

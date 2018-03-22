@@ -1,5 +1,5 @@
-TEST OPTIONS
-============
+TEST OPTIONS NEEDLIST
+=====================
 
 .. spec:: test123
     :id: SP_TOO_003
@@ -12,8 +12,4 @@ TEST OPTIONS
    :links: SP_TOO_003
    :tags: 1
 
-.. needtable::
-
-.. needtable::
-   :columns: Incoming;Id;tags;STATUS;TiTle
-
+.. needlist::
