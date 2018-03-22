@@ -175,22 +175,6 @@ def process_needtables(app, doctree, fromdocname):
 
         # add filter information to output
         if current_needtable["show_filters"]:
-            para = nodes.paragraph()
-            filter_text = "Used filter:"
-            filter_text += " status(%s)" % " OR ".join(current_needtable["status"]) if len(
-                current_needtable["status"]) > 0 else ""
-            if len(current_needtable["status"]) > 0 and len(current_needtable["tags"]) > 0:
-                filter_text += " AND "
-            filter_text += " tags(%s)" % " OR ".join(current_needtable["tags"]) if len(
-                current_needtable["tags"]) > 0 else ""
-            if (len(current_needtable["status"]) > 0 or len(current_needtable["tags"]) > 0) and len(
-                    current_needtable["types"]) > 0:
-                filter_text += " AND "
-            filter_text += " types(%s)" % " OR ".join(current_needtable["types"]) if len(
-                current_needtable["types"]) > 0 else ""
-
-            filter_node = nodes.emphasis(filter_text, filter_text)
-            para += filter_node
-            content.append(para)
+            content.append(used_filter_paragraph(current_needtable))
 
         node.replace_self(content)
