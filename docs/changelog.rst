@@ -6,8 +6,12 @@ Changelog
  * Deprecated: :ref:`needfilter` is replaced by needlist, :ref:`needtable` or needdiagram. Which support additional options for related layout.
  * Improvement: Added :ref:`needtable` directive.
  * Improvement: Added `DataTables <https://datatables.net/>`_ support for :ref:`needtable` (including table search, excel/pdf export and dynamic column selection).
+ * Improvement: Added meta information shields on documentation page
+ * Improvement: Added more examples to documentation
  * Bugfix: Care about unneeded separator characters in tags (`#36 <https://github.com/useblocks/sphinxcontrib-needs/issues/36>`_)
  * Bugfix: Avoiding multiple registration of resource files (js, css), if sphinx gets called several times (e.g. during tests)
+ * Bugfix: Needs with no status shows up on filters (`#45 <https://github.com/useblocks/sphinxcontrib-needs/issues/45>`_)
+ * Bugfix: Supporting Sphinx 1.7 (`#41 <https://github.com/useblocks/sphinxcontrib-needs/issues/41>`_)
 
 0.1.49
 ------
