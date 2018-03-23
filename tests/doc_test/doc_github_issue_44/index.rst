@@ -10,4 +10,4 @@ Wrong link error message.
 
 .. test:: Test 3
      :id: test_3
-     :links: test_1;test_2;test_broken
+     :links: test_1;test_2;test_123_broken

@@ -26,7 +26,7 @@ def test_doc_github_44(app, status, warning):
     # I have no glue how to get it from an app.build(), because stdout redirecting does not work. Maybe because
     # nosetest is doing something similar for each test.
     # So we call the needed command directly, but still use the sphinx_testing app to create the outdir for us.
-    output = str(check_output(["sphinx-build", "-b", "html", app.srcdir, app.outdir],
+    output = str(check_output(["sphinx-build", "-a", "-E", "-b", "html", app.srcdir, app.outdir],
                               stderr=STDOUT, universal_newlines=True))
     # app.build() Uncomment, if build should stop on breakpoints
     html = (app.outdir / 'index.html').read_text()
@@ -35,7 +35,7 @@ def test_doc_github_44(app, status, warning):
     assert 'Test 2' in html
     assert 'Test 3' in html
 
-    assert "WARNING: Needs: linked need TEST_3 not found" not in output
-    assert "WARNING: Needs: linked need TEST_BROKEN not found" in output
+    assert "Needs: linked need TEST_3 not found" not in output
+    assert "Needs: linked need TEST_123_BROKEN not found" in output
 
 
