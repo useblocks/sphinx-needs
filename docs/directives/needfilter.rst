@@ -42,9 +42,8 @@ To show the used filters under a list, set **:show_filters:**
 The showed list is unsorted as long as the parameter **:sort_by:** is not used.
 Valid options for **:sort_by:** are **id** and **status**.
 
-.. _filter:
+.. note:: Please read the common filter page :ref:`filter` for more detailed information about filter possibilities.
 
-.. include:: directives/include_filter.rst
 
 `:layout:`
 ~~~~~~~~~~

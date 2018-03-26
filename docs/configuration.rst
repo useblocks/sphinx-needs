@@ -462,7 +462,7 @@ needs_id_regex
 Defines a regular expression, which is used to validate all manual set IDs and to generate valid IDs for needs
 without a given ID.
 
-Default value: ^[A-Z0-9_]{3,}
+Default value: ``^[A-Z0-9_]{3,}``
 
 By default an ID is allowed to contain upper characters, numbers and underscore only.
 The ID length must be at least 3 characters.

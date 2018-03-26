@@ -39,22 +39,58 @@ You can easily filter for multiple statuses by separating them by ";". Example: 
 
       .. needlist::
          :status: open
-
+         :show_status:
 
    .. needlist::
          :status: open
+         :show_status:
 
 .. _option_tags:
 
 tags
 ----
 
+**tags** allows to filter needs by one or multiple tags.
+
+To search for multiple tags, simply separate them by using ";".
+
+.. container:: toggle
+
+   .. container::  header
+
+      **Show example**
+
+   .. code-block:: rst
+
+      .. needlist::
+         :tags: main_example
+         :show_tags:
+
+   .. needlist::
+         :tags: main_example
+         :show_tags:
+
+
 .. _option_types:
 
 types
 -----
-For **:types:** the type itself and the human-readable type_title can be used as filter value.
+For **:types:** the type itself or the human-readable type-title can be used as filter value.
 
+.. container:: toggle
+
+   .. container::  header
+
+      **Show example**
+
+   .. code-block:: rst
+
+      .. needtable::
+         :types: test
+
+   .. needtable::
+      :types: test
+      :style: table
 
 .. _option_filter:
 
@@ -76,58 +112,64 @@ So each valid Python expression is supported. The following variables/functions 
 If your expression is valid and it's True, the related need is added to the filter result list.
 If it is invalid or returns False, the related need is not taken into account for the current filter.
 
-**Examples**::
+.. container:: toggle
 
-    .. req:: Requirement A
-       :tags: A;
-       :status: open
+   .. container::  header
 
-    .. req:: Requirement B
-       :tags: B;
-       :status: closed
+      **Show example**
 
-    .. spec:: Specification A
-       :tags: A;
-       :status: closed
+   .. code-block:: rst
 
-    .. spec:: Specification B
-       :tags: B;
-       :status: open
+       .. req:: Requirement A
+          :tags: A; filter_example
+          :status: open
 
-    .. test:: Test 1
+       .. req:: Requirement B
+          :tags: B; filter_example
+          :status: closed
 
-    .. needfilter::
-       :filter: ("B" in tags or ("spec" == type and "closed" == status)) or "test" == type
+       .. spec:: Specification A
+          :tags: A; filter_example
+          :status: closed
 
+       .. spec:: Specification B
+          :tags: B; filter_example
+          :status: open
 
-This will have the following result:
+       .. test:: Test 1
+          :tags: filter_example
 
-.. req:: Requirement A
-   :tags: A; filter
-   :status: open
-   :hide:
+       .. needtable::
+          :filter: "filter_example" in tags and ("B" in tags or ("spec" == type and "closed" == status)) or "test" == type
 
-.. req:: Requirement B
-   :tags: B; filter
-   :status: closed
-   :hide:
+   This will have the following result:
 
-.. spec:: Specification A
-   :tags: A; filter
-   :status: closed
-   :hide:
+   .. req:: Requirement A
+      :tags: A; filter_example
+      :status: open
+      :hide:
 
-.. spec:: Specification B
-   :tags: B; filter
-   :status: open
-   :hide:
+   .. req:: Requirement B
+      :tags: B; filter_example
+      :status: closed
+      :hide:
 
-.. test:: Test 1
-   :tags: awesome; filter
-   :hide:
+   .. spec:: Specification A
+      :tags: A; filter_example
+      :status: closed
+      :hide:
 
-.. needfilter::
-       :filter: ("B" in tags or ("spec" == type and "closed" == status)) or ("test" == type and "awesome" in tags)
+   .. spec:: Specification B
+      :tags: B; filter_example
+      :status: open
+      :hide:
+
+   .. test:: Test 1
+      :tags: filter_example
+      :hide:
+
+   .. needfilter::
+      :filter: "filter_example" in tags and (("B" in tags or ("spec" == type and "closed" == status)) or "test" == type)
 
 .. _re_search:
 
@@ -140,9 +182,22 @@ search(pattern, variable) is based on
 The first parameter must be a regular expression pattern.
 The second parameter should be on of the above variables(status, id, content, ..)
 
-Example::
+.. container:: toggle
 
-    .. Returns True, if a email address is inside the need content.
+   .. container::  header
 
-    .. needfilter::
-       :filter: search("(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", content)
+      **Show example**
+
+   This example uses a regular expressions to find all needs with an e-mail address in title.
+
+   .. code-block:: rst
+
+      .. req:: Set admin e-mail to admin@mycompany.com
+
+      .. needlist::
+         :filter: search("([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", title)
+
+   .. req:: Set admin e-mail to admin@mycompany.com
+
+   .. needlist::
+      :filter: search("([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", title)

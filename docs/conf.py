@@ -103,10 +103,9 @@ DEFAULT_DIAGRAM_TEMPLATE = \
 # needs_diagram_template = DEFAULT_DIAGRAM_TEMPLATE
 
 needs_types = [dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),
-               dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="artifact"),
-               dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="storage"),
-               dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="agent"),
-               dict(directive="mytest", title="My Test Case", prefix="MT_", color="#CCCCCC", style="agent")
+               dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="node"),
+               dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="node"),
+               dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="node"),
                ]
 needs_show_link_type = False
 needs_show_link_title = False
@@ -122,7 +121,7 @@ if os.name == "nt":
     plantuml = plantuml.replace("/", "\\")
     plantuml = plantuml.replace("\\", "\\\\")
 
-plantuml_output_format = 'svg'
+plantuml_output_format = 'png'
 
 needs_collapse_details = True
 needs_table_style = "datatables"

@@ -1,3 +1,6 @@
+.. role:: underline
+    :class: underline
+
 .. image:: https://img.shields.io/pypi/l/sphinxcontrib-needs.svg
     :target: https://pypi.python.org/pypi/sphinxcontrib-needs
     :alt: License
@@ -64,7 +67,7 @@ Input
 
    .. req:: My first requirement
       :id: req_001
-      :tags: example
+      :tags: main_example
 
       This is an awesome requirement and it includes a nice title,
       a given id, a tag and this text as description.
@@ -72,24 +75,43 @@ Input
    .. spec:: Spec for a requirement
       :links: req_001
       :status: done
-      :tags: important; example
+      :tags: important; main_example
+      :collpase: false
 
-      We haven't set an **ID** here, so sphinxcontrib-needs
+      We haven't set an **ID** here, so sphinx-needs
       will generated one for us.
 
       But we have **set a link** to our first requirement and
       also a *status* is given.
+
+      We also have set **collapse** to false, so that all
+      meta-data is shown directly under the title.
 
    **Some text**
 
    Wohooo, we have created :need:`req_001`,
    which is linked by :need_incoming:`req_001`.
 
-   **A filter**
+   **Some filters**
+
+   Simple list:
+
+   .. needlist::
+     :tags: main_example
+
+   Simple table:
 
    .. needtable::
-      :tags: example
-      :show_filters:
+     :tags: main_example
+     :style: table
+
+   A more powerful table
+   (based on `DataTables <https://datatables.net/>`_):
+
+   .. needtable::
+     :tags: main_example
+     :style: datatables
+
 
 
 Result
@@ -99,7 +121,7 @@ Result
 
 .. req:: My first requirement
    :id: req_001
-   :tags: example
+   :tags: main_example
 
    This is an awesome requirement and it includes a nice title,
    a given id, a tag and this text as description.
@@ -107,7 +129,8 @@ Result
 .. spec:: Spec for a requirement
    :links: req_001
    :status: done
-   :tags: important; example
+   :tags: important; main_example
+   :collapse: false
 
    We haven't set an **ID** here, so sphinxcontrib-needs
    will generated one for us.
@@ -115,16 +138,33 @@ Result
    But we have **set a link** to our first requirement and
    also a *status* is given.
 
+   We also have set **collapse** to false, so that all meta-data is shown directly under the title.
+
 **Some text**
 
 Wohooo, we have created :need:`req_001`,
 which is linked by :need_incoming:`req_001`.
 
-**A filter**
+**Some filters**
+
+:underline:`Simple list`:
+
+.. needlist::
+  :tags: main_example
+
+:underline:`Simple table`:
 
 .. needtable::
-  :tags: example
-  :show_filters:
+  :tags: main_example
+  :style: table
+
+:underline:`A more powerful table` (based on `DataTables <https://datatables.net/>`_):
+
+.. needtable::
+  :tags: main_example
+  :style: datatables
+
+
 
 Motivation
 ----------

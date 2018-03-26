@@ -89,12 +89,12 @@ You can easily set links to multiple needs by using ";" as separator.
    .. code-block:: rst
 
       .. req:: Link example
-         :links: req_001; OWN_ID_123; IMPL_01
+         :links: OWN_ID_123; IMPL_01
 
          We have linked this requirement to multiple other needs.
 
    .. req:: Link example
-         :links: req_001; OWN_ID_123; IMPL_01
+         :links: OWN_ID_123; IMPL_01
          :collapse: false
 
          We have linked this requirement to multiple other needs.

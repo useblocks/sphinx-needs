@@ -5,6 +5,19 @@ needtable
 
 .. versionadded:: 0.2.0
 
+**needtable** generates a table, based on the result of given filters.
+
+.. code-block:: rst
+
+   .. needtable::
+      :tags: main_example
+      :style: table
+
+.. needtable::
+   :tags: main_example
+   :style: table
+
+
 Options
 -------
 
@@ -16,10 +29,11 @@ Supported options:
  * :ref:`needtable_columns`
  * :ref:`needtable_show_filters`
  * :ref:`needtable_style`
- * :ref:`option_status`
- * :ref:`option_tags`
- * :ref:`option_types`
- * :ref:`option_filter`
+ * Common filters:
+    * :ref:`option_status`
+    * :ref:`option_tags`
+    * :ref:`option_types`
+    * :ref:`option_filter`
 
 
 .. _needtable_columns:
@@ -92,6 +106,7 @@ If set, the used filter is added in front of the table::
       :tags: test
       :columns: id;title;tags
       :show_filters:
+      :style: table
 
 
 .. _needtable_style:
@@ -115,18 +130,21 @@ Overrides config parameter :ref:`needs_table_style` if set.
 
    .. code-block:: rst
 
+
       .. needtable::
          :style: table
 
       .. needtable::
          :style: datatables
 
+   Table with ``:style: table``:
+
    .. needtable::
          :tags: awesome
-         :columns: id;title
          :style: table
+
+   Table with ``:style: datables``:
 
    .. needtable::
       :tags: awesome
-      :columns: id;title
       :style: datatables

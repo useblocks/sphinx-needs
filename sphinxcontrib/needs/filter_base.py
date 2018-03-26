@@ -39,13 +39,16 @@ class FilterBase(Directive):
 
             tags = [tag.strip() for tag in re.split(";|,", tags) if len(tag) > 0]
 
-        status = self.options.get("status", "")
-        try:
-            status = str(status)
-            status = [stat.strip() for stat in re.split(";|,", status)]
-        except Exception:
-            # If we could not transform/use status information, we just skip this status
-            pass
+        status = self.options.get("status", None)
+        if status is not None:
+            try:
+                status = str(status)
+                status = [stat.strip() for stat in re.split(";|,", status)]
+            except Exception:
+                # If we could not transform/use status information, we just skip this status
+                pass
+        else:
+            status = []
 
         types = self.options.get("types", [])
         if isinstance(types, str):
@@ -81,8 +84,11 @@ def procces_filters(all_needs, current_needlist):
     found_needs = []
     for need_info in all_needs:
         status_filter_passed = False
-        if (need_info["status"] is not None and need_info["status"] in current_needlist["status"]) or \
-           len(current_needlist["status"]) == 0:
+        if current_needlist["status"] is None or len(current_needlist["status"]) == 0:
+            # Filtering for status was not requested
+            status_filter_passed = True
+        elif need_info["status"] is not None and need_info["status"] in current_needlist["status"]:
+            # Match was found
             status_filter_passed = True
 
         tags_filter_passed = False

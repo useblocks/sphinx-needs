@@ -1,9 +1,19 @@
 .. _needlist:
 
 needlist
-=========
+========
 
 .. versionadded:: 0.2.0
+
+**needlist** creates a list, which elements are based on the result of given filters.
+
+.. code-block:: rst
+
+   .. needlist::
+      :tags: main_example
+
+.. needlist::
+   :tags: main_example
 
 Options
 -------
@@ -16,10 +26,11 @@ Supported options:
  * :ref:`needlist_show_status`
  * :ref:`needlist_show_tags`
  * :ref:`needlist_show_filters`
- * :ref:`option_status`
- * :ref:`option_tags`
- * :ref:`option_types`
- * :ref:`option_filter`
+ * Common filters:
+    * :ref:`option_status`
+    * :ref:`option_tags`
+    * :ref:`option_types`
+    * :ref:`option_filter`
 
 
 .. _needlist_show_status:

@@ -7,7 +7,6 @@ Roles can be used to get short information of needs inside single sentences::
 
     My specification :need:`my_spec` is used to fulfill requirements :need_incoming:`my_spec`
 
-
 .. _role_need:
 
 need
@@ -16,7 +15,6 @@ need
 The role ``:need:`` will add title, id and a link to the need.
 
 It is mostly used to reference an existing need, without the need to keep title and link location manually in sync.
-
 
 Example
 ~~~~~~~

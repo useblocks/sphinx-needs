@@ -5,6 +5,25 @@ needflow
 
 .. versionadded:: 0.2.0
 
+**needflow** creates a flowchart of filtered needs.
+
+
+.. code-block:: rst
+
+   .. needflow::
+      :tags: main_example
+
+{% if READTHEDOCS %}
+
+.. image:: _static/needflow_flow.png
+
+{% else %}
+
+.. needflow::
+   :tags: main_example
+
+{% endif %}
+
 Options
 -------
 
@@ -13,25 +32,21 @@ Options
 
 Supported options:
 
- * :ref:`needflow_columns`
-  * :ref:`option_status`
- * :ref:`option_tags`
- * :ref:`option_types`
- * :ref:`option_filter`
+ * :ref:`needflow_show_filters`
+ * :ref:`needflow_show_legend`
+ * Common filters:
+    * :ref:`option_status`
+    * :ref:`option_tags`
+    * :ref:`option_types`
+    * :ref:`option_filter`
 
 
-.. _needflow_columns:
+.. _needflow_show_filters:
 
-columns
-~~~~~~~
-Needs a comma/semicolon separated string, which is used to define the position of specific columns.
-For instance::
+show_filters
+~~~~~~~~~~~~
 
-    .. needtable::
-       :columns: id;title;tags
-
-
-This will show the columns *id*, *title* and *tags* in the given order.
+Adds information of used filters below generated flowchart.
 
 .. container:: toggle
 
@@ -41,13 +56,37 @@ This will show the columns *id*, *title* and *tags* in the given order.
 
    .. code-block:: rst
 
-      .. needtable::
-         :columns: id;title;tags
+      .. needflow::
+         :tags: main_example
+         :show_filters:
 
-   .. needtable::
-      :tags: test
-      :columns: id;title;tags
-      :style: table
+   .. needflow::
+         :tags: main_example
+         :show_filters:
 
 
-Supported columns are:
+.. _needflow_show_legend:
+
+show_legend
+~~~~~~~~~~~
+
+Adds a legend below generated flowchart. The legends contains all defined need-types and their configured color
+for flowcharts.
+
+.. container:: toggle
+
+   .. container::  header
+
+      **Show example**
+
+   .. code-block:: rst
+
+      .. needflow::
+         :tags: main_example
+         :show_legend:
+
+   .. needflow::
+         :tags: main_example
+         :show_legend:
+
+
