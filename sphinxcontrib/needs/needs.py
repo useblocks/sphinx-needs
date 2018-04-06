@@ -147,6 +147,7 @@ def setup(app):
     app.add_config_value('needs_id_length', 5, 'html')
     app.add_config_value('needs_specs_show_needlist', False, 'html')
     app.add_config_value('needs_id_required', False, 'html')
+    app.add_config_value('needs_id_regex', "^[A-Z0-9_]{{{id_length},}}".format(id_length=app.config.needs_id_length), 'html')
     app.add_config_value('needs_show_link_type', False, 'html')
     app.add_config_value('needs_show_link_title', False, 'html')
     app.add_config_value('needs_file', "needs.json", 'html')

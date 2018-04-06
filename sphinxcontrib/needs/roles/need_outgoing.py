@@ -29,12 +29,12 @@ def process_need_outgoing(app, doctree, fromdocname):
         #                             node_need_ref['reftarget'] + '?')
 
         node_link_container = nodes.inline()
-        ref_need = env.need_all_needs[node_need_ref['reftarget'].upper()]
+        ref_need = env.need_all_needs[node_need_ref['reftarget']]
 
         for index, link in enumerate(ref_need["links"]):
             # If need target exists, let's create the reference
             if link in env.need_all_needs:
-                target_need = env.need_all_needs[node_need_ref['reftarget'].upper()]
+                target_need = env.need_all_needs[node_need_ref['reftarget']]
                 try:
                     target_need = env.need_all_needs[link]
                     if getattr(env.config, "needs_show_link_title", False) is True:
@@ -53,7 +53,7 @@ def process_need_outgoing(app, doctree, fromdocname):
                                                 target_need['docname'],
                                                 target_need['target']['refid'],
                                                 node_need_ref[0].deepcopy(),
-                                                node_need_ref['reftarget'].upper())
+                                                node_need_ref['reftarget'])
 
                     node_link_container += new_node_ref
 

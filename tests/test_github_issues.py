@@ -35,7 +35,7 @@ def test_doc_github_44(app, status, warning):
     assert 'Test 2' in html
     assert 'Test 3' in html
 
-    assert "Needs: linked need TEST_3 not found" not in output
-    assert "Needs: linked need TEST_123_BROKEN not found" in output
+    assert "Needs: linked need test_3 not found" not in output
+    assert "Needs: linked need test_123_broken not found" in output
 
 

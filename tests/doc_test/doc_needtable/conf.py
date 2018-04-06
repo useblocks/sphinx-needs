@@ -35,6 +35,7 @@ extensions = ['sphinxcontrib.needs']
 
 needs_table_style = "TABLE"
 
+needs_id_regex = "^[A-Za-z0-9_]"
 
 needs_types = [
     dict(directive="story", title="User Story", prefix="US_", color="#BFD8D2", style="node"),

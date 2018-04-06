@@ -393,6 +393,9 @@ needs_table_style
 ~~~~~~~~~~~~~~~~~
 .. versionadded:: 0.2.0
 
+Defines the default style for each table. Can be overridden for specific tables by setting parameter
+:ref:`needtable_style` of directive :ref:`needtable`.
+
 .. code-block:: python
 
     # conf.py
@@ -405,15 +408,15 @@ Supported values:
 * **table**: Default sphinx table
 * **datatables**: Table with activated DataTables functions (Sort, search, export, ...).
 
-Can be overridden for each single table by setting :ref:`needtable_style`.
-
-
 
 .. _needs_table_columns:
 
 needs_table_columns
 ~~~~~~~~~~~~~~~~~~~
 .. versionadded:: 0.2.0
+
+Defines the default columns for each table. Can be overridden for specific tables by setting parameter
+:ref:`needtable_columns` of directive :ref:`needtable`.
 
 .. code-block:: python
 
@@ -432,7 +435,6 @@ Supported values:
 * incoming
 * outgoing
 
-Can be overwritten for each single table by setting :ref:`needtable_columns`.
 
 .. _needs_collapse_details:
 
@@ -467,4 +469,11 @@ Default value: ``^[A-Z0-9_]{3,}``
 By default an ID is allowed to contain upper characters, numbers and underscore only.
 The ID length must be at least 3 characters.
 
+.. warning::
+
+   An automatically generated ID of needs without an manually given ID does match
+   the default value of needs_id_regex only.
+
+   If you change the regular expression you should also set :ref:`needs_id_required`
+   so that authors are forced to set an valid ID.
 

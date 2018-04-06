@@ -6,6 +6,7 @@ Changelog
  * Deprecated: :ref:`needfilter` is replaced by needlist, :ref:`needtable` or needdiagram. Which support additional options for related layout.
  * Improvement: Added :ref:`needtable` directive.
  * Improvement: Added `DataTables <https://datatables.net/>`_ support for :ref:`needtable` (including table search, excel/pdf export and dynamic column selection).
+ * Improvement: Added :ref:`needs_id_regex`, which takes a regular expression and which is used to validate given IDs of needs.
  * Improvement: Added meta information shields on documentation page
  * Improvement: Added more examples to documentation
  * Bugfix: Care about unneeded separator characters in tags (`#36 <https://github.com/useblocks/sphinxcontrib-needs/issues/36>`_)

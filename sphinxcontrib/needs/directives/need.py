@@ -75,7 +75,11 @@ class NeedDirective(Directive):
                                         hashlib.sha1(self.arguments[0].encode("UTF-8")).hexdigest().upper()
                                         [:env.app.config.needs_id_length]))
 
-        id = id.upper()
+        if env.app.config.needs_id_regex and not re.match(env.app.config.needs_id_regex, id):
+            raise NeedsInvalidException("Given ID '{id}' does not match configured regex '{regex}'".format(
+                id=id, regex=env.app.config.needs_id_regex))
+
+        # id = id.upper()
 
         # Calculate target id, to be able to set a link back
         targetid = id
@@ -121,7 +125,7 @@ class NeedDirective(Directive):
         links = self.options.get("links", [])
         if len(links) > 0:
             # links = [link.strip().upper() for link in links.split(";") if link != ""]
-            links = [link.strip().upper() for link in re.split(";|,", links) if link != ""]
+            links = [link.strip() for link in re.split(";|,", links) if link != ""]
 
         #############################################################################################
         # Add need to global need list
@@ -212,4 +216,8 @@ class NeedsStatusNotAllowed(SphinxError):
 
 
 class NeedsTagNotAllowed(SphinxError):
+    pass
+
+
+class NeedsInvalidException(SphinxError):
     pass

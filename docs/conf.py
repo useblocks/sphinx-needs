@@ -110,6 +110,8 @@ needs_types = [dict(directive="req", title="Requirement", prefix="R_", color="#B
 needs_show_link_type = False
 needs_show_link_title = False
 
+needs_id_regex = "^[A-Za-z0-9_]"
+
 # needs_css = "dark.css"
 
 cwd = os.getcwd()

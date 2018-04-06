@@ -143,7 +143,7 @@ Overrides config parameter :ref:`needs_table_style` if set.
          :tags: awesome
          :style: table
 
-   Table with ``:style: datables``:
+   Table with ``:style: datatables``:
 
    .. needtable::
       :tags: awesome

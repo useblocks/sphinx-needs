@@ -33,6 +33,7 @@ sys.path.insert(0, os.path.abspath('../../sphinxcontrib'))
 
 extensions = ['sphinxcontrib.needs']
 
+needs_id_regex = "^[A-Za-z0-9_]"
 
 needs_types = [
     dict(directive="story", title="User Story", prefix="US_", color="#BFD8D2", style="node"),

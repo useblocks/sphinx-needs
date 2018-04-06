@@ -20,7 +20,7 @@ def process_need_incoming(app, doctree, fromdocname):
         #                             node_need_backref['reftarget'] + '?')
 
         node_link_container = nodes.inline()
-        ref_need = env.need_all_needs[node_need_backref['reftarget'].upper()]
+        ref_need = env.need_all_needs[node_need_backref['reftarget']]
         for index, back_link in enumerate(ref_need["links_back"]):
             # If need back_link target exists, let's create the reference
             if back_link in env.need_all_needs:
@@ -42,7 +42,7 @@ def process_need_incoming(app, doctree, fromdocname):
                                                 target_need['docname'],
                                                 target_need['target']['refid'],
                                                 node_need_backref[0].deepcopy(),
-                                                node_need_backref['reftarget'].upper())
+                                                node_need_backref['reftarget'])
 
                     node_link_container += new_node_ref
 

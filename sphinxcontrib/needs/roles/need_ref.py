@@ -30,8 +30,8 @@ def process_need_ref(app, doctree, fromdocname):
                                     node_need_ref['reftarget'] + '?')
 
         # If need target exists, let's create the reference
-        if node_need_ref['reftarget'].upper() in env.need_all_needs:
-            target_need = env.need_all_needs[node_need_ref['reftarget'].upper()]
+        if node_need_ref['reftarget'] in env.need_all_needs:
+            target_need = env.need_all_needs[node_need_ref['reftarget']]
             try:
                 link_text = app.config.needs_role_need_template.format(title=target_need["title"],
                                                                        id=target_need["id"],
@@ -50,7 +50,7 @@ def process_need_ref(app, doctree, fromdocname):
                                             target_need['docname'],
                                             target_need['target']['refid'],
                                             node_need_ref[0].deepcopy(),
-                                            node_need_ref['reftarget'].upper())
+                                            node_need_ref['reftarget'])
             except NoUri:
                 # If the given need id can not be found, we must pass here....
                 pass

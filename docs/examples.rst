@@ -28,9 +28,9 @@ Examples
     .. test:: Test for XY
        :status: implemented
        :tags: test; user_interface; python27
-       :links: OWN_ID_123; impl_01
+       :links: OWN_ID_123; IMPL_01
 
-       This test checks :need:`impl_01` for :need:`OWN_ID_123` inside a
+       This test checks :need:`IMPL_01` for :need:`OWN_ID_123` inside a
        Python 2.7 environment.
 
     **Linking inside text**
@@ -78,7 +78,7 @@ This will be rendered to:
    Outgoing links of this spec: :need_outgoing:`OWN_ID_123`.
 
 .. impl:: Implementation for specification
-   :id: impl_01
+   :id: IMPL_01
    :links: OWN_ID_123
 
    Incoming links of this spec: :need_incoming:`IMPL_01`.
@@ -86,14 +86,14 @@ This will be rendered to:
 .. test:: Test for XY
    :status: implemented
    :tags: test; user_interface; python27
-   :links: OWN_ID_123; impl_01
+   :links: OWN_ID_123; IMPL_01
 
-   This test checks :need:`impl_01` for :need:`OWN_ID_123` inside a
+   This test checks :need:`IMPL_01` for :need:`OWN_ID_123` inside a
    Python 2.7 environment.
 
 **Linking inside text**
 
-As :need:`impl_01` shows, the linked :need:`OWN_ID_123` is realisable.
+As :need:`IMPL_01` shows, the linked :need:`OWN_ID_123` is realisable.
 
 **Filter result as list**
 
