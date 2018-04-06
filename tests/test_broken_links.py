@@ -17,7 +17,12 @@ def test_doc_build_html(app, status, warning):
     app.build()
     sys.stderr.flush()
     out = sys.stderr.getvalue()
-    sys.stdout.close()  # close the stream
-    sys.stdout = backup  # restore original stdout
+    try:
+        # Need to put is inside a try except statement, as the tests thorws following error using tox:
+        # AttributeError: 'Tee' object has no attribute 'close'
+        sys.stdout.close()  # close the stream
+        sys.stdout = backup  # restore original stdout
+    except Exception:
+        pass
 
     # assert "Needs: linked need" in out
