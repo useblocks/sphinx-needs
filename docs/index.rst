@@ -176,6 +176,10 @@ The project team was searching for a small and practical way of managing require
 fulfill the parameters of the `ISO 26262 <https://en.wikipedia.org/wiki/ISO_26262>`_
 standard for safety critical software.
 
+Sphinx-Needs is part of a software bundle, which was designed to support the development of
+`ISO 26262 <https://en.wikipedia.org/wiki/ISO_26262>`_ compliant software.
+Other tools are: `tox-envreport <http://tox-envreport.readthedocs.io/en/latest/>`_.
+
 One more thing ...
 ------------------
 
