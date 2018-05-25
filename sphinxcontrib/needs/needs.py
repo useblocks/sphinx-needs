@@ -50,12 +50,8 @@ DEFAULT_TEMPLATE_COLLAPSE = """
 
             :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
 
-        {%- if status and  status|upper != "NONE" and not hide_status %}
-        | status: :needs_status:`{{status}}`
-        {%- endif -%}
-        {%- if tags and not hide_tags %}
-        | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`
-        {%- endif %}
+{% if status and  status|upper != "NONE" and not hide_status %}        | status: :needs_status:`{{status}}`{% endif %}
+{% if tags and not hide_tags %}        | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`{% endif %}
         | links incoming: :need_incoming:`{{id}}`
         | links outgoing: :need_outgoing:`{{id}}`
 
@@ -82,12 +78,12 @@ DEFAULT_TEMPLATE = """
     :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
 
 
-        {%- if status and  status|upper != "NONE" and not hide_status %}
+{%- if status and  status|upper != "NONE" and not hide_status %}
         | status: :needs_status:`{{status}}`
-        {%- endif -%}
-        {%- if tags and not hide_tags %}
+{%- endif %}
+{%- if tags and not hide_tags %}
         | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`
-        {%- endif %}
+{%- endif %}
         | links incoming: :need_incoming:`{{id}}`
         | links outgoing: :need_outgoing:`{{id}}`
 
@@ -277,4 +273,4 @@ def setup(app):
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect('env-updated', install_styles_static_files)
 
-    return {'version': '0.2.0'}  # identifies the version of our extension
+    return {'version': '0.2.1'}  # identifies the version of our extension

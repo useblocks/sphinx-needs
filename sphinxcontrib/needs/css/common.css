@@ -17,8 +17,8 @@ div.toggle {
     /*border-radius: 5px;*/
 }
 
-dl.need div.toggle {
-    margin-top: -15px;
+div.need div.toggle {
+    /*margin-top: -15px;*/
 }
 
 div.need div.toggle div.line-block {

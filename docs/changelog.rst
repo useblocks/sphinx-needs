@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.2.1
+-----
+ * Bugfix: Sphinx warnings fixed, if need-collapse was used. (`#46 <https://github.com/useblocks/sphinxcontrib-needs/issues/46>`_ )
+ * Bugfix: dark.css, blank.css and common.css used wrong need-container selector. Fixed.
+
 0.2.0
 -----
  * Deprecated: :ref:`needfilter` is replaced by needlist, :ref:`needtable` or needdiagram. Which support additional options for related layout.
