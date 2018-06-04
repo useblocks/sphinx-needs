@@ -29,6 +29,3 @@ def setup(app):
     app.add_directive('test-results', TestResultsDirective)
 
     return {'version': '0.1.0'}  # identifies the version of our extension
-
-
-
