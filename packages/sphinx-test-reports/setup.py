@@ -4,7 +4,7 @@
 import os
 from setuptools import setup, find_packages
 
-requires = ['Sphinx']
+requires = ['Sphinx', 'lxml']
 
 setup(
     name='sphinx-test-reports',
