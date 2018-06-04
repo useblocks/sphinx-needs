@@ -28,4 +28,10 @@ class TestResultsDirective(Directive):
             xml_path = os.path.join(root_path, xml_path)
         parser = JUnitParser(xml_path)
 
+        # Construction idea taken from http://agateau.com/2015/docutils-snippets/
+
+        # for testsuite in parser.junit_xml_object.testsuite:
+        #     # table = nodes.table
+        #     pass
+
         return [nodes.Text(parser.junit_xml_string, parser.junit_xml_string)]

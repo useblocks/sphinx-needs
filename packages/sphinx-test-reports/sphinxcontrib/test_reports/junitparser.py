@@ -22,6 +22,61 @@ class JUnitParser:
         self.junit_xml_object = objectify.fromstring(self.junit_xml_string)
         self.junit_xml_string = str(self.junit_xml_string)
 
+    def parse(self):
+        """
+        Creates a common python dictionary object, no matter what information are supported by the parsed xml file for
+        test results junit().
+
+        :return: dictionary
+        """
+
+        junit_dict = []
+
+        for testsuite in self.junit_xml_object:
+            ts_dict = {
+                "name": testsuite.attrib.get("name", "unknown"),
+                "tests": testsuite.attrib.get("tests", "-1"),
+                "errors": testsuite.attrib.get("errors", "-1"),
+                "failures": testsuite.attrib.get("failures", "-1"),
+                "skips": testsuite.attrib.get("skips", testsuite.attrib.get("skip", "-1")),
+                "time": testsuite.attrib.get("time", "-1"),
+                "testcases": []
+            }
+
+            for testcase in testsuite.testcase:
+                tc_dict = {
+                    "classname": testcase.attrib.get("classname", "unknown"),
+                    "file": testcase.attrib.get("file", "unknown"),
+                    "line": testcase.attrib.get("line", "-1"),
+                    "name": testcase.attrib.get("name", "unknown"),
+                    "time": testcase.attrib.get("time", "-1"),
+                }
+
+                # The following data is normally a subnode (e.g. skipped/failure).
+                # We integrate it right into the testcase for better handling
+                if hasattr(testcase, "skipped"):
+                    result = testcase.skipped
+                    tc_dict["result"] = "skipped"
+                    tc_dict["type"] = result.attrib.get("message", "unknown")
+                    tc_dict["type"] = result.attrib.get("type", "unknown")
+                    tc_dict["text"] = result.text
+                elif hasattr(testcase, "failure"):
+                    result = testcase.failure
+                    tc_dict["result"] = "failure"
+                    tc_dict["type"] = result.attrib.get("type", "unknown")
+                    tc_dict["text"] = result.text
+                else:
+                    tc_dict["result"] = "passed"
+
+                ts_dict["testcases"].append(tc_dict)
+
+            junit_dict.append(ts_dict)
+
+        return junit_dict
+
+    def docutils_table(self):
+        pass
+
 
 class JUnitFileMissing(BaseException):
     pass

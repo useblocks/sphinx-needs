@@ -1,0 +1,52 @@
+<testsuite errors="0" failures="0" name="pytest" skips="10" tests="10" time="0.054">
+    <testcase classname="setup" file="setup.py" line="-1" name="FLAKE8" time="0.000252246856689">
+        <skipped message="file(s) previously passed FLAKE8 checks" type="pytest.skip">
+        /home/daniel/workspace/sphinx/sphinx-test-reports/.tox/py27-sphinx15/local/lib/python2.7/site-packages/pytest_flake8.py:106: &lt;py._xmlgen.raw object at 0x7fd5a8a0e950>
+        </skipped>
+    </testcase>
+    <testcase classname="docs.conf" file="docs/conf.py" line="-1" name="FLAKE8" time="0.000167846679688">
+        <skipped message="file(s) previously passed FLAKE8 checks" type="pytest.skip">
+        /home/daniel/workspace/sphinx/sphinx-test-reports/.tox/py27-sphinx15/local/lib/python2.7/site-packages/pytest_flake8.py:106: &lt;py._xmlgen.raw object at 0x7fd5a8a0ea10>
+        </skipped>
+    </testcase>
+    <testcase classname="sphinxcontrib.__init__" file="sphinxcontrib/__init__.py" line="-1" name="FLAKE8" time="0.000164031982422">
+        <skipped message="file(s) previously passed FLAKE8 checks" type="pytest.skip">
+        /home/daniel/workspace/sphinx/sphinx-test-reports/.tox/py27-sphinx15/local/lib/python2.7/site-packages/pytest_flake8.py:106: &lt;py._xmlgen.raw object at 0x7fd5a8497450>
+        </skipped>
+    </testcase>
+    <testcase classname="sphinxcontrib.test_reports.__init__" file="sphinxcontrib/test_reports/__init__.py" line="-1" name="FLAKE8" time="0.000192880630493">
+        <skipped message="file(s) previously passed FLAKE8 checks" type="pytest.skip">
+        /home/daniel/workspace/sphinx/sphinx-test-reports/.tox/py27-sphinx15/local/lib/python2.7/site-packages/pytest_flake8.py:106: &lt;py._xmlgen.raw object at 0x7fd5a8497c10>
+        </skipped>
+    </testcase>
+    <testcase classname="sphinxcontrib.test_reports.junitparser" file="sphinxcontrib/test_reports/junitparser.py" line="-1" name="FLAKE8" time="0.00017786026001">
+        <skipped message="file(s) previously passed FLAKE8 checks" type="pytest.skip">
+        /home/daniel/workspace/sphinx/sphinx-test-reports/.tox/py27-sphinx15/local/lib/python2.7/site-packages/pytest_flake8.py:106: &lt;py._xmlgen.raw object at 0x7fd5a84a2350>
+        </skipped>
+    </testcase>
+    <testcase classname="sphinxcontrib.test_reports.test_reports" file="sphinxcontrib/test_reports/test_reports.py" line="-1" name="FLAKE8" time="0.000218152999878">
+        <skipped message="file(s) previously passed FLAKE8 checks" type="pytest.skip">
+        /home/daniel/workspace/sphinx/sphinx-test-reports/.tox/py27-sphinx15/local/lib/python2.7/site-packages/pytest_flake8.py:106: &lt;py._xmlgen.raw object at 0x7fd5a84a2a50>
+        </skipped>
+    </testcase>
+    <testcase classname="sphinxcontrib.test_reports.directives.__init__" file="sphinxcontrib/test_reports/directives/__init__.py" line="-1" name="FLAKE8" time="0.000204801559448">
+        <skipped message="file(s) previously passed FLAKE8 checks" type="pytest.skip">
+        /home/daniel/workspace/sphinx/sphinx-test-reports/.tox/py27-sphinx15/local/lib/python2.7/site-packages/pytest_flake8.py:106: &lt;py._xmlgen.raw object at 0x7fd5a84a2cd0>
+        </skipped>
+    </testcase>
+    <testcase classname="sphinxcontrib.test_reports.directives.test_env" file="sphinxcontrib/test_reports/directives/test_env.py" line="-1" name="FLAKE8" time="0.000218868255615">
+        <skipped message="file(s) previously passed FLAKE8 checks" type="pytest.skip">
+        /home/daniel/workspace/sphinx/sphinx-test-reports/.tox/py27-sphinx15/local/lib/python2.7/site-packages/pytest_flake8.py:106: &lt;py._xmlgen.raw object at 0x7fd5a84ae250>
+        </skipped>
+    </testcase>
+    <testcase classname="sphinxcontrib.test_reports.directives.test_report" file="sphinxcontrib/test_reports/directives/test_report.py" line="-1" name="FLAKE8" time="0.000199317932129">
+        <skipped message="file(s) previously passed FLAKE8 checks" type="pytest.skip">
+        /home/daniel/workspace/sphinx/sphinx-test-reports/.tox/py27-sphinx15/local/lib/python2.7/site-packages/pytest_flake8.py:106: &lt;py._xmlgen.raw object at 0x7fd5a84ae950>
+        </skipped>
+    </testcase>
+    <testcase classname="sphinxcontrib.test_reports.directives.test_results" file="sphinxcontrib/test_reports/directives/test_results.py" line="-1" name="FLAKE8" time="0.00019097328186">
+        <skipped message="file(s) previously passed FLAKE8 checks" type="pytest.skip">
+        /home/daniel/workspace/sphinx/sphinx-test-reports/.tox/py27-sphinx15/local/lib/python2.7/site-packages/pytest_flake8.py:106: &lt;py._xmlgen.raw object at 0x7fd5a84bf090>
+        </skipped>
+    </testcase>
+</testsuite>

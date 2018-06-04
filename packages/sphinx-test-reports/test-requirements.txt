@@ -1,4 +1,4 @@
-pytest
+pytest >=3.5
 pytest-flake8
 coverage
 python-coveralls
