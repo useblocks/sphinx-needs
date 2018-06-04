@@ -3,13 +3,13 @@ import sphinx
 # from docutils import nodes
 from pkg_resources import parse_version
 
+from sphinxcontrib.test_reports.directives.test_results import TestResults, TestResultsDirective
+
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
     from sphinx.util import logging
 else:
     import logging
-
-from sphinxcontrib.test_reports.directives.test_results import TestResults, TestResultsDirective
 
 
 def setup(app):

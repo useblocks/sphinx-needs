@@ -19,8 +19,8 @@ class JUnitParser:
         self.valid_xml = self.xmlschema.validate(self.junit_xml_doc)
 
         self.junit_xml_string = etree.tostring(self.junit_xml_doc)
-
         self.junit_xml_object = objectify.fromstring(self.junit_xml_string)
+        self.junit_xml_string = str(self.junit_xml_string)
 
 
 class JUnitFileMissing(BaseException):
