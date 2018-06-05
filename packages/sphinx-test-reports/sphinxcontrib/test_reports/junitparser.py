@@ -10,17 +10,24 @@ class JUnitParser:
             junit_xsd = os.path.join(os.path.dirname(__file__), "schemas", "JUnit.xsd")
         self.junit_xsd_path = junit_xsd
 
+        self.junit_schema_doc = None
+        self.xmlschema = None
+        self.valid_xml = None
+
         if not os.path.exists(self.junit_xml_path):
             raise JUnitFileMissing("The given file does not exist: {0}".format(self.junit_xml_path))
-
-        self.junit_schema_doc = etree.parse(self.junit_xsd_path)
-        self.xmlschema = etree.XMLSchema(self.junit_schema_doc)
         self.junit_xml_doc = etree.parse(self.junit_xml_path)
-        self.valid_xml = self.xmlschema.validate(self.junit_xml_doc)
 
         self.junit_xml_string = etree.tostring(self.junit_xml_doc)
         self.junit_xml_object = objectify.fromstring(self.junit_xml_string)
         self.junit_xml_string = str(self.junit_xml_string)
+
+    def validate(self):
+        self.junit_schema_doc = etree.parse(self.junit_xsd_path)
+        self.xmlschema = etree.XMLSchema(self.junit_schema_doc)
+        self.valid_xml = self.xmlschema.validate(self.junit_xml_doc)
+
+        return self.valid_xml
 
     def parse(self):
         """
