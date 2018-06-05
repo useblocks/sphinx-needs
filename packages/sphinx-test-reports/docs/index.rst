@@ -38,6 +38,33 @@ Functions
   based exports as table. (E.g. used operating system, python version, installed packages, ...)
 
 
+.. note:: This plugin is in an early alpha phase and under heavy development.
+
+Example
+-------
+
+Input
+~~~~~
+
+**my_data.xml**
+
+.. literalinclude:: ../tests/data/xml_data_2.xml
+
+**my_document.rst**
+
+.. code-block:: rst
+
+   My Test Results
+   ===============
+
+   .. test-results:: my_data.xml
+
+Output
+~~~~~~
+
+.. test-results:: ../tests/data/xml_data_2.xml
+
+
 Motivation
 ----------
 ``Sphinx-Test-Reports`` was created for an automotive project, which needs to document test results and their used
