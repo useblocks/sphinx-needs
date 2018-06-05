@@ -59,4 +59,6 @@ Content
    :maxdepth: 2
    :caption: Contents:
 
+   directives/test_results
+
 

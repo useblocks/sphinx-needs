@@ -27,11 +27,52 @@ class TestResultsDirective(Directive):
         if not os.path.isabs(xml_path):
             xml_path = os.path.join(root_path, xml_path)
         parser = JUnitParser(xml_path)
+        results = parser.parse()
 
         # Construction idea taken from http://agateau.com/2015/docutils-snippets/
 
-        # for testsuite in parser.junit_xml_object.testsuite:
-        #     # table = nodes.table
-        #     pass
+        main_section = []
 
-        return [nodes.Text(parser.junit_xml_string, parser.junit_xml_string)]
+        header = ('class', 'name', 'status', 'reason')
+        colwidths = (1, 1, 1, 2)
+
+        for testsuite in results:
+            section = nodes.section()
+            section += nodes.title(text=testsuite["name"])
+            section += nodes.paragraph(text="Tests: {tests}, Failure: {failure}, Error: {error}, "
+                                            "Skipped: {skipped}".format(tests=testsuite["tests"],
+                                                                        failure=testsuite["failures"],
+                                                                        error=testsuite["errors"],
+                                                                        skipped=testsuite["skips"]
+                                                                        ))
+            section += nodes.paragraph(text="Time: {time}".format(time=testsuite["time"]))
+
+            table = nodes.table()
+            section += table
+
+            tgroup = nodes.tgroup(cols=len(header))
+            table += tgroup
+            for colwidth in colwidths:
+                tgroup += nodes.colspec(colwidth=colwidth)
+
+            thead = nodes.thead()
+            tgroup += thead
+            thead += self._create_table_row(header)
+
+            tbody = nodes.tbody()
+            tgroup += tbody
+            for testcase in testsuite["testcases"]:
+                tbody += self._create_table_row((testcase["classname"], testcase["name"],
+                                                testcase["result"], testcase["text"],))
+
+            main_section += section
+
+        return main_section
+
+    def _create_table_row(self, row_cells):
+        row = nodes.row()
+        for cell in row_cells:
+            entry = nodes.entry()
+            row += entry
+            entry += nodes.paragraph(text=cell)
+        return row

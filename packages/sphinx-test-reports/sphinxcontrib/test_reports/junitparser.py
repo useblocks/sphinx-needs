@@ -57,16 +57,20 @@ class JUnitParser:
                 if hasattr(testcase, "skipped"):
                     result = testcase.skipped
                     tc_dict["result"] = "skipped"
-                    tc_dict["type"] = result.attrib.get("message", "unknown")
                     tc_dict["type"] = result.attrib.get("type", "unknown")
                     tc_dict["text"] = result.text
+                    tc_dict["message"] = result.attrib.get("message", "unknown")
                 elif hasattr(testcase, "failure"):
                     result = testcase.failure
                     tc_dict["result"] = "failure"
                     tc_dict["type"] = result.attrib.get("type", "unknown")
                     tc_dict["text"] = result.text
+                    tc_dict["message"] = ""
                 else:
                     tc_dict["result"] = "passed"
+                    tc_dict["type"] = ""
+                    tc_dict["text"] = ""
+                    tc_dict["message"] = ""
 
                 ts_dict["testcases"].append(tc_dict)
 
