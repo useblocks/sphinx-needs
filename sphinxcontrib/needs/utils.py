@@ -82,6 +82,11 @@ def rstjinja(app, docname, source):
 
 
 class NeedsList:
+    JSON_KEY_EXCLUSIONS = {'links_back', 'type_color', 'hide_status',
+                           'target_node', 'hide', 'type_prefix', 'lineno',
+                           'docname', 'type', 'collapse',
+                           'type_style', 'hide_tags', 'content'}
+
     def __init__(self, config, outdir, confdir):
         self.log = logging.getLogger(__name__)
         self.config = config
@@ -95,8 +100,7 @@ class NeedsList:
             "created": "",
             "versions": {}}
 
-    def add_need(self, version, title, need_id, need_type, need_type_name=None,
-                 description=None, status=None, tags=None, links=None):
+    def add_need(self, version, need_info):
         if version not in self.needs_list["versions"].keys():
             self.needs_list["versions"][version] = {"created": "",
                                                     "needs_amount": 0,
@@ -106,14 +110,10 @@ class NeedsList:
             self.needs_list["versions"][version]["needs"] = {}
 
         self.needs_list["versions"][version]["created"] = datetime.now().isoformat()
-        self.needs_list["versions"][version]["needs"][need_id] = {"title": title,
-                                                                  "id": need_id,
-                                                                  "type": need_type,
-                                                                  "type_name": need_type_name,
-                                                                  "description": description,
-                                                                  "status": status,
-                                                                  "tags": tags,
-                                                                  "links": links}
+        writable_needs = {key: need_info[key] for key in need_info
+                          if key not in self.JSON_KEY_EXCLUSIONS}
+        writable_needs['description'] = need_info['content']
+        self.needs_list["versions"][version]["needs"][need_info["id"]] = writable_needs
         self.needs_list["versions"][version]["needs_amount"] = len(self.needs_list["versions"][version]["needs"])
 
     def wipe_version(self, version):

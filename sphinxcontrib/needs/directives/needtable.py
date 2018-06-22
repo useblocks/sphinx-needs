@@ -50,8 +50,8 @@ class NeedtableDirective(FilterBase):
             columns = env.app.config.needs_table_columns
         if isinstance(columns, str):
             columns = [col.strip() for col in re.split(";|,", columns)]
-        columns = [col.upper() for col in columns if col.upper() in ["ID", "TITLE", "TAGS", "STATUS", "TYPE",
-                                                                     "INCOMING", "OUTGOING"]]
+
+        columns = [col.upper() for col in columns]
 
         style = self.options.get("style", "").upper()
 
@@ -59,7 +59,7 @@ class NeedtableDirective(FilterBase):
         env.need_all_needtables[targetid] = {
             'docname': env.docname,
             'lineno': self.lineno,
-            'target': targetnode,
+            'target_node': targetnode,
             'columns': columns,
             'style': style,
             'show_filters': True if self.options.get("show_filters", False) is None else False
@@ -119,20 +119,8 @@ def process_needtables(app, doctree, fromdocname):
 
         node_columns = []
         for col in current_needtable["columns"]:
-            if col == "ID":
-                node_columns.append(nodes.entry('', nodes.paragraph('', 'ID')))
-            elif col == "TITLE":
-                node_columns.append(nodes.entry('', nodes.paragraph('', 'Title')))
-            elif col == "STATUS":
-                node_columns.append(nodes.entry('', nodes.paragraph('', 'Status')))
-            elif col == "TYPE":
-                node_columns.append(nodes.entry('', nodes.paragraph('', 'Type')))
-            elif col == "TAGS":
-                node_columns.append(nodes.entry('', nodes.paragraph('', 'Tags')))
-            elif col == "INCOMING":
-                node_columns.append(nodes.entry('', nodes.paragraph('', 'Incoming')))
-            elif col == "OUTGOING":
-                node_columns.append(nodes.entry('', nodes.paragraph('', 'Outgoing')))
+            header_name = col.title() if col != "ID" else col
+            node_columns.append(nodes.entry('', nodes.paragraph('', header_name)))
 
         tgroup += nodes.thead('', nodes.row(
             '', *node_columns))
@@ -156,18 +144,12 @@ def process_needtables(app, doctree, fromdocname):
             for col in current_needtable["columns"]:
                 if col == "ID":
                     row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "id", make_ref=True)
-                elif col == "TITLE":
-                    row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "title")
-                elif col == "STATUS":
-                    row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "status")
-                elif col == "TYPE":
-                    row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "type_name")
-                elif col == "TAGS":
-                    row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "tags")
                 elif col == "INCOMING":
                     row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "links_back", ref_lookup=True)
                 elif col == "OUTGOING":
                     row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "links", ref_lookup=True)
+                else:
+                    row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, col.lower())
             tbody += row
 
         if len(found_needs) == 0:

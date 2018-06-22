@@ -25,8 +25,7 @@ class NeedsBuilder(Builder):
         needs_list.load_json()
 
         for key, need in needs.items():
-            needs_list.add_need(version, need["title"], need["id"], need["type"], need["type_name"],
-                                need["content"], need["status"], need["tags"], need["links"])
+            needs_list.add_need(version, need)
         try:
             needs_list.write_json()
         except Exception as e:

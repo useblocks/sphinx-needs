@@ -58,7 +58,7 @@ class NeedfilterDirective(FilterBase):
         env.need_all_needfilters[targetid] = {
             'docname': env.docname,
             'lineno': self.lineno,
-            'target': targetnode,
+            'target_node': targetnode,
             'show_tags': True if self.options.get("show_tags", False) is None else False,
             'show_status': True if self.options.get("show_status", False) is None else False,
             'show_filters': True if self.options.get("show_filters", False) is None else False,
@@ -170,7 +170,7 @@ def process_needfilters(app, doctree, fromdocname):
                     ref['refdocname'] = need_info['docname']
                     ref['refuri'] = app.builder.get_relative_uri(
                         fromdocname, need_info['docname'])
-                    ref['refuri'] += '#' + need_info['target']['refid']
+                    ref['refuri'] += '#' + need_info['target_node']['refid']
                     ref.append(title)
                     para += ref
                 else:
@@ -196,7 +196,7 @@ def process_needfilters(app, doctree, fromdocname):
                     link = "../" + app.builder.get_target_uri(need_info['docname']) \
                            + "?highlight={0}".format(urlParse(need_info['title'])) \
                            + "#" \
-                           + need_info['target']['refid'] \
+                           + need_info['target_node']['refid'] \
                         # Gets mostly called during latex generation
                 except NoUri:
                     link = ""
