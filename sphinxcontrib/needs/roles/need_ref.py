@@ -7,11 +7,9 @@ from pkg_resources import parse_version
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
     from sphinx.util import logging
-    log = logging.getLogger(__name__)
 else:
     import logging
-    logging.basicConfig()
-    log = logging.getLogger()
+log = logging.getLogger(__name__)
 
 
 class Need_ref(nodes.Inline, nodes.Element):
@@ -48,7 +46,7 @@ def process_need_ref(app, doctree, fromdocname):
                 new_node_ref = make_refnode(app.builder,
                                             fromdocname,
                                             target_need['docname'],
-                                            target_need['target']['refid'],
+                                            target_need['target_node']['refid'],
                                             node_need_ref[0].deepcopy(),
                                             node_need_ref['reftarget'])
             except NoUri:

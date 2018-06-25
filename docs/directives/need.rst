@@ -168,3 +168,9 @@ Allowed values:
 
       Title, tags, links and everything else is shown directly.
 
+Customized Options
+------------------
+
+Sphinx-Needs supports the definition and filtering of customized options for needs.
+
+Please see :ref:`needs_extra_options` for detailed information and examples.

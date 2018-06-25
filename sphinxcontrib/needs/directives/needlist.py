@@ -56,7 +56,7 @@ class NeedlistDirective(FilterBase):
         env.need_all_needlists[targetid] = {
             'docname': env.docname,
             'lineno': self.lineno,
-            'target': targetnode,
+            'target_node': targetnode,
             'show_tags': True if self.options.get("show_tags", False) is None else False,
             'show_status': True if self.options.get("show_status", False) is None else False,
             'show_filters': True if self.options.get("show_filters", False) is None else False,
@@ -117,7 +117,7 @@ def process_needlist(app, doctree, fromdocname):
                 ref['refdocname'] = need_info['docname']
                 ref['refuri'] = app.builder.get_relative_uri(
                     fromdocname, need_info['docname'])
-                ref['refuri'] += '#' + need_info['target']['refid']
+                ref['refuri'] += '#' + need_info['target_node']['refid']
                 ref.append(title)
                 para += ref
             else:

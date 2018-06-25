@@ -4,10 +4,10 @@ from sphinx_testing import with_app
 from sphinxcontrib.needs.directives.need import NeedsNoIdException
 
 
-#OFFICIAL DOCUMENTATION BUILDS
+#  OFFICIAL DOCUMENTATION BUILDS
 
 
-@with_app(buildername='html', srcdir='../docs')  #, warningiserror=True)
+@with_app(buildername='html', srcdir='../docs')  # , warningiserror=True)
 def test_build_html(app, status, warning):
     app.builder.build_all()
 
@@ -28,6 +28,11 @@ def test_build_epub(app, status, warning):
 
 
 @with_app(buildername='json', srcdir='../docs')
+def test_build_json(app, status, warning):
+    app.builder.build_all()
+
+
+@with_app(buildername='needs', srcdir='../docs')
 def test_build_json(app, status, warning):
     app.builder.build_all()
 

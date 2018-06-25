@@ -20,6 +20,8 @@ import os
 import sys
 import datetime
 
+from docutils.parsers.rst import directives
+
 sys.path.insert(0, os.path.abspath('../sphinxcontrib'))
 
 # -- General configuration ------------------------------------------------
@@ -37,9 +39,9 @@ sys.path.insert(0, os.path.abspath('../sphinxcontrib'))
 # built documents.
 #
 # The short X.Y version.
-version = '0.2.1'
+version = '0.2.2'
 # The full version, including alpha/beta/rc tags.
-release = '0.2.1'
+release = '0.2.2'
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 if on_rtd:
@@ -94,6 +96,40 @@ NOTE_TEMPLATE = """
    {% endfor -%}
    {% endif %}
 """
+
+EXTRA_CONTENT_TEMPLATE_COLLAPSE = """
+.. _{{id}}:
+
+{% if hide == false -%}
+.. role:: needs_tag
+.. role:: needs_status
+.. role:: needs_type
+.. role:: needs_id
+.. role:: needs_title
+
+.. rst-class:: need
+.. rst-class:: need_{{type_name}}
+
+.. container:: need
+
+    .. container:: toggle
+
+        .. container:: header
+
+            :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
+
+{% if status and  status|upper != "NONE" and not hide_status %}        | status: :needs_status:`{{status}}`{% endif %}
+{% if tags and not hide_tags %}        | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`{% endif %}
+{% if my_extra_option != "" %}        | my_extra_option: {{ my_extra_option }}{% endif %}
+{% if another_option != "" %}        | another_option: {{ another_option }}{% endif %}
+        | links incoming: :need_incoming:`{{id}}`
+        | links outgoing: :need_outgoing:`{{id}}`
+
+    {{content|indent(4) }}
+
+{% endif -%}
+"""
+
 DEFAULT_DIAGRAM_TEMPLATE = \
     "<size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>"
 
@@ -128,6 +164,14 @@ plantuml_output_format = 'png'
 needs_collapse_details = True
 needs_table_style = "datatables"
 needs_table_columns = "ID;TITLE;STATUS;OUTGOING"
+
+
+needs_template_collapse = EXTRA_CONTENT_TEMPLATE_COLLAPSE
+needs_extra_options = {
+         "my_extra_option": directives.unchanged,
+         "another_option": directives.unchanged,
+         }
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

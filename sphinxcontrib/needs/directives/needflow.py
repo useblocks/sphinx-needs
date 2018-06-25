@@ -51,7 +51,7 @@ class NeedflowDirective(FilterBase):
         env.need_all_needflows[targetid] = {
             'docname': env.docname,
             'lineno': self.lineno,
-            'target': targetnode,
+            'target_node': targetnode,
             'show_filters': True if self.options.get("show_filters", False) is None else False,
             'show_legend': True if self.options.get("show_legend", False) is None else False,
         }
@@ -124,7 +124,7 @@ def process_needflow(app, doctree, fromdocname):
                 link = "../" + app.builder.get_target_uri(need_info['docname']) \
                        + "?highlight={0}".format(urlParse(need_info['title'])) \
                        + "#" \
-                       + need_info['target']['refid'] \
+                       + need_info['target_node']['refid'] \
                     # Gets mostly called during latex generation
             except NoUri:
                 link = ""
