@@ -105,16 +105,8 @@ def procces_filters(all_needs, current_needlist):
             python_filter_passed = True
         else:
             python_filter_passed = False
-            filter_context = {
-                "tags": need_info["tags"],
-                "status": need_info["status"],
-                "type": need_info["type"],
-                "id": need_info["id"],
-                "title": need_info["title"],
-                "links": need_info["links"],
-                "content": need_info["content"],
-                "search": re.search
-            }
+            filter_context = need_info.copy()
+            filter_context["search"] = re.search
             try:
                 # python_filter_passed = eval(current_needlist["filter"], globals(), filter_context)
                 python_filter_passed = eval(current_needlist["filter"], None, filter_context)

@@ -62,6 +62,35 @@ needs_types must be a list of dictionaries, where each dictionary **must** conta
 * **color**: A color as hex value. Used in diagrams and some days maybe in other representations as well.
 * **style**: A plantuml node type, like node, artifact, frame, storage or database. See `plantuml documentation <http://plantuml.com/deployment-diagram>`_ for more.
 
+
+.. _need_extra_options:
+
+needs_extra_options
+~~~~~~~~~~~~~~~~~~~
+
+The option allows the addition of extra options that can be specified on
+needs.
+
+It can be specified as a dict as follows::
+
+   needs_extra_options = {
+    "introduced": directives.unchanged,
+    "updated": directives.unchanged,
+    "impacts": directives.unchanged
+   }
+
+The key of the dict represents the option/attribute name that can be associated
+with the need, and the value represents the `option conversion function <http://docutils.sourceforge.net/docs/howto/rst-directives.html#option-conversion-functions>`_
+to apply to the associated value.
+
+In order to make the options appear in the rendered content you will need to
+override the the default templates used (see needs_template_ and
+needs_template_collapse_ for more information).
+
+.. note:: To filter on these options in `needlist`, `needtable`, etc. you
+          must use the :ref:`filter` option.
+
+
 .. _needs_template:
 
 needs_template

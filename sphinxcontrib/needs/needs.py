@@ -156,6 +156,8 @@ def setup(app):
 
     app.add_config_value('needs_role_need_template', "{title} ({id})", 'html')
 
+    app.add_config_value('needs_extra_options', {}, 'html')
+
     app.add_config_value('needs_diagram_template',
                          DEFAULT_DIAGRAM_TEMPLATE,
                          'html')
@@ -217,6 +219,7 @@ def setup(app):
         config = imp.load_source(module_name, os.path.join(app.confdir, "conf.py"))
         os.chdir(old_cwd)  # Lets switch back the cwd, otherwise other stuff may not run...
         types = getattr(config, "needs_types", app.config.needs_types)
+        extra_options = getattr(config, "needs_extra_options", app.config.needs_extra_options)
     except IOError:
         types = app.config.needs_types
     except Exception as e:
@@ -228,6 +231,8 @@ def setup(app):
         # Register requested types of needs
         app.add_directive(type["directive"], NeedDirective)
         app.add_directive("{0}_list".format(type["directive"]), NeedDirective)
+
+    NeedDirective.option_spec.update(extra_options)
 
     app.add_directive('needfilter', NeedfilterDirective)
     app.add_directive('needlist', NeedlistDirective)

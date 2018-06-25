@@ -49,7 +49,7 @@ def process_need_outgoing(app, doctree, fromdocname):
                     new_node_ref = make_refnode(app.builder,
                                                 fromdocname,
                                                 target_need['docname'],
-                                                target_need['target']['refid'],
+                                                target_need['target_node']['refid'],
                                                 node_need_ref[0].deepcopy(),
                                                 node_need_ref['reftarget'])
 
