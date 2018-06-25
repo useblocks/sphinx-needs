@@ -148,7 +148,6 @@ class NeedDirective(Directive):
             'type_prefix': type_prefix,
             'type_color': type_color,
             'type_style': type_style,
-            'section': self.section,
             'status': status,
             'tags': tags,
             'id': id,
@@ -179,17 +178,6 @@ class NeedDirective(Directive):
 
         return [target_node]
 
-    @property
-    def section(self):
-        """Gets the section name of the current node"""
-        current_node = self.state_machine.node
-        while current_node:
-            if isinstance(current_node, nodes.section):
-                return current_node.children[0].rawsource
-            current_node = current_node.parent
-        else:
-            return ""
-
     def merge_extra_options(self, needs_info):
         """Add any extra options introduced via options_ext to needs_info"""
         extra_keys = set(self.options.keys()).difference(set(needs_info.keys()))
@@ -203,10 +191,28 @@ class NeedDirective(Directive):
                 needs_info[key] = ""
 
 
+def get_section(need_info):
+    """Gets the section name of the current node"""
+    current_node = need_info['target_node']
+    while current_node:
+        if isinstance(current_node, nodes.section):
+            return current_node.astext().split('\n')[0]
+        current_node = getattr(current_node, 'parent', None)
+    return ''
+
+
 def purge_needs(app, env, docname):
     if not hasattr(env, 'need_all_needs'):
         return
     env.need_all_needs = {key: need for key, need in env.need_all_needs.items() if need['docname'] != docname}
+
+
+def add_sections(app, doctree, fromdocname):
+    """Add section titles to the needs as additional attributes that can
+    be used in tables and filters"""
+    needs = getattr(app.builder.env, 'need_all_needs', {})
+    for key, need_info in needs.items():
+        need_info['section'] = get_section(need_info)
 
 
 def process_need_nodes(app, doctree, fromdocname):

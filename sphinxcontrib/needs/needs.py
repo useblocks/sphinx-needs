@@ -8,7 +8,8 @@ import sphinx
 from docutils import nodes
 from pkg_resources import parse_version
 from sphinx.roles import XRefRole
-from sphinxcontrib.needs.directives.need import Need, NeedDirective, process_need_nodes, purge_needs
+from sphinxcontrib.needs.directives.need import Need, NeedDirective, \
+    process_need_nodes, purge_needs, add_sections
 from sphinxcontrib.needs.directives.needimport import Needimport, NeedimportDirective
 from sphinxcontrib.needs.directives.needtable import Needtable, NeedtableDirective, process_needtables
 from sphinxcontrib.needs.directives.needlist import Needlist, NeedlistDirective, process_needlist
@@ -263,6 +264,7 @@ def setup(app):
     ########################################################################
     # Make connections to events
     app.connect('env-purge-doc', purge_needs)
+    app.connect('doctree-resolved', add_sections)
     app.connect('doctree-resolved', process_need_nodes)
     app.connect('doctree-resolved', process_needfilters)
     app.connect('doctree-resolved', process_needlist)

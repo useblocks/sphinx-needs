@@ -37,11 +37,6 @@ def test_build_json(app, status, warning):
 
 
 @with_app(buildername='needs', srcdir='../docs')
-def test_build_json(app, status, warning):
-    app.builder.build_all()
-
-
-@with_app(buildername='needs', srcdir='../docs')
 def test_build_needs(app, status, warning):
     app.builder.build_all()
     json_text = (app.outdir / 'needs.json').read_text()
