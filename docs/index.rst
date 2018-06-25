@@ -46,6 +46,7 @@ Each need contains:
 * a **status** (optional)
 * several **tags** (optional)
 * several **links** to other needs (optional)
+* project specific options (optional, see :ref:`needs_extra_options`)
 
 Needs can be :ref:`easily filtered <filter>` and presented in lists, tables and diagrams.
 

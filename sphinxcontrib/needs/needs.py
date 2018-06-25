@@ -27,6 +27,7 @@ if parse_version(sphinx_version) >= parse_version("1.6"):
     from sphinx.util import logging
 else:
     import logging
+    logging.basicConfig()  # Only need to do this once
 
 
 DEFAULT_TEMPLATE_COLLAPSE = """
@@ -155,6 +156,8 @@ def setup(app):
 
     app.add_config_value('needs_role_need_template', "{title} ({id})", 'html')
 
+    app.add_config_value('needs_extra_options', {}, 'html')
+
     app.add_config_value('needs_diagram_template',
                          DEFAULT_DIAGRAM_TEMPLATE,
                          'html')
@@ -216,6 +219,7 @@ def setup(app):
         config = imp.load_source(module_name, os.path.join(app.confdir, "conf.py"))
         os.chdir(old_cwd)  # Lets switch back the cwd, otherwise other stuff may not run...
         types = getattr(config, "needs_types", app.config.needs_types)
+        extra_options = getattr(config, "needs_extra_options", app.config.needs_extra_options)
     except IOError:
         types = app.config.needs_types
     except Exception as e:
@@ -227,6 +231,9 @@ def setup(app):
         # Register requested types of needs
         app.add_directive(type["directive"], NeedDirective)
         app.add_directive("{0}_list".format(type["directive"]), NeedDirective)
+
+    # Update NeedDirective to use customized options
+    NeedDirective.option_spec.update(extra_options)
 
     app.add_directive('needfilter', NeedfilterDirective)
     app.add_directive('needlist', NeedlistDirective)
@@ -273,4 +280,4 @@ def setup(app):
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect('env-updated', install_styles_static_files)
 
-    return {'version': '0.2.1'}  # identifies the version of our extension
+    return {'version': '0.2.2'}  # identifies the version of our extension

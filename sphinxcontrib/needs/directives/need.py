@@ -45,6 +45,7 @@ class NeedDirective(Directive):
         type_name = ""
         type_prefix = ""
         type_color = ""
+        type_style = ""
         found = False
         for type in types:
             if type["directive"] == self.name:
@@ -82,8 +83,8 @@ class NeedDirective(Directive):
         # id = id.upper()
 
         # Calculate target id, to be able to set a link back
-        targetid = id
-        targetnode = nodes.target('', '', ids=[targetid])
+        target_id = id
+        target_node = nodes.target('', '', ids=[target_id])
 
         collapse = str(self.options.get("collapse", ""))
         if isinstance(collapse, str) and len(collapse) > 0:
@@ -138,10 +139,10 @@ class NeedDirective(Directive):
             raise NeedsDuplicatedId("A need with ID {0} already exists! This is not allowed".format(id))
 
         # Add the need and all needed information
-        env.need_all_needs[id] = {
+        needs_info = {
             'docname': env.docname,
             'lineno': self.lineno,
-            'target': targetnode,
+            'target_node': target_node,
             'type': self.name,
             'type_name': type_name,
             'type_prefix': type_prefix,
@@ -158,7 +159,8 @@ class NeedDirective(Directive):
             'hide_tags': hide_tags,
             'hide_status': hide_status,
         }
-
+        self.merge_extra_options(needs_info)
+        env.need_all_needs[id] = needs_info
         if collapse == "":
             if env.config.needs_collapse_details:
                 template = Template(env.config.needs_template_collapse)
@@ -169,11 +171,24 @@ class NeedDirective(Directive):
         else:
             template = Template(env.config.needs_template)
 
+        text = template.render(**env.need_all_needs[id])
         self.state_machine.insert_input(
-            template.render(**env.need_all_needs[id]).split('\n'),
+            text.split('\n'),
             self.state_machine.document.attributes['source'])
 
-        return [targetnode]
+        return [target_node]
+
+    def merge_extra_options(self, needs_info):
+        """Add any extra options introduced via options_ext to needs_info"""
+        extra_keys = set(self.options.keys()).difference(set(needs_info.keys()))
+        for key in extra_keys:
+            needs_info[key] = self.options[key]
+
+        # Finally add all not used extra options with empty value to need_info.
+        # Needed for filters, which need to access these empty/not used options.
+        for key in self.option_spec:
+            if key not in needs_info.keys():
+                needs_info[key] = ""
 
 
 def purge_needs(app, env, docname):

@@ -1,9 +1,12 @@
 from sphinx.builders import Builder
-from sphinx.util import logging
 from sphinxcontrib.needs.utils import NeedsList
-
-
-# import logging
+import sphinx
+from pkg_resources import parse_version
+sphinx_version = sphinx.__version__
+if parse_version(sphinx_version) >= parse_version("1.6"):
+    from sphinx.util import logging
+else:
+    import logging
 
 
 class NeedsBuilder(Builder):
@@ -25,8 +28,7 @@ class NeedsBuilder(Builder):
         needs_list.load_json()
 
         for key, need in needs.items():
-            needs_list.add_need(version, need["title"], need["id"], need["type"], need["type_name"],
-                                need["content"], need["status"], need["tags"], need["links"])
+            needs_list.add_need(version, need)
         try:
             needs_list.write_json()
         except Exception as e:
