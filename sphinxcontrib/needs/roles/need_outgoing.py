@@ -6,11 +6,9 @@ from pkg_resources import parse_version
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
     from sphinx.util import logging
-    log = logging.getLogger(__name__)
 else:
     import logging
-    logging.basicConfig()
-    log = logging.getLogger()
+log = logging.getLogger(__name__)
 
 
 class Need_outgoing(nodes.Inline, nodes.Element):

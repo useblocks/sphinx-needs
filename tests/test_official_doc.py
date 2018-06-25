@@ -32,6 +32,11 @@ def test_build_json(app, status, warning):
     app.builder.build_all()
 
 
+@with_app(buildername='needs', srcdir='../docs')
+def test_build_json(app, status, warning):
+    app.builder.build_all()
+
+
 # Test with needs_id_required=True and missing ids in docs.
 @raises(NeedsNoIdException)
 @with_app(buildername='html', srcdir='../docs', confoverrides={"needs_id_required": True})
