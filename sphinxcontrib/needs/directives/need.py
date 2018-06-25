@@ -184,6 +184,12 @@ class NeedDirective(Directive):
         for key in extra_keys:
             needs_info[key] = self.options[key]
 
+        # Finally add all not used extra options with empty value to need_info.
+        # Needed for filters, which need to access these empty/not used options.
+        for key in self.option_spec:
+            if key not in needs_info.keys():
+                needs_info[key] = ""
+
 
 def purge_needs(app, env, docname):
     if not hasattr(env, 'need_all_needs'):

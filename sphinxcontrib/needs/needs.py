@@ -232,6 +232,7 @@ def setup(app):
         app.add_directive(type["directive"], NeedDirective)
         app.add_directive("{0}_list".format(type["directive"]), NeedDirective)
 
+    # Update NeedDirective to use customized options
     NeedDirective.option_spec.update(extra_options)
 
     app.add_directive('needfilter', NeedfilterDirective)
@@ -279,4 +280,4 @@ def setup(app):
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect('env-updated', install_styles_static_files)
 
-    return {'version': '0.2.1'}  # identifies the version of our extension
+    return {'version': '0.2.2'}  # identifies the version of our extension

@@ -14,7 +14,7 @@ Activation
 
 Add **sphinxcontrib.needs** to your extensions::
 
-    extensions = ["sphinxcontrib.needs",]
+   extensions = ["sphinxcontrib.needs",]
 
 Options
 -------
@@ -63,7 +63,7 @@ needs_types must be a list of dictionaries, where each dictionary **must** conta
 * **style**: A plantuml node type, like node, artifact, frame, storage or database. See `plantuml documentation <http://plantuml.com/deployment-diagram>`_ for more.
 
 
-.. _need_extra_options:
+.. _needs_extra_options:
 
 needs_extra_options
 ~~~~~~~~~~~~~~~~~~~
@@ -71,13 +71,24 @@ needs_extra_options
 The option allows the addition of extra options that can be specified on
 needs.
 
-It can be specified as a dict as follows::
+It can be specified as a dict inside ``conf.py`` as follows::
 
    needs_extra_options = {
     "introduced": directives.unchanged,
     "updated": directives.unchanged,
     "impacts": directives.unchanged
    }
+
+And used like:
+
+.. code-block:: rst
+
+   .. req:: My Requirement
+      :status: open
+      :introduced: Yes
+      :updated: 2018/03/26
+      :tags: important;complex;
+      :impacts: really everything
 
 The key of the dict represents the option/attribute name that can be associated
 with the need, and the value represents the `option conversion function <http://docutils.sourceforge.net/docs/howto/rst-directives.html#option-conversion-functions>`_
@@ -89,6 +100,92 @@ needs_template_collapse_ for more information).
 
 .. note:: To filter on these options in `needlist`, `needtable`, etc. you
           must use the :ref:`filter` option.
+
+
+.. container:: toggle
+
+   .. container:: header
+
+      **Show example**
+
+   **conf.py**
+
+   .. code-block:: python
+      :linenos:
+
+      from docutils.parsers.rst import directives
+
+      needs_extra_options = {
+         "my_extra_option": directives.unchanged,
+         "another_option": directives.unchanged,
+         }
+
+      # Lines 33 and 34 were added to show extra options
+      EXTRA_CONTENT_TEMPLATE_COLLAPSE = """
+      {% raw %}
+      .. _{{id}}:
+
+      {% if hide == false -%}
+      .. role:: needs_tag
+      .. role:: needs_status
+      .. role:: needs_type
+      .. role:: needs_id
+      .. role:: needs_title
+
+      .. rst-class:: need
+      .. rst-class:: need_{{type_name}}
+
+      .. container:: need
+
+          .. container:: toggle
+
+              .. container:: header
+
+                  :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
+
+      {% if status and  status|upper != "NONE" and not hide_status %}        | status: :needs_status:`{{status}}`{% endif %}
+      {% if tags and not hide_tags %}        | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`{% endif %}
+      {% if my_extra_option != "" %}        | my_extra_option: {{ my_extra_option }}{% endif %}
+      {% if another_option != "" %}        | another_option: {{ another_option }}{% endif %}
+              | links incoming: :need_incoming:`{{id}}`
+              | links outgoing: :need_outgoing:`{{id}}`
+
+          {{content|indent(4) }}
+
+      {% endif -%}
+      {% endraw %}
+      """
+
+      needs_template_collapse = EXTRA_CONTENT_TEMPLATE_COLLAPSE
+
+
+   **index.rst**
+
+   .. code-block:: rst
+
+      .. req:: My requirement with custom options
+         :id: xyz_123
+         :status: open
+         :my_extra_option: A new option
+         :another_option: filter_me
+
+         Some content
+
+      .. needfilter::
+         :filter: "filter_me" in another_option
+
+   **Result**
+
+   .. req:: My requirement with custom options
+      :id: xyz_123
+      :status: open
+      :my_extra_option: A new option
+      :another_option: filter_me
+
+      Some content
+
+   .. needfilter::
+      :filter: "filter_me" in another_option
 
 
 .. _needs_template:

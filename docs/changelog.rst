@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.2.2
+-----
+ * Improvement: Project specific options for needs are supported now. See :ref:`needs_extra_options`. (`#48 <https://github.com/useblocks/sphinxcontrib-needs/pull/48>`_ )
+ * Bugfix: Logging fixed (`#50 <https://github.com/useblocks/sphinxcontrib-needs/issues/50>`_ )
+ * Bugfix: Tests for custom styles are now working when executed with all other tests (`#47 <https://github.com/useblocks/sphinxcontrib-needs/pull/47>`_ )
+
+
 0.2.1
 -----
  * Bugfix: Sphinx warnings fixed, if need-collapse was used. (`#46 <https://github.com/useblocks/sphinxcontrib-needs/issues/46>`_ )
