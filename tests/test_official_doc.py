@@ -4,10 +4,10 @@ from sphinx_testing import with_app
 from sphinxcontrib.needs.directives.need import NeedsNoIdException
 
 
-#OFFICIAL DOCUMENTATION BUILDS
+#  OFFICIAL DOCUMENTATION BUILDS
 
 
-@with_app(buildername='html', srcdir='../docs')  #, warningiserror=True)
+@with_app(buildername='html', srcdir='../docs')  # , warningiserror=True)
 def test_build_html(app, status, warning):
     app.builder.build_all()
 
