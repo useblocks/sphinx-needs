@@ -103,11 +103,16 @@ So each valid Python expression is supported. The following variables/functions 
 * tags, as Python list (compare like ``"B" in tags``)
 * type, as Python string (compare like ``"story" == type``)
 * status, as Python string (compare like ``"opened" != status``)
+* sections, as Python list with the hiearchy of sections with lowest-level
+  section first.  (compare like ``"Section Header" in sections``)
 * id, as Python string (compare like ``"MY_ID_" in id``)
 * title, as Python string (compare like ``len(title.split(" ")) > 5``)
 * links, as Python list (compare like ``"ID_123" not in links``)
 * content, as Python string (compare like ``len(content) == 0``)
 * :ref:`re_search`, as Python function for performing searches with a regular expression
+
+.. note:: If extra options were specified using `needs_extra_options` then
+          those will be available for use in filter expressions as well.
 
 If your expression is valid and it's True, the related need is added to the filter result list.
 If it is invalid or returns False, the related need is not taken into account for the current filter.

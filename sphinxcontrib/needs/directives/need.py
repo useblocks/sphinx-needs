@@ -9,6 +9,8 @@ from jinja2 import Template
 import hashlib
 import re
 
+NON_BREAKING_SPACE = re.compile('\xa0+')
+
 
 class Need(nodes.General, nodes.Element):
     pass
@@ -191,10 +193,36 @@ class NeedDirective(Directive):
                 needs_info[key] = ""
 
 
+def get_sections(need_info):
+    """Gets the hierarchy of the section nodes as a list starting at the
+    section of the current need and then its parent sections"""
+    sections = []
+    current_node = need_info['target_node']
+    while current_node:
+        if isinstance(current_node, nodes.section):
+            section_text = current_node.astext().split('\n', 1)
+            # If using auto-section numbering, then Sphinx inserts
+            # multiple non-breaking space unicode characters into the title
+            # we'll replace those with a simple space to make them easier to
+            # use in filters
+            title = NON_BREAKING_SPACE.sub(' ', section_text[0])
+            sections.append(title)
+        current_node = getattr(current_node, 'parent', None)
+    return sections
+
+
 def purge_needs(app, env, docname):
     if not hasattr(env, 'need_all_needs'):
         return
     env.need_all_needs = {key: need for key, need in env.need_all_needs.items() if need['docname'] != docname}
+
+
+def add_sections(app, doctree, fromdocname):
+    """Add section titles to the needs as additional attributes that can
+    be used in tables and filters"""
+    needs = getattr(app.builder.env, 'need_all_needs', {})
+    for key, need_info in needs.items():
+        need_info['sections'] = get_sections(need_info)
 
 
 def process_need_nodes(app, doctree, fromdocname):

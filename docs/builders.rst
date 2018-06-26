@@ -51,6 +51,9 @@ Format
                     "links": [
                         "OWN_ID_123"
                     ],
+                    "sections": [
+                        "Examples"
+                    ],
                     "status": null,
                     "tags": [],
                     "title": "Implementation for specification",
@@ -67,6 +70,9 @@ Format
                     "id": "IMPL_01",
                     "links": [
                         "OWN_ID_123"
+                    ],
+                    "sections": [
+                        "Examples"
                     ],
                     "status": "closed",
                     "tags": ["links","update"],
