@@ -168,6 +168,45 @@ Allowed values:
 
       Title, tags, links and everything else is shown directly.
 
+
+.. _title_from_content:
+
+title_from_content
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.2.3
+
+When this flag is provided on an individual need, a title will be derived
+from the first sentence of the content.  If not title and no content is provided
+then the build process will fail.
+
+The derived title will respect the :ref:`needs_max_title_length` and provide an
+ellided title if needed.  By default there is no limit to the title length.
+
+When using this setting be sure to exercise caution that special formatting
+that you would not want in the title (bulleted lists, nested directives, etc.)
+do not appear in the first sentence.
+
+If a title is provided and the flag is present, then the provided title will
+be used and a warning will be issued.
+
+Example::
+
+    .. req::
+        :title_from_content:
+
+        The first sentence will be the title.  Anything after the first
+        sentence will not be part of the title.
+
+The resulting requirement would have the title derived from the first
+sentence of the requirement.
+
+.. req::
+    :title_from_content:
+
+    The first sentence will be the title.  Anything after the first
+    sentence will not be part of the title.
+
 Customized Options
 ------------------
 

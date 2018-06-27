@@ -1,13 +1,19 @@
 # -*- coding: utf-8 -*-
+import hashlib
+import re
 
 from docutils import nodes
 from docutils.parsers.rst import directives
 from docutils.parsers.rst import Directive
 from sphinx.errors import SphinxError
 from jinja2 import Template
-
-import hashlib
-import re
+from pkg_resources import parse_version
+import sphinx
+sphinx_version = sphinx.__version__
+if parse_version(sphinx_version) >= parse_version("1.6"):
+    from sphinx.util import logging
+else:
+    import logging
 
 NON_BREAKING_SPACE = re.compile('\xa0+')
 
@@ -31,18 +37,23 @@ class NeedDirective(Directive):
                    'hide_tags': directives.flag,
                    'hide_status': directives.flag,
                    'hide_links': directives.flag,
+                   'title_from_content': directives.flag,
                    }
 
     # add configured link types
 
     final_argument_whitespace = True
 
+    def __init__(self, *args, **kw):
+        super(NeedDirective, self).__init__(*args, **kw)
+        self.log = logging.getLogger(__name__)
+        self.full_title = self._get_full_title()
+
     def run(self):
         #############################################################################################
         # Get environment
         #############################################################################################
-        env = self.state.document.settings.env
-
+        env = self.env
         types = env.app.config.needs_types
         type_name = ""
         type_prefix = ""
@@ -73,20 +84,14 @@ class NeedDirective(Directive):
             raise NeedsNoIdException("An id is missing for this need and must be set, because 'needs_id_required' "
                                      "is set to True in conf.py")
 
-        id = self.options.get("id",
-                              "%s%s" % (type_prefix,
-                                        hashlib.sha1(self.arguments[0].encode("UTF-8")).hexdigest().upper()
-                                        [:env.app.config.needs_id_length]))
+        id = self.options.get("id", self.make_hashed_id(type_prefix, env.config.needs_id_length))
 
         if env.app.config.needs_id_regex and not re.match(env.app.config.needs_id_regex, id):
             raise NeedsInvalidException("Given ID '{id}' does not match configured regex '{regex}'".format(
                 id=id, regex=env.app.config.needs_id_regex))
 
-        # id = id.upper()
-
         # Calculate target id, to be able to set a link back
-        target_id = id
-        target_node = nodes.target('', '', ids=[target_id])
+        target_node = nodes.target('', '', ids=[id])
 
         collapse = str(self.options.get("collapse", ""))
         if isinstance(collapse, str) and len(collapse) > 0:
@@ -100,7 +105,6 @@ class NeedDirective(Directive):
         hide = True if "hide" in self.options.keys() else False
         hide_tags = True if "hide_tags" in self.options.keys() else False
         hide_status = True if "hide_status" in self.options.keys() else False
-        title = self.arguments[0]
         content = "\n".join(self.content)
 
         # Handle status
@@ -138,11 +142,21 @@ class NeedDirective(Directive):
             env.need_all_needs = {}
 
         if id in env.need_all_needs.keys():
-            raise NeedsDuplicatedId("A need with ID {0} already exists! This is not allowed".format(id))
+            if 'id' in self.options:
+                raise NeedsDuplicatedId("A need with ID {0} already exists! "
+                                        "This is not allowed".format(id))
+            else:  # this is a generated ID
+                raise NeedsDuplicatedId(
+                    "Needs could not generate a unique ID for a need with "
+                    "the title '{}' because another need had the same title. "
+                    "Either supply IDs for the requirements or ensure the "
+                    "titles are different.  NOTE: If title is being generated "
+                    "from the content, then ensure the first sentence of the "
+                    "requirements are different.".format(' '.join(self.full_title)))
 
         # Add the need and all needed information
         needs_info = {
-            'docname': env.docname,
+            'docname': self.docname,
             'lineno': self.lineno,
             'target_node': target_node,
             'type': self.name,
@@ -154,7 +168,8 @@ class NeedDirective(Directive):
             'tags': tags,
             'id': id,
             'links': links,
-            'title': title,
+            'title': self.trimmed_title,
+            'full_title': self.full_title,
             'content': content,
             'collapse': collapse,
             'hide': hide,
@@ -180,6 +195,41 @@ class NeedDirective(Directive):
 
         return [target_node]
 
+    def make_hashed_id(self, type_prefix, id_length):
+        hashable_content = self.full_title or '\n'.join(self.content)
+        return "%s%s" % (type_prefix,
+                         hashlib.sha1(hashable_content.encode("UTF-8"))
+                                .hexdigest()
+                                .upper()[:id_length])
+
+    @property
+    def env(self):
+        return self.state.document.settings.env
+
+    @property
+    def title_from_content(self):
+        return ('title_from_content' in self.options or
+                self.env.config.needs_title_from_content)
+
+    @property
+    def docname(self):
+        return self.state.document.settings.env.docname
+
+    @property
+    def trimmed_title(self):
+        title = self.full_title
+        max_length = self.max_title_length
+        if max_length == -1 or len(title) <= max_length:
+            return title
+        elif max_length <= 3:
+            return title[:self.max_title_length]
+        else:
+            return title[:self.max_title_length - 3] + '...'
+
+    @property
+    def max_title_length(self):
+        return self.state.document.settings.env.config.needs_max_title_length
+
     def merge_extra_options(self, needs_info):
         """Add any extra options introduced via options_ext to needs_info"""
         extra_keys = set(self.options.keys()).difference(set(needs_info.keys()))
@@ -191,6 +241,29 @@ class NeedDirective(Directive):
         for key in self.option_spec:
             if key not in needs_info.keys():
                 needs_info[key] = ""
+
+    def _get_full_title(self):
+        """Determines the title for the need in order of precedence:
+        directive argument, first sentence of requirement (if
+        `:title_from_content:` was set, and '' if no title is to be derived."""
+        if len(self.arguments) > 0:  # a title was passed
+            if 'title_from_content' in self.options:
+                self.log.warning(
+                    'Needs: need "{}" has :title_from_content: set, '
+                    'but a title was provided. (see file {})'
+                    .format(self.arguments[0], self.docname)
+                )
+            return self.arguments[0]
+        elif self.title_from_content:
+            first_sentence = ' '.join(self.content).split('.', 1)[0]
+            if not first_sentence:
+                raise NeedsInvalidException(':title_from_content: set, but '
+                                            'no content provided. '
+                                            '(Line {} of file {}'
+                                            .format(self.lineno, self.docname))
+            return first_sentence
+        else:
+            return ''
 
 
 def get_sections(need_info):

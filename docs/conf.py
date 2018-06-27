@@ -145,6 +145,8 @@ needs_types = [dict(directive="req", title="Requirement", prefix="R_", color="#B
                ]
 needs_show_link_type = False
 needs_show_link_title = False
+needs_title_optional = True
+needs_max_title_length = 75
 
 needs_id_regex = "^[A-Za-z0-9_]"
 
