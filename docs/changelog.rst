@@ -3,6 +3,7 @@ Changelog
 
 0.2.2
 -----
+ * Improvement: The sections, to which a need belongs, are now stored, filterable and exported in ``needs.json``. See updated :ref:`option_filter`. (`#53 <https://github.com/useblocks/sphinxcontrib-needs/pull/53>`_ )
  * Improvement: Project specific options for needs are supported now. See :ref:`needs_extra_options`. (`#48 <https://github.com/useblocks/sphinxcontrib-needs/pull/48>`_ )
  * Bugfix: Logging fixed (`#50 <https://github.com/useblocks/sphinxcontrib-needs/issues/50>`_ )
  * Bugfix: Tests for custom styles are now working when executed with all other tests (`#47 <https://github.com/useblocks/sphinxcontrib-needs/pull/47>`_ )
@@ -15,7 +16,7 @@ Changelog
 
 0.2.0
 -----
- * Deprecated: :ref:`needfilter` is replaced by needlist, :ref:`needtable` or needdiagram. Which support additional options for related layout.
+ * Deprecated: :ref:`needfilter` is replaced by :ref:`needlist`, :ref:`needtable` or :ref:`needflow`. Which support additional options for related layout.
  * Improvement: Added :ref:`needtable` directive.
  * Improvement: Added `DataTables <https://datatables.net/>`_ support for :ref:`needtable` (including table search, excel/pdf export and dynamic column selection).
  * Improvement: Added :ref:`needs_id_regex`, which takes a regular expression and which is used to validate given IDs of needs.

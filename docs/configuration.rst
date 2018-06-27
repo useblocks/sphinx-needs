@@ -68,6 +68,8 @@ needs_types must be a list of dictionaries, where each dictionary **must** conta
 needs_extra_options
 ~~~~~~~~~~~~~~~~~~~
 
+.. versionadded:: 0.2.2
+
 The option allows the addition of extra options that can be specified on
 needs.
 
