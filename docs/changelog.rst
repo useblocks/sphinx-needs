@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.2.3
+-----
+ * Improvement: Titles can now be made optional.  See :ref:`needs_title_optional`. (`#49 <https://github.com/useblocks/sphinxcontrib-needs/issues/49>`_)
+ * Improvement: Titles be auto-generated from the first sentence of a requirement.  See :ref:`needs_title_from_content` and :ref:`title_from_content`. (`#49 <https://github.com/useblocks/sphinxcontrib-needs/issues/49>`_)
+ * Improvement: Titles can have a maximum length.  See :ref:`needs_max_title_length`. (`#49 <https://github.com/useblocks/sphinxcontrib-needs/issues/49>`_)
+
 0.2.2
 -----
  * Improvement: The sections, to which a need belongs, are now stored, filterable and exported in ``needs.json``. See updated :ref:`option_filter`. (`#53 <https://github.com/useblocks/sphinxcontrib-needs/pull/53>`_ )

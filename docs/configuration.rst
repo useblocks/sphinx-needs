@@ -356,6 +356,109 @@ If an ID is missing sphinx throws the exception "NeedsNoIdException" and stops t
 
     .. req:: This works now!
 
+
+.. _needs_title_optional:
+
+needs_title_optional
+~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.2.3
+
+Normally a title is required to follow the need directive as follows::
+
+    .. req:: This is the required title
+        :id: R_9999
+
+By default this option is set to **False**.
+
+When this option is set to **True**, a title does not need to be provided, but
+either some content or an `:id:` element will be required.  If a title is not
+provided and no ID is provided, then an ID will be generated based on the
+content of the requirement.
+
+It is important to note in these scenarios that titles will not be available
+in other directives such as needtable, needlist, needflow.
+
+A title can be auto-generated for a requirement by either setting
+needs_title_from_content_ to **True** or providing the flag
+`:title_from_content:` as follows::
+
+    .. req::
+        :title_from_content:
+
+        This will be my title.  Anything after the first sentence will not be
+        part of the title.
+
+The resulting requirement would have the title derived from the first
+sentence of the requirement.
+
+.. req::
+    :title_from_content:
+
+    This will be my title.  Anything after the first sentence will not be
+    part of the title.
+
+
+.. _needs_title_from_content:
+
+needs_title_from_content
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.2.3
+
+This setting defaults to **False**.  When set to **True** and a need does
+not provide a title, then a title will be generated using the first sentence
+of the requirement.  The length of the title will adhere to the needs_max_title_length_
+setting (which is not limited by default).
+
+When using this setting be sure to exercise caution that special formatting
+that you would not want in the title (bulleted lists, nested directives, etc.)
+do not appear in the first sentence.
+
+If a title is specified for an individual requirement, then that title
+will be used over the generated title.
+
+Example::
+
+    .. req::
+
+        The tool must have error logging.  All critical errors must be
+        written to the console.
+
+
+This will be rendered the first sentence as the title
+
+.. req::
+
+    The tool must have error logging.  All critical errors must be
+    written to the console.
+
+
+.. _needs_max_title_length:
+
+needs_max_title_length
+~~~~~~~~~~~~~~~~~~~~~~~
+
+This option is used in conjunction with auto-generated titles as controlled by
+needs_title_from_content_ and :ref:`title_from_content`.  By default there is no
+limit to the length of a title.
+
+If a maximum length is provided and the generated title would exceed that limit,
+then an elided version of the title will be used.
+
+When generating a requirement ID from the title, the full generated title will
+still be used.
+
+Example:
+
+.. req::
+    :title_from_content:
+
+    This is a requirement with a very long title that will need to be
+    shortened to prevent our titles from being too long.
+    Additional content can be provided in the requirement and not be part
+    of the title.
+
 .. _needs_show_link_type:
 
 needs_show_link_type

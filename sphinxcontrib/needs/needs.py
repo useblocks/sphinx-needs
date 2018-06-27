@@ -50,7 +50,7 @@ DEFAULT_TEMPLATE_COLLAPSE = """
 
         .. container:: header
 
-            :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
+            :needs_type:`{{type_name}}`: {% if title %}:needs_title:`{{title}}`{% endif %} :needs_id:`{{id}}`
 
 {% if status and  status|upper != "NONE" and not hide_status %}        | status: :needs_status:`{{status}}`{% endif %}
 {% if tags and not hide_tags %}        | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`{% endif %}
@@ -158,6 +158,9 @@ def setup(app):
     app.add_config_value('needs_role_need_template', "{title} ({id})", 'html')
 
     app.add_config_value('needs_extra_options', {}, 'html')
+    app.add_config_value('needs_title_optional', False, 'html')
+    app.add_config_value('needs_max_title_length', -1, 'html')
+    app.add_config_value('needs_title_from_content', False, 'html')
 
     app.add_config_value('needs_diagram_template',
                          DEFAULT_DIAGRAM_TEMPLATE,
@@ -221,6 +224,8 @@ def setup(app):
         os.chdir(old_cwd)  # Lets switch back the cwd, otherwise other stuff may not run...
         types = getattr(config, "needs_types", app.config.needs_types)
         extra_options = getattr(config, "needs_extra_options", app.config.needs_extra_options)
+        title_optional = getattr(config, "needs_title_optional", app.config.needs_title_optional)
+        title_from_content = getattr(config, "needs_title_from_content", app.config.needs_title_from_content)
     except IOError:
         types = app.config.needs_types
     except Exception as e:
@@ -228,13 +233,16 @@ def setup(app):
             os.path.join(app.confdir, "conf.py"), e))
         types = app.config.needs_types
 
+    # Update NeedDirective to use customized options
+    NeedDirective.option_spec.update(extra_options)
+    if title_optional or title_from_content:
+        NeedDirective.required_arguments = 0
+        NeedDirective.optional_arguments = 1
+
     for type in types:
         # Register requested types of needs
         app.add_directive(type["directive"], NeedDirective)
         app.add_directive("{0}_list".format(type["directive"]), NeedDirective)
-
-    # Update NeedDirective to use customized options
-    NeedDirective.option_spec.update(extra_options)
 
     app.add_directive('needfilter', NeedfilterDirective)
     app.add_directive('needlist', NeedlistDirective)
