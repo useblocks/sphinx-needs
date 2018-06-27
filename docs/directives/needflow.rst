@@ -15,7 +15,7 @@ needflow
 
 {% if READTHEDOCS %}
 
-.. image:: _static/needflow_flow.png
+.. image:: /_static/needflow_flow.png
 
 {% else %}
 
