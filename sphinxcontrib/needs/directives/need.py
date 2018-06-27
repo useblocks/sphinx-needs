@@ -152,7 +152,7 @@ class NeedDirective(Directive):
                     "Either supply IDs for the requirements or ensure the "
                     "titles are different.  NOTE: If title is being generated "
                     "from the content, then ensure the first sentence of the "
-                    "requirements are different.".format(' '.join(self.content)))
+                    "requirements are different.".format(' '.join(self.full_title)))
 
         # Add the need and all needed information
         needs_info = {
