@@ -394,7 +394,6 @@ sentence of the requirement.
 
 .. req::
     :title_from_content:
-    :collapse: false
 
     This will be my title.  Anything after the first sentence will not be
     part of the title.
