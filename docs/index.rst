@@ -81,7 +81,7 @@ Input
       :links: req_001
       :status: done
       :tags: important; main_example
-      :collpase: false
+      :collapse: false
 
       We haven't set an **ID** here, so sphinx-needs
       will generated one for us.

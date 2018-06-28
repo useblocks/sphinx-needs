@@ -39,9 +39,9 @@ sys.path.insert(0, os.path.abspath('../sphinxcontrib'))
 # built documents.
 #
 # The short X.Y version.
-version = '0.2.2'
+version = '0.2.3'
 # The full version, including alpha/beta/rc tags.
-release = '0.2.2'
+release = '0.2.3'
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 if on_rtd:
@@ -116,7 +116,7 @@ EXTRA_CONTENT_TEMPLATE_COLLAPSE = """
 
         .. container:: header
 
-            :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
+            :needs_type:`{{type_name}}`: {% if title %}:needs_title:`{{title}}`{% endif %} :needs_id:`{{id}}`
 
 {% if status and  status|upper != "NONE" and not hide_status %}        | status: :needs_status:`{{status}}`{% endif %}
 {% if tags and not hide_tags %}        | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`{% endif %}
