@@ -116,7 +116,7 @@ EXTRA_CONTENT_TEMPLATE_COLLAPSE = """
 
         .. container:: header
 
-            :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
+            :needs_type:`{{type_name}}`: {% if title %}:needs_title:`{{title}}`{% endif %} :needs_id:`{{id}}`
 
 {% if status and  status|upper != "NONE" and not hide_status %}        | status: :needs_status:`{{status}}`{% endif %}
 {% if tags and not hide_tags %}        | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`{% endif %}

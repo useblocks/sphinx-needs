@@ -27,7 +27,7 @@ Creates a need with specified type. The type is defined by using the correct dir
 
 This creates a new requirement, with a title, content, given id, a status and several tags.
 
-All options are optional, only the title as argument must be given.
+All options are optional, only the title as argument must be given (if needs_title_from_content_ is not set).
 
 .. note::
 
