@@ -60,6 +60,14 @@ class NeedflowDirective(FilterBase):
         return [targetnode] + [Needflow('')]
 
 
+def make_entity_name(name):
+    """Creates a valid PlantUML entity name from the given value."""
+    invalid_chars = "-=!#$%^&*[](){}/~'`<>:;"
+    for char in invalid_chars:
+        name = name.replace(char, "_")
+    return name
+
+
 def process_needflow(app, doctree, fromdocname):
     # Replace all needflow nodes with a list of the collected needs.
     # Augment each need with a backlink to the original location.
@@ -133,10 +141,14 @@ def process_needflow(app, doctree, fromdocname):
             node_text = diagram_template.render(**need_info)
 
             puml_node["uml"] += '{style} "{node_text}" as {id} [[{link}]] {color}\n'.format(
-                id=need_info["id"], node_text=node_text, link=link, color=need_info["type_color"],
+                id=make_entity_name(need_info["id"]), node_text=node_text,
+                link=make_entity_name(link), color=need_info["type_color"],
                 style=need_info["type_style"])
             for link in need_info["links"]:
-                puml_connections += '{id} --> {link}\n'.format(id=need_info["id"], link=link)
+                puml_connections += '{id} --> {link}\n'.format(
+                    id=make_entity_name(need_info["id"]),
+                    link=make_entity_name(link)
+                )
 
         puml_node["uml"] += puml_connections
 
@@ -177,5 +189,4 @@ def process_needflow(app, doctree, fromdocname):
             filter_node = nodes.emphasis(filter_text, filter_text)
             para += filter_node
             content.append(para)
-
         node.replace_self(content)
