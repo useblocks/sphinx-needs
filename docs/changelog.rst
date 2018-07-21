@@ -1,6 +1,11 @@
 Changelog
 =========
 
+
+0.2.4
+-----
+ * Bugfix: Fixed performance issue (`#63 <https://github.com/useblocks/sphinxcontrib-needs/issues/63>`_ )
+
 0.2.3
 -----
  * Improvement: Titles can now be made optional.  See :ref:`needs_title_optional`. (`#49 <https://github.com/useblocks/sphinxcontrib-needs/issues/49>`_)
