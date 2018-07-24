@@ -290,4 +290,4 @@ def setup(app):
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect('env-updated', install_styles_static_files)
 
-    return {'version': '0.2.2'}  # identifies the version of our extension
+    return {'version': '0.2.4'}  # identifies the version of our extension

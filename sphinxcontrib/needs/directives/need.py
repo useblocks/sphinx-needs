@@ -158,6 +158,7 @@ class NeedDirective(Directive):
         needs_info = {
             'docname': self.docname,
             'lineno': self.lineno,
+            'links_back': [],
             'target_node': target_node,
             'type': self.name,
             'type_name': type_name,
@@ -273,12 +274,12 @@ def get_sections(need_info):
     current_node = need_info['target_node']
     while current_node:
         if isinstance(current_node, nodes.section):
-            section_text = current_node.astext().split('\n', 1)
+            title = current_node.children[0].astext()
             # If using auto-section numbering, then Sphinx inserts
             # multiple non-breaking space unicode characters into the title
             # we'll replace those with a simple space to make them easier to
             # use in filters
-            title = NON_BREAKING_SPACE.sub(' ', section_text[0])
+            title = NON_BREAKING_SPACE.sub(' ', title)
             sections.append(title)
         current_node = getattr(current_node, 'parent', None)
     return sections
@@ -295,7 +296,9 @@ def add_sections(app, doctree, fromdocname):
     be used in tables and filters"""
     needs = getattr(app.builder.env, 'need_all_needs', {})
     for key, need_info in needs.items():
-        need_info['sections'] = get_sections(need_info)
+        sections = get_sections(need_info)
+        need_info['sections'] = sections
+        need_info['section_name'] = sections[0] if sections else ""
 
 
 def process_need_nodes(app, doctree, fromdocname):
@@ -312,11 +315,10 @@ def process_need_nodes(app, doctree, fromdocname):
             return
 
         needs = env.need_all_needs
-        for key, current_need in needs.items():
-            current_need["links_back"] = []
-            for linked_key, linked_need in needs.items():
-                if current_need["id"] in linked_need["links"]:
-                    current_need["links_back"].append(linked_need["id"])
+        for key, need in needs.items():
+            for link in need["links"]:
+                if link in needs:
+                    needs[link]["links_back"].append(key)
 
 
 class NeedsNoIdException(SphinxError):
