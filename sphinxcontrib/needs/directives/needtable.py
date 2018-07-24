@@ -120,6 +120,7 @@ def process_needtables(app, doctree, fromdocname):
         node_columns = []
         for col in current_needtable["columns"]:
             header_name = col.title() if col != "ID" else col
+            header_name = header_name.replace("_", " ")
             node_columns.append(nodes.entry('', nodes.paragraph('', header_name)))
 
         tgroup += nodes.thead('', nodes.row(

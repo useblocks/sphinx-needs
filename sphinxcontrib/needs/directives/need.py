@@ -158,7 +158,7 @@ class NeedDirective(Directive):
         needs_info = {
             'docname': self.docname,
             'lineno': self.lineno,
-            'links_back': [],
+            'links_back': set(),
             'target_node': target_node,
             'type': self.name,
             'type_name': type_name,
@@ -318,7 +318,7 @@ def process_need_nodes(app, doctree, fromdocname):
         for key, need in needs.items():
             for link in need["links"]:
                 if link in needs:
-                    needs[link]["links_back"].append(key)
+                    needs[link]["links_back"].add(key)
 
 
 class NeedsNoIdException(SphinxError):
