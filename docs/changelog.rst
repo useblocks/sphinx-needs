@@ -2,6 +2,10 @@ Changelog
 =========
 
 
+0.2.5
+-----
+   * Bugfix: Fix for changes made in 0.2.5.    
+
 0.2.4
 -----
  * Bugfix: Fixed performance issue (`#63 <https://github.com/useblocks/sphinxcontrib-needs/issues/63>`_ )
