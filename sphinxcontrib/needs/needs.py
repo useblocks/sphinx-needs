@@ -9,7 +9,7 @@ from docutils import nodes
 from pkg_resources import parse_version
 from sphinx.roles import XRefRole
 from sphinxcontrib.needs.directives.need import Need, NeedDirective, \
-    process_need_nodes, purge_needs, add_sections
+    process_need_nodes, purge_needs, add_sections, html_visit, html_depart
 from sphinxcontrib.needs.directives.needimport import Needimport, NeedimportDirective
 from sphinxcontrib.needs.directives.needtable import Needtable, NeedtableDirective, process_needtables
 from sphinxcontrib.needs.directives.needlist import Needlist, NeedlistDirective, process_needlist
@@ -22,6 +22,7 @@ from sphinxcontrib.needs.environment import install_styles_static_files, install
 from sphinxcontrib.needs.roles.need_incoming import Need_incoming, process_need_incoming
 from sphinxcontrib.needs.roles.need_outgoing import Need_outgoing, process_need_outgoing
 from sphinxcontrib.needs.roles.need_ref import Need_ref, process_need_ref
+from sphinxcontrib.needs.utils import process_dynamic_values
 
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
@@ -184,7 +185,7 @@ def setup(app):
     app.add_config_value('needs_css', "modern.css", 'html')
 
     # Define nodes
-    app.add_node(Need)
+    app.add_node(Need, html=(html_visit, html_depart))
     app.add_node(Needfilter)
     app.add_node(Needimport)
     app.add_node(Needlist)
@@ -274,6 +275,7 @@ def setup(app):
     app.connect('env-purge-doc', purge_needs)
     app.connect('doctree-resolved', add_sections)
     app.connect('doctree-resolved', process_need_nodes)
+    app.connect('doctree-resolved', process_dynamic_values)
     app.connect('doctree-resolved', process_needfilters)
     app.connect('doctree-resolved', process_needlist)
     app.connect('doctree-resolved', process_needtables)

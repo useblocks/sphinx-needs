@@ -6,7 +6,8 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 from docutils.parsers.rst import Directive
 from sphinx.errors import SphinxError
-from jinja2 import Template
+from sphinx.util.nodes import nested_parse_with_titles
+from docutils.statemachine import ViewList
 from pkg_resources import parse_version
 import sphinx
 sphinx_version = sphinx.__version__
@@ -14,6 +15,9 @@ if parse_version(sphinx_version) >= parse_version("1.6"):
     from sphinx.util import logging
 else:
     import logging
+
+from sphinxcontrib.needs.roles.need_incoming import Need_incoming
+from sphinxcontrib.needs.roles.need_outgoing import Need_outgoing
 
 NON_BREAKING_SPACE = re.compile('\xa0+')
 
@@ -101,6 +105,8 @@ class NeedDirective(Directive):
                 collapse = False
             else:
                 raise Exception("collapse attribute must be true or false")
+        else:
+            collapse = getattr(env.app.config, "needs_collapse_details", True)
 
         hide = True if "hide" in self.options.keys() else False
         hide_tags = True if "hide_tags" in self.options.keys() else False
@@ -177,24 +183,130 @@ class NeedDirective(Directive):
             'hide_tags': hide_tags,
             'hide_status': hide_status,
         }
-        self.merge_extra_options(needs_info)
+        extra_options = self.merge_extra_options(needs_info)
         env.need_all_needs[id] = needs_info
-        if collapse == "":
-            if env.config.needs_collapse_details:
-                template = Template(env.config.needs_template_collapse)
-            else:
-                template = Template(env.config.needs_template)
-        elif collapse:
-            template = Template(env.config.needs_template_collapse)
+
+        # OLD CODE: using state machine
+        # if collapse == "":
+        #     if env.config.needs_collapse_details:
+        #         template = Template(env.config.needs_template_collapse)
+        #     else:
+        #         template = Template(env.config.needs_template)
+        # elif collapse:
+        #     template = Template(env.config.needs_template_collapse)
+        # else:
+        #     template = Template(env.config.needs_template)
+        #
+        # text = template.render(**env.need_all_needs[id])
+        # self.state_machine.insert_input(
+        #     text.split('\n'),
+        #     self.state_machine.document.attributes['source'])
+
+        rst = ViewList()
+        for line in self.content:
+            rst.append(line, self.docname, self.lineno)
+
+        node_need = Need('', classes=[self.name])
+
+        # need title calculation
+        title_type = '{}: '.format(needs_info["type_name"])
+        title_headline = "{} ".format(needs_info["title"])
+        title_id = "{}".format(needs_info["id"])
+
+        # need title
+        node_type = nodes.inline(title_type, title_type, classes=["needs-type"])
+        node_title = nodes.inline(title_headline, title_headline, classes=["needs-title"])
+        nodes_id = nodes.inline(title_id, title_id, classes=["needs-id"])
+
+        # need parameters
+        param_status = "status: "
+        param_tags = "tags: "
+
+        param_extra_options = {}
+        for option in extra_options:
+            param_extra_options[option] = self.options.get(option)
+
+        node_status = nodes.line(param_status, param_status, classes=['status'])
+        node_status.append(nodes.inline(needs_info["status"], needs_info["status"],
+                                        classes=["needs-status", str(needs_info['status'])]))
+
+        node_tags = nodes.line(param_tags, param_tags, classes=['tags'])
+        for tag in needs_info['tags']:
+            node_tags.append(nodes.inline(tag, tag, classes=["needs-tag", str(tag)]))
+            node_tags.append(nodes.inline(' ', ' '))
+
+        # Links incoming
+        node_incoming = nodes.line()
+        prefix = "links incoming: "
+        node_incoming_prefix = nodes.Text(prefix, prefix)
+        node_incoming.append(node_incoming_prefix)
+        node_incoming_links = Need_incoming(reftarget=id)
+        node_incoming_emphasis = nodes.emphasis('', '')
+        node_incoming_emphasis.append(nodes.Text(id, id))
+        node_incoming_links.append(node_incoming_emphasis)
+        node_incoming.append(node_incoming_links)
+
+        # Links outgoing
+        node_outgoing = nodes.line()
+        prefix = "links outgoing: "
+        node_outgoing_prefix = nodes.Text(prefix, prefix)
+        node_outgoing.append(node_outgoing_prefix)
+        node_outgoing_links = Need_outgoing(reftarget=id)
+        node_outgoing_emphasis = nodes.emphasis('', '')
+        node_outgoing_emphasis.append(nodes.Text(id, id))
+        node_outgoing_links.append(node_outgoing_emphasis)
+        node_outgoing.append(node_outgoing_links)
+
+        nodes_extra_options = []
+        for key, value in param_extra_options.items():
+            param_option = '{}: '.format(key)
+            node_option = nodes.line(param_option, param_option, classes=['extra_option'])
+            node_option.append(nodes.inline(value, value,
+                                            classes=["needs-extra-option", str(key)]))
+
+            nodes_extra_options.append(node_option)
+
+        # Collapse check
+        if needs_info["collapse"]:
+            # HEADER
+            node_need_toogle_container = nodes.container(classes=['toggle'])
+            node_need_toogle_head_container = nodes.container(classes=['header'])
+            node_need_toogle_head_container += node_type, node_title, nodes_id
+
+            node_need_toogle_container.append(node_need_toogle_head_container)
+
+            # PARAMETERS
+            if needs_info["status"]:
+                node_need_toogle_container.append(node_status)
+            if needs_info["tags"]:
+                node_need_toogle_container.append(node_tags)
+
+            node_need_toogle_container.append(node_incoming)
+            node_need_toogle_container.append(node_outgoing)
+
+            node_need_toogle_container += nodes_extra_options
+            node_need.append(node_need_toogle_container)
         else:
-            template = Template(env.config.needs_template)
+            node_headline = nodes.line()
+            node_headline += node_type, node_title, nodes_id
+            node_need.append(node_headline)
+            if needs_info["status"]:
+                node_need.append(node_status)
+            if needs_info["tags"]:
+                node_need.append(node_tags)
 
-        text = template.render(**env.need_all_needs[id])
-        self.state_machine.insert_input(
-            text.split('\n'),
-            self.state_machine.document.attributes['source'])
+            node_need.append(node_incoming)
+            node_need.append(node_outgoing)
+            node_need += nodes_extra_options
 
-        return [target_node]
+        # need content calculation (parse RST content)
+        node_need_content = nodes.Element()
+        node_need_content.document = self.state.document
+        nested_parse_with_titles(self.state, rst, node_need_content)
+
+        node_need += node_need_content.children
+
+        return [target_node] + [node_need]
 
     def make_hashed_id(self, type_prefix, id_length):
         hashable_content = self.full_title or '\n'.join(self.content)
@@ -242,6 +354,8 @@ class NeedDirective(Directive):
         for key in self.option_spec:
             if key not in needs_info.keys():
                 needs_info[key] = ""
+
+        return extra_keys
 
     def _get_full_title(self):
         """Determines the title for the need in order of precedence:
@@ -319,6 +433,28 @@ def process_need_nodes(app, doctree, fromdocname):
             for link in need["links"]:
                 if link in needs:
                     needs[link]["links_back"].add(key)
+
+    # for node in doctree.traverse(Need):
+    #     if not app.config.needs_include_needs:
+    #         # Ok, this is really dirty.
+    #         # If we replace a node, docutils checks, if it will not lose any attributes.
+    #         # But this is here the case, because we are using the attribute "ids" of a node.
+    #         # However, I do not understand, why losing an attribute is such a big deal, so we delete everything
+    #         # before docutils claims about it.
+    #         for att in ('ids', 'names', 'classes', 'dupnames'):
+    #             node[att] = []
+    #         node.replace_self([])
+
+        # content = nodes.Text("Buh", "Buh")
+        # node.replace_self(content)
+
+
+def html_visit(self, node):
+    self.body.append(self.starttag(node, 'div', '', CLASS='need'))
+
+
+def html_depart(self, node):
+    self.body.append('</div>')
 
 
 class NeedsNoIdException(SphinxError):

@@ -10,9 +10,13 @@ def test_custom_attributes_appear(app, status, warning):
     html = (app.outdir / 'index.html').read_text()
 
     # Custom options should appear
-    assert 'introduced: <cite>1.0.0</cite>' in html
-    assert 'updated: <cite>1.5.1</cite>' in html
-    assert 'impacts: <cite>component_a</cite>' in html
+    # assert 'introduced: <cite>1.0.0</cite>' in html
+    assert '<div class="extra_option line">updated: <span class="needs-extra-option updated">1.5.1</span></div>' \
+           in html
+    assert '<div class="extra_option line">introduced: <span class="needs-extra-option introduced">1.0.0</span></div>' \
+           in html
+    assert '<div class="extra_option line">impacts: <span class="needs-extra-option impacts">component_a</span></div>' \
+           in html
 
     tables = re.findall("(<table .*?</table>)", html, re.DOTALL)
     assert len(tables) == 2

@@ -87,6 +87,14 @@ def rstjinja(app, docname, source):
     source[0] = rendered
 
 
+def process_dynamic_values(app, doctree, fromdocname):
+    env = app.builder.env
+    if not hasattr(env, 'need_all_needs'):
+        return
+
+    # all_needs = env.need_all_needs
+
+
 class NeedsList:
     JSON_KEY_EXCLUSIONS = {'links_back', 'type_color', 'hide_status',
                            'target_node', 'hide', 'type_prefix', 'lineno',

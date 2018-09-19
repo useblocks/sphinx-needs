@@ -4,7 +4,7 @@ Changelog
 
 0.2.5
 -----
-   * Bugfix: Fix for changes made in 0.2.5.    
+   * Bugfix: Fix for changes made in 0.2.5.
 
 0.2.4
 -----
