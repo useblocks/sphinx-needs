@@ -9,7 +9,7 @@ from docutils import nodes
 from pkg_resources import parse_version
 from sphinx.roles import XRefRole
 from sphinxcontrib.needs.directives.need import Need, NeedDirective, \
-    process_need_nodes, purge_needs, add_sections, html_visit, html_depart
+    process_need_nodes, purge_needs, add_sections, html_visit, html_depart, latex_visit, latex_depart
 from sphinxcontrib.needs.directives.needimport import Needimport, NeedimportDirective
 from sphinxcontrib.needs.directives.needtable import Needtable, NeedtableDirective, process_needtables
 from sphinxcontrib.needs.directives.needlist import Needlist, NeedlistDirective, process_needlist
@@ -185,8 +185,8 @@ def setup(app):
     app.add_config_value('needs_css', "modern.css", 'html')
 
     # Define nodes
-    app.add_node(Need, html=(html_visit, html_depart))
-    app.add_node(Needfilter)
+    app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
+    app.add_node(Needfilter, )
     app.add_node(Needimport)
     app.add_node(Needlist)
     app.add_node(Needtable)

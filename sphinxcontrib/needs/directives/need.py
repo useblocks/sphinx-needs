@@ -202,21 +202,26 @@ class NeedDirective(Directive):
         #     text.split('\n'),
         #     self.state_machine.document.attributes['source'])
 
+        if hide:
+            return [target_node]
+
         rst = ViewList()
         for line in self.content:
             rst.append(line, self.docname, self.lineno)
 
-        node_need = Need('', classes=[self.name])
+        node_need = Need('', classes=['need', self.name, 'need-{}'.format(type_name.lower())])
 
         # need title calculation
         title_type = '{}: '.format(needs_info["type_name"])
-        title_headline = "{} ".format(needs_info["title"])
+        title_headline = needs_info["title"]
         title_id = "{}".format(needs_info["id"])
+        title_spacer = " "
 
         # need title
         node_type = nodes.inline(title_type, title_type, classes=["needs-type"])
         node_title = nodes.inline(title_headline, title_headline, classes=["needs-title"])
         nodes_id = nodes.inline(title_id, title_id, classes=["needs-id"])
+        node_spacer = nodes.inline(title_spacer, title_spacer, classes=["needs-spacer"])
 
         # need parameters
         param_status = "status: "
@@ -271,7 +276,7 @@ class NeedDirective(Directive):
             # HEADER
             node_need_toogle_container = nodes.container(classes=['toggle'])
             node_need_toogle_head_container = nodes.container(classes=['header'])
-            node_need_toogle_head_container += node_type, node_title, nodes_id
+            node_need_toogle_head_container += node_type, node_spacer, node_title, node_spacer, nodes_id
 
             node_need_toogle_container.append(node_need_toogle_head_container)
 
@@ -288,7 +293,7 @@ class NeedDirective(Directive):
             node_need.append(node_need_toogle_container)
         else:
             node_headline = nodes.line()
-            node_headline += node_type, node_title, nodes_id
+            node_headline += node_type, node_spacer, node_title, node_spacer, nodes_id
             node_need.append(node_headline)
             if needs_info["status"]:
                 node_need.append(node_status)
@@ -455,6 +460,14 @@ def html_visit(self, node):
 
 def html_depart(self, node):
     self.body.append('</div>')
+
+
+def latex_visit(self, node):
+    pass
+
+
+def latex_depart(self, node):
+    pass
 
 
 class NeedsNoIdException(SphinxError):
