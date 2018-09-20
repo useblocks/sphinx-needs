@@ -9,7 +9,7 @@ requires = ['Sphinx', 'six']
 setup(
     name='sphinxcontrib-needs',
     # If you raise, think about versions in conf.py and needs.py!!!
-    version='0.2.5',
+    version='0.3.0',
     url='http://github.com/useblocks/sphinxcontrib-needs',
     download_url='http://pypi.python.org/pypi/sphinxcontrib-needs',
     license='MIT',
@@ -27,7 +27,6 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Topic :: Documentation',
