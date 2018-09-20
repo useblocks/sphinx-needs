@@ -1,5 +1,10 @@
 import re
 
+try:
+    from pathlib import Path
+except ImportError:
+    from pathlib2 import Path
+
 from sphinx_testing import with_app
 
 
@@ -7,7 +12,7 @@ from sphinx_testing import with_app
 def test_custom_attributes_appear(app, status, warning):
     app.build()
 
-    html = (app.outdir / 'index.html').read_text()
+    html = Path(app.outdir, 'index.html').read_text()
 
     # Custom options should appear
     # assert 'introduced: <cite>1.0.0</cite>' in html

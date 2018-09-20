@@ -2,13 +2,17 @@
 from sphinx_testing import with_app
 
 from test_title_optional import extract_needs_from_html
+try:
+    from pathlib import Path
+except ImportError:
+    from pathlib2 import Path
 
 
 @with_app(buildername='html', srcdir='doc_test/title_from_content')
 def test_title_from_content_scenarios(app, status, warning):
     app.build()
 
-    html = (app.outdir / 'index.html').read_text()
+    html = Path(app.outdir, 'index.html').read_text()
     needs = extract_needs_from_html(html)
 
     assert needs[0].id == 'R_12345'

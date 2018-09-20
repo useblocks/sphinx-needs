@@ -10,14 +10,14 @@ from sphinx.util.nodes import nested_parse_with_titles
 from docutils.statemachine import ViewList
 from pkg_resources import parse_version
 import sphinx
+from sphinxcontrib.needs.roles.need_incoming import Need_incoming
+from sphinxcontrib.needs.roles.need_outgoing import Need_outgoing
+
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
     from sphinx.util import logging
 else:
     import logging
-
-from sphinxcontrib.needs.roles.need_incoming import Need_incoming
-from sphinxcontrib.needs.roles.need_outgoing import Need_outgoing
 
 NON_BREAKING_SPACE = re.compile('\xa0+')
 
@@ -454,7 +454,18 @@ def process_need_nodes(app, doctree, fromdocname):
         # node.replace_self(content)
 
 
+#####################
+# Visitor functions #
+#####################
+# Used for builders like html or latex to tell them, what do, if they stumble on a Need-Node in the doctree.
+# Normally nothing needs to be done, as all needed output-configuration is done in the child-nodes of the detected
+# Need-Node.
+
 def html_visit(self, node):
+    """
+    Visitor method for Need-node of builder 'html'.
+    Does only wrap the Need-content into an extra <div> with class=need
+    """
     self.body.append(self.starttag(node, 'div', '', CLASS='need'))
 
 

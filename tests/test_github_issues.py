@@ -1,6 +1,12 @@
 import re
 
 from sphinx_testing import with_app
+
+try:
+    from pathlib import Path
+except ImportError:
+    from pathlib2 import Path
+
 try:
     from StringIO import StringIO  # Python 2
 except ImportError:
@@ -14,7 +20,7 @@ from subprocess import check_output, STDOUT
 #     """
 #     #app.builder.build_all()
 #     app.build()
-#     html = (app.outdir / 'index.html').read_text()
+#     html = (app.outdir, 'index.html').read_text()
 #     assert '<h1>Some needs' in html
 #     assert 'OWN_ID_123' in html
 
@@ -31,7 +37,7 @@ def test_doc_github_44(app, status, warning):
     output = str(check_output(["sphinx-build", "-a", "-E", "-b", "html", app.srcdir, app.outdir],
                               stderr=STDOUT, universal_newlines=True))
     # app.build() Uncomment, if build should stop on breakpoints
-    html = (app.outdir / 'index.html').read_text()
+    html = Path(app.outdir, 'index.html').read_text()
     assert '<h1>Github Issue 44 test' in html
     assert 'Test 1' in html
     assert 'Test 2' in html
@@ -54,7 +60,7 @@ def test_doc_github_61(app, status, warning):
     # error message is embedded in the image itself. The best we can do is make sure
     # the transformed entity names are in the alt text of the image.
     app.build()
-    html = (app.outdir / 'index.html').read_text()
+    html = Path(app.outdir, 'index.html').read_text()
     alt_text = re.findall('<img.*?alt=(.*?)>', html, re.MULTILINE + re.DOTALL)
     assert len(alt_text) == 1
     assert "A-001" in alt_text[0]

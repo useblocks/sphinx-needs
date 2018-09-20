@@ -6,7 +6,10 @@ from nose.tools import raises
 from sphinx_testing import with_app
 
 from sphinxcontrib.needs.directives.need import NeedsNoIdException
-
+try:
+    from pathlib import Path
+except ImportError:
+    from pathlib2 import Path
 
 #  OFFICIAL DOCUMENTATION BUILDS
 
@@ -39,7 +42,7 @@ def test_build_json(app, status, warning):
 @with_app(buildername='needs', srcdir='../docs')
 def test_build_needs(app, status, warning):
     app.builder.build_all()
-    json_text = (app.outdir / 'needs.json').read_text()
+    json_text = Path(app.outdir, 'needs.json').read_text()
     needs_data = json.loads(json_text)
 
     # Validate top-level data

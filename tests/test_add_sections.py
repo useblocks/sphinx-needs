@@ -1,12 +1,17 @@
 import re
 
+try:
+    from pathlib import Path
+except ImportError:
+    from pathlib2 import Path
+
 from sphinx_testing import with_app
 
 
 @with_app(buildername='html', srcdir='doc_test/add_sections')
 def test_section_is_usable_in_filters(app, status, warning):
     app.builder.build_all()
-    html = (app.outdir / 'index.html').read_text()
+    html = Path(app.outdir, 'index.html').read_text()
 
     tables = re.findall("(<table .*?</table>)", html, re.DOTALL)
     assert len(tables) == 2

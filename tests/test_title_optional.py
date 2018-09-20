@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 from sphinx_testing import with_app
 from xml.etree import ElementTree
-
+try:
+    from pathlib import Path
+except ImportError:
+    from pathlib2 import Path
 
 NS = {'html': 'http://www.w3.org/1999/xhtml'}
 
@@ -23,7 +26,7 @@ class HtmlNeed(object):
 
 
 def extract_needs_from_html(html):
-    document = ElementTree.fromstring(html)
+    document = ElementTree.fromstring(html.encode('utf-8'))
     divs = document.findall(".//html:div", NS)
     return [HtmlNeed(div) for div in divs if 'need-requirement' in div.get('class', '')]
 
@@ -32,7 +35,7 @@ def extract_needs_from_html(html):
 def test_title_optional_scenarios(app, status, warning):
     app.build()
 
-    html = (app.outdir / 'index.html').read_text()
+    html = Path(app.outdir, 'index.html').read_text()
     needs = extract_needs_from_html(html)
 
     assert needs[0].id == 'R_12345'
