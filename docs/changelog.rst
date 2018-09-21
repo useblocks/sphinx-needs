@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.3.0
+-----
+   TODO:
+   * Deprecation of need_template
+   * Not set need statements are no longer printed out or print empty lines
+   * needs_inline: Todo need links to need_inlines to not work currently
 
 0.2.5
 -----

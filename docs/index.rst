@@ -118,7 +118,6 @@ Input
      :style: datatables
 
 
-
 Result
 ~~~~~~
 

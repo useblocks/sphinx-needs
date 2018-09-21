@@ -14,7 +14,7 @@ span.needs-title {
     font-weight: bold;
 }
 
-span.needs-id {
+span.needs-id, a.needs-id {
     font-size: 80%;
     color: #aaa;
 }

@@ -72,6 +72,8 @@ class NeedDirective(Directive):
         super(NeedDirective, self).__init__(*args, **kw)
         self.log = logging.getLogger(__name__)
         self.full_title = self._get_full_title()
+        self.inline_pattern = re.compile('\(([\w-]+)\)(.*)')
+        # self.inline_pattern = re.compile('\(([\w-]+)\)([\w\s-]*)')
 
     def run(self):
         #############################################################################################
@@ -222,6 +224,10 @@ class NeedDirective(Directive):
         node_need_content.document = self.state.document
         nested_parse_with_titles(self.state, rst, node_need_content)
 
+        internals = self.find_internals(node_need_content)
+
+        self.update_need_with_internals(needs_info, internals)
+
         node_need += node_need_content.children
 
         return [target_node] + [node_need]
@@ -232,6 +238,61 @@ class NeedDirective(Directive):
                          hashlib.sha1(hashable_content.encode("UTF-8"))
                                 .hexdigest()
                                 .upper()[:id_length])
+
+    def update_need_with_internals(self, need, internal_nodes):
+        for internal_node in internal_nodes:
+            content = internal_node.children[0].children[0]  # ->inline->Text
+            result = self.inline_pattern.match(content)
+            if result is not None:
+                inline_id = result.group(1)
+                inline_content = result.group(2)
+            else:
+                # ToDo: Create random id
+                inline_id = 123
+                inline_content = content
+
+            if 'internals' not in need.keys():
+                need['internals'] = {}
+
+            need['internals'][inline_id] = {
+                'id': inline_id,
+                'content': inline_content,
+                'document': need["docname"]
+            }
+
+            inline_id_ref = '{}.{}'.format(need['id'], inline_id)
+            inline_id_show = inline_id
+            internal_node['reftarget'] = inline_id_ref
+
+            inline_link_text = ' {}'.format(inline_id_show)
+            inline_link_node = nodes.Text(inline_link_text, inline_link_text)
+            inline_text_node = nodes.Text(inline_content, inline_content)
+
+            from sphinx.util.nodes import make_refnode
+            inline_ref_node = make_refnode(self.env.app.builder,
+                                           need['docname'],
+                                           need['docname'],
+                                           inline_id_ref,
+                                           inline_link_node)
+            inline_ref_node["classes"] += ['needs-id']
+
+            internal_node.children = []
+            node_need_inline_line = nodes.inline(ids=[inline_id_ref], classes=["need-internal"])
+            node_need_inline_line.append(inline_text_node)
+            node_need_inline_line.append(inline_ref_node)
+            internal_node.append(node_need_inline_line)
+
+    def find_internals(self, node):
+        from sphinxcontrib.needs.roles.need_inline import NeedInline
+        found_nodes = []
+        for child in node.children:
+            if isinstance(child, NeedInline):
+                found_nodes.append(child)
+            else:
+                found_nodes += self.find_internals(child)
+        return found_nodes
+
+
 
     @property
     def env(self):
@@ -424,41 +485,49 @@ def construct_meta(need_data, env):
     node_status = nodes.line(param_status, param_status, classes=['status'])
     node_status.append(nodes.inline(need_data["status"], need_data["status"],
                                     classes=["needs-status", str(need_data['status'])]))
+    node_meta.append(node_status)
 
     node_tags = nodes.line(param_tags, param_tags, classes=['tags'])
     for tag in need_data['tags']:
         node_tags.append(nodes.inline(tag, tag, classes=["needs-tag", str(tag)]))
         node_tags.append(nodes.inline(' ', ' '))
+    node_meta.append(node_tags)
 
     # Links incoming
-    node_incoming = nodes.line()
-    prefix = "links incoming: "
-    node_incoming_prefix = nodes.Text(prefix, prefix)
-    node_incoming.append(node_incoming_prefix)
-    node_incoming_links = Need_incoming(reftarget=need_data['id'])
-    node_incoming_links.append(nodes.Text(need_data['id'], need_data['id']))
-    node_incoming.append(node_incoming_links)
+    if need_data['links_back']:
+        node_incoming = nodes.line()
+        prefix = "links incoming: "
+        node_incoming_prefix = nodes.Text(prefix, prefix)
+        node_incoming.append(node_incoming_prefix)
+        node_incoming_links = Need_incoming(reftarget=need_data['id'])
+        node_incoming_links.append(nodes.Text(need_data['id'], need_data['id']))
+        node_incoming.append(node_incoming_links)
+        node_meta.append(node_incoming)
 
     # Links outgoing
-    node_outgoing = nodes.line()
-    prefix = "links outgoing: "
-    node_outgoing_prefix = nodes.Text(prefix, prefix)
-    node_outgoing.append(node_outgoing_prefix)
-    node_outgoing_links = Need_outgoing(reftarget=need_data['id'])
-    node_outgoing_links.append(nodes.Text(need_data['id'], need_data['id']))
-    node_outgoing.append(node_outgoing_links)
+    if need_data['links']:
+        node_outgoing = nodes.line()
+        prefix = "links outgoing: "
+        node_outgoing_prefix = nodes.Text(prefix, prefix)
+        node_outgoing.append(node_outgoing_prefix)
+        node_outgoing_links = Need_outgoing(reftarget=need_data['id'])
+        node_outgoing_links.append(nodes.Text(need_data['id'], need_data['id']))
+        node_outgoing.append(node_outgoing_links)
+        node_meta.append(node_outgoing)
 
     extra_options = getattr(env.config, 'needs_extra_options', {})
     node_extra_options = []
     for key, value in extra_options.items():
         param_data = need_data[key]
+        if param_data is None or not param_data:
+            continue
         param_option = '{}: '.format(key)
         node_option = nodes.line(param_option, param_option, classes=['extra_option'])
         node_option.append(nodes.inline(param_data, param_data,
                                         classes=["needs-extra-option", str(key)]))
         node_extra_options.append(node_option)
 
-    node_meta += [node_status, node_tags, node_incoming, node_outgoing] + node_extra_options
+    node_meta += node_extra_options
     return node_meta
 
 #####################

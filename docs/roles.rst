@@ -75,3 +75,60 @@ Example
 
 **Result**: The realisation of **Sliced Bread** is really important because the
 needs :need_incoming:`roles_req_1` are based on it.
+
+
+need_inline / ni
+----------------
+.. versionadded:: 0.3.0
+
+``:need_inline`` or as shortcut ``:ni:`` can be used inside needs to set a sub-id for a specific sentence/area.
+This sub-ids can be linked and referenced in other need functions like links and co.
+
+Example
+~~~~~~~
+
+.. code-block:: jinja
+
+   .. req:: Car must be awesome
+      :id: my_car_1
+      :tags: car
+      :status: open
+
+      My new car must be the fastest on the world. Therefor it shall have:
+
+      * :need_inline:`(1)A topspeed of 300 km/h`
+      * :ni:`(2) An acceleration of 30 m/s or much much more`
+
+      And we also need --> :ni:`(awesome_3) a turbo button`!
+
+
+   .. spec:: Build awesome car
+      :links: my_car_1.1, my_car_1.2
+
+      No way to get :need:`my_car_1.awesome_3` realised.
+
+
+   Reference to a need_internal from outside need scope: :need:`my_car_1.2`.
+
+**Result**
+
+.. req:: Car must be awesome
+   :id: my_car_1
+   :tags: car
+   :status: open
+
+   My new car must be the fastest on the world. Therefor it shall have:
+
+   * :need_inline:`(1)A topspeed of 300 km/h`
+   * :ni:`(2) An acceleration of 30 m/s or much much more`
+
+   And we also need --> :ni:`(awesome_3) a turbo button`!
+
+
+.. spec:: Build awesome car
+   :links: my_car_1.1, my_car_1.2
+
+   No way to get :need:`my_car_1.awesome_3` realised.
+
+
+Reference to a need_internal from outside need scope: :need:`my_car_1.2`.

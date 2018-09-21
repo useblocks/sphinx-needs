@@ -22,6 +22,7 @@ from sphinxcontrib.needs.environment import install_styles_static_files, install
 from sphinxcontrib.needs.roles.need_incoming import Need_incoming, process_need_incoming
 from sphinxcontrib.needs.roles.need_outgoing import Need_outgoing, process_need_outgoing
 from sphinxcontrib.needs.roles.need_ref import Need_ref, process_need_ref
+from sphinxcontrib.needs.roles.need_inline import NeedInline, process_need_inline
 from sphinxcontrib.needs.utils import process_dynamic_values
 
 sphinx_version = sphinx.__version__
@@ -29,8 +30,8 @@ if parse_version(sphinx_version) >= parse_version("1.6"):
     from sphinx.util import logging
 else:
     import logging
-    logging.basicConfig()  # Only need to do this once
 
+    logging.basicConfig()  # Only need to do this once
 
 DEFAULT_TEMPLATE_COLLAPSE = """
 .. _{{id}}:
@@ -191,6 +192,7 @@ def setup(app):
     app.add_node(Needlist)
     app.add_node(Needtable)
     app.add_node(Needflow)
+    app.add_node(NeedInline, html=(visitor_dummy, visitor_dummy), latex=(visitor_dummy, visitor_dummy))
 
     ########################################################################
     # DIRECTIVES
@@ -268,6 +270,14 @@ def setup(app):
                                            innernodeclass=nodes.emphasis,
                                            warn_dangling=True))
 
+    app.add_role('need_inline', XRefRole(nodeclass=NeedInline,
+                                         innernodeclass=nodes.inline,
+                                         warn_dangling=True))
+    # Shortcut for need_inline
+    app.add_role('ni', XRefRole(nodeclass=NeedInline,
+                                innernodeclass=nodes.inline,
+                                warn_dangling=True))
+
     ########################################################################
     # EVENTS
     ########################################################################
@@ -280,6 +290,7 @@ def setup(app):
     app.connect('doctree-resolved', process_needlist)
     app.connect('doctree-resolved', process_needtables)
     app.connect('doctree-resolved', process_needflow)
+    app.connect('doctree-resolved', process_need_inline)
     app.connect('doctree-resolved', process_need_ref)
     app.connect('doctree-resolved', process_need_incoming)
     app.connect('doctree-resolved', process_need_outgoing)
@@ -293,3 +304,13 @@ def setup(app):
     app.connect('env-updated', install_styles_static_files)
 
     return {'version': '0.3.0'}  # identifies the version of our extension
+
+
+def visitor_dummy(*args, **kwargs):
+    """
+    Dummy class for visitor methods, which does nothing.
+    :param args:
+    :param kwargs:
+    :return:
+    """
+    pass

@@ -27,12 +27,25 @@ def process_need_ref(app, doctree, fromdocname):
                                     node_need_ref[0].deepcopy(),
                                     node_need_ref['reftarget'] + '?')
 
-        # If need target exists, let's create the reference
-        if node_need_ref['reftarget'] in env.need_all_needs:
-            target_need = env.need_all_needs[node_need_ref['reftarget']]
+        if '.' in node_need_ref['reftarget']:
+            ref_id, internal_id = node_need_ref['reftarget'].split('.')
+        else:
+            ref_id = node_need_ref['reftarget']
+            internal_id = None
+
+        if ref_id in env.need_all_needs:
+            target_need = env.need_all_needs[ref_id]
             try:
-                link_text = app.config.needs_role_need_template.format(title=target_need["title"],
-                                                                       id=target_need["id"],
+                if internal_id is not None:
+                    title = target_need['internals'][internal_id]['content']
+                else:
+                    title = target_need["title"]
+
+                # Shorten title, if necessary
+                title = title if len(title) < 30 else '{}...'.format(title[:27])
+
+                link_text = app.config.needs_role_need_template.format(title=title,
+                                                                       id=node_need_ref['reftarget'],
                                                                        type=target_need["type"],
                                                                        type_name=target_need["type_name"],
                                                                        status=target_need["status"],
@@ -46,7 +59,7 @@ def process_need_ref(app, doctree, fromdocname):
                 new_node_ref = make_refnode(app.builder,
                                             fromdocname,
                                             target_need['docname'],
-                                            target_need['target_node']['refid'],
+                                            node_need_ref['reftarget'],
                                             node_need_ref[0].deepcopy(),
                                             node_need_ref['reftarget'])
             except NoUri:
