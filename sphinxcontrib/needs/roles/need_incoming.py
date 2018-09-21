@@ -35,7 +35,7 @@ def process_need_incoming(app, doctree, fromdocname):
 
                     # if index + 1 < len(ref_need["links_back"]):
                     #     link_text += ", "
-                    node_need_backref[0].children[0] = nodes.Text(link_text, link_text)
+                    node_need_backref[0] = nodes.Text(link_text, link_text)
 
                     new_node_ref = make_refnode(app.builder,
                                                 fromdocname,

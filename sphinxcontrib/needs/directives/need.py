@@ -23,10 +23,30 @@ NON_BREAKING_SPACE = re.compile('\xa0+')
 
 
 class Need(nodes.General, nodes.Element):
+    """
+    Node for containing a complete need.
+    Node structure:
+
+    - need
+      - headline container
+      - meta container ()
+      - content container
+
+    As the content container gets rendered RST input, this must already be created during
+    node handling and can not be done later during event handling.
+    Reason: nested_parse_with_titles() needs self.state, which is available only during node handling.
+
+    headline and content container get added later during event handling (process_need_nodes()).
+    """
     pass
 
 
 class NeedDirective(Directive):
+    """
+    Collects mainly all needed need-information and renders its rst-based content.
+
+    It only creates a basic node-structure to support later manipulation.
+    """
     # this enables content in the directive
     has_content = True
 
@@ -75,9 +95,9 @@ class NeedDirective(Directive):
         if not found:
             # This should never happen. But it may happen, if Sphinx is called multiples times
             # inside one ongoing python process.
-            # In this case the configuration from a prior sphinx run may be active, which has requisterd a direcitve,
+            # In this case the configuration from a prior sphinx run may be active, which has registered a directive,
             # which is reused inside a current document, but no type was defined for the current run...
-            # Yeeeh, this really may happen...
+            # Yeah, this really has happened...
             return [nodes.Text('', '')]
 
         # Get the id or generate a random string/hash string, which is hopefully unique
@@ -137,7 +157,6 @@ class NeedDirective(Directive):
         # Get links
         links = self.options.get("links", [])
         if len(links) > 0:
-            # links = [link.strip().upper() for link in links.split(";") if link != ""]
             links = [link.strip() for link in re.split(";|,", links) if link != ""]
 
         #############################################################################################
@@ -183,128 +202,22 @@ class NeedDirective(Directive):
             'hide_tags': hide_tags,
             'hide_status': hide_status,
         }
-        extra_options = self.merge_extra_options(needs_info)
+        self.merge_extra_options(needs_info)
         env.need_all_needs[id] = needs_info
-
-        # OLD CODE: using state machine
-        # if collapse == "":
-        #     if env.config.needs_collapse_details:
-        #         template = Template(env.config.needs_template_collapse)
-        #     else:
-        #         template = Template(env.config.needs_template)
-        # elif collapse:
-        #     template = Template(env.config.needs_template_collapse)
-        # else:
-        #     template = Template(env.config.needs_template)
-        #
-        # text = template.render(**env.need_all_needs[id])
-        # self.state_machine.insert_input(
-        #     text.split('\n'),
-        #     self.state_machine.document.attributes['source'])
 
         if hide:
             return [target_node]
 
+        # Adding of basic Need node.
+        ############################
+        # Title and meta data information gets added alter during event handling via process_need_nodes()
+        # We just add a basic need node and render the rst-based content, because this can not be done later.
+        node_need = Need('', classes=['need', self.name, 'need-{}'.format(type_name.lower())])
+
+        # Render rst-based content and add it to the need-node
         rst = ViewList()
         for line in self.content:
             rst.append(line, self.docname, self.lineno)
-
-        node_need = Need('', classes=['need', self.name, 'need-{}'.format(type_name.lower())])
-
-        # need title calculation
-        title_type = '{}: '.format(needs_info["type_name"])
-        title_headline = needs_info["title"]
-        title_id = "{}".format(needs_info["id"])
-        title_spacer = " "
-
-        # need title
-        node_type = nodes.inline(title_type, title_type, classes=["needs-type"])
-        node_title = nodes.inline(title_headline, title_headline, classes=["needs-title"])
-        nodes_id = nodes.inline(title_id, title_id, classes=["needs-id"])
-        node_spacer = nodes.inline(title_spacer, title_spacer, classes=["needs-spacer"])
-
-        # need parameters
-        param_status = "status: "
-        param_tags = "tags: "
-
-        param_extra_options = {}
-        for option in extra_options:
-            param_extra_options[option] = self.options.get(option)
-
-        node_status = nodes.line(param_status, param_status, classes=['status'])
-        node_status.append(nodes.inline(needs_info["status"], needs_info["status"],
-                                        classes=["needs-status", str(needs_info['status'])]))
-
-        node_tags = nodes.line(param_tags, param_tags, classes=['tags'])
-        for tag in needs_info['tags']:
-            node_tags.append(nodes.inline(tag, tag, classes=["needs-tag", str(tag)]))
-            node_tags.append(nodes.inline(' ', ' '))
-
-        # Links incoming
-        node_incoming = nodes.line()
-        prefix = "links incoming: "
-        node_incoming_prefix = nodes.Text(prefix, prefix)
-        node_incoming.append(node_incoming_prefix)
-        node_incoming_links = Need_incoming(reftarget=id)
-        node_incoming_emphasis = nodes.emphasis('', '')
-        node_incoming_emphasis.append(nodes.Text(id, id))
-        node_incoming_links.append(node_incoming_emphasis)
-        node_incoming.append(node_incoming_links)
-
-        # Links outgoing
-        node_outgoing = nodes.line()
-        prefix = "links outgoing: "
-        node_outgoing_prefix = nodes.Text(prefix, prefix)
-        node_outgoing.append(node_outgoing_prefix)
-        node_outgoing_links = Need_outgoing(reftarget=id)
-        node_outgoing_emphasis = nodes.emphasis('', '')
-        node_outgoing_emphasis.append(nodes.Text(id, id))
-        node_outgoing_links.append(node_outgoing_emphasis)
-        node_outgoing.append(node_outgoing_links)
-
-        nodes_extra_options = []
-        for key, value in param_extra_options.items():
-            param_option = '{}: '.format(key)
-            node_option = nodes.line(param_option, param_option, classes=['extra_option'])
-            node_option.append(nodes.inline(value, value,
-                                            classes=["needs-extra-option", str(key)]))
-
-            nodes_extra_options.append(node_option)
-
-        # Collapse check
-        if needs_info["collapse"]:
-            # HEADER
-            node_need_toogle_container = nodes.container(classes=['toggle'])
-            node_need_toogle_head_container = nodes.container(classes=['header'])
-            node_need_toogle_head_container += node_type, node_spacer, node_title, node_spacer, nodes_id
-
-            node_need_toogle_container.append(node_need_toogle_head_container)
-
-            # PARAMETERS
-            if needs_info["status"]:
-                node_need_toogle_container.append(node_status)
-            if needs_info["tags"]:
-                node_need_toogle_container.append(node_tags)
-
-            node_need_toogle_container.append(node_incoming)
-            node_need_toogle_container.append(node_outgoing)
-
-            node_need_toogle_container += nodes_extra_options
-            node_need.append(node_need_toogle_container)
-        else:
-            node_headline = nodes.line()
-            node_headline += node_type, node_spacer, node_title, node_spacer, nodes_id
-            node_need.append(node_headline)
-            if needs_info["status"]:
-                node_need.append(node_status)
-            if needs_info["tags"]:
-                node_need.append(node_tags)
-
-            node_need.append(node_incoming)
-            node_need.append(node_outgoing)
-            node_need += nodes_extra_options
-
-        # need content calculation (parse RST content)
         node_need_content = nodes.Element()
         node_need_content.document = self.state.document
         nested_parse_with_titles(self.state, rst, node_need_content)
@@ -421,38 +334,132 @@ def add_sections(app, doctree, fromdocname):
 
 
 def process_need_nodes(app, doctree, fromdocname):
+    """
+    Event handler to add title meta data (status, tags, links, ...) information to the Need node.
+
+    :param app:
+    :param doctree:
+    :param fromdocname:
+    :return:
+    """
     if not app.config.needs_include_needs:
         for node in doctree.traverse(Need):
             node.parent.remove(node)
-    else:
-        # We need to get the back_links/incoming_links and store them
-        # inside each need
-        env = app.builder.env
+        return
 
-        # If no needs were defined, we do not need to do anything
-        if not hasattr(env, "need_all_needs"):
-            return
+    # We need to get the back_links/incoming_links and store them
+    # inside each need
+    env = app.builder.env
 
-        needs = env.need_all_needs
-        for key, need in needs.items():
-            for link in need["links"]:
-                if link in needs:
-                    needs[link]["links_back"].add(key)
+    # If no needs were defined, we do not need to do anything
+    if not hasattr(env, "need_all_needs"):
+        return
 
-    # for node in doctree.traverse(Need):
-    #     if not app.config.needs_include_needs:
-    #         # Ok, this is really dirty.
-    #         # If we replace a node, docutils checks, if it will not lose any attributes.
-    #         # But this is here the case, because we are using the attribute "ids" of a node.
-    #         # However, I do not understand, why losing an attribute is such a big deal, so we delete everything
-    #         # before docutils claims about it.
-    #         for att in ('ids', 'names', 'classes', 'dupnames'):
-    #             node[att] = []
-    #         node.replace_self([])
+    needs = env.need_all_needs
+    for key, need in needs.items():
+        for link in need["links"]:
+            if link in needs:
+                needs[link]["links_back"].add(key)
 
-        # content = nodes.Text("Buh", "Buh")
-        # node.replace_self(content)
+    for node_need in doctree.traverse(Need):
+        need_id = node_need.attributes["ids"][0]
+        need_data = needs[need_id]
 
+        node_headline = construct_headline(need_data)
+        node_meta = construct_meta(need_data, env)
+
+        # Collapse check
+        if need_data["collapse"]:
+            # HEADER
+            node_need_toogle_container = nodes.container(classes=['toggle'])
+            node_need_toogle_head_container = nodes.container(classes=['header'])
+            node_need_toogle_head_container += node_headline.children
+
+            node_need_toogle_container.append(node_need_toogle_head_container)
+            node_need_toogle_container.append(node_meta)
+
+            # node_need_toogle_container += nodes_extra_options
+            node_need.insert(0, node_need_toogle_container)
+        else:
+
+            node_need.insert(0, node_headline)
+            node_need.insert(1, node_meta)
+
+
+def construct_headline(need_data):
+    """
+    Constructs the node-structure for the headline/title container
+    :param need_data: need_info container
+    :return: node
+    """
+    # need title calculation
+    title_type = '{}: '.format(need_data["type_name"])
+    title_headline = need_data["title"]
+    title_id = "{}".format(need_data["id"])
+    title_spacer = " "
+
+    # need title
+    node_type = nodes.inline(title_type, title_type, classes=["needs-type"])
+    node_title = nodes.inline(title_headline, title_headline, classes=["needs-title"])
+    nodes_id = nodes.inline(title_id, title_id, classes=["needs-id"])
+    node_spacer = nodes.inline(title_spacer, title_spacer, classes=["needs-spacer"])
+
+    node_headline = nodes.line()
+    node_headline += node_type, node_spacer, node_title, node_spacer, nodes_id
+
+    return node_headline
+
+
+def construct_meta(need_data, env):
+    """
+    Constructs the node-structure for the status container
+    :param need_data: need_info container
+    :return: node
+    """
+
+    node_meta = nodes.container()
+    # need parameters
+    param_status = "status: "
+    param_tags = "tags: "
+    node_status = nodes.line(param_status, param_status, classes=['status'])
+    node_status.append(nodes.inline(need_data["status"], need_data["status"],
+                                    classes=["needs-status", str(need_data['status'])]))
+
+    node_tags = nodes.line(param_tags, param_tags, classes=['tags'])
+    for tag in need_data['tags']:
+        node_tags.append(nodes.inline(tag, tag, classes=["needs-tag", str(tag)]))
+        node_tags.append(nodes.inline(' ', ' '))
+
+    # Links incoming
+    node_incoming = nodes.line()
+    prefix = "links incoming: "
+    node_incoming_prefix = nodes.Text(prefix, prefix)
+    node_incoming.append(node_incoming_prefix)
+    node_incoming_links = Need_incoming(reftarget=need_data['id'])
+    node_incoming_links.append(nodes.Text(need_data['id'], need_data['id']))
+    node_incoming.append(node_incoming_links)
+
+    # Links outgoing
+    node_outgoing = nodes.line()
+    prefix = "links outgoing: "
+    node_outgoing_prefix = nodes.Text(prefix, prefix)
+    node_outgoing.append(node_outgoing_prefix)
+    node_outgoing_links = Need_outgoing(reftarget=need_data['id'])
+    node_outgoing_links.append(nodes.Text(need_data['id'], need_data['id']))
+    node_outgoing.append(node_outgoing_links)
+
+    extra_options = getattr(env.config, 'needs_extra_options', {})
+    node_extra_options = []
+    for key, value in extra_options.items():
+        param_data = need_data[key]
+        param_option = '{}: '.format(key)
+        node_option = nodes.line(param_option, param_option, classes=['extra_option'])
+        node_option.append(nodes.inline(param_data, param_data,
+                                        classes=["needs-extra-option", str(key)]))
+        node_extra_options.append(node_option)
+
+    node_meta += [node_status, node_tags, node_incoming, node_outgoing] + node_extra_options
+    return node_meta
 
 #####################
 # Visitor functions #
@@ -460,6 +467,7 @@ def process_need_nodes(app, doctree, fromdocname):
 # Used for builders like html or latex to tell them, what do, if they stumble on a Need-Node in the doctree.
 # Normally nothing needs to be done, as all needed output-configuration is done in the child-nodes of the detected
 # Need-Node.
+
 
 def html_visit(self, node):
     """
