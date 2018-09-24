@@ -45,9 +45,11 @@ release = '0.3.0'
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 if on_rtd:
-    extensions = ['sphinxcontrib.needs']
+    extensions = ['sphinxcontrib.needs', 'sphinx.ext.autodoc']
 else:
-    extensions = ['sphinxcontrib.plantuml', 'sphinxcontrib.needs']
+    extensions = ['sphinxcontrib.plantuml', 'sphinxcontrib.needs', 'sphinx.ext.autodoc']
+
+add_module_names = False
 
 # NEEDS CONFIGURATION
 
@@ -172,6 +174,8 @@ needs_template_collapse = EXTRA_CONTENT_TEMPLATE_COLLAPSE
 needs_extra_options = {
          "my_extra_option": directives.unchanged,
          "another_option": directives.unchanged,
+         "author": directives.unchanged,
+         "comment": directives.unchanged,
          }
 
 

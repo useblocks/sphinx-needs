@@ -27,18 +27,33 @@ def process_need_outgoing(app, doctree, fromdocname):
         #                             node_need_ref['reftarget'] + '?')
 
         node_link_container = nodes.inline()
-        ref_need = env.need_all_needs[node_need_ref['reftarget']]
+        ref_need = env.needs_all_needs[node_need_ref['reftarget']]
 
         for index, link in enumerate(ref_need["links"]):
+            link_split = link.split('.')
+            link = link_split[0]
+            try:
+                link_internal = link_split[1]
+            except IndexError:
+                link_internal = None
+
             # If need target exists, let's create the reference
-            if link in env.need_all_needs:
-                target_need = env.need_all_needs[node_need_ref['reftarget']]
+            if link in env.needs_all_needs:
+                target_need = env.needs_all_needs[node_need_ref['reftarget']]
                 try:
-                    target_need = env.need_all_needs[link]
-                    if getattr(env.config, "needs_show_link_title", False) is True:
-                        link_text = "{title} ({id})".format(title=target_need["title"], id=target_need["id"])
+                    target_need = env.needs_all_needs[link]
+                    if link_internal is not None and link_internal in target_need['internals'].keys():
+                        int_content = target_need['internals'][link_internal]['content']
+                        target_title = int_content if len(int_content) < 30 else int_content[:27] + '...'
+                        target_id = '.'.join([link, link_internal])
                     else:
-                        link_text = target_need["id"]
+                        target_title = target_need["title"]
+                        target_id = target_need["id"]
+
+                    if getattr(env.config, "needs_show_link_title", False) is True:
+                        link_text = "{title} ({id})".format(title=target_title, id=target_id)
+                    else:
+                        link_text = target_id
                     if getattr(env.config, "needs_show_link_type", False) is True:
                         link_text += " [{type}]".format(type=target_need["type_name"])
 
@@ -49,7 +64,7 @@ def process_need_outgoing(app, doctree, fromdocname):
                     new_node_ref = make_refnode(app.builder,
                                                 fromdocname,
                                                 target_need['docname'],
-                                                target_need['target_node']['refid'],
+                                                target_id,
                                                 node_need_ref[0].deepcopy(),
                                                 node_need_ref['reftarget'])
 

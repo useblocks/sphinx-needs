@@ -20,12 +20,12 @@ def process_need_incoming(app, doctree, fromdocname):
         #                             node_need_backref['reftarget'] + '?')
 
         node_link_container = nodes.inline()
-        ref_need = env.need_all_needs[node_need_backref['reftarget']]
+        ref_need = env.needs_all_needs[node_need_backref['reftarget']]
         for index, back_link in enumerate(ref_need["links_back"]):
             # If need back_link target exists, let's create the reference
-            if back_link in env.need_all_needs:
+            if back_link in env.needs_all_needs:
                 try:
-                    target_need = env.need_all_needs[back_link]
+                    target_need = env.needs_all_needs[back_link]
                     if getattr(env.config, "needs_show_link_title", False) is True:
                         link_text = "{title} ({id})".format(title=target_need["title"], id=target_need["id"])
                     else:

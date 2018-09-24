@@ -201,6 +201,7 @@ Content
    configuration
    builders
    filter
+   dynamic_functions
    styles
    examples
    changelog

@@ -5,6 +5,7 @@ import random
 import string
 
 import sphinx
+from sphinx.errors import SphinxError
 from docutils import nodes
 from pkg_resources import parse_version
 from sphinx.roles import XRefRole
@@ -24,6 +25,7 @@ from sphinxcontrib.needs.roles.need_outgoing import Need_outgoing, process_need_
 from sphinxcontrib.needs.roles.need_ref import Need_ref, process_need_ref
 from sphinxcontrib.needs.roles.need_inline import NeedInline, process_need_inline
 from sphinxcontrib.needs.utils import process_dynamic_values
+from sphinxcontrib.needs.functions import register_func, needs_common_functions
 
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
@@ -168,6 +170,8 @@ def setup(app):
                          DEFAULT_DIAGRAM_TEMPLATE,
                          'html')
 
+    app.add_config_value('needs_functions', None, 'html')
+
     # If given, only the defined status are allowed.
     # Values needed for each status:
     # * name
@@ -283,6 +287,7 @@ def setup(app):
     ########################################################################
     # Make connections to events
     app.connect('env-purge-doc', purge_needs)
+    app.connect('env-before-read-docs', prepare_env)
     app.connect('doctree-resolved', add_sections)
     app.connect('doctree-resolved', process_need_nodes)
     app.connect('doctree-resolved', process_dynamic_values)
@@ -309,8 +314,41 @@ def setup(app):
 def visitor_dummy(*args, **kwargs):
     """
     Dummy class for visitor methods, which does nothing.
-    :param args:
-    :param kwargs:
-    :return:
     """
     pass
+
+
+def prepare_env(app, env, docname):
+    """
+    Prepares the sphinx environment to store sphinx-needs internal data.
+    """
+    if not hasattr(env, 'needs_all_needs'):
+        # Used to store all needed information about all needs in document
+        env.needs_all_needs = {}
+
+    if not hasattr(env, 'needs_functions'):
+        # Used to store all registered functions for supporting dynamic need values.
+        env.needs_functions = {}
+        needs_functions = getattr(app.config, 'needs_functions', [])
+        if needs_functions is None:
+            needs_functions = []
+        if not isinstance(needs_functions, list):
+            raise SphinxError('Config parameter needs_functions must be a list!')
+
+        # Register built-in functions
+        for need_common_func in needs_common_functions:
+            register_func(env, need_common_func)
+
+        # Register functions configured by user
+        for needs_func in needs_functions:
+            register_func(app, needs_func)
+
+    if not hasattr(env, 'needs_workflow'):
+        # Used to store workflow status information for already executed tasks.
+        # Some tasks like backlink_creation need be be performed only once.
+        # But most sphinx-events get called several times (for each single document file), which would also
+        # execute our code several times...
+        env.needs_workflow = {
+            'backlink_creation': False,
+            'dynamic_values_resolved': False
+        }

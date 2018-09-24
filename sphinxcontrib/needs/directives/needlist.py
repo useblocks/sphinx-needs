@@ -44,8 +44,8 @@ class NeedlistDirective(FilterBase):
             env.need_all_needlists = {}
 
         # be sure, global var is available. If not, create it
-        if not hasattr(env, 'need_all_needs'):
-            env.need_all_needs = {}
+        if not hasattr(env, 'needs_all_needs'):
+            env.needs_all_needs = {}
 
         targetid = "needlist-{docname}-{id}".format(
             docname=env.docname,
@@ -87,7 +87,7 @@ def process_needlist(app, doctree, fromdocname):
 
         id = node.attributes["ids"][0]
         current_needfilter = env.need_all_needlists[id]
-        all_needs = env.need_all_needs
+        all_needs = env.needs_all_needs
         content = []
         all_needs = list(all_needs.values())
 

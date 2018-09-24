@@ -33,8 +33,8 @@ def process_need_ref(app, doctree, fromdocname):
             ref_id = node_need_ref['reftarget']
             internal_id = None
 
-        if ref_id in env.need_all_needs:
-            target_need = env.need_all_needs[ref_id]
+        if ref_id in env.needs_all_needs:
+            target_need = env.needs_all_needs[ref_id]
             try:
                 if internal_id is not None:
                     title = target_need['internals'][internal_id]['content']

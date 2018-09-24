@@ -39,8 +39,8 @@ class NeedflowDirective(FilterBase):
             env.need_all_needflows = {}
 
         # be sure, global var is available. If not, create it
-        if not hasattr(env, 'need_all_needs'):
-            env.need_all_needs = {}
+        if not hasattr(env, 'needs_all_needs'):
+            env.needs_all_needs = {}
 
         targetid = "needflow-{docname}-{id}".format(
             docname=env.docname,
@@ -88,7 +88,7 @@ def process_needflow(app, doctree, fromdocname):
 
         id = node.attributes["ids"][0]
         current_needflow = env.need_all_needflows[id]
-        all_needs = env.need_all_needs
+        all_needs = env.needs_all_needs
 
         content = []
         try:

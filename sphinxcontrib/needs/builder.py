@@ -20,7 +20,7 @@ class NeedsBuilder(Builder):
 
     def finish(self):
         log = logging.getLogger(__name__)
-        needs = self.env.need_all_needs
+        needs = self.env.needs_all_needs
         config = self.env.config
         version = config.version
         needs_list = NeedsList(config, self.outdir, self.confdir)

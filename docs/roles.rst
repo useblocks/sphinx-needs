@@ -97,18 +97,22 @@ Example
       My new car must be the fastest on the world. Therefor it shall have:
 
       * :need_inline:`(1)A topspeed of 300 km/h`
-      * :ni:`(2) An acceleration of 30 m/s or much much more`
+      * :ni:`(2) An acceleration of 200 m/s or much much more`
 
       And we also need --> :ni:`(awesome_3) a turbo button`!
 
 
    .. spec:: Build awesome car
+      :id: impl_my_car_1
       :links: my_car_1.1, my_car_1.2
 
-      No way to get :need:`my_car_1.awesome_3` realised.
+      Requirements :need:`my_car_1.1` and :need:`my_car_1.2` are no problem and can
+      be realised by doing rocket science.
+
+      But no way to get :need:`my_car_1.awesome_3` realised.
 
 
-   Reference to a need_internal from outside need scope: :need:`my_car_1.2`.
+   Reference to an inline need from outside need scope: :need:`my_car_1.2`.
 
 **Result**
 
@@ -120,15 +124,19 @@ Example
    My new car must be the fastest on the world. Therefor it shall have:
 
    * :need_inline:`(1)A topspeed of 300 km/h`
-   * :ni:`(2) An acceleration of 30 m/s or much much more`
+   * :ni:`(2) An acceleration of 200 m/s or much much more`
 
    And we also need --> :ni:`(awesome_3) a turbo button`!
 
 
 .. spec:: Build awesome car
+   :id: impl_my_car_1
    :links: my_car_1.1, my_car_1.2
 
-   No way to get :need:`my_car_1.awesome_3` realised.
+   Requirements :need:`my_car_1.1` and :need:`my_car_1.2` are no problem and can
+   be realised by doing rocket science.
+
+   But no way to get :need:`my_car_1.awesome_3` realised.
 
 
-Reference to a need_internal from outside need scope: :need:`my_car_1.2`.
+Reference to an inline need from outside need scope: :need:`my_car_1.2`.

@@ -12,6 +12,7 @@ from pkg_resources import parse_version
 import sphinx
 from sphinxcontrib.needs.roles.need_incoming import Need_incoming
 from sphinxcontrib.needs.roles.need_outgoing import Need_outgoing
+from sphinxcontrib.needs.functions import execute_func, FunctionParsingException
 
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
@@ -148,7 +149,7 @@ class NeedDirective(Directive):
             tags = [tag.strip() for tag in re.split(";|,", tags)]
             for i in range(len(tags)):
                 if len(tags[i]) == 0:
-                    del(tags[i])
+                    del (tags[i])
             # Check if tag is in needs_tags. If not raise an error.
             if env.app.config.needs_tags:
                 for tag in tags:
@@ -165,10 +166,10 @@ class NeedDirective(Directive):
         # Add need to global need list
         #############################################################################################
         # be sure, global var is available. If not, create it
-        if not hasattr(env, 'need_all_needs'):
-            env.need_all_needs = {}
+        if not hasattr(env, 'needs_all_needs'):
+            env.needs_all_needs = {}
 
-        if id in env.need_all_needs.keys():
+        if id in env.needs_all_needs.keys():
             if 'id' in self.options:
                 raise NeedsDuplicatedId("A need with ID {0} already exists! "
                                         "This is not allowed".format(id))
@@ -205,7 +206,7 @@ class NeedDirective(Directive):
             'hide_status': hide_status,
         }
         self.merge_extra_options(needs_info)
-        env.need_all_needs[id] = needs_info
+        env.needs_all_needs[id] = needs_info
 
         if hide:
             return [target_node]
@@ -236,8 +237,8 @@ class NeedDirective(Directive):
         hashable_content = self.full_title or '\n'.join(self.content)
         return "%s%s" % (type_prefix,
                          hashlib.sha1(hashable_content.encode("UTF-8"))
-                                .hexdigest()
-                                .upper()[:id_length])
+                         .hexdigest()
+                         .upper()[:id_length])
 
     def update_need_with_internals(self, need, internal_nodes):
         for internal_node in internal_nodes:
@@ -292,8 +293,6 @@ class NeedDirective(Directive):
                 found_nodes += self.find_internals(child)
         return found_nodes
 
-
-
     @property
     def env(self):
         return self.state.document.settings.env
@@ -345,7 +344,7 @@ class NeedDirective(Directive):
                 self.log.warning(
                     'Needs: need "{}" has :title_from_content: set, '
                     'but a title was provided. (see file {})'
-                    .format(self.arguments[0], self.docname)
+                        .format(self.arguments[0], self.docname)
                 )
             return self.arguments[0]
         elif self.title_from_content:
@@ -379,15 +378,19 @@ def get_sections(need_info):
 
 
 def purge_needs(app, env, docname):
-    if not hasattr(env, 'need_all_needs'):
+    """
+    Gets executed, if a doc file needs to be purged/ read in again.
+    So this code delete all found needs for the given docname.
+    """
+    if not hasattr(env, 'needs_all_needs'):
         return
-    env.need_all_needs = {key: need for key, need in env.need_all_needs.items() if need['docname'] != docname}
+    env.needs_all_needs = {key: need for key, need in env.needs_all_needs.items() if need['docname'] != docname}
 
 
 def add_sections(app, doctree, fromdocname):
     """Add section titles to the needs as additional attributes that can
     be used in tables and filters"""
-    needs = getattr(app.builder.env, 'need_all_needs', {})
+    needs = getattr(app.builder.env, 'needs_all_needs', {})
     for key, need_info in needs.items():
         sections = get_sections(need_info)
         need_info['sections'] = sections
@@ -408,19 +411,28 @@ def process_need_nodes(app, doctree, fromdocname):
             node.parent.remove(node)
         return
 
-    # We need to get the back_links/incoming_links and store them
-    # inside each need
     env = app.builder.env
 
     # If no needs were defined, we do not need to do anything
-    if not hasattr(env, "need_all_needs"):
+    if not hasattr(env, "needs_all_needs"):
         return
 
-    needs = env.need_all_needs
-    for key, need in needs.items():
-        for link in need["links"]:
-            if link in needs:
-                needs[link]["links_back"].add(key)
+    needs = env.needs_all_needs
+
+    # Create back-links in all found needs.
+    # But do this only once, as all needs are already collected and this sorting is for all
+    # needs and not only for the ones of the current document.
+    if not env.needs_workflow['backlink_creation']:
+        for key, need in needs.items():
+            for link in need["links"]:
+                if link in needs:
+                    needs[link]["links_back"].add(key)
+        env.needs_workflow['backlink_creation'] = True
+
+    # Call dynamic functions and replace related note data with their retur values
+    if not env.needs_workflow['dynamic_values_resolved']:
+        resolve_dynamic_values(env)
+        env.needs_workflow['dynamic_values_resolved'] = True
 
     for node_need in doctree.traverse(Need):
         need_id = node_need.attributes["ids"][0]
@@ -442,7 +454,6 @@ def process_need_nodes(app, doctree, fromdocname):
             # node_need_toogle_container += nodes_extra_options
             node_need.insert(0, node_need_toogle_container)
         else:
-
             node_need.insert(0, node_headline)
             node_need.insert(1, node_meta)
 
@@ -482,16 +493,19 @@ def construct_meta(need_data, env):
     # need parameters
     param_status = "status: "
     param_tags = "tags: "
-    node_status = nodes.line(param_status, param_status, classes=['status'])
-    node_status.append(nodes.inline(need_data["status"], need_data["status"],
-                                    classes=["needs-status", str(need_data['status'])]))
-    node_meta.append(node_status)
 
-    node_tags = nodes.line(param_tags, param_tags, classes=['tags'])
-    for tag in need_data['tags']:
-        node_tags.append(nodes.inline(tag, tag, classes=["needs-tag", str(tag)]))
-        node_tags.append(nodes.inline(' ', ' '))
-    node_meta.append(node_tags)
+    if need_data["status"] is not None:
+        node_status = nodes.line(param_status, param_status, classes=['status'])
+        node_status.append(nodes.inline(need_data["status"], need_data["status"],
+                                        classes=["needs-status", str(need_data['status'])]))
+        node_meta.append(node_status)
+
+    if need_data["tags"]:
+        node_tags = nodes.line(param_tags, param_tags, classes=['tags'])
+        for tag in need_data['tags']:
+            node_tags.append(nodes.inline(tag, tag, classes=["needs-tag", str(tag)]))
+            node_tags.append(nodes.inline(' ', ' '))
+        node_meta.append(node_tags)
 
     # Links incoming
     if need_data['links_back']:
@@ -529,6 +543,48 @@ def construct_meta(need_data, env):
 
     node_meta += node_extra_options
     return node_meta
+
+
+def resolve_dynamic_values(env):
+    """
+    Resolve dynamic values inside need data.
+
+    Rough workflow:
+
+    #. Parse all needs and their data for a string like [[ my_func(a,b,c) ]]
+    #. Extract function name and call parameters
+    #. Execute registered function name with extracted call parameters
+    #. Replace original string with return value
+
+    :param env: Sphinx environment
+    :return: return value of given function
+    """
+    needs = env.needs_all_needs
+    func_pattern = re.compile('\[\[(.*)\]\]')
+    for key, need in needs.items():
+        for need_option in need:
+            if need_option in ['docname', 'lineno', 'target_node', 'content']:
+                # dynamic values in this data are not allowed.
+                continue
+
+            func_match = func_pattern.match(str(need[need_option]))
+            if func_match is None:
+                continue
+
+            func_call = func_match.group(1)  # Extract function call
+            try:
+                return_value = execute_func(env, need, func_call)  # Exceute function call and get return value
+            except FunctionParsingException:
+                raise SphinxError("Function definition of {option} in file {file}:{line} has "
+                                  "unsupported parameters. "
+                                  "supported are str, int/float, list".format(option=need_option,
+                                                                              file=need['docname'],
+                                                                              line=need['lineno']))
+            need[need_option] = return_value  # Replace original function string with return value of function call
+
+
+
+
 
 #####################
 # Visitor functions #

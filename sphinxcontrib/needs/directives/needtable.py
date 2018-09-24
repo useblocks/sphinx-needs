@@ -37,8 +37,8 @@ class NeedtableDirective(FilterBase):
             env.need_all_needtables = {}
 
         # be sure, global var is available. If not, create it
-        if not hasattr(env, 'need_all_needs'):
-            env.need_all_needs = {}
+        if not hasattr(env, 'needs_all_needs'):
+            env.needs_all_needs = {}
 
         targetid = "needtable-{docname}-{id}".format(
             docname=env.docname,
@@ -94,7 +94,7 @@ def process_needtables(app, doctree, fromdocname):
 
         id = node.attributes["ids"][0]
         current_needtable = env.need_all_needtables[id]
-        all_needs = env.need_all_needs
+        all_needs = env.needs_all_needs
 
         if current_needtable["style"] == "" or current_needtable["style"].upper() not in ["TABLE", "DATATABLES"]:
             if app.config.needs_table_style == "":
@@ -144,13 +144,13 @@ def process_needtables(app, doctree, fromdocname):
             row = nodes.row()
             for col in current_needtable["columns"]:
                 if col == "ID":
-                    row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "id", make_ref=True)
+                    row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, "id", make_ref=True)
                 elif col == "INCOMING":
-                    row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "links_back", ref_lookup=True)
+                    row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, "links_back", ref_lookup=True)
                 elif col == "OUTGOING":
-                    row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, "links", ref_lookup=True)
+                    row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, "links", ref_lookup=True)
                 else:
-                    row += row_col_maker(app, fromdocname, env.need_all_needs, need_info, col.lower())
+                    row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, col.lower())
             tbody += row
 
         if len(found_needs) == 0:
