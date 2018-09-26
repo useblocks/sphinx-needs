@@ -26,8 +26,6 @@ def copy(app, need, needs, option, need_id=None):
            :id: copy_1
            :status: open
 
-           Takes own id as status
-
         .. spec:: copy-example implementation
            :id: copy_2
            :status: [[copy("status", "copy_1")]]
@@ -40,15 +38,13 @@ def copy(app, need, needs, option, need_id=None):
            :id: copy_1
            :status: open
 
-           Takes own id as status
-
     .. spec:: copy-example implementation
        :id: copy_2
        :status: [[copy("status", "copy_1")]]
        :comment: [[copy("id")]]
 
        Copies status of ``copy_1`` to own status.
-       Sets all a comment, which copies the id of own need.
+       Sets also a comment, which copies the id of own need.
 
     :param option: Name of the option to copy
     :param need_id: id of the need, which contains the source option. If None, current need is taken

@@ -77,11 +77,11 @@ Example
 needs :need_incoming:`roles_req_1` are based on it.
 
 
-need_inline / ni
+need_part / np
 ----------------
 .. versionadded:: 0.3.0
 
-``:need_inline`` or as shortcut ``:ni:`` can be used inside needs to set a sub-id for a specific sentence/area.
+``:need_part`` or as shortcut ``:np:`` can be used inside needs to set a sub-id for a specific sentence/part.
 This sub-ids can be linked and referenced in other need functions like links and co.
 
 Example
@@ -96,10 +96,10 @@ Example
 
       My new car must be the fastest on the world. Therefor it shall have:
 
-      * :need_inline:`(1)A topspeed of 300 km/h`
-      * :ni:`(2) An acceleration of 200 m/s or much much more`
+      * :need_part:`(1)A topspeed of 300 km/h`
+      * :np:`(2) An acceleration of 200 m/s or much much more`
 
-      And we also need --> :ni:`(awesome_3) a turbo button`!
+      And we also need --> :np:`(awesome_3) a turbo button`!
 
 
    .. spec:: Build awesome car
@@ -112,7 +112,7 @@ Example
       But no way to get :need:`my_car_1.awesome_3` realised.
 
 
-   Reference to an inline need from outside need scope: :need:`my_car_1.2`.
+   Reference to a part of a need from outside need scope: :need:`my_car_1.2`.
 
 **Result**
 
@@ -123,10 +123,10 @@ Example
 
    My new car must be the fastest on the world. Therefor it shall have:
 
-   * :need_inline:`(1)A topspeed of 300 km/h`
-   * :ni:`(2) An acceleration of 200 m/s or much much more`
+   * :need_part:`(1)A topspeed of 300 km/h`
+   * :np:`(2) An acceleration of 200 m/s or much much more`
 
-   And we also need --> :ni:`(awesome_3) a turbo button`!
+   And we also need --> :np:`(awesome_3) a turbo button`!
 
 
 .. spec:: Build awesome car
@@ -139,4 +139,4 @@ Example
    But no way to get :need:`my_car_1.awesome_3` realised.
 
 
-Reference to an inline need from outside need scope: :need:`my_car_1.2`.
+Reference to a part of a need from outside need scope: :need:`my_car_1.2`.

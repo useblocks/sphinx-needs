@@ -33,19 +33,19 @@ def process_need_outgoing(app, doctree, fromdocname):
             link_split = link.split('.')
             link = link_split[0]
             try:
-                link_internal = link_split[1]
+                link_part = link_split[1]
             except IndexError:
-                link_internal = None
+                link_part = None
 
             # If need target exists, let's create the reference
             if link in env.needs_all_needs:
                 target_need = env.needs_all_needs[node_need_ref['reftarget']]
                 try:
                     target_need = env.needs_all_needs[link]
-                    if link_internal is not None and link_internal in target_need['internals'].keys():
-                        int_content = target_need['internals'][link_internal]['content']
-                        target_title = int_content if len(int_content) < 30 else int_content[:27] + '...'
-                        target_id = '.'.join([link, link_internal])
+                    if link_part is not None and link_part in target_need['parts'].keys():
+                        part_content = target_need['parts'][link_part]['content']
+                        target_title = part_content if len(part_content) < 30 else part_content[:27] + '...'
+                        target_id = '.'.join([link, link_part])
                     else:
                         target_title = target_need["title"]
                         target_id = target_need["id"]

@@ -28,16 +28,16 @@ def process_need_ref(app, doctree, fromdocname):
                                     node_need_ref['reftarget'] + '?')
 
         if '.' in node_need_ref['reftarget']:
-            ref_id, internal_id = node_need_ref['reftarget'].split('.')
+            ref_id, part_id = node_need_ref['reftarget'].split('.')
         else:
             ref_id = node_need_ref['reftarget']
-            internal_id = None
+            part_id = None
 
         if ref_id in env.needs_all_needs:
             target_need = env.needs_all_needs[ref_id]
             try:
-                if internal_id is not None:
-                    title = target_need['internals'][internal_id]['content']
+                if part_id is not None:
+                    title = target_need['parts'][part_id]['content']
                 else:
                     title = target_need["title"]
 

@@ -12,7 +12,8 @@ from pkg_resources import parse_version
 import sphinx
 from sphinxcontrib.needs.roles.need_incoming import Need_incoming
 from sphinxcontrib.needs.roles.need_outgoing import Need_outgoing
-from sphinxcontrib.needs.functions import execute_func, FunctionParsingException
+from sphinxcontrib.needs.roles.need_part import update_need_with_parts, find_parts
+from sphinxcontrib.needs.functions import resolve_dynamic_values, find_and_replace_node_content
 
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
@@ -63,7 +64,7 @@ class NeedDirective(Directive):
                    'hide_status': directives.flag,
                    'hide_links': directives.flag,
                    'title_from_content': directives.flag,
-                   }
+    }
 
     # add configured link types
 
@@ -73,8 +74,6 @@ class NeedDirective(Directive):
         super(NeedDirective, self).__init__(*args, **kw)
         self.log = logging.getLogger(__name__)
         self.full_title = self._get_full_title()
-        self.inline_pattern = re.compile('\(([\w-]+)\)(.*)')
-        # self.inline_pattern = re.compile('\(([\w-]+)\)([\w\s-]*)')
 
     def run(self):
         #############################################################################################
@@ -106,7 +105,7 @@ class NeedDirective(Directive):
         # Get the id or generate a random string/hash string, which is hopefully unique
         # TODO: Check, if id was already given. If True, recalculate id
         # id = self.options.get("id", ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for
-        #  _ in range(5)))
+        # _ in range(5)))
         if "id" not in self.options.keys() and env.app.config.needs_id_required:
             raise NeedsNoIdException("An id is missing for this need and must be set, because 'needs_id_required' "
                                      "is set to True in conf.py")
@@ -225,9 +224,8 @@ class NeedDirective(Directive):
         node_need_content.document = self.state.document
         nested_parse_with_titles(self.state, rst, node_need_content)
 
-        internals = self.find_internals(node_need_content)
-
-        self.update_need_with_internals(needs_info, internals)
+        need_parts = find_parts(node_need_content)
+        update_need_with_parts(env, needs_info, need_parts)
 
         node_need += node_need_content.children
 
@@ -239,59 +237,6 @@ class NeedDirective(Directive):
                          hashlib.sha1(hashable_content.encode("UTF-8"))
                          .hexdigest()
                          .upper()[:id_length])
-
-    def update_need_with_internals(self, need, internal_nodes):
-        for internal_node in internal_nodes:
-            content = internal_node.children[0].children[0]  # ->inline->Text
-            result = self.inline_pattern.match(content)
-            if result is not None:
-                inline_id = result.group(1)
-                inline_content = result.group(2)
-            else:
-                # ToDo: Create random id
-                inline_id = 123
-                inline_content = content
-
-            if 'internals' not in need.keys():
-                need['internals'] = {}
-
-            need['internals'][inline_id] = {
-                'id': inline_id,
-                'content': inline_content,
-                'document': need["docname"]
-            }
-
-            inline_id_ref = '{}.{}'.format(need['id'], inline_id)
-            inline_id_show = inline_id
-            internal_node['reftarget'] = inline_id_ref
-
-            inline_link_text = ' {}'.format(inline_id_show)
-            inline_link_node = nodes.Text(inline_link_text, inline_link_text)
-            inline_text_node = nodes.Text(inline_content, inline_content)
-
-            from sphinx.util.nodes import make_refnode
-            inline_ref_node = make_refnode(self.env.app.builder,
-                                           need['docname'],
-                                           need['docname'],
-                                           inline_id_ref,
-                                           inline_link_node)
-            inline_ref_node["classes"] += ['needs-id']
-
-            internal_node.children = []
-            node_need_inline_line = nodes.inline(ids=[inline_id_ref], classes=["need-internal"])
-            node_need_inline_line.append(inline_text_node)
-            node_need_inline_line.append(inline_ref_node)
-            internal_node.append(node_need_inline_line)
-
-    def find_internals(self, node):
-        from sphinxcontrib.needs.roles.need_inline import NeedInline
-        found_nodes = []
-        for child in node.children:
-            if isinstance(child, NeedInline):
-                found_nodes.append(child)
-            else:
-                found_nodes += self.find_internals(child)
-        return found_nodes
 
     @property
     def env(self):
@@ -344,7 +289,7 @@ class NeedDirective(Directive):
                 self.log.warning(
                     'Needs: need "{}" has :title_from_content: set, '
                     'but a title was provided. (see file {})'
-                        .format(self.arguments[0], self.docname)
+                    .format(self.arguments[0], self.docname)
                 )
             return self.arguments[0]
         elif self.title_from_content:
@@ -429,14 +374,14 @@ def process_need_nodes(app, doctree, fromdocname):
                     needs[link]["links_back"].add(key)
         env.needs_workflow['backlink_creation'] = True
 
-    # Call dynamic functions and replace related note data with their retur values
-    if not env.needs_workflow['dynamic_values_resolved']:
-        resolve_dynamic_values(env)
-        env.needs_workflow['dynamic_values_resolved'] = True
+    # Call dynamic functions and replace related note data with their return values
+    resolve_dynamic_values(env)
 
     for node_need in doctree.traverse(Need):
         need_id = node_need.attributes["ids"][0]
         need_data = needs[need_id]
+
+        find_and_replace_node_content(node_need, env, need_data)
 
         node_headline = construct_headline(need_data)
         node_meta = construct_meta(need_data, env)
@@ -543,48 +488,6 @@ def construct_meta(need_data, env):
 
     node_meta += node_extra_options
     return node_meta
-
-
-def resolve_dynamic_values(env):
-    """
-    Resolve dynamic values inside need data.
-
-    Rough workflow:
-
-    #. Parse all needs and their data for a string like [[ my_func(a,b,c) ]]
-    #. Extract function name and call parameters
-    #. Execute registered function name with extracted call parameters
-    #. Replace original string with return value
-
-    :param env: Sphinx environment
-    :return: return value of given function
-    """
-    needs = env.needs_all_needs
-    func_pattern = re.compile('\[\[(.*)\]\]')
-    for key, need in needs.items():
-        for need_option in need:
-            if need_option in ['docname', 'lineno', 'target_node', 'content']:
-                # dynamic values in this data are not allowed.
-                continue
-
-            func_match = func_pattern.match(str(need[need_option]))
-            if func_match is None:
-                continue
-
-            func_call = func_match.group(1)  # Extract function call
-            try:
-                return_value = execute_func(env, need, func_call)  # Exceute function call and get return value
-            except FunctionParsingException:
-                raise SphinxError("Function definition of {option} in file {file}:{line} has "
-                                  "unsupported parameters. "
-                                  "supported are str, int/float, list".format(option=need_option,
-                                                                              file=need['docname'],
-                                                                              line=need['lineno']))
-            need[need_option] = return_value  # Replace original function string with return value of function call
-
-
-
-
 
 #####################
 # Visitor functions #

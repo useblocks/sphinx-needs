@@ -18,10 +18,23 @@ Examples
       :status: open
       :comment: [[test("my_test", [1,2,3], key="value")]]
 
+      This need has the id **[[copy("id")]]**!!
+
 .. req:: my test requirement
    :id: df_1
    :status: open
    :comment: [[test("my_test", [1,2,3], key="value")]]
+
+
+   This need has the id **[[copy("id")]]**!!
+
+    ==============  =====  =======
+    A               B      A and B
+    ==============  =====  =======
+    True            False  [[copy("id")]]
+    [[copy("id")]]  Bulb   Awesome
+    ==============  =====  =======
+
 
 
 
