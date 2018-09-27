@@ -135,8 +135,7 @@ def setup(app):
                           dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="node"),
                           dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="node"),
                           # Kept for backwards compatibility
-                          dict(directive="need", title="Need", prefix="N_", color="#9856a5", style="node")
-                         ],
+                          dict(directive="need", title="Need", prefix="N_", color="#9856a5", style="node")],
                          'html')
     app.add_config_value('needs_template', DEFAULT_TEMPLATE, 'html')
     app.add_config_value('needs_template_collapse', DEFAULT_TEMPLATE_COLLAPSE, 'html')

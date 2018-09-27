@@ -146,7 +146,8 @@ def process_needtables(app, doctree, fromdocname):
                 if col == "ID":
                     row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, "id", make_ref=True)
                 elif col == "INCOMING":
-                    row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, "links_back", ref_lookup=True)
+                    row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info,
+                                         "links_back", ref_lookup=True)
                 elif col == "OUTGOING":
                     row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, "links", ref_lookup=True)
                 else:

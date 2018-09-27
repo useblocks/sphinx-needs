@@ -6,13 +6,8 @@ Changelog
    TODO:
    * Deprecation of need_template
    * Not set need statements are no longer printed out or print empty lines
-   * needs_inline: Todo need links to need_inlines to not work currently
    * New config parameter ``needs_functions``
-
    * New dynamic function
-   * ToDo: Parse Tags and Links
-   * RegEx-Match inside strings is not working, e.g. "name of [[copy("id")]]"
-   * Do not replace complete text but only the regex-match text. So above output would be e.g. "name of my_id"
 
 
 0.2.5

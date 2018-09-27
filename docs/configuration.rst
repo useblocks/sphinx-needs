@@ -195,6 +195,8 @@ needs_template_collapse_ for more information).
 needs_template
 ~~~~~~~~~~~~~~
 
+.. deprecated:: 0.3.0
+
 The layout of needs can be fully customized by using `jinja <http://jinja.pocoo.org/>`_.
 
 If nothing is set, the following default template is used:
@@ -256,6 +258,8 @@ Available jinja variables are:
 
 needs_template_collapse
 ~~~~~~~~~~~~~~~~~~~~~~~
+
+.. deprecated:: 0.3.0
 
 Defines a template, which is used for need with active option **collapse**.
 
@@ -708,3 +712,27 @@ The ID length must be at least 3 characters.
    If you change the regular expression you should also set :ref:`needs_id_required`
    so that authors are forced to set an valid ID.
 
+
+.. _needs_functions:
+
+needs_functions
+~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.3.0
+
+Used to register own dynamic functions.
+
+Must be a list of python functions.
+
+Default value: ``[]``
+
+Inside your ``conf.py`` file ue it like this:
+
+.. code-block:: python
+
+   needs_functions == [my_own_function]
+
+   def my_own_function(app, need, needs):
+       return "Awesome"]
+
+See :ref:`dynamic_functions` for ore information.

@@ -63,8 +63,7 @@ class NeedDirective(Directive):
                    'hide_tags': directives.flag,
                    'hide_status': directives.flag,
                    'hide_links': directives.flag,
-                   'title_from_content': directives.flag,
-    }
+                   'title_from_content': directives.flag}
 
     # add configured link types
 
@@ -145,6 +144,9 @@ class NeedDirective(Directive):
 
         tags = self.options.get("tags", [])
         if len(tags) > 0:
+            # Not working regex.
+            # test = re.match(r'^(?: *(\[\[.*?\]\]|[^,; ]+) *(?:,|;|$)?)+', tags)
+
             tags = [tag.strip() for tag in re.split(";|,", tags)]
             for i in range(len(tags)):
                 if len(tags[i]) == 0:
@@ -155,11 +157,19 @@ class NeedDirective(Directive):
                     if tag not in [tag["name"] for tag in env.app.config.needs_tags]:
                         raise NeedsTagNotAllowed("Tag {0} of need id {1} is not allowed "
                                                  "by config value 'needs_tags'.".format(tag, id))
+            # This may have cut also dynamic function strings, as they can contain , as well.
+            # So let put them together again
+            # ToDo: There may be a smart regex for the splitting. This would avoid this mess of code...
+            tags = _fix_list_dyn_func(tags)
 
         # Get links
         links = self.options.get("links", [])
         if len(links) > 0:
             links = [link.strip() for link in re.split(";|,", links) if link != ""]
+            # This may have cut also dynamic function strings, as they can contain , as well.
+            # So let put them together again
+            # ToDo: There may be a smart regex for the splitting. This would avoid this mess of code...
+            links = _fix_list_dyn_func(links)
 
         #############################################################################################
         # Add need to global need list
@@ -364,18 +374,10 @@ def process_need_nodes(app, doctree, fromdocname):
 
     needs = env.needs_all_needs
 
-    # Create back-links in all found needs.
-    # But do this only once, as all needs are already collected and this sorting is for all
-    # needs and not only for the ones of the current document.
-    if not env.needs_workflow['backlink_creation']:
-        for key, need in needs.items():
-            for link in need["links"]:
-                if link in needs:
-                    needs[link]["links_back"].add(key)
-        env.needs_workflow['backlink_creation'] = True
-
     # Call dynamic functions and replace related note data with their return values
     resolve_dynamic_values(env)
+
+    create_back_links(env)
 
     for node_need in doctree.traverse(Need):
         need_id = node_need.attributes["ids"][0]
@@ -401,6 +403,26 @@ def process_need_nodes(app, doctree, fromdocname):
         else:
             node_need.insert(0, node_headline)
             node_need.insert(1, node_meta)
+
+
+def create_back_links(env):
+    """
+    Create back-links in all found needs.
+    But do this only once, as all needs are already collected and this sorting is for all
+    needs and not only for the ones of the current document.
+
+    :param env: sphinx enviroment
+    :return: None
+    """
+    if env.needs_workflow['backlink_creation']:
+        return
+
+    needs = env.needs_all_needs
+    for key, need in needs.items():
+        for link in need["links"]:
+            if link in needs:
+                needs[link]["links_back"].append(key)
+    env.needs_workflow['backlink_creation'] = True
 
 
 def construct_headline(need_data):
@@ -488,6 +510,43 @@ def construct_meta(need_data, env):
 
     node_meta += node_extra_options
     return node_meta
+
+
+def _fix_list_dyn_func(list):
+    """
+    This searches a list for dynamic function fragments, which may have been cut by generic searches for ",|;".
+
+    Example:
+    `link_a, [[copy('links', need_id)]]` this will be splitted in list of 3 parts:
+
+    #. link_a
+    #. [[copy('links'
+    #. need_id)]]
+
+    This function fixes the above list to the following:
+
+    #. link_a
+    #. [[copy('links', need_id)]]
+
+    :param list: list which may contain splitted function calls
+    :return: list of fixed elements
+    """
+    open_func_string = False
+    new_list = []
+    for element in list:
+        if '[[' in element:
+            open_func_string = True
+            new_link = [element]
+        elif ']]' in element:
+            new_link.append(element)
+            open_func_string = False
+            element = ",".join(new_link)
+            new_list.append(element)
+        elif open_func_string:
+            new_link.append(element)
+        else:
+            new_list.append(element)
+    return new_list
 
 #####################
 # Visitor functions #
