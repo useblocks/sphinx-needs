@@ -7,6 +7,12 @@ Roles can be used to get short information of needs inside single sentences::
 
     My specification :need:`my_spec` is used to fulfill requirements :need_incoming:`my_spec`
 
+Available roles:
+
+.. contents::
+   :local:
+   :depth: 1
+
 .. _role_need:
 
 need
@@ -83,6 +89,8 @@ need_part / np
 
 ``:need_part`` or as shortcut ``:np:`` can be used inside needs to set a sub-id for a specific sentence/part.
 This sub-ids can be linked and referenced in other need functions like links and co.
+
+The used need_part id can be freely chosen, but should not contain any whitespaces or dots.
 
 Example
 ~~~~~~~

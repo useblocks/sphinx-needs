@@ -34,6 +34,12 @@ The following functions are available in all sphinx-needs installations.
 .. contents::
    :local:
 
+
+.. note::
+
+   The parameters ``app``, ``need`` and ``needs`` of the following functions are set automatically.
+   And there is no need/way to use them inside dynamic function calls.
+
 test
 ~~~~
 .. autofunction:: sphinxcontrib.needs.functions.common.test
@@ -54,8 +60,8 @@ inside your ``conf.py`` file::
 
    needs_functions == [my_own_function]
 
-    def my_own_function(app, need, needs):
-      return "Awesome"
+   def my_own_function(app, need, needs):
+       return "Awesome"
 
 Reference function
 ~~~~~~~~~~~~~~~~~~
@@ -79,7 +85,7 @@ Such a defined function can be called via:
    .. req:: test requirement
       :status: [[test()]]
 
-The parameters ``app``, ``need`` and``needs`` are set automatically. You are free to add other parameters, which
+The parameters ``app``, ``need`` and ``needs`` are set automatically. You are free to add other parameters, which
 are allowed to be of type str, int, float and list.
 
 
