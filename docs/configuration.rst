@@ -7,6 +7,7 @@ All configurations take place in your project's conf.py file.
 
 
 .. contents::
+   :local:
 
 
 Activation
@@ -103,9 +104,8 @@ The key of the dict represents the option/attribute name that can be associated
 with the need, and the value represents the `option conversion function <http://docutils.sourceforge.net/docs/howto/rst-directives.html#option-conversion-functions>`_
 to apply to the associated value.
 
-In order to make the options appear in the rendered content you will need to
-override the the default templates used (see needs_template_ and
-needs_template_collapse_ for more information).
+Extra options automatically appear in needs, if a value is set.
+By using :ref:`needs_hide_options` the output of such options can be hidden.
 
 .. note:: To filter on these options in `needlist`, `needtable`, etc. you
           must use the :ref:`filter` option.
@@ -128,45 +128,6 @@ needs_template_collapse_ for more information).
          "my_extra_option": directives.unchanged,
          "another_option": directives.unchanged,
          }
-
-      # Lines 33 and 34 were added to show extra options
-      EXTRA_CONTENT_TEMPLATE_COLLAPSE = """
-      {% raw %}
-      .. _{{id}}:
-
-      {% if hide == false -%}
-      .. role:: needs_tag
-      .. role:: needs_status
-      .. role:: needs_type
-      .. role:: needs_id
-      .. role:: needs_title
-
-      .. rst-class:: need
-      .. rst-class:: need_{{type_name}}
-
-      .. container:: need
-
-          .. container:: toggle
-
-              .. container:: header
-
-                  :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
-
-      {% if status and  status|upper != "NONE" and not hide_status %}        | status: :needs_status:`{{status}}`{% endif %}
-      {% if tags and not hide_tags %}        | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`{% endif %}
-      {% if my_extra_option != "" %}        | my_extra_option: {{ my_extra_option }}{% endif %}
-      {% if another_option != "" %}        | another_option: {{ another_option }}{% endif %}
-              | links incoming: :need_incoming:`{{id}}`
-              | links outgoing: :need_outgoing:`{{id}}`
-
-          {{content|indent(4) }}
-
-      {% endif -%}
-      {% endraw %}
-      """
-
-      needs_template_collapse = EXTRA_CONTENT_TEMPLATE_COLLAPSE
-
 
    **index.rst**
 
@@ -241,121 +202,6 @@ can be used to easily execute :ref:`dynamic_functions`.
 
 Combined with :ref:`dynamic_functions` and :ref:`needs_global_options` this configuration can be used to perform
 complex calculations in the background and hide any output.
-
-
-.. _needs_template:
-
-needs_template
-~~~~~~~~~~~~~~
-
-.. deprecated:: 0.3.0
-
-The layout of needs can be fully customized by using `jinja <http://jinja.pocoo.org/>`_.
-
-If nothing is set, the following default template is used:
-
-.. code-block:: jinja
-
-   {% raw -%}
-
-   .. _{{id}}:
-
-   {% if hide == false -%}
-   .. role:: needs_tag
-   .. role:: needs_status
-   .. role:: needs_type
-   .. role:: needs_id
-   .. role:: needs_title
-
-   .. rst-class:: need
-   .. rst-class:: need_{{type_name}}
-
-   .. container:: need
-
-       :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
-           {%- if status and  status|upper != "NONE" and not hide_status %}
-           | status: :needs_status:`{{status}}`
-           {%- endif -%}
-           {%- if tags and not hide_tags %}
-           | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`
-           {%- endif %}
-           | links incoming: :need_incoming:`{{id}}`
-           | links outgoing: :need_outgoing:`{{id}}`
-
-           {{content|indent(8) }}
-
-   {% endif -%}
-
-   {% endraw %}
-
-Available jinja variables are:
-
-* type
-* type_name
-* type_prefix
-* status
-* tags
-* id
-* links
-* title
-* content
-* hide
-* hide_tags
-* hide_status
-
-.. warning::
-
-   You must add a reference like `.. _{{ '{{id}}' }}:` to the template. Otherwise linking will not work!
-
-.. _needs_template_collapse:
-
-needs_template_collapse
-~~~~~~~~~~~~~~~~~~~~~~~
-
-.. deprecated:: 0.3.0
-
-Defines a template, which is used for need with active option **collapse**.
-
-Default value:
-
-.. code-block:: jinja
-
-    {% raw -%}
-
-    .. _{{id}}:
-
-    {% if hide == false -%}
-   .. role:: needs_tag
-   .. role:: needs_status
-   .. role:: needs_type
-   .. role:: needs_id
-   .. role:: needs_title
-   .. rst-class:: need
-   .. rst-class:: need_{{type_name}}
-
-   .. container:: need
-
-       .. container:: toggle
-
-           .. container:: header
-
-               :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
-               :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
-           {%- if status and  status|upper != "NONE" and not hide_status %}
-           | status: :needs_status:`{{status}}`
-           {%- endif -%}
-           {%- if tags and not hide_tags %}
-           | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`
-           {%- endif %}
-           | links incoming: :need_incoming:`{{id}}`
-           | links outgoing: :need_outgoing:`{{id}}`
-
-       {{content|indent(4) }}
-
-   {% endif -%}
-   {% endraw %}
-
-For more details please see :ref:`needs_template`.
 
 
 needs_diagram_template
@@ -437,7 +283,7 @@ It is important to note in these scenarios that titles will not be available
 in other directives such as needtable, needlist, needflow.
 
 A title can be auto-generated for a requirement by either setting
-needs_title_from_content_ to **True** or providing the flag
+:ref:`needs_title_from_content` to **True** or providing the flag
 `:title_from_content:` as follows::
 
     .. req::
@@ -454,6 +300,7 @@ sentence of the requirement.
 
     This will be my title.  Anything after the first sentence will not be
     part of the title.
+
 
 
 .. _needs_title_from_content:
@@ -789,3 +636,122 @@ Inside your ``conf.py`` file ue it like this:
        return "Awesome"]
 
 See :ref:`dynamic_functions` for ore information.
+
+Deprecated options
+------------------
+
+The following options are no longer supported, if the latest version of sphinx-needs is used.
+
+.. _needs_template:
+
+needs_template
+~~~~~~~~~~~~~~
+
+.. deprecated:: 0.3.0
+
+The layout of needs can be fully customized by using `jinja <http://jinja.pocoo.org/>`_.
+
+If nothing is set, the following default template is used:
+
+.. code-block:: jinja
+
+   {% raw -%}
+
+   .. _{{id}}:
+
+   {% if hide == false -%}
+   .. role:: needs_tag
+   .. role:: needs_status
+   .. role:: needs_type
+   .. role:: needs_id
+   .. role:: needs_title
+
+   .. rst-class:: need
+   .. rst-class:: need_{{type_name}}
+
+   .. container:: need
+
+       :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
+           {%- if status and  status|upper != "NONE" and not hide_status %}
+           | status: :needs_status:`{{status}}`
+           {%- endif -%}
+           {%- if tags and not hide_tags %}
+           | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`
+           {%- endif %}
+           | links incoming: :need_incoming:`{{id}}`
+           | links outgoing: :need_outgoing:`{{id}}`
+
+           {{content|indent(8) }}
+
+   {% endif -%}
+
+   {% endraw %}
+
+Available jinja variables are:
+
+* type
+* type_name
+* type_prefix
+* status
+* tags
+* id
+* links
+* title
+* content
+* hide
+* hide_tags
+* hide_status
+
+.. warning::
+
+   You must add a reference like `.. _{{ '{{id}}' }}:` to the template. Otherwise linking will not work!
+
+.. _needs_template_collapse:
+
+needs_template_collapse
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. deprecated:: 0.3.0
+
+Defines a template, which is used for need with active option **collapse**.
+
+Default value:
+
+.. code-block:: jinja
+
+    {% raw -%}
+
+    .. _{{id}}:
+
+    {% if hide == false -%}
+   .. role:: needs_tag
+   .. role:: needs_status
+   .. role:: needs_type
+   .. role:: needs_id
+   .. role:: needs_title
+   .. rst-class:: need
+   .. rst-class:: need_{{type_name}}
+
+   .. container:: need
+
+       .. container:: toggle
+
+           .. container:: header
+
+               :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
+               :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
+           {%- if status and  status|upper != "NONE" and not hide_status %}
+           | status: :needs_status:`{{status}}`
+           {%- endif -%}
+           {%- if tags and not hide_tags %}
+           | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`
+           {%- endif %}
+           | links incoming: :need_incoming:`{{id}}`
+           | links outgoing: :need_outgoing:`{{id}}`
+
+       {{content|indent(4) }}
+
+   {% endif -%}
+   {% endraw %}
+
+For more details please see :ref:`needs_template`.

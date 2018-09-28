@@ -178,10 +178,7 @@ needs_extra_options = {
          "comment": directives.unchanged,
          }
 
-needs_global_options = {
-         'my_option_1': 'Fix value',
-         'my_option_2': '[[copy("id")]]'
-      }
+needs_title_from_content = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
