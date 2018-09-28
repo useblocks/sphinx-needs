@@ -3,16 +3,16 @@ Changelog
 
 0.3.0
 -----
-   TODO:
-   * Deprecation of need_template
-   * Not set need statements are no longer printed out or print empty lines
-   * New config parameter ``needs_functions``
-   * New dynamic function
-
+ * Improvement: :ref:`dynamic_functions` are now available to support calculation of need values.
+ * Improvement: :ref:`needs_functions` can be used to register and use own dynamic functions.
+ * Improvement: Added :ref:`needs_global_options` to set need values globally for all needs.
+ * Improvement: Added :ref:`needs_hide_options` to hide specific options of all needs.
+ * Bugfix: Removed needs are now deleted from existing needs.json (`#68 <https://github.com/useblocks/sphinxcontrib-needs/issues/68>`_ )
+ * Deprecated: :ref:`needs_template` and :ref:`needs_template_collapse` are no longer supported.
 
 0.2.5
 -----
-   * Bugfix: Fix for changes made in 0.2.5.
+ * Bugfix: Fix for changes made in 0.2.5.
 
 0.2.4
 -----

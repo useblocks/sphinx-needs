@@ -27,6 +27,11 @@ class NeedsBuilder(Builder):
 
         needs_list.load_json()
 
+        # Clean needs_list from already stored needs of the current version.
+        # This is needed as needs could have been removed from documentation and if this is the case,
+        # removed needs would stay in needs_list, if list gets not cleaned.
+        needs_list.wipe_version(version)
+
         for key, need in needs.items():
             needs_list.add_need(version, need)
         try:

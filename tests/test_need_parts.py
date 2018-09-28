@@ -8,7 +8,7 @@ except ImportError:
 @with_app(buildername='html', srcdir='doc_test/doc_need_parts')
 def test_doc_need_parts(app, status, warning):
     app.build()
-    html = Path(app.outdir / 'index.html').read_text()
+    html = Path(app.outdir, 'index.html').read_text()
     assert '<span class="need-part" id="SP_TOO_001.1">exit()<a class="needs-id reference internal" ' \
            'href="#SP_TOO_001.1"> 1</a></span>' in html
 

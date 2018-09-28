@@ -75,6 +75,8 @@ needs.
 
 It can be specified as a dict inside ``conf.py`` as follows::
 
+  from docutils.parsers.rst import directives
+
    needs_extra_options = {
     "introduced": directives.unchanged,
     "updated": directives.unchanged,
@@ -91,6 +93,11 @@ And used like:
       :updated: 2018/03/26
       :tags: important;complex;
       :impacts: really everything
+
+Default value = ``{'hidden': directives.unchanged}``
+
+The ``hidden`` option is a globally available option, which is always hidden and
+can be used to easily execute :ref:`dynamic_functions`.
 
 The key of the dict represents the option/attribute name that can be associated
 with the need, and the value represents the `option conversion function <http://docutils.sourceforge.net/docs/howto/rst-directives.html#option-conversion-functions>`_
@@ -188,6 +195,52 @@ needs_template_collapse_ for more information).
 
    .. needfilter::
       :filter: "filter_me" in another_option
+
+
+.. _needs_global_options:
+
+needs_global_options
+~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.3.0
+
+Global options are set on global level for all needs, so that all needs get the same value for the configured option.
+
+.. code-block:: python
+
+   needs_global_options = {
+      'global_option': 'Fix value'
+   }
+
+Default value = ``{}``
+
+Combined with :ref:`dynamic_functions` this can be a powerful method to automate data handling::
+
+   needs_global_options = {
+         'global_option': '[[copy("id")]]'
+   }
+
+
+.. _needs_hide_options:
+
+needs_hide_options
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.3.0
+
+Can be used to hide specific options from general output in rendered document::
+
+   needs_hide_options = ['tags', 'global_option']
+
+Works with local set options, extra options and global options.
+
+Default value: ``['hidden']``
+
+The ``hidden`` option is a globally available option, which is always hidden and
+can be used to easily execute :ref:`dynamic_functions`.
+
+Combined with :ref:`dynamic_functions` and :ref:`needs_global_options` this configuration can be used to perform
+complex calculations in the background and hide any output.
 
 
 .. _needs_template:

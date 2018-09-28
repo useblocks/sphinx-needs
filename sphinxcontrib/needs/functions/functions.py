@@ -210,8 +210,11 @@ def _analyze_func_string(func_string):
     :return: function name, arguments, keyword arguments
     """
     func = ast.parse(func_string)
-    func_call = func.body[0].value
-    func_name = func_call.func.id
+    try:
+        func_call = func.body[0].value
+        func_name = func_call.func.id
+    except AttributeError:
+        raise SphinxError("Given dynamic function string is not a valid python call. Got: {}".format(func_string))
 
     func_args = []
     for arg in func_call.args:

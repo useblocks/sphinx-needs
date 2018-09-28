@@ -215,6 +215,7 @@ class NeedDirective(Directive):
             'hide_status': hide_status,
         }
         self.merge_extra_options(needs_info)
+        self.merge_global_options(needs_info)
         env.needs_all_needs[id] = needs_info
 
         if hide:
@@ -289,6 +290,19 @@ class NeedDirective(Directive):
                 needs_info[key] = ""
 
         return extra_keys
+
+    def merge_global_options(self, needs_info):
+        """Add all global defined options to needs_info"""
+        global_options = getattr(self.env.app.config, 'needs_global_options', None)
+        if global_options is None:
+            return
+        for key, value in global_options.items():
+
+            # If key already exists in needs_info, this global_option got overwritten manually in current need
+            if key in needs_info.keys():
+                continue
+
+            needs_info[key] = value
 
     def _get_full_title(self):
         """Determines the title for the need in order of precedence:
@@ -456,18 +470,22 @@ def construct_meta(need_data, env):
     :return: node
     """
 
+    hide_options = env.config.needs_hide_options
+    if not isinstance(hide_options, list):
+        raise SphinxError('Config parameter needs_hide_options must be of type list')
+
     node_meta = nodes.container()
     # need parameters
     param_status = "status: "
     param_tags = "tags: "
 
-    if need_data["status"] is not None:
+    if need_data["status"] is not None and 'status' not in hide_options:
         node_status = nodes.line(param_status, param_status, classes=['status'])
         node_status.append(nodes.inline(need_data["status"], need_data["status"],
                                         classes=["needs-status", str(need_data['status'])]))
         node_meta.append(node_status)
 
-    if need_data["tags"]:
+    if need_data["tags"] and 'tags' not in hide_options:
         node_tags = nodes.line(param_tags, param_tags, classes=['tags'])
         for tag in need_data['tags']:
             node_tags.append(nodes.inline(tag, tag, classes=["needs-tag", str(tag)]))
@@ -475,7 +493,7 @@ def construct_meta(need_data, env):
         node_meta.append(node_tags)
 
     # Links incoming
-    if need_data['links_back']:
+    if need_data['links_back'] and 'links_back' not in hide_options:
         node_incoming = nodes.line()
         prefix = "links incoming: "
         node_incoming_prefix = nodes.Text(prefix, prefix)
@@ -486,7 +504,7 @@ def construct_meta(need_data, env):
         node_meta.append(node_incoming)
 
     # Links outgoing
-    if need_data['links']:
+    if need_data['links'] and 'links' not in hide_options:
         node_outgoing = nodes.line()
         prefix = "links outgoing: "
         node_outgoing_prefix = nodes.Text(prefix, prefix)
@@ -499,6 +517,8 @@ def construct_meta(need_data, env):
     extra_options = getattr(env.config, 'needs_extra_options', {})
     node_extra_options = []
     for key, value in extra_options.items():
+        if key in hide_options:
+            continue
         param_data = need_data[key]
         if param_data is None or not param_data:
             continue
@@ -509,6 +529,26 @@ def construct_meta(need_data, env):
         node_extra_options.append(node_option)
 
     node_meta += node_extra_options
+
+    global_options = getattr(env.config, 'needs_global_options', {})
+    node_global_options = []
+    for key, value in global_options.items():
+        # If a global option got locally overwritten, it must already part of extra_options.
+        # In this skipp output, as this is done during extra_option handling
+        if key in extra_options or key in hide_options:
+            continue
+
+        param_data = need_data[key]
+        if param_data is None or not param_data:
+            continue
+        param_option = '{}: '.format(key)
+        node_option = nodes.line(param_option, param_option, classes=['global_option'])
+        node_option.append(nodes.inline(param_data, param_data,
+                                        classes=["needs-global-option", str(key)]))
+        node_global_options.append(node_option)
+
+    node_meta += node_global_options
+
     return node_meta
 
 

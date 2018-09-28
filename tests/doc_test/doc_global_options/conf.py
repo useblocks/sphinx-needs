@@ -42,8 +42,10 @@ needs_types = [
     dict(directive="test", title="Test Case", prefix="TC_", color="#DCB239", style="node")
 ]
 
-needs_extra_options = {
-    'test_func': directives.unchanged
+needs_global_options = {
+    'global_1': "test_global",
+    'global_2': 1.27,
+    'global_3': "[[test()]]"
 }
 
 cwd = os.getcwd()

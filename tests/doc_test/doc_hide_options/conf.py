@@ -42,9 +42,11 @@ needs_types = [
     dict(directive="test", title="Test Case", prefix="TC_", color="#DCB239", style="node")
 ]
 
-needs_extra_options = {
-    'test_func': directives.unchanged
+needs_global_options = {
+    'test_global': "test_global"
 }
+
+needs_hide_options = ['status', 'tags', 'test_global']
 
 cwd = os.getcwd()
 plantuml = 'java -jar %s' % os.path.join(cwd, "../utils/plantuml_beta.jar")

@@ -7,6 +7,7 @@ import string
 import sphinx
 from sphinx.errors import SphinxError
 from docutils import nodes
+from docutils.parsers.rst import directives
 from pkg_resources import parse_version
 from sphinx.roles import XRefRole
 from sphinxcontrib.needs.directives.need import Need, NeedDirective, \
@@ -170,6 +171,8 @@ def setup(app):
                          'html')
 
     app.add_config_value('needs_functions', None, 'html')
+    app.add_config_value('needs_global_options', {}, 'html')
+    app.add_config_value('needs_hide_options', [], 'html')
 
     # If given, only the defined status are allowed.
     # Values needed for each status:
@@ -341,6 +344,9 @@ def prepare_env(app, env, docname):
         # Register functions configured by user
         for needs_func in needs_functions:
             register_func(app, needs_func)
+
+    app.config.needs_hide_options += ['hidden']
+    app.config.needs_extra_options['hidden'] = directives.unchanged
 
     if not hasattr(env, 'needs_workflow'):
         # Used to store workflow status information for already executed tasks.
