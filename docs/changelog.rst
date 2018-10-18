@@ -1,6 +1,10 @@
 Changelog
 =========
 
+0.3.1
+-----
+ * Improvement: Added dynamic function :ref:`check_linked_values`.
+
 0.3.0
 -----
  * Improvement: :ref:`dynamic_functions` are now available to support calculation of need values.

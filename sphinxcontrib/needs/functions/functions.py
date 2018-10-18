@@ -58,7 +58,7 @@ def execute_func(env, need, func_string):
     func = env.needs_functions[func_name]['function']
     func_return = func(env, need, env.needs_all_needs, *func_args, **func_kwargs)
 
-    if not isinstance(func_return, (str, int, float, list, unicode)):
+    if not isinstance(func_return, (str, int, float, list, unicode)) and func_return is not None:
         raise SphinxError('Return value of function {} is of type {}. Allowed are str, int, float'.format(
             func_name, type(func_return)))
 
@@ -70,7 +70,7 @@ def execute_func(env, need, func_string):
     return func_return
 
 
-func_pattern = re.compile('\[\[(.*)\]\]')  # RegEx to detect function strings
+func_pattern = re.compile(r'\[\[(.*?)\]\]')  # RegEx to detect function strings
 
 
 def find_and_replace_node_content(node, env, need):
@@ -140,19 +140,27 @@ def resolve_dynamic_values(env):
                 # dynamic values in this data are not allowed.
                 continue
             if not isinstance(need[need_option], (list, set)):
-                try:
-                    func_call, func_return = _detect_and_execute(need[need_option], need, env)
-                except FunctionParsingException:
-                    raise SphinxError("Function definition of {option} in file {file}:{line} has "
-                                      "unsupported parameters. "
-                                      "supported are str, int/float, list".format(option=need_option,
-                                                                                  file=need['docname'],
-                                                                                  line=need['lineno']))
+                func_call = True
+                while func_call:
+                    try:
+                        func_call, func_return = _detect_and_execute(need[need_option], need, env)
+                    except FunctionParsingException:
+                        raise SphinxError("Function definition of {option} in file {file}:{line} has "
+                                          "unsupported parameters. "
+                                          "supported are str, int/float, list".format(option=need_option,
+                                                                                      file=need['docname'],
+                                                                                      line=need['lineno']))
 
-                if func_call is None:
-                    continue
-                # Replace original function string with return value of function call
-                need[need_option] = need[need_option].replace('[[{}]]'.format(func_call), func_return)
+                    if func_call is None:
+                        continue
+                    # Replace original function string with return value of function call
+                    if func_return is None:
+                        need[need_option] = need[need_option].replace('[[{}]]'.format(func_call), '')
+                    else:
+                        need[need_option] = need[need_option].replace('[[{}]]'.format(func_call), func_return)
+
+                    if need[need_option] == '':
+                        need[need_option] = None
             else:
                 new_values = []
                 for element in need[need_option]:
@@ -186,7 +194,7 @@ def _detect_and_execute(content, need, env):
     except UnicodeEncodeError:
         content = content.encode('utf-8')
 
-    func_match = func_pattern.match(content)
+    func_match = func_pattern.search(content)
     if func_match is None:
         return None, None
 
@@ -222,6 +230,8 @@ def _analyze_func_string(func_string):
             func_args.append(arg.n)
         elif isinstance(arg, ast.Str):
             func_args.append(arg.s)
+        elif isinstance(arg, ast.BoolOp):
+            func_args.append(arg.s)
         elif isinstance(arg, ast.List):
             arg_list = []
             for element in arg.elts:
@@ -240,6 +250,8 @@ def _analyze_func_string(func_string):
             func_kargs[kkey] = kvalue.n
         elif isinstance(kvalue, ast.Str):
             func_kargs[kkey] = kvalue.s
+        elif isinstance(kvalue, ast.NameConstant):  # Check if Boolean
+            func_kargs[kkey] = kvalue.value
         elif isinstance(kvalue, ast.List):
             arg_list = []
             for element in kvalue.elts:

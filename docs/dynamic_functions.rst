@@ -48,6 +48,12 @@ copy
 ~~~~
 .. autofunction:: sphinxcontrib.needs.functions.common.copy
 
+.. _check_linked_values:
+
+check_linked_values
+~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sphinxcontrib.needs.functions.common.check_linked_values
+
 
 Develop own functions
 ---------------------

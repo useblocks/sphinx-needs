@@ -4,6 +4,8 @@ Collection of common sphinx-needs functions for dynamic values
 .. note:: The function parameters ``app``, ``need``, ``needs`` are set automatically and can not be overridden by user.
 """
 
+import re
+
 
 def test(app, need, needs, *args, **kwargs):
     """
@@ -86,3 +88,143 @@ def copy(app, need, needs, option, need_id=None):
         need = needs[need_id]
 
     return need[option]
+
+
+def check_linked_values(app, need, needs, result, search_option, search_value, filter=None, one_hit=False):
+    """
+    Returns a specific value, if for all linked needs a given option has a given value.
+
+    The linked needs can be filtered by using the ``filter`` option.
+
+    If ``one_hit`` is set to True, only one linked need must have a positive match for the searched value.
+
+    .. code-block:: jinja
+
+        .. req:: example A
+           :id: clv_A
+           :status: in progress
+
+        .. req:: example B
+           :id: clv_B
+           :status: in progress
+
+        .. spec:: example C
+           :id: clv_C
+           :status: closed
+
+        .. spec:: result 1: Positive check
+           :links: clv_A, clv_B
+           :status: [[check_linked_values('progress', 'status', 'in progress' )]]
+
+           status gets set to *progress*.
+
+        .. spec:: result 2: Negative check
+           :links: clv_A, clv_B, clv_C
+           :status: [[check_linked_values('progress', 'status', 'in progress' )]]
+
+           status gets not set to *progress*, because status of linked need *clv_C* does not match *"in progress"*.
+
+        .. spec:: result 3: Positive check thanks of used filter
+           :links: clv_A, clv_B, clv_C
+           :status: [[check_linked_values('progress', 'status', 'in progress', 'type == "req" ' )]]
+
+           status gets set to *progress*, because linked need *clv_C* is not part of the filter.
+
+        .. spec:: result 4: Positive check thanks of one_hit option
+           :links: clv_A, clv_B, clv_C
+           :status: [[check_linked_values('progress', 'status', 'in progress', one_hit=True )]]
+
+           Even *clv_C* has not the searched status, status gets anyway set to *progress*.
+           That's because ``one_hit`` is used so that only one linked need must have the searched
+           value.
+
+        .. spec:: result 5: Two checks and a joint status
+           :links: clv_A, clv_B, clv_C
+           :status: [[check_linked_values('progress', 'status', 'in progress', one_hit=True )]] [[check_linked_values('closed', 'status', 'closed', one_hit=True )]]
+
+           Two checks are performed and both are positive. So their results get joined.
+
+    .. req:: example A
+       :id: clv_A
+       :status: in progress
+       :collapse: False
+
+    .. req:: example B
+       :id: clv_B
+       :status: in progress
+       :collapse: False
+
+    .. spec:: example C
+       :id: clv_C
+       :status: closed
+       :collapse: False
+
+    .. spec:: result 1: Positive check
+       :id: clv_1
+       :links: clv_A, clv_B
+       :status: [[check_linked_values('progress', 'status', 'in progress' )]]
+       :collapse: False
+
+       status gets set to *progress*.
+
+    .. spec:: result 2: Negative check
+       :id: clv_2
+       :links: clv_A, clv_B, clv_C
+       :status: [[check_linked_values('progress', 'status', 'in progress' )]]
+       :collapse: False
+
+       status gets not set to *progress*, because status of linked need *clv_C* does not match *"in progress"*.
+
+    .. spec:: result 3: Positive check thanks of used filter
+       :id: clv_3
+       :links: clv_A, clv_B, clv_C
+       :status: [[check_linked_values('progress', 'status', 'in progress', 'type == "req" ' )]]
+       :collapse: False
+
+       status gets set to *progress*, because linked need *clv_C* is not part of the filter.
+
+    .. spec:: result 4: Positive check thanks of one_hit option
+       :id: clv_4
+       :links: clv_A, clv_B, clv_C
+       :status: [[check_linked_values('progress', 'status', 'in progress', one_hit=True )]]
+       :collapse: False
+
+       Even *clv_C* has not the searched status, status gets anyway set to *progress*.
+       That's because ``one_hit`` is used so that only one linked need must have the searched
+       value.
+
+    .. spec:: result 5: Two checks and a joint status
+       :id: clv_5
+       :links: clv_A, clv_B, clv_C
+       :status: [[check_linked_values('progress', 'status', 'in progress', one_hit=True )]] [[check_linked_values('closed', 'status', 'closed', one_hit=True )]]
+       :collapse: False
+
+       Two checks are performed and both are positive. So their results get joined.
+
+    :param result: value, which gets returned if all linked needs have parsed the checks
+    :param search_option: option name, which is used n linked needs for the search
+    :param search_value: value, which an option of a linked need must match
+    :param filter: Checks are only performed on linked needs, which pass the defined filter
+    :param one_hit: If True, only one linked need must have a positive check
+    :return: result, if all checks are positive
+    """
+    links = need["links"]
+    if not isinstance(search_value, list):
+        search_value = [search_value]
+
+    for link in links:
+        if filter is not None:
+            filter_context = needs[link].copy()
+            filter_context["search"] = re.search
+            try:
+                if not eval(filter, None, filter_context):
+                    continue
+            except Exception as e:
+                print("Filter {0} not valid: Error: {1}".format(filter, e))
+
+        if not one_hit and not needs[link][search_option] in search_value:
+            return None
+        elif one_hit and needs[link][search_option] in search_value:
+            return result
+
+    return result
