@@ -8,7 +8,7 @@ Changelog
  * Improvement: Added :ref:`needs_global_options` to set need values globally for all needs.
  * Improvement: Added :ref:`needs_hide_options` to hide specific options of all needs.
  * Bugfix: Removed needs are now deleted from existing needs.json (`#68 <https://github.com/useblocks/sphinxcontrib-needs/issues/68>`_ )
- * Deprecated: :ref:`needs_template` and :ref:`needs_template_collapse` are no longer supported.
+ * Removed: :ref:`needs_template` and :ref:`needs_template_collapse` are no longer supported.
 
 0.2.5
 -----

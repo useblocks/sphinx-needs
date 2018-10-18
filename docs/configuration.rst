@@ -637,7 +637,7 @@ Inside your ``conf.py`` file ue it like this:
 
 See :ref:`dynamic_functions` for ore information.
 
-Deprecated options
+Removed options
 ------------------
 
 The following options are no longer supported, if the latest version of sphinx-needs is used.
@@ -647,7 +647,7 @@ The following options are no longer supported, if the latest version of sphinx-n
 needs_template
 ~~~~~~~~~~~~~~
 
-.. deprecated:: 0.3.0
+*removed: 0.3.0*
 
 The layout of needs can be fully customized by using `jinja <http://jinja.pocoo.org/>`_.
 
@@ -710,8 +710,7 @@ Available jinja variables are:
 
 needs_template_collapse
 ~~~~~~~~~~~~~~~~~~~~~~~
-
-.. deprecated:: 0.3.0
+*removed: 0.3.0*
 
 Defines a template, which is used for need with active option **collapse**.
 
