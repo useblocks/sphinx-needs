@@ -18,6 +18,9 @@ import sys
 is_python3 = sys.version_info.major == 3
 if is_python3:
     unicode = str
+    ast_boolean = ast.NameConstant
+else:
+    ast_boolean = ast.Name
 
 
 def register_func(env, need_function):
@@ -250,8 +253,11 @@ def _analyze_func_string(func_string):
             func_kargs[kkey] = kvalue.n
         elif isinstance(kvalue, ast.Str):
             func_kargs[kkey] = kvalue.s
-        elif isinstance(kvalue, ast.NameConstant):  # Check if Boolean
-            func_kargs[kkey] = kvalue.value
+        elif isinstance(kvalue, ast_boolean):  # Check if Boolean
+            if is_python3:
+                func_kargs[kkey] = kvalue.value
+            else:
+                func_kargs[kkey] = kvalue.id
         elif isinstance(kvalue, ast.List):
             arg_list = []
             for element in kvalue.elts:
