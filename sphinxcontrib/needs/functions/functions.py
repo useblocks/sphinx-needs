@@ -160,7 +160,7 @@ def resolve_dynamic_values(env):
                     if func_return is None:
                         need[need_option] = need[need_option].replace('[[{}]]'.format(func_call), '')
                     else:
-                        need[need_option] = need[need_option].replace('[[{}]]'.format(func_call), func_return)
+                        need[need_option] = need[need_option].replace('[[{}]]'.format(func_call), str(func_return))
 
                     if need[need_option] == '':
                         need[need_option] = None

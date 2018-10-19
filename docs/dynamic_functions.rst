@@ -55,6 +55,14 @@ check_linked_values
 .. autofunction:: sphinxcontrib.needs.functions.common.check_linked_values
 
 
+.. _calc_sum:
+
+calc_sum
+~~~~~~~~
+
+.. autofunction:: sphinxcontrib.needs.functions.common.calc_sum
+
+
 Develop own functions
 ---------------------
 

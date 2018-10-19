@@ -106,35 +106,35 @@ def check_linked_values(app, need, needs, result, search_option, search_value, f
 
     .. code-block:: jinja
 
-        .. req:: example A
+        .. req:: Input A
            :id: clv_A
            :status: in progress
 
-        .. req:: example B
+        .. req:: Input B
            :id: clv_B
            :status: in progress
 
-        .. spec:: example C
+        .. spec:: Input C
            :id: clv_C
            :status: closed
 
-    .. req:: example A
+    .. req:: Input A
        :id: clv_A
        :status: in progress
        :collapse: False
 
-    .. req:: example B
+    .. req:: Input B
        :id: clv_B
        :status: in progress
        :collapse: False
 
-    .. spec:: example C
+    .. spec:: Input C
        :id: clv_C
        :status: closed
        :collapse: False
 
 
-    **Result 1: Positive check**
+    **Example 1: Positive check**
 
     Status gets set to *progress*.
 
@@ -151,7 +151,7 @@ def check_linked_values(app, need, needs, result, search_option, search_value, f
        :collapse: False
 
 
-    **Result 2: Negative check**
+    **Example 2: Negative check**
 
     Status gets not set to *progress*, because status of linked need *clv_C* does not match *"in progress"*.
 
@@ -168,7 +168,7 @@ def check_linked_values(app, need, needs, result, search_option, search_value, f
        :collapse: False
 
 
-    **Result 3: Positive check thanks of used filter**
+    **Example 3: Positive check thanks of used filter**
 
     status gets set to *progress*, because linked need *clv_C* is not part of the filter.
 
@@ -184,7 +184,7 @@ def check_linked_values(app, need, needs, result, search_option, search_value, f
        :status: [[check_linked_values('progress', 'status', 'in progress', 'type == "req" ' )]]
        :collapse: False
 
-    **Result 4: Positive check thanks of one_hit option**
+    **Example 4: Positive check thanks of one_hit option**
 
     Even *clv_C* has not the searched status, status gets anyway set to *progress*.
     That's because ``one_hit`` is used so that only one linked need must have the searched
@@ -244,3 +244,114 @@ def check_linked_values(app, need, needs, result, search_option, search_value, f
             return result
 
     return result
+
+
+def calc_sum(app, need, needs, option, filter=None, links_only=False):
+    """
+    Sums the values of a given option in filtered needs up to single number.
+
+    Useful e.g. for calculating the amount of needed hours for implementation of all linked
+    specification needs.
+
+
+    **Input data**
+
+    .. spec:: Do this
+       :id: sum_input_1
+       :hours: 7
+       :collapse: False
+
+    .. spec:: Do that
+       :id: sum_input_2
+       :hours: 15
+       :collapse: False
+
+    .. spec:: Do too much
+       :id: sum_input_3
+       :hours: 110
+       :collapse: False
+
+    **Example 2**
+
+    .. code-block:: jinja
+
+       .. req:: Result 1
+          :amount: [[calc_sum("hours")]]
+
+    .. req:: Result 1
+       :amount: [[calc_sum("hours")]]
+       :collapse: False
+
+
+    **Example 2**
+
+    .. code-block:: jinja
+
+       .. req:: Result 2
+          :amount: [[calc_sum("hours", "float(hours) > 10")]]
+
+    .. req:: Result 2
+       :amount: [[calc_sum("hours", "float(hours) > 10")]]
+       :collapse: False
+
+    **Example 3**
+
+    .. code-block:: jinja
+
+       .. req:: Result 3
+          :links: sum_input_1; sum_input_3
+          :amount: [[calc_sum("hours", links_only="True")]]
+
+    .. req:: Result 3
+       :links: sum_input_1; sum_input_3
+       :amount: [[calc_sum("hours", links_only="True")]]
+       :collapse: False
+
+    **Example 4**
+
+    .. code-block:: jinja
+
+       .. req:: Result 4
+          :links: sum_input_1; sum_input_3
+          :amount: [[calc_sum("hours", "float(hours) > 10", "True")]]
+
+    .. req:: Result 4
+       :links: sum_input_1; sum_input_3
+       :amount: [[calc_sum("hours", "float(hours) > 10", "True")]]
+       :collapse: False
+
+    :param option: Options, from which the numbers shall be taken
+    :param filter: Filter string, which all needs must passed to get their value added.
+    :param links_only: If "True", only linked needs are taken into account.
+
+    :return: A float number
+    """
+    if not links_only:
+        check_needs = needs.values()
+    else:
+        check_needs = []
+        for link in need["links"]:
+            check_needs.append(needs[link])
+
+    calculated_sum = 0
+
+    for check_need in check_needs:
+        if filter is not None:
+            filter_context = check_need.copy()
+            filter_context["search"] = re.search
+            try:
+                if not eval(filter, None, filter_context):
+                    continue
+            except ValueError as e:
+                pass
+        try:
+            calculated_sum += float(check_need[option])
+        except ValueError:
+            pass
+
+    return calculated_sum
+
+
+
+
+

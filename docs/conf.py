@@ -41,7 +41,7 @@ sys.path.insert(0, os.path.abspath('../sphinxcontrib'))
 # The short X.Y version.
 version = '0.3'
 # The full version, including alpha/beta/rc tags.
-release = '0.3.0'
+release = '0.3.1'
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 if on_rtd:
@@ -176,6 +176,8 @@ needs_extra_options = {
          "another_option": directives.unchanged,
          "author": directives.unchanged,
          "comment": directives.unchanged,
+         "amount": directives.unchanged,
+         "hours": directives.unchanged,
          }
 
 needs_title_from_content = True

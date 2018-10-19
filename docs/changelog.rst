@@ -4,6 +4,7 @@ Changelog
 0.3.1
 -----
  * Improvement: Added dynamic function :ref:`check_linked_values`.
+ * Improvement: Added dynamic function :ref:`calc_sum`.
 
 0.3.0
 -----
