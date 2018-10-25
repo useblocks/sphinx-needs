@@ -177,7 +177,7 @@ def process_needflow(app, doctree, fromdocname):
 
         if len(content) == 0:
             nothing_found = "No needs passed the filters"
-            para = nodes.line()
+            para = nodes.paragraph()
             nothing_found_node = nodes.Text(nothing_found, nothing_found)
             para += nothing_found_node
             content.append(para)

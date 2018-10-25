@@ -1,24 +1,26 @@
 .. role:: underline
     :class: underline
 
-.. image:: https://img.shields.io/pypi/l/sphinxcontrib-needs.svg
-    :target: https://pypi.python.org/pypi/sphinxcontrib-needs
-    :alt: License
-.. image:: https://img.shields.io/pypi/pyversions/sphinxcontrib-needs.svg
-    :target: https://pypi.python.org/pypi/sphinxcontrib-needs
-    :alt: Supported versions
-.. image:: https://readthedocs.org/projects/sphinxcontrib-needs/badge/?version=latest
-    :target: https://readthedocs.org/projects/sphinxcontrib-needs/
-.. image:: https://travis-ci.org/useblocks/sphinxcontrib-needs.svg?branch=master
-    :target: https://travis-ci.org/useblocks/sphinxcontrib-needs
-    :alt: Travis-CI Build Status
-.. image:: https://img.shields.io/pypi/v/sphinxcontrib-needs.svg
-    :target: https://pypi.python.org/pypi/sphinxcontrib-needs
-    :alt: PyPI Package latest release
+.. only:: html
 
-.. image:: https://img.shields.io/badge/sphinx-1.5%2C%201.6%2C%201.7%2C%201.8-blue.svg
-    :target: https://sphinx-doc.org
-    :alt: Supported Sphinx releases
+   .. image:: https://img.shields.io/pypi/l/sphinxcontrib-needs.svg
+       :target: https://pypi.python.org/pypi/sphinxcontrib-needs
+       :alt: License
+   .. image:: https://img.shields.io/pypi/pyversions/sphinxcontrib-needs.svg
+       :target: https://pypi.python.org/pypi/sphinxcontrib-needs
+       :alt: Supported versions
+   .. image:: https://readthedocs.org/projects/sphinxcontrib-needs/badge/?version=latest
+       :target: https://readthedocs.org/projects/sphinxcontrib-needs/
+   .. image:: https://travis-ci.org/useblocks/sphinxcontrib-needs.svg?branch=master
+       :target: https://travis-ci.org/useblocks/sphinxcontrib-needs
+       :alt: Travis-CI Build Status
+   .. image:: https://img.shields.io/pypi/v/sphinxcontrib-needs.svg
+       :target: https://pypi.python.org/pypi/sphinxcontrib-needs
+       :alt: PyPI Package latest release
+
+   .. image:: https://img.shields.io/badge/sphinx-1.5%2C%201.6%2C%201.7%2C%201.8-blue.svg
+       :target: https://sphinx-doc.org
+       :alt: Supported Sphinx releases
 
 Requirements, Bugs, Test cases, ... inside Sphinx
 =================================================

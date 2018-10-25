@@ -3,7 +3,7 @@ from docutils import nodes
 
 def no_needs_found_paragraph():
     nothing_found = "No needs passed the filters"
-    para = nodes.line()
+    para = nodes.paragraph()
     nothing_found_node = nodes.Text(nothing_found, nothing_found)
     para += nothing_found_node
     return para

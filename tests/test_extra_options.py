@@ -16,12 +16,10 @@ def test_custom_attributes_appear(app, status, warning):
 
     # Custom options should appear
     # assert 'introduced: <cite>1.0.0</cite>' in html
-    assert '<div class="extra_option line">updated: <span class="needs-extra-option updated">1.5.1</span></div>' \
-           in html
-    assert '<div class="extra_option line">introduced: <span class="needs-extra-option introduced">1.0.0</span></div>' \
-           in html
-    assert '<div class="extra_option line">impacts: <span class="needs-extra-option impacts">component_a</span></div>' \
-           in html
+    assert '<span class="needs-extra-option updated">1.5.1</span>' in html
+    assert '<span class="needs-extra-option introduced">1.1.1</span>'in html
+    assert '<span class="needs-extra-option impacts">component_b</span>'in html
+
 
     tables = re.findall("(<table .*?</table>)", html, re.DOTALL)
     assert len(tables) == 2
@@ -37,7 +35,7 @@ def test_custom_attributes_appear(app, status, warning):
     assert 'R_12346' not in tables[1]
 
     # Need list should only have component B requirements
-    items = re.findall('(<div class="line" id="needlist-index-.*?</div>)',
+    items = re.findall('(<div class="line-block" id="needlist-index-.*?</div>)',
                        html, re.DOTALL)
     assert len(items) == 1
     assert 'R_12346' in items[0]

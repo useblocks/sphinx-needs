@@ -99,6 +99,7 @@ def process_needlist(app, doctree, fromdocname):
 
         found_needs = procces_filters(all_needs, current_needfilter)
 
+        line_block = nodes.line_block()
         for need_info in found_needs:
             para = nodes.line()
             description = "%s: %s" % (need_info["id"], need_info["title"])
@@ -122,8 +123,8 @@ def process_needlist(app, doctree, fromdocname):
                 para += ref
             else:
                 para += title
-
-            content.append(para)
+            line_block.append(para)
+        content.append(line_block)
 
         if len(content) == 0:
             content.append(no_needs_found_paragraph())

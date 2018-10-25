@@ -313,7 +313,7 @@ class NeedDirective(Directive):
                 self.log.warning(
                     'Needs: need "{}" has :title_from_content: set, '
                     'but a title was provided. (see file {})'
-                    .format(self.arguments[0], self.docname)
+                        .format(self.arguments[0], self.docname)
                 )
             return self.arguments[0]
         elif self.title_from_content:
@@ -458,10 +458,16 @@ def construct_headline(need_data):
     nodes_id = nodes.inline(title_id, title_id, classes=["needs-id"])
     node_spacer = nodes.inline(title_spacer, title_spacer, classes=["needs-spacer"])
 
-    node_headline = nodes.line()
-    node_headline += node_type, node_spacer, node_title, node_spacer, nodes_id
+    headline_container = nodes.container(classes=["headline"])
+    headline_container.append(node_type)
+    headline_container.append(node_spacer)
+    headline_container.append(node_title)
+    headline_container.append(node_spacer)
+    headline_container.append(nodes_id)
 
-    return node_headline
+    # node_headline += node_type, node_spacer, node_title, node_spacer, nodes_id
+
+    return headline_container
 
 
 def construct_meta(need_data, env):
@@ -481,21 +487,29 @@ def construct_meta(need_data, env):
     param_tags = "tags: "
 
     if need_data["status"] is not None and 'status' not in hide_options:
-        node_status = nodes.line(param_status, param_status, classes=['status'])
-        node_status.append(nodes.inline(need_data["status"], need_data["status"],
-                                        classes=["needs-status", str(need_data['status'])]))
-        node_meta.append(node_status)
+        status_container = nodes.container(classes=['status'])
+        # node_status = nodes.line(param_status, param_status, classes=['status'])
+        node_status = nodes.inline(param_status, param_status, classes=['status'])
+        status_container.append(node_status)
+        status_container.append(nodes.inline(need_data["status"], need_data["status"],
+                                             classes=["needs-status", str(need_data['status'])]))
+        node_meta.append(status_container)
 
     if need_data["tags"] and 'tags' not in hide_options:
-        node_tags = nodes.line(param_tags, param_tags, classes=['tags'])
+        tag_container = nodes.container(classes=['tags'])
+        # node_tags = nodes.line(param_tags, param_tags, classes=['tags'])
+        node_tags = nodes.inline(param_tags, param_tags, classes=['tags'])
+        tag_container.append(node_tags)
         for tag in need_data['tags']:
-            node_tags.append(nodes.inline(tag, tag, classes=["needs-tag", str(tag)]))
-            node_tags.append(nodes.inline(' ', ' '))
-        node_meta.append(node_tags)
+            # node_tags.append(nodes.inline(tag, tag, classes=["needs-tag", str(tag)]))
+            # node_tags.append(nodes.inline(' ', ' '))
+            tag_container.append(nodes.inline(tag, tag, classes=["needs-tag", str(tag)]))
+            tag_container.append(nodes.inline(' ', ' '))
+        node_meta.append(tag_container)
 
     # Links incoming
     if need_data['links_back'] and 'links_back' not in hide_options:
-        node_incoming = nodes.line()
+        node_incoming = nodes.container(classes=['links', 'incoming'])
         prefix = "links incoming: "
         node_incoming_prefix = nodes.Text(prefix, prefix)
         node_incoming.append(node_incoming_prefix)
@@ -504,9 +518,9 @@ def construct_meta(need_data, env):
         node_incoming.append(node_incoming_links)
         node_meta.append(node_incoming)
 
-    # Links outgoing
+    # # Links outgoing
     if need_data['links'] and 'links' not in hide_options:
-        node_outgoing = nodes.line()
+        node_outgoing = nodes.container(classes=['links', 'outgoing'])
         prefix = "links outgoing: "
         node_outgoing_prefix = nodes.Text(prefix, prefix)
         node_outgoing.append(node_outgoing_prefix)
@@ -524,10 +538,11 @@ def construct_meta(need_data, env):
         if param_data is None or not param_data:
             continue
         param_option = '{}: '.format(key)
-        node_option = nodes.line(param_option, param_option, classes=['extra_option'])
-        node_option.append(nodes.inline(param_data, param_data,
-                                        classes=["needs-extra-option", str(key)]))
-        node_extra_options.append(node_option)
+        option_container = nodes.container(classes=['extra_option'])
+        option_container.append(nodes.inline(param_option, param_option, classes=['extra_option']))
+        option_container.append(nodes.inline(param_data, param_data,
+                                             classes=["needs-extra-option", str(key)]))
+        node_extra_options.append(option_container)
 
     node_meta += node_extra_options
 
@@ -543,10 +558,11 @@ def construct_meta(need_data, env):
         if param_data is None or not param_data:
             continue
         param_option = '{}: '.format(key)
-        node_option = nodes.line(param_option, param_option, classes=['global_option'])
-        node_option.append(nodes.inline(param_data, param_data,
-                                        classes=["needs-global-option", str(key)]))
-        node_global_options.append(node_option)
+        global_option_container = nodes.container(classes=['global_option'])
+        global_option_container.append(nodes.inline(param_option, param_option, classes=['global_option']))
+        global_option_container.append(nodes.inline(param_data, param_data,
+                                                    classes=["needs-global-option", str(key)]))
+        node_global_options.append(global_option_container)
 
     node_meta += node_global_options
 
@@ -588,6 +604,7 @@ def _fix_list_dyn_func(list):
         else:
             new_list.append(element)
     return new_list
+
 
 #####################
 # Visitor functions #

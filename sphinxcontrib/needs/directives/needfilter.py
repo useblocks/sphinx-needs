@@ -151,6 +151,7 @@ def process_needfilters(app, doctree, fromdocname):
 
         found_needs = procces_filters(all_needs, current_needfilter)
 
+        line_block = nodes.line_block()
         for need_info in found_needs:
             if current_needfilter["layout"] == "list":
                 para = nodes.line()
@@ -176,7 +177,7 @@ def process_needfilters(app, doctree, fromdocname):
                 else:
                     para += title
 
-                content.append(para)
+                line_block.append(para)
             elif current_needfilter["layout"] == "table":
                 row = nodes.row()
                 row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, "id", make_ref=True)
@@ -209,6 +210,9 @@ def process_needfilters(app, doctree, fromdocname):
                     style=need_info["type_style"])
                 for link in need_info["links"]:
                     puml_connections += '{id} --> {link}\n'.format(id=need_info["id"], link=link)
+
+        if current_needfilter["layout"] == "list":
+            content.append(line_block)
 
         if current_needfilter["layout"] == "diagram":
             puml_node["uml"] += puml_connections
