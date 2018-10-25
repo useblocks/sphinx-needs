@@ -92,6 +92,34 @@ For **:types:** the type itself or the human-readable type-title can be used as 
       :types: test
       :style: table
 
+
+.. _option_sort_by:
+
+sort_by
+-------
+
+Sorts the result list. Allowed values are ``id`` and ``status``
+
+.. container:: toggle
+
+   .. container::  header
+
+      **Show example**
+
+   .. code-block:: rst
+
+      .. needtable::
+         :sort_by: id
+         :status: open
+
+
+   .. needtable::
+      :sort_by: id
+      :status: open
+      :style: table
+
+
+
 .. _option_filter:
 
 filter
