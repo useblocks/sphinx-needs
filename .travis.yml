@@ -11,10 +11,12 @@ before_install:
 
 install:
 - pip install tox-travis
-- pip install sphinxcontrib-plantuml
 - python setup.py install
 script:
 - tox
+
+after_success:
+- pip install sphinxcontrib-plantuml
 - cd docs
 - make latexpdf
 
