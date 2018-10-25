@@ -145,9 +145,19 @@ def process_needflow(app, doctree, fromdocname):
                 link=make_entity_name(link), color=need_info["type_color"],
                 style=need_info["type_style"])
             for link in need_info["links"]:
-                puml_connections += '{id} --> {link}\n'.format(
+                if '.' in link:
+                    final_link = link.split('.')[0]
+                    comment = ': {part}'.format(part=link.split('.')[1])
+                    link_style = '..'
+                else:
+                    final_link = link
+                    comment = ''
+                    link_style = '--'
+                puml_connections += '{id} {link_style}> {link}{comment}\n'.format(
                     id=make_entity_name(need_info["id"]),
-                    link=make_entity_name(link)
+                    link=make_entity_name(final_link),
+                    comment=comment,
+                    link_style=link_style
                 )
 
         puml_node["uml"] += puml_connections

@@ -83,11 +83,13 @@ Example
 needs :need_incoming:`roles_req_1` are based on it.
 
 
+.. _need_part:
+
 need_part / np
 ----------------
 .. versionadded:: 0.3.0
 
-``:need_part`` or as shortcut ``:np:`` can be used inside needs to set a sub-id for a specific sentence/part.
+``:need_part:`` or as shortcut ``:np:`` can be used inside needs to set a sub-id for a specific sentence/part.
 This sub-ids can be linked and referenced in other need functions like links and co.
 
 The used need_part id can be freely chosen, but should not contain any whitespaces or dots.
@@ -139,7 +141,7 @@ Example
 
 .. spec:: Build awesome car
    :id: impl_my_car_1
-   :links: my_car_1.1, my_car_1.2
+   :links: my_car_1, my_car_1.1, my_car_1.2
 
    Requirements :need:`my_car_1.1` and :need:`my_car_1.2` are no problem and can
    be realised by doing rocket science.
@@ -148,3 +150,62 @@ Example
 
 
 Reference to a part of a need from outside need scope: :need:`my_car_1.2`.
+
+**Presentation in needflow**
+
+Links to need_parts are shown as dotted line to the upper need inside :ref:`needflow` diagrams.
+They are also getting the part_id as link description.
+
+.. code-block:: rst
+
+   .. needflow::
+      :filter: id in ["my_car_1","impl_my_car_1"]
+
+.. needflow::
+   :filter: id in ["my_car_1","impl_my_car_1"]
+
+**Presentation in needtable**
+
+.. code-block:: rst
+
+   .. needtable::
+      :style: table
+      :filter: id in ["my_car_1","impl_my_car_1"]
+
+.. needtable::
+   :style: table
+   :filter: id in ["my_car_1","impl_my_car_1"]
+
+.. _need_count:
+
+need_count
+----------
+.. versionadded:: 0.3.1
+
+Counts found needs for a given filter and shows the final amount.
+
+The content of the role must be a valid filter-string as used e.g. by :ref:`needlist` in the ``:filter:`` option.
+See :ref:`option_filter` for more information.
+
+Example
+~~~~~~~
+
+.. code-block:: rst
+
+   All needs: :need_count:`True`
+   Specification needs: :need_count:`type=='spec'`
+   Open specification needs: :need_count:`type=='spec' and status=='open'`
+   Needs with tag *test*: :need_count:`'test' in tags`
+   Needs with title longer 10 chars: :need_count:`search("[\\w\\s]{10,}", title)`
+
+| All needs: :need_count:`True`
+| Specification needs: :need_count:`type=='spec'`
+| Open specification needs: :need_count:`type=='spec' and status=='open'`
+| Needs with tag *test*: :need_count:`'test' in tags`
+| Needs with title longer 10 chars: :need_count:`search("[\\w\\s]{10,}", title)`
+
+.. note::
+
+   If backslashes ``\`` are used inside the regex function ``search``, please make sure to double them as in python
+   one ``\`` needs to be represented by ``\\``.
+

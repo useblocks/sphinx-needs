@@ -35,6 +35,14 @@ def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=Fal
             data = need_info[need_key]
 
         for index, datum in enumerate(data):
+            link_id = datum
+            link_part = None
+
+            if need_key in ['links', 'back_links']:
+                if '.' in datum:
+                    link_id = datum.split('.')[0]
+                    link_part = datum.split('.')[1]
+
             text_col = nodes.Text(datum, datum)
             if make_ref or ref_lookup:
                 try:
@@ -43,9 +51,11 @@ def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=Fal
                         ref_col['refuri'] = app.builder.get_relative_uri(fromdocname, need_info['docname'])
                         ref_col['refuri'] += "#" + datum
                     else:
-                        temp_need = all_needs[datum]
+                        temp_need = all_needs[link_id]
                         ref_col['refuri'] = app.builder.get_relative_uri(fromdocname, temp_need['docname'])
                         ref_col['refuri'] += "#" + temp_need["id"]
+                        if link_part is not None:
+                            ref_col['refuri'] += '.' + link_part
 
                 except KeyError:
                     para_col += text_col

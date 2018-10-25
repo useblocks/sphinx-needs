@@ -25,6 +25,7 @@ from sphinxcontrib.needs.roles.need_incoming import Need_incoming, process_need_
 from sphinxcontrib.needs.roles.need_outgoing import Need_outgoing, process_need_outgoing
 from sphinxcontrib.needs.roles.need_ref import Need_ref, process_need_ref
 from sphinxcontrib.needs.roles.need_part import NeedPart, process_need_part
+from sphinxcontrib.needs.roles.need_count import NeedCount, process_need_count
 from sphinxcontrib.needs.utils import process_dynamic_values
 from sphinxcontrib.needs.functions import register_func, needs_common_functions
 
@@ -284,6 +285,10 @@ def setup(app):
                                 innernodeclass=nodes.inline,
                                 warn_dangling=True))
 
+    app.add_role('need_count', XRefRole(nodeclass=NeedCount,
+                                        innernodeclass=nodes.inline,
+                                        warn_dangling=True))
+
     ########################################################################
     # EVENTS
     ########################################################################
@@ -301,6 +306,7 @@ def setup(app):
     app.connect('doctree-resolved', process_need_ref)
     app.connect('doctree-resolved', process_need_incoming)
     app.connect('doctree-resolved', process_need_outgoing)
+    app.connect('doctree-resolved', process_need_count)
     app.connect('env-updated', install_datatables_static_files)
 
     # Call this after all JS files, which perform DOM manipulation, have been called.

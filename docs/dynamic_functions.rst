@@ -3,7 +3,7 @@
 Dynamic functions
 =================
 
-Sphinx-needs provides a mechanism to set dynamic data for need-options during generation.
+Sphinx-Needs provides a mechanism to set dynamic data for need-options during generation.
 This is realised by giving an author the possibility to set a function call to a predefined function, which calculates
 the final result/value for the option.
 
@@ -38,7 +38,6 @@ The following functions are available in all sphinx-needs installations.
 .. note::
 
    The parameters ``app``, ``need`` and ``needs`` of the following functions are set automatically.
-   And there is no need/way to use them inside dynamic function calls.
 
 test
 ~~~~

@@ -5,6 +5,10 @@ Changelog
 -----
  * Improvement: Added dynamic function :ref:`check_linked_values`.
  * Improvement: Added dynamic function :ref:`calc_sum`.
+ * Improvement: Added role :ref:`need_count`, which shows the amount of found needs for a given filter-string.
+ * Bugfix: Links to :ref:`need_part` in :ref:`needflow` are now shown correctly as extra line between
+   need_parts containing needs.
+ * Bugfix: Links to :ref:`need_part` in :ref:`needtable` are now shown and linked correctly in tables.
 
 0.3.0
 -----
