@@ -161,8 +161,19 @@ They are also getting the part_id as link description.
    .. needflow::
       :filter: id in ["my_car_1","impl_my_car_1"]
 
+{% if READTHEDOCS %}
+..
+
+.. image:: _static/need_part_as_flow.png
+
+{% else %}
+
 .. needflow::
    :filter: id in ["my_car_1","impl_my_car_1"]
+
+{% endif %}
+
+
 
 **Presentation in needtable**
 

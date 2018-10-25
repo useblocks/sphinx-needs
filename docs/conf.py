@@ -44,11 +44,10 @@ version = '0.3'
 release = '0.3.1'
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
-# if on_rtd:
-#     extensions = ['sphinxcontrib.needs', 'sphinx.ext.autodoc']
-# else:
-#     extensions = ['sphinxcontrib.plantuml', 'sphinxcontrib.needs', 'sphinx.ext.autodoc']
-extensions = ['sphinxcontrib.plantuml', 'sphinxcontrib.needs', 'sphinx.ext.autodoc']
+if on_rtd:
+    extensions = ['sphinxcontrib.needs', 'sphinx.ext.autodoc']
+else:
+    extensions = ['sphinxcontrib.plantuml', 'sphinxcontrib.needs', 'sphinx.ext.autodoc']
 
 add_module_names = False
 
@@ -156,13 +155,13 @@ needs_id_regex = "^[A-Za-z0-9_]"
 # needs_css = "dark.css"
 
 cwd = os.getcwd()
-# plantuml = 'java -jar %s' % os.path.join(cwd, "utils/plantuml_beta.jar")
+plantuml = 'java -jar %s' % os.path.join(cwd, "utils/plantuml_beta.jar")
 
 # If we are running on windows, we need to manipulate the path,
 # otherwise plantuml will have problems.
-# if os.name == "nt":
-#     plantuml = plantuml.replace("/", "\\")
-#     plantuml = plantuml.replace("\\", "\\\\")
+if os.name == "nt":
+    plantuml = plantuml.replace("/", "\\")
+    plantuml = plantuml.replace("\\", "\\\\")
 
 plantuml_output_format = 'png'
 
