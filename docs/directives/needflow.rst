@@ -60,9 +60,17 @@ Adds information of used filters below generated flowchart.
          :tags: main_example
          :show_filters:
 
+   {% if READTHEDOCS %}
+
+   .. image:: /_static/needflow_flow.png
+
+   {% else %}
+
    .. needflow::
-         :tags: main_example
-         :show_filters:
+     :tags: main_example
+     :show_filters:
+   {% endif %}
+
 
 
 .. _needflow_show_legend:
@@ -85,8 +93,19 @@ for flowcharts.
          :tags: main_example
          :show_legend:
 
+
+
+   {% if READTHEDOCS %}
+
+   .. image:: /_static/needflow_flow_legend.png
+
+   {% else %}
+
    .. needflow::
-         :tags: main_example
-         :show_legend:
+     :tags: main_example
+     :show_legend:
+   {% endif %}
+
+
 
 
