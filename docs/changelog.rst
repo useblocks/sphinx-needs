@@ -1,10 +1,14 @@
 Changelog
 =========
 
+
+0.3.3
+-----
+ * Bugfix: Latex and Latexpdf are working again.
+
 0.3.2
 -----
-
-   * Bugfix: Links to parts of needs (:ref:`need_part`) are now stored and presented as *links incoming* of target link.
+ * Bugfix: Links to parts of needs (:ref:`need_part`) are now stored and presented as *links incoming* of target link.
 
 0.3.1
 -----
