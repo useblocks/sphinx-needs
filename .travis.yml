@@ -16,6 +16,7 @@ script:
 - tox
 
 after_success:
+- which python
 - pip install sphinxcontrib-plantuml
 - cd docs
 - make latexpdf
