@@ -5,8 +5,13 @@ python:
 - '2.7'
 - '3.5'
 - '3.6'
+before_install:
+- sudo apt-get update
+- sudo apt-get install -y texlive-latex-recommended, texlive-fonts-recommended, texlive-latex-extra, latexmk, texlive-luatex, texlive-xetex
+
 install:
 - pip install tox-travis
+- pip install sphinxcontrib-plantuml
 - python setup.py install
 script:
 - tox
