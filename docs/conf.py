@@ -48,7 +48,6 @@ on_rtd = os.environ.get('READTHEDOCS') == 'True'
 #     extensions = ['sphinxcontrib.needs', 'sphinx.ext.autodoc']
 # else:
 #     extensions = ['sphinxcontrib.plantuml', 'sphinxcontrib.needs', 'sphinx.ext.autodoc']
-
 extensions = ['sphinxcontrib.plantuml', 'sphinxcontrib.needs', 'sphinx.ext.autodoc']
 
 add_module_names = False
@@ -142,7 +141,7 @@ DEFAULT_DIAGRAM_TEMPLATE = \
 # needs_template = TITLE_TEMPLATE
 # needs_diagram_template = DEFAULT_DIAGRAM_TEMPLATE
 
-v = [dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),
+needs_types = [dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),
                dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="node"),
                dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="node"),
                dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="node"),
@@ -157,13 +156,13 @@ needs_id_regex = "^[A-Za-z0-9_]"
 # needs_css = "dark.css"
 
 cwd = os.getcwd()
-plantuml = 'java -jar %s' % os.path.join(cwd, "utils/plantuml_beta.jar")
+# plantuml = 'java -jar %s' % os.path.join(cwd, "utils/plantuml_beta.jar")
 
 # If we are running on windows, we need to manipulate the path,
 # otherwise plantuml will have problems.
-if os.name == "nt":
-    plantuml = plantuml.replace("/", "\\")
-    plantuml = plantuml.replace("\\", "\\\\")
+# if os.name == "nt":
+#     plantuml = plantuml.replace("/", "\\")
+#     plantuml = plantuml.replace("\\", "\\\\")
 
 plantuml_output_format = 'png'
 
