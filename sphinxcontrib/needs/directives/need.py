@@ -435,7 +435,7 @@ def create_back_links(env):
     for key, need in needs.items():
         for link in need["links"]:
             link = link.split('.')[0]
-            if link in needs:
+            if link in needs and key not in needs[link]["links_back"]:
                 needs[link]["links_back"].append(key)
     env.needs_workflow['backlink_creation'] = True
 
