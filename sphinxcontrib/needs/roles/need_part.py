@@ -29,7 +29,7 @@ def process_need_part(app, doctree, fromdocname):
     pass
 
 
-part_pattern = re.compile('\(([\w-]+)\)(.*)')
+part_pattern = re.compile(r'\(([\w-]+)\)(.*)')
 
 
 def update_need_with_parts(env, need, part_nodes):

@@ -33,7 +33,7 @@ def safe_add_file(filename, app):
         if hasattr(app.builder, "css_files") and static_data_file not in app.builder.css_files:
             app.add_stylesheet(data_file)
     else:
-        raise NotImplemented("File type {} not support by save_add_file".format(data_file.split(".")[-1]))
+        raise NotImplementedError("File type {} not support by save_add_file".format(data_file.split(".")[-1]))
 
 
 def safe_remove_file(filename, app):
