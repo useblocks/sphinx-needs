@@ -2,6 +2,11 @@ Changelog
 =========
 
 
+0.3.4
+-----
+* Bugfix: Need representation in PDFs were broken (e.g. all meta data on one line).
+
+
 0.3.3
 -----
  * Bugfix: Latex and Latexpdf are working again.

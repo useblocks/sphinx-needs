@@ -36,6 +36,7 @@ Sphinx-Needs allows the definition, linking and filtering of need-objects, which
 
 This list can be easily customized via :ref:`configuration <need_types>` (for instance to support bugs or user stories).
 
+
 What is a need?
 ---------------
 

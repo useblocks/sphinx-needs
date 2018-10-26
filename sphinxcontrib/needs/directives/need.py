@@ -40,6 +40,7 @@ class Need(nodes.General, nodes.Element):
 
     headline and content container get added later during event handling (process_need_nodes()).
     """
+    child_text_separator = "\n"
     pass
 
 
@@ -73,6 +74,7 @@ class NeedDirective(Directive):
         super(NeedDirective, self).__init__(*args, **kw)
         self.log = logging.getLogger(__name__)
         self.full_title = self._get_full_title()
+
 
     def run(self):
         #############################################################################################
@@ -403,7 +405,7 @@ def process_need_nodes(app, doctree, fromdocname):
         node_meta = construct_meta(need_data, env)
 
         # Collapse check
-        if need_data["collapse"]:
+        if need_data["collapse"] and "HTML" in env.app.builder.name.upper():
             # HEADER
             node_need_toogle_container = nodes.container(classes=['toggle'])
             node_need_toogle_head_container = nodes.container(classes=['header'])
