@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.3.5
+-----
+ * Bugfix: A :ref:`need_part` without a given ID gets a random id based on its content now.
+ * Bugfix: Calculation of outgoing links does not crash, if need_parts are involved.
+
 
 0.3.4
 -----
