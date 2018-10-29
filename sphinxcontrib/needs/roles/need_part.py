@@ -7,6 +7,7 @@ Most voodoo is done in need.py
 
 """
 from docutils import nodes
+import hashlib
 import re
 import sphinx
 
@@ -40,9 +41,8 @@ def update_need_with_parts(env, need, part_nodes):
             inline_id = result.group(1)
             part_content = result.group(2)
         else:
-            # ToDo: Create random id
-            inline_id = 123
             part_content = content
+            inline_id = hashlib.sha1(part_content.encode("UTF-8")).hexdigest().upper()[:3]
 
         if 'parts' not in need.keys():
             need['parts'] = {}

@@ -13,6 +13,10 @@ NEED PARTS
     * :need_part:`(awesome_id)blub()`
 
 
+    * :np:`unknown_id_1`
+    * :np:`unknown_id_2`
+
+
 :need:`SP_TOO_001.1`
 
 :need:`SP_TOO_001.2`

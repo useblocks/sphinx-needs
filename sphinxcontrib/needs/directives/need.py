@@ -75,7 +75,6 @@ class NeedDirective(Directive):
         self.log = logging.getLogger(__name__)
         self.full_title = self._get_full_title()
 
-
     def run(self):
         #############################################################################################
         # Get environment
@@ -215,6 +214,7 @@ class NeedDirective(Directive):
             'hide': hide,
             'hide_tags': hide_tags,
             'hide_status': hide_status,
+            'parts': {}
         }
         self.merge_extra_options(needs_info)
         self.merge_global_options(needs_info)
@@ -405,7 +405,7 @@ def process_need_nodes(app, doctree, fromdocname):
         node_meta = construct_meta(need_data, env)
 
         # Collapse check
-        if need_data["collapse"] and "HTML" in env.app.builder.name.upper():
+        if need_data["collapse"] and "HTML" in app.builder.name.upper():
             # HEADER
             node_need_toogle_container = nodes.container(classes=['toggle'])
             node_need_toogle_head_container = nodes.container(classes=['header'])
