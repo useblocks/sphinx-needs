@@ -1,4 +1,4 @@
-include sphinxcontrib/needs/needimport_template.rst
+include sphinxcontrib/needs/directives/needimport_template.rst
 
 include sphinxcontrib/needs/css/common.css
 include sphinxcontrib/needs/css/blank.css
