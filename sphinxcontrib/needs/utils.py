@@ -44,8 +44,8 @@ def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=Fal
                     link_id = datum.split('.')[0]
                     link_part = datum.split('.')[1]
 
-            datum = prefix + datum
-            text_col = nodes.Text(datum, datum)
+            datum_text = prefix + datum
+            text_col = nodes.Text(datum_text, datum_text)
             if make_ref or ref_lookup:
                 try:
                     ref_col = nodes.reference("", "")
