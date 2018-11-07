@@ -24,6 +24,7 @@ class NeedtableDirective(FilterBase):
     Directive present filtered needs inside a table.
     """
     option_spec = {'show_filters': directives.flag,
+                   'show_parts': directives.flag,
                    'columns': directives.unchanged_required,
                    'style': directives.unchanged_required,
                    }
@@ -62,7 +63,10 @@ class NeedtableDirective(FilterBase):
             'target_node': targetnode,
             'columns': columns,
             'style': style,
-            'show_filters': True if self.options.get("show_filters", False) is None else False
+            # As the following options are flags, the content is None, if set.
+            # If not set, the options.get() method returns False
+            'show_filters': True if self.options.get("show_filters", False) is None else False,
+            'show_parts': True if self.options.get("show_parts", False) is None else False
         }
         env.need_all_needtables[targetid].update(self.collect_filter_attributes())
 
@@ -141,7 +145,8 @@ def process_needtables(app, doctree, fromdocname):
         found_needs = procces_filters(all_needs, current_needtable)
 
         for need_info in found_needs:
-            row = nodes.row()
+            # Pure need row
+            row = nodes.row(classes=['need'])
             for col in current_needtable["columns"]:
                 if col == "ID":
                     row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, "id", make_ref=True)
@@ -153,6 +158,32 @@ def process_needtables(app, doctree, fromdocname):
                 else:
                     row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, col.lower())
             tbody += row
+
+            # Need part rows
+            if current_needtable["show_parts"]:
+                for key, part in need_info["parts"].items():
+                    row = nodes.row(classes=['need_part'])
+                    temp_part = part.copy()  # The dict needs to be manipulated, so that row_col_maker() can be used
+                    temp_part['docname'] = need_info['docname']
+
+                    for col in current_needtable["columns"]:
+                        if col == "ID":
+                            temp_part['id'] = '.'.join([need_info['id'], part['id']])
+                            row += row_col_maker(
+                                app, fromdocname, env.needs_all_needs, temp_part, "id",
+                                make_ref=True, prefix=app.config.needs_part_prefix)
+                        elif col == "TITLE":
+                            row += row_col_maker(
+                                app, fromdocname, env.needs_all_needs, temp_part, "content",
+                                prefix=app.config.needs_part_prefix)
+                        elif col == "INCOMING":
+                            row += row_col_maker(
+                                app, fromdocname, env.needs_all_needs, temp_part, "links_back", ref_lookup=True)
+                        else:
+                            row += row_col_maker(
+                                app, fromdocname, env.needs_all_needs, temp_part, col.lower())
+
+                    tbody += row
 
         if len(found_needs) == 0:
             content.append(no_needs_found_paragraph())

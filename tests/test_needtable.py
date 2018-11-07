@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from sphinx_testing import with_app
 try:
     from pathlib import Path
@@ -36,3 +38,15 @@ def test_doc_needtable_styles(app, status, warning):
     assert 'style_1' in html
     assert 'NEEDS_TABLE' in html
     assert 'NEEDS_DATATABLES' in html
+
+
+@with_app(buildername='html', srcdir='doc_test/doc_needtable')
+def test_doc_needtable_styles(app, status, warning):
+    app.build()
+    html = Path(app.outdir, 'test_parts.html').read_text()
+    assert 'table_001.1' in html
+    assert 'table_001.2' in html
+    assert 'table_001.3' in html
+    assert 'class="need_part' in html
+
+

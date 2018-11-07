@@ -9,7 +9,7 @@ requires = ['Sphinx', 'six']
 setup(
     name='sphinxcontrib-needs',
     # If you raise, think about versions in conf.py and needs.py!!!
-    version='0.3.5',
+    version='0.3.6',
     url='http://github.com/useblocks/sphinxcontrib-needs',
     download_url='http://pypi.python.org/pypi/sphinxcontrib-needs',
     license='MIT',
@@ -19,7 +19,7 @@ setup(
     long_description=open(os.path.join(os.path.dirname(__file__), "README.rst")).read(),
     zip_safe=False,
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',

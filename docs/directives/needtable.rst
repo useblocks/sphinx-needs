@@ -29,6 +29,7 @@ Supported options:
  * :ref:`needtable_columns`
  * :ref:`needtable_show_filters`
  * :ref:`needtable_style`
+ * :ref:`needtable_show_parts`
  * Common filters:
     * :ref:`option_status`
     * :ref:`option_tags`
@@ -148,3 +149,76 @@ Overrides config parameter :ref:`needs_table_style` if set.
    .. needtable::
       :tags: awesome
       :style: datatables
+
+.. _needtable_show_parts:
+
+show_parts
+~~~~~~~~~~
+
+.. versionadded:: 0.3.6
+
+Adds an extra table row for each :ref:`need_part` found inside a filtered need.
+
+The part rows are added directly under the related need rows and their id and title get a prefix.
+
+To change the prefix please read :ref:`needs_part_prefix`.
+
+.. needtable::
+   :tags: test_table
+   :show_parts:
+   :columns: id;title;outgoing;incoming
+   :style: table
+
+.. container:: toggle
+
+   .. container::  header
+
+      **Show example configuration**
+
+   .. code-block:: rst
+
+
+      .. req:: Test need with need parts
+         :id: table_001
+
+         :np:`(1) Part 1 of requirement`.
+
+         :np:`(2) Part 2 of requirement`.
+
+         :np:`(3) Part 3 of requirement`.
+
+      .. spec:: Specifies part 1
+         :id: table_002
+         :links: table_001.1
+
+      .. spec:: Specifies part 2
+         :id: table_003
+         :links: table_001.2
+
+      .. needtable::
+         :show_parts:
+         :columns: id;title;outgoing;incoming
+         :style: table
+
+
+   .. req:: Test need with need parts
+      :id: table_001
+      :tags: test_table
+
+      :np:`(1) Part 1 of requirement`.
+
+      :np:`(2) Part 2 of requirement`.
+
+      :np:`(3) Part 3 of requirement`.
+
+
+   .. spec:: Specifies part 1
+      :id: table_002
+      :tags: test_table
+      :links: table_001.1
+
+   .. spec:: Specifies part 2
+      :id: table_003
+      :tags: test_table
+      :links: table_001.2
+

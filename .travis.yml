@@ -5,6 +5,14 @@ python:
 - '2.7'
 - '3.5'
 - '3.6'
+- '3.7'
+
+matrix:
+  include:
+    - python: 3.7
+      dist: xenial
+      sudo: true
+
 before_install:
 - sudo apt-get update
 - sudo apt-get install -y texlive-latex-recommended texlive-fonts-recommended texlive-latex-extra latexmk texlive-luatex texlive-xetex

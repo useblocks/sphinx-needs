@@ -637,6 +637,26 @@ Inside your ``conf.py`` file ue it like this:
 
 See :ref:`dynamic_functions` for ore information.
 
+
+.. _needs_part_prefix:
+
+needs_part_prefix
+~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.3.6
+
+String used as prefix for :ref:`need_part` output in :ref:`tables <needtable_show_parts>`.
+
+Default value: ``u'\u2192\u00a0'``
+
+The default value contains an arrow right and a non breaking space.
+
+.. code-block:: python
+
+   needs_part_prefix = u'\u2192\u00a0'
+
+See :ref:`needtable_show_parts` for an example output.
+
 Removed options
 ------------------
 

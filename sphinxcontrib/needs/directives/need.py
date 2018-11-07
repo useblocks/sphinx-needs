@@ -439,9 +439,23 @@ def create_back_links(env):
     needs = env.needs_all_needs
     for key, need in needs.items():
         for link in need["links"]:
-            link = link.split('.')[0]
-            if link in needs and key not in needs[link]["links_back"]:
-                needs[link]["links_back"].append(key)
+            link_main = link.split('.')[0]
+            try:
+                link_part = link.split('.')[1]
+            except IndexError:
+                link_part = None
+
+            if link_main in needs:
+                if key not in needs[link_main]["links_back"]:
+                    needs[link_main]["links_back"].append(key)
+
+                # Handling of links to need_parts inside a need
+                if link_part is not None:
+                    if link_part in needs[link_main]['parts']:
+                        if 'links_back' not in needs[link_main]['parts'][link_part].keys():
+                            needs[link_main]['parts'][link_part]['links_back'] = []
+                        needs[link_main]['parts'][link_part]['links_back'].append(key)
+
     env.needs_workflow['backlink_creation'] = True
 
 

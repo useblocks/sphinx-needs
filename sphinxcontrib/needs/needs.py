@@ -192,6 +192,9 @@ def setup(app):
     # Path of css file, which shall be used for need style
     app.add_config_value('needs_css', "modern.css", 'html')
 
+    # Prefix for need_part output in tables
+    app.add_config_value('needs_part_prefix', u'\u2192\u00a0', 'html')
+
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(Needfilter, )
@@ -316,7 +319,7 @@ def setup(app):
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect('env-updated', install_styles_static_files)
 
-    return {'version': '0.3.5'}  # identifies the version of our extension
+    return {'version': '0.3.6'}  # identifies the version of our extension
 
 
 def visitor_dummy(*args, **kwargs):

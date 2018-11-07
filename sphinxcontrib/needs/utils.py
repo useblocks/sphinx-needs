@@ -12,7 +12,7 @@ else:
     import logging
 
 
-def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=False, ref_lookup=False):
+def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=False, ref_lookup=False, prefix=''):
     """
     Creates and returns a column.
 
@@ -23,12 +23,13 @@ def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=Fal
     :param need_key: The key to access the needed data from need_info
     :param make_ref: If true, creates a reference for the given data in need_key
     :param ref_lookup: If true, it uses the data to lookup for a related need and uses its data to create the reference
+    :param prefix: string, which is used as prefix for the text output
     :return: column object (nodes.entry)
     """
     row_col = nodes.entry()
     para_col = nodes.paragraph()
 
-    if need_info[need_key] is not None:
+    if need_key in need_info and need_info[need_key] is not None:
         if not isinstance(need_info[need_key], (list, set)):
             data = [need_info[need_key]]
         else:
@@ -43,6 +44,7 @@ def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=Fal
                     link_id = datum.split('.')[0]
                     link_part = datum.split('.')[1]
 
+            datum = prefix + datum
             text_col = nodes.Text(datum, datum)
             if make_ref or ref_lookup:
                 try:
@@ -68,7 +70,8 @@ def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=Fal
             if index + 1 < len(data):
                 para_col += nodes.emphasis("; ", "; ")
 
-        row_col += para_col
+    row_col += para_col
+
     return row_col
 
 
