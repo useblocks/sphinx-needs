@@ -5,7 +5,7 @@ import re
 from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinxcontrib.needs.utils import row_col_maker, status_sorter
-from sphinxcontrib.needs.filter_base import FilterBase, procces_filters
+from sphinxcontrib.needs.filter_common import FilterBase, procces_filters
 from sphinxcontrib.needs.directives.utils import no_needs_found_paragraph, used_filter_paragraph
 
 

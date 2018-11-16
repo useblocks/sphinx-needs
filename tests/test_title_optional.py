@@ -17,7 +17,8 @@ class HtmlNeed(object):
 
     @property
     def id(self):
-        return self.need.find(".//html:span[@class='needs-id']", NS).text
+        # return self.need.find(".//html:span[@class='needs-id']", NS)._children[0].text
+        return self.need.find(".//html:a[@class='reference internal']", NS).text
 
     @property
     def title(self):

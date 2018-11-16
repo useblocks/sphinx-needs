@@ -13,4 +13,4 @@ def test_multiple_link_backs(app, status, warning):
     html = Path(app.outdir, 'index.html').read_text()
 
     links_to = re.findall("#R_12346", html)
-    assert len(links_to) == 2
+    assert len(links_to) == 3

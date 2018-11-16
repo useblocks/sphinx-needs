@@ -47,10 +47,17 @@ def update_need_with_parts(env, need, part_nodes):
         if 'parts' not in need.keys():
             need['parts'] = {}
 
+        if inline_id in need['parts'].keys():
+            log.warn("part_need id {} in need {} is already taken. need_part may get overridden.".format(
+                inline_id, need['id']))
+
         need['parts'][inline_id] = {
             'id': inline_id,
             'content': part_content,
-            'document': need["docname"]
+            'document': need["docname"],
+            'links_back': [],
+            'is_part': True,
+            'is_need': False
         }
 
         part_id_ref = '{}.{}'.format(need['id'], inline_id)

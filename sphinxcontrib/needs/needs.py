@@ -37,6 +37,8 @@ else:
 
     logging.basicConfig()  # Only need to do this once
 
+VERSION = '0.3.7'
+
 DEFAULT_TEMPLATE_COLLAPSE = """
 .. _{{id}}:
 
@@ -99,30 +101,6 @@ DEFAULT_TEMPLATE = """
 
 {% endif -%}
 """
-
-# Old node template
-# DEFAULT_TEMPLATE = """
-# .. _{{id}}:
-#
-# {% if hide == false -%}
-# {{type_name}}: **{{title}}** ({{id}})
-#
-# {{content|indent(4) }}
-#
-#     {% if status and not hide_status -%}
-#     **status**: {{status}}
-#     {% endif %}
-#
-#     {% if tags and not hide_tags -%}
-#     **tags**: {{"; ".join(tags)}}
-#     {% endif %}
-#
-#     **links incoming**: :need_incoming:`{{id}}`
-#
-#     **links outgoing**: :need_outgoing:`{{id}}`
-#
-# {% endif -%}
-# """
 
 DEFAULT_DIAGRAM_TEMPLATE = \
     "<size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>"
@@ -319,7 +297,7 @@ def setup(app):
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect('env-updated', install_styles_static_files)
 
-    return {'version': '0.3.6'}  # identifies the version of our extension
+    return {'version': VERSION}  # identifies the version of our extension
 
 
 def visitor_dummy(*args, **kwargs):

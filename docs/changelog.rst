@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.3.7
+-----
+* Improvement: :ref:`filter_string` now supports the filtering of :ref:`need_part`.
+* Improvement: The ID of a need is now printed as link, which can easily be used for sharing. (`#75 <https://github.com/useblocks/sphinxcontrib-needs/issues/75>`_ )
+* Bugfix: Filter functionality in different directives are now using the same internal filter function.
+* Bugfix: Reused IDs for a :ref:`need_part` are now detected and a warning gets printed. (`#74 <https://github.com/useblocks/sphinxcontrib-needs/issues/74>`_ )
+
 0.3.6
 -----
 * Improvement: Added needtable option :ref:`needtable_show_parts`.

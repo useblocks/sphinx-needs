@@ -10,6 +10,8 @@ from sphinx.util.nodes import nested_parse_with_titles
 from docutils.statemachine import ViewList
 from pkg_resources import parse_version
 import sphinx
+from sphinx.util.nodes import make_refnode
+
 from sphinxcontrib.needs.roles.need_incoming import Need_incoming
 from sphinxcontrib.needs.roles.need_outgoing import Need_outgoing
 from sphinxcontrib.needs.roles.need_part import update_need_with_parts, find_parts
@@ -214,7 +216,10 @@ class NeedDirective(Directive):
             'hide': hide,
             'hide_tags': hide_tags,
             'hide_status': hide_status,
-            'parts': {}
+            'parts': {},
+
+            'is_part': False,
+            'is_need': True
         }
         self.merge_extra_options(needs_info)
         self.merge_global_options(needs_info)
@@ -401,7 +406,7 @@ def process_need_nodes(app, doctree, fromdocname):
 
         find_and_replace_node_content(node_need, env, need_data)
 
-        node_headline = construct_headline(need_data)
+        node_headline = construct_headline(need_data, app)
         node_meta = construct_meta(need_data, env)
 
         # Collapse check
@@ -459,7 +464,7 @@ def create_back_links(env):
     env.needs_workflow['backlink_creation'] = True
 
 
-def construct_headline(need_data):
+def construct_headline(need_data, app):
     """
     Constructs the node-structure for the headline/title container
     :param need_data: need_info container
@@ -474,7 +479,18 @@ def construct_headline(need_data):
     # need title
     node_type = nodes.inline(title_type, title_type, classes=["needs-type"])
     node_title = nodes.inline(title_headline, title_headline, classes=["needs-title"])
-    nodes_id = nodes.inline(title_id, title_id, classes=["needs-id"])
+
+    nodes_id = nodes.inline(classes=["needs-id"])
+
+    nodes_id_text = nodes.Text(title_id, title_id)
+    id_ref = make_refnode(app.builder,
+                          fromdocname=need_data['docname'],
+                          todocname=need_data['docname'],
+                          targetid=need_data['id'],
+                          child=nodes_id_text.deepcopy(),
+                          title=title_id)
+    nodes_id += id_ref
+
     node_spacer = nodes.inline(title_spacer, title_spacer, classes=["needs-spacer"])
 
     headline_line = nodes.line(classes=["headline"])
@@ -483,8 +499,6 @@ def construct_headline(need_data):
     headline_line.append(node_title)
     headline_line.append(node_spacer)
     headline_line.append(nodes_id)
-
-    # node_headline += node_type, node_spacer, node_title, node_spacer, nodes_id
 
     return headline_line
 

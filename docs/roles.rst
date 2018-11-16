@@ -142,6 +142,7 @@ Example
 .. spec:: Build awesome car
    :id: impl_my_car_1
    :links: my_car_1, my_car_1.1, my_car_1.2
+   :tags: car
 
    Requirements :need:`my_car_1.1` and :need:`my_car_1.2` are no problem and can
    be realised by doing rocket science.
@@ -177,15 +178,21 @@ They are also getting the part_id as link description.
 
 **Presentation in needtable**
 
+Please see :ref:`needtable_show_parts` pf :ref:`needtable` configuration documentation.
+
 .. code-block:: rst
 
    .. needtable::
       :style: table
-      :filter: id in ["my_car_1","impl_my_car_1"]
+      :filter: 'car' in tags
+      :show_parts:
+      :columns: id, title, incoming, outgoing
 
 .. needtable::
    :style: table
-   :filter: id in ["my_car_1","impl_my_car_1"]
+   :filter: 'car' in tags
+   :show_parts:
+   :columns: id, title, incoming, outgoing
 
 .. _need_count:
 
@@ -196,7 +203,7 @@ need_count
 Counts found needs for a given filter and shows the final amount.
 
 The content of the role must be a valid filter-string as used e.g. by :ref:`needlist` in the ``:filter:`` option.
-See :ref:`option_filter` for more information.
+See :ref:`filter_string` for more information.
 
 Example
 ~~~~~~~
@@ -208,15 +215,23 @@ Example
    Open specification needs: :need_count:`type=='spec' and status=='open'`
    Needs with tag *test*: :need_count:`'test' in tags`
    Needs with title longer 10 chars: :need_count:`search("[\\w\\s]{10,}", title)`
+   All need_parts: :need_count:`is_part`
+   All needs containing need_parts: :need_count:`is_need and len(parts)>0`
 
 | All needs: :need_count:`True`
 | Specification needs: :need_count:`type=='spec'`
 | Open specification needs: :need_count:`type=='spec' and status=='open'`
 | Needs with tag *test*: :need_count:`'test' in tags`
 | Needs with title longer 10 chars: :need_count:`search("[\\w\\s]{10,}", title)`
+| All need_parts: :need_count:`is_part`
+| All needs containing need_parts: :need_count:`is_need and len(parts)>0`
 
 .. note::
 
    If backslashes ``\`` are used inside the regex function ``search``, please make sure to double them as in python
    one ``\`` needs to be represented by ``\\``.
 
+.. note::
+   ``need_count`` executes the given filter on needs and need_parts!
+   So if you use :ref:`need_part` , the result may contain the amount of found needs **and** found need_parts.
+   To avoid is, add ``is_need`` or ``is_part`` to your filter.

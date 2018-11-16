@@ -8,7 +8,7 @@ from jinja2 import Template
 from sphinx.environment import NoUri
 from sphinxcontrib.needs.utils import row_col_maker, status_sorter
 
-from sphinxcontrib.needs.filter_base import FilterBase, procces_filters
+from sphinxcontrib.needs.filter_common import FilterBase, procces_filters
 
 if sys.version_info.major < 3:
     urlParse = urllib.quote_plus

@@ -5,6 +5,7 @@ import os
 import shutil
 import sphinx
 from pkg_resources import parse_version
+
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
     from sphinx.util import logging
@@ -182,3 +183,21 @@ class NeedsList:
                 self.log.warning("Could not decode json file {0}".format(file))
             else:
                 self.needs_list = needs_list
+
+
+def merge_two_dicts(x, y):
+    """
+    Merges 2 dictionary.
+    Overrides values from x with values from y, if key is the same.
+
+    Needed for Python < 3.5
+
+    See: https://stackoverflow.com/a/26853961
+
+    :param x:
+    :param y:
+    :return:
+    """
+    z = x.copy()  # start with x's keys and values
+    z.update(y)  # modifies z with y's keys and values & returns None
+    return z

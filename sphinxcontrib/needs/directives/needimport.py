@@ -8,6 +8,8 @@ from docutils.parsers.rst import directives
 from docutils.parsers.rst import Directive
 from jinja2 import Template
 
+from sphinxcontrib.needs.filter_common import filter_single_need
+
 
 class Needimport(nodes.General, nodes.Element):
     pass
@@ -82,14 +84,14 @@ class NeedimportDirective(Directive):
                     "id": need["id"],
                     "title": need["title"],
                     "links": need["links"],
-                    "search": re.search,
+                    # "search": re.search,
                     # Support both ways of addressing the description, as "description" is used in json file, but
                     # "content" is the sphinx internal name for this kind of information
                     "content": need["description"],
                     "description": need["description"]
                 }
                 try:
-                    if eval(filter, None, filter_context):
+                    if filter_single_need(filter_context, filter):
                         needs_list_filtered[key] = need
                 except Exception as e:
                     print("Filter {0} not valid: Error: {1}".format(filter, e))

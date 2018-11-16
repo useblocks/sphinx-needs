@@ -7,7 +7,7 @@ Collection of common sphinx-needs functions for dynamic values
 
 
 import re
-
+from sphinxcontrib.needs.filter_common import filter_single_need
 
 def test(app, need, needs, *args, **kwargs):
     """
@@ -230,10 +230,8 @@ def check_linked_values(app, need, needs, result, search_option, search_value, f
 
     for link in links:
         if filter is not None:
-            filter_context = needs[link].copy()
-            filter_context["search"] = re.search
             try:
-                if not eval(filter, None, filter_context):
+                if not filter_single_need(needs[link], filter):
                     continue
             except Exception as e:
                 print("Filter {0} not valid: Error: {1}".format(filter, e))
@@ -337,10 +335,8 @@ def calc_sum(app, need, needs, option, filter=None, links_only=False):
 
     for check_need in check_needs:
         if filter is not None:
-            filter_context = check_need.copy()
-            filter_context["search"] = re.search
             try:
-                if not eval(filter, None, filter_context):
+                if not filter_single_need(check_need, filter):
                     continue
             except ValueError as e:
                 pass
