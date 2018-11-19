@@ -1,6 +1,14 @@
 Changelog
 =========
 
+0.3.8
+-----
+
+* Improvement: :ref:`need_part` has now attributes `id_parent` and `id_complete`, which can be referenced
+  in :ref:`filter_string`.
+
+
+
 0.3.7
 -----
 * Improvement: :ref:`filter_string` now supports the filtering of :ref:`need_part`.

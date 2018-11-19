@@ -164,6 +164,10 @@ A filter string gets evaluated on needs and need_parts!
 A need_part inherits all options from its parent need, if the need_part has no own content for this option.
 E.g. the need_part *title* is kept, but the *status* attribute is taken from its parent need.
 
+.. note::
+
+   Following attributes are kept inside a need_part: id, title, links_back
+
 This allows to perform searches for need_parts, where search options are based on parent attributes.
 
 The following filter will find all need_parts, which are part of a need, which has a tag called *important*.
@@ -188,6 +192,13 @@ Inside a filter string the following variables/functions can be used:
 * **is_part** as Python boolean. (compare like ``is_part``)
 * **parts** as Python list with :ref:`need_part` of the current need. (compare like ``len(parts)>0``)
 * :ref:`re_search`, as Python function for performing searches with a regular expression
+
+Additional variables for :ref:`need_part`:
+
+* **id_parent** as Python string, which contains the id of the parent need. (compare like ``id_parent == "ABC_01"``)
+* **id_complete** as Python string. Contains the concatenated ids of parent need and need_part.
+  (compare like ``id_complete != 'ABC_01.03'``)
+
 
 .. note:: If extra options were specified using :ref:`needs_extra_options` then
           those will be available for use in filter expressions as well.

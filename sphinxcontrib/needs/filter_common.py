@@ -140,6 +140,8 @@ def filter_needs(needs, filter_string="", filter_parts=True, merge_part_with_par
             for part_id, part in filter_need['parts'].items():
                 if merge_part_with_parent:
                     filter_part = merge_two_dicts(filter_need, part)
+                    filter_part['id_parent'] = filter_need['id']
+                    filter_part['id_complete'] = ".".join([filter_need['id'], filter_part['id']])
                 else:
                     filter_part = part
                 try:
