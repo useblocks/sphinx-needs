@@ -8,7 +8,7 @@ from docutils import nodes
 import sphinx
 from pkg_resources import parse_version
 
-from sphinxcontrib.needs.filter_common import filter_needs
+from sphinxcontrib.needs.filter_common import filter_needs, prepare_need_list
 
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
@@ -31,7 +31,8 @@ def process_need_count(app, doctree, fromdocname):
         if not filter:
             amount = len(all_needs)
         else:
-            amount = len(filter_needs(all_needs, filter))
+            need_list = prepare_need_list(all_needs)  # adds parts to need_list
+            amount = len(filter_needs(need_list, filter))
 
         new_node_count = nodes.Text(amount, amount)
         node_need_count.replace_self(new_node_count)

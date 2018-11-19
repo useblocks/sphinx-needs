@@ -6,6 +6,11 @@ try:
 except ImportError:
     from pathlib2 import Path
 
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+
 NS = {'html': 'http://www.w3.org/1999/xhtml'}
 
 
@@ -27,7 +32,15 @@ class HtmlNeed(object):
 
 
 def extract_needs_from_html(html):
-    document = ElementTree.fromstring(html.encode('utf-8'))
+    source = StringIO(html)
+    parser = ElementTree.XMLParser(encoding="utf-8")
+
+    # XML knows not nbsp definition, which comes from HTML.
+    # So we need to add it
+    parser.entity["nbsp"] = ' '
+
+    etree = ElementTree.ElementTree()
+    document = etree.parse(source, parser=parser)
     divs = document.findall(".//html:div", NS)
     return [HtmlNeed(div) for div in divs if 'need-requirement' in div.get('class', '')]
 

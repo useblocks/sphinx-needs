@@ -145,22 +145,35 @@ def process_needtables(app, doctree, fromdocname):
         found_needs = procces_filters(all_needs, current_needtable)
 
         for need_info in found_needs:
-            # Pure need row
-            row = nodes.row(classes=['need'])
+            temp_need = need_info.copy()
+            if temp_need['is_need']:
+                row = nodes.row(classes=['need'])
+                prefix = ''
+            else:
+                row = nodes.row(classes=['need_part'])
+                temp_need['id'] = temp_need['id_complete']
+                prefix = app.config.needs_part_prefix
+                temp_need['title'] = temp_need['content']
+
             for col in current_needtable["columns"]:
                 if col == "ID":
-                    row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, "id", make_ref=True)
+                    row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need, "id", make_ref=True,
+                                         prefix=prefix)
+                elif col == "TITLE":
+                    row += row_col_maker(
+                        app, fromdocname, env.needs_all_needs, temp_need, "title",
+                        prefix=app.config.needs_part_prefix)
                 elif col == "INCOMING":
-                    row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info,
+                    row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need,
                                          "links_back", ref_lookup=True)
                 elif col == "OUTGOING":
-                    row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, "links", ref_lookup=True)
+                    row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need, "links", ref_lookup=True)
                 else:
-                    row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, col.lower())
+                    row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need, col.lower())
             tbody += row
 
             # Need part rows
-            if current_needtable["show_parts"]:
+            if current_needtable["show_parts"] and need_info['is_need']:
                 for key, part in need_info["parts"].items():
                     row = nodes.row(classes=['need_part'])
                     temp_part = part.copy()  # The dict needs to be manipulated, so that row_col_maker() can be used

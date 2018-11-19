@@ -82,7 +82,11 @@ def procces_filters(all_needs, current_needlist):
             all_needs = sorted(all_needs, key=status_sorter)
 
     found_needs_by_options = []
-    for need_info in all_needs:
+
+    # Add all need_parts of given needs to the search list
+    all_needs_incl_parts = prepare_need_list(all_needs)
+
+    for need_info in all_needs_incl_parts:
         status_filter_passed = False
         if current_needlist["status"] is None or len(current_needlist["status"]) == 0:
             # Filtering for status was not requested
@@ -104,11 +108,53 @@ def procces_filters(all_needs, current_needlist):
         if status_filter_passed and tags_filter_passed and type_filter_passed:
             found_needs_by_options.append(need_info)
 
-    found_needs_by_string = filter_needs(all_needs, current_needlist["filter"])
+    found_needs_by_string = filter_needs(all_needs_incl_parts, current_needlist["filter"])
 
-    found_needs = [x for x in found_needs_by_string if x in found_needs_by_options]
+    # found_needs = [x for x in found_needs_by_string if x in found_needs_by_options]
+
+    found_needs = check_need_list(found_needs_by_options, found_needs_by_string)
 
     return found_needs
+
+
+def prepare_need_list(need_list):
+    # all_needs_incl_parts = need_list.copy()
+    try:
+        all_needs_incl_parts = need_list[:]
+    except TypeError:
+        try:
+            all_needs_incl_parts = need_list.copy()
+        except AttributeError:
+            all_needs_incl_parts = list(need_list)[:]
+
+    for need in need_list:
+        for part_id, part in need['parts'].items():
+            filter_part = merge_two_dicts(need, part)
+            filter_part['id_parent'] = need['id']
+            filter_part['id_complete'] = ".".join([need['id'], filter_part['id']])
+            all_needs_incl_parts.append(filter_part)
+
+    return all_needs_incl_parts
+
+
+def check_need_list(list_a, list_b):
+    common_list = []
+
+    for element_a in list_a:
+        element_a_id = element_a['id']
+        if element_a['is_part']:
+            element_a_id = element_a['id_parent'] + '.' + element_a_id
+
+        for element_b in list_b:
+            element_b_id = element_b['id']
+            if element_b['is_part']:
+                element_b_id = element_b['id_parent'] + '.' + element_b_id
+
+            if element_a_id == element_b_id:
+                common_list.append(element_a)
+                break
+
+    return common_list
 
 
 def filter_needs(needs, filter_string="", filter_parts=True, merge_part_with_parent=True):
@@ -135,25 +181,25 @@ def filter_needs(needs, filter_string="", filter_parts=True, merge_part_with_par
         except Exception as e:
             print("Filter {0} not valid: Error: {1}".format(filter, e))
 
-        if filter_parts:
-            # Check need_parts also
-            for part_id, part in filter_need['parts'].items():
-                if merge_part_with_parent:
-                    filter_part = merge_two_dicts(filter_need, part)
-                    filter_part['id_parent'] = filter_need['id']
-                    filter_part['id_complete'] = ".".join([filter_need['id'], filter_part['id']])
-                else:
-                    filter_part = part
-                try:
-                    if filter_single_need(filter_part, filter_string):
-                        found_needs.append(part)
-                except Exception as e:
-                    if merge_part_with_parent:
-                        print("Filter {0} not valid: Error: {1}".format(filter, e))
-                    else:
-                        # No output here, as the given search filter may has checks on elements, which
-                        # are not part of a need_part, e.g. status.
-                        pass
+        # if filter_parts:
+        #     # Check need_parts also
+        #     for part_id, part in filter_need['parts'].items():
+        #         if merge_part_with_parent:
+        #             filter_part = merge_two_dicts(filter_need, part)
+        #             filter_part['id_parent'] = filter_need['id']
+        #             filter_part['id_complete'] = ".".join([filter_need['id'], filter_part['id']])
+        #         else:
+        #             filter_part = part
+        #         try:
+        #             if filter_single_need(filter_part, filter_string):
+        #                 found_needs.append(part)
+        #         except Exception as e:
+        #             if merge_part_with_parent:
+        #                 print("Filter {0} not valid: Error: {1}".format(filter, e))
+        #             else:
+        #                 # No output here, as the given search filter may has checks on elements, which
+        #                 # are not part of a need_part, e.g. status.
+        #                 pass
 
     return found_needs
 
