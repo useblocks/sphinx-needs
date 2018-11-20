@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import sys
 from sphinx_testing import with_app
 from xml.etree import ElementTree
 try:
@@ -32,8 +33,13 @@ class HtmlNeed(object):
 
 
 def extract_needs_from_html(html):
-    source = StringIO(html)
-    parser = ElementTree.XMLParser(encoding="utf-8")
+
+    if sys.version_info >= (3, 0):
+        source = StringIO(html)
+        parser = ElementTree.XMLParser(encoding="utf-8")
+    else:  # Python 2.x
+        source = StringIO(html.encode("utf-8"))
+        parser = ElementTree.XMLParser(encoding="utf-8")
 
     # XML knows not nbsp definition, which comes from HTML.
     # So we need to add it
