@@ -6,8 +6,7 @@ Changelog
 
 * Improvement: :ref:`need_part` has now attributes `id_parent` and `id_complete`, which can be referenced
   in :ref:`filter_string`.
-
-
+* Improvement: :ref:`needtable` supports presentation of filtered :ref:`need_part` (without showing parent need).
 
 0.3.7
 -----
