@@ -10,7 +10,7 @@ import urllib
 from docutils.parsers.rst import Directive
 from docutils.parsers.rst import directives
 
-from sphinxcontrib.needs.utils import status_sorter, merge_two_dicts
+from sphinxcontrib.needs.utils import status_sorter, merge_two_dicts, logger
 
 if sys.version_info.major < 3:
     urlParse = urllib.quote_plus
@@ -179,27 +179,7 @@ def filter_needs(needs, filter_string="", filter_parts=True, merge_part_with_par
             if filter_single_need(filter_need, filter_string):
                 found_needs.append(filter_need)
         except Exception as e:
-            print("Filter {0} not valid: Error: {1}".format(filter, e))
-
-        # if filter_parts:
-        #     # Check need_parts also
-        #     for part_id, part in filter_need['parts'].items():
-        #         if merge_part_with_parent:
-        #             filter_part = merge_two_dicts(filter_need, part)
-        #             filter_part['id_parent'] = filter_need['id']
-        #             filter_part['id_complete'] = ".".join([filter_need['id'], filter_part['id']])
-        #         else:
-        #             filter_part = part
-        #         try:
-        #             if filter_single_need(filter_part, filter_string):
-        #                 found_needs.append(part)
-        #         except Exception as e:
-        #             if merge_part_with_parent:
-        #                 print("Filter {0} not valid: Error: {1}".format(filter, e))
-        #             else:
-        #                 # No output here, as the given search filter may has checks on elements, which
-        #                 # are not part of a need_part, e.g. status.
-        #                 pass
+            logger.warning("Filter {0} not valid: Error: {1}".format(filter_string, e))
 
     return found_needs
 
@@ -218,5 +198,9 @@ def filter_single_need(need, filter_string=""):
     try:
         result = bool(eval(filter_string, None, filter_context))
     except Exception as e:
-        print("Filter {0} not valid: Error: {1}".format(filter, e))
+        raise NeedInvalidFilter("Filter {0} not valid: Error: {1}".format(filter_string, e))
     return result
+
+
+class NeedInvalidFilter(BaseException):
+    pass

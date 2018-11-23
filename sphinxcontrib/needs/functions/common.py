@@ -5,9 +5,9 @@ Collection of common sphinx-needs functions for dynamic values
 """
 # flake8: noqa
 
+from sphinxcontrib.needs.filter_common import filter_single_need, NeedInvalidFilter
+from sphinxcontrib.needs.utils import logger
 
-import re
-from sphinxcontrib.needs.filter_common import filter_single_need
 
 def test(app, need, needs, *args, **kwargs):
     """
@@ -92,7 +92,7 @@ def copy(app, need, needs, option, need_id=None):
     return need[option]
 
 
-def check_linked_values(app, need, needs, result, search_option, search_value, filter=None, one_hit=False):
+def check_linked_values(app, need, needs, result, search_option, search_value, filter_string=None, one_hit=False):
     """
     Returns a specific value, if for all linked needs a given option has a given value.
 
@@ -220,7 +220,7 @@ def check_linked_values(app, need, needs, result, search_option, search_value, f
     :param result: value, which gets returned if all linked needs have parsed the checks
     :param search_option: option name, which is used n linked needs for the search
     :param search_value: value, which an option of a linked need must match
-    :param filter: Checks are only performed on linked needs, which pass the defined filter
+    :param filter_string: Checks are only performed on linked needs, which pass the defined filter
     :param one_hit: If True, only one linked need must have a positive check
     :return: result, if all checks are positive
     """
@@ -229,12 +229,12 @@ def check_linked_values(app, need, needs, result, search_option, search_value, f
         search_value = [search_value]
 
     for link in links:
-        if filter is not None:
+        if filter_string is not None:
             try:
-                if not filter_single_need(needs[link], filter):
+                if not filter_single_need(needs[link], filter_string):
                     continue
             except Exception as e:
-                print("Filter {0} not valid: Error: {1}".format(filter, e))
+                logger.warning("CheckLinkedValues: Filter {0} not valid: Error: {1}".format(filter_string, e))
 
         if not one_hit and not needs[link][search_option] in search_value:
             return None
@@ -286,10 +286,10 @@ def calc_sum(app, need, needs, option, filter=None, links_only=False):
     .. code-block:: jinja
 
        .. req:: Result 2
-          :amount: [[calc_sum("hours", "float(hours) > 10")]]
+          :amount: [[calc_sum("hours", "hours.isdigit() and float(hours) > 10")]]
 
     .. req:: Result 2
-       :amount: [[calc_sum("hours", "float(hours) > 10")]]
+       :amount: [[calc_sum("hours", "hours.isdigit() and float(hours) > 10")]]
        :collapse: False
 
     **Example 3**
@@ -311,11 +311,11 @@ def calc_sum(app, need, needs, option, filter=None, links_only=False):
 
        .. req:: Result 4
           :links: sum_input_1; sum_input_3
-          :amount: [[calc_sum("hours", "float(hours) > 10", "True")]]
+          :amount: [[calc_sum("hours", "hours.isdigit() and float(hours) > 10", "True")]]
 
     .. req:: Result 4
        :links: sum_input_1; sum_input_3
-       :amount: [[calc_sum("hours", "float(hours) > 10", "True")]]
+       :amount: [[calc_sum("hours", "hours.isdigit() and float(hours) > 10", "True")]]
        :collapse: False
 
     :param option: Options, from which the numbers shall be taken
@@ -340,6 +340,8 @@ def calc_sum(app, need, needs, option, filter=None, links_only=False):
                     continue
             except ValueError as e:
                 pass
+            except NeedInvalidFilter as ex:
+                logger.warning('Given filter is not valied. Error: {}'.format(ex))
         try:
             calculated_sum += float(check_need[option])
         except ValueError:

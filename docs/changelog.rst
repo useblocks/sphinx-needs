@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.3.9
+-----
+* Bugfix: Grubby tag/link strings in needs, which define empty links/tags, produce a warning now.
+* Bugfix: Better logging of document location, if a filter string is not valid.
+* Bugfix: Replaced all print-statements with sphinx warnings.
+
 0.3.8
 -----
 

@@ -12,6 +12,8 @@ if parse_version(sphinx_version) >= parse_version("1.6"):
 else:
     import logging
 
+logger = logging.getLogger(__name__)
+
 
 def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=False, ref_lookup=False, prefix=''):
     """

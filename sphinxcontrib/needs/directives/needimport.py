@@ -9,6 +9,7 @@ from docutils.parsers.rst import Directive
 from jinja2 import Template
 
 from sphinxcontrib.needs.filter_common import filter_single_need
+from sphinxcontrib.needs.utils import logger
 
 
 class Needimport(nodes.General, nodes.Element):
@@ -33,7 +34,7 @@ class NeedimportDirective(Directive):
     def run(self):
         needs_list = {}
         version = self.options.get("version", None)
-        filter = self.options.get("filter", None)
+        filter_string = self.options.get("filter", None)
         id_prefix = self.options.get("id_prefix", "")
         hide = True if "hide" in self.options.keys() else False
 
@@ -74,7 +75,7 @@ class NeedimportDirective(Directive):
         # Filter imported needs
         needs_list_filtered = {}
         for key, need in needs_list.items():
-            if filter is None:
+            if filter_string is None:
                 needs_list_filtered[key] = need
             else:
                 filter_context = {
@@ -91,10 +92,12 @@ class NeedimportDirective(Directive):
                     "description": need["description"]
                 }
                 try:
-                    if filter_single_need(filter_context, filter):
+                    if filter_single_need(filter_context, filter_string):
                         needs_list_filtered[key] = need
                 except Exception as e:
-                    print("Filter {0} not valid: Error: {1}".format(filter, e))
+                    logger.warning("needimport: Filter {0} not valid. Error: {1}. {}{}".format(filter_string, e,
+                                                                                               self.docname,
+                                                                                               self.lineno))
 
         needs_list = needs_list_filtered
 

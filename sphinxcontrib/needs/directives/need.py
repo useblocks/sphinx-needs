@@ -22,6 +22,7 @@ if parse_version(sphinx_version) >= parse_version("1.6"):
     from sphinx.util import logging
 else:
     import logging
+logger = logging.getLogger(__name__)
 
 NON_BREAKING_SPACE = re.compile('\xa0+')
 
@@ -154,6 +155,9 @@ class NeedDirective(Directive):
             for i in range(len(tags)):
                 if len(tags[i]) == 0 or tags[i].isspace():
                     del (tags[i])
+                    logger.warning('Scruffy tag definition found in need {}. '
+                                   'Defined tag contains spaces only.'.format(id))
+
             # Check if tag is in needs_tags. If not raise an error.
             if env.app.config.needs_tags:
                 for tag in tags:
@@ -163,16 +167,24 @@ class NeedDirective(Directive):
             # This may have cut also dynamic function strings, as they can contain , as well.
             # So let put them together again
             # ToDo: There may be a smart regex for the splitting. This would avoid this mess of code...
-            tags = _fix_list_dyn_func(tags)
+        tags = _fix_list_dyn_func(tags)
 
         # Get links
-        links = self.options.get("links", [])
-        if len(links) > 0:
-            links = [link.strip() for link in re.split(";|,", links) if not link.isspace()]
+        links_string = self.options.get("links", [])
+        links = []
+        if len(links_string) > 0:
+            # links = [link.strip() for link in re.split(";|,", links) if not link.isspace()]
+            for link in re.split(";|,", links_string):
+                if not link.isspace():
+                    links.append(link.strip())
+                else:
+                    logger.warning('Grubby link definition found in need {}. '
+                                   'Defined link contains spaces only.'.format(id))
+
             # This may have cut also dynamic function strings, as they can contain , as well.
             # So let put them together again
             # ToDo: There may be a smart regex for the splitting. This would avoid this mess of code...
-            links = _fix_list_dyn_func(links)
+        links = _fix_list_dyn_func(links)
 
         #############################################################################################
         # Add need to global need list
@@ -183,8 +195,8 @@ class NeedDirective(Directive):
 
         if id in env.needs_all_needs.keys():
             if 'id' in self.options:
-                raise NeedsDuplicatedId("A need with ID {0} already exists! "
-                                        "This is not allowed".format(id))
+                raise NeedsDuplicatedId("A need with ID {} already exists! "
+                                        "This is not allowed. Document {}[{}]".format(id, self.docname, self.lineno))
             else:  # this is a generated ID
                 raise NeedsDuplicatedId(
                     "Needs could not generate a unique ID for a need with "

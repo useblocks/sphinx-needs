@@ -6,9 +6,13 @@ from sphinx.util.console import brown
 import sphinx
 from pkg_resources import parse_version
 
+from sphinxcontrib.needs.utils import logger
+
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
     from sphinx.util import status_iterator  # NOQA Sphinx 1.5
+
+
 
 STATICS_DIR_NAME = '_static'
 
@@ -85,7 +89,7 @@ def install_styles_static_files(app, env):
 
         if not os.path.exists(source_file_path):
             source_file_path = os.path.join(os.path.dirname(__file__), "css", "blank.css")
-            print("{0} not found. Copying sphinx-internal blank.css".format(source_file_path))
+            logger.warning("{0} not found. Copying sphinx-internal blank.css".format(source_file_path))
 
         dest_file_path = os.path.join(dest_path, os.path.basename(source_file_path))
 
