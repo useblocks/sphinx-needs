@@ -44,7 +44,7 @@ def test_doc_github_44(app, status, warning):
     assert 'Test 3' in html
 
     assert "Needs: linked need test_3 not found" not in output
-    assert "Needs: linked need test_123_broken not found" in output
+    assert "Needs: outgoing linked need test_123_broken not found" in output
 
 
 @with_app(buildername='html', srcdir='doc_test/doc_github_issue_61')

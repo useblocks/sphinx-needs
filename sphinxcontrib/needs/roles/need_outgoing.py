@@ -83,7 +83,9 @@ def process_need_outgoing(app, doctree, fromdocname):
                     log.warning('Needs: linked need %s not found (Line %i of file %s)' % (
                         link, node_need_ref.line, node_need_ref.source))
                 else:
-                    log.warning('Needs: linked need %s not found' % link)
+                    log.warning('Needs: outgoing linked need %s not found (document: %s, '
+                                'source need %s on line %s )' %
+                                (link, ref_need['docname'], ref_need['id'], ref_need['lineno']))
 
         if len(node_link_container.children) == 0:
             node_link_container += nodes.Text("None", "None")

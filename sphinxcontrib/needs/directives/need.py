@@ -152,7 +152,7 @@ class NeedDirective(Directive):
 
             tags = [tag.strip() for tag in re.split(";|,", tags)]
             for i in range(len(tags)):
-                if len(tags[i]) == 0:
+                if len(tags[i]) == 0 or tags[i].isspace():
                     del (tags[i])
             # Check if tag is in needs_tags. If not raise an error.
             if env.app.config.needs_tags:
@@ -168,7 +168,7 @@ class NeedDirective(Directive):
         # Get links
         links = self.options.get("links", [])
         if len(links) > 0:
-            links = [link.strip() for link in re.split(";|,", links) if link != ""]
+            links = [link.strip() for link in re.split(";|,", links) if not link.isspace()]
             # This may have cut also dynamic function strings, as they can contain , as well.
             # So let put them together again
             # ToDo: There may be a smart regex for the splitting. This would avoid this mess of code...
