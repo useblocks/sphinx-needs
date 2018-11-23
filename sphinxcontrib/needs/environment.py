@@ -13,7 +13,6 @@ if parse_version(sphinx_version) >= parse_version("1.6"):
     from sphinx.util import status_iterator  # NOQA Sphinx 1.5
 
 
-
 STATICS_DIR_NAME = '_static'
 
 
