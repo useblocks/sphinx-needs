@@ -4,6 +4,7 @@ import sphinx
 from pkg_resources import parse_version
 
 from sphinxcontrib.test_reports.directives.test_results import TestResults, TestResultsDirective
+from sphinxcontrib.test_reports.directives.test_env import EnvReport, EnvReportDirective
 from sphinxcontrib.test_reports.environment import install_styles_static_files
 
 sphinx_version = sphinx.__version__
@@ -28,6 +29,9 @@ def setup(app):
     app.add_node(TestResults)
 
     app.add_directive('test-results', TestResultsDirective)
+
+    app.add_node(EnvReport)
+    app.add_directive('test-env', EnvReportDirective)
 
     # events
     app.connect('env-updated', install_styles_static_files)

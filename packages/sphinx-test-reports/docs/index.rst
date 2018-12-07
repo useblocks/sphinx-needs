@@ -87,5 +87,5 @@ Content
    :caption: Contents:
 
    directives/test_results
-
-
+   directives/test_env
+   changelog

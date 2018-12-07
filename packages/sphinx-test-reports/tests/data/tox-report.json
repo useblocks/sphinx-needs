@@ -1,0 +1,321 @@
+{
+    "flake8": {
+        "host": "saif-HP-ProBook-6470b",
+        "installed_packages": [
+            "arrow==0.10.0",
+            "attrs==18.2.0",
+            "binaryornot==0.4.4",
+            "blinker==1.4",
+            "certifi==2018.4.16",
+            "chardet==3.0.4",
+            "click==6.7",
+            "cookiecutter==1.5.1",
+            "docutils==0.14",
+            "envparse==0.2.0",
+            "erc-e2e==0.1.0",
+            "flake8==3.5.0",
+            "flake8-blind-except==0.1.1",
+            "flake8-bugbear==18.2.0",
+            "flake8-builtins==1.1.1",
+            "flake8-commas==2.0.0",
+            "flake8-comprehensions==1.4.1",
+            "flake8-debugger==3.1.0",
+            "flake8-deprecated==1.3",
+            "flake8-docstrings==1.3.0",
+            "flake8-formatter-abspath==1.0.1",
+            "flake8-import-order==0.17.1",
+            "flake8-mutable==1.2.0",
+            "flake8-pep3101==1.2",
+            "flake8-per-file-ignores==0.6",
+            "flake8-polyfill==1.0.2",
+            "flake8-quotes==0.14.0",
+            "flake8-rst-docstrings==0.0.8",
+            "flake8-string-format==0.2.3",
+            "flake8-tidy-imports==1.1.0",
+            "flake8-tuple==0.2.13",
+            "future==0.16.0",
+            "groundwork==0.1.13",
+            "idna==2.6",
+            "Jinja2==2.9.6",
+            "jinja2-time==0.2.0",
+            "jsonschema==2.6.0",
+            "lxml==4.0.0",
+            "MarkupSafe==1.0",
+            "mccabe==0.6.1",
+            "nose==1.3.7",
+            "pathlib==1.0.1",
+            "pathmatch==0.2.1",
+            "poyo==0.4.1",
+            "pycodestyle==2.3.1",
+            "pydocstyle==3.0.0",
+            "pyflakes==1.6.0",
+            "python-dateutil==2.6.1",
+            "requests==2.18.4",
+            "restructuredtext-lint==1.2.1",
+            "six==1.11.0",
+            "snowballstemmer==1.2.1",
+            "svn==0.3.45",
+            "typing==3.6.6",
+            "urllib3==1.22",
+            "whichcraft==0.4.1"
+        ],
+        "installpkg": {
+            "basename": "erc_e2e-0.1.0.zip",
+            "md5": "df03855c61c10ddd32f2c888856cc51e",
+            "sha256": "576f9f616a18bc74404a0f241c96d9e3c75f03f091f8981495598d0c6dc25c41"
+        },
+        "name": "flake8",
+        "path": "/home/saif/JC_env/Main_task/ascgit307.erc/erc_e2e/.tox/flake8",
+        "platform": "linux",
+        "python": {
+            "executable": "/home/saif/JC_env/Main_task/ascgit307.erc/erc_e2e/.tox/flake8/bin/python",
+            "version": "3.5.2 (default, Nov 12 2018, 13:43:14) \n[GCC 5.4.0 20160609]",
+            "version_info": [
+                3,
+                5,
+                2,
+                "final",
+                0
+            ]
+        },
+        "reportversion": "1",
+        "setup": [
+            {
+                "command": [
+                    "/home/saif/JC_env/Main_task/ascgit307.erc/erc_e2e/.tox/flake8/bin/python",
+                    "-m",
+                    "pip",
+                    "freeze"
+                ],
+                "output": "actionid: flake8\nmsg: envreport\ncmdargs: '/home/saif/JC_env/Main_task/ascgit307.erc/erc_e2e/.tox/flake8/bin/python -m pip freeze'\n\narrow==0.10.0\nattrs==18.2.0\nbinaryornot==0.4.4\nblinker==1.4\ncertifi==2018.4.16\nchardet==3.0.4\nclick==6.7\ncookiecutter==1.5.1\ndocutils==0.14\nenvparse==0.2.0\nerc-e2e==0.1.0\nflake8==3.5.0\nflake8-blind-except==0.1.1\nflake8-bugbear==18.2.0\nflake8-builtins==1.1.1\nflake8-commas==2.0.0\nflake8-comprehensions==1.4.1\nflake8-debugger==3.1.0\nflake8-deprecated==1.3\nflake8-docstrings==1.3.0\nflake8-formatter-abspath==1.0.1\nflake8-import-order==0.17.1\nflake8-mutable==1.2.0\nflake8-pep3101==1.2\nflake8-per-file-ignores==0.6\nflake8-polyfill==1.0.2\nflake8-quotes==0.14.0\nflake8-rst-docstrings==0.0.8\nflake8-string-format==0.2.3\nflake8-tidy-imports==1.1.0\nflake8-tuple==0.2.13\nfuture==0.16.0\ngroundwork==0.1.13\nidna==2.6\nJinja2==2.9.6\njinja2-time==0.2.0\njsonschema==2.6.0\nlxml==4.0.0\nMarkupSafe==1.0\nmccabe==0.6.1\nnose==1.3.7\npathlib==1.0.1\npathmatch==0.2.1\npoyo==0.4.1\npycodestyle==2.3.1\npydocstyle==3.0.0\npyflakes==1.6.0\npython-dateutil==2.6.1\nrequests==2.18.4\nrestructuredtext-lint==1.2.1\nsix==1.11.0\nsnowballstemmer==1.2.1\nsvn==0.3.45\ntyping==3.6.6\nurllib3==1.22\nwhichcraft==0.4.1\n",
+                "retcode": "0"
+            }
+        ],
+        "test": [
+            {
+                "command": [
+                    "/home/saif/JC_env/Main_task/ascgit307.erc/erc_e2e/.tox/flake8/bin/flake8"
+                ],
+                "output": null,
+                "retcode": "0"
+            }
+        ],
+        "toxversion": "3.5.3"
+    },
+    "py35": {
+        "host": "saif-HP-ProBook-6470b",
+        "installed_packages": [
+            "arrow==0.10.0",
+            "atomicwrites==1.2.1",
+            "attrs==18.2.0",
+            "binaryornot==0.4.4",
+            "blinker==1.4",
+            "brotlipy==0.7.0",
+            "certifi==2018.4.16",
+            "cffi==1.11.5",
+            "chardet==3.0.4",
+            "click==6.7",
+            "cookiecutter==1.5.1",
+            "coverage==4.5.2",
+            "decorator==4.3.0",
+            "docutils==0.14",
+            "envparse==0.2.0",
+            "erc-e2e==0.1.0",
+            "filelock==3.0.10",
+            "Flask==1.0.2",
+            "future==0.16.0",
+            "groundwork==0.1.13",
+            "gw-utils==0.2.3",
+            "httpbin==0.7.0",
+            "idna==2.6",
+            "itsdangerous==1.1.0",
+            "Jinja2==2.9.6",
+            "jinja2-time==0.2.0",
+            "jsonschema==2.6.0",
+            "lxml==4.0.0",
+            "MarkupSafe==1.0",
+            "more-itertools==4.3.0",
+            "nose==1.3.7",
+            "pathlib==1.0.1",
+            "pathlib2==2.3.2",
+            "pluggy==0.8.0",
+            "poyo==0.4.1",
+            "py==1.7.0",
+            "pycparser==2.19",
+            "pyelftools===0.24-st1",
+            "pytest==4.0.0",
+            "pytest-cov==2.6.0",
+            "pytest-runner==4.2",
+            "python-dateutil==2.6.1",
+            "PyYAML==3.13",
+            "raven==6.9.0",
+            "requests==2.18.4",
+            "six==1.11.0",
+            "svn==0.3.45",
+            "toml==0.10.0",
+            "tox==3.5.3",
+            "typing==3.6.6",
+            "urllib3==1.22",
+            "virtualenv==16.1.0",
+            "Werkzeug==0.14.1",
+            "whichcraft==0.4.1",
+            "yamldirs==1.1.3"
+        ],
+        "installpkg": {
+            "basename": "erc_e2e-0.1.0.zip",
+            "md5": "df03855c61c10ddd32f2c888856cc51e",
+            "sha256": "576f9f616a18bc74404a0f241c96d9e3c75f03f091f8981495598d0c6dc25c41"
+        },
+        "name": "py35",
+        "path": "/home/saif/JC_env/Main_task/ascgit307.erc/erc_e2e/.tox/py35",
+        "platform": "linux",
+        "python": {
+            "executable": "/home/saif/JC_env/Main_task/ascgit307.erc/erc_e2e/.tox/py35/bin/python",
+            "version": "3.5.2 (default, Nov 12 2018, 13:43:14) \n[GCC 5.4.0 20160609]",
+            "version_info": [
+                3,
+                5,
+                2,
+                "final",
+                0
+            ]
+        },
+        "reportversion": "1",
+        "setup": [
+            {
+                "command": [
+                    "/home/saif/JC_env/Main_task/ascgit307.erc/erc_e2e/.tox/py35/bin/python",
+                    "-m",
+                    "pip",
+                    "install",
+                    "--no-deps",
+                    "-U",
+                    "/home/saif/JC_env/Main_task/ascgit307.erc/erc_e2e/.tox/.tmp/package/1/erc_e2e-0.1.0.zip"
+                ],
+                "output": "actionid: py35\nmsg: installpkg\ncmdargs: '/home/saif/JC_env/Main_task/ascgit307.erc/erc_e2e/.tox/py35/bin/python -m pip install --no-deps -U /home/saif/JC_env/Main_task/ascgit307.erc/erc_e2e/.tox/.tmp/package/1/erc_e2e-0.1.0.zip'\n\nProcessing ./.tox/.tmp/package/1/erc_e2e-0.1.0.zip\nBuilding wheels for collected packages: erc-e2e\n  Running setup.py bdist_wheel for erc-e2e: started\n  Running setup.py bdist_wheel for erc-e2e: finished with status 'done'\n  Stored in directory: /home/saif/.cache/pip/wheels/f7/81/bb/85d03f88c7253c16a001851c961b6ed0a084ca296a0b5d296a\nSuccessfully built erc-e2e\nInstalling collected packages: erc-e2e\n  Found existing installation: erc-e2e 0.1.0\n    Not uninstalling erc-e2e at /home/saif/JC_env/Main_task/ascgit307.erc/erc_e2e, outside environment /home/saif/JC_env/Main_task/ascgit307.erc/erc_e2e/.tox/py35\n    Can't uninstall 'erc-e2e'. No files were found to uninstall.\nSuccessfully installed erc-e2e-0.1.0\n",
+                "retcode": "0"
+            },
+            {
+                "command": [
+                    "/home/saif/JC_env/Main_task/ascgit307.erc/erc_e2e/.tox/py35/bin/python",
+                    "-m",
+                    "pip",
+                    "freeze"
+                ],
+                "output": "actionid: py35\nmsg: envreport\ncmdargs: '/home/saif/JC_env/Main_task/ascgit307.erc/erc_e2e/.tox/py35/bin/python -m pip freeze'\n\narrow==0.10.0\natomicwrites==1.2.1\nattrs==18.2.0\nbinaryornot==0.4.4\nblinker==1.4\nbrotlipy==0.7.0\ncertifi==2018.4.16\ncffi==1.11.5\nchardet==3.0.4\nclick==6.7\ncookiecutter==1.5.1\ncoverage==4.5.2\ndecorator==4.3.0\ndocutils==0.14\nenvparse==0.2.0\nerc-e2e==0.1.0\nfilelock==3.0.10\nFlask==1.0.2\nfuture==0.16.0\ngroundwork==0.1.13\ngw-utils==0.2.3\nhttpbin==0.7.0\nidna==2.6\nitsdangerous==1.1.0\nJinja2==2.9.6\njinja2-time==0.2.0\njsonschema==2.6.0\nlxml==4.0.0\nMarkupSafe==1.0\nmore-itertools==4.3.0\nnose==1.3.7\npathlib==1.0.1\npathlib2==2.3.2\npluggy==0.8.0\npoyo==0.4.1\npy==1.7.0\npycparser==2.19\npyelftools===0.24-st1\npytest==4.0.0\npytest-cov==2.6.0\npytest-runner==4.2\npython-dateutil==2.6.1\nPyYAML==3.13\nraven==6.9.0\nrequests==2.18.4\nsix==1.11.0\nsvn==0.3.45\ntoml==0.10.0\ntox==3.5.3\ntyping==3.6.6\nurllib3==1.22\nvirtualenv==16.1.0\nWerkzeug==0.14.1\nwhichcraft==0.4.1\nyamldirs==1.1.3\n",
+                "retcode": "0"
+            }
+        ],
+        "test": [],
+        "toxversion": "3.5.3"
+    },
+    "pylint": {
+        "host": "saif-HP-ProBook-6470b",
+        "installed_packages": [
+            "arrow==0.10.0",
+            "astroid==2.0.4",
+            "atomicwrites==1.2.1",
+            "attrs==18.2.0",
+            "binaryornot==0.4.4",
+            "blinker==1.4",
+            "brotlipy==0.7.0",
+            "certifi==2018.4.16",
+            "cffi==1.11.5",
+            "chardet==3.0.4",
+            "click==6.7",
+            "cookiecutter==1.5.1",
+            "coverage==4.5.2",
+            "decorator==4.3.0",
+            "docutils==0.14",
+            "envparse==0.2.0",
+            "erc-e2e==0.1.0",
+            "filelock==3.0.10",
+            "Flask==1.0.2",
+            "future==0.16.0",
+            "groundwork==0.1.13",
+            "httpbin==0.7.0",
+            "idna==2.6",
+            "isort==4.3.4",
+            "itsdangerous==1.1.0",
+            "Jinja2==2.9.6",
+            "jinja2-time==0.2.0",
+            "jsonschema==2.6.0",
+            "lazy-object-proxy==1.3.1",
+            "lxml==4.0.0",
+            "MarkupSafe==1.0",
+            "mccabe==0.6.1",
+            "more-itertools==4.3.0",
+            "nose==1.3.7",
+            "pathlib==1.0.1",
+            "pathlib2==2.3.2",
+            "pluggy==0.8.0",
+            "poyo==0.4.1",
+            "py==1.7.0",
+            "pycparser==2.19",
+            "pylint==2.1.1",
+            "pytest==4.0.0",
+            "pytest-cov==2.6.0",
+            "pytest-runner==4.2",
+            "python-dateutil==2.6.1",
+            "PyYAML==3.13",
+            "raven==6.9.0",
+            "requests==2.18.4",
+            "six==1.11.0",
+            "svn==0.3.45",
+            "toml==0.10.0",
+            "tox==3.5.3",
+            "typed-ast==1.1.0",
+            "typing==3.6.6",
+            "urllib3==1.22",
+            "virtualenv==16.1.0",
+            "Werkzeug==0.14.1",
+            "whichcraft==0.4.1",
+            "wrapt==1.10.11",
+            "yamldirs==1.1.3"
+        ],
+        "installpkg": {
+            "basename": "erc_e2e-0.1.0.zip",
+            "md5": "df03855c61c10ddd32f2c888856cc51e",
+            "sha256": "576f9f616a18bc74404a0f241c96d9e3c75f03f091f8981495598d0c6dc25c41"
+        },
+        "name": "pylint",
+        "path": "/home/saif/JC_env/Main_task/ascgit307.erc/erc_e2e/.tox/pylint",
+        "platform": "linux",
+        "python": {
+            "executable": "/home/saif/JC_env/Main_task/ascgit307.erc/erc_e2e/.tox/pylint/bin/python",
+            "version": "3.5.2 (default, Nov 12 2018, 13:43:14) \n[GCC 5.4.0 20160609]",
+            "version_info": [
+                3,
+                5,
+                2,
+                "final",
+                0
+            ]
+        },
+        "reportversion": "1",
+        "setup": [
+            {
+                "command": [
+                    "/home/saif/JC_env/Main_task/ascgit307.erc/erc_e2e/.tox/pylint/bin/python",
+                    "-m",
+                    "pip",
+                    "freeze"
+                ],
+                "output": "actionid: pylint\nmsg: envreport\ncmdargs: '/home/saif/JC_env/Main_task/ascgit307.erc/erc_e2e/.tox/pylint/bin/python -m pip freeze'\n\narrow==0.10.0\nastroid==2.0.4\natomicwrites==1.2.1\nattrs==18.2.0\nbinaryornot==0.4.4\nblinker==1.4\nbrotlipy==0.7.0\ncertifi==2018.4.16\ncffi==1.11.5\nchardet==3.0.4\nclick==6.7\ncookiecutter==1.5.1\ncoverage==4.5.2\ndecorator==4.3.0\ndocutils==0.14\nenvparse==0.2.0\nerc-e2e==0.1.0\nfilelock==3.0.10\nFlask==1.0.2\nfuture==0.16.0\ngroundwork==0.1.13\nhttpbin==0.7.0\nidna==2.6\nisort==4.3.4\nitsdangerous==1.1.0\nJinja2==2.9.6\njinja2-time==0.2.0\njsonschema==2.6.0\nlazy-object-proxy==1.3.1\nlxml==4.0.0\nMarkupSafe==1.0\nmccabe==0.6.1\nmore-itertools==4.3.0\nnose==1.3.7\npathlib==1.0.1\npathlib2==2.3.2\npluggy==0.8.0\npoyo==0.4.1\npy==1.7.0\npycparser==2.19\npylint==2.1.1\npytest==4.0.0\npytest-cov==2.6.0\npytest-runner==4.2\npython-dateutil==2.6.1\nPyYAML==3.13\nraven==6.9.0\nrequests==2.18.4\nsix==1.11.0\nsvn==0.3.45\ntoml==0.10.0\ntox==3.5.3\ntyped-ast==1.1.0\ntyping==3.6.6\nurllib3==1.22\nvirtualenv==16.1.0\nWerkzeug==0.14.1\nwhichcraft==0.4.1\nwrapt==1.10.11\nyamldirs==1.1.3\n",
+                "retcode": "0"
+            }
+        ],
+        "test": [
+            {
+                "command": [
+                    "/bin/bash",
+                    "-c",
+                    "set -o pipefail && pylint -f parseable --msg-template \"{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}\" erc_e2e tests | tee pylint.log"
+                ],
+                "output": null,
+                "retcode": "0"
+            }
+        ],
+        "toxversion": "3.5.3"
+    }
+}
