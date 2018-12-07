@@ -8,8 +8,7 @@ requires = ['Sphinx', 'lxml']
 
 setup(
     name='sphinx-test-reports',
-    # If you raise, think about versions in conf.py and needs.py!!!
-    version='0.1.0',
+    version='0.2.0',
     url='http://github.com/useblocks/sphinx-test-reports',
     download_url='http://pypi.python.org/pypi/sphinx-test-reports',
     license='MIT',

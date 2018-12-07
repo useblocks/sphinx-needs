@@ -1,3 +1,5 @@
+.. _test-results:
+
 test-results
 ============
 

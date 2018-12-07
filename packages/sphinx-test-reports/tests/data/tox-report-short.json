@@ -1,0 +1,28 @@
+{
+    "py27": {
+       "host": "user_abc",
+       "installed_packages": [
+          "arrow==0.10.0",
+          "atomicwrites==1.2.1"
+       ],
+       "installpkg": {
+          "basename": "erc_e2e-0.1.0.zip",
+          "md5": "df03855c61c10ddd32f2c888856cc51e",
+          "sha256": "576f9f616a18bc74404a0f241c96d9e3c75f03f091f8981495598d0c6dc25c41"
+       },
+       "name": "py35",
+       "path": "/home/user_abc/projects/sphinx-test-reports",
+       "platform": "linux",
+       "python": {
+          "executable": "/home/user_abc/projects/sphinx-test-reports/.tox/py35/bin/python",
+          "version": "3.5.2 (default, Nov 12 2018, 13:43:14) \n[GCC 5.4.0 20160609]",
+          "version_info": [
+              3,
+              5,
+              2,
+              "final",
+              0
+          ]
+       }
+    }
+}

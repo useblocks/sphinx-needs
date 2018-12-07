@@ -12,3 +12,5 @@ _build
 .pytest_cache
 .coverage
 .directory
+
+{envlogdir}

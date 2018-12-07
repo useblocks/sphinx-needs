@@ -36,4 +36,4 @@ def setup(app):
     # events
     app.connect('env-updated', install_styles_static_files)
 
-    return {'version': '0.1.0'}  # identifies the version of our extension
+    return {'version': '0.2.0'}  # identifies the version of our extension

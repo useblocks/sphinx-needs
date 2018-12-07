@@ -75,6 +75,8 @@ def test_doc_env_report_default_build_html(app, status, warning):
     assert len(tables) == 3
 
     # checking if all env from JSON file is present in output or not in table format
+    # AS it is not clearm in which order the tablesget printed, we need to check all of them
+    # for the needed test case
     assert 'pylint' in tables[0] or 'pylint' in tables[1] or 'pylint' in tables[2]
     assert 'py35' in tables[0] or 'py35' in tables[1] or 'py35' in tables[2]
     assert 'flake8' in tables[0] or 'flake8' in tables[1] or 'flake8' in tables[2]

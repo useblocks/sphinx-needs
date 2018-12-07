@@ -25,9 +25,9 @@ copyright = '2017-{year}, <a href="http://useblocks.com">team useblocks</a>'.for
 author = 'team useblocks'
 
 # The short X.Y version
-version = ''
+version = '0.2'
 # The full version, including alpha/beta/rc tags
-release = '0.1'
+release = '0.2'
 
 
 # -- General configuration ---------------------------------------------------
