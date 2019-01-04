@@ -341,7 +341,7 @@ def calc_sum(app, need, needs, option, filter=None, links_only=False):
             except ValueError as e:
                 pass
             except NeedInvalidFilter as ex:
-                logger.warning('Given filter is not valied. Error: {}'.format(ex))
+                logger.warning('Given filter is not valid. Error: {}'.format(ex))
         try:
             calculated_sum += float(check_need[option])
         except ValueError:
