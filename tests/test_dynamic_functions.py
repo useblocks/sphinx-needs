@@ -29,9 +29,16 @@ def test_doc_df_calc_sum(app, status, warning):
 
 
 @with_app(buildername='html', srcdir='doc_test/doc_df_check_linked_values')
-def test_doc_df_calc_sum(app, status, warning):
+def test_doc_df_linked_values(app, status, warning):
     app.build()
     html = Path(app.outdir, 'index.html').read_text()
     assert 'all_good' in html
     assert 'all_bad' not in html
     assert 'all_awesome' in html
+
+
+@with_app(buildername='html', srcdir='doc_test/doc_df_user_functions')
+def test_doc_df_user_functions(app, status, warning):
+    app.build()
+    html = Path(app.outdir, 'index.html').read_text()
+    assert 'Awesome' in html

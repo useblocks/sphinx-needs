@@ -37,7 +37,7 @@ else:
 
     logging.basicConfig()  # Only need to do this once
 
-VERSION = '0.3.9'
+VERSION = '0.3.10'
 
 DEFAULT_TEMPLATE_COLLAPSE = """
 .. _{{id}}:
@@ -149,7 +149,7 @@ def setup(app):
                          DEFAULT_DIAGRAM_TEMPLATE,
                          'html')
 
-    app.add_config_value('needs_functions', None, 'html')
+    # app.add_config_value('needs_functions', None, 'html')
     app.add_config_value('needs_global_options', {}, 'html')
     app.add_config_value('needs_hide_options', [], 'html')
 
@@ -217,6 +217,7 @@ def setup(app):
         extra_options = getattr(config, "needs_extra_options", app.config.needs_extra_options)
         title_optional = getattr(config, "needs_title_optional", app.config.needs_title_optional)
         title_from_content = getattr(config, "needs_title_from_content", app.config.needs_title_from_content)
+        app.needs_functions = getattr(config, "needs_functions", [])
     except IOError:
         types = app.config.needs_types
     except Exception as e:
@@ -318,7 +319,9 @@ def prepare_env(app, env, docname):
     if not hasattr(env, 'needs_functions'):
         # Used to store all registered functions for supporting dynamic need values.
         env.needs_functions = {}
-        needs_functions = getattr(app.config, 'needs_functions', [])
+
+        # needs_functions = getattr(app.config, 'needs_functions', [])
+        needs_functions = app.needs_functions
         if needs_functions is None:
             needs_functions = []
         if not isinstance(needs_functions, list):
@@ -330,7 +333,7 @@ def prepare_env(app, env, docname):
 
         # Register functions configured by user
         for needs_func in needs_functions:
-            register_func(app, needs_func)
+            register_func(env, needs_func)
 
     app.config.needs_hide_options += ['hidden']
     app.config.needs_extra_options['hidden'] = directives.unchanged

@@ -1,6 +1,14 @@
 Changelog
 =========
 
+0.3.10
+------
+* Bugfix: **type** was missing in output of builder :ref:`needs_builder` (`#79 <https://github.com/useblocks/sphinxcontrib-needs/issues/79>`_ )
+* Bugfix: **needs_functions** parameter in *conf.py* created a sphinx error, if
+  containing python methods. Internal workaround added, so that usage of own
+  :ref:`dynamic_functions` stays the same as in prior versions (`#78 <https://github.com/useblocks/sphinxcontrib-needs/issues/78>`_ )
+
+
 0.3.9
 -----
 * Bugfix: Grubby tag/link strings in needs, which define empty links/tags, produce a warning now.
