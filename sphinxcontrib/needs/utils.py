@@ -114,8 +114,7 @@ def process_dynamic_values(app, doctree, fromdocname):
 class NeedsList:
     JSON_KEY_EXCLUSIONS = {'links_back', 'type_color', 'hide_status',
                            'target_node', 'hide', 'type_prefix', 'lineno',
-                           'type', 'collapse',
-                           'type_style', 'hide_tags', 'content'}
+                           'collapse', 'type_style', 'hide_tags', 'content'}
 
     def __init__(self, config, outdir, confdir):
         self.log = logging.getLogger(__name__)

@@ -12,3 +12,9 @@ TEST DOCUMENT IMPORT
 .. toctree::
 
    filter
+
+.. req:: Test requirement 1
+   :id: REQ_1
+
+.. spec:: Test specification 1
+   :id: SPEC_1

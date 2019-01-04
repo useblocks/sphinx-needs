@@ -1,3 +1,5 @@
+import json
+
 try:
     from pathlib import Path
 except ImportError:
@@ -23,3 +25,19 @@ def test_import_json(app, status, warning):
     # search() test
     assert "AAA" in filter_html
 
+
+@with_app(buildername='needs', srcdir='doc_test/import_doc')  # , warningiserror=True)
+def test_import_builder(app, status, warning):
+    app.build()
+    needs_text = Path(app.outdir, 'needs.json').read_text()
+    needs = json.loads(needs_text)
+    assert 'created' in needs.keys()
+    need = needs['versions']['1.0']['needs']['REQ_1']
+
+    check_keys = ['id', 'type', 'description', 'full_title', 'is_need',
+                  'is_part', 'links', 'section_name', 'status', 'tags',
+                  'title', 'type_name']
+
+    for key in check_keys:
+        if key not in need.keys():
+            raise AssertionError('%s not in exported need' % key)
