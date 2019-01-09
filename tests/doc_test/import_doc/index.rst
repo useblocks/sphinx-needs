@@ -1,8 +1,12 @@
 TEST DOCUMENT IMPORT
 ====================
 
+.. needimport:: needs_test.json
 
 .. needimport:: needs_test.json
+   :id_prefix: hidden_
+   :tags: hidden
+   :hide:
 
 .. needimport:: needs_test.json
    :id_prefix: test_

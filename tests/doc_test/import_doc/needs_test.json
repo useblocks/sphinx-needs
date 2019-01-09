@@ -176,6 +176,7 @@
                         "IMPL_01"
                     ],
                     "status": "implemented",
+                    "hide": true,
                     "tags": [
                         "test",
                         "user_interface",

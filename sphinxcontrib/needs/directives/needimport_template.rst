@@ -8,11 +8,11 @@
    {% endif -%}
    {% if need.tags|length > 0 -%}
    :tags: {{need.tags|join(',')}}
-   {% endif %}
+   {% endif -%}
    {% if hide or need.hide -%}
    :hide:
    {% endif %}
    {% for line in need.description.split('\n') -%}
-   {{line}}
+   {{ line }}
    {% endfor %}
 {% endfor %}

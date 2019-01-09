@@ -17,6 +17,10 @@ def test_import_json(app, status, warning):
     assert 'test_TEST_01' in html
     assert 'new_tag' in html
 
+    # Check hidden
+    assert "needs-tag hidden" not in html
+    assert "Test for XY" not in html
+
     # Check filters
     filter_html = Path(app.outdir, 'filter.html').read_text()
     assert "TEST_01" not in filter_html
@@ -24,6 +28,7 @@ def test_import_json(app, status, warning):
 
     # search() test
     assert "AAA" in filter_html
+
 
 
 @with_app(buildername='needs', srcdir='doc_test/import_doc')  # , warningiserror=True)
