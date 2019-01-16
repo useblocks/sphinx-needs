@@ -18,11 +18,11 @@ DYNAMIC FUNCTIONS
    :hours: 40000
 
 .. spec:: Result 1
-   :hours: [[calc_sum('hours')]]
+   :amount: [[calc_sum('hours')]]
 
 .. spec:: Result 2
    :links: TEST_1,TEST_2,TEST_3
-   :hours: [[calc_sum('hours', links_only=True)]]
+   :amount: [[calc_sum('hours', links_only=True)]]
 
 .. spec:: Result 3
-   :hours: [[calc_sum('hours', filter='id in ["TEST_1","TEST_2"]')]]
+   :amount: [[calc_sum('hours', filter='id in ["TEST_1","TEST_2"]')]]
