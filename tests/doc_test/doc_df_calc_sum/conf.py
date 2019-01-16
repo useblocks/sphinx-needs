@@ -44,7 +44,8 @@ needs_types = [
 
 needs_extra_options = {
     'test_func': directives.unchanged,
-    'hours': directives.unchanged
+    'hours': directives.unchanged,
+    'amount': directives.unchanged
 }
 
 cwd = os.getcwd()
