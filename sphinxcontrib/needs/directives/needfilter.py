@@ -142,13 +142,6 @@ def process_needfilters(app, doctree, fromdocname):
             content += tgroup
 
         all_needs = list(all_needs.values())
-
-        if current_needfilter["sort_by"] is not None:
-            if current_needfilter["sort_by"] == "id":
-                all_needs = sorted(all_needs, key=lambda node: node["id"])
-            elif current_needfilter["sort_by"] == "status":
-                all_needs = sorted(all_needs, key=status_sorter)
-
         found_needs = procces_filters(all_needs, current_needfilter)
 
         line_block = nodes.line_block()
