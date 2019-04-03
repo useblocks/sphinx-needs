@@ -19,14 +19,13 @@ else:
 
 
 class FilterBase(Directive):
-    def sort_by(argument):
-        return directives.choice(argument, ("status", "id"))
-
-    base_option_spec = {'status': directives.unchanged_required,
-                        'tags': directives.unchanged_required,
-                        'types': directives.unchanged_required,
-                        'filter': directives.unchanged_required,
-                        'sort_by': sort_by}
+    base_option_spec = {
+        "status": directives.unchanged_required,
+        "tags": directives.unchanged_required,
+        "types": directives.unchanged_required,
+        "filter": directives.unchanged_required,
+        "sort_by": directives.unchanged,
+    }
 
     def collect_filter_attributes(self):
         tags = str(self.options.get("tags", ""))
@@ -75,11 +74,18 @@ def procces_filters(all_needs, current_needlist):
     :return: list of needs, which passed the filters
     """
 
-    if current_needlist["sort_by"] is not None:
-        if current_needlist["sort_by"] == "id":
-            all_needs = sorted(all_needs, key=lambda node: node["id"])
-        elif current_needlist["sort_by"] == "status":
+    sort_key = current_needlist["sort_by"]
+    if sort_key is not None:
+        if sort_key == "status":
             all_needs = sorted(all_needs, key=status_sorter)
+        else:
+            try:
+                sorted_needs = sorted(all_needs, key=lambda node: node[sort_key])
+                all_needs = sorted_needs
+            except Exception as e:
+                logger.warning(
+                    "Sorting parameter {0} not valid: Error: {1}".format(sort_key, e)
+                )
 
     found_needs_by_options = []
 
