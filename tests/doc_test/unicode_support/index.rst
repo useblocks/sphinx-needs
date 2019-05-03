@@ -1,7 +1,7 @@
 TEST DOCUMENT NEEDLIST
 ======================
 
-.. req:: Загрузка CPU
+.. spec:: Загрузка CPU
    :id: RQ001
 
 Linking to requirement: :need:`RQ001`
@@ -13,3 +13,5 @@ Linking to requirement: :need:`RQ001`
 
 
 .. needtable::
+
+.. needflow::

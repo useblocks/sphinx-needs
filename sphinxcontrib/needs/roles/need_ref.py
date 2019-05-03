@@ -42,7 +42,7 @@ def process_need_ref(app, doctree, fromdocname):
                     title = target_need["title"]
 
                 # Shorten title, if necessary
-                title = title if len(title) < 30 else '{}...'.format(title[:27])
+                title = title if len(title) < 30 else u'{}...'.format(title[:27])
 
                 link_text = app.config.needs_role_need_template.format(title=title,
                                                                        id=node_need_ref['reftarget'],

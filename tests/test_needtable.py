@@ -16,18 +16,32 @@ def test_doc_build_html(app, status, warning):
 
 @with_app(buildername='html', srcdir='doc_test/doc_needtable')
 def test_doc_needtable_options(app, status, warning):
+    import sphinx
     app.build()
     html = Path(app.outdir, 'test_options.html').read_text()
     assert 'SP_TOO_003' in html
     assert 'id="needtable-test_options-0"' in html
     assert 'id="needtable-test_options-1"' in html
-    column_order = """
+
+    if sphinx.version_info[0] < 2:
+        column_order = """
 <tr class="row-odd"><th class="head">Incoming</th>
 <th class="head">ID</th>
 <th class="head">Tags</th>
 <th class="head">Status</th>
 <th class="head">Title</th>
 """
+    else:
+        column_order = """
+<tr class="row-odd"><th class="head"><p>ID</p></th>
+<th class="head"><p>Title</p></th>
+<th class="head"><p>Status</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Outgoing</p></th>
+<th class="head"><p>Tags</p></th>
+</tr>
+"""
+
     assert column_order in html
 
 
