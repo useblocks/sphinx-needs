@@ -12,7 +12,13 @@ TEST OPTIONS
    :links: SP_TOO_003
    :tags: 1
 
+
+table 1
+--------
 .. needtable::
+
+table 2
+-------
 
 .. needtable::
    :columns: Incoming;Id;tags;STATUS;TiTle

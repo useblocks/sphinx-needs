@@ -6,6 +6,7 @@ try:
 except ImportError:
     from pathlib2 import Path
 
+
 @with_app(buildername='html', srcdir='doc_test/doc_needtable')
 def test_doc_build_html(app, status, warning):
     app.build()
@@ -33,12 +34,11 @@ def test_doc_needtable_options(app, status, warning):
 """
     else:
         column_order = """
-<tr class="row-odd"><th class="head"><p>ID</p></th>
-<th class="head"><p>Title</p></th>
-<th class="head"><p>Status</p></th>
-<th class="head"><p>Type</p></th>
-<th class="head"><p>Outgoing</p></th>
+<tr class="row-odd"><th class="head"><p>Incoming</p></th>
+<th class="head"><p>ID</p></th>
 <th class="head"><p>Tags</p></th>
+<th class="head"><p>Status</p></th>
+<th class="head"><p>Title</p></th>
 </tr>
 """
 
