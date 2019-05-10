@@ -182,6 +182,52 @@ Combined with :ref:`dynamic_functions` this can be a powerful method to automate
    }
 
 
+.. _needs_extra_links:
+
+needs_extra_links
+~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.3.0
+
+Allows the definition of additional link types.
+
+Each configured link should define:
+
+* **name**: The name of the outgoing link. Will be used also as name for the need-option.. E.g. "blocks".
+* **incoming**: Incoming text, which shall be used for incoming links. E.g. "is blocked by".
+* **copy** (optional): True/False. If True, the links will be copied also to the common link-list. Default: True
+* **color** (optional): String as a hex-color value, e.g. "#FFCC00". Used for :ref:`needflow`. Default: #000000
+
+Configuration example::
+
+   needs_extra_links = [
+      {
+         "name": "blocks",
+         "incoming": "is blocked by",
+      },
+      {
+         "name": "tests",
+         "incoming": "is tested by",
+         "copy": False,
+         "color": "#00AA00"
+      }
+   ]
+
+
+The above example configuration allows the following usage::
+
+   .. req:: My requirement
+      :id: REQ_001
+      :links: SPEC_001
+      :blocks: REQ_003, REQ_017
+
+   .. test:: Test of requirements
+      :tests: REQ_001, REQ_003
+
+**Attention**: The used names can not be reused in the configuration of :ref:`needs_global_options`.
+
+
+
 .. _needs_hide_options:
 
 needs_hide_options

@@ -145,6 +145,23 @@ needs_types = [dict(directive="req", title="Requirement", prefix="R_", color="#B
                dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="node"),
                dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="node"),
                ]
+
+needs_extra_links = [
+    {
+        "name": "blocks",
+        "incoming": "is blocked by",
+        "outgoing": "blocks",
+        "copy": True,
+        "color": "#AA0000"
+    },
+    {
+        "name": "tests",
+        "incoming": "is tested by",
+        "outgoing": "tests",
+        "copy": True,
+        "color": "#00AA00"
+    }]
+
 needs_show_link_type = False
 needs_show_link_title = False
 needs_title_optional = True

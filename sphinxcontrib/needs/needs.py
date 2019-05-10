@@ -173,6 +173,15 @@ def setup(app):
     # Prefix for need_part output in tables
     app.add_config_value('needs_part_prefix', u'\u2192\u00a0', 'html')
 
+    # List of additional links, which can be used by setting related option
+    # Values needed for each new link:
+    # * name (will also be the option name)
+    # * incoming
+    # * copy_link (copy to common links data. Default: True)
+    # * color (used for needflow. Default: #000000)
+    # Example: [{"name": "blocks, "incoming": "is blocked by", "copy_link": True, "color": "#ffcc00"}]
+    app.add_config_value('needs_extra_links', [], 'html')
+
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(Needfilter, )
@@ -215,6 +224,13 @@ def setup(app):
         os.chdir(old_cwd)  # Lets switch back the cwd, otherwise other stuff may not run...
         types = getattr(config, "needs_types", app.config.needs_types)
         extra_options = getattr(config, "needs_extra_options", app.config.needs_extra_options)
+
+        # Get extra links and create a dictionary of needed options.
+        extra_links_raw = getattr(config, "needs_extra_links", app.config.needs_extra_links)
+        extra_links = {}
+        for extra_link in extra_links_raw:
+            extra_links[extra_link['name']] = directives.unchanged
+
         title_optional = getattr(config, "needs_title_optional", app.config.needs_title_optional)
         title_from_content = getattr(config, "needs_title_from_content", app.config.needs_title_from_content)
         app.needs_functions = getattr(config, "needs_functions", [])
@@ -227,6 +243,10 @@ def setup(app):
 
     # Update NeedDirective to use customized options
     NeedDirective.option_spec.update(extra_options)
+
+    # Update NeedDirective to use customized links
+    NeedDirective.option_spec.update(extra_links)
+
     if title_optional or title_from_content:
         NeedDirective.required_arguments = 0
         NeedDirective.optional_arguments = 1
@@ -337,6 +357,14 @@ def prepare_env(app, env, docname):
 
     app.config.needs_hide_options += ['hidden']
     app.config.needs_extra_options['hidden'] = directives.unchanged
+    common_links = [{
+        'name': 'links',
+        'outgoing': 'links outgoing',
+        'incoming': 'link incoming',
+        'copy': False,
+        'color': '#000000'
+    }]
+    app.config.needs_extra_links = common_links + app.config.needs_extra_links
 
     if not hasattr(env, 'needs_workflow'):
         # Used to store workflow status information for already executed tasks.
@@ -344,6 +372,8 @@ def prepare_env(app, env, docname):
         # But most sphinx-events get called several times (for each single document file), which would also
         # execute our code several times...
         env.needs_workflow = {
-            'backlink_creation': False,
+            'backlink_creation_links': False,
             'dynamic_values_resolved': False
         }
+        for link_type in app.config.needs_extra_links:
+            env.needs_workflow['backlink_creation_{}'.format(link_type['name'])] = False

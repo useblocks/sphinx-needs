@@ -29,7 +29,14 @@ def process_need_outgoing(app, doctree, fromdocname):
         node_link_container = nodes.inline()
         ref_need = env.needs_all_needs[node_need_ref['reftarget']]
 
-        for index, link in enumerate(ref_need["links"]):
+        # Lets check if Need_incoming shall follow a specific link type
+        if "link_type" in node_need_ref.attributes.keys():
+            links = ref_need[node_need_ref.attributes['link_type']]
+        # if not, follow back to default links
+        else:
+            links = ref_need["links_back"]
+
+        for index, link in enumerate(links):
             link_split = link.split('.')
             link = link_split[0]
             try:
@@ -71,7 +78,7 @@ def process_need_outgoing(app, doctree, fromdocname):
                     node_link_container += new_node_ref
 
                     # If we have several links, we add an empty text between them
-                    if index + 1 < len(ref_need["links"]):
+                    if index + 1 < len(links):
                         node_link_container += nodes.Text(" ", " ")
 
                 except NoUri:
