@@ -219,8 +219,8 @@ class NeedDirective(Directive):
 
         # Merge links
         for link in env.config.needs_extra_links:
-            needs_info[link["name"]] = self.read_in_links(link["name"])
-            needs_info['{}_back'.format(link["name"])] = set()
+            needs_info[link["option"]] = self.read_in_links(link["option"])
+            needs_info['{}_back'.format(link["option"])] = set()
 
         env.needs_all_needs[id] = needs_info
 
@@ -417,7 +417,7 @@ def process_need_nodes(app, doctree, fromdocname):
 
     # Create back links of common links and extra links
     for links in env.config.needs_extra_links:
-        create_back_links(env, links['name'])
+        create_back_links(env, links['option'])
 
     for node_need in doctree.traverse(Need):
         need_id = node_need.attributes["ids"][0]
@@ -448,7 +448,7 @@ def process_need_nodes(app, doctree, fromdocname):
             node_need.insert(0, node_meta)
 
 
-def create_back_links(env, name):
+def create_back_links(env, option):
     """
     Create back-links in all found needs.
     But do this only once, as all needs are already collected and this sorting is for all
@@ -457,13 +457,13 @@ def create_back_links(env, name):
     :param env: sphinx enviroment
     :return: None
     """
-    name_back = '{}_back'.format(name)
-    if env.needs_workflow['backlink_creation_{}'.format(name)]:
+    option_back = '{}_back'.format(option)
+    if env.needs_workflow['backlink_creation_{}'.format(option)]:
         return
 
     needs = env.needs_all_needs
     for key, need in needs.items():
-        for link in need[name]:
+        for link in need[option]:
             link_main = link.split('.')[0]
             try:
                 link_part = link.split('.')[1]
@@ -471,17 +471,17 @@ def create_back_links(env, name):
                 link_part = None
 
             if link_main in needs:
-                if key not in needs[link_main][name_back]:
-                    needs[link_main][name_back].append(key)
+                if key not in needs[link_main][option_back]:
+                    needs[link_main][option_back].append(key)
 
                 # Handling of links to need_parts inside a need
                 if link_part is not None:
                     if link_part in needs[link_main]['parts']:
-                        if name_back not in needs[link_main]['parts'][link_part].keys():
-                            needs[link_main]['parts'][link_part][name_back] = []
-                        needs[link_main]['parts'][link_part][name_back].append(key)
+                        if option_back not in needs[link_main]['parts'][link_part].keys():
+                            needs[link_main]['parts'][link_part][option_back] = []
+                        needs[link_main]['parts'][link_part][option_back].append(key)
 
-    env.needs_workflow['backlink_creation_{}'.format(name)] = True
+    env.needs_workflow['backlink_creation_{}'.format(option)] = True
 
 
 def construct_headline(need_data, app):
@@ -562,9 +562,9 @@ def construct_meta(need_data, env):
 
     # Links incoming
     for link_type in env.config.needs_extra_links:
-        link_back = '{}_back'.format(link_type['name'])
+        link_back = '{}_back'.format(link_type['option'])
         if need_data[link_back] and link_back not in hide_options:
-            node_incoming_line = nodes.line(classes=[link_type['name'], 'incoming'])
+            node_incoming_line = nodes.line(classes=[link_type['option'], 'incoming'])
             prefix = "{}: ".format(link_type['incoming'])
             node_incoming_prefix = nodes.inline(prefix, prefix)
             node_incoming_line.append(node_incoming_prefix)
@@ -575,9 +575,9 @@ def construct_meta(need_data, env):
 
     # Links outgoing
     for link_type in env.config.needs_extra_links:
-        link = '{}'.format(link_type['name'])
+        link = '{}'.format(link_type['option'])
         if need_data[link] and link not in hide_options:
-            node_outgoing_line = nodes.line(classes=[link_type['name'], 'outgoing'])
+            node_outgoing_line = nodes.line(classes=[link_type['option'], 'outgoing'])
             prefix = "{}: ".format(link_type['outgoing'])
             node_outgoing_prefix = nodes.inline(prefix, prefix)
             node_outgoing_line.append(node_outgoing_prefix)

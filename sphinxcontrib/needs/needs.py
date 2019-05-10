@@ -229,7 +229,7 @@ def setup(app):
         extra_links_raw = getattr(config, "needs_extra_links", app.config.needs_extra_links)
         extra_links = {}
         for extra_link in extra_links_raw:
-            extra_links[extra_link['name']] = directives.unchanged
+            extra_links[extra_link['option']] = directives.unchanged
 
         title_optional = getattr(config, "needs_title_optional", app.config.needs_title_optional)
         title_from_content = getattr(config, "needs_title_from_content", app.config.needs_title_from_content)
@@ -357,8 +357,10 @@ def prepare_env(app, env, docname):
 
     app.config.needs_hide_options += ['hidden']
     app.config.needs_extra_options['hidden'] = directives.unchanged
+
+    # The default link name. Must exist in all configurations. Therefore we set it here for the user.
     common_links = [{
-        'name': 'links',
+        'option': 'links',
         'outgoing': 'links outgoing',
         'incoming': 'link incoming',
         'copy': False,
@@ -376,4 +378,4 @@ def prepare_env(app, env, docname):
             'dynamic_values_resolved': False
         }
         for link_type in app.config.needs_extra_links:
-            env.needs_workflow['backlink_creation_{}'.format(link_type['name'])] = False
+            env.needs_workflow['backlink_creation_{}'.format(link_type['option'])] = False

@@ -193,8 +193,9 @@ Allows the definition of additional link types.
 
 Each configured link should define:
 
-* **name**: The name of the outgoing link. Will be used also as name for the need-option.. E.g. "blocks".
+* **option**: The name of the option. Example "blocks".
 * **incoming**: Incoming text, which shall be used for incoming links. E.g. "is blocked by".
+* **outgoing**: Outgoing text, which shall be used for outgoing links. E.g. "blocks".
 * **copy** (optional): True/False. If True, the links will be copied also to the common link-list. Default: True
 * **color** (optional): String as a hex-color value, e.g. "#FFCC00". Used for :ref:`needflow`. Default: #000000
 
@@ -202,12 +203,14 @@ Configuration example::
 
    needs_extra_links = [
       {
-         "name": "blocks",
+         "option": "blocks",
          "incoming": "is blocked by",
+         "outgoing: "blocks"
       },
       {
-         "name": "tests",
+         "option": "tests",
          "incoming": "is tested by",
+         "outgoing": "tests",
          "copy": False,
          "color": "#00AA00"
       }
@@ -224,9 +227,7 @@ The above example configuration allows the following usage::
    .. test:: Test of requirements
       :tests: REQ_001, REQ_003
 
-**Attention**: The used names can not be reused in the configuration of :ref:`needs_global_options`.
-
-
+**Attention**: The used option name can not be reused in the configuration of :ref:`needs_global_options`.
 
 .. _needs_hide_options:
 

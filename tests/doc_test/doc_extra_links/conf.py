@@ -33,7 +33,6 @@ sys.path.insert(0, os.path.abspath('../../sphinxcontrib'))
 
 extensions = ['sphinxcontrib.needs']
 
-
 needs_types = [
     dict(directive="story", title="User Story", prefix="US_", color="#BFD8D2", style="node"),
     dict(directive="spec", title="Specification", prefix="SP_", color="#FEDCD2", style="node"),
@@ -43,19 +42,21 @@ needs_types = [
 
 needs_extra_links = [
     {
-         "name": "blocks",
-         "incoming": "is blocked by",
-         "outgoing": "blocks",
-         "copy": True,
-         "color": "#AA0000"
+        "option": "blocks",
+        "incoming": "is blocked by",
+        "outgoing": "blocks",
+        "copy": True,
+        "color": "#AA0000"
     },
     {
-         "name": "tests",
-         "incoming": "is tested by",
-         "outgoing": "tests",
-         "copy": True,
-         "color": "#00AA00"
+        "option": "tests",
+        "incoming": "is tested by",
+        "outgoing": "tests",
+        "copy": True,
+        "color": "#00AA00"
     }]
+
+needs_collapse_details = False
 
 cwd = os.getcwd()
 plantuml = 'java -jar %s' % os.path.join(cwd, "../utils/plantuml_beta.jar")
@@ -157,7 +158,7 @@ latex_elements = {
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
-#  author, documentclass [howto, manual, or own class]).
+# author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'needstestdocs.tex', 'needs test docs Documentation',
      'team useblocks', 'manual'),

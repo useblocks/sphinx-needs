@@ -148,14 +148,14 @@ needs_types = [dict(directive="req", title="Requirement", prefix="R_", color="#B
 
 needs_extra_links = [
     {
-        "name": "blocks",
+        "option": "blocks",
         "incoming": "is blocked by",
         "outgoing": "blocks",
         "copy": True,
         "color": "#AA0000"
     },
     {
-        "name": "tests",
+        "option": "tests",
         "incoming": "is tested by",
         "outgoing": "tests",
         "copy": True,
