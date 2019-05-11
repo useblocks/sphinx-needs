@@ -26,8 +26,7 @@ class NeedtableDirective(FilterBase):
     option_spec = {'show_filters': directives.flag,
                    'show_parts': directives.flag,
                    'columns': directives.unchanged_required,
-                   'style': directives.unchanged_required,
-                   }
+                   'style': directives.unchanged_required}
 
     # Update the options_spec with values defined in the FilterBase class
     option_spec.update(FilterBase.base_option_spec)
@@ -83,6 +82,20 @@ def process_needtables(app, doctree, fromdocname):
     :return:
     """
     env = app.builder.env
+
+    # Create a link_type dictionary, which keys-list can be easily used to find columns
+    link_type_list = {}
+    for link_type in app.config.needs_extra_links:
+        link_type_list[link_type["option"].upper()] = link_type
+        link_type_list[link_type["option"].upper() + '_BACK'] = link_type
+        link_type_list[link_type["incoming"].upper()] = link_type
+        link_type_list[link_type["outgoing"].upper()] = link_type
+
+        # Extra handling tb backward compatible, as INCOMING and OUTGOING are
+        # known und used column names for incoming/outgoing links
+        if link_type['option'] == 'links':
+            link_type_list['OUTGOING'] = link_type
+            link_type_list['INCOMING'] = link_type
 
     for node in doctree.traverse(Needtable):
         if not app.config.needs_include_needs:
@@ -163,11 +176,14 @@ def process_needtables(app, doctree, fromdocname):
                     row += row_col_maker(
                         app, fromdocname, env.needs_all_needs, temp_need, "title",
                         prefix=app.config.needs_part_prefix)
-                elif col == "INCOMING":
-                    row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need,
-                                         "links_back", ref_lookup=True)
-                elif col == "OUTGOING":
-                    row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need, "links", ref_lookup=True)
+                elif col in link_type_list.keys():
+                    link_type = link_type_list[col]
+                    if col == 'INCOMING' or col == link_type['option'].upper() + '_BACK' or col == link_type['incoming'].upper():
+                        row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need,
+                                             link_type['option'] + '_back', ref_lookup=True)
+                    else:
+                        row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need,
+                                             link_type['option'], ref_lookup=True)
                 else:
                     row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need, col.lower())
             tbody += row
@@ -189,14 +205,18 @@ def process_needtables(app, doctree, fromdocname):
                             row += row_col_maker(
                                 app, fromdocname, env.needs_all_needs, temp_part, "content",
                                 prefix=app.config.needs_part_prefix)
-                        elif col == "INCOMING":
-                            row += row_col_maker(
-                                app, fromdocname, env.needs_all_needs, temp_part, "links_back", ref_lookup=True)
-                        else:
-                            row += row_col_maker(
-                                app, fromdocname, env.needs_all_needs, temp_part, col.lower())
+                        elif col in link_type_list.keys() and (
+                            col == link_type_list[col]['option'].upper() + '_BACK' or
+                            col == link_type_list[col]['incoming'].upper()):
 
-                    tbody += row
+                            row += row_col_maker(
+                                app, fromdocname, env.needs_all_needs, temp_part,
+                                link_type_list[col]['option'] + '_back', ref_lookup=True)
+                    else:
+                        row += row_col_maker(
+                            app, fromdocname, env.needs_all_needs, temp_part, col.lower())
+
+                tbody += row
 
         if len(found_needs) == 0:
             content.append(no_needs_found_paragraph())

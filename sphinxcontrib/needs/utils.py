@@ -42,7 +42,12 @@ def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=Fal
             link_id = datum
             link_part = None
 
-            if need_key in ['links', 'back_links']:
+            link_list = []
+            for link_type in app.env.config.needs_extra_links:
+                link_list.append(link_type["option"])
+                link_list.append(link_type["option"] + '_back')
+
+            if need_key in link_list:
                 if '.' in datum:
                     link_id = datum.split('.')[0]
                     link_part = datum.split('.')[1]
