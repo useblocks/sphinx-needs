@@ -274,7 +274,7 @@ search(pattern, variable) is based on
 `Pythons re.search() function <https://docs.python.org/3/library/re.html#re.search>`_
 
 The first parameter must be a regular expression pattern.
-The second parameter should be on of the above variables(status, id, content, ..)
+The second parameter should be one of the above variables(status, id, content, ..)
 
 .. container:: toggle
 
