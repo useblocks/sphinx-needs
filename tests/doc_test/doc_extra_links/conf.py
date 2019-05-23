@@ -31,7 +31,8 @@ sys.path.insert(0, os.path.abspath('../../sphinxcontrib'))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 
-extensions = ['sphinxcontrib.needs']
+extensions = ['sphinxcontrib.needs',
+              'sphinxcontrib.plantuml']
 
 needs_types = [
     dict(directive="story", title="User Story", prefix="US_", color="#BFD8D2", style="node"),
@@ -42,23 +43,32 @@ needs_types = [
 
 needs_extra_links = [
     {
+        "option": "links",
+        "incoming": "is linked by",
+        "outgoing": "links to",
+        "copy": False,
+        "style": "#black",
+        "style_part": "dotted,#black"
+    },
+    {
         "option": "blocks",
         "incoming": "is blocked by",
         "outgoing": "blocks",
         "copy": True,
-        "color": "#AA0000"
+        "style": "bold,#AA0000",
     },
     {
         "option": "tests",
         "incoming": "is tested by",
         "outgoing": "tests",
-        "copy": True,
-        "color": "#00AA00"
+        "copy": False,
+        "style": "dashed,#00AA00",
+        "style_part": "dotted,#00AA00"
     }]
 
 needs_collapse_details = False
 
-cwd = os.getcwd()
+cwd = os.path.dirname(__file__)
 plantuml = 'java -jar %s' % os.path.join(cwd, "../utils/plantuml_beta.jar")
 
 # If we are running on windows, we need to manipulate the path,

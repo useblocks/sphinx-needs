@@ -212,8 +212,8 @@ def process_needtables(app, doctree, fromdocname):
                             row += row_col_maker(
                                 app, fromdocname, env.needs_all_needs, temp_part,
                                 link_type_list[col]['option'] + '_back', ref_lookup=True)
-                    else:
-                        row += row_col_maker(
+                        else:
+                            row += row_col_maker(
                             app, fromdocname, env.needs_all_needs, temp_part, col.lower())
 
                 tbody += row

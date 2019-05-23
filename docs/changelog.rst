@@ -4,6 +4,8 @@ Changelog
 0.3.11
 ------
 * Improvement: Added config option :ref:`needs_extra_links` to define additional link types like *blocks*, *tested by* and more.
+  Supports also style configuration and custom presentation names for links.
+* Improvement: Added config option :ref:`needs_flow_show_links` and related needflow option :ref:`needflow_show_link_names`.
 * Bugfix: Unicode handling for Python 2.7 fixed. (`#86 <https://github.com/useblocks/sphinxcontrib-needs/issues/86>`_)
 
 0.3.10

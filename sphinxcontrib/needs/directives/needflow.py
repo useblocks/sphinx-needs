@@ -28,7 +28,8 @@ class NeedflowDirective(FilterBase):
        Use needlist, needtable or needdiagram instead
     """
     option_spec = {'show_legend': directives.flag,
-                   'show_filters': directives.flag}
+                   'show_filters': directives.flag,
+                   'show_link_names': directives.flag}
 
     # Update the options_spec with values defined in the FilterBase class
     option_spec.update(FilterBase.base_option_spec)
@@ -54,6 +55,7 @@ class NeedflowDirective(FilterBase):
             'target_node': targetnode,
             'show_filters': True if self.options.get("show_filters", False) is None else False,
             'show_legend': True if self.options.get("show_legend", False) is None else False,
+            'show_link_names': True if self.options.get("show_link_names", False) is None else False,
         }
         env.need_all_needflows[targetid].update(self.collect_filter_attributes())
 
@@ -73,6 +75,7 @@ def process_needflow(app, doctree, fromdocname):
     # Augment each need with a backlink to the original location.
     env = app.builder.env
 
+    link_types = env.config.needs_extra_links
     # NEEDFLOW
     for node in doctree.traverse(Needflow):
         if not app.config.needs_include_needs:
@@ -144,21 +147,41 @@ def process_needflow(app, doctree, fromdocname):
                 id=make_entity_name(need_info["id"]), node_text=node_text,
                 link=make_entity_name(link), color=need_info["type_color"],
                 style=need_info["type_style"])
-            for link in need_info["links"]:
-                if '.' in link:
-                    final_link = link.split('.')[0]
-                    comment = ': {part}'.format(part=link.split('.')[1])
-                    link_style = '..'
-                else:
-                    final_link = link
-                    comment = ''
-                    link_style = '--'
-                puml_connections += '{id} {link_style}> {link}{comment}\n'.format(
-                    id=make_entity_name(need_info["id"]),
-                    link=make_entity_name(final_link),
-                    comment=comment,
-                    link_style=link_style
-                )
+
+            for link_type in link_types:
+                for link in need_info[link_type['option']]:
+                    if '.' in link:
+                        final_link = link.split('.')[0]
+                        if current_needflow["show_link_names"] or env.config.needs_flow_show_links:
+                            desc = link_type['outgoing'] + '\\n'
+                        else:
+                            desc = ''
+
+                        comment = ': {desc}{part}'.format(desc=desc, part=link.split('.')[1])
+                        if "style_part" in link_type.keys() and link_type['style_part'] is not None and \
+                                len(link_type['style_part']) > 0:
+                            link_style = '[{style}]'.format(style=link_type['style_part'])
+                        else:
+                            link_style = "[dotted]"
+                    else:
+                        final_link = link
+                        if current_needflow["show_link_names"] or env.config.needs_flow_show_links:
+                            comment = ': {desc}'.format(desc=link_type['outgoing'])
+                        else:
+                            comment = ''
+
+                        if "style" in link_type.keys() and link_type['style'] is not None and \
+                                len(link_type['style']) > 0:
+                            link_style = '[{style}]'.format(style=link_type['style'])
+                        else:
+                            link_style = ""
+
+                    puml_connections += '{id} --{link_style}> {link}{comment}\n'.format(
+                        id=make_entity_name(need_info["id"]),
+                        link=make_entity_name(final_link),
+                        comment=comment,
+                        link_style=link_style
+                    )
 
         puml_node["uml"] += puml_connections
 

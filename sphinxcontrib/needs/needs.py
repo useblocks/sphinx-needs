@@ -182,6 +182,8 @@ def setup(app):
     # Example: [{"name": "blocks, "incoming": "is blocked by", "copy_link": True, "color": "#ffcc00"}]
     app.add_config_value('needs_extra_links', [], 'html')
 
+    app.add_config_value('needs_flow_show_links', False, 'html')
+
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(Needfilter, )
@@ -359,13 +361,23 @@ def prepare_env(app, env, docname):
     app.config.needs_extra_options['hidden'] = directives.unchanged
 
     # The default link name. Must exist in all configurations. Therefore we set it here for the user.
-    common_links = [{
-        'option': 'links',
-        'outgoing': 'links outgoing',
-        'incoming': 'link incoming',
-        'copy': False,
-        'color': '#000000'
-    }]
+    common_links = []
+    link_types = app.config.needs_extra_links
+    basic_link_type_found = False
+    for link_type in link_types:
+        if link_type['option'] == 'links':
+            basic_link_type_found = True
+            break
+
+    if not basic_link_type_found:
+        common_links.append({
+            'option': 'links',
+            'outgoing': 'links outgoing',
+            'incoming': 'link incoming',
+            'copy': False,
+            'color': '#000000'
+        })
+
     app.config.needs_extra_links = common_links + app.config.needs_extra_links
 
     if not hasattr(env, 'needs_workflow'):

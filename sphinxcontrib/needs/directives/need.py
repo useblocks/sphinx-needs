@@ -218,9 +218,17 @@ class NeedDirective(Directive):
         self.merge_global_options(needs_info)
 
         # Merge links
-        for link in env.config.needs_extra_links:
-            needs_info[link["option"]] = self.read_in_links(link["option"])
-            needs_info['{}_back'.format(link["option"])] = set()
+        copy_links = []
+
+        for link_type in env.config.needs_extra_links:
+            links = self.read_in_links(link_type["option"])
+            needs_info[link_type["option"]] = links
+            needs_info['{}_back'.format(link_type["option"])] = set()
+
+            if link_type['copy'] and link_type['option'] != 'links':
+                copy_links += links
+
+        needs_info['links'] += copy_links
 
         env.needs_all_needs[id] = needs_info
 
