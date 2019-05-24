@@ -169,23 +169,6 @@ class NeedDirective(Directive):
             # ToDo: There may be a smart regex for the splitting. This would avoid this mess of code...
         tags = _fix_list_dyn_func(tags)
 
-        # Get links
-        links_string = self.options.get("links", [])
-        links = []
-        if len(links_string) > 0:
-            # links = [link.strip() for link in re.split(";|,", links) if not link.isspace()]
-            for link in re.split(";|,", links_string):
-                if not link.isspace():
-                    links.append(link.strip())
-                else:
-                    logger.warning('Grubby link definition found in need {}. '
-                                   'Defined link contains spaces only.'.format(id))
-
-            # This may have cut also dynamic function strings, as they can contain , as well.
-            # So let put them together again
-            # ToDo: There may be a smart regex for the splitting. This would avoid this mess of code...
-        links = _fix_list_dyn_func(links)
-
         #############################################################################################
         # Add need to global need list
         #############################################################################################
@@ -210,7 +193,6 @@ class NeedDirective(Directive):
         needs_info = {
             'docname': self.docname,
             'lineno': self.lineno,
-            'links_back': set(),
             'target_node': target_node,
             'type': self.name,
             'type_name': type_name,
@@ -220,7 +202,6 @@ class NeedDirective(Directive):
             'status': status,
             'tags': tags,
             'id': id,
-            'links': links,
             'title': self.trimmed_title,
             'full_title': self.full_title,
             'content': content,
@@ -235,6 +216,20 @@ class NeedDirective(Directive):
         }
         self.merge_extra_options(needs_info)
         self.merge_global_options(needs_info)
+
+        # Merge links
+        copy_links = []
+
+        for link_type in env.config.needs_extra_links:
+            links = self.read_in_links(link_type["option"])
+            needs_info[link_type["option"]] = links
+            needs_info['{}_back'.format(link_type["option"])] = set()
+
+            if link_type['copy'] and link_type['option'] != 'links':
+                copy_links += links
+
+        needs_info['links'] += copy_links
+
         env.needs_all_needs[id] = needs_info
 
         if hide:
@@ -260,6 +255,24 @@ class NeedDirective(Directive):
         node_need += node_need_content.children
 
         return [target_node] + [node_need]
+
+    def read_in_links(self, name):
+        # Get links
+        links_string = self.options.get(name, [])
+        links = []
+        if len(links_string) > 0:
+            # links = [link.strip() for link in re.split(";|,", links) if not link.isspace()]
+            for link in re.split(";|,", links_string):
+                if not link.isspace():
+                    links.append(link.strip())
+                else:
+                    logger.warning('Grubby link definition found in need {}. '
+                                   'Defined link contains spaces only.'.format(id))
+
+            # This may have cut also dynamic function strings, as they can contain , as well.
+            # So let put them together again
+            # ToDo: There may be a smart regex for the splitting. This would avoid this mess of code...
+        return _fix_list_dyn_func(links)
 
     def make_hashed_id(self, type_prefix, id_length):
         hashable_content = self.full_title or '\n'.join(self.content)
@@ -410,7 +423,9 @@ def process_need_nodes(app, doctree, fromdocname):
     # Call dynamic functions and replace related note data with their return values
     resolve_dynamic_values(env)
 
-    create_back_links(env)
+    # Create back links of common links and extra links
+    for links in env.config.needs_extra_links:
+        create_back_links(env, links['option'])
 
     for node_need in doctree.traverse(Need):
         need_id = node_need.attributes["ids"][0]
@@ -441,7 +456,7 @@ def process_need_nodes(app, doctree, fromdocname):
             node_need.insert(0, node_meta)
 
 
-def create_back_links(env):
+def create_back_links(env, option):
     """
     Create back-links in all found needs.
     But do this only once, as all needs are already collected and this sorting is for all
@@ -450,12 +465,13 @@ def create_back_links(env):
     :param env: sphinx enviroment
     :return: None
     """
-    if env.needs_workflow['backlink_creation']:
+    option_back = '{}_back'.format(option)
+    if env.needs_workflow['backlink_creation_{}'.format(option)]:
         return
 
     needs = env.needs_all_needs
     for key, need in needs.items():
-        for link in need["links"]:
+        for link in need[option]:
             link_main = link.split('.')[0]
             try:
                 link_part = link.split('.')[1]
@@ -463,17 +479,17 @@ def create_back_links(env):
                 link_part = None
 
             if link_main in needs:
-                if key not in needs[link_main]["links_back"]:
-                    needs[link_main]["links_back"].append(key)
+                if key not in needs[link_main][option_back]:
+                    needs[link_main][option_back].append(key)
 
                 # Handling of links to need_parts inside a need
                 if link_part is not None:
                     if link_part in needs[link_main]['parts']:
-                        if 'links_back' not in needs[link_main]['parts'][link_part].keys():
-                            needs[link_main]['parts'][link_part]['links_back'] = []
-                        needs[link_main]['parts'][link_part]['links_back'].append(key)
+                        if option_back not in needs[link_main]['parts'][link_part].keys():
+                            needs[link_main]['parts'][link_part][option_back] = []
+                        needs[link_main]['parts'][link_part][option_back].append(key)
 
-    env.needs_workflow['backlink_creation'] = True
+    env.needs_workflow['backlink_creation_{}'.format(option)] = True
 
 
 def construct_headline(need_data, app):
@@ -553,26 +569,30 @@ def construct_meta(need_data, env):
         node_meta.append(tag_line)
 
     # Links incoming
-    if need_data['links_back'] and 'links_back' not in hide_options:
-        node_incoming_line = nodes.line(classes=['links', 'incoming'])
-        prefix = "links incoming: "
-        node_incoming_prefix = nodes.inline(prefix, prefix)
-        node_incoming_line.append(node_incoming_prefix)
-        node_incoming_links = Need_incoming(reftarget=need_data['id'])
-        node_incoming_links.append(nodes.inline(need_data['id'], need_data['id']))
-        node_incoming_line.append(node_incoming_links)
-        node_meta.append(node_incoming_line)
+    for link_type in env.config.needs_extra_links:
+        link_back = '{}_back'.format(link_type['option'])
+        if need_data[link_back] and link_back not in hide_options:
+            node_incoming_line = nodes.line(classes=[link_type['option'], 'incoming'])
+            prefix = "{}: ".format(link_type['incoming'])
+            node_incoming_prefix = nodes.inline(prefix, prefix)
+            node_incoming_line.append(node_incoming_prefix)
+            node_incoming_links = Need_incoming(reftarget=need_data['id'], link_type=link_back)
+            node_incoming_links.append(nodes.inline(need_data['id'], need_data['id']))
+            node_incoming_line.append(node_incoming_links)
+            node_meta.append(node_incoming_line)
 
-    # # Links outgoing
-    if need_data['links'] and 'links' not in hide_options:
-        node_outgoing_line = nodes.line(classes=['links', 'outgoing'])
-        prefix = "links outgoing: "
-        node_outgoing_prefix = nodes.inline(prefix, prefix)
-        node_outgoing_line.append(node_outgoing_prefix)
-        node_outgoing_links = Need_outgoing(reftarget=need_data['id'])
-        node_outgoing_links.append(nodes.inline(need_data['id'], need_data['id']))
-        node_outgoing_line.append(node_outgoing_links)
-        node_meta.append(node_outgoing_line)
+    # Links outgoing
+    for link_type in env.config.needs_extra_links:
+        link = '{}'.format(link_type['option'])
+        if need_data[link] and link not in hide_options:
+            node_outgoing_line = nodes.line(classes=[link_type['option'], 'outgoing'])
+            prefix = "{}: ".format(link_type['outgoing'])
+            node_outgoing_prefix = nodes.inline(prefix, prefix)
+            node_outgoing_line.append(node_outgoing_prefix)
+            node_outgoing_links = Need_outgoing(reftarget=need_data['id'], link_type=link)
+            node_outgoing_links.append(nodes.inline(need_data['id'], need_data['id']))
+            node_outgoing_line.append(node_outgoing_links)
+            node_meta.append(node_outgoing_line)
 
     extra_options = getattr(env.config, 'needs_extra_options', {})
     node_extra_options = []

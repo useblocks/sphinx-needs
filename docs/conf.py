@@ -41,7 +41,7 @@ sys.path.insert(0, os.path.abspath('../sphinxcontrib'))
 # The short X.Y version.
 version = '0.3'
 # The full version, including alpha/beta/rc tags.
-release = '0.3.10'
+release = '0.3.11'
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 if on_rtd:
@@ -145,6 +145,23 @@ needs_types = [dict(directive="req", title="Requirement", prefix="R_", color="#B
                dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="node"),
                dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="node"),
                ]
+
+needs_extra_links = [
+    {
+        "option": "blocks",
+        "incoming": "is blocked by",
+        "outgoing": "blocks",
+        "copy": True,
+        "color": "#AA0000"
+    },
+    {
+        "option": "tests",
+        "incoming": "is tested by",
+        "outgoing": "tests",
+        "copy": True,
+        "color": "#00AA00"
+    }]
+
 needs_show_link_type = False
 needs_show_link_title = False
 needs_title_optional = True

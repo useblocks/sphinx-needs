@@ -21,7 +21,15 @@ def process_need_incoming(app, doctree, fromdocname):
 
         node_link_container = nodes.inline()
         ref_need = env.needs_all_needs[node_need_backref['reftarget']]
-        for index, back_link in enumerate(ref_need["links_back"]):
+
+        # Lets check if Need_incoming shall follow a specific link type
+        if "link_type" in node_need_backref.attributes.keys():
+            links_back = ref_need[node_need_backref.attributes['link_type']]
+        # if not, follow back to default links
+        else:
+            links_back = ref_need["links_back"]
+
+        for index, back_link in enumerate(links_back):
             # If need back_link target exists, let's create the reference
             if back_link in env.needs_all_needs:
                 try:
@@ -47,7 +55,7 @@ def process_need_incoming(app, doctree, fromdocname):
                     node_link_container += new_node_ref
 
                     # If we have several links, we add an empty text between them
-                    if index + 1 < len(ref_need["links_back"]):
+                    if index + 1 < len(links_back):
                         node_link_container += nodes.Text(" ", " ")
 
                 except NoUri:

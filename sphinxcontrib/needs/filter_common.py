@@ -26,7 +26,8 @@ class FilterBase(Directive):
                         'tags': directives.unchanged_required,
                         'types': directives.unchanged_required,
                         'filter': directives.unchanged_required,
-                        'sort_by': sort_by}
+                        'sort_by': sort_by,
+                        'export_id': directives.unchanged_required}
 
     def collect_filter_attributes(self):
         tags = str(self.options.get("tags", ""))
@@ -113,6 +114,23 @@ def procces_filters(all_needs, current_needlist):
     # found_needs = [x for x in found_needs_by_string if x in found_needs_by_options]
 
     found_needs = check_need_list(found_needs_by_options, found_needs_by_string)
+
+    # Store basic filter configuration and result global list.
+    # Needed mainly for exporting the result to needs.json (if builder "needs" is used).
+    env = current_needlist['env']
+    filter_list = env.needs_all_filters
+    found_needs_ids = [need['id'] for need in found_needs]
+
+    filter_list[current_needlist['target_node']] = {
+        'target_node': current_needlist['target_node'],
+        'filter': current_needlist['filter'] if current_needlist['filter'] is not None else "",
+        'status': current_needlist['status'],
+        'tags': current_needlist['tags'],
+        'types': current_needlist['types'],
+        'export_id': current_needlist['export_id'].upper(),
+        'result': found_needs_ids,
+        'amount': len(found_needs_ids)
+    }
 
     return found_needs
 

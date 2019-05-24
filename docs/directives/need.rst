@@ -101,6 +101,63 @@ You can easily set links to multiple needs by using ";" as separator.
 
 
 
+.. _need_extra_links:
+
+extra links
++++++++++++
+
+By using :ref:`needs_extra_links` you can use the configured link-types to set additional on other options.
+
+.. container:: toggle
+
+   .. container:: header
+
+      **Show example**
+
+   .. code-block:: python
+
+      # conf.py
+      needs_extra_links = [
+         {
+            "name": "blocks",
+            "incoming": "is blocked by",
+         },
+         {
+            "name": "tests",
+            "incoming": "is tested by",
+            "copy": False,
+            "color": "#00AA00"
+         }
+      ]
+
+   .. code-block:: rst
+
+      .. req:: test me
+         :id: test_req
+
+         A requirement, which needs to be tested
+
+      .. test:: test a requirement
+         :id: test_001
+         :tests: test_req
+
+         Perform some tests
+
+
+   .. req:: test me
+      :id: test_req
+      :collapse: false
+
+      A requirement, which needs to be tested
+
+   .. test:: test a requirement
+      :id: test_001
+      :tests: test_req
+      :collapse: false
+
+      Perform some tests
+
+
 .. _need_hide:
 
 hide

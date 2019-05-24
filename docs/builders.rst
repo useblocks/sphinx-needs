@@ -9,7 +9,7 @@ needs
 -----
 .. versionadded:: 0.1.30
 
-The **needs** builder exports all found needs to a single json file.
+The **needs** builder exports all found needs and selected filter results to a single json file.
 
 The build creates a folder **needs** and a file called **needs.json** inside a given build-folder.
 
@@ -32,6 +32,27 @@ version(s) inside the **needs.json**.
    If you generate and store/archive (e.g. in git) the **needs.json** file
    every time you raise your documentation version, you will get nice history data.
 
+.. _filter_export:
+
+Exporting filters
++++++++++++++++++
+
+.. versionadded:: 0.3.11
+
+The results and filter configuration of a filter based directive, like :ref:`needlist`, :ref:`needtable`
+or :ref:`needflow`, get exported, if the option :ref:`export_id` is used in the related directive.
+
+This allows to export specified filter results only.
+
+
+Example::
+
+   .. needtable::
+      :status: open
+      :filter: "test" in tags
+      :export_id: filter_01
+
+
 Format
 ++++++
 
@@ -44,6 +65,18 @@ Format
     "versions": {
         "1.0": {
             "created": "2017-07-03T11:54:42.433868",
+            "filters": {
+               "FILTER_1": {
+                 "amount": 1,
+                 "export_id": "FILTER_1",
+                 "filter": "",
+                 "result": [
+                     "IMPL_01",
+                 ],
+                 "status": [],
+                 "tags": "",
+                 "types": []
+            },
             "needs": {
                 "IMPL_01": {
                     "description": "Incoming links of this spec: :need_incoming:`IMPL_01`.",
@@ -61,9 +94,21 @@ Format
                     "type_name": "Implementation"
                 }
             }
-        }
+        },
         "1.5": {
             "created": "2017-07-03T16:10:31.633425",
+            "filters": {
+               "FILTER_1": {
+                 "amount": 1,
+                 "export_id": "FILTER_1",
+                 "filter": "",
+                 "result": [
+                     "IMPL_01",
+                 ],
+                 "status": [],
+                 "tags": "",
+                 "types": []
+            },
             "needs": {
                 "IMPL_01": {
                     "description": "Incoming links",

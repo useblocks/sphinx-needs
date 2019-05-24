@@ -182,6 +182,111 @@ Combined with :ref:`dynamic_functions` this can be a powerful method to automate
    }
 
 
+.. _needs_extra_links:
+
+needs_extra_links
+~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.3.11
+
+Allows the definition of additional link types.
+
+Each configured link should define:
+
+* **option**: The name of the option. Example "blocks".
+* **incoming**: Incoming text, which shall be used for incoming links. E.g. "is blocked by".
+* **outgoing**: Outgoing text, which shall be used for outgoing links. E.g. "blocks".
+* **copy** (optional): True/False. If True, the links will be copied also to the common link-list (link type ``links``).
+  Default: True
+* **style** (optional): A plantuml style description, e.g. "#FFCC00". Used for :ref:`needflow`. See :ref:`links_style`.
+* **style_part** (optional): Same as **style**, but get used if link is connected to a :ref:`need_part`.
+  See :ref:`links_style`.
+
+
+Configuration example::
+
+   needs_extra_links = [
+      {
+         "option": "blocks",
+         "incoming": "is blocked by",
+         "outgoing": "blocks"
+      },
+      {
+         "option": "tests",
+         "incoming": "is tested by",
+         "outgoing": "tests",
+         "copy": False,
+         "style": "#00AA00"
+         "style_part": "#00AA00"
+      }
+   ]
+
+
+The above example configuration allows the following usage::
+
+   .. req:: My requirement
+      :id: REQ_001
+      :links: SPEC_001
+      :blocks: REQ_003, REQ_017
+
+   .. test:: Test of requirements
+      :tests: REQ_001, REQ_003
+
+**Attention**: The used option name can not be reused in the configuration of :ref:`needs_global_options`.
+
+A link type with option-name **links** is added by default.
+You are free to overwrite the default config by defining your own type with option name **links**.
+This type will be used as default configuration for all links.
+
+.. _links_style:
+
+style / style_part
+++++++++++++++++++
+
+The style string can contain following, comma separated information:
+
+* **color**: #ffcc00 or red
+* **line style**: dotted, dashed, bold
+
+Valid configuration examples are:
+
+* ``#ffcc00``
+* ``dashed``
+* ``dotted,#red``
+
+An empty string uses the default plantuml settings.
+
+.. _needs_flow_show_links:
+
+needs_flow_show_links
+~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.3.11
+
+Used to de/activate the output of link type names beside the connection in the :ref:`needflow` directive::
+
+   needs_flow_show_links = True
+
+
+Default value: ``False``
+
+Can be configured also for each :ref:`needflow` directive via :ref:`needflow_show_link_names`.
+
+.. _needs_flow_link_types:
+
+needs_flow_link_types
+~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.3.11
+
+Defines the link_types to show in a :ref:`needflow` diagram::
+
+   needs_flow_link_types = ['links', 'blocks', 'tests']
+
+This can be also defined on each specific needflow by using the needflow option :ref:`needflow_link_types`.
+So also :ref:`needflow_link_types` for more details.
+
+
 .. _needs_hide_options:
 
 needs_hide_options
