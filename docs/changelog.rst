@@ -5,7 +5,9 @@ Changelog
 ------
 * Improvement: Added config option :ref:`needs_extra_links` to define additional link types like *blocks*, *tested by* and more.
   Supports also style configuration and custom presentation names for links.
+* Improvement: Added :ref:`export_id` option for filter directives to export results of filters to ``needs.json``.
 * Improvement: Added config option :ref:`needs_flow_show_links` and related needflow option :ref:`needflow_show_link_names`.
+* Improvement: Added config option :ref:`needs_flow_link_types` and related needflow option :ref:`needflow_link_types`.
 * Bugfix: Unicode handling for Python 2.7 fixed. (`#86 <https://github.com/useblocks/sphinxcontrib-needs/issues/86>`_)
 
 0.3.10

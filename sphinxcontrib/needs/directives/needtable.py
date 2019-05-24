@@ -65,7 +65,9 @@ class NeedtableDirective(FilterBase):
             # As the following options are flags, the content is None, if set.
             # If not set, the options.get() method returns False
             'show_filters': True if self.options.get("show_filters", False) is None else False,
-            'show_parts': True if self.options.get("show_parts", False) is None else False
+            'show_parts': True if self.options.get("show_parts", False) is None else False,
+            'export_id': self.options.get("export_id", ""),
+            'env': env,
         }
         env.need_all_needtables[targetid].update(self.collect_filter_attributes())
 

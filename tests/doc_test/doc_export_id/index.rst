@@ -51,40 +51,28 @@ Lists
 
 .. needlist::
 
+.. needlist::
+   :export_id: list_1
+
 
 Tables
 ------
 
 .. needtable::
+   :status: open
 
 .. needtable::
-   :columns: id, incoming, outgoing
+   :export_id: table_1
 
 .. needtable::
-   :columns: id, incoming, outgoing, blocks, blocks_back, tests, tests_back
-
+   :filter: "test" in type
+   :export_id: table_2
 
 Flow
 ----
 
-**flow by default config**
+.. needflow::
 
 .. needflow::
-   :show_legend:
-   :filter: is_need
+   :export_id: flow_1
 
-**flow with link names and all now link types**
-
-.. needflow::
-   :show_legend:
-   :filter: is_need
-   :show_link_names:
-   :link_types: links,blocks,tests
-
-**flow without links**
-
-.. needflow::
-   :show_legend:
-   :filter: is_need
-   :show_link_names:
-   :link_types: blocks,tests

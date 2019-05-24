@@ -117,9 +117,13 @@ def process_dynamic_values(app, doctree, fromdocname):
 
 
 class NeedsList:
-    JSON_KEY_EXCLUSIONS = {'links_back', 'type_color', 'hide_status',
-                           'target_node', 'hide', 'type_prefix', 'lineno',
-                           'collapse', 'type_style', 'hide_tags', 'content'}
+    JSON_KEY_EXCLUSIONS_NEEDS = {'links_back', 'type_color', 'hide_status',
+                                 'target_node', 'hide', 'type_prefix', 'lineno',
+                                 'collapse', 'type_style', 'hide_tags', 'content'}
+
+    JSON_KEY_EXCLUSIONS_FILTERS = {'links_back', 'type_color', 'hide_status',
+                                   'target_node', 'hide', 'type_prefix', 'lineno',
+                                   'collapse', 'type_style', 'hide_tags', 'content'}
 
     def __init__(self, config, outdir, confdir):
         self.log = logging.getLogger(__name__)
@@ -134,21 +138,32 @@ class NeedsList:
             "created": "",
             "versions": {}}
 
-    def add_need(self, version, need_info):
+    def update_or_add_version(self, version):
         if version not in self.needs_list["versions"].keys():
             self.needs_list["versions"][version] = {"created": "",
                                                     "needs_amount": 0,
-                                                    "needs": {}}
+                                                    "needs": {},
+                                                    "filters_amount": 0,
+                                                    "filters": {}}
 
         if "needs" not in self.needs_list["versions"][version].keys():
             self.needs_list["versions"][version]["needs"] = {}
 
         self.needs_list["versions"][version]["created"] = datetime.now().isoformat()
+
+    def add_need(self, version, need_info):
+        self.update_or_add_version(version)
         writable_needs = {key: need_info[key] for key in need_info
-                          if key not in self.JSON_KEY_EXCLUSIONS}
+                          if key not in self.JSON_KEY_EXCLUSIONS_NEEDS}
         writable_needs['description'] = need_info['content']
         self.needs_list["versions"][version]["needs"][need_info["id"]] = writable_needs
         self.needs_list["versions"][version]["needs_amount"] = len(self.needs_list["versions"][version]["needs"])
+
+    def add_filter(self, version, need_filter):
+        self.update_or_add_version(version)
+        writable_filters = {key: need_filter[key] for key in need_filter if key not in self.JSON_KEY_EXCLUSIONS_FILTERS}
+        self.needs_list["versions"][version]["filters"][need_filter["export_id"].upper()] = writable_filters
+        self.needs_list["versions"][version]["filters_amount"] = len(self.needs_list["versions"][version]["filters"])
 
     def wipe_version(self, version):
         if version in self.needs_list["versions"].keys():

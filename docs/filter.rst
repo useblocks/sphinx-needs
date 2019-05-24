@@ -295,3 +295,19 @@ The second parameter should be one of the above variables(status, id, content, .
 
    .. needlist::
       :filter: search("([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", title)
+
+.. _export_id:
+
+export_id
+~~~~~~~~~
+
+.. versionadded:: 0.3.11
+
+If set, the filter results get exported to needs.json, if the builder :ref:`needs_builder` is used::
+
+   .. needtable::
+      :status: open
+      :filter: "test" in tags
+      :export_id: filter_01
+
+See :ref:`filter_export` for more details.

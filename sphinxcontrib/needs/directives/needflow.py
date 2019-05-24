@@ -1,14 +1,24 @@
 import os
+import re
+import sphinx
 import sys
 import urllib
 
 from docutils import nodes
 from docutils.parsers.rst import directives
 from jinja2 import Template
+from pkg_resources import parse_version
 from sphinx.environment import NoUri
 from sphinxcontrib.needs.utils import status_sorter
 
 from sphinxcontrib.needs.filter_common import FilterBase, procces_filters
+
+sphinx_version = sphinx.__version__
+if parse_version(sphinx_version) >= parse_version("1.6"):
+    from sphinx.util import logging
+else:
+    import logging
+logger = logging.getLogger(__name__)
 
 if sys.version_info.major < 3:
     urlParse = urllib.quote_plus
@@ -29,7 +39,8 @@ class NeedflowDirective(FilterBase):
     """
     option_spec = {'show_legend': directives.flag,
                    'show_filters': directives.flag,
-                   'show_link_names': directives.flag}
+                   'show_link_names': directives.flag,
+                   'link_types': directives.unchanged_required}
 
     # Update the options_spec with values defined in the FilterBase class
     option_spec.update(FilterBase.base_option_spec)
@@ -43,10 +54,20 @@ class NeedflowDirective(FilterBase):
         if not hasattr(env, 'needs_all_needs'):
             env.needs_all_needs = {}
 
+        id = env.new_serialno('needflow')
         targetid = "needflow-{docname}-{id}".format(
             docname=env.docname,
-            id=env.new_serialno('needflow'))
+            id=id)
         targetnode = nodes.target('', '', ids=[targetid])
+
+        link_types = self.options.get("link_types", [])
+        if len(link_types) > 0:
+            link_types = [link_type.strip() for link_type in re.split(";|,", link_types)]
+            for i in range(len(link_types)):
+                if len(link_types[i]) == 0 or link_types[i].isspace():
+                    del (link_types[i])
+                    logger.warning('Scruffy link_type definition found in needflow {}. '
+                                   'Defined link_type contains spaces only.'.format(id))
 
         # Add the need and all needed information
         env.need_all_needflows[targetid] = {
@@ -56,6 +77,9 @@ class NeedflowDirective(FilterBase):
             'show_filters': True if self.options.get("show_filters", False) is None else False,
             'show_legend': True if self.options.get("show_legend", False) is None else False,
             'show_link_names': True if self.options.get("show_link_names", False) is None else False,
+            'link_types': link_types,
+            'export_id': self.options.get("export_id", ""),
+            'env': env
         }
         env.need_all_needflows[targetid].update(self.collect_filter_attributes())
 
@@ -76,6 +100,8 @@ def process_needflow(app, doctree, fromdocname):
     env = app.builder.env
 
     link_types = env.config.needs_extra_links
+    allowed_link_types_options = [link.upper() for link in env.config.needs_flow_link_types]
+
     # NEEDFLOW
     for node in doctree.traverse(Needflow):
         if not app.config.needs_include_needs:
@@ -92,6 +118,13 @@ def process_needflow(app, doctree, fromdocname):
         id = node.attributes["ids"][0]
         current_needflow = env.need_all_needflows[id]
         all_needs = env.needs_all_needs
+
+        option_link_types = [link.upper() for link in current_needflow['link_types']]
+        for lt in option_link_types:
+            if lt not in [link['option'].upper() for link in link_types]:
+                logger.warning('Unknown link type {link_type} in needflow {flow}. Allowed values: {link_types}'.format(
+                    link_type=lt, flow=current_needflow['target_node'], link_types=",".join(link_types)
+                ))
 
         content = []
         try:
@@ -149,6 +182,13 @@ def process_needflow(app, doctree, fromdocname):
                 style=need_info["type_style"])
 
             for link_type in link_types:
+                # Skip link-type handling, if it is not part of a specified list of allowed link_types or
+                # if not part of the overall configuration of needs_flow_link_types
+                if (current_needflow["link_types"] and link_type['option'].upper() not in option_link_types) or \
+                        (not current_needflow["link_types"] and \
+                         link_type['option'].upper() not in allowed_link_types_options):
+                    continue
+
                 for link in need_info[link_type['option']]:
                     if '.' in link:
                         final_link = link.split('.')[0]

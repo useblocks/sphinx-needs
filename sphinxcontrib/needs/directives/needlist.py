@@ -60,6 +60,8 @@ class NeedlistDirective(FilterBase):
             'show_tags': True if self.options.get("show_tags", False) is None else False,
             'show_status': True if self.options.get("show_status", False) is None else False,
             'show_filters': True if self.options.get("show_filters", False) is None else False,
+            'export_id': self.options.get("export_id", ""),
+            'env': env,
         }
         env.need_all_needlists[targetid].update(self.collect_filter_attributes())
 

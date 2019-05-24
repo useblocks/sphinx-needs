@@ -21,6 +21,7 @@ class NeedsBuilder(Builder):
     def finish(self):
         log = logging.getLogger(__name__)
         needs = self.env.needs_all_needs
+        filters = self.env.needs_all_filters
         config = self.env.config
         version = config.version
         needs_list = NeedsList(config, self.outdir, self.confdir)
@@ -34,6 +35,11 @@ class NeedsBuilder(Builder):
 
         for key, need in needs.items():
             needs_list.add_need(version, need)
+
+        for key, need_filter in filters.items():
+            if need_filter['export_id']:
+                needs_list.add_filter(version, need_filter)
+
         try:
             needs_list.write_json()
         except Exception as e:

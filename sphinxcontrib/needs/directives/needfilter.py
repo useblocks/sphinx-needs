@@ -64,6 +64,8 @@ class NeedfilterDirective(FilterBase):
             'show_filters': True if self.options.get("show_filters", False) is None else False,
             'show_legend': True if self.options.get("show_legend", False) is None else False,
             'layout': self.options.get("layout", "list"),
+            'export_id': self.options.get("export_id", ""),
+            'env': env,
         }
         env.need_all_needfilters[targetid].update(self.collect_filter_attributes())
 

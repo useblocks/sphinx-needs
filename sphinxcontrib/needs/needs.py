@@ -183,6 +183,7 @@ def setup(app):
     app.add_config_value('needs_extra_links', [], 'html')
 
     app.add_config_value('needs_flow_show_links', False, 'html')
+    app.add_config_value('needs_flow_link_types', [], 'html')
 
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
@@ -337,6 +338,10 @@ def prepare_env(app, env, docname):
     if not hasattr(env, 'needs_all_needs'):
         # Used to store all needed information about all needs in document
         env.needs_all_needs = {}
+
+    if not hasattr(env, 'needs_all_filters'):
+        # Used to store all needed information about all filters in document
+        env.needs_all_filters = {}
 
     if not hasattr(env, 'needs_functions'):
         # Used to store all registered functions for supporting dynamic need values.
