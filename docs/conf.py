@@ -152,14 +152,16 @@ needs_extra_links = [
         "incoming": "is blocked by",
         "outgoing": "blocks",
         "copy": True,
-        "color": "#AA0000"
+        "style": "#AA0000",
+        "style_part": "strict,#AA0000"
     },
     {
         "option": "tests",
         "incoming": "is tested by",
         "outgoing": "tests",
         "copy": True,
-        "color": "#00AA00"
+        "style": "#00AA00",
+        "style_part": "dotted,#00AA00"
     }]
 
 needs_show_link_type = False

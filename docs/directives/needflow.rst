@@ -7,20 +7,28 @@ needflow
 
 **needflow** creates a flowchart of filtered needs.
 
+{% if READTHEDOCS %}
 
 .. code-block:: rst
 
    .. needflow::
       :tags: main_example
 
-{% if READTHEDOCS %}
-
 .. image:: /_static/needflow_flow.png
 
 {% else %}
 
+.. code-block:: rst
+
+   .. needflow::
+      :tags: flow_example
+      :link_types: tests, blocks
+      :show_link_names:
+
 .. needflow::
-   :tags: main_example
+   :tags: flow_example
+   :link_types: tests, blocks
+   :show_link_names:
 
 {% endif %}
 
@@ -35,6 +43,7 @@ Supported options:
  * :ref:`needflow_show_filters`
  * :ref:`needflow_show_legend`
  * :ref:`needflow_show_link_names`
+ * :ref:`needflow_link_types`
  * Common filters:
     * :ref:`option_status`
     * :ref:`option_tags`
@@ -160,3 +169,80 @@ You can avoid this by not setting **"links**" in the ``link_type`` option.
 This option can be set globally via configuration option :ref:`needs_flow_link_types`.
 
 See also :ref:`needs_extra_links` for more details about specific link types.
+
+
+.. container:: toggle
+
+   .. container::  header
+
+      **Show example**
+
+   .. code-block:: rst
+
+      .. req:: A requirement
+         :hide:
+         :id: req_flow_001
+         :tags: flow_example
+
+      .. spec:: A specification
+         :hide:
+         :id: spec_flow_001
+         :blocks: req_flow_001
+         :tags: flow_example
+
+         :need_part:`(subspec_1)A testable part of the specification`
+
+         :need_part:`(subspec_2)Another testable part of the specification`
+
+      .. spec:: Another specification
+         :hide:
+         :id: spec_flow_002
+         :links: req_flow_001
+         :blocks: spec_flow_001
+         :tags: flow_example
+
+      .. test:: A test case
+         :hide:
+         :id: test_flow_001
+         :tests: spec_flow_002, spec_flow_001.subspec_1, spec_flow_001.subspec_2
+         :tags: flow_example
+
+
+      .. needflow::
+         :tags: flow_example
+         :link_types: tests, blocks
+         :show_link_names:
+
+   .. req:: A requirement
+      :hide:
+      :id: req_flow_001
+      :tags: flow_example
+
+   .. spec:: A specification
+      :hide:
+      :id: spec_flow_001
+      :blocks: req_flow_001
+      :tags: flow_example
+
+      :need_part:`(subspec_1)A testable part of the specification`
+
+      :need_part:`(subspec_2)Another testable part of the specification`
+
+   .. spec:: Another specification
+      :hide:
+      :id: spec_flow_002
+      :links: req_flow_001
+      :blocks: spec_flow_001
+      :tags: flow_example
+
+   .. test:: A test case
+      :hide:
+      :id: test_flow_001
+      :tests: spec_flow_002, spec_flow_001.subspec_1, spec_flow_001.subspec_2
+      :tags: flow_example
+
+
+   .. needflow::
+      :tags: flow_example
+      :link_types: tests, blocks
+      :show_link_names:

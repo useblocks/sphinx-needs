@@ -286,6 +286,7 @@ Defines the link_types to show in a :ref:`needflow` diagram::
 This can be also defined on each specific needflow by using the needflow option :ref:`needflow_link_types`.
 So also :ref:`needflow_link_types` for more details.
 
+Default value: ``['links']``
 
 .. _needs_hide_options:
 

@@ -183,7 +183,7 @@ def setup(app):
     app.add_config_value('needs_extra_links', [], 'html')
 
     app.add_config_value('needs_flow_show_links', False, 'html')
-    app.add_config_value('needs_flow_link_types', [], 'html')
+    app.add_config_value('needs_flow_link_types', ["links"], 'html')
 
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
