@@ -1,6 +1,14 @@
 Changelog
 =========
 
+0.3.12
+------
+* Improvement: Tables can be sorted by any alphanumeric option (`#92 <https://github.com/useblocks/sphinxcontrib-needs/issues/92>`_)
+* Improvement: :ref:`need_part` are now embedded in their parent need, if :ref:`needflow` is used. (`#83 <https://github.com/useblocks/sphinxcontrib-needs/issues/83>`_)
+* Bugfix: Links to :ref:`need_part` are no longer rendered to parent need, instead the link goes directly to the need_part. (`#91 <https://github.com/useblocks/sphinxcontrib-needs/issues/91>`_)
+* Bugfix: Links in :ref:`needflow` get shown again by default (`#90 <https://github.com/useblocks/sphinxcontrib-needs/issues/90>`_)
+
+
 0.3.11
 ------
 * Improvement: Added config option :ref:`needs_extra_links` to define additional link types like *blocks*, *tested by* and more.

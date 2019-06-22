@@ -18,7 +18,7 @@
        :target: https://pypi.python.org/pypi/sphinxcontrib-needs
        :alt: PyPI Package latest release
 
-   .. image:: https://img.shields.io/badge/sphinx-1.5%2C%201.6%2C%201.7%2C%201.8-blue.svg
+   .. image:: https://img.shields.io/badge/sphinx-1.5%2C%201.6%2C%201.7%2C%201.8%2C%202.0%2C%202.1-blue.svg
        :target: https://sphinx-doc.org
        :alt: Supported Sphinx releases
 
@@ -35,6 +35,9 @@ Sphinx-Needs allows the definition, linking and filtering of need-objects, which
 * test cases.
 
 This list can be easily customized via :ref:`configuration <need_types>` (for instance to support bugs or user stories).
+
+Sphinx-Needs is an extension for the Python based documentation framework `Sphinx <https://sphinx-doc.org>`_,
+which can be easily extended by different extensions to fulfill nearly any requirement of a software development team.
 
 
 What is a need?
@@ -181,7 +184,7 @@ a german automotive company.
 
 The project team was searching for a small and practical way of managing requirements and more to
 fulfill the parameters of the `ISO 26262 <https://en.wikipedia.org/wiki/ISO_26262>`_
-standard for safety critical software.
+standard for safety critical software in the Python environment.
 
 Sphinx-Needs is part of a software bundle, which was designed to support the development of
 `ISO 26262 <https://en.wikipedia.org/wiki/ISO_26262>`_ compliant software.

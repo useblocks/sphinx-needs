@@ -76,3 +76,23 @@ Flow
 .. needflow::
    :export_id: flow_1
 
+.. needflow::
+   :export_id: flow_2
+   :filter: is_need is False or type != "story"
+
+
+
+.. uml::
+
+   node test
+   node test_2
+
+   node spec
+   cloud spec_1 as s1 [[https.spiegel.de]] #ffcc00 {
+
+    node spec_1.2 as s11
+   }
+
+    test --> s1
+    test_2 --> s11
+

@@ -151,28 +151,39 @@ def process_needflow(app, doctree, fromdocname):
         all_needs = list(all_needs.values())
         found_needs = procces_filters(all_needs, current_needflow)
 
+        processed_need_part_ids = []
+
         for need_info in found_needs:
-            # Link calculation
-            # All links we can get from docutils functions will be relative.
-            # But the generated link in the svg will be relative to the svg-file location
-            # (e.g. server.com/docs/_images/sqwxo499cnq329439dfjne.svg)
-            # and not to current documentation. Therefore we need to add ../ to get out of the _image folder.
-            try:
-                link = "../" + app.builder.get_target_uri(need_info['docname']) \
-                       + "?highlight={0}".format(urlParse(need_info['title'])) \
-                       + "#" \
-                       + need_info['target_node']['refid'] \
-                    # Gets mostly called during latex generation
-            except NoUri:
-                link = ""
+            # Check if need_part was already handled during handling of parent need.
+            # If this is the case, it is already part of puml-code and we do not need to create a node.
+            if not (need_info['is_part'] and need_info['id_complete'] in processed_need_part_ids):
+                # Check if we need to embed need_parts into parent need, because they are also part of search result.
+                node_part_code = ""
+                valid_need_parts = [x for x in found_needs if x['is_part'] and x['id_parent'] == need_info['id']]
+                for need_part in valid_need_parts:
+                    part_link = calculate_link(app, need_part)
+                    diagram_template = Template(env.config.needs_diagram_template)
+                    part_text = diagram_template.render(**need_part)
+                    node_part_code += '{style} "{node_text}" as {id} [[{link}]] {color}\n'.format(
+                        id=make_entity_name(need_part["id_complete"]), node_text=part_text,
+                        link=make_entity_name(part_link), color=need_part["type_color"],
+                        style=need_part["type_style"])
 
-            diagram_template = Template(env.config.needs_diagram_template)
-            node_text = diagram_template.render(**need_info)
+                    processed_need_part_ids.append(need_part['id_complete'])
 
-            puml_node["uml"] += '{style} "{node_text}" as {id} [[{link}]] {color}\n'.format(
-                id=make_entity_name(need_info["id"]), node_text=node_text,
-                link=make_entity_name(link), color=need_info["type_color"],
-                style=need_info["type_style"])
+                link = calculate_link(app, need_info)
+
+                diagram_template = Template(env.config.needs_diagram_template)
+                node_text = diagram_template.render(**need_info)
+                if need_info['is_part']:
+                    need_id = need_info['id_complete']
+                else:
+                    need_id = need_info['id']
+                node_code = '{style} "{node_text}" as {id} [[{link}]] {color} {{\n {need_parts} }}\n'.format(
+                    id=make_entity_name(need_id), node_text=node_text,
+                    link=make_entity_name(link), color=need_info["type_color"],
+                    style=need_info["type_style"], need_parts=node_part_code)
+                puml_node["uml"] += node_code
 
             for link_type in link_types:
                 # Skip link-type handling, if it is not part of a specified list of allowed link_types or
@@ -184,7 +195,8 @@ def process_needflow(app, doctree, fromdocname):
 
                 for link in need_info[link_type['option']]:
                     if '.' in link:
-                        final_link = link.split('.')[0]
+                        # final_link = link.split('.')[0]
+                        final_link = link
                         if current_needflow["show_link_names"] or env.config.needs_flow_show_links:
                             desc = link_type['outgoing'] + '\\n'
                         else:
@@ -208,6 +220,11 @@ def process_needflow(app, doctree, fromdocname):
                             link_style = '[{style}]'.format(style=link_type['style'])
                         else:
                             link_style = ""
+
+                    # Do not create an links, if the link target is not part of the search result.
+                    if final_link not in [x['id'] for x in found_needs if x['is_need']] and \
+                            final_link not in [x['id_complete'] for x in found_needs if x['is_part']]:
+                        continue
 
                     puml_connections += '{id} --{link_style}> {link}{comment}\n'.format(
                         id=make_entity_name(need_info["id"]),
@@ -256,3 +273,21 @@ def process_needflow(app, doctree, fromdocname):
             para += filter_node
             content.append(para)
         node.replace_self(content)
+
+
+def calculate_link(app, need_info):
+    # Link calculation
+    # All links we can get from docutils functions will be relative.
+    # But the generated link in the svg will be relative to the svg-file location
+    # (e.g. server.com/docs/_images/sqwxo499cnq329439dfjne.svg)
+    # and not to current documentation. Therefore we need to add ../ to get out of the _image folder.
+    try:
+        link = "../" + app.builder.get_target_uri(need_info['docname']) \
+               + "?highlight={0}".format(urlParse(need_info['title'])) \
+               + "#" \
+               + need_info['target_node']['refid'] \
+            # Gets mostly called during latex generation
+    except NoUri:
+        link = ""
+
+    return link

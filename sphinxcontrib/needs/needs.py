@@ -103,7 +103,13 @@ DEFAULT_TEMPLATE = """
 """
 
 DEFAULT_DIAGRAM_TEMPLATE = \
-    "<size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>"
+    """
+{%- if is_need -%}
+<size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>
+{%- else -%}
+<size:12>{{type_name}} (part)</size>\\n**{{content|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id_parent}}.**{{id}}**</size>
+{%- endif -%}
+"""
 
 
 def setup(app):
