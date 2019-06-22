@@ -32,7 +32,7 @@ class NeedlistDirective(FilterBase):
     """
     option_spec = {'show_status': directives.flag,
                    'show_tags': directives.flag,
-                   'show_filters': directives.flag
+                   'show_filters': directives.flag,
                    }
 
     # Update the options_spec with values defined in the FilterBase class

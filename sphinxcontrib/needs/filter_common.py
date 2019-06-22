@@ -25,6 +25,7 @@ class FilterBase(Directive):
         "types": directives.unchanged_required,
         "filter": directives.unchanged_required,
         "sort_by": directives.unchanged,
+        'export_id': directives.unchanged,
     }
 
     def collect_filter_attributes(self):
