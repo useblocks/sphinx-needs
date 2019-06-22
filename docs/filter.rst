@@ -112,7 +112,7 @@ For **:types:** the type itself or the human-readable type-title can be used as 
 
 sort_by
 ~~~~~~~
-Sorts the result list. Allowed values are ``id`` and ``status``
+Sorts the result list. Allowed values are ``status`` or any alphanumerical property.
 
 .. container:: toggle
 

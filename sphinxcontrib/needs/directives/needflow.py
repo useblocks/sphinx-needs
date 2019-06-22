@@ -149,13 +149,6 @@ def process_needflow(app, doctree, fromdocname):
         puml_connections = ""
 
         all_needs = list(all_needs.values())
-
-        if current_needflow["sort_by"] is not None:
-            if current_needflow["sort_by"] == "id":
-                all_needs = sorted(all_needs, key=lambda node: node["id"])
-            elif current_needflow["sort_by"] == "status":
-                all_needs = sorted(all_needs, key=status_sorter)
-
         found_needs = procces_filters(all_needs, current_needflow)
 
         for need_info in found_needs:
