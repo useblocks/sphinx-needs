@@ -4,7 +4,9 @@
 import os
 from setuptools import setup, find_packages
 
-requires = ['Sphinx', 'six']
+requires = ['Sphinx<2;python_version<"3.5"',
+            'Sphinx;python_version>="3.5"',
+            'six']
 
 setup(
     name='sphinxcontrib-needs',
