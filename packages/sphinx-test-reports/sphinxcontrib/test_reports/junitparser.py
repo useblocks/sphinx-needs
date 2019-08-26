@@ -20,6 +20,8 @@ class JUnitParser:
 
         self.junit_xml_string = etree.tostring(self.junit_xml_doc)
         self.junit_xml_object = objectify.fromstring(self.junit_xml_string)
+        if self.junit_xml_object.tag == 'testsuites':
+            self.junit_xml_object = self.junit_xml_object.testsuite
         self.junit_xml_string = str(self.junit_xml_string)
 
     def validate(self):
