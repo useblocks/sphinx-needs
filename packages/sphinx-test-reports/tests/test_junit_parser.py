@@ -2,6 +2,9 @@
 import os
 xml_path = os.path.join(os.path.dirname(__file__), "data", "xml_data.xml")
 xml_pytest_path = os.path.join(os.path.dirname(__file__), "data", "pytest_data.xml")
+xml_pytest51_path = os.path.join(os.path.dirname(__file__),
+                                 "data",
+                                 "pytest_data_5_1.xml")
 xml_nose_path = os.path.join(os.path.dirname(__file__), "data", "nose_data.xml")
 
 
@@ -70,3 +73,13 @@ def test_parse_pytest_xml():
     assert results[0]["testcases"][0]["time"] == "0.000252246856689"
     assert results[0]["testcases"][0]["line"] == "-1"
     assert results[0]["testcases"][0]["file"] == "setup.py"
+
+
+def test_parse_pytest_51_xml():
+    from sphinxcontrib.test_reports.junitparser import JUnitParser
+    parser = JUnitParser(xml_pytest51_path)
+    assert hasattr(parser, "parse")
+    results = parser.parse()
+
+    assert len(results) == 1
+    assert results[0]["name"] == "pytest"
