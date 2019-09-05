@@ -158,6 +158,12 @@ def prepare_need_list(need_list):
             filter_part['id_complete'] = ".".join([need['id'], filter_part['id']])
             all_needs_incl_parts.append(filter_part)
 
+        # Be sure extra attributes, which makes only sense for need_parts, are also available on
+        # need level so that no KeyError gets raised, if search/filter get executed on needs with a need-part argument.
+        if 'id_parent' not in need.keys():
+            need['id_parent'] = need['id']
+        if 'id_complete' not in need.keys():
+            need['id_complete'] = need['id']
     return all_needs_incl_parts
 
 

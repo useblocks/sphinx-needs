@@ -1,5 +1,9 @@
 Changelog
 =========
+0.3.13
+------
+* Bugfix: Filters on needs with ``id_parent`` or ``id_complete`` do not raise an exception anymore and filters
+  gets executed correctly.
 
 0.3.12
 ------
