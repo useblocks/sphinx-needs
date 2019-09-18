@@ -636,6 +636,7 @@ RST-attributes like ``**bold**`` are **not** supported.
 
 needs_role_need_max_title_length
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. versionadded:: 0.3.14
 
 Defines the maximum length of need title that is shown in need references.
 
@@ -645,6 +646,11 @@ using ``needs_role_need_max_title_length``, it is possible to change this
 maximum length.
 
 If set to -1 the title will never be shortened.
+
+.. code-block:: python
+
+    # conf.py
+    needs_role_need_max_title_length = 45
 
 .. _needs_table_style:
 

@@ -1,5 +1,10 @@
 Changelog
 =========
+0.3.14
+------
+* Improvement: Added config option :ref:`needs_role_need_max_title_length` to define the maximum title length of
+  referenced needs. (`#95 <https://github.com/useblocks/sphinxcontrib-needs/issues/95>`_)
+
 0.3.13
 ------
 * Bugfix: Filters on needs with ``id_parent`` or ``id_complete`` do not raise an exception anymore and filters
@@ -7,7 +12,7 @@ Changelog
 
 0.3.12
 ------
-* Improvement: Tables can be sorted by any alphanumeric option (`#92 <https://github.com/useblocks/sphinxcontrib-needs/issues/92>`_)
+* Improvement: Tables can be sorted by any alphanumeric option. (`#92 <https://github.com/useblocks/sphinxcontrib-needs/issues/92>`_)
 * Improvement: :ref:`need_part` are now embedded in their parent need, if :ref:`needflow` is used. (`#83 <https://github.com/useblocks/sphinxcontrib-needs/issues/83>`_)
 * Bugfix: Links to :ref:`need_part` are no longer rendered to parent need, instead the link goes directly to the need_part. (`#91 <https://github.com/useblocks/sphinxcontrib-needs/issues/91>`_)
 * Bugfix: Links in :ref:`needflow` get shown again by default (`#90 <https://github.com/useblocks/sphinxcontrib-needs/issues/90>`_)
