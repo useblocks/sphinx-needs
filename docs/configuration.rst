@@ -632,6 +632,20 @@ Please see https://pyformat.info/ for more information.
 
 RST-attributes like ``**bold**`` are **not** supported.
 
+.. _needs_role_need_max_title_length:
+
+needs_role_need_max_title_length
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Defines the maximum length of need title that is shown in need references.
+
+By default need titles that are longer than 30 characters are shortened when
+shown in :ref:`role_need` text representation and "..." is added at end. By
+using ``needs_role_need_max_title_length``, it is possible to change this
+mamximum length.
+
+If set to -1 the title will never be shortened.
+
 .. _needs_table_style:
 
 needs_table_style

@@ -145,6 +145,7 @@ def setup(app):
     app.add_config_value('needs_collapse_details', True, 'html')
 
     app.add_config_value('needs_role_need_template', u"{title} ({id})", 'html')
+    app.add_config_value('needs_role_need_max_title_length', 30, 'html')
 
     app.add_config_value('needs_extra_options', {}, 'html')
     app.add_config_value('needs_title_optional', False, 'html')
