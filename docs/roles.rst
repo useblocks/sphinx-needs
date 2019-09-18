@@ -36,8 +36,8 @@ Example
 
 .. note::
 
-   The string representation can be easily customized by using the configuration
-   parameters :ref:`needs_role_need_template` and
+   The string representation can be easily customized by using the
+   configuration parameters :ref:`needs_role_need_template` and
    :ref:`needs_role_need_max_title_length`.
 
 
