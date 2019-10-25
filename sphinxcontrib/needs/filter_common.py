@@ -206,7 +206,7 @@ def filter_needs(needs, filter_string="", filter_parts=True, merge_part_with_par
 
     for filter_need in needs:
         try:
-            if filter_single_need(filter_need, filter_string):
+            if filter_single_need(filter_need, filter_string, needs):
                 found_needs.append(filter_need)
         except Exception as e:
             logger.warning("Filter {0} not valid: Error: {1}".format(filter_string, e))
@@ -214,7 +214,7 @@ def filter_needs(needs, filter_string="", filter_parts=True, merge_part_with_par
     return found_needs
 
 
-def filter_single_need(need, filter_string=""):
+def filter_single_need(need, filter_string="", needs=None):
     """
     Checks if a single need/need_part passes a filter_string
 
@@ -223,6 +223,9 @@ def filter_single_need(need, filter_string=""):
     :return: True, if need as passed the filter_string, else False
     """
     filter_context = need.copy()
+    if needs is not None:
+        filter_context['needs'] = needs
+
     filter_context["search"] = re.search
     result = False
     try:

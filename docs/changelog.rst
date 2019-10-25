@@ -1,5 +1,10 @@
 Changelog
 =========
+0.3.15
+------
+* Improvement: In filter operations, all needs can be accessed  by using keyword ``needs``.
+* Bugfix: Removed prefix from normal needs for needtable (`#97 <https://github.com/useblocks/sphinxcontrib-needs/issues/97>`_)
+
 0.3.14
 ------
 * Improvement: Added config option :ref:`needs_role_need_max_title_length` to define the maximum title length of

@@ -171,7 +171,7 @@ def process_needtables(app, doctree, fromdocname):
                 elif col == "TITLE":
                     row += row_col_maker(
                         app, fromdocname, env.needs_all_needs, temp_need, "title",
-                        prefix=app.config.needs_part_prefix)
+                        prefix=prefix)
                 elif col in link_type_list.keys():
                     link_type = link_type_list[col]
                     if col == 'INCOMING' or col == link_type['option'].upper() + '_BACK' or col == link_type['incoming'].upper():
