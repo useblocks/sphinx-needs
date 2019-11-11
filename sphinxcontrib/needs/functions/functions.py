@@ -53,7 +53,7 @@ def execute_func(env, need, func_string):
     :param func_string: string of the found function. Without [[ ]]
     :return: return value of executed function
     """
-    func_name, func_args, func_kwargs = _analyze_func_string(func_string)
+    func_name, func_args, func_kwargs = _analyze_func_string(func_string, need)
 
     if func_name not in env.needs_functions.keys():
         raise SphinxError('Unknown dynamic sphinx-needs function: {}. Found in need: {}'.format(func_name, need['id']))
@@ -207,7 +207,7 @@ def _detect_and_execute(content, need, env):
     return func_call, func_return
 
 
-def _analyze_func_string(func_string):
+def _analyze_func_string(func_string, need):
     """
     Analyze given functiion string an extract:
 
@@ -243,6 +243,11 @@ def _analyze_func_string(func_string):
                 elif isinstance(element, ast.Str):
                     arg_list.append(element.s)
             func_args.append(arg_list)
+        elif isinstance(arg, ast.Attribute):
+            if arg.value.id == 'need':
+                func_args.append(need[arg.attr])
+            else:
+                raise FunctionParsingException()
         else:
             raise FunctionParsingException()
     func_kargs = {}

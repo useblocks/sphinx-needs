@@ -1,6 +1,10 @@
 from docutils import nodes
-from sphinx.environment import NoUri
 from sphinx.util.nodes import make_refnode
+
+try:
+    from sphinx.errors import NoUri  # Sphinx 3.0
+except ImportError:
+    from sphinx.environment import NoUri  # Sphinx < 3.0
 
 
 class Need_incoming(nodes.Inline, nodes.Element):
@@ -58,7 +62,7 @@ def process_need_incoming(app, doctree, fromdocname):
                     if index + 1 < len(links_back):
                         node_link_container += nodes.Text(" ", " ")
 
-                except NoUri:
+                except Exception:
                     # Irf the given need id can not be found, we must pass here....
                     pass
 

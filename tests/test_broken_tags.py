@@ -7,7 +7,7 @@ except ImportError:
 
 from sphinx_testing import with_app
 
-from sphinxcontrib.needs.directives.need import NeedsTagNotAllowed
+from sphinxcontrib.needs.api.need import NeedsTagNotAllowed
 
 
 @raises(NeedsTagNotAllowed)

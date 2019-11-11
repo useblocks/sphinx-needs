@@ -5,7 +5,10 @@ import urllib
 from docutils import nodes
 from docutils.parsers.rst import directives
 from jinja2 import Template
-from sphinx.environment import NoUri
+try:
+    from sphinx.errors import NoUri  # Sphinx 3.0
+except ImportError:
+    from sphinx.environment import NoUri  # Sphinx < 3.0
 from sphinxcontrib.needs.utils import row_col_maker, status_sorter
 
 from sphinxcontrib.needs.filter_common import FilterBase, procces_filters

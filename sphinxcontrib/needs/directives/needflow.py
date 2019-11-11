@@ -8,8 +8,11 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 from jinja2 import Template
 from pkg_resources import parse_version
-from sphinx.environment import NoUri
-from sphinxcontrib.needs.utils import status_sorter
+try:
+    from sphinx.errors import NoUri  # Sphinx 3.0
+except ImportError:
+    from sphinx.environment import NoUri  # Sphinx < 3.0
+
 
 from sphinxcontrib.needs.filter_common import FilterBase, procces_filters
 

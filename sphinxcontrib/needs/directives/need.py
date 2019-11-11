@@ -12,10 +12,13 @@ from pkg_resources import parse_version
 import sphinx
 from sphinx.util.nodes import make_refnode
 
+from sphinxcontrib.needs.api import add_need
+
 from sphinxcontrib.needs.roles.need_incoming import Need_incoming
 from sphinxcontrib.needs.roles.need_outgoing import Need_outgoing
 from sphinxcontrib.needs.roles.need_part import update_need_with_parts, find_parts
 from sphinxcontrib.needs.functions import resolve_dynamic_values, find_and_replace_node_content
+from sphinxcontrib.needs.api.exceptions import NeedsInvalidException
 
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
@@ -83,45 +86,8 @@ class NeedDirective(Directive):
         # Get environment
         #############################################################################################
         env = self.env
-        types = env.app.config.needs_types
-        type_name = ""
-        type_prefix = ""
-        type_color = ""
-        type_style = ""
-        found = False
-        for type in types:
-            if type["directive"] == self.name:
-                type_name = type["title"]
-                type_prefix = type["prefix"]
-                type_color = type["color"]
-                type_style = type["style"]
-                found = True
-                break
-        if not found:
-            # This should never happen. But it may happen, if Sphinx is called multiples times
-            # inside one ongoing python process.
-            # In this case the configuration from a prior sphinx run may be active, which has registered a directive,
-            # which is reused inside a current document, but no type was defined for the current run...
-            # Yeah, this really has happened...
-            return [nodes.Text('', '')]
 
-        # Get the id or generate a random string/hash string, which is hopefully unique
-        # TODO: Check, if id was already given. If True, recalculate id
-        # id = self.options.get("id", ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for
-        # _ in range(5)))
-        if "id" not in self.options.keys() and env.app.config.needs_id_required:
-            raise NeedsNoIdException("An id is missing for this need and must be set, because 'needs_id_required' "
-                                     "is set to True in conf.py")
-
-        id = self.options.get("id", self.make_hashed_id(type_prefix, env.config.needs_id_length))
-
-        if env.app.config.needs_id_regex and not re.match(env.app.config.needs_id_regex, id):
-            raise NeedsInvalidException("Given ID '{id}' does not match configured regex '{regex}'".format(
-                id=id, regex=env.app.config.needs_id_regex))
-
-        # Calculate target id, to be able to set a link back
-        target_node = nodes.target('', '', ids=[id])
-
+        # ToDo: Keep this in directive!!!
         collapse = str(self.options.get("collapse", ""))
         if isinstance(collapse, str) and len(collapse) > 0:
             if collapse.upper() in ["TRUE", 1, "YES"]:
@@ -136,125 +102,24 @@ class NeedDirective(Directive):
         hide = True if "hide" in self.options.keys() else False
         hide_tags = True if "hide_tags" in self.options.keys() else False
         hide_status = True if "hide_status" in self.options.keys() else False
+
+        id = self.options.get("id", None)
         content = "\n".join(self.content)
-
-        # Handle status
         status = self.options.get("status", None)
-        # Check if status is in needs_statuses. If not raise an error.
-        if env.app.config.needs_statuses:
-            if status not in [stat["name"] for stat in env.app.config.needs_statuses]:
-                raise NeedsStatusNotAllowed("Status {0} of need id {1} is not allowed "
-                                            "by config value 'needs_statuses'.".format(status, id))
+        tags = self.options.get("tags", '')
 
-        tags = self.options.get("tags", [])
-        if len(tags) > 0:
-            # Not working regex.
-            # test = re.match(r'^(?: *(\[\[.*?\]\]|[^,; ]+) *(?:,|;|$)?)+', tags)
+        need_extra_options = {}
+        for extra_link in env.config.needs_extra_links:
+            need_extra_options[extra_link['option']] = self.options.get(extra_link['option'], '')
 
-            tags = [tag.strip() for tag in re.split(";|,", tags)]
-            for i in range(len(tags)):
-                if len(tags[i]) == 0 or tags[i].isspace():
-                    del (tags[i])
-                    logger.warning('Scruffy tag definition found in need {}. '
-                                   'Defined tag contains spaces only.'.format(id))
+        for extra_option in env.config.needs_extra_options.keys():
+            need_extra_options[extra_option] = self.options.get(extra_option, '')
 
-            # Check if tag is in needs_tags. If not raise an error.
-            if env.app.config.needs_tags:
-                for tag in tags:
-                    if tag not in [tag["name"] for tag in env.app.config.needs_tags]:
-                        raise NeedsTagNotAllowed("Tag {0} of need id {1} is not allowed "
-                                                 "by config value 'needs_tags'.".format(tag, id))
-            # This may have cut also dynamic function strings, as they can contain , as well.
-            # So let put them together again
-            # ToDo: There may be a smart regex for the splitting. This would avoid this mess of code...
-        tags = _fix_list_dyn_func(tags)
-
-        #############################################################################################
-        # Add need to global need list
-        #############################################################################################
-        # be sure, global var is available. If not, create it
-        if not hasattr(env, 'needs_all_needs'):
-            env.needs_all_needs = {}
-
-        if id in env.needs_all_needs.keys():
-            if 'id' in self.options:
-                raise NeedsDuplicatedId("A need with ID {} already exists! "
-                                        "This is not allowed. Document {}[{}]".format(id, self.docname, self.lineno))
-            else:  # this is a generated ID
-                raise NeedsDuplicatedId(
-                    "Needs could not generate a unique ID for a need with "
-                    "the title '{}' because another need had the same title. "
-                    "Either supply IDs for the requirements or ensure the "
-                    "titles are different.  NOTE: If title is being generated "
-                    "from the content, then ensure the first sentence of the "
-                    "requirements are different.".format(' '.join(self.full_title)))
-
-        # Add the need and all needed information
-        needs_info = {
-            'docname': self.docname,
-            'lineno': self.lineno,
-            'target_node': target_node,
-            'type': self.name,
-            'type_name': type_name,
-            'type_prefix': type_prefix,
-            'type_color': type_color,
-            'type_style': type_style,
-            'status': status,
-            'tags': tags,
-            'id': id,
-            'title': self.trimmed_title,
-            'full_title': self.full_title,
-            'content': content,
-            'collapse': collapse,
-            'hide': hide,
-            'hide_tags': hide_tags,
-            'hide_status': hide_status,
-            'parts': {},
-
-            'is_part': False,
-            'is_need': True
-        }
-        self.merge_extra_options(needs_info)
-        self.merge_global_options(needs_info)
-
-        # Merge links
-        copy_links = []
-
-        for link_type in env.config.needs_extra_links:
-            links = self.read_in_links(link_type["option"])
-            needs_info[link_type["option"]] = links
-            needs_info['{}_back'.format(link_type["option"])] = set()
-
-            if link_type['copy'] and link_type['option'] != 'links':
-                copy_links += links
-
-        needs_info['links'] += copy_links
-
-        env.needs_all_needs[id] = needs_info
-
-        if hide:
-            return [target_node]
-
-        # Adding of basic Need node.
-        ############################
-        # Title and meta data information gets added alter during event handling via process_need_nodes()
-        # We just add a basic need node and render the rst-based content, because this can not be done later.
-        node_need = Need('', classes=['need', self.name, 'need-{}'.format(type_name.lower())])
-
-        # Render rst-based content and add it to the need-node
-        rst = ViewList()
-        for line in self.content:
-            rst.append(line, self.docname, self.lineno)
-        node_need_content = nodes.Element()
-        node_need_content.document = self.state.document
-        nested_parse_with_titles(self.state, rst, node_need_content)
-
-        need_parts = find_parts(node_need_content)
-        update_need_with_parts(env, needs_info, need_parts)
-
-        node_need += node_need_content.children
-
-        return [target_node] + [node_need]
+        return add_need(env.app, self.state, self.docname, self.lineno,
+                        need_type=self.name, title=self.trimmed_title, id=id, content=content,
+                        status=status, tags=tags,
+                        hide=hide, hide_tags=hide_tags, hide_status=hide_status,
+                        collapse=collapse, **need_extra_options)
 
     def read_in_links(self, name):
         # Get links
@@ -336,8 +201,10 @@ class NeedDirective(Directive):
 
             needs_info[key] = value
 
+    # ToDo. Keep this in directive
     def _get_full_title(self):
-        """Determines the title for the need in order of precedence:
+        """
+        Determines the title for the need in order of precedence:
         directive argument, first sentence of requirement (if
         `:title_from_content:` was set, and '' if no title is to be derived."""
         if len(self.arguments) > 0:  # a title was passed
@@ -696,24 +563,4 @@ def latex_visit(self, node):
 
 
 def latex_depart(self, node):
-    pass
-
-
-class NeedsNoIdException(SphinxError):
-    pass
-
-
-class NeedsDuplicatedId(SphinxError):
-    pass
-
-
-class NeedsStatusNotAllowed(SphinxError):
-    pass
-
-
-class NeedsTagNotAllowed(SphinxError):
-    pass
-
-
-class NeedsInvalidException(SphinxError):
     pass

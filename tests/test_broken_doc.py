@@ -1,7 +1,7 @@
 from nose.tools import raises
 from sphinx_testing import with_app
 
-from sphinxcontrib.needs.directives.need import NeedsDuplicatedId
+from sphinxcontrib.needs.api.need import NeedsDuplicatedId
 
 
 @raises(NeedsDuplicatedId)

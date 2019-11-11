@@ -37,7 +37,7 @@ else:
 
     logging.basicConfig()  # Only need to do this once
 
-VERSION = '0.3.15'
+VERSION = '1.0.0'
 
 DEFAULT_TEMPLATE_COLLAPSE = """
 .. _{{id}}:
@@ -264,7 +264,7 @@ def setup(app):
     for type in types:
         # Register requested types of needs
         app.add_directive(type["directive"], NeedDirective)
-        app.add_directive("{0}_list".format(type["directive"]), NeedDirective)
+        # app.add_directive("{0}_list".format(type["directive"]), NeedDirective)
 
     app.add_directive('needfilter', NeedfilterDirective)
     app.add_directive('needlist', NeedlistDirective)

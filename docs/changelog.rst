@@ -1,5 +1,10 @@
 Changelog
 =========
+1.0.0
+-----
+
+* Bugfix: Fixed deprecation warnings to support upcoming Sphinx3.0 API.
+
 0.3.15
 ------
 * Improvement: In filter operations, all needs can be accessed  by using keyword ``needs``.

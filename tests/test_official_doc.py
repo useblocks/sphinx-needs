@@ -5,7 +5,7 @@ import six
 from nose.tools import raises
 from sphinx_testing import with_app
 
-from sphinxcontrib.needs.directives.need import NeedsNoIdException
+from sphinxcontrib.needs.api.need import NeedsNoIdException
 try:
     from pathlib import Path
 except ImportError:

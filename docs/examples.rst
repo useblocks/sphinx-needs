@@ -97,17 +97,16 @@ As :need:`IMPL_01` shows, the linked :need:`OWN_ID_123` is realisable.
 
 **Filter result as list**
 
-.. needfilter::
+.. needtable::
    :tags: test
    :show_filters:
 
 **Filter result as table**
 
-.. needfilter::
+.. needtable::
    :tags: test
    :status: implemented; open
    :show_filters:
-   :layout: table
 
 **Filter result as diagram**
 
@@ -117,17 +116,17 @@ As :need:`IMPL_01` shows, the linked :need:`OWN_ID_123` is realisable.
    ReadTheDocs does not support plantuml.
    Therefore diagram generation is not possible on the server and we show an image here.
 
-   .. needfilter::
-      :layout: diagram
+   .. needflow::
+      :filter: "test" in tags
 
 
 .. image:: _static/diagram.png
 
 {% else %}
 
-.. needfilter::
-       :filter: "filter" not in tags
-       :layout: diagram
+.. needflow::
+   :filter: "Examples" == section_name
+
 
 {% endif %}
 

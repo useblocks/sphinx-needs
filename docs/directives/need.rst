@@ -88,10 +88,15 @@ You can easily set links to multiple needs by using ";" as separator.
 
    .. code-block:: rst
 
-      .. req:: Link example
-         :links: OWN_ID_123; IMPL_01
+      .. req:: Link example Target
+         :id: REQ_LINK_1
 
-         We have linked this requirement to multiple other needs.
+         This is the target for a link. Itself has no link set.
+
+      .. req:: Link example Source
+         :links: REQ_LINK_1
+
+         This sets a link to id ``REQ_LINK_1``.
 
    .. req:: Link example
          :links: OWN_ID_123; IMPL_01

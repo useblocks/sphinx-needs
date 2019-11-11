@@ -193,6 +193,8 @@ Inside a filter string the following variables/functions can be used:
 * **parts** as Python list with :ref:`need_part` of the current need. (compare like ``len(parts)>0``)
 * :ref:`re_search`, as Python function for performing searches with a regular expression
 * **needs** as Python dict. Contains all needs. Helpful to perform complex filters on links (added 0.3.15).
+* **sections** as list of sections names, th which the need belongs to.
+* **section_name** as string, which defines the last/lowest section a need belongs to.
 
 Additional variables for :ref:`need_part`:
 

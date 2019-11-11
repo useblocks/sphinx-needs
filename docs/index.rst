@@ -210,6 +210,7 @@ Content
    dynamic_functions
    styles
    examples
+   api
    changelog
    license
    contributors
