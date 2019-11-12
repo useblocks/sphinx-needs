@@ -45,8 +45,8 @@ Content
 .. toctree::
    :maxdepth: 2
 
-   directives/test_results
-   directives/test_env
+   directives/index
+   filter
    changelog
 
 

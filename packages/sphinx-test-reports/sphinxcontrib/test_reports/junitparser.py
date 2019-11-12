@@ -1,4 +1,5 @@
 import os
+import re
 from lxml import etree, objectify
 
 
@@ -42,12 +43,19 @@ class JUnitParser:
         junit_dict = []
 
         for testsuite in self.junit_xml_object:
+            tests = int(testsuite.attrib.get("tests", "-1"))
+            errors = int(testsuite.attrib.get("errors", "-1"))
+            failures = int(testsuite.attrib.get("failures", "-1"))
+            skips = int(testsuite.attrib.get("skips", testsuite.attrib.get("skip", "-1")))
+            passed = int(tests - sum(x for x in [errors, failures, skips] if x > 0))
+
             ts_dict = {
                 "name": testsuite.attrib.get("name", "unknown"),
-                "tests": testsuite.attrib.get("tests", "-1"),
-                "errors": testsuite.attrib.get("errors", "-1"),
-                "failures": testsuite.attrib.get("failures", "-1"),
-                "skips": testsuite.attrib.get("skips", testsuite.attrib.get("skip", "-1")),
+                "tests": tests,
+                "errors": errors,
+                "failures": failures,
+                "skips": skips,
+                "passed": passed,
                 "time": testsuite.attrib.get("time", "-1"),
                 "testcases": []
             }
@@ -67,13 +75,13 @@ class JUnitParser:
                     result = testcase.skipped
                     tc_dict["result"] = "skipped"
                     tc_dict["type"] = result.attrib.get("type", "unknown")
-                    tc_dict["text"] = result.text
+                    tc_dict["text"] = re.sub(r"[\n\t]*", "", result.text)  # Removes newlines  and tabs
                     tc_dict["message"] = result.attrib.get("message", "unknown")
                 elif hasattr(testcase, "failure"):
                     result = testcase.failure
                     tc_dict["result"] = "failure"
                     tc_dict["type"] = result.attrib.get("type", "unknown")
-                    tc_dict["text"] = result.text
+                    tc_dict["text"] = re.sub(r"[\n\t]*", "", result.text)  # Removes newlines and tabs
                     tc_dict["message"] = ""
                 else:
                     tc_dict["result"] = "passed"

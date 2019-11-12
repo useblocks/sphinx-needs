@@ -15,6 +15,7 @@
 # import os
 # import sys
 import datetime
+import os
 # sys.path.insert(0, os.path.abspath('.'))
 
 # -- Project information -----------------------------------------------------
@@ -39,11 +40,26 @@ release = '0.2'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ["sphinxcontrib.test_reports"]
+extensions = ["sphinxcontrib.needs",
+              "sphinxcontrib.test_reports",
+              'sphinxcontrib.plantuml']
+
+cwd = os.getcwd()
+plantuml = 'java -jar %s' % os.path.join(cwd, "utils/plantuml_beta.jar")
+
+# If we are running on windows, we need to manipulate the path,
+# otherwise plantuml will have problems.
+if os.name == "nt":
+    plantuml = plantuml.replace("/", "\\")
+    plantuml = plantuml.replace("\\", "\\\\")
+
+plantuml_output_format = 'png'
 
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
+
+
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:

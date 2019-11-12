@@ -19,6 +19,8 @@
 import os
 import sys
 
+from sphinxcontrib.test_reports import Results4Needs
+
 sys.path.insert(0, os.path.abspath('../../sphinxcontrib'))
 
 # -- General configuration ------------------------------------------------
@@ -31,7 +33,13 @@ sys.path.insert(0, os.path.abspath('../../sphinxcontrib'))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 
-extensions = ['sphinxcontrib.test_reports']
+extensions = ['sphinxcontrib.test_reports',
+              'sphinxcontrib.needs']
+
+my_results = Results4Needs('../../data/nose_data.xml')
+
+needs_functions = [my_results.testcase_value, my_results.testsuite_value]
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
