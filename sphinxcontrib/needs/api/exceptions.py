@@ -1,4 +1,4 @@
-from sphinx.errors import SphinxError
+from sphinx.errors import SphinxError, SphinxWarning
 
 
 class NeedsNotLoadedException(SphinxError):
@@ -18,6 +18,10 @@ class NeedsApiConfigException(SphinxError):
     """
 
 
+class NeedsApiConfigWarning(SphinxWarning):
+    pass
+
+
 class NeedsNoIdException(SphinxError):
     pass
 
@@ -35,4 +39,8 @@ class NeedsTagNotAllowed(SphinxError):
 
 
 class NeedsInvalidException(SphinxError):
+    pass
+
+
+class NeedsInvalidOption(SphinxError):
     pass

@@ -2,7 +2,7 @@ import hashlib
 import re
 from docutils import nodes
 from sphinxcontrib.needs.api.exceptions import NeedsNoIdException, NeedsInvalidException, NeedsStatusNotAllowed, \
-     NeedsTagNotAllowed, NeedsDuplicatedId
+     NeedsTagNotAllowed, NeedsDuplicatedId, NeedsInvalidOption
 import sphinxcontrib.needs.directives.need
 from sphinx.util.nodes import nested_parse_with_titles
 from sphinxcontrib.needs.roles.need_part import update_need_with_parts, find_parts
@@ -65,7 +65,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
                                  "is set to True in conf.py")
 
     if id is None:
-        need_id = make_hashed_id(type_prefix, env.config.needs_id_length, title, content)
+        need_id = make_hashed_id(app, need_type, title, content)
     else:
         need_id = id
 
@@ -167,6 +167,13 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
     needs_global_options = env.config.needs_global_options
     merge_global_options(needs_info, needs_global_options)
 
+    link_names = [x['option'] for x in env.config.needs_extra_links]
+    for keyword in kwargs:
+        if keyword not in needs_extra_options and keyword not in link_names:
+            raise NeedsInvalidOption('Unknown Option {}. '
+                                     'Use needs_extra_options or needs_extra_links in conf.py'
+                                     'to define this option.'.format(keyword))
+
     # Merge links
     copy_links = []
 
@@ -233,7 +240,18 @@ def read_in_links(links_string):
     return _fix_list_dyn_func(links)
 
 
-def make_hashed_id(type_prefix, id_length, full_title, content):
+def make_hashed_id(app, need_type, full_title, content, id_length=None):
+    types = app.config.needs_types
+    if id_length is None:
+        id_length = app.config.needs_id_length
+    type_prefix = None
+    for ntype in types:
+        if ntype["directive"] == need_type:
+            type_prefix = ntype["prefix"]
+            break
+    if type_prefix is None:
+        raise NeedsInvalidException('Given need_type {} is unknown'.format(need_type))
+
     hashable_content = full_title or '\n'.join(content)
     return "%s%s" % (type_prefix,
                      hashlib.sha1(hashable_content.encode("UTF-8"))
@@ -284,7 +302,7 @@ def merge_extra_options(needs_info, needs_kwargs, needs_extra_options):
 
     for key in needs_extra_options:
         if key in extra_keys:
-            needs_info[key] = needs_kwargs[key]
+            needs_info[key] = str(needs_kwargs[key])
         elif key not in needs_info.keys():
             # Finally add all not used extra options with empty value to need_info.
             # Needed for filters, which need to access these empty/not used options.
@@ -304,3 +322,5 @@ def merge_global_options(needs_info, global_options):
             continue
 
         needs_info[key] = value
+
+

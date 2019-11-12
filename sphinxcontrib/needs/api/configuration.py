@@ -3,8 +3,9 @@ API to get or add specific sphinx needs configuration parameters.
 
 All functions here are available under ``sphinxcontrib.api``. So dot not import this module directly.
 """
+from docutils.parsers.rst import directives
 
-from sphinxcontrib.needs.api.exceptions import NeedsNotLoadedException, NeedsApiConfigException
+from sphinxcontrib.needs.api.exceptions import NeedsNotLoadedException, NeedsApiConfigException, NeedsApiConfigWarning
 import sphinxcontrib.needs.directives.need
 
 
@@ -14,7 +15,6 @@ def get_need_types(app):
 
     **Usage**::
 
-        from sphinxcontrib.needs.api import get_need_types
         from sphinxcontrib.needs.api import get_need_types
 
         all_types = get_need_types(app)
@@ -31,6 +31,8 @@ def add_need_type(app, directive, title, prefix, color='#ffffff', style='node'):
     Adds a new need_type to the configuration.
 
     The given directive must no exist, otherwise NeedsApiConfigException gets raised.
+
+    Same impact as using :ref:`need_types` manually.
 
     **Usage**::
 
@@ -63,3 +65,30 @@ def add_need_type(app, directive, title, prefix, color='#ffffff', style='node'):
         'style': style
     })
     app.add_directive(directive, sphinxcontrib.needs.directives.need.NeedDirective)
+
+
+def add_extra_option(app, name):
+    """
+    Adds an extra option to the configuration. This option can then later be used inside needs or ``add_need``.
+
+    Same impact as using :ref:`needs_extra_options` manually.
+
+    **Usage**::
+
+        from sphinxcontrib.needs.api import add_extra_option
+
+        add_extra_option(app, 'my_extra_option')
+
+    :param app: Sphinx application object
+    :param name: Name as string of the extra option
+    :return: None
+    """
+    if not hasattr(app.config, 'needs_extra_options'):
+        raise NeedsNotLoadedException('needs_types missing in configuration.')
+
+    extra_options = getattr(app.config, 'needs_extra_options', {})
+
+    if name in extra_options.keys():
+        raise NeedsApiConfigWarning('Option {} already registered.'.format(name))
+
+    extra_options[name] = directives.unchanged

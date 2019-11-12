@@ -467,7 +467,7 @@ def construct_meta(need_data, env):
         if key in hide_options:
             continue
         param_data = need_data[key]
-        if param_data is None or not param_data:
+        if (param_data is None or not param_data) and param_data != 0:
             continue
         param_option = '{}: '.format(key)
         option_line = nodes.line(classes=['extra_option'])
