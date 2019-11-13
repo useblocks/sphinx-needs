@@ -1,2 +1,3 @@
 sphinx>=2.0
 sphinxcontrib-needs>=0.4
+sphinx-test-reports>=0.3
