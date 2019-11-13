@@ -156,7 +156,7 @@ def setup(app):
                          DEFAULT_DIAGRAM_TEMPLATE,
                          'html')
 
-    # app.add_config_value('needs_functions', None, 'html')
+    app.add_config_value('needs_functions', [], 'html')
     app.add_config_value('needs_global_options', {}, 'html')
     app.add_config_value('needs_hide_options', [], 'html')
 

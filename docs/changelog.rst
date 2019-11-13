@@ -1,8 +1,9 @@
 Changelog
 =========
-1.0.0
+0.4.0
 -----
-
+* Improvement: Provides API for other sphinx-extensions. See :ref:`api` for documentation.
+* Improvement: Added :ref:`support` page.
 * Bugfix: Fixed deprecation warnings to support upcoming Sphinx3.0 API.
 
 0.3.15

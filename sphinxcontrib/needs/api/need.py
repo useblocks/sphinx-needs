@@ -22,13 +22,60 @@ logger = logging.getLogger(__name__)
 def add_need(app, state, docname, lineno, need_type, title, id=None, content="", status=None, tags=None,
              links_string=None, hide=False, hide_tags=False, hide_status=False, collapse=True, **kwargs):
     """
+    Creates a new need and returns its node.
 
-    :param hide:
-    :param content:
-    :param title:
-    :param app:
-    :param need_type:
-    :return:
+    ``add_need`` allows to create needs programmatically and use its returned node to be integrated in any
+    docutils based structure.
+
+    ``kwags`` can contain options defined in ``needs_extra_options`` and ``needs_extra_links``.
+    If an entry is found in ``kwags``, which *is not* specified in the configuration or registered e.g. via
+    ``add_extra_option``, an exception is raised.
+
+    **Usage**:
+
+    Normally needs get created during handling of a specialised directive.
+    So this pseudo-code shows how to use ``add_need`` inside such a directive.
+
+    .. code-block:: python
+
+        from docutils.parsers.rst import Directive
+        from sphinxcontrib.needs.api import add_need
+
+        class MyDirective(Directive)
+            # configs and init routine
+
+            def run():
+                main_section = []
+
+                docname = self.state.document.settings.env.docname
+
+                # All needed sphinx-internal information we can take from our current directive class.
+                # e..g app, state, lineno
+                main_section += add_need(self.env.app, self.state, docname, self.lineno,
+                                         need_type="req", title="my title", id="ID_001"
+                                         content=self.content)
+
+                # Feel free to add custom stuff to main_section like sections, text, ...
+
+                return main_section
+
+    :param app: Sphinx application object.
+    :param state: Current state object.
+    :param docname: documentation name.
+    :param lineno: line number.
+    :param need_type: Name of the need type to create.
+    :param title: String as title.
+    :param id: ID as string. If not given, a id will get generated.
+    :param content: Content as single string.
+    :param status: Status as string.
+    :param tags: Tags as single string.
+    :param links_string: Links as single string.
+    :param hide: boolean value.
+    :param hide_tags: boolean value.
+    :param hide_status: boolean value.
+    :param collapse: boolean value.
+
+    :return: node
     """
     #############################################################################################
     # Get environment
@@ -162,10 +209,10 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
         'is_need': True
     }
     needs_extra_options = env.config.needs_extra_options.keys()
-    merge_extra_options(needs_info, kwargs, needs_extra_options)
+    _merge_extra_options(needs_info, kwargs, needs_extra_options)
 
     needs_global_options = env.config.needs_global_options
-    merge_global_options(needs_info, needs_global_options)
+    _merge_global_options(needs_info, needs_global_options)
 
     link_names = [x['option'] for x in env.config.needs_extra_links]
     for keyword in kwargs:
@@ -185,7 +232,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
         else:
             # if yes, parse string and get links
             links_string = kwargs[link_type['option']]
-            links = read_in_links(links_string)
+            links = _read_in_links(links_string)
 
         needs_info[link_type["option"]] = links
         needs_info['{}_back'.format(link_type["option"])] = set()
@@ -223,7 +270,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
     return [target_node] + [node_need]
 
 
-def read_in_links(links_string):
+def _read_in_links(links_string):
     # Get links
     links = []
     if len(links_string) > 0:
@@ -241,6 +288,18 @@ def read_in_links(links_string):
 
 
 def make_hashed_id(app, need_type, full_title, content, id_length=None):
+    """
+    Creates an ID based on title or need.
+
+    Also cares about the correct prefix, which is specified for each need type.
+
+    :param app: Sphinx application object
+    :param need_type: name of the need directive, e.g. req
+    :param full_title: full title of the need
+    :param content: content of the need
+    :param id_length: maximum length of the generated ID
+    :return: ID as string
+    """
     types = app.config.needs_types
     if id_length is None:
         id_length = app.config.needs_id_length
@@ -296,7 +355,7 @@ def _fix_list_dyn_func(list):
     return new_list
 
 
-def merge_extra_options(needs_info, needs_kwargs, needs_extra_options):
+def _merge_extra_options(needs_info, needs_kwargs, needs_extra_options):
     """Add any extra options introduced via options_ext to needs_info"""
     extra_keys = set(needs_kwargs.keys()).difference(set(needs_info.keys()))
 
@@ -311,7 +370,7 @@ def merge_extra_options(needs_info, needs_kwargs, needs_extra_options):
     return extra_keys
 
 
-def merge_global_options(needs_info, global_options):
+def _merge_global_options(needs_info, global_options):
     """Add all global defined options to needs_info"""
     if global_options is None:
         return

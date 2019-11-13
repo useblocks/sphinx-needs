@@ -211,6 +211,7 @@ Content
    styles
    examples
    api
+   support
    changelog
    license
    contributors

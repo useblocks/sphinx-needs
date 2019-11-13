@@ -1,7 +1,7 @@
 """
 API to get or add specific sphinx needs configuration parameters.
 
-All functions here are available under ``sphinxcontrib.api``. So dot not import this module directly.
+All functions here are available under ``sphinxcontrib.api``. So do not import this module directly.
 """
 from docutils.parsers.rst import directives
 
@@ -84,7 +84,7 @@ def add_extra_option(app, name):
     :return: None
     """
     if not hasattr(app.config, 'needs_extra_options'):
-        raise NeedsNotLoadedException('needs_types missing in configuration.')
+        raise NeedsNotLoadedException('needs_extra_options missing in configuration.')
 
     extra_options = getattr(app.config, 'needs_extra_options', {})
 
@@ -92,3 +92,32 @@ def add_extra_option(app, name):
         raise NeedsApiConfigWarning('Option {} already registered.'.format(name))
 
     extra_options[name] = directives.unchanged
+
+
+def add_dynamic_function(app, function):
+    """
+    Registers a new dynamic function for sphinx-needs.
+
+    The name to call the function is automatically taken from the provided function
+    and must be unique.
+
+    **Usage**::
+
+        from sphinxcontrib.needs.api import add_dynamic_function
+
+        def my_function(app, need, needs, *args, **kwargs):
+            # Do magic here
+            return "some data"
+
+        add_dynamic_function(app, my_function)
+
+    Read :ref:`dynamic_functions` for details about how to use dynamic functions.
+
+    :param app: Sphinx application object
+    :param function: Function to register
+    :return: None
+    """
+    if not hasattr(app, 'needs_functions'):
+        raise NeedsNotLoadedException('needs_functions missing in configuration.')
+    needs_functions = getattr(app, 'needs_functions', [])
+    needs_functions.append(function)
