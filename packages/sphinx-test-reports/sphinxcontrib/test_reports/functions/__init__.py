@@ -1,4 +1,4 @@
-def test_link(app, need, needs, test_option, target_option, *args, **kwargs):
+def tr_link(app, need, needs, test_option, target_option, *args, **kwargs):
     if test_option not in need:
         return ""
     test_opt = need[test_option]

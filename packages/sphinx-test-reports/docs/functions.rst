@@ -7,7 +7,7 @@ Read chapter `Dynamic function <https://sphinxcontrib-needs.readthedocs.io/en/la
 from Sphinx-Needs documentation to know how to use them.
 
 
-test_link
+tr_link
 ---------
 Links a need (e.g testcase) automatically to other needs, which have a specific value in a given option.
 
@@ -19,9 +19,9 @@ Links a need (e.g testcase) automatically to other needs, which have a specific 
       :suite: pytest
       :classname: sphinxcontrib.test_reports.test_reports
       :case: FLAKE8
-      :links: [[test_link("source_option", "target_option")]]
+      :links: [[tr_link("source_option", "target_option")]]
 
-``test_link`` needs the following arguments:
+``tr_link`` needs the following arguments:
 
 * **source_option**: Name of an option of the test-need, which is used for comparision. E.g. ``classname``.
 * **target_option**: Name of an option of all other needs, which is used for comparision. E.g. ``title``.
@@ -47,7 +47,7 @@ If this is the case, their IDs get stored and finally returned.
       :classname: sphinxcontrib.test_reports.test_reports
       :case: FLAKE8
       :tags: example, link_example
-      :links: [[test_link('classname', 'title')]]
+      :links: [[tr_link('classname', 'title')]]
 
       A simple test case.
       We will set a link to the need, which has our classname as title.
@@ -69,7 +69,7 @@ If this is the case, their IDs get stored and finally returned.
    :classname: sphinxcontrib.test_reports.test_reports
    :case: FLAKE8
    :tags: example, link_example
-   :links: [[test_link('classname', 'title')]]
+   :links: [[tr_link('classname', 'title')]]
 
    A simple test case.
    We will set a link to the need, which has our classname as title.

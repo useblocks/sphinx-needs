@@ -10,7 +10,7 @@ from sphinxcontrib.test_reports.directives import TestFile, TestFileDirective, T
     TestCase, TestCaseDirective
 from sphinxcontrib.test_reports.directives.test_env import EnvReport, EnvReportDirective
 from sphinxcontrib.test_reports.environment import install_styles_static_files
-from sphinxcontrib.test_reports.functions import test_link
+from sphinxcontrib.test_reports.functions import tr_link
 
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
@@ -74,7 +74,7 @@ def setup(app):
     # Extra dynamic functions
     # For details about usage read
     # https://sphinxcontrib-needs.readthedocs.io/en/latest/api.html#sphinxcontrib.needs.api.configuration.add_dynamic_function
-    add_dynamic_function(app, test_link)
+    add_dynamic_function(app, tr_link)
 
     # Extra need types
     # For details about usage read
