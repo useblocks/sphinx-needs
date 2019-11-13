@@ -22,7 +22,7 @@ def test_doc_env_report_build_html(app, status, warning):
     html = (app.outdir / 'index.html').read_text()
 
     assert '<h1>Test-Env report' in html
-    assert '<th class="head">Variable</th>' in html
+    assert '<th class="head"><p>Variable</p></th>' in html
 
     tables = re.findall("(<table .*?</table>)", html, re.DOTALL)
 
@@ -108,7 +108,7 @@ def test_doc_env_report_warning_build_html(app, status, warning):
     html = (app.outdir / 'index.html').read_text()
 
     assert '<h1>Test-Env report' in html
-    assert '<th class="head">Variable</th>' in html
+    assert '<th class="head"><p>Variable</p></th>' in html
 
     tables = re.findall("(<table .*?</table>)", html, re.DOTALL)
 
@@ -135,7 +135,7 @@ def test_doc_env_report_warning_build_html(app, status, warning):
     Taken from solution of this issue:
         https://github.com/useblocks/sphinxcontrib-needs/issues/44
     """
-    
+
     if sphinx_version > 15:
         assert "WARNING: environment 'defs' is not present in JSON file" in output
         assert "WARNING: option 'abc' is not present in JSON file" in output

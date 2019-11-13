@@ -43,10 +43,10 @@ class JUnitParser:
         junit_dict = []
 
         for testsuite in self.junit_xml_object:
-            tests = int(testsuite.attrib.get("tests", "-1"))
-            errors = int(testsuite.attrib.get("errors", "-1"))
-            failures = int(testsuite.attrib.get("failures", "-1"))
-            skips = int(testsuite.attrib.get("skips", testsuite.attrib.get("skip", "-1")))
+            tests = int(testsuite.attrib.get("tests", -1))
+            errors = int(testsuite.attrib.get("errors", -1))
+            failures = int(testsuite.attrib.get("failures", -1))
+            skips = int(testsuite.attrib.get("skips", testsuite.attrib.get("skip", -1)))
             passed = int(tests - sum(x for x in [errors, failures, skips] if x > 0))
 
             ts_dict = {
@@ -56,7 +56,7 @@ class JUnitParser:
                 "failures": failures,
                 "skips": skips,
                 "passed": passed,
-                "time": testsuite.attrib.get("time", "-1"),
+                "time": float(testsuite.attrib.get("time", -1)),
                 "testcases": []
             }
 
@@ -64,9 +64,9 @@ class JUnitParser:
                 tc_dict = {
                     "classname": testcase.attrib.get("classname", "unknown"),
                     "file": testcase.attrib.get("file", "unknown"),
-                    "line": testcase.attrib.get("line", "-1"),
+                    "line": int(testcase.attrib.get("line", -1)),
                     "name": testcase.attrib.get("name", "unknown"),
-                    "time": testcase.attrib.get("time", "-1"),
+                    "time": float(testcase.attrib.get("time", -1)),
                 }
 
                 # The following data is normally a subnode (e.g. skipped/failure).

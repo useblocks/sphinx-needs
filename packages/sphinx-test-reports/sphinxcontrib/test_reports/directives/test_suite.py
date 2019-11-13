@@ -1,7 +1,6 @@
 import hashlib
-import os
 from docutils import nodes
-from docutils.parsers.rst import Directive, directives
+from docutils.parsers.rst import directives
 
 from sphinxcontrib.test_reports.directives import TestCommonDirective
 import sphinxcontrib.test_reports.directives.test_case

@@ -1,7 +1,6 @@
 """
 A Common directive, from which all other test directives inherit the shared functions.
 """
-import hashlib
 import os
 from docutils.parsers.rst import Directive
 
@@ -67,7 +66,8 @@ class TestCommonDirective(Directive):
         self.test_name = self.arguments[0]
         self.test_content = "\n".join(self.content)
         need_type = self.name.replace('-', '').replace('_', '')
-        self.test_id = self.options.get('id', make_hashed_id(self.env.app, need_type, self.test_name, self.test_content))
+        self.test_id = self.options.get('id',
+                                        make_hashed_id(self.env.app, need_type, self.test_name, self.test_content))
 
         self.test_file = self.options.get('file', None)
         self.test_file_given = self.test_file[:]

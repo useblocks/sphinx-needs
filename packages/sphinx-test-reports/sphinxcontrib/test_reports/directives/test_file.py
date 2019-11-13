@@ -60,7 +60,6 @@ class TestFileDirective(TestCommonDirective):
             raise TestReportIncompleteConfiguration('option auto_cases must be used together with '
                                                     'auto_suites for test-file directives.')
 
-
         if 'auto_suites' in self.options.keys():
             for suite in self.results:
                 suite_id = self.test_id
