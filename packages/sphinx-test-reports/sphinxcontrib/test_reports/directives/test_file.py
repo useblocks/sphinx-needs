@@ -1,11 +1,11 @@
 import hashlib
-import os
 from docutils import nodes
-from docutils.parsers.rst import Directive, directives
+from docutils.parsers.rst import directives
 
-from sphinxcontrib.test_reports.junitparser import JUnitParser
 from sphinxcontrib.test_reports.directives import TestCommonDirective
-from sphinxcontrib.test_reports.exceptions import TestReportFileNotSetException, TestReportFileInvalidException
+import sphinxcontrib.test_reports.directives.test_suite
+from sphinxcontrib.test_reports.exceptions import TestReportIncompleteConfiguration
+
 from sphinxcontrib.needs.api import add_need
 
 
@@ -26,6 +26,8 @@ class TestFileDirective(TestCommonDirective):
                    'links': directives.unchanged_required,
                    'collapse': directives.unchanged_required,
                    'file': directives.unchanged_required,
+                   'auto_suites': directives.flag,
+                   'auto_cases': directives.flag,
                    }
 
     final_argument_whitespace = True
@@ -53,4 +55,33 @@ class TestFileDirective(TestCommonDirective):
                                  status=self.test_status, collapse=self.collapse,
                                  file=self.test_file_given, suites=suites, cases=cases,
                                  passed=passed, skipped=skipped, failed=failed, errors=errors)
+
+        if 'auto_cases' in self.options.keys() and 'auto_suites' not in self.options.keys():
+            raise TestReportIncompleteConfiguration('option auto_cases must be used together with '
+                                                    'auto_suites for test-file directives.')
+
+
+        if 'auto_suites' in self.options.keys():
+            for suite in self.results:
+                suite_id = self.test_id
+                suite_id += '_' + hashlib.sha1(suite['name'].encode("UTF-8")).hexdigest().upper()[:3]
+
+                options = self.options
+                options['suite'] = suite['name']
+                options['id'] = suite_id
+
+                if 'links' not in self.options:
+                    options['links'] = self.test_id
+                elif self.test_id not in options['links']:
+                    options['links'] = options['links'] + ';' + self.test_id
+
+                arguments = [suite['name']]
+                suite_directive = sphinxcontrib.test_reports.directives.test_suite.TestSuiteDirective(
+                    'test-suite', arguments, options,
+                    self.content, self.lineno,
+                    self.content_offset, self.block_text, self.state,
+                    self.state_machine)
+
+                main_section += suite_directive.run()
+
         return main_section

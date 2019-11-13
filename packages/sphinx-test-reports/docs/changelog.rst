@@ -1,6 +1,15 @@
 Changelog
 =========
 
+0.3.0
+-----
+
+* Improvement: Using `sphinx-needs <https://sphinxcontrib-needs.readthedocs.io/en/latest/>`_ for data representation
+  and filtering.
+* Improvement: New directives :ref:`test-file`, :ref:`test-suite` and :ref:`test-case`.
+* Improvement: New possibilities to :ref:`filter test data <filter>`.
+* Improvement: Much better documentation.
+
 0.2.1
 -----
 * Skipped support für Python < 3.5.

@@ -4,11 +4,11 @@
 import os
 from setuptools import setup, find_packages
 
-requires = ['Sphinx', 'lxml']
+requires = ['sphinx>2.0', 'lxml', 'sphinxcontrib-needs>=0.4']
 
 setup(
     name='sphinx-test-reports',
-    version='0.2.1',
+    version='0.3.0',
     url='http://github.com/useblocks/sphinx-test-reports',
     download_url='http://pypi.python.org/pypi/sphinx-test-reports',
     license='MIT',

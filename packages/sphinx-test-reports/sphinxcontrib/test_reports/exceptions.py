@@ -1,4 +1,4 @@
-from sphinx.errors import SphinxError
+from sphinx.errors import SphinxError, SphinxWarning
 
 
 class TestReportFileNotSetException(SphinxError):
@@ -16,4 +16,10 @@ class TestReportFileInvalidException(SphinxError):
 class TestReportInvalidOption(SphinxError):
     """
     Raised if an option is not given or invalid.
+    """
+
+
+class TestReportIncompleteConfiguration(SphinxWarning):
+    """
+    Raised if given arguments / options are not correct configured
     """

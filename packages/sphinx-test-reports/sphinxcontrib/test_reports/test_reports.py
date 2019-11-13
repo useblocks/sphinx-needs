@@ -3,13 +3,14 @@ import sphinx
 # from docutils import nodes
 from pkg_resources import parse_version
 
-from sphinxcontrib.needs.api import add_need_type, add_extra_option
+from sphinxcontrib.needs.api import add_need_type, add_extra_option, add_dynamic_function
 
 from sphinxcontrib.test_reports.directives.test_results import TestResults, TestResultsDirective
 from sphinxcontrib.test_reports.directives import TestFile, TestFileDirective, TestSuite, TestSuiteDirective, \
     TestCase, TestCaseDirective
 from sphinxcontrib.test_reports.directives.test_env import EnvReport, EnvReportDirective
 from sphinxcontrib.test_reports.environment import install_styles_static_files
+from sphinxcontrib.test_reports.functions import test_link
 
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
@@ -69,6 +70,11 @@ def setup(app):
     add_extra_option(app, 'failed')
     add_extra_option(app, 'errors')
     add_extra_option(app, 'result')  # used by test cases only
+
+    # Extra dynamic functions
+    # For details about usage read
+    # https://sphinxcontrib-needs.readthedocs.io/en/latest/api.html#sphinxcontrib.needs.api.configuration.add_dynamic_function
+    add_dynamic_function(app, test_link)
 
     # Extra need types
     # For details about usage read

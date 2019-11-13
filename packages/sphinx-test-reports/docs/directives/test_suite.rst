@@ -6,7 +6,7 @@ test-suite
 ``test-suite`` loads the data from a given file path in ``file`` for a specified suite.
 
 Usage
-.....
+-----
 
 .. code-block:: rst
 

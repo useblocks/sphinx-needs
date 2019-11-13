@@ -6,7 +6,7 @@ test-case
 ``test-case`` loads the data from a given file path in ``file`` for a specified test case.
 
 Usage
-.....
+-----
 
 .. code-block:: rst
 
@@ -48,11 +48,22 @@ Example
 .. code-block:: rst
 
    .. test-case:: Flake8 test case
+      :id: TESTCASE_1
       :file: ../tests/data/pytest_data.xml
       :suite: pytest
-      :id: TESTCASE_1
+      :classname: sphinxcontrib.test_reports.test_reports
+      :case: FLAKE8
+      :links: TESTSUITE_1
 
-      A test suite, containing the results of the suite ooly.
+      A pytest test case.
+
+   .. test-case:: nose test case
+      :file: ../tests/data/nose_data.xml
+      :suite: nosetests
+      :classname: test_empty_doc
+      :id: TESTCASE_2
+
+      A nosetest test case.
 
 
 .. test-case:: Flake8 test case

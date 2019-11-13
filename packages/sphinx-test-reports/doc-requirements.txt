@@ -1,1 +1,2 @@
-sphinx>=1.6
+sphinx>=2.0
+sphinxcontrib-needs>=0.4

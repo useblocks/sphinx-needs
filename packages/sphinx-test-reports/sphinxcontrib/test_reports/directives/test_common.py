@@ -77,11 +77,12 @@ class TestCommonDirective(Directive):
         self.test_status = self.options.get('status', None)
 
         self.collapse = str(self.options.get("collapse", ""))
+
         if isinstance(self.collapse, str) and len(self.collapse) > 0:
             if self.collapse.upper() in ["TRUE", 1, "YES"]:
-                collapse = True
+                self.collapse = True
             elif self.collapse.upper() in ["FALSE", 0, "NO"]:
-                collapse = False
+                self.collapse = False
             else:
                 raise Exception("collapse attribute must be true or false")
         else:

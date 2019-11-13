@@ -47,6 +47,9 @@ Content
 
    directives/index
    filter
+   functions
+   examples
+   support
    changelog
 
 
