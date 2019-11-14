@@ -34,35 +34,96 @@ Sphinx-Needs allows the definition, linking and filtering of need-objects, which
 * implementations
 * test cases.
 
-This list can be easily customized via :ref:`configuration <need_types>` (for instance to support bugs or user stories).
+This list can be easily customized via :ref:`configuration <need_types>`.
+For instance to support bugs, user stories or features.
 
 Sphinx-Needs is an extension for the Python based documentation framework `Sphinx <https://sphinx-doc.org>`_,
 which can be easily extended by different extensions to fulfill nearly any requirement of a software development team.
 
+.. req:: What is a need
+   :id: REQ_1
+   :tags: introduction
 
-What is a need?
----------------
+   A need is a generic object, which can become everything you want for your sphinx documentation:
+   A requirement, a test case, a user story, a bug, an employee, a product or anything else.
 
-A need is a generic object, which can become everything you want for your sphinx documentation:
-A requirement, a test case, a user story, a bug, an employee, a product or anything else.
+   But whatever you chose it shall be and how many of them you need, each need is handled the same way.
 
-But whatever you chose it shall be and how many of them you need, each need is handled the same way.
+.. spec:: Content of each need
+   :id: SPEC_1
+   :style: needs_blue
+   :tags: introduction
+   :status: done
+   :links: REQ_1
+   :collapse: FALSE
 
-Each need contains:
+   Each need contains:
 
-* a **title** (required)
-* an **unique id** (optional. Gets calculated based on title if not given)
-* a **description**, which supports fully rst and sphinx extensions (optional)
-* a **status** (optional)
-* several **tags** (optional)
-* several **links** to other needs (optional)
-* project specific options (optional, see :ref:`needs_extra_options`)
+   * a **title** (required)
+   * an **unique id** (optional. Gets calculated based on title if not given)
+   * a **description**, which supports fully rst and sphinx extensions (optional)
+   * a **status** (optional)
+   * a **style** (optional)
+   * several **tags** (optional)
+   * several **links** to other needs (optional)
+   * project specific options (optional, see :ref:`needs_extra_options`)
 
-Needs can be :ref:`easily filtered <filter>` and presented in lists, tables and diagrams.
+.. feature:: Filtering needs
+   :id: FEATURE_1
+   :style: needs_yellow
+   :tags: introduction
+   :links: SPEC_1
 
-For external synchronization (e.g. with JIRA, a spreadsheet, ...)
-the builder :ref:`needs_builder` is available to export all created needs to a single json file.
-And also importing needs from external files is supported by using :ref:`needimport`.
+   Needs can be :ref:`easily filtered <filter>` and presented in lists, tables and diagrams.
+
+   .. needflow::
+      :tags: introduction
+
+.. feature:: Ex/Importing needs
+   :id: FEATURE_2
+   :style: needs_yellow
+   :tags: introduction
+   :links: SPEC_1
+
+   For external synchronization (e.g. with JIRA, a spreadsheet, ...)
+   the builder :ref:`needs_builder` is available to export all created needs to a single json file.
+   And also importing needs from external files is supported by using :ref:`needimport`.
+
+   .. code-block:: bash
+
+      make html   # HTML output
+      make needs  # needs.json containing all data
+
+.. feature:: Automated data handling
+   :id: FEATURE_3
+   :style: needs_yellow
+   :tags: introduction
+   :links: SPEC_1
+
+   For complex data chains between needs, :ref:`dynamic_functions` can be used to load and set
+   changeable data automatically during documentation generation phase.
+
+.. feature:: Customizing everything
+   :id: FEATURE_4
+   :style: needs_yellow_border
+   :tags: introduction
+   :links: SPEC_1
+
+   ``Sphinx-needs`` allows to customize needs-types, needs-options, colors, layouts, ids, checks, ... .
+
+   The pages :ref:`config` and :ref:`styles` are full of possibilities to adopt ``Sphinx-needs`` for your
+   own processes and workflows.
+
+.. feature:: API for other extensions
+   :id: FEATURE_5
+   :style: needs_yellow
+   :tags: introduction
+   :links: SPEC_1
+
+   The :ref:`api` allows other sphinx-extension to build specific solutions around and with ``Sphinx-Needs``.
+
+   For instance `Sphinx-Test-Reports <https://sphinx-test-reports.readthedocs.io/en/latest/>`_ creates needs from
+   test results and makes them searchable and linkable to other need-types.
 
 Example
 -------

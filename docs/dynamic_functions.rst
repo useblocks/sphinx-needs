@@ -10,6 +10,13 @@ the final result/value for the option.
 This can be useful, if for instance the status of a requirement depends on linked test cases and their status.
 Or if specific data shall be requested from an external server like JIRA.
 
+**needtable**
+
+The options :ref:`needtable_style_row` of :ref:`needtable` are also supporting
+dynamic function execution. In this case the function will get executed with the found need for each row.
+
+This allows to set row and column specific styles and e.g. set a row background to red, if a need-status is *failed*.
+
 Example
 -------
 

@@ -19,6 +19,7 @@ from sphinxcontrib.needs.roles.need_outgoing import Need_outgoing
 from sphinxcontrib.needs.roles.need_part import update_need_with_parts, find_parts
 from sphinxcontrib.needs.functions import resolve_dynamic_values, find_and_replace_node_content
 from sphinxcontrib.needs.api.exceptions import NeedsInvalidException
+from sphinxcontrib.needs.functions.functions import check_and_get_content
 
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
@@ -70,7 +71,8 @@ class NeedDirective(Directive):
                    'hide_tags': directives.flag,
                    'hide_status': directives.flag,
                    'hide_links': directives.flag,
-                   'title_from_content': directives.flag}
+                   'title_from_content': directives.flag,
+                   'style': directives.unchanged_required}
 
     # add configured link types
 
@@ -107,6 +109,7 @@ class NeedDirective(Directive):
         content = "\n".join(self.content)
         status = self.options.get("status", None)
         tags = self.options.get("tags", '')
+        style = self.options.get("style", '')
 
         need_extra_options = {}
         for extra_link in env.config.needs_extra_links:
@@ -119,7 +122,7 @@ class NeedDirective(Directive):
                         need_type=self.name, title=self.trimmed_title, id=id, content=content,
                         status=status, tags=tags,
                         hide=hide, hide_tags=hide_tags, hide_status=hide_status,
-                        collapse=collapse, **need_extra_options)
+                        collapse=collapse, style=style, **need_extra_options)
 
     def read_in_links(self, name):
         # Get links
@@ -299,6 +302,10 @@ def process_need_nodes(app, doctree, fromdocname):
         need_data = needs[need_id]
 
         find_and_replace_node_content(node_need, env, need_data)
+        from sphinxcontrib.needs.functions.functions import check_and_get_content
+        for index, attribute in enumerate(node_need.attributes['classes']):
+            node_need.attributes['classes'][index] = check_and_get_content(attribute, need_data, env)
+
 
         node_headline = construct_headline(need_data, app)
         node_meta = construct_meta(need_data, env)
@@ -413,6 +420,7 @@ def construct_meta(need_data, env):
     # need parameters
     param_status = "status: "
     param_tags = "tags: "
+    param_style = "style: "
 
     if need_data["status"] is not None and 'status' not in hide_options:
         status_line = nodes.line(classes=['status'])
@@ -460,6 +468,14 @@ def construct_meta(need_data, env):
             node_outgoing_links.append(nodes.inline(need_data['id'], need_data['id']))
             node_outgoing_line.append(node_outgoing_links)
             node_meta.append(node_outgoing_line)
+
+    if need_data["style"] is not None and 'style' not in hide_options and len(need_data["style"]) > 0:
+        style_line = nodes.line(classes=['style'])
+        node_status = nodes.inline(param_style, param_style, classes=['style'])
+        style_line.append(node_status)
+        style_line.append(nodes.inline(need_data["style"], need_data["style"],
+                                       classes=["needs-style", str(need_data['style'])]))
+        node_meta.append(style_line)
 
     extra_options = getattr(env.config, 'needs_extra_options', {})
     node_extra_options = []

@@ -29,7 +29,7 @@ def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=Fal
     :param prefix: string, which is used as prefix for the text output
     :return: column object (nodes.entry)
     """
-    row_col = nodes.entry()
+    row_col = nodes.entry(classes=['needs_' + need_key])
     para_col = nodes.paragraph()
 
     if need_key in need_info and need_info[need_key] is not None:

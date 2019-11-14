@@ -25,3 +25,46 @@ div.need div.toggle div.line-block {
     margin-top: 0px;
     margin-left: 30px;
 }
+
+.need.needs_green, .need.needs_implemented {
+    background-color: palegreen !important;
+}
+
+.need.needs_red, .need.needs_open {
+    background-color: palevioletred !important;
+}
+
+.need.needs_yellow, .need.needs_in_progress {
+    background-color: palegoldenrod !important;
+}
+
+.needs_blue {
+    background-color: paleturquoise !important;
+}
+
+.need.needs_green_border {
+    border: 5px solid palegreen;
+}
+
+.need.needs_red_border {
+    border: 5px solid palevioletred;
+}
+
+.need.needs_yellow_border {
+    border: 5px solid palegoldenrod;
+}
+
+.need.needs_blue_border {
+    border: 5px solid paleturquoise;
+}
+
+
+
+tr.needs_in_progress td.needs_status p {
+    background-color: #1b6082;
+    padding: 3px 5px;
+    text-align: center;
+    border-radius: 10px;
+    border: 1px solid #212174;
+    color: #ffffff;
+}

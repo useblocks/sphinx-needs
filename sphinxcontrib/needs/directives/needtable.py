@@ -7,7 +7,7 @@ from docutils.parsers.rst import directives
 from sphinxcontrib.needs.utils import row_col_maker, status_sorter
 from sphinxcontrib.needs.filter_common import FilterBase, procces_filters
 from sphinxcontrib.needs.directives.utils import no_needs_found_paragraph, used_filter_paragraph
-
+from sphinxcontrib.needs.functions.functions import check_and_get_content
 
 if sys.version_info.major < 3:
     urlParse = urllib.quote_plus
@@ -26,7 +26,9 @@ class NeedtableDirective(FilterBase):
     option_spec = {'show_filters': directives.flag,
                    'show_parts': directives.flag,
                    'columns': directives.unchanged_required,
-                   'style': directives.unchanged_required}
+                   'style': directives.unchanged_required,
+                   'style_row': directives.unchanged_required,
+                   'style_col': directives.unchanged_required}
 
     # Update the options_spec with values defined in the FilterBase class
     option_spec.update(FilterBase.base_option_spec)
@@ -54,6 +56,8 @@ class NeedtableDirective(FilterBase):
         columns = [col.upper() for col in columns]
 
         style = self.options.get("style", "").upper()
+        style_row = self.options.get("style_row", "")
+        style_col = self.options.get("style_col", "")
 
         # Add the need and all needed information
         env.need_all_needtables[targetid] = {
@@ -62,6 +66,8 @@ class NeedtableDirective(FilterBase):
             'target_node': targetnode,
             'columns': columns,
             'style': style,
+            'style_row': style_row,
+            'style_col': style_col,
             # As the following options are flags, the content is None, if set.
             # If not set, the options.get() method returns False
             'show_filters': True if self.options.get("show_filters", False) is None else False,
@@ -154,12 +160,15 @@ def process_needtables(app, doctree, fromdocname):
         found_needs = procces_filters(all_needs, current_needtable)
 
         for need_info in found_needs:
+            style_row = check_and_get_content(current_needtable['style_row'], need_info, env)
+            style_col = current_needtable['style_col']
+
             temp_need = need_info.copy()
             if temp_need['is_need']:
-                row = nodes.row(classes=['need'])
+                row = nodes.row(classes=['need', style_row])
                 prefix = ''
             else:
-                row = nodes.row(classes=['need_part'])
+                row = nodes.row(classes=['need_part', style_row])
                 temp_need['id'] = temp_need['id_complete']
                 prefix = app.config.needs_part_prefix
                 temp_need['title'] = temp_need['content']

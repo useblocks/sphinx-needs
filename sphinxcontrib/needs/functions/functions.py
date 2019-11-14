@@ -191,6 +191,35 @@ def resolve_dynamic_values(env):
     env.needs_workflow['dynamic_values_resolved'] = True
 
 
+def check_and_get_content(content, need, env):
+    """
+    DChecks if the given content is a function call.
+    If not, content is returned.
+    If it is, the functions gets executed and its returns value replaces the related part in content.
+
+    :param content: option content string
+    :param need: need
+    :param env: Sphinx environment object
+    :return: string
+    """
+
+    try:
+        content = str(content)
+    except UnicodeEncodeError:
+        content = content.encode('utf-8')
+
+    func_match = func_pattern.search(content)
+    if func_match is None:
+        return content
+
+    func_call = func_match.group(1)  # Extract function call
+    func_return = execute_func(env, need, func_call)  # Execute function call and get return value
+
+    # Replace the function_call with the calculated value
+    content = content.replace('[[{}]]'.format(func_call), func_return)
+    return content
+
+
 def _detect_and_execute(content, need, env):
     try:
         content = str(content)

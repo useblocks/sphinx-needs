@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def add_need(app, state, docname, lineno, need_type, title, id=None, content="", status=None, tags=None,
-             links_string=None, hide=False, hide_tags=False, hide_status=False, collapse=True, **kwargs):
+             links_string=None, hide=False, hide_tags=False, hide_status=False, collapse=True, style=None, **kwargs):
     """
     Creates a new need and returns its node.
 
@@ -74,6 +74,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
     :param hide_tags: boolean value.
     :param hide_status: boolean value.
     :param collapse: boolean value.
+    :param style: String value of class attribute of node.
 
     :return: node
     """
@@ -200,6 +201,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
         'full_title': title,
         'content': content,
         'collapse': collapse,
+        'style': style,
         'hide': hide,
         'hide_tags': hide_tags,
         'hide_status': hide_status,
@@ -251,8 +253,12 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
     ############################
     # Title and meta data information gets added alter during event handling via process_need_nodes()
     # We just add a basic need node and render the rst-based content, because this can not be done later.
+    style_classes = ['need', type_name, 'need-{}'.format(type_name.lower())]
+    if style is not None and style is not '':
+        style_classes.append(style)
+
     node_need = sphinxcontrib.needs.directives.need.Need(
-        '', classes=['need', type_name, 'need-{}'.format(type_name.lower())])
+        '', classes=style_classes)
 
     # Render rst-based content and add it to the need-node
     rst = ViewList()

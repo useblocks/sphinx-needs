@@ -47,6 +47,7 @@ Supported options:
 * :ref:`need_hide_status`
 * :ref:`need_hide_tags`
 * :ref:`need_collapse`
+* :ref:`need_style`
 
 .. _need_id:
 
@@ -268,6 +269,97 @@ sentence of the requirement.
 
     The first sentence will be the title.  Anything after the first
     sentence will not be part of the title.
+
+.. _need_style:
+
+style
+~~~~~
+
+.. versionadded:: 0.4.1
+
+``style`` can be used to set a specific class-attribute for the need representation.
+
+The class-attribute can then be addressed by css to specific the layout of the need.
+
+.. req:: My styled requirement
+   :id: STYLE_001
+   :tags: style_example
+   :style: needs_red
+
+.. req:: Another styled requirement
+   :id: STYLE_002
+   :tags: style_example
+   :style: needs_blue
+
+.. req:: Green is my color
+   :id: STYLE_003
+   :tags: style_example
+   :style: needs_green
+
+.. req:: Not/Normal styled requirement
+   :id: STYLE_004
+   :tags: style_example
+
+.. container:: toggle
+
+   .. container:: header
+
+      **Show example**
+
+   .. code-block:: rst
+
+      .. req:: My styled requirement
+         :id: STYLE_001
+         :tags: style_example
+         :style: needs_red
+
+      .. req:: Another styled requirement
+         :id: STYLE_002
+         :tags: style_example
+         :style: needs_blue
+
+      .. req:: Green is my color
+         :id: STYLE_003
+         :tags: style_example
+         :style: needs_green
+
+      .. req:: Not/Normal styled requirement
+         :id: STYLE_004
+         :tags: style_example
+
+By using :ref:`dynamic_functions` the value of ``style`` can be automatically
+combined with values from other need options.
+
+Here ``style`` is set to ``needs_[[copy('status')]]``.
+
+.. req:: My automatically styled requirement
+   :id: STYLE_005
+   :status: in_progress
+   :tags: style_example
+   :style: needs_[[copy("status")]]
+
+.. req:: My automatically styled requirement
+   :id: STYLE_006
+   :status: open
+   :tags: style_example
+   :style: needs_[[copy("status")]]
+
+.. code-block:: rst
+
+   .. req:: My automatically styled requirement
+      :id: STYLE_005
+      :status: in_progress
+      :tags: style_example
+      :style: needs_[[copy(status)]]
+
+   .. req:: My automatically styled requirement
+      :id: STYLE_006
+      :status: open
+      :tags: style_example
+      :style: needs_[[copy(status)]]
+
+
+
 
 Customized Options
 ------------------

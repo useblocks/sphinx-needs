@@ -144,6 +144,7 @@ needs_types = [dict(directive="req", title="Requirement", prefix="R_", color="#B
                dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="node"),
                dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="node"),
                dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="node"),
+               dict(directive="feature", title="Feature", prefix="F_", color="#FFCC00", style="node"),
                ]
 
 needs_extra_links = [

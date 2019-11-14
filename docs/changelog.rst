@@ -1,5 +1,12 @@
 Changelog
 =========
+
+0.4.1
+-----
+* Improvement: Added :ref:`need_style` option to allow custom styles for needs.
+* Improvement: Added :ref:`needtable_style_row` option to allow custom styles for table rows and columns.
+
+
 0.4.0
 -----
 * Improvement: Provides API for other sphinx-extensions. See :ref:`api` for documentation.

@@ -30,6 +30,7 @@ Supported options:
  * :ref:`needtable_show_filters`
  * :ref:`needtable_style`
  * :ref:`needtable_show_parts`
+ * :ref:`needtable_style_row`
  * Common filters:
     * :ref:`option_status`
     * :ref:`option_tags`
@@ -222,3 +223,101 @@ To change the prefix please read :ref:`needs_part_prefix`.
       :tags: test_table
       :links: table_001.2
 
+.. _needtable_style_row:
+
+style_row
+~~~~~~~~~
+
+.. versionadded:: 0.4.1
+
+``style_row`` can be used to set a specific class-attribute for the table-row representation.
+
+The class-attribute can then be addressed by css and specific layout can be set for the row.
+
+.. needtable::
+      :tags: ex_row_color
+      :style_row: needs_green
+
+.. container:: toggle
+
+   .. container::  header
+
+      **Show used configuration**
+
+   .. code-block:: rst
+
+      .. needtable::
+         :tags: ex_row_color
+         :style_row: needs_green
+
+Row style based on specific need value
+......................................
+
+:ref:`dynamic_functions` can be used to calculate a value for ``style_row`` based on a specific value of the
+documented need in the row.
+
+.. needtable::
+   :tags: ex_row_color
+   :columns: id, title, status
+   :style_row: needs_[[copy("status")]]
+
+In this example we set ``style_row`` to ``needs_[[copy("status")]]``, so the status of each need will be
+part of the row style.
+
+.. container:: toggle
+
+   .. container::  header
+
+      **Show used configuration**
+
+   **needtable**
+
+   .. code-block:: rst
+
+      .. needtable::
+         :tags: ex_row_color
+         :columns: id, title, status
+         :style_row: needs_[[copy("status")]]
+
+   **needs as input**
+
+   .. req:: Implemented spec
+      :id: EX_ROW_1
+      :tags: ex_row_color
+      :status: implemented
+
+   .. req:: Not implemented spec
+      :id: EX_ROW_2
+      :tags: ex_row_color
+      :status: open
+
+   .. req:: Spec under progress
+      :id: EX_ROW_3
+      :tags: ex_row_color
+      :status: in_progress
+
+   **inside a provided css file**
+
+   .. code-block:: css
+
+      tr.needs_implemented {
+       background-color: palegreen !important;
+      }
+
+      tr.needs_open {
+          background-color: palevioletred !important;
+      }
+
+      tr.needs_in_progress {
+          background-color: palegoldenrod !important;
+      }
+
+      /* This sets values for the status column */
+      tr.needs_in_progress td.needs_status p {
+          background-color: #1b6082;
+          padding: 3px 5px;
+          text-align: center;
+          border-radius: 10px;
+          border: 1px solid #212174;
+          color: #ffffff;
+      }
