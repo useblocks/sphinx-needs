@@ -110,23 +110,5 @@ As :need:`IMPL_01` shows, the linked :need:`OWN_ID_123` is realisable.
 
 **Filter result as diagram**
 
-{% if READTHEDOCS %}
-
-..
-   ReadTheDocs does not support plantuml.
-   Therefore diagram generation is not possible on the server and we show an image here.
-
-   .. needflow::
-      :filter: "test" in tags
-
-
-.. image:: _static/diagram.png
-
-{% else %}
-
 .. needflow::
    :filter: "Examples" == section_name
-
-
-{% endif %}
-
