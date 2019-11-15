@@ -1,13 +1,13 @@
-tr.passed {
-    background-color: rgba(0,250,0,0.1);
+tr.tr_passed, div.tr_passed {
+    background-color: rgba(0,250,0,0.2) !important;
 }
 
-tr.failure {
-    background-color: rgba(250,0,0,0.1);
+tr.tr_failure, div.tr_failure {
+    background-color: rgba(250,0,0,0.2) !important;
 }
 
-tr.skipped {
-    background-color: rgba(0,0,0,0.05);
+tr.tr_skipped{
+    background-color: rgba(0,0,0,0.1) !important;
 }
 
 td.status p {
@@ -16,17 +16,17 @@ td.status p {
     border-radius: 10px;
 }
 
-td.status p.passed{
+td.status p.tr_passed{
     border: 1px solid #008000;
     color: #008000;
 }
 
-td.status p.failure{
+td.status p.tr_failure{
     border: 1px solid #800000;
     color: #800000;
 }
 
-td.status p.skipped{
+td.status p.tr_skipped{
     border: 1px solid #555;
     color: #555;
 }

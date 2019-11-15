@@ -70,7 +70,7 @@ class TestSuiteDirective(TestCommonDirective):
             for case in suite['testcases']:
                 case_id = self.test_id
                 case_id += '_' + hashlib.sha1(case['classname'].encode("UTF-8") + case['name'].encode("UTF-8")
-                                              ).hexdigest().upper()[:3]
+                                              ).hexdigest().upper()[:5]
 
                 options = self.options
                 options['case'] = case['name']

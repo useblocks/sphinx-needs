@@ -45,10 +45,11 @@ Content
 .. toctree::
    :maxdepth: 2
 
+   install
    directives/index
    filter
    functions
-   examples
+   examples/index
    support
    changelog
 

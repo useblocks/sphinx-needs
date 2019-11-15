@@ -10,8 +10,9 @@ Professional Support
 --------------------
 If you need professional support you should get in contact with our company `useblocks <http://useblocks.com>`_.
 
-We are a bunch of passionated developers, who do normally process and tool related projects for automotive
+We are a bunch of passionated developers, who normally work on process, tool or embedded related projects for automotive
 companies around the world.
+
 
 Fastest way of reaching us is via e-mail: mail@useblocks.com.
 

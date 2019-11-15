@@ -75,11 +75,11 @@ class TestResultsDirective(Directive):
                      testcase["result"], "\n\n".join([testcase["message"] if testcase["message"] != "unknown" else "",
                                                       testcase["text"]]))
 
-        row = nodes.row(classes=[testcase["result"]])
+        row = nodes.row(classes=['tr_' + testcase["result"]])
         for index, cell in enumerate(row_cells):
-            entry = nodes.entry(classes=[testcase["result"], self.header[index]])
+            entry = nodes.entry(classes=['tr_' + testcase["result"], self.header[index]])
             row += entry
-            entry += nodes.paragraph(text=cell, classes=[testcase["result"]])
+            entry += nodes.paragraph(text=cell, classes=['tr_' + testcase["result"]])
         return row
 
     def _create_table_row(self, row_cells):

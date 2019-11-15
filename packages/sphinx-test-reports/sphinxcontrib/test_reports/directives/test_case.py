@@ -71,8 +71,37 @@ class TestCaseDirective(TestCommonDirective):
                                           'and testsuite {}'.format(case_name, class_name, self.test_file, suite_name))
 
         result = case['result']
-        content = self.test_content + '\n\n**Text**: {}\n\n**Message**: {}'.format(case['text'], case['message'])
+        content = self.test_content
+        if len(case['text']) > 0:
+            content += """
+            
+**Text**::
+
+   {}
+
+""".format('\n   '.join([x.lstrip() for x in case['text'].split('\n')]))
+
+        if len(case['message']) > 0:
+            content += """
+
+**Message**::
+
+   {}
+
+""".format('\n   '.join([x.lstrip() for x in case['message'].split('\n')]))
+
+        if len(case['system-out']) > 0:
+            content += """
+
+**System-out**::
+
+   {}
+
+""".format('\n   '.join([x.lstrip() for x in case['system-out'].split('\n')]))
+
         time = case['time']
+        style = 'tr_' + case['result']
+
         main_section = []
         docname = self.state.document.settings.env.docname
         main_section += add_need(self.env.app, self.state, docname, self.lineno,
@@ -80,5 +109,5 @@ class TestCaseDirective(TestCommonDirective):
                                  content=content, links=self.test_links, tags=self.test_tags,
                                  status=self.test_status, collapse=self.collapse,
                                  file=self.test_file_given, suite=suite['name'], case=case_name, classname=class_name,
-                                 result=result, time=time)
+                                 result=result, time=time, style=style)
         return main_section

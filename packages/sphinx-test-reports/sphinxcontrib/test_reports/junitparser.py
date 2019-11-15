@@ -75,19 +75,26 @@ class JUnitParser:
                     result = testcase.skipped
                     tc_dict["result"] = "skipped"
                     tc_dict["type"] = result.attrib.get("type", "unknown")
-                    tc_dict["text"] = re.sub(r"[\n\t]*", "", result.text)  # Removes newlines  and tabs
+                    # tc_dict["text"] = re.sub(r"[\n\t]*", "", result.text)  # Removes newlines  and tabs
+                    tc_dict["text"] = result.text
                     tc_dict["message"] = result.attrib.get("message", "unknown")
                 elif hasattr(testcase, "failure"):
                     result = testcase.failure
                     tc_dict["result"] = "failure"
                     tc_dict["type"] = result.attrib.get("type", "unknown")
-                    tc_dict["text"] = re.sub(r"[\n\t]*", "", result.text)  # Removes newlines and tabs
+                    # tc_dict["text"] = re.sub(r"[\n\t]*", "", result.text)  # Removes newlines and tabs
+                    tc_dict["text"] = result.text
                     tc_dict["message"] = ""
                 else:
                     tc_dict["result"] = "passed"
                     tc_dict["type"] = ""
                     tc_dict["text"] = ""
                     tc_dict["message"] = ""
+
+                if hasattr(testcase, 'system-out'):
+                    tc_dict['system-out'] = testcase['system-out'].text
+                else:
+                    tc_dict['system-out'] = ""
 
                 ts_dict["testcases"].append(tc_dict)
 
