@@ -7,17 +7,6 @@ needflow
 
 **needflow** creates a flowchart of filtered needs.
 
-{% if READTHEDOCS %}
-
-.. code-block:: rst
-
-   .. needflow::
-      :tags: main_example
-
-.. image:: /_static/needflow_flow.png
-
-{% else %}
-
 .. code-block:: rst
 
    .. needflow::
@@ -30,7 +19,6 @@ needflow
    :link_types: tests, blocks
    :show_link_names:
 
-{% endif %}
 
 Dependencies
 ------------
@@ -146,19 +134,9 @@ for flowcharts.
          :tags: main_example
          :show_legend:
 
-
-
-   {% if READTHEDOCS %}
-
-   .. image:: /_static/needflow_flow_legend.png
-
-   {% else %}
-
    .. needflow::
       :tags: main_example
       :show_legend:
-
-   {% endif %}
 
 .. _needflow_show_link_names:
 
