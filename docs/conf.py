@@ -45,7 +45,7 @@ release = '0.4.0'
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 if on_rtd:
-    extensions = ['sphinxcontrib.needs', 'sphinx.ext.autodoc']
+    extensions = ['sphinxcontrib.plantuml', 'sphinxcontrib.needs', 'sphinx.ext.autodoc']
 else:
     extensions = ['sphinxcontrib.plantuml', 'sphinxcontrib.needs', 'sphinx.ext.autodoc']
 
@@ -174,8 +174,12 @@ needs_id_regex = "^[A-Za-z0-9_]"
 
 # needs_css = "dark.css"
 
-cwd = os.getcwd()
-plantuml = 'java -jar %s' % os.path.join(cwd, "utils/plantuml_beta.jar")
+on_rtd = os.environ.get('READTHEDOCS') == 'True'
+if on_rtd:
+    plantuml = 'java -Djava.awt.headless=true -jar /usr/share/plantuml/plantuml.jar'
+else:
+    cwd = os.getcwd()
+    plantuml = 'java -jar %s' % os.path.join(cwd, "utils/plantuml_beta.jar")
 
 # If we are running on windows, we need to manipulate the path,
 # otherwise plantuml will have problems.
