@@ -1,5 +1,4 @@
 import os
-import re
 from lxml import etree, objectify
 
 

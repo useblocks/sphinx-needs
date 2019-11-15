@@ -74,7 +74,7 @@ class TestCaseDirective(TestCommonDirective):
         content = self.test_content
         if len(case['text']) > 0:
             content += """
-            
+
 **Text**::
 
    {}
