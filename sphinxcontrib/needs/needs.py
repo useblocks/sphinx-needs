@@ -37,7 +37,7 @@ else:
 
     logging.basicConfig()  # Only need to do this once
 
-VERSION = '1.0.0'
+VERSION = '0.4.1'
 
 DEFAULT_TEMPLATE_COLLAPSE = """
 .. _{{id}}:

@@ -165,7 +165,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
     if need_id in env.needs_all_needs.keys():
         if id is not None:
             raise NeedsDuplicatedId("A need with ID {} already exists! "
-                                    "This is not allowed. Document {}[{}]".format(need_id, docname, lineno))
+                                    "This is not allowed. Document {}[{}] Title: {}.".format(need_id, docname, lineno, title))
         else:  # this is a generated ID
             raise NeedsDuplicatedId(
                 "Needs could not generate a unique ID for a need with "
