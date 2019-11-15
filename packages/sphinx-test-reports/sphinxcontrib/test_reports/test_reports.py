@@ -83,4 +83,4 @@ def setup(app):
     add_need_type(app, 'testsuite', 'Test-Suite', 'TS_', '#cccccc', 'folder')
     add_need_type(app, 'testcase', 'Test-Case', 'TC_', '#999999', 'rectangle')
 
-    return {'version': '0.2.0'}  # identifies the version of our extension
+    return {'version': '0.3.1'}  # identifies the version of our extension
