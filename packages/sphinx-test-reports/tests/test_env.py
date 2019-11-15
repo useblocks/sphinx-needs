@@ -22,7 +22,7 @@ def test_doc_env_report_build_html(app, status, warning):
     html = (app.outdir / 'index.html').read_text()
 
     assert '<h1>Test-Env report' in html
-    assert '<th class="head">Variable</th>' in html
+    assert '<th class="head"><p>Variable</p></th>' in html
 
     tables = re.findall("(<table .*?</table>)", html, re.DOTALL)
 
@@ -108,7 +108,7 @@ def test_doc_env_report_warning_build_html(app, status, warning):
     html = (app.outdir / 'index.html').read_text()
 
     assert '<h1>Test-Env report' in html
-    assert '<th class="head">Variable</th>' in html
+    assert '<th class="head"><p>Variable</p></th>' in html
 
     tables = re.findall("(<table .*?</table>)", html, re.DOTALL)
 
