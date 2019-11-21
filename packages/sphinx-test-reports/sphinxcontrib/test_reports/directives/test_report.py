@@ -4,8 +4,6 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 
 from sphinxcontrib.test_reports.directives import TestCommonDirective
-from sphinxcontrib.test_reports.exceptions import TestReportInvalidOption
-from sphinxcontrib.needs.api import add_need
 
 
 class TestReport(nodes.General, nodes.Element):
