@@ -315,7 +315,7 @@ def make_hashed_id(app, need_type, full_title, content, id_length=None):
             type_prefix = ntype["prefix"]
             break
     if type_prefix is None:
-        raise NeedsInvalidException('Given need_type {} is unknown'.format(need_type))
+        raise NeedsInvalidException('Given need_type {} is unknown. File {}'.format(need_type, app.env.docname))
 
     hashable_content = full_title or '\n'.join(content)
     return "%s%s" % (type_prefix,

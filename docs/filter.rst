@@ -195,6 +195,8 @@ Inside a filter string the following variables/functions can be used:
 * **needs** as Python dict. Contains all needs. Helpful to perform complex filters on links (added 0.3.15).
 * **sections** as list of sections names, th which the need belongs to.
 * **section_name** as string, which defines the last/lowest section a need belongs to.
+* **signature** as string, which contains a function-name, possible set by
+  `sphinx-autodoc <https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html>`_ above the need.
 
 Additional variables for :ref:`need_part`:
 

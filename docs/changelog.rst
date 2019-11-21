@@ -1,6 +1,14 @@
 Changelog
 =========
 
+0.4.2
+-----
+
+* Improvement: Added ``signature`` information to need-object. Usable inside :ref:`filter_string`.
+  Mainly needed by `Sphinx-Test-Reports <https://sphinx-test-reports.readthedocs.io/en/latest/>`_ to link imported
+  test cases to needs documented by
+  `sphinx-autodoc <https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html>`_.
+
 0.4.1
 -----
 * Improvement: Added :ref:`need_style` option to allow custom styles for needs.

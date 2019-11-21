@@ -6,8 +6,8 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 from docutils.parsers.rst import Directive
 from sphinx.errors import SphinxError
-from sphinx.util.nodes import nested_parse_with_titles
-from docutils.statemachine import ViewList
+from sphinx.addnodes import desc_signature, desc_name
+
 from pkg_resources import parse_version
 import sphinx
 from sphinx.util.nodes import make_refnode
@@ -230,10 +230,11 @@ class NeedDirective(Directive):
             return ''
 
 
-def get_sections(need_info):
+def get_sections_and_signature(need_info):
     """Gets the hierarchy of the section nodes as a list starting at the
     section of the current need and then its parent sections"""
     sections = []
+    signature = None
     current_node = need_info['target_node']
     while current_node:
         if isinstance(current_node, nodes.section):
@@ -244,8 +245,26 @@ def get_sections(need_info):
             # use in filters
             title = NON_BREAKING_SPACE.sub(' ', title)
             sections.append(title)
+
+        # Checking for a signature defined "above" the need.
+        # Used and set normally by directives like automodule.
+        # Only check as long as we haven't found a signature
+        if signature is None and current_node.parent is not None and current_node.parent.children is not None:
+            for sibling in current_node.parent.children:
+                # We want to check only "above" current node, so no need to check sibling after current_node.
+                if sibling == current_node:
+                    break
+                if isinstance(sibling, desc_signature):
+                    # Check the child of the found signature for the text content/node.
+                    for desc_child in sibling.children:
+                        if isinstance(desc_child, desc_name) and \
+                                isinstance(desc_child.children[0], nodes.Text):
+                            signature = desc_child.children[0]
+                if signature is not None:
+                    break
+
         current_node = getattr(current_node, 'parent', None)
-    return sections
+    return sections, signature
 
 
 def purge_needs(app, env, docname):
@@ -263,9 +282,10 @@ def add_sections(app, doctree, fromdocname):
     be used in tables and filters"""
     needs = getattr(app.builder.env, 'needs_all_needs', {})
     for key, need_info in needs.items():
-        sections = get_sections(need_info)
+        sections, signature = get_sections_and_signature(need_info)
         need_info['sections'] = sections
         need_info['section_name'] = sections[0] if sections else ""
+        need_info['signature'] = signature if signature else ""
 
 
 def process_need_nodes(app, doctree, fromdocname):

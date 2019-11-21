@@ -37,7 +37,7 @@ else:
 
     logging.basicConfig()  # Only need to do this once
 
-VERSION = '0.4.1'
+VERSION = '0.4.2'
 
 DEFAULT_TEMPLATE_COLLAPSE = """
 .. _{{id}}:
@@ -206,6 +206,8 @@ def setup(app):
     ########################################################################
 
     # Define directives
+    # ToDo: Directives can be registered after event 'config-inited'. No need to import conf.py by our own.
+    # ToDo: See Sphinx-Test-Reports for a working implementation.
     # As values from conf.py are not available during setup phase, we have to import and read them by our own.
     # Otherwise this "app.config.needs_types" would always return the default values only.
     try:
