@@ -1,9 +1,11 @@
+.. _example_pytest:
+
 pytest
 ======
 
 The data is coming from a pytest-run on the tests of the sphinx project.
 
-| Test suite: :need_count:`'pytest_sphinx' in tags and type=='testsuite'`
+| Test suites: :need_count:`'pytest_sphinx' in tags and type=='testsuite'`
 | Test cases: :need_count:`'pytest_sphinx' in tags and type=='testcase'`
 | Failed test cases: :need_count:`'pytest_sphinx' in tags and 'failure' == result and type=='testcase'`
 | Skipped test cases: :need_count:`'pytest_sphinx' in tags and 'skipped' == result and type=='testcase'`

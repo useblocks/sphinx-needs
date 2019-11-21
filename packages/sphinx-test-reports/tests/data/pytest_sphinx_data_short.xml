@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuite errors="0" failures="2" name="pytest" skips="1" tests="7" time="79.535">
+    <testcase classname="tests.test_versioning" file="tests/test_versioning.py" line="126" name="test_insert_similar"
+              time="0.02409982681274414"></testcase>
+    <testcase classname="tests.test_websupport" file="tests/test_websupport.py" line="21" name="test_build"
+              time="0.3648707866668701">
+        <system-out>#x1B[01mRunning Sphinx v1.7+/aecb0082#x1B[39;49;00m
+            #x1B[01mloading pickled environment... #x1B[39;49;00mnot yet created
+            #x1B[01mbuilding [mo]: #x1B[39;49;00mtargets for 0 po files that are out of date
+            #x1B[01mbuilding [websupport]#x1B[39;49;00m: targets for 1 source files that are out of date
+            #x1B[01mupdating environment: #x1B[39;49;00m1 added, 0 changed, 0 removed
+        </system-out>
+    </testcase>
+    <testcase classname="tests.test_writer_latex" file="tests/test_writer_latex.py" line="16"
+              name="test_rstdim_to_latexdim" time="0.0007483959197998047"></testcase>
+    <testcase classname="tests.py35.test_autodoc_py35" file="tests/py35/test_autodoc_py35.py" line="111"
+              name="test_generate" time="0.3316631317138672"></testcase>
+
+    <testcase classname="tests.test_theming" file="tests/test_theming.py" line="18" name="test_theme_api"
+              time="0.01364278793334961">
+        <failure
+                message="AssertionError: assert {&apos;agogo&apos;, &apos;al...default&apos;, ...} == {&apos;agogo&apos;, &apos;bas..., &apos;epub&apos;, ...}
+  Extra items in the left set:
+  &apos;alabaster&apos;
+  Use -v to get the full diff">app = &lt;SphinxTestApp buildername=&apos;html&apos;&gt;, status = &lt;_io.StringIO
+            object at 0x7ff4b6c574c8&gt;, warning = &lt;_io.StringIO object at 0x7ff4b6c57798&gt;
+
+            @pytest.mark.sphinx(
+            confoverrides={&apos;html_theme&apos;: &apos;ziptheme&apos;,
+            &apos;html_theme_options.testopt&apos;: &apos;foo&apos;})
+            def test_theme_api(app, status, warning):
+            E Extra items in the left set:
+            E &apos;alabaster&apos;
+            E Use -v to get the full diff
+
+            tests/test_theming.py:26: AssertionError
+        </failure>
+        <system-out># testroot: root
+            # builder: html
+            # srcdir: /tmp/root
+            # outdir: /tmp/root/_build/html
+            # status:
+            # warning:
+        </system-out>
+    </testcase>
+    <testcase classname="tests.test_build_latex" file="tests/test_build_latex.py" line="105"
+              name="test_build_latex_doc[lualatex-howto]" time="0.9610209465026855">
+        <failure message="AssertionError: lualatex exited with return code 1
+assert False">app = &lt;SphinxTestApp buildername=&apos;latex&apos;&gt;, status = &lt;_io.StringIO object at
+            0x7ff4c662a438&gt;, warning = &lt;_io.StringIO object at 0x7ff4c662a678&gt;
+            engine = &apos;lualatex&apos;, docclass = &apos;howto&apos;
+
+            @skip_if_requested
+            @skip_if_stylefiles_notfound
+            print(stdout)
+            print(stderr)
+            &gt; assert False, &apos;%s exited with return code %s&apos; % (
+            app.config.latex_engine, p.returncode)
+            E AssertionError: lualatex exited with return code 1
+            E assert False
+
+            tests/test_build_latex.py:86: AssertionError
+        </failure>
+        <system-out>b&quot;This is LuaTeX, Version 1.0.4 (TeX Live 2017/Debian) \n restricted system commands
+            enabled.\n(./lualatex/SphinxTests.tex\nLaTeX2e &lt;2017-04-15&gt;\n[\\directlua]:1: module &apos;luaotfload-main&apos;
+            not found:\n\tno field package.preload[&apos;luaotfload-main&apos;]\n\t[kpse lua searcher] file not found:
+            #x1B[31m/tmp/root/contents.txt:10: WARNING: extensions is already assigned section numbers (nested numbered
+            toctree?)#x1B[39;49;00m
+            #x1B[31m/tmp/root/robots.txt: WARNING: document isn&apos;t included in any toctree#x1B[39;49;00m
+        </system-out>
+    </testcase>
+    <testcase classname="tests.test_build_texinfo" file="tests/test_build_texinfo.py" line="48" name="test_texinfo"
+              time="0.6067860126495361">
+        <skipped message="&lt;Skipped instance&gt;" type="pytest.skip">
+            /home/daniel/workspace/sphinx/sphinx/tests/test_build_texinfo.py:61: &lt;py._xmlgen.raw object at
+            0x7ff4c6fc0978&gt;
+        </skipped>
+        <system-out># testroot: root
+            # builder: texinfo
+            # srcdir: /tmp/root
+            # outdir: /tmp/root/_build/texinfo
+            # status:
+            #x1B[01mRunning Sphinx v1.7+/aecb0082#x1B[39;49;00m
+            #x1B[01mloading pickled environment... #x1B[39;49;00mdone
+        </system-out>
+    </testcase>
+</testsuite>

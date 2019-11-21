@@ -7,7 +7,7 @@ from sphinxcontrib.needs.api import add_need_type, add_extra_option, add_dynamic
 
 from sphinxcontrib.test_reports.directives.test_results import TestResults, TestResultsDirective
 from sphinxcontrib.test_reports.directives import TestFile, TestFileDirective, TestSuite, TestSuiteDirective, \
-    TestCase, TestCaseDirective
+    TestCase, TestCaseDirective, TestReport, TestReportDirective
 from sphinxcontrib.test_reports.directives.test_env import EnvReport, EnvReportDirective
 from sphinxcontrib.test_reports.environment import install_styles_static_files
 from sphinxcontrib.test_reports.functions import tr_link
@@ -40,11 +40,13 @@ def setup(app):
     app.add_node(TestFile)
     app.add_node(TestSuite)
     app.add_node(TestCase)
+    app.add_node(TestReport)
     app.add_node(EnvReport)
 
     # directives
     app.add_directive('test-results', TestResultsDirective)
     app.add_directive('test-env', EnvReportDirective)
+    app.add_directive('test-report', TestReportDirective)
 
     # events
     app.connect('env-updated', install_styles_static_files)

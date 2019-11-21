@@ -8,7 +8,7 @@ from sphinx.util import logging
 from sphinxcontrib.needs.api import make_hashed_id
 
 from sphinxcontrib.test_reports.junitparser import JUnitParser
-from sphinxcontrib.test_reports.exceptions import TestReportFileNotSetException
+from sphinxcontrib.test_reports.exceptions import TestReportFileNotSetException, SphinxError
 
 
 class TestCommonDirective(Directive):
@@ -73,9 +73,15 @@ class TestCommonDirective(Directive):
 
         self.test_name = self.arguments[0]
         self.test_content = "\n".join(self.content)
-        self.need_type = self.app.tr_types[self.name][0]
-        self.test_id = self.options.get('id',
-                                        make_hashed_id(self.app, self.need_type, self.test_name, self.test_content))
+        if self.name != 'test-report':
+            self.need_type = self.app.tr_types[self.name][0]
+            self.test_id = self.options.get('id',
+                                            make_hashed_id(self.app, self.need_type, self.test_name, self.test_content))
+        else:
+            self.test_id = self.options.get('id', None)
+
+        if self.test_id is None:
+            raise SphinxError('ID must be set for test-report.')
 
         self.test_file = self.options.get('file', None)
         self.test_file_given = self.test_file[:]
