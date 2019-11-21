@@ -59,8 +59,9 @@ class TestSuiteDirective(TestCommonDirective):
 
         main_section = []
         docname = self.state.document.settings.env.docname
-        main_section += add_need(self.env.app, self.state, docname, self.lineno,
-                                 need_type="testsuite", title=self.test_name, id=self.test_id,
+        main_section += add_need(self.app, self.state, docname, self.lineno,
+                                 need_type=self.need_type,
+                                 title=self.test_name, id=self.test_id,
                                  content=self.test_content, links=self.test_links, tags=self.test_tags,
                                  status=self.test_status, collapse=self.collapse,
                                  file=self.test_file_given, suite=suite['name'], cases=cases,
@@ -84,8 +85,8 @@ class TestSuiteDirective(TestCommonDirective):
 
                 arguments = [case['name']]
                 case_directive = sphinxcontrib.test_reports.directives.test_case.TestCaseDirective(
-                    'test-case', arguments, options,
-                    self.content, self.lineno,
+                    self.app.config.tr_case[0], arguments, options,
+                    '', self.lineno,  # no content
                     self.content_offset, self.block_text, self.state,
                     self.state_machine)
 

@@ -3,11 +3,12 @@ A Common directive, from which all other test directives inherit the shared func
 """
 import os
 from docutils.parsers.rst import Directive
+from sphinx.util import logging
 
 from sphinxcontrib.needs.api import make_hashed_id
 
 from sphinxcontrib.test_reports.junitparser import JUnitParser
-from sphinxcontrib.test_reports.exceptions import TestReportFileNotSetException, TestReportFileInvalidException
+from sphinxcontrib.test_reports.exceptions import TestReportFileNotSetException
 
 
 class TestCommonDirective(Directive):
@@ -17,8 +18,9 @@ class TestCommonDirective(Directive):
     def __init__(self, *args, **kwargs):
         super(TestCommonDirective, self).__init__(*args, **kwargs)
         self.env = self.state.document.settings.env
-        if not hasattr(self.env, 'testreport_data'):
-            self.env.testreport_data = {}
+        self.app = self.env.app
+        if not hasattr(self.app, 'testreport_data'):
+            self.app.testreport_data = {}
 
         self.test_file = None
         self.results = None
@@ -31,6 +33,9 @@ class TestCommonDirective(Directive):
         self.test_tags = None
         self.test_status = None
         self.collapse = None
+        self.need_type = None
+
+        self.log = logging.getLogger(__name__)
 
     def load_test_file(self):
         """
@@ -43,17 +48,20 @@ class TestCommonDirective(Directive):
         if self.test_file is None:
             raise TestReportFileNotSetException('Option test_file must be set.')
 
-        root_path = self.env.app.config.test_reports_rootdir
+        root_path = self.app.config.tr_rootdir
         if not os.path.isabs(self.test_file):
             self.test_file = os.path.join(root_path, self.test_file)
         if not os.path.exists(self.test_file):
-            raise TestReportFileInvalidException('Given test_file path invalid: {}'.format(self.test_file))
+            # raise TestReportFileInvalidException('Given test_file path invalid: {}'.format(self.test_file))
+            self.log.warning('Given test_file path invalid: {} in {} (Line: {})'.format(
+                self.test_file, self.docname, self.lineno))
+            return None
 
-        if self.test_file not in self.env.testreport_data.keys():
+        if self.test_file not in self.app.testreport_data.keys():
             parser = JUnitParser(self.test_file)
-            self.env.testreport_data[self.test_file] = parser.parse()
+            self.app.testreport_data[self.test_file] = parser.parse()
 
-        self.results = self.env.testreport_data[self.test_file]
+        self.results = self.app.testreport_data[self.test_file]
         return self.results
 
     def prepare_basic_options(self):
@@ -65,9 +73,9 @@ class TestCommonDirective(Directive):
 
         self.test_name = self.arguments[0]
         self.test_content = "\n".join(self.content)
-        need_type = self.name.replace('-', '').replace('_', '')
+        self.need_type = self.app.tr_types[self.name][0]
         self.test_id = self.options.get('id',
-                                        make_hashed_id(self.env.app, need_type, self.test_name, self.test_content))
+                                        make_hashed_id(self.app, self.need_type, self.test_name, self.test_content))
 
         self.test_file = self.options.get('file', None)
         self.test_file_given = self.test_file[:]
@@ -86,4 +94,4 @@ class TestCommonDirective(Directive):
             else:
                 raise Exception("collapse attribute must be true or false")
         else:
-            self.collapse = getattr(self.env.app.config, "needs_collapse_details", True)
+            self.collapse = getattr(self.app.config, "needs_collapse_details", True)

@@ -4,10 +4,10 @@ def tr_link(app, need, needs, test_option, target_option, *args, **kwargs):
     test_opt = need[test_option]
 
     links = []
-    for need in needs.values():
-        if target_option not in need:
+    for need_target in needs.values():
+        if target_option not in need_target:
             continue
-        if test_opt == need[target_option]:
-            links.append(need['id'])
+        if test_opt == need_target[target_option] and test_opt is not None and len(test_opt) > 0:
+            links.append(need_target['id'])
 
     return links

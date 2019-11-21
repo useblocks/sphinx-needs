@@ -64,7 +64,7 @@ class EnvReportDirective(Directive):
         env = self.state.document.settings.env
 
         json_path = self.arguments[0]
-        root_path = env.app.config.test_reports_rootdir
+        root_path = env.app.config.tr_rootdir
         if not os.path.isabs(json_path):
             json_path = os.path.join(root_path, json_path)
 

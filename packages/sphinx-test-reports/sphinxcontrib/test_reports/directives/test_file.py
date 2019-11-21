@@ -37,7 +37,19 @@ class TestFileDirective(TestCommonDirective):
 
     def run(self):
         self.prepare_basic_options()
-        self.load_test_file()
+        results = self.load_test_file()
+
+        # Error handling, if file not found
+        if results is None:
+            main_section = []
+            content = nodes.error()
+            para = nodes.paragraph()
+            text_string = "Test file not found: {}".format(self.test_file)
+            text = nodes.Text(text_string, text_string)
+            para += text
+            content.append(para)
+            main_section.append(content)
+            return main_section
 
         suites = len(self.results)
         cases = sum([int(x['tests']) for x in self.results])
@@ -49,8 +61,9 @@ class TestFileDirective(TestCommonDirective):
 
         main_section = []
         docname = self.state.document.settings.env.docname
-        main_section += add_need(self.env.app, self.state, docname, self.lineno,
-                                 need_type="testfile", title=self.test_name, id=self.test_id,
+        main_section += add_need(self.app, self.state, docname, self.lineno,
+                                 need_type=self.need_type,
+                                 title=self.test_name, id=self.test_id,
                                  content=self.test_content, links=self.test_links, tags=self.test_tags,
                                  status=self.test_status, collapse=self.collapse,
                                  file=self.test_file_given, suites=suites, cases=cases,
@@ -76,8 +89,8 @@ class TestFileDirective(TestCommonDirective):
 
                 arguments = [suite['name']]
                 suite_directive = sphinxcontrib.test_reports.directives.test_suite.TestSuiteDirective(
-                    'test-suite', arguments, options,
-                    self.content, self.lineno,
+                    self.app.config.tr_suite[0], arguments, options,
+                    '', self.lineno,  # no content
                     self.content_offset, self.block_text, self.state,
                     self.state_machine)
 

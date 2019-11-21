@@ -30,7 +30,10 @@ def setup(app):
     log.info("Setting up sphinx-test-reports extension")
 
     # configurations
-    app.add_config_value('test_reports_rootdir', app.confdir, 'html')
+    app.add_config_value('tr_rootdir', app.confdir, 'html')
+    app.add_config_value('tr_file', ['test-file', 'testfile', 'Test-File', 'TF_', '#ffffff', 'node'], 'html')
+    app.add_config_value('tr_suite', ['test-suite', 'testsuite', 'Test-Suite', 'TS_', '#cccccc', 'folder'], 'html')
+    app.add_config_value('tr_case', ['test-case', 'testcase', 'Test-Case', 'TC_', '#999999', 'rectangle'], 'html')
 
     # nodes
     app.add_node(TestResults)
@@ -41,17 +44,37 @@ def setup(app):
 
     # directives
     app.add_directive('test-results', TestResultsDirective)
-    app.add_directive('test-file', TestFileDirective)
-    app.add_directive('test-suite', TestSuiteDirective)
-    app.add_directive('test-case', TestCaseDirective)
     app.add_directive('test-env', EnvReportDirective)
 
     # events
     app.connect('env-updated', install_styles_static_files)
+    app.connect('config-inited', tr_preparation)
+    app.connect('config-inited', sphinx_needs_update)
 
-    ############################
-    # sphinx-needs configuration
-    ############################
+    return {'version': '0.3.2'}  # identifies the version of our extension
+
+
+def tr_preparation(app, *args):
+    """
+    Prepares needed vars in the app context.
+    """
+    if not hasattr(app, 'tr_types'):
+        app.tr_types = {}
+
+    # Collects the configured test-report node types
+    app.tr_types[app.config.tr_file[0]] = app.config.tr_file[1:]
+    app.tr_types[app.config.tr_suite[0]] = app.config.tr_suite[1:]
+    app.tr_types[app.config.tr_case[0]] = app.config.tr_case[1:]
+
+    app.add_directive(app.config.tr_file[0], TestFileDirective)
+    app.add_directive(app.config.tr_suite[0], TestSuiteDirective)
+    app.add_directive(app.config.tr_case[0], TestCaseDirective)
+
+
+def sphinx_needs_update(app, *args):
+    """
+    sphinx-needs configuration
+    """
 
     # Extra options
     # For details read
@@ -59,6 +82,8 @@ def setup(app):
     add_extra_option(app, 'file')
     add_extra_option(app, 'suite')
     add_extra_option(app, 'case')
+    add_extra_option(app, 'case_name')
+    add_extra_option(app, 'case_parameter')
     add_extra_option(app, 'classname')
     add_extra_option(app, 'time')
 
@@ -79,8 +104,6 @@ def setup(app):
     # Extra need types
     # For details about usage read
     # https://sphinxcontrib-needs.readthedocs.io/en/latest/api.html#sphinxcontrib.needs.api.configuration.add_need_type
-    add_need_type(app, 'testfile', 'Test-File', 'TF_', '#ffffff', 'node')
-    add_need_type(app, 'testsuite', 'Test-Suite', 'TS_', '#cccccc', 'folder')
-    add_need_type(app, 'testcase', 'Test-Case', 'TC_', '#999999', 'rectangle')
-
-    return {'version': '0.3.1'}  # identifies the version of our extension
+    add_need_type(app, *app.config.tr_file[1:])
+    add_need_type(app, *app.config.tr_suite[1:])
+    add_need_type(app, *app.config.tr_case[1:])

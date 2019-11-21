@@ -47,6 +47,7 @@ Content
 
    install
    directives/index
+   configuration
    filter
    functions
    examples/index

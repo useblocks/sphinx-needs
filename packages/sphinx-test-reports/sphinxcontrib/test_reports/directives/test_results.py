@@ -28,7 +28,7 @@ class TestResultsDirective(Directive):
         env = self.state.document.settings.env
 
         xml_path = self.arguments[0]
-        root_path = env.app.config.test_reports_rootdir
+        root_path = env.app.config.tr_rootdir
         if not os.path.isabs(xml_path):
             xml_path = os.path.join(root_path, xml_path)
         parser = JUnitParser(xml_path)

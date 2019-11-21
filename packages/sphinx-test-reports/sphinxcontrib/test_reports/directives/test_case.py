@@ -41,9 +41,9 @@ class TestCaseDirective(TestCommonDirective):
         if suite_name is None:
             raise TestReportInvalidOption('Suite not given!')
 
-        case_name = self.options.get('case', None)
+        case_full_name = self.options.get('case', None)
         class_name = self.options.get('classname', None)
-        if case_name is None and class_name is None:
+        if case_full_name is None and class_name is None:
             raise TestReportInvalidOption('Case or classname not given!')
 
         suite = None
@@ -57,18 +57,20 @@ class TestCaseDirective(TestCommonDirective):
 
         case = None
         for case_obj in suite['testcases']:
-            if case_obj['name'] == case_name and class_name is None:
-                case = case_obj
-            elif case_obj['classname'] == class_name and case_name is None:
+            if case_obj['name'] == case_full_name and class_name is None:
                 case = case_obj
                 break
-            elif case_obj['name'] == case_name and case_obj['classname'] == class_name:
+            elif case_obj['classname'] == class_name and case_full_name is None:
+                case = case_obj
+                break
+            elif case_obj['name'] == case_full_name and case_obj['classname'] == class_name:
                 case = case_obj
                 break
 
         if case is None:
             raise TestReportInvalidOption('Case {} with classname {} not found in test file {} '
-                                          'and testsuite {}'.format(case_name, class_name, self.test_file, suite_name))
+                                          'and testsuite {}'.format(case_full_name,
+                                                                    class_name, self.test_file, suite_name))
 
         result = case['result']
         content = self.test_content
@@ -102,12 +104,27 @@ class TestCaseDirective(TestCommonDirective):
         time = case['time']
         style = 'tr_' + case['result']
 
+        import re
+        groups = re.match(r'^(?P<name>[^\[]+)($|\[(?P<param>.*)?\])', case['name'])
+        try:
+            case_name = groups['name']
+            case_parameter = groups['param']
+        except TypeError:
+            case_name = case_full_name
+            case_parameter = ''
+
+        if case_parameter is None:
+            case_parameter = ''
+
         main_section = []
         docname = self.state.document.settings.env.docname
-        main_section += add_need(self.env.app, self.state, docname, self.lineno,
-                                 need_type="testcase", title=self.test_name, id=self.test_id,
+        main_section += add_need(self.app, self.state, docname, self.lineno,
+                                 need_type=self.need_type,
+                                 title=self.test_name, id=self.test_id,
                                  content=content, links=self.test_links, tags=self.test_tags,
                                  status=self.test_status, collapse=self.collapse,
-                                 file=self.test_file_given, suite=suite['name'], case=case_name, classname=class_name,
+                                 file=self.test_file_given, suite=suite['name'],
+                                 case=case_full_name, case_name=case_name, case_parameter=case_parameter,
+                                 classname=class_name,
                                  result=result, time=time, style=style)
         return main_section
