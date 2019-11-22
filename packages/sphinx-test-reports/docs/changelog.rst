@@ -1,6 +1,6 @@
 Changelog
 =========
-0.3.2
+0.3.3
 -----
 * Improvement: Addes :ref:`test_report` directive.
 * Improvement: Introduces :ref:`tr_file`, :ref:`tr_suite` and :ref:`tr_case` options to customize names.

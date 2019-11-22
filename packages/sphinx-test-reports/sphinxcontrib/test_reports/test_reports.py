@@ -53,7 +53,7 @@ def setup(app):
     app.connect('config-inited', tr_preparation)
     app.connect('config-inited', sphinx_needs_update)
 
-    return {'version': '0.3.2'}  # identifies the version of our extension
+    return {'version': '0.3.3'}  # identifies the version of our extension
 
 
 def tr_preparation(app, *args):
