@@ -1,4 +1,4 @@
 sphinx>=2.0
 sphinxcontrib-needs>=0.4.2
-sphinx-test-reports>=0.3.2
+sphinx-test-reports>=0.3.3
 sphinxcontrib-plantuml
