@@ -1,5 +1,9 @@
 Changelog
 =========
+0.4.3
+-----
+
+* Improvement: Role :ref:`role_need` supports standard sphinx-ref syntax. Example: ``:need:`custom name <need_id>```
 
 0.4.2
 -----

@@ -1,4 +1,5 @@
 from docutils import nodes
+import re
 try:
     from sphinx.errors import NoUri  # Sphinx 3.0
 except ImportError:
@@ -14,6 +15,7 @@ else:
     import logging
 log = logging.getLogger(__name__)
 
+from sphinxcontrib.needs.api.exceptions import NeedsInvalidException
 
 class Need_ref(nodes.Inline, nodes.Element):
     pass
@@ -30,16 +32,25 @@ def process_need_ref(app, doctree, fromdocname):
                                     node_need_ref[0].deepcopy(),
                                     node_need_ref['reftarget'] + '?')
 
-        if '.' in node_need_ref['reftarget']:
-            ref_id, part_id = node_need_ref['reftarget'].split('.')
+        findings = re.match(r'([\w ]+)(\<(.*)\>)?', node_need_ref.children[0].rawsource)
+        if findings.group(2) is not None:
+            ref_id = findings.group(3)
+            ref_name = findings.group(1)
         else:
-            ref_id = node_need_ref['reftarget']
+            ref_id = findings.group(1)
+            ref_name = None
+
+        if '.' in ref_id:
+            ref_id, part_id =ref_id.split('.')
+        else:
             part_id = None
 
         if ref_id in env.needs_all_needs:
             target_need = env.needs_all_needs[ref_id]
             try:
-                if part_id is not None:
+                if ref_name is not None:
+                    title = ref_name
+                elif part_id is not None:
                     title = target_need['parts'][part_id]['content']
                 else:
                     title = target_need["title"]
@@ -50,7 +61,7 @@ def process_need_ref(app, doctree, fromdocname):
                     title = title if len(title) < max_length else u'{}...'.format(title[:max_length-3])
 
                 link_text = app.config.needs_role_need_template.format(title=title,
-                                                                       id=node_need_ref['reftarget'],
+                                                                       id=ref_id,
                                                                        type=target_need["type"],
                                                                        type_name=target_need["type_name"],
                                                                        status=target_need["status"],

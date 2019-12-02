@@ -32,7 +32,12 @@ Example
 
    The requirement :need:`roles_req_1` is the most important one.
 
-**Result**: The requirement :need:`roles_req_1` is the most important one.
+   But we can also set :need:`a custom link name <roles_req_1>`.
+
+**Result**:
+
+| The requirement :need:`roles_req_1` is the most important one.
+| But we can also set :need:`a custom link name <roles_req_1>`.
 
 .. note::
 
