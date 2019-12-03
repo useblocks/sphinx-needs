@@ -17,6 +17,9 @@ dynamic function execution. In this case the function will get executed with the
 
 This allows to set row and column specific styles and e.g. set a row background to red, if a need-status is *failed*.
 
+.. contents::
+   :local:
+
 Example
 -------
 
@@ -67,6 +70,13 @@ calc_sum
 ~~~~~~~~
 
 .. autofunction:: sphinxcontrib.needs.functions.common.calc_sum
+
+.. _links_content:
+
+links_from_content
+~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: sphinxcontrib.needs.functions.common.links_from_content
 
 
 Develop own functions

@@ -5,6 +5,9 @@ Collection of common sphinx-needs functions for dynamic values
 """
 # flake8: noqa
 
+
+import re
+
 from sphinxcontrib.needs.filter_common import filter_single_need, NeedInvalidFilter
 from sphinxcontrib.needs.utils import logger
 
@@ -348,6 +351,72 @@ def calc_sum(app, need, needs, option, filter=None, links_only=False):
             pass
 
     return calculated_sum
+
+
+
+def links_from_content(app, need, needs, need_id=None):
+    """
+    Extracts links from content of a need.
+
+    All need-links set by using ``:need:`NEED_ID``` get extracted.
+
+    Example:
+
+    .. req:: Requirement 1
+       :id: CON_REQ_1
+
+    .. req:: Requirement 2
+       :id: CON_REQ_2
+
+    .. spec:: Test spec
+       :id: CON_SPEC_1
+       :links: [[links_from_content()]]
+
+       This specification cares about the realisation of:
+
+       * :need:`CON_REQ_1`
+       * :need:`My need <CON_REQ_2>`
+
+    .. spec:: Test spec 2
+       :id: CON_SPEC_2
+       :links: [[links_from_content('CON_SPEC_1')]]
+
+       Links retrieved from content of :need:`CON_SPEC_1`
+
+    Used code of **CON_SPEC_1**::
+
+       .. spec:: Test spec
+          :id: CON_SPEC_1
+          :links: [[links_from_content()]]
+
+          This specification cares about the realisation of:
+
+          * :need:`CON_REQ_1`
+          * :need:`CON_REQ_2`
+
+       .. spec:: Test spec 2
+          :id: CON_SPEC_2
+          :links: [[links_from_content('CON_SPEC_1')]]
+
+          Links retrieved from content of :need:`CON_SPEC_1`
+
+    :param need_id: ID of need, which provides the content. If not set, current need is used.
+    :return: List of linked need-ids in content
+    """
+    if need_id is not None:
+        source_need = needs[need_id]
+    else:
+        source_need = need
+
+    links = re.findall(r':need:`([\w]*)`|:need:`[\w ]+\<(.*)\>`', source_need['content'])
+    final_links = []
+    for link in links:
+        if link[0]:
+            final_links.append(link[0])
+        elif link[1]:
+            final_links.append(link[1])
+
+    return final_links
 
 
 
