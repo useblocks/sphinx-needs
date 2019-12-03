@@ -15,4 +15,5 @@ def test_doc_need_parts(app, status, warning):
     assert '<em class="xref need">exit() (SP_TOO_001.1)</em>' in html
     assert '<em class="xref need">start() (SP_TOO_001.2)</em>' in html
     assert '<em class="xref need">blub() (SP_TOO_001.awesome_id)</em>' in html
+    assert '<em class="xref need">My custom link name (SP_TOO_001.awesome_id)</em>' in html
     assert 'SP_TOO_001' in html

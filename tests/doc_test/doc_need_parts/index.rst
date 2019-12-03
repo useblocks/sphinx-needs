@@ -22,3 +22,5 @@ NEED PARTS
 :need:`SP_TOO_001.2`
 
 :need:`SP_TOO_001.awesome_id`
+
+:need:`My custom link name <SP_TOO_001.awesome_id>`

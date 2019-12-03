@@ -32,17 +32,23 @@ def process_need_ref(app, doctree, fromdocname):
                                     node_need_ref[0].deepcopy(),
                                     node_need_ref['reftarget'] + '?')
 
-        findings = re.match(r'([\w ]+)(\<(.*)\>)?', node_need_ref.children[0].rawsource)
-        if findings.group(2) is not None:
-            ref_id = findings.group(3)
-            ref_name = findings.group(1)
-        else:
-            ref_id = findings.group(1)
+        # findings = re.match(r'([\w ]+)(\<(.*)\>)?', node_need_ref.children[0].rawsource)
+        # if findings.group(2) is not None:
+        #     ref_id = findings.group(3)
+        #     ref_name = findings.group(1)
+        # else:
+        #     ref_id = findings.group(1)
+        #     ref_name = None
+        ref_id_complete = node_need_ref['reftarget']
+        ref_name = node_need_ref.children[0].children[0]
+        # Only use ref_name, if it differs from ref_id
+        if str(ref_id_complete) == str(ref_name):
             ref_name = None
 
-        if '.' in ref_id:
-            ref_id, part_id =ref_id.split('.')
+        if '.' in ref_id_complete:
+            ref_id, part_id =ref_id_complete.split('.')
         else:
+            ref_id = ref_id_complete
             part_id = None
 
         if ref_id in env.needs_all_needs:
@@ -61,7 +67,7 @@ def process_need_ref(app, doctree, fromdocname):
                     title = title if len(title) < max_length else u'{}...'.format(title[:max_length-3])
 
                 link_text = app.config.needs_role_need_template.format(title=title,
-                                                                       id=ref_id,
+                                                                       id=ref_id_complete,
                                                                        type=target_need["type"],
                                                                        type_name=target_need["type_name"],
                                                                        status=target_need["status"],
