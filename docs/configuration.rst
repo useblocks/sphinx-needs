@@ -195,7 +195,7 @@ To use filters for global_options, the given value must be a tuple, containing t
   #. filter string, which must be passed (required)
   #. default value, if filter string is not passed (optional)
 
-.. code-block::
+.. code-block:: python
 
    needs_global_options = {
       # Without default value
