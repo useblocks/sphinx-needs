@@ -408,7 +408,7 @@ def links_from_content(app, need, needs, need_id=None):
     else:
         source_need = need
 
-    links = re.findall(r':need:`([\w]*)`|:need:`[\w ]+\<(.*)\>`', source_need['content'])
+    links = re.findall(r':need:`(\w+)`|:need:`.+\<(.+)\>`', source_need['content'])
     final_links = []
     for link in links:
         if link[0]:
