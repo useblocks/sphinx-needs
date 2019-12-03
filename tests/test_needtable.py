@@ -55,7 +55,7 @@ def test_doc_needtable_styles(app, status, warning):
 
 
 @with_app(buildername='html', srcdir='doc_test/doc_needtable')
-def test_doc_needtable_styles(app, status, warning):
+def test_doc_needtable_parts(app, status, warning):
     app.build()
     html = Path(app.outdir, 'test_parts.html').read_text()
     assert 'table_001.1' in html
