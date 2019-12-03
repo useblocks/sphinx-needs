@@ -6,6 +6,7 @@ from sphinxcontrib.needs.api.exceptions import NeedsNoIdException, NeedsInvalidE
 import sphinxcontrib.needs.directives.need
 from sphinx.util.nodes import nested_parse_with_titles
 from sphinxcontrib.needs.roles.need_part import update_need_with_parts, find_parts
+from sphinxcontrib.needs.filter_common import filter_single_need
 import sphinx
 from docutils.statemachine import ViewList
 from pkg_resources import parse_version
@@ -346,16 +347,23 @@ def _fix_list_dyn_func(list):
     open_func_string = False
     new_list = []
     for element in list:
-        if '[[' in element:
+        # If dyn_func got not cut, just add it
+        if '[[' in element and ']]' in element:
+            new_list.append(element)
+        # Other check if this is the starting element of dyn function
+        elif '[[' in element:
             open_func_string = True
             new_link = [element]
+        # Check if this is the ending element if dyn function
         elif ']]' in element:
             new_link.append(element)
             open_func_string = False
             element = ",".join(new_link)
             new_list.append(element)
+        # Check it is a "middle" part of the dyn function
         elif open_func_string:
             new_link.append(element)
+        # Looks like it isn't a cut dyn_func, just add.
         else:
             new_list.append(element)
     return new_list
@@ -386,6 +394,16 @@ def _merge_global_options(needs_info, global_options):
         if key in needs_info.keys():
             continue
 
-        needs_info[key] = value
+        if not isinstance(value, tuple):
+            needs_info[key] = value
+        else:
+            if len(value) < 2 or len(value) > 3:
+                raise NeedsInvalidException('global option tuple has wrong amount of parameters: {}'.format(key))
+            if filter_single_need(needs_info, value[1]):
+                needs_info[key] = value[0]
+            elif len(value) == 3:
+                needs_info[key] = value[2]
+            else:
+                pass  # set no value, as no default was given
 
 

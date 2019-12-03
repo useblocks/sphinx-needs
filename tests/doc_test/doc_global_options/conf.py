@@ -45,7 +45,9 @@ needs_types = [
 needs_global_options = {
     'global_1': "test_global",
     'global_2': 1.27,
-    'global_3': "[[test()]]"
+    'global_3': "[[test()]]",
+    'global_4': ('STATUS_IMPL', 'status == "implemented"'),
+    'global_5': ('STATUS_CLOSED', 'status == "closed"', 'STATUS_UNKNOWN')
 }
 
 cwd = os.getcwd()

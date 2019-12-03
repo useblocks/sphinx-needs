@@ -162,7 +162,6 @@ By using :ref:`needs_hide_options` the output of such options can be hidden.
 
 needs_global_options
 ~~~~~~~~~~~~~~~~~~~~
-
 .. versionadded:: 0.3.0
 
 Global options are set on global level for all needs, so that all needs get the same value for the configured option.
@@ -181,6 +180,44 @@ Combined with :ref:`dynamic_functions` this can be a powerful method to automate
          'global_option': '[[copy("id")]]'
    }
 
+.. _global_option_filters:
+
+Filter based global options
++++++++++++++++++++++++++++
+.. versionadded:: 0.4.3
+
+The value of a global_option can be also set only, if a given :ref:`filter_string` is passed.
+If it is not passed, the option is not set or a given default value is set.
+
+To use filters for global_options, the given value must be a tuple, containing the following elements:
+
+  #. value to set (required)
+  #. filter string, which must be passed (required)
+  #. default value, if filter string is not passed (optional)
+
+.. code-block::
+
+   needs_global_options = {
+      # Without default value
+      'status': ('closed', 'status.lower() in ['done', 'resolved', 'closed']')
+
+      # Set Marco as author if security tag is used. In all other cases set Daniel as author.
+      'author': ('Marco', '"security" in tags', 'Daniel)
+
+      # Dynamic functions are allowed as well
+      'req_id': ('[[copy("id")]]', 'id.startswith("REQ_")')
+   }
+
+.. warning::
+
+   The filter string gets executed against the current need only and has no access to other needs.
+   That's because the global_options get set during initialisation of the document and during this phase not every
+   document has been already read by Sphinx.
+
+   So avoid any references to other needs in the filter string.
+
+   If you need access to other needs for complex filtering, you maybe should provide your own :ref:`dynamic_functions`
+   and perform the filtering there.
 
 .. _needs_extra_links:
 

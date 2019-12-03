@@ -16,10 +16,9 @@ from sphinxcontrib.needs.api import add_need
 
 from sphinxcontrib.needs.roles.need_incoming import Need_incoming
 from sphinxcontrib.needs.roles.need_outgoing import Need_outgoing
-from sphinxcontrib.needs.roles.need_part import update_need_with_parts, find_parts
 from sphinxcontrib.needs.functions import resolve_dynamic_values, find_and_replace_node_content
 from sphinxcontrib.needs.api.exceptions import NeedsInvalidException
-from sphinxcontrib.needs.functions.functions import check_and_get_content
+
 
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
@@ -176,33 +175,6 @@ class NeedDirective(Directive):
     @property
     def max_title_length(self):
         return self.state.document.settings.env.config.needs_max_title_length
-
-    def merge_extra_options(self, needs_info):
-        """Add any extra options introduced via options_ext to needs_info"""
-        extra_keys = set(self.options.keys()).difference(set(needs_info.keys()))
-        for key in extra_keys:
-            needs_info[key] = self.options[key]
-
-        # Finally add all not used extra options with empty value to need_info.
-        # Needed for filters, which need to access these empty/not used options.
-        for key in self.option_spec:
-            if key not in needs_info.keys():
-                needs_info[key] = ""
-
-        return extra_keys
-
-    def merge_global_options(self, needs_info):
-        """Add all global defined options to needs_info"""
-        global_options = getattr(self.env.app.config, 'needs_global_options', None)
-        if global_options is None:
-            return
-        for key, value in global_options.items():
-
-            # If key already exists in needs_info, this global_option got overwritten manually in current need
-            if key in needs_info.keys():
-                continue
-
-            needs_info[key] = value
 
     # ToDo. Keep this in directive
     def _get_full_title(self):

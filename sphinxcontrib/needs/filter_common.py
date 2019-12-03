@@ -220,6 +220,7 @@ def filter_single_need(need, filter_string="", needs=None):
 
     :param need: need or need_part
     :param filter_string: string, which is used as input for eval()
+    :param needs: list of all needs
     :return: True, if need as passed the filter_string, else False
     """
     filter_context = need.copy()

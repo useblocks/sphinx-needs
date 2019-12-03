@@ -183,7 +183,10 @@ def resolve_dynamic_values(env):
                             new_values.append(element.replace('[[{}]]'.format(func_call), str(func_return)))
                         else:
                             if isinstance(need[need_option], (list, set)):
-                                new_values += func_return
+                                if isinstance(func_return, (list, set)):
+                                    new_values += func_return
+                                else:
+                                    new_values += [func_return]
 
                 need[need_option] = new_values
 
@@ -238,7 +241,7 @@ def _detect_and_execute(content, need, env):
 
 def _analyze_func_string(func_string, need):
     """
-    Analyze given functiion string an extract:
+    Analyze given function string and extract:
 
     * function name
     * function arguments

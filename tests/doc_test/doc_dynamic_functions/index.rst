@@ -15,3 +15,11 @@ DYNAMIC FUNCTIONS
 .. spec:: TEST_3
    :id: TEST_3
    :test_func: [[test()]]
+
+.. spec:: TEST_4
+    :id: TEST_4
+    :tags: test_4a;test_4b;[[copy('title')]]
+
+.. spec:: TEST_5
+    :id: TEST_5
+    :tags: [[copy('id')]]
