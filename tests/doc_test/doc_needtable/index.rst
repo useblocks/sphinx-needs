@@ -13,3 +13,4 @@ TEST DOCUMENT NEEDTABLE
 
 .. needtable::
    :tags: test;my_test
+   :sort: id

@@ -5,8 +5,10 @@ Changelog
 
 * Improvement: Role :ref:`role_need` supports standard sphinx-ref syntax. Example: ``:need:`custom name <need_id>```
 * Improvement: Added :ref:`global_option_filters` to set values of global options only under custom circumstances.
+* Improvement: Added sorting to :ref:`needtable`. See :ref:`needtable_sort` for details.
 * Bugfix: Fixed corrupted :ref:`dynamic_functions` handling for ``tags`` and other list options.
   (`#100 <https://github.com/useblocks/sphinxcontrib-needs/issues/100>`_)
+* Bugfix: Double entries for same need in :ref:`needtable` fixed. (`#100 <https://github.com/useblocks/sphinxcontrib-needs/issues/93>`_)
 
 0.4.2
 -----

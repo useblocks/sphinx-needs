@@ -4,7 +4,7 @@ import re
 
 from docutils import nodes
 from docutils.parsers.rst import directives
-from sphinxcontrib.needs.utils import row_col_maker, status_sorter
+from sphinxcontrib.needs.utils import row_col_maker
 from sphinxcontrib.needs.filter_common import FilterBase, procces_filters
 from sphinxcontrib.needs.directives.utils import no_needs_found_paragraph, used_filter_paragraph
 from sphinxcontrib.needs.functions.functions import check_and_get_content
@@ -28,7 +28,8 @@ class NeedtableDirective(FilterBase):
                    'columns': directives.unchanged_required,
                    'style': directives.unchanged_required,
                    'style_row': directives.unchanged_required,
-                   'style_col': directives.unchanged_required}
+                   'style_col': directives.unchanged_required,
+                   'sort': directives.unchanged_required}
 
     # Update the options_spec with values defined in the FilterBase class
     option_spec.update(FilterBase.base_option_spec)
@@ -59,6 +60,8 @@ class NeedtableDirective(FilterBase):
         style_row = self.options.get("style_row", "")
         style_col = self.options.get("style_col", "")
 
+        sort = self.options.get("sort", "id")
+
         # Add the need and all needed information
         env.need_all_needtables[targetid] = {
             'docname': env.docname,
@@ -68,6 +71,7 @@ class NeedtableDirective(FilterBase):
             'style': style,
             'style_row': style_row,
             'style_col': style_col,
+            'sort': sort,
             # As the following options are flags, the content is None, if set.
             # If not set, the options.get() method returns False
             'show_filters': True if self.options.get("show_filters", False) is None else False,
@@ -159,9 +163,29 @@ def process_needtables(app, doctree, fromdocname):
         # Perform filtering of needs
         found_needs = procces_filters(all_needs, current_needtable)
 
+        def get_sorter(key):
+            """
+            Returns a sort-function for a given need-key.
+            :param key: key of need object as string
+            :return:  function to use in sort(key=x)
+            """
+            def sort(need):
+                """
+                Returns a given value of need, which is used for list sorting.
+                :param need: need-element, which gets sort
+                :return: value of need
+                """
+                if isinstance(need[key], str):
+                    # if we filter for string (e.g. id) everything should be lowercase.
+                    # Otherwise "Z" will be above "a"
+                    return need[key].lower()
+                return need[key]
+            return sort
+
+        found_needs.sort(key=get_sorter(current_needtable['sort']))
+
         for need_info in found_needs:
             style_row = check_and_get_content(current_needtable['style_row'], need_info, env)
-            style_col = current_needtable['style_col']
 
             temp_need = need_info.copy()
             if temp_need['is_need']:
@@ -221,7 +245,7 @@ def process_needtables(app, doctree, fromdocname):
                             row += row_col_maker(
                             app, fromdocname, env.needs_all_needs, temp_part, col.lower())
 
-                tbody += row
+                    tbody += row
 
         if len(found_needs) == 0:
             content.append(no_needs_found_paragraph())

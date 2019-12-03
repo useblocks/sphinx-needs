@@ -31,6 +31,7 @@ Supported options:
  * :ref:`needtable_style`
  * :ref:`needtable_show_parts`
  * :ref:`needtable_style_row`
+ * :ref:`needtable_sort`
  * Common filters:
     * :ref:`option_status`
     * :ref:`option_tags`
@@ -321,3 +322,52 @@ part of the row style.
           border: 1px solid #212174;
           color: #ffffff;
       }
+
+
+.. _needtable_sort:
+
+sort
+~~~~
+.. versionadded:: 0.4.3
+
+``.. needtable::`` provides a ``sort`` option to sort the filter-results for a given key.
+
+The sort-value must be compatible to the options supported by :ref:`filter_string` and the addressed need-value
+must be from type ``string``, ``float`` or ``int``.
+
+If no sort option is given, ``id`` is used by default:
+
+.. needtable::
+   :tags: ex_row_color
+   :style: table
+
+In this case, ``status`` is given for sort. So *EX_ROW_3* is above of *EX_ROW_2*.
+
+.. needtable::
+   :tags: ex_row_color
+   :style: table
+   :sort: status
+
+.. container:: toggle
+
+   .. container::  header
+
+      **Show used configuration**
+
+   .. code-block:: rst
+
+      .. needtable::
+         :tags: ex_row_color
+         :style: table
+
+      .. needtable::
+         :tags: ex_row_color
+         :style: table
+         :sort: status
+
+.. note::
+
+   Sorting may only work if the standard sphinx-table is used for output: ``:style: table``.
+   The default DatabTables table uses Javascript to sort results by its own.
+
+
