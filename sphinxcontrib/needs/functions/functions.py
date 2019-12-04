@@ -101,8 +101,8 @@ def find_and_replace_node_content(node, env, need):
                 func_string = func_string.replace('”', '"')
                 func_string = func_string.replace('”', '"')
 
-                func_string = func_string.replace('‘', '"')
-                func_string = func_string.replace('’', '"')
+                func_string = func_string.replace('‘', '\'')
+                func_string = func_string.replace('’', '\'')
                 func_return = execute_func(env, need, func_string)
                 if not is_python3:
                     new_text = new_text.replace(u'[[{}]]'.format(func_string_org.decode('utf-8')), func_return)
@@ -237,7 +237,6 @@ def _detect_and_execute(content, need, env):
     func_return = execute_func(env, need, func_call)  # Execute function call and get return value
 
     return func_call, func_return
-
 
 def _analyze_func_string(func_string, need):
     """

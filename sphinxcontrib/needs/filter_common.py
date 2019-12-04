@@ -67,7 +67,8 @@ class FilterBase(Directive):
 
 def procces_filters(all_needs, current_needlist):
     """
-    Filters all needs with given configuration
+    Filters all needs with given configuration.
+    Used by needlist, needtable and needflow.
 
     :param current_needlist: needlist object, which stores all filters
     :param all_needs: List of all needs inside document
@@ -187,13 +188,11 @@ def check_need_list(list_a, list_b):
     return common_list
 
 
-def filter_needs(needs, filter_string="", filter_parts=True, merge_part_with_parent=True):
+def filter_needs(needs, filter_string="", current_need=None):
     """
     Filters given needs based on a given filter string.
     Returns all needs, which pass the given filter.
 
-    :param merge_part_with_parent: If True, need_parts inherit options from their parent need
-    :param filter_parts: If True, need_parts get also filtered
     :param filter_string: strings, which gets evaluated against each need
     :param needs: list of needs, which shall be filtered
     :return:
@@ -206,7 +205,7 @@ def filter_needs(needs, filter_string="", filter_parts=True, merge_part_with_par
 
     for filter_need in needs:
         try:
-            if filter_single_need(filter_need, filter_string, needs):
+            if filter_single_need(filter_need, filter_string, needs, current_need):
                 found_needs.append(filter_need)
         except Exception as e:
             logger.warning("Filter {0} not valid: Error: {1}".format(filter_string, e))
@@ -214,7 +213,7 @@ def filter_needs(needs, filter_string="", filter_parts=True, merge_part_with_par
     return found_needs
 
 
-def filter_single_need(need, filter_string="", needs=None):
+def filter_single_need(need, filter_string="", needs=None, current_need=None):
     """
     Checks if a single need/need_part passes a filter_string
 
@@ -226,6 +225,8 @@ def filter_single_need(need, filter_string="", needs=None):
     filter_context = need.copy()
     if needs is not None:
         filter_context['needs'] = needs
+    if current_need is not None:
+        filter_context['current_need'] = current_need
 
     filter_context["search"] = re.search
     result = False

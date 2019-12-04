@@ -8,6 +8,8 @@ Changelog
 * Improvement: Added sorting to :ref:`needtable`. See :ref:`needtable_sort` for details.
 * Improvement: Added dynamic function :ref:`links_content` to calculated links to other needs automatically from need-content.
   (`#98 <https://github.com/useblocks/sphinxcontrib-needs/issues/98>`_)
+* Improvement: Dynamic function :ref:`copy` supports uppercase and lowercase transformation.
+* Improvement: Dynamic function :ref:`copy` supports filter_string.
 * Bugfix: Fixed corrupted :ref:`dynamic_functions` handling for ``tags`` and other list options.
   (`#100 <https://github.com/useblocks/sphinxcontrib-needs/issues/100>`_)
 * Bugfix: Double entries for same need in :ref:`needtable` fixed. (`#93 <https://github.com/useblocks/sphinxcontrib-needs/issues/93>`_)

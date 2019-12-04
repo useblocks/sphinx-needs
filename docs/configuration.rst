@@ -199,7 +199,7 @@ To use filters for global_options, the given value must be a tuple, containing t
 
    needs_global_options = {
       # Without default value
-      'status': ('closed', 'status.lower() in ['done', 'resolved', 'closed']')
+      'status': ('closed', 'status.lower() in ["done", "resolved", "closed"]')
 
       # Set Marco as author if security tag is used. In all other cases set Daniel as author.
       'author': ('Marco', '"security" in tags', 'Daniel)
@@ -207,6 +207,18 @@ To use filters for global_options, the given value must be a tuple, containing t
       # Dynamic functions are allowed as well
       'req_id': ('[[copy("id")]]', 'id.startswith("REQ_")')
    }
+
+There are use cases, for which an option needs to get different values based on different filter.
+In this cases you can provide a list of tuples::
+
+      needs_global_options = {
+            # Without default value
+            'status': [
+                  ('fulfilled', 'status.lower() in ["done", "resolved", "closed"]', 'type=="req"'),
+                  ('done', 'status.lower() in ["done", "resolved", "closed"]', 'type=="task"'),
+                  ('implemented', 'status.lower() in ["done", "resolved", "closed"]', 'type=="spec"')
+            ]
+         }
 
 .. warning::
 

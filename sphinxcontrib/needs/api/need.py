@@ -229,11 +229,16 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
 
     for link_type in env.config.needs_extra_links:
         # Check, if specific link-type got some arguments during method call
-        if link_type['option'] not in list(kwargs.keys()):
+        if link_type['option'] not in list(kwargs.keys()) and link_type['option'] not in needs_global_options.keys():
             # if not we set no links, but entry in needS_info must be there
             links = []
+        elif link_type['option'] in needs_global_options.keys() and \
+                (link_type['option'] not in list(kwargs.keys()) or len(str( kwargs[link_type['option']])) == 0):
+            # If it is in global option, value got already set during prior handling of them
+            links_string = needs_info[link_type['option']]
+            links = _read_in_links(links_string)
         else:
-            # if yes, parse string and get links
+            # if it is set in kwargs, take this value and maybe override set value from global_options
             links_string = kwargs[link_type['option']]
             links = _read_in_links(links_string)
 
@@ -391,19 +396,30 @@ def _merge_global_options(needs_info, global_options):
     for key, value in global_options.items():
 
         # If key already exists in needs_info, this global_option got overwritten manually in current need
-        if key in needs_info.keys():
+        if key in needs_info.keys() and len(str(needs_info[key])) > 0:
             continue
 
-        if not isinstance(value, tuple):
-            needs_info[key] = value
+        if isinstance(value, tuple):
+            values = [value]
+        elif isinstance(value, list):
+            values = value
         else:
-            if len(value) < 2 or len(value) > 3:
+            needs_info[key] = value
+            continue
+
+        for single_value in values:
+            if len(single_value) < 2 or len(single_value) > 3:
                 raise NeedsInvalidException('global option tuple has wrong amount of parameters: {}'.format(key))
-            if filter_single_need(needs_info, value[1]):
-                needs_info[key] = value[0]
-            elif len(value) == 3:
-                needs_info[key] = value[2]
+            if filter_single_need(needs_info, single_value[1]):
+                # Set value, if filter has matched
+                needs_info[key] = single_value[0]
+            elif len(single_value) == 3 and (key not in needs_info.keys() or len(str(needs_info[key])) > 0):
+                # Otherwise set default, but only if no value was set before or value is "" and a default is defined
+                needs_info[key] = single_value[2]
             else:
-                pass  # set no value, as no default was given
+                # If not value was set until now, we have to set an empty value, so that we are sure that each need
+                # has at least the key.
+                if key not in needs_info.keys():
+                    needs_info[key] = ''
 
 

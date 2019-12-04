@@ -488,10 +488,13 @@ def construct_meta(need_data, env):
 
     global_options = getattr(env.config, 'needs_global_options', {})
     node_global_options = []
+    link_types = [x['option'] for x in env.config.needs_extra_links]
     for key, value in global_options.items():
         # If a global option got locally overwritten, it must already part of extra_options.
         # In this skipp output, as this is done during extra_option handling
-        if key in extra_options or key in hide_options:
+        # Also if it is part of link_types, the handling is already done.
+        # So skip in all of these cases
+        if key in extra_options or key in hide_options or key in link_types:
             continue
 
         param_data = need_data[key]

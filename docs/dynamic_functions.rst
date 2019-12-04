@@ -53,6 +53,8 @@ test
 ~~~~
 .. autofunction:: sphinxcontrib.needs.functions.common.test
 
+.. _copy:
+
 copy
 ~~~~
 .. autofunction:: sphinxcontrib.needs.functions.common.copy

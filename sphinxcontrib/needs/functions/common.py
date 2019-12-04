@@ -8,7 +8,7 @@ Collection of common sphinx-needs functions for dynamic values
 
 import re
 
-from sphinxcontrib.needs.filter_common import filter_single_need, NeedInvalidFilter
+from sphinxcontrib.needs.filter_common import filter_single_need, NeedInvalidFilter, filter_needs
 from sphinxcontrib.needs.utils import logger
 
 
@@ -33,7 +33,7 @@ def test(app, need, needs, *args, **kwargs):
     return "Test output of need {}. args: {}. kwargs: {}".format(need['id'], args, kwargs)
 
 
-def copy(app, need, needs, option, need_id=None):
+def copy(app, need, needs, option, need_id=None, lower=False, upper=False, filter=None):
     """
     Copies the value of one need option to another
 
@@ -85,12 +85,47 @@ def copy(app, need, needs, option, need_id=None):
 
        Also copies all tags from copy_1.
 
+    If the filter_string needs to compare a value from the current need and the value is unknown yet,
+    you can reference the valued field by using ``current_need["my_field"]`` inside the filter string.
+    Small example::
+
+        .. test:: test of current_need value
+           :id: copy_4
+
+           The following copy command copies the title of the first need found under the same highest
+           section (headline):
+
+           [[copy('title', filter='current_need["sections"][-1]==sections[-1]')]]
+
+    .. test:: test of current_need value
+       :id: copy_4
+
+       The following copy command copies the title of the first need found under the same  highest
+       section (headline):
+
+           [[copy('title', filter='current_need["sections"][-1]==sections[-1]')]]
+    This filter possibilities get really powerful in combination with :ref:`needs_global_options`.
+
+
     :param option: Name of the option to copy
     :param need_id: id of the need, which contains the source option. If None, current need is taken
+    :param upper: Is set to True, copied value will be uppercase
+    :param lower: Is set to True, copied value will be lowercase
+    :param filter: :ref:`filter_string`, which first result is used as copy source.
     :return: string of copied need option
     """
     if need_id is not None:
         need = needs[need_id]
+
+    if filter is not None:
+        result = filter_needs(needs.values(), filter, need)
+        if result:
+            need = result[0]
+
+    if lower:
+        return need[option].lower()
+    if upper:
+        return need[option].upper()
 
     return need[option]
 
@@ -353,8 +388,7 @@ def calc_sum(app, need, needs, option, filter=None, links_only=False):
     return calculated_sum
 
 
-
-def links_from_content(app, need, needs, need_id=None):
+def links_from_content(app, need, needs, need_id=None, filter=None):
     """
     Extracts links from content of a need.
 
@@ -401,6 +435,7 @@ def links_from_content(app, need, needs, need_id=None):
           Links retrieved from content of :need:`CON_SPEC_1`
 
     :param need_id: ID of need, which provides the content. If not set, current need is used.
+    :param filter: :ref:`filter_string`, which a found need-link must pass.
     :return: List of linked need-ids in content
     """
     if need_id is not None:
@@ -409,14 +444,22 @@ def links_from_content(app, need, needs, need_id=None):
         source_need = need
 
     links = re.findall(r':need:`(\w+)`|:need:`.+\<(.+)\>`', source_need['content'])
-    final_links = []
+    raw_links = []
     for link in links:
         if link[0]:
-            final_links.append(link[0])
+            raw_links.append(link[0])
         elif link[1]:
-            final_links.append(link[1])
+            raw_links.append(link[1])
 
-    return final_links
+    if filter is not None and len(filter) > 0:
+        filtered_links = []
+        for link in raw_links:
+            if filter_single_need(needs[link], filter):
+                filtered_links.append(link)
+        return filtered_links
+
+    return raw_links
+
 
 
 
