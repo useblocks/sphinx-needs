@@ -1,3 +1,4 @@
 sphinx>=1.6
 sphinxcontrib-plantuml
 matplotlib
+numpy
