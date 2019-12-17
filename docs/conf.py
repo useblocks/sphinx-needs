@@ -44,12 +44,16 @@ version = '0.4'
 release = '0.4.3'
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
-if on_rtd:
-    extensions = ['sphinxcontrib.plantuml', 'sphinxcontrib.needs', 'sphinx.ext.autodoc']
-else:
-    extensions = ['sphinxcontrib.plantuml', 'sphinxcontrib.needs', 'sphinx.ext.autodoc']
+
+extensions = ['sphinxcontrib.plantuml',
+              'sphinxcontrib.needs',
+              'sphinx.ext.autodoc',
+              'matplotlib.sphinxext.plot_directive']
 
 add_module_names = False
+
+global TESTME
+TESTME = "abc"
 
 # NEEDS CONFIGURATION
 

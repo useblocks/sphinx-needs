@@ -112,3 +112,18 @@ As :need:`IMPL_01` shows, the linked :need:`OWN_ID_123` is realisable.
 
 .. needflow::
    :filter: "Examples" == section_name
+
+
+Single needs
+------------
+
+.. req:: Open requirement example
+   :status: open
+
+.. req:: In progress requirement example
+   :status: in_progress
+
+.. req:: Closed requirement example
+   :status: closed
+
+

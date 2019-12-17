@@ -273,6 +273,7 @@ Content
    styles
    examples
    api
+   snippets
    support
    changelog
    license
