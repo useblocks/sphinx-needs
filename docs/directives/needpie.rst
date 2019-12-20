@@ -37,7 +37,7 @@ Example with all options used:
    :legend:
    :shadow:
    :explode: 0, 0.3, 0
-   :colors: #ffcc00, #444, limegreen
+   :colors: #ffcc00, #444444, limegreen
    :text_color: crimson
    :style: dark_background
 
@@ -52,7 +52,7 @@ Example with all options used:
       :legend:
       :shadow:
       :explode: 0, 0.3, 0
-      :colors: #ffcc00, #444, limegreen
+      :colors: #ffcc00, #444444, limegreen
       :text_color: crimson
       :style: dark_background
 
