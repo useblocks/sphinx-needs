@@ -261,7 +261,7 @@ html_theme = 'alabaster'
 
 # html_logo = "_static/needs_logo.png"
 # html_sidebars = {'**': ['about.html', 'navigation.html', 'sourcelink.html', 'searchbox.html'], }
-html_sidebars = {'**': ['about.html', 'navigation.html'], }
+html_sidebars = {'**': ['about.html', 'navigation.html', 'searchbox.html'], }
 
 html_theme_options = {
     'logo': 'needs_logo.png',
