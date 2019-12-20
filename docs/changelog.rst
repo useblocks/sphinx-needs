@@ -1,5 +1,11 @@
 Changelog
 =========
+0.4.4 (not released yet)
+------------------------
+
+* Improvement: Added :ref:`needpie` which draws pie-charts based on :ref:`filter_string`.
+
+
 0.4.3
 -----
 

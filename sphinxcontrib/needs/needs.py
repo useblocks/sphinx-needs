@@ -16,6 +16,7 @@ from sphinxcontrib.needs.directives.needimport import Needimport, NeedimportDire
 from sphinxcontrib.needs.directives.needtable import Needtable, NeedtableDirective, process_needtables
 from sphinxcontrib.needs.directives.needlist import Needlist, NeedlistDirective, process_needlist
 from sphinxcontrib.needs.directives.needflow import Needflow, NeedflowDirective, process_needflow
+from sphinxcontrib.needs.directives.needpie import Needpie, NeedpieDirective, process_needpie
 
 from sphinxcontrib.needs.builder import NeedsBuilder
 from sphinxcontrib.needs.directives.needfilter import Needfilter, NeedfilterDirective, process_needfilters
@@ -199,6 +200,7 @@ def setup(app):
     app.add_node(Needlist)
     app.add_node(Needtable)
     app.add_node(Needflow)
+    app.add_node(Needpie)
     app.add_node(NeedPart, html=(visitor_dummy, visitor_dummy), latex=(visitor_dummy, visitor_dummy))
 
     ########################################################################
@@ -272,7 +274,7 @@ def setup(app):
     app.add_directive('needlist', NeedlistDirective)
     app.add_directive('needtable', NeedtableDirective)
     app.add_directive('needflow', NeedflowDirective)
-
+    app.add_directive('needpie', NeedpieDirective)
     app.add_directive('needimport', NeedimportDirective)
 
     ########################################################################
@@ -316,6 +318,7 @@ def setup(app):
     app.connect('doctree-resolved', process_needlist)
     app.connect('doctree-resolved', process_needtables)
     app.connect('doctree-resolved', process_needflow)
+    app.connect('doctree-resolved', process_needpie)
     app.connect('doctree-resolved', process_need_part)
     app.connect('doctree-resolved', process_need_ref)
     app.connect('doctree-resolved', process_need_incoming)

@@ -153,6 +153,8 @@ The usage of a filter string is supported/required by:
 * :ref:`needlist`
 * :ref:`needtable`
 * :ref:`needflow`
+* :ref:`needpie`
+
 
 The filter string must be a valid Python expression:
 

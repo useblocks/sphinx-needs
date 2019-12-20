@@ -74,8 +74,8 @@ which can be easily extended by different extensions to fulfill nearly any requi
    :tags: introduction
    :links: SPEC_1
 
-   Needs can be :ref:`easily filtered <filter>` and presented in :ref:`lists<needlist>`, :ref:`tables <needtable>`
-   and :ref:`diagrams <needflow>`.
+   Needs can be :ref:`easily filtered <filter>` and presented in :ref:`lists<needlist>`, :ref:`tables <needtable>`,
+   :ref:`diagrams <needflow>` and :ref:`pie charts <needpie>`.
 
    .. needflow::
       :tags: introduction

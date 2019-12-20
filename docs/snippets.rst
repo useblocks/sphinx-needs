@@ -4,12 +4,6 @@ Snippets
 .. contents::
    :local:
 
-
-.. warning::
-
-   The used plot-directive from matplotlib gets executed directly before all documents get read in.
-   Therefor the available needs will not be correct during plot generation time.
-
 How to create a pie chart with matplotlib?
 ------------------------------------------
 This example shows the distribution of the different need-types used in this documentation.
@@ -39,6 +33,13 @@ This example shows the distribution of the different need-types used in this doc
         shadow=True, startangle=90)
    ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
    plt.show()
+
+.. warning::
+
+   The used plot-directive from matplotlib gets executed directly before all documents get read in.
+   Therefor the available needs will not be correct during plot generation time.
+
+   To avoid this use the sphinx-needs internal plot mechanisms: :ref:`needpie`.
 
 **Installation**::
 
@@ -124,6 +125,13 @@ How to create a bar chart with matplotlib?
 
    fig.tight_layout()
    plt.show()
+
+.. warning::
+
+   The used plot-directive from matplotlib gets executed directly before all documents get read in.
+   Therefor the available needs will not be correct during plot generation time.
+
+   To avoid this use the sphinx-needs internal plot mechanisms: :ref:`needpie`.
 
 **Installation**::
 

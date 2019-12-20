@@ -103,7 +103,8 @@ def copy(app, need, needs, option, need_id=None, lower=False, upper=False, filte
        The following copy command copies the title of the first need found under the same  highest
        section (headline):
 
-           [[copy('title', filter='current_need["sections"][-1]==sections[-1]')]]
+            [[copy('title', filter='current_need["sections"][-1]==sections[-1]')]]
+
     This filter possibilities get really powerful in combination with :ref:`needs_global_options`.
 
 
