@@ -7,7 +7,8 @@ from setuptools import setup, find_packages
 requires = ['Sphinx<2;python_version<"3.5"',
             'Sphinx;python_version>="3.5"',
             'six',
-            'matplotlib']
+            'matplotlib<3.1.1;python_version<"3.6"',
+            'matplotlib;python_version>="3.6"']
 
 setup(
     name='sphinxcontrib-needs',
