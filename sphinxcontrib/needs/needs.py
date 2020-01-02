@@ -29,7 +29,7 @@ from sphinxcontrib.needs.roles.need_part import NeedPart, process_need_part
 from sphinxcontrib.needs.roles.need_count import NeedCount, process_need_count
 from sphinxcontrib.needs.utils import process_dynamic_values
 from sphinxcontrib.needs.functions import register_func, needs_common_functions
-from sphinxcontrib.needs.constraints import process_constraints
+from sphinxcontrib.needs.warnings import process_warnings
 
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
@@ -330,7 +330,7 @@ def setup(app):
     app.connect('env-updated', install_datatables_static_files)
 
     # Called during consistency check, which if after everything got read in.
-    app.connect('env-check-consistency', process_constraints)
+    app.connect('env-check-consistency', process_warnings)
 
     # Call this after all JS files, which perform DOM manipulation, have been called.
     # Otherwise newly added dom objects can not be collapsed
