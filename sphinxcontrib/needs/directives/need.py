@@ -298,6 +298,9 @@ def process_need_nodes(app, doctree, fromdocname):
         for index, attribute in enumerate(node_need.attributes['classes']):
             node_need.attributes['classes'][index] = check_and_get_content(attribute, need_data, env)
 
+        # UGLY CODE STARTS HERE :)
+        from sphinxcontrib.needs.layout import build_need
+        build_need('default', node_need, app)
 
         node_headline = construct_headline(need_data, app)
         node_meta = construct_meta(need_data, env)

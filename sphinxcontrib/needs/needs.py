@@ -114,6 +114,27 @@ DEFAULT_DIAGRAM_TEMPLATE = \
 """
 
 
+LAYOUTS = {
+    'default': {
+        'grid': 'simple',
+        'layout': {
+            'head': [
+                '<<type>>: <<title>>  <<id>>'
+            ],
+            'meta': [
+                'status: <<status>>',
+                'tags: <<tags>>'
+            ],
+            'content': [
+                '<<content>>'
+            ],
+            'footer': [
+            ]
+        }
+    }
+}
+
+
 def setup(app):
     log = logging.getLogger(__name__)
     app.add_builder(NeedsBuilder)
@@ -195,6 +216,7 @@ def setup(app):
     app.add_config_value('needs_flow_link_types', ["links"], 'html')
 
     app.add_config_value('needs_warnings', {}, 'html')
+    app.add_config_value('needs_layouts', LAYOUTS, 'html')
 
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
