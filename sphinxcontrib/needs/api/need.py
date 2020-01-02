@@ -245,6 +245,9 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
         needs_info[link_type["option"]] = links
         needs_info['{}_back'.format(link_type["option"])] = set()
 
+        if 'copy' not in link_type.keys():
+            link_type['copy'] = False
+
         if link_type['copy'] and link_type['option'] != 'links':
             copy_links += links  # Save extra links for main-links
 

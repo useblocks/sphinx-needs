@@ -7,6 +7,7 @@ Changelog
 * Improvement: Added config option :ref:`needs_constraints`. (`#110 <https://github.com/useblocks/sphinxcontrib-needs/issues/110>`_)
 * Bugfix: Need css style name is now based on need-type and not on the longer, whitespace-containing type name.
   Example: ``need-test`` instead of not valid ``need-test case``. (`#108 <https://github.com/useblocks/sphinxcontrib-needs/issues/108>`_)
+* Bugfix: No more exception raise if ``copy`` value not set inside :ref:`needs_extra_links`.
 
 0.4.3
 -----
