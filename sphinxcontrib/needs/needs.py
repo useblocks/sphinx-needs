@@ -29,6 +29,7 @@ from sphinxcontrib.needs.roles.need_part import NeedPart, process_need_part
 from sphinxcontrib.needs.roles.need_count import NeedCount, process_need_count
 from sphinxcontrib.needs.utils import process_dynamic_values
 from sphinxcontrib.needs.functions import register_func, needs_common_functions
+from sphinxcontrib.needs.constraints import process_constraints
 
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
@@ -193,6 +194,8 @@ def setup(app):
     app.add_config_value('needs_flow_show_links', False, 'html')
     app.add_config_value('needs_flow_link_types', ["links"], 'html')
 
+    app.add_config_value('needs_constraints', {}, 'html')
+
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(Needfilter, )
@@ -326,12 +329,16 @@ def setup(app):
     app.connect('doctree-resolved', process_need_count)
     app.connect('env-updated', install_datatables_static_files)
 
+    # Called during consistency check, which if after everything got read in.
+    app.connect('env-check-consistency', process_constraints)
+
     # Call this after all JS files, which perform DOM manipulation, have been called.
     # Otherwise newly added dom objects can not be collapsed
     app.connect('env-updated', install_collapse_static_files)
 
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect('env-updated', install_styles_static_files)
+
 
     return {'version': VERSION}  # identifies the version of our extension
 

@@ -334,7 +334,7 @@ Here ``style`` is set to ``needs_[[copy('status')]]``.
 
 .. req:: My automatically styled requirement
    :id: STYLE_005
-   :status: in_progress
+   :status: in progress
    :tags: style_example
    :style: needs_[[copy("status")]]
 
@@ -348,7 +348,7 @@ Here ``style`` is set to ``needs_[[copy('status')]]``.
 
    .. req:: My automatically styled requirement
       :id: STYLE_005
-      :status: in_progress
+      :status: in progress
       :tags: style_example
       :style: needs_[[copy(status)]]
 

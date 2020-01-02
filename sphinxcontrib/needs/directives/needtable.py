@@ -186,6 +186,7 @@ def process_needtables(app, doctree, fromdocname):
 
         for need_info in found_needs:
             style_row = check_and_get_content(current_needtable['style_row'], need_info, env)
+            style_row = style_row.replace(' ', '_')  # Replace whitespaces with _ to get valid css name
 
             temp_need = need_info.copy()
             if temp_need['is_need']:

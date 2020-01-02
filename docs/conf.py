@@ -210,6 +210,11 @@ needs_extra_options = {
 
 needs_title_from_content = True
 
+needs_constraints = {
+    'type_check': 'type not in ["req", "spec", "impl", "test", "feature"]',
+    # 'valid_status': 'status not in ["open", "in progress", "closed", "done", "implemented"] and status is not None'
+}
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 

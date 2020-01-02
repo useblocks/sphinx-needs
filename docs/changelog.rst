@@ -4,6 +4,7 @@ Changelog
 ------------------------
 
 * Improvement: Added :ref:`needpie` which draws pie-charts based on :ref:`filter_string`.
+* Improvement: Added config option :ref:`needs_constraints`. (`#110 <https://github.com/useblocks/sphinxcontrib-needs/issues/110>`_)
 
 
 0.4.3

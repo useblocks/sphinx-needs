@@ -265,6 +265,12 @@ documented need in the row.
 In this example we set ``style_row`` to ``needs_[[copy("status")]]``, so the status of each need will be
 part of the row style.
 
+.. note::
+
+   If ``style_row`` contains whitespaces, they get automatically replaced by ``_`` to get a valid css class name.
+
+   So a copied status value like ``in progress`` will become ``in_progress``.
+
 .. container:: toggle
 
    .. container::  header
@@ -295,7 +301,7 @@ part of the row style.
    .. req:: Spec under progress
       :id: EX_ROW_3
       :tags: ex_row_color
-      :status: in_progress
+      :status: in progress
 
    **inside a provided css file**
 

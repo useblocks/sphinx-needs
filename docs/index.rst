@@ -126,6 +126,21 @@ which can be easily extended by different extensions to fulfill nearly any requi
    For instance `Sphinx-Test-Reports <https://sphinx-test-reports.readthedocs.io/en/latest/>`_ creates needs from
    test results and makes them searchable and linkable to other need-types.
 
+.. feature:: Developed for safe process executions
+   :id: FEATURE_6
+   :style: needs_yellow
+   :tags: introduction
+   :links: SPEC_1
+
+   ``Sphinx-needs`` allows to define the exact allowed way of using and configuring needs.
+
+   Use :ref:`needs_constraints` to check for not allowed configurations, e.g. wrong status names.
+   Or force the usage of exactly defined need-ids by setting :ref:`needs_id_required` and :ref:`needs_id_regex`.
+
+   See :ref:`config` for more options to get a sphinx documentation valid with ISO 26262, DO-178B/C or any other
+   safety standard.
+
+
 Example
 -------
 

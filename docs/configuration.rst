@@ -836,6 +836,55 @@ The default value contains an arrow right and a non breaking space.
 
 See :ref:`needtable_show_parts` for an example output.
 
+
+.. _needs_constraints:
+
+needs_constraints
+~~~~~~~~~~~~~~~~~
+.. versionadded:: 0.4.4
+
+``needs_constraints`` allows the definition of constraints, which all needs must not fulfill during a sphinx build.
+
+A fulfilled constraint will raise a warning during build time.
+
+Use ``-W`` in your sphinx build command to stop the whole build, if a constraint is raised.
+This will handle **all warnings** as exceptions.
+
+.. code-block:: rst
+
+   needs_constraints = {
+     # req need must have a status
+     'req_with_status': "type == 'req' and status is None or len(status) == 0",
+
+     # status must be open or closed
+     'valid_status' : "status not in ['open', 'closed']",
+   }
+
+``needs_constraints`` must be a dictionary.
+The **dictionary key** is used as identifier and gets printed in log outputs.
+The **value** must be a valid filter string and defines a *not allowed behavior*.
+
+So use the filter string to define how needs are not allowed to be configured/used.
+
+Example output:
+
+.. code-block:: text
+
+  ...
+  looking for now-outdated files... none found
+  pickling environment... done
+  checking consistency... WARNING: Sphinx-Needs constraints were raised. See console / log output for details.
+
+  Checking sphinx-needs constraints
+    type_check: passed
+    valid_status: failed
+        failed needs: 11 (STYLE_005, EX_ROW_1, EX_ROW_3, copy_2, clv_1, clv_2, clv_3, clv_4, clv_5, T_C3893, R_AD4A0)
+        used filter: status not in ["open", "in progress", "closed", "done"] and status is not None
+  done
+  ...
+
+Due to the nature of sphinx logging, a warning may be printed wherever in the log.
+
 Removed options
 ------------------
 

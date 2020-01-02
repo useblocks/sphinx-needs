@@ -193,9 +193,10 @@ def filter_needs(needs, filter_string="", current_need=None):
     Filters given needs based on a given filter string.
     Returns all needs, which pass the given filter.
 
-    :param filter_string: strings, which gets evaluated against each need
     :param needs: list of needs, which shall be filtered
-    :return:
+    :param filter_string: strings, which gets evaluated against each need
+    :param current_need: current need, which uses the filter.
+    :return: list of found needs
     """
 
     if filter_string is None or filter_string == "":
