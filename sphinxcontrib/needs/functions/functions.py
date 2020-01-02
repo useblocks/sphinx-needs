@@ -196,7 +196,7 @@ def resolve_dynamic_values(env):
 
 def check_and_get_content(content, need, env):
     """
-    DChecks if the given content is a function call.
+    Checks if the given content is a function call.
     If not, content is returned.
     If it is, the functions gets executed and its returns value replaces the related part in content.
 

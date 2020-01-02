@@ -134,7 +134,9 @@ which can be easily extended by different extensions to fulfill nearly any requi
 
    ``Sphinx-needs`` allows to define the exact allowed way of using and configuring needs.
 
-   Use :ref:`needs_constraints` to check for not allowed configurations, e.g. wrong status names.
+   Use :ref:`needs_statuses`, :ref:`needs_tags` or :ref:`needs_constraints` to check for not allowed configurations,
+   e.g. wrong status names.
+
    Or force the usage of exactly defined need-ids by setting :ref:`needs_id_required` and :ref:`needs_id_regex`.
 
    See :ref:`config` for more options to get a sphinx documentation valid with ISO 26262, DO-178B/C or any other

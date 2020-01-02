@@ -259,7 +259,8 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
     ############################
     # Title and meta data information gets added alter during event handling via process_need_nodes()
     # We just add a basic need node and render the rst-based content, because this can not be done later.
-    style_classes = ['need', type_name, 'need-{}'.format(type_name.lower())]
+    # style_classes = ['need', type_name, 'need-{}'.format(type_name.lower())]  # Used < 0.4.4
+    style_classes = ['need', 'need-{}'.format(need_type.lower())]
     if style is not None and style is not '':
         style_classes.append(style)
 

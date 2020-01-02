@@ -5,7 +5,8 @@ Changelog
 
 * Improvement: Added :ref:`needpie` which draws pie-charts based on :ref:`filter_string`.
 * Improvement: Added config option :ref:`needs_constraints`. (`#110 <https://github.com/useblocks/sphinxcontrib-needs/issues/110>`_)
-
+* Bugfix: Need css style name is now based on need-type and not on the longer, whitespace-containing type name.
+  Example: ``need-test`` instead of not valid ``need-test case``. (`#108 <https://github.com/useblocks/sphinxcontrib-needs/issues/108>`_)
 
 0.4.3
 -----

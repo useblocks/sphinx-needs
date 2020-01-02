@@ -48,7 +48,7 @@ def extract_needs_from_html(html):
     etree = ElementTree.ElementTree()
     document = etree.parse(source, parser=parser)
     divs = document.findall(".//html:div", NS)
-    return [HtmlNeed(div) for div in divs if 'need-requirement' in div.get('class', '')]
+    return [HtmlNeed(div) for div in divs if 'need-req' in div.get('class', '')]
 
 
 @with_app(buildername='html', srcdir='doc_test/title_optional')
