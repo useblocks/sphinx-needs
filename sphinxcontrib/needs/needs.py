@@ -119,14 +119,14 @@ LAYOUTS = {
         'grid': 'simple',
         'layout': {
             'head': [
-                '<<type>>: <<title>>  <<id>>'
+                '<<meta(type)>>: <<meta(title)>>  <<meta(id)>>'
             ],
             'meta': [
-                'status: <<status>>',
-                'tags: <<tags>>'
+                '**status**: <<meta(status)>>',
+                '**tags**: <<meta(tags)>>'
             ],
             'content': [
-                '<<content>>'
+                '<<content()>>'
             ],
             'footer': [
             ]
