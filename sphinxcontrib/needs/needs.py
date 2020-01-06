@@ -119,16 +119,50 @@ LAYOUTS = {
         'grid': 'simple',
         'layout': {
             'head': [
-                '<<meta(type)>>: <<meta(title)>>  <<meta(id)>>'
+                '<<meta(type_name)>>: **<<meta(title)>>** <<meta_id()>>'
             ],
             'meta': [
-                '**status**: <<meta(status)>>',
-                '**tags**: <<meta(tags)>>'
+                '<<meta(status, \*\*status_b\*\*: )>>',
+                '<<meta(tags, \*\*tags*\*\: )>>',
+                '<<meta_links_all(\*\*,\*\*)>>'
             ],
             'content': [
                 '<<content()>>'
             ],
+        }
+    },
+    'complex': {
+        'grid': 'complex',
+        'layout': {
+            'head_left': [
+                '<<meta(type)>>'
+            ],
+            'head': [
+                '<<meta(title)>>',
+                'Responsible: **me**'
+            ],
+            'head_right': [
+                '**<<meta(status)>>**'
+            ],
+            'meta_left': [
+                '**status**: *<<meta(status)>>*',
+                '**collapse**: *<<meta(collapse)>>*',
+            ],
+            'meta_right': [
+                '**tags**: <<meta(tags)>>',
+                '**links**: <<meta_links(links)>>',
+                '**Incoming**: <<meta_links(links, True)>>'
+            ],
+            'content': [
+                '<<content()>>'
+            ],
+            'footer_left': [
+                'Copyright by `useblocks.com <https://useblocks.com>`_'
+            ],
             'footer': [
+            ],
+            'footer_right': [
+                '**<<meta_id()>>**',
             ]
         }
     }
@@ -217,6 +251,7 @@ def setup(app):
 
     app.add_config_value('needs_warnings', {}, 'html')
     app.add_config_value('needs_layouts', LAYOUTS, 'html')
+    app.add_config_value('needs_default_layout', 'default', 'html')
 
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
@@ -419,7 +454,7 @@ def prepare_env(app, env, docname):
         common_links.append({
             'option': 'links',
             'outgoing': 'links outgoing',
-            'incoming': 'link incoming',
+            'incoming': 'links incoming',
             'copy': False,
             'color': '#000000'
         })

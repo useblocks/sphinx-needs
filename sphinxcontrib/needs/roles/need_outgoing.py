@@ -84,7 +84,7 @@ def process_need_outgoing(app, doctree, fromdocname):
 
                     # If we have several links, we add an empty text between them
                     if index + 1 < len(links):
-                        node_link_container += nodes.Text(" ", " ")
+                        node_link_container += nodes.Text(", ", ", ")
 
                 except NoUri:
                     # If the given need id can not be found, we must pass here....

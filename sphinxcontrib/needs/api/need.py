@@ -21,7 +21,8 @@ logger = logging.getLogger(__name__)
 
 
 def add_need(app, state, docname, lineno, need_type, title, id=None, content="", status=None, tags=None,
-             links_string=None, hide=False, hide_tags=False, hide_status=False, collapse=True, style=None, **kwargs):
+             links_string=None, hide=False, hide_tags=False, hide_status=False, collapse=True, style=None,
+             layout=None, **kwargs):
     """
     Creates a new need and returns its node.
 
@@ -76,6 +77,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
     :param hide_status: boolean value.
     :param collapse: boolean value.
     :param style: String value of class attribute of node.
+    :param layout: String value of layout definition to use
 
     :return: node
     """
@@ -203,6 +205,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
         'content': content,
         'collapse': collapse,
         'style': style,
+        'layout': layout,
         'hide': hide,
         'hide_tags': hide_tags,
         'hide_status': hide_status,

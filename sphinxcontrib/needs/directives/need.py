@@ -71,7 +71,8 @@ class NeedDirective(Directive):
                    'hide_status': directives.flag,
                    'hide_links': directives.flag,
                    'title_from_content': directives.flag,
-                   'style': directives.unchanged_required}
+                   'style': directives.unchanged_required,
+                   'layout': directives.unchanged_required}
 
     # add configured link types
 
@@ -109,6 +110,7 @@ class NeedDirective(Directive):
         status = self.options.get("status", None)
         tags = self.options.get("tags", '')
         style = self.options.get("style", '')
+        layout = self.options.get("layout", '')
 
         need_extra_options = {}
         for extra_link in env.config.needs_extra_links:
@@ -121,7 +123,7 @@ class NeedDirective(Directive):
                         need_type=self.name, title=self.trimmed_title, id=id, content=content,
                         status=status, tags=tags,
                         hide=hide, hide_tags=hide_tags, hide_status=hide_status,
-                        collapse=collapse, style=style, **need_extra_options)
+                        collapse=collapse, style=style, layout=layout, **need_extra_options)
 
     def read_in_links(self, name):
         # Get links
@@ -300,29 +302,33 @@ def process_need_nodes(app, doctree, fromdocname):
 
         # UGLY CODE STARTS HERE :)
         from sphinxcontrib.needs.layout import build_need
-        build_need('default', node_need, app)
+        layout = need_data['layout']
+        if layout is None or len(layout) == 0:
+            layout = getattr(app.config, 'needs_default_layout', 'default')
 
-        node_headline = construct_headline(need_data, app)
-        node_meta = construct_meta(need_data, env)
+        build_need(layout, node_need, app)
+
+        # node_headline = construct_headline(need_data, app)
+        # node_meta = construct_meta(need_data, env)
 
         # Collapse check
-        if need_data["collapse"] and "HTML" in app.builder.name.upper():
-            # HEADER
-            node_need_toogle_container = nodes.container(classes=['toggle'])
-            node_need_toogle_head_container = nodes.container(classes=['header'])
-            node_need_toogle_head_container += node_headline.children
-
-            node_need_toogle_container.append(node_need_toogle_head_container)
-
-            # Only add node_meta(line_block), if it has lines in it
-            # Otherwise the pdf/latex build will claim about an empty line_block.
-            if node_meta.children:
-                node_need_toogle_container.append(node_meta)
-
-            node_need.insert(0, node_need_toogle_container)
-        else:
-            node_meta.insert(0, node_headline)
-            node_need.insert(0, node_meta)
+        # if need_data["collapse"] and "HTML" in app.builder.name.upper():
+        #     # HEADER
+        #     node_need_toogle_container = nodes.container(classes=['toggle'])
+        #     node_need_toogle_head_container = nodes.container(classes=['header'])
+        #     node_need_toogle_head_container += node_headline.children
+        #
+        #     node_need_toogle_container.append(node_need_toogle_head_container)
+        #
+        #     # Only add node_meta(line_block), if it has lines in it
+        #     # Otherwise the pdf/latex build will claim about an empty line_block.
+        #     if node_meta.children:
+        #         node_need_toogle_container.append(node_meta)
+        #
+        #     node_need.insert(0, node_need_toogle_container)
+        # else:
+        #     node_meta.insert(0, node_headline)
+        #     node_need.insert(0, node_meta)
 
 
 def create_back_links(env, option):

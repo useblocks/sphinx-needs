@@ -52,10 +52,11 @@ which can be easily extended by different extensions to fulfill nearly any requi
 .. spec:: Content of each need
    :id: SPEC_1
    :style: needs_blue
-   :tags: introduction
+   :tags: introduction, awesome, nice
    :status: done
    :links: REQ_1
    :collapse: FALSE
+   :layout: complex
 
    Each need contains:
 

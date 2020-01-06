@@ -841,7 +841,7 @@ See :ref:`needtable_show_parts` for an example output.
 
 needs_warnings
 ~~~~~~~~~~~~~~~~~
-.. versionadded:: 0.4.4
+.. versionadded:: 0.5.0
 
 ``needs_warnings`` allows the definition of warnings, which all needs must avoid during a sphinx build.
 
@@ -884,6 +884,29 @@ Example output:
   ...
 
 Due to the nature of sphinx logging, a sphinx-warning may be printed wherever in the log.
+
+.. _needs_layouts:
+
+needs_layouts
+~~~~~~~~~~~~~
+.. versionadded:: 0.5.0
+
+.. _needs_default_layout:
+
+needs_default_layout
+~~~~~~~~~~~~~~~~~~~~~
+.. versionadded:: 0.5.0
+
+``needs_default_layout`` defines the layout to use by default.
+
+The used layout name must be one provided already by Sphinx-Needs or one provided by user via
+configuration :ref:`needs_layouts`.
+
+default values of ``needs_default_layout`` is ``default``.
+
+.. code-block:: python
+
+      needs_default_layout = 'my_own_layout`
 
 Removed options
 ------------------

@@ -60,7 +60,7 @@ def process_need_incoming(app, doctree, fromdocname):
 
                     # If we have several links, we add an empty text between them
                     if index + 1 < len(links_back):
-                        node_link_container += nodes.Text(" ", " ")
+                        node_link_container += nodes.Text(", ", ", ")
 
                 except Exception:
                     # Irf the given need id can not be found, we must pass here....
