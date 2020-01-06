@@ -126,22 +126,21 @@ LAYOUTS = {
                 '<<meta(tags, \*\*tags*\*\: )>>',
                 '<<meta_links_all(\*\*,\*\*)>>'
             ],
-            'content': [
-                '<<content()>>'
-            ],
         }
     },
     'complex': {
         'grid': 'complex',
         'layout': {
             'head_left': [
-                '<<meta(type)>>'
+                'Type:',
+                '**<<meta(type_name)>>**'
             ],
             'head': [
                 '<<meta(title)>>',
                 'Responsible: **me**'
             ],
             'head_right': [
+                'Status:',
                 '**<<meta(status)>>**'
             ],
             'meta_left': [
@@ -153,13 +152,11 @@ LAYOUTS = {
                 '**links**: <<meta_links(links)>>',
                 '**Incoming**: <<meta_links(links, True)>>'
             ],
-            'content': [
-                '<<content()>>'
-            ],
             'footer_left': [
                 'Copyright by `useblocks.com <https://useblocks.com>`_'
             ],
             'footer': [
+                # '<<meta_all()>>'
             ],
             'footer_right': [
                 '**<<meta_id()>>**',

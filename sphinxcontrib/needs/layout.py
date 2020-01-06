@@ -311,6 +311,34 @@ class LayoutHandler:
         id_container += id_ref
         return id_container
 
+    def _meta_all(self, prefix='', postfix=''):
+        """
+        ToDo: Define stuff which shall not be part of output
+
+        :param prefix:
+        :param postfix:
+        :return:
+        """
+        ignore = []
+
+        data_container = nodes.inline()
+        for data in self.need.keys():
+            if data in ignore:
+                continue
+
+            data_line = nodes.line()
+            label = prefix + '{}:'.format(data) + postfix + ' '
+            result = self._meta(data, label)
+            if result is None or len(str(result)) == 0 or bool(result) is False:
+                continue
+            if isinstance(result, list):
+                data_line += result
+            else:
+                data_line.append(result)
+
+            data_container.append(data_line)
+
+        return data_container
 
     def _meta_links(self, name, incoming=False):
         data_container = nodes.inline(classes=[name])
