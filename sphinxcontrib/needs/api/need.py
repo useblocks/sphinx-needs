@@ -111,7 +111,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
     # _ in range(5)))
     if id is None and env.app.config.needs_id_required:
         raise NeedsNoIdException("An id is missing for this need and must be set, because 'needs_id_required' "
-                                 "is set to True in conf.py")
+                                 "is set to True in conf.py. Need '{}' in {} ({})".format(title, docname, lineno))
 
     if id is None:
         need_id = make_hashed_id(app, need_type, title, content)

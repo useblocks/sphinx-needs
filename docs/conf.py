@@ -175,7 +175,7 @@ needs_title_optional = True
 needs_max_title_length = 75
 
 needs_id_regex = "^[A-Za-z0-9_]"
-
+needs_id_required = False
 # needs_css = "dark.css"
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
