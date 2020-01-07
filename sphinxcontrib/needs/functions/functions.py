@@ -275,12 +275,19 @@ def _analyze_func_string(func_string, need):
                     arg_list.append(element.s)
             func_args.append(arg_list)
         elif isinstance(arg, ast.Attribute):
-            if arg.value.id == 'need':
+            if arg.value.id == 'need' and need is not None:
                 func_args.append(need[arg.attr])
             else:
-                raise FunctionParsingException()
+                raise FunctionParsingException('usage of need attribute not supported.')
+        elif isinstance(arg, ast.NameConstant):
+            if isinstance(arg.value, bool):
+                func_args.append(arg.value)
+            else:
+                raise FunctionParsingException(
+                    'Unsupported type found in function definition. Supported are numbers, strings, bool and list')
         else:
-            raise FunctionParsingException()
+            raise FunctionParsingException(
+                'Unsupported type found in function definition. Supported are numbers, strings, bool and list')
     func_kargs = {}
     for keyword in func_call.keywords:
         kvalue = keyword.value

@@ -83,6 +83,16 @@ class LayoutHandler:
                                section_bubble_up_kludge=False,
                                inliner=None)
 
+        self.functions = {
+            'meta': self._meta,
+            'meta_all': self._meta_all,
+            'meta_links': self._meta_links,
+            'meta_links_all': self._meta_links_all,
+            'meta_id': self._meta_id,
+            'image': self._image,
+            'link': self._link,
+        }
+
     def get_need_table(self):
         if self.layout['grid'] not in self.grids.keys():
             raise SphinxNeedLayoutException('Unknown layout-grid: {}. Supported are {}'.format(
@@ -233,7 +243,8 @@ class LayoutHandler:
                 # func_elements = re.findall(r'<<([a-z_()]*)>>', node_str)
                 node_line = nodes.inline()
 
-                line_elements = re.findall(r'([^<>]+)|(<<[a-zA-Z_(),\-:;* ]*>>)', node_str)
+                # line_elements = re.findall(r'([^<>]+)|(<<[a-zA-Z_(),\-:;*"\'= !]*>>)', node_str)
+                line_elements = re.findall(r'([^<>]+)|(<<.*>>)', node_str)
 
                 for line_element in line_elements:
                     text = line_element[0]
@@ -244,15 +255,45 @@ class LayoutHandler:
                         result = nodes.Text(text, text)
                     # Check if function_definition was detected
                     elif len(text) == 0 and len(func_def) > 1:
-                        func_name, func_args = re.findall(r'([\w_]+)(\(.*\))?', func_def)[0]
-                        func_name = '_' + func_name
-                        func = getattr(self, func_name, None)
-                        if func is not None:
-                            attrs = func_args[1:-1].split(',')
-                            attrs = [x for x in attrs if len(x) > 0]
-                            result = func(*attrs)
-                        else:
-                            result = nodes.Text(func_def, func_def)
+                        from sphinxcontrib.needs.functions.functions import _analyze_func_string
+                        func_def_clean = func_def.replace('<<', '').replace('>>', '')
+                        func_name, func_args, func_kargs = _analyze_func_string(func_def_clean, None)
+
+                        # Replace place holders
+                        # Looks for {{name}}, where name must be an option of need, and replaces it with the
+                        # related need content
+                        for index, arg in enumerate(func_args):
+                            # If argument is not a string, nothing to replace
+                            # (replacement in string-lists is not supported)
+                            if not isinstance(arg, str):
+                                continue
+                            try:
+                                func_args[index] = self._replace_place_holder(arg)
+                            except SphinxNeedLayoutException as e:
+                                raise SphinxNeedLayoutException(
+                                    'Referenced item "{}" in {} not available in need {}'.format(
+                                        e, func_def_clean, self.need['id']))
+
+                        for key, karg in func_kargs.items():
+                            # If argument is not a string, nothing to replace
+                            # (replacement in string-lists is not supported)
+                            if not isinstance(karg, str):
+                                continue
+                            try:
+                                func_kargs[key] = self._replace_place_holder(karg)
+                            except SphinxNeedLayoutException as e:
+                                raise SphinxNeedLayoutException(
+                                    'Referenced item "{}" in {} not available in need {}'.format(
+                                        e, func_def_clean, self.need['id']))
+
+                        try:
+                            func = self.functions[func_name]
+                        except KeyError:
+                            raise SphinxNeedLayoutException('Used function {} unknown. Please use {}'.format(
+                                func_name, ', '.join(self.functions.keys())
+                            ))
+                        result = func(*func_args, **func_kargs)
+
                         node_line += result
                     else:
                         raise SphinxNeedLayoutException('Error during layout line parsing. This looks strange: {}'.format(
@@ -260,6 +301,17 @@ class LayoutHandler:
 
                 return_nodes.append(node_line)
         return return_nodes
+
+    def _replace_place_holder(self, data):
+        replace_items = re.findall(r'{{(.*)}}', data)
+        for item in replace_items:
+            if item not in self.need.keys():
+                raise SphinxNeedLayoutException(item)
+            # To escape { we need to use 2 of them.
+            # So {{ becomes {{{{
+            replace_string = '{{{{{}}}}}'.format(item)
+            data = data.replace(replace_string, self.need[item])
+        return data
 
     def _meta(self, name, prefix=None):
         data_container = nodes.inline(classes=[name])
@@ -311,19 +363,27 @@ class LayoutHandler:
         id_container += id_ref
         return id_container
 
-    def _meta_all(self, prefix='', postfix=''):
+    def _meta_all(self, prefix='', postfix='', exclude=None, no_links=False):
         """
         ToDo: Define stuff which shall not be part of output
 
         :param prefix:
         :param postfix:
+        :param exclude: List of value names, which are excluded from output
         :return:
         """
-        ignore = []
+        if exclude is None or not isinstance(exclude, list):
+            exclude = ['docname', 'lineno', 'target_node', 'refid', 'content', 'collapse', 'parts', 'id_parent',
+                       'id_complete', 'title', 'full_title', 'is_part', 'is_need',
+                       'type_prefix', 'type_color', 'type_style']
 
+        if no_links:
+            link_names = [x['option'] for x in self.app.config.needs_extra_links]
+            link_names += [x['option'] + '_back' for x in self.app.config.needs_extra_links]
+            exclude += link_names
         data_container = nodes.inline()
         for data in self.need.keys():
-            if data in ignore:
+            if data in exclude:
                 continue
 
             data_line = nodes.line()
@@ -381,6 +441,72 @@ class LayoutHandler:
 
         return data_container
 
+    def _image(self, url, height=None, width=None, align=None):
+        """
+
+        See https://docutils.sourceforge.io/docs/ref/rst/directives.html#images
+
+        If url starts with ``icon:`` the following string is taken is icon-name and the related icon is shown.
+        Example: ``icon:activity`` will show:
+
+        .. image:: _static/sphinx-needs/images/activity.svg
+
+        For all icons, see https://feathericons.com/.
+
+        Examples::
+
+            '<<image("_images/useblocks_logo.png", height="50px", align="center")>>',
+            '<<image("icon:bell", height="20px", align="center")>>'
+        :param url:
+        :param height:
+        :param width:
+        :param align:
+        :return:
+        """
+        # from sphinx.addnodes import
+        options = {}
+        if height is not None:
+            options['height'] = height
+        if width is not None:
+            options['width'] = width
+        if align is not None:
+            options['align'] = align
+
+        if url is None or not isinstance(url, str):
+            raise SphinxNeedLayoutException('not valid url given for image function in layout')
+
+        if url.startswith('icon:'):
+            url = '_static/sphinx-needs/images/{}.svg'.format(url.split(':')[1])
+
+        image_node = nodes.image(url, **options)
+        image_node['candidates'] = '*'
+        image_node['uri'] = url
+
+        return image_node
+
+    def _link(self, url, text=None, image_url=None, image_height=None, image_width=None):
+        """
+        Shows a link.
+        Link can be a text, an image or both
+
+        :param url:
+        :param text:
+        :param image_url:
+        :param image_height:
+        :param image_width:
+        :return:
+        """
+
+        if text is None:  # May be needed if only image shall be shown
+            text = ''
+
+        link_node = nodes.reference(text, text, refuri=url)
+
+        if image_url is not None:
+            image_node = self._image(image_url, image_height, image_width)
+            link_node.append(image_node)
+
+        return link_node
 
 
 class SphinxNeedLayoutException(BaseException):

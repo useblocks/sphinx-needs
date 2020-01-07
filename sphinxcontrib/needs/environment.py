@@ -170,3 +170,37 @@ def install_collapse_static_files(app, env):
 
         safe_remove_file("sphinx-needs/libs/html/sphinx_needs_collapse.js", app)
         safe_add_file("sphinx-needs/libs/html/sphinx_needs_collapse.js", app)
+
+
+def install_feather_icons(app, env):
+    STATICS_DIR_PATH = os.path.join(app.builder.outdir, STATICS_DIR_NAME)
+    dest_path = os.path.join(STATICS_DIR_PATH, 'sphinx-needs/images')
+
+    source_folder = os.path.join(os.path.dirname(__file__), "images/feather/")
+    files_to_copy = []
+
+    for root, dirs, files in os.walk(source_folder):
+        for single_file in files:
+            files_to_copy.append(os.path.join(root, single_file))
+
+    if parse_version(sphinx_version) < parse_version("1.6"):
+        global status_iterator
+        status_iterator = app.status_iterator
+
+    for source_file_path in status_iterator(
+            files_to_copy,
+            'Copying images for sphinx-needs  icon support...',
+            brown, len(files_to_copy)):
+
+        if not os.path.isabs(source_file_path):
+            raise IOError("Path must be absolute. Got: {}".format(source_file_path))
+
+        if not os.path.exists(source_file_path):
+            raise IOError("File not found: {}".format(source_file_path))
+
+        dest_file_path = os.path.join(dest_path, os.path.relpath(source_file_path, source_folder))
+
+        if not os.path.exists(os.path.dirname(dest_file_path)):
+            ensuredir(os.path.dirname(dest_file_path))
+
+        copyfile(source_file_path, dest_file_path)

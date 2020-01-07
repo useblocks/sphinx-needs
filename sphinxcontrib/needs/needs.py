@@ -21,7 +21,7 @@ from sphinxcontrib.needs.directives.needpie import Needpie, NeedpieDirective, pr
 from sphinxcontrib.needs.builder import NeedsBuilder
 from sphinxcontrib.needs.directives.needfilter import Needfilter, NeedfilterDirective, process_needfilters
 from sphinxcontrib.needs.environment import install_styles_static_files, install_datatables_static_files, \
-    install_collapse_static_files
+    install_collapse_static_files, install_feather_icons
 from sphinxcontrib.needs.roles.need_incoming import Need_incoming, process_need_incoming
 from sphinxcontrib.needs.roles.need_outgoing import Need_outgoing, process_need_outgoing
 from sphinxcontrib.needs.roles.need_ref import Need_ref, process_need_ref
@@ -119,12 +119,12 @@ LAYOUTS = {
         'grid': 'simple',
         'layout': {
             'head': [
-                '<<meta(type_name)>>: **<<meta(title)>>** <<meta_id()>>'
+                '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>'
             ],
             'meta': [
-                '<<meta(status, \*\*status_b\*\*: )>>',
-                '<<meta(tags, \*\*tags*\*\: )>>',
-                '<<meta_links_all(\*\*,\*\*)>>'
+                '<<meta("status", "\*\*status_b\*\*: ")>>',
+                '<<meta("tags", "\*\*tags*\*\: ")>>',
+                '<<meta_links_all("\*\*","\*\*")>>'
             ],
         }
     },
@@ -133,30 +133,31 @@ LAYOUTS = {
         'layout': {
             'head_left': [
                 'Type:',
-                '**<<meta(type_name)>>**'
+                '**<<meta("type_name")>>**'
             ],
             'head': [
-                '<<meta(title)>>',
+                '<<meta("title")>>',
                 'Responsible: **me**'
             ],
             'head_right': [
                 'Status:',
-                '**<<meta(status)>>**'
+                '**<<meta("status")>>**'
             ],
             'meta_left': [
-                '**status**: *<<meta(status)>>*',
-                '**collapse**: *<<meta(collapse)>>*',
+                '<<meta_all(no_links=True, prefix="\*\*", postfix="\*\*")>>'
             ],
             'meta_right': [
-                '**tags**: <<meta(tags)>>',
-                '**links**: <<meta_links(links)>>',
-                '**Incoming**: <<meta_links(links, True)>>'
+                '**tags**: <<meta("tags")>>',
+                '**Outgoing**: <<meta_links("links")>>',
+                '**Incoming**: <<meta_links("links", incoming=True)>>'
             ],
             'footer_left': [
                 'Copyright by `useblocks.com <https://useblocks.com>`_'
             ],
             'footer': [
-                # '<<meta_all()>>'
+                '<<link("\https://useblocks.com", "", "_images/useblocks_logo.png", "50px")>>',
+                '<<link("\https://jira.com", "", "icon:activity", "20px")>>',
+                '<<image("_static/status_{{status}}.svg")>>'
             ],
             'footer_right': [
                 '**<<meta_id()>>**',
@@ -382,6 +383,7 @@ def setup(app):
     app.connect('doctree-resolved', process_need_outgoing)
     app.connect('doctree-resolved', process_need_count)
     app.connect('env-updated', install_datatables_static_files)
+    app.connect('env-updated', install_feather_icons)
 
     # Called during consistency check, which if after everything got read in.
     app.connect('env-check-consistency', process_warnings)
