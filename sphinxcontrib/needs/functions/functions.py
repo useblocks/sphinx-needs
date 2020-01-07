@@ -287,7 +287,8 @@ def _analyze_func_string(func_string, need):
                     'Unsupported type found in function definition. Supported are numbers, strings, bool and list')
         else:
             raise FunctionParsingException(
-                'Unsupported type found in function definition. Supported are numbers, strings, bool and list')
+                'Unsupported type found in function definition: {}. '
+                'Supported are numbers, strings, bool and list'.format(func_string))
     func_kargs = {}
     for keyword in func_call.keywords:
         kvalue = keyword.value

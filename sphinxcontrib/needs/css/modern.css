@@ -1,3 +1,57 @@
+table.need {
+    margin-bottom: 10px;
+    background-color: #eee;
+    border: 1px solid #888;
+    width: 100%;
+}
+
+table.need td {
+    border: none;
+}
+table.need tr.head {
+    background-color: rgba(0,0,0,0.1);
+}
+
+table.need.layout_complex td.head_left {
+    text-align: left;
+    background-color: rgba(0,0,0,0.1);
+}
+
+table.need.layout_complex td.head_center {
+    text-align: center;
+}
+
+table.need.layout_complex td.head_right {
+    text-align: right;
+    background-color: rgba(0,0,0,0.1);
+}
+
+table.need.layout_complex tr.footer {
+    text-align: right;
+    background-color: rgba(0,0,0,0.1);
+}
+
+
+table.need tr.meta {
+    border-bottom: 1px solid #888;
+    border-top: 1px solid #888;
+    font-size: smaller;
+}
+
+table.need tr.footer {
+    border-top: 1px solid #888;
+    font-size: small;
+}
+
+table.need a {
+    border-bottom: none;
+}
+
+/*END NEW STUFF*/
+/*END NEW STUFF*/
+/*END NEW STUFF*/
+
+
 /* whole NEED */
 div.need {
     background-color: #eee;
@@ -6,31 +60,33 @@ div.need {
     border-radius: 3px;
 }
 
-span.needs-type {
+span.needs_type {
     color: #444;
 }
 
-span.needs-title {
+span.needs_title {
     font-weight: bold;
 }
 
-span.needs-id, a.needs-id {
+span.needs_id, a.needs_id {
     font-size: 80%;
     color: #aaa;
 }
 
-span.needs-tag {
+span.needs_tags span.needs_data {
     background-color: #ccc;
     border-radius: 5px;
     padding: 0 5px;
 }
 
-span.needs-status {
+span.needs_status span.needs_data{
     background-color: #004b6b;
     color: #fff;
     border-radius: 5px;
     padding: 0 5px;
 }
+
+
 
 em.need_outgoing {
 

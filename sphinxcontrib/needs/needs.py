@@ -122,9 +122,8 @@ LAYOUTS = {
                 '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>'
             ],
             'meta': [
-                '<<meta("status", "\*\*status_b\*\*: ")>>',
-                '<<meta("tags", "\*\*tags*\*\: ")>>',
-                '<<meta_links_all("\*\*","\*\*")>>'
+                '<<meta_all(no_links=True)>>',
+                '<<meta_links_all()>>'
             ],
         }
     },
@@ -132,35 +131,27 @@ LAYOUTS = {
         'grid': 'complex',
         'layout': {
             'head_left': [
-                'Type:',
-                '**<<meta("type_name")>>**'
+                '<<meta_id()>>',
             ],
             'head': [
                 '<<meta("title")>>',
-                'Responsible: **me**'
             ],
             'head_right': [
-                'Status:',
-                '**<<meta("status")>>**'
+                '<<meta("type_name")>>'
             ],
             'meta_left': [
-                '<<meta_all(no_links=True, prefix="\*\*", postfix="\*\*")>>'
+                '<<meta_all(no_links=True, exclude=["layout","style"])>>'
             ],
             'meta_right': [
-                '**tags**: <<meta("tags")>>',
-                '**Outgoing**: <<meta_links("links")>>',
-                '**Incoming**: <<meta_links("links", incoming=True)>>'
+                '<<meta_links_all()>>'
             ],
             'footer_left': [
-                'Copyright by `useblocks.com <https://useblocks.com>`_'
+                'layout: <<meta("layout")>>',
             ],
             'footer': [
-                '<<link("\https://useblocks.com", "", "_images/useblocks_logo.png", "50px")>>',
-                '<<link("\https://jira.com", "", "icon:activity", "20px")>>',
-                '<<image("_static/status_{{status}}.svg")>>'
             ],
             'footer_right': [
-                '**<<meta_id()>>**',
+                'style: <<meta("style")>>'
             ]
         }
     }

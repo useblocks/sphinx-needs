@@ -37,12 +37,8 @@ def build_need(layout, node, app):
     env = app.builder.env
     needs = env.needs_all_needs
 
-    available_layouts = getattr(app.config, 'needs_layouts', {})
-    if layout not in available_layouts.keys():
-        raise SphinxNeedLayoutException('Given layout "{}" is unknown. Registered layouts are: {}'.format(
-            layout, ', '.join(available_layouts.keys())))
 
-    need_layout = available_layouts[layout]
+    need_layout = layout
     need_id = node.attributes["ids"][0]
     need_data = needs[need_id]
 
@@ -57,10 +53,20 @@ class LayoutHandler:
     def __init__(self, app, need, layout, node):
         self.app = app
         self.need = need
-        self.layout = layout
+
+        self.layout_name = layout
+        available_layouts = getattr(app.config, 'needs_layouts', {})
+        if self.layout_name not in available_layouts.keys():
+            raise SphinxNeedLayoutException('Given layout "{}" is unknown. Registered layouts are: {}'.format(
+                self.layout_name, ', '.join(available_layouts.keys())))
+        self.layout = available_layouts[self.layout_name]
+
         self.node = node
 
-        self.node_table = nodes.table(classes=["need"], ids=[self.need['id']])
+        classes = ["need", 'layout_' + self.layout_name]
+        if self.need['style'] is not None and len(self.need['style']) > 0:
+            classes.append('style_' + self.need['style'])
+        self.node_table = nodes.table(classes=classes, ids=[self.need['id']])
         self.node_tbody = nodes.tbody()
 
         self.grids = {
@@ -147,15 +153,15 @@ class LayoutHandler:
         head_row = nodes.row(classes=['head'])
         self.node_tbody += head_row
         # HEAD left
-        head_left_entry = nodes.entry(classes=['head'], morecols=1)
+        head_left_entry = nodes.entry(classes=['head_left'], morecols=1)
         head_left_entry += self.get_section('head_left')
         head_row += head_left_entry
         # HEAD mid
-        head_entry = nodes.entry(classes=['head'], morecols=1)
+        head_entry = nodes.entry(classes=['head_center'], morecols=1)
         head_entry += self.get_section('head')
         head_row += head_entry
         # HEAD right
-        head_right_entry = nodes.entry(classes=['head'], morecols=1)
+        head_right_entry = nodes.entry(classes=['head_right'], morecols=1)
         head_right_entry += self.get_section('head_right')
         head_row += head_right_entry
 
@@ -314,10 +320,12 @@ class LayoutHandler:
         return data
 
     def _meta(self, name, prefix=None):
-        data_container = nodes.inline(classes=[name])
+        data_container = nodes.inline(classes=['needs_' + name])
         if prefix is not None:
             prefix_node = self._parse(prefix)
-            data_container += prefix_node
+            label_node = nodes.inline(classes=['needs_label'])
+            label_node += prefix_node
+            data_container.append(label_node)
         try:
             data = self.need[name]
         except KeyError:
@@ -329,18 +337,20 @@ class LayoutHandler:
         if isinstance(data, str):
             if len(data) == 0:
                 return []
-            data_container.append(nodes.Text(data, data))
+            data_node = nodes.inline(classes=['needs_data'])
+            data_node.append(nodes.Text(data, data))
+            data_container.append(data_node)
         elif isinstance(data, list):
             if len(data) == 0:
                 return []
-            list_container = nodes.inline(classes=[name])
+            list_container = nodes.inline(classes=['needs_data_container'])
             for index, element in enumerate(data):
                 if index > 0:
-                    spacer = nodes.inline(classes=['spacer'])
+                    spacer = nodes.inline(classes=['needs_spacer'])
                     spacer += nodes.Text(', ', ', ')
                     list_container += spacer
 
-                inline = nodes.inline(classes=[element.replace(' ', '_').lower()])
+                inline = nodes.inline(classes=['needs_data'])
                 inline += nodes.Text(element, element)
                 list_container += inline
             data_container += list_container
@@ -363,7 +373,7 @@ class LayoutHandler:
         id_container += id_ref
         return id_container
 
-    def _meta_all(self, prefix='', postfix='', exclude=None, no_links=False):
+    def _meta_all(self, prefix='', postfix='', exclude=None, no_links=False, defaults=True):
         """
         ToDo: Define stuff which shall not be part of output
 
@@ -372,10 +382,18 @@ class LayoutHandler:
         :param exclude: List of value names, which are excluded from output
         :return:
         """
+        default_excludes = ['docname', 'lineno', 'target_node', 'refid', 'content', 'collapse', 'parts', 'id_parent',
+                           'id_complete', 'title', 'full_title', 'is_part', 'is_need',
+                           'type_prefix', 'type_color', 'type_style', 'type', 'type_name', 'id',
+                           'hide', 'hide_status', 'hide_tags', 'sections', 'section_name']
+
         if exclude is None or not isinstance(exclude, list):
-            exclude = ['docname', 'lineno', 'target_node', 'refid', 'content', 'collapse', 'parts', 'id_parent',
-                       'id_complete', 'title', 'full_title', 'is_part', 'is_need',
-                       'type_prefix', 'type_color', 'type_style']
+            if defaults:
+                exclude = default_excludes
+            else:
+                exclude = []
+        elif defaults:
+            exclude += default_excludes
 
         if no_links:
             link_names = [x['option'] for x in self.app.config.needs_extra_links]

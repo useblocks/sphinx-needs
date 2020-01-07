@@ -26,36 +26,36 @@ div.need div.toggle div.line-block {
     margin-left: 30px;
 }
 
-.need.needs_green, .need.needs_implemented {
+table.style_needs_green, table.style_needs_implemented {
     background-color: palegreen !important;
 }
 
-.need.needs_red, .need.needs_open {
+table.style_needs_red, table.style_needs_open {
     background-color: palevioletred !important;
 }
 
-.need.needs_yellow, .need.needs_in_progress {
+table.style_needs_yellow, table.style_needs_in_progress {
     background-color: palegoldenrod !important;
 }
 
-.needs_blue {
+table.style_needs_blue {
     background-color: paleturquoise !important;
 }
 
-.need.needs_green_border {
-    border: 5px solid palegreen;
+table.style_needs_green_border {
+    border: 5px solid palegreen !important;
 }
 
-.need.needs_red_border {
-    border: 5px solid palevioletred;
+table.style_needs_red_border {
+    border: 5px solid palevioletred !important;
 }
 
-.need.needs_yellow_border {
-    border: 5px solid palegoldenrod;
+table.style_needs_yellow_border {
+    border: 5px solid palegoldenrod !important;
 }
 
-.need.needs_blue_border {
-    border: 5px solid paleturquoise;
+table.style_needs_blue_border {
+    border: 5px solid paleturquoise !important;
 }
 
 

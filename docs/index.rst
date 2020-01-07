@@ -53,7 +53,7 @@ which can be easily extended by different extensions to fulfill nearly any requi
    :id: SPEC_1
    :style: needs_blue
    :tags: introduction, awesome, nice
-   :status: closed
+   :status: open
    :links: REQ_1
    :collapse: FALSE
    :layout: complex
