@@ -154,7 +154,28 @@ LAYOUTS = {
                 'style: <<meta("style")>>'
             ]
         }
-    }
+    },
+    'content': {
+        'grid': 'content',
+        'layout': {
+        }
+    },
+    'content_footer': {
+        'grid': 'content_footer',
+        'layout': {
+            'footer': [
+                '<<meta_id()>>'
+            ]
+        }
+    },
+    'content_footer_left': {
+        'grid': 'content_footer_left',
+        'layout': {
+            'footer': [
+                '<<meta_id()>>'
+            ]
+        }
+    },
 }
 
 

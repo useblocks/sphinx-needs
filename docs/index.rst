@@ -71,9 +71,10 @@ which can be easily extended by different extensions to fulfill nearly any requi
 
 .. feature:: Filtering needs
    :id: FEATURE_1
-   :style: needs_yellow
+   :style: needs_clean
    :tags: introduction
    :links: SPEC_1
+   :layout: content
 
    Needs can be :ref:`easily filtered <filter>` and presented in :ref:`lists<needlist>`, :ref:`tables <needtable>`,
    :ref:`diagrams <needflow>` and :ref:`pie charts <needpie>`.
@@ -86,6 +87,7 @@ which can be easily extended by different extensions to fulfill nearly any requi
    :style: needs_yellow
    :tags: introduction
    :links: SPEC_1
+   :layout: content_footer
 
    For external synchronization (e.g. with JIRA, a spreadsheet, ...)
    the builder :ref:`needs_builder` is available to export all created needs to a single json file.
@@ -98,9 +100,10 @@ which can be easily extended by different extensions to fulfill nearly any requi
 
 .. feature:: Automated data handling
    :id: FEATURE_3
-   :style: needs_yellow
+   :style: needs_clean
    :tags: introduction
    :links: SPEC_1
+   :layout: content_footer_left
 
    For complex data chains between needs, :ref:`dynamic_functions` can be used to load and set
    changeable data automatically during documentation generation phase.

@@ -26,6 +26,20 @@ div.need div.toggle div.line-block {
     margin-left: 30px;
 }
 
+/* Style configuration */
+
+/* CLEAN */
+table.style_needs_clean {
+    background: None !important;
+    border: None !important;
+    box-shadow: None !important;
+}
+
+table.style_needs_clean td {
+    padding: 0;
+}
+
+/* GREEN and IMPLEMENTED */
 table.style_needs_green, table.style_needs_implemented {
     background-color: palegreen !important;
 }

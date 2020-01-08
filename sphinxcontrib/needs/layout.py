@@ -71,7 +71,10 @@ class LayoutHandler:
 
         self.grids = {
             'simple': self._grid_simple,
-            'complex': self._grid_complex
+            'complex': self._grid_complex,
+            'content': self._grid_content,
+            'content_footer': self._grid_content_footer,
+            'content_footer_left': self._grid_content_footer_left,
         }
 
         # Dummy Document setup
@@ -201,6 +204,76 @@ class LayoutHandler:
         footer_row += footer_right_entry
 
         # Construct table
+        node_tgroup += self.node_tbody
+
+    def _grid_content(self):
+        # Table definition
+        node_tgroup = nodes.tgroup(cols=1)
+        self.node_table += node_tgroup
+
+        node_colspec = nodes.colspec(colwidth=100)
+        node_tgroup += node_colspec
+
+        # CONTENT row
+        content_row = nodes.row(classes=['content'])
+        content_entry = nodes.entry(classes=['content'])
+        content_entry.insert(0, self.node.children)
+        content_row += content_entry
+
+        # Construct table
+        self.node_tbody += content_row
+        node_tgroup += self.node_tbody
+
+    def _grid_content_footer(self):
+        # Table definition
+        node_tgroup = nodes.tgroup(cols=2)
+        self.node_table += node_tgroup
+
+        node_colspec = nodes.colspec(colwidth=100)
+        node_tgroup += node_colspec
+
+        # CONTENT row
+        content_row = nodes.row(classes=['content'])
+        content_entry = nodes.entry(classes=['content'])
+        content_entry.insert(0, self.node.children)
+        content_row += content_entry
+
+        # Footer row
+        footer_row = nodes.row(classes=['footer'])
+        footer_entry = nodes.entry(classes=['footer'])
+        footer_entry += self.get_section('footer')
+        footer_row += footer_entry
+
+        # Construct table
+        self.node_tbody += content_row
+        self.node_tbody += footer_row
+        node_tgroup += self.node_tbody
+
+    def _grid_content_footer_left(self):
+        # Table definition
+        node_tgroup = nodes.tgroup(cols=1)
+        self.node_table += node_tgroup
+
+        col_widths = [10, 90]
+        for width in col_widths:
+            node_colspec = nodes.colspec(colwidth=width)
+            node_tgroup += node_colspec
+
+        # CONTENT row
+        content_row = nodes.row(classes=['content'])
+
+        # Footer col
+        footer_entry = nodes.entry(classes=['footer'])
+        footer_entry += self.get_section('footer')
+        content_row += footer_entry
+
+        # Content col
+        content_entry = nodes.entry(classes=['content'])
+        content_entry.insert(0, self.node.children)
+        content_row += content_entry
+
+        # Construct table
+        self.node_tbody += content_row
         node_tgroup += self.node_tbody
 
     def get_section(self, section):
