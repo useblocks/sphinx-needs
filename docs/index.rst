@@ -71,10 +71,9 @@ which can be easily extended by different extensions to fulfill nearly any requi
 
 .. feature:: Filtering needs
    :id: FEATURE_1
-   :style: needs_clean
    :tags: introduction
    :links: SPEC_1
-   :layout: content
+   :layout: side_right
 
    Needs can be :ref:`easily filtered <filter>` and presented in :ref:`lists<needlist>`, :ref:`tables <needtable>`,
    :ref:`diagrams <needflow>` and :ref:`pie charts <needpie>`.
@@ -87,7 +86,7 @@ which can be easily extended by different extensions to fulfill nearly any requi
    :style: needs_yellow
    :tags: introduction
    :links: SPEC_1
-   :layout: content_footer
+   :layout: side_right_partial
 
    For external synchronization (e.g. with JIRA, a spreadsheet, ...)
    the builder :ref:`needs_builder` is available to export all created needs to a single json file.
@@ -113,6 +112,7 @@ which can be easily extended by different extensions to fulfill nearly any requi
    :style: needs_yellow_border
    :tags: introduction
    :links: SPEC_1
+   :layout: side_left
 
    ``Sphinx-needs`` allows to customize needs-types, needs-options, colors, layouts, ids, checks, ... .
 
@@ -124,6 +124,7 @@ which can be easily extended by different extensions to fulfill nearly any requi
    :style: needs_yellow
    :tags: introduction
    :links: SPEC_1
+   :layout: side_left_partial
 
    The :ref:`api` allows other sphinx-extension to build specific solutions around and with ``Sphinx-Needs``.
 

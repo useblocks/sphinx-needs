@@ -114,6 +114,19 @@ DEFAULT_DIAGRAM_TEMPLATE = \
 """
 
 
+LAYOUT_COMMON_SIDE = {
+            'side': [
+                '<<image("_static/useblocks_logo.png")>>'
+            ],
+            'head': [
+                '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>'
+            ],
+            'meta': [
+                '<<meta_all(no_links=True)>>',
+                '<<meta_links_all()>>'
+            ],
+        }
+
 LAYOUTS = {
     'default': {
         'grid': 'simple',
@@ -127,6 +140,23 @@ LAYOUTS = {
             ],
         }
     },
+    'side_left': {
+        'grid': 'simple_side_left',
+        'layout': LAYOUT_COMMON_SIDE
+    },
+    'side_left_partial': {
+        'grid': 'simple_side_left_partial',
+        'layout': LAYOUT_COMMON_SIDE
+    },
+    'side_right': {
+        'grid': 'simple_side_right',
+        'layout': LAYOUT_COMMON_SIDE
+    },
+    'side_right_partial': {
+        'grid': 'simple_side_right_partial',
+        'layout': LAYOUT_COMMON_SIDE
+    },
+
     'complex': {
         'grid': 'complex',
         'layout': {
@@ -169,9 +199,9 @@ LAYOUTS = {
         }
     },
     'content_footer_left': {
-        'grid': 'content_footer_left',
+        'grid': 'content_side_left',
         'layout': {
-            'footer': [
+            'side': [
                 '<<meta_id()>>'
             ]
         }

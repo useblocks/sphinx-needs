@@ -70,11 +70,109 @@ class LayoutHandler:
         self.node_tbody = nodes.tbody()
 
         self.grids = {
-            'simple': self._grid_simple,
+            'simple': {
+                'func': self._grid_simple,
+                'configs': {
+                    'colwidths': [100],
+                    'side_left': False,
+                    'side_right': False,
+                    'footer': False
+                }
+            },
+            'simple_side_left': {
+                'func': self._grid_simple,
+                'configs': {
+                    'colwidths': [30, 70],
+                    'side_left': 'full',
+                    'side_right': False,
+                    'footer': False
+                }
+            },
+            'simple_side_right': {
+                'func': self._grid_simple,
+                'configs': {
+                    'colwidths': [70, 30],
+                    'side_left': False,
+                    'side_right': 'full',
+                    'footer': False
+                }
+            },
+            'simple_side_left_partial': {
+                'func': self._grid_simple,
+                'configs': {
+                    'colwidths': [20, 80],
+                    'side_left': 'part',
+                    'side_right': False,
+                    'footer': False
+                }
+            },
+            'simple_side_right_partial': {
+                'func': self._grid_simple,
+                'configs': {
+                    'colwidths': [80, 20],
+                    'side_left': False,
+                    'side_right': 'part',
+                    'footer': False
+                }
+            },
+
             'complex': self._grid_complex,
-            'content': self._grid_content,
-            'content_footer': self._grid_content_footer,
-            'content_footer_left': self._grid_content_footer_left,
+
+            'content': {
+                'func': self._grid_content,
+                'configs': {
+                    'colwidths': [100],
+                    'side_left': False,
+                    'side_right': False,
+                    'footer': False
+                }
+            },
+
+            'content_footer': {
+                'func': self._grid_content,
+                'configs': {
+                    'colwidths': [100],
+                    'side_left': False,
+                    'side_right': False,
+                    'footer': True
+                }
+            },
+            'content_side_left': {
+                'func': self._grid_content,
+                'configs': {
+                    'colwidths': [5, 95],
+                    'side_left': True,
+                    'side_right': False,
+                    'footer': False
+                }
+            },
+            'content_side_right': {
+                'func': self._grid_content,
+                'configs': {
+                    'colwidths': [95, 5],
+                    'side_left': False,
+                    'side_right': False,
+                    'footer': False
+                }
+            },
+            'content_footer_side_left': {
+                'func': self._grid_content,
+                'configs': {
+                    'colwidths': [5, 95],
+                    'side_left': True,
+                    'side_right': False,
+                    'footer': True
+                }
+            },
+            'content_footer_side_right': {
+                'func': self._grid_content,
+                'configs': {
+                    'colwidths': [5, 95],
+                    'side_left': False,
+                    'side_right': True,
+                    'footer': True
+                }
+            },
         }
 
         # Dummy Document setup
@@ -108,173 +206,13 @@ class LayoutHandler:
                 self.layout['grid'], ', '.join(self.grids.keys())
             ))
 
-        self.grids[self.layout['grid']]()
+        func = self.grids[self.layout['grid']]
+        if callable(func):
+            func()
+        else:
+            func['func'](**func['configs'])
+
         return self.node_table
-
-    def _grid_simple(self):
-        # Table definition
-        node_tgroup = nodes.tgroup(cols=1)
-        self.node_table += node_tgroup
-
-        node_colspec = nodes.colspec(colwidth=100)
-        node_tgroup += node_colspec
-
-        # HEAD row
-        head_row = nodes.row(classes=['head'])
-        head_entry = nodes.entry(classes=['head'])
-        head_entry += self.get_section('head')
-        head_row += head_entry
-
-        # META row
-        meta_row = nodes.row(classes=['meta'])
-        meta_entry = nodes.entry(classes=['meta'])
-        meta_entry += self.get_section('meta')
-        meta_row += meta_entry
-
-        # CONTENT row
-        content_row = nodes.row(classes=['content'])
-        content_entry = nodes.entry(classes=['content'])
-        content_entry.insert(0, self.node.children)
-        content_row += content_entry
-
-        # Construct table
-        self.node_tbody += head_row
-        self.node_tbody += meta_row
-        self.node_tbody += content_row
-        node_tgroup += self.node_tbody
-
-    def _grid_complex(self):
-        node_tgroup = nodes.tgroup(cols=6)
-        self.node_table += node_tgroup
-
-        col_widths = [10, 10, 30, 30, 10, 10]
-        for width in col_widths:
-            node_colspec = nodes.colspec(colwidth=width)
-            node_tgroup += node_colspec
-
-        # HEAD row
-        head_row = nodes.row(classes=['head'])
-        self.node_tbody += head_row
-        # HEAD left
-        head_left_entry = nodes.entry(classes=['head_left'], morecols=1)
-        head_left_entry += self.get_section('head_left')
-        head_row += head_left_entry
-        # HEAD mid
-        head_entry = nodes.entry(classes=['head_center'], morecols=1)
-        head_entry += self.get_section('head')
-        head_row += head_entry
-        # HEAD right
-        head_right_entry = nodes.entry(classes=['head_right'], morecols=1)
-        head_right_entry += self.get_section('head_right')
-        head_row += head_right_entry
-
-        # META row
-        meta_row = nodes.row(classes=['meta'])
-        self.node_tbody += meta_row
-        # META left
-        meta_left_entry = nodes.entry(classes=['meta'], morecols=2)
-        meta_left_entry += self.get_section('meta_left')
-        meta_row += meta_left_entry
-        # META right
-        meta_right_entry = nodes.entry(classes=['meta'], morecols=2)
-        meta_right_entry += self.get_section('meta_right')
-        meta_row += meta_right_entry
-
-        # CONTENT row
-        content_row = nodes.row(classes=['content'])
-        self.node_tbody += content_row
-        content_entry = nodes.entry(classes=['content'], morecols=5)
-        content_entry.insert(0, self.node.children)
-        content_row += content_entry
-
-        # FOOTER row
-        footer_row = nodes.row(classes=['footer'])
-        self.node_tbody += footer_row
-        # FOOTER left
-        footer_left_entry = nodes.entry(classes=['footer'], morecols=1)
-        footer_left_entry += self.get_section('footer_left')
-        footer_row += footer_left_entry
-        # FOOTER mid
-        footer_entry = nodes.entry(classes=['footer'], morecols=1)
-        footer_entry += self.get_section('footer')
-        footer_row += footer_entry
-        # FOOTER right
-        footer_right_entry = nodes.entry(classes=['footer'], morecols=1)
-        footer_right_entry += self.get_section('footer_right')
-        footer_row += footer_right_entry
-
-        # Construct table
-        node_tgroup += self.node_tbody
-
-    def _grid_content(self):
-        # Table definition
-        node_tgroup = nodes.tgroup(cols=1)
-        self.node_table += node_tgroup
-
-        node_colspec = nodes.colspec(colwidth=100)
-        node_tgroup += node_colspec
-
-        # CONTENT row
-        content_row = nodes.row(classes=['content'])
-        content_entry = nodes.entry(classes=['content'])
-        content_entry.insert(0, self.node.children)
-        content_row += content_entry
-
-        # Construct table
-        self.node_tbody += content_row
-        node_tgroup += self.node_tbody
-
-    def _grid_content_footer(self):
-        # Table definition
-        node_tgroup = nodes.tgroup(cols=2)
-        self.node_table += node_tgroup
-
-        node_colspec = nodes.colspec(colwidth=100)
-        node_tgroup += node_colspec
-
-        # CONTENT row
-        content_row = nodes.row(classes=['content'])
-        content_entry = nodes.entry(classes=['content'])
-        content_entry.insert(0, self.node.children)
-        content_row += content_entry
-
-        # Footer row
-        footer_row = nodes.row(classes=['footer'])
-        footer_entry = nodes.entry(classes=['footer'])
-        footer_entry += self.get_section('footer')
-        footer_row += footer_entry
-
-        # Construct table
-        self.node_tbody += content_row
-        self.node_tbody += footer_row
-        node_tgroup += self.node_tbody
-
-    def _grid_content_footer_left(self):
-        # Table definition
-        node_tgroup = nodes.tgroup(cols=1)
-        self.node_table += node_tgroup
-
-        col_widths = [10, 90]
-        for width in col_widths:
-            node_colspec = nodes.colspec(colwidth=width)
-            node_tgroup += node_colspec
-
-        # CONTENT row
-        content_row = nodes.row(classes=['content'])
-
-        # Footer col
-        footer_entry = nodes.entry(classes=['footer'])
-        footer_entry += self.get_section('footer')
-        content_row += footer_entry
-
-        # Content col
-        content_entry = nodes.entry(classes=['content'])
-        content_entry.insert(0, self.node.children)
-        content_row += content_entry
-
-        # Construct table
-        self.node_tbody += content_row
-        node_tgroup += self.node_tbody
 
     def get_section(self, section):
         try:
@@ -310,6 +248,15 @@ class LayoutHandler:
         return result
 
     def _func_replace(self, section_nodes):
+        """
+        Replaces a function definition like ``<<meta(a, ,b)>>`` with the related docutils nodes.
+
+        It take an already existing docutils-node-tree and searches for Text-nodes containing ``<<..>>``.
+        These nodes get then replaced by the return value (also a node) from the related function.
+
+        :param section_nodes: docutils node (tree)
+        :return: docutils nodes
+        """
         return_nodes = []
         for node in section_nodes:
             if not isinstance(node, nodes.Text):
@@ -598,6 +545,240 @@ class LayoutHandler:
             link_node.append(image_node)
 
         return link_node
+
+    def _grid_simple(self, colwidths, side_left, side_right, footer):
+        """
+        Creates most "simple" grid layouts.
+        Side parts and footer can be activated via config.
+
+        .. code_block:: text
+
+            +------+---------+------+
+            |      | Head    |      |
+            |      +---------+      |
+            |      | Meta    |      |
+            | Side +---------+ Side |
+            |      | Content |      |
+            |      +---------+      |
+            |      | Footer  |      |
+            +------+---------+------+
+
+        Only one active side is supported, as the section name is "side" for left and right section.
+
+        If ``side_right`` or ``side_left`` is set to ``partial``, the table grids looks like::
+
+        +------+------+------+
+        |      | Head |      |
+        | Side +------+ Side |
+        |      | Meta |      |
+        +------+------+------+
+        | Content            |
+        +--------------------+
+        | Footer             |
+        +--------------------+
+
+
+        :param colwidths: List of integer for column widths
+        :param side_left: False, 'full' or 'part'
+        :param side_right: False, 'full' or 'part'
+        :param footer:  True or False
+        :return: need-table node
+        """
+        common_more_cols = 0
+
+        if side_left:
+            if side_left == 'full':
+                side_left_morerows = 2
+            else:
+                side_left_morerows = 1
+                common_more_cols += 1
+            if footer:
+                side_left_morerows += 1
+
+        if side_right:
+            if side_right == 'full':
+                side_right_morerows = 2
+            else:
+                side_right_morerows = 1
+                common_more_cols += 1
+            if footer:
+                side_right_morerows += 1
+
+        # Table definition
+        node_tgroup = nodes.tgroup(cols=common_more_cols)
+        self.node_table += node_tgroup
+
+        for width in colwidths:
+            node_colspec = nodes.colspec(colwidth=width)
+            node_tgroup += node_colspec
+
+        # HEAD row
+        head_row = nodes.row(classes=['head'])
+
+        if side_left:
+            side_entry = nodes.entry(classes=['side'], morerows=side_left_morerows)
+            side_entry += self.get_section('side')
+            head_row += side_entry
+
+        head_entry = nodes.entry(classes=['head'])
+        head_entry += self.get_section('head')
+        head_row += head_entry
+
+        if side_right:
+            side_entry = nodes.entry(classes=['side'], morerows=side_right_morerows)
+            side_entry += self.get_section('side')
+            head_row += side_entry
+
+        # META row
+        meta_row = nodes.row(classes=['meta'])
+        meta_entry = nodes.entry(classes=['meta'])
+        meta_entry += self.get_section('meta')
+        meta_row += meta_entry
+
+        # CONTENT row
+        content_row = nodes.row(classes=['content'])
+        content_entry = nodes.entry(classes=['content'], morecols=common_more_cols)
+        content_entry.insert(0, self.node.children)
+        content_row += content_entry
+
+        # FOOTER row
+        if footer:
+            footer_row = nodes.row(classes=['footer'])
+            footer_entry = nodes.entry(classes=['footer'], morecols=common_more_cols)
+            footer_entry += self.get_section('footer')
+            footer_row += footer_entry
+
+        # Construct table
+        self.node_tbody += head_row
+        self.node_tbody += meta_row
+        self.node_tbody += content_row
+        if footer:
+            self.node_tbody += footer_row
+        node_tgroup += self.node_tbody
+
+    def _grid_complex(self):
+        node_tgroup = nodes.tgroup(cols=6)
+        self.node_table += node_tgroup
+
+        col_widths = [10, 10, 30, 30, 10, 10]
+        for width in col_widths:
+            node_colspec = nodes.colspec(colwidth=width)
+            node_tgroup += node_colspec
+
+        # HEAD row
+        head_row = nodes.row(classes=['head'])
+        self.node_tbody += head_row
+        # HEAD left
+        head_left_entry = nodes.entry(classes=['head_left'], morecols=1)
+        head_left_entry += self.get_section('head_left')
+        head_row += head_left_entry
+        # HEAD mid
+        head_entry = nodes.entry(classes=['head_center'], morecols=1)
+        head_entry += self.get_section('head')
+        head_row += head_entry
+        # HEAD right
+        head_right_entry = nodes.entry(classes=['head_right'], morecols=1)
+        head_right_entry += self.get_section('head_right')
+        head_row += head_right_entry
+
+        # META row
+        meta_row = nodes.row(classes=['meta'])
+        self.node_tbody += meta_row
+        # META left
+        meta_left_entry = nodes.entry(classes=['meta'], morecols=2)
+        meta_left_entry += self.get_section('meta_left')
+        meta_row += meta_left_entry
+        # META right
+        meta_right_entry = nodes.entry(classes=['meta'], morecols=2)
+        meta_right_entry += self.get_section('meta_right')
+        meta_row += meta_right_entry
+
+        # CONTENT row
+        content_row = nodes.row(classes=['content'])
+        self.node_tbody += content_row
+        content_entry = nodes.entry(classes=['content'], morecols=5)
+        content_entry.insert(0, self.node.children)
+        content_row += content_entry
+
+        # FOOTER row
+        footer_row = nodes.row(classes=['footer'])
+        self.node_tbody += footer_row
+        # FOOTER left
+        footer_left_entry = nodes.entry(classes=['footer'], morecols=1)
+        footer_left_entry += self.get_section('footer_left')
+        footer_row += footer_left_entry
+        # FOOTER mid
+        footer_entry = nodes.entry(classes=['footer'], morecols=1)
+        footer_entry += self.get_section('footer')
+        footer_row += footer_entry
+        # FOOTER right
+        footer_right_entry = nodes.entry(classes=['footer'], morecols=1)
+        footer_right_entry += self.get_section('footer_right')
+        footer_row += footer_right_entry
+
+        # Construct table
+        node_tgroup += self.node_tbody
+
+    def _grid_content(self, colwidths, side_left, side_right, footer):
+        """
+        Creates most "content" based grid layouts.
+        Side parts and footer can be activated via config.
+
+        +------+---------+------+
+        |      | Content |      |
+        | Side +---------+ Side |
+        |      | Footer  |      |
+        +------+---------+------+
+
+        Only one active side is supported, as the section name is "side" for left and right section.
+
+        :param colwidths: List of integer for column widths
+        :param side_left: True or False
+        :param side_right: True or False
+        :param footer:  True or False
+        :return: need-table node
+        """
+        side_morerows = 0
+        if footer:
+            side_morerows = 1
+
+        # Table definition
+        node_tgroup = nodes.tgroup(cols=len(colwidths))
+        self.node_table += node_tgroup
+
+        for width in colwidths:
+            node_colspec = nodes.colspec(colwidth=width)
+            node_tgroup += node_colspec
+
+        # CONTENT row
+        content_row = nodes.row(classes=['content'])
+
+        if side_left:
+            side_entry = nodes.entry(classes=['side', 'left'], morerows=side_morerows)
+            side_entry += self.get_section('side')
+            content_row += side_entry
+
+        content_entry = nodes.entry(classes=['content'])
+        content_entry.insert(0, self.node.children)
+        content_row += content_entry
+
+        if side_right:
+            side_entry = nodes.entry(classes=['side', 'right'], morerows=side_morerows)
+            side_entry += self.get_section('side')
+            content_row += side_entry
+
+        # FOOTER row
+        if footer:
+            footer_row = nodes.row(classes=['footer'])
+            footer_entry = nodes.entry(classes=['footer'])
+            footer_entry += self.get_section('footer')
+            footer_row += footer_entry
+
+        # Construct table
+        self.node_tbody += content_row
+        if footer:
+            self.node_tbody += footer_row
+        node_tgroup += self.node_tbody
 
 
 class SphinxNeedLayoutException(BaseException):

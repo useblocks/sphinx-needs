@@ -43,7 +43,7 @@ table.need tr.footer {
     font-size: small;
 }
 
-table.need.layout_content_footer_left td.footer {
+table.need.layout_content_footer_left td.side {
     font-size: small;
     text-orientation: upright;
     writing-mode: sideways-lr;
