@@ -346,7 +346,16 @@ class LayoutHandler:
             data = data.replace(replace_string, self.need[item])
         return data
 
-    def _meta(self, name, prefix=None):
+    def _meta(self, name, prefix=None, show_empty=False):
+        """
+        Returns the specific meta data of a need as a  inside docutils node,
+
+        :param name: name of the need item
+        :param prefix: string as rst-code, will be added infront of the value output
+        :param show_empty: If false and requested need-value is None or '', no output is returned. Default: false
+        :return: docutils node
+        """
+
         data_container = nodes.inline(classes=['needs_' + name])
         if prefix is not None:
             prefix_node = self._parse(prefix)
@@ -358,17 +367,19 @@ class LayoutHandler:
         except KeyError:
             data = ''
 
-        if data is None:
+        if data is None and not show_empty:
             return []
+        elif data is None and show_empty:
+            data = ''
 
         if isinstance(data, str):
-            if len(data) == 0:
+            if len(data) == 0 and not show_empty:
                 return []
             data_node = nodes.inline(classes=['needs_data'])
             data_node.append(nodes.Text(data, data))
             data_container.append(data_node)
         elif isinstance(data, list):
-            if len(data) == 0:
+            if len(data) == 0 and not show_empty:
                 return []
             list_container = nodes.inline(classes=['needs_data_container'])
             for index, element in enumerate(data):
@@ -400,7 +411,7 @@ class LayoutHandler:
         id_container += id_ref
         return id_container
 
-    def _meta_all(self, prefix='', postfix='', exclude=None, no_links=False, defaults=True):
+    def _meta_all(self, prefix='', postfix='', exclude=None, no_links=False, defaults=True, show_empty=False):
         """
         ToDo: Define stuff which shall not be part of output
 
@@ -409,6 +420,7 @@ class LayoutHandler:
         :param exclude: List of value names, which are excluded from output
         :param defaults: If True, default excludes are added. This filters out all internal data, which is normally not
                          relevant for the user.
+        :param show_empty: If true, also need data with no value will be printed. Mostly useful for debugging.
         :return:
         """
         default_excludes = ['docname', 'lineno', 'target_node', 'refid', 'content', 'collapse', 'parts', 'id_parent',
@@ -435,8 +447,8 @@ class LayoutHandler:
 
             data_line = nodes.line()
             label = prefix + '{}:'.format(data) + postfix + ' '
-            result = self._meta(data, label)
-            if result is None or len(str(result)) == 0 or bool(result) is False:
+            result = self._meta(data, label, show_empty)
+            if not show_empty and result is None or len(str(result)) == 0 or bool(result) is False:
                 continue
             if isinstance(result, list):
                 data_line += result

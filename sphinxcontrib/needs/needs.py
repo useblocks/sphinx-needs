@@ -218,7 +218,7 @@ LAYOUTS = {
         'grid': 'content_footer',
         'layout': {
             'footer': [
-                '<<meta_all(exclude=[], defaults=False)>>'
+                '<<meta_all(exclude=[], defaults=False, show_empty=True)>>'
             ]
         }
     },
