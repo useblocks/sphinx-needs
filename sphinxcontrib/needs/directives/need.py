@@ -304,7 +304,7 @@ def process_need_nodes(app, doctree, fromdocname):
         from sphinxcontrib.needs.layout import build_need
         layout = need_data['layout']
         if layout is None or len(layout) == 0:
-            layout = getattr(app.config, 'needs_default_layout', 'default')
+            layout = getattr(app.config, 'needs_default_layout', 'clean')
 
         build_need(layout, node_need, app)
 

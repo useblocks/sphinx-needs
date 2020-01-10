@@ -66,7 +66,25 @@ def install_styles_static_files(app, env):
     STATICS_DIR_PATH = os.path.join(app.builder.outdir, STATICS_DIR_NAME)
     dest_path = os.path.join(STATICS_DIR_PATH, 'sphinx-needs')
 
-    files_to_copy = ["common.css", app.config.needs_css]
+    files_to_copy = ["common.css"]
+
+    if app.config.needs_css == 'modern.css':
+        source_folder = os.path.join(os.path.dirname(__file__), "css/modern/")
+        for root, dirs, files in os.walk(source_folder):
+            for single_file in files:
+                files_to_copy.append(os.path.join(root, single_file))
+    elif app.config.needs_css == 'dark.css':
+        source_folder = os.path.join(os.path.dirname(__file__), "css/dark/")
+        for root, dirs, files in os.walk(source_folder):
+            for single_file in files:
+                files_to_copy.append(os.path.join(root, single_file))
+    elif app.config.needs_css == 'blank.css':
+        source_folder = os.path.join(os.path.dirname(__file__), "css/blank/")
+        for root, dirs, files in os.walk(source_folder):
+            for single_file in files:
+                files_to_copy.append(os.path.join(root, single_file))
+    else:
+        files_to_copy += [app.config.needs_css]
 
     # Be sure no "old" css layout is already set
     safe_remove_file("sphinx-needs/common.css", app)

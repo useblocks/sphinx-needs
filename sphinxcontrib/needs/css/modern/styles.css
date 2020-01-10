@@ -1,0 +1,50 @@
+/*Colors based on https://flatuicolors.com/palette/se*/
+
+/* ********************* */
+/* Full need table color */
+/* ********************* */
+table.needs_style_clean,
+table.needs_style_clean tr,
+table.needs_style_clean td{
+    margin-bottom: 10px;
+    border: none !important;
+    width: 100%;
+    background: None;
+    padding: 0;
+    box-shadow: None;
+}
+
+table.needs_style_green, table.needs_style_implemented {
+    background-color: #05c46b !important;
+}
+
+table.needs_style_red, table.needs_style_open {
+    background-color: #ff3f34 !important;
+}
+
+table.needs_style_yellow, table.needs_style_in_progress {
+    background-color: #ffc048 !important;
+}
+
+table.needs_style_blue {
+    background-color: #0fbcf9 !important;
+}
+
+/* **************************** */
+/* Border only need table color */
+/* **************************** */
+table.needs_style_green_border {
+    border: 5px solid #05c46b !important;
+}
+
+table.needs_style_red_border {
+    border: 5px solid #ff3f34 !important;
+}
+
+table.needs_style_yellow_border {
+    border: 5px solid #ffc048 !important;
+}
+
+table.needs_style_blue_border {
+    border: 5px solid #0fbcf9 !important;
+}

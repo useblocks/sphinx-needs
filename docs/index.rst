@@ -51,12 +51,10 @@ which can be easily extended by different extensions to fulfill nearly any requi
 
 .. spec:: Content of each need
    :id: SPEC_1
-   :style: needs_blue
    :tags: introduction, awesome, nice
    :status: open
    :links: REQ_1
    :collapse: FALSE
-   :layout: complex
 
    Each need contains:
 
@@ -64,16 +62,16 @@ which can be easily extended by different extensions to fulfill nearly any requi
    * an **unique id** (optional. Gets calculated based on title if not given)
    * a **description**, which supports fully rst and sphinx extensions (optional)
    * a **status** (optional)
-   * a **style** (optional)
    * several **tags** (optional)
    * several **links** to other needs (optional)
    * project specific options (optional, see :ref:`needs_extra_options`)
+   * a **layout** (optional)
+   * a **style** (optional)
 
 .. feature:: Filtering needs
    :id: FEATURE_1
    :tags: introduction
    :links: SPEC_1
-   :layout: side_right
 
    Needs can be :ref:`easily filtered <filter>` and presented in :ref:`lists<needlist>`, :ref:`tables <needtable>`,
    :ref:`diagrams <needflow>` and :ref:`pie charts <needpie>`.
@@ -83,10 +81,8 @@ which can be easily extended by different extensions to fulfill nearly any requi
 
 .. feature:: Ex/Importing needs
    :id: FEATURE_2
-   :style: needs_yellow
    :tags: introduction
    :links: SPEC_1
-   :layout: side_right_partial
 
    For external synchronization (e.g. with JIRA, a spreadsheet, ...)
    the builder :ref:`needs_builder` is available to export all created needs to a single json file.
@@ -99,20 +95,18 @@ which can be easily extended by different extensions to fulfill nearly any requi
 
 .. feature:: Automated data handling
    :id: FEATURE_3
-   :style: needs_clean
    :tags: introduction
    :links: SPEC_1
-   :layout: content_footer_left
 
    For complex data chains between needs, :ref:`dynamic_functions` can be used to load and set
    changeable data automatically during documentation generation phase.
 
 .. feature:: Customizing everything
    :id: FEATURE_4
-   :style: needs_yellow_border
    :tags: introduction
    :links: SPEC_1
-   :layout: side_left
+   :layout: complete
+   :style: yellow
 
    ``Sphinx-needs`` allows to customize needs-types, needs-options, colors, layouts, ids, checks, ... .
 
@@ -121,10 +115,8 @@ which can be easily extended by different extensions to fulfill nearly any requi
 
 .. feature:: API for other extensions
    :id: FEATURE_5
-   :style: needs_yellow
    :tags: introduction
    :links: SPEC_1
-   :layout: side_left_partial
 
    The :ref:`api` allows other sphinx-extension to build specific solutions around and with ``Sphinx-Needs``.
 
@@ -292,7 +284,7 @@ Content
    builders
    filter
    dynamic_functions
-   styles
+   layout_styles
    examples
    api
    snippets

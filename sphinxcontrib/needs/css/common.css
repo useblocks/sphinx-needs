@@ -1,3 +1,53 @@
+
+
+
+
+
+
+
+
+
+
+/* DataTable layout*/
+table.dataTable {
+    border-collapse: collapse;
+    border: none;
+}
+
+div.dataTables_length {
+    margin-bottom: 10px;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    padding: 0.15em 0.75em;
+    background: none;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    background: none;
+}
+
+div.dataTables_length select {
+    background: none;
+}
+
+/*DataTables Download Buttons*/
+div.dt-buttons {
+   margin-left: 10%;
+}
+
+div.dt-buttons button {
+    padding: 0.1em 1em;
+    border: 1px solid #999;
+    border-radius: 2px;
+    font-size: 0.88em;
+    line-height: inherit;
+    color: inherit;
+    white-space: nowrap;
+    overflow: hidden;
+    background-color: inherit;
+    background-image: none;
+}
 .toggle .header {
     display: block;
     clear: both;
@@ -39,46 +89,46 @@ table.style_needs_clean td {
     padding: 0;
 }
 
-/* GREEN and IMPLEMENTED */
-table.style_needs_green, table.style_needs_implemented {
-    background-color: palegreen !important;
+
+/* **************** */
+/* DataTable layout */
+/* **************** */
+table.dataTable {
+    border-collapse: collapse;
+    border: none;
 }
 
-table.style_needs_red, table.style_needs_open {
-    background-color: palevioletred !important;
+div.dataTables_length {
+    margin-bottom: 10px;
 }
 
-table.style_needs_yellow, table.style_needs_in_progress {
-    background-color: palegoldenrod !important;
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    padding: 0.15em 0.75em;
+    background: none;
 }
 
-table.style_needs_blue {
-    background-color: paleturquoise !important;
+.dataTables_wrapper .dataTables_paginate .paginate_button.current, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    background: none;
 }
 
-table.style_needs_green_border {
-    border: 5px solid palegreen !important;
+div.dataTables_length select {
+    background: none;
 }
 
-table.style_needs_red_border {
-    border: 5px solid palevioletred !important;
+/*DataTables Download Buttons*/
+div.dt-buttons {
+   margin-left: 10%;
 }
 
-table.style_needs_yellow_border {
-    border: 5px solid palegoldenrod !important;
-}
-
-table.style_needs_blue_border {
-    border: 5px solid paleturquoise !important;
-}
-
-
-
-tr.needs_in_progress td.needs_status p {
-    background-color: #1b6082;
-    padding: 3px 5px;
-    text-align: center;
-    border-radius: 10px;
-    border: 1px solid #212174;
-    color: #ffffff;
+div.dt-buttons button {
+    padding: 0.1em 1em;
+    border: 1px solid #999;
+    border-radius: 2px;
+    font-size: 0.88em;
+    line-height: inherit;
+    color: inherit;
+    white-space: nowrap;
+    overflow: hidden;
+    background-color: inherit;
+    background-image: none;
 }

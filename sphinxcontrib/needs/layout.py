@@ -57,15 +57,20 @@ class LayoutHandler:
         self.layout_name = layout
         available_layouts = getattr(app.config, 'needs_layouts', {})
         if self.layout_name not in available_layouts.keys():
-            raise SphinxNeedLayoutException('Given layout "{}" is unknown. Registered layouts are: {}'.format(
-                self.layout_name, ', '.join(available_layouts.keys())))
+            raise SphinxNeedLayoutException(
+                'Given layout "{}" is unknown for need {}. Registered layouts are: {}'.format(
+                self.layout_name, need['id'], ' ,'.join(available_layouts.keys())))
         self.layout = available_layouts[self.layout_name]
 
         self.node = node
 
-        classes = ["need", 'layout_' + self.layout_name]
+        classes = ["need",
+                   'needs_grid_' + self.layout['grid'],
+                   'needs_layout_' + self.layout_name]
+
         if self.need['style'] is not None and len(self.need['style']) > 0:
-            classes.append('style_' + self.need['style'])
+            classes.append('needs_style_' + self.need['style'])
+
         self.node_table = nodes.table(classes=classes, ids=[self.need['id']])
         self.node_tbody = nodes.tbody()
 
@@ -151,7 +156,7 @@ class LayoutHandler:
                 'configs': {
                     'colwidths': [95, 5],
                     'side_left': False,
-                    'side_right': False,
+                    'side_right': True,
                     'footer': False
                 }
             },
@@ -704,7 +709,7 @@ class LayoutHandler:
         footer_row = nodes.row(classes=['footer'])
         self.node_tbody += footer_row
         # FOOTER left
-        footer_left_entry = nodes.entry(classes=['footer'], morecols=1)
+        footer_left_entry = nodes.entry(classes=['footer_left'], morecols=1)
         footer_left_entry += self.get_section('footer_left')
         footer_row += footer_left_entry
         # FOOTER mid
@@ -712,7 +717,7 @@ class LayoutHandler:
         footer_entry += self.get_section('footer')
         footer_row += footer_entry
         # FOOTER right
-        footer_right_entry = nodes.entry(classes=['footer'], morecols=1)
+        footer_right_entry = nodes.entry(classes=['footer_right'], morecols=1)
         footer_right_entry += self.get_section('footer_right')
         footer_row += footer_right_entry
 

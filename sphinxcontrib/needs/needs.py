@@ -128,7 +128,7 @@ LAYOUT_COMMON_SIDE = {
         }
 
 LAYOUTS = {
-    'default': {
+    'clean': {
         'grid': 'simple',
         'layout': {
             'head': [
@@ -140,24 +140,24 @@ LAYOUTS = {
             ],
         }
     },
-    'side_left': {
+    'clean_l': {
         'grid': 'simple_side_left',
         'layout': LAYOUT_COMMON_SIDE
     },
-    'side_left_partial': {
+    'clean_lp': {
         'grid': 'simple_side_left_partial',
         'layout': LAYOUT_COMMON_SIDE
     },
-    'side_right': {
+    'clean_r': {
         'grid': 'simple_side_right',
         'layout': LAYOUT_COMMON_SIDE
     },
-    'side_right_partial': {
+    'clean_rp': {
         'grid': 'simple_side_right_partial',
         'layout': LAYOUT_COMMON_SIDE
     },
 
-    'complex': {
+    'complete': {
         'grid': 'complex',
         'layout': {
             'head_left': [
@@ -185,12 +185,12 @@ LAYOUTS = {
             ]
         }
     },
-    'content': {
+    'focus': {
         'grid': 'content',
         'layout': {
         }
     },
-    'content_footer': {
+    'focus_f': {
         'grid': 'content_footer',
         'layout': {
             'footer': [
@@ -198,8 +198,16 @@ LAYOUTS = {
             ]
         }
     },
-    'content_footer_left': {
+    'focus_l': {
         'grid': 'content_side_left',
+        'layout': {
+            'side': [
+                '<<meta_id()>>'
+            ]
+        }
+    },
+    'focus_r': {
+        'grid': 'content_side_right',
         'layout': {
             'side': [
                 '<<meta_id()>>'
@@ -291,7 +299,7 @@ def setup(app):
 
     app.add_config_value('needs_warnings', {}, 'html')
     app.add_config_value('needs_layouts', LAYOUTS, 'html')
-    app.add_config_value('needs_default_layout', 'default', 'html')
+    app.add_config_value('needs_default_layout', 'clean', 'html')
 
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
