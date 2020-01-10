@@ -70,6 +70,8 @@ class LayoutHandler:
 
         if self.need['style'] is not None and len(self.need['style']) > 0:
             classes.append('needs_style_' + self.need['style'])
+        else:
+            classes.append('needs_style_none')
 
         self.node_table = nodes.table(classes=classes, ids=[self.need['id']])
         self.node_tbody = nodes.tbody()
@@ -405,6 +407,8 @@ class LayoutHandler:
         :param prefix:
         :param postfix:
         :param exclude: List of value names, which are excluded from output
+        :param defaults: If True, default excludes are added. This filters out all internal data, which is normally not
+                         relevant for the user.
         :return:
         """
         default_excludes = ['docname', 'lineno', 'target_node', 'refid', 'content', 'collapse', 'parts', 'id_parent',

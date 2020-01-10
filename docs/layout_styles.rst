@@ -45,6 +45,7 @@ Most useful layout are:
 .. list-table::
    :header-rows: 1
    :stub-columns: 1
+   :widths: 20 20 60
 
    - * Layout
      * Used grid
@@ -64,6 +65,7 @@ There are also some *extensions* for the layouts above available:
 .. list-table::
    :header-rows: 1
    :stub-columns: 1
+   :widths: 20 20 60
 
    - * Layout
      * Used grid
@@ -87,6 +89,20 @@ There are also some *extensions* for the layouts above available:
      * content_side_left
      * Adds a small footer to the left side of content, showing the need id.
 
+Special layouts:
+
+.. list-table::
+   :header-rows: 1
+   :stub-columns: 1
+   :widths: 20 20 60
+
+   - * Layout
+     * Used grid
+     * Comment
+   - * debug
+     * content_footer
+     * Shows **all** meta data (also internal ones) in the footer.
+       Useful do see what data is available for a need and which can be used in :ref:`filter_string`.
 
 Styles
 ------

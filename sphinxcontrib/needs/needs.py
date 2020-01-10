@@ -214,6 +214,14 @@ LAYOUTS = {
             ]
         }
     },
+    'debug': {
+        'grid': 'content_footer',
+        'layout': {
+            'footer': [
+                '<<meta_all(exclude=[], defaults=False)>>'
+            ]
+        }
+    },
 }
 
 

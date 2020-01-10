@@ -125,9 +125,10 @@ which can be easily extended by different extensions to fulfill nearly any requi
 
 .. feature:: Developed for safe process executions
    :id: FEATURE_6
-   :style: needs_yellow
    :tags: introduction
    :links: SPEC_1
+   :layout: debug
+   :style: red
 
    ``Sphinx-needs`` allows to define the exact allowed way of using and configuring needs.
 
