@@ -1,8 +1,4 @@
 include sphinxcontrib/needs/directives/needimport_template.rst
 
-include sphinxcontrib/needs/css/common.css
-include sphinxcontrib/needs/css/blank.css
-include sphinxcontrib/needs/css/modern.css
-include sphinxcontrib/needs/css/dark.css
-
+graft sphinxcontrib/needs/css
 graft sphinxcontrib/needs/libs
