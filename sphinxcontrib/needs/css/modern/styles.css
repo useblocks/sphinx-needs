@@ -14,19 +14,36 @@ table.needs_style_clean td{
     box-shadow: None;
 }
 
-table.needs_style_green, table.needs_style_implemented {
+table.needs_style_green,
+table.needs_style_green tr.need,
+table.needs_style_green td.need,
+table.needs_style_implemented,
+table.needs_style_implemented tr.need,
+table.needs_style_implemented td.need {
     background-color: #05c46b !important;
 }
 
-table.needs_style_red, table.needs_style_open {
+table.needs_style_red,
+table.needs_style_red tr.need,
+table.needs_style_red td.need,
+table.needs_style_open,
+table.needs_style_open tr.need,
+table.needs_style_open td.need {
     background-color: #ff3f34 !important;
 }
 
-table.needs_style_yellow, table.needs_style_in_progress {
+table.needs_style_yellow,
+table.needs_style_yellow tr.need,
+table.needs_style_yellow td.need,
+table.needs_style_in_progress,
+table.needs_style_in_progress tr.need,
+table.needs_style_in_progress td.need {
     background-color: #ffc048 !important;
 }
 
-table.needs_style_blue {
+table.needs_style_blue,
+table.needs_style_blue tr.need,
+table.needs_style_blue td.need {
     background-color: #0fbcf9 !important;
 }
 

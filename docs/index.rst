@@ -54,7 +54,6 @@ which can be easily extended by different extensions to fulfill nearly any requi
    :tags: introduction, awesome, nice
    :status: open
    :links: REQ_1
-   :collapse: FALSE
 
    Each need contains:
 
@@ -72,6 +71,7 @@ which can be easily extended by different extensions to fulfill nearly any requi
    :id: FEATURE_1
    :tags: introduction
    :links: SPEC_1
+   :collapse: False
 
    Needs can be :ref:`easily filtered <filter>` and presented in :ref:`lists<needlist>`, :ref:`tables <needtable>`,
    :ref:`diagrams <needflow>` and :ref:`pie charts <needpie>`.

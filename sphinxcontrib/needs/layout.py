@@ -205,6 +205,7 @@ class LayoutHandler:
             'meta_id': self._meta_id,
             'image': self._image,
             'link': self._link,
+            'collapse_button': self._collapse_button
         }
 
     def get_need_table(self):
@@ -276,12 +277,11 @@ class LayoutHandler:
                 # func_elements = re.findall(r'<<([a-z_()]*)>>', node_str)
                 node_line = nodes.inline()
 
-                # line_elements = re.findall(r'([^<>]+)|(<<[a-zA-Z_(),\-:;*"\'= !]*>>)', node_str)
-                line_elements = re.findall(r'([^<>]+)|(<<.*>>)', node_str)
+                line_elements = re.findall(r'(<<[^<>]+>>)|([^<>]+)', node_str)
 
                 for line_element in line_elements:
-                    text = line_element[0]
-                    func_def = line_element[1]
+                    text = line_element[1]
+                    func_def = line_element[0]
                     # Check if normal string was detected
                     if len(text) > 0 and len(func_def) == 0:
                         node_line += nodes.Text(text, text)
@@ -567,6 +567,41 @@ class LayoutHandler:
 
         return link_node
 
+    def _collapse_button(self, target='meta', collapsed='Show', visible='Close', initial=False):
+        """
+
+        :param target:
+        :param collapsed:
+        :param visible:
+        :param initial: If True, initial status will hide rows after loading page.
+        :return:
+        """
+        coll_node_collapsed = nodes.inline(classes=['needs', 'collapsed'])
+        coll_node_visible = nodes.inline(classes=['needs', 'visible'])
+
+        coll_node_collapsed.append(nodes.Text(collapsed, collapsed))
+        coll_node_visible.append(nodes.Text(visible, visible))
+
+        coll_container = nodes.inline(classes=['needs', 'collapse'])
+        # docutils does'nt allow has to add any html-attributes beside class and id to nodes.
+        # So we misused "id" for this and use "__" (2x _) as separator for row-target names
+
+        if self.need['collapse'] is not None and self.need['collapse'] is False or \
+                self.need['collapse'] is None and initial is False:
+            status = 'show'
+        elif self.need['collapse'] is not None and self.need['collapse'] is True or \
+                self.need['collapse'] is None and initial is True:
+            status = 'hide'
+
+        target_strings = target.split(',')
+        final_targets = [x.strip() for x in target_strings]
+        targets = ['target__' + status + '__' + '__'.join(final_targets)]
+        coll_container.attributes['ids'] = targets
+        coll_container.append(coll_node_collapsed)
+        coll_container.append(coll_node_visible)
+
+        return coll_container
+
     def _grid_simple(self, colwidths, side_left, side_right, footer):
         """
         Creates most "simple" grid layouts.
@@ -634,38 +669,38 @@ class LayoutHandler:
             node_tgroup += node_colspec
 
         # HEAD row
-        head_row = nodes.row(classes=['head'])
+        head_row = nodes.row(classes=['need', 'head'])
 
         if side_left:
-            side_entry = nodes.entry(classes=['side'], morerows=side_left_morerows)
+            side_entry = nodes.entry(classes=['need', 'side'], morerows=side_left_morerows)
             side_entry += self.get_section('side')
             head_row += side_entry
 
-        head_entry = nodes.entry(classes=['head'])
+        head_entry = nodes.entry(classes=['need', 'head'])
         head_entry += self.get_section('head')
         head_row += head_entry
 
         if side_right:
-            side_entry = nodes.entry(classes=['side'], morerows=side_right_morerows)
+            side_entry = nodes.entry(classes=['need', 'side'], morerows=side_right_morerows)
             side_entry += self.get_section('side')
             head_row += side_entry
 
         # META row
-        meta_row = nodes.row(classes=['meta'])
-        meta_entry = nodes.entry(classes=['meta'])
+        meta_row = nodes.row(classes=['need', 'meta'])
+        meta_entry = nodes.entry(classes=['need', 'meta'])
         meta_entry += self.get_section('meta')
         meta_row += meta_entry
 
         # CONTENT row
-        content_row = nodes.row(classes=['content'])
-        content_entry = nodes.entry(classes=['content'], morecols=common_more_cols)
+        content_row = nodes.row(classes=['need', 'content'])
+        content_entry = nodes.entry(classes=['need', 'content'], morecols=common_more_cols)
         content_entry.insert(0, self.node.children)
         content_row += content_entry
 
         # FOOTER row
         if footer:
-            footer_row = nodes.row(classes=['footer'])
-            footer_entry = nodes.entry(classes=['footer'], morecols=common_more_cols)
+            footer_row = nodes.row(classes=['need', 'footer'])
+            footer_entry = nodes.entry(classes=['need', 'footer'], morecols=common_more_cols)
             footer_entry += self.get_section('footer')
             footer_row += footer_entry
 

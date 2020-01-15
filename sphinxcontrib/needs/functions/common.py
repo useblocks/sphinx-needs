@@ -395,6 +395,8 @@ def links_from_content(app, need, needs, need_id=None, filter=None):
 
     All need-links set by using ``:need:`NEED_ID``` get extracted.
 
+    Same links are only added once.
+
     Example:
 
     .. req:: Requirement 1
@@ -447,15 +449,15 @@ def links_from_content(app, need, needs, need_id=None, filter=None):
     links = re.findall(r':need:`(\w+)`|:need:`.+\<(.+)\>`', source_need['content'])
     raw_links = []
     for link in links:
-        if link[0]:
+        if link[0] and link[0] not in raw_links:
             raw_links.append(link[0])
-        elif link[1]:
+        elif link[1] and link[0] not in raw_links:
             raw_links.append(link[1])
 
     if filter is not None and len(filter) > 0:
         filtered_links = []
         for link in raw_links:
-            if filter_single_need(needs[link], filter):
+            if link not in filtered_links and filter_single_need(needs[link], filter):
                 filtered_links.append(link)
         return filtered_links
 

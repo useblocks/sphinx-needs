@@ -10,6 +10,8 @@ Changelog
 * Bugfix: No more exception raise if ``copy`` value not set inside :ref:`needs_extra_links`.
 * Improvement: Better log message, if required id is missing. (`#112 <https://github.com/useblocks/sphinxcontrib-needs/issues/112>`_)
 
+* Removed needs_collapse_details, because now realized by layout
+
 0.4.3
 -----
 

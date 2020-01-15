@@ -132,7 +132,7 @@ LAYOUTS = {
         'grid': 'simple',
         'layout': {
             'head': [
-                '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>'
+                '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>  <<collapse_button("meta, content", collapsed="🡇", visible="🡆", initial=True)>>'
             ],
             'meta': [
                 '<<meta_all(no_links=True)>>',

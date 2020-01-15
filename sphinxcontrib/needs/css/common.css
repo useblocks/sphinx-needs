@@ -1,11 +1,8 @@
-
-
-
-
-
-
-
-
+/* This is needed to avoid custom settings for common tables, like the ReadTheDocs theme docs */
+/* It reimplements the normal browser behavior of breaking/wrapping table content if too long.*/
+table.need td.need {
+    white-space: normal;
+}
 
 
 /* DataTable layout*/
