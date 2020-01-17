@@ -537,9 +537,21 @@ class LayoutHandler:
         if url.startswith('icon:'):
             url = '_static/sphinx-needs/images/{}.svg'.format(url.split(':')[1])
 
-        image_node = nodes.image(url, **options)
+        image_node = nodes.image(url, classes=['needs_image'], **options)
         image_node['candidates'] = '*'
         image_node['uri'] = url
+
+        # Okay, this is really ugly.
+        # Sphinx does automatically wrap all images into a reference node, which links to the image file.
+        # See Bug: https://github.com/sphinx-doc/sphinx/issues/7032
+        # This behavior can only be avoided by not using width/height attributes or by adding our
+        # own reference node.
+        # We do last one here and set class to "no_link", which is later used by some javascript to avoid
+        # being clickable, so that the page does not "jump"
+        if no_link:
+            ref_node = nodes.reference('test', '', refuri='#', classes=['no_link'])
+            ref_node.append(image_node)
+            return ref_node
 
         return image_node
 
@@ -582,12 +594,12 @@ class LayoutHandler:
         if not collapsed.startswith('image:') and not collapsed.startswith('icon:'):
             coll_node_collapsed.append(nodes.Text(collapsed, collapsed))
         else:
-            coll_node_collapsed.append(self._image(collapsed.replace('image:', ''), width='20px', no_link=True))
+            coll_node_collapsed.append(self._image(collapsed.replace('image:', ''), width='17px', no_link=True))
 
         if not visible.startswith('image:') and not visible.startswith('icon:'):
             coll_node_visible.append(nodes.Text(visible, visible))
         else:
-            coll_node_visible.append(self._image(visible.replace('image:', ''), width='20px', no_link=True))
+            coll_node_visible.append(self._image(visible.replace('image:', ''), width='17px', no_link=True))
 
         coll_container = nodes.inline(classes=['needs', 'collapse'])
         # docutils does'nt allow has to add any html-attributes beside class and id to nodes.
