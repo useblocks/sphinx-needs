@@ -193,7 +193,7 @@ if os.name == "nt":
 
 plantuml_output_format = 'png'
 
-needs_collapse_details = True
+# needs_collapse_details = True
 needs_table_style = "datatables"
 needs_table_columns = "ID;TITLE;STATUS;OUTGOING"
 

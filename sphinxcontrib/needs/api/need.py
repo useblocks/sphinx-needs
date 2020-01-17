@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 def add_need(app, state, docname, lineno, need_type, title, id=None, content="", status=None, tags=None,
-             links_string=None, hide=False, hide_tags=False, hide_status=False, collapse=True, style=None,
+             links_string=None, hide=False, hide_tags=False, hide_status=False, collapse=None, style=None,
              layout=None, **kwargs):
     """
     Creates a new need and returns its node.

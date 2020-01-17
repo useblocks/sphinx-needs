@@ -37,7 +37,6 @@ def build_need(layout, node, app):
     env = app.builder.env
     needs = env.needs_all_needs
 
-
     need_layout = layout
     need_id = node.attributes["ids"][0]
     need_data = needs[need_id]
@@ -59,7 +58,7 @@ class LayoutHandler:
         if self.layout_name not in available_layouts.keys():
             raise SphinxNeedLayoutException(
                 'Given layout "{}" is unknown for need {}. Registered layouts are: {}'.format(
-                self.layout_name, need['id'], ' ,'.join(available_layouts.keys())))
+                    self.layout_name, need['id'], ' ,'.join(available_layouts.keys())))
         self.layout = available_layouts[self.layout_name]
 
         self.node = node
@@ -329,8 +328,9 @@ class LayoutHandler:
 
                         node_line += result
                     else:
-                        raise SphinxNeedLayoutException('Error during layout line parsing. This looks strange: {}'.format(
-                            line_element))
+                        raise SphinxNeedLayoutException(
+                            'Error during layout line parsing. This looks strange: {}'.format(
+                                line_element))
 
                 return_nodes.append(node_line)
         return return_nodes
@@ -424,9 +424,9 @@ class LayoutHandler:
         :return:
         """
         default_excludes = ['docname', 'lineno', 'target_node', 'refid', 'content', 'collapse', 'parts', 'id_parent',
-                           'id_complete', 'title', 'full_title', 'is_part', 'is_need',
-                           'type_prefix', 'type_color', 'type_style', 'type', 'type_name', 'id',
-                           'hide', 'hide_status', 'hide_tags', 'sections', 'section_name']
+                            'id_complete', 'title', 'full_title', 'is_part', 'is_need',
+                            'type_prefix', 'type_color', 'type_style', 'type', 'type_name', 'id',
+                            'hide', 'hide_status', 'hide_tags', 'sections', 'section_name']
 
         if exclude is None or not isinstance(exclude, list):
             if defaults:
@@ -500,7 +500,7 @@ class LayoutHandler:
 
         return data_container
 
-    def _image(self, url, height=None, width=None, align=None):
+    def _image(self, url, height=None, width=None, align=None, no_link=False):
         """
 
         See https://docutils.sourceforge.io/docs/ref/rst/directives.html#images
@@ -579,18 +579,25 @@ class LayoutHandler:
         coll_node_collapsed = nodes.inline(classes=['needs', 'collapsed'])
         coll_node_visible = nodes.inline(classes=['needs', 'visible'])
 
-        coll_node_collapsed.append(nodes.Text(collapsed, collapsed))
-        coll_node_visible.append(nodes.Text(visible, visible))
+        if not collapsed.startswith('image:') and not collapsed.startswith('icon:'):
+            coll_node_collapsed.append(nodes.Text(collapsed, collapsed))
+        else:
+            coll_node_collapsed.append(self._image(collapsed.replace('image:', ''), width='20px', no_link=True))
+
+        if not visible.startswith('image:') and not visible.startswith('icon:'):
+            coll_node_visible.append(nodes.Text(visible, visible))
+        else:
+            coll_node_visible.append(self._image(visible.replace('image:', ''), width='20px', no_link=True))
 
         coll_container = nodes.inline(classes=['needs', 'collapse'])
         # docutils does'nt allow has to add any html-attributes beside class and id to nodes.
         # So we misused "id" for this and use "__" (2x _) as separator for row-target names
 
-        if self.need['collapse'] is not None and self.need['collapse'] is False or \
-                self.need['collapse'] is None and initial is False:
+        if (self.need['collapse'] is not None and self.need['collapse'] is False) or \
+                (self.need['collapse'] is None and initial is False):
             status = 'show'
-        elif self.need['collapse'] is not None and self.need['collapse'] is True or \
-                self.need['collapse'] is None and initial is True:
+        elif (self.need['collapse'] is not None and self.need['collapse'] is True) or \
+                (self.need['collapse'] is None and initial is True):
             status = 'hide'
 
         target_strings = target.split(',')

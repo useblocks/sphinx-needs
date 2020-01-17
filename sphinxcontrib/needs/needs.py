@@ -132,7 +132,7 @@ LAYOUTS = {
         'grid': 'simple',
         'layout': {
             'head': [
-                '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>  <<collapse_button("meta, content", collapsed="🡇", visible="🡆", initial=True)>>'
+                '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>  <<collapse_button("meta", collapsed="icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=True)>>'
             ],
             'meta': [
                 '<<meta_all(no_links=True)>>',
@@ -255,7 +255,7 @@ def setup(app):
     app.add_config_value('needs_table_columns', "ID;TITLE;STATUS;TYPE;OUTGOING;TAGS", 'html')
     app.add_config_value('needs_table_style', "DATATABLES", 'html')
 
-    app.add_config_value('needs_collapse_details', True, 'html')
+    app.add_config_value('needs_collapse_details', None, 'html')
 
     app.add_config_value('needs_role_need_template', u"{title} ({id})", 'html')
     app.add_config_value('needs_role_need_max_title_length', 30, 'html')

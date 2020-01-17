@@ -90,7 +90,7 @@ class NeedDirective(Directive):
         env = self.env
 
         # ToDo: Keep this in directive!!!
-        collapse = str(self.options.get("collapse", ""))
+        collapse = self.options.get("collapse", None)
         if isinstance(collapse, str) and len(collapse) > 0:
             if collapse.upper() in ["TRUE", 1, "YES"]:
                 collapse = True
@@ -99,7 +99,7 @@ class NeedDirective(Directive):
             else:
                 raise Exception("collapse attribute must be true or false")
         else:
-            collapse = getattr(env.app.config, "needs_collapse_details", True)
+            collapse = getattr(env.app.config, "needs_collapse_details", None)
 
         hide = True if "hide" in self.options.keys() else False
         hide_tags = True if "hide_tags" in self.options.keys() else False
