@@ -109,7 +109,7 @@ class NeedDirective(Directive):
         content = "\n".join(self.content)
         status = self.options.get("status", None)
         tags = self.options.get("tags", '')
-        style = self.options.get("style", '')
+        style = self.options.get("style", None)
         layout = self.options.get("layout", '')
 
         need_extra_options = {}

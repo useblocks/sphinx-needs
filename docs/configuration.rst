@@ -891,22 +891,92 @@ needs_layouts
 ~~~~~~~~~~~~~
 .. versionadded:: 0.5.0
 
+``needs_layouts`` is used to define own grid-based layouts with custom data.
+
+Please read :ref:`layouts_styles` for detailed information.
+
+``needs_layouts`` must be a dictionary and each key represents a layout. A layout must define the used grid-system and
+a layout-structure. Example::
+
+    needs_layouts = {
+        'my_layout': {
+            'grid': 'simple',
+            'layout': {
+                'head': ['my custom head']
+                'meta': [ 'my first meta line',
+                          'my second meta line']
+            }
+        }
+    }
+
+The ``layout-structure`` must also be a dictionary, where each key reference an area in the used grid system.
+By default these can be: `head`, `meta`, `footer` and more.
+If the layout-structure is using a not supported key by the current grid-system, the entry gets ignored.
+E.g. grid ``simple`` is not supporting ``footer`` area.
+
+The values of a specific layout-structure area definition must be a list, where each entry must be a string and
+represents a single line in the later need representation.
+
+.. note::
+
+   ``Sphinx-Needs`` provides some default layouts. These layouts can **not** be overwritten.
+   See :ref:`layout list <layouts>` for more information.
+
 .. _needs_default_layout:
 
 needs_default_layout
 ~~~~~~~~~~~~~~~~~~~~~
 .. versionadded:: 0.5.0
 
-``needs_default_layout`` defines the layout to use by default.
+``needs_default_layout`` defines the layout to be used by default.
 
 The used layout name must be one provided already by Sphinx-Needs or one provided by user via
 configuration :ref:`needs_layouts`.
 
-default values of ``needs_default_layout`` is ``default``.
+Default value of ``needs_default_layout`` is ``clean``.
 
 .. code-block:: python
 
-      needs_default_layout = 'my_own_layout`
+      needs_default_layout = 'my_own_layout'
+
+.. _needs_default_style:
+
+needs_default_style
+~~~~~~~~~~~~~~~~~~~
+.. versionadded:: 0.5.0
+
+The value of ``needs_default_style`` is used as default value for each need, which does not define its own
+style information via ``:style:`` option.
+
+.. list-table::
+
+   - * **green** or **implemented**
+     * Green background
+   - * **red** or **open**
+     * Red background
+   - * **yellow** or **in_progress**
+     * Yellow background
+   - * **blue**
+     * Blue background
+   - * **green_border**
+     * Green border, but normal background
+   - * **red_border**
+     * Red border, but normal background
+   - * **yellow_border**
+     * Yellow border, but normal background
+   - * **blue_border**
+     * Blue border, but normal background
+
+.. code-block:: python
+
+   needs_default_layout = 'border_yellow'
+
+
+A combination of multiple styles is possible::
+
+   needs_default_style = 'blue, green_border'
+
+Custom values can be set as well, if your projects provides the needed css-files for it.
 
 Removed options
 ------------------

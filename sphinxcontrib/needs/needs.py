@@ -116,7 +116,6 @@ DEFAULT_DIAGRAM_TEMPLATE = \
 
 LAYOUT_COMMON_SIDE = {
             'side': [
-                '<<image("_static/useblocks_logo.png")>>'
             ],
             'head': [
                 '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>'
@@ -132,7 +131,7 @@ LAYOUTS = {
         'grid': 'simple',
         'layout': {
             'head': [
-                '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>  <<collapse_button("meta", collapsed="icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=True)>>'
+                '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>  <<collapse_button("meta", collapsed="icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=False)>>'
             ],
             'meta': [
                 '<<meta_all(no_links=True)>>',
@@ -308,6 +307,7 @@ def setup(app):
     app.add_config_value('needs_warnings', {}, 'html')
     app.add_config_value('needs_layouts', LAYOUTS, 'html')
     app.add_config_value('needs_default_layout', 'clean', 'html')
+    app.add_config_value('needs_default_style', None, 'html')
 
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))

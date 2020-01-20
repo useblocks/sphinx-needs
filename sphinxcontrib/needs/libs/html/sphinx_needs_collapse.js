@@ -1,11 +1,11 @@
-// $(document).ready(function() {
-//     $(".toggle > *").hide();
-//     $(".toggle .header").show();
-//     $(".toggle .header").click(function() {
-//         $(this).parent().children().not(".header").toggle(200);
-//         $(this).parent().children(".header").toggleClass("open");
-//     })
-// });
+$(document).ready(function() {
+    $(".toggle > *").hide();
+    $(".toggle .header").show();
+    $(".toggle .header").click(function() {
+        $(this).parent().children().not(".header").toggle(200);
+        $(this).parent().children(".header").toggleClass("open");
+    })
+});
 //
 // // readthedocs fix
 // // Readthedocs sets a wrapper around all tables, with a display attribute.

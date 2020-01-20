@@ -190,7 +190,7 @@ def process_needfilters(app, doctree, fromdocname):
                 # All links we can get from docutils functions will be relative.
                 # But the generated link in the svg will be relative to the svg-file location
                 # (e.g. server.com/docs/_images/sqwxo499cnq329439dfjne.svg)
-                # and not to current documentation. Therefore we need to add ../ to get out of the _image folder.
+                # and not to current documentation. Therefore we need to add ../ to get out of the image folder.
                 try:
                     link = "../" + app.builder.get_target_uri(need_info['docname']) \
                            + "?highlight={0}".format(urlParse(need_info['title'])) \

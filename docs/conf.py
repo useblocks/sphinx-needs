@@ -50,10 +50,8 @@ extensions = ['sphinxcontrib.plantuml',
               'sphinx.ext.autodoc',
               'matplotlib.sphinxext.plot_directive']
 
-add_module_names = False
-
-global TESTME
-TESTME = "abc"
+add_module_names = False  # Used to shorten function name output
+autodoc_docstring_signature = True  # Used to read spec. func-defs from docstring (e.g. get rid of self)
 
 # NEEDS CONFIGURATION
 
@@ -214,6 +212,9 @@ needs_warnings = {
     'type_check': 'type not in ["req", "spec", "impl", "test", "feature"]',
     # 'valid_status': 'status not in ["open", "in progress", "closed", "done", "implemented"] and status is not None'
 }
+
+needs_default_layout = 'clean'
+needs_default_style = None
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

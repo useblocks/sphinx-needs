@@ -109,7 +109,7 @@ which can be easily extended by different extensions to fulfill nearly any requi
 
    ``Sphinx-needs`` allows to customize needs-types, needs-options, colors, layouts, ids, checks, ... .
 
-   The pages :ref:`config` and :ref:`styles` are full of possibilities to adopt ``Sphinx-needs`` for your
+   The pages :ref:`config` and :ref:`layouts_styles` are full of possibilities to adopt ``Sphinx-needs`` for your
    own processes and workflows.
 
 .. feature:: API for other extensions
@@ -126,8 +126,6 @@ which can be easily extended by different extensions to fulfill nearly any requi
    :id: FEATURE_6
    :tags: introduction
    :links: SPEC_1
-   :layout: debug
-   :style: red
 
    ``Sphinx-needs`` allows to define the exact allowed way of using and configuring needs.
 

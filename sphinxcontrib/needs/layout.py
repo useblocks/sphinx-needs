@@ -49,6 +49,9 @@ def build_need(layout, node, app):
 
 
 class LayoutHandler:
+    """
+    Cares about the correct layout handling
+    """
     def __init__(self, app, need, layout, node):
         self.app = app
         self.need = need
@@ -67,8 +70,13 @@ class LayoutHandler:
                    'needs_grid_' + self.layout['grid'],
                    'needs_layout_' + self.layout_name]
 
+        if self.need['style'] is None:
+            self.need['style'] = getattr(self.app.config, 'needs_default_style', None)
+
         if self.need['style'] is not None and len(self.need['style']) > 0:
-            classes.append('needs_style_' + self.need['style'])
+            for style in self.need['style'].strip().split(','):
+                style = style.strip()
+                classes.append('needs_style_' + style)
         else:
             classes.append('needs_style_none')
 
@@ -197,14 +205,14 @@ class LayoutHandler:
                                inliner=None)
 
         self.functions = {
-            'meta': self._meta,
-            'meta_all': self._meta_all,
-            'meta_links': self._meta_links,
-            'meta_links_all': self._meta_links_all,
-            'meta_id': self._meta_id,
-            'image': self._image,
-            'link': self._link,
-            'collapse_button': self._collapse_button
+            'meta': self.meta,
+            'meta_all': self.meta_all,
+            'meta_links': self.meta_links,
+            'meta_links_all': self.meta_links_all,
+            'meta_id': self.meta_id,
+            'image': self.image,
+            'link': self.link,
+            'collapse_button': self.collapse_button
         }
 
     def get_need_table(self):
@@ -346,9 +354,12 @@ class LayoutHandler:
             data = data.replace(replace_string, self.need[item])
         return data
 
-    def _meta(self, name, prefix=None, show_empty=False):
+    def meta(self, name, prefix=None, show_empty=False):
         """
-        Returns the specific meta data of a need as a  inside docutils node,
+        Returns the specific meta data of a need inside docutils nodes.
+        Usage::
+
+            <<meta('status', prefix:'**status**', show_empty=True)>>
 
         :param name: name of the need item
         :param prefix: string as rst-code, will be added infront of the value output
@@ -397,7 +408,16 @@ class LayoutHandler:
 
         return data_container
 
-    def _meta_id(self):
+    def meta_id(self):
+        """
+        Returns the current need id as clickable and linked reference.
+
+        Usage::
+
+            <<meta_id()>>
+
+        :return: docutils node
+        """
         from sphinx.util.nodes import make_refnode
         id_container = nodes.inline(classes=["needs-id"])
 
@@ -411,9 +431,25 @@ class LayoutHandler:
         id_container += id_ref
         return id_container
 
-    def _meta_all(self, prefix='', postfix='', exclude=None, no_links=False, defaults=True, show_empty=False):
+    def meta_all(self, prefix='', postfix='', exclude=None, no_links=False, defaults=True, show_empty=False):
         """
-        ToDo: Define stuff which shall not be part of output
+        ``meta_all()`` excludes by default the output of: ``docname``, ``lineno``, ``target_node``, ``refid``,
+        ``content``, ``collapse``, ``parts``, ``id_parent``,
+        ``id_complete``, ``title``, ``full_title``, ``is_part``, ``is_need``,
+        ``type_prefix``, ``type_color``, ``type_style``, ``type``, ``type_name``, ``id``,
+        ``hide``, ``hide_status``, ``hide_tags``, ``sections``, ``section_name``.
+
+        To exclude further need-data, use ``exclude``, like ``exclude=['status', 'tags']``
+
+        To exclude nothing, set ``defaults`` to ``False``.
+
+        Usage::
+
+            <<meta_all(prefix='\*\*', postix='\*\*', no_links=True)>>
+
+        .. note::
+
+           You must escape all rst_content in your function strings! E.g. to get `**` one must use `\\\\*\\\\*`.
 
         :param prefix:
         :param postfix:
@@ -421,7 +457,7 @@ class LayoutHandler:
         :param defaults: If True, default excludes are added. This filters out all internal data, which is normally not
                          relevant for the user.
         :param show_empty: If true, also need data with no value will be printed. Mostly useful for debugging.
-        :return:
+        :return: docutils nodes
         """
         default_excludes = ['docname', 'lineno', 'target_node', 'refid', 'content', 'collapse', 'parts', 'id_parent',
                             'id_complete', 'title', 'full_title', 'is_part', 'is_need',
@@ -447,7 +483,7 @@ class LayoutHandler:
 
             data_line = nodes.line()
             label = prefix + '{}:'.format(data) + postfix + ' '
-            result = self._meta(data, label, show_empty)
+            result = self.meta(data, label, show_empty)
             if not show_empty and result is None or len(str(result)) == 0 or bool(result) is False:
                 continue
             if isinstance(result, list):
@@ -459,7 +495,15 @@ class LayoutHandler:
 
         return data_container
 
-    def _meta_links(self, name, incoming=False):
+    def meta_links(self, name, incoming=False):
+        """
+        Documents the set links of a given link type.
+        The documented links are all full clickable links to the target needs.
+
+        :param name:  link type name
+        :param incoming: If ``False``, outcoming links get documented. Use ``True`` for incoming
+        :return: docutils nodes
+        """
         data_container = nodes.inline(classes=[name])
         if name not in [x['option'] for x in self.app.config.needs_extra_links]:
             raise SphinxNeedLayoutException('Invalid link name {} for link-type'.format(name))
@@ -479,7 +523,14 @@ class LayoutHandler:
         data_container.append(node_links)
         return data_container
 
-    def _meta_links_all(self, prefix='', postfix=''):
+    def meta_links_all(self, prefix='', postfix=''):
+        """
+        Documents all used link types in the current link automatically.
+
+        :param prefix:  prefix string
+        :param postfix:  postfix string
+        :return: docutils nodes
+        """
         data_container = []
         for link_type in self.app.config.needs_extra_links:
             type_key = link_type['option']
@@ -487,7 +538,7 @@ class LayoutHandler:
                 outgoing_line = nodes.line()
                 outgoing_label = prefix + '{}:'.format(link_type['outgoing']) + postfix + ' '
                 outgoing_line += self._parse(outgoing_label)
-                outgoing_line += self._meta_links(link_type['option'], incoming=False)
+                outgoing_line += self.meta_links(link_type['option'], incoming=False)
                 data_container.append(outgoing_line)
 
             type_key = link_type['option'] + '_back'
@@ -495,12 +546,12 @@ class LayoutHandler:
                 incoming_line = nodes.line()
                 incoming_label = prefix + '{}:'.format(link_type['incoming']) + postfix + ' '
                 incoming_line += self._parse(incoming_label)
-                incoming_line += self._meta_links(link_type['option'], incoming=True)
+                incoming_line += self.meta_links(link_type['option'], incoming=True)
                 data_container.append(incoming_line)
 
         return data_container
 
-    def _image(self, url, height=None, width=None, align=None, no_link=False):
+    def image(self, url, height=None, width=None, align=None, no_link=False):
         """
 
         See https://docutils.sourceforge.io/docs/ref/rst/directives.html#images
@@ -516,6 +567,7 @@ class LayoutHandler:
 
             '<<image("_images/useblocks_logo.png", height="50px", align="center")>>',
             '<<image("icon:bell", height="20px", align="center")>>'
+
         :param url:
         :param height:
         :param width:
@@ -534,8 +586,16 @@ class LayoutHandler:
         if url is None or not isinstance(url, str):
             raise SphinxNeedLayoutException('not valid url given for image function in layout')
 
+        import os
+        # os.path.realpath(self.need)
+
         if url.startswith('icon:'):
             url = '_static/sphinx-needs/images/{}.svg'.format(url.split(':')[1])
+            # The url needs to be relative to the current document where the need is defined
+            # Otherwise the link is aiming "too high".
+            # Normally sphinx is doing this kind of calculation, but it looks like not in the current state
+            subfolder_amount = self.need['docname'].count('/')
+            url = '../' * subfolder_amount + url
 
         image_node = nodes.image(url, classes=['needs_image'], **options)
         image_node['candidates'] = '*'
@@ -555,7 +615,7 @@ class LayoutHandler:
 
         return image_node
 
-    def _link(self, url, text=None, image_url=None, image_height=None, image_width=None):
+    def link(self, url, text=None, image_url=None, image_height=None, image_width=None):
         """
         Shows a link.
         Link can be a text, an image or both
@@ -574,19 +634,22 @@ class LayoutHandler:
         link_node = nodes.reference(text, text, refuri=url)
 
         if image_url is not None:
-            image_node = self._image(image_url, image_height, image_width)
+            image_node = self.image(image_url, image_height, image_width)
             link_node.append(image_node)
 
         return link_node
 
-    def _collapse_button(self, target='meta', collapsed='Show', visible='Close', initial=False):
+    def collapse_button(self, target='meta', collapsed='Show', visible='Close', initial=False):
         """
+        To show icons instead of text on the button, use collapse_button() like this::
 
-        :param target:
-        :param collapsed:
-        :param visible:
+            <<collapse_button("icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=False)>>
+
+        :param target: css_name of row to collapse. Default is ``meta``
+        :param collapsed: Text or image/icon string to show when target rows are collapsed
+        :param visible: Text or image/icon string to show when target rows are visible
         :param initial: If True, initial status will hide rows after loading page.
-        :return:
+        :return: docutils nodes
         """
         coll_node_collapsed = nodes.inline(classes=['needs', 'collapsed'])
         coll_node_visible = nodes.inline(classes=['needs', 'visible'])
@@ -594,12 +657,12 @@ class LayoutHandler:
         if not collapsed.startswith('image:') and not collapsed.startswith('icon:'):
             coll_node_collapsed.append(nodes.Text(collapsed, collapsed))
         else:
-            coll_node_collapsed.append(self._image(collapsed.replace('image:', ''), width='17px', no_link=True))
+            coll_node_collapsed.append(self.image(collapsed.replace('image:', ''), width='17px', no_link=True))
 
         if not visible.startswith('image:') and not visible.startswith('icon:'):
             coll_node_visible.append(nodes.Text(visible, visible))
         else:
-            coll_node_visible.append(self._image(visible.replace('image:', ''), width='17px', no_link=True))
+            coll_node_visible.append(self.image(visible.replace('image:', ''), width='17px', no_link=True))
 
         coll_container = nodes.inline(classes=['needs', 'collapse'])
         # docutils does'nt allow has to add any html-attributes beside class and id to nodes.
@@ -626,7 +689,7 @@ class LayoutHandler:
         Creates most "simple" grid layouts.
         Side parts and footer can be activated via config.
 
-        .. code_block:: text
+        .. code-block:: text
 
             +------+---------+------+
             |      | Head    |      |

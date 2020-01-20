@@ -3,6 +3,8 @@ Changelog
 0.5.0 (not released yet)
 ------------------------
 
+* Improvement: Introduction of needs :ref:`layouts_styles`.
+* Improvement: Added config options :ref:`needs_layouts` and :ref:`needs_default_layout`.
 * Improvement: Added :ref:`needpie` which draws pie-charts based on :ref:`filter_string`.
 * Improvement: Added config option :ref:`needs_warnings`. (`#110 <https://github.com/useblocks/sphinxcontrib-needs/issues/110>`_)
 * Bugfix: Need css style name is now based on need-type and not on the longer, whitespace-containing type name.
@@ -10,7 +12,10 @@ Changelog
 * Bugfix: No more exception raise if ``copy`` value not set inside :ref:`needs_extra_links`.
 * Improvement: Better log message, if required id is missing. (`#112 <https://github.com/useblocks/sphinxcontrib-needs/issues/112>`_)
 
-* Removed needs_collapse_details, because now realized by layout
+* Removed: needs_collapse_details, because now realized by :ref:`layouts`.
+
+**WARNING**: This version changes a lot the html output and therefore the needed css selectors. So if you are using
+custom css definitions and need to update them.
 
 0.4.3
 -----
