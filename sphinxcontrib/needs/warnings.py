@@ -15,10 +15,23 @@ else:
 logger = logging.getLogger(__name__)
 
 
-def process_warnings(app, env):
+# def process_warnings(app, doctree, fromdocname):
+def process_warnings(app, exception):
+    if exception is not None:
+        return
+
+    env = app.env
     # If no needs were defined, we do not need to do anything
     if not hasattr(env, "needs_all_needs"):
         return
+
+    # Check if warnings already got executed.
+    # Needed because the used event gets executed multiple times, but warnings need to be checked only
+    # on first execution
+    if hasattr(env, "needs_warnings_executed") and env.needs_warnings_executed is True:
+        return
+
+    env.needs_warnings_executed = True
 
     needs = env.needs_all_needs
 

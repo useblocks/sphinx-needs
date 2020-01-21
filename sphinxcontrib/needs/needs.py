@@ -446,11 +446,12 @@ def setup(app):
     app.connect('doctree-resolved', process_need_incoming)
     app.connect('doctree-resolved', process_need_outgoing)
     app.connect('doctree-resolved', process_need_count)
+    app.connect('build-finished', process_warnings)
     app.connect('env-updated', install_datatables_static_files)
     app.connect('env-updated', install_feather_icons)
 
     # Called during consistency check, which if after everything got read in.
-    app.connect('env-check-consistency', process_warnings)
+    # app.connect('env-check-consistency', process_warnings)
 
     # Call this after all JS files, which perform DOM manipulation, have been called.
     # Otherwise newly added dom objects can not be collapsed
