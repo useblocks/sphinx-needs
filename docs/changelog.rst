@@ -15,7 +15,7 @@ Changelog
 * Removed: needs_collapse_details, because now realized by :ref:`layouts`.
 
 **WARNING**: This version changes a lot the html output and therefore the needed css selectors. So if you are using
-custom css definitions and need to update them.
+custom css definitions you need to update them.
 
 0.4.3
 -----

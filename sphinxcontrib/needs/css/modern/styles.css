@@ -9,7 +9,7 @@ table.needs_style_clean td{
     margin-bottom: 10px;
     border: none !important;
     width: 100%;
-    background: None;
+    background: None !important;
     padding: 0;
     box-shadow: None;
 }

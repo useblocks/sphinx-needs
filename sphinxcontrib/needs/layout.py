@@ -596,6 +596,19 @@ class LayoutHandler:
             # Normally sphinx is doing this kind of calculation, but it looks like not in the current state
             subfolder_amount = self.need['docname'].count('/')
             url = '../' * subfolder_amount + url
+        elif url.startswith('field:'):
+            field = url.split(':')[1]
+            try:
+                value = self.need[field]
+            except KeyError:
+                value = ''
+
+            if value is None or len(value) == 0:
+                return []
+
+            url = '_static/{}'.format(value)
+            subfolder_amount = self.need['docname'].count('/')
+            url = '../' * subfolder_amount + url
 
         image_node = nodes.image(url, classes=['needs_image'], **options)
         image_node['candidates'] = '*'

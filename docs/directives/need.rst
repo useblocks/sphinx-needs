@@ -270,7 +270,7 @@ sentence of the requirement.
     The first sentence will be the title.  Anything after the first
     sentence will not be part of the title.
 
-.. _need_layout::
+.. _need_layout:
 
 layout
 ~~~~~~

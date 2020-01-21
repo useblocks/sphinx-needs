@@ -8,7 +8,7 @@ All configurations take place in your project's conf.py file.
 
 .. contents::
    :local:
-
+   :depth: 2
 
 Activation
 ----------
@@ -916,6 +916,7 @@ E.g. grid ``simple`` is not supporting ``footer`` area.
 
 The values of a specific layout-structure area definition must be a list, where each entry must be a string and
 represents a single line in the later need representation.
+This line can contain :ref:`layout_functions`, which care about getting need-data or adding links.
 
 .. note::
 
@@ -948,24 +949,7 @@ needs_default_style
 The value of ``needs_default_style`` is used as default value for each need, which does not define its own
 style information via ``:style:`` option.
 
-.. list-table::
-
-   - * **green** or **implemented**
-     * Green background
-   - * **red** or **open**
-     * Red background
-   - * **yellow** or **in_progress**
-     * Yellow background
-   - * **blue**
-     * Blue background
-   - * **green_border**
-     * Green border, but normal background
-   - * **red_border**
-     * Red border, but normal background
-   - * **yellow_border**
-     * Yellow border, but normal background
-   - * **blue_border**
-     * Blue border, but normal background
+See :ref:`styles` for a list of default style names.
 
 .. code-block:: python
 

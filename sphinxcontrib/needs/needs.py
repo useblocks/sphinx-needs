@@ -116,6 +116,7 @@ DEFAULT_DIAGRAM_TEMPLATE = \
 
 LAYOUT_COMMON_SIDE = {
             'side': [
+                '<<image("field:image", align="center")>>'
             ],
             'head': [
                 '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>'
@@ -131,7 +132,8 @@ LAYOUTS = {
         'grid': 'simple',
         'layout': {
             'head': [
-                '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>  <<collapse_button("meta", collapsed="icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=False)>>'
+                '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>  <<collapse_button("meta", '
+                'collapsed="icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=False)>> '
             ],
             'meta': [
                 '<<meta_all(no_links=True)>>',
@@ -214,9 +216,13 @@ LAYOUTS = {
         }
     },
     'debug': {
-        'grid': 'content_footer',
+        'grid': 'simple',
         'layout': {
-            'footer': [
+            'head': [
+                '<<meta_id()>> **<<meta("title")>>**',
+                '**<<collapse_button("meta", collapsed="Debug view on", visible="Debug view off", initial=True)>>**'
+            ],
+            'meta': [
                 '<<meta_all(exclude=[], defaults=False, show_empty=True)>>'
             ]
         }

@@ -29,4 +29,4 @@ Need some material to convince team members and managers to use Sphinx together 
 
 Download our paper: :download:`sphinx_needs_paper.pdf <_static/sphinx_needs_paper.pdf>`.
 
-It contains a short feature description and some basic numbers about this projects compared to other solutions.
+It contains a short feature description and some basic numbers about this project compared to other solutions.

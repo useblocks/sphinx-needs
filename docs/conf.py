@@ -204,6 +204,7 @@ needs_extra_options = {
          "comment": directives.unchanged,
          "amount": directives.unchanged,
          "hours": directives.unchanged,
+         "image": directives.unchanged,
          }
 
 needs_title_from_content = True
