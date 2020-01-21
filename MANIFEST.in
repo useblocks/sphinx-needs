@@ -2,3 +2,4 @@ include sphinxcontrib/needs/directives/needimport_template.rst
 
 graft sphinxcontrib/needs/css
 graft sphinxcontrib/needs/libs
+graft sphinxcontrib/needs/images
