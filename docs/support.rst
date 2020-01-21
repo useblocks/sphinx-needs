@@ -22,4 +22,11 @@ Fastest way of reaching us is via e-mail: mail@useblocks.com.
    :width: 100px
    :target: http://useblocks.com
 
+Convince your team
+------------------
 
+Need some material to convince team members and managers to use Sphinx together with Sphinx-Needs for your project?
+
+Download our paper: :download:`sphinx_needs_paper.pdf <_static/sphinx_needs_paper.pdf>`.
+
+It contains a short feature description and some basic numbers about this projects compared to other solutions.
