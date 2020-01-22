@@ -73,8 +73,8 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
     :param tags: Tags as single string.
     :param links_string: Links as single string.
     :param hide: boolean value.
-    :param hide_tags: boolean value.
-    :param hide_status: boolean value.
+    :param hide_tags: boolean value. (Not used with Sphinx-Needs >0.5.0)
+    :param hide_status: boolean value. (Not used with Sphinx-Needs >0.5.0)
     :param collapse: boolean value.
     :param style: String value of class attribute of node.
     :param layout: String value of layout definition to use
@@ -208,8 +208,6 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
         'style': style,
         'layout': layout,
         'hide': hide,
-        'hide_tags': hide_tags,
-        'hide_status': hide_status,
         'parts': {},
 
         'is_part': False,

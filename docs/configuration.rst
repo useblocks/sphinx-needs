@@ -337,28 +337,6 @@ So also :ref:`needflow_link_types` for more details.
 
 Default value: ``['links']``
 
-.. _needs_hide_options:
-
-needs_hide_options
-~~~~~~~~~~~~~~~~~~
-
-.. versionadded:: 0.3.0
-
-Can be used to hide specific options from general output in rendered document::
-
-   needs_hide_options = ['tags', 'global_option']
-
-Works with local set options, extra options and global options.
-
-Default value: ``['hidden']``
-
-The ``hidden`` option is a globally available option, which is always hidden and
-can be used to easily execute :ref:`dynamic_functions`.
-
-Combined with :ref:`dynamic_functions` and :ref:`needs_global_options` this configuration can be used to perform
-complex calculations in the background and hide any output.
-
-
 needs_diagram_template
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -749,25 +727,6 @@ Supported values:
 * incoming
 * outgoing
 
-
-.. _needs_collapse_details:
-
-needs_collapse_details
-~~~~~~~~~~~~~~~~~~~~~~
-
-.. versionadded:: 0.2.0
-
-If true, need details like status, tags or links are collapsed and shown only after a click on the need title.
-
-.. code-block:: python
-
-    # conf.py
-    needs_collapse_details = False
-
-Default value: True
-
-Can be overwritten for each single need by setting :ref:`need_collapse`.
-
 .. _needs_id_regex:
 
 needs_id_regex
@@ -1024,8 +983,7 @@ Available jinja variables are:
 * title
 * content
 * hide
-* hide_tags
-* hide_status
+
 
 .. warning::
 
@@ -1079,3 +1037,56 @@ Default value:
    {% endraw %}
 
 For more details please see :ref:`needs_template`.
+
+.. _needs_hide_options:
+
+needs_hide_options
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.3.0
+
+*removed: 0.5.0*
+
+.. note::
+
+   To remove options from output in ``Sphinx-Needs`` version >= ``0.5.0`` you must provide your own layout, which
+   does not include these options. See :ref:``layouts_styles`` for more information.
+
+Can be used to hide specific options from general output in rendered document::
+
+   needs_hide_options = ['tags', 'global_option']
+
+Works with local set options, extra options and global options.
+
+Default value: ``['hidden']``
+
+The ``hidden`` option is a globally available option, which is always hidden and
+can be used to easily execute :ref:`dynamic_functions`.
+
+Combined with :ref:`dynamic_functions` and :ref:`needs_global_options` this configuration can be used to perform
+complex calculations in the background and hide any output.
+
+.. _needs_collapse_details:
+
+needs_collapse_details
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.2.0
+
+*removed: 0.5.0*
+
+.. note::
+
+   Starting with version 0.5.0 the used :ref:`layout <layouts>` decides, what the default behavior is.
+   To customize this behavior, you have to create your own :ref:`layout <layouts>`.
+
+If true, need details like status, tags or links are collapsed and shown only after a click on the need title.
+
+.. code-block:: python
+
+    # conf.py
+    needs_collapse_details = False
+
+Default value: True
+
+Can be overwritten for each single need by setting :ref:`need_collapse`.

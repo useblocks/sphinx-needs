@@ -28,8 +28,8 @@ class HtmlNeed(object):
 
     @property
     def title(self):
-        title = self.need.find(".//html:span[@class='needs-title']", NS)
-        return title.text if title is not None else None
+        title = self.need.find(".//html:span[@class='needs_title']", NS)
+        return title[0].text if title is not None else None  # title[0] aims to the span_data element
 
 
 def extract_needs_from_html(html):
@@ -47,8 +47,8 @@ def extract_needs_from_html(html):
 
     etree = ElementTree.ElementTree()
     document = etree.parse(source, parser=parser)
-    divs = document.findall(".//html:div", NS)
-    return [HtmlNeed(div) for div in divs if 'need-req' in div.get('class', '')]
+    tables = document.findall(".//html:table", NS)
+    return [HtmlNeed(table) for table in tables if 'need' in table.get('class', '')]
 
 
 @with_app(buildername='html', srcdir='doc_test/title_optional')

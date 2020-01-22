@@ -44,9 +44,8 @@ Supported options:
 * :ref:`need_tags`
 * :ref:`need_links`
 * :ref:`need_hide`
-* :ref:`need_hide_status`
-* :ref:`need_hide_tags`
 * :ref:`need_collapse`
+* :ref:`need_layout`
 * :ref:`need_style`
 
 .. _need_id:
@@ -170,18 +169,6 @@ hide
 ~~~~
 There is an option **:hide:**, if this is set (no value is needed), the need will not be printed in
 documentation. But it will show up in need filters!
-
-.. _need_hide_status:
-
-hide_status
-~~~~~~~~~~~
-You can also use **:hide_status:**  to hide status information for a need.
-
-.. _need_hide_tags:
-
-hide_tags
-~~~~~~~~~
-Or use **:hide_tags:** to hide the tags of a need.
 
 .. _need_collapse:
 
@@ -371,3 +358,33 @@ Customized Options
 Sphinx-Needs supports the definition and filtering of customized options for needs.
 
 Please see :ref:`needs_extra_options` for detailed information and examples.
+
+
+Removed Options
+---------------
+
+.. _need_hide_status:
+
+hide_status
+~~~~~~~~~~~
+*removed: 0.5.0*
+
+.. note::
+
+   To remove options from output in ``Sphinx-Needs`` version >= ``0.5.0`` you must provide your own layout, which
+   does not include these options. See :ref:``layouts_styles`` for more information.
+
+You can also use **:hide_status:**  to hide status information for a need.
+
+.. _need_hide_tags:
+
+hide_tags
+~~~~~~~~~
+*removed: 0.5.0*
+
+.. note::
+
+   To remove options from output in ``Sphinx-Needs`` version >= ``0.5.0`` you must provide your own layout, which
+   does not include these options. See :ref:``layouts_styles`` for more information.
+
+Or use **:hide_tags:** to hide the tags of a need.

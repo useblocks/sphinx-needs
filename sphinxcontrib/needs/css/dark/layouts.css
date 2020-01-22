@@ -1,0 +1,46 @@
+/* ******************* */
+/* FOCUS based layouts */
+/* ******************* */
+table.needs_layout_focus_l td.side {
+    text-orientation: upright;
+    writing-mode: sideways-lr;
+    font-size: small;
+}
+
+table.needs_layout_focus_r td.side {
+    text-orientation: upright;
+    writing-mode: sideways-rl;
+    font-size: small;
+}
+
+/* ********************** */
+/* COMPLETE based layouts */
+/* ********************** */
+table.needs_layout_complete td.head_left {
+    text-align: left;
+    background-color: rgba(0,0,0,0.1);
+    font-size: smaller;
+}
+
+table.needs_layout_complete td.head_center {
+    text-align: center;
+    font-weight: bold;
+}
+
+table.needs_layout_complete td.head_right {
+    text-align: right;
+    background-color: rgba(0,0,0,0.1);
+    font-size: smaller;
+}
+
+table.needs_layout_complete tr.footer {
+    background-color: rgba(0,0,0,0.1);
+}
+
+table.needs_layout_complete td.footer_right {
+    text-align: right;
+}
+
+table.needs_layout_complete td.footer {
+    text-align: center;
+}

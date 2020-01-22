@@ -1,0 +1,67 @@
+/* whole NEED container */
+div.need {
+
+}
+
+/*
+Styles based on need type
+*************************
+The name depends on the type name.
+If a type like "story" was configured in conf.py,
+span.needs-story can be used for custom styles for this type.
+*/
+
+span.needs-specification {
+
+}
+
+span.needs-requirement {
+
+}
+
+/*
+Single elements
+***************
+*/
+
+/* The type text of a need. The part before the title starts */
+span.needs-type {
+
+}
+
+/* The title text of need. Part between need type and need id */
+span.needs-title {
+
+}
+
+/* The ID of a need (text behind the need title) */
+span.needs-id {
+
+}
+
+/* Tags inside a need*/
+span.needs-tag {
+
+}
+
+/* Status of a need */
+span.needs-status {
+
+}
+
+/* Outgoing need links.
+Applies for outgoing links inside a need and for the role :need_outgoing: */
+em.need_outgoing {
+
+}
+
+/* Incoming need links.
+Applies for incoming links inside a need and for the role :need_incoming: */
+em.need_incoming {
+
+}
+
+/* Linked needs inside text (by using role :need:)*/
+em.need {
+
+}

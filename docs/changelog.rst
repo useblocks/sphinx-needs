@@ -12,7 +12,10 @@ Changelog
 * Bugfix: No more exception raise if ``copy`` value not set inside :ref:`needs_extra_links`.
 * Improvement: Better log message, if required id is missing. (`#112 <https://github.com/useblocks/sphinxcontrib-needs/issues/112>`_)
 
-* Removed: needs_collapse_details, because now realized by :ref:`layouts`.
+* Removed: Configuration option :ref:`needs_collapse_details`. This is now realized by :ref:`layouts`.
+* Removed: Configuration option :ref:`needs_hide_options`. This is now realized by :ref:`layouts`.
+* Removed: Need option :ref:`need_hide_status`. This is now realized by :ref:`layouts`.
+* Removed: Need option :ref:`need_hide_tags`. This is now realized by :ref:`layouts`.
 
 **WARNING**: This version changes a lot the html output and therefore the needed css selectors. So if you are using
 custom css definitions you need to update them.

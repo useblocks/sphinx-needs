@@ -67,9 +67,6 @@ class NeedDirective(Directive):
                    'links': directives.unchanged_required,
                    'collapse': directives.unchanged_required,
                    'hide': directives.flag,
-                   'hide_tags': directives.flag,
-                   'hide_status': directives.flag,
-                   'hide_links': directives.flag,
                    'title_from_content': directives.flag,
                    'style': directives.unchanged_required,
                    'layout': directives.unchanged_required}
@@ -102,8 +99,6 @@ class NeedDirective(Directive):
             collapse = getattr(env.app.config, "needs_collapse_details", None)
 
         hide = True if "hide" in self.options.keys() else False
-        hide_tags = True if "hide_tags" in self.options.keys() else False
-        hide_status = True if "hide_status" in self.options.keys() else False
 
         id = self.options.get("id", None)
         content = "\n".join(self.content)
@@ -122,7 +117,7 @@ class NeedDirective(Directive):
         return add_need(env.app, self.state, self.docname, self.lineno,
                         need_type=self.name, title=self.trimmed_title, id=id, content=content,
                         status=status, tags=tags,
-                        hide=hide, hide_tags=hide_tags, hide_status=hide_status,
+                        hide=hide,
                         collapse=collapse, style=style, layout=layout, **need_extra_options)
 
     def read_in_links(self, name):
@@ -308,28 +303,6 @@ def process_need_nodes(app, doctree, fromdocname):
 
         build_need(layout, node_need, app)
 
-        # node_headline = construct_headline(need_data, app)
-        # node_meta = construct_meta(need_data, env)
-
-        # Collapse check
-        # if need_data["collapse"] and "HTML" in app.builder.name.upper():
-        #     # HEADER
-        #     node_need_toogle_container = nodes.container(classes=['toggle'])
-        #     node_need_toogle_head_container = nodes.container(classes=['header'])
-        #     node_need_toogle_head_container += node_headline.children
-        #
-        #     node_need_toogle_container.append(node_need_toogle_head_container)
-        #
-        #     # Only add node_meta(line_block), if it has lines in it
-        #     # Otherwise the pdf/latex build will claim about an empty line_block.
-        #     if node_meta.children:
-        #         node_need_toogle_container.append(node_meta)
-        #
-        #     node_need.insert(0, node_need_toogle_container)
-        # else:
-        #     node_meta.insert(0, node_headline)
-        #     node_need.insert(0, node_meta)
-
 
 def create_back_links(env, option):
     """
@@ -365,160 +338,6 @@ def create_back_links(env, option):
                         needs[link_main]['parts'][link_part][option_back].append(key)
 
     env.needs_workflow['backlink_creation_{}'.format(option)] = True
-
-
-def construct_headline(need_data, app):
-    """
-    Constructs the node-structure for the headline/title container
-    :param need_data: need_info container
-    :return: node
-    """
-    # need title calculation
-    title_type = '{}: '.format(need_data["type_name"])
-    title_headline = need_data["title"]
-    title_id = "{}".format(need_data["id"])
-    title_spacer = " "
-
-    # need title
-    node_type = nodes.inline(title_type, title_type, classes=["needs-type"])
-    node_title = nodes.inline(title_headline, title_headline, classes=["needs-title"])
-
-    nodes_id = nodes.inline(classes=["needs-id"])
-
-    nodes_id_text = nodes.Text(title_id, title_id)
-    id_ref = make_refnode(app.builder,
-                          fromdocname=need_data['docname'],
-                          todocname=need_data['docname'],
-                          targetid=need_data['id'],
-                          child=nodes_id_text.deepcopy(),
-                          title=title_id)
-    nodes_id += id_ref
-
-    node_spacer = nodes.inline(title_spacer, title_spacer, classes=["needs-spacer"])
-
-    headline_line = nodes.line(classes=["headline"])
-    headline_line.append(node_type)
-    headline_line.append(node_spacer)
-    headline_line.append(node_title)
-    headline_line.append(node_spacer)
-    headline_line.append(nodes_id)
-
-    return headline_line
-
-
-def construct_meta(need_data, env):
-    """
-    Constructs the node-structure for the status container
-    :param need_data: need_info container
-    :return: node
-    """
-
-    hide_options = env.config.needs_hide_options
-    if not isinstance(hide_options, list):
-        raise SphinxError('Config parameter needs_hide_options must be of type list')
-
-    node_meta = nodes.line_block(classes=['needs_meta'])
-    # need parameters
-    param_status = "status: "
-    param_tags = "tags: "
-    param_style = "style: "
-
-    if need_data["status"] is not None and 'status' not in hide_options:
-        status_line = nodes.line(classes=['status'])
-        # node_status = nodes.line(param_status, param_status, classes=['status'])
-        node_status = nodes.inline(param_status, param_status, classes=['status'])
-        status_line.append(node_status)
-        status_line.append(nodes.inline(need_data["status"], need_data["status"],
-                                        classes=["needs-status", str(need_data['status'])]))
-        node_meta.append(status_line)
-
-    if need_data["tags"] and 'tags' not in hide_options:
-        tag_line = nodes.line(classes=['tags'])
-        # node_tags = nodes.line(param_tags, param_tags, classes=['tags'])
-        node_tags = nodes.inline(param_tags, param_tags, classes=['tags'])
-        tag_line.append(node_tags)
-        for tag in need_data['tags']:
-            # node_tags.append(nodes.inline(tag, tag, classes=["needs-tag", str(tag)]))
-            # node_tags.append(nodes.inline(' ', ' '))
-            tag_line.append(nodes.inline(tag, tag, classes=["needs-tag", str(tag)]))
-            tag_line.append(nodes.inline(' ', ' '))
-        node_meta.append(tag_line)
-
-    # Links incoming
-    for link_type in env.config.needs_extra_links:
-        link_back = '{}_back'.format(link_type['option'])
-        if need_data[link_back] and link_back not in hide_options:
-            node_incoming_line = nodes.line(classes=[link_type['option'], 'incoming'])
-            prefix = "{}: ".format(link_type['incoming'])
-            node_incoming_prefix = nodes.inline(prefix, prefix)
-            node_incoming_line.append(node_incoming_prefix)
-            node_incoming_links = Need_incoming(reftarget=need_data['id'], link_type=link_back)
-            node_incoming_links.append(nodes.inline(need_data['id'], need_data['id']))
-            node_incoming_line.append(node_incoming_links)
-            node_meta.append(node_incoming_line)
-
-    # Links outgoing
-    for link_type in env.config.needs_extra_links:
-        link = '{}'.format(link_type['option'])
-        if need_data[link] and link not in hide_options:
-            node_outgoing_line = nodes.line(classes=[link_type['option'], 'outgoing'])
-            prefix = "{}: ".format(link_type['outgoing'])
-            node_outgoing_prefix = nodes.inline(prefix, prefix)
-            node_outgoing_line.append(node_outgoing_prefix)
-            node_outgoing_links = Need_outgoing(reftarget=need_data['id'], link_type=link)
-            node_outgoing_links.append(nodes.inline(need_data['id'], need_data['id']))
-            node_outgoing_line.append(node_outgoing_links)
-            node_meta.append(node_outgoing_line)
-
-    if need_data["style"] is not None and 'style' not in hide_options and len(need_data["style"]) > 0:
-        style_line = nodes.line(classes=['style'])
-        node_status = nodes.inline(param_style, param_style, classes=['style'])
-        style_line.append(node_status)
-        style_line.append(nodes.inline(need_data["style"], need_data["style"],
-                                       classes=["needs-style", str(need_data['style'])]))
-        node_meta.append(style_line)
-
-    extra_options = getattr(env.config, 'needs_extra_options', {})
-    node_extra_options = []
-    for key, value in extra_options.items():
-        if key in hide_options:
-            continue
-        param_data = need_data[key]
-        if (param_data is None or not param_data) and param_data != 0:
-            continue
-        param_option = '{}: '.format(key)
-        option_line = nodes.line(classes=['extra_option'])
-        option_line.append(nodes.inline(param_option, param_option, classes=['extra_option']))
-        option_line.append(nodes.inline(param_data, param_data,
-                                        classes=["needs-extra-option", str(key)]))
-        node_extra_options.append(option_line)
-
-    node_meta += node_extra_options
-
-    global_options = getattr(env.config, 'needs_global_options', {})
-    node_global_options = []
-    link_types = [x['option'] for x in env.config.needs_extra_links]
-    for key, value in global_options.items():
-        # If a global option got locally overwritten, it must already part of extra_options.
-        # In this skipp output, as this is done during extra_option handling
-        # Also if it is part of link_types, the handling is already done.
-        # So skip in all of these cases
-        if key in extra_options or key in hide_options or key in link_types:
-            continue
-
-        param_data = need_data[key]
-        if param_data is None or not param_data:
-            continue
-        param_option = '{}: '.format(key)
-        global_option_line = nodes.line(classes=['global_option'])
-        global_option_line.append(nodes.inline(param_option, param_option, classes=['global_option']))
-        global_option_line.append(nodes.inline(param_data, param_data,
-                                               classes=["needs-global-option", str(key)]))
-        node_global_options.append(global_option_line)
-
-    node_meta += node_global_options
-
-    return node_meta
 
 
 def _fix_list_dyn_func(list):

@@ -14,16 +14,16 @@ def test_section_is_usable_in_filters(app, status, warning):
     html = Path(app.outdir, 'index.html').read_text()
 
     tables = re.findall("(<table .*?</table>)", html, re.DOTALL)
-    assert len(tables) == 2
+    assert len(tables) == 4
 
     # All requirements should be in first table
-    assert 'R_12345' in tables[0]
-    assert 'First Section' in tables[0]
-    assert 'R_12346' in tables[0]
-    assert 'Second Section' in tables[0]
+    assert 'R_12345' in tables[2]
+    assert 'First Section' in tables[2]
+    assert 'R_12346' in tables[2]
+    assert 'Second Section' in tables[2]
 
     # Only requirements from the first section should be in table 2
-    assert 'R_12345' in tables[1]
-    assert 'First Section' in tables[1]
-    assert 'R_12346' not in tables[1]
-    assert 'Second Section' not in tables[1]
+    assert 'R_12345' in tables[3]
+    assert 'First Section' in tables[3]
+    assert 'R_12346' not in tables[3]
+    assert 'Second Section' not in tables[3]

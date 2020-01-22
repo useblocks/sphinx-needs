@@ -41,6 +41,10 @@ def build_need(layout, node, app):
     need_id = node.attributes["ids"][0]
     need_data = needs[need_id]
 
+    if need_data['hide']:
+        node.parent.replace(node, [])
+        return
+
     lh = LayoutHandler(app, need_data, need_layout, node)
     new_need_node = lh.get_need_table()
 
