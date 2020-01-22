@@ -559,7 +559,7 @@ class LayoutHandler:
         If url starts with ``icon:`` the following string is taken is icon-name and the related icon is shown.
         Example: ``icon:activity`` will show:
 
-        .. image:: _static/sphinx-needs/images/activity.svg
+        .. image:: _static/activity.svg
 
         For all icons, see https://feathericons.com/.
 

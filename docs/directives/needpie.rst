@@ -3,7 +3,7 @@
 needpie
 ========
 
-.. versionadded:: 0.4.4
+.. versionadded:: 0.5.0
 
 ``needpie`` adds a pie-chart to your documentation::
 

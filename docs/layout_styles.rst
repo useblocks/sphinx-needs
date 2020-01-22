@@ -364,6 +364,21 @@ Different styles can also be combined by setting a comma-separated string: ``yel
    :tags: example
    :style: yellow, red_border
 
+Using styles
+~~~~~~~~~~~~
+There are two ways of setting a style for a need:
+
+Set it globally via :ref:`needs_default_style` in your ``conf.py`` file::
+
+   # conf.py
+   needs_default_style = 'red'
+
+Or set it locally for each need by using :ref:`need_style` option::
+
+   .. req:: My requirement
+      :style: red
+
+By setting a style to ``None``, no style is set and the normal Sphinx-Needs style is used.
 
 Own style configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -476,9 +491,8 @@ simple_side_left
 |      | meta    |
 |      +---------+
 |      | content |
-|      +---------+
-|      | footer  |
 +------+---------+
+
 
 .. _grid_simple_side_right:
 
@@ -490,9 +504,8 @@ simple_side_right
 | meta    |      |
 +---------+      |
 | content |      |
-+---------+      |
-| footer  |      |
 +---------+------+
+
 
 .. _grid_simple_side_left_partial:
 
@@ -505,8 +518,6 @@ simple_side_left_partial
 +------+------+
 | content     |
 +-------------+
-| footer      |
-+-------------+
 
 .. _grid_simple_side_right_partial:
 
@@ -518,8 +529,6 @@ simple_side_right_partial
 | meta |      |
 +------+------+
 | content     |
-+-------------+
-| footer      |
 +-------------+
 
 Complex grids
