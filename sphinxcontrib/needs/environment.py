@@ -13,7 +13,7 @@ if parse_version(sphinx_version) >= parse_version("1.6"):
     from sphinx.util import status_iterator  # NOQA Sphinx 1.5
 
 
-STATICS_DIR_NAME = '_static'
+IMAGE_DIR_NAME = '_static'
 
 
 def safe_add_file(filename, app):
@@ -63,7 +63,7 @@ def safe_remove_file(filename, app):
 # Base implementation from sphinxcontrib-images
 # https://github.com/spinus/sphinxcontrib-images/blob/master/sphinxcontrib/images.py#L203
 def install_styles_static_files(app, env):
-    STATICS_DIR_PATH = os.path.join(app.builder.outdir, STATICS_DIR_NAME)
+    STATICS_DIR_PATH = os.path.join(app.builder.outdir, IMAGE_DIR_NAME)
     dest_path = os.path.join(STATICS_DIR_PATH, 'sphinx-needs')
 
     files_to_copy = ["common.css"]
@@ -119,7 +119,7 @@ def install_styles_static_files(app, env):
 
 
 def install_datatables_static_files(app, env):
-    STATICS_DIR_PATH = os.path.join(app.builder.outdir, STATICS_DIR_NAME)
+    STATICS_DIR_PATH = os.path.join(app.builder.outdir, IMAGE_DIR_NAME)
     dest_path = os.path.join(STATICS_DIR_PATH, 'sphinx-needs/libs/html')
 
     source_folder = os.path.join(os.path.dirname(__file__), "libs/html")
@@ -158,7 +158,7 @@ def install_datatables_static_files(app, env):
 
 
 def install_collapse_static_files(app, env):
-    STATICS_DIR_PATH = os.path.join(app.builder.outdir, STATICS_DIR_NAME)
+    STATICS_DIR_PATH = os.path.join(app.builder.outdir, IMAGE_DIR_NAME)
     dest_path = os.path.join(STATICS_DIR_PATH, 'sphinx-needs')
 
     source_folder = os.path.join(os.path.dirname(__file__), "libs/html")
@@ -191,10 +191,14 @@ def install_collapse_static_files(app, env):
 
 
 def install_feather_icons(app, env):
-    STATICS_DIR_PATH = os.path.join(app.builder.outdir, STATICS_DIR_NAME)
+    STATICS_DIR_PATH = os.path.join(app.builder.outdir, IMAGE_DIR_NAME)
     dest_path = os.path.join(STATICS_DIR_PATH, 'sphinx-needs/images')
 
-    source_folder = os.path.join(os.path.dirname(__file__), "images/feather/")
+    source_folder = os.path.join(os.path.dirname(__file__), "images/feather_svg/")
+    if any(x in app.builder.name.upper() for x in ['PDF', 'LATEX']):
+        # latexpdf can't handle svg files. We not to use the png format here.
+        source_folder = os.path.join(os.path.dirname(__file__), "images/feather_png/")
+
     files_to_copy = []
 
     for root, dirs, files in os.walk(source_folder):

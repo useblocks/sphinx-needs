@@ -66,6 +66,19 @@ LAYOUT_COMMON_SIDE = {
         }
 
 LAYOUTS = {
+    'test': {
+        'grid': 'simple',
+        'layout': {
+            'head': [
+                '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>  <<collapse_button("meta", '
+                'collapsed="icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=False)>> '
+            ],
+            'meta': [
+                '<<meta_all(no_links=True)>>',
+                '<<meta_links_all()>>'
+            ],
+        }
+    },
     'clean': {
         'grid': 'simple',
         'layout': {
@@ -350,7 +363,7 @@ def setup(app):
     app.add_role('need_part', XRefRole(nodeclass=NeedPart,
                                        innernodeclass=nodes.inline,
                                        warn_dangling=True))
-    # Shortcut for need_inline
+    # Shortcut for need_part
     app.add_role('np', XRefRole(nodeclass=NeedPart,
                                 innernodeclass=nodes.inline,
                                 warn_dangling=True))

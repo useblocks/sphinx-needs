@@ -4,6 +4,14 @@ table.need td.need {
     white-space: normal;
 }
 
+table.need tr.head div.line-block,
+table.need tr.meta div.line-block,
+table.need tr.footer div.line-block {
+    display: block;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
 
 /* DataTable layout*/
 table.dataTable {

@@ -240,9 +240,11 @@ class LayoutHandler:
             # Return nothing, if not specific configuration is given for layout section
             return []
 
-        lines_container = nodes.container(classes=['needs_{}'.format(section)])
+        #
+        lines_container = nodes.line_block(classes=['needs_{}'.format(section)])
 
         for line in lines:
+            # line_block_node = nodes.line_block()
             line_node = nodes.line()
 
             line_parsed = self._parse(line)
@@ -563,7 +565,7 @@ class LayoutHandler:
         If url starts with ``icon:`` the following string is taken is icon-name and the related icon is shown.
         Example: ``icon:activity`` will show:
 
-        .. image:: _static/activity.svg
+        .. image:: _static/activity.png
 
         For all icons, see https://feathericons.com/.
 
@@ -590,16 +592,22 @@ class LayoutHandler:
         if url is None or not isinstance(url, str):
             raise SphinxNeedLayoutException('not valid url given for image function in layout')
 
-        import os
-        # os.path.realpath(self.need)
-
         if url.startswith('icon:'):
-            url = '_static/sphinx-needs/images/{}.svg'.format(url.split(':')[1])
-            # The url needs to be relative to the current document where the need is defined
-            # Otherwise the link is aiming "too high".
-            # Normally sphinx is doing this kind of calculation, but it looks like not in the current state
-            subfolder_amount = self.need['docname'].count('/')
-            url = '../' * subfolder_amount + url
+            if any(x in self.app.builder.name.upper() for x in ['PDF', 'LATEX']):
+                # latexpdf can't handle svg files. We not to use the png format here.
+                builder_extension = 'png'
+            else:
+                builder_extension = 'svg'
+
+            url = '_static/sphinx-needs/images/{}.{}'.format(url.split(':')[1], builder_extension)
+
+            if any(x in self.app.builder.name.upper() for x in ['PDF', 'LATEX']) is False:
+                # This is not needed for Latex. as latex puts the complete content in a single text file on root level
+                # The url needs to be relative to the current document where the need is defined
+                # Otherwise the link is aiming "too high".
+                # Normally sphinx is doing this kind of calculation, but it looks like not in the current state
+                subfolder_amount = self.need['docname'].count('/')
+                url = '../' * subfolder_amount + url
         elif url.startswith('field:'):
             field = url.split(':')[1]
             try:
