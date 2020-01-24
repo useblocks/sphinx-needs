@@ -118,7 +118,6 @@ There are also some *extensions* for the layouts above available:
 The layouts ``clean_l``, ``clean_r``, ``clean_lp`` and ``clean_rp`` are using the value from the field ``image`` as
 source for the image in the side element. This field must made available via :ref:`needs_extra_options`.
 If you need another field as source, you must create your own layout.
-The image must also be available in the ``_static`` folder.
 
 **Examples**
 
@@ -126,7 +125,7 @@ The image must also be available in the ``_static`` folder.
    :id: EX_CLEAN_L
    :status: open
    :tags: a, b, c, example
-   :image: needs_logo.png
+   :image: _images/needs_logo.png
    :layout: clean_l
 
    This is a need using **CLEAN_L layout**.
@@ -135,7 +134,7 @@ The image must also be available in the ``_static`` folder.
    :id: EX_CLEAN_R
    :status: open
    :tags: a, b, c, example
-   :image: needs_logo.png
+   :image:  _images/needs_logo.png
    :layout: clean_r
 
    This is a need using **CLEAN_R layout**.
@@ -144,7 +143,7 @@ The image must also be available in the ``_static`` folder.
    :id: EX_CLEAN_LP
    :status: open
    :tags: a, b, c, example
-   :image: needs_logo.png
+   :image:  _images/needs_logo.png
    :layout: clean_lp
 
    This is a need using **CLEAN_LP layout**.
@@ -153,7 +152,7 @@ The image must also be available in the ``_static`` folder.
    :id: EX_CLEAN_RP
    :status: open
    :tags: a, b, c, example
-   :image: needs_logo.png
+   :image:  _images/needs_logo.png
    :layout: clean_rp
 
    This is a need using **CLEAN_RP layout**.

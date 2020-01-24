@@ -240,7 +240,10 @@ class LayoutHandler:
             # Return nothing, if not specific configuration is given for layout section
             return []
 
-        #
+        # Needed for PDF/Latex output, where empty line_blocks raise exceptions during build
+        if len(lines) == 0:
+            return []
+
         lines_container = nodes.line_block(classes=['needs_{}'.format(section)])
 
         for line in lines:
@@ -340,7 +343,8 @@ class LayoutHandler:
                             ))
                         result = func(*func_args, **func_kargs)
 
-                        node_line += result
+                        if result is not None and len(result) > 0:
+                            node_line += result
                     else:
                         raise SphinxNeedLayoutException(
                             'Error during layout line parsing. This looks strange: {}'.format(
@@ -599,15 +603,23 @@ class LayoutHandler:
             else:
                 builder_extension = 'svg'
 
-            url = '_static/sphinx-needs/images/{}.{}'.format(url.split(':')[1], builder_extension)
+            # url = '_static/sphinx-needs/images/{}.{}'.format(url.split(':')[1], builder_extension)
+            import os
+            needs_location = os.path.dirname(__file__)
+            url = os.path.join(needs_location,
+                               'images',
+                               'feather_{}'.format(builder_extension),
+                               '{}.{}'.format(url.split(':')[1], builder_extension))
 
-            if any(x in self.app.builder.name.upper() for x in ['PDF', 'LATEX']) is False:
-                # This is not needed for Latex. as latex puts the complete content in a single text file on root level
-                # The url needs to be relative to the current document where the need is defined
-                # Otherwise the link is aiming "too high".
-                # Normally sphinx is doing this kind of calculation, but it looks like not in the current state
-                subfolder_amount = self.need['docname'].count('/')
-                url = '../' * subfolder_amount + url
+            # url = '../sphinxcontrib/needs/images/feather_{}/{}.{}'.format(builder_extension, url.split(':')[1], builder_extension)
+
+            # if any(x in self.app.builder.name.upper() for x in ['PDF', 'LATEX']) is False:
+            #     # This is not needed for Latex. as latex puts the complete content in a single text file on root level
+            #     # The url needs to be relative to the current document where the need is defined
+            #     # Otherwise the link is aiming "too high".
+            #     # Normally sphinx is doing this kind of calculation, but it looks like not in the current state
+            #     subfolder_amount = self.need['docname'].count('/')
+            #     url = '../' * subfolder_amount + url
         elif url.startswith('field:'):
             field = url.split(':')[1]
             try:
@@ -618,13 +630,20 @@ class LayoutHandler:
             if value is None or len(value) == 0:
                 return []
 
-            url = '_static/{}'.format(value)
+            # url = '_static/{}'.format(value)
+            url = value
             subfolder_amount = self.need['docname'].count('/')
             url = '../' * subfolder_amount + url
 
         image_node = nodes.image(url, classes=['needs_image'], **options)
+        # image_node['candidates'] = {'*': url}
         image_node['candidates'] = '*'
         image_node['uri'] = url
+
+        # Sphinx voodoo needed here.
+        # It is not enough to just add a doctuils nodes.image, we also have to register the imag location for sphinx
+        # Otherwise the images gets not copied to the later build-output location
+        self.app.env.images.add_file(self.need['docname'], url)
 
         # Okay, this is really ugly.
         # Sphinx does automatically wrap all images into a reference node, which links to the image file.
@@ -676,6 +695,10 @@ class LayoutHandler:
         :param initial: If True, initial status will hide rows after loading page.
         :return: docutils nodes
         """
+        if any(x in self.app.builder.name.upper() for x in ['PDF', 'LATEX']):
+            # PDF/Latex output do not support collapse functions
+            return
+
         coll_node_collapsed = nodes.inline(classes=['needs', 'collapsed'])
         coll_node_visible = nodes.inline(classes=['needs', 'visible'])
 

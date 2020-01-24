@@ -378,6 +378,14 @@ def setup(app):
     # Make connections to events
     app.connect('env-purge-doc', purge_needs)
     app.connect('env-before-read-docs', prepare_env)
+
+    # There is also the event doctree-read.
+    # But it looks like in this event no references are already solved, which
+    # makes trouble in our code.
+    # However, some sphinx-internal actions (like image collection) are already called during
+    # doctree-read. So manipulating the doctree may result in conflicts, as e.g. images get not
+    # registered for sphinx. So some sphinx-internal tasks/functions may be called by hand again...
+    # See also https://github.com/sphinx-doc/sphinx/issues/7054#issuecomment-578019701 for an example
     app.connect('doctree-resolved', add_sections)
     app.connect('doctree-resolved', process_need_nodes)
     app.connect('doctree-resolved', process_dynamic_values)
@@ -393,7 +401,7 @@ def setup(app):
     app.connect('doctree-resolved', process_need_count)
     app.connect('build-finished', process_warnings)
     app.connect('env-updated', install_datatables_static_files)
-    app.connect('env-updated', install_feather_icons)
+    # app.connect('env-updated', install_feather_icons)
 
     # Called during consistency check, which if after everything got read in.
     # app.connect('env-check-consistency', process_warnings)
