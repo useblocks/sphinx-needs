@@ -10,11 +10,11 @@ table.need td {
 }
 table.need tr.head {
     background-color: rgba(0,0,0,0.1);
+    border-bottom: 1px solid #888;
 }
 
 table.need tr.meta {
     border-bottom: 1px solid #888;
-    border-top: 1px solid #888;
     font-size: smaller;
 }
 
