@@ -23,7 +23,7 @@ Layout and style of needs can be highly customized, so that a need can also look
    :align: center
 
 Take a look into our `Examples <https://sphinxcontrib-needs.readthedocs.io/en/latest/examples/index.html>`_ for more
-picture and ideas how to use ``Sphinx-Needs``.
+pictures and ideas how to use ``Sphinx-Needs``.
 
 For filtering and analyzing needs, ``Sphinx-Needs`` provides different, powerful possibilities:
 
