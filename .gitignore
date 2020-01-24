@@ -12,4 +12,3 @@ _build
 .pytest_cache
 .coverage
 .doctrees
-_images
