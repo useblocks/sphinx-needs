@@ -1,4 +1,7 @@
-*Complete, rendered documentation*: http://sphinxcontrib-needs.readthedocs.io/en/latest/
+**Complete documentation**: http://sphinxcontrib-needs.readthedocs.io/en/latest/
+
+Introduction
+============
 
 ``Sphinx-Needs`` allows the definition, linking and filtering of class-like need-objects, which are by default:
 
@@ -12,75 +15,28 @@ This list can be easily customized via configuration (for instance to support bu
 A default requirement need looks like:
 
 .. image:: https://raw.githubusercontent.com/useblocks/sphinxcontrib-needs/master/docs/_images/need_1.png
+   :align: center
 
-The layout and style of needs can be highly customized, so that a need can also look like:
+Layout and style of needs can be highly customized, so that a need can also look like:
 
 .. image:: https://raw.githubusercontent.com/useblocks/sphinxcontrib-needs/master/docs/_images/need_2.png
+   :align: center
 
 Take a look into our `Examples <https://sphinxcontrib-needs.readthedocs.io/en/latest/examples/index.html>`_ for more
 picture and ideas how to use ``Sphinx-Needs``.
 
-For filter and analyzing needs, ``Sphinx-Needs`` provides different, powerful possibilities:
+For filtering and analyzing needs, ``Sphinx-Needs`` provides different, powerful possibilities:
 
 .. list-table::
+   :header-rows: 1
+   :widths: 46,14,40
 
+   - * `needtable <https://sphinxcontrib-needs.readthedocs.io/en/latest/directives/needtable.html>`_
+     * `needflow <https://sphinxcontrib-needs.readthedocs.io/en/latest/directives/needflow.html>`_
+     * `needpie <https://sphinxcontrib-needs.readthedocs.io/en/latest/directives/needpie.html>`_
    - * .. image:: https://raw.githubusercontent.com/useblocks/sphinxcontrib-needs/master/docs/_images/needtable_1.png
      * .. image:: https://raw.githubusercontent.com/useblocks/sphinxcontrib-needs/master/docs/_images/needflow_1.png
      * .. image:: https://raw.githubusercontent.com/useblocks/sphinxcontrib-needs/master/docs/_images/needpie_1.png
-
-
-Example
--------
-
-For the rendered output and more documentation, please visit http://sphinxcontrib-needs.readthedocs.io/en/latest/
-
-.. code-block:: rst
-
-    .. req:: My first requirement
-       :status: open
-       :tags: requirement; test; awesome
-
-       This is my **first** requirement!!
-       .. note:: It's awesome :)
-
-    .. spec:: Specification of a requirement
-       :id: OWN_ID_123
-
-    .. impl:: Implementation for specification
-       :id: impl_01
-       :links: OWN_ID_123
-
-    .. test:: Test for XY
-       :status: implemented
-       :tags: test; user_interface; python27
-       :links: OWN_ID_123; impl_01
-
-       This test checks the implementation of :ref:`impl_01` for spec :ref:`OWN_ID_123` inside a
-       Python 2.7 environment.
-
-What is a need?
----------------
-
-A need is a generic object, which can become everything you want for your sphinx documentation:
-A requirement, a test case, a user story, a bug, an employee, a product or anything else.
-
-But whatever you chose it shall be and how many of them you need, each need is handled the same way.
-
-Each need can contain:
-
-* a **title** (required)
-* an **unique id** (optional. Gets calculated based on title if not given)
-* a **description**, which supports fully rst and sphinx extensions (optional)
-* a **status** (optional)
-* several **tags** (optional)
-* several **links** to other needs (optional)
-
-You can create filterable overviews of defined needs by using the needfilter directive::
-
-    .. needfiler::
-       :status: open;in_progress
-       :tags: tests; test; test_case;
-       :layout: table
 
 Installation
 ============
