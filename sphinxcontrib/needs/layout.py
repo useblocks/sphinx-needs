@@ -688,6 +688,9 @@ class LayoutHandler:
 
             <<collapse_button("icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=False)>>
 
+        For the builders ``latex`` and ``latexpdf`` no output is returned, as their build results are really static
+        and collapse-feature can not be implemented..
+
         :param target: css_name of row to collapse. Default is ``meta``
         :param collapsed: Text or image/icon string to show when target rows are collapsed
         :param visible: Text or image/icon string to show when target rows are visible

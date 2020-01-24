@@ -208,7 +208,6 @@ needs_extra_options = {
          "image": directives.unchanged,
          }
 
-needs_title_from_content = True
 
 needs_warnings = {
     'type_check': 'type not in ["req", "spec", "impl", "test", "feature"]',
@@ -217,6 +216,18 @@ needs_warnings = {
 
 needs_default_layout = 'clean'
 needs_default_style = None
+
+needs_layouts = {
+    'example': {
+        'grid': 'simple_side_right_partial',
+        'layout': {
+            'head': ['**<<meta("title")>>** for *<<meta("author")>>*'],
+            'meta': ['**status**: <<meta("status")>>',
+                     '**author**: <<meta("author")>>'],
+            'side': ['<<image("_images/{{author}}.png", align="center")>>']
+        }
+    }
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

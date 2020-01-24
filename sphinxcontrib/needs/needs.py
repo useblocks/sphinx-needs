@@ -256,7 +256,7 @@ def setup(app):
     app.add_config_value('needs_flow_link_types', ["links"], 'html')
 
     app.add_config_value('needs_warnings', {}, 'html')
-    app.add_config_value('needs_layouts', LAYOUTS, 'html')
+    app.add_config_value('needs_layouts', {}, 'html')
     app.add_config_value('needs_default_layout', 'clean', 'html')
     app.add_config_value('needs_default_style', None, 'html')
 
@@ -476,6 +476,8 @@ def prepare_env(app, env, docname):
         })
 
     app.config.needs_extra_links = common_links + app.config.needs_extra_links
+
+    app.config.needs_layouts = {**LAYOUTS, **app.config.needs_layouts}
 
     if not hasattr(env, 'needs_workflow'):
         # Used to store workflow status information for already executed tasks.

@@ -224,24 +224,124 @@ Or set it locally for each need by using :ref:`need_layout` option::
 
 Defining own layouts
 ~~~~~~~~~~~~~~~~~~~~
+Own layouts can be defined by using the the config parameter :ref:`needs_layouts` in your ``conf.py`` file.
 
-A full, valid layout configuration look like this::
+``needs_layouts`` must be a dictionary and each key represents a layout. A layout must define the used grid-system and
+a layout-structure. Example::
 
-   # Sphinx-Needs definition of the  *clean* layout
-   'clean': {
-        'grid': 'simple',
-        'layout': {
-            'head': [
-                '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>  <<collapse_button("meta", collapsed="icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=False)>>'
-            ],
-            'meta': [
-                '<<meta_all(no_links=True)>>',
-                '<<meta_links_all()>>'
-            ],
+    needs_layouts = {
+        'my_layout': {
+            'grid': 'simple',
+            'layout': {
+                'head': ['my custom head']
+                'meta': [ 'my first meta line',
+                          'my second meta line']
+            }
         }
-    },
+    }
 
-Please see :ref:`needs_layouts` for a detailed explanation of the format and how to use it.
+The ``layout-structure`` must also be a dictionary, where each key reference an area in the used grid system.
+By default these can be: `head`, `meta`, `footer` and more.
+If the layout-structure is using a not supported key by the current grid-system, the entry gets ignored.
+E.g. grid ``simple`` is not supporting ``footer`` area.
+
+The values of a specific layout-structure area definition must be a list, where each entry must be a string and
+represents a single line in the later need representation.
+This line can contain :ref:`layout_functions`, which care about getting need-data or adding links.
+
+.. note::
+
+   ``Sphinx-Needs`` provides some default layouts. These layouts can **not** be overwritten.
+   See :ref:`layout list <layouts>` for more information.
+
+.. note::
+
+   The ``content`` area of a grid can not be overwritten. It is always there and can't be changed or replaced.
+
+
+.. _layout_line:
+
+Layout line
++++++++++++
+A layout line may look like this::
+
+   **style**: my_<<meta('status')>>_style
+
+This line contains:
+
+   * a rst text, which supports common inline roles (bold, italic):
+     ``**style**: _my_``
+   * a layout function, which gets executed and returns a string:
+     ``<<meta('status')>>``
+   * another rst text:
+     ``_style``
+
+When executed, the line will result in the following for a status like ``open``:
+
+**style**:  my_open_style
+
+You can combine as many :ref:`layout_functions` and text elements as you want for a line.
+
+The head-line for the default Sphinx-Needs layout ``clean`` looks like this::
+
+   <<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>  <<collapse_button("meta", collapsed="icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=False)>>
+
+You are free to surround a layout function with a rst role. Like ``**<<meta("title")>>**`` to get a bold printed title.
+
+Sometimes an argument for a layout function shall be based on a given need option. In this cases the option name
+can be surrounded by ``{%raw%}{{ .. }}{%endraw%}``.
+As example, there may be an ``author`` option in a bug-need and you want to show a picture of the author in the grid
+``simple_side_right_partial``.
+
+The line for the ``side`` area could look like::
+
+   '<<image("_images/{%raw%}{{author}}{%endraw%}.png", align="center")>>'
+
+.. spec:: My test spec
+   :author: daniel
+   :id: IMAGE_EXAMPLE
+   :tags: example
+   :status: open
+   :layout: example
+   :style: yellow, blue_border
+
+   This example shows an image based on the ``author`` option.
+
+   The used layout takes the value from ``author`` and puts some image-path related information around it.
+
+Here is the complete used code::
+
+   # conf.py
+   # -------
+
+   from docutils.parsers.rst import directives
+   # Make the author option valid
+   needs_extra_options = {
+         "author": directives.unchanged,
+         }
+
+   # Define own layout
+   needs_layouts = {
+       'example': {
+           'grid': 'simple_side_right_partial',
+           'layout': {
+               'head': ['**<<meta("title")>>** for *<<meta("author")>>*'],
+               'meta': ['**status**: <<meta("status")>>',
+                        '**author**: <<meta("author")>>'],
+               'side': ['<<image("_images/{%raw%}{{author}}{%endraw%}.png", align="center")>>']
+           }
+       }
+   }
+
+   # rst-code of the above need
+   # --------------------------
+
+   .. spec:: My test spec
+      :author: daniel
+      :status: open
+      :layout: example
+      :tags: example
+      :style: yellow, blue_border
 
 .. _layout_functions:
 

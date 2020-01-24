@@ -852,7 +852,7 @@ needs_layouts
 
 ``needs_layouts`` is used to define own grid-based layouts with custom data.
 
-Please read :ref:`layouts_styles` for detailed information.
+Please read :ref:`layouts_styles` for a lot more detailed information.
 
 ``needs_layouts`` must be a dictionary and each key represents a layout. A layout must define the used grid-system and
 a layout-structure. Example::
@@ -861,21 +861,12 @@ a layout-structure. Example::
         'my_layout': {
             'grid': 'simple',
             'layout': {
-                'head': ['my custom head']
-                'meta': [ 'my first meta line',
-                          'my second meta line']
+                'head': ['my custom head'],
+                'meta': ['my first meta line',
+                         'my second meta line']
             }
         }
     }
-
-The ``layout-structure`` must also be a dictionary, where each key reference an area in the used grid system.
-By default these can be: `head`, `meta`, `footer` and more.
-If the layout-structure is using a not supported key by the current grid-system, the entry gets ignored.
-E.g. grid ``simple`` is not supporting ``footer`` area.
-
-The values of a specific layout-structure area definition must be a list, where each entry must be a string and
-represents a single line in the later need representation.
-This line can contain :ref:`layout_functions`, which care about getting need-data or adding links.
 
 .. note::
 
