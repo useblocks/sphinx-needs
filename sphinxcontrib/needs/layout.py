@@ -343,7 +343,7 @@ class LayoutHandler:
                             ))
                         result = func(*func_args, **func_kargs)
 
-                        if result is not None and len(result) > 0:
+                        if result is not None:
                             node_line += result
                     else:
                         raise SphinxNeedLayoutException(
@@ -630,7 +630,6 @@ class LayoutHandler:
             if value is None or len(value) == 0:
                 return []
 
-            # url = '_static/{}'.format(value)
             url = value
             subfolder_amount = self.need['docname'].count('/')
             url = '../' * subfolder_amount + url

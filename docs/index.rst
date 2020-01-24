@@ -18,7 +18,7 @@
        :target: https://pypi.python.org/pypi/sphinxcontrib-needs
        :alt: PyPI Package latest release
 
-   .. image:: https://img.shields.io/badge/sphinx-1.5%2C%201.6%2C%201.7%2C%201.8%2C%202.0%2C%202.1-blue.svg
+   .. image:: https://img.shields.io/badge/sphinx-1.8%2C%202.0%2C%202.1%2C%202.2%2C%202.3-blue.svg
        :target: https://sphinx-doc.org
        :alt: Supported Sphinx releases
 
