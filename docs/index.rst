@@ -283,7 +283,7 @@ Content
    filter
    dynamic_functions
    layout_styles
-   examples
+   examples/index
    api
    snippets
    support
