@@ -39,7 +39,7 @@ else:
 
     logging.basicConfig()  # Only need to do this once
 
-VERSION = '0.4.3'
+VERSION = '0.5.0'
 
 
 DEFAULT_DIAGRAM_TEMPLATE = \

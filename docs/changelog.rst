@@ -1,7 +1,7 @@
 Changelog
 =========
-0.5.0 (not released yet)
-------------------------
+0.5.0
+-----
 
 * Improvement: Introduction of needs :ref:`layouts_styles`.
 * Improvement: Added config options :ref:`needs_layouts` and :ref:`needs_default_layout`.
