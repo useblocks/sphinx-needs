@@ -1,7 +1,5 @@
 *Complete, rendered documentation*: http://sphinxcontrib-needs.readthedocs.io/en/latest/
 
-This package contains the needs Sphinx extension.
-
 It allows the definition, linking and filtering of need-objects, which are by default:
 
 * requirements
@@ -10,6 +8,8 @@ It allows the definition, linking and filtering of need-objects, which are by de
 * test cases.
 
 This list can be easily customized via configuration (for instance to support bugs or user stories).
+
+.. image:: https://raw.githubusercontent.com/useblocks/sphinxcontrib-needs/master/docs/_images/need_1.png
 
 Example
 -------
