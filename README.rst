@@ -20,6 +20,15 @@ The layout and style of needs can be highly customized, so that a need can also 
 Take a look into our `Examples <https://sphinxcontrib-needs.readthedocs.io/en/latest/examples/index.html>`_ for more
 picture and ideas how to use ``Sphinx-Needs``.
 
+For filter and analyzing needs, ``Sphinx-Needs`` provides different, powerful possibilities:
+
+.. list-table::
+
+   - * .. image:: https://raw.githubusercontent.com/useblocks/sphinxcontrib-needs/master/docs/_images/needtable_1.png
+     * .. image:: https://raw.githubusercontent.com/useblocks/sphinxcontrib-needs/master/docs/_images/needflow_1.png
+     * .. image:: https://raw.githubusercontent.com/useblocks/sphinxcontrib-needs/master/docs/_images/needpie_1.png
+
+
 Example
 -------
 
