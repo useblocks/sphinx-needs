@@ -1,5 +1,10 @@
 Changelog
 =========
+0.5.1
+-----
+* Improvement: Added :ref:`needextract` directive to mirror existing needs for special outputs. (`#66 <https://github.com/useblocks/sphinxcontrib-needs/issues/66>`_)
+* Bugfix: Some minor css fixes for new layout system.
+
 0.5.0
 -----
 
