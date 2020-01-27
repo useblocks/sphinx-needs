@@ -139,7 +139,7 @@ def resolve_dynamic_values(env):
     needs = env.needs_all_needs
     for key, need in needs.items():
         for need_option in need:
-            if need_option in ['docname', 'lineno', 'target_node', 'content']:
+            if need_option in ['docname', 'lineno', 'target_node', 'content', 'content_node']:
                 # dynamic values in this data are not allowed.
                 continue
             if not isinstance(need[need_option], (list, set)):
@@ -251,7 +251,10 @@ def _analyze_func_string(func_string, need):
     :param func_string: string of the function
     :return: function name, arguments, keyword arguments
     """
-    func = ast.parse(func_string)
+    try:
+        func = ast.parse(func_string)
+    except SyntaxError as e:
+        raise SphinxError('Parsing function string failed for need {}: {}. {}'.format(need['id'], func_string, e))
     try:
         func_call = func.body[0].value
         func_name = func_call.func.id

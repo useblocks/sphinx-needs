@@ -18,6 +18,8 @@ from sphinxcontrib.needs.roles.need_incoming import Need_incoming
 from sphinxcontrib.needs.roles.need_outgoing import Need_outgoing
 from sphinxcontrib.needs.functions import resolve_dynamic_values, find_and_replace_node_content
 from sphinxcontrib.needs.api.exceptions import NeedsInvalidException
+from sphinxcontrib.needs.functions.functions import check_and_get_content
+from sphinxcontrib.needs.layout import build_need
 
 
 sphinx_version = sphinx.__version__
@@ -291,12 +293,9 @@ def process_need_nodes(app, doctree, fromdocname):
         need_data = needs[need_id]
 
         find_and_replace_node_content(node_need, env, need_data)
-        from sphinxcontrib.needs.functions.functions import check_and_get_content
         for index, attribute in enumerate(node_need.attributes['classes']):
             node_need.attributes['classes'][index] = check_and_get_content(attribute, need_data, env)
 
-        # UGLY CODE STARTS HERE :)
-        from sphinxcontrib.needs.layout import build_need
         layout = need_data['layout']
         if layout is None or len(layout) == 0:
             layout = getattr(app.config, 'needs_default_layout', 'clean')

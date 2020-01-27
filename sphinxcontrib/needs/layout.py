@@ -11,9 +11,74 @@ from docutils.parsers.rst.states import Inliner, Struct
 from docutils.utils import new_document
 
 
-def build_need(layout, node, app):
+def create_need(need_id, app, layout=None, style=None, docname=None):
     """
-    Creates a need based on a given layout.
+    Creates a new need-node for a given layout.
+
+    Need must already exist in internal dictionary.
+    This creates a new representation only.
+    :param need_id: need id
+    :param app: sphinx application
+    :param layout: layout to use, overrides layout set by need itself
+    :param style: style to use, overrides styles set by need itself
+    :param docname: Needed for calculating references
+    :return:
+    """
+    env = app.builder.env
+    needs = env.needs_all_needs
+
+    if need_id not in needs.keys():
+        raise SphinxNeedLayoutException('Given need id {} does not exist.'.format(need_id))
+
+    node_container = nodes.container()
+    node_inner = needs[need_id]['content_node']
+    # Resolve internal refernces.
+    # This is done for original need content automatically.
+    # But as we are working on  a copy, we have to trigger this on our own.
+    if docname is None:
+        docname = needs[need_id]['docname']  # needed to calculate relative references
+
+    # resolve_references() ignores the given docname and takes the docname from the pending_xref node.
+    # Therefore we need to manipulate this first, before we can ask Sphinx to perform the normal
+    # reference handling for us.
+    replace_pending_xref_refdoc(node_inner, docname)
+    env.resolve_references(node_inner, docname, env.app.builder)
+
+    node_container.append(node_inner)
+
+    node_inner.attributes['ids'].append(need_id)
+
+    if layout is None:
+        layout = getattr(app.config, 'needs_default_layout', 'clean')
+
+    if style is None:
+        style = getattr(app.config, 'needs_default_style', 'None')
+
+    build_need(layout, node_inner, app, style)
+
+    return node_container
+
+
+def replace_pending_xref_refdoc(node, new_refdoc):
+    """
+    Overwrites the refdoc attribute of all pending_xref nodes.
+    This is needed, if a doctree with references gets copied used somewhereelse in the documentation.
+    What is the normal case when using needextract.
+    :param node: doctree
+    :param new_refdoc: string, should be an existing docname
+    :return: None
+    """
+    from sphinx.addnodes import pending_xref
+    if isinstance(node, pending_xref):
+        node.attributes['refdoc'] = new_refdoc
+    else:
+        for child in node.children:
+            replace_pending_xref_refdoc(child, new_refdoc)
+
+
+def build_need(layout, node, app, style=None):
+    """
+    Builds a need based on a given layout for a given need-node.
 
     The created table must have ethe following docutils structure::
 
@@ -31,6 +96,7 @@ def build_need(layout, node, app):
     :param layout:
     :param node:
     :param app:
+    :param style:
     :return:
     """
 
@@ -45,7 +111,7 @@ def build_need(layout, node, app):
         node.parent.replace(node, [])
         return
 
-    lh = LayoutHandler(app, need_data, need_layout, node)
+    lh = LayoutHandler(app, need_data, need_layout, node, style)
     new_need_node = lh.get_need_table()
 
     # We need to replace the current need-node (containing content only) with our new table need node.
@@ -56,7 +122,7 @@ class LayoutHandler:
     """
     Cares about the correct layout handling
     """
-    def __init__(self, app, need, layout, node):
+    def __init__(self, app, need, layout, node, style=None):
         self.app = app
         self.need = need
 
@@ -74,11 +140,15 @@ class LayoutHandler:
                    'needs_grid_' + self.layout['grid'],
                    'needs_layout_' + self.layout_name]
 
-        if self.need['style'] is None:
-            self.need['style'] = getattr(self.app.config, 'needs_default_style', None)
+        if style is not None:
+            self.style = style
+        elif self.need['style'] is not None:
+            self.style = self.need['style']
+        else:
+            self.style = getattr(self.app.config, 'needs_default_style', None)
 
-        if self.need['style'] is not None and len(self.need['style']) > 0:
-            for style in self.need['style'].strip().split(','):
+        if self.style and len(self.style) > 0:
+            for style in self.style.strip().split(','):
                 style = style.strip()
                 classes.append('needs_style_' + style)
         else:
@@ -185,7 +255,7 @@ class LayoutHandler:
             'content_footer_side_right': {
                 'func': self._grid_content,
                 'configs': {
-                    'colwidths': [5, 95],
+                    'colwidths': [95, 5],
                     'side_left': False,
                     'side_right': True,
                     'footer': True
@@ -472,7 +542,7 @@ class LayoutHandler:
         default_excludes = ['docname', 'lineno', 'target_node', 'refid', 'content', 'collapse', 'parts', 'id_parent',
                             'id_complete', 'title', 'full_title', 'is_part', 'is_need',
                             'type_prefix', 'type_color', 'type_style', 'type', 'type_name', 'id',
-                            'hide', 'hide_status', 'hide_tags', 'sections', 'section_name']
+                            'hide', 'hide_status', 'hide_tags', 'sections', 'section_name', 'content_node']
 
         if exclude is None or not isinstance(exclude, list):
             if defaults:

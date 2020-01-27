@@ -8,6 +8,7 @@ Directives
    needlist
    needtable
    needflow
+   needextract
    needpie
    needimport
 

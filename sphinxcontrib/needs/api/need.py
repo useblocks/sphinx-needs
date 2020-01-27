@@ -193,6 +193,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
         'docname': docname,
         'lineno': lineno,
         'target_node': target_node,
+        'content_node': None,  # gets set after rst parsing
         'type': need_type,
         'type_name': type_name,
         'type_prefix': type_prefix,
@@ -284,6 +285,8 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
     update_need_with_parts(env, needs_info, need_parts)
 
     node_need += node_need_content.children
+
+    needs_info['content_node'] = node_need
 
     return [target_node] + [node_need]
 

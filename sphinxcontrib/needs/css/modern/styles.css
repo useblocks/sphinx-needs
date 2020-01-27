@@ -3,15 +3,24 @@
 /* ********************* */
 /* Full need table color */
 /* ********************* */
+table.needs_style_gray,
+table.needs_style_gray tr,
+table.needs_style_gray td {
+    background-color: #eee;
+}
+
 table.needs_style_clean,
 table.needs_style_clean tr,
 table.needs_style_clean td{
     margin-bottom: 10px;
     border: none !important;
-    width: 100%;
     background: None !important;
     padding: 0;
     box-shadow: None;
+}
+
+table.needs_style_clean {
+    width: 100%;
 }
 
 table.needs_style_green,

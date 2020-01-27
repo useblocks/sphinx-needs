@@ -17,6 +17,7 @@ from sphinxcontrib.needs.directives.needtable import Needtable, NeedtableDirecti
 from sphinxcontrib.needs.directives.needlist import Needlist, NeedlistDirective, process_needlist
 from sphinxcontrib.needs.directives.needflow import Needflow, NeedflowDirective, process_needflow
 from sphinxcontrib.needs.directives.needpie import Needpie, NeedpieDirective, process_needpie
+from sphinxcontrib.needs.directives.needextract import Needextract, NeedextractDirective, process_needextract
 
 from sphinxcontrib.needs.builder import NeedsBuilder
 from sphinxcontrib.needs.directives.needfilter import Needfilter, NeedfilterDirective, process_needfilters
@@ -27,7 +28,6 @@ from sphinxcontrib.needs.roles.need_outgoing import Need_outgoing, process_need_
 from sphinxcontrib.needs.roles.need_ref import Need_ref, process_need_ref
 from sphinxcontrib.needs.roles.need_part import NeedPart, process_need_part
 from sphinxcontrib.needs.roles.need_count import NeedCount, process_need_count
-from sphinxcontrib.needs.utils import process_dynamic_values
 from sphinxcontrib.needs.functions import register_func, needs_common_functions
 from sphinxcontrib.needs.warnings import process_warnings
 
@@ -268,6 +268,7 @@ def setup(app):
     app.add_node(Needtable)
     app.add_node(Needflow)
     app.add_node(Needpie)
+    app.add_node(Needextract)
     app.add_node(NeedPart, html=(visitor_dummy, visitor_dummy), latex=(visitor_dummy, visitor_dummy))
 
     ########################################################################
@@ -343,6 +344,7 @@ def setup(app):
     app.add_directive('needflow', NeedflowDirective)
     app.add_directive('needpie', NeedpieDirective)
     app.add_directive('needimport', NeedimportDirective)
+    app.add_directive('needextract', NeedextractDirective)
 
     ########################################################################
     # ROLES
@@ -388,7 +390,7 @@ def setup(app):
     # See also https://github.com/sphinx-doc/sphinx/issues/7054#issuecomment-578019701 for an example
     app.connect('doctree-resolved', add_sections)
     app.connect('doctree-resolved', process_need_nodes)
-    app.connect('doctree-resolved', process_dynamic_values)
+    app.connect('doctree-resolved', process_needextract)
     app.connect('doctree-resolved', process_needfilters)
     app.connect('doctree-resolved', process_needlist)
     app.connect('doctree-resolved', process_needtables)

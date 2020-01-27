@@ -25,10 +25,7 @@ class Needlist(nodes.General, nodes.Element):
 
 class NeedlistDirective(FilterBase):
     """
-    Directive to filter needs and present them inside a list, table or diagram.
-
-    .. deprecated:: 0.2.0
-       Use needlist, needtable or needdiagram instead
+    Directive to filter needs and present them inside a list
     """
     option_spec = {'show_status': directives.flag,
                    'show_tags': directives.flag,
