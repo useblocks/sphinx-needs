@@ -54,7 +54,7 @@ def create_need(need_id, app, layout=None, style=None, docname=None):
     if style is None:
         style = getattr(app.config, 'needs_default_style', 'None')
 
-    build_need(layout, node_inner, app, style)
+    build_need(layout, node_inner, app, style, docname)
 
     return node_container
 
@@ -76,7 +76,7 @@ def replace_pending_xref_refdoc(node, new_refdoc):
             replace_pending_xref_refdoc(child, new_refdoc)
 
 
-def build_need(layout, node, app, style=None):
+def build_need(layout, node, app, style=None, fromdocname=None):
     """
     Builds a need based on a given layout for a given need-node.
 
@@ -97,6 +97,7 @@ def build_need(layout, node, app, style=None):
     :param node:
     :param app:
     :param style:
+    :param fromdocname:
     :return:
     """
 
@@ -111,7 +112,10 @@ def build_need(layout, node, app, style=None):
         node.parent.replace(node, [])
         return
 
-    lh = LayoutHandler(app, need_data, need_layout, node, style)
+    if fromdocname is None:
+        fromdocname = need_data['docname']
+
+    lh = LayoutHandler(app, need_data, need_layout, node, style, fromdocname)
     new_need_node = lh.get_need_table()
 
     # We need to replace the current need-node (containing content only) with our new table need node.
@@ -122,7 +126,7 @@ class LayoutHandler:
     """
     Cares about the correct layout handling
     """
-    def __init__(self, app, need, layout, node, style=None):
+    def __init__(self, app, need, layout, node, style=None, fromdocname=None):
         self.app = app
         self.need = need
 
@@ -135,6 +139,12 @@ class LayoutHandler:
         self.layout = available_layouts[self.layout_name]
 
         self.node = node
+
+        # Used, if need is referenced from another page
+        if fromdocname is None:
+            self.fromdocname = need['docname']
+        else:
+            self.fromdocname = fromdocname
 
         classes = ["need",
                    'needs_grid_' + self.layout['grid'],
@@ -503,7 +513,8 @@ class LayoutHandler:
 
         nodes_id_text = nodes.Text(self.need['id'], self.need['id'])
         id_ref = make_refnode(self.app.builder,
-                              fromdocname=self.need['docname'],
+                              # fromdocname=self.need['docname'],
+                              fromdocname=self.fromdocname,
                               todocname=self.need['docname'],
                               targetid=self.need['id'],
                               child=nodes_id_text.deepcopy(),

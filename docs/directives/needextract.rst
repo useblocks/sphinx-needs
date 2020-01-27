@@ -29,5 +29,5 @@ needextract
 
 .. needextract::
    :filter: type == 'feature' or id.startswith('EXTRACT')
-   :layout: focus
+   :layout: focus_r
    :style: clean
