@@ -111,11 +111,13 @@ def rstjinja(app, docname, source):
 class NeedsList:
     JSON_KEY_EXCLUSIONS_NEEDS = {'links_back', 'type_color', 'hide_status',
                                  'target_node', 'hide', 'type_prefix', 'lineno',
-                                 'collapse', 'type_style', 'hide_tags', 'content'}
+                                 'collapse', 'type_style', 'hide_tags',
+                                 'content', 'content_node'}
 
     JSON_KEY_EXCLUSIONS_FILTERS = {'links_back', 'type_color', 'hide_status',
                                    'target_node', 'hide', 'type_prefix', 'lineno',
-                                   'collapse', 'type_style', 'hide_tags', 'content'}
+                                   'collapse', 'type_style', 'hide_tags',
+                                   'content', 'content_node'}
 
     def __init__(self, config, outdir, confdir):
         self.log = logging.getLogger(__name__)

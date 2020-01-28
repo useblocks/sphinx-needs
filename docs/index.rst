@@ -75,8 +75,17 @@ which can be easily extended by different extensions to fulfill nearly any requi
    Needs can be :ref:`easily filtered <filter>` and presented in :ref:`lists<needlist>`, :ref:`tables <needtable>`,
    :ref:`diagrams <needflow>` and :ref:`pie charts <needpie>`.
 
-   .. needflow::
-      :tags: introduction
+**Table example**
+
+.. needtable::
+   :tags: introduction
+   :style: table
+   :columns: id, title, outgoing
+
+**Diagram example**
+
+.. needflow::
+   :tags: introduction
 
 .. feature:: Ex/Importing needs
    :id: FEATURE_2

@@ -194,7 +194,7 @@ Special layouts:
      * Comment
    - * debug
      * :ref:`grid_content_footer`
-     * Shows **all** meta data (also internal ones) in the footer.
+     * Shows **all** meta data (also internal ones).
        Useful do see what data is available for a need and which can be used in :ref:`filter_string`.
 
 **Examples**
@@ -398,6 +398,8 @@ Default styles are:
      * Yellow background
    - * **blue**
      * Blue background
+   - * **discreet**
+     * Background color is only a little bit lighter/darker as the page background
    - * **green_border**
      * Green border, but normal background
    - * **red_border**
@@ -406,6 +408,8 @@ Default styles are:
      * Yellow border, but normal background
    - * **blue_border**
      * Blue border, but normal background
+   - * **discreet_border**
+     * Border color is only a little bit lighter/darker as the page background
    - * **clean**
      * Removes all style information. Looks like normal text. Mostly used with layout **focus**.
 
@@ -430,6 +434,11 @@ Default styles are:
    :id: EX_STYLE_BLUE
    :tags: example
    :style: blue
+
+.. req:: Discreet background
+   :id: EX_STYLE_DISCREET
+   :tags: example
+   :style: discreet
 
 .. req:: Clean style
    :id: EX_STYLE_CLEAN
@@ -456,12 +465,22 @@ Default styles are:
    :tags: example
    :style: blue_border
 
+.. req:: Discreet border
+   :id: EX_STYLE_DISCREET_BORDER
+   :tags: example
+   :style: discreet_border
+
 Different styles can also be combined by setting a comma-separated string: ``yellow, red_border``.
 
 .. req:: Yellow background + Red border
    :id: EX_STYLE_YELLOW_RED
    :tags: example
    :style: yellow, red_border
+
+.. req:: Discreet view
+   :id: EX_STYLE_DISCREET_COMBI
+   :tags: example
+   :style: discreet, discreet_border
 
 Using styles
 ~~~~~~~~~~~~

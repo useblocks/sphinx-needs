@@ -9,6 +9,7 @@ table.needs_style_gray td {
     background-color: #333;
 }
 
+/* CLEAN*/
 table.needs_style_clean,
 table.needs_style_clean tr,
 table.needs_style_clean td{
@@ -23,6 +24,15 @@ table.needs_style_clean {
     width: 100%;
 }
 
+/* DISCREET */
+table.needs_style_discreet,
+table.needs_style_discreet tr.need,
+table.needs_style_discreet td.need {
+    background-color: rgba(255,255,255,0.1) !important;
+}
+
+
+/* GREEN */
 table.needs_style_green,
 table.needs_style_green tr.need,
 table.needs_style_green td.need,
@@ -32,6 +42,7 @@ table.needs_style_implemented td.need {
     background-color: #04723c !important;
 }
 
+/* RED */
 table.needs_style_red,
 table.needs_style_red tr.need,
 table.needs_style_red td.need,
@@ -41,6 +52,7 @@ table.needs_style_open td.need {
     background-color: #81201b !important;
 }
 
+/* YELLOW */
 table.needs_style_yellow,
 table.needs_style_yellow tr.need,
 table.needs_style_yellow td.need,
@@ -50,6 +62,7 @@ table.needs_style_in_progress td.need {
     background-color: #a97c32 !important;
 }
 
+/* BLUE*/
 table.needs_style_blue,
 table.needs_style_blue tr.need,
 table.needs_style_blue td.need {
@@ -74,3 +87,8 @@ table.needs_style_yellow_border {
 table.needs_style_blue_border {
     border: 5px solid #096285 !important;
 }
+
+table.needs_style_discreet_border {
+    border: 5px solid rgba(255,255,255,0.2) !important;
+}
+

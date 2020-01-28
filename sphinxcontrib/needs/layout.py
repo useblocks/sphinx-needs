@@ -29,6 +29,7 @@ def create_need(need_id, app, layout=None, style=None, docname=None):
 
     if need_id not in needs.keys():
         raise SphinxNeedLayoutException('Given need id {} does not exist.'.format(need_id))
+    need_data = needs[need_id]
 
     node_container = nodes.container()
     node_inner = needs[need_id]['content_node']
@@ -49,10 +50,16 @@ def create_need(need_id, app, layout=None, style=None, docname=None):
     node_inner.attributes['ids'].append(need_id)
 
     if layout is None:
-        layout = getattr(app.config, 'needs_default_layout', 'clean')
+        if need_data['layout'] is None or len(need_data['layout']) == 0:
+            layout = getattr(app.config, 'needs_default_layout', 'clean')
+        else:
+            layout = need_data['layout']
 
     if style is None:
-        style = getattr(app.config, 'needs_default_style', 'None')
+        if need_data['style'] is None or len(need_data['style']) == 0:
+            style = getattr(app.config, 'needs_default_style', 'None')
+        else:
+            style = need_data['style']
 
     build_need(layout, node_inner, app, style, docname)
 

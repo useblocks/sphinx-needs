@@ -23,6 +23,15 @@ table.needs_style_clean {
     width: 100%;
 }
 
+/* DISCREET */
+table.needs_style_discreet,
+table.needs_style_discreet tr.need,
+table.needs_style_discreet td.need {
+    background-color: rgba(0,0,0,0.004) !important;
+    box-shadow: None;
+}
+
+
 table.needs_style_green,
 table.needs_style_green tr.need,
 table.needs_style_green td.need,
@@ -73,4 +82,10 @@ table.needs_style_yellow_border {
 
 table.needs_style_blue_border {
     border: 5px solid #0fbcf9 !important;
+}
+
+table.needs_style_discreet_border,
+table.needs_style_discreet_border tr.need,
+table.needs_style_discreet_border td.need {
+    border: 1px solid rgba(0,0,0,0.05) !important;
 }
