@@ -405,7 +405,7 @@ def _merge_global_options(needs_info, global_options):
     for key, value in global_options.items():
 
         # If key already exists in needs_info, this global_option got overwritten manually in current need
-        if key in needs_info.keys() and len(str(needs_info[key])) > 0:
+        if key in needs_info.keys() and needs_info[key] is not None and len(str(needs_info[key])) > 0:
             continue
 
         if isinstance(value, tuple):

@@ -190,7 +190,7 @@ class NeedDirective(Directive):
                 )
             return self.arguments[0]
         elif self.title_from_content:
-            first_sentence = ' '.join(self.content).split('.', 1)[0]
+            first_sentence = re.split(r'[.\n]', '\n'.join(self.content))[0]
             if not first_sentence:
                 raise NeedsInvalidException(':title_from_content: set, but '
                                             'no content provided. '

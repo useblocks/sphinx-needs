@@ -1,5 +1,10 @@
 Changelog
 =========
+0.5.2 (not released yet)
+------------------------
+* Bugfix: :ref:`needs_global_options` handles None values correctly. ``style`` can now be set.
+* Bugix: :ref:`needs_title_from_content` takes ``\n`` and ``.`` as delimiter.
+
 0.5.1
 -----
 * Improvement: Added :ref:`needextract` directive to mirror existing needs for special outputs. (`#66 <https://github.com/useblocks/sphinxcontrib-needs/issues/66>`_)
