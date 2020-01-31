@@ -15,8 +15,19 @@ else:
 logger = logging.getLogger(__name__)
 
 
-# def process_warnings(app, doctree, fromdocname):
 def process_warnings(app, exception):
+    """
+    Checks the configured warnings.
+
+    This func gets called by the latest sphinx-event, so that really everything is already done.
+
+    :param app: application
+    :param exception: raised exceptions
+    :return:
+    """
+
+    # We cget called also if an exception occured during build
+    # In this case the build is already broken and we do not need to check anything.
     if exception is not None:
         return
 

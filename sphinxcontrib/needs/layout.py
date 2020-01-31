@@ -10,6 +10,8 @@ from docutils.parsers.rst import languages, Parser
 from docutils.parsers.rst.states import Inliner, Struct
 from docutils.utils import new_document
 
+from sphinxcontrib.needs.utils import INTERNALS
+
 
 def create_need(need_id, app, layout=None, style=None, docname=None):
     """
@@ -557,10 +559,7 @@ class LayoutHandler:
         :param show_empty: If true, also need data with no value will be printed. Mostly useful for debugging.
         :return: docutils nodes
         """
-        default_excludes = ['docname', 'lineno', 'target_node', 'refid', 'content', 'collapse', 'parts', 'id_parent',
-                            'id_complete', 'title', 'full_title', 'is_part', 'is_need',
-                            'type_prefix', 'type_color', 'type_style', 'type', 'type_name', 'id',
-                            'hide', 'hide_status', 'hide_tags', 'sections', 'section_name', 'content_node']
+        default_excludes = INTERNALS
 
         if exclude is None or not isinstance(exclude, list):
             if defaults:

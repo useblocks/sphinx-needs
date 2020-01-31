@@ -30,6 +30,7 @@ from sphinxcontrib.needs.roles.need_part import NeedPart, process_need_part
 from sphinxcontrib.needs.roles.need_count import NeedCount, process_need_count
 from sphinxcontrib.needs.functions import register_func, needs_common_functions
 from sphinxcontrib.needs.warnings import process_warnings
+from sphinxcontrib.needs.utils import INTERNALS
 
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
@@ -380,6 +381,7 @@ def setup(app):
     # Make connections to events
     app.connect('env-purge-doc', purge_needs)
     app.connect('env-before-read-docs', prepare_env)
+    app.connect('config-inited', check_configuration)
 
     # There is also the event doctree-read.
     # But it looks like in this event no references are already solved, which
@@ -492,3 +494,47 @@ def prepare_env(app, env, docname):
         }
         for link_type in app.config.needs_extra_links:
             env.needs_workflow['backlink_creation_{}'.format(link_type['option'])] = False
+
+
+def check_configuration(app, config):
+    """
+    Checks the configuration for invalid options.
+
+    E.g. defined need-option, which is already defined internally
+
+    :param app:
+    :param config:
+    :return:
+    """
+    INTERNALS = ['docname', 'lineno', 'target_node', 'refid', 'content', 'collapse', 'parts', 'id_parent',
+                'id_complete', 'title', 'full_title', 'is_part', 'is_need',
+                'type_prefix', 'type_color', 'type_style', 'type', 'type_name', 'id',
+                'hide', 'hide_status', 'hide_tags', 'sections', 'section_name', 'content_node']
+
+    extra_options = config['needs_extra_options']
+    link_types = [x['option'] for x in config['needs_extra_links']]
+
+    # Check for usage of internal names
+    for internal in INTERNALS:
+        if internal in extra_options.keys():
+            raise NeedsConfigException('Extra option "{}" already used internally. '
+                                       ' Please use another name.'.format(internal))
+        if internal in link_types:
+            raise NeedsConfigException('Link type name "{}" already used internally. '
+                                       ' Please use another name.'.format(internal))
+
+    # Check if option and link are using the same name
+    for link in link_types:
+        if link in extra_options.keys():
+            raise NeedsConfigException('Same name for link type and extra option: {}.'
+                                       ' This is not allowed.'.format(link))
+        if link + '_back' in extra_options.keys():
+            raise NeedsConfigException('Same name for automatically created link type and extra option: {}.'
+                                       ' This is not allowed.'.format(link + '_back'))
+
+
+class NeedsConfigException(SphinxError):
+    pass
+
+
+

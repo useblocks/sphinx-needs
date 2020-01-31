@@ -14,6 +14,12 @@ else:
 
 logger = logging.getLogger(__name__)
 
+# List of internal need option names. They should not be used by or presented to user.
+INTERNALS = ['docname', 'lineno', 'target_node', 'refid', 'content', 'collapse', 'parts', 'id_parent',
+             'id_complete', 'title', 'full_title', 'is_part', 'is_need',
+             'type_prefix', 'type_color', 'type_style', 'type', 'type_name', 'id',
+             'hide', 'hide_status', 'hide_tags', 'sections', 'section_name', 'content_node']
+
 
 def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=False, ref_lookup=False, prefix=''):
     """
