@@ -370,7 +370,7 @@ Available layout functions are:
 
 .. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.meta_links(name, incoming=False)
 
-.. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.meta_links_all(prefix='', postfix='')
+.. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.meta_links_all(prefix='', postfix='', exclude=None)
 
 .. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.image(url, height=None, width=None, align=None, no_link=False)
 
