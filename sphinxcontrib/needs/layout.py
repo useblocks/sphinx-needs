@@ -554,6 +554,7 @@ class LayoutHandler:
         :param prefix:
         :param postfix:
         :param exclude: List of value names, which are excluded from output
+        :param no_links: excludes all incoming and outgoing extra link types from output
         :param defaults: If True, default excludes are added. This filters out all internal data, which is normally not
                          relevant for the user.
         :param show_empty: If true, also need data with no value will be printed. Mostly useful for debugging.
