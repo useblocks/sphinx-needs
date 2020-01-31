@@ -8,6 +8,8 @@ Changelog
 * Bugfix: :ref:`needs_title_from_content` takes ``\n`` and ``.`` as delimiter.
 * Bugfix: Setting css-attribute ``white-space: normal`` for all need-tables, which is set badly in some sphinx-themes.
   (Yes, I'm looking at you *ReadTheDocs theme*...)
+* Bugfix: ``meta_all`` :ref:`layout function <layout_functions>` also outputs extra links and the `no_links`
+  parameter now works as expected
 
 0.5.1
 -----

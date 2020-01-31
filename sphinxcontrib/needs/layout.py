@@ -559,7 +559,7 @@ class LayoutHandler:
         :param show_empty: If true, also need data with no value will be printed. Mostly useful for debugging.
         :return: docutils nodes
         """
-        default_excludes = INTERNALS
+        default_excludes = INTERNALS.copy()
 
         if exclude is None or not isinstance(exclude, list):
             if defaults:
