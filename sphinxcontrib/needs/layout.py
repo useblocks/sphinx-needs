@@ -620,18 +620,21 @@ class LayoutHandler:
         data_container.append(node_links)
         return data_container
 
-    def meta_links_all(self, prefix='', postfix=''):
+    def meta_links_all(self, prefix='', postfix='', exclude=None):
         """
-        Documents all used link types in the current link automatically.
+        Documents all used link types for the current need automatically.
 
         :param prefix:  prefix string
         :param postfix:  postfix string
+        :param exclude:  list of extra link type names, which are excluded from output
         :return: docutils nodes
         """
+        if exclude is None:
+            exclude = []
         data_container = []
         for link_type in self.app.config.needs_extra_links:
             type_key = link_type['option']
-            if self.need[type_key] is not None and len(self.need[type_key]) > 0:
+            if self.need[type_key] is not None and len(self.need[type_key]) > 0 and type_key not in exclude:
                 outgoing_line = nodes.line()
                 outgoing_label = prefix + '{}:'.format(link_type['outgoing']) + postfix + ' '
                 outgoing_line += self._parse(outgoing_label)
@@ -639,7 +642,7 @@ class LayoutHandler:
                 data_container.append(outgoing_line)
 
             type_key = link_type['option'] + '_back'
-            if self.need[type_key] is not None and len(self.need[type_key]) > 0:
+            if self.need[type_key] is not None and len(self.need[type_key]) > 0 and type_key not in exclude:
                 incoming_line = nodes.line()
                 incoming_label = prefix + '{}:'.format(link_type['incoming']) + postfix + ' '
                 incoming_line += self._parse(incoming_label)
