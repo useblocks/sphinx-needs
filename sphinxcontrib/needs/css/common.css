@@ -4,6 +4,11 @@ table.need td {
     white-space: normal;
 }
 
+/* We need not line-block margin:24 px here, which is coming from sphinx theme */
+table.need td div.needs_side.line-block{
+    margin-bottom: 0;
+}
+
 table.need tr.head div.line-block,
 table.need tr.meta div.line-block,
 table.need tr.footer div.line-block {
