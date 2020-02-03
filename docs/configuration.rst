@@ -326,9 +326,9 @@ Here are some examples:
      * style_end
    - * default
      * ``-``
-     * ``>``
+     * ``->``
    - * reverse
-     * ``<``
+     * ``<-``
      * ``-``
    - * Both sides, dotted line
      * ``<.``
@@ -349,6 +349,7 @@ Use ``style_start`` and ``style_end`` like this::
          "style_end": "-->",
       }
    ]
+
 
 .. _needs_flow_show_links:
 

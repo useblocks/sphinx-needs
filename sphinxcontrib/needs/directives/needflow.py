@@ -241,7 +241,7 @@ def process_needflow(app, doctree, fromdocname):
                             len(link_type['style_end']) > 0:
                         style_end = link_type['style_end']
                     else:
-                        style_end = '>'
+                        style_end = '->'
 
                     # puml_connections += '{id} --{link_style}> {link}{comment}\n'.format(
                     puml_connections += '{id} {style_start}{link_style}{style_end} {link}{comment}\n'.format(

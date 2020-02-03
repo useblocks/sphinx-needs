@@ -173,6 +173,8 @@ class LayoutHandler:
         else:
             classes.append('needs_style_none')
 
+        classes.append('needs_type_' + ''.join(self.need['type'].split()))
+
         self.node_table = nodes.table(classes=classes, ids=[self.need['id']])
         self.node_tbody = nodes.tbody()
 

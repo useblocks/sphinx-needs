@@ -11,6 +11,8 @@ Changelog
   (Yes, I'm looking at you *ReadTheDocs theme*...)
 * Bugfix: ``meta_all`` :ref:`layout function <layout_functions>` also outputs extra links and the `no_links`
   parameter now works as expected
+* Bugfix: Added need-type as css-class back on need. Css class name is ``needs_type_(need_type attribute)``.
+  (`#124 <https://github.com/useblocks/sphinxcontrib-needs/issues/124>`_)
 
 0.5.1
 -----
