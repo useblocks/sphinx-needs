@@ -267,6 +267,8 @@ Configuration example::
          "copy": False,
          "style": "#00AA00"
          "style_part": "#00AA00"
+         "style_start": "-",
+         "style_end": "--o",
       }
    ]
 
@@ -304,6 +306,49 @@ Valid configuration examples are:
 * ``dotted,#red``
 
 An empty string uses the default plantuml settings.
+
+.. _needflow_style_start:
+
+style_start / style_end
++++++++++++++++++++++++
+
+These two options can define the arrow type, line type and line length.
+
+See `Plantuml documentation page <https://plantuml.com/en/component-diagram>`_ for details about supported formats.
+
+Here are some examples:
+
+.. list-table::
+   :header-rows: 1
+
+   - * description
+     * style_start
+     * style_end
+   - * default
+     * ``-``
+     * ``>``
+   - * reverse
+     * ``<``
+     * ``-``
+   - * Both sides, dotted line
+     * ``<.``
+     * ``.>``
+   - * Deeper level / longer line
+     * ``--``
+     * ``->``
+
+Use ``style_start`` and ``style_end`` like this::
+
+   needs_extra_links = [
+      {
+         "option": "tests",
+         "incoming": "is tested by",
+         "outgoing": "tests",
+         "copy": False,
+         "style_start": "<-",
+         "style_end": "-->",
+      }
+   ]
 
 .. _needs_flow_show_links:
 

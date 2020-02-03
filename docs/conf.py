@@ -157,7 +157,9 @@ needs_extra_links = [
         "outgoing": "blocks",
         "copy": True,
         "style": "#AA0000",
-        "style_part": "strict,#AA0000"
+        "style_part": "strict,#AA0000",
+        "style_start": '-',
+        "style_end": '>',
     },
     {
         "option": "tests",

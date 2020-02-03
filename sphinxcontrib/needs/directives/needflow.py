@@ -14,6 +14,8 @@ except ImportError:
     from sphinx.environment import NoUri  # Sphinx < 3.0
 
 
+
+
 from sphinxcontrib.needs.filter_common import FilterBase, procces_filters
 
 sphinx_version = sphinx.__version__
@@ -229,11 +231,26 @@ def process_needflow(app, doctree, fromdocname):
                             final_link not in [x['id_complete'] for x in found_needs if x['is_part']]:
                         continue
 
-                    puml_connections += '{id} --{link_style}> {link}{comment}\n'.format(
+                    if 'style_start' in link_type.keys() and link_type['style_start'] is not None and \
+                            len(link_type['style_start']) > 0:
+                        style_start = link_type['style_start']
+                    else:
+                        style_start = '-'
+
+                    if 'style_end' in link_type.keys() and link_type['style_end'] is not None and \
+                            len(link_type['style_end']) > 0:
+                        style_end = link_type['style_end']
+                    else:
+                        style_end = '>'
+
+                    # puml_connections += '{id} --{link_style}> {link}{comment}\n'.format(
+                    puml_connections += '{id} {style_start}{link_style}{style_end} {link}{comment}\n'.format(
                         id=make_entity_name(need_info["id"]),
                         link=make_entity_name(final_link),
                         comment=comment,
-                        link_style=link_style
+                        link_style=link_style,
+                        style_start=style_start,
+                        style_end=style_end
                     )
 
         puml_node["uml"] += puml_connections
