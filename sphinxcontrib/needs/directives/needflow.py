@@ -46,7 +46,8 @@ class NeedflowDirective(FilterBase):
                    'show_filters': directives.flag,
                    'show_link_names': directives.flag,
                    'link_types': directives.unchanged_required,
-                   'config': directives.unchanged_required}
+                   'config': directives.unchanged_required,
+                   'debug': directives.flag}
 
     # Update the options_spec with values defined in the FilterBase class
     option_spec.update(FilterBase.base_option_spec)
@@ -91,6 +92,7 @@ class NeedflowDirective(FilterBase):
             'show_filters': True if self.options.get("show_filters", False) is None else False,
             'show_legend': True if self.options.get("show_legend", False) is None else False,
             'show_link_names': True if self.options.get("show_link_names", False) is None else False,
+            'debug': True if self.options.get("debug", False) is None else False,
             'config_names': config_names,
             'config': '\n'.join(configs),
             'link_types': link_types,
@@ -167,12 +169,18 @@ def process_needflow(app, doctree, fromdocname):
         # Adding config
         config = current_needflow['config']
         if config is not None and len(config) >= 3:
+            # Remove all empty lines
+            config = '\n'.join([line.strip() for line in config.split('\n') if line.strip() != ''])
+            puml_node["uml"] += '\n\' Config\n\n'
             puml_node["uml"] += config
+            puml_node["uml"] += '\n\n'
 
         all_needs = list(all_needs.values())
         found_needs = procces_filters(all_needs, current_needflow)
 
         processed_need_part_ids = []
+
+        puml_node["uml"] += '\n\' Nodes definition \n\n'
 
         for need_info in found_needs:
             # Check if need_part was already handled during handling of parent need.
@@ -269,17 +277,21 @@ def process_needflow(app, doctree, fromdocname):
                         style_end=style_end
                     )
 
+        puml_node["uml"] += '\n\' Connection definition \n\n'
         puml_node["uml"] += puml_connections
 
         # Create a legend
         if current_needflow["show_legend"]:
+            puml_node["uml"] += '\n\n\' Legend definition \n\n'
+
             puml_node["uml"] += "legend\n"
             puml_node["uml"] += "|= Color |= Type |\n"
             for need in app.config.needs_types:
                 puml_node["uml"] += "|<back:{color}> {color} </back>| {name} |\n".format(
                     color=need["color"], name=need["title"])
             puml_node["uml"] += "endlegend\n"
-        puml_node["uml"] += "@enduml"
+
+        puml_node["uml"] += "\n@enduml"
         puml_node["incdir"] = os.path.dirname(current_needflow["docname"])
         puml_node["filename"] = os.path.split(current_needflow["docname"])[1]  # Needed for plantuml >= 0.9
         content.append(puml_node)
@@ -308,6 +320,13 @@ def process_needflow(app, doctree, fromdocname):
             filter_node = nodes.emphasis(filter_text, filter_text)
             para += filter_node
             content.append(para)
+
+        if current_needflow['debug']:
+            debug_container = nodes.container()
+            debug_para = nodes.raw('', '<pre>{}</pre>'.format(puml_node["uml"]), format = 'html')
+            debug_container += debug_para
+            content += debug_container
+
         node.replace_self(content)
 
 

@@ -278,3 +278,30 @@ Multiple configurations can be set together by separating them via ``,``.
    :link_types: tests, blocks
    :show_link_names:
    :config: monochrome,lefttoright,handwritten
+
+.. _needflow_debug:
+
+debug
+~~~~~
+
+.. versionadded:: 0.5.2
+
+If ``debug`` is set, a debug-output of the generated PlantUML code gets added after the generated image.
+
+Helpful to identify reasons why a PlantUML build my have thrown errors.
+
+Example::
+
+   .. needflow::
+      :tags: flow_example
+      :types: spec
+      :link_types: tests, blocks
+      :config:  lefttoright, handwritten
+      :debug:
+
+.. needflow::
+   :tags: flow_example
+   :link_types: tests, blocks
+   :config:  lefttoright, handwritten
+   :debug:
+
