@@ -3,6 +3,7 @@ import re
 import sphinx
 import sys
 import urllib
+import html
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -323,7 +324,10 @@ def process_needflow(app, doctree, fromdocname):
 
         if current_needflow['debug']:
             debug_container = nodes.container()
-            debug_para = nodes.raw('', '<pre>{}</pre>'.format(puml_node["uml"]), format = 'html')
+            data = puml_node["uml"]
+            import html
+            data = '\n'.join([html.escape(line) for line in data.split('\n')])
+            debug_para = nodes.raw('', '<pre>{}</pre>'.format(data), format = 'html')
             debug_container += debug_para
             content += debug_container
 

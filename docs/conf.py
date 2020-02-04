@@ -158,8 +158,8 @@ needs_extra_links = [
         "copy": True,
         "style": "#AA0000",
         "style_part": "strict,#AA0000",
-        "style_start": '"*" -',
-        "style_end": '-o "*"',
+        "style_start": '-',
+        "style_end": '-o',
     },
     {
         "option": "tests",
