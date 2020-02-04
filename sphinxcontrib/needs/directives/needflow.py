@@ -327,7 +327,7 @@ def process_needflow(app, doctree, fromdocname):
             data = puml_node["uml"]
             import html
             data = '\n'.join([html.escape(line) for line in data.split('\n')])
-            debug_para = nodes.raw('', '<pre>{}</pre>'.format(data), format = 'html')
+            debug_para = nodes.raw('', '<pre>{}</pre>'.format(data), format='html')
             debug_container += debug_para
             content += debug_container
 
