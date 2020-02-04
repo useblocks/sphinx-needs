@@ -80,7 +80,7 @@ class NeedflowDirective(FilterBase):
         if config_names is not None and len(config_names) > 0:
             for config_name in config_names.split(','):
                 config_name = config_name.strip()
-                if config_name is not '' and config_name in env.config.needs_flow_configs:
+                if config_name != '' and config_name in env.config.needs_flow_configs:
                     configs.append(env.config.needs_flow_configs[config_name])
 
         # Add the need and all needed information
