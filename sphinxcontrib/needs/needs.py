@@ -31,6 +31,7 @@ from sphinxcontrib.needs.roles.need_count import NeedCount, process_need_count
 from sphinxcontrib.needs.functions import register_func, needs_common_functions
 from sphinxcontrib.needs.warnings import process_warnings
 from sphinxcontrib.needs.utils import INTERNALS
+from sphinxcontrib.needs.defaults import DEFAULT_DIAGRAM_TEMPLATE, LAYOUTS, NEEDFLOW_CONFIG_DEFAULTS
 
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
@@ -42,144 +43,6 @@ else:
 
 VERSION = '0.5.1'
 
-
-DEFAULT_DIAGRAM_TEMPLATE = \
-    """
-{%- if is_need -%}
-<size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>
-{%- else -%}
-<size:12>{{type_name}} (part)</size>\\n**{{content|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id_parent}}.**{{id}}**</size>
-{%- endif -%}
-"""
-
-
-LAYOUT_COMMON_SIDE = {
-            'side': [
-                '<<image("field:image", align="center")>>'
-            ],
-            'head': [
-                '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>'
-            ],
-            'meta': [
-                '<<meta_all(no_links=True)>>',
-                '<<meta_links_all()>>'
-            ],
-        }
-
-LAYOUTS = {
-    'test': {
-        'grid': 'simple',
-        'layout': {
-            'head': [
-                '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>  <<collapse_button("meta", '
-                'collapsed="icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=False)>> '
-            ],
-            'meta': [
-                '<<meta_all(no_links=True)>>',
-                '<<meta_links_all()>>'
-            ],
-        }
-    },
-    'clean': {
-        'grid': 'simple',
-        'layout': {
-            'head': [
-                '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>  <<collapse_button("meta", '
-                'collapsed="icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=False)>> '
-            ],
-            'meta': [
-                '<<meta_all(no_links=True)>>',
-                '<<meta_links_all()>>'
-            ],
-        }
-    },
-    'clean_l': {
-        'grid': 'simple_side_left',
-        'layout': LAYOUT_COMMON_SIDE
-    },
-    'clean_lp': {
-        'grid': 'simple_side_left_partial',
-        'layout': LAYOUT_COMMON_SIDE
-    },
-    'clean_r': {
-        'grid': 'simple_side_right',
-        'layout': LAYOUT_COMMON_SIDE
-    },
-    'clean_rp': {
-        'grid': 'simple_side_right_partial',
-        'layout': LAYOUT_COMMON_SIDE
-    },
-
-    'complete': {
-        'grid': 'complex',
-        'layout': {
-            'head_left': [
-                '<<meta_id()>>',
-            ],
-            'head': [
-                '<<meta("title")>>',
-            ],
-            'head_right': [
-                '<<meta("type_name")>>'
-            ],
-            'meta_left': [
-                '<<meta_all(no_links=True, exclude=["layout","style"])>>'
-            ],
-            'meta_right': [
-                '<<meta_links_all()>>'
-            ],
-            'footer_left': [
-                'layout: <<meta("layout")>>',
-            ],
-            'footer': [
-            ],
-            'footer_right': [
-                'style: <<meta("style")>>'
-            ]
-        }
-    },
-    'focus': {
-        'grid': 'content',
-        'layout': {
-        }
-    },
-    'focus_f': {
-        'grid': 'content_footer',
-        'layout': {
-            'footer': [
-                '<<meta_id()>>'
-            ]
-        }
-    },
-    'focus_l': {
-        'grid': 'content_side_left',
-        'layout': {
-            'side': [
-                '<<meta_id()>>'
-            ]
-        }
-    },
-    'focus_r': {
-        'grid': 'content_side_right',
-        'layout': {
-            'side': [
-                '<<meta_id()>>'
-            ]
-        }
-    },
-    'debug': {
-        'grid': 'simple',
-        'layout': {
-            'head': [
-                '<<meta_id()>> **<<meta("title")>>**',
-                '**<<collapse_button("meta", collapsed="Debug view on", visible="Debug view off", initial=True)>>**'
-            ],
-            'meta': [
-                '<<meta_all(exclude=[], defaults=False, show_empty=True)>>'
-            ]
-        }
-    },
-}
 
 
 def setup(app):
@@ -260,6 +123,8 @@ def setup(app):
     app.add_config_value('needs_layouts', {}, 'html')
     app.add_config_value('needs_default_layout', 'clean', 'html')
     app.add_config_value('needs_default_style', None, 'html')
+
+    app.add_config_value('needs_flow_configs', {}, 'html')
 
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
@@ -483,6 +348,8 @@ def prepare_env(app, env, docname):
 
     app.config.needs_layouts = {**LAYOUTS, **app.config.needs_layouts}
 
+    app.config.needs_flow_configs.update(NEEDFLOW_CONFIG_DEFAULTS)
+
     if not hasattr(env, 'needs_workflow'):
         # Used to store workflow status information for already executed tasks.
         # Some tasks like backlink_creation need be be performed only once.
@@ -506,11 +373,6 @@ def check_configuration(app, config):
     :param config:
     :return:
     """
-    INTERNALS = ['docname', 'lineno', 'target_node', 'refid', 'content', 'collapse', 'parts', 'id_parent',
-                'id_complete', 'title', 'full_title', 'is_part', 'is_need',
-                'type_prefix', 'type_color', 'type_style', 'type', 'type_name', 'id',
-                'hide', 'hide_status', 'hide_tags', 'sections', 'section_name', 'content_node']
-
     extra_options = config['needs_extra_options']
     link_types = [x['option'] for x in config['needs_extra_links']]
 
@@ -535,6 +397,3 @@ def check_configuration(app, config):
 
 class NeedsConfigException(SphinxError):
     pass
-
-
-

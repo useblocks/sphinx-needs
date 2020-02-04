@@ -63,6 +63,8 @@ needs_types must be a list of dictionaries, where each dictionary **must** conta
 * **color**: A color as hex value. Used in diagrams and some days maybe in other representations as well.
 * **style**: A plantuml node type, like node, artifact, frame, storage or database. See `plantuml documentation <http://plantuml.com/deployment-diagram>`_ for more.
 
+`color` can also be an empty string. This makes sense, if the PlantUMl configuration is mostly provided by using
+:ref:`needs_flow_configs` and the used colors shall not get overwritten by type specific values.
 
 .. _needs_extra_options:
 
@@ -383,6 +385,67 @@ So also :ref:`needflow_link_types` for more details.
 
 Default value: ``['links']``
 
+.. _needs_flow_configs:
+
+needs_flow_configs
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.5.2
+
+``needs_flow_configs`` must be a dictionary, which can store multiple `PlantUML configurations <https://plantuml.com/>`_.
+These configs can then be selected when using :ref:`needflow`.
+
+.. code-block:: python
+
+   needs_flow_configs = {
+      'my_config': """
+          skinparam monochrome true
+          skinparam componentStyle uml2
+      """,
+      'another_config': """
+          skinparam class {
+              BackgroundColor PaleGreen
+              ArrowColor SeaGreen
+              BorderColor SpringGreen
+          }
+      """
+   }
+
+``Sphinx-Needs`` provides already some useful configurations:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30,70
+
+   - * config name
+     * description
+   - * monochrome
+     * Changes all colors to monochrome colors
+   - * handwritten
+     * All lines look like they were handwritten (squiggly)
+   - * lefttoright
+     * Direction of boxes is left to right
+   - * toptobottom
+     * Direction of boxes is top to bottom (PlantUML default value)
+   - * tne
+     * Tomorrow night eighties theme. Look `here <https://github.com/gabrieljoelc/plantuml-themes>`_ for example.
+   - * cplant
+     * Cplant theme. Read `this <https://github.com/aoki/cplant>`_ for example.
+
+This configurations can then be used like this:
+
+.. code-block:: rst
+
+   .. needflow::
+      :tags: flow_example
+      :types: spec
+      :config: lefttoright,handwritten
+
+.. needflow::
+   :tags: flow_example
+   :types: spec
+   :config: lefttoright,handwritten
+
 needs_diagram_template
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -410,6 +473,7 @@ By default the following template is used:
     <size:12>{{type_name}} (part)</size>\\n**{{content|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id_parent}}.**{{id}}**</size>
     {%- endif -%}
     {% endraw %}
+
 
 .. _needs_id_required:
 

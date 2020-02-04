@@ -45,7 +45,8 @@ class NeedflowDirective(FilterBase):
     option_spec = {'show_legend': directives.flag,
                    'show_filters': directives.flag,
                    'show_link_names': directives.flag,
-                   'link_types': directives.unchanged_required}
+                   'link_types': directives.unchanged_required,
+                   'config': directives.unchanged_required}
 
     # Update the options_spec with values defined in the FilterBase class
     option_spec.update(FilterBase.base_option_spec)
@@ -74,6 +75,14 @@ class NeedflowDirective(FilterBase):
                     logger.warning('Scruffy link_type definition found in needflow {}. '
                                    'Defined link_type contains spaces only.'.format(id))
 
+        config_names = self.options.get("config", None)
+        configs = []
+        if config_names is not None and len(config_names) > 0:
+            for config_name in config_names.split(','):
+                config_name = config_name.strip()
+                if config_name is not '' and config_name in env.config.needs_flow_configs:
+                    configs.append(env.config.needs_flow_configs[config_name])
+
         # Add the need and all needed information
         env.need_all_needflows[targetid] = {
             'docname': env.docname,
@@ -82,6 +91,8 @@ class NeedflowDirective(FilterBase):
             'show_filters': True if self.options.get("show_filters", False) is None else False,
             'show_legend': True if self.options.get("show_legend", False) is None else False,
             'show_link_names': True if self.options.get("show_link_names", False) is None else False,
+            'config_names': config_names,
+            'config': '\n'.join(configs),
             'link_types': link_types,
             'export_id': self.options.get("export_id", ""),
             'env': env
@@ -152,6 +163,11 @@ def process_needflow(app, doctree, fromdocname):
         puml_node = plantuml(plantuml_block_text, **dict())
         puml_node["uml"] = "@startuml\n"
         puml_connections = ""
+
+        # Adding config
+        config = current_needflow['config']
+        if config is not None and len(config) >= 3:
+            puml_node["uml"] += config
 
         all_needs = list(all_needs.values())
         found_needs = procces_filters(all_needs, current_needflow)

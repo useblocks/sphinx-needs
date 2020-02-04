@@ -42,6 +42,7 @@ Supported options:
  * :ref:`needflow_show_legend`
  * :ref:`needflow_show_link_names`
  * :ref:`needflow_link_types`
+ * :ref:`needflow_config`
  * Common filters:
     * :ref:`option_status`
     * :ref:`option_tags`
@@ -234,3 +235,46 @@ See also :ref:`needs_extra_links` for more details about specific link types.
       :tags: flow_example
       :link_types: tests, blocks
       :show_link_names:
+
+.. _needflow_config:
+
+config
+~~~~~~
+
+.. versionadded:: 0.5.2
+
+Allows to specify a configuration, which must be provided by setting :ref:`needs_flow_configs`.
+
+.. code-block:: rst
+
+   .. needflow::
+      :tags: flow_example
+      :types: spec
+      :link_types: tests, blocks
+      :show_link_names:
+      :config: monochrome
+
+.. needflow::
+   :tags: flow_example
+   :types: spec
+   :link_types: tests, blocks
+   :show_link_names:
+   :config: monochrome
+
+Multiple configurations can be set together by separating them via ``,``.
+
+.. code-block:: rst
+
+   .. needflow::
+      :tags: flow_example
+      :types: spec
+      :link_types: tests, blocks
+      :show_link_names:
+      :config: monochrome,lefttoright,handwritten
+
+.. needflow::
+   :tags: flow_example
+   :types: spec
+   :link_types: tests, blocks
+   :show_link_names:
+   :config: monochrome,lefttoright,handwritten

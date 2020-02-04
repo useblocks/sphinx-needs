@@ -5,6 +5,7 @@ Changelog
 * Improvement: ``Sphinx-Needs`` configuration gets checked before build. (`#118 <https://github.com/useblocks/sphinxcontrib-needs/issues/118>`_)
 * Improvement: ``meta_links_all`` :ref:`layout function <layout_functions>` now supports an exclude parameter
 * Improvement: :ref:`needflow`'s :ref:`connection line and arrow type <needflow_style_start>` can be configured.
+* Improvement: Configurations added for :ref:`needflow`. Use :ref:`needs_flow_configs` to define them and :ref:`needflow_config` for activation.
 * Bugfix: :ref:`needs_global_options` handles None values correctly. ``style`` can now be set.
 * Bugfix: :ref:`needs_title_from_content` takes ``\n`` and ``.`` as delimiter.
 * Bugfix: Setting css-attribute ``white-space: normal`` for all need-tables, which is set badly in some sphinx-themes.
