@@ -386,6 +386,7 @@ There can be several templates in parallel, but only one can be set for a need.
 
    .. spec:: My specification
       :status: open
+      :links: FEATURE_1, FEATURE_2
       :id: TEMPL_SPEC
       :tags: example, template
       :template: spec_template
@@ -396,6 +397,7 @@ There can be several templates in parallel, but only one can be set for a need.
 
 .. spec:: My specification
    :status: open
+   :links: FEATURE_1, FEATURE_2
    :id: TEMPL_SPEC
    :tags: example, template
    :template: spec_template

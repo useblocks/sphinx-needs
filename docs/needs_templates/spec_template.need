@@ -14,3 +14,10 @@ Tags:
 {% for tag in tags %}
 {{loop.index}}. tag: **{{tag}}**
 {% endfor %}
+
+{# Access to values from other needs can be done #}
+{# by using dynamic_functions #}
+Links:
+{% for link in links %}
+| **{{link}}**: [[copy('title', '{{link}}')]] ([[copy('type_name', '{{link}}')]])
+{%- endfor %}
