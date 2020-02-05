@@ -93,12 +93,15 @@ You can easily set links to multiple needs by using ";" as separator.
 
       This sets a link to id ``REQ_LINK_1``.
 
-.. req:: Link example
-      :links: OWN_ID_123; IMPL_01
-      :collapse: false
+.. req:: Link example Target
+   :id: REQ_LINK_1
 
-      We have linked this requirement to multiple other needs.
+   This is the target for a link. Itself has no link set.
 
+.. req:: Link example Source
+   :links: REQ_LINK_1
+
+   This sets a link to id ``REQ_LINK_1``.
 
 
 .. _need_extra_links:
@@ -309,7 +312,7 @@ style
 
 ``style`` can be used to set a specific class-attribute for the need representation.
 
-The class-attribute can then be addressed by css to specific the layout of the need.
+The class-attribute can then be addressed by css to specify the layout of the need.
 
 .. req:: My styled requirement
    :id: STYLE_001
@@ -330,37 +333,32 @@ The class-attribute can then be addressed by css to specific the layout of the n
    :id: STYLE_004
    :style: yellow, blue_border
 
-.. container:: toggle
+.. code-block:: rst
 
-   .. container:: header
+   .. req:: My styled requirement
+      :id: STYLE_001
+      :tags: style_example
+      :style: red
 
-      **Show code**
+   .. req:: Another styled requirement
+      :id: STYLE_002
+      :tags: style_example
+      :style: blue
 
-   .. code-block:: rst
+   .. req:: Green is my color
+      :id: STYLE_003
+      :tags: style_example
+      :style: green
 
-      .. req:: My styled requirement
-         :id: STYLE_001
-         :tags: style_example
-         :style: red
-
-      .. req:: Another styled requirement
-         :id: STYLE_002
-         :tags: style_example
-         :style: blue
-
-      .. req:: Green is my color
-         :id: STYLE_003
-         :tags: style_example
-         :style: green
-
-      .. req:: Yellow and blue border
-         :id: STYLE_004
-         :style: yellow, blue_border
+   .. req:: Yellow and blue border
+      :id: STYLE_004
+      :style: yellow, blue_border
 
 By using :ref:`dynamic_functions` the value of ``style`` can be automatically
 combined with values from other need options.
 
-Here ``style`` is set to ``needs_[[copy('status')]]``.
+Here ``style`` is set to ``[[copy('status')]]``,
+which leads to the css class ``needs_style_open`` if style is set to ``open``.
 
 .. req:: My automatically styled requirement
    :id: STYLE_005
@@ -465,7 +463,7 @@ hide_status
 .. note::
 
    To remove options from output in ``Sphinx-Needs`` version >= ``0.5.0`` you must provide your own layout, which
-   does not include these options. See :ref:``layouts_styles`` for more information.
+   does not include these options. See :ref:`layouts_styles` for more information.
 
 You can also use **:hide_status:**  to hide status information for a need.
 
@@ -478,6 +476,6 @@ hide_tags
 .. note::
 
    To remove options from output in ``Sphinx-Needs`` version >= ``0.5.0`` you must provide your own layout, which
-   does not include these options. See :ref:``layouts_styles`` for more information.
+   does not include these options. See :ref:`layouts_styles` for more information.
 
 Or use **:hide_tags:** to hide the tags of a need.
