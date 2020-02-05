@@ -1,8 +1,10 @@
 import hashlib
 import re
+import os
 from docutils import nodes
+from jinja2 import Template
 from sphinxcontrib.needs.api.exceptions import NeedsNoIdException, NeedsInvalidException, NeedsStatusNotAllowed, \
-     NeedsTagNotAllowed, NeedsDuplicatedId, NeedsInvalidOption
+     NeedsTagNotAllowed, NeedsDuplicatedId, NeedsInvalidOption, NeedsTemplateException
 import sphinxcontrib.needs.directives.need
 from sphinx.util.nodes import nested_parse_with_titles
 from sphinxcontrib.needs.roles.need_part import update_need_with_parts, find_parts
@@ -22,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 def add_need(app, state, docname, lineno, need_type, title, id=None, content="", status=None, tags=None,
              links_string=None, hide=False, hide_tags=False, hide_status=False, collapse=None, style=None,
-             layout=None, **kwargs):
+             layout=None, template=None, **kwargs):
     """
     Creates a new need and returns its node.
 
@@ -78,6 +80,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
     :param collapse: boolean value.
     :param style: String value of class attribute of node.
     :param layout: String value of layout definition to use
+    :param template: Template name to use for the content of this need
 
     :return: node
     """
@@ -208,6 +211,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
         'collapse': collapse,
         'style': style,
         'layout': layout,
+        'template': template,
         'hide': hide,
         'parts': {},
 
@@ -257,6 +261,29 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
     needs_info['links'] += copy_links  # Set copied links to main-links
 
     env.needs_all_needs[need_id] = needs_info
+
+    # Template build
+    if template is not None and len(template) > 0:
+        template_folder = app.config.needs_template_folder
+        if not os.path.isabs(template_folder):
+            template_folder = os.path.join(app.confdir, template_folder)
+
+        if not os.path.isdir(template_folder):
+            raise NeedsTemplateException('Template folder does not exist: {}'.format(template_folder))
+
+        template_file_name = template + '.need'
+        template_path = os.path.join(template_folder, template_file_name)
+        if not os.path.isfile(template_path):
+            raise NeedsTemplateException('Template does not exist: {}'.format(template_path))
+
+        with open(template_path, 'r') as template_file:
+            template_content = ''.join(template_file.readlines())
+        template_obj = Template(template_content)
+        new_content = template_obj.render(**needs_info)
+
+        # Overwrite current content
+        content = new_content
+        needs_info['content'] = new_content
 
     if hide:
         return [target_node]

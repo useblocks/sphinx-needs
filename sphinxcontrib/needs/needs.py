@@ -126,6 +126,8 @@ def setup(app):
 
     app.add_config_value('needs_flow_configs', {}, 'html')
 
+    app.add_config_value('needs_template_folder', 'needs_templates/', 'html')
+
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(Needfilter, )

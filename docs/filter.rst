@@ -22,6 +22,7 @@ The following filter options are supported by directives:
  * :ref:`needlist`
  * :ref:`needtable`
  * :ref:`needflow`
+ * :ref:`needpie`
  * :ref:`needfilter` (deprecated!)
 
 

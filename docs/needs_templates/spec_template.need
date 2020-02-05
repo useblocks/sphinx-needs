@@ -1,0 +1,16 @@
+{# Comment, no output here #}
+A line before the content
+
+{# Place the original content here #}
+{{content}}
+
+{# Use {{..}} to access need values #}
+Status: **{{status}}**
+
+Template: **{{template}}.need**
+
+{# You can also loop over need values #}
+Tags:
+{% for tag in tags %}
+{{loop.index}}. tag: **{{tag}}**
+{% endfor %}

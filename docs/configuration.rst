@@ -1003,6 +1003,20 @@ A combination of multiple styles is possible::
 
 Custom values can be set as well, if your projects provides the needed css-files for it.
 
+.. _needs_template_folder:
+
+needs_template_folder
+~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.5.2
+
+``needs_template_folder`` allows the definition of your own ``Sphinx-Needs`` template folder.
+By default this is ``needs_templates/``.
+
+The folder must already exist, otherwise an exception gets thrown, if a need tries to use a template.
+
+Read also :ref:`need_template option description <need_template>` for information of how to use templates.
+
 Removed options
 ------------------
 

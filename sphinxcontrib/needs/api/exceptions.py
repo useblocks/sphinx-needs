@@ -44,3 +44,7 @@ class NeedsInvalidException(SphinxError):
 
 class NeedsInvalidOption(SphinxError):
     pass
+
+
+class NeedsTemplateException(SphinxError):
+    pass

@@ -47,6 +47,7 @@ Supported options:
 * :ref:`need_collapse`
 * :ref:`need_layout`
 * :ref:`need_style`
+* :ref:`need_template`
 
 .. _need_id:
 
@@ -351,6 +352,61 @@ Here ``style`` is set to ``needs_[[copy('status')]]``.
       :status: open
       :tags: style_example
       :style: [[copy(status)]]
+
+.. _need_template:
+
+template
+~~~~~~~~
+
+.. versionadded:: 0.5.2
+
+By setting ``template`` the content of the need gets replaced by the content of the specified template.
+
+``Sphinx-Needs`` templates support the template language `Jinja <https://jinja.palletsprojects.com/>`_
+and gives access to all need data, including the original content.
+
+The template name must be the same as a file name in the ``Sphinx-Needs`` template folder, without the file extension.
+So a file named ``my_template.need`` must be referenced like this: ``:template: my_template``.
+``Sphinx-Needs`` templates must always use the file extension ``.need``.
+
+The location of all template files is specified by :ref:`needs_template_folder`, which is by
+default ``needs_templates/``.
+
+There can be several templates in parallel, but only one can be set for a need.
+
+**Example**
+
+*Template:* spec_template.need
+
+.. literalinclude:: /needs_templates/spec_template.need
+
+*Need*
+
+.. code-block:: rst
+
+   .. spec:: My specification
+      :status: open
+      :id: TEMPL_SPEC
+      :tags: example, template
+      :template: spec_template
+
+      This is my **specification** content.
+
+*Result*
+
+.. spec:: My specification
+   :status: open
+   :id: TEMPL_SPEC
+   :tags: example, template
+   :template: spec_template
+
+   This is my **specification** content.
+
+A list of available need-value names can be found in the documentation of :ref:`filter_string` or by using
+the ``debug`` :ref:`layout <layouts>`.
+
+You can automatically assign templates to specific needs by using :ref:`needs_global_options`.
+
 
 Customized Options
 ------------------

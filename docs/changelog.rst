@@ -7,6 +7,8 @@ Changelog
 * Improvement: :ref:`needflow`'s :ref:`connection line and arrow type <needflow_style_start>` can be configured.
 * Improvement: Configurations added for :ref:`needflow`. Use :ref:`needs_flow_configs` to define them and :ref:`needflow_config` for activation.
 * Improvement: :ref:`needflow` option :ref:`needflow_debug` added, which prints the generated PlantUML code after the flowchart.
+* Improvement: Supporting Need-Templates by providing need option :ref:`need_template` and
+  configuration option :ref:`needs_template_folder`. (`#119 <https://github.com/useblocks/sphinxcontrib-needs/issues/119>`_)
 * Bugfix: :ref:`needs_global_options` handles None values correctly. ``style`` can now be set.
 * Bugfix: :ref:`needs_title_from_content` takes ``\n`` and ``.`` as delimiter.
 * Bugfix: Setting css-attribute ``white-space: normal`` for all need-tables, which is set badly in some sphinx-themes.
