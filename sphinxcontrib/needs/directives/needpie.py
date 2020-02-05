@@ -9,6 +9,8 @@ from pkg_resources import parse_version
 
 import matplotlib
 
+from sphinxcontrib.needs.filter_common import FilterBase, filter_needs
+
 if not os.environ.get('DISPLAY'):
     matplotlib.use('Agg')
 import matplotlib.pyplot
@@ -20,7 +22,6 @@ try:
 except ImportError:
     from sphinx.environment import NoUri  # Sphinx < 3.0
 
-from sphinxcontrib.needs.filter_common import FilterBase, procces_filters
 
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
@@ -143,7 +144,6 @@ def process_needpie(app, doctree, fromdocname):
         else:
             matplotlib.style.use('default')
 
-        from sphinxcontrib.needs.filter_common import filter_needs
         content = current_needpie['content']
         sizes = []
         for line in content:
