@@ -125,11 +125,11 @@ By using :ref:`needs_extra_links` you can use the configured link-types to set a
       # conf.py
       needs_extra_links = [
          {
-            "name": "blocks",
+            "option": "blocks",
             "incoming": "is blocked by",
          },
          {
-            "name": "tests",
+            "option": "tests",
             "incoming": "is tested by",
             "copy": False,
             "color": "#00AA00"
