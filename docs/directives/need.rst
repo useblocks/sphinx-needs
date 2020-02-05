@@ -81,29 +81,23 @@ All you need is the related ID.
 
 You can easily set links to multiple needs by using ";" as separator.
 
-.. container:: toggle
+.. code-block:: rst
 
-   .. container:: header
+   .. req:: Link example Target
+      :id: REQ_LINK_1
 
-      **Show example**
+      This is the target for a link. Itself has no link set.
 
-   .. code-block:: rst
+   .. req:: Link example Source
+      :links: REQ_LINK_1
 
-      .. req:: Link example Target
-         :id: REQ_LINK_1
+      This sets a link to id ``REQ_LINK_1``.
 
-         This is the target for a link. Itself has no link set.
+.. req:: Link example
+      :links: OWN_ID_123; IMPL_01
+      :collapse: false
 
-      .. req:: Link example Source
-         :links: REQ_LINK_1
-
-         This sets a link to id ``REQ_LINK_1``.
-
-   .. req:: Link example
-         :links: OWN_ID_123; IMPL_01
-         :collapse: false
-
-         We have linked this requirement to multiple other needs.
+      We have linked this requirement to multiple other needs.
 
 
 
@@ -114,54 +108,48 @@ extra links
 
 By using :ref:`needs_extra_links` you can use the configured link-types to set additional on other options.
 
-.. container:: toggle
+.. code-block:: python
 
-   .. container:: header
+   # conf.py
+   needs_extra_links = [
+      {
+         "option": "blocks",
+         "incoming": "is blocked by",
+      },
+      {
+         "option": "tests",
+         "incoming": "is tested by",
+         "copy": False,
+         "color": "#00AA00"
+      }
+   ]
 
-      **Show example**
-
-   .. code-block:: python
-
-      # conf.py
-      needs_extra_links = [
-         {
-            "option": "blocks",
-            "incoming": "is blocked by",
-         },
-         {
-            "option": "tests",
-            "incoming": "is tested by",
-            "copy": False,
-            "color": "#00AA00"
-         }
-      ]
-
-   .. code-block:: rst
-
-      .. req:: test me
-         :id: test_req
-
-         A requirement, which needs to be tested
-
-      .. test:: test a requirement
-         :id: test_001
-         :tests: test_req
-
-         Perform some tests
-
+.. code-block:: rst
 
    .. req:: test me
       :id: test_req
-      :collapse: false
 
       A requirement, which needs to be tested
 
    .. test:: test a requirement
       :id: test_001
       :tests: test_req
-      :collapse: false
 
       Perform some tests
+
+
+.. req:: test me
+   :id: test_req
+   :collapse: false
+
+   A requirement, which needs to be tested
+
+.. test:: test a requirement
+   :id: test_001
+   :tests: test_req
+   :collapse: false
+
+   Perform some tests
 
 
 .. _need_hide:
@@ -187,25 +175,7 @@ Allowed values:
  * false; no; 0
 
 
-.. container:: toggle
-
-   .. container:: header
-
-      **Show example**
-
-   .. code-block:: rst
-
-      .. req:: Collapse is set to True
-         :tags: collapse; example
-         :collapse: True
-
-         Only title and content are shown
-
-      .. req:: Collapse is set to False
-         :tags: collapse; example
-         :collapse: False
-
-         Title, tags, links and everything else is shown directly.
+.. code-block:: rst
 
    .. req:: Collapse is set to True
       :tags: collapse; example
@@ -218,6 +188,18 @@ Allowed values:
       :collapse: False
 
       Title, tags, links and everything else is shown directly.
+
+.. req:: Collapse is set to True
+   :tags: collapse; example
+   :collapse: True
+
+   Only title and content are shown
+
+.. req:: Collapse is set to False
+   :tags: collapse; example
+   :collapse: False
+
+   Title, tags, links and everything else is shown directly.
 
 
 .. _title_from_content:
@@ -263,7 +245,60 @@ sentence of the requirement.
 layout
 ~~~~~~
 
-TBD
+.. versionadded:: 0.4.1
+
+``layout`` can be used to set a specific grid and content mapping.
+
+.. code-block:: rst
+
+   .. req:: My layout requirement 1
+      :id: LAYOUT_1
+      :tags: layout_example
+      :layout: clean
+
+      Some **content** of LAYOUT_1
+
+.. req:: My layout requirement 1
+   :id: LAYOUT_1
+   :tags: layout_example
+   :layout: clean
+
+   Some **content** of LAYOUT_1
+
+.. code-block:: rst
+
+   .. req:: My layout requirement 2
+      :id: LAYOUT_2
+      :tags: layout_example
+      :layout: complete
+
+      Some **content** of LAYOUT_2
+
+.. req:: My layout requirement 2
+   :id: LAYOUT_2
+   :tags: layout_example
+   :layout: complete
+
+   Some **content** of LAYOUT_2
+
+.. code-block:: rst
+
+   .. req:: My layout requirement 3
+      :id: LAYOUT_3
+      :tags: layout_example
+      :layout: focus
+
+      Some **content** of LAYOUT_3
+
+.. req:: My layout requirement 3
+   :id: LAYOUT_3
+   :tags: layout_example
+   :layout: focus
+
+   Some **content** of LAYOUT_3
+
+Please take a look into :ref:`layouts` for more information.
+
 
 .. _need_style:
 
