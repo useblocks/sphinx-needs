@@ -279,6 +279,27 @@ Multiple configurations can be set together by separating them via ``,``.
    :show_link_names:
    :config: monochrome,lefttoright,handwritten
 
+``Sphinx-Needs`` provides already some useful configurations:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30,70
+
+   - * config name
+     * description
+   - * monochrome
+     * Changes all colors to monochrome colors
+   - * handwritten
+     * All lines look like they were handwritten (squiggly)
+   - * lefttoright
+     * Direction of boxes is left to right
+   - * toptobottom
+     * Direction of boxes is top to bottom (PlantUML default value)
+   - * tne
+     * Tomorrow night eighties theme. Look `here <https://github.com/gabrieljoelc/plantuml-themes>`_ for example.
+   - * cplant
+     * Cplant theme. Read `this <https://github.com/aoki/cplant>`_ for example.
+
 .. _needflow_debug:
 
 debug
@@ -288,7 +309,7 @@ debug
 
 If ``debug`` is set, a debug-output of the generated PlantUML code gets added after the generated image.
 
-Helpful to identify reasons why a PlantUML build my have thrown errors.
+Helpful to identify reasons why a PlantUML build may have thrown errors.
 
 Example::
 

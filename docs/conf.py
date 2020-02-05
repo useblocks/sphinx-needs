@@ -170,6 +170,20 @@ needs_extra_links = [
         "style_part": "dotted,#00AA00"
     }]
 
+needs_flow_configs = {
+   'my_config': """
+       skinparam monochrome true
+       skinparam componentStyle uml2
+   """,
+   'another_config': """
+       skinparam class {
+           BackgroundColor PaleGreen
+           ArrowColor SeaGreen
+           BorderColor SpringGreen
+       }
+   """
+}
+
 needs_show_link_type = False
 needs_show_link_title = False
 needs_title_optional = True

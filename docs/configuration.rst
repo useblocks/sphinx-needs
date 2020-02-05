@@ -411,27 +411,6 @@ These configs can then be selected when using :ref:`needflow`.
       """
    }
 
-``Sphinx-Needs`` provides already some useful configurations:
-
-.. list-table::
-   :header-rows: 1
-   :widths: 30,70
-
-   - * config name
-     * description
-   - * monochrome
-     * Changes all colors to monochrome colors
-   - * handwritten
-     * All lines look like they were handwritten (squiggly)
-   - * lefttoright
-     * Direction of boxes is left to right
-   - * toptobottom
-     * Direction of boxes is top to bottom (PlantUML default value)
-   - * tne
-     * Tomorrow night eighties theme. Look `here <https://github.com/gabrieljoelc/plantuml-themes>`_ for example.
-   - * cplant
-     * Cplant theme. Read `this <https://github.com/aoki/cplant>`_ for example.
-
 This configurations can then be used like this:
 
 .. code-block:: rst
@@ -439,12 +418,14 @@ This configurations can then be used like this:
    .. needflow::
       :tags: flow_example
       :types: spec
-      :config: lefttoright,handwritten
+      :config: my_config
 
 .. needflow::
    :tags: flow_example
    :types: spec
-   :config: lefttoright,handwritten
+   :config: my_config
+
+See also :ref:`needflow config option <needflow_config>` for more details and already available configurations.
 
 needs_diagram_template
 ~~~~~~~~~~~~~~~~~~~~~~
