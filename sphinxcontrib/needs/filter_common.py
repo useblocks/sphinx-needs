@@ -232,7 +232,9 @@ def filter_single_need(need, filter_string="", needs=None, current_need=None):
     filter_context["search"] = re.search
     result = False
     try:
-        result = bool(eval(filter_string, None, filter_context))
+        # Set filter_context as globals and not only locals in eval()!
+        # Otherwise the vars not not be accessed in list comprehensions.
+        result = bool(eval(filter_string, filter_context))
     except Exception as e:
         raise NeedInvalidFilter("Filter {0} not valid: Error: {1}".format(filter_string, e))
     return result

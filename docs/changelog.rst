@@ -17,6 +17,7 @@ Changelog
   parameter now works as expected
 * Bugfix: Added need-type as css-class back on need. Css class name is ``needs_type_(need_type attribute)``.
   (`#124 <https://github.com/useblocks/sphinxcontrib-needs/issues/124>`_)
+* Bugfix: Need access inside list comprehensions in :ref:`filter_string` is now working.
 
 0.5.1
 -----
