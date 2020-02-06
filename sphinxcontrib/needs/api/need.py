@@ -263,7 +263,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
     env.needs_all_needs[need_id] = needs_info
 
     # Template build
-    if template is not None and len(template) > 0:
+    if needs_info['template'] is not None and len(needs_info['template']) > 0:
         template_folder = app.config.needs_template_folder
         if not os.path.isabs(template_folder):
             template_folder = os.path.join(app.confdir, template_folder)
@@ -271,7 +271,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
         if not os.path.isdir(template_folder):
             raise NeedsTemplateException('Template folder does not exist: {}'.format(template_folder))
 
-        template_file_name = template + '.need'
+        template_file_name = needs_info['template'] + '.need'
         template_path = os.path.join(template_folder, template_file_name)
         if not os.path.isfile(template_path):
             raise NeedsTemplateException('Template does not exist: {}'.format(template_path))
@@ -285,7 +285,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
         content = new_content
         needs_info['content'] = new_content
 
-    if hide:
+    if needs_info['hide']:
         return [target_node]
 
     # Adding of basic Need node.

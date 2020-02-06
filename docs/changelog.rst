@@ -1,5 +1,10 @@
 Changelog
 =========
+0.5.3
+-----
+* Bugfix: :ref:`need_template` can now be set via :ref:`needs_global_options`.
+
+
 0.5.2
 -----
 * Improvement: ``Sphinx-Needs`` configuration gets checked before build. (`#118 <https://github.com/useblocks/sphinxcontrib-needs/issues/118>`_)
