@@ -252,7 +252,8 @@ def process_needflow(app, doctree, fromdocname):
 
                 node_code = '{style} "{node_text}" as {id} [[{link}]] #{color} {need_parts}\n'.format(
                     id=make_entity_name(need_id), node_text=node_text,
-                    link=make_entity_name(link), color=';'.join(colors),
+                    # link=make_entity_name(link), color=';'.join(colors),
+                    link=link, color=';'.join(colors),
                     style=style, need_parts=node_part_code)
                 puml_node["uml"] += node_code
 
@@ -396,10 +397,11 @@ def calculate_link(app, need_info):
     # and not to current documentation. Therefore we need to add ../ to get out of the image folder.
     try:
         link = "../" + app.builder.get_target_uri(need_info['docname']) \
-               + "?highlight={0}".format(urlParse(need_info['title'])) \
                + "#" \
-               + need_info['target_node']['refid'] \
-            # Gets mostly called during latex generation
+               + need_info['target_node']['refid']
+        # This would highlight all word from title. Deactivated with 0.5.3
+        # + "?highlight={0}".format(urlParse(need_info['title']))
+
     except NoUri:
         link = ""
 
