@@ -47,6 +47,7 @@ Supported options:
  * :ref:`needflow_link_types`
  * :ref:`needflow_config`
  * :ref:`needflow_scale`
+ * :ref:`needflow_align`
  * :ref:`needflow_highlight`
  * :ref:`needflow_debug`
  * Common filters:
