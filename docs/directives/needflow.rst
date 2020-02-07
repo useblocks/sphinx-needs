@@ -7,21 +7,21 @@ needflow
 
 **needflow** creates a flowchart of filtered needs.
 
+If an argument is provided, this is taken as caption for the generated image.
+
 .. code-block:: rst
 
-   .. needflow::
+   .. needflow:: My first needflow
       :filter: is_need
       :tags: flow_example
       :link_types: tests, blocks
       :show_link_names:
 
-.. needflow::
+.. needflow:: My first needflow
    :filter: is_need
    :tags: flow_example
    :link_types: tests, blocks
    :show_link_names:
-
-
 
 Dependencies
 ------------
@@ -322,6 +322,26 @@ which also passes the given filter string.
    :tags: flow_example
    :link_types: tests, blocks
    :highlight: id in ['spec_flow_002', 'subspec_2'] or type == 'req'
+
+.. _needflow_align:
+
+align
+~~~~~
+
+Set ``align`` value for PlantUML image.
+Allowed values are: ``left``, ``center``, ``right``
+
+.. code-block:: rst
+
+   .. needflow::
+      :filter: is_need
+      :tags: flow_example
+      :align: center
+
+.. needflow::
+   :filter: is_need and type == 'spec'
+   :tags: flow_example
+   :align: center
 
 .. _needflow_debug:
 

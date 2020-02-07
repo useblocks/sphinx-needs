@@ -3,6 +3,8 @@ Changelog
 0.5.3 (not released yet)
 ------------------------
 * Improvement: Added ``transparent`` for transparent background to needflow configurations.
+* Improvement: :ref:`needflow` uses directive argument as caption now.
+* Improvement: Added option :ref:`needflow_align` to align needflow images.
 * Improvement: Added option :ref:`needflow_scale` to scale needflow images. (`#127 <https://github.com/useblocks/sphinxcontrib-needs/issues/127>`_)
 * Improvement: Added option :ref:`needflow_highlight` to :ref:`needflow`. (`#128 <https://github.com/useblocks/sphinxcontrib-needs/issues/128>`_)
 * Bugfix: :ref:`need_template` can now be set via :ref:`needs_global_options`.

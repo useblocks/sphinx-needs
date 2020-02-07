@@ -35,11 +35,10 @@ class Needflow(nodes.General, nodes.Element):
 
 class NeedflowDirective(FilterBase):
     """
-    Directive to filter needs and present them inside a list, table or diagram.
-
-    .. deprecated:: 0.2.0
-       Use needlist, needtable or needdiagram instead
+    Directive to get flow charts.
     """
+    optional_arguments = 1
+    final_argument_whitespace = True
     option_spec = {'show_legend': directives.flag,
                    'show_filters': directives.flag,
                    'show_link_names': directives.flag,
@@ -47,6 +46,7 @@ class NeedflowDirective(FilterBase):
                    'config': directives.unchanged_required,
                    'scale': directives.unchanged_required,
                    'highlight': directives.unchanged_required,
+                   'align': directives.unchanged_required,
                    'debug': directives.flag}
 
     # Update the options_spec with values defined in the FilterBase class
@@ -92,11 +92,16 @@ class NeedflowDirective(FilterBase):
 
         highlight = self.options.get("highlight", '')
 
+        caption = None
+        if self.arguments:
+            caption = self.arguments[0]
+
         # Add the need and all needed information
         env.need_all_needflows[targetid] = {
             'docname': env.docname,
             'lineno': self.lineno,
             'target_node': targetnode,
+            'caption': caption,
             'show_filters': True if self.options.get("show_filters", False) is None else False,
             'show_legend': True if self.options.get("show_legend", False) is None else False,
             'show_link_names': True if self.options.get("show_link_names", False) is None else False,
@@ -105,6 +110,7 @@ class NeedflowDirective(FilterBase):
             'config': '\n'.join(configs),
             'scale': scale,
             'highlight': highlight,
+            'align': self.options.get("align", None),
             'link_types': link_types,
             'export_id': self.options.get("export_id", ""),
             'env': env
@@ -329,6 +335,21 @@ def process_needflow(app, doctree, fromdocname):
         puml_node["uml"] += "\n@enduml"
         puml_node["incdir"] = os.path.dirname(current_needflow["docname"])
         puml_node["filename"] = os.path.split(current_needflow["docname"])[1]  # Needed for plantuml >= 0.9
+
+        scale = int(current_needflow['scale'])
+        if scale != 100:
+            puml_node['scale'] = scale
+
+        if current_needflow['align'] is not None and len(current_needflow['align']) != '' or \
+                current_needflow['caption'] is not None and len(current_needflow['caption']) != '':
+            puml_node = nodes.figure('', puml_node)
+
+            if current_needflow['align'] is not None and len(current_needflow['align']) != '':
+                puml_node['align'] = current_needflow['align']
+
+            if current_needflow['caption'] is not None and len(current_needflow['caption']) != '':
+                puml_node += nodes.caption('', current_needflow['caption'])
+
         content.append(puml_node)
 
         if len(content) == 0:
@@ -355,10 +376,6 @@ def process_needflow(app, doctree, fromdocname):
             filter_node = nodes.emphasis(filter_text, filter_text)
             para += filter_node
             content.append(para)
-
-        scale = int(current_needflow['scale'])
-        if scale != 100:
-            puml_node['scale'] = scale
 
         if current_needflow['debug']:
             debug_container = nodes.container()
