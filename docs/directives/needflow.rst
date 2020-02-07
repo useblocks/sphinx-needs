@@ -306,6 +306,8 @@ Numbers between ``1`` and ``300`` are supported.
 highlight
 ~~~~~~~~~
 
+.. versionadded:: 0.5.3
+
 ``highlight`` takes a single :ref:`filter_string` as value and sets the border to **red** for each need of the needflow,
 which also passes the given filter string.
 
