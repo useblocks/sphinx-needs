@@ -357,7 +357,8 @@ def process_needflow(app, doctree, fromdocname):
             content.append(para)
 
         scale = int(current_needflow['scale'])
-        puml_node['scale'] = scale  # Always set scale attribute to get a linked image
+        if scale != 100:
+            puml_node['scale'] = scale
 
         if current_needflow['debug']:
             debug_container = nodes.container()
