@@ -10,14 +10,17 @@ needflow
 .. code-block:: rst
 
    .. needflow::
+      :filter: is_need
       :tags: flow_example
       :link_types: tests, blocks
       :show_link_names:
 
 .. needflow::
+   :filter: is_need
    :tags: flow_example
    :link_types: tests, blocks
    :show_link_names:
+
 
 
 Dependencies
@@ -43,6 +46,8 @@ Supported options:
  * :ref:`needflow_show_link_names`
  * :ref:`needflow_link_types`
  * :ref:`needflow_config`
+ * :ref:`needflow_scale`
+ * :ref:`needflow_highlight`
  * :ref:`needflow_debug`
  * Common filters:
     * :ref:`option_status`
@@ -58,29 +63,17 @@ show_filters
 
 Adds information of used filters below generated flowchart.
 
-.. container:: toggle
 
-   .. container::  header
-
-      **Show example**
-
-   .. code-block:: rst
-
-      .. needflow::
-         :tags: main_example
-         :show_filters:
-
-   {% if READTHEDOCS %}
-
-   .. image:: /_static/needflow_flow.png
-
-   {% else %}
+.. code-block:: rst
 
    .. needflow::
       :tags: main_example
       :show_filters:
 
-   {% endif %}
+
+.. needflow::
+   :tags: main_example
+   :show_filters:
 
 
 .. _needflow_show_legend:
@@ -91,21 +84,15 @@ show_legend
 Adds a legend below generated flowchart. The legends contains all defined need-types and their configured color
 for flowcharts.
 
-.. container:: toggle
-
-   .. container::  header
-
-      **Show example**
-
-   .. code-block:: rst
-
-      .. needflow::
-         :tags: main_example
-         :show_legend:
+.. code-block:: rst
 
    .. needflow::
       :tags: main_example
       :show_legend:
+
+.. needflow::
+   :tags: main_example
+   :show_legend:
 
 .. _needflow_show_link_names:
 
@@ -118,21 +105,18 @@ Adds the link type name beside connections.
 
 Can be configured globally by setting :ref:`needs_flow_show_links` in ``conf.py``.
 
-.. container:: toggle
 
-   .. container::  header
+.. code-block:: rst
 
-      **Show example**
+   .. needflow::
+      :tags: main_example
+      :show_link_names:
 
-   .. code-block:: rst
+Setup data can be found in test case document `tests/doc_test/doc_extra_links`
 
-      .. needflow::
-         :show_legend:
-         :show_link_names:
-
-   Setup data can be found in test case document `tests/doc_test/doc_extra_links`
-
-   .. image:: /_static/needflow_link_names.png
+.. needflow::
+   :tags: main_example
+   :show_link_names:
 
 .. _needflow_link_types:
 
@@ -160,56 +144,13 @@ This option can be set globally via configuration option :ref:`needs_flow_link_t
 
 See also :ref:`needs_extra_links` for more details about specific link types.
 
-
-.. container:: toggle
-
-   .. container::  header
-
-      **Show example**
-
-   .. code-block:: rst
-
-      .. req:: A requirement
-         :hide:
-         :id: req_flow_001
-         :tags: flow_example
-
-      .. spec:: A specification
-         :hide:
-         :id: spec_flow_001
-         :blocks: req_flow_001
-         :tags: flow_example
-
-         :need_part:`(subspec_1)A testable part of the specification`
-
-         :need_part:`(subspec_2)Another testable part of the specification`
-
-      .. spec:: Another specification
-         :hide:
-         :id: spec_flow_002
-         :links: req_flow_001
-         :blocks: spec_flow_001
-         :tags: flow_example
-
-      .. test:: A test case
-         :hide:
-         :id: test_flow_001
-         :tests: spec_flow_002, spec_flow_001.subspec_1, spec_flow_001.subspec_2
-         :tags: flow_example
-
-
-      .. needflow::
-         :tags: flow_example
-         :link_types: tests, blocks
-         :show_link_names:
+.. code-block:: rst
 
    .. req:: A requirement
-      :hide:
       :id: req_flow_001
       :tags: flow_example
 
    .. spec:: A specification
-      :hide:
       :id: spec_flow_001
       :blocks: req_flow_001
       :tags: flow_example
@@ -219,23 +160,49 @@ See also :ref:`needs_extra_links` for more details about specific link types.
       :need_part:`(subspec_2)Another testable part of the specification`
 
    .. spec:: Another specification
-      :hide:
       :id: spec_flow_002
       :links: req_flow_001
       :blocks: spec_flow_001
       :tags: flow_example
 
    .. test:: A test case
-      :hide:
       :id: test_flow_001
       :tests: spec_flow_002, spec_flow_001.subspec_1, spec_flow_001.subspec_2
       :tags: flow_example
-
 
    .. needflow::
       :tags: flow_example
       :link_types: tests, blocks
       :show_link_names:
+
+.. req:: A requirement
+   :id: req_flow_001
+   :tags: flow_example
+
+.. spec:: A specification
+   :id: spec_flow_001
+   :blocks: req_flow_001
+   :tags: flow_example
+
+   :need_part:`(subspec_1)A testable part of the specification`
+
+   :need_part:`(subspec_2)Another testable part of the specification`
+
+.. spec:: Another specification
+   :id: spec_flow_002
+   :links: req_flow_001
+   :blocks: spec_flow_001
+   :tags: flow_example
+
+.. test:: A test case
+   :id: test_flow_001
+   :tests: spec_flow_002, spec_flow_001.subspec_1, spec_flow_001.subspec_2
+   :tags: flow_example
+
+.. needflow::
+   :tags: flow_example
+   :link_types: tests, blocks
+   :show_link_names:
 
 .. _needflow_config:
 
@@ -249,6 +216,7 @@ Allows to specify a configuration, which must be provided by setting :ref:`needs
 .. code-block:: rst
 
    .. needflow::
+      :filter: is_need
       :tags: flow_example
       :types: spec
       :link_types: tests, blocks
@@ -256,6 +224,7 @@ Allows to specify a configuration, which must be provided by setting :ref:`needs
       :config: monochrome
 
 .. needflow::
+   :filter: is_need
    :tags: flow_example
    :types: spec
    :link_types: tests, blocks
@@ -267,6 +236,7 @@ Multiple configurations can be set together by separating them via ``,``.
 .. code-block:: rst
 
    .. needflow::
+      :filter: is_need
       :tags: flow_example
       :types: spec
       :link_types: tests, blocks
@@ -274,6 +244,7 @@ Multiple configurations can be set together by separating them via ``,``.
       :config: monochrome,lefttoright,handwritten
 
 .. needflow::
+   :filter: is_need
    :tags: flow_example
    :types: spec
    :link_types: tests, blocks
@@ -319,14 +290,36 @@ Numbers between ``1`` and ``300`` are supported.
 .. code-block:: rst
 
    .. needflow::
+      :filter: is_need
       :tags: flow_example
       :link_types: tests, blocks
       :scale: 50
 
 .. needflow::
+   :filter: is_need
    :tags: flow_example
    :link_types: tests, blocks
    :scale: 50
+
+.. _needflow_highlight:
+
+highlight
+~~~~~~~~~
+
+``highlight`` takes a single :ref:`filter_string` as value and sets the border to **red** for each need of the needflow,
+which also passes the given filter string.
+
+.. code-block:: rst
+
+   .. needflow::
+      :tags: flow_example
+      :link_types: tests, blocks
+      :highlight: id in ['spec_flow_002', 'subspec_2'] or type == 'req'
+
+.. needflow::
+   :tags: flow_example
+   :link_types: tests, blocks
+   :highlight: id in ['spec_flow_002', 'subspec_2'] or type == 'req'
 
 .. _needflow_debug:
 
@@ -342,12 +335,14 @@ Helpful to identify reasons why a PlantUML build may have thrown errors.
 Example::
 
    .. needflow::
+      :filter: is_need
       :tags: flow_example
       :link_types: tests, blocks
       :config:  lefttoright, handwritten
       :debug:
 
 .. needflow::
+   :filter: is_need
    :tags: flow_example
    :link_types: tests, blocks
    :config:  lefttoright, handwritten

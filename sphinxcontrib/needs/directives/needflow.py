@@ -14,7 +14,7 @@ try:
 except ImportError:
     from sphinx.environment import NoUri  # Sphinx < 3.0
 
-from sphinxcontrib.needs.filter_common import FilterBase, procces_filters
+from sphinxcontrib.needs.filter_common import FilterBase, procces_filters, filter_single_need
 
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
@@ -46,6 +46,7 @@ class NeedflowDirective(FilterBase):
                    'link_types': directives.unchanged_required,
                    'config': directives.unchanged_required,
                    'scale': directives.unchanged_required,
+                   'highlight': directives.unchanged_required,
                    'debug': directives.flag}
 
     # Update the options_spec with values defined in the FilterBase class
@@ -89,6 +90,8 @@ class NeedflowDirective(FilterBase):
         if int(scale) < 1 or int(scale) > 300:
             raise Exception('Needflow scale value must be between 1 and 300. "{}" found'.format(scale))
 
+        highlight = self.options.get("highlight", '')
+
         # Add the need and all needed information
         env.need_all_needflows[targetid] = {
             'docname': env.docname,
@@ -101,6 +104,7 @@ class NeedflowDirective(FilterBase):
             'config_names': config_names,
             'config': '\n'.join(configs),
             'scale': scale,
+            'highlight': highlight,
             'link_types': link_types,
             'export_id': self.options.get("export_id", ""),
             'env': env
@@ -199,10 +203,19 @@ def process_needflow(app, doctree, fromdocname):
                     part_link = calculate_link(app, need_part)
                     diagram_template = Template(env.config.needs_diagram_template)
                     part_text = diagram_template.render(**need_part)
-                    node_part_code += '{style} "{node_text}" as {id} [[{link}]] {color}\n'.format(
+                    part_colors = []
+                    if need_part["type_color"] != '':
+                        # We set # later, as the user may not have given a color and the node must get highlighted
+                        part_colors.append(need_part["type_color"].replace('#', ''))
+
+                    if current_needflow['highlight'] is not None and current_needflow['highlight'] != '' and \
+                            filter_single_need(need_part, current_needflow['highlight'], all_needs):
+                        part_colors.append('line:FF0000')
+
+                    node_part_code += '{style} "{node_text}" as {id} [[{link}]] #{color}\n'.format(
                         id=make_entity_name(need_part["id_complete"]), node_text=part_text,
-                        link=make_entity_name(part_link), color=need_part["type_color"],
-                        style=need_part["type_style"])
+                        link=make_entity_name(part_link), color=';'.join(part_colors),
+                        style='rectangle')
 
                     processed_need_part_ids.append(need_part['id_complete'])
 
@@ -214,10 +227,27 @@ def process_needflow(app, doctree, fromdocname):
                     need_id = need_info['id_complete']
                 else:
                     need_id = need_info['id']
-                node_code = '{style} "{node_text}" as {id} [[{link}]] {color} {{\n {need_parts} }}\n'.format(
+
+                colors = []
+                if need_info["type_color"] != '':
+                    # We set # later, as the user may not have given a color and the node must get highlighted
+                    colors.append(need_info["type_color"].replace('#', ''))
+
+                if current_needflow['highlight'] is not None and current_needflow['highlight'] != '' and \
+                    filter_single_need(need_info, current_needflow['highlight'], all_needs):
+                    colors.append('line:FF0000')
+
+                # Only add subelements and their {...} container, if we really need them.
+                # Otherwise plantuml may not set style correctly, if {..} is empty
+                if node_part_code is not '':
+                    node_part_code = '{{\n {} }}'.format(node_part_code)
+
+                style = need_info["type_style"]
+
+                node_code = '{style} "{node_text}" as {id} [[{link}]] #{color} {need_parts}\n'.format(
                     id=make_entity_name(need_id), node_text=node_text,
-                    link=make_entity_name(link), color=need_info["type_color"],
-                    style=need_info["type_style"], need_parts=node_part_code)
+                    link=make_entity_name(link), color=';'.join(colors),
+                    style=style, need_parts=node_part_code)
                 puml_node["uml"] += node_code
 
             for link_type in link_types:
@@ -229,15 +259,15 @@ def process_needflow(app, doctree, fromdocname):
                     continue
 
                 for link in need_info[link_type['option']]:
-                    if '.' in link:
-                        # final_link = link.split('.')[0]
+                    # If source or target of link is a need_part, a specific style is needed
+                    if '.' in link or '.' in need_info["id_complete"]:
                         final_link = link
                         if current_needflow["show_link_names"] or env.config.needs_flow_show_links:
                             desc = link_type['outgoing'] + '\\n'
+                            comment = ': {desc}'.format(desc=desc)
                         else:
-                            desc = ''
+                            comment = ''
 
-                        comment = ': {desc}{part}'.format(desc=desc, part=link.split('.')[1])
                         if "style_part" in link_type.keys() and link_type['style_part'] is not None and \
                                 len(link_type['style_part']) > 0:
                             link_style = '[{style}]'.format(style=link_type['style_part'])
@@ -273,9 +303,8 @@ def process_needflow(app, doctree, fromdocname):
                     else:
                         style_end = '->'
 
-                    # puml_connections += '{id} --{link_style}> {link}{comment}\n'.format(
                     puml_connections += '{id} {style_start}{link_style}{style_end} {link}{comment}\n'.format(
-                        id=make_entity_name(need_info["id"]),
+                        id=make_entity_name(need_info["id_complete"]),
                         link=make_entity_name(final_link),
                         comment=comment,
                         link_style=link_style,
