@@ -14,9 +14,6 @@ try:
 except ImportError:
     from sphinx.environment import NoUri  # Sphinx < 3.0
 
-
-
-
 from sphinxcontrib.needs.filter_common import FilterBase, procces_filters
 
 sphinx_version = sphinx.__version__
@@ -48,6 +45,7 @@ class NeedflowDirective(FilterBase):
                    'show_link_names': directives.flag,
                    'link_types': directives.unchanged_required,
                    'config': directives.unchanged_required,
+                   'scale': directives.unchanged_required,
                    'debug': directives.flag}
 
     # Update the options_spec with values defined in the FilterBase class
@@ -85,6 +83,12 @@ class NeedflowDirective(FilterBase):
                 if config_name != '' and config_name in env.config.needs_flow_configs:
                     configs.append(env.config.needs_flow_configs[config_name])
 
+        scale = self.options.get("scale", '100').replace('%', '')
+        if not scale.isdigit():
+            raise Exception('Needflow scale value must be a number. "{}" found'.format(scale))
+        if int(scale) < 1 or int(scale) > 300:
+            raise Exception('Needflow scale value must be between 1 and 300. "{}" found'.format(scale))
+
         # Add the need and all needed information
         env.need_all_needflows[targetid] = {
             'docname': env.docname,
@@ -96,6 +100,7 @@ class NeedflowDirective(FilterBase):
             'debug': True if self.options.get("debug", False) is None else False,
             'config_names': config_names,
             'config': '\n'.join(configs),
+            'scale': scale,
             'link_types': link_types,
             'export_id': self.options.get("export_id", ""),
             'env': env
@@ -322,10 +327,12 @@ def process_needflow(app, doctree, fromdocname):
             para += filter_node
             content.append(para)
 
+        scale = int(current_needflow['scale'])
+        puml_node['scale'] = scale  # Always set scale attribute to get a linked image
+
         if current_needflow['debug']:
             debug_container = nodes.container()
             data = puml_node["uml"]
-            import html
             data = '\n'.join([html.escape(line) for line in data.split('\n')])
             debug_para = nodes.raw('', '<pre>{}</pre>'.format(data), format='html')
             debug_container += debug_para

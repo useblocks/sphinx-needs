@@ -104,6 +104,11 @@ def find_and_replace_node_content(node, env, need):
                 func_string = func_string.replace('‘', '\'')
                 func_string = func_string.replace('’', '\'')
                 func_return = execute_func(env, need, func_string)
+
+                # This shoudl never happen, but we can not be sure.
+                if isinstance(func_return, list):
+                    func_return = ", ".join(func_return)
+
                 if not is_python3:
                     new_text = new_text.replace(u'[[{}]]'.format(func_string_org.decode('utf-8')), func_return)
                 else:

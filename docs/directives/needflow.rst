@@ -43,6 +43,7 @@ Supported options:
  * :ref:`needflow_show_link_names`
  * :ref:`needflow_link_types`
  * :ref:`needflow_config`
+ * :ref:`needflow_debug`
  * Common filters:
     * :ref:`option_status`
     * :ref:`option_tags`
@@ -295,10 +296,37 @@ Multiple configurations can be set together by separating them via ``,``.
      * Direction of boxes is left to right
    - * toptobottom
      * Direction of boxes is top to bottom (PlantUML default value)
+   - * transparent
+     * Transparent background
    - * tne
      * Tomorrow night eighties theme. Look `here <https://github.com/gabrieljoelc/plantuml-themes>`_ for example.
    - * cplant
      * Cplant theme. Read `this <https://github.com/aoki/cplant>`_ for example.
+
+.. _needflow_scale:
+
+scale
+~~~~~
+
+.. versionadded:: 0.5.3
+
+``scale`` allows to set a scale factor for the final flow chart.
+
+``:scale: 50`` will set width and height to ``50%`` of the original image size.
+
+Numbers between ``1`` and ``300`` are supported.
+
+.. code-block:: rst
+
+   .. needflow::
+      :tags: flow_example
+      :link_types: tests, blocks
+      :scale: 50
+
+.. needflow::
+   :tags: flow_example
+   :link_types: tests, blocks
+   :scale: 50
 
 .. _needflow_debug:
 
@@ -315,7 +343,6 @@ Example::
 
    .. needflow::
       :tags: flow_example
-      :types: spec
       :link_types: tests, blocks
       :config:  lefttoright, handwritten
       :debug:

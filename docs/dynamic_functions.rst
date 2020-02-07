@@ -90,10 +90,10 @@ Registration
 Every dynamic function must be registered by using configuration parameter :ref:`needs_functions`
 inside your ``conf.py`` file::
 
-   needs_functions = [my_own_function]
-
    def my_own_function(app, need, needs):
        return "Awesome"
+
+   needs_functions = [my_own_function]
 
 Reference function
 ~~~~~~~~~~~~~~~~~~

@@ -151,6 +151,9 @@ NEEDFLOW_CONFIG_DEFAULTS = {
     'toptobottom': """
         top to bottom direction
     """,
+    'transparent': """
+    skinparam backgroundcolor transparent
+    """,
     'tne': """
     ' Based on "Tomorrow night eighties" color theme (see https://github.com/chriskempson/tomorrow-theme)
     ' Provided by gabrieljoelc (https://github.com/gabrieljoelc/plantuml-themes)

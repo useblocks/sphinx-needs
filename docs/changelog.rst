@@ -1,9 +1,10 @@
 Changelog
 =========
-0.5.3
------
+0.5.3 (not released yet)
+------------------------
+* Improvement: Added ``transparent`` for transparent background to needflow configurations.
+* Improvement: Added option :ref:`needflow_scale` to scale needflow images. (`#127 <https://github.com/useblocks/sphinxcontrib-needs/issues/127>`_)
 * Bugfix: :ref:`need_template` can now be set via :ref:`needs_global_options`.
-
 
 0.5.2
 -----
