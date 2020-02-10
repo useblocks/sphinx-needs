@@ -245,7 +245,7 @@ def process_needflow(app, doctree, fromdocname):
 
                 # Only add subelements and their {...} container, if we really need them.
                 # Otherwise plantuml may not set style correctly, if {..} is empty
-                if node_part_code is not '':
+                if node_part_code != '':
                     node_part_code = '{{\n {} }}'.format(node_part_code)
 
                 style = need_info["type_style"]
