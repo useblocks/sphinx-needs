@@ -284,8 +284,9 @@ def setup(app):
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect('env-updated', install_styles_static_files)
 
-
-    return {'version': VERSION}  # identifies the version of our extension
+    return {'version': VERSION,
+            'parallel_read_safe': False,  # Must be False, otherwise IDs are not found exceptions are raised.
+            'parallel_write_safe': True}
 
 
 def visitor_dummy(*args, **kwargs):
