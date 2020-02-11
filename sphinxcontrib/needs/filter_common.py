@@ -6,6 +6,7 @@ like needtable, needlist and needflow.
 import re
 import sys
 import urllib
+import copy
 
 from docutils.parsers.rst import Directive
 from docutils.parsers.rst import directives
@@ -19,6 +20,8 @@ else:
 
 
 class FilterBase(Directive):
+    has_content = True
+
     base_option_spec = {
         "status": directives.unchanged_required,
         "tags": directives.unchanged_required,
@@ -61,6 +64,7 @@ class FilterBase(Directive):
             'types': types,
             'filter': self.options.get("filter", None),
             'sort_by': self.options.get("sort_by", None),
+            'filter_code': self.content,
         }
         return collected_filter_options
 
@@ -94,33 +98,51 @@ def procces_filters(all_needs, current_needlist):
     # Add all need_parts of given needs to the search list
     all_needs_incl_parts = prepare_need_list(all_needs)
 
-    for need_info in all_needs_incl_parts:
-        status_filter_passed = False
-        if current_needlist["status"] is None or len(current_needlist["status"]) == 0:
-            # Filtering for status was not requested
-            status_filter_passed = True
-        elif need_info["status"] is not None and need_info["status"] in current_needlist["status"]:
-            # Match was found
-            status_filter_passed = True
+    filter_code = '\n'.join(current_needlist["filter_code"])
+    if not filter_code or filter_code.isspace():
+        for need_info in all_needs_incl_parts:
+            status_filter_passed = False
+            if current_needlist["status"] is None or len(current_needlist["status"]) == 0:
+                # Filtering for status was not requested
+                status_filter_passed = True
+            elif need_info["status"] is not None and need_info["status"] in current_needlist["status"]:
+                # Match was found
+                status_filter_passed = True
 
-        tags_filter_passed = False
-        if len(set(need_info["tags"]) & set(current_needlist["tags"])) > 0 or len(current_needlist["tags"]) == 0:
-            tags_filter_passed = True
+            tags_filter_passed = False
+            if len(set(need_info["tags"]) & set(current_needlist["tags"])) > 0 or len(current_needlist["tags"]) == 0:
+                tags_filter_passed = True
 
-        type_filter_passed = False
-        if need_info["type"] in current_needlist["types"] \
-                or need_info["type_name"] in current_needlist["types"] \
-                or len(current_needlist["types"]) == 0:
-            type_filter_passed = True
+            type_filter_passed = False
+            if need_info["type"] in current_needlist["types"] \
+                    or need_info["type_name"] in current_needlist["types"] \
+                    or len(current_needlist["types"]) == 0:
+                type_filter_passed = True
 
-        if status_filter_passed and tags_filter_passed and type_filter_passed:
-            found_needs_by_options.append(need_info)
+            if status_filter_passed and tags_filter_passed and type_filter_passed:
+                found_needs_by_options.append(need_info)
 
-    found_needs_by_string = filter_needs(all_needs_incl_parts, current_needlist["filter"])
+        found_needs_by_string = filter_needs(all_needs_incl_parts, current_needlist["filter"])
 
-    # found_needs = [x for x in found_needs_by_string if x in found_needs_by_options]
+        found_needs = check_need_list(found_needs_by_options, found_needs_by_string)
 
-    found_needs = check_need_list(found_needs_by_options, found_needs_by_string)
+    else:
+        # Provides only a copy of needs to avoid data manipulations.
+        context = {
+            'needs': copy.deepcopy(all_needs_incl_parts),
+            'results': [],
+        }
+        exec(filter_code, context)
+
+        # The filter results may be dirty, as it may continue manipulated needs.
+        found_dirty_needs = context['results']
+        found_needs = []
+
+        # Just take the ids from search result and use the related, but original need
+        found_need_ids = [x['id'] for x in found_dirty_needs]
+        for need in all_needs_incl_parts:
+            if need['id'] in found_need_ids:
+                found_needs.append(need)
 
     # Store basic filter configuration and result global list.
     # Needed mainly for exporting the result to needs.json (if builder "needs" is used).

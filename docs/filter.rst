@@ -319,3 +319,73 @@ If set, the filter results get exported to needs.json, if the builder :ref:`need
       :export_id: filter_01
 
 See :ref:`filter_export` for more details.
+
+
+.. _filter_code:
+
+Filter code
+-----------
+
+.. versionadded:: 0.5.3
+
+The content of a :ref:`needlist`, :ref:`needtable` or :ref:`needflow` can be used to define own filters
+with the help of Python.
+
+The used code must define a variable ``results``, which must be a list and contains the filtered needs.
+
+.. code-block::
+
+   .. needtable::
+      :columns: id, title, type, links, links_back
+      :style: table
+
+      # Collect all requirements and specs,
+      # which are linked to each other.
+
+      results = []
+      # Lets create a needs_dict to address needs by ids more easily.
+      needs_dict = {x['id']: x for x in needs}
+
+      for need in needs:
+         if need['type'] == 'req':
+            for links_id in need['links']:
+               if needs_dict[links_id]['type'] == 'spec':
+                  results.append(need)
+                  results.append(needs_dict[links_id])
+
+.. needtable::
+   :columns: id, title, type, links, links_back
+   :style: table
+
+   # Collect all requirements and specs,
+   # which are linked to each other.
+
+   results = []
+   # Lets create a needs_dict to address needs by ids more easily.
+   needs_dict = {x['id']: x for x in needs}
+
+   for need in needs:
+      if need['type'] == 'req':
+         for links_id in need['links']:
+            if needs_dict[links_id]['type'] == 'spec':
+               results.append(need)
+               results.append(needs_dict[links_id])
+
+The code has access to a variable called ``needs``, which contains a copy of all needs.
+So manipulations on the values in ``needs`` do not have any affects.
+
+This mechanism can also be a good alternative for complex filter strings to save performance.
+For example if a filter string is using list comprehensions to get access to linked needs.
+
+If ``filter code`` is used, all other filter related options (like ``status`` or ``filters``) are ignored.
+
+.. warning::
+
+   This feature executes every given Python code.
+   So be sure to trust the input/writers.
+
+
+
+
+
+

@@ -8,6 +8,7 @@ Changelog
 * Improvement: Added option :ref:`needflow_scale` to scale needflow images. (`#127 <https://github.com/useblocks/sphinxcontrib-needs/issues/127>`_)
 * Improvement: Added option :ref:`needflow_highlight` to :ref:`needflow`. (`#128 <https://github.com/useblocks/sphinxcontrib-needs/issues/128>`_)
 * Improvement: :ref:`need_count` supports :ref:`ratio calculation <need_count_ratio>`. (`#131 <https://github.com/useblocks/sphinxcontrib-needs/issues/131>`_)
+* Improvement: :ref:`needlist`, :ref:`needtable` and :ref:`needflow` support :ref:`filter_code`. (`#132 <https://github.com/useblocks/sphinxcontrib-needs/issues/132>`_)
 * Bugfix: :ref:`need_template` can now be set via :ref:`needs_global_options`.
 * Bugfix: Setting correct urls for needs in :ref:`needflow` charts.
 
