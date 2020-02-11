@@ -48,3 +48,7 @@ class NeedsInvalidOption(SphinxError):
 
 class NeedsTemplateException(SphinxError):
     pass
+
+
+class NeedsInvalidFilter(SphinxError):
+    pass

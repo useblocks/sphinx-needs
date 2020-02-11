@@ -241,3 +241,23 @@ Example
    ``need_count`` executes the given filter on needs and need_parts!
    So if you use :ref:`need_part` , the result may contain the amount of found needs **and** found need_parts.
    To avoid is, add ``is_need`` or ``is_part`` to your filter.
+
+
+.. _need_count_ratio:
+
+Ratio
+~~~~~
+
+.. versionadded:: 0.5.3
+
+To put one filter in ration to another filter, you can define two filters separated by ``_?_``
+(question mark surrounded by one space on each side).
+
+Example:
+
+.. code-block::
+
+   :need_count:`status = open and type == "spec" ? type == "spec"`% of our specifications are open.
+
+:need_count:`status == "open" and type == "spec" ? type == "spec"` % of our specifications are open.
+
