@@ -11,6 +11,7 @@ Changelog
 * Improvement: :ref:`needlist`, :ref:`needtable` and :ref:`needflow` support :ref:`filter_code`. (`#132 <https://github.com/useblocks/sphinxcontrib-needs/issues/132>`_)
 * Bugfix: :ref:`need_template` can now be set via :ref:`needs_global_options`.
 * Bugfix: Setting correct urls for needs in :ref:`needflow` charts.
+* Bugfix: Setting correct image candidates (`#134 <https://github.com/useblocks/sphinxcontrib-needs/issues/134>`_)
 
 0.5.2
 -----

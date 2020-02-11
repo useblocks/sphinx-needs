@@ -250,7 +250,7 @@ Ratio
 
 .. versionadded:: 0.5.3
 
-To put one filter in ration to another filter, you can define two filters separated by ``_?_``
+To calculate the ratio of one filter to another filter, you can define two filters separated by ``_?_``
 (question mark surrounded by one space on each side).
 
 Example:

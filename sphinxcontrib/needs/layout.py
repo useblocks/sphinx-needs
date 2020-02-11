@@ -728,8 +728,8 @@ class LayoutHandler:
             url = '../' * subfolder_amount + url
 
         image_node = nodes.image(url, classes=['needs_image'], **options)
-        # image_node['candidates'] = {'*': url}
-        image_node['candidates'] = '*'
+        image_node['candidates'] = {'*': url}
+        # image_node['candidates'] = '*'
         image_node['uri'] = url
 
         # Sphinx voodoo needed here.
