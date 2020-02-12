@@ -218,7 +218,6 @@ def process_needpie(app, doctree, fromdocname):
 
         image_node = nodes.image()
         image_node['uri'] = rel_file_path
-        # image_node['candidates'] = '*'  # look at uri value for source path, relative to the srcdir folder
         image_node['candidates'] = {'*': rel_file_path}  # look at uri value for source path, relative to the srcdir folder
         node.replace_self(image_node)
 

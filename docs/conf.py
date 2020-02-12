@@ -48,7 +48,8 @@ on_rtd = os.environ.get('READTHEDOCS') == 'True'
 extensions = ['sphinxcontrib.plantuml',
               'sphinxcontrib.needs',
               'sphinx.ext.autodoc',
-              'matplotlib.sphinxext.plot_directive']
+              'matplotlib.sphinxext.plot_directive',
+              'sphinx_copybutton']
 
 
 add_module_names = False  # Used to shorten function name output
@@ -307,7 +308,8 @@ html_theme_options = {
     'github_user': 'useblocks',
     'github_repo': 'sphinxcontrib-needs',
     'github_banner': True,
-    'github_button': False,
+    'github_button': True,
+    'github_type': 'star',
     'fixed_sidebar': True,
     'extra_nav_links': {'needs@PyPi': "https://pypi.python.org/pypi/sphinxcontrib-needs/",
                         'needs@github': "https://github.com/useblocks/sphinxcontrib-needs",
