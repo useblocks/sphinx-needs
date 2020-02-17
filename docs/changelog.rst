@@ -1,7 +1,7 @@
 Changelog
 =========
-0.5.3 (not released yet)
-------------------------
+0.5.3
+-----
 * Improvement: Added ``transparent`` for transparent background to needflow configurations.
 * Improvement: :ref:`needflow` uses directive argument as caption now.
 * Improvement: Added option :ref:`needflow_align` to align needflow images.

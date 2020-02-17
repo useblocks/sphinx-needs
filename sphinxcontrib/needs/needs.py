@@ -41,7 +41,7 @@ else:
 
     logging.basicConfig()  # Only need to do this once
 
-VERSION = '0.5.2'
+VERSION = '0.5.3'
 
 
 
