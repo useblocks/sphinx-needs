@@ -9,6 +9,9 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 from jinja2 import Template
 from pkg_resources import parse_version
+
+from sphinxcontrib.plantuml import generate_name  # Need for plantuml filename calculation
+
 try:
     from sphinx.errors import NoUri  # Sphinx 3.0
 except ImportError:
@@ -338,18 +341,32 @@ def process_needflow(app, doctree, fromdocname):
         puml_node["filename"] = os.path.split(current_needflow["docname"])[1]  # Needed for plantuml >= 0.9
 
         scale = int(current_needflow['scale'])
-        if scale != 100:
-            puml_node['scale'] = scale
+        # if scale != 100:
+        puml_node['scale'] = scale
 
-        if current_needflow['align'] is not None and len(current_needflow['align']) != '' or \
-                current_needflow['caption'] is not None and len(current_needflow['caption']) != '':
-            puml_node = nodes.figure('', puml_node)
+        puml_node = nodes.figure('', puml_node)
 
-            if current_needflow['align'] is not None and len(current_needflow['align']) != '':
-                puml_node['align'] = current_needflow['align']
+        if current_needflow['align'] is not None and len(current_needflow['align']) != '':
+            puml_node['align'] = current_needflow['align']
+        else:
+            puml_node['align'] = 'center'
 
-            if current_needflow['caption'] is not None and len(current_needflow['caption']) != '':
-                puml_node += nodes.caption('', current_needflow['caption'])
+        if current_needflow['caption'] is not None and len(current_needflow['caption']) != '':
+            # Make the caption to a link to the original file.
+            try:
+                if "SVG" in app.config.plantuml_output_format.upper():
+                    file_ext = 'svg'
+                else:
+                    file_ext = 'png'
+            except Exception:
+                file_ext = 'png'
+
+            gen_flow_link = generate_name(app, puml_node.children[0], file_ext)
+            current_file_parts = fromdocname.split('/')
+            subfolder_amount = len(current_file_parts) - 1
+            img_locaton = '../' * subfolder_amount + '_images/' + gen_flow_link[0].split('/')[-1]
+            flow_ref = nodes.reference('t', current_needflow['caption'], refuri=img_locaton)
+            puml_node += nodes.caption('', '', flow_ref)
 
         content.append(puml_node)
 
@@ -380,7 +397,10 @@ def process_needflow(app, doctree, fromdocname):
 
         if current_needflow['debug']:
             debug_container = nodes.container()
-            data = puml_node["uml"]
+            if isinstance(puml_node, nodes.figure):
+                data = puml_node.children[0]["uml"]
+            else:
+                data = puml_node["uml"]
             data = '\n'.join([html.escape(line) for line in data.split('\n')])
             debug_para = nodes.raw('', '<pre>{}</pre>'.format(data), format='html')
             debug_container += debug_para
