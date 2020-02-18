@@ -333,7 +333,7 @@ with the help of Python.
 
 The used code must define a variable ``results``, which must be a list and contains the filtered needs.
 
-.. code-block::
+.. code-block:: rst
 
    .. needtable::
       :columns: id, title, type, links, links_back
