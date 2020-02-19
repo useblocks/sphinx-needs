@@ -92,7 +92,7 @@ def setup(app):
     # * name
     # * description
     # Example: [{"name": "open", "description": "open status"}, {...}, {...}]
-    app.add_config_value('needs_statuses', False, 'html')
+    app.add_config_value('needs_statuses', [], 'html')
 
     # If given, only the defined tags are allowed.
     # Values needed for each tag:

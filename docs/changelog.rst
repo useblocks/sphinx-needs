@@ -1,5 +1,10 @@
 Changelog
 =========
+0.5.4 (not yet released)
+------------------------
+
+* Bugfix: Setting correct default value for :ref:`needs_statuses` (`#136 <https://github.com/useblocks/sphinxcontrib-needs/issues/136>`_)
+
 0.5.3
 -----
 * Improvement: Added ``transparent`` for transparent background to needflow configurations.
