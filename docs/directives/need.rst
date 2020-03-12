@@ -49,6 +49,7 @@ Supported options:
 * :ref:`need_style`
 * :ref:`need_template`
 * :ref:`need_pre_template`
+* :ref:`need_post_template`
 
 .. _need_id:
 
