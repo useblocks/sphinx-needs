@@ -391,8 +391,9 @@ To force the usage of a specific backend, use the ``style`` option.
 **NEEDFLOW**
 
 .. needflow::
-   :filter: is_need
    :tags: flow_example
+   :link_types: tests, blocks
+   :highlight: id in ['spec_flow_002', 'subspec_2'] or type == 'req'
    :style: mermaid
    :debug:
 
@@ -443,3 +444,24 @@ Feature comparison
    - * Interactivity support (custom js callbacks)
      * no
      * yes (by docs) but not tested
+   - * Layout/Style customizable via css
+     * no
+     * yes, if embedded svg
+   - * **Render need_parts**
+     * **Yes**
+     * **No** See `mermaid issue <https://github.com/mermaid-js/mermaid/issues/644>`_
+   - * Multiple line endings
+     * Yes
+     * No, only arrow or none
+
+
+.. mermaid::
+
+   graph LR;
+        A[Now with default style on links]--v-->B{a = '1,2'}
+        B-->|v|C[v]
+        B-- ... default style on links -->Z[My default thing this]
+        C-->D{condition};
+
+        linkStyle 0 stroke-width:2px,fill:none,stroke:blue;
+        linkStyle default stroke-width:2px,fill:none,stroke:red;

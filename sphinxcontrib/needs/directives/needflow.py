@@ -247,8 +247,6 @@ graph TD
     all_needs = list(all_needs.values())
     found_needs = procces_filters(all_needs, current_needflow)
 
-    processed_need_part_ids = []
-
     node_elements = []
     node_styles = []
     node_clicks = []
@@ -256,68 +254,35 @@ graph TD
 
     for need_info in found_needs:
         # Check if need_part was already handled during handling of parent need.
-        # If this is the case, it is already part of puml-code and we do not need to create a node.
-        if not (need_info['is_part'] and need_info['id_complete'] in processed_need_part_ids):
-            # Check if we need to embed need_parts into parent need, because they are also part of search result.
-            node_part_code = ""
-            valid_need_parts = [x for x in found_needs if x['is_part'] and x['id_parent'] == need_info['id']]
-            # node_part_elements = []
-            # node_part_styles = []
-            # node_part_clicks = []
-            # for need_part in valid_need_parts:
-            #     part_link = calculate_link(app, need_part)
-            #     diagram_template = Template(env.config.needs_diagram_template)
-            #     part_text = diagram_template.render(**need_part)
-            #     part_colors = []
-            #     if need_part["type_color"] != '':
-            #         # We set # later, as the user may not have given a color and the node must get highlighted
-            #         part_colors.append(need_part["type_color"].replace('#', ''))
-            #
-            #     if current_needflow['highlight'] is not None and current_needflow['highlight'] != '' and \
-            #             filter_single_need(need_part, current_needflow['highlight'], all_needs):
-            #         part_colors.append('line:FF0000')
-            #
-            #     node_part_elements.append('{id}({node_text})'.format(
-            #         id=make_entity_name(need_part["id_complete"]), node_text=part_text
-            #     ))
-            #     node_part_clicks.append('click {id} "{link}" ""'.format(
-            #         id=make_entity_name(need_part["id_complete"]), link=make_entity_name(part_link)
-            #     ))
-            #     node_part_styles.append('style {id} fill:#{color}'.format(
-            #         id=make_entity_name(need_part["id_complete"]), color=';'.join(part_colors)))
-            #
-            #     processed_need_part_ids.append(need_part['id_complete'])
+        # If this is the case, it is already part of mermaid-code and we do not need to create a node.
+        if need_info['is_part']:
+            logger.warning('Backend Mermaid does not support rendering need_parts. Please use PlantUML instead to show '
+                           'need_parts from search result inside this flow diagram.')
+            continue  # Mermaid does currently not support inner nodes
 
-            link = calculate_link(app, need_info)
+        link = calculate_link(app, need_info)
 
-            node_text = '<center>{type}<br>' \
-                        '<big><strong>{title}</strong></big><br>' \
-                        '<small>{id}</small></center>'.format(
-                type=need_info['type_name'],
-                title=need_info['title'],
-                id=need_info['id'], )
-            if need_info['is_part']:
-                need_id = need_info['id_complete']
-            else:
-                need_id = need_info['id']
+        node_text = '<center>{type}<br>' \
+                    '<big><strong>{title}</strong></big><br>' \
+                    '<small>{id}</small></center>'.format(type=need_info['type_name'],
+                                                          title=need_info['title'],
+                                                          id=need_info['id'], )
 
-            colors = []
-            if need_info["type_color"] != '':
-                # We set # later, as the user may not have given a color and the node must get highlighted
-                colors.append(need_info["type_color"].replace('#', ''))
+        need_id = need_info['id']
 
-            # if current_needflow['highlight'] is not None and current_needflow['highlight'] != '' and \
-            #         filter_single_need(need_info, current_needflow['highlight'], all_needs):
-            #     colors.append('line:FF0000')
+        colors = []
+        if need_info["type_color"] != '':
+            # We set # later, as the user may not have given a color and the node must get highlighted
+            colors.append('fill:#' + need_info["type_color"].replace('#', ''))
 
-            # Only add subelements and their {...} container, if we really need them.
-            # Otherwise plantuml may not set style correctly, if {..} is empty
-            # if node_part_code != '':
-            #     node_part_code = '{{\n {} }}'.format(node_part_code)
+        if current_needflow['highlight'] is not None and current_needflow['highlight'] != '' and \
+                filter_single_need(need_info, current_needflow['highlight'], all_needs):
+            colors.append('stroke:#FF0000')
+            colors.append('stroke-width:2px')
 
-            node_elements.append('{id}({node_text})'.format(id=make_entity_name(need_id), node_text=node_text))
-            node_clicks.append('click {id} "{link}" "link"'.format(id=make_entity_name(need_id), link=link))
-            node_styles.append('style {id} fill:#{color}'.format(id=make_entity_name(need_id), color=';'.join(colors)))
+        node_elements.append('{id}({node_text})'.format(id=make_entity_name(need_id), node_text=node_text))
+        node_clicks.append('click {id} "{link}" "link"'.format(id=make_entity_name(need_id), link=link))
+        node_styles.append('style {id} {color}'.format(id=make_entity_name(need_id), color=','.join(colors)))
 
         link_types = env.config.needs_extra_links
         allowed_link_types_options = [link.upper() for link in env.config.needs_flow_link_types]
@@ -332,18 +297,7 @@ graph TD
             for link in need_info[link_type['option']]:
                 # If source or target of link is a need_part, a specific style is needed
                 if '.' in link or '.' in need_info["id_complete"]:
-                    final_link = link
-                    if current_needflow["show_link_names"] or env.config.needs_flow_show_links:
-                        desc = link_type['outgoing'] + '\\n'
-                        comment = ' {desc} '.format(desc=desc)
-                    else:
-                        comment = ''
-
-                    if "style_part" in link_type.keys() and link_type['style_part'] is not None and \
-                            len(link_type['style_part']) > 0:
-                        link_style = '{style}'.format(style=link_type['style_part'])
-                    else:
-                        link_style = "."
+                    continue  # No need-part support by mermaid
                 else:
                     final_link = link
                     if current_needflow["show_link_names"] or env.config.needs_flow_show_links:
@@ -362,25 +316,30 @@ graph TD
                         final_link not in [x['id_complete'] for x in found_needs if x['is_part']]:
                     continue
 
+                # Mermaid has really poor possibilities for line start and end
                 if 'style_start' in link_type.keys() and link_type['style_start'] is not None and \
-                        len(link_type['style_start']) > 0:
+                        len(link_type['style_start']) > 0 and link_type['style_start'] in ['-']:
                     style_start = link_type['style_start']
                 else:
                     style_start = '-'
 
+                # Mermaid has really poor possibilities for line start and end
                 if 'style_end' in link_type.keys() and link_type['style_end'] is not None and \
-                        len(link_type['style_end']) > 0:
+                        len(link_type['style_end']) > 0 and link_type['style_end'] in ['-', '->']:
                     style_end = link_type['style_end']
                 else:
                     style_end = '->'
 
-                node_connections.append('{id} {style_start}{link_style}{comment}{style_end} {link}'.format(
+                node_connections.append('{id} {style_start}{comment}{style_end} {link}'.format(
                     id=make_entity_name(need_info["id_complete"]),
                     link=make_entity_name(final_link),
                     comment=comment,
-                    link_style=link_style,
                     style_start=style_start,
                     style_end=style_end
+                ))
+                node_connections.append('linkStyle {number} stroke:{link_style}'.format(
+                    number=len(node_connections)//2,
+                    link_style=link_style
                 ))
 
     mermaid_text += '\n%% Nodes definition \n\n'
