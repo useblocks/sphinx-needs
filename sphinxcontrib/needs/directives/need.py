@@ -72,7 +72,9 @@ class NeedDirective(Directive):
                    'title_from_content': directives.flag,
                    'style': directives.unchanged_required,
                    'layout': directives.unchanged_required,
-                   'template': directives.unchanged_required}
+                   'template': directives.unchanged_required,
+                   'pre_template': directives.unchanged_required,
+                   'post_template': directives.unchanged_required}
 
     final_argument_whitespace = True
 
@@ -108,6 +110,8 @@ class NeedDirective(Directive):
         style = self.options.get("style", None)
         layout = self.options.get("layout", '')
         template = self.options.get("template", None)
+        pre_template = self.options.get("pre_template", None)
+        post_template = self.options.get("post_template", None)
 
         need_extra_options = {}
         for extra_link in env.config.needs_extra_links:
@@ -119,7 +123,7 @@ class NeedDirective(Directive):
         return add_need(env.app, self.state, self.docname, self.lineno,
                         need_type=self.name, title=self.trimmed_title, id=id, content=content,
                         status=status, tags=tags,
-                        hide=hide, template=template,
+                        hide=hide, template=template, pre_template=pre_template, post_template=post_template,
                         collapse=collapse, style=style, layout=layout, **need_extra_options)
 
     def read_in_links(self, name):

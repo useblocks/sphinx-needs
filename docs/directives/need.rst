@@ -48,6 +48,7 @@ Supported options:
 * :ref:`need_layout`
 * :ref:`need_style`
 * :ref:`need_template`
+* :ref:`need_pre_template`
 
 .. _need_id:
 
@@ -441,6 +442,80 @@ A list of available need-value names can be found in the documentation of :ref:`
 the ``debug`` :ref:`layout <layouts>`.
 
 You can automatically assign templates to specific needs by using :ref:`needs_global_options`.
+
+.. _need_pre_template:
+
+pre_template
+~~~~~~~~~~~~
+
+.. versionadded:: 0.5.4
+
+Adds specific content **before** the whole need.
+This may be useful to e.g. set a section name before each need.
+
+**Example**
+
+*Template:* spec_pre_template.need
+
+.. literalinclude:: /needs_templates/spec_pre_template.need
+
+*Need*
+
+.. code-block:: rst
+
+   .. spec:: My specification
+      :id: TEMPL_PRE_SPEC
+      :tags: example, template
+      :pre_template: spec_pre_template
+
+      This is my **specification** content.
+
+*Result*
+
+.. spec:: My specification
+   :id: TEMPL_PRE_SPEC
+   :tags: example, template
+   :pre_template: spec_pre_template
+
+   This is my **specification** content.
+
+.. _need_post_template:
+
+post_template
+~~~~~~~~~~~~~
+
+.. versionadded:: 0.5.4
+
+Adds specific content **after** the whole need.
+This may be useful to show some need-specific analytics, like dependency diagrams or table of linked needs.
+
+**Example**
+
+*Template:* spec_post_template.need
+
+.. literalinclude:: /needs_templates/spec_post_template.need
+
+*Need*
+
+.. code-block:: rst
+
+   .. spec:: My specification
+      :id: TEMPL_POST_SPEC
+      :tags: example, template
+      :links: FEATURE_1, FEATURE_2
+      :post_template: spec_post_template
+
+      This is my **specification** content.
+
+*Result*
+
+.. spec:: My specification
+   :id: TEMPL_POST_SPEC
+   :tags: example, template
+   :links: FEATURE_1, FEATURE_2
+   :post_template: spec_post_template
+
+   This is my **specification** content.
 
 
 Customized Options

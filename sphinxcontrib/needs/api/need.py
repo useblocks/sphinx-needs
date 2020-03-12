@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 def add_need(app, state, docname, lineno, need_type, title, id=None, content="", status=None, tags=None,
              links_string=None, hide=False, hide_tags=False, hide_status=False, collapse=None, style=None,
-             layout=None, template=None, **kwargs):
+             layout=None, template=None, pre_template=None, post_template=None, **kwargs):
     """
     Creates a new need and returns its node.
 
@@ -81,6 +81,8 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
     :param style: String value of class attribute of node.
     :param layout: String value of layout definition to use
     :param template: Template name to use for the content of this need
+    :param pre_template: Template name to use for content added before need
+    :param post_template: Template name to use for the content added after need
 
     :return: node
     """
@@ -212,6 +214,8 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
         'style': style,
         'layout': layout,
         'template': template,
+        'pre_template': pre_template,
+        'post_template': post_template,
         'hide': hide,
         'parts': {},
 
@@ -262,28 +266,31 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
 
     env.needs_all_needs[need_id] = needs_info
 
-    # Template build
+    # Template builds
+    ##############################
+
+    # template
     if needs_info['template'] is not None and len(needs_info['template']) > 0:
-        template_folder = app.config.needs_template_folder
-        if not os.path.isabs(template_folder):
-            template_folder = os.path.join(app.confdir, template_folder)
-
-        if not os.path.isdir(template_folder):
-            raise NeedsTemplateException('Template folder does not exist: {}'.format(template_folder))
-
-        template_file_name = needs_info['template'] + '.need'
-        template_path = os.path.join(template_folder, template_file_name)
-        if not os.path.isfile(template_path):
-            raise NeedsTemplateException('Template does not exist: {}'.format(template_path))
-
-        with open(template_path, 'r') as template_file:
-            template_content = ''.join(template_file.readlines())
-        template_obj = Template(template_content)
-        new_content = template_obj.render(**needs_info)
-
+        new_content = _prepare_template(app, needs_info, 'template')
         # Overwrite current content
         content = new_content
         needs_info['content'] = new_content
+    else:
+        new_content = None
+
+    # pre_template
+    if needs_info['pre_template'] is not None and len(needs_info['pre_template']) > 0:
+        pre_content = _prepare_template(app, needs_info, 'pre_template')
+        needs_info['pre_content'] = pre_content
+    else:
+        pre_content = None
+
+    # post_template
+    if needs_info['post_template'] is not None and len(needs_info['post_template']) > 0:
+        post_content = _prepare_template(app, needs_info, 'post_template')
+        needs_info['post_content'] = post_content
+    else:
+        post_content = None
 
     if needs_info['hide']:
         return [target_node]
@@ -301,13 +308,8 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
         '', classes=style_classes)
 
     # Render rst-based content and add it to the need-node
-    rst = ViewList()
-    for line in content.split('\n'):
-        rst.append(line, docname, lineno)
-    node_need_content = nodes.Element()
-    node_need_content.document = state.document
-    nested_parse_with_titles(state, rst, node_need_content)
 
+    node_need_content = _render_template(content, docname, lineno, state)
     need_parts = find_parts(node_need_content)
     update_need_with_parts(env, needs_info, need_parts)
 
@@ -315,7 +317,52 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
 
     needs_info['content_node'] = node_need
 
-    return [target_node] + [node_need]
+    return_nodes = [target_node] + [node_need]
+    if pre_content is not None:
+        node_need_pre_content = _render_template(pre_content, docname, lineno, state)
+        pre_container = nodes.container()
+        pre_container += node_need_pre_content.children
+        return_nodes = [pre_container] + return_nodes
+
+    if post_content is not None:
+        node_need_post_content = _render_template(post_content, docname, lineno, state)
+        post_container = nodes.container()
+        post_container += node_need_post_content.children
+        return_nodes = return_nodes + [post_container]
+
+    return return_nodes
+
+
+def _prepare_template(app, needs_info, template_key):
+    template_folder = app.config.needs_template_folder
+    if not os.path.isabs(template_folder):
+        template_folder = os.path.join(app.confdir, template_folder)
+
+    if not os.path.isdir(template_folder):
+        raise NeedsTemplateException('Template folder does not exist: {}'.format(template_folder))
+
+    template_file_name = needs_info[template_key] + '.need'
+    template_path = os.path.join(template_folder, template_file_name)
+    if not os.path.isfile(template_path):
+        raise NeedsTemplateException('Template does not exist: {}'.format(template_path))
+
+    with open(template_path, 'r') as template_file:
+        template_content = ''.join(template_file.readlines())
+    template_obj = Template(template_content)
+    new_content = template_obj.render(**needs_info)
+
+    return new_content
+
+
+def _render_template(content, docname, lineno, state):
+    rst = ViewList()
+    for line in content.split('\n'):
+        rst.append(line, docname, lineno)
+    node_need_content = nodes.Element()
+    node_need_content.document = state.document
+    nested_parse_with_titles(state, rst, node_need_content)
+    return node_need_content
+
 
 
 def _read_in_links(links_string):
