@@ -1,4 +1,6 @@
 sphinx>=1.6
 sphinxcontrib-plantuml
+sphinxcontrib-mermaid
 matplotlib
 sphinx-copybutton
+

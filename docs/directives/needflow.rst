@@ -371,3 +371,75 @@ Example::
    :config:  lefttoright, handwritten
    :debug:
 
+.. _needflow_style:
+
+style
+~~~~~
+
+.. versionadded:: 0.5.4
+
+``Sphinx-Needs`` supports the following backends to render ``needflow`` diagrams:
+
+* `PlantUML <https://plantuml.com/>`_
+* `mermaid <https://mermaid-js.github.io/mermaid/#/>`_
+
+``PlantUML`` was the first backend supported by ``Sphinx-Needs`` and is therefore the default backend, which gets
+automatically selected, if nothing else is configured.
+
+To force the usage of a specific backend, use the ``style`` option.
+
+**NEEDFLOW**
+
+.. needflow::
+   :filter: is_need
+   :tags: flow_example
+   :style: mermaid
+   :debug:
+
+Feature comparison
+++++++++++++++++++
+
+.. list-table::
+
+   - * Mermaid
+     * PlantUML
+   - * .. needflow::
+          :filter: is_need
+          :tags: flow_example
+          :style: mermaid
+     * .. needflow::
+          :filter: is_need
+          :tags: flow_example
+          :style: plantuml
+
+.. list-table::
+   :header-rows: 1
+
+   - * Feature
+     * PlantUML
+     * Mermaid
+   - * Generation during build time
+     * yes, always
+     * yes, configurable
+   - * Output by default
+     * png, svg
+     * embedded svg (for html, no download)
+   - * Generation location by default
+     * During build (by developer/ci)
+     * During view (by user/browser)
+   - * PDF support
+     * yes
+     * yes
+   - * Scales in browser
+     * yes
+     * yes
+   - * Link to org. image (org. size)
+     * yes
+     * no, if embedded svg
+       yes, if normal png/svg images
+   - * Clickable needs (links)
+     * yes, if svg and not scaled
+     * yes, always
+   - * Interactivity support (custom js callbacks)
+     * no
+     * yes (by docs) but not tested

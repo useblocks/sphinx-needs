@@ -11,6 +11,7 @@ from jinja2 import Template
 from pkg_resources import parse_version
 
 from sphinxcontrib.plantuml import generate_name  # Need for plantuml filename calculation
+from sphinx.errors import SphinxError
 
 try:
     from sphinx.errors import NoUri  # Sphinx 3.0
@@ -31,6 +32,9 @@ if sys.version_info.major < 3:
 else:
     urlParse = urllib.parse.quote_plus
 
+BACKENDS = ['PLANTUML', 'MERMAID']
+BACKEND_DEFAULT = 'PLANTUML'
+
 
 class Needflow(nodes.General, nodes.Element):
     pass
@@ -50,6 +54,7 @@ class NeedflowDirective(FilterBase):
                    'scale': directives.unchanged_required,
                    'highlight': directives.unchanged_required,
                    'align': directives.unchanged_required,
+                   'style': directives.unchanged_required,
                    'debug': directives.flag}
 
     # Update the options_spec with values defined in the FilterBase class
@@ -99,6 +104,14 @@ class NeedflowDirective(FilterBase):
         if self.arguments:
             caption = self.arguments[0]
 
+        style = self.options.get("style", None)
+        if style is not None and len(style) > 0:
+            style = style.upper()
+            if style not in BACKENDS:
+                raise NeedsUnsupportedBackend('Unknown backend: {}. Supported are {}'.format(style, ",".join(BACKENDS)))
+        else:
+            style = BACKEND_DEFAULT
+
         # Add the need and all needed information
         env.need_all_needflows[targetid] = {
             'docname': env.docname,
@@ -116,7 +129,8 @@ class NeedflowDirective(FilterBase):
             'align': self.options.get("align", None),
             'link_types': link_types,
             'export_id': self.options.get("export_id", ""),
-            'env': env
+            'env': env,
+            'style': style
         }
         env.need_all_needflows[targetid].update(self.collect_filter_attributes())
 
@@ -164,247 +178,21 @@ def process_needflow(app, doctree, fromdocname):
                 ))
 
         content = []
-        try:
-            if "sphinxcontrib.plantuml" not in app.config.extensions:
-                raise ImportError
-            from sphinxcontrib.plantuml import plantuml
-        except ImportError:
-            content = nodes.error()
-            para = nodes.paragraph()
-            text = nodes.Text("PlantUML is not available!", "PlantUML is not available!")
-            para += text
-            content.append(para)
-            node.replace_self(content)
-            continue
+        if current_needflow['style'] not in BACKENDS:
+            raise NeedsUnsupportedBackend('Unknown backend: {}. Supported are {}'.format(current_needflow['style'],
+                                                                                         ",".join(BACKENDS)))
 
-        plantuml_block_text = ".. plantuml::\n" \
-                              "\n" \
-                              "   @startuml" \
-                              "   @enduml"
-        puml_node = plantuml(plantuml_block_text, **dict())
-        puml_node["uml"] = "@startuml\n"
-        puml_connections = ""
-
-        # Adding config
-        config = current_needflow['config']
-        if config is not None and len(config) >= 3:
-            # Remove all empty lines
-            config = '\n'.join([line.strip() for line in config.split('\n') if line.strip() != ''])
-            puml_node["uml"] += '\n\' Config\n\n'
-            puml_node["uml"] += config
-            puml_node["uml"] += '\n\n'
-
-        all_needs = list(all_needs.values())
-        found_needs = procces_filters(all_needs, current_needflow)
-
-        processed_need_part_ids = []
-
-        puml_node["uml"] += '\n\' Nodes definition \n\n'
-
-        for need_info in found_needs:
-            # Check if need_part was already handled during handling of parent need.
-            # If this is the case, it is already part of puml-code and we do not need to create a node.
-            if not (need_info['is_part'] and need_info['id_complete'] in processed_need_part_ids):
-                # Check if we need to embed need_parts into parent need, because they are also part of search result.
-                node_part_code = ""
-                valid_need_parts = [x for x in found_needs if x['is_part'] and x['id_parent'] == need_info['id']]
-                for need_part in valid_need_parts:
-                    part_link = calculate_link(app, need_part)
-                    diagram_template = Template(env.config.needs_diagram_template)
-                    part_text = diagram_template.render(**need_part)
-                    part_colors = []
-                    if need_part["type_color"] != '':
-                        # We set # later, as the user may not have given a color and the node must get highlighted
-                        part_colors.append(need_part["type_color"].replace('#', ''))
-
-                    if current_needflow['highlight'] is not None and current_needflow['highlight'] != '' and \
-                            filter_single_need(need_part, current_needflow['highlight'], all_needs):
-                        part_colors.append('line:FF0000')
-
-                    node_part_code += '{style} "{node_text}" as {id} [[{link}]] #{color}\n'.format(
-                        id=make_entity_name(need_part["id_complete"]), node_text=part_text,
-                        link=make_entity_name(part_link), color=';'.join(part_colors),
-                        style='rectangle')
-
-                    processed_need_part_ids.append(need_part['id_complete'])
-
-                link = calculate_link(app, need_info)
-
-                diagram_template = Template(env.config.needs_diagram_template)
-                node_text = diagram_template.render(**need_info)
-                if need_info['is_part']:
-                    need_id = need_info['id_complete']
-                else:
-                    need_id = need_info['id']
-
-                colors = []
-                if need_info["type_color"] != '':
-                    # We set # later, as the user may not have given a color and the node must get highlighted
-                    colors.append(need_info["type_color"].replace('#', ''))
-
-                if current_needflow['highlight'] is not None and current_needflow['highlight'] != '' and \
-                    filter_single_need(need_info, current_needflow['highlight'], all_needs):
-                    colors.append('line:FF0000')
-
-                # Only add subelements and their {...} container, if we really need them.
-                # Otherwise plantuml may not set style correctly, if {..} is empty
-                if node_part_code != '':
-                    node_part_code = '{{\n {} }}'.format(node_part_code)
-
-                style = need_info["type_style"]
-
-                node_code = '{style} "{node_text}" as {id} [[{link}]] #{color} {need_parts}\n'.format(
-                    id=make_entity_name(need_id), node_text=node_text,
-                    # link=make_entity_name(link), color=';'.join(colors),
-                    link=link, color=';'.join(colors),
-                    style=style, need_parts=node_part_code)
-                puml_node["uml"] += node_code
-
-            for link_type in link_types:
-                # Skip link-type handling, if it is not part of a specified list of allowed link_types or
-                # if not part of the overall configuration of needs_flow_link_types
-                if (current_needflow["link_types"] and link_type['option'].upper() not in option_link_types) or \
-                        (not current_needflow["link_types"] and \
-                         link_type['option'].upper() not in allowed_link_types_options):
-                    continue
-
-                for link in need_info[link_type['option']]:
-                    # If source or target of link is a need_part, a specific style is needed
-                    if '.' in link or '.' in need_info["id_complete"]:
-                        final_link = link
-                        if current_needflow["show_link_names"] or env.config.needs_flow_show_links:
-                            desc = link_type['outgoing'] + '\\n'
-                            comment = ': {desc}'.format(desc=desc)
-                        else:
-                            comment = ''
-
-                        if "style_part" in link_type.keys() and link_type['style_part'] is not None and \
-                                len(link_type['style_part']) > 0:
-                            link_style = '[{style}]'.format(style=link_type['style_part'])
-                        else:
-                            link_style = "[dotted]"
-                    else:
-                        final_link = link
-                        if current_needflow["show_link_names"] or env.config.needs_flow_show_links:
-                            comment = ': {desc}'.format(desc=link_type['outgoing'])
-                        else:
-                            comment = ''
-
-                        if "style" in link_type.keys() and link_type['style'] is not None and \
-                                len(link_type['style']) > 0:
-                            link_style = '[{style}]'.format(style=link_type['style'])
-                        else:
-                            link_style = ""
-
-                    # Do not create an links, if the link target is not part of the search result.
-                    if final_link not in [x['id'] for x in found_needs if x['is_need']] and \
-                            final_link not in [x['id_complete'] for x in found_needs if x['is_part']]:
-                        continue
-
-                    if 'style_start' in link_type.keys() and link_type['style_start'] is not None and \
-                            len(link_type['style_start']) > 0:
-                        style_start = link_type['style_start']
-                    else:
-                        style_start = '-'
-
-                    if 'style_end' in link_type.keys() and link_type['style_end'] is not None and \
-                            len(link_type['style_end']) > 0:
-                        style_end = link_type['style_end']
-                    else:
-                        style_end = '->'
-
-                    puml_connections += '{id} {style_start}{link_style}{style_end} {link}{comment}\n'.format(
-                        id=make_entity_name(need_info["id_complete"]),
-                        link=make_entity_name(final_link),
-                        comment=comment,
-                        link_style=link_style,
-                        style_start=style_start,
-                        style_end=style_end
-                    )
-
-        puml_node["uml"] += '\n\' Connection definition \n\n'
-        puml_node["uml"] += puml_connections
-
-        # Create a legend
-        if current_needflow["show_legend"]:
-            puml_node["uml"] += '\n\n\' Legend definition \n\n'
-
-            puml_node["uml"] += "legend\n"
-            puml_node["uml"] += "|= Color |= Type |\n"
-            for need in app.config.needs_types:
-                puml_node["uml"] += "|<back:{color}> {color} </back>| {name} |\n".format(
-                    color=need["color"], name=need["title"])
-            puml_node["uml"] += "endlegend\n"
-
-        puml_node["uml"] += "\n@enduml"
-        puml_node["incdir"] = os.path.dirname(current_needflow["docname"])
-        puml_node["filename"] = os.path.split(current_needflow["docname"])[1]  # Needed for plantuml >= 0.9
-
-        scale = int(current_needflow['scale'])
-        # if scale != 100:
-        puml_node['scale'] = scale
-
-        puml_node = nodes.figure('', puml_node)
-
-        if current_needflow['align'] is not None and len(current_needflow['align']) != '':
-            puml_node['align'] = current_needflow['align']
-        else:
-            puml_node['align'] = 'center'
-
-        if current_needflow['caption'] is not None and len(current_needflow['caption']) != '':
-            # Make the caption to a link to the original file.
-            try:
-                if "SVG" in app.config.plantuml_output_format.upper():
-                    file_ext = 'svg'
-                else:
-                    file_ext = 'png'
-            except Exception:
-                file_ext = 'png'
-
-            gen_flow_link = generate_name(app, puml_node.children[0], file_ext)
-            current_file_parts = fromdocname.split('/')
-            subfolder_amount = len(current_file_parts) - 1
-            img_locaton = '../' * subfolder_amount + '_images/' + gen_flow_link[0].split('/')[-1]
-            flow_ref = nodes.reference('t', current_needflow['caption'], refuri=img_locaton)
-            puml_node += nodes.caption('', '', flow_ref)
-
-        content.append(puml_node)
-
-        if len(content) == 0:
-            nothing_found = "No needs passed the filters"
-            para = nodes.paragraph()
-            nothing_found_node = nodes.Text(nothing_found, nothing_found)
-            para += nothing_found_node
-            content.append(para)
-        if current_needflow["show_filters"]:
-            para = nodes.paragraph()
-            filter_text = "Used filter:"
-            filter_text += " status(%s)" % " OR ".join(current_needflow["status"]) if len(
-                current_needflow["status"]) > 0 else ""
-            if len(current_needflow["status"]) > 0 and len(current_needflow["tags"]) > 0:
-                filter_text += " AND "
-            filter_text += " tags(%s)" % " OR ".join(current_needflow["tags"]) if len(
-                current_needflow["tags"]) > 0 else ""
-            if (len(current_needflow["status"]) > 0 or len(current_needflow["tags"]) > 0) and len(
-                    current_needflow["types"]) > 0:
-                filter_text += " AND "
-            filter_text += " types(%s)" % " OR ".join(current_needflow["types"]) if len(
-                current_needflow["types"]) > 0 else ""
-
-            filter_node = nodes.emphasis(filter_text, filter_text)
-            para += filter_node
-            content.append(para)
+        if current_needflow['style'] == 'PLANTUML':
+            content, code = _render_plantuml(current_needflow, all_needs, option_link_types, app, fromdocname)
+        if current_needflow['style'] == 'MERMAID':
+            content, code = _render_mermaid(current_needflow, all_needs, option_link_types, app, fromdocname)
 
         if current_needflow['debug']:
             debug_container = nodes.container()
-            if isinstance(puml_node, nodes.figure):
-                data = puml_node.children[0]["uml"]
-            else:
-                data = puml_node["uml"]
-            data = '\n'.join([html.escape(line) for line in data.split('\n')])
+            data = '\n'.join([html.escape(line) for line in code.split('\n')])
             debug_para = nodes.raw('', '<pre>{}</pre>'.format(data), format='html')
             debug_container += debug_para
-            content += debug_container
+            content.append(debug_container)
 
         node.replace_self(content)
 
@@ -426,3 +214,438 @@ def calculate_link(app, need_info):
         link = ""
 
     return link
+
+
+def _render_mermaid(current_needflow, all_needs, option_link_types, app, fromdocname):
+    env = app.env
+
+    try:
+        if "sphinxcontrib.mermaid" not in app.config.extensions:
+            raise ImportError
+        from sphinxcontrib.mermaid import mermaid
+    except ImportError:
+        content = nodes.error()
+        para = nodes.paragraph()
+        text = nodes.Text("Mermaid is not available!", "Mermaid is not available!")
+        para += text
+        content.append(para)
+        return content, None
+
+    content = []
+    mermaid_text = """
+graph TD
+"""
+    # Adding config
+    config = current_needflow['config']
+    if config is not None and len(config) >= 3:
+        # Remove all empty lines
+        config = '\n'.join([line.strip() for line in config.split('\n') if line.strip() != ''])
+        mermaid_text += '\n%%  Config\n\n'
+        mermaid_text += config
+        mermaid_text += '\n\n'
+
+    all_needs = list(all_needs.values())
+    found_needs = procces_filters(all_needs, current_needflow)
+
+    processed_need_part_ids = []
+
+    node_elements = []
+    node_styles = []
+    node_clicks = []
+    node_connections = []
+
+    for need_info in found_needs:
+        # Check if need_part was already handled during handling of parent need.
+        # If this is the case, it is already part of puml-code and we do not need to create a node.
+        if not (need_info['is_part'] and need_info['id_complete'] in processed_need_part_ids):
+            # Check if we need to embed need_parts into parent need, because they are also part of search result.
+            node_part_code = ""
+            valid_need_parts = [x for x in found_needs if x['is_part'] and x['id_parent'] == need_info['id']]
+            # node_part_elements = []
+            # node_part_styles = []
+            # node_part_clicks = []
+            # for need_part in valid_need_parts:
+            #     part_link = calculate_link(app, need_part)
+            #     diagram_template = Template(env.config.needs_diagram_template)
+            #     part_text = diagram_template.render(**need_part)
+            #     part_colors = []
+            #     if need_part["type_color"] != '':
+            #         # We set # later, as the user may not have given a color and the node must get highlighted
+            #         part_colors.append(need_part["type_color"].replace('#', ''))
+            #
+            #     if current_needflow['highlight'] is not None and current_needflow['highlight'] != '' and \
+            #             filter_single_need(need_part, current_needflow['highlight'], all_needs):
+            #         part_colors.append('line:FF0000')
+            #
+            #     node_part_elements.append('{id}({node_text})'.format(
+            #         id=make_entity_name(need_part["id_complete"]), node_text=part_text
+            #     ))
+            #     node_part_clicks.append('click {id} "{link}" ""'.format(
+            #         id=make_entity_name(need_part["id_complete"]), link=make_entity_name(part_link)
+            #     ))
+            #     node_part_styles.append('style {id} fill:#{color}'.format(
+            #         id=make_entity_name(need_part["id_complete"]), color=';'.join(part_colors)))
+            #
+            #     processed_need_part_ids.append(need_part['id_complete'])
+
+            link = calculate_link(app, need_info)
+
+            node_text = '<center>{type}<br>' \
+                        '<big><strong>{title}</strong></big><br>' \
+                        '<small>{id}</small></center>'.format(
+                type=need_info['type_name'],
+                title=need_info['title'],
+                id=need_info['id'], )
+            if need_info['is_part']:
+                need_id = need_info['id_complete']
+            else:
+                need_id = need_info['id']
+
+            colors = []
+            if need_info["type_color"] != '':
+                # We set # later, as the user may not have given a color and the node must get highlighted
+                colors.append(need_info["type_color"].replace('#', ''))
+
+            # if current_needflow['highlight'] is not None and current_needflow['highlight'] != '' and \
+            #         filter_single_need(need_info, current_needflow['highlight'], all_needs):
+            #     colors.append('line:FF0000')
+
+            # Only add subelements and their {...} container, if we really need them.
+            # Otherwise plantuml may not set style correctly, if {..} is empty
+            # if node_part_code != '':
+            #     node_part_code = '{{\n {} }}'.format(node_part_code)
+
+            node_elements.append('{id}({node_text})'.format(id=make_entity_name(need_id), node_text=node_text))
+            node_clicks.append('click {id} "{link}" "link"'.format(id=make_entity_name(need_id), link=link))
+            node_styles.append('style {id} fill:#{color}'.format(id=make_entity_name(need_id), color=';'.join(colors)))
+
+        link_types = env.config.needs_extra_links
+        allowed_link_types_options = [link.upper() for link in env.config.needs_flow_link_types]
+        for link_type in link_types:
+            # Skip link-type handling, if it is not part of a specified list of allowed link_types or
+            # if not part of the overall configuration of needs_flow_link_types
+            if (current_needflow["link_types"] and link_type['option'].upper() not in option_link_types) or \
+                    (not current_needflow["link_types"] and \
+                     link_type['option'].upper() not in allowed_link_types_options):
+                continue
+
+            for link in need_info[link_type['option']]:
+                # If source or target of link is a need_part, a specific style is needed
+                if '.' in link or '.' in need_info["id_complete"]:
+                    final_link = link
+                    if current_needflow["show_link_names"] or env.config.needs_flow_show_links:
+                        desc = link_type['outgoing'] + '\\n'
+                        comment = ' {desc} '.format(desc=desc)
+                    else:
+                        comment = ''
+
+                    if "style_part" in link_type.keys() and link_type['style_part'] is not None and \
+                            len(link_type['style_part']) > 0:
+                        link_style = '{style}'.format(style=link_type['style_part'])
+                    else:
+                        link_style = "."
+                else:
+                    final_link = link
+                    if current_needflow["show_link_names"] or env.config.needs_flow_show_links:
+                        comment = ' {desc} '.format(desc=link_type['outgoing'])
+                    else:
+                        comment = ''
+
+                    if "style" in link_type.keys() and link_type['style'] is not None and \
+                            len(link_type['style']) > 0:
+                        link_style = '{style}'.format(style=link_type['style'])
+                    else:
+                        link_style = ""
+
+                # Do not create an links, if the link target is not part of the search result.
+                if final_link not in [x['id'] for x in found_needs if x['is_need']] and \
+                        final_link not in [x['id_complete'] for x in found_needs if x['is_part']]:
+                    continue
+
+                if 'style_start' in link_type.keys() and link_type['style_start'] is not None and \
+                        len(link_type['style_start']) > 0:
+                    style_start = link_type['style_start']
+                else:
+                    style_start = '-'
+
+                if 'style_end' in link_type.keys() and link_type['style_end'] is not None and \
+                        len(link_type['style_end']) > 0:
+                    style_end = link_type['style_end']
+                else:
+                    style_end = '->'
+
+                node_connections.append('{id} {style_start}{link_style}{comment}{style_end} {link}'.format(
+                    id=make_entity_name(need_info["id_complete"]),
+                    link=make_entity_name(final_link),
+                    comment=comment,
+                    link_style=link_style,
+                    style_start=style_start,
+                    style_end=style_end
+                ))
+
+    mermaid_text += '\n%% Nodes definition \n\n'
+    for element in node_elements:
+        mermaid_text += element + "\n"
+
+    mermaid_text += '\n%% Nodes styles \n\n'
+    for style in node_styles:
+        mermaid_text += style + "\n"
+
+    mermaid_text += '\n%% Nodes clicks \n\n'
+    for click in node_clicks:
+        mermaid_text += click + "\n"
+
+    mermaid_text += '\n%% Nodes connections \n\n'
+    for connection in node_connections:
+        mermaid_text += connection + "\n"
+
+    mermaid_node = mermaid(mermaid_text, **dict())
+    mermaid_node['code'] = mermaid_text
+    mermaid_node['options'] = mermaid_text
+    content.append(mermaid_node)
+    return content, mermaid_text
+
+
+def _render_plantuml(current_needflow, all_needs, option_link_types, app, fromdocname):
+    env = app.builder.env
+
+    link_types = env.config.needs_extra_links
+    allowed_link_types_options = [link.upper() for link in env.config.needs_flow_link_types]
+
+    content = []
+
+    try:
+        if "sphinxcontrib.plantuml" not in app.config.extensions:
+            raise ImportError
+        from sphinxcontrib.plantuml import plantuml
+    except ImportError:
+        content = nodes.error()
+        para = nodes.paragraph()
+        text = nodes.Text("PlantUML is not available!", "PlantUML is not available!")
+        para += text
+        content.append(para)
+        return content, None
+
+    plantuml_block_text = ".. plantuml::\n" \
+                          "\n" \
+                          "   @startuml" \
+                          "   @enduml"
+    puml_node = plantuml(plantuml_block_text, **dict())
+    puml_node["uml"] = "@startuml\n"
+    puml_connections = ""
+
+    # Adding config
+    config = current_needflow['config']
+    if config is not None and len(config) >= 3:
+        # Remove all empty lines
+        config = '\n'.join([line.strip() for line in config.split('\n') if line.strip() != ''])
+        puml_node["uml"] += '\n\' Config\n\n'
+        puml_node["uml"] += config
+        puml_node["uml"] += '\n\n'
+
+    all_needs = list(all_needs.values())
+    found_needs = procces_filters(all_needs, current_needflow)
+
+    processed_need_part_ids = []
+
+    puml_node["uml"] += '\n\' Nodes definition \n\n'
+
+    for need_info in found_needs:
+        # Check if need_part was already handled during handling of parent need.
+        # If this is the case, it is already part of puml-code and we do not need to create a node.
+        if not (need_info['is_part'] and need_info['id_complete'] in processed_need_part_ids):
+            # Check if we need to embed need_parts into parent need, because they are also part of search result.
+            node_part_code = ""
+            valid_need_parts = [x for x in found_needs if x['is_part'] and x['id_parent'] == need_info['id']]
+            for need_part in valid_need_parts:
+                part_link = calculate_link(app, need_part)
+                diagram_template = Template(env.config.needs_diagram_template)
+                part_text = diagram_template.render(**need_part)
+                part_colors = []
+                if need_part["type_color"] != '':
+                    # We set # later, as the user may not have given a color and the node must get highlighted
+                    part_colors.append(need_part["type_color"].replace('#', ''))
+
+                if current_needflow['highlight'] is not None and current_needflow['highlight'] != '' and \
+                        filter_single_need(need_part, current_needflow['highlight'], all_needs):
+                    part_colors.append('line:FF0000')
+
+                node_part_code += '{style} "{node_text}" as {id} [[{link}]] #{color}\n'.format(
+                    id=make_entity_name(need_part["id_complete"]), node_text=part_text,
+                    link=make_entity_name(part_link), color=';'.join(part_colors),
+                    style='rectangle')
+
+                processed_need_part_ids.append(need_part['id_complete'])
+
+            link = calculate_link(app, need_info)
+
+            diagram_template = Template(env.config.needs_diagram_template)
+            node_text = diagram_template.render(**need_info)
+            if need_info['is_part']:
+                need_id = need_info['id_complete']
+            else:
+                need_id = need_info['id']
+
+            colors = []
+            if need_info["type_color"] != '':
+                # We set # later, as the user may not have given a color and the node must get highlighted
+                colors.append(need_info["type_color"].replace('#', ''))
+
+            if current_needflow['highlight'] is not None and current_needflow['highlight'] != '' and \
+                    filter_single_need(need_info, current_needflow['highlight'], all_needs):
+                colors.append('line:FF0000')
+
+            # Only add subelements and their {...} container, if we really need them.
+            # Otherwise plantuml may not set style correctly, if {..} is empty
+            if node_part_code != '':
+                node_part_code = '{{\n {} }}'.format(node_part_code)
+
+            style = need_info["type_style"]
+
+            node_code = '{style} "{node_text}" as {id} [[{link}]] #{color} {need_parts}\n'.format(
+                id=make_entity_name(need_id), node_text=node_text,
+                # link=make_entity_name(link), color=';'.join(colors),
+                link=link, color=';'.join(colors),
+                style=style, need_parts=node_part_code)
+            puml_node["uml"] += node_code
+
+        for link_type in link_types:
+            # Skip link-type handling, if it is not part of a specified list of allowed link_types or
+            # if not part of the overall configuration of needs_flow_link_types
+            if (current_needflow["link_types"] and link_type['option'].upper() not in option_link_types) or \
+                    (not current_needflow["link_types"] and \
+                     link_type['option'].upper() not in allowed_link_types_options):
+                continue
+
+            for link in need_info[link_type['option']]:
+                # If source or target of link is a need_part, a specific style is needed
+                if '.' in link or '.' in need_info["id_complete"]:
+                    final_link = link
+                    if current_needflow["show_link_names"] or env.config.needs_flow_show_links:
+                        desc = link_type['outgoing'] + '\\n'
+                        comment = ': {desc}'.format(desc=desc)
+                    else:
+                        comment = ''
+
+                    if "style_part" in link_type.keys() and link_type['style_part'] is not None and \
+                            len(link_type['style_part']) > 0:
+                        link_style = '[{style}]'.format(style=link_type['style_part'])
+                    else:
+                        link_style = "[dotted]"
+                else:
+                    final_link = link
+                    if current_needflow["show_link_names"] or env.config.needs_flow_show_links:
+                        comment = ': {desc}'.format(desc=link_type['outgoing'])
+                    else:
+                        comment = ''
+
+                    if "style" in link_type.keys() and link_type['style'] is not None and \
+                            len(link_type['style']) > 0:
+                        link_style = '[{style}]'.format(style=link_type['style'])
+                    else:
+                        link_style = ""
+
+                # Do not create an links, if the link target is not part of the search result.
+                if final_link not in [x['id'] for x in found_needs if x['is_need']] and \
+                        final_link not in [x['id_complete'] for x in found_needs if x['is_part']]:
+                    continue
+
+                if 'style_start' in link_type.keys() and link_type['style_start'] is not None and \
+                        len(link_type['style_start']) > 0:
+                    style_start = link_type['style_start']
+                else:
+                    style_start = '-'
+
+                if 'style_end' in link_type.keys() and link_type['style_end'] is not None and \
+                        len(link_type['style_end']) > 0:
+                    style_end = link_type['style_end']
+                else:
+                    style_end = '->'
+
+                puml_connections += '{id} {style_start}{link_style}{style_end} {link}{comment}\n'.format(
+                    id=make_entity_name(need_info["id_complete"]),
+                    link=make_entity_name(final_link),
+                    comment=comment,
+                    link_style=link_style,
+                    style_start=style_start,
+                    style_end=style_end
+                )
+
+    puml_node["uml"] += '\n\' Connection definition \n\n'
+    puml_node["uml"] += puml_connections
+
+    # Create a legend
+    if current_needflow["show_legend"]:
+        puml_node["uml"] += '\n\n\' Legend definition \n\n'
+
+        puml_node["uml"] += "legend\n"
+        puml_node["uml"] += "|= Color |= Type |\n"
+        for need in app.config.needs_types:
+            puml_node["uml"] += "|<back:{color}> {color} </back>| {name} |\n".format(
+                color=need["color"], name=need["title"])
+        puml_node["uml"] += "endlegend\n"
+
+    puml_node["uml"] += "\n@enduml"
+    puml_node["incdir"] = os.path.dirname(current_needflow["docname"])
+    puml_node["filename"] = os.path.split(current_needflow["docname"])[1]  # Needed for plantuml >= 0.9
+
+    scale = int(current_needflow['scale'])
+    # if scale != 100:
+    puml_node['scale'] = scale
+
+    puml_node = nodes.figure('', puml_node)
+
+    if current_needflow['align'] is not None and len(current_needflow['align']) != '':
+        puml_node['align'] = current_needflow['align']
+    else:
+        puml_node['align'] = 'center'
+
+    if current_needflow['caption'] is not None and len(current_needflow['caption']) != '':
+        # Make the caption to a link to the original file.
+        try:
+            if "SVG" in app.config.plantuml_output_format.upper():
+                file_ext = 'svg'
+            else:
+                file_ext = 'png'
+        except Exception:
+            file_ext = 'png'
+
+        gen_flow_link = generate_name(app, puml_node.children[0], file_ext)
+        current_file_parts = fromdocname.split('/')
+        subfolder_amount = len(current_file_parts) - 1
+        img_locaton = '../' * subfolder_amount + '_images/' + gen_flow_link[0].split('/')[-1]
+        flow_ref = nodes.reference('t', current_needflow['caption'], refuri=img_locaton)
+        puml_node += nodes.caption('', '', flow_ref)
+
+    content.append(puml_node)
+
+    if len(content) == 0:
+        nothing_found = "No needs passed the filters"
+        para = nodes.paragraph()
+        nothing_found_node = nodes.Text(nothing_found, nothing_found)
+        para += nothing_found_node
+        content.append(para)
+    if current_needflow["show_filters"]:
+        para = nodes.paragraph()
+        filter_text = "Used filter:"
+        filter_text += " status(%s)" % " OR ".join(current_needflow["status"]) if len(
+            current_needflow["status"]) > 0 else ""
+        if len(current_needflow["status"]) > 0 and len(current_needflow["tags"]) > 0:
+            filter_text += " AND "
+        filter_text += " tags(%s)" % " OR ".join(current_needflow["tags"]) if len(
+            current_needflow["tags"]) > 0 else ""
+        if (len(current_needflow["status"]) > 0 or len(current_needflow["tags"]) > 0) and len(
+                current_needflow["types"]) > 0:
+            filter_text += " AND "
+        filter_text += " types(%s)" % " OR ".join(current_needflow["types"]) if len(
+            current_needflow["types"]) > 0 else ""
+
+        filter_node = nodes.emphasis(filter_text, filter_text)
+        para += filter_node
+        content.append(para)
+
+    return content, puml_node.children[0]['uml']
+
+
+class NeedsUnsupportedBackend(SphinxError):
+    pass

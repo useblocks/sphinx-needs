@@ -46,6 +46,7 @@ release = '0.5.3'
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 
 extensions = ['sphinxcontrib.plantuml',
+               'sphinxcontrib.mermaid',
               'sphinxcontrib.needs',
               'sphinx.ext.autodoc',
               'matplotlib.sphinxext.plot_directive',
