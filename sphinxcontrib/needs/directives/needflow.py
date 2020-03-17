@@ -197,18 +197,24 @@ def process_needflow(app, doctree, fromdocname):
         node.replace_self(content)
 
 
-def calculate_link(app, need_info):
+def calculate_link(app, need_info, embedded=False):
     # Link calculation
     # All links we can get from docutils functions will be relative.
     # But the generated link in the svg will be relative to the svg-file location
     # (e.g. server.com/docs/_images/sqwxo499cnq329439dfjne.svg)
     # and not to current documentation. Therefore we need to add ../ to get out of the image folder.
     try:
-        link = "../" + app.builder.get_target_uri(need_info['docname']) \
-               + "#" \
-               + need_info['target_node']['refid']
-        # This would highlight all word from title. Deactivated with 0.5.3
-        # + "?highlight={0}".format(urlParse(need_info['title']))
+        if not embedded:
+            link = "../" + app.builder.get_target_uri(need_info['docname']) \
+                   + "#" \
+                   + need_info['target_node']['refid']
+            # This would highlight all word from title. Deactivated with 0.5.3
+            # + "?highlight={0}".format(urlParse(need_info['title']))
+        else:
+            # Images is embedded in html code.
+            link = app.builder.get_target_uri(need_info['docname']) \
+                   + "#" \
+                   + need_info['target_node']['refid']
 
     except NoUri:
         link = ""
@@ -229,20 +235,20 @@ def _render_mermaid(current_needflow, all_needs, option_link_types, app, fromdoc
         text = nodes.Text("Mermaid is not available!", "Mermaid is not available!")
         para += text
         content.append(para)
-        return content, None
+        return content, ''
 
     content = []
     mermaid_text = """
 graph TD
 """
     # Adding config
-    config = current_needflow['config']
-    if config is not None and len(config) >= 3:
-        # Remove all empty lines
-        config = '\n'.join([line.strip() for line in config.split('\n') if line.strip() != ''])
-        mermaid_text += '\n%%  Config\n\n'
-        mermaid_text += config
-        mermaid_text += '\n\n'
+    # config = current_needflow['config']
+    # if config is not None and len(config) >= 3:
+    #     # Remove all empty lines
+    #     config = '\n'.join([line.strip() for line in config.split('\n') if line.strip() != ''])
+    #     mermaid_text += '\n%%  Config\n\n'
+    #     mermaid_text += config
+    #     mermaid_text += '\n\n'
 
     all_needs = list(all_needs.values())
     found_needs = procces_filters(all_needs, current_needflow)
@@ -260,7 +266,7 @@ graph TD
                            'need_parts from search result inside this flow diagram.')
             continue  # Mermaid does currently not support inner nodes
 
-        link = calculate_link(app, need_info)
+        link = calculate_link(app, need_info, embedded=True)
 
         node_text = '<center>{type}<br>' \
                     '<big><strong>{title}</strong></big><br>' \
@@ -306,7 +312,12 @@ graph TD
                         comment = ''
 
                     if "style" in link_type.keys() and link_type['style'] is not None and \
-                            len(link_type['style']) > 0:
+                        isinstance(link_type['style'], tuple):
+                        link_style = 'stroke:{stroke_color},stroke-width:{stroke_width}'.format(
+                            stroke_color=link_type['style'][0],
+                            stroke_width=link_type['style'][2]
+                        )
+                    elif "style" in link_type.keys() and link_type['style'] is not None and len(link_type['style']) > 0:
                         link_style = '{style}'.format(style=link_type['style'])
                     else:
                         link_style = ""
@@ -325,7 +336,7 @@ graph TD
 
                 # Mermaid has really poor possibilities for line start and end
                 if 'style_end' in link_type.keys() and link_type['style_end'] is not None and \
-                        len(link_type['style_end']) > 0 and link_type['style_end'] in ['-', '->']:
+                        len(link_type['style_end']) > 0 and link_type['style_end'] in ['--', '->']:
                     style_end = link_type['style_end']
                 else:
                     style_end = '->'
@@ -337,7 +348,7 @@ graph TD
                     style_start=style_start,
                     style_end=style_end
                 ))
-                node_connections.append('linkStyle {number} stroke:{link_style}'.format(
+                node_connections.append('linkStyle {number} {link_style}'.format(
                     number=len(node_connections)//2,
                     link_style=link_style
                 ))
@@ -488,7 +499,14 @@ def _render_plantuml(current_needflow, all_needs, option_link_types, app, fromdo
 
                     if "style_part" in link_type.keys() and link_type['style_part'] is not None and \
                             len(link_type['style_part']) > 0:
-                        link_style = '[{style}]'.format(style=link_type['style_part'])
+                        if isinstance(link_type['style_part'], tuple):
+                            link_style = '[{stroke_type},thickness={stroke_width},{stroke_color}]'.format(
+                                    stroke_color=link_type['style_part'][0],
+                                    stroke_type=link_type['style_part'][1],
+                                    stroke_width=link_type['style_part'][2]
+                                )
+                        else:
+                            link_style = '[{style}]'.format(style=link_type['style_part'])
                     else:
                         link_style = "[dotted]"
                 else:
@@ -500,7 +518,14 @@ def _render_plantuml(current_needflow, all_needs, option_link_types, app, fromdo
 
                     if "style" in link_type.keys() and link_type['style'] is not None and \
                             len(link_type['style']) > 0:
-                        link_style = '[{style}]'.format(style=link_type['style'])
+                        if isinstance(link_type['style_part'], tuple):
+                            link_style = '[{stroke_type},thickness={stroke_width},{stroke_color}]'.format(
+                                stroke_color=link_type['style'][0],
+                                stroke_type=link_type['style'][1],
+                                stroke_width=link_type['style'][2]
+                            )
+                        else:
+                            link_style = '[{style}]'.format(style=link_type['style'])
                     else:
                         link_style = ""
 
