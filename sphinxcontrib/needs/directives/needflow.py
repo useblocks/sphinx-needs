@@ -197,7 +197,7 @@ def process_needflow(app, doctree, fromdocname):
         node.replace_self(content)
 
 
-def calculate_link(app, need_info, embedded=False):
+def calculate_link(app, need_info, embedded=False, fromdocname=None):
     # Link calculation
     # All links we can get from docutils functions will be relative.
     # But the generated link in the svg will be relative to the svg-file location
@@ -212,7 +212,9 @@ def calculate_link(app, need_info, embedded=False):
             # + "?highlight={0}".format(urlParse(need_info['title']))
         else:
             # Images is embedded in html code.
-            link = app.builder.get_target_uri(need_info['docname']) \
+
+            link = "../" * (len(fromdocname.split('/'))-1) + \
+                   app.builder.get_target_uri(need_info['docname']) \
                    + "#" \
                    + need_info['target_node']['refid']
 
@@ -266,7 +268,7 @@ graph TD
                            'need_parts from search result inside this flow diagram.')
             continue  # Mermaid does currently not support inner nodes
 
-        link = calculate_link(app, need_info, embedded=True)
+        link = calculate_link(app, need_info, embedded=True, fromdocname=fromdocname)
 
         node_text = '<center>{type}<br>' \
                     '<big><strong>{title}</strong></big><br>' \
@@ -341,7 +343,15 @@ graph TD
                 else:
                     style_end = '->'
 
-                node_connections.append('{id} {style_start}{comment}{style_end} {link}'.format(
+                try:
+                    if link_type['style_reverse']:
+                        con_string = '{link} {style_start}{comment}{style_end} {id}'
+                    else:
+                        con_string = '{id} {style_start}{comment}{style_end} {link}'
+                except KeyError:
+                    con_string = '{id} {style_start}{comment}{style_end} {link}'
+
+                node_connections.append(con_string.format(
                     id=make_entity_name(need_info["id_complete"]),
                     link=make_entity_name(final_link),
                     comment=comment,
