@@ -63,6 +63,10 @@ div.dt-buttons button {
     clear: both;
 }
 
+.toggle .header p{
+    display: inline;
+}
+
 .toggle .header:after {
     content: " ▷";
 }
