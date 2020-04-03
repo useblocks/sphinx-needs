@@ -1,10 +1,13 @@
 $(document).ready(function() {
-    $(".toggle > *").hide();
-    $(".toggle .header").show();
-    $(".toggle .header").click(function() {
-        $(this).parent().children().not(".header").toggle(200);
-        $(this).parent().children(".header").toggleClass("open");
-    })
+    window.setTimeout(function() {
+            $(".toggle > *").hide();
+                $(".toggle .header").show();
+                $(".toggle .header").click(function() {
+                    $(this).parent().children().not(".header").not(".wy-table-responsive").toggle(200);
+                    $(this).parent().children('.wy-table-responsive').children().toggle(200);
+                    $(this).parent().children(".header").toggleClass("open");
+                })
+          }, 10);
 });
 //
 // // readthedocs fix
