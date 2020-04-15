@@ -23,3 +23,5 @@ DYNAMIC FUNCTIONS
 .. spec:: TEST_5
     :id: TEST_5
     :tags: [[copy('id')]]
+
+    Test a `link <http://www.[[copy('id')]]>`_

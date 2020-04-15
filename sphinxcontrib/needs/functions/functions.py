@@ -85,34 +85,44 @@ def find_and_replace_node_content(node, env, need):
     :return: None
     """
     new_children = []
-    if not node.children:
-        if isinstance(node, nodes.Text):
-            func_match = func_pattern.findall(node)
+    if not node.children and isinstance(node, nodes.Text) or isinstance(node, nodes.reference):
+        if isinstance(node, nodes.reference):
+            new_text = node.attributes['refuri']
+        else:
             new_text = node
-            for func_string in func_match:
-                if not is_python3:
-                    func_string = func_string.encode('utf-8')
-                # sphinx is replacing ' and " with language specific quotation marks (up and down), which makes
-                # it impossible for the later used AST render engine to detect a python function call in the given
-                # string. Therefor a replacement is needed for the execution of the found string.
-                func_string_org = func_string[:]
-                func_string = func_string.replace('„', '"')
-                func_string = func_string.replace('“', '"')
-                func_string = func_string.replace('”', '"')
-                func_string = func_string.replace('”', '"')
+        func_match = func_pattern.findall(new_text)
+        for func_string in func_match:
+            if not is_python3:
+                func_string = func_string.encode('utf-8')
+            # sphinx is replacing ' and " with language specific quotation marks (up and down), which makes
+            # it impossible for the later used AST render engine to detect a python function call in the given
+            # string. Therefor a replacement is needed for the execution of the found string.
+            func_string_org = func_string[:]
+            func_string = func_string.replace('„', '"')
+            func_string = func_string.replace('“', '"')
+            func_string = func_string.replace('”', '"')
+            func_string = func_string.replace('”', '"')
 
-                func_string = func_string.replace('‘', '\'')
-                func_string = func_string.replace('’', '\'')
-                func_return = execute_func(env, need, func_string)
+            func_string = func_string.replace('‘', '\'')
+            func_string = func_string.replace('’', '\'')
+            func_return = execute_func(env, need, func_string)
 
-                # This shoudl never happen, but we can not be sure.
-                if isinstance(func_return, list):
-                    func_return = ", ".join(func_return)
+            # This should never happen, but we can not be sure.
+            if isinstance(func_return, list):
+                func_return = ", ".join(func_return)
 
-                if not is_python3:
-                    new_text = new_text.replace(u'[[{}]]'.format(func_string_org.decode('utf-8')), func_return)
-                else:
-                    new_text = new_text.replace(u'[[{}]]'.format(func_string_org), func_return)
+            if not is_python3:
+                new_text = new_text.replace(u'[[{}]]'.format(func_string_org.decode('utf-8')), func_return)
+            else:
+                new_text = new_text.replace(u'[[{}]]'.format(func_string_org), func_return)
+        if isinstance(node, nodes.reference):
+            node.attributes['refuri'] = new_text
+            # Call normal handling for children of reference node (will contain related Text node with link-text)
+            for child in node.children:
+                new_child = find_and_replace_node_content(child, env, need)
+                new_children.append(new_child)
+                node.children = new_children
+        else:
             node = nodes.Text(new_text, new_text)
         return node
     else:

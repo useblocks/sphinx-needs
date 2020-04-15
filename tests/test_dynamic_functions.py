@@ -24,6 +24,8 @@ def test_doc_dynamic_functions(app, status, warning):
 
     assert 'Test output of need TEST_3. args:' in html
 
+    assert '<a class="reference external" href="http://www.TEST_5">link</a>' in html
+
 
 @with_app(buildername='html', srcdir='doc_test/doc_df_calc_sum')
 def test_doc_df_calc_sum(app, status, warning):
