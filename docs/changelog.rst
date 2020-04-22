@@ -1,7 +1,7 @@
 Changelog
 =========
-0.5.4 (not yet released)
-------------------------
+0.5.4
+-----
 
 * Improvement: Added options :ref:`need_pre_template` and :ref:`need_post_template` for needs. (`#139 <https://github.com/useblocks/sphinxcontrib-needs/issues/139>`_)
 * Bugfix: Setting correct default value for :ref:`needs_statuses` (`#136 <https://github.com/useblocks/sphinxcontrib-needs/issues/136>`_)

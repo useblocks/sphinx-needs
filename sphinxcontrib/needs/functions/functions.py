@@ -87,7 +87,10 @@ def find_and_replace_node_content(node, env, need):
     new_children = []
     if not node.children and isinstance(node, nodes.Text) or isinstance(node, nodes.reference):
         if isinstance(node, nodes.reference):
-            new_text = node.attributes['refuri']
+            try:
+                new_text = node.attributes['refuri']
+            except KeyError:
+                new_text= ''
         else:
             new_text = node
         func_match = func_pattern.findall(new_text)
