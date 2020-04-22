@@ -90,7 +90,9 @@ def find_and_replace_node_content(node, env, need):
             try:
                 new_text = node.attributes['refuri']
             except KeyError:
-                new_text= ''
+                # If no refuri is set, we don't not need to modify anything.
+                # So stop here and return the untouched node.
+                return node
         else:
             new_text = node
         func_match = func_pattern.findall(new_text)
