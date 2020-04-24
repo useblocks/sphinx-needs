@@ -3,7 +3,8 @@ import sys
 import sphinx
 from sphinx_testing import with_app
 
-from test_title_optional import extract_needs_from_html
+from tests.util import extract_needs_from_html
+
 try:
     from pathlib import Path
 except ImportError:

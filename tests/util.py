@@ -17,13 +17,18 @@ class HtmlNeed(object):
 
     @property
     def id(self):
-        # return self.need.find(".//html:span[@class='needs-id']", NS)._children[0].text
-        return self.need.find(".//html:a[@class='reference internal']", NS).text
+        found_id = self.need.find(".//html:a[@class='reference internal']", NS)
+        if found_id is None:
+            found_id = self.need.find(".//html:a[@class='reference internal']", {'html': ''})
+        return found_id.text
 
     @property
     def title(self):
         title = self.need.find(".//html:span[@class='needs_title']", NS)
-        return title[0].text if title is not None else None  # title[0] aims to the span_data element
+        found_title = self.need.find(".//html:span[@class='needs_title']", NS)
+        if found_title is None:
+            found_title = self.need.find(".//html:span[@class='needs_title']", {'html': ''})
+        return found_title[0].text if found_title is not None else None  # title[0] aims to the span_data element
 
 
 def extract_needs_from_html(html):

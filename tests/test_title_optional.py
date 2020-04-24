@@ -2,7 +2,9 @@
 import sys
 import sphinx
 from sphinx_testing import with_app
-from xml.etree import ElementTree
+
+from tests.util import extract_needs_from_html
+
 try:
     from pathlib import Path
 except ImportError:
@@ -31,25 +33,6 @@ class HtmlNeed(object):
     def title(self):
         title = self.need.find(".//html:span[@class='needs_title']", NS)
         return title[0].text if title is not None else None  # title[0] aims to the span_data element
-
-
-def extract_needs_from_html(html):
-
-    if sys.version_info >= (3, 0):
-        source = StringIO(html)
-        parser = ElementTree.XMLParser(encoding="utf-8")
-    else:  # Python 2.x
-        source = StringIO(html.encode("utf-8"))
-        parser = ElementTree.XMLParser(encoding="utf-8")
-
-    # XML knows not nbsp definition, which comes from HTML.
-    # So we need to add it
-    parser.entity["nbsp"] = ' '
-
-    etree = ElementTree.ElementTree()
-    document = etree.parse(source, parser=parser)
-    tables = document.findall(".//html:table", NS)
-    return [HtmlNeed(table) for table in tables if 'need' in table.get('class', '')]
 
 
 @with_app(buildername='html', srcdir='doc_test/title_optional')
