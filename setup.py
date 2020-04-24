@@ -5,9 +5,10 @@ import os
 from setuptools import setup, find_packages
 
 requires = ['Sphinx<2;python_version<"3.5"',
-            'Sphinx;python_version>="3.5"',
+            'Sphinx<3;python_version<"3.6"',  # Needed as matplotlib can not deal with py35 and sphinx3
+            'Sphinx;python_version>="3.6"',
             'six',
-            'matplotlib<=3.0.3.;python_version<"3.6"',
+            'matplotlib<=3.0.3.;python_version<"3.6"',  # last version with py3.5 support
             'matplotlib;python_version>="3.6"',
             'MarkupSafe<1.3.0.;python_version<"3.6"']
 
