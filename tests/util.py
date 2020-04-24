@@ -45,4 +45,13 @@ def extract_needs_from_html(html):
     etree = ElementTree.ElementTree()
     document = etree.parse(source, parser=parser)
     tables = document.findall(".//html:table", NS)
+
+    # Sphinx <3.0 start html-code with:
+    #    <html xmlns="http://www.w3.org/1999/xhtml">
+    # Sphinx >= 3.0 starts it with:
+    #    <html>
+    # So above search will not work for Sphinx >= 3.0 and we try a new one
+    if len(tables) == 0:
+        tables = document.findall(".//html:table", {'html': ''})
+
     return [HtmlNeed(table) for table in tables if 'need' in table.get('class', '')]
