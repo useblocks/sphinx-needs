@@ -115,7 +115,6 @@ class NeedflowDirective(FilterBase):
             'highlight': highlight,
             'align': self.options.get("align", None),
             'link_types': link_types,
-            'export_id': self.options.get("export_id", ""),
             'env': env
         }
         env.need_all_needflows[targetid].update(self.collect_filter_attributes())
