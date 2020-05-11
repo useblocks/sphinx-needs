@@ -30,7 +30,7 @@ from sphinxcontrib.needs.roles.need_part import NeedPart, process_need_part
 from sphinxcontrib.needs.roles.need_count import NeedCount, process_need_count
 from sphinxcontrib.needs.functions import register_func, needs_common_functions
 from sphinxcontrib.needs.warnings import process_warnings
-from sphinxcontrib.needs.utils import INTERNALS
+from sphinxcontrib.needs.utils import INTERNALS, NEEDS_FUNCTIONS
 from sphinxcontrib.needs.defaults import DEFAULT_DIAGRAM_TEMPLATE, LAYOUTS, NEEDFLOW_CONFIG_DEFAULTS
 
 sphinx_version = sphinx.__version__
@@ -42,6 +42,16 @@ else:
     logging.basicConfig()  # Only need to do this once
 
 VERSION = '0.5.4'
+
+NEEDS_FUNCTIONS_CONF = []
+
+
+class TagsDummy:
+    """
+    Dummy class for faking tags.has() feature during own import of conf.py
+    """
+    def has(self, *args):
+        return True
 
 
 def setup(app):
@@ -143,73 +153,12 @@ def setup(app):
     ########################################################################
 
     # Define directives
-    # ToDo: Directives can be registered after event 'config-inited'. No need to import conf.py by our own.
-    # ToDo: See Sphinx-Test-Reports for a working implementation.
-    # As values from conf.py are not available during setup phase, we have to import and read them by our own.
-    # Otherwise this "app.config.needs_types" would always return the default values only.
-    try:
-        import imp
-        # If sphinx gets started multiple times inside a python process, the following module gets also
-        # loaded several times. This has a drawback, as the config from the current build gets somehow merged
-        # with the config from the previous builds.
-        # So if the current config does not define a parameter, which was set in build before, the "old" value is
-        # taken. This is dangerous, because a developer may simply want to use the defaults (like the predefined types)
-        # and therefore does not set this specific value. But instead he would get the value from a previous build.
-        # So we generate a random module name for our configuration, so that this is loaded for the first time.
-        # Drawback: The old modules will still exist (but are not used).
-        #
-        # From https://docs.python.org/2.7/library/functions.html#reload
-        # "When a module is reloaded, its dictionary (containing the module’s global variables) is retained.
-        # Redefinitions of names will override the old definitions, so this is generally not a problem.
-        # If the new version of a module does not define a name that was defined by the old version,
-        # the old definition remains"
-
-        # Be sure, our current working directory is the folder, which stores the conf.py.
-        # Inside the conf.py there may be relatives paths, which would be incorrect, if our cwd is wrong.
-        old_cwd = os.getcwd()
-        os.chdir(app.confdir)
-        module_name = "needs_app_conf_" + ''.join(random.choice(string.ascii_uppercase) for _ in range(5))
-        config = imp.load_source(module_name, os.path.join(app.confdir, "conf.py"))
-        os.chdir(old_cwd)  # Lets switch back the cwd, otherwise other stuff may not run...
-        types = getattr(config, "needs_types", app.config.needs_types)
-        extra_options = getattr(config, "needs_extra_options", app.config.needs_extra_options)
-
-        # Get extra links and create a dictionary of needed options.
-        extra_links_raw = getattr(config, "needs_extra_links", app.config.needs_extra_links)
-        extra_links = {}
-        for extra_link in extra_links_raw:
-            extra_links[extra_link['option']] = directives.unchanged
-
-        title_optional = getattr(config, "needs_title_optional", app.config.needs_title_optional)
-        title_from_content = getattr(config, "needs_title_from_content", app.config.needs_title_from_content)
-        app.needs_functions = getattr(config, "needs_functions", [])
-    except IOError:
-        types = app.config.needs_types
-    except Exception as e:
-        log.error("Error during sphinxcontrib-needs setup: {0}, {1}".format(
-            os.path.join(app.confdir, "conf.py"), e))
-        types = app.config.needs_types
-
-    # Update NeedDirective to use customized options
-    NeedDirective.option_spec.update(extra_options)
-
-    # Update NeedDirective to use customized links
-    NeedDirective.option_spec.update(extra_links)
-
-    if title_optional or title_from_content:
-        NeedDirective.required_arguments = 0
-        NeedDirective.optional_arguments = 1
-
-    for type in types:
-        # Register requested types of needs
-        app.add_directive(type["directive"], NeedDirective)
-        # app.add_directive("{0}_list".format(type["directive"]), NeedDirective)
-
     app.add_directive('needfilter', NeedfilterDirective)
     app.add_directive('needlist', NeedlistDirective)
     app.add_directive('needtable', NeedtableDirective)
     app.add_directive('needflow', NeedflowDirective)
     app.add_directive('needpie', NeedpieDirective)
+    app.add_directive('needsequence', NeedsequenceDirective)
     app.add_directive('needimport', NeedimportDirective)
     app.add_directive('needextract', NeedextractDirective)
 
@@ -246,7 +195,9 @@ def setup(app):
     ########################################################################
     # Make connections to events
     app.connect('env-purge-doc', purge_needs)
+    app.connect('config-inited', load_config)
     app.connect('env-before-read-docs', prepare_env)
+    # app.connect('env-before-read-docs', load_config)
     app.connect('config-inited', check_configuration)
 
     # There is also the event doctree-read.
@@ -288,6 +239,41 @@ def setup(app):
             'parallel_write_safe': True}
 
 
+def load_config(app, *args):
+    """
+    Register extra options and directive based on config from con.py
+    """
+    types = app.config.needs_types
+    extra_options = getattr(app.config, "needs_extra_options", app.config.needs_extra_options)
+
+    # Get extra links and create a dictionary of needed options.
+    extra_links_raw = getattr(app.config, "needs_extra_links", app.config.needs_extra_links)
+    extra_links = {}
+    for extra_link in extra_links_raw:
+        extra_links[extra_link['option']] = directives.unchanged
+
+    title_optional = getattr(app.config, "needs_title_optional", app.config.needs_title_optional)
+    title_from_content = getattr(app.config, "needs_title_from_content", app.config.needs_title_from_content)
+    # app.needs_functions = getattr(app.config, "needs_functions", [])
+    global NEEDS_FUNCTIONS_CONF
+    NEEDS_FUNCTIONS_CONF = getattr(app.config, "needs_functions", [])
+    # app.needs_functions = []
+
+    # Update NeedDirective to use customized options
+    NeedDirective.option_spec.update(extra_options)
+
+    # Update NeedDirective to use customized links
+    NeedDirective.option_spec.update(extra_links)
+
+    if title_optional or title_from_content:
+        NeedDirective.required_arguments = 0
+        NeedDirective.optional_arguments = 1
+
+    for type in types:
+        # Register requested types of needs
+        app.add_directive(type["directive"], NeedDirective)
+
+
 def visitor_dummy(*args, **kwargs):
     """
     Dummy class for visitor methods, which does nothing.
@@ -299,6 +285,8 @@ def prepare_env(app, env, docname):
     """
     Prepares the sphinx environment to store sphinx-needs internal data.
     """
+    NEEDS_FUNCTIONS.clear()
+
     if not hasattr(env, 'needs_all_needs'):
         # Used to store all needed information about all needs in document
         env.needs_all_needs = {}
@@ -307,24 +295,19 @@ def prepare_env(app, env, docname):
         # Used to store all needed information about all filters in document
         env.needs_all_filters = {}
 
-    if not hasattr(env, 'needs_functions'):
-        # Used to store all registered functions for supporting dynamic need values.
-        env.needs_functions = {}
+    needs_functions = NEEDS_FUNCTIONS_CONF
+    if needs_functions is None:
+        needs_functions = []
+    if not isinstance(needs_functions, list):
+        raise SphinxError('Config parameter needs_functions must be a list!')
 
-        # needs_functions = getattr(app.config, 'needs_functions', [])
-        needs_functions = app.needs_functions
-        if needs_functions is None:
-            needs_functions = []
-        if not isinstance(needs_functions, list):
-            raise SphinxError('Config parameter needs_functions must be a list!')
+    # Register built-in functions
+    for need_common_func in needs_common_functions:
+        register_func(env, need_common_func)
 
-        # Register built-in functions
-        for need_common_func in needs_common_functions:
-            register_func(env, need_common_func)
-
-        # Register functions configured by user
-        for needs_func in needs_functions:
-            register_func(env, needs_func)
+    # Register functions configured by user
+    for needs_func in needs_functions:
+        register_func(env, needs_func)
 
     app.config.needs_extra_options['hidden'] = directives.unchanged
 

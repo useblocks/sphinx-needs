@@ -14,6 +14,7 @@ import re
 from sphinx.errors import SphinxError
 import sys
 
+from sphinxcontrib.needs.utils import NEEDS_FUNCTIONS
 
 is_python3 = sys.version_info.major == 3
 if is_python3:
@@ -31,15 +32,20 @@ def register_func(env, need_function):
     :return: None
     """
 
-    if not hasattr(env, 'needs_functions'):
-        env.needs_functions = {}
+    # if not hasattr(env, 'needs_functions'):
+    #     env.needs_functions = {}
+    global NEEDS_FUNCTIONS
+    if NEEDS_FUNCTIONS is None:
+        NEEDS_FUNCTIONS = {}
 
     func_name = need_function.__name__
 
-    if func_name in env.needs_functions.keys():
+    # if func_name in env.needs_functions.keys():
+    if func_name in NEEDS_FUNCTIONS.keys():
         raise SphinxError('sphinx-needs: Function name {} already registered.'.format(func_name))
 
-    env.needs_functions[func_name] = {
+    # env.needs_functions[func_name] = {
+    NEEDS_FUNCTIONS[func_name] = {
         'name': func_name,
         'function': need_function
     }
@@ -53,12 +59,16 @@ def execute_func(env, need, func_string):
     :param func_string: string of the found function. Without [[ ]]
     :return: return value of executed function
     """
+    global NEEDS_FUNCTIONS
     func_name, func_args, func_kwargs = _analyze_func_string(func_string, need)
 
-    if func_name not in env.needs_functions.keys():
+    # if func_name not in env.needs_functions.keys():
+    if func_name not in NEEDS_FUNCTIONS.keys():
         raise SphinxError('Unknown dynamic sphinx-needs function: {}. Found in need: {}'.format(func_name, need['id']))
 
-    func = env.needs_functions[func_name]['function']
+    # func = env.needs_functions[func_name]['function']
+
+    func = NEEDS_FUNCTIONS[func_name]['function']
     func_return = func(env, need, env.needs_all_needs, *func_args, **func_kwargs)
 
     if not isinstance(func_return, (str, int, float, list, unicode)) and func_return is not None:

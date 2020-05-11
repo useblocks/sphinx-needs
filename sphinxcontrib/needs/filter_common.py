@@ -65,6 +65,7 @@ class FilterBase(Directive):
             'filter': self.options.get("filter", None),
             'sort_by': self.options.get("sort_by", None),
             'filter_code': self.content,
+            'export_id': self.options.get("export_id", ""),
         }
         return collected_filter_options
 

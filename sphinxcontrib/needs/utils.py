@@ -14,6 +14,8 @@ else:
 
 logger = logging.getLogger(__name__)
 
+NEEDS_FUNCTIONS = {}
+
 # List of internal need option names. They should not be used by or presented to user.
 INTERNALS = ['docname', 'lineno', 'target_node', 'refid', 'content', 'pre_content', 'post_content',
              'collapse', 'parts', 'id_parent',

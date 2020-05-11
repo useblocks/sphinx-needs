@@ -1,8 +1,16 @@
 Changelog
 =========
+
+0.5.5 (not released yet)
+------------------------
+* Improvement: Added :ref:`needsequence` directive. (`#144 <https://github.com/useblocks/sphinxcontrib-needs/issues/144>`_)
+* Bugfix: Using of `tags.has() <https://www.sphinx-doc.org/en/master/usage/configuration.html#conf-tags>`_ in
+  ``conf.py`` does not raise an exception anymore. (`#142 <https://github.com/useblocks/sphinxcontrib-needs/issues/142>`_)
+* Improvement: Clean up of internal configuration handling and avoiding needS_functions to get pickled by sphinx.
+
+
 0.5.4
 -----
-
 * Improvement: Added options :ref:`need_pre_template` and :ref:`need_post_template` for needs. (`#139 <https://github.com/useblocks/sphinxcontrib-needs/issues/139>`_)
 * Bugfix: Setting correct default value for :ref:`needs_statuses` (`#136 <https://github.com/useblocks/sphinxcontrib-needs/issues/136>`_)
 * Bugfix: Dynamic functions can be used in links (text and url) now.
