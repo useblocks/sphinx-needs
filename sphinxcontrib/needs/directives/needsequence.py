@@ -1,5 +1,5 @@
 import os
-
+import re
 import sphinx
 import sys
 import urllib
@@ -44,10 +44,14 @@ class NeedsequenceDirective(FilterBase, DiagramBase):
     """
     optional_arguments = 1
     final_argument_whitespace = True
-    option_spec = {}
+    option_spec = {
+        'start': directives.unchanged,
+        'link_types': directives.unchanged,
+    }
 
     # Update the options_spec with values defined in the FilterBase class
     option_spec.update(FilterBase.base_option_spec)
+    option_spec.update(DiagramBase.base_option_spec)
 
     def run(self):
         env = self.state.document.settings.env
@@ -56,12 +60,18 @@ class NeedsequenceDirective(FilterBase, DiagramBase):
 
         id, targetid, targetnode = self.create_target('needsequence')
 
+        start = self.options.get('start', None)
+        if start is None or len(start.strip()) == 0:
+            raise NeedSequenceException(f'No valid start option given for needsequence. '
+                                        f'See file {env.docname}:{self.lineno}')
+
         # Add the needsequence and all needed information
         env.need_all_needsequences[targetid] = {
             'docname': env.docname,
             'lineno': self.lineno,
             'target_node': targetnode,
-            'env': env
+            'env': env,
+            'start': self.options.get('start', ''),
         }
         # Data for filtering
         env.need_all_needsequences[targetid].update(self.collect_filter_attributes())
@@ -79,7 +89,7 @@ def process_needsequence(app, doctree, fromdocname):
     allowed_link_types_options = [link.upper() for link in env.config.needs_flow_link_types]
 
     # NEEDSEQUENCE
-    for node in doctree.traverse(NeedsequenceDirective):
+    for node in doctree.traverse(Needsequence):
         if not app.config.needs_include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
@@ -93,7 +103,7 @@ def process_needsequence(app, doctree, fromdocname):
 
         id = node.attributes["ids"][0]
         current_needsequence = env.need_all_needsequences[id]
-        all_needs = env.needs_all_needs
+        all_needs_dict = env.needs_all_needs
 
         option_link_types = [link.upper() for link in current_needsequence['link_types']]
         for lt in option_link_types:
@@ -124,18 +134,46 @@ def process_needsequence(app, doctree, fromdocname):
         config = current_needsequence['config']
         puml_node["uml"] += add_config(config)
 
-        all_needs = list(all_needs.values())
+        all_needs = list(all_needs_dict.values())
         found_needs = procces_filters(all_needs, current_needsequence)
 
-        processed_need_part_ids = []
+        start_needs_id = [x.strip() for x in re.split(";|,", current_needsequence['start'])]
+        if len(start_needs_id) == 0:
+            raise NeedsequenceDirective('No start-id set for needsequence'
+                                        f' File {current_needsequence["docname"]}'
+                                        f':{current_needsequence["lineno"]}')
 
         puml_node["uml"] += '\n\' Nodes definition \n\n'
 
-        for need_info in found_needs:
-            pass
+        # Add  start participants
+        p_string = ''
+        c_string = ''
+        for need_id in start_needs_id:
+            try:
+                need = all_needs_dict[need_id.strip()]
+            except KeyError:
+                raise NeedSequenceException(f'Given {need_id} in needsequence unknown.'
+                                            f' File {current_needsequence["docname"]}'
+                                            f':{current_needsequence["lineno"]}')
+
+            # Add children of participants
+            msg_receiver_needs, p_string_new, c_string_new = get_message_needs(need,
+                                                                               current_needsequence['link_types'],
+                                                                               all_needs_dict,
+                                                                               filter=current_needsequence['filter'])
+            p_string += p_string_new
+            c_string += c_string_new
+
+            # for msg_id, msg in msg_receiver_needs.items():
+            #     for rec in msg['receivers'].values():
+            #         c_string += f'{need_id} -> {rec["id"]}: {msg["title"]}\n'
+            #         if rec['id'] not in p_string:
+            #             p_string += f'participant "{rec["title"]}" as {rec["id"]}\n'
+
+        puml_node["uml"] += p_string
 
         puml_node["uml"] += '\n\' Connection definition \n\n'
-
+        puml_node["uml"] += c_string
 
         # Create a legend
         if current_needsequence["show_legend"]:
@@ -195,3 +233,56 @@ def process_needsequence(app, doctree, fromdocname):
             content += get_debug_containter(puml_node)
 
         node.replace_self(content)
+
+
+def get_message_needs(sender, link_types, all_needs_dict, tracked_receivers=None, filter=None):
+    msg_needs = []
+    if tracked_receivers is None:
+        tracked_receivers = []
+    for link_type in link_types:
+        msg_needs += [all_needs_dict[x] for x in sender[link_type]]
+
+    messages = {}
+    p_string = ''
+    c_string = ''
+    for msg_need in msg_needs:
+        messages[msg_need['id']] = {
+            'id': msg_need['id'],
+            'title': msg_need['title'],
+            'receivers': {}
+        }
+        if sender['id'] not in tracked_receivers:
+            p_string += f'participant "{sender["title"]}" as {sender["id"]}\n'
+            tracked_receivers.append(sender['id'])
+        for link_type in link_types:
+            receiver_ids = msg_need[link_type]
+            for rec_id in receiver_ids:
+                if filter is not None:
+                    from sphinxcontrib.needs.filter_common import filter_single_need
+                    if not filter_single_need(all_needs_dict[rec_id], filter, needs=all_needs_dict.values()):
+                        continue
+
+                rec_data = {
+                    'id': rec_id,
+                    'title': all_needs_dict[rec_id]['title'],
+                    'messages': []
+                }
+
+                c_string += f'{sender["id"]} -> {rec_data["id"]}: {msg_need["title"]}\n'
+
+                if rec_id not in tracked_receivers:
+                    rec_messages, p_string_new, c_string_new = get_message_needs(
+                        all_needs_dict[rec_id], link_types, all_needs_dict,
+                        tracked_receivers, filter=filter)
+                    p_string += p_string_new
+                    c_string += c_string_new
+
+                    rec_data['messages'] = rec_messages
+
+                messages[msg_need['id']]['receivers'][rec_id] = rec_data
+
+    return messages, p_string, c_string
+
+
+class NeedSequenceException(BaseException):
+    """Errors during Sequence handling"""

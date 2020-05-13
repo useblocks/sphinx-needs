@@ -149,6 +149,8 @@ needs_types = [dict(directive="req", title="Requirement", prefix="R_", color="#B
                dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="node"),
                dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="node"),
                dict(directive="feature", title="Feature", prefix="F_", color="#FFCC00", style="node"),
+               dict(directive="user", title="User", prefix="U_", color="#777777", style="node"),
+               dict(directive="action", title="Action", prefix="A_", color="#AAAAAA", style="node"),
                ]
 
 needs_extra_links = [
@@ -169,7 +171,16 @@ needs_extra_links = [
         "copy": True,
         "style": "#00AA00",
         "style_part": "dotted,#00AA00"
-    }]
+    },
+    {
+        "option": "triggers",
+        "incoming": "triggered by",
+        "outgoing": "triggers",
+        "copy": False,
+        "style": "#00AA00",
+        "style_part": "solid,#777777"
+    }
+]
 
 needs_flow_configs = {
    'my_config': """
@@ -199,7 +210,7 @@ if on_rtd:
     plantuml = 'java -Djava.awt.headless=true -jar /usr/share/plantuml/plantuml.jar'
 else:
     cwd = os.getcwd()
-    plantuml = 'java -jar %s' % os.path.join(cwd, "utils/plantuml_beta.jar")
+    plantuml = 'java -jar %s' % os.path.join(cwd, "utils/plantuml.jar")
 
 # If we are running on windows, we need to manipulate the path,
 # otherwise plantuml will have problems.
@@ -228,7 +239,7 @@ needs_extra_options = {
 
 
 needs_warnings = {
-    'type_check': 'type not in ["req", "spec", "impl", "test", "feature"]',
+    'type_check': 'type not in ["req", "spec", "impl", "test", "feature", "action", "user"]',
     # 'valid_status': 'status not in ["open", "in progress", "closed", "done", "implemented"] and status is not None'
 }
 

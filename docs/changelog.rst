@@ -6,7 +6,7 @@ Changelog
 * Improvement: Added :ref:`needsequence` directive. (`#144 <https://github.com/useblocks/sphinxcontrib-needs/issues/144>`_)
 * Bugfix: Using of `tags.has() <https://www.sphinx-doc.org/en/master/usage/configuration.html#conf-tags>`_ in
   ``conf.py`` does not raise an exception anymore. (`#142 <https://github.com/useblocks/sphinxcontrib-needs/issues/142>`_)
-* Improvement: Clean up of internal configuration handling and avoiding needS_functions to get pickled by sphinx.
+* Improvement: Clean up of internal configuration handling and avoiding needs_functions to get pickled by sphinx.
 
 
 0.5.4

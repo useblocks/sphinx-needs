@@ -64,7 +64,7 @@ class DiagramBase(Directive):
     def collect_diagram_attributes(self):
         env = self.state.document.settings.env
 
-        link_types = self.options.get("link_types", [])
+        link_types = self.options.get("link_types", 'links')
         if len(link_types) > 0:
             link_types = [link_type.strip() for link_type in re.split(";|,", link_types)]
             for i in range(len(link_types)):
@@ -170,6 +170,8 @@ def get_debug_containter(puml_node):
     data = '\n'.join([html.escape(line) for line in data.split('\n')])
     debug_para = nodes.raw('', '<pre>{}</pre>'.format(data), format='html')
     debug_container += debug_para
+
+    return debug_container
 
 
 def calculate_link(app, need_info):
