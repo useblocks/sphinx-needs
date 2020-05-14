@@ -74,7 +74,10 @@ class NeedDirective(Directive):
                    'layout': directives.unchanged_required,
                    'template': directives.unchanged_required,
                    'pre_template': directives.unchanged_required,
-                   'post_template': directives.unchanged_required}
+                   'post_template': directives.unchanged_required,
+                   'duration': directives.unchanged_required,
+                   'completion': directives.unchanged_required,
+                   }
 
     final_argument_whitespace = True
 
@@ -112,8 +115,13 @@ class NeedDirective(Directive):
         template = self.options.get("template", None)
         pre_template = self.options.get("pre_template", None)
         post_template = self.options.get("post_template", None)
+        duration = self.options.get("duration", None)
+        completion = self.options.get("completion", None)
 
-        need_extra_options = {}
+        need_extra_options = {
+            'duration': duration,
+            'completion': completion
+        }
         for extra_link in env.config.needs_extra_links:
             need_extra_options[extra_link['option']] = self.options.get(extra_link['option'], '')
 

@@ -38,7 +38,7 @@ Default: **5**::
 
     needs_id_length = 3
 
-.. _need_types:
+.. _needs_types:
 
 needs_types
 ~~~~~~~~~~~
@@ -1016,6 +1016,32 @@ By default this is ``needs_templates/``.
 The folder must already exist, otherwise an exception gets thrown, if a need tries to use a template.
 
 Read also :ref:`need_template option description <need_template>` for information of how to use templates.
+
+.. _needs_duration_option:
+
+needs_duration_option
+~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.5.5
+
+Used to define option, which shall be used to store ``duration`` information for :ref:`needgantt`.
+
+See also :ref:`needgantt_duration_option`, which overrides this value for specific ``needgantt`` charts.
+
+Default: :ref:`need_duration`
+
+.. _needs_completion_option:
+
+needs_completion_option
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.5.5
+
+Used to define option, which shall be used to store ``completion`` information for :ref:`needgantt`.
+
+See also :ref:`needgantt_completion_option`, which overrides this value for specific ``needgantt`` charts.
+
+Default: :ref:`need_completion`
 
 Removed options
 ------------------

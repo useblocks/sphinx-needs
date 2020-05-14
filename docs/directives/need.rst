@@ -32,7 +32,7 @@ All options are optional, only the title as argument must be given (if :ref:`nee
 .. note::
 
     By default the above example works also with `.. spec::`, `.. impl::`, `.. test::` and all other need types,
-    which are configured via :ref:`need_types`.
+    which are configured via :ref:`needs_types`.
 
 Options
 -------
@@ -50,6 +50,8 @@ Supported options:
 * :ref:`need_template`
 * :ref:`need_pre_template`
 * :ref:`need_post_template`
+* :ref:`need_duration`
+* :ref:`need_completion`
 
 .. _need_id:
 
@@ -518,6 +520,31 @@ This may be useful to show some need-specific analytics, like dependency diagram
 
    This is my **specification** content.
 
+
+.. _need_duration:
+
+duration
+~~~~~~~~
+
+.. versionadded:: 0.5.5
+
+Used to track the duration of a need.
+
+It is used by default by :ref:`needgantt` and interpreted as days.
+But the need itself allows any value.
+
+
+.. _need_completion:
+
+completion
+~~~~~~~~~~
+
+.. versionadded:: 0.5.5
+
+Used to track the completion of a need.
+
+It is used by default by :ref:`needgantt` and interpreted as percentage.
+But the need itself allows any value.
 
 Customized Options
 ------------------

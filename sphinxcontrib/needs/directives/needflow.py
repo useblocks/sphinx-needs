@@ -18,6 +18,7 @@ except ImportError:
     from sphinx.environment import NoUri  # Sphinx < 3.0
 
 from sphinxcontrib.needs.filter_common import FilterBase, procces_filters, filter_single_need
+from sphinxcontrib.needs.diagrams_common import calculate_link
 
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
@@ -407,21 +408,3 @@ def process_needflow(app, doctree, fromdocname):
 
         node.replace_self(content)
 
-
-def calculate_link(app, need_info):
-    # Link calculation
-    # All links we can get from docutils functions will be relative.
-    # But the generated link in the svg will be relative to the svg-file location
-    # (e.g. server.com/docs/_images/sqwxo499cnq329439dfjne.svg)
-    # and not to current documentation. Therefore we need to add ../ to get out of the image folder.
-    try:
-        link = "../" + app.builder.get_target_uri(need_info['docname']) \
-               + "#" \
-               + need_info['target_node']['refid']
-        # This would highlight all word from title. Deactivated with 0.5.3
-        # + "?highlight={0}".format(urlParse(need_info['title']))
-
-    except NoUri:
-        link = ""
-
-    return link

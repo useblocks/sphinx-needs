@@ -18,6 +18,7 @@ from sphinxcontrib.needs.directives.needlist import Needlist, NeedlistDirective,
 from sphinxcontrib.needs.directives.needflow import Needflow, NeedflowDirective, process_needflow
 from sphinxcontrib.needs.directives.needpie import Needpie, NeedpieDirective, process_needpie
 from sphinxcontrib.needs.directives.needsequence import Needsequence, NeedsequenceDirective, process_needsequence
+from sphinxcontrib.needs.directives.needgantt import Needgantt, NeedganttDirective, process_needgantt
 from sphinxcontrib.needs.directives.needextract import Needextract, NeedextractDirective, process_needextract
 
 from sphinxcontrib.needs.builder import NeedsBuilder
@@ -97,6 +98,9 @@ def setup(app):
     app.add_config_value('needs_functions', [], 'html')
     app.add_config_value('needs_global_options', {}, 'html')
 
+    app.add_config_value('needs_duration_option', 'duration', 'html')
+    app.add_config_value('needs_completion_option', 'completion', 'html')
+
     # If given, only the defined status are allowed.
     # Values needed for each status:
     # * name
@@ -147,6 +151,7 @@ def setup(app):
     app.add_node(Needflow)
     app.add_node(Needpie)
     app.add_node(Needsequence)
+    app.add_node(Needgantt)
     app.add_node(Needextract)
     app.add_node(NeedPart, html=(visitor_dummy, visitor_dummy), latex=(visitor_dummy, visitor_dummy))
 
@@ -161,6 +166,7 @@ def setup(app):
     app.add_directive('needflow', NeedflowDirective)
     app.add_directive('needpie', NeedpieDirective)
     app.add_directive('needsequence', NeedsequenceDirective)
+    app.add_directive('needgantt', NeedganttDirective)
     app.add_directive('needimport', NeedimportDirective)
     app.add_directive('needextract', NeedextractDirective)
 
@@ -218,6 +224,7 @@ def setup(app):
     app.connect('doctree-resolved', process_needflow)
     app.connect('doctree-resolved', process_needpie)
     app.connect('doctree-resolved', process_needsequence)
+    app.connect('doctree-resolved', process_needgantt)
     app.connect('doctree-resolved', process_need_part)
     app.connect('doctree-resolved', process_need_ref)
     app.connect('doctree-resolved', process_need_incoming)

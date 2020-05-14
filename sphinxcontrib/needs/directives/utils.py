@@ -1,3 +1,5 @@
+import re
+
 from docutils import nodes
 
 
@@ -27,3 +29,23 @@ def used_filter_paragraph(current_needfilter):
     filter_node = nodes.emphasis(filter_text, filter_text)
     para += filter_node
     return para
+
+
+def get_link_type_option(name, env, node, default=''):
+    link_types = [x.strip() for x in re.split(";|,", node.options.get(name, default))]
+    conf_link_types = env.config.needs_extra_links
+    conf_link_types_name = [x['option'] for x in conf_link_types]
+
+    final_link_types = []
+    for link_type in link_types:
+        if link_type is None or link_type == '':
+            continue
+        if link_type not in conf_link_types_name:
+            raise SphinxNeedsLinkTypeException(f'{link_type} does not exist in configuration option needs_extra_links')
+
+        final_link_types.append(link_type)
+    return final_link_types
+
+
+class SphinxNeedsLinkTypeException(BaseException):
+    """Raised if problems with link types happen"""

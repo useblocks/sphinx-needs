@@ -4,6 +4,9 @@ Changelog
 0.5.5 (not released yet)
 ------------------------
 * Improvement: Added :ref:`needsequence` directive. (`#144 <https://github.com/useblocks/sphinxcontrib-needs/issues/144>`_)
+* Improvement: Added :ref:`needgantt` directive. (`#146 <https://github.com/useblocks/sphinxcontrib-needs/issues/146>`_)
+* Improvement: Added two new need-options: :ref:`need_duration` and :ref:`need_completion`
+* Improvement: Configuration option :ref:`needs_duration_option` and :ref:`needs_completion_option` added
 * Bugfix: Using of `tags.has() <https://www.sphinx-doc.org/en/master/usage/configuration.html#conf-tags>`_ in
   ``conf.py`` does not raise an exception anymore. (`#142 <https://github.com/useblocks/sphinxcontrib-needs/issues/142>`_)
 * Improvement: Clean up of internal configuration handling and avoiding needs_functions to get pickled by sphinx.
@@ -419,7 +422,7 @@ custom css definitions you need to update them.
 * Backwards compatibility changes:
 
 * Reimplemented **needlist** as alias for :ref:`needfilter`
-* Added *need* directive/need as part of the default :ref:`need_types` configuration.
+* Added *need* directive/need as part of the default :ref:`needs_types` configuration.
 
 0.1.18
 ------

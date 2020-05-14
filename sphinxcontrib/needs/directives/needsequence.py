@@ -128,14 +128,12 @@ def process_needsequence(app, doctree, fromdocname):
                               "   @enduml"
         puml_node = plantuml(plantuml_block_text, **dict())
         puml_node["uml"] = "@startuml\n"
-        puml_connections = ""
 
         # Adding config
         config = current_needsequence['config']
         puml_node["uml"] += add_config(config)
 
         all_needs = list(all_needs_dict.values())
-        found_needs = procces_filters(all_needs, current_needsequence)
 
         start_needs_id = [x.strip() for x in re.split(";|,", current_needsequence['start'])]
         if len(start_needs_id) == 0:
@@ -163,12 +161,6 @@ def process_needsequence(app, doctree, fromdocname):
                                                                                filter=current_needsequence['filter'])
             p_string += p_string_new
             c_string += c_string_new
-
-            # for msg_id, msg in msg_receiver_needs.items():
-            #     for rec in msg['receivers'].values():
-            #         c_string += f'{need_id} -> {rec["id"]}: {msg["title"]}\n'
-            #         if rec['id'] not in p_string:
-            #             p_string += f'participant "{rec["title"]}" as {rec["id"]}\n'
 
         puml_node["uml"] += p_string
 

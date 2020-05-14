@@ -32,7 +32,7 @@ def add_need_type(app, directive, title, prefix, color='#ffffff', style='node'):
 
     The given directive must no exist, otherwise NeedsApiConfigException gets raised.
 
-    Same impact as using :ref:`need_types` manually.
+    Same impact as using :ref:`needs_types` manually.
 
     **Usage**::
 

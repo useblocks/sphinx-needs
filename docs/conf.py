@@ -150,7 +150,8 @@ needs_types = [dict(directive="req", title="Requirement", prefix="R_", color="#B
                dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="node"),
                dict(directive="feature", title="Feature", prefix="F_", color="#FFCC00", style="node"),
                dict(directive="user", title="User", prefix="U_", color="#777777", style="node"),
-               dict(directive="action", title="Action", prefix="A_", color="#AAAAAA", style="node"),
+               dict(directive="action", title="Action", prefix="A_", color="#FFCC00", style="node"),
+               dict(directive="milestone", title="Milestone", prefix="M_", color="#FF3333", style="node"),
                ]
 
 needs_extra_links = [
@@ -179,7 +180,32 @@ needs_extra_links = [
         "copy": False,
         "style": "#00AA00",
         "style_part": "solid,#777777"
+    },
+    {
+        "option": "starts_with",
+        "incoming": "triggers directly",
+        "outgoing": "starts with",
+        "copy": False,
+        "style": "#00AA00",
+        "style_part": "solid,#777777"
+    },
+    {
+        "option": "starts_after",
+        "incoming": "triggers at end",
+        "outgoing": "starts after",
+        "copy": False,
+        "style": "#00AA00",
+        "style_part": "solid,#777777"
+    },
+    {
+        "option": "ends_with",
+        "incoming": "triggers to end with",
+        "outgoing": "ends with",
+        "copy": False,
+        "style": "#00AA00",
+        "style_part": "solid,#777777"
     }
+
 ]
 
 needs_flow_configs = {
@@ -235,6 +261,9 @@ needs_extra_options = {
          "amount": directives.unchanged,
          "hours": directives.unchanged,
          "image": directives.unchanged,
+         "duration": directives.unchanged,
+         "start_day": directives.unchanged,
+         "completion": directives.unchanged,
          }
 
 

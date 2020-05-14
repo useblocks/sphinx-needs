@@ -34,7 +34,7 @@ Sphinx-Needs allows the definition, linking and filtering of need-objects, which
 * implementations
 * test cases.
 
-This list can be easily customized via :ref:`configuration <need_types>`.
+This list can be easily customized via :ref:`configuration <needs_types>`.
 For instance to support bugs, user stories or features.
 
 Sphinx-Needs is an extension for the Python based documentation framework `Sphinx <https://sphinx-doc.org>`_,

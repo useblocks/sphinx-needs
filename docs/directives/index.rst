@@ -9,6 +9,7 @@ Directives
    needtable
    needflow
    needsequence
+   needgantt
    needextract
    needpie
    needimport
