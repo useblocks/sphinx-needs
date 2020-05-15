@@ -1,8 +1,8 @@
 Changelog
 =========
 
-0.5.5 (not released yet)
-------------------------
+0.5.5
+-----
 * Improvement: Added :ref:`needsequence` directive. (`#144 <https://github.com/useblocks/sphinxcontrib-needs/issues/144>`_)
 * Improvement: Added :ref:`needgantt` directive. (`#146 <https://github.com/useblocks/sphinxcontrib-needs/issues/146>`_)
 * Improvement: Added two new need-options: :ref:`need_duration` and :ref:`need_completion`
