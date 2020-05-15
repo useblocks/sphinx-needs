@@ -261,14 +261,11 @@ needs_extra_options = {
          "amount": directives.unchanged,
          "hours": directives.unchanged,
          "image": directives.unchanged,
-         "duration": directives.unchanged,
-         "start_day": directives.unchanged,
-         "completion": directives.unchanged,
          }
 
 
 needs_warnings = {
-    'type_check': 'type not in ["req", "spec", "impl", "test", "feature", "action", "user"]',
+    'type_check': 'type not in ["req", "spec", "impl", "test", "feature", "action", "user", "milestone"]',
     # 'valid_status': 'status not in ["open", "in progress", "closed", "done", "implemented"] and status is not None'
 }
 

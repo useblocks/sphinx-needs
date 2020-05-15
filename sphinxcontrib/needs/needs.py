@@ -319,7 +319,11 @@ def prepare_env(app, env, docname):
     for needs_func in needs_functions:
         register_func(env, needs_func)
 
-    app.config.needs_extra_options['hidden'] = directives.unchanged
+    # Own extra options
+    for option in ['hidden', 'duration', 'completion']:
+        # Check if not already set by user
+        if option not in app.config.needs_extra_options.keys():
+            app.config.needs_extra_options[option] = directives.unchanged
 
     # The default link name. Must exist in all configurations. Therefore we set it here for the user.
     common_links = []

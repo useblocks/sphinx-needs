@@ -45,14 +45,14 @@ needgantt
        :duration: 7
 
     .. milestone:: Solution ticket closed
-       :id: ACT_TICKET_CLOSED
+       :id: MS_TICKET_CLOSED
        :tags: gantt_example
        :links:  ACT_TICKET_WORK
 
     .. action:: Add solution to release plan
        :id: ACT_RELEASE_PLAN
        :tags: gantt_example
-       :links:  ACT_TICKET_CLOSED
+       :links:  MS_TICKET_CLOSED
        :duration: 1
 
     .. action:: Deploy release
@@ -69,7 +69,7 @@ needgantt
        :completion: 80%
 
     .. milestone:: Bug solved
-       :id: ACT_BUG_SOLVED
+       :id: MS_BUG_SOLVED
        :tags: gantt_example
        :links: ACT_TEST
 
