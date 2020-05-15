@@ -81,8 +81,8 @@ class NeedganttDirective(FilterBase, DiagramBase):
             try:
                 datetime.fromisoformat(start_date)
             except Exception:
-                raise NeedGanttException(f'Given start date {start_date} is not valid. Please use YYYY-MM-DD as format. '
-                                         f'E.g. 2020-03-27')
+                raise NeedGanttException('Given start date {} is not valid. Please use YYYY-MM-DD as format. '
+                                         'E.g. 2020-03-27'.format(start_date))
         else:
             start_date = None  # If None we do not set a start date later
 
@@ -90,8 +90,8 @@ class NeedganttDirective(FilterBase, DiagramBase):
         timeline_options = ['daily', 'weekly', 'monthly']
         if timeline is not None and timeline != '':
             if timeline not in timeline_options:
-                raise NeedGanttException(f'Given scale value {timeline} is invalid. Please use: '
-                                         f'{",".join(timeline_options)}')
+                raise NeedGanttException('Given scale value {} is invalid. Please use: '
+                                         '{}'.format(timeline, ",".join(timeline_options)))
         else:
             timeline = None  # Timeline/scale not set later
 
@@ -174,7 +174,7 @@ def process_needgantt(app, doctree, fromdocname):
 
         # Scale/timeline handling
         if current_needgantt['timeline'] is not None and current_needgantt['timeline'] != '':
-            puml_node["uml"] += f'printscale {current_needgantt["timeline"]}\n'
+            puml_node["uml"] += 'printscale {}\n'.format(current_needgantt["timeline"])
 
         # Project start date handling
         start_date_string = current_needgantt['start_date']
@@ -183,8 +183,10 @@ def process_needgantt(app, doctree, fromdocname):
             try:
                 start_date = datetime.fromisoformat(start_date_string)
             except Exception:
-                raise NeedGanttException(f'start_date "{start_date_string}"for needgantt is invalid. '
-                                         f'File: {current_needgantt["docname"]}:current_needgantt["lineno"]')
+                raise NeedGanttException('start_date "{}"for needgantt is invalid. '
+                                         'File: {}:current_needgantt["lineno"]'.format(
+                    start_date_string, current_needgantt["docname"]
+                ))
             import locale
             # Be sure we get english month names.
             # Normally the language of the current machine is used to create the month name.
@@ -192,7 +194,7 @@ def process_needgantt(app, doctree, fromdocname):
             start_date_plantuml = start_date.strftime("%dth of %B %Y")
             locale.setlocale(locale.LC_ALL, '')  # Set language to the one used by system
         if start_date_plantuml is not None:
-            puml_node["uml"] += f'Project starts the {start_date_plantuml}\n'
+            puml_node["uml"] += 'Project starts the {}\n'.format(start_date_plantuml)
 
         # Element handling
         puml_node["uml"] += '\n\' Elements definition \n\n'
@@ -212,34 +214,34 @@ def process_needgantt(app, doctree, fromdocname):
                 complete_option = current_needgantt['completion_option']
                 complete = need[complete_option]
                 if duration is None or duration == '' or not duration.isdigit():
-                    logger.warning(f'Duration not set or invalid for needgantt chart. '
-                                   f'Need: {need["id"]}. Duration: {duration}')
+                    logger.warning('Duration not set or invalid for needgantt chart. '
+                                   'Need: {}. Duration: {}'.format(need["id"], duration))
                     duration = 1
-                gantt_element = f'[{need["title"]}] as [{need["id"]}] lasts {duration} days\n'
+                gantt_element = '[{}] as [{}] lasts {} days\n'.format(need["title"], need["id"], duration)
             else:
-                gantt_element = f'[{need["title"]}] as [{need["id"]}] lasts 0 days\n'
+                gantt_element = '[{}] as [{}] lasts 0 days\n'.format(need["title"], need["id"])
 
-            el_link_string += f'[{need["title"]}] links to [[{calculate_link(app, need)}]]\n'
+            el_link_string += '[{}] links to [[{}]]\n'.format(need["title"], calculate_link(app, need))
 
             if complete is not None and complete != '':
                 complete = complete.replace('%', '')
-                el_completion_string += f'[{need["title"]}] is {complete}% completed\n'
+                el_completion_string += '[{}] is {}% completed\n'.format(need["title"], complete)
 
-            el_color_string += f'[{need["title"]}] is colored in {need["type_color"]}\n'
+            el_color_string += '[{}] is colored in {}\n'.format(need["title"], need["type_color"])
 
             puml_node["uml"] += gantt_element
 
         puml_node["uml"] += '\n\' Element links definition \n\n'
-        puml_node["uml"] += f'{el_link_string}\n'
+        puml_node["uml"] += el_link_string + '\n'
 
         puml_node["uml"] += '\n\' Element completion definition \n\n'
-        puml_node["uml"] += f'{el_completion_string}\n'
+        puml_node["uml"] += el_completion_string + '\n'
 
         puml_node["uml"] += '\n\' Element color definition \n\n'
         if current_needgantt['no_color']:
             puml_node["uml"] += '\' Color support deactivated via flag'
         else:
-            puml_node["uml"] += f'{el_color_string}\n'
+            puml_node["uml"] += el_color_string + '\n'
 
         # Constrain handling
         puml_node["uml"] += '\n\' Constraints definition \n\n'
@@ -266,13 +268,9 @@ def process_needgantt(app, doctree, fromdocname):
                     start_with_links = need[link_type]
                     for start_with_link in start_with_links:
                         start_need = all_needs_dict[start_with_link]
-                        gantt_constraint = f'[{need["id"]}] {keyword} at [{start_need["id"]}]\'s {start_end_sync}\n'
+                        gantt_constraint = '[{}] {} at [{}]\'s ' \
+                                           '{}\n'.format(need["id"], keyword, start_need["id"], start_end_sync)
                         puml_node["uml"] += gantt_constraint
-
-            # elif filter_single_need(need, current_needgantt['milestone_filter']):
-            #     # Milestone gantt element handling
-            #     gantt_element = f'[{need["title"]}] as [{need["id"]}] happens {duration} days\n'
-
 
         # Create a legend
         if current_needgantt["show_legend"]:

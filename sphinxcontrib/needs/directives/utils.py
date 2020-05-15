@@ -41,7 +41,7 @@ def get_link_type_option(name, env, node, default=''):
         if link_type is None or link_type == '':
             continue
         if link_type not in conf_link_types_name:
-            raise SphinxNeedsLinkTypeException(f'{link_type} does not exist in configuration option needs_extra_links')
+            raise SphinxNeedsLinkTypeException(link_type + 'does not exist in configuration option needs_extra_links')
 
         final_link_types.append(link_type)
     return final_link_types

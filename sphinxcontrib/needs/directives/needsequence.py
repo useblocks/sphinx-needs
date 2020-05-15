@@ -62,8 +62,8 @@ class NeedsequenceDirective(FilterBase, DiagramBase):
 
         start = self.options.get('start', None)
         if start is None or len(start.strip()) == 0:
-            raise NeedSequenceException(f'No valid start option given for needsequence. '
-                                        f'See file {env.docname}:{self.lineno}')
+            raise NeedSequenceException('No valid start option given for needsequence. '
+                                        'See file {}:{}'.format(env.docname, self.lineno))
 
         # Add the needsequence and all needed information
         env.need_all_needsequences[targetid] = {
@@ -138,8 +138,9 @@ def process_needsequence(app, doctree, fromdocname):
         start_needs_id = [x.strip() for x in re.split(";|,", current_needsequence['start'])]
         if len(start_needs_id) == 0:
             raise NeedsequenceDirective('No start-id set for needsequence'
-                                        f' File {current_needsequence["docname"]}'
-                                        f':{current_needsequence["lineno"]}')
+                                        ' File '
+                                        ':{}'.format({current_needsequence["docname"]},
+                                                      current_needsequence["lineno"]))
 
         puml_node["uml"] += '\n\' Nodes definition \n\n'
 
@@ -150,9 +151,10 @@ def process_needsequence(app, doctree, fromdocname):
             try:
                 need = all_needs_dict[need_id.strip()]
             except KeyError:
-                raise NeedSequenceException(f'Given {need_id} in needsequence unknown.'
-                                            f' File {current_needsequence["docname"]}'
-                                            f':{current_needsequence["lineno"]}')
+                raise NeedSequenceException('Given {} in needsequence unknown.'
+                                            ' File {}'
+                                            ':{}'.format(need_id, current_needsequence["docname"],
+                                                         current_needsequence["lineno"]))
 
             # Add children of participants
             msg_receiver_needs, p_string_new, c_string_new = get_message_needs(need,
@@ -244,7 +246,7 @@ def get_message_needs(sender, link_types, all_needs_dict, tracked_receivers=None
             'receivers': {}
         }
         if sender['id'] not in tracked_receivers:
-            p_string += f'participant "{sender["title"]}" as {sender["id"]}\n'
+            p_string += 'participant "{}" as {}\n'.format(sender["title"], sender["id"])
             tracked_receivers.append(sender['id'])
         for link_type in link_types:
             receiver_ids = msg_need[link_type]
@@ -260,7 +262,7 @@ def get_message_needs(sender, link_types, all_needs_dict, tracked_receivers=None
                     'messages': []
                 }
 
-                c_string += f'{sender["id"]} -> {rec_data["id"]}: {msg_need["title"]}\n'
+                c_string += '{} -> {}: {}\n'.format(sender["id"], rec_data["id"], msg_need["title"])
 
                 if rec_id not in tracked_receivers:
                     rec_messages, p_string_new, c_string_new = get_message_needs(
