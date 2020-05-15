@@ -10,8 +10,9 @@ from docutils.parsers.rst import directives
 from pkg_resources import parse_version
 
 
-from sphinxcontrib.needs.diagrams_common import DiagramBase, make_entity_name, no_plantuml, \
+from sphinxcontrib.needs.diagrams_common import DiagramBase, no_plantuml, \
     add_config, get_filter_para, get_debug_containter, calculate_link
+from sphinxcontrib.needs.utils import MONTH_NAMES
 
 from sphinxcontrib.plantuml import generate_name  # Need for plantuml filename calculation
 
@@ -187,12 +188,9 @@ def process_needgantt(app, doctree, fromdocname):
                                          'File: {}:current_needgantt["lineno"]'.format(
                     start_date_string, current_needgantt["docname"]
                 ))
-            import locale
-            # Be sure we get english month names.
-            # Normally the language of the current machine is used to create the month name.
-            locale.setlocale(locale.LC_ALL, "en_US.UTF-8")
-            start_date_plantuml = start_date.strftime("%dth of %B %Y")
-            locale.setlocale(locale.LC_ALL, '')  # Set language to the one used by system
+
+            month = MONTH_NAMES[int(start_date.strftime("%-m"))]
+            start_date_plantuml = start_date.strftime("%dth of {} %Y".format(month))
         if start_date_plantuml is not None:
             puml_node["uml"] += 'Project starts the {}\n'.format(start_date_plantuml)
 
@@ -244,6 +242,7 @@ def process_needgantt(app, doctree, fromdocname):
             puml_node["uml"] += el_color_string + '\n'
 
         # Constrain handling
+        puml_node["uml"] += '\n\' Constraints definition \n\n'
         puml_node["uml"] += '\n\' Constraints definition \n\n'
         for need in found_needs:
             if current_needgantt['milestone_filter'] is None or current_needgantt['milestone_filter'] == '':

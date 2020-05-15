@@ -23,6 +23,9 @@ INTERNALS = ['docname', 'lineno', 'target_node', 'refid', 'content', 'pre_conten
              'type_prefix', 'type_color', 'type_style', 'type', 'type_name', 'id',
              'hide', 'hide_status', 'hide_tags', 'sections', 'section_name', 'content_node']
 
+MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
+               'September', 'October', 'November', 'December']
+
 
 def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=False, ref_lookup=False, prefix=''):
     """
