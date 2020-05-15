@@ -80,7 +80,8 @@ class NeedganttDirective(FilterBase, DiagramBase):
         start_date = self.options.get('start_date', None)
         if start_date is not None and start_date != '':
             try:
-                datetime.fromisoformat(start_date)
+                datetime.strptime(start_date, '%Y-%m-%d')
+                # datetime.fromisoformat(start_date) # > py3.7 only
             except Exception:
                 raise NeedGanttException('Given start date {} is not valid. Please use YYYY-MM-DD as format. '
                                          'E.g. 2020-03-27'.format(start_date))
@@ -182,7 +183,8 @@ def process_needgantt(app, doctree, fromdocname):
         start_date_plantuml = None
         if start_date_string is not None and start_date_string != '':
             try:
-                start_date = datetime.fromisoformat(start_date_string)
+                start_date = datetime.strptime(start_date_string, '%Y-%m-%d')
+                # start_date = datetime.fromisoformat(start_date_string)  # > py3.7 only
             except Exception:
                 raise NeedGanttException('start_date "{}"for needgantt is invalid. '
                                          'File: {}:current_needgantt["lineno"]'.format(
