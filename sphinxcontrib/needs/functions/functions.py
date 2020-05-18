@@ -24,7 +24,7 @@ else:
     ast_boolean = ast.Name
 
 
-def register_func(env, need_function):
+def register_func(need_function):
     """
     Registers a new sphinx-needs function for the given sphinx environment.
     :param env: Sphinx environment

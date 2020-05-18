@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.5.6 (not yet released)
+------------------------
+
+* Bugfix: Dynamic function registration via API supports new internal function handling
+  (`#147 <https://github.com/useblocks/sphinxcontrib-needs/issues/147>`_)
+
 0.5.5
 -----
 * Improvement: Added :ref:`needsequence` directive. (`#144 <https://github.com/useblocks/sphinxcontrib-needs/issues/144>`_)

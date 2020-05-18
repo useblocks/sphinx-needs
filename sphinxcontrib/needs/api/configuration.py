@@ -6,6 +6,7 @@ All functions here are available under ``sphinxcontrib.api``. So do not import t
 from docutils.parsers.rst import directives
 
 from sphinxcontrib.needs.api.exceptions import NeedsNotLoadedException, NeedsApiConfigException, NeedsApiConfigWarning
+from sphinxcontrib.needs.functions import register_func
 import sphinxcontrib.needs.directives.need
 
 
@@ -117,7 +118,5 @@ def add_dynamic_function(app, function):
     :param function: Function to register
     :return: None
     """
-    if not hasattr(app, 'needs_functions'):
-        raise NeedsNotLoadedException('needs_functions missing in configuration.')
-    needs_functions = getattr(app, 'needs_functions', [])
-    needs_functions.append(function)
+    register_func(function)
+

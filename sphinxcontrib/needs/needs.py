@@ -313,11 +313,11 @@ def prepare_env(app, env, docname):
 
     # Register built-in functions
     for need_common_func in needs_common_functions:
-        register_func(env, need_common_func)
+        register_func(need_common_func)
 
     # Register functions configured by user
     for needs_func in needs_functions:
-        register_func(env, needs_func)
+        register_func(needs_func)
 
     # Own extra options
     for option in ['hidden', 'duration', 'completion']:
