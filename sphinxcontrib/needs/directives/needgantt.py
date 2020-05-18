@@ -70,8 +70,6 @@ class NeedganttDirective(FilterBase, DiagramBase):
 
         id, targetid, targetnode = self.create_target('needgantt')
 
-        starts_with_links = self.options.get('starts_with_links', None)
-
         starts_with_links = get_link_type_option('starts_with_links', env, self, '')
         starts_after_links = get_link_type_option('starts_after_links', env, self, 'links')
         ends_with_links = get_link_type_option('ends_with_links', env, self)
@@ -232,7 +230,9 @@ def process_needgantt(app, doctree, fromdocname):
             puml_node["uml"] += gantt_element
 
         puml_node["uml"] += '\n\' Element links definition \n\n'
-        puml_node["uml"] += el_link_string + '\n'
+        puml_node["uml"] += '\n\' Deactivated, as currently supported by plantuml beta only'
+        # ToDo: Activate if linking is working with default plantuml
+        # puml_node["uml"] += el_link_string + '\n'
 
         puml_node["uml"] += '\n\' Element completion definition \n\n'
         puml_node["uml"] += el_completion_string + '\n'

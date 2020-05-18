@@ -73,6 +73,13 @@ needgantt
        :tags: gantt_example
        :links: ACT_TEST
 
+.. hint::
+
+   The Gantt function is quite new in `PlantUML <https://plantuml.com/gantt-diagram>`__ and some features are
+   available in the `Beta version <http://beta.plantuml.net/plantuml.jar>`__ only.
+   So if you get any syntax errors during the build, please download the
+   `latest PlantUML <http://sourceforge.net/projects/plantuml/files/plantuml.jar/download>`__ version.
+
 If ``svg`` is set as output format for PlantUML, the tasks elements are linked to their related need.
 
 Color is taken from :ref:`needs_types` configuration.

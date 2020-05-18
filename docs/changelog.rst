@@ -6,6 +6,8 @@ Changelog
 
 * Bugfix: Dynamic function registration via API supports new internal function handling
   (`#147 <https://github.com/useblocks/sphinxcontrib-needs/issues/147>`_)
+* Bugfix: Deactivated linked gantt elements in :ref:`needgantt`, as PlantUML does not support them in its
+  latest version (not beta).
 
 0.5.5
 -----
