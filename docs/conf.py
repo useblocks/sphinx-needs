@@ -232,11 +232,16 @@ needs_id_required = False
 # needs_css = "dark.css"
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
+cwd = os.getcwd()
+local_plantuml_path = os.path.join(cwd, "utils/plantuml.jar")
+
 if on_rtd:
-    plantuml = 'java -Djava.awt.headless=true -jar /usr/share/plantuml/plantuml.jar'
+   # Deactivated using rtd plantuml version as it looks quite old.
+   # plantuml = 'java -Djava.awt.headless=true -jar /usr/share/plantuml/plantuml.jar'
+   plantuml = 'java -Djava.awt.headless=true -jar {}'.format(local_plantuml_path)
 else:
     cwd = os.getcwd()
-    plantuml = 'java -jar %s' % os.path.join(cwd, "utils/plantuml.jar")
+    plantuml = 'java -jar {}'.format(local_plantuml_path)
 
 # If we are running on windows, we need to manipulate the path,
 # otherwise plantuml will have problems.
