@@ -200,6 +200,8 @@ def process_needgantt(app, doctree, fromdocname):
         el_completion_string = ''
         el_color_string = ''
         for need in found_needs:
+            complete = None
+
             if current_needgantt['milestone_filter'] is None or current_needgantt['milestone_filter'] == '':
                 is_milestone = False
             else:
