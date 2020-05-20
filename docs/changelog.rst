@@ -1,8 +1,8 @@
 Changelog
 =========
 
-0.5.6 (not yet released)
-------------------------
+0.5.6
+-----
 
 * Bugfix: Dynamic function registration via API supports new internal function handling
   (`#147 <https://github.com/useblocks/sphinxcontrib-needs/issues/147>`_)
