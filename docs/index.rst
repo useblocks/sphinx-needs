@@ -267,7 +267,10 @@ standard for safety critical software in the Python environment.
 
 Sphinx-Needs is part of a software bundle, which was designed to support the development of
 `ISO 26262 <https://en.wikipedia.org/wiki/ISO_26262>`_ compliant software.
-Other tools are: `tox-envreport <http://tox-envreport.readthedocs.io/en/latest/>`_.
+Other tools are:
+`sphinx-test-reports <https://sphinx-test-reports.readthedocs.io/en/latest/>`_,
+`sphinx-collections <https://sphinx-collections.readthedocs.io/en/latest/>`_ and
+`tox-envreport <http://tox-envreport.readthedocs.io/en/latest/>`_.
 
 One more thing ...
 ------------------
