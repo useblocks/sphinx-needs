@@ -92,6 +92,8 @@ The goal is to provide enough information to be able to setup an identical test 
 the parameters of the `ISO 26262 <https://en.wikipedia.org/wiki/ISO_26262>`_ standard
 for safety critical software in automotive companies.
 
-Other tools are: `sphinx-needs <http://sphinxcontrib-needs.readthedocs.io/en/latest/>`_
-and `tox-envreport <http://tox-envreport.readthedocs.io/en/latest/>`_
+Other tools are:
+`sphinx-needs <http://sphinxcontrib-needs.readthedocs.io/en/latest/>`_,
+`sphinx-collections <https://sphinx-collections.readthedocs.io/en/latest/>`_ and
+`tox-envreport <http://tox-envreport.readthedocs.io/en/latest/>`_
 
