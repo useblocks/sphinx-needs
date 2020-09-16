@@ -6,27 +6,18 @@ python:
 - '3.7'
 - '3.8'
 
-# Travis python3.7 workaround
-# See https://github.com/travis-ci/travis-ci/issues/9815
-#matrix:
-#  include:
-#    - python: 3.7
-#      dist: xenial
-#      sudo: true
-
 before_install:
 - sudo apt-get update
 - sudo apt-get install -y texlive-latex-recommended texlive-fonts-recommended texlive-latex-extra latexmk texlive-luatex texlive-xetex
+- pip install poetry
 
 install:
-- pip install tox-travis
-- python setup.py install
+- poetry install
 script:
-- tox
+- poetry run nox
 
 after_success:
 - which python
-- pip install sphinxcontrib-plantuml
 - cd docs
 - make latexpdf
 
