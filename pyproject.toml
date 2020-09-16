@@ -1,0 +1,50 @@
+[tool.poetry]
+name = "sphinxcontrib-needs"
+version = "0.5.6-alpha.1"
+description = "Sphinx needs extension for managing needs/requirements and specifications"
+authors = ["team useblocks <info@useblocks.com>"]
+license = "MIT"
+readme = "README.rst"
+repository = "http://github.com/useblocks/sphinxcontrib-needs"
+documentation = "https://sphinxcontrib-needs.readthedocs.io/en/latest/"
+classifiers=[
+        'Development Status :: 5 - Production/Stable',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Topic :: Documentation',
+        'Topic :: Utilities',
+    ]
+
+packages = [
+    {include = "sphinxcontrib", from = "."}
+]
+
+[tool.poetry.dependencies]
+python = "^3.5, ^3.6"
+sphinxcontrib-plantuml = "^0.18.1"
+matplotlib = "^3.3.1"
+sphinx-copybutton = "^0.3.0"
+sphinx = "^3.2.1"
+
+[tool.poetry.dev-dependencies]
+pathlib2 = "^2.3.5"
+pytest = "^6.0.2"
+pytest-flake8 = "^1.0.6"
+coverage = "^5.3"
+python-coveralls = "^2.9.3"
+nose = "^1.3.7"
+sphinx_testing = "^1.0.1"
+sphinxcontrib-plantuml = "^0.18.1"
+sphinx-copybutton = "^0.3.0"
+nox = "^2020.8.22"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
