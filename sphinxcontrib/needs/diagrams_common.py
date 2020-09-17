@@ -10,13 +10,8 @@ import sphinx
 from docutils import nodes
 from docutils.parsers.rst import Directive
 from docutils.parsers.rst import directives
-from .common import getLogger
-logger = getLogger(__name__)
-
-try:
-    from sphinx.errors import NoUri  # Sphinx 3.0
-except ImportError:
-    from sphinx.environment import NoUri  # Sphinx < 3.0
+from .common import logging, NoUri
+logger = logging.getLogger(__name__)
 
 
 class DiagramBase(Directive):

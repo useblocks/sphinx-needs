@@ -8,5 +8,8 @@ else:
     import logging
     logging.basicConfig()  # Only need to do this once
 
-def getLogger(name: str):
-    return logging.getLogger(name)
+
+try:
+    from sphinx.errors import NoUri  # Sphinx 3.0
+except ImportError:
+    from sphinx.environment import NoUri  # Sphinx < 3.0

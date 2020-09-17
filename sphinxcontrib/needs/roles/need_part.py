@@ -11,8 +11,8 @@ import hashlib
 import re
 import sphinx
 
-from ..common import getLogger
-log = getLogger(__name__)
+from ..common import logging
+log = logging.getLogger(__name__)
 
 
 class NeedPart(nodes.Inline, nodes.Element):

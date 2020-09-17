@@ -1,7 +1,7 @@
 from sphinx.builders import Builder
 from sphinxcontrib.needs.utils import NeedsList
 import sphinx
-from .common import getLogger
+from .common import logging
 
 
 class NeedsBuilder(Builder):
@@ -14,7 +14,7 @@ class NeedsBuilder(Builder):
         pass
 
     def finish(self):
-        log = getLogger(__name__)
+        log = logging.getLogger(__name__)
         needs = self.env.needs_all_needs
         filters = self.env.needs_all_filters
         config = self.env.config

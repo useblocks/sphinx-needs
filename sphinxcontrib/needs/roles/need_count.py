@@ -10,8 +10,8 @@ import sphinx
 from sphinxcontrib.needs.filter_common import filter_needs, prepare_need_list
 from sphinxcontrib.needs.api.exceptions import NeedsInvalidFilter
 
-from ..common import getLogger
-log = getLogger(__name__)
+from ..common import logging
+log = logging.getLogger(__name__)
 
 
 class NeedCount(nodes.Inline, nodes.Element):

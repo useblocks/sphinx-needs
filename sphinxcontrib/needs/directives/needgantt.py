@@ -16,16 +16,11 @@ from sphinxcontrib.needs.utils import MONTH_NAMES
 
 from sphinxcontrib.plantuml import generate_name  # Need for plantuml filename calculation
 
-try:
-    from sphinx.errors import NoUri  # Sphinx 3.0
-except ImportError:
-    from sphinx.environment import NoUri  # Sphinx < 3.0
-
 from sphinxcontrib.needs.filter_common import FilterBase, procces_filters, filter_single_need
 from sphinxcontrib.needs.directives.utils import get_link_type_option
 
-from ..common import getLogger
-logger = getLogger(__name__)
+from ..common import logging, NoUri
+logger = logging.getLogger(__name__)
 
 if sys.version_info.major < 3:
     urlParse = urllib.quote_plus

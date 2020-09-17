@@ -17,13 +17,8 @@ import matplotlib.pyplot
 import hashlib
 from docutils.parsers.rst import directives
 
-try:
-    from sphinx.errors import NoUri  # Sphinx 3.0
-except ImportError:
-    from sphinx.environment import NoUri  # Sphinx < 3.0
-
-from ..common import getLogger
-logger = getLogger(__name__)
+from ..common import logging, NoUri
+logger = logging.getLogger(__name__)
 
 if sys.version_info.major < 3:
     urlParse = urllib.quote_plus

@@ -11,10 +11,10 @@ from sphinxcontrib.needs.roles.need_part import update_need_with_parts, find_par
 from sphinxcontrib.needs.filter_common import filter_single_need
 import sphinx
 from docutils.statemachine import ViewList
-from ..common import getLogger
+from ..common import logging
 
 
-logger = getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def add_need(app, state, docname, lineno, need_type, title, id=None, content="", status=None, tags=None,

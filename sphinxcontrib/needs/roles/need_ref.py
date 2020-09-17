@@ -1,14 +1,10 @@
 from docutils import nodes
 import re
-try:
-    from sphinx.errors import NoUri  # Sphinx 3.0
-except ImportError:
-    from sphinx.environment import NoUri  # Sphinx < 3.0
 from sphinx.util.nodes import make_refnode
 
 import sphinx
-from ..common import getLogger
-log = getLogger(__name__)
+from ..common import logging, NoUri
+log = logging.getLogger(__name__)
 
 from sphinxcontrib.needs.api.exceptions import NeedsInvalidException
 
