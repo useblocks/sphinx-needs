@@ -14,7 +14,7 @@ sphinx_versions = [
 
 @nox.session(python=python_versions, reuse_venv=True)
 @nox.parametrize("sphinx", sphinx_versions)
-def tests(session, sphinx):
+def test(session, sphinx):
     # see https://github.com/python-poetry/poetry/issues/2920#issuecomment-693147409
     with tempfile.TemporaryDirectory() as tmp_dir:
         copy_tree(
