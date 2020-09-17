@@ -7,13 +7,8 @@ try:
 except ImportError:
     from sphinx.environment import NoUri  # Sphinx < 3.0
 
-from pkg_resources import parse_version
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
-log = logging.getLogger(__name__)
+from ..common import getLogger
+log = getLogger(__name__)
 
 
 class Need_outgoing(nodes.Inline, nodes.Element):

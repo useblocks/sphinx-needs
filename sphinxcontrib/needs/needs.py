@@ -34,14 +34,7 @@ from sphinxcontrib.needs.functions import register_func, needs_common_functions
 from sphinxcontrib.needs.warnings import process_warnings
 from sphinxcontrib.needs.utils import INTERNALS, NEEDS_FUNCTIONS
 from sphinxcontrib.needs.defaults import DEFAULT_DIAGRAM_TEMPLATE, LAYOUTS, NEEDFLOW_CONFIG_DEFAULTS
-
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
-
-    logging.basicConfig()  # Only need to do this once
+from .common import getLogger
 
 VERSION = '0.5.6'
 
@@ -57,7 +50,7 @@ class TagsDummy:
 
 
 def setup(app):
-    log = logging.getLogger(__name__)
+    log = getLogger(__name__)
     app.add_builder(NeedsBuilder)
     app.add_config_value('needs_types',
                          [dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),

@@ -11,15 +11,10 @@ from sphinxcontrib.needs.roles.need_part import update_need_with_parts, find_par
 from sphinxcontrib.needs.filter_common import filter_single_need
 import sphinx
 from docutils.statemachine import ViewList
-from pkg_resources import parse_version
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
+from ..common import getLogger
 
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 def add_need(app, state, docname, lineno, need_type, title, id=None, content="", status=None, tags=None,

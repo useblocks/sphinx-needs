@@ -22,13 +22,8 @@ try:
 except ImportError:
     from sphinx.environment import NoUri  # Sphinx < 3.0
 
-
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
-logger = logging.getLogger(__name__)
+from ..common import getLogger
+logger = getLogger(__name__)
 
 if sys.version_info.major < 3:
     urlParse = urllib.quote_plus

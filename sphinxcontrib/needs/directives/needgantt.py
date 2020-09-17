@@ -24,12 +24,8 @@ except ImportError:
 from sphinxcontrib.needs.filter_common import FilterBase, procces_filters, filter_single_need
 from sphinxcontrib.needs.directives.utils import get_link_type_option
 
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
-logger = logging.getLogger(__name__)
+from ..common import getLogger
+logger = getLogger(__name__)
 
 if sys.version_info.major < 3:
     urlParse = urllib.quote_plus

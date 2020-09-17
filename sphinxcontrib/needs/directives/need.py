@@ -22,12 +22,8 @@ from sphinxcontrib.needs.functions.functions import check_and_get_content
 from sphinxcontrib.needs.layout import build_need
 
 
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
-logger = logging.getLogger(__name__)
+from ..common import getLogger
+logger = getLogger(__name__)
 
 NON_BREAKING_SPACE = re.compile('\xa0+')
 
@@ -83,7 +79,7 @@ class NeedDirective(Directive):
 
     def __init__(self, *args, **kw):
         super(NeedDirective, self).__init__(*args, **kw)
-        self.log = logging.getLogger(__name__)
+        self.log = getLogger(__name__)
         self.full_title = self._get_full_title()
 
     def run(self):
