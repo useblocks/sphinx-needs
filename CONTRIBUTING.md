@@ -16,11 +16,13 @@
 
 ## Tasks
 
-Note that a [`Makefile`](./Makefile) is provided for common tasks
+Note that a [`Makefile`](./Makefile) is provided for common tasks.
 
 ### Installing Dependencies
 
     make install
+
+*you must install the dependencies before running other tasks*
 
 ### Running tests
 
