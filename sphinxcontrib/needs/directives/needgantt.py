@@ -22,7 +22,7 @@ from sphinxcontrib.needs.directives.utils import get_link_type_option
 from ..common import logging, NoUri
 logger = logging.getLogger(__name__)
 
-if sys.version_info.major < 3:
+if sys.version_info < (3,0):
     urlParse = urllib.quote_plus
 else:
     urlParse = urllib.parse.quote_plus

@@ -12,11 +12,7 @@ from docutils.parsers.rst import directives
 from sphinxcontrib.needs.utils import status_sorter
 from sphinxcontrib.needs.filter_common import FilterBase, procces_filters
 from sphinxcontrib.needs.directives.utils import no_needs_found_paragraph, used_filter_paragraph
-
-if sys.version_info.major < 3:
-    urlParse = urllib.quote_plus
-else:
-    urlParse = urllib.parse.quote_plus
+from ..common import urlParse
 
 
 class Needlist(nodes.General, nodes.Element):

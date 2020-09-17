@@ -15,13 +15,8 @@ from sphinxcontrib.plantuml import generate_name  # Need for plantuml filename c
 from sphinxcontrib.needs.filter_common import FilterBase, procces_filters, filter_single_need
 from sphinxcontrib.needs.diagrams_common import calculate_link
 
-from ..common import logging, NoUri
+from ..common import logging, NoUri, urlParse
 logger = logging.getLogger(__name__)
-
-if sys.version_info.major < 3:
-    urlParse = urllib.quote_plus
-else:
-    urlParse = urllib.parse.quote_plus
 
 
 class Needflow(nodes.General, nodes.Element):

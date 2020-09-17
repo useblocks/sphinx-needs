@@ -5,15 +5,10 @@ import urllib
 from docutils import nodes
 from docutils.parsers.rst import directives
 from jinja2 import Template
-from ..common import NoUri
+from ..common import NoUri, urlParse
 from sphinxcontrib.needs.utils import row_col_maker, status_sorter
 
 from sphinxcontrib.needs.filter_common import FilterBase, procces_filters
-
-if sys.version_info.major < 3:
-    urlParse = urllib.quote_plus
-else:
-    urlParse = urllib.parse.quote_plus
 
 
 class Needfilter(nodes.General, nodes.Element):

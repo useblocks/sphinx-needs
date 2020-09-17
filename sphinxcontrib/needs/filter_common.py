@@ -12,11 +12,7 @@ from docutils.parsers.rst import Directive
 from docutils.parsers.rst import directives
 
 from sphinxcontrib.needs.utils import status_sorter, merge_two_dicts, logger
-
-if sys.version_info.major < 3:
-    urlParse = urllib.quote_plus
-else:
-    urlParse = urllib.parse.quote_plus
+from .common import urlParse
 
 
 class FilterBase(Directive):
