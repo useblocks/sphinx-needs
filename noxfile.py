@@ -5,11 +5,19 @@ import os
 from distutils.dir_util import copy_tree
 
 python_versions = [
+    "3.5",
+    "3.7",
     "3.8",
+    "*",
 ]
 
 sphinx_versions = [
-    "^3.0",
+    "~2.2",
+    "~2.3",
+    "~2.4",
+    "~3.0",
+    "~3.2",
+    "*",
 ]
 
 @nox.session(python=python_versions, reuse_venv=True)
