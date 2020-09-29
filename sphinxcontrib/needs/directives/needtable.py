@@ -184,6 +184,7 @@ def process_needtables(app, doctree, fromdocname):
         found_needs.sort(key=get_sorter(current_needtable['sort']))
 
         for need_info in found_needs:
+            make_ref = True
             style_row = check_and_get_content(current_needtable['style_row'], need_info, env)
             style_row = style_row.replace(' ', '_')  # Replace whitespaces with _ to get valid css name
 
@@ -199,8 +200,13 @@ def process_needtables(app, doctree, fromdocname):
 
             for col in current_needtable["columns"]:
                 if col == "ID":
-                    row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need, "id", make_ref=True,
-                                         prefix=prefix)
+                    try:
+                        row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need, "id", make_ref=make_ref,
+                                             prefix=prefix)
+                    except:
+                        make_ref=False
+                        row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need, "id", make_ref=make_ref,
+                                             prefix=prefix)                        
                 elif col == "TITLE":
                     row += row_col_maker(
                         app, fromdocname, env.needs_all_needs, temp_need, "title",
@@ -209,10 +215,10 @@ def process_needtables(app, doctree, fromdocname):
                     link_type = link_type_list[col]
                     if col == 'INCOMING' or col == link_type['option'].upper() + '_BACK' or col == link_type['incoming'].upper():
                         row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need,
-                                             link_type['option'] + '_back', ref_lookup=True)
+                                             link_type['option'] + '_back', ref_lookup=make_ref)
                     else:
                         row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need,
-                                             link_type['option'], ref_lookup=True)
+                                             link_type['option'], ref_lookup=make_ref)
                 else:
                     row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need, col.lower())
             tbody += row
