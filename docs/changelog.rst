@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.5.7 (not released yet)
+------------------------
+
+* Bugfix: Role :ref:`role_need_outgoing` shows correct link instead of *None*
+  (`#160 <https://github.com/useblocks/sphinxcontrib-needs/issues/160>`_)
+
+
 0.5.6
 -----
 

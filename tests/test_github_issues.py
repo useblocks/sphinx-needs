@@ -67,3 +67,11 @@ def test_doc_github_61(app, status, warning):
     assert "A-002" in alt_text[4]
     assert "A_001" in alt_text[4]
     assert "A_002" in alt_text[4]
+
+
+@with_app(buildername='html', srcdir='doc_test/doc_github_issue_160')
+def test_doc_github_160(app, status, warning):
+    app.build()
+    html = Path(app.outdir, 'index.html').read_text()
+    assert '<a class="reference internal" href="#A-001" title="A-002">A-001</a>' in html
+

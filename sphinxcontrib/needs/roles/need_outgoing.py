@@ -39,7 +39,7 @@ def process_need_outgoing(app, doctree, fromdocname):
             links = ref_need[node_need_ref.attributes['link_type']]
         # if not, follow back to default links
         else:
-            links = ref_need["links_back"]
+            links = ref_need["links"]
 
         for index, link in enumerate(links):
             link_split = link.split('.')
