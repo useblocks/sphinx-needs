@@ -43,7 +43,7 @@ else:
 
     logging.basicConfig()  # Only need to do this once
 
-VERSION = '0.5.6'
+VERSION = '0.5.7'
 
 NEEDS_FUNCTIONS_CONF = []
 
