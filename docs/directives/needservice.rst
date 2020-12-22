@@ -7,10 +7,13 @@ needservice
 **needservice** allows the import of data from external services like Jira or github::
 
     .. needservice:: github
-       :id: GITHUB_123
-       :filter: project=useblocks/sphinx-needs;status=open
+       :query: repo:useblocks/sphinx-needs
+
 
 .. needservice:: github
+   :query: repo:useblocks/sphinxcontrib-needs
+
+   test
 
 The service is responsible for fetching all needed data based on the given options and return a list of
 need configurations. This is used by **Sphinx-Needs** to create a single need-object for each found need configuration.

@@ -281,9 +281,11 @@ def load_config(app, *args):
 
     # Update NeedDirective to use customized options
     NeedDirective.option_spec.update(extra_options)
+    NeedserviceDirective.option_spec.update(extra_options)
 
     # Update NeedDirective to use customized links
     NeedDirective.option_spec.update(extra_links)
+    NeedserviceDirective.option_spec.update(extra_links)
 
     if title_optional or title_from_content:
         NeedDirective.required_arguments = 0

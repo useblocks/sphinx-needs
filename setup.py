@@ -10,7 +10,8 @@ requires = ['Sphinx<2;python_version<"3.5"',
             'six',
             'matplotlib<=3.0.3.;python_version<"3.6"',  # last version with py3.5 support
             'matplotlib;python_version>="3.6"',
-            'MarkupSafe<1.3.0.;python_version<"3.6"']
+            'MarkupSafe<1.3.0.;python_version<"3.6"',
+            'm2r']
 
 setup(
     name='sphinxcontrib-needs',

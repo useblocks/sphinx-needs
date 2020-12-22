@@ -16,6 +16,8 @@ else:
     import logging
 logger = logging.getLogger(__name__)
 
+from docutils.parsers.rst import directives
+
 
 class Needservice(nodes.General, nodes.Element):
     pass
@@ -27,7 +29,9 @@ class NeedserviceDirective(Directive):
     required_arguments = 1
     optional_arguments = 0
 
-    option_spec = {}
+    option_spec = {'query': directives.unchanged_required,
+                   'amount': directives.unchanged_required  # ToDo: Needs to be implemented icl paging (Load everything till amount is reached)!
+                   }
 
     final_argument_whitespace = True
 
@@ -89,6 +93,7 @@ class NeedserviceDirective(Directive):
             # Replace values in datum with calculated/checked ones.
             datum.update(options)
 
+            # ToDo: Tags and Status are not set (but exist in data)
             section += add_need(self.env.app, self.state, docname, self.lineno,
                                 need_type, need_title, **datum)
 

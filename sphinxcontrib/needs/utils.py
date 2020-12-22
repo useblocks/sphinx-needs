@@ -19,9 +19,10 @@ NEEDS_FUNCTIONS = {}
 # List of internal need option names. They should not be used by or presented to user.
 INTERNALS = ['docname', 'lineno', 'target_node', 'refid', 'content', 'pre_content', 'post_content',
              'collapse', 'parts', 'id_parent',
-             'id_complete', 'title', 'full_title', 'is_part', 'is_need',
-             'type_prefix', 'type_color', 'type_style', 'type', 'type_name', 'id',
+             'id_complete', 'title', 'full_title', 'is_part', 'is_need', 'tags',
+             'type_prefix', 'type_color', 'type_style', 'type', 'type_name', 'id', 'status',
              'hide', 'hide_status', 'hide_tags', 'sections', 'section_name', 'content_node']
+
 
 MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
                'September', 'October', 'November', 'December']
