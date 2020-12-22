@@ -18,7 +18,7 @@ class ServiceManager:
         self.log = logging.getLogger(__name__)
         self.services = {}
 
-    def register(self, name, clazz):
+    def register(self, name, clazz, **kwargs):
         try:
             config = self.app.config.needs_services[name]
         except KeyError:
@@ -32,7 +32,7 @@ class ServiceManager:
                 self.app.config.needs_extra_options[option] = directives.unchanged
 
         # Init service with custom config
-        self.services[name] = clazz(self.app, name, config)
+        self.services[name] = clazz(self.app, name, config, **kwargs)
 
     def get(self, name):
         if name in self.services.keys():

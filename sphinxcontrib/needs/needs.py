@@ -323,7 +323,8 @@ def prepare_env(app, env, docname):
 
     # Register embedded services
     # env.needs_services.register('jira', JiraService)
-    app.needs_services.register('github', GithubService)
+    app.needs_services.register('github-issues', GithubService, type='issue')
+    app.needs_services.register('github-prs', GithubService, type='pr')
 
     needs_functions = NEEDS_FUNCTIONS_CONF
     if needs_functions is None:

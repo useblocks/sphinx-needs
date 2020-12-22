@@ -290,6 +290,12 @@ needs_layouts = {
 }
 
 needs_service_all_data = True
+needs_services = {
+    'github-issues': {
+        'max_amount': 2,
+        'max_content_lines': 20
+    }
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

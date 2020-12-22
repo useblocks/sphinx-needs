@@ -1,16 +1,7 @@
 import requests
 import sphinx
 from pkg_resources import parse_version
-
-from m2r import convert
-
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
-
-    logging.basicConfig()  # Only need to do this once
+import textwrap
 
 from sphinxcontrib.needs.services.base import BaseService
 
@@ -18,18 +9,48 @@ from sphinxcontrib.needs.services.base import BaseService
 class GithubService(BaseService):
     options = ['query']
 
-    def __init__(self, app, name, config):
+    def __init__(self, app, name, config, **kwargs):
         self.app = app
         self.name = name
         self.config = config
 
+        self.url = self.config.get('url', 'https://api.github.com/')
+        self.max_amount = self.config.get('max_amount', 5)
+        self.max_content_lines = self.config.get('max_content_lines', -1)
+
+        self.type_config = {
+            'issue': {
+                'url': 'search/issues',
+                'query': 'is:issue',
+            },
+            'pr': {
+                'url': 'search/issues',
+                'query': 'is:pr',
+            },
+            'commit': {
+                'url': 'search/commits',
+                'query': '',
+            },
+        }
+
+        if 'type' in kwargs:
+            self.type = kwargs['type']
+
+        if self.type not in self.type_config.keys():
+            raise KeyError(f'github type "{self.type}" not supported. Use: {", ".join(self.type_config.keys())}')
+
         super(GithubService, self).__init__()
 
     def _send(self, query):
+        query = f'{query} {self.type_config[self.type]["query"]}'
         params = {
-            'q': query
+            'q': query,
+            'per_page': self.max_amount
         }
-        resp = requests.get('https://api.github.com/search/issues', params=params)
+        url = self.url + self.type_config[self.type]['url']
+
+        self.log.info(f'Service {self.name} requesting data for query: {query}')
+        resp = requests.get(url, params=params)
         return resp.json()
 
     def request(self, options=None):
@@ -43,33 +64,30 @@ class GithubService(BaseService):
             query = options['query']
 
         response = self._send(query)
-        # data = [
-        #     {
-        #         'title': 'test1',
-        #         'content': 'test1 content',
-        #         'id': 'GIT_001',
-        #         'author': 'MEEEEE'
-        #     },
-        #     {
-        #         'title': 'test2',
-        #         'content': 'test2 content',
-        #         'id': 'GIT_002',
-        #         'unknown': 'BLUBB',
-        #         'unknown2': 'BLUBB2'
-        #     },
-        # ]
         data = []
         for item in response['items']:
+            # wraps content lines, if they are too long. Respects already existing newlines.
+            content_lines = ['\n   '.join(textwrap.wrap(line, 60, break_long_words=True, replace_whitespace=False))
+                             for line in item["body"].splitlines() if line.strip() != '']
+
+            # Reduce content length, if requested by config
+            if self.max_content_lines > 0:
+                content_lines = content_lines[0:self.max_content_lines]
+            content = '\n\n   '.join(content_lines)
+
+            # Be sure the content gets not interpreted as rst or html code, so we put
+            # everything in a safe code-block
+            content = '.. code-block:: text\n\n   ' + content
+
             data.append(
                 {
                     'id': f'GITHUB_{item["number"]}',
                     'title': item["title"],
-                    # 'content': convert(item["body"]),
-                    'content': item["body"],
+                    'content': content,
                     'status': item["state"],
                     'tags': ".".join([x['name'] for x in item["labels"]]),
                     'author': item["user"]['login'],
-                    }
+                }
             )
         return data
 

@@ -7,6 +7,7 @@ from pkg_resources import parse_version
 import sphinx
 
 from sphinxcontrib.needs.api import add_need
+from sphinxcontrib.needs.directives.need import NeedDirective
 from sphinxcontrib.needs.utils import INTERNALS
 
 sphinx_version = sphinx.__version__
@@ -32,6 +33,9 @@ class NeedserviceDirective(Directive):
     option_spec = {'query': directives.unchanged_required,
                    'amount': directives.unchanged_required  # ToDo: Needs to be implemented icl paging (Load everything till amount is reached)!
                    }
+
+    # Support all options from a common need.
+    option_spec.update(NeedDirective.option_spec)
 
     final_argument_whitespace = True
 
@@ -77,7 +81,8 @@ class NeedserviceDirective(Directive):
             # extra_option or extra_link
             missing_options = {}
             for element in datum.keys():
-                defined_options = INTERNALS + list(getattr(app.config, "needs_extra_options", {}).keys())
+                defined_options = list(self.__class__.option_spec.keys())
+                defined_options.append('content')  # Add content, so that it gets not detected as missing
                 if element not in defined_options and element not in getattr(app.config, "needs_extra_links", []):
                     missing_options[element] = datum[element]
 
@@ -89,6 +94,7 @@ class NeedserviceDirective(Directive):
                 for name, value in missing_options.items():
                     content.append(f'\n:{name}: {value}')
 
+            # content.insert(0, '.. code-block:: text\n')
             options['content'] = '\n'.join(content)
             # Replace values in datum with calculated/checked ones.
             datum.update(options)
