@@ -30,9 +30,7 @@ class NeedserviceDirective(Directive):
     required_arguments = 1
     optional_arguments = 0
 
-    option_spec = {'query': directives.unchanged_required,
-                   'amount': directives.unchanged_required  # ToDo: Needs to be implemented icl paging (Load everything till amount is reached)!
-                   }
+    option_spec = {}
 
     # Support all options from a common need.
     option_spec.update(NeedDirective.option_spec)

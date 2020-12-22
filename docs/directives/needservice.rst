@@ -14,9 +14,18 @@ needservice
 
 .. needservice:: github-issues
    :query: repo:useblocks/sphinxcontrib-needs
+   :type: test
+   :max_amount: 2
+   :max_content_lines: 2
 
    Extra content for each new need
 
+.. needservice:: github-prs
+   :query: repo:useblocks/sphinxcontrib-needs
+   :type: spec
+   :max_amount: 3
+   :max_content_lines: 2
+   :comment: imported
 
 The service is responsible for fetching all needed data based on the given options and return a list of
 need configurations. This is used by **Sphinx-Needs** to create a single need-object for each found need configuration.

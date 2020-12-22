@@ -2,6 +2,8 @@ import sphinx
 from docutils.parsers.rst import directives
 from pkg_resources import parse_version
 
+from sphinxcontrib.needs.directives.needservice import NeedserviceDirective
+
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
     from sphinx.util import logging
@@ -30,6 +32,9 @@ class ServiceManager:
             if option not in self.app.config.needs_extra_options.keys():
                 self.log.debug(f'Register option "{option}" for service "{name}"')
                 self.app.config.needs_extra_options[option] = directives.unchanged
+                # Register new option directly in Service directive, as its class options got already
+                # calculated
+                NeedserviceDirective.option_spec[option] = directives.unchanged
 
         # Init service with custom config
         self.services[name] = clazz(self.app, name, config, **kwargs)

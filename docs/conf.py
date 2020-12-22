@@ -292,8 +292,10 @@ needs_layouts = {
 needs_service_all_data = True
 needs_services = {
     'github-issues': {
+        'need_type': 'spec',
         'max_amount': 2,
-        'max_content_lines': 20
+        'max_content_lines': 20,
+        'id_prefix': 'GH_ISSUE_'
     }
 }
 
