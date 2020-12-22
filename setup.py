@@ -15,7 +15,7 @@ requires = ['Sphinx<2;python_version<"3.5"',
 setup(
     name='sphinxcontrib-needs',
     # If you raise, think about versions in conf.py and needs.py!!!
-    version='0.5.7',
+    version='0.6.0',
     url='http://github.com/useblocks/sphinxcontrib-needs',
     download_url='http://pypi.python.org/pypi/sphinxcontrib-needs',
     license='MIT',

@@ -290,6 +290,7 @@ Content
    builders
    filter
    dynamic_functions
+   services
    layout_styles
    examples/index
    api

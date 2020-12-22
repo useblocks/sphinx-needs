@@ -2,7 +2,7 @@ Directives
 ==========
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    need
    needlist
@@ -13,10 +13,11 @@ Directives
    needextract
    needpie
    needimport
+   needservice
 
 **Deprecated**:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    needfilter

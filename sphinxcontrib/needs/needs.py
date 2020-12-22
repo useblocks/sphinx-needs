@@ -20,6 +20,7 @@ from sphinxcontrib.needs.directives.needpie import Needpie, NeedpieDirective, pr
 from sphinxcontrib.needs.directives.needsequence import Needsequence, NeedsequenceDirective, process_needsequence
 from sphinxcontrib.needs.directives.needgantt import Needgantt, NeedganttDirective, process_needgantt
 from sphinxcontrib.needs.directives.needextract import Needextract, NeedextractDirective, process_needextract
+from sphinxcontrib.needs.directives.needservice import Needservice, NeedserviceDirective
 
 from sphinxcontrib.needs.builder import NeedsBuilder
 from sphinxcontrib.needs.directives.needfilter import Needfilter, NeedfilterDirective, process_needfilters
@@ -35,6 +36,10 @@ from sphinxcontrib.needs.warnings import process_warnings
 from sphinxcontrib.needs.utils import INTERNALS, NEEDS_FUNCTIONS
 from sphinxcontrib.needs.defaults import DEFAULT_DIAGRAM_TEMPLATE, LAYOUTS, NEEDFLOW_CONFIG_DEFAULTS
 
+from sphinxcontrib.needs.services.manager import ServiceManager
+from sphinxcontrib.needs.services.jira import JiraService
+from sphinxcontrib.needs.services.github import GithubService
+
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
     from sphinx.util import logging
@@ -43,7 +48,7 @@ else:
 
     logging.basicConfig()  # Only need to do this once
 
-VERSION = '0.5.7'
+VERSION = '0.6.0'
 
 NEEDS_FUNCTIONS_CONF = []
 
@@ -142,6 +147,9 @@ def setup(app):
 
     app.add_config_value('needs_template_folder', 'needs_templates/', 'html')
 
+    app.add_config_value('needs_services', {}, 'html')
+    app.add_config_value('needs_service_all_data', False, 'html')
+
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(Needfilter, )
@@ -153,6 +161,7 @@ def setup(app):
     app.add_node(Needsequence)
     app.add_node(Needgantt)
     app.add_node(Needextract)
+    app.add_node(Needservice)
     app.add_node(NeedPart, html=(visitor_dummy, visitor_dummy), latex=(visitor_dummy, visitor_dummy))
 
     ########################################################################
@@ -169,6 +178,7 @@ def setup(app):
     app.add_directive('needgantt', NeedganttDirective)
     app.add_directive('needimport', NeedimportDirective)
     app.add_directive('needextract', NeedextractDirective)
+    app.add_directive('needservice', NeedserviceDirective)
 
     ########################################################################
     # ROLES
@@ -304,6 +314,14 @@ def prepare_env(app, env, docname):
     if not hasattr(env, 'needs_all_filters'):
         # Used to store all needed information about all filters in document
         env.needs_all_filters = {}
+
+    if not hasattr(env, 'needs_services'):
+        # Used to store all needed information about all services
+        app.needs_services = ServiceManager(app)
+
+    # Register embedded services
+    # env.needs_services.register('jira', JiraService)
+    app.needs_services.register('github', GithubService)
 
     needs_functions = NEEDS_FUNCTIONS_CONF
     if needs_functions is None:

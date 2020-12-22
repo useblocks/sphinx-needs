@@ -1,9 +1,11 @@
 Changelog
 =========
 
-0.5.7 (not released yet)
+0.6.0 (not released yet)
 ------------------------
 
+* Improvement: Directive :ref:`needservice` added, which allow to include data from external services like Jira or github.
+  (`#163 <https://github.com/useblocks/sphinxcontrib-needs/issues/163>`_)
 * Bugfix: Role :ref:`role_need_outgoing` shows correct link instead of *None*
   (`#160 <https://github.com/useblocks/sphinxcontrib-needs/issues/160>`_)
 

@@ -39,9 +39,9 @@ sys.path.insert(0, os.path.abspath('../sphinxcontrib'))
 # built documents.
 #
 # The short X.Y version.
-version = '0.5'
+version = '0.6'
 # The full version, including alpha/beta/rc tags.
-release = '0.5.7'
+release = '0.6.0'
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 
@@ -288,6 +288,8 @@ needs_layouts = {
         }
     }
 }
+
+needs_service_all_data = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

@@ -1043,6 +1043,50 @@ See also :ref:`needgantt_completion_option`, which overrides this value for spec
 
 Default: :ref:`need_completion`
 
+.. _needs_services:
+
+needs_services
+~~~~~~~~~~~~~~
+
+.. versionadded:: 0.6.0
+
+Takes extra configuration options for :ref:`services`::
+
+    needs_services = {
+        'jira': {
+            'url': 'my_jira_server.com',
+        },
+        'git': {
+            'url': 'my_git_server.com',
+        },
+        'my_service': {
+            'class': MyServiceClass,
+            'config_1': 'value_x',
+        }
+    }
+
+Each key-value-pair in ``needs_services`` describes a service specific configuration.
+
+Own services can be registered by setting ``class`` as additional option.
+
+Config options are service specific and are described by :ref:`services`.
+
+See also :ref:`needservice`.
+
+.. _needs_service_all_data:
+
+needs_service_all_data
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.6.0
+
+If set to ``True``, data for options, which are unknown, is added as string to the need content.
+If ``False``, unknown option data is not shown anywhere.
+
+Default: ``False``.
+
+needs_service_all_data = True
+
 Removed options
 ------------------
 
