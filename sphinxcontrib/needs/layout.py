@@ -4,6 +4,7 @@ Cares about the correct creation and handling of need layout.
 Based on https://github.com/useblocks/sphinxcontrib-needs/issues/102
 """
 import re
+import requests
 from docutils import nodes
 from docutils.frontend import OptionParser
 from docutils.parsers.rst import languages, Parser
@@ -460,7 +461,7 @@ class LayoutHandler:
         Returns the specific meta data of a need inside docutils nodes.
         Usage::
 
-            <<meta('status', prefix:'**status**', show_empty=True)>>
+            <<meta('status', prefix='**status**', show_empty=True)>>
 
         :param name: name of the need item
         :param prefix: string as rst-code, will be added infront of the value output
@@ -654,7 +655,8 @@ class LayoutHandler:
 
         return data_container
 
-    def image(self, url, height=None, width=None, align=None, no_link=False):
+    def image(self, url, height=None, width=None, align=None, no_link=False, prefix="",
+              is_external=False):
         """
 
         See https://docutils.sourceforge.io/docs/ref/rst/directives.html#images
@@ -670,13 +672,25 @@ class LayoutHandler:
 
             '<<image("_images/useblocks_logo.png", height="50px", align="center")>>',
             '<<image("icon:bell", height="20px", align="center")>>'
+            '<<image("field:url", height="60px", align="center")>>'  # Get url from need['url']
 
+        :param no_link:
         :param url:
         :param height:
         :param width:
         :param align:
+        :param prefix: Prefix string infront of the image
+        :param is_external: If ``True`` url references an external image, which needs to be downloaded
         :return:
         """
+        data_container = nodes.inline()
+        if prefix is not None:
+            prefix_node = self._parse(prefix)
+            label_node = nodes.inline(classes=['needs_label'])
+            label_node += prefix_node
+            data_container.append(label_node)
+
+
         # from sphinx.addnodes import
         options = {}
         if height is not None:
@@ -724,8 +738,32 @@ class LayoutHandler:
                 return []
 
             url = value
-            subfolder_amount = self.need['docname'].count('/')
-            url = '../' * subfolder_amount + url
+
+            if not is_external:
+                subfolder_amount = self.need['docname'].count('/')
+                url = '../' * subfolder_amount + url
+
+        if is_external:
+            import os
+            from urllib.parse import urlparse
+
+            url_parsed = urlparse(url)
+            filename = os.path.basename(url_parsed.path) + '.png'
+            path = os.path.join(self.app.srcdir, "github_images")
+            file_path = os.path.join(path, filename)
+
+            # Download only, if file not downloaded yet
+            if not os.path.exists(file_path):
+                try:
+                    os.mkdir(path)
+                except FileExistsError:
+                    pass
+                response = requests.get(url)
+                if response.status_code == 200:
+                    with open(file_path, 'wb') as f:
+                        f.write(response.content)
+
+            url = file_path
 
         image_node = nodes.image(url, classes=['needs_image'], **options)
         image_node['candidates'] = {'*': url}
@@ -749,9 +787,11 @@ class LayoutHandler:
             ref_node.append(image_node)
             return ref_node
 
-        return image_node
+        data_container.append(image_node)
+        return data_container
 
-    def link(self, url, text=None, image_url=None, image_height=None, image_width=None):
+    def link(self, url, text=None, image_url=None, image_height=None, image_width=None,
+             prefix="", is_dynamic=False):
         """
         Shows a link.
         Link can be a text, an image or both
@@ -761,11 +801,31 @@ class LayoutHandler:
         :param image_url:
         :param image_height:
         :param image_width:
+        :param prefix: Additional string infront of the string
+        :param is_dynamic: if ``True``, ``url`` is not static and gets read from need
         :return:
+
+        Examples::
+
+            <<link('http://sphinx-docs.org', 'Sphinx')>>
+            <<link('url', 'Link', is_dynamic=True)>>  # Reads url from need[url]
         """
+        data_container = nodes.inline()
+        if prefix is not None:
+            prefix_node = self._parse(prefix)
+            label_node = nodes.inline(classes=['needs_label'])
+            label_node += prefix_node
+            data_container.append(label_node)
+
 
         if text is None:  # May be needed if only image shall be shown
             text = ''
+
+        if is_dynamic:
+            try:
+                url = self.need[url]
+            except KeyError:
+                url = ''
 
         link_node = nodes.reference(text, text, refuri=url)
 
@@ -773,7 +833,9 @@ class LayoutHandler:
             image_node = self.image(image_url, image_height, image_width)
             link_node.append(image_node)
 
-        return link_node
+        data_container.append(link_node)
+
+        return data_container
 
     def collapse_button(self, target='meta', collapsed='Show', visible='Close', initial=False):
         """

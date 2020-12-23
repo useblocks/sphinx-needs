@@ -1,13 +1,58 @@
 import requests
-import sphinx
-from pkg_resources import parse_version
 import textwrap
 
 from sphinxcontrib.needs.services.base import BaseService
 
+# Additional needed options, which are not defined by default
+EXTRA_DATA_OPTIONS = ['user', 'created_at', 'updated_at', 'closed_at']
+EXTRA_LINK_OPTIONS = ['url']
+EXTRA_IMAGE_OPTIONS = ['avatar']
+
+# Additional options, which are used to configure the service and shall not be part of the later needs
+CONFIG_OPTIONS = ['type', 'query', 'max_amount', 'max_content_lines', 'id_prefix']
+
+# All Github related data options
+GITHUB_DATA = ['status', 'tags'] + EXTRA_DATA_OPTIONS + EXTRA_LINK_OPTIONS + EXTRA_IMAGE_OPTIONS
+
+# Needed for layout. Example: "user","avatar",...
+GITHUB_DATA_STR = '"' + '","'.join(EXTRA_DATA_OPTIONS + EXTRA_LINK_OPTIONS + EXTRA_IMAGE_OPTIONS) + '"'
+CONFIG_DATA_STR = '"' + '","'.join(CONFIG_OPTIONS) + '"'
+
+GITHUB_LAYOUT = {
+    'grid': 'complex',
+    'layout': {
+
+        'head_left': [
+            '<<meta_id()>>',
+        ],
+        'head': [
+            '**<<meta("title")>>**',
+        ],
+        'head_right': [
+            f'<<image("field:avatar", width="40px", align="middle", is_external=True)>>',
+            '<<meta("user")>>'
+        ],
+        'meta_left': [f'<<meta("{x}", prefix="{x}: ")>>' for x in EXTRA_DATA_OPTIONS] +
+                     [f'<<link("{x}", text="Link", prefix="{x}: ", is_dynamic=True)>>' for x in EXTRA_LINK_OPTIONS],
+        'meta_right': [
+            '<<meta("type_name", prefix="type: ")>>',
+            f'<<meta_all(no_links=True, exclude=["layout","style",{GITHUB_DATA_STR}, {CONFIG_DATA_STR}])>>',
+            '<<meta_links_all()>>'
+        ],
+        'footer_left': [
+            'layout: <<meta("layout")>>',
+        ],
+        'footer': [
+        ],
+        'footer_right': [
+            'style: <<meta("style")>>'
+        ]
+    }
+}
+
 
 class GithubService(BaseService):
-    options = ['type', 'query', 'max_amount', 'max_content_lines', 'id_prefix']
+    options = CONFIG_OPTIONS + EXTRA_DATA_OPTIONS + EXTRA_LINK_OPTIONS + EXTRA_IMAGE_OPTIONS
 
     def __init__(self, app, name, config, **kwargs):
         self.app = app
@@ -19,6 +64,10 @@ class GithubService(BaseService):
         self.max_amount = self.config.get('max_amount', 5)
         self.max_content_lines = self.config.get('max_content_lines', -1)
         self.id_prefix = self.config.get('id_prefix', 'GITHUB_')
+        self.layout = self.config.get('layout', 'github')
+
+        if 'github' not in self.app.config.needs_layouts.keys():
+            self.app.config.needs_layouts['github'] = GITHUB_LAYOUT
 
         self.type_config = {
             'issue': {
@@ -88,20 +137,26 @@ class GithubService(BaseService):
 
             prefix = options.get('id_prefix', self.id_prefix)
             need_id = f'{prefix}{item["number"]}'
-            element_data = var = {
+            element_data = {
                 'type': options.get('type', self.need_type),
+                'layout': options.get('layout', self.layout),
                 'id': need_id,
                 'title': item["title"],
                 'content': content,
                 'status': item["state"],
                 'tags': ",".join([x['name'] for x in item["labels"]]),
-                'author': item["user"]['login'],
+                'user': item["user"]['login'],
+                'url': item['html_url'],
+                'avatar': item['user']['avatar_url'],
+                'created_at': item['created_at'],
+                'updated_at': item['updated_at'],
+                'closed_at': item['closed_at']
             }
 
             # Add data from options, which was defined by user but is not set by this service
             for key, value in options.items():
                 # Check if given option is not already handled and is not part of the service internal options
-                if key not in element_data.keys() and key not in self.options:
+                if key not in element_data.keys() and key not in GITHUB_DATA:
                     element_data[key] = value
 
             data.append(element_data)
