@@ -100,7 +100,7 @@ How to create a bar chart with matplotlib?
    from sphinxcontrib.needs.filter_common import filter_needs
 
    # Prepare plot
-   labels= ['Open', 'In progress', 'Closed', 'None / not set']
+   labels = ['Open', 'In progress', 'Closed', 'None / not set']
    x = np.arange(len(labels))  # the label locations
    width = 0.35  # the width of the bars
    fig, ax = plt.subplots()
@@ -110,12 +110,12 @@ How to create a bar chart with matplotlib?
 
    need_types = ['req', 'spec', 'impl', 'feature', 'test']
    for index, need_type in enumerate(need_types):
-      results = []
-      results.append(len(filter_needs(needs, f"type=='{need_type}' and status=='open'")))
-      results.append(len(filter_needs(needs, f"type=='{need_type}' and status in ['in_progress', 'in progress']")))
-      results.append(len(filter_needs(needs, f"type=='{need_type}' and status in ['done','closed']")))
-      results.append(len(filter_needs(needs, f"type=='{need_type}' and status==None")))
-      ax.bar(x + width* index, results, width, label=need_type)
+       results = []
+       results.append(len(filter_needs(needs, f"type=='{need_type}' and status=='open'")))
+       results.append(len(filter_needs(needs, f"type=='{need_type}' and status in ['in_progress', 'in progress']")))
+       results.append(len(filter_needs(needs, f"type=='{need_type}' and status in ['done','closed']")))
+       results.append(len(filter_needs(needs, f"type=='{need_type}' and status==None")))
+       ax.bar(x + width* index, results, width, label=need_type)
 
    ax.set_ylabel('Amount')
    ax.set_title('Amount of needs by status and type')

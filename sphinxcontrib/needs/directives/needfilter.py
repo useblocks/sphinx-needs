@@ -9,7 +9,7 @@ try:
     from sphinx.errors import NoUri  # Sphinx 3.0
 except ImportError:
     from sphinx.environment import NoUri  # Sphinx < 3.0
-from sphinxcontrib.needs.utils import row_col_maker, status_sorter
+from sphinxcontrib.needs.utils import row_col_maker
 
 from sphinxcontrib.needs.filter_common import FilterBase, procces_filters
 

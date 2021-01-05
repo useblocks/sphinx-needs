@@ -1,5 +1,4 @@
 import os
-import re
 import sphinx
 import sys
 import urllib
@@ -9,17 +8,11 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 from pkg_resources import parse_version
 
-
 from sphinxcontrib.needs.diagrams_common import DiagramBase, no_plantuml, \
     add_config, get_filter_para, get_debug_containter, calculate_link
 from sphinxcontrib.needs.utils import MONTH_NAMES
 
 from sphinxcontrib.plantuml import generate_name  # Need for plantuml filename calculation
-
-try:
-    from sphinx.errors import NoUri  # Sphinx 3.0
-except ImportError:
-    from sphinx.environment import NoUri  # Sphinx < 3.0
 
 from sphinxcontrib.needs.filter_common import FilterBase, procces_filters, filter_single_need
 from sphinxcontrib.needs.directives.utils import get_link_type_option
@@ -128,8 +121,8 @@ def process_needgantt(app, doctree, fromdocname):
     # Replace all needgantt nodes with a list of the collected needs.
     env = app.builder.env
 
-    link_types = env.config.needs_extra_links
-    allowed_link_types_options = [link.upper() for link in env.config.needs_flow_link_types]
+    # link_types = env.config.needs_extra_links
+    # allowed_link_types_options = [link.upper() for link in env.config.needs_flow_link_types]
 
     # NEEDGANTT
     for node in doctree.traverse(Needgantt):
@@ -163,7 +156,6 @@ def process_needgantt(app, doctree, fromdocname):
                               "   @enduml"
         puml_node = plantuml(plantuml_block_text, **dict())
         puml_node["uml"] = "@startuml\n"
-        puml_connections = ""
 
         # Adding config
         config = current_needgantt['config']
@@ -185,9 +177,8 @@ def process_needgantt(app, doctree, fromdocname):
                 # start_date = datetime.fromisoformat(start_date_string)  # > py3.7 only
             except Exception:
                 raise NeedGanttException('start_date "{}"for needgantt is invalid. '
-                                         'File: {}:current_needgantt["lineno"]'.format(
-                    start_date_string, current_needgantt["docname"]
-                ))
+                                         'File: {}:current_needgantt["lineno"]'.format(start_date_string,
+                                                                                       current_needgantt["docname"]))
 
             month = MONTH_NAMES[int(start_date.strftime("%-m"))]
             start_date_plantuml = start_date.strftime("%dth of {} %Y".format(month))

@@ -1,11 +1,6 @@
 from docutils import nodes
 from sphinx.util.nodes import make_refnode
 
-try:
-    from sphinx.errors import NoUri  # Sphinx 3.0
-except ImportError:
-    from sphinx.environment import NoUri  # Sphinx < 3.0
-
 
 class Need_incoming(nodes.Inline, nodes.Element):
     pass

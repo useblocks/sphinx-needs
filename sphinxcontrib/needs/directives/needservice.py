@@ -1,5 +1,3 @@
-import os
-
 from docutils import nodes
 
 from docutils.parsers.rst import Directive
@@ -8,7 +6,6 @@ import sphinx
 
 from sphinxcontrib.needs.api import add_need
 from sphinxcontrib.needs.directives.need import NeedDirective
-from sphinxcontrib.needs.utils import INTERNALS
 
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
@@ -16,8 +13,6 @@ if parse_version(sphinx_version) >= parse_version("1.6"):
 else:
     import logging
 logger = logging.getLogger(__name__)
-
-from docutils.parsers.rst import directives
 
 
 class Needservice(nodes.General, nodes.Element):
@@ -59,7 +54,11 @@ class NeedserviceDirective(Directive):
         for datum in service_data:
             options = {}
 
-            content = datum['content'].split('\n')
+            try:
+                content = datum['content'].split('\n')
+            except KeyError:
+                content = []
+
             content.extend(self.content)
 
             if 'type' not in datum.keys():

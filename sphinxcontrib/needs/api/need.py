@@ -3,8 +3,8 @@ import re
 import os
 from docutils import nodes
 from jinja2 import Template
-from sphinxcontrib.needs.api.exceptions import NeedsNoIdException, NeedsInvalidException, NeedsStatusNotAllowed, \
-     NeedsTagNotAllowed, NeedsDuplicatedId, NeedsInvalidOption, NeedsTemplateException
+from sphinxcontrib.needs.api.exceptions import NeedsNoIdException, NeedsInvalidException, NeedsStatusNotAllowed,\
+    NeedsTagNotAllowed, NeedsDuplicatedId, NeedsInvalidOption, NeedsTemplateException
 import sphinxcontrib.needs.directives.need
 from sphinx.util.nodes import nested_parse_with_titles
 from sphinxcontrib.needs.roles.need_part import update_need_with_parts, find_parts
@@ -147,12 +147,15 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
         tags = []
     if len(tags) > 0:
         tags = [tag.strip() for tag in re.split(";|,", tags)]
+        new_tags = []  # Shall contain only valid tags
         for i in range(len(tags)):
             if len(tags[i]) == 0 or tags[i].isspace():
-                del (tags[i])
                 logger.warning('Scruffy tag definition found in need {}. '
                                'Defined tag contains spaces only.'.format(need_id))
+            else:
+                new_tags.append(tags[i])
 
+        tags = new_tags
         # Check if tag is in needs_tags. If not raise an error.
         if env.app.config.needs_tags:
             for tag in tags:
@@ -174,7 +177,8 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
     if need_id in env.needs_all_needs.keys():
         if id is not None:
             raise NeedsDuplicatedId("A need with ID {} already exists! "
-                                    "This is not allowed. Document {}[{}] Title: {}.".format(need_id, docname, lineno, title))
+                                    "This is not allowed. Document {}[{}] Title: {}.".format(need_id, docname,
+                                                                                             lineno, title))
         else:  # this is a generated ID
             raise NeedsDuplicatedId(
                 "Needs could not generate a unique ID for a need with "
@@ -244,7 +248,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
             # if not we set no links, but entry in needS_info must be there
             links = []
         elif link_type['option'] in needs_global_options.keys() and \
-                (link_type['option'] not in list(kwargs.keys()) or len(str( kwargs[link_type['option']])) == 0):
+                (link_type['option'] not in list(kwargs.keys()) or len(str(kwargs[link_type['option']])) == 0):
             # If it is in global option, value got already set during prior handling of them
             links_string = needs_info[link_type['option']]
             links = _read_in_links(links_string)
@@ -362,7 +366,6 @@ def _render_template(content, docname, lineno, state):
     node_need_content.document = state.document
     nested_parse_with_titles(state, rst, node_need_content)
     return node_need_content
-
 
 
 def _read_in_links(links_string):
@@ -504,5 +507,3 @@ def _merge_global_options(needs_info, global_options):
                 # has at least the key.
                 if key not in needs_info.keys():
                     needs_info[key] = ''
-
-

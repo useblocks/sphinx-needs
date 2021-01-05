@@ -168,6 +168,7 @@ def process_needtables(app, doctree, fromdocname):
             :param key: key of need object as string
             :return:  function to use in sort(key=x)
             """
+
             def sort(need):
                 """
                 Returns a given value of need, which is used for list sorting.
@@ -179,6 +180,7 @@ def process_needtables(app, doctree, fromdocname):
                     # Otherwise "Z" will be above "a"
                     return need[key].lower()
                 return need[key]
+
             return sort
 
         found_needs.sort(key=get_sorter(current_needtable['sort']))
@@ -207,7 +209,8 @@ def process_needtables(app, doctree, fromdocname):
                         prefix=prefix)
                 elif col in link_type_list.keys():
                     link_type = link_type_list[col]
-                    if col == 'INCOMING' or col == link_type['option'].upper() + '_BACK' or col == link_type['incoming'].upper():
+                    if col == 'INCOMING' or col == link_type['option'].upper() + '_BACK' or \
+                            col == link_type['incoming'].upper():
                         row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need,
                                              link_type['option'] + '_back', ref_lookup=True)
                     else:
@@ -234,16 +237,16 @@ def process_needtables(app, doctree, fromdocname):
                             row += row_col_maker(
                                 app, fromdocname, env.needs_all_needs, temp_part, "content",
                                 prefix=app.config.needs_part_prefix)
-                        elif col in link_type_list.keys() and (
-                            col == link_type_list[col]['option'].upper() + '_BACK' or
-                            col == link_type_list[col]['incoming'].upper()):
+                        elif col in link_type_list.keys() \
+                                and (col == link_type_list[col]['option'].upper() + '_BACK'
+                                     or col == link_type_list[col]['incoming'].upper()):
 
                             row += row_col_maker(
                                 app, fromdocname, env.needs_all_needs, temp_part,
                                 link_type_list[col]['option'] + '_back', ref_lookup=True)
                         else:
                             row += row_col_maker(
-                            app, fromdocname, env.needs_all_needs, temp_part, col.lower())
+                                app, fromdocname, env.needs_all_needs, temp_part, col.lower())
 
                     tbody += row
 

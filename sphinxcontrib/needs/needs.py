@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import os
-import random
-import string
-
 import sphinx
 from sphinx.errors import SphinxError
 from docutils import nodes
@@ -25,7 +21,7 @@ from sphinxcontrib.needs.directives.needservice import Needservice, NeedserviceD
 from sphinxcontrib.needs.builder import NeedsBuilder
 from sphinxcontrib.needs.directives.needfilter import Needfilter, NeedfilterDirective, process_needfilters
 from sphinxcontrib.needs.environment import install_styles_static_files, install_datatables_static_files, \
-    install_collapse_static_files, install_feather_icons
+    install_collapse_static_files
 from sphinxcontrib.needs.roles.need_incoming import Need_incoming, process_need_incoming
 from sphinxcontrib.needs.roles.need_outgoing import Need_outgoing, process_need_outgoing
 from sphinxcontrib.needs.roles.need_ref import Need_ref, process_need_ref
@@ -37,7 +33,6 @@ from sphinxcontrib.needs.utils import INTERNALS, NEEDS_FUNCTIONS
 from sphinxcontrib.needs.defaults import DEFAULT_DIAGRAM_TEMPLATE, LAYOUTS, NEEDFLOW_CONFIG_DEFAULTS
 
 from sphinxcontrib.needs.services.manager import ServiceManager
-from sphinxcontrib.needs.services.jira import JiraService
 from sphinxcontrib.needs.services.github import GithubService
 
 sphinx_version = sphinx.__version__
@@ -63,6 +58,7 @@ class TagsDummy:
 
 def setup(app):
     log = logging.getLogger(__name__)
+    log.debug("Starting setup of sphinx-Needs")
     app.add_builder(NeedsBuilder)
     app.add_config_value('needs_types',
                          [dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),
@@ -323,8 +319,14 @@ def prepare_env(app, env, docname):
 
     # Register embedded services
     # env.needs_services.register('jira', JiraService)
-    app.needs_services.register('github-issues', GithubService, type='issue')
-    app.needs_services.register('github-prs', GithubService, type='pr')
+    app.needs_services.register('github-issues', GithubService, gh_type='issue')
+    app.needs_services.register('github-prs', GithubService, gh_type='pr')
+
+    # Register user defined services
+    for name, service in app.config.needs_services.items():
+        if name not in app.needs_services.services.keys():
+            # We found a not yet registered service
+            app.needs_services.register(name, service['class'], **service['class_init'])
 
     needs_functions = NEEDS_FUNCTIONS_CONF
     if needs_functions is None:

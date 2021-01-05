@@ -268,6 +268,7 @@ def _detect_and_execute(content, need, env):
 
     return func_call, func_return
 
+
 def _analyze_func_string(func_string, need):
     """
     Analyze given function string and extract:
@@ -284,7 +285,8 @@ def _analyze_func_string(func_string, need):
     try:
         func = ast.parse(func_string)
     except SyntaxError as e:
-        raise SphinxError('Parsing function string failed for need {}: {}. {}'.format(need['id'], func_string, e))
+        need_id = need['id'] if need is not None else 'UNKNOWN'
+        raise SphinxError('Parsing function string failed for need {}: {}. {}'.format(need_id, func_string, e))
     try:
         func_call = func.body[0].value
         func_name = func_call.func.id

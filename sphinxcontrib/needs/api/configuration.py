@@ -119,4 +119,3 @@ def add_dynamic_function(app, function):
     :return: None
     """
     register_func(function)
-

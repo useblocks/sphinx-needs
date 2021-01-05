@@ -12,11 +12,6 @@ from pkg_resources import parse_version
 
 from sphinxcontrib.plantuml import generate_name  # Need for plantuml filename calculation
 
-try:
-    from sphinx.errors import NoUri  # Sphinx 3.0
-except ImportError:
-    from sphinx.environment import NoUri  # Sphinx < 3.0
-
 from sphinxcontrib.needs.filter_common import FilterBase, procces_filters, filter_single_need
 from sphinxcontrib.needs.diagrams_common import calculate_link
 
@@ -243,7 +238,7 @@ def process_needflow(app, doctree, fromdocname):
                     colors.append(need_info["type_color"].replace('#', ''))
 
                 if current_needflow['highlight'] is not None and current_needflow['highlight'] != '' and \
-                    filter_single_need(need_info, current_needflow['highlight'], all_needs):
+                        filter_single_need(need_info, current_needflow['highlight'], all_needs):
                     colors.append('line:FF0000')
 
                 # Only add subelements and their {...} container, if we really need them.
@@ -264,8 +259,8 @@ def process_needflow(app, doctree, fromdocname):
                 # Skip link-type handling, if it is not part of a specified list of allowed link_types or
                 # if not part of the overall configuration of needs_flow_link_types
                 if (current_needflow["link_types"] and link_type['option'].upper() not in option_link_types) or \
-                        (not current_needflow["link_types"] and \
-                         link_type['option'].upper() not in allowed_link_types_options):
+                        (not current_needflow["link_types"]
+                         and link_type['option'].upper() not in allowed_link_types_options):
                     continue
 
                 for link in need_info[link_type['option']]:
@@ -407,4 +402,3 @@ def process_needflow(app, doctree, fromdocname):
             content += debug_container
 
         node.replace_self(content)
-

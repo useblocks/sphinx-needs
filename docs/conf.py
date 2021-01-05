@@ -1,3 +1,5 @@
+# flake8: noqa
+
 # -*- coding: utf-8 -*-
 #
 # needs test docs documentation build configuration file, created by
@@ -21,6 +23,7 @@ import sys
 import datetime
 
 from docutils.parsers.rst import directives
+
 
 sys.path.insert(0, os.path.abspath('../sphinxcontrib'))
 
@@ -236,9 +239,9 @@ cwd = os.getcwd()
 local_plantuml_path = os.path.join(cwd, "utils/plantuml.jar")
 
 if on_rtd:
-   # Deactivated using rtd plantuml version as it looks quite old.
-   # plantuml = 'java -Djava.awt.headless=true -jar /usr/share/plantuml/plantuml.jar'
-   plantuml = 'java -Djava.awt.headless=true -jar {}'.format(local_plantuml_path)
+    # Deactivated using rtd plantuml version as it looks quite old.
+    # plantuml = 'java -Djava.awt.headless=true -jar /usr/share/plantuml/plantuml.jar'
+    plantuml = 'java -Djava.awt.headless=true -jar {}'.format(local_plantuml_path)
 else:
     cwd = os.getcwd()
     plantuml = 'java -jar {}'.format(local_plantuml_path)
@@ -270,7 +273,9 @@ needs_extra_options = {
 
 
 needs_warnings = {
-    'type_check': 'type not in ["req", "spec", "impl", "test", "feature", "action", "user", "milestone"]',
+    'type_check': 'type not in ["req", "spec", "impl", "test", "feature", "action", "user", "milestone", '
+                  '"issue", "pr", "commit"'  # github service types
+                  ']',
     # 'valid_status': 'status not in ["open", "in progress", "closed", "done", "implemented"] and status is not None'
 }
 
@@ -292,10 +297,10 @@ needs_layouts = {
 needs_service_all_data = True
 needs_services = {
     'github-issues': {
-        'need_type': 'spec',
+        'url': 'https://api.github.com/',
         'max_amount': 2,
         'max_content_lines': 20,
-        'id_prefix': 'GH_ISSUE_'
+        'id_prefix': 'GH_ISSUE_',
     }
 }
 

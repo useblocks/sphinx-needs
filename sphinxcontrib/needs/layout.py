@@ -4,12 +4,16 @@ Cares about the correct creation and handling of need layout.
 Based on https://github.com/useblocks/sphinxcontrib-needs/issues/102
 """
 import re
+import os
 import requests
+
 from docutils import nodes
 from docutils.frontend import OptionParser
 from docutils.parsers.rst import languages, Parser
 from docutils.parsers.rst.states import Inliner, Struct
 from docutils.utils import new_document
+
+from urllib.parse import urlparse
 
 from sphinxcontrib.needs.utils import INTERNALS
 
@@ -690,7 +694,6 @@ class LayoutHandler:
             label_node += prefix_node
             data_container.append(label_node)
 
-
         # from sphinx.addnodes import
         options = {}
         if height is not None:
@@ -711,14 +714,11 @@ class LayoutHandler:
                 builder_extension = 'svg'
 
             # url = '_static/sphinx-needs/images/{}.{}'.format(url.split(':')[1], builder_extension)
-            import os
             needs_location = os.path.dirname(__file__)
             url = os.path.join(needs_location,
                                'images',
                                'feather_{}'.format(builder_extension),
                                '{}.{}'.format(url.split(':')[1], builder_extension))
-
-            # url = '../sphinxcontrib/needs/images/feather_{}/{}.{}'.format(builder_extension, url.split(':')[1], builder_extension)
 
             # if any(x in self.app.builder.name.upper() for x in ['PDF', 'LATEX']) is False:
             #     # This is not needed for Latex. as latex puts the complete content in a single text file on root level
@@ -739,17 +739,14 @@ class LayoutHandler:
 
             url = value
 
-            if not is_external:
+            if not is_external and not os.path.isabs(url):
                 subfolder_amount = self.need['docname'].count('/')
                 url = '../' * subfolder_amount + url
 
         if is_external:
-            import os
-            from urllib.parse import urlparse
-
             url_parsed = urlparse(url)
             filename = os.path.basename(url_parsed.path) + '.png'
-            path = os.path.join(self.app.srcdir, "github_images")
+            path = os.path.join(self.app.srcdir, "images")
             file_path = os.path.join(path, filename)
 
             # Download only, if file not downloaded yet
@@ -816,7 +813,6 @@ class LayoutHandler:
             label_node = nodes.inline(classes=['needs_label'])
             label_node += prefix_node
             data_container.append(label_node)
-
 
         if text is None:  # May be needed if only image shall be shown
             text = ''

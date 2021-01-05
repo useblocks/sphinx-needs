@@ -97,8 +97,18 @@ which can be easily extended by different extensions to fulfill nearly any requi
       make html   # HTML output
       make needs  # needs.json containing all data
 
-.. feature:: Automated data handling
+.. feature:: Connect to external services
    :id: FEATURE_3
+   :tags: introduction
+   :links: SPEC_1
+
+   ``Sphinx-Needs`` can request issues and other data from external services like :ref:`GitHub <github_service>`.
+
+   Embed tickets, requirements and other external information from specific services
+   into your documentation by using :ref:`services`.
+
+.. feature:: Automated data handling
+   :id: FEATURE_4
    :tags: introduction
    :links: SPEC_1
 
@@ -106,7 +116,7 @@ which can be easily extended by different extensions to fulfill nearly any requi
    changeable data automatically during documentation generation phase.
 
 .. feature:: Customizing everything
-   :id: FEATURE_4
+   :id: FEATURE_5
    :tags: introduction
    :links: SPEC_1
    :layout: complete
@@ -118,7 +128,7 @@ which can be easily extended by different extensions to fulfill nearly any requi
    own processes and workflows.
 
 .. feature:: API for other extensions
-   :id: FEATURE_5
+   :id: FEATURE_6
    :tags: introduction
    :links: SPEC_1
 
@@ -128,7 +138,7 @@ which can be easily extended by different extensions to fulfill nearly any requi
    test results and makes them searchable and linkable to other need-types.
 
 .. feature:: Developed for safe process executions
-   :id: FEATURE_6
+   :id: FEATURE_7
    :tags: introduction
    :links: SPEC_1
 
@@ -290,7 +300,7 @@ Content
    builders
    filter
    dynamic_functions
-   services
+   services/index
    layout_styles
    examples/index
    api

@@ -5,17 +5,13 @@ import re
 from docutils import nodes
 from docutils.parsers.rst import directives
 from docutils.parsers.rst import Directive
-from sphinx.errors import SphinxError
 from sphinx.addnodes import desc_signature, desc_name
 
 from pkg_resources import parse_version
 import sphinx
-from sphinx.util.nodes import make_refnode
 
 from sphinxcontrib.needs.api import add_need
 
-from sphinxcontrib.needs.roles.need_incoming import Need_incoming
-from sphinxcontrib.needs.roles.need_outgoing import Need_outgoing
 from sphinxcontrib.needs.functions import resolve_dynamic_values, find_and_replace_node_content
 from sphinxcontrib.needs.api.exceptions import NeedsInvalidException
 from sphinxcontrib.needs.functions.functions import check_and_get_content
@@ -165,8 +161,8 @@ class NeedDirective(Directive):
 
     @property
     def title_from_content(self):
-        return ('title_from_content' in self.options or
-                self.env.config.needs_title_from_content)
+        return ('title_from_content' in self.options
+                or self.env.config.needs_title_from_content)
 
     @property
     def docname(self):

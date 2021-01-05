@@ -1,3 +1,4 @@
+# flake8: noqa
 
 DEFAULT_DIAGRAM_TEMPLATE = \
     """
@@ -169,7 +170,7 @@ NEEDFLOW_CONFIG_DEFAULTS = {
     !define Aqua         #66cccc
     !define Blue         #6699cc
     !define Purple       #cc99cc
-    
+
     skinparam Shadowing false
     skinparam backgroundColor #2d2d2d
     skinparam Arrow {
@@ -202,12 +203,12 @@ NEEDFLOW_CONFIG_DEFAULTS = {
       BorderColor Selection
       FontColor Orange
     }
-    
+
     skinparam cloud {
       BackgroundColor CurrentLine
       BorderColor Selection
     }
-    
+
     skinparam interface {
       BackgroundColor CurrentLine
       BorderColor Selection
@@ -225,7 +226,7 @@ NEEDFLOW_CONFIG_DEFAULTS = {
     !define BLUE    #1E98F2
     !define CYAN    #25AFCA
     !define WHITE   #FEF2DC
-    
+
     ' Base Setting
     skinparam Shadowing false
     skinparam BackgroundColor transparent
@@ -236,7 +237,7 @@ NEEDFLOW_CONFIG_DEFAULTS = {
       FontSize  10
       FontStyle plain
     }
-    
+
     skinparam Sequence {
       ArrowThickness 1
       ArrowColor RED
@@ -249,7 +250,7 @@ NEEDFLOW_CONFIG_DEFAULTS = {
       BorderColor BLACK
       FontColor #FFFFFF
     }
-    
+
     skinparam Actor {
       BackgroundColor BLACK
       BorderColor BLACK

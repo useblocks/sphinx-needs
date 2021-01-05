@@ -6,20 +6,15 @@ import urllib
 
 from docutils import nodes
 from docutils.parsers.rst import directives
-from jinja2 import Template
 from pkg_resources import parse_version
 
-from sphinxcontrib.needs.diagrams_common import DiagramBase, make_entity_name, no_plantuml, \
+from sphinxcontrib.needs.diagrams_common import DiagramBase, no_plantuml, \
     add_config, get_filter_para, get_debug_containter
 
 from sphinxcontrib.plantuml import generate_name  # Need for plantuml filename calculation
 
-try:
-    from sphinx.errors import NoUri  # Sphinx 3.0
-except ImportError:
-    from sphinx.environment import NoUri  # Sphinx < 3.0
+from sphinxcontrib.needs.filter_common import FilterBase
 
-from sphinxcontrib.needs.filter_common import FilterBase, procces_filters, filter_single_need
 
 sphinx_version = sphinx.__version__
 if parse_version(sphinx_version) >= parse_version("1.6"):
@@ -38,7 +33,7 @@ class Needsequence(nodes.General, nodes.Element):
     pass
 
 
-class NeedsequenceDirective(FilterBase, DiagramBase):
+class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
     """
     Directive to get sequence diagrams.
     """
@@ -86,7 +81,7 @@ def process_needsequence(app, doctree, fromdocname):
     env = app.builder.env
 
     link_types = env.config.needs_extra_links
-    allowed_link_types_options = [link.upper() for link in env.config.needs_flow_link_types]
+    # allowed_link_types_options = [link.upper() for link in env.config.needs_flow_link_types]
 
     # NEEDSEQUENCE
     for node in doctree.traverse(Needsequence):
@@ -133,14 +128,14 @@ def process_needsequence(app, doctree, fromdocname):
         config = current_needsequence['config']
         puml_node["uml"] += add_config(config)
 
-        all_needs = list(all_needs_dict.values())
+        # all_needs = list(all_needs_dict.values())
 
         start_needs_id = [x.strip() for x in re.split(";|,", current_needsequence['start'])]
         if len(start_needs_id) == 0:
             raise NeedsequenceDirective('No start-id set for needsequence'
-                                        ' File '
+                                        ' File {}'
                                         ':{}'.format({current_needsequence["docname"]},
-                                                      current_needsequence["lineno"]))
+                                                     current_needsequence["lineno"]))
 
         puml_node["uml"] += '\n\' Nodes definition \n\n'
 

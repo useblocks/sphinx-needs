@@ -1,5 +1,4 @@
 from docutils import nodes
-import re
 try:
     from sphinx.errors import NoUri  # Sphinx 3.0
 except ImportError:
@@ -15,7 +14,6 @@ else:
     import logging
 log = logging.getLogger(__name__)
 
-from sphinxcontrib.needs.api.exceptions import NeedsInvalidException
 
 class Need_ref(nodes.Inline, nodes.Element):
     pass
@@ -46,7 +44,7 @@ def process_need_ref(app, doctree, fromdocname):
             ref_name = None
 
         if '.' in ref_id_complete:
-            ref_id, part_id =ref_id_complete.split('.')
+            ref_id, part_id = ref_id_complete.split('.')
         else:
             ref_id = ref_id_complete
             part_id = None
@@ -64,7 +62,7 @@ def process_need_ref(app, doctree, fromdocname):
                 # Shorten title, if necessary
                 max_length = app.config.needs_role_need_max_title_length
                 if max_length > 3:
-                    title = title if len(title) < max_length else u'{}...'.format(title[:max_length-3])
+                    title = title if len(title) < max_length else u'{}...'.format(title[:max_length - 3])
 
                 link_text = app.config.needs_role_need_template.format(title=title,
                                                                        id=ref_id_complete,

@@ -1,5 +1,4 @@
 import os
-import re
 import sphinx
 import sys
 import urllib
@@ -16,11 +15,6 @@ if not os.environ.get('DISPLAY'):
 import matplotlib.pyplot
 import hashlib
 from docutils.parsers.rst import directives
-
-try:
-    from sphinx.errors import NoUri  # Sphinx 3.0
-except ImportError:
-    from sphinx.environment import NoUri  # Sphinx < 3.0
 
 
 sphinx_version = sphinx.__version__
@@ -134,7 +128,6 @@ def process_needpie(app, doctree, fromdocname):
             node.replace_self([])
             continue
 
-
         id = node.attributes["ids"][0]
         current_needpie = env.need_all_needpie[id]
 
@@ -218,7 +211,10 @@ def process_needpie(app, doctree, fromdocname):
 
         image_node = nodes.image()
         image_node['uri'] = rel_file_path
-        image_node['candidates'] = {'*': rel_file_path}  # look at uri value for source path, relative to the srcdir folder
+
+        # look at uri value for source path, relative to the srcdir folder
+        image_node['candidates'] = {'*': rel_file_path}
+
         node.replace_self(image_node)
 
 

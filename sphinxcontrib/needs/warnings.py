@@ -64,6 +64,3 @@ def process_warnings(app, exception):
 
         if warning_raised:
             logger.warning('Sphinx-Needs warnings were raised. See console / log output for details.')
-
-
-
