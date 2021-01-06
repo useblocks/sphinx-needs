@@ -149,7 +149,7 @@ class GithubService(BaseService):
                 elif self.gh_type == 'pr':
                     single_type = 'pulls'
                 else:
-                    single_type = 'commits:'
+                    single_type = 'commits'
                 url = self.url + 'repos/{owner}/{repo}/{single_type}/{number}'.format(
                     owner=owner, repo=repo, single_type=single_type, number=number)
             except IndexError:
@@ -215,11 +215,11 @@ class GithubService(BaseService):
             content = '.. code-block:: text\n\n   ' + content
 
             prefix = options.get('id_prefix', self.id_prefix)
-            need_id = prefix + item["number"]
+            need_id = prefix + str(item["number"])
             given_tags = options.get('tags', False)
             github_tags = ",".join([x['name'] for x in item["labels"]])
             if given_tags:
-                tags = given_tags + ', ' + github_tags
+                tags = str(given_tags) + ', ' + str(github_tags)
             else:
                 tags = github_tags
 
