@@ -5,28 +5,21 @@ python:
 - '3.5'
 - '3.7'
 - '3.8'
-
-# Travis python3.7 workaround
-# See https://github.com/travis-ci/travis-ci/issues/9815
-#matrix:
-#  include:
-#    - python: 3.7
-#      dist: xenial
-#      sudo: true
-
 before_install:
 - sudo apt-get update
-- sudo apt-get install -y texlive-latex-recommended texlive-fonts-recommended texlive-latex-extra latexmk texlive-luatex texlive-xetex
-
+- sudo apt-get install -y texlive-latex-recommended texlive-fonts-recommended texlive-latex-extra
+  latexmk texlive-luatex texlive-xetex
 install:
 - pip install tox-travis
 - python setup.py install
 script:
 - tox
-
 after_success:
 - which python
 - pip install sphinxcontrib-plantuml
 - cd docs
 - make latexpdf
-
+env:
+  global:
+  - secure: M7mBLHk9cx+0cx7Wlo+TU+GrWdLeI1XBNSe/9oRg8FUuN6sSzkjq/0TcYYGTzcMlhUaxzKObTtE2ye2iHsPUBkjIcGdUXA5uU+EGCryz/ckdI3rPx+e2/32riJmTLgQOPpQAoVG+SDoL/28jSVetwv3SpOKue+XOI3QfZOfunZDWJOpRtFyCcm+nZ8HlxQ+glnlvZkACrNWFq/Q2WJlSSHP2/CG62jc6/j+tXXu9n5DlGbZd7QyaZHmj9xa5OFgqsk5XfilDfc/XSrw3cNDIlCTYkUwRebneblZPLEQ/qVp7bfW+lFQ9z2wHpu8ZG8HV6TDnByQ1YC/tscxkJBrFbqKC0cXouPPq+LamZOauiJOqasMKCRdmoRDKMvt7jowXXoeHvgzBr7Uo7xzE0Kx1CvsAYMG2LpX5ds9vXv6PkSZ7gw6B9krBnMEkrhwQO8M+1NtAjPVsZyNLl8jxcyL+8o41isDwqzoHo5G2/uRiMqxLsTaDylSrCg5EftbS8aDVxEkChRTP2bdJqZ5P2ji2klRfQkpNEnPxuJVx8BdgIsmhup0AA5zMcMNAsyjf0gDzkBnbesEx06VDznN5aeW0Gvf4jfp83Ee2D8aV2B7SB3nBoA1MHOkSN+WLLIGY87ZrKEBOUu2tdbbpJ1wuFZgwSepsO8DOd4sSpl0BGQpq+XY=
+  - secure: X2JTnSnEl3JknGl/0WJEh2183g+Ejsn43QMJ45sueZHbJcQxa4PgYZm0ad4MeJ1QoLjnnSPrU3JX2qWXskbr6bLlIEgoC3VPLZezvBb1lF/b4/EzLUdxcNbBK7QJUlTGHrZQh/V8RrTEcn1/HVtb+Fq766+GliKdEVaRaE6zbKq2g833lrj1zwAAGhyLnzsYnUJKtiUx6+tUg6fnmW27KpCEE+kRc5pTacpj2aFdDaFSqwrSaOrxYIdvJcF7KGvkMpidNkXe+9n5s3fa57yNhhTn79PfL3NpqANulrkD4l1iLLLzmNu/SJANhpKO2qgU7v0EpMpzgrAkXjkhwgZdzEKHhOlMR8Zz5mxEn1AauiJYoEZbseUcHqF0GxTUIX6r9A5beD1sYE92WGDQlW40MdvBLqZ18CW6pFogBA/Rd6/bKcHzMtXUs36y1Tti20hX05ZTcSYAX0PjdtTQ6Dw26zkWE1LKuUdD3JzNCxAtm7MBAsZ4k+ZJ1ugCvt9dzwUQxD0W51ltKzTlSUOSODmVRsHur/xJZFp5/Z92syc6aVGZKQBU4+r4YRVVs3iAT5msPmQu7gx1qGQAiZupyRkhlXnOxwpi5mGd1+hyDzY9kG1nYBLl4QX5au3MjOgh+cc9NTS1o9OcKekEH9PfKbjoqbyqjcVUUX00HViTlY/U6Po=
