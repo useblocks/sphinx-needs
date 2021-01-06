@@ -1,6 +1,7 @@
 import os
 import requests
 import textwrap
+import time
 
 from urllib.parse import urlparse
 
@@ -172,17 +173,26 @@ class GithubService(BaseService):
         if resp.status_code > 299:
             extra_info = ""
             # Lets try to get information about the rate limit, as this is mostly the main problem.
-            try:
-                if 'rate limit' in resp.json()['message']:
-                    resp_limit = requests.get(self.url + 'rate_limit', auth=auth)
-                    extra_info = resp_limit.json()
-            except Exception:
-                pass
-
-            raise NeedGithubServiceException('Github service error during request.\n'
-                                             'Status code: {}\n'
-                                             'Error: {}\n'
-                                             '{}'.format(resp.status_code, resp.text, extra_info))
+            if 'rate limit' in resp.json()['message']:
+                resp_limit = requests.get(self.url + 'rate_limit', auth=auth)
+                extra_info = resp_limit.json()
+                self.log.info('GitHub: API rate limit exceeded. We need to wait 60 secs...')
+                self.log.info(extra_info)
+                time.sleep(61)
+                resp = requests.get(url, params=params, auth=auth, headers=headers)
+                if resp.status_code > 299:
+                    if 'rate limit' in resp.json()['message']:
+                        raise NeedGithubServiceException("GitHub: API rate limit exceeded (twice). Stop here.")
+                    else:
+                        raise NeedGithubServiceException('Github service error during request.\n'
+                                                         'Status code: {}\n'
+                                                         'Error: {}\n'
+                                                         '{}'.format(resp.status_code, resp.text, extra_info))
+            else:
+                raise NeedGithubServiceException('Github service error during request.\n'
+                                                 'Status code: {}\n'
+                                                 'Error: {}\n'
+                                                 '{}'.format(resp.status_code, resp.text, extra_info))
 
         if specific:
             return {'items': [resp.json()]}

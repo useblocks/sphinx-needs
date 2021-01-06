@@ -24,7 +24,6 @@ import datetime
 
 from docutils.parsers.rst import directives
 
-
 sys.path.insert(0, os.path.abspath('../sphinxcontrib'))
 
 # -- General configuration ------------------------------------------------
@@ -53,7 +52,6 @@ extensions = ['sphinxcontrib.plantuml',
               'sphinx.ext.autodoc',
               'matplotlib.sphinxext.plot_directive',
               'sphinx_copybutton']
-
 
 add_module_names = False  # Used to shorten function name output
 autodoc_docstring_signature = True  # Used to read spec. func-defs from docstring (e.g. get rid of self)
@@ -212,11 +210,11 @@ needs_extra_links = [
 ]
 
 needs_flow_configs = {
-   'my_config': """
+    'my_config': """
        skinparam monochrome true
        skinparam componentStyle uml2
    """,
-   'another_config': """
+    'another_config': """
        skinparam class {
            BackgroundColor PaleGreen
            ArrowColor SeaGreen
@@ -259,18 +257,16 @@ plantuml_output_format = 'svg_img'
 needs_table_style = "datatables"
 needs_table_columns = "ID;TITLE;STATUS;OUTGOING"
 
-
 needs_template_collapse = EXTRA_CONTENT_TEMPLATE_COLLAPSE
 needs_extra_options = {
-         "my_extra_option": directives.unchanged,
-         "another_option": directives.unchanged,
-         "author": directives.unchanged,
-         "comment": directives.unchanged,
-         "amount": directives.unchanged,
-         "hours": directives.unchanged,
-         "image": directives.unchanged,
-         }
-
+    "my_extra_option": directives.unchanged,
+    "another_option": directives.unchanged,
+    "author": directives.unchanged,
+    "comment": directives.unchanged,
+    "amount": directives.unchanged,
+    "hours": directives.unchanged,
+    "image": directives.unchanged,
+}
 
 needs_warnings = {
     'type_check': 'type not in ["req", "spec", "impl", "test", "feature", "action", "user", "milestone", '
@@ -321,9 +317,12 @@ github_username = os.environ.get('GITHUB_USERNAME', '')
 github_token = os.environ.get('GITHUB_TOKEN', '')
 
 if github_username != '' and github_token != '':
+    print('GITHUB: Using as username: {}. lenth token: {}'.format(github_username, len(github_token)))
     for service in ['github-issues', 'github-prs', 'github-commits']:
         needs_services[service]['username'] = github_username
         needs_services[service]['token'] = github_token
+else:
+    print('GITHUB: No auth provided')
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
