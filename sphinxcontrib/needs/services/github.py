@@ -131,6 +131,10 @@ class GithubService(BaseService):
         super(GithubService, self).__init__()
 
     def _send(self, query, options, specific=False):
+        headers = {}
+        if self.gh_type == 'commit':
+            headers['Accept'] = "application/vnd.github.cloak-preview+json"
+
         if not specific:
             url = self.url + self.gh_type_config[self.gh_type]['url']
             query = '{} {}'.format(query, self.gh_type_config[self.gh_type]["query"])
@@ -163,7 +167,22 @@ class GithubService(BaseService):
             auth = (self.username, self.token)
         else:
             auth = None
-        resp = requests.get(url, params=params, auth=auth)
+        resp = requests.get(url, params=params, auth=auth, headers=headers)
+
+        if resp.status_code > 299:
+            extra_info = ""
+            # Lets try to get information about the rate limit, as this is mostly the main problem.
+            try:
+                if 'rate limit' in resp.json()['message']:
+                    resp_limit = requests.get(self.url + 'rate_limit', auth=auth)
+                    extra_info = resp_limit.json()
+            except Exception:
+                pass
+
+            raise NeedGithubServiceException('Github service error during request.\n'
+                                             'Status code: {}\n'
+                                             'Error: {}\n'
+                                             '{}'.format(resp.status_code, resp.text, extra_info))
 
         if specific:
             return {'items': [resp.json()]}
@@ -186,16 +205,25 @@ class GithubService(BaseService):
             specific = True
 
         response = self._send(query, options, specific=specific)
-        data = []
-
         if 'items' not in response.keys():
             if 'errors' in response.keys():
                 raise NeedGithubServiceException('GitHub service query error: {}\n'
                                                  'Used query: {}'.format(response["errors"][0]["message"], query))
             else:
-                raise NeedGithubServiceException('Github service: Unknown error. Status code: {}. '
-                                                 'Content: {}'.format(response.status_code, response.text))
-        for item in response['items']:
+                raise NeedGithubServiceException('Github service: Unknown error.')
+
+        if self.gh_type == 'issue' or self.gh_type == 'pr':
+            data = self.prepare_issue_data(response['items'], options)
+        elif self.gh_type == 'commit':
+            data = self.prepare_commit_data(response['items'], options)
+        else:
+            raise NeedGithubServiceException('Github service failed. Wrong gh_type...')
+
+        return data
+
+    def prepare_issue_data(self, items, options):
+        data = []
+        for item in items:
             # wraps content lines, if they are too long. Respects already existing newlines.
             content_lines = ['\n   '.join(textwrap.wrap(line, 60, break_long_words=True, replace_whitespace=False))
                              for line in item["body"].splitlines() if line.strip() != '']
@@ -223,48 +251,7 @@ class GithubService(BaseService):
             else:
                 tags = github_tags
 
-            # Download and store avatar image
-            avatar_url = item['user']['avatar_url']
-            url_parsed = urlparse(avatar_url)
-            filename = os.path.basename(url_parsed.path) + '.png'
-            path = os.path.join(self.app.srcdir, self.download_folder)
-            avatar_file_path = os.path.join(path, filename)
-
-            # Placeholder avatar, if things go wrong or avatar download is deactivated
-            default_avatar_file_path = os.path.join(os.path.dirname(__file__), '../images/avatar.png')
-            if self.download_avatars:
-                # Download only, if file not downloaded yet
-                if not os.path.exists(avatar_file_path):
-                    try:
-                        os.mkdir(path)
-                    except FileExistsError:
-                        pass
-                    if self.username and self.token:
-                        auth = (self.username, self.token)
-                    else:
-                        auth = ()
-                    response = requests.get(avatar_url, auth=auth, allow_redirects=False)
-                    if response.status_code == 200:
-                        with open(avatar_file_path, 'wb') as f:
-                            f.write(response.content)
-                    elif response.status_code == 302:
-                        self.log.warning('GitHub service {} could not download avatar image '
-                                         'from {}.\n'
-                                         '    Status code: {}\n'
-                                         '    Reason: Looks like the authentication provider tries to redirect you.'
-                                         ' This is not supported and is a common problem, '
-                                         'if you use GitHub Enterprise.'.format(self.name, avatar_url,
-                                                                                response.status_code))
-                        avatar_file_path = default_avatar_file_path
-                    else:
-                        self.log.warning('GitHub service {} could not download avatar image '
-                                         'from {}.\n'
-                                         '    Status code: {}'.format(self.name, avatar_url,
-                                                                      response.status_code
-                                                                      ))
-                        avatar_file_path = default_avatar_file_path
-            else:
-                avatar_file_path = default_avatar_file_path
+            avatar_file_path = self._get_avatar(item["user"]['avatar_url'])
 
             element_data = {
                 'service': self.name,
@@ -277,22 +264,101 @@ class GithubService(BaseService):
                 'tags': tags,
                 'user': item["user"]['login'],
                 'url': item['html_url'],
-                # 'avatar': item['user']['avatar_url'],
                 'avatar': avatar_file_path,
                 'created_at': item['created_at'],
                 'updated_at': item['updated_at'],
                 'closed_at': item['closed_at']
             }
-
-            # Add data from options, which was defined by user but is not set by this service
-            for key, value in options.items():
-                # Check if given option is not already handled and is not part of the service internal options
-                if key not in element_data.keys() and key not in GITHUB_DATA:
-                    element_data[key] = value
-
+            self._add_given_options(options, element_data)
             data.append(element_data)
 
         return data
+
+    def prepare_commit_data(self, items, options):
+        data = []
+
+        for item in items:
+            avatar_file_path = self._get_avatar(item["author"]['avatar_url'])
+
+            element_data = {
+                'service': self.name,
+                'type': options.get('type', self.need_type),
+                'layout': options.get('layout', self.layout),
+                'id': self.id_prefix + item['sha'][:6],
+                'title': item['commit']['message'].split('\n')[0][:60],  # 1. line, max length 60 chars
+                'content': item['commit']['message'],
+                'user': item['author']['login'],
+                'url': item['html_url'],
+                'avatar': avatar_file_path,
+                'created_at': item['commit']['author']['date']
+            }
+            self._add_given_options(options, element_data)
+            data.append(element_data)
+
+        return data
+
+    def _get_avatar(self, avatar_url):
+        """
+        Download and store avatar image
+
+        :param avatar_url:
+        :return:
+        """
+        url_parsed = urlparse(avatar_url)
+        filename = os.path.basename(url_parsed.path) + '.png'
+        path = os.path.join(self.app.srcdir, self.download_folder)
+        avatar_file_path = os.path.join(path, filename)
+
+        # Placeholder avatar, if things go wrong or avatar download is deactivated
+        default_avatar_file_path = os.path.join(os.path.dirname(__file__), '../images/avatar.png')
+        if self.download_avatars:
+            # Download only, if file not downloaded yet
+            if not os.path.exists(avatar_file_path):
+                try:
+                    os.mkdir(path)
+                except FileExistsError:
+                    pass
+                if self.username and self.token:
+                    auth = (self.username, self.token)
+                else:
+                    auth = ()
+                response = requests.get(avatar_url, auth=auth, allow_redirects=False)
+                if response.status_code == 200:
+                    with open(avatar_file_path, 'wb') as f:
+                        f.write(response.content)
+                elif response.status_code == 302:
+                    self.log.warning('GitHub service {} could not download avatar image '
+                                     'from {}.\n'
+                                     '    Status code: {}\n'
+                                     '    Reason: Looks like the authentication provider tries to redirect you.'
+                                     ' This is not supported and is a common problem, '
+                                     'if you use GitHub Enterprise.'.format(self.name, avatar_url,
+                                                                            response.status_code))
+                    avatar_file_path = default_avatar_file_path
+                else:
+                    self.log.warning('GitHub service {} could not download avatar image '
+                                     'from {}.\n'
+                                     '    Status code: {}'.format(self.name, avatar_url,
+                                                                  response.status_code
+                                                                  ))
+                    avatar_file_path = default_avatar_file_path
+        else:
+            avatar_file_path = default_avatar_file_path
+
+        return avatar_file_path
+
+    def _add_given_options(self, options, element_data):
+        """
+        Add data from options, which was defined by user but is not set by this service
+
+        :param options:
+        :param element_data:
+        :return:
+        """
+        for key, value in options.items():
+            # Check if given option is not already handled and is not part of the service internal options
+            if key not in element_data.keys() and key not in GITHUB_DATA:
+                element_data[key] = value
 
 
 class NeedGithubServiceException(BaseException):

@@ -7,7 +7,7 @@ Changelog
 * Improvement: Directive :ref:`needservice` added, which allow to include data from external services like Jira or github.
   See also :ref:`services`
   (`#163 <https://github.com/useblocks/sphinxcontrib-needs/issues/163>`_)
-* Improvement: :ref:`github_services` added to fetch issues, pr or commits from GitHub or GitHub Enterprise.
+* Improvement: :ref:`github_service` added to fetch issues, pr or commits from GitHub or GitHub Enterprise.
 * Bugfix: Role :ref:`role_need_outgoing` shows correct link instead of *None*
   (`#160 <https://github.com/useblocks/sphinxcontrib-needs/issues/160>`_)
 

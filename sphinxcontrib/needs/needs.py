@@ -321,6 +321,7 @@ def prepare_env(app, env, docname):
     # env.needs_services.register('jira', JiraService)
     app.needs_services.register('github-issues', GithubService, gh_type='issue')
     app.needs_services.register('github-prs', GithubService, gh_type='pr')
+    app.needs_services.register('github-commits', GithubService, gh_type='commit')
 
     # Register user defined services
     for name, service in app.config.needs_services.items():

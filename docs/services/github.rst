@@ -15,6 +15,9 @@ Therefore the below configuration is valid for all three services.
 
 Each services creates normally multiple need objects for each element found by querying the GitHub API.
 
+.. contents::
+   :local:
+
 **Example of an imported github issue**:
 
 .. code-block:: rst
@@ -62,12 +65,6 @@ Also the content part of ``needservice`` is added as extra data to the end of th
 
    Extra content for each new need
 
-.. contents::
-   :local:
-
-
-
-
 Querying objects
 ----------------
 There are two options for querying objects for GitHub:
@@ -76,6 +73,15 @@ There are two options for querying objects for GitHub:
 :``specific``: Gets a single, specific element from GitHub
 
 Setting ``query`` or ``specific`` option is mandatory for services ``github-issues`` and ``github-prs``!
+
+.. warning::
+
+   GitHub counts the performed API requests and may reject new requests, if the rate limit is exceeded.
+   This seems to be **10 requests per minute for search-API** for unauthenticated users.
+
+   You can higher this limit to **30 requests**, if you provide a username and token in the service config.
+
+   ``Sphinx-Needs`` will support you with the current rate limit status, if a request got rejected.
 
 query
 +++++
@@ -224,7 +230,7 @@ Please see the this example for a ``Github Enterprise`` configuration in your ``
             'id_prefix': 'GH_ISSUE_',
         },
         # GitHub Enterprise configuration
-        'my-company-prs': {
+        'my-company-issues': {
             'class': GithubService,
             'class_init': {
                 'gh_type': 'issue'
@@ -245,3 +251,49 @@ it shall deal with. Allowed are ``issue``, ``pr`` and ``commit``.
 
 All other options are normal configuration options for the service, which are also available for the GitHub cloud
 instance.
+
+
+Examples
+--------
+
+Commits
++++++++
+
+**Search**
+Search for all commits of Sphinx-Needs, which have ``Python`` in their message.
+
+.. code-block:: rst
+
+    .. needservice:: github-commits
+       :query: repo:useblocks/sphinxcontrib-needs python
+       :max_amount: 2
+
+.. needservice:: github-commits
+   :query: repo:useblocks/sphinxcontrib-needs python
+   :max_amount: 2
+
+**Specific commit**
+
+Document commit ``a4a596`` of ``Sphinx-Needs``.
+
+.. code-block:: rst
+
+    .. needservice:: github-commits
+       :specific: useblocks/sphinxcontrib-needs/a4a596
+
+.. needservice:: github-commits
+   :specific: useblocks/sphinxcontrib-needs/a4a596113
+
+Filtering
++++++++++
+Show all needs, which have ``github`` as part of their ``service`` value.
+
+.. code-block:: rst
+
+    .. needtable::
+       :filter: 'github' in service
+       :columns: id, title, type, service, user
+
+.. needtable::
+   :filter: 'github' in service
+   :columns: id, title, type, service, user

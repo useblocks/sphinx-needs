@@ -5,3 +5,11 @@ h1.logo-name {
 .underline {
   text-decoration: underline;
 }
+
+div.document {
+    width: 1100px;
+}
+
+div.body {
+    max-width: 880px
+}

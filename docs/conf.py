@@ -295,14 +295,35 @@ needs_layouts = {
 }
 
 needs_service_all_data = True
+
 needs_services = {
     'github-issues': {
         'url': 'https://api.github.com/',
-        'max_amount': 2,
         'max_content_lines': 20,
         'id_prefix': 'GH_ISSUE_',
+    },
+    'github-prs': {
+        'url': 'https://api.github.com/',
+        'max_content_lines': 20,
+        'id_prefix': 'GH_PR_',
+    },
+    'github-commits': {
+        'url': 'https://api.github.com/',
+        'max_content_lines': 20,
+        'id_prefix': 'GH_COM_',
     }
 }
+
+# Get and maybe set Github credentials for services.
+# This is needed as the rate limit for not authenticated users is too low for the amount of requests we
+# need to perform for this documentation
+github_username = os.environ.get('GITHUB_USERNAME', '')
+github_token = os.environ.get('GITHUB_TOKEN', '')
+
+if github_username != '' and github_token != '':
+    for service in ['github-issues', 'github-prs', 'github-commits']:
+        needs_services[service]['username'] = github_username
+        needs_services[service]['token'] = github_token
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -367,7 +388,7 @@ html_theme_options = {
     'github_banner': True,
     'github_button': True,
     'github_type': 'star',
-    'fixed_sidebar': True,
+    'fixed_sidebar': False,
     'extra_nav_links': {'needs@PyPi': "https://pypi.python.org/pypi/sphinxcontrib-needs/",
                         'needs@github': "https://github.com/useblocks/sphinxcontrib-needs",
                         'needs@travis': "https://travis-ci.org/useblocks/sphinxcontrib-needs"}

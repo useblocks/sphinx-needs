@@ -30,7 +30,7 @@ You can always set all options, which are also available for all need objects.
 So the ones defined by :ref:`needs_extra_options` and :ref:`needs_extra_links`.
 These options will then be set for all needs created by the requested service.
 
-Most services also support to add additional content to the created needs.
+Most services also support adding additional content to the created needs.
 Simply use the content part of ``.. needservice::`` and the content gets added and rendered for all
 needs created by the service.
 
