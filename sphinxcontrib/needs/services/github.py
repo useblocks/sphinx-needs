@@ -33,16 +33,21 @@ GITHUB_LAYOUT = {
             'visible="icon:arrow-right-circle", initial=True)>>'
         ],
         'head': ['**<<meta("title")>>** ('
-                 + ", ".join([f'<<link("{x}", text="{x}", is_dynamic=True)>>' for x in EXTRA_LINK_OPTIONS]) + ')'],
+                 + ", ".join(['<<link("{value}", text="{value}", is_dynamic=True)>>'.format(value=x)
+                              for x in EXTRA_LINK_OPTIONS]) + ')'],
         'head_right': [
             '<<image("field:avatar", width="40px", align="middle")>>',
             '<<meta("user")>>'
         ],
-        'meta_left': [f'<<meta("{x}", prefix="{x}: ")>>' for x in EXTRA_DATA_OPTIONS] +
-                     [f'<<link("{x}", text="Link", prefix="{x}: ", is_dynamic=True)>>' for x in EXTRA_LINK_OPTIONS],
+        'meta_left': ['<<meta("{value}", prefix="{value}: ")>>'.format(value=x) for x in EXTRA_DATA_OPTIONS] +
+                     [
+
+
+                         '<<link("{value}", text="Link", prefix="{value}: ", is_dynamic=True)>>'.format(value=x)
+                         for x in EXTRA_LINK_OPTIONS],
         'meta_right': [
             '<<meta("type_name", prefix="type: ")>>',
-            f'<<meta_all(no_links=True, exclude=["layout","style",{GITHUB_DATA_STR}, {CONFIG_DATA_STR}])>>',
+            '<<meta_all(no_links=True, exclude=["layout","style",{}, {}])>>'.format(GITHUB_DATA_STR, CONFIG_DATA_STR),
             '<<meta_links_all()>>'
         ],
         'footer_left': [
@@ -117,7 +122,8 @@ class GithubService(BaseService):
             self.gh_type = kwargs['gh_type']
 
         if self.gh_type not in self.gh_type_config.keys():
-            raise KeyError(f'github type "{self.gh_type}" not supported. Use: {", ".join(self.gh_type_config.keys())}')
+            raise KeyError('github type "{}" not supported. Use: {}'.format(
+                self.gh_type, ", ".join(self.gh_type_config.keys())))
 
         # Set need_type to use by default
         self.need_type = self.config.get('need_type', self.gh_type_config[self.gh_type]['need_type'])
@@ -127,7 +133,7 @@ class GithubService(BaseService):
     def _send(self, query, options, specific=False):
         if not specific:
             url = self.url + self.gh_type_config[self.gh_type]['url']
-            query = f'{query} {self.gh_type_config[self.gh_type]["query"]}'
+            query = '{} {}'.format(query, self.gh_type_config[self.gh_type]["query"])
             params = {
                 'q': query,
                 'per_page': options.get('max_amount', self.max_amount)
@@ -144,14 +150,14 @@ class GithubService(BaseService):
                     single_type = 'pulls'
                 else:
                     single_type = 'commits:'
-                url = self.url + f'repos/{owner}/{repo}/{single_type}/{number}'.format(
+                url = self.url + 'repos/{owner}/{repo}/{single_type}/{number}'.format(
                     owner=owner, repo=repo, single_type=single_type, number=number)
             except IndexError:
                 raise NeedGithubServiceException('Single option ot valid, must follow "owner/repo/number"')
 
             params = {}
 
-        self.log.info(f'Service {self.name} requesting data for query: {query}')
+        self.log.info('Service {} requesting data for query: {}'.format(self.name, query))
 
         if self.username:
             auth = (self.username, self.token)
@@ -166,7 +172,7 @@ class GithubService(BaseService):
     def request(self, options=None):
         if options is None:
             options = {}
-        self.log.debug(f'Requesting data for service {self.name}')
+        self.log.debug('Requesting data for service {}'.format(self.name))
 
         if 'query' not in options and 'specific' not in options:
             raise NeedGithubServiceException('"query" or "specific" missing as option for github service.')
@@ -184,11 +190,11 @@ class GithubService(BaseService):
 
         if 'items' not in response.keys():
             if 'errors' in response.keys():
-                raise NeedGithubServiceException(f'GitHub service query error: {response["errors"][0]["message"]}\n'
-                                                 f'Used query: {query}')
+                raise NeedGithubServiceException('GitHub service query error: {}\n'
+                                                 'Used query: {}'.format(response["errors"][0]["message"], query))
             else:
-                raise NeedGithubServiceException(f'Github service: Unknown error. Status code: {response.status_code}. '
-                                                 f'Content: {response.text}')
+                raise NeedGithubServiceException('Github service: Unknown error. Status code: {}. '
+                                                 'Content: {}'.format(response.status_code, response.text))
         for item in response['items']:
             # wraps content lines, if they are too long. Respects already existing newlines.
             content_lines = ['\n   '.join(textwrap.wrap(line, 60, break_long_words=True, replace_whitespace=False))
@@ -209,11 +215,11 @@ class GithubService(BaseService):
             content = '.. code-block:: text\n\n   ' + content
 
             prefix = options.get('id_prefix', self.id_prefix)
-            need_id = f'{prefix}{item["number"]}'
+            need_id = prefix + item["number"]
             given_tags = options.get('tags', False)
             github_tags = ",".join([x['name'] for x in item["labels"]])
             if given_tags:
-                tags = f'{given_tags}, {github_tags}'
+                tags = given_tags + ', ' + github_tags
             else:
                 tags = github_tags
 
@@ -242,17 +248,20 @@ class GithubService(BaseService):
                         with open(avatar_file_path, 'wb') as f:
                             f.write(response.content)
                     elif response.status_code == 302:
-                        self.log.warning(f'GitHub service {self.name} could not download avatar image '
-                                         f'from {avatar_url}.\n'
-                                         f'    Status code: {response.status_code}\n'
-                                         f'    Reason: Looks like the authentication provider tries to redirect you.'
-                                         f' This is not supported and is a common problem, '
-                                         f'if you use GitHub Enterprise.')
+                        self.log.warning('GitHub service {} could not download avatar image '
+                                         'from {}.\n'
+                                         '    Status code: {}\n'
+                                         '    Reason: Looks like the authentication provider tries to redirect you.'
+                                         ' This is not supported and is a common problem, '
+                                         'if you use GitHub Enterprise.'.format(self.name, avatar_url,
+                                                                                response.status_code))
                         avatar_file_path = default_avatar_file_path
                     else:
-                        self.log.warning(f'GitHub service {self.name} could not download avatar image '
-                                         f'from {avatar_url}.\n'
-                                         f'    Status code: {response.status_code}')
+                        self.log.warning('GitHub service {} could not download avatar image '
+                                         'from {}.\n'
+                                         '    Status code: {}'.format(self.name, avatar_url,
+                                                                      response.status_code
+                                                                      ))
                         avatar_file_path = default_avatar_file_path
             else:
                 avatar_file_path = default_avatar_file_path
