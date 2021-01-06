@@ -1,8 +1,8 @@
 Changelog
 =========
 
-0.6.0 (not released yet)
-------------------------
+0.6.0
+-----
 
 * Improvement: Directive :ref:`needservice` added, which allow to include data from external services like Jira or github.
   See also :ref:`services`
