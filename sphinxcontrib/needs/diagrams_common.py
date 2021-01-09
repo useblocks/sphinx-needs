@@ -5,18 +5,11 @@ diagram related directive. E.g. needflow and needsequence.
 
 import html
 import re
-import sphinx
 
 from docutils import nodes
 from docutils.parsers.rst import Directive
 from docutils.parsers.rst import directives
-from pkg_resources import parse_version
-
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
+from .logging import logging
 logger = logging.getLogger(__name__)
 
 try:

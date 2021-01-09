@@ -1,18 +1,11 @@
 from docutils import nodes
 
 from docutils.parsers.rst import Directive
-from pkg_resources import parse_version
-import sphinx
 
 from sphinxcontrib.needs.api import add_need
 from sphinxcontrib.needs.directives.need import NeedDirective
 
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
-logger = logging.getLogger(__name__)
+from ..logging import logging
 
 
 class Needservice(nodes.General, nodes.Element):

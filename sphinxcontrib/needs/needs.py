@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import sphinx
 from sphinx.errors import SphinxError
 from docutils import nodes
 from docutils.parsers.rst import directives
-from pkg_resources import parse_version
 from sphinx.roles import XRefRole
 from sphinxcontrib.needs.directives.need import Need, NeedDirective, \
     process_need_nodes, purge_needs, add_sections, html_visit, html_depart, latex_visit, latex_depart
@@ -35,13 +33,7 @@ from sphinxcontrib.needs.defaults import DEFAULT_DIAGRAM_TEMPLATE, LAYOUTS, NEED
 from sphinxcontrib.needs.services.manager import ServiceManager
 from sphinxcontrib.needs.services.github import GithubService
 
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
-
-    logging.basicConfig()  # Only need to do this once
+from .logging import logging
 
 VERSION = '0.6.0'
 

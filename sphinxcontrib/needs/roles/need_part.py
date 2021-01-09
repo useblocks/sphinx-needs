@@ -9,16 +9,9 @@ Most voodoo is done in need.py
 from docutils import nodes
 import hashlib
 import re
-import sphinx
 
-from pkg_resources import parse_version
+from ..logging import logging
 
-sphinx_version = sphinx.__version__
-
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
 log = logging.getLogger(__name__)
 
 

@@ -1,6 +1,5 @@
 import hashlib
 import re
-import os
 from docutils import nodes
 from jinja2 import Template
 from sphinxcontrib.needs.api.exceptions import NeedsNoIdException, NeedsInvalidException, NeedsStatusNotAllowed,\
@@ -9,14 +8,8 @@ import sphinxcontrib.needs.directives.need
 from sphinx.util.nodes import nested_parse_with_titles
 from sphinxcontrib.needs.roles.need_part import update_need_with_parts, find_parts
 from sphinxcontrib.needs.filter_common import filter_single_need
-import sphinx
 from docutils.statemachine import ViewList
-from pkg_resources import parse_version
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
+from ..logging import logging
 
 
 logger = logging.getLogger(__name__)

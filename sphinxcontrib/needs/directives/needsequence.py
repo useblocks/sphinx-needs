@@ -1,25 +1,24 @@
 import os
 import re
-import sphinx
 import urllib
 
 from docutils import nodes
 from docutils.parsers.rst import directives
-from pkg_resources import parse_version
+from sphinxcontrib.plantuml import (
+    generate_name,  # Need for plantuml filename calculation
+)
 
-from sphinxcontrib.needs.diagrams_common import DiagramBase, no_plantuml, \
-    add_config, get_filter_para, get_debug_container
-
-from sphinxcontrib.plantuml import generate_name  # Need for plantuml filename calculation
-
+from sphinxcontrib.needs.diagrams_common import (
+    DiagramBase,
+    add_config,
+    get_debug_container,
+    get_filter_para,
+    no_plantuml,
+)
 from sphinxcontrib.needs.filter_common import FilterBase
 
+from ..logging import logging
 
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
 logger = logging.getLogger(__name__)
 
 urlParse = urllib.parse.quote_plus

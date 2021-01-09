@@ -1,12 +1,6 @@
 from sphinx.builders import Builder
 from sphinxcontrib.needs.utils import NeedsList
-import sphinx
-from pkg_resources import parse_version
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
+from .logging import logging
 
 
 class NeedsBuilder(Builder):
