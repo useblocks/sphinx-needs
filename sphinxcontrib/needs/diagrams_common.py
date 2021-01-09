@@ -9,8 +9,8 @@ import re
 from docutils import nodes
 from docutils.parsers.rst import Directive
 from docutils.parsers.rst import directives
-from .logging import logging
-logger = logging.getLogger(__name__)
+from .logging import getLogger
+logger = getLogger(__name__)
 
 try:
     from sphinx.errors import NoUri  # Sphinx 3.0

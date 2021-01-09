@@ -33,7 +33,7 @@ from sphinxcontrib.needs.defaults import DEFAULT_DIAGRAM_TEMPLATE, LAYOUTS, NEED
 from sphinxcontrib.needs.services.manager import ServiceManager
 from sphinxcontrib.needs.services.github import GithubService
 
-from .logging import logging
+from .logging import getLogger
 
 VERSION = '0.6.0'
 
@@ -49,7 +49,7 @@ class TagsDummy:
 
 
 def setup(app):
-    log = logging.getLogger(__name__)
+    log = getLogger(__name__)
     log.debug("Starting setup of sphinx-Needs")
     app.add_builder(NeedsBuilder)
     app.add_config_value('needs_types',

@@ -13,9 +13,9 @@ import hashlib
 import matplotlib.pyplot
 from docutils.parsers.rst import directives
 
-from ..logging import logging
+from ..logging import getLogger
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 urlParse = urllib.parse.quote_plus
 

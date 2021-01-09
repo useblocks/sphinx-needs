@@ -13,9 +13,9 @@ from sphinxcontrib.needs.functions import resolve_dynamic_values, find_and_repla
 from sphinxcontrib.needs.api.exceptions import NeedsInvalidException
 from sphinxcontrib.needs.functions.functions import check_and_get_content
 from sphinxcontrib.needs.layout import build_need
-from ..logging import logging
+from ..logging import getLogger
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 NON_BREAKING_SPACE = re.compile('\xa0+')
 
@@ -70,7 +70,7 @@ class NeedDirective(Directive):
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
-        self.log = logging.getLogger(__name__)
+        self.log = getLogger(__name__)
         self.full_title = self._get_full_title()
 
     def run(self):

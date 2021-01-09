@@ -5,8 +5,8 @@ except ImportError:
     from sphinx.environment import NoUri  # Sphinx < 3.0
 from sphinx.util.nodes import make_refnode
 
-from ..logging import logging
-log = logging.getLogger(__name__)
+from ..logging import getLogger
+log = getLogger(__name__)
 
 
 class Need_ref(nodes.Inline, nodes.Element):

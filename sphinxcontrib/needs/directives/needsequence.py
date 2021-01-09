@@ -17,9 +17,9 @@ from sphinxcontrib.needs.diagrams_common import (
 )
 from sphinxcontrib.needs.filter_common import FilterBase
 
-from ..logging import logging
+from ..logging import getLogger
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 urlParse = urllib.parse.quote_plus
 

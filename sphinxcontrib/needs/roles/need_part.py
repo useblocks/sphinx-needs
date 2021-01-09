@@ -10,9 +10,9 @@ from docutils import nodes
 import hashlib
 import re
 
-from ..logging import logging
+from ..logging import getLogger
 
-log = logging.getLogger(__name__)
+log = getLogger(__name__)
 
 
 class NeedPart(nodes.Inline, nodes.Element):

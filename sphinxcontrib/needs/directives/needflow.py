@@ -6,16 +6,19 @@ import urllib
 from docutils import nodes
 from docutils.parsers.rst import directives
 from jinja2 import Template
-from sphinxcontrib.plantuml import \
-    generate_name  # Need for plantuml filename calculation
+from sphinxcontrib.plantuml import (
+    generate_name,  # Need for plantuml filename calculation
+)
 
 from sphinxcontrib.needs.diagrams_common import calculate_link
-from sphinxcontrib.needs.filter_common import (FilterBase, filter_single_need,
-                                               process_filters)
+from sphinxcontrib.needs.filter_common import (
+    FilterBase,
+    filter_single_need,
+    process_filters,
+)
+from sphinxcontrib.needs.logging import getLogger
 
-from ..logging import logging
-
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 urlParse = urllib.parse.quote_plus
 

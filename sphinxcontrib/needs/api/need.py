@@ -9,10 +9,10 @@ from sphinx.util.nodes import nested_parse_with_titles
 from sphinxcontrib.needs.roles.need_part import update_need_with_parts, find_parts
 from sphinxcontrib.needs.filter_common import filter_single_need
 from docutils.statemachine import ViewList
-from ..logging import logging
+from ..logging import getLogger
 
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 def add_need(app, state, docname, lineno, need_type, title, id=None, content="", status=None, tags=None,

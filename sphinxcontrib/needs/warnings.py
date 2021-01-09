@@ -4,9 +4,9 @@ Cares about handling and execution warnings.
 """
 from sphinxcontrib.needs.filter_common import filter_needs
 
-from .logging import logging
+from .logging import logging, getLogger
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 def process_warnings(app, exception):

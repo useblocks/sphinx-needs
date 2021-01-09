@@ -13,9 +13,9 @@ from sphinxcontrib.plantuml import generate_name  # Need for plantuml filename c
 
 from sphinxcontrib.needs.filter_common import FilterBase, process_filters, filter_single_need
 from sphinxcontrib.needs.directives.utils import get_link_type_option
-from ..logging import logging
+from ..logging import getLogger
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 urlParse = urllib.parse.quote_plus
 

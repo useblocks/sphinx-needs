@@ -7,3 +7,7 @@ if parse_version(sphinx_version) >= parse_version("1.6"):
 else:
     import logging
     logging.basicConfig()  # Only need to do this once
+
+
+def getLogger(name):
+    return logging.getLogger(name)
