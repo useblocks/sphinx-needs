@@ -24,7 +24,7 @@ class ServiceManager:
         try:
             config = self.app.config.needs_services[name]
         except KeyError:
-            self.log.warning('No service config found for {}. '
+            self.log.debug('No service config found for {}. '
                              'Add it in your conf.py to needs_services dictionary.'.format(name))
             config = {}
 

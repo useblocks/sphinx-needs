@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.6.1 (not released yet)
+------------------------
+
+* Bugfix: No warning is thrown anymore, if :ref:`needservice` can't find a service config in ``conf.py``
+  (`#168 <https://github.com/useblocks/sphinxcontrib-needs/issues/168>`_)
+
 0.6.0
 -----
 
