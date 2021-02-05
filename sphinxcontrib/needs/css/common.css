@@ -17,47 +17,6 @@ table.need tr.footer div.line-block {
     margin-bottom: 0;
 }
 
-
-/* DataTable layout*/
-table.dataTable {
-    border-collapse: collapse;
-    border: none;
-}
-
-div.dataTables_length {
-    margin-bottom: 10px;
-}
-
-.dataTables_wrapper .dataTables_paginate .paginate_button {
-    padding: 0.15em 0.75em;
-    background: none;
-}
-
-.dataTables_wrapper .dataTables_paginate .paginate_button.current, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
-    background: none;
-}
-
-div.dataTables_length select {
-    background: none;
-}
-
-/*DataTables Download Buttons*/
-div.dt-buttons {
-   margin-left: 10%;
-}
-
-div.dt-buttons button {
-    padding: 0.1em 1em;
-    border: 1px solid #999;
-    border-radius: 2px;
-    font-size: 0.88em;
-    line-height: inherit;
-    color: inherit;
-    white-space: nowrap;
-    overflow: hidden;
-    background-color: inherit;
-    background-image: none;
-}
 .toggle .header {
     display: block;
     clear: both;
