@@ -9,19 +9,13 @@ in need configurations.
 """
 
 import ast
-from docutils import nodes
 import re
+
+from docutils import nodes
 from sphinx.errors import SphinxError
-import sys
 
-from sphinxcontrib.needs.utils import NEEDS_FUNCTIONS
-
-is_python3 = sys.version_info.major == 3
-if is_python3:
-    unicode = str
-    ast_boolean = ast.NameConstant
-else:
-    ast_boolean = ast.Name
+unicode = str
+ast_boolean = ast.NameConstant
 
 
 def register_func(need_function):
@@ -107,8 +101,6 @@ def find_and_replace_node_content(node, env, need):
             new_text = node
         func_match = func_pattern.findall(new_text)
         for func_string in func_match:
-            if not is_python3:
-                func_string = func_string.encode('utf-8')
             # sphinx is replacing ' and " with language specific quotation marks (up and down), which makes
             # it impossible for the later used AST render engine to detect a python function call in the given
             # string. Therefor a replacement is needed for the execution of the found string.
@@ -126,10 +118,8 @@ def find_and_replace_node_content(node, env, need):
             if isinstance(func_return, list):
                 func_return = ", ".join(func_return)
 
-            if not is_python3:
-                new_text = new_text.replace(u'[[{}]]'.format(func_string_org.decode('utf-8')), func_return)
-            else:
-                new_text = new_text.replace(u'[[{}]]'.format(func_string_org), func_return)
+            new_text = new_text.replace(u'[[{}]]'.format(func_string_org), func_return)
+
         if isinstance(node, nodes.reference):
             node.attributes['refuri'] = new_text
             # Call normal handling for children of reference node (will contain related Text node with link-text)
@@ -333,10 +323,7 @@ def _analyze_func_string(func_string, need):
         elif isinstance(kvalue, ast.Str):
             func_kargs[kkey] = kvalue.s
         elif isinstance(kvalue, ast_boolean):  # Check if Boolean
-            if is_python3:
-                func_kargs[kkey] = kvalue.value
-            else:
-                func_kargs[kkey] = kvalue.id
+            func_kargs[kkey] = kvalue.value
         elif isinstance(kvalue, ast.List):
             arg_list = []
             for element in kvalue.elts:
