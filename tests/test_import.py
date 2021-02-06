@@ -1,9 +1,5 @@
 import json
-
-try:
-    from pathlib import Path
-except ImportError:
-    from pathlib2 import Path
+from pathlib import Path
 
 from sphinx_testing import with_app
 
@@ -28,7 +24,6 @@ def test_import_json(app, status, warning):
 
     # search() test
     assert "AAA" in filter_html
-
 
 
 @with_app(buildername='needs', srcdir='doc_test/import_doc')  # , warningiserror=True)

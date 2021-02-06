@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 
+from pathlib import Path
+
 from sphinx_testing import with_app
-try:
-    from pathlib import Path
-except ImportError:
-    from pathlib2 import Path
 
 
 @with_app(buildername='html', srcdir='doc_test/doc_needtable')
@@ -62,5 +60,3 @@ def test_doc_needtable_parts(app, status, warning):
     assert 'table_001.2' in html
     assert 'table_001.3' in html
     assert 'class="need_part' in html
-
-

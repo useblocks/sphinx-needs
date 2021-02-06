@@ -1,9 +1,5 @@
 import re
-
-try:
-    from pathlib import Path
-except ImportError:
-    from pathlib2 import Path
+from pathlib import Path
 
 from sphinx_testing import with_app
 
@@ -17,9 +13,8 @@ def test_custom_attributes_appear(app, status, warning):
     # Custom options should appear
     # assert 'introduced: <cite>1.0.0</cite>' in html
     assert '<span class="needs_data">1.5.1' in html
-    assert '<span class="needs_data">1.1.1'in html
-    assert '<span class="needs_data">component_b'in html
-
+    assert '<span class="needs_data">1.1.1' in html
+    assert '<span class="needs_data">component_b' in html
 
     tables = re.findall("(<table .*?</table>)", html, re.DOTALL)
     assert len(tables) == 4

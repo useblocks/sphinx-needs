@@ -1,17 +1,19 @@
 import json
-import responses
-from pathlib import Path
-from random import randrange
 import re
 import uuid
+from pathlib import Path
+from random import randrange
 
+import responses
 import six
 from nose.tools import raises
 from sphinx_testing import with_app
 
 from sphinxcontrib.needs.api.need import NeedsNoIdException
-from tests.data.service_github import GITHUB_SPECIFIC_COMMIT_ANSWER, GITHUB_ISSUE_SEARCH_ANSWER, GITHUB_SPECIFIC_ISSUE_ANSWER, \
-     GITHUB_SEARCH_COMMIT_ANSWER
+from tests.data.service_github import (GITHUB_ISSUE_SEARCH_ANSWER,
+                                       GITHUB_SEARCH_COMMIT_ANSWER,
+                                       GITHUB_SPECIFIC_COMMIT_ANSWER,
+                                       GITHUB_SPECIFIC_ISSUE_ANSWER)
 
 
 def random_data_callback(request):

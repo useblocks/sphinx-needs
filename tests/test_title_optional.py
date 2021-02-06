@@ -1,19 +1,11 @@
 # -*- coding: utf-8 -*-
 import sys
+from pathlib import Path
+
 import sphinx
 from sphinx_testing import with_app
 
 from tests.util import extract_needs_from_html
-
-try:
-    from pathlib import Path
-except ImportError:
-    from pathlib2 import Path
-
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 
 NS = {'html': 'http://www.w3.org/1999/xhtml'}
 

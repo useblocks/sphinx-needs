@@ -1,11 +1,8 @@
-import sys
+from pathlib import Path
 
 from sphinx.builders.html import StandaloneHTMLBuilder
 from sphinx_testing import with_app
-try:
-    from pathlib import Path
-except ImportError:
-    from pathlib2 import Path
+
 
 @with_app(buildername='html', srcdir='doc_test/doc_style_blank')
 def test_doc_style_blank(app, status, warning):

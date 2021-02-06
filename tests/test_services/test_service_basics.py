@@ -1,12 +1,9 @@
-from sphinxcontrib.needs.services.manager import ServiceManager
-from sphinxcontrib.needs.services.base import BaseService
-
+from pathlib import Path
 
 from sphinx_testing import with_app
-try:
-    from pathlib import Path
-except ImportError:
-    from pathlib2 import Path
+
+from sphinxcontrib.needs.services.base import BaseService
+from sphinxcontrib.needs.services.manager import ServiceManager
 
 
 class TestService(BaseService):

@@ -1,6 +1,7 @@
 import sys
 
 from sphinx_testing import with_app
+
 try:
     from StringIO import StringIO  # Python 2
 except ImportError:

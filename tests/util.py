@@ -24,7 +24,6 @@ class HtmlNeed(object):
 
     @property
     def title(self):
-        title = self.need.find(".//html:span[@class='needs_title']", NS)
         found_title = self.need.find(".//html:span[@class='needs_title']", NS)
         if found_title is None:
             found_title = self.need.find(".//html:span[@class='needs_title']", {'html': ''})

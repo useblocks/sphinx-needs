@@ -1,13 +1,8 @@
-try:
-    from pathlib import Path
-except ImportError:
-    from pathlib2 import Path
-
-from subprocess import check_output, STDOUT, CalledProcessError
-from sphinx_testing import with_app
-
 import imp
 import sys
+from pathlib import Path
+
+from sphinx_testing import with_app
 
 dummy_code = """
 def setup(app):
@@ -48,4 +43,3 @@ def test_api_add_type(app, status, warning):
     html = Path(app.outdir, 'index.html').read_text()
     assert html is not None
     assert 'Awesome spec' in html
-

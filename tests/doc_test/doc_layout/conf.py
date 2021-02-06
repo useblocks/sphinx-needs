@@ -19,6 +19,8 @@
 import os
 import sys
 
+from docutils.parsers.rst import directives
+
 sys.path.insert(0, os.path.abspath('../../sphinxcontrib'))
 
 # -- General configuration ------------------------------------------------
@@ -41,7 +43,6 @@ needs_types = [
     dict(directive="test", title="Test Case", prefix="TC_", color="#DCB239", style="node")
 ]
 
-from docutils.parsers.rst import directives
 needs_extra_options = {
          "author": directives.unchanged,
          }
