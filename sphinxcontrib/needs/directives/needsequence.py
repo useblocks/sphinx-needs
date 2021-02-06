@@ -9,7 +9,7 @@ from docutils.parsers.rst import directives
 from pkg_resources import parse_version
 
 from sphinxcontrib.needs.diagrams_common import DiagramBase, no_plantuml, \
-    add_config, get_filter_para, get_debug_containter
+    add_config, get_filter_para, get_debug_container
 
 from sphinxcontrib.plantuml import generate_name  # Need for plantuml filename calculation
 
@@ -219,7 +219,7 @@ def process_needsequence(app, doctree, fromdocname):
             content.append(get_filter_para(current_needsequence))
 
         if current_needsequence['debug']:
-            content += get_debug_containter(puml_node)
+            content += get_debug_container(puml_node)
 
         node.replace_self(content)
 

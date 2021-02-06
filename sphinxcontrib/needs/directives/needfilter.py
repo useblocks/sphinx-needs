@@ -11,7 +11,7 @@ except ImportError:
     from sphinx.environment import NoUri  # Sphinx < 3.0
 from sphinxcontrib.needs.utils import row_col_maker
 
-from sphinxcontrib.needs.filter_common import FilterBase, procces_filters
+from sphinxcontrib.needs.filter_common import FilterBase, process_filters
 
 if sys.version_info.major < 3:
     urlParse = urllib.quote_plus
@@ -147,7 +147,7 @@ def process_needfilters(app, doctree, fromdocname):
             content += tgroup
 
         all_needs = list(all_needs.values())
-        found_needs = procces_filters(all_needs, current_needfilter)
+        found_needs = process_filters(all_needs, current_needfilter)
 
         line_block = nodes.line_block()
         for need_info in found_needs:

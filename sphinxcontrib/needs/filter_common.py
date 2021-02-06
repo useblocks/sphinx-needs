@@ -70,7 +70,7 @@ class FilterBase(Directive):
         return collected_filter_options
 
 
-def procces_filters(all_needs, current_needlist):
+def process_filters(all_needs, current_needlist):
     """
     Filters all needs with given configuration.
     Used by needlist, needtable and needflow.

@@ -10,7 +10,7 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 
 from sphinxcontrib.needs.layout import create_need
-from sphinxcontrib.needs.filter_common import FilterBase, procces_filters
+from sphinxcontrib.needs.filter_common import FilterBase, process_filters
 from sphinxcontrib.needs.directives.utils import no_needs_found_paragraph, used_filter_paragraph
 
 if sys.version_info.major < 3:
@@ -87,7 +87,7 @@ def process_needextract(app, doctree, fromdocname):
         all_needs = env.needs_all_needs
         content = []
         all_needs = list(all_needs.values())
-        found_needs = procces_filters(all_needs, current_needextract)
+        found_needs = process_filters(all_needs, current_needextract)
 
         for need_info in found_needs:
             need_extract = create_need(need_info['id'], app,
