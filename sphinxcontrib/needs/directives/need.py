@@ -260,7 +260,7 @@ def add_sections(app, doctree, fromdocname):
     """Add section titles to the needs as additional attributes that can
     be used in tables and filters"""
     needs = getattr(app.builder.env, 'needs_all_needs', {})
-    for key, need_info in needs.items():
+    for need_info in needs.values():
         sections, signature = get_sections_and_signature(need_info)
         need_info['sections'] = sections
         need_info['section_name'] = sections[0] if sections else ""
