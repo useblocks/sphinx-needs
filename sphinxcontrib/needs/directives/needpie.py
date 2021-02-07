@@ -179,7 +179,7 @@ def process_needpie(app, doctree, fromdocname):
         if text_color is not None:
             pie_kwargs['textprops'] = dict(color=text_color)
 
-        wedges, texts, autotexts = axes.pie(sizes, **pie_kwargs)
+        wedges, _texts, autotexts = axes.pie(sizes, **pie_kwargs)
 
         if text_color is not None:
             for autotext in autotexts:
