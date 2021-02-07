@@ -81,10 +81,11 @@ class NeedganttDirective(FilterBase, DiagramBase):
 
         timeline = self.options.get('timeline', None)
         timeline_options = ['daily', 'weekly', 'monthly']
-        if timeline is not None and timeline != '':
-            if timeline not in timeline_options:
-                raise NeedGanttException('Given scale value {} is invalid. Please use: '
-                                         '{}'.format(timeline, ",".join(timeline_options)))
+        if timeline and timeline not in timeline_options:
+            raise NeedGanttException(
+                "Given scale value {} is invalid. Please use: "
+                "{}".format(timeline, ",".join(timeline_options))
+            )
         else:
             timeline = None  # Timeline/scale not set later
 
