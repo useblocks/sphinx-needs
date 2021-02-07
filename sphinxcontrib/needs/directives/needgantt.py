@@ -194,12 +194,11 @@ def process_needgantt(app, doctree, fromdocname):
         for need in found_needs:
             complete = None
 
-            if current_needgantt['milestone_filter'] is None or current_needgantt['milestone_filter'] == '':
-                is_milestone = False
-            else:
+            if current_needgantt['milestone_filter']:
                 is_milestone = filter_single_need(need, current_needgantt['milestone_filter'])
-            if current_needgantt['milestone_filter'] is None or current_needgantt['milestone_filter'] == '' or \
-                    not is_milestone:
+            else:
+                is_milestone = False
+            if not (current_needgantt['milestone_filter'] and is_milestone):
                 # Normal gantt element handling
                 duration_option = current_needgantt['duration_option']
                 duration = need[duration_option]
