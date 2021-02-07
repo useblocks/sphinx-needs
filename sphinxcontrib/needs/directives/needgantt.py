@@ -69,7 +69,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
 
         milestone_filter = self.options.get('milestone_filter', None)
         start_date = self.options.get('start_date', None)
-        if start_date is not None and start_date != '':
+        if start_date:
             try:
                 datetime.strptime(start_date, '%Y-%m-%d')
                 # datetime.fromisoformat(start_date) # > py3.7 only
