@@ -88,7 +88,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
         else:
             timeline = None  # Timeline/scale not set later
 
-        no_color = True if "no_color" in self.options.keys() else False
+        no_color = "no_color" in self.options.keys()
 
         duration_option = self.options.get('duration_option', env.app.config.needs_duration_option)
         completion_option = self.options.get('completion_option', env.app.config.needs_completion_option)
