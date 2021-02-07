@@ -94,16 +94,16 @@ class DiagramBase(Directive):
             caption = self.arguments[0]
 
         collected_diagram_options = {
-            'show_legend': True if self.options.get("show_legend", False) is None else False,
-            'show_filters': True if self.options.get("show_filters", False) is None else False,
-            'show_link_names': True if self.options.get("show_link_names", False) is None else False,
+            'show_legend': self.options.get("show_legend", False) is None,
+            'show_filters': self.options.get("show_filters", False) is None,
+            'show_link_names': self.options.get("show_link_names", False) is None,
             'link_types': link_types,
             'config': '\n'.join(configs),
             'config_names': config_names,
             'scale': scale,
             'highlight': highlight,
             'align': self.options.get("align", None),
-            'debug': True if self.options.get("debug", False) is None else False,
+            'debug': self.options.get("debug", False) is None,
             'caption': caption,
         }
         return collected_diagram_options
