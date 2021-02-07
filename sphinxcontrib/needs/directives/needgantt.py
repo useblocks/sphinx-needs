@@ -166,13 +166,13 @@ def process_needgantt(app, doctree, fromdocname):
         found_needs = process_filters(all_needs, current_needgantt)
 
         # Scale/timeline handling
-        if current_needgantt['timeline'] is not None and current_needgantt['timeline'] != '':
+        if current_needgantt['timeline']:
             puml_node["uml"] += 'printscale {}\n'.format(current_needgantt["timeline"])
 
         # Project start date handling
         start_date_string = current_needgantt['start_date']
         start_date_plantuml = None
-        if start_date_string is not None and start_date_string != '':
+        if start_date_string:
             try:
                 start_date = datetime.strptime(start_date_string, '%Y-%m-%d')
                 # start_date = datetime.fromisoformat(start_date_string)  # > py3.7 only
@@ -198,8 +198,10 @@ def process_needgantt(app, doctree, fromdocname):
                 is_milestone = filter_single_need(need, current_needgantt['milestone_filter'])
             else:
                 is_milestone = False
-            if not (current_needgantt['milestone_filter'] and is_milestone):
-                # Normal gantt element handling
+
+            if current_needgantt['milestone_filter'] and is_milestone:
+                gantt_element = '[{}] as [{}] lasts 0 days\n'.format(need["title"], need["id"])
+            else:  # Normal gantt element handling
                 duration_option = current_needgantt['duration_option']
                 duration = need[duration_option]
                 complete_option = current_needgantt['completion_option']
@@ -209,8 +211,6 @@ def process_needgantt(app, doctree, fromdocname):
                                    'Need: {}. Duration: {}'.format(need["id"], duration))
                     duration = 1
                 gantt_element = '[{}] as [{}] lasts {} days\n'.format(need["title"], need["id"], duration)
-            else:
-                gantt_element = '[{}] as [{}] lasts 0 days\n'.format(need["title"], need["id"])
 
             el_link_string += '[{}] links to [[{}]]\n'.format(need["title"], calculate_link(app, need))
 
