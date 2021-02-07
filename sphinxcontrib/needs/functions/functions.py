@@ -167,7 +167,7 @@ def resolve_dynamic_values(env):
         return
 
     needs = env.needs_all_needs
-    for key, need in needs.items():
+    for need in needs.values():
         for need_option in need:
             if need_option in ['docname', 'lineno', 'target_node', 'content', 'content_node']:
                 # dynamic values in this data are not allowed.
