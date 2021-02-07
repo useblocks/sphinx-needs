@@ -13,10 +13,7 @@ from sphinxcontrib.needs.layout import create_need
 from sphinxcontrib.needs.filter_common import FilterBase, procces_filters
 from sphinxcontrib.needs.directives.utils import no_needs_found_paragraph, used_filter_paragraph
 
-if sys.version_info.major < 3:
-    urlParse = urllib.quote_plus
-else:
-    urlParse = urllib.parse.quote_plus
+urlParse = urllib.parse.quote_plus
 
 
 class Needextract(nodes.General, nodes.Element):
