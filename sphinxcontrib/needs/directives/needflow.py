@@ -71,7 +71,7 @@ class NeedflowDirective(FilterBase):
             link_types = [link_type.strip() for link_type in re.split(";|,", link_types)]
             for i in range(len(link_types)):
                 if len(link_types[i]) == 0 or link_types[i].isspace():
-                    del (link_types[i])
+                    del link_types[i]
                     logger.warning('Scruffy link_type definition found in needflow {}. '
                                    'Defined link_type contains spaces only.'.format(id))
 
