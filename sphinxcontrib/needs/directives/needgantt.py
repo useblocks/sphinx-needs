@@ -287,12 +287,9 @@ def process_needgantt(app, doctree, fromdocname):
 
         puml_node = nodes.figure('', puml_node)
 
-        if current_needgantt['align'] is not None and len(current_needgantt['align']) != '':
-            puml_node['align'] = current_needgantt['align']
-        else:
-            puml_node['align'] = 'center'
+        puml_node['align'] = current_needgantt['align'] or 'center'
 
-        if current_needgantt['caption'] is not None and len(current_needgantt['caption']) != '':
+        if current_needgantt['caption']:
             # Make the caption to a link to the original file.
             try:
                 if "SVG" in app.config.plantuml_output_format.upper():
