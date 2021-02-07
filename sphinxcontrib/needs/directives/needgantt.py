@@ -204,7 +204,7 @@ def process_needgantt(app, doctree, fromdocname):
                 duration = need[duration_option]
                 complete_option = current_needgantt['completion_option']
                 complete = need[complete_option]
-                if duration is None or duration == '' or not duration.isdigit():
+                if not (duration and duration.isdigit()):
                     logger.warning('Duration not set or invalid for needgantt chart. '
                                    'Need: {}. Duration: {}'.format(need["id"], duration))
                     duration = 1
@@ -214,7 +214,7 @@ def process_needgantt(app, doctree, fromdocname):
 
             el_link_string += '[{}] links to [[{}]]\n'.format(need["title"], calculate_link(app, need))
 
-            if complete is not None and complete != '':
+            if complete:
                 complete = complete.replace('%', '')
                 el_completion_string += '[{}] is {}% completed\n'.format(need["title"], complete)
 
@@ -240,10 +240,10 @@ def process_needgantt(app, doctree, fromdocname):
         puml_node["uml"] += '\n\' Constraints definition \n\n'
         puml_node["uml"] += '\n\' Constraints definition \n\n'
         for need in found_needs:
-            if current_needgantt['milestone_filter'] is None or current_needgantt['milestone_filter'] == '':
-                is_milestone = False
-            else:
+            if current_needgantt['milestone_filter']:
                 is_milestone = filter_single_need(need, current_needgantt['milestone_filter'])
+            else:
+                is_milestone = False
             constrain_types = ['starts_with_links', 'starts_after_links', 'ends_with_links']
             for con_type in constrain_types:
                 if is_milestone:
