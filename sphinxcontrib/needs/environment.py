@@ -72,17 +72,17 @@ def install_styles_static_files(app, env):
 
     if app.config.needs_css == 'modern.css':
         source_folder = os.path.join(os.path.dirname(__file__), "css/modern/")
-        for root, dirs, files in os.walk(source_folder):
+        for root, _dirs, files in os.walk(source_folder):
             for single_file in files:
                 files_to_copy.append(os.path.join(root, single_file))
     elif app.config.needs_css == 'dark.css':
         source_folder = os.path.join(os.path.dirname(__file__), "css/dark/")
-        for root, dirs, files in os.walk(source_folder):
+        for root, _dirs, files in os.walk(source_folder):
             for single_file in files:
                 files_to_copy.append(os.path.join(root, single_file))
     elif app.config.needs_css == 'blank.css':
         source_folder = os.path.join(os.path.dirname(__file__), "css/blank/")
-        for root, dirs, files in os.walk(source_folder):
+        for root, _dirs, files in os.walk(source_folder):
             for single_file in files:
                 files_to_copy.append(os.path.join(root, single_file))
     else:
@@ -127,7 +127,7 @@ def install_datatables_static_files(app, env):
     source_folder = os.path.join(os.path.dirname(__file__), "libs/html")
     files_to_copy = []
 
-    for root, dirs, files in os.walk(source_folder):
+    for root, _dirs, files in os.walk(source_folder):
         for single_file in files:
             files_to_copy.append(os.path.join(root, single_file))
 
