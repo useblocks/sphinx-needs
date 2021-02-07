@@ -222,7 +222,7 @@ def process_needtables(app, doctree, fromdocname):
 
             # Need part rows
             if current_needtable["show_parts"] and need_info['is_need']:
-                for key, part in need_info["parts"].items():
+                for part in need_info["parts"].values():
                     row = nodes.row(classes=['need_part'])
                     temp_part = part.copy()  # The dict needs to be manipulated, so that row_col_maker() can be used
                     temp_part['docname'] = need_info['docname']
