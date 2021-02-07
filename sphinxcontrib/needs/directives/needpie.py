@@ -90,7 +90,7 @@ class NeedpieDirective(FilterBase):
         if colors is not None and len(colors) > 0:
             colors = colors.split(',')
 
-        shadow = True if 'shadow' in self.options else False
+        shadow = 'shadow' in self.options
 
         # Add the need and all needed information
         env.need_all_needpie[targetid] = {
