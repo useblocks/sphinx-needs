@@ -61,7 +61,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
         # Creates env.need_all_needgantts safely and other vars
         self.prepare_env('needgantts')
 
-        id, targetid, targetnode = self.create_target('needgantt')
+        _id, targetid, targetnode = self.create_target('needgantt')
 
         starts_with_links = get_link_type_option('starts_with_links', env, self, '')
         starts_after_links = get_link_type_option('starts_after_links', env, self, 'links')
