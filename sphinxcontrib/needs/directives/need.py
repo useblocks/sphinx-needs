@@ -77,7 +77,7 @@ class NeedDirective(Directive):
     final_argument_whitespace = True
 
     def __init__(self, *args, **kw):
-        super(NeedDirective, self).__init__(*args, **kw)
+        super().__init__(*args, **kw)
         self.log = logging.getLogger(__name__)
         self.full_title = self._get_full_title()
 
