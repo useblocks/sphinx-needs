@@ -1,5 +1,4 @@
 import os
-import sys
 import urllib
 
 from docutils import nodes

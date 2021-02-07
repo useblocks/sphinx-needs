@@ -1,7 +1,6 @@
 import os
 import re
 import sphinx
-import sys
 import urllib
 
 from docutils import nodes

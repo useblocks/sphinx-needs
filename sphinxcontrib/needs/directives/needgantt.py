@@ -1,6 +1,5 @@
 import os
 import sphinx
-import sys
 import urllib
 
 from datetime import datetime
