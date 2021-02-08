@@ -13,6 +13,7 @@ import re
 
 from docutils import nodes
 from sphinx.errors import SphinxError
+from sphinxcontrib.needs.utils import NEEDS_FUNCTIONS  # noqa: F401
 
 unicode = str
 ast_boolean = ast.NameConstant
