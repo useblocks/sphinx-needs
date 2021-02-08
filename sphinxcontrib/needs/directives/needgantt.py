@@ -9,12 +9,12 @@ from docutils.parsers.rst import directives
 from pkg_resources import parse_version
 
 from sphinxcontrib.needs.diagrams_common import DiagramBase, no_plantuml, \
-    add_config, get_filter_para, get_debug_containter, calculate_link
+    add_config, get_filter_para, get_debug_container, calculate_link
 from sphinxcontrib.needs.utils import MONTH_NAMES
 
 from sphinxcontrib.plantuml import generate_name  # Need for plantuml filename calculation
 
-from sphinxcontrib.needs.filter_common import FilterBase, procces_filters, filter_single_need
+from sphinxcontrib.needs.filter_common import FilterBase, process_filters, filter_single_need
 from sphinxcontrib.needs.directives.utils import get_link_type_option
 
 sphinx_version = sphinx.__version__
@@ -162,7 +162,7 @@ def process_needgantt(app, doctree, fromdocname):
         puml_node["uml"] += add_config(config)
 
         all_needs = list(all_needs_dict.values())
-        found_needs = procces_filters(all_needs, current_needgantt)
+        found_needs = process_filters(all_needs, current_needgantt)
 
         # Scale/timeline handling
         if current_needgantt['timeline'] is not None and current_needgantt['timeline'] != '':
@@ -305,8 +305,8 @@ def process_needgantt(app, doctree, fromdocname):
             gen_flow_link = generate_name(app, puml_node.children[0], file_ext)
             current_file_parts = fromdocname.split('/')
             subfolder_amount = len(current_file_parts) - 1
-            img_locaton = '../' * subfolder_amount + '_images/' + gen_flow_link[0].split('/')[-1]
-            flow_ref = nodes.reference('t', current_needgantt['caption'], refuri=img_locaton)
+            img_location = '../' * subfolder_amount + '_images/' + gen_flow_link[0].split('/')[-1]
+            flow_ref = nodes.reference('t', current_needgantt['caption'], refuri=img_location)
             puml_node += nodes.caption('', '', flow_ref)
 
         content.append(puml_node)
@@ -321,7 +321,7 @@ def process_needgantt(app, doctree, fromdocname):
             content.append(get_filter_para(current_needgantt))
 
         if current_needgantt['debug']:
-            content += get_debug_containter(puml_node)
+            content += get_debug_container(puml_node)
 
         puml_node['class'] = ['needgantt']
         node.replace_self(content)

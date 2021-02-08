@@ -12,7 +12,7 @@ from pkg_resources import parse_version
 
 from sphinxcontrib.plantuml import generate_name  # Need for plantuml filename calculation
 
-from sphinxcontrib.needs.filter_common import FilterBase, procces_filters, filter_single_need
+from sphinxcontrib.needs.filter_common import FilterBase, process_filters, filter_single_need
 from sphinxcontrib.needs.diagrams_common import calculate_link
 
 sphinx_version = sphinx.__version__
@@ -190,7 +190,7 @@ def process_needflow(app, doctree, fromdocname):
             puml_node["uml"] += '\n\n'
 
         all_needs = list(all_needs.values())
-        found_needs = procces_filters(all_needs, current_needflow)
+        found_needs = process_filters(all_needs, current_needflow)
 
         processed_need_part_ids = []
 
