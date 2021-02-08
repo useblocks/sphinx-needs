@@ -17,7 +17,7 @@ from sphinxcontrib.needs.diagrams_common import (
 )
 from sphinxcontrib.needs.filter_common import FilterBase
 
-from ..logging import getLogger
+from sphinxcontrib.needs.logging import getLogger
 
 logger = getLogger(__name__)
 

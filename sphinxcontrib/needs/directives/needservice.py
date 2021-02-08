@@ -5,7 +5,7 @@ from docutils.parsers.rst import Directive
 from sphinxcontrib.needs.api import add_need
 from sphinxcontrib.needs.directives.need import NeedDirective
 
-from ..logging import getLogger
+from sphinxcontrib.needs.logging import getLogger
 
 
 class Needservice(nodes.General, nodes.Element):

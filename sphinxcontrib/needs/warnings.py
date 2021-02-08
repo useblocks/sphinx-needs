@@ -4,7 +4,7 @@ Cares about handling and execution warnings.
 """
 from sphinxcontrib.needs.filter_common import filter_needs
 
-from .logging import logging, getLogger
+from sphinxcontrib.needs.logging import logging, getLogger
 
 logger = getLogger(__name__)
 

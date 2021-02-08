@@ -9,7 +9,7 @@ from docutils import nodes
 from sphinxcontrib.needs.filter_common import filter_needs, prepare_need_list
 from sphinxcontrib.needs.api.exceptions import NeedsInvalidFilter
 
-from ..logging import getLogger
+from sphinxcontrib.needs.logging import getLogger
 log = getLogger(__name__)
 
 

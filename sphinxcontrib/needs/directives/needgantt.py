@@ -13,7 +13,7 @@ from sphinxcontrib.plantuml import generate_name  # Need for plantuml filename c
 
 from sphinxcontrib.needs.filter_common import FilterBase, process_filters, filter_single_need
 from sphinxcontrib.needs.directives.utils import get_link_type_option
-from ..logging import getLogger
+from sphinxcontrib.needs.logging import getLogger
 
 logger = getLogger(__name__)
 

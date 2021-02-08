@@ -13,7 +13,7 @@ from sphinxcontrib.needs.functions import resolve_dynamic_values, find_and_repla
 from sphinxcontrib.needs.api.exceptions import NeedsInvalidException
 from sphinxcontrib.needs.functions.functions import check_and_get_content
 from sphinxcontrib.needs.layout import build_need
-from ..logging import getLogger
+from sphinxcontrib.needs.logging import getLogger
 
 logger = getLogger(__name__)
 

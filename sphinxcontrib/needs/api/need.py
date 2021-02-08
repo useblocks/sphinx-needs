@@ -9,7 +9,7 @@ from sphinx.util.nodes import nested_parse_with_titles
 from sphinxcontrib.needs.roles.need_part import update_need_with_parts, find_parts
 from sphinxcontrib.needs.filter_common import filter_single_need
 from docutils.statemachine import ViewList
-from ..logging import getLogger
+from sphinxcontrib.needs.logging import getLogger
 
 
 logger = getLogger(__name__)

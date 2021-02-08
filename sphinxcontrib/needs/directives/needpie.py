@@ -13,7 +13,7 @@ import hashlib
 import matplotlib.pyplot
 from docutils.parsers.rst import directives
 
-from ..logging import getLogger
+from sphinxcontrib.needs.logging import getLogger
 
 logger = getLogger(__name__)
 

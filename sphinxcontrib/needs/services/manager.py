@@ -2,7 +2,7 @@ from docutils.parsers.rst import directives
 
 from sphinxcontrib.needs.directives.needservice import NeedserviceDirective
 
-from ..logging import getLogger
+from sphinxcontrib.needs.logging import getLogger
 
 
 class ServiceManager:

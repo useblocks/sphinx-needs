@@ -33,7 +33,7 @@ from sphinxcontrib.needs.defaults import DEFAULT_DIAGRAM_TEMPLATE, LAYOUTS, NEED
 from sphinxcontrib.needs.services.manager import ServiceManager
 from sphinxcontrib.needs.services.github import GithubService
 
-from .logging import getLogger
+from sphinxcontrib.needs.logging import getLogger
 
 VERSION = '0.6.0'
 

@@ -1,6 +1,6 @@
 from sphinx.builders import Builder
 from sphinxcontrib.needs.utils import NeedsList
-from .logging import getLogger
+from sphinxcontrib.needs.logging import getLogger
 
 
 class NeedsBuilder(Builder):

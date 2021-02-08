@@ -9,7 +9,7 @@ import re
 from docutils import nodes
 from docutils.parsers.rst import Directive
 from docutils.parsers.rst import directives
-from .logging import getLogger
+from sphinxcontrib.needs.logging import getLogger
 logger = getLogger(__name__)
 
 try:

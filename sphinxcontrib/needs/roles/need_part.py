@@ -10,7 +10,7 @@ from docutils import nodes
 import hashlib
 import re
 
-from ..logging import getLogger
+from sphinxcontrib.needs.logging import getLogger
 
 log = getLogger(__name__)
 

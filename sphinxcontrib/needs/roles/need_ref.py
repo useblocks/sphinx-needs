@@ -5,7 +5,7 @@ except ImportError:
     from sphinx.environment import NoUri  # Sphinx < 3.0
 from sphinx.util.nodes import make_refnode
 
-from ..logging import getLogger
+from sphinxcontrib.needs.logging import getLogger
 log = getLogger(__name__)
 
 

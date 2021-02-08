@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 import os
 import shutil
-from .logging import getLogger
+from sphinxcontrib.needs.logging import getLogger
 
 logger = getLogger(__name__)
 

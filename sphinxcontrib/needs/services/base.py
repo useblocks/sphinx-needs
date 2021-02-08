@@ -1,4 +1,4 @@
-from ..logging import getLogger
+from sphinxcontrib.needs.logging import getLogger
 
 
 class BaseService:
