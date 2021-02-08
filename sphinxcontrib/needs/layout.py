@@ -589,7 +589,7 @@ class LayoutHandler:
             data_line = nodes.line()
             label = prefix + '{}:'.format(data) + postfix + ' '
             result = self.meta(data, label, show_empty)
-            if not show_empty and result is None or len(str(result)) == 0 or bool(result) is False:
+            if not (show_empty or result):
                 continue
             if isinstance(result, list):
                 data_line += result
