@@ -40,7 +40,6 @@ def random_data_callback(request):
     return 200, [], json.dumps(data)
 
 
-
 #  OFFICIAL DOCUMENTATION BUILDS
 
 @responses.activate
@@ -48,6 +47,7 @@ def random_data_callback(request):
 def test_build_html(app, status, warning):
     responses.add_callback(responses.GET, re.compile(r'https://api.github.com/.*'), callback=random_data_callback,
                            content_type='application/json')
+    responses.add(responses.GET, re.compile(r'https://avatars.githubusercontent.com/.*'), body='')
     app.builder.build_all()
 
 
@@ -56,6 +56,7 @@ def test_build_html(app, status, warning):
 def test_build_singlehtml(app, status, warning):
     responses.add_callback(responses.GET, re.compile(r'https://api.github.com/.*'), callback=random_data_callback,
                            content_type='application/json')
+    responses.add(responses.GET, re.compile(r'https://avatars.githubusercontent.com/.*'), body='')
     app.builder.build_all()
 
 
@@ -64,6 +65,7 @@ def test_build_singlehtml(app, status, warning):
 def test_build_latex(app, status, warning):
     responses.add_callback(responses.GET, re.compile(r'https://api.github.com/.*'), callback=random_data_callback,
                            content_type='application/json')
+    responses.add(responses.GET, re.compile(r'https://avatars.githubusercontent.com/.*'), body='')
     app.builder.build_all()
 
 
@@ -72,6 +74,7 @@ def test_build_latex(app, status, warning):
 def test_build_epub(app, status, warning):
     responses.add_callback(responses.GET, re.compile(r'https://api.github.com/.*'), callback=random_data_callback,
                            content_type='application/json')
+    responses.add(responses.GET, re.compile(r'https://avatars.githubusercontent.com/.*'), body='')
     app.builder.build_all()
 
 
@@ -80,6 +83,7 @@ def test_build_epub(app, status, warning):
 def test_build_json(app, status, warning):
     responses.add_callback(responses.GET, re.compile(r'https://api.github.com/.*'), callback=random_data_callback,
                            content_type='application/json')
+    responses.add(responses.GET, re.compile(r'https://avatars.githubusercontent.com/.*'), body='')
     app.builder.build_all()
 
 
@@ -88,6 +92,7 @@ def test_build_json(app, status, warning):
 def test_build_needs(app, status, warning):
     responses.add_callback(responses.GET, re.compile(r'https://api.github.com/.*'), callback=random_data_callback,
                            content_type='application/json')
+    responses.add(responses.GET, re.compile(r'https://avatars.githubusercontent.com/.*'), body='')
     app.builder.build_all()
     json_text = Path(app.outdir, 'needs.json').read_text()
     needs_data = json.loads(json_text)
@@ -124,4 +129,5 @@ def test_build_needs(app, status, warning):
 def test_id_required_build_html(app, status, warning):
     responses.add_callback(responses.GET, re.compile(r'https://api.github.com/.*'), callback=random_data_callback,
                            content_type='application/json')
+    responses.add(responses.GET, re.compile(r'https://avatars.githubusercontent.com/.*'), body='')
     app.builder.build_all()
