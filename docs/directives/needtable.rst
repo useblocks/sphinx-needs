@@ -341,7 +341,7 @@ sort
 The sort-value must be compatible to the options supported by :ref:`filter_string` and the addressed need-value
 must be from type ``string``, ``float`` or ``int``.
 
-If no sort option is given, ``id`` is used by default:
+If no sort option is given, ``id_complete`` is used by default:
 
 .. needtable::
    :tags: ex_row_color
