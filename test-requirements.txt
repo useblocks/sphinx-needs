@@ -8,3 +8,4 @@ nose
 sphinx_testing>=1.0
 sphinxcontrib-plantuml
 sphinx-copybutton
+responses

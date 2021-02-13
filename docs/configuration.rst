@@ -1085,10 +1085,12 @@ If ``False``, unknown option data is not shown anywhere.
 
 Default: ``False``.
 
-needs_service_all_data = True
+.. code-block:: rst
+
+    needs_service_all_data = True
 
 Removed options
-------------------
+---------------
 
 The following options are no longer supported, if the latest version of sphinx-needs is used.
 

@@ -15,3 +15,4 @@ _build
 .coverage
 .doctrees
 docs/github_images/
+.eggs/

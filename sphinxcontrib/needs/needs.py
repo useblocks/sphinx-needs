@@ -146,6 +146,8 @@ def setup(app):
     app.add_config_value('needs_services', {}, 'html')
     app.add_config_value('needs_service_all_data', False, 'html')
 
+    app.add_config_value('needs_debug_no_external_calls', False, 'html')
+
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(Needfilter, )
@@ -318,7 +320,6 @@ def prepare_env(app, env, docname):
         app.needs_services = ServiceManager(app)
 
     # Register embedded services
-    # env.needs_services.register('jira', JiraService)
     app.needs_services.register('github-issues', GithubService, gh_type='issue')
     app.needs_services.register('github-prs', GithubService, gh_type='pr')
     app.needs_services.register('github-commits', GithubService, gh_type='commit')
