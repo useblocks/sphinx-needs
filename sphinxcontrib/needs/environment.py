@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Iterable
 
@@ -6,7 +5,7 @@ import sphinx
 from pkg_resources import parse_version
 from sphinx.application import Sphinx
 from sphinx.util.console import brown
-from sphinx.util.osutil import copyfile, ensuredir
+from sphinx.util.osutil import copyfile
 
 from sphinxcontrib.needs.utils import logger
 
@@ -131,84 +130,76 @@ def install_styles_static_files(app: Sphinx, env):
         safe_add_file(relative_path, app)
 
 
-def install_datatables_static_files(app: Sphinx, env):
-    STATICS_DIR_PATH = Path(app.builder.outdir) / IMAGE_DIR_NAME
-    dest_path = STATICS_DIR_PATH / "sphinx-needs" / "libs" / "html"
-    source_folder = Path(__file__).parent / "libs" / "html"
-
-    files_to_copy = [f for f in source_folder.glob("**/*") if f.is_file()]
-
+def install_static_files(
+    app: Sphinx,
+    source_dir: Path,
+    destination_dir: Path,
+    files_to_copy: Iterable[Path],
+    message: str,
+):
     if parse_version(sphinx_version) < parse_version("1.6"):
         global status_iterator
         status_iterator = app.status_iterator
 
     for source_file_path in status_iterator(
         files_to_copy,
-        "Copying static files for sphinx-needs datatables support...",
+        message,
         brown,
-        len(files_to_copy),
     ):
+        source_file = Path(source_file_path)
 
-        if not os.path.isabs(source_file_path):
-            raise IOError("Path must be absolute. Got: {}".format(source_file_path))
+        if not source_file.is_absolute():
+            raise IOError("Path must be absolute. Got: {}".format(source_file))
 
-        if not os.path.exists(source_file_path):
-            raise IOError("File not found: {}".format(source_file_path))
+        if not source_file.exists():
+            raise IOError("File not found: {}".format(source_file))
 
-        dest_file_path = os.path.join(
-            dest_path, os.path.relpath(source_file_path, source_folder)
-        )
+        relative_path = source_file.relative_to(source_dir)
+        destination_file = destination_dir / relative_path
+        destination_file.parent.mkdir(parents=True, exist_ok=True)
 
-        if not os.path.exists(os.path.dirname(dest_file_path)):
-            ensuredir(os.path.dirname(dest_file_path))
+        copyfile(str(source_file), str(destination_file))
 
-        copyfile(source_file_path, dest_file_path)
+
+def install_datatables_static_files(app: Sphinx, env):
+    STATICS_DIR_PATH = Path(app.builder.outdir) / IMAGE_DIR_NAME
+    destination_dir = STATICS_DIR_PATH / "sphinx-needs" / "libs" / "html"
+    source_dir = Path(__file__).parent / "libs" / "html"
+
+    files_to_copy = [f for f in source_dir.glob("**/*") if f.is_file()]
+
+    install_static_files(
+        app,
+        source_dir,
+        destination_dir,
+        files_to_copy,
+        "Copying static files for sphinx-needs datatables support...",
+    )
 
     # Add the needed datatables js and css file
     html_path = Path("sphinx-needs") / "libs" / "html"
-    safe_add_file(html_path / "datatables.min.js", app)
-    safe_add_file(html_path / "datatables_loader.js", app)
-    safe_add_file(html_path / "datatables.min.css", app)
+    for f in ["datatables.min.js", "datatables_loader.js", "datatables.min.css"]:
+        safe_add_file(html_path / f, app)
 
 
-def install_collapse_static_files(app, env):
-    STATICS_DIR_PATH = os.path.join(app.builder.outdir, IMAGE_DIR_NAME)
-    dest_path = os.path.join(STATICS_DIR_PATH, "sphinx-needs")
+def install_collapse_static_files(app: Sphinx, env):
+    STATICS_DIR_PATH = Path(app.builder.outdir) / IMAGE_DIR_NAME
+    destination_dir = STATICS_DIR_PATH / "sphinx-needs"
+    source_dir = Path(__file__).parent / "libs" / "html"
 
-    source_folder = os.path.join(os.path.dirname(__file__), "libs/html")
-    files_to_copy = [os.path.join(source_folder, "sphinx_needs_collapse.js")]
+    files_to_copy = [source_dir / "sphinx_needs_collapse.js"]
 
-    if parse_version(sphinx_version) < parse_version("1.6"):
-        global status_iterator
-        status_iterator = app.status_iterator
-
-    for source_file_path in status_iterator(
+    install_static_files(
+        app,
+        source_dir,
+        destination_dir,
         files_to_copy,
         "Copying static files for sphinx-needs collapse support...",
-        brown,
-        len(files_to_copy),
-    ):
+    )
 
-        if not os.path.isabs(source_file_path):
-            raise IOError("Path must be absolute. Got: {}".format(source_file_path))
-
-        if not os.path.exists(source_file_path):
-            raise IOError("File not found: {}".format(source_file_path))
-
-        dest_file_path = os.path.join(
-            dest_path, os.path.relpath(source_file_path, source_folder)
-        )
-
-        if not os.path.exists(os.path.dirname(dest_file_path)):
-            ensuredir(os.path.dirname(dest_file_path))
-
-        copyfile(source_file_path, dest_file_path)
-
-        collapse_js = (
-            Path("sphinx-needs") / "libs" / "html" / "sphinx_needs_collapse.js"
-        )
-        safe_remove_file(collapse_js, app)
-        safe_add_file(collapse_js, app)
+    collapse_js = Path("sphinx-needs") / "libs" / "html" / "sphinx_needs_collapse.js"
+    safe_remove_file(collapse_js, app)
+    safe_add_file(collapse_js, app)
 
 
 def install_feather_icons(app, env):
