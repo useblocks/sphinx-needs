@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import sphinx
+from sphinx.application import Sphinx
 from pkg_resources import parse_version
 from sphinx.util.console import brown
 from sphinx.util.osutil import copyfile, ensuredir
@@ -16,7 +17,7 @@ if parse_version(sphinx_version) >= parse_version("1.6"):
 IMAGE_DIR_NAME = "_static"
 
 
-def safe_add_file(filename: Path, app):
+def safe_add_file(filename: Path, app: Sphinx):
     """
     Adds files to builder resources only, if the given filename was not already
     registered.
@@ -47,7 +48,7 @@ def safe_add_file(filename: Path, app):
         )
 
 
-def safe_remove_file(filename: Path, app):
+def safe_remove_file(filename: Path, app: Sphinx):
     """
     Removes a given resource file from builder resources.
 
@@ -77,27 +78,30 @@ def safe_remove_file(filename: Path, app):
 
 # Base implementation from sphinxcontrib-images
 # https://github.com/spinus/sphinxcontrib-images/blob/master/sphinxcontrib/images.py#L203
-def install_styles_static_files(app, env):
-    STATICS_DIR_PATH = os.path.join(app.builder.outdir, IMAGE_DIR_NAME)
-    dest_path = os.path.join(STATICS_DIR_PATH, "sphinx-needs")
+def install_styles_static_files(app: Sphinx, env):
+    STATICS_DIR_PATH = Path(app.builder.outdir) / IMAGE_DIR_NAME
+    dest_path = STATICS_DIR_PATH / "sphinx-needs"
 
-    files_to_copy = ["common.css"]
+    files_to_copy = [Path("common.css")]
+
+    def get_source_folder(theme: str) -> Path:
+        return Path(__file__).parent / "css" / theme
 
     if app.config.needs_css == "modern.css":
-        source_folder = os.path.join(os.path.dirname(__file__), "css/modern/")
-        for root, _dirs, files in os.walk(source_folder):
+        source_folder = get_source_folder("modern")
+        for root, dirs, files in os.walk(str(source_folder)):
             for single_file in files:
-                files_to_copy.append(os.path.join(root, single_file))
+                files_to_copy.append(Path(root) / single_file)
     elif app.config.needs_css == "dark.css":
-        source_folder = os.path.join(os.path.dirname(__file__), "css/dark/")
-        for root, _dirs, files in os.walk(source_folder):
+        source_folder = get_source_folder("dark")
+        for root, dirs, files in os.walk(source_folder):
             for single_file in files:
-                files_to_copy.append(os.path.join(root, single_file))
+                files_to_copy.append(Path(root) / single_file)
     elif app.config.needs_css == "blank.css":
-        source_folder = os.path.join(os.path.dirname(__file__), "css/blank/")
-        for root, _dirs, files in os.walk(source_folder):
+        source_folder = get_source_folder("blank")
+        for root, dirs, files in os.walk(source_folder):
             for single_file in files:
-                files_to_copy.append(os.path.join(root, single_file))
+                files_to_copy.append(Path(root) / single_file)
     else:
         files_to_copy += [app.config.needs_css]
 
