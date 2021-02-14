@@ -587,7 +587,7 @@ class LayoutHandler:
                 continue
 
             data_line = nodes.line()
-            label = f'{prefix}{data}:{postfix} '
+            label = prefix + '{}:'.format(data) + postfix + ' '
             result = self.meta(data, label, show_empty)
             if not (show_empty or result):
                 continue
