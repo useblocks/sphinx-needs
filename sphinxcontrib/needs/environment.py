@@ -47,7 +47,7 @@ def safe_add_file(filename: Path, app):
         )
 
 
-def safe_remove_file(filename, app):
+def safe_remove_file(filename: Path, app):
     """
     Removes a given resource file from builder resources.
 
@@ -59,21 +59,20 @@ def safe_remove_file(filename, app):
     :param app: app object
     :return: None
     """
-    data_file = filename
-    static_data_file = os.path.join("_static", data_file)
+    static_data_file = Path("_static") / filename
 
-    if data_file.split(".")[-1] == "js":
+    if filename.suffix == ".js":
         if (
             hasattr(app.builder, "script_files")
-            and static_data_file in app.builder.script_files
+            and str(static_data_file) in app.builder.script_files
         ):
-            app.builder.script_files.remove(static_data_file)
-    elif data_file.split(".")[-1] == "css":
+            app.builder.script_files.remove(str(static_data_file))
+    elif filename.suffix == ".css":
         if (
             hasattr(app.builder, "css_files")
-            and static_data_file in app.builder.css_files
+            and str(static_data_file) in app.builder.css_files
         ):
-            app.builder.css_files.remove(static_data_file)
+            app.builder.css_files.remove(str(static_data_file))
 
 
 # Base implementation from sphinxcontrib-images
@@ -103,10 +102,10 @@ def install_styles_static_files(app, env):
         files_to_copy += [app.config.needs_css]
 
     # Be sure no "old" css layout is already set
-    safe_remove_file("sphinx-needs/common.css", app)
-    safe_remove_file("sphinx-needs/blank.css", app)
-    safe_remove_file("sphinx-needs/modern.css", app)
-    safe_remove_file("sphinx-needs/dark.css", app)
+    safe_remove_file(Path("sphinx-needs/common.css"), app)
+    safe_remove_file(Path("sphinx-needs/blank.css"), app)
+    safe_remove_file(Path("sphinx-needs/modern.css"), app)
+    safe_remove_file(Path("sphinx-needs/dark.css"), app)
 
     if parse_version(sphinx_version) < parse_version("1.6"):
         global status_iterator
@@ -222,9 +221,9 @@ def install_collapse_static_files(app, env):
 
         copyfile(source_file_path, dest_file_path)
 
-        html_path = Path("sphinx-needs") / "libs" / "html"
-        safe_remove_file("sphinx-needs/libs/html/sphinx_needs_collapse.js", app)
-        safe_add_file(html_path / "sphinx_needs_collapse.js", app)
+        collapse_js = Path("sphinx-needs") / "libs" / "html" / "sphinx_needs_collapse.js"
+        safe_remove_file(collapse_js, app)
+        safe_add_file(collapse_js, app)
 
 
 def install_feather_icons(app, env):
