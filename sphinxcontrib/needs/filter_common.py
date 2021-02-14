@@ -11,7 +11,7 @@ import copy
 from docutils.parsers.rst import Directive
 from docutils.parsers.rst import directives
 
-from sphinxcontrib.needs.utils import status_sorter, merge_two_dicts, logger
+from sphinxcontrib.needs.utils import status_sorter, logger
 
 urlParse = urllib.parse.quote_plus
 
@@ -174,7 +174,7 @@ def prepare_need_list(need_list):
 
     for need in need_list:
         for part in need['parts'].values():
-            filter_part = merge_two_dicts(need, part)
+            filter_part = {**need, **part}
             filter_part['id_parent'] = need['id']
             filter_part['id_complete'] = ".".join([need['id'], filter_part['id']])
             all_needs_incl_parts.append(filter_part)

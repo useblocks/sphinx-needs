@@ -1,28 +1,74 @@
-from docutils import nodes
 import json
-from datetime import datetime
-import os
 import shutil
 from sphinxcontrib.needs.logging import getLogger
+from datetime import datetime
+from pathlib import Path
+from typing import Optional
+
+from docutils import nodes
 
 logger = getLogger(__name__)
 
 NEEDS_FUNCTIONS = {}
 
 # List of internal need option names. They should not be used by or presented to user.
-INTERNALS = ['docname', 'lineno', 'target_node', 'refid', 'content', 'pre_content', 'post_content',
-             'collapse', 'parts', 'id_parent',
-             'id_complete', 'title', 'full_title', 'is_part', 'is_need',
-             'type_prefix', 'type_color', 'type_style', 'type', 'type_name', 'id',
-             'hide', 'hide_status', 'hide_tags', 'sections', 'section_name', 'content_node',
-             ]
+INTERNALS = [
+    "docname",
+    "lineno",
+    "target_node",
+    "refid",
+    "content",
+    "pre_content",
+    "post_content",
+    "collapse",
+    "parts",
+    "id_parent",
+    "id_complete",
+    "title",
+    "full_title",
+    "is_part",
+    "is_need",
+    "type_prefix",
+    "type_color",
+    "type_style",
+    "type",
+    "type_name",
+    "id",
+    "hide",
+    "hide_status",
+    "hide_tags",
+    "sections",
+    "section_name",
+    "content_node",
+]
 
 
-MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
-               'September', 'October', 'November', 'December']
+MONTH_NAMES = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+]
 
 
-def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=False, ref_lookup=False, prefix=''):
+def row_col_maker(
+    app,
+    fromdocname,
+    all_needs,
+    need_info,
+    need_key,
+    make_ref=False,
+    ref_lookup=False,
+    prefix="",
+):
     """
     Creates and returns a column.
 
@@ -32,11 +78,12 @@ def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=Fal
     :param need_info: need_info object, which stores all related need data
     :param need_key: The key to access the needed data from need_info
     :param make_ref: If true, creates a reference for the given data in need_key
-    :param ref_lookup: If true, it uses the data to lookup for a related need and uses its data to create the reference
+    :param ref_lookup: If true, it uses the data to lookup for a related need and uses
+        its data to create the reference
     :param prefix: string, which is used as prefix for the text output
     :return: column object (nodes.entry)
     """
-    row_col = nodes.entry(classes=['needs_' + need_key])
+    row_col = nodes.entry(classes=["needs_" + need_key])
     para_col = nodes.paragraph()
 
     if need_key in need_info and need_info[need_key] is not None:
@@ -52,12 +99,12 @@ def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=Fal
             link_list = []
             for link_type in app.env.config.needs_extra_links:
                 link_list.append(link_type["option"])
-                link_list.append(link_type["option"] + '_back')
+                link_list.append(link_type["option"] + "_back")
 
             if need_key in link_list:
-                if '.' in datum:
-                    link_id = datum.split('.')[0]
-                    link_part = datum.split('.')[1]
+                if "." in datum:
+                    link_id = datum.split(".")[0]
+                    link_part = datum.split(".")[1]
 
             datum_text = prefix + str(datum)
             text_col = nodes.Text(datum_text, datum_text)
@@ -65,14 +112,18 @@ def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=Fal
                 try:
                     ref_col = nodes.reference("", "")
                     if not ref_lookup:
-                        ref_col['refuri'] = app.builder.get_relative_uri(fromdocname, need_info['docname'])
-                        ref_col['refuri'] += "#" + datum
+                        ref_col["refuri"] = app.builder.get_relative_uri(
+                            fromdocname, need_info["docname"]
+                        )
+                        ref_col["refuri"] += "#" + datum
                     else:
                         temp_need = all_needs[link_id]
-                        ref_col['refuri'] = app.builder.get_relative_uri(fromdocname, temp_need['docname'])
-                        ref_col['refuri'] += "#" + temp_need["id"]
+                        ref_col["refuri"] = app.builder.get_relative_uri(
+                            fromdocname, temp_need["docname"]
+                        )
+                        ref_col["refuri"] += "#" + temp_need["id"]
                         if link_part is not None:
-                            ref_col['refuri'] += '.' + link_part
+                            ref_col["refuri"] += "." + link_part
 
                 except KeyError:
                     para_col += text_col
@@ -106,27 +157,45 @@ def rstjinja(app, docname, source):
     Render our pages as a jinja template for fancy templating goodness.
     """
     # Make sure we're outputting HTML
-    if app.builder.format != 'html':
+    if app.builder.format != "html":
         return
     src = source[0]
-    rendered = app.builder.templates.render_string(
-        src, app.config.html_context
-    )
+    rendered = app.builder.templates.render_string(src, app.config.html_context)
     source[0] = rendered
 
 
 class NeedsList:
-    JSON_KEY_EXCLUSIONS_NEEDS = {'links_back', 'type_color', 'hide_status',
-                                 'target_node', 'hide', 'type_prefix', 'lineno',
-                                 'collapse', 'type_style', 'hide_tags',
-                                 'content', 'content_node'}
+    JSON_KEY_EXCLUSIONS_NEEDS = {
+        "links_back",
+        "type_color",
+        "hide_status",
+        "target_node",
+        "hide",
+        "type_prefix",
+        "lineno",
+        "collapse",
+        "type_style",
+        "hide_tags",
+        "content",
+        "content_node",
+    }
 
-    JSON_KEY_EXCLUSIONS_FILTERS = {'links_back', 'type_color', 'hide_status',
-                                   'target_node', 'hide', 'type_prefix', 'lineno',
-                                   'collapse', 'type_style', 'hide_tags',
-                                   'content', 'content_node'}
+    JSON_KEY_EXCLUSIONS_FILTERS = {
+        "links_back",
+        "type_color",
+        "hide_status",
+        "target_node",
+        "hide",
+        "type_prefix",
+        "lineno",
+        "collapse",
+        "type_style",
+        "hide_tags",
+        "content",
+        "content_node",
+    }
 
-    def __init__(self, config, outdir, confdir):
+    def __init__(self, config, outdir: Path, confdir: Path):
         self.log = getLogger(__name__)
         self.config = config
         self.outdir = outdir
@@ -137,15 +206,18 @@ class NeedsList:
             "project": self.project,
             "current_version": self.current_version,
             "created": "",
-            "versions": {}}
+            "versions": {},
+        }
 
     def update_or_add_version(self, version):
         if version not in self.needs_list["versions"].keys():
-            self.needs_list["versions"][version] = {"created": "",
-                                                    "needs_amount": 0,
-                                                    "needs": {},
-                                                    "filters_amount": 0,
-                                                    "filters": {}}
+            self.needs_list["versions"][version] = {
+                "created": "",
+                "needs_amount": 0,
+                "needs": {},
+                "filters_amount": 0,
+                "filters": {},
+            }
 
         if "needs" not in self.needs_list["versions"][version].keys():
             self.needs_list["versions"][version]["needs"] = {}
@@ -154,72 +226,61 @@ class NeedsList:
 
     def add_need(self, version, need_info):
         self.update_or_add_version(version)
-        writable_needs = {key: need_info[key] for key in need_info
-                          if key not in self.JSON_KEY_EXCLUSIONS_NEEDS}
-        writable_needs['description'] = need_info['content']
+        writable_needs = {
+            key: need_info[key]
+            for key in need_info
+            if key not in self.JSON_KEY_EXCLUSIONS_NEEDS
+        }
+        writable_needs["description"] = need_info["content"]
         self.needs_list["versions"][version]["needs"][need_info["id"]] = writable_needs
-        self.needs_list["versions"][version]["needs_amount"] = len(self.needs_list["versions"][version]["needs"])
+        self.needs_list["versions"][version]["needs_amount"] = len(
+            self.needs_list["versions"][version]["needs"]
+        )
 
     def add_filter(self, version, need_filter):
         self.update_or_add_version(version)
-        writable_filters = {key: need_filter[key] for key in need_filter if key not in self.JSON_KEY_EXCLUSIONS_FILTERS}
-        self.needs_list["versions"][version]["filters"][need_filter["export_id"].upper()] = writable_filters
-        self.needs_list["versions"][version]["filters_amount"] = len(self.needs_list["versions"][version]["filters"])
+        writable_filters = {
+            key: need_filter[key]
+            for key in need_filter
+            if key not in self.JSON_KEY_EXCLUSIONS_FILTERS
+        }
+        self.needs_list["versions"][version]["filters"][
+            need_filter["export_id"].upper()
+        ] = writable_filters
+        self.needs_list["versions"][version]["filters_amount"] = len(
+            self.needs_list["versions"][version]["filters"]
+        )
 
     def wipe_version(self, version):
         if version in self.needs_list["versions"].keys():
-            del (self.needs_list["versions"][version])
+            del self.needs_list["versions"][version]
 
-    def write_json(self, file=None):
-        # We need to rewrite some data, because this kind of data gets overwritten during needs.json import.
+    def write_json(self):
+        # We need to rewrite some data, because this kind of data gets overwritten
+        # during needs.json import.
         self.needs_list["created"] = datetime.now().isoformat()
         self.needs_list["current_version"] = self.current_version
         self.needs_list["project"] = self.project
 
-        needs_json = json.dumps(self.needs_list, indent=4, sort_keys=True)
-        file = os.path.join(self.outdir, "needs.json")
+        file = self.outdir / "needs.json"
+        with open(file, "w") as f:
+            json.dump(self.needs_list, f, indent=4, sort_keys=True)
 
-        # if file is None:
-        #     file = getattr(self.config, "needs_file", "needs.json")
-        with open(file, "w") as needs_file:
-            needs_file.write(needs_json)
-
-        doc_tree_folder = os.path.join(self.outdir, ".doctrees")
-        if os.path.exists(doc_tree_folder):
+        doc_tree_folder = self.outdir / ".doctrees"
+        if doc_tree_folder.exists():
             shutil.rmtree(doc_tree_folder)
 
-    def load_json(self, file=None):
+    def load_json(self, file: Optional[Path] = None):
         if file is None:
-            file = getattr(self.config, "needs_file", "needs.json")
-        if not os.path.isabs(file):
-            file = os.path.join(self.confdir, file)
+            file = Path(getattr(self.config, "needs_file", "needs.json"))
+        if not file.is_absolute():
+            file = self.confdir / file
 
-        if not os.path.exists(file):
-            self.log.warning("Could not load needs json file {0}".format(file))
+        if file.exists():
+            with open(file, "r") as f:
+                try:
+                    self.needs_list = json.load(f)
+                except json.JSONDecodeError:
+                    self.log.warning("Could not decode json file {0}".format(file))
         else:
-            with open(file, "r") as needs_file:
-                needs_file_content = needs_file.read()
-            try:
-                needs_list = json.loads(needs_file_content)
-            except json.JSONDecodeError:
-                self.log.warning("Could not decode json file {0}".format(file))
-            else:
-                self.needs_list = needs_list
-
-
-def merge_two_dicts(x, y):
-    """
-    Merges 2 dictionary.
-    Overrides values from x with values from y, if key is the same.
-
-    Needed for Python < 3.5
-
-    See: https://stackoverflow.com/a/26853961
-
-    :param x:
-    :param y:
-    :return:
-    """
-    z = x.copy()  # start with x's keys and values
-    z.update(y)  # modifies z with y's keys and values & returns None
-    return z
+            self.log.warning("Could not load needs json file {0}".format(file))

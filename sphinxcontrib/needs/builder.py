@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from sphinx.builders import Builder
 from sphinxcontrib.needs.utils import NeedsList
 from sphinxcontrib.needs.logging import getLogger
@@ -18,7 +20,7 @@ class NeedsBuilder(Builder):
         filters = self.env.needs_all_filters
         config = self.env.config
         version = config.version
-        needs_list = NeedsList(config, self.outdir, self.confdir)
+        needs_list = NeedsList(config, Path(self.outdir), Path(self.confdir))
 
         needs_list.load_json()
 

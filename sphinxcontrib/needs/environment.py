@@ -79,14 +79,14 @@ def safe_remove_file(filename: Path, app: Sphinx):
 # Base implementation from sphinxcontrib-images
 # https://github.com/spinus/sphinxcontrib-images/blob/master/sphinxcontrib/images.py#L203
 def install_styles_static_files(app: Sphinx, env):
-    STATICS_DIR_PATH = Path(app.builder.outdir) / IMAGE_DIR_NAME
-    CSS_DIR = Path(__file__).parent / "css"
-    dest_dir = STATICS_DIR_PATH / "sphinx-needs"
+    statics_dir = Path(app.builder.outdir) / IMAGE_DIR_NAME
+    css_root = Path(__file__).parent / "css"
+    dest_dir = statics_dir / "sphinx-needs"
 
     def find_css_files() -> Iterable[Path]:
         for theme in ["modern", "dark", "blank"]:
             if app.config.needs_css == "{}.css".format(theme):
-                css_dir = CSS_DIR / theme
+                css_dir = css_root / theme
                 return [f for f in css_dir.glob("**/*") if f.is_file()]
         return [app.config.needs_css]
 
@@ -111,10 +111,10 @@ def install_styles_static_files(app: Sphinx, env):
         source_file_path = Path(source_file_path)
 
         if not source_file_path.is_absolute():
-            source_file_path = CSS_DIR / source_file_path
+            source_file_path = css_root / source_file_path
 
         if not source_file_path.exists():
-            source_file_path = CSS_DIR / "blank" / "blank.css"
+            source_file_path = css_root / "blank" / "blank.css"
             logger.warning(
                 "{0} not found. Copying sphinx-internal blank.css".format(
                     source_file_path
@@ -126,7 +126,7 @@ def install_styles_static_files(app: Sphinx, env):
 
         copyfile(str(source_file_path), str(dest_file))
 
-        relative_path = Path(dest_file).relative_to(STATICS_DIR_PATH)
+        relative_path = Path(dest_file).relative_to(statics_dir)
         safe_add_file(relative_path, app)
 
 
@@ -162,9 +162,9 @@ def install_static_files(
 
 
 def install_datatables_static_files(app: Sphinx, env):
-    STATICS_DIR_PATH = Path(app.builder.outdir) / IMAGE_DIR_NAME
-    destination_dir = STATICS_DIR_PATH / "sphinx-needs" / "libs" / "html"
+    statics_dir = Path(app.builder.outdir) / IMAGE_DIR_NAME
     source_dir = Path(__file__).parent / "libs" / "html"
+    destination_dir = statics_dir / "sphinx-needs" / "libs" / "html"
 
     files_to_copy = [f for f in source_dir.glob("**/*") if f.is_file()]
 
@@ -183,9 +183,9 @@ def install_datatables_static_files(app: Sphinx, env):
 
 
 def install_collapse_static_files(app: Sphinx, env):
-    STATICS_DIR_PATH = Path(app.builder.outdir) / IMAGE_DIR_NAME
-    destination_dir = STATICS_DIR_PATH / "sphinx-needs"
+    statics_dir = Path(app.builder.outdir) / IMAGE_DIR_NAME
     source_dir = Path(__file__).parent / "libs" / "html"
+    destination_dir = statics_dir / "sphinx-needs"
 
     files_to_copy = [source_dir / "sphinx_needs_collapse.js"]
 
@@ -197,7 +197,7 @@ def install_collapse_static_files(app: Sphinx, env):
         "Copying static files for sphinx-needs collapse support...",
     )
 
-    collapse_js = Path("sphinx-needs") / "libs" / "html" / "sphinx_needs_collapse.js"
+    collapse_js = source_dir / "sphinx_needs_collapse.js"
     safe_remove_file(collapse_js, app)
     safe_add_file(collapse_js, app)
 
