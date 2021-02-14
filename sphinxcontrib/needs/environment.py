@@ -1,10 +1,10 @@
 import os
-from sphinx.util.osutil import copyfile
-from sphinx.util.osutil import ensuredir
-from sphinx.util.console import brown
+from pathlib import Path
 
 import sphinx
 from pkg_resources import parse_version
+from sphinx.util.console import brown
+from sphinx.util.osutil import copyfile, ensuredir
 
 from sphinxcontrib.needs.utils import logger
 
@@ -16,31 +16,33 @@ if parse_version(sphinx_version) >= parse_version("1.6"):
 IMAGE_DIR_NAME = '_static'
 
 
-def safe_add_file(filename, app):
+def safe_add_file(filename: Path, app):
     """
-    Adds files to builder resources only, if the given filename was not
-    already registered.
-    Needed mainly for tests to avoid multiple registration of the same file
-    and therefore also multiple execution of e.g. a javascript file during
-    page load.
+    Adds files to builder resources only, if the given filename was not already
+    registered.
+
+    Needed mainly for tests to avoid multiple registration of the same file and
+    therefore also multiple execution of e.g. a javascript file during page load.
 
     :param filename: filename to remove
     :param app: app object
     :return: None
     """
-    data_file = filename
-    static_data_file = os.path.join("_static", data_file)
-
-    if data_file.split(".")[-1] == "js":
-        if hasattr(app.builder, "script_files") and static_data_file not in app.builder.script_files:
-            # app.add_javascript(data_file)
-            app.add_js_file(data_file)
-    elif data_file.split(".")[-1] == "css":
-        if hasattr(app.builder, "css_files") and static_data_file not in app.builder.css_files:
-            # app.add_stylesheet(data_file)
-            app.add_css_file(data_file)
+    static_data_file = Path("_static") / filename
+    if filename.suffix == ".js":
+        if (
+            hasattr(app.builder, "script_files") and
+            static_data_file not in app.builder.script_files
+        ):
+            app.add_js_file(str(filename))
+    elif filename.suffix == ".css":
+        if (
+            hasattr(app.builder, "css_files") and
+            static_data_file not in app.builder.css_files
+        ):
+            app.add_css_file(str(filename))
     else:
-        raise NotImplementedError("File type {} not support by save_add_file".format(data_file.split(".")[-1]))
+        raise NotImplementedError("File type {} not support by save_add_file".format(filename.suffix))
 
 
 def safe_remove_file(filename, app):
@@ -119,7 +121,8 @@ def install_styles_static_files(app, env):
 
         copyfile(source_file_path, dest_file_path)
 
-        safe_add_file(os.path.relpath(dest_file_path, STATICS_DIR_PATH), app)
+        relative_path = Path(dest_file_path).relative_to(STATICS_DIR_PATH)
+        safe_add_file(relative_path, app)
 
 
 def install_datatables_static_files(app, env):
@@ -156,9 +159,10 @@ def install_datatables_static_files(app, env):
         copyfile(source_file_path, dest_file_path)
 
     # Add the needed datatables js and css file
-    safe_add_file("sphinx-needs/libs/html/datatables.min.js", app)
-    safe_add_file("sphinx-needs/libs/html/datatables_loader.js", app)
-    safe_add_file("sphinx-needs/libs/html/datatables.min.css", app)
+    html_path = Path("sphinx-needs") / "libs" / "html"
+    safe_add_file(html_path / "datatables.min.js", app)
+    safe_add_file(html_path / "datatables_loader.js", app)
+    safe_add_file(html_path / "datatables.min.css", app)
 
 
 def install_collapse_static_files(app, env):
@@ -190,5 +194,50 @@ def install_collapse_static_files(app, env):
 
         copyfile(source_file_path, dest_file_path)
 
+        html_path = Path("sphinx-needs") / "libs" / "html"
         safe_remove_file("sphinx-needs/libs/html/sphinx_needs_collapse.js", app)
-        safe_add_file("sphinx-needs/libs/html/sphinx_needs_collapse.js", app)
+        safe_add_file(html_path / "sphinx_needs_collapse.js", app)
+
+
+def install_feather_icons(app, env):
+    pass
+    # ATTENTION: Not needed anymore!
+    # Got deactivate in needs.py for all events.
+    # We let Sphinx deal with copying the needed files , by registering only the needed icon to sphinx
+    # in the layout image function.
+
+    # STATICS_DIR_PATH = os.path.join(app.builder.outdir, IMAGE_DIR_NAME)
+    # dest_path = os.path.join(STATICS_DIR_PATH, 'sphinx-needs/images')
+    #
+    # source_folder = os.path.join(os.path.dirname(__file__), "images/feather_svg/")
+    # if any(x in app.builder.name.upper() for x in ['PDF', 'LATEX']):
+    #     # latexpdf can't handle svg files. We not to use the png format here.
+    #     source_folder = os.path.join(os.path.dirname(__file__), "images/feather_png/")
+    #
+    # files_to_copy = []
+    #
+    # for root, dirs, files in os.walk(source_folder):
+    #     for single_file in files:
+    #         files_to_copy.append(os.path.join(root, single_file))
+    #
+    # if parse_version(sphinx_version) < parse_version("1.6"):
+    #     global status_iterator
+    #     status_iterator = app.status_iterator
+    #
+    # for source_file_path in status_iterator(
+    #         files_to_copy,
+    #         'Copying images for sphinx-needs  icon support...',
+    #         brown, len(files_to_copy)):
+    #
+    #     if not os.path.isabs(source_file_path):
+    #         raise IOError("Path must be absolute. Got: {}".format(source_file_path))
+    #
+    #     if not os.path.exists(source_file_path):
+    #         raise IOError("File not found: {}".format(source_file_path))
+    #
+    #     dest_file_path = os.path.join(dest_path, os.path.relpath(source_file_path, source_folder))
+    #
+    #     if not os.path.exists(os.path.dirname(dest_file_path)):
+    #         ensuredir(os.path.dirname(dest_file_path))
+    #
+    #     copyfile(source_file_path, dest_file_path)
