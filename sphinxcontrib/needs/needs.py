@@ -240,7 +240,6 @@ def setup(app):
     app.connect('doctree-resolved', process_need_count)
     app.connect('build-finished', process_warnings)
     app.connect('env-updated', install_datatables_static_files)
-    # app.connect('env-updated', install_feather_icons)
 
     # Called during consistency check, which if after everything got read in.
     # app.connect('env-check-consistency', process_warnings)
