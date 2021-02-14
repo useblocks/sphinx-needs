@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Iterable
 
 import sphinx
 from sphinx.application import Sphinx
@@ -82,26 +83,26 @@ def install_styles_static_files(app: Sphinx, env):
     STATICS_DIR_PATH = Path(app.builder.outdir) / IMAGE_DIR_NAME
     dest_path = STATICS_DIR_PATH / "sphinx-needs"
 
+    def find_css_files(theme: str) -> Iterable[Path]:
+        source_folder = Path(__file__).parent / "css" / theme
+        for root, _dirs, files in os.walk(str(source_folder)):
+            for f in files:
+                yield Path(root) / f
+
     files_to_copy = [Path("common.css")]
 
-    def get_source_folder(theme: str) -> Path:
-        return Path(__file__).parent / "css" / theme
-
     if app.config.needs_css == "modern.css":
-        source_folder = get_source_folder("modern")
-        for root, dirs, files in os.walk(str(source_folder)):
-            for single_file in files:
-                files_to_copy.append(Path(root) / single_file)
+        files_to_copy.extend(
+            find_css_files("modern")
+        )
     elif app.config.needs_css == "dark.css":
-        source_folder = get_source_folder("dark")
-        for root, dirs, files in os.walk(source_folder):
-            for single_file in files:
-                files_to_copy.append(Path(root) / single_file)
+        files_to_copy.extend(
+            find_css_files("dark")
+        )
     elif app.config.needs_css == "blank.css":
-        source_folder = get_source_folder("blank")
-        for root, dirs, files in os.walk(source_folder):
-            for single_file in files:
-                files_to_copy.append(Path(root) / single_file)
+        files_to_copy.extend(
+            find_css_files("blank")
+        )
     else:
         files_to_copy += [app.config.needs_css]
 
