@@ -56,7 +56,7 @@ class NeedtableDirective(FilterBase):
         style_row = self.options.get("style_row", "")
         style_col = self.options.get("style_col", "")
 
-        sort = self.options.get("sort", "id")
+        sort = self.options.get("sort", "id_complete")
 
         # Add the need and all needed information
         env.need_all_needtables[targetid] = {
