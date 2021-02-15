@@ -1,7 +1,4 @@
-try:
-    from pathlib import Path
-except ImportError:
-    from pathlib2 import Path
+from pathlib import Path
 
 from sphinx_testing import with_app
 
@@ -26,4 +23,3 @@ def test_extra_links_latex(app, status, warning):
     assert 'tests' in tex
     assert 'blocked by' in tex
     assert 'blocks' in tex
-

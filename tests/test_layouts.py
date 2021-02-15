@@ -1,6 +1,8 @@
 import sys
+
 import sphinx
 from sphinx_testing import with_app
+
 from tests.util import extract_needs_from_html
 
 

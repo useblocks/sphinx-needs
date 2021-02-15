@@ -1,12 +1,8 @@
-try:
-    from pathlib import Path
-except ImportError:
-    from pathlib2 import Path
-
-from sphinx_testing import with_app
-
 import imp
 import sys
+from pathlib import Path
+
+from sphinx_testing import with_app
 
 dummy_code = """
 def setup(app):
@@ -14,7 +10,7 @@ def setup(app):
 
     def after_config(app, config):
         print(get_need_types(app))
-    
+
     # app.connect('config-inited', after_config)
     print(get_need_types(app))
     return {'version': '0.1'}

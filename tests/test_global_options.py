@@ -1,9 +1,6 @@
-import re
+from pathlib import Path
+
 from sphinx_testing import with_app
-try:
-    from pathlib import Path
-except ImportError:
-    from pathlib2 import Path
 
 
 @with_app(buildername='html', srcdir='doc_test/doc_global_options')

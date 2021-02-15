@@ -18,6 +18,7 @@
 #
 import os
 import sys
+
 from docutils.parsers.rst import directives
 
 sys.path.insert(0, os.path.abspath('../../sphinxcontrib'))
@@ -50,6 +51,7 @@ needs_extra_options = {
 
 def my_own_function(app, need, needs):
     return "Awesome"
+
 
 needs_functions = [my_own_function]
 

@@ -1,10 +1,5 @@
-import sys
 from xml.etree import ElementTree
-
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import StringIO
 
 NS = {'html': 'http://www.w3.org/1999/xhtml'}
 
@@ -24,7 +19,6 @@ class HtmlNeed(object):
 
     @property
     def title(self):
-        title = self.need.find(".//html:span[@class='needs_title']", NS)
         found_title = self.need.find(".//html:span[@class='needs_title']", NS)
         if found_title is None:
             found_title = self.need.find(".//html:span[@class='needs_title']", {'html': ''})
@@ -36,12 +30,8 @@ def extract_needs_from_html(html):
     html = html.replace('&copy;', '')
     html = html.replace('&amp;', '')
 
-    if sys.version_info >= (3, 0):
-        source = StringIO(html)
-        parser = ElementTree.XMLParser(encoding="utf-8")
-    else:  # Python 2.x
-        source = StringIO(html.encode("utf-8"))
-        parser = ElementTree.XMLParser(encoding="utf-8")
+    source = StringIO(html)
+    parser = ElementTree.XMLParser(encoding="utf-8")
 
     # XML knows not nbsp definition, which comes from HTML.
     # So we need to add it

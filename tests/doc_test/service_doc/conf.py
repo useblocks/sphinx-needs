@@ -19,6 +19,8 @@
 import os
 import sys
 
+from tests.test_services.test_service_basics import TestService
+
 sys.path.insert(0, os.path.abspath('../../sphinxcontrib'))
 
 # -- General configuration ------------------------------------------------
@@ -40,8 +42,6 @@ needs_types = [
     dict(directive="impl", title="Implementation", prefix="IM_", color="#DF744A", style="node"),
     dict(directive="test", title="Test Case", prefix="TC_", color="#DCB239", style="node")
 ]
-
-from tests.test_services.test_service_basics import TestService
 
 
 needs_services = {

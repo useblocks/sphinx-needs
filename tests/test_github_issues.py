@@ -1,17 +1,8 @@
 import re
+from pathlib import Path
+from subprocess import STDOUT, check_output
 
 from sphinx_testing import with_app
-
-try:
-    from pathlib import Path
-except ImportError:
-    from pathlib2 import Path
-
-try:
-    from StringIO import StringIO  # Python 2
-except ImportError:
-    from io import StringIO  # Python 3
-from subprocess import check_output, STDOUT
 
 # @with_app(buildername='html', srcdir='doc_test/doc_github_issue_21')
 # def test_doc_github_21(app, status, warning):
@@ -74,4 +65,3 @@ def test_doc_github_160(app, status, warning):
     app.build()
     html = Path(app.outdir, 'index.html').read_text()
     assert '<a class="reference internal" href="#A-001" title="A-002">A-001</a>' in html
-
