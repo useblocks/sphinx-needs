@@ -1,7 +1,6 @@
 import os
 import re
 import sphinx
-import sys
 import urllib
 
 from docutils import nodes
@@ -23,10 +22,7 @@ else:
     import logging
 logger = logging.getLogger(__name__)
 
-if sys.version_info.major < 3:
-    urlParse = urllib.quote_plus
-else:
-    urlParse = urllib.parse.quote_plus
+urlParse = urllib.parse.quote_plus
 
 
 class Needsequence(nodes.General, nodes.Element):

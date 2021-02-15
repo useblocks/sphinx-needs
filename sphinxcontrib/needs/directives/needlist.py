@@ -3,7 +3,6 @@
 
 """
 
-import sys
 import urllib
 
 from docutils import nodes
@@ -12,10 +11,7 @@ from docutils.parsers.rst import directives
 from sphinxcontrib.needs.filter_common import FilterBase, process_filters
 from sphinxcontrib.needs.directives.utils import no_needs_found_paragraph, used_filter_paragraph
 
-if sys.version_info.major < 3:
-    urlParse = urllib.quote_plus
-else:
-    urlParse = urllib.parse.quote_plus
+urlParse = urllib.parse.quote_plus
 
 
 class Needlist(nodes.General, nodes.Element):

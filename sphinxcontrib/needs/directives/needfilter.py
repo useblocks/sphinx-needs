@@ -1,5 +1,4 @@
 import os
-import sys
 import urllib
 
 from docutils import nodes
@@ -13,10 +12,7 @@ from sphinxcontrib.needs.utils import row_col_maker
 
 from sphinxcontrib.needs.filter_common import FilterBase, process_filters
 
-if sys.version_info.major < 3:
-    urlParse = urllib.quote_plus
-else:
-    urlParse = urllib.parse.quote_plus
+urlParse = urllib.parse.quote_plus
 
 
 class Needfilter(nodes.General, nodes.Element):

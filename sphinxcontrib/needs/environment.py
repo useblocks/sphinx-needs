@@ -18,9 +18,11 @@ IMAGE_DIR_NAME = '_static'
 
 def safe_add_file(filename, app):
     """
-    Adds files to builder resources only, if the given filename was not already registered.
-    Needed mainly for tests to avoid multiple registration of the same file and therefore also multiple execution
-    of e.g. a javascript file during page load.
+    Adds files to builder resources only, if the given filename was not
+    already registered.
+    Needed mainly for tests to avoid multiple registration of the same file
+    and therefore also multiple execution of e.g. a javascript file during
+    page load.
 
     :param filename: filename to remove
     :param app: app object

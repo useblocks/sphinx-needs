@@ -1,4 +1,3 @@
-import sys
 import urllib
 import re
 
@@ -9,10 +8,7 @@ from sphinxcontrib.needs.filter_common import FilterBase, process_filters
 from sphinxcontrib.needs.directives.utils import no_needs_found_paragraph, used_filter_paragraph
 from sphinxcontrib.needs.functions.functions import check_and_get_content
 
-if sys.version_info.major < 3:
-    urlParse = urllib.quote_plus
-else:
-    urlParse = urllib.parse.quote_plus
+urlParse = urllib.parse.quote_plus
 
 
 class Needtable(nodes.General, nodes.Element):
