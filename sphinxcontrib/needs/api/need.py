@@ -1,7 +1,5 @@
 import hashlib
-import os
-import re
-
+from pathlib import Path
 from docutils import nodes
 from docutils.statemachine import ViewList
 from jinja2 import Template
@@ -340,20 +338,26 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
 
 
 def _prepare_template(app, needs_info, template_key):
-    template_folder = app.config.needs_template_folder
-    if not os.path.isabs(template_folder):
-        template_folder = os.path.join(app.confdir, template_folder)
-
-    if not os.path.isdir(template_folder):
-        raise NeedsTemplateException('Template folder does not exist: {}'.format(template_folder))
+    template_folder = Path(app.config.needs_template_folder)
+    if not template_folder.is_absolute():
+        template_folder = app.confdir / template_folder
+    print()
+    print("##### DEBUG #####")
+    print(f"type: {type(template_folder)}")
+    print(f"attributes: {dir(template_folder)}")
+    print()
+    if not template_folder.is_dir():
+        raise NeedsTemplateException(
+            'Template folder does not exist: {}'.format(template_folder)
+            )
 
     template_file_name = needs_info[template_key] + '.need'
-    template_path = os.path.join(template_folder, template_file_name)
-    if not os.path.isfile(template_path):
+    template_path = template_folder / template_file_name
+    if not template_path.is_file():
         raise NeedsTemplateException('Template does not exist: {}'.format(template_path))
 
-    with open(template_path, 'r') as template_file:
-        template_content = ''.join(template_file.readlines())
+    with open(template_path, 'r') as f:
+        template_content = f.read()
     template_obj = Template(template_content)
     new_content = template_obj.render(**needs_info)
 
