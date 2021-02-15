@@ -7,23 +7,15 @@ from docutils.parsers.rst import directives
 from docutils.parsers.rst import Directive
 from sphinx.addnodes import desc_signature, desc_name
 
-from pkg_resources import parse_version
-import sphinx
-
 from sphinxcontrib.needs.api import add_need
 
 from sphinxcontrib.needs.functions import resolve_dynamic_values, find_and_replace_node_content
 from sphinxcontrib.needs.api.exceptions import NeedsInvalidException
 from sphinxcontrib.needs.functions.functions import check_and_get_content
 from sphinxcontrib.needs.layout import build_need
+from sphinxcontrib.needs.logging import getLogger
 
-
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 NON_BREAKING_SPACE = re.compile('\xa0+')
 
@@ -78,7 +70,7 @@ class NeedDirective(Directive):
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
-        self.log = logging.getLogger(__name__)
+        self.log = getLogger(__name__)
         self.full_title = self._get_full_title()
 
     def run(self):

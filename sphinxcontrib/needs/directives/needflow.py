@@ -1,25 +1,24 @@
+import html
 import os
 import re
-import sphinx
 import urllib
-import html
 
 from docutils import nodes
 from docutils.parsers.rst import directives
 from jinja2 import Template
-from pkg_resources import parse_version
+from sphinxcontrib.plantuml import (
+    generate_name,  # Need for plantuml filename calculation
+)
 
-from sphinxcontrib.plantuml import generate_name  # Need for plantuml filename calculation
-
-from sphinxcontrib.needs.filter_common import FilterBase, process_filters, filter_single_need
 from sphinxcontrib.needs.diagrams_common import calculate_link
+from sphinxcontrib.needs.filter_common import (
+    FilterBase,
+    filter_single_need,
+    process_filters,
+)
+from sphinxcontrib.needs.logging import getLogger
 
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 urlParse = urllib.parse.quote_plus
 

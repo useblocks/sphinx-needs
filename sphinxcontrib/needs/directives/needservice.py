@@ -1,18 +1,11 @@
 from docutils import nodes
 
 from docutils.parsers.rst import Directive
-from pkg_resources import parse_version
-import sphinx
 
 from sphinxcontrib.needs.api import add_need
 from sphinxcontrib.needs.directives.need import NeedDirective
 
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
-logger = logging.getLogger(__name__)
+from sphinxcontrib.needs.logging import getLogger
 
 
 class Needservice(nodes.General, nodes.Element):
@@ -34,7 +27,7 @@ class NeedserviceDirective(Directive):
 
     def __init__(self, *args, **kw):
         super(NeedserviceDirective, self).__init__(*args, **kw)
-        self.log = logging.getLogger(__name__)
+        self.log = getLogger(__name__)
 
     @property
     def env(self):

@@ -1,25 +1,27 @@
 import hashlib
-import re
 import os
+import re
+
 from docutils import nodes
-from jinja2 import Template
-from sphinxcontrib.needs.api.exceptions import NeedsNoIdException, NeedsInvalidException, NeedsStatusNotAllowed,\
-    NeedsTagNotAllowed, NeedsDuplicatedId, NeedsInvalidOption, NeedsTemplateException
-import sphinxcontrib.needs.directives.need
-from sphinx.util.nodes import nested_parse_with_titles
-from sphinxcontrib.needs.roles.need_part import update_need_with_parts, find_parts
-from sphinxcontrib.needs.filter_common import filter_single_need
-import sphinx
 from docutils.statemachine import ViewList
-from pkg_resources import parse_version
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
+from jinja2 import Template
+from sphinx.util.nodes import nested_parse_with_titles
 
+import sphinxcontrib.needs.directives.need
+from sphinxcontrib.needs.api.exceptions import (
+    NeedsDuplicatedId,
+    NeedsInvalidException,
+    NeedsInvalidOption,
+    NeedsNoIdException,
+    NeedsStatusNotAllowed,
+    NeedsTagNotAllowed,
+    NeedsTemplateException,
+)
+from sphinxcontrib.needs.filter_common import filter_single_need
+from sphinxcontrib.needs.logging import getLogger
+from sphinxcontrib.needs.roles.need_part import find_parts, update_need_with_parts
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 def add_need(app, state, docname, lineno, need_type, title, id=None, content="", status=None, tags=None,

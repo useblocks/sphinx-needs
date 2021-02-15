@@ -2,17 +2,11 @@
 Cares about handling and execution warnings.
 
 """
-from pkg_resources import parse_version
-import sphinx
 from sphinxcontrib.needs.filter_common import filter_needs
 
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
+from sphinxcontrib.needs.logging import logging, getLogger
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 def process_warnings(app, exception):

@@ -1,23 +1,15 @@
-import sphinx
 from docutils.parsers.rst import directives
-from pkg_resources import parse_version
 
 from sphinxcontrib.needs.directives.needservice import NeedserviceDirective
 
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
-
-    logging.basicConfig()  # Only need to do this once
+from sphinxcontrib.needs.logging import getLogger
 
 
 class ServiceManager:
     def __init__(self, app):
         self.app = app
 
-        self.log = logging.getLogger(__name__)
+        self.log = getLogger(__name__)
         self.services = {}
 
     def register(self, name, clazz, **kwargs):

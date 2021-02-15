@@ -15,7 +15,7 @@ def test_doc_build_html(app, status, warning):
     sys.stderr.flush()
     out = sys.stderr.getvalue()
     try:
-        # Need to put is inside a try except statement, as the tests thorws following error using tox:
+        # Need to put is inside a try except statement, as the tests throws following error using tox:
         # AttributeError: 'Tee' object has no attribute 'close'
         sys.stdout.close()  # close the stream
         sys.stdout = backup  # restore original stdout

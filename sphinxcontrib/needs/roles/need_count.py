@@ -5,18 +5,12 @@ Based on https://github.com/useblocks/sphinxcontrib-needs/issues/37
 """
 
 from docutils import nodes
-import sphinx
-from pkg_resources import parse_version
 
 from sphinxcontrib.needs.filter_common import filter_needs, prepare_need_list
 from sphinxcontrib.needs.api.exceptions import NeedsInvalidFilter
 
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
-log = logging.getLogger(__name__)
+from sphinxcontrib.needs.logging import getLogger
+log = getLogger(__name__)
 
 
 class NeedCount(nodes.Inline, nodes.Element):

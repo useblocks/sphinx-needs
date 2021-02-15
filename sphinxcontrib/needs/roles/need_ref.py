@@ -5,14 +5,8 @@ except ImportError:
     from sphinx.environment import NoUri  # Sphinx < 3.0
 from sphinx.util.nodes import make_refnode
 
-import sphinx
-from pkg_resources import parse_version
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
-log = logging.getLogger(__name__)
+from sphinxcontrib.needs.logging import getLogger
+log = getLogger(__name__)
 
 
 class Need_ref(nodes.Inline, nodes.Element):

@@ -3,16 +3,9 @@ import json
 from datetime import datetime
 import os
 import shutil
-import sphinx
-from pkg_resources import parse_version
+from sphinxcontrib.needs.logging import getLogger
 
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
-
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 NEEDS_FUNCTIONS = {}
 
@@ -134,7 +127,7 @@ class NeedsList:
                                    'content', 'content_node'}
 
     def __init__(self, config, outdir, confdir):
-        self.log = logging.getLogger(__name__)
+        self.log = getLogger(__name__)
         self.config = config
         self.outdir = outdir
         self.confdir = confdir

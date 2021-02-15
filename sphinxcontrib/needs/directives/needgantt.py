@@ -1,11 +1,9 @@
 import os
-import sphinx
 import urllib
 
 from datetime import datetime
 from docutils import nodes
 from docutils.parsers.rst import directives
-from pkg_resources import parse_version
 
 from sphinxcontrib.needs.diagrams_common import DiagramBase, no_plantuml, \
     add_config, get_filter_para, get_debug_container, calculate_link
@@ -15,13 +13,9 @@ from sphinxcontrib.plantuml import generate_name  # Need for plantuml filename c
 
 from sphinxcontrib.needs.filter_common import FilterBase, process_filters, filter_single_need
 from sphinxcontrib.needs.directives.utils import get_link_type_option
+from sphinxcontrib.needs.logging import getLogger
 
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 urlParse = urllib.parse.quote_plus
 
