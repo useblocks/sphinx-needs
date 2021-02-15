@@ -1,4 +1,5 @@
 import hashlib
+import re
 from pathlib import Path
 from docutils import nodes
 from docutils.statemachine import ViewList
