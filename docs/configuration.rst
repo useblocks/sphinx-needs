@@ -66,6 +66,18 @@ needs_types must be a list of dictionaries, where each dictionary **must** conta
 `color` can also be an empty string. This makes sense, if the PlantUMl configuration is mostly provided by using
 :ref:`needs_flow_configs` and the used colors shall not get overwritten by type specific values.
 
+.. warning::
+
+   If a need type shall contain :ref:`need_part` and later be printed via :ref:`needflow`,
+   the chosen ``PlantUML`` node type must support nested elements for
+   this type.
+
+   Types who support nested elements are for instance: ``node``, ``package``, ``frame``.
+   **Not supporting** elements are for instance ``usecase``, ``actor``.
+
+   Please take a look into the  `PlantUML Manual <https://plantuml.com/>`_ for more details.
+
+
 .. _needs_extra_options:
 
 needs_extra_options
