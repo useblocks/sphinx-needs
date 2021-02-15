@@ -1,6 +1,7 @@
 import hashlib
 import re
 from pathlib import Path
+
 from docutils import nodes
 from docutils.statemachine import ViewList
 from jinja2 import Template
@@ -340,13 +341,10 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
 
 def _prepare_template(app, needs_info, template_key):
     template_folder = Path(app.config.needs_template_folder)
+
     if not template_folder.is_absolute():
-        template_folder = app.confdir / template_folder
-    print()
-    print("##### DEBUG #####")
-    print(f"type: {type(template_folder)}")
-    print(f"attributes: {dir(template_folder)}")
-    print()
+        template_folder = Path(app.confdir) / template_folder
+
     if not template_folder.is_dir():
         raise NeedsTemplateException(
             'Template folder does not exist: {}'.format(template_folder)
