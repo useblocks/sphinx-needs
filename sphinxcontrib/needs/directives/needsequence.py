@@ -152,7 +152,7 @@ def process_needsequence(app, doctree, fromdocname):
                                                          current_needsequence["lineno"]))
 
             # Add children of participants
-            msg_receiver_needs, p_string_new, c_string_new = get_message_needs(need,
+            _msg_receiver_needs, p_string_new, c_string_new = get_message_needs(need,
                                                                                current_needsequence['link_types'],
                                                                                all_needs_dict,
                                                                                filter=current_needsequence['filter'])

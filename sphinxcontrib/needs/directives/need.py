@@ -45,7 +45,6 @@ class Need(nodes.General, nodes.Element):
     headline and content container get added later during event handling (process_need_nodes()).
     """
     child_text_separator = "\n"
-    pass
 
 
 class NeedDirective(Directive):
@@ -78,7 +77,7 @@ class NeedDirective(Directive):
     final_argument_whitespace = True
 
     def __init__(self, *args, **kw):
-        super(NeedDirective, self).__init__(*args, **kw)
+        super().__init__(*args, **kw)
         self.log = logging.getLogger(__name__)
         self.full_title = self._get_full_title()
 
@@ -260,7 +259,7 @@ def add_sections(app, doctree, fromdocname):
     """Add section titles to the needs as additional attributes that can
     be used in tables and filters"""
     needs = getattr(app.builder.env, 'needs_all_needs', {})
-    for key, need_info in needs.items():
+    for need_info in needs.values():
         sections, signature = get_sections_and_signature(need_info)
         need_info['sections'] = sections
         need_info['section_name'] = sections[0] if sections else ""

@@ -176,7 +176,7 @@ def prepare_need_list(need_list):
             all_needs_incl_parts = list(need_list)[:]
 
     for need in need_list:
-        for part_id, part in need['parts'].items():
+        for part in need['parts'].values():
             filter_part = merge_two_dicts(need, part)
             filter_part['id_parent'] = need['id']
             filter_part['id_complete'] = ".".join([need['id'], filter_part['id']])

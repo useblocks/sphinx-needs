@@ -61,7 +61,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
         # Creates env.need_all_needgantts safely and other vars
         self.prepare_env('needgantts')
 
-        id, targetid, targetnode = self.create_target('needgantt')
+        _id, targetid, targetnode = self.create_target('needgantt')
 
         starts_with_links = get_link_type_option('starts_with_links', env, self, '')
         starts_after_links = get_link_type_option('starts_after_links', env, self, 'links')
@@ -69,7 +69,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
 
         milestone_filter = self.options.get('milestone_filter', None)
         start_date = self.options.get('start_date', None)
-        if start_date is not None and start_date != '':
+        if start_date:
             try:
                 datetime.strptime(start_date, '%Y-%m-%d')
                 # datetime.fromisoformat(start_date) # > py3.7 only
@@ -81,14 +81,15 @@ class NeedganttDirective(FilterBase, DiagramBase):
 
         timeline = self.options.get('timeline', None)
         timeline_options = ['daily', 'weekly', 'monthly']
-        if timeline is not None and timeline != '':
-            if timeline not in timeline_options:
-                raise NeedGanttException('Given scale value {} is invalid. Please use: '
-                                         '{}'.format(timeline, ",".join(timeline_options)))
+        if timeline and timeline not in timeline_options:
+            raise NeedGanttException(
+                "Given scale value {} is invalid. Please use: "
+                "{}".format(timeline, ",".join(timeline_options))
+            )
         else:
             timeline = None  # Timeline/scale not set later
 
-        no_color = True if "no_color" in self.options.keys() else False
+        no_color = "no_color" in self.options.keys()
 
         duration_option = self.options.get('duration_option', env.app.config.needs_duration_option)
         completion_option = self.options.get('completion_option', env.app.config.needs_completion_option)
@@ -165,13 +166,13 @@ def process_needgantt(app, doctree, fromdocname):
         found_needs = process_filters(all_needs, current_needgantt)
 
         # Scale/timeline handling
-        if current_needgantt['timeline'] is not None and current_needgantt['timeline'] != '':
+        if current_needgantt['timeline']:
             puml_node["uml"] += 'printscale {}\n'.format(current_needgantt["timeline"])
 
         # Project start date handling
         start_date_string = current_needgantt['start_date']
         start_date_plantuml = None
-        if start_date_string is not None and start_date_string != '':
+        if start_date_string:
             try:
                 start_date = datetime.strptime(start_date_string, '%Y-%m-%d')
                 # start_date = datetime.fromisoformat(start_date_string)  # > py3.7 only
@@ -193,28 +194,27 @@ def process_needgantt(app, doctree, fromdocname):
         for need in found_needs:
             complete = None
 
-            if current_needgantt['milestone_filter'] is None or current_needgantt['milestone_filter'] == '':
-                is_milestone = False
-            else:
+            if current_needgantt['milestone_filter']:
                 is_milestone = filter_single_need(need, current_needgantt['milestone_filter'])
-            if current_needgantt['milestone_filter'] is None or current_needgantt['milestone_filter'] == '' or \
-                    not is_milestone:
-                # Normal gantt element handling
+            else:
+                is_milestone = False
+
+            if current_needgantt['milestone_filter'] and is_milestone:
+                gantt_element = '[{}] as [{}] lasts 0 days\n'.format(need["title"], need["id"])
+            else:  # Normal gantt element handling
                 duration_option = current_needgantt['duration_option']
                 duration = need[duration_option]
                 complete_option = current_needgantt['completion_option']
                 complete = need[complete_option]
-                if duration is None or duration == '' or not duration.isdigit():
+                if not (duration and duration.isdigit()):
                     logger.warning('Duration not set or invalid for needgantt chart. '
                                    'Need: {}. Duration: {}'.format(need["id"], duration))
                     duration = 1
                 gantt_element = '[{}] as [{}] lasts {} days\n'.format(need["title"], need["id"], duration)
-            else:
-                gantt_element = '[{}] as [{}] lasts 0 days\n'.format(need["title"], need["id"])
 
             el_link_string += '[{}] links to [[{}]]\n'.format(need["title"], calculate_link(app, need))
 
-            if complete is not None and complete != '':
+            if complete:
                 complete = complete.replace('%', '')
                 el_completion_string += '[{}] is {}% completed\n'.format(need["title"], complete)
 
@@ -240,10 +240,10 @@ def process_needgantt(app, doctree, fromdocname):
         puml_node["uml"] += '\n\' Constraints definition \n\n'
         puml_node["uml"] += '\n\' Constraints definition \n\n'
         for need in found_needs:
-            if current_needgantt['milestone_filter'] is None or current_needgantt['milestone_filter'] == '':
-                is_milestone = False
-            else:
+            if current_needgantt['milestone_filter']:
                 is_milestone = filter_single_need(need, current_needgantt['milestone_filter'])
+            else:
+                is_milestone = False
             constrain_types = ['starts_with_links', 'starts_after_links', 'ends_with_links']
             for con_type in constrain_types:
                 if is_milestone:

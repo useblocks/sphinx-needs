@@ -377,7 +377,7 @@ def calc_sum(app, need, needs, option, filter=None, links_only=False):
             try:
                 if not filter_single_need(check_need, filter):
                     continue
-            except ValueError as e:
+            except ValueError:
                 pass
             except NeedInvalidFilter as ex:
                 logger.warning('Given filter is not valid. Error: {}'.format(ex))

@@ -90,7 +90,7 @@ class NeedpieDirective(FilterBase):
         if colors is not None and len(colors) > 0:
             colors = colors.split(',')
 
-        shadow = True if 'shadow' in self.options else False
+        shadow = 'shadow' in self.options
 
         # Add the need and all needed information
         env.need_all_needpie[targetid] = {
@@ -179,7 +179,7 @@ def process_needpie(app, doctree, fromdocname):
         if text_color is not None:
             pie_kwargs['textprops'] = dict(color=text_color)
 
-        wedges, texts, autotexts = axes.pie(sizes, **pie_kwargs)
+        wedges, _texts, autotexts = axes.pie(sizes, **pie_kwargs)
 
         if text_color is not None:
             for autotext in autotexts:

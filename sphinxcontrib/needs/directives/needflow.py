@@ -71,7 +71,7 @@ class NeedflowDirective(FilterBase):
             link_types = [link_type.strip() for link_type in re.split(";|,", link_types)]
             for i in range(len(link_types)):
                 if len(link_types[i]) == 0 or link_types[i].isspace():
-                    del (link_types[i])
+                    del link_types[i]
                     logger.warning('Scruffy link_type definition found in needflow {}. '
                                    'Defined link_type contains spaces only.'.format(id))
 
@@ -101,10 +101,10 @@ class NeedflowDirective(FilterBase):
             'lineno': self.lineno,
             'target_node': targetnode,
             'caption': caption,
-            'show_filters': True if self.options.get("show_filters", False) is None else False,
-            'show_legend': True if self.options.get("show_legend", False) is None else False,
-            'show_link_names': True if self.options.get("show_link_names", False) is None else False,
-            'debug': True if self.options.get("debug", False) is None else False,
+            'show_filters': self.options.get("show_filters", False) is None,
+            'show_legend': self.options.get("show_legend", False) is None,
+            'show_link_names': self.options.get("show_link_names", False) is None,
+            'debug': self.options.get("debug", False) is None,
             'config_names': config_names,
             'config': '\n'.join(configs),
             'scale': scale,
