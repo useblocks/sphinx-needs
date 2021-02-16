@@ -1,11 +1,13 @@
 import json
 import shutil
-from sphinxcontrib.needs.logging import getLogger
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
 from docutils import nodes
+
+from sphinxcontrib.needs.logging import getLogger
 
 logger = getLogger(__name__)
 
@@ -263,6 +265,11 @@ class NeedsList:
         self.needs_list["project"] = self.project
 
         file = self.outdir / "needs.json"
+
+        # This compat block should be removed when Python 3.5 support is dropped.
+        if sys.version_info <= (3, 5):
+            file = str(file)
+
         with open(file, "w") as f:
             json.dump(self.needs_list, f, indent=4, sort_keys=True)
 
@@ -277,6 +284,10 @@ class NeedsList:
             file = self.confdir / file
 
         if file.exists():
+            # This compat block should be removed when Python 3.5 support is dropped.
+            if sys.version_info <= (3, 5):
+                file = str(file)
+
             with open(file, "r") as f:
                 try:
                     self.needs_list = json.load(f)
