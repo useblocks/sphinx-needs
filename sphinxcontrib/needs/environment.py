@@ -63,11 +63,9 @@ def safe_remove_file(filename: Path, app: Sphinx):
     static_data_file = Path("_static") / filename
 
     def remove_file(file: Path, attribute: str):
-        if (
-            hasattr(app.builder, attribute) and
-            str(file) in getattr(app.builder, attribute)
-        ):
-            getattr(app.builder, attribute).remove(str(file))
+        files = getattr(app.builder, attribute, [])
+        if str(file) in files:
+            files.remove(str(file))
 
     attributes = {
         ".js": "script_files",
@@ -189,17 +187,15 @@ def install_collapse_static_files(app: Sphinx, env):
     statics_dir = Path(app.builder.outdir) / IMAGE_DIR_NAME
     source_dir = Path(__file__).parent / "libs" / "html"
     destination_dir = statics_dir / "sphinx-needs"
-
-    files_to_copy = [source_dir / "sphinx_needs_collapse.js"]
+    collapse_js = source_dir / "sphinx_needs_collapse.js"
 
     install_static_files(
         app,
         source_dir,
         destination_dir,
-        files_to_copy,
+        [collapse_js],
         "Copying static files for sphinx-needs collapse support...",
     )
 
-    collapse_js = source_dir / "sphinx_needs_collapse.js"
     safe_remove_file(collapse_js, app)
     safe_add_file(collapse_js, app)
