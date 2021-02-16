@@ -1,5 +1,6 @@
 import hashlib
 import re
+import sys
 from pathlib import Path
 
 from docutils import nodes
@@ -354,6 +355,10 @@ def _prepare_template(app, needs_info, template_key):
     template_path = template_folder / template_file_name
     if not template_path.is_file():
         raise NeedsTemplateException('Template does not exist: {}'.format(template_path))
+
+    # This compat block should be removed when Python 3.5 support is dropped.
+    if sys.version_info <= (3, 5):
+        template_path = str(template_path)
 
     with open(template_path, 'r') as f:
         template_content = f.read()

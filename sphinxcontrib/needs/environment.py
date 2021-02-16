@@ -62,18 +62,21 @@ def safe_remove_file(filename: Path, app: Sphinx):
     """
     static_data_file = Path("_static") / filename
 
-    if filename.suffix == ".js":
+    def remove_file(file: Path, attribute: str):
         if (
-            hasattr(app.builder, "script_files")
-            and str(static_data_file) in app.builder.script_files
+            hasattr(app.builder, attribute) and
+            str(file) in getattr(app.builder, attribute)
         ):
-            app.builder.script_files.remove(str(static_data_file))
-    elif filename.suffix == ".css":
-        if (
-            hasattr(app.builder, "css_files")
-            and str(static_data_file) in app.builder.css_files
-        ):
-            app.builder.css_files.remove(str(static_data_file))
+            getattr(app.builder, attribute).remove(str(file))
+
+    attributes = {
+        ".js": "script_files",
+        ".css": "css_files",
+    }
+
+    attribute = attributes.get(filename.suffix)
+    if attribute:
+        remove_file(static_data_file, attribute)
 
 
 # Base implementation from sphinxcontrib-images
