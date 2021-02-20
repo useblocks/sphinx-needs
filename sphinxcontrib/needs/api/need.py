@@ -37,35 +37,6 @@ class NeedType:
         self.style = style
 
 
-def split_tags(
-    tags_string: Optional[str], need_id: str, allowed_tags: Optional[List[str]]
-) -> List[str]:
-
-    if not tags_string:
-        return []
-
-    def is_valid(tag: str) -> bool:
-        if len(tag) == 0 or tag.isspace():
-            logger.warning(
-                "Scruffy tag definition found in need {}. "
-                "Defined tag contains spaces only.".format(need_id)
-            )
-            return False
-
-        if allowed_tags and tag not in allowed_tags:
-            raise NeedsTagNotAllowed(
-                "Tag {0} of need id {1} is not allowed "
-                "by config value 'needs_tags'.".format(tag, need_id)
-            )
-
-        return True
-
-    raw_tags = (tag.strip() for tag in re.split(";|,", tags_string))
-    tags = filter(is_valid, raw_tags)
-
-    return utils.fix_list_dyn_func(tags)
-
-
 def add_need(
     app: Sphinx,
     state,
@@ -214,11 +185,11 @@ def add_need(
             "by config value 'needs_statuses'.".format(status, need_id)
         )
 
-    allowed_tags: Optional[List[str]] = None
+    allowed_tags = None
     if config.needs_tags:
         allowed_tags = [tag["name"] for tag in config.needs_tags]
 
-    tag_list = split_tags(tags, need_id, allowed_tags)
+    tag_list = _split_tags(tags, need_id, allowed_tags)
 
     ####################################################################################
     # Add need to global need list
@@ -399,26 +370,33 @@ def add_need(
     return return_nodes
 
 
-def make_hashed_id(
-    prefix: str,
-    content: str,
-    id_length: Optional[int] = None,
-) -> str:
-    """
-    Creates an ID based on title or need.
+def _split_tags(
+    tags_string: Optional[str], need_id: str, allowed_tags: Optional[List[str]]
+) -> List[str]:
 
-    Also cares about the correct prefix, which is specified for each need type.
+    if not tags_string:
+        return []
 
-    :param prefix: the prefix of the id of every need of this type
-    :param content: the content to be hashed
-    :param id_length: maximum length of the generated ID
-    :return: ID as string
-    """
+    def is_valid(tag: str) -> bool:
+        if len(tag) == 0 or tag.isspace():
+            logger.warning(
+                "Scruffy tag definition found in need {}. "
+                "Defined tag contains spaces only.".format(need_id)
+            )
+            return False
 
-    return "{}{}".format(
-        prefix,
-        hashlib.sha1(content.encode("UTF-8")).hexdigest().upper()[:id_length],
-    )
+        if allowed_tags and tag not in allowed_tags:
+            raise NeedsTagNotAllowed(
+                "Tag {0} of need id {1} is not allowed "
+                "by config value 'needs_tags'.".format(tag, need_id)
+            )
+
+        return True
+
+    raw_tags = (tag.strip() for tag in re.split(";|,", tags_string))
+    tags = filter(is_valid, raw_tags)
+
+    return utils.fix_list_dyn_func(tags)
 
 
 def _prepare_template(app: Sphinx, needs_info, template_key) -> str:
@@ -454,6 +432,26 @@ def _render_template(content: str, docname: str, lineno: int, state) -> nodes.El
     node_need_content.document = state.document
     nested_parse_with_titles(state, rst, node_need_content)
     return node_need_content
+
+
+def make_hashed_id(
+    prefix: str,
+    content: str,
+    id_length: Optional[int] = None,
+) -> str:
+    """
+    Creates an ID based on title or need.
+    Also cares about the correct prefix, which is specified for each need type.
+    :param prefix: the prefix of the id of every need of this type
+    :param content: the content to be hashed
+    :param id_length: maximum length of the generated ID
+    :return: ID as string
+    """
+
+    return "{}{}".format(
+        prefix,
+        hashlib.sha1(content.encode("UTF-8")).hexdigest().upper()[:id_length],
+    )
 
 
 def _merge_extra_options(needs_info, needs_kwargs, needs_extra_options):
