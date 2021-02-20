@@ -207,12 +207,12 @@ def add_need(
 
     # Handle status
     # Check if status is in needs_statuses. If not raise an error.
-    if config.needs_statuses:
-        if status not in [stat["name"] for stat in config.needs_statuses]:
-            raise NeedsStatusNotAllowed(
-                "Status {0} of need id {1} is not allowed "
-                "by config value 'needs_statuses'.".format(status, need_id)
-            )
+    allowed_status_names = (s["name"] for s in config.needs_statuses)
+    if config.needs_statuses and status not in allowed_status_names:
+        raise NeedsStatusNotAllowed(
+            "Status {0} of need id {1} is not allowed "
+            "by config value 'needs_statuses'.".format(status, need_id)
+        )
 
     allowed_tags: Optional[List[str]] = None
     if config.needs_tags:
@@ -307,11 +307,13 @@ def add_need(
             link_type["option"] not in list(kwargs.keys())
             or len(str(kwargs[link_type["option"]])) == 0
         ):
-            # If it is in global option, value got already set during prior handling of them
+            # If it is in global option, value got already set during prior handling of
+            # them
             links_string = needs_info[link_type["option"]]
             links = utils.read_in_links(links_string)
         else:
-            # if it is set in kwargs, take this value and maybe override set value from global_options
+            # if it is set in kwargs, take this value and maybe override set value from
+            # global_options
             links_string = kwargs[link_type["option"]]
             links = utils.read_in_links(links_string)
 
