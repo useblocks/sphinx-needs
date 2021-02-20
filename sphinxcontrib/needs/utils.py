@@ -1,8 +1,10 @@
 import os
+import re
 from docutils import nodes
 import json
 from datetime import datetime
 import shutil
+from typing import Iterable, List, Optional
 
 from sphinx.application import Sphinx
 
@@ -197,3 +199,76 @@ class NeedsList:
                 self.log.warning("Could not decode json file {0}".format(file))
             else:
                 self.needs_list = needs_list
+
+
+def trim_title(title: str, max_length: int) -> str:
+    if max_length == -1 or len(title) <= max_length:
+        return title
+    elif max_length <= 3:
+        return title[:max_length]
+    else:
+        return title[: max_length - 3] + "..."
+
+
+def read_in_links(links_string: Optional[str]) -> List[str]:
+
+    if not links_string:
+        return []
+
+    def is_valid(link: str) -> bool:
+        if link.isspace():
+            logger.warning(
+                "Grubby link definition found in need {}. "
+                "Defined link contains spaces only.".format(id)
+            )
+            return False
+        return True
+
+    raw_links = (link.strip() for link in re.split(";|,", links_string))
+    links = filter(is_valid, raw_links)
+
+    return fix_list_dyn_func(links)
+
+
+def fix_list_dyn_func(list: Iterable[str]) -> List[str]:
+    """
+    This searches a list for dynamic function fragments, which may have been cut by generic searches for ",|;".
+
+    Example:
+    `link_a, [[copy('links', need_id)]]` this will be splitted in list of 3 parts:
+
+    #. link_a
+    #. [[copy('links'
+    #. need_id)]]
+
+    This function fixes the above list to the following:
+
+    #. link_a
+    #. [[copy('links', need_id)]]
+
+    :param list: list which may contain splitted function calls
+    :return: list of fixed elements
+    """
+    open_func_string = False
+    new_list = []
+    for element in list:
+        # If dyn_func got not cut, just add it
+        if "[[" in element and "]]" in element:
+            new_list.append(element)
+        # Other check if this is the starting element of dyn function
+        elif "[[" in element:
+            open_func_string = True
+            new_link = [element]
+        # Check if this is the ending element if dyn function
+        elif "]]" in element:
+            new_link.append(element)
+            open_func_string = False
+            element = ",".join(new_link)
+            new_list.append(element)
+        # Check it is a "middle" part of the dyn function
+        elif open_func_string:
+            new_link.append(element)
+        # Looks like it isn't a cut dyn_func, just add.
+        else:
+            new_list.append(element)
+    return new_list

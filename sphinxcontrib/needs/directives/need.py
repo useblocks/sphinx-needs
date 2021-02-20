@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
-import hashlib
 import re
 
 from docutils import nodes
-from docutils.parsers.rst import directives
-from docutils.parsers.rst import Directive
-from sphinx.addnodes import desc_signature, desc_name
+from docutils.parsers.rst import Directive, directives
+from sphinx.addnodes import desc_name, desc_signature
 
+from sphinxcontrib.needs import utils
 from sphinxcontrib.needs.api import add_need
-
-from sphinxcontrib.needs.functions import resolve_dynamic_values, find_and_replace_node_content
+from sphinxcontrib.needs.api import make_hashed_id as _make_hashed_id
 from sphinxcontrib.needs.api.exceptions import NeedsInvalidException
+from sphinxcontrib.needs.functions import (
+    find_and_replace_node_content,
+    resolve_dynamic_values,
+)
 from sphinxcontrib.needs.functions.functions import check_and_get_content
 from sphinxcontrib.needs.layout import build_need
 from sphinxcontrib.needs.logging import get_logger
@@ -121,29 +123,11 @@ class NeedDirective(Directive):
         return need_nodes
 
     def read_in_links(self, name):
-        # Get links
-        links_string = self.options.get(name, [])
-        links = []
-        if links_string:
-            # links = [link.strip() for link in re.split(";|,", links) if not link.isspace()]
-            for link in re.split(";|,", links_string):
-                if link.isspace():
-                    logger.warning('Grubby link definition found in need {}. '
-                                   'Defined link contains spaces only.'.format(id))
-                else:
-                    links.append(link.strip())
-
-            # This may have cut also dynamic function strings, as they can contain , as well.
-            # So let put them together again
-            # ToDo: There may be a smart regex for the splitting. This would avoid this mess of code...
-        return _fix_list_dyn_func(links)
+        return utils.read_in_links(self.options.get(name))
 
     def make_hashed_id(self, type_prefix, id_length):
         hashable_content = self.full_title or '\n'.join(self.content)
-        return "%s%s" % (type_prefix,
-                         hashlib.sha1(hashable_content.encode("UTF-8"))
-                         .hexdigest()
-                         .upper()[:id_length])
+        return _make_hashed_id(type_prefix, hashable_content, id_length)
 
     @property
     def env(self):
@@ -160,14 +144,7 @@ class NeedDirective(Directive):
 
     @property
     def trimmed_title(self):
-        title = self.full_title
-        max_length = self.max_title_length
-        if max_length == -1 or len(title) <= max_length:
-            return title
-        elif max_length <= 3:
-            return title[:self.max_title_length]
-        else:
-            return title[:self.max_title_length - 3] + '...'
+        return utils.trim_title(self.full_title, self.max_title_length)
 
     @property
     def max_title_length(self):
