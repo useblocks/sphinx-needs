@@ -22,7 +22,7 @@ def process_warnings(app, exception):
 
     # We cget called also if an exception occured during build
     # In this case the build is already broken and we do not need to check anything.
-    if exception is not None:
+    if exception:
         return
 
     env = app.env
@@ -33,7 +33,7 @@ def process_warnings(app, exception):
     # Check if warnings already got executed.
     # Needed because the used event gets executed multiple times, but warnings need to be checked only
     # on first execution
-    if hasattr(env, "needs_warnings_executed") and env.needs_warnings_executed is True:
+    if hasattr(env, "needs_warnings_executed") and env.needs_warnings_executed:
         return
 
     env.needs_warnings_executed = True

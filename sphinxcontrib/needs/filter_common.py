@@ -40,7 +40,7 @@ class FilterBase(Directive):
             tags = [tag.strip() for tag in re.split(";|,", tags) if len(tag) > 0]
 
         status = self.options.get("status", None)
-        if status is not None:
+        if status:
             try:
                 status = str(status)
                 status = [stat.strip() for stat in re.split(";|,", status)]
@@ -244,9 +244,9 @@ def filter_single_need(need, filter_string="", needs=None, current_need=None):
     :return: True, if need as passed the filter_string, else False
     """
     filter_context = need.copy()
-    if needs is not None:
+    if needs:
         filter_context['needs'] = needs
-    if current_need is not None:
+    if current_need:
         filter_context['current_need'] = current_need
 
     filter_context["search"] = re.search

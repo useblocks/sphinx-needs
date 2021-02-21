@@ -68,7 +68,7 @@ class DiagramBase(Directive):
 
         config_names = self.options.get("config", None)
         configs = []
-        if config_names is not None and len(config_names) > 0:
+        if config_names:
             for config_name in config_names.split(','):
                 config_name = config_name.strip()
                 if config_name != '' and config_name in env.config.needs_flow_configs:
@@ -123,7 +123,7 @@ def no_plantuml(node):
 def add_config(config):
     """Adds config section"""
     uml = ''
-    if config is not None and len(config) >= 3:
+    if config and len(config) >= 3:
         # Remove all empty lines
         config = '\n'.join([line.strip() for line in config.split('\n') if line.strip() != ''])
         uml += '\n\' Config\n\n'

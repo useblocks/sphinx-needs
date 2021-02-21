@@ -164,14 +164,9 @@ class LayoutHandler:
                    'needs_grid_' + self.layout['grid'],
                    'needs_layout_' + self.layout_name]
 
-        if style is not None:
-            self.style = style
-        elif self.need['style'] is not None:
-            self.style = self.need['style']
-        else:
-            self.style = getattr(self.app.config, 'needs_default_style', None)
+        self.style = style or self.need['style'] or getattr(self.app.config, 'needs_default_style', None)
 
-        if self.style and len(self.style) > 0:
+        if self.style:
             for style in self.style.strip().split(','):
                 style = style.strip()
                 classes.append('needs_style_' + style)
@@ -439,7 +434,7 @@ class LayoutHandler:
                             ))
                         result = func(*func_args, **func_kargs)
 
-                        if result is not None:
+                        if result:
                             node_line += result
                     else:
                         raise SphinxNeedLayoutException(
@@ -688,7 +683,7 @@ class LayoutHandler:
         :return:
         """
         data_container = nodes.inline()
-        if prefix is not None:
+        if prefix:
             prefix_node = self._parse(prefix)
             label_node = nodes.inline(classes=['needs_label'])
             label_node += prefix_node
@@ -696,11 +691,11 @@ class LayoutHandler:
 
         # from sphinx.addnodes import
         options = {}
-        if height is not None:
+        if height:
             options['height'] = height
-        if width is not None:
+        if width:
             options['width'] = width
-        if align is not None:
+        if align:
             options['align'] = align
 
         if url is None or not isinstance(url, str):
@@ -808,14 +803,13 @@ class LayoutHandler:
             <<link('url', 'Link', is_dynamic=True)>>  # Reads url from need[url]
         """
         data_container = nodes.inline()
-        if prefix is not None:
+        if prefix:
             prefix_node = self._parse(prefix)
             label_node = nodes.inline(classes=['needs_label'])
             label_node += prefix_node
             data_container.append(label_node)
 
-        if text is None:  # May be needed if only image shall be shown
-            text = ''
+        text = text = '' # May be needed if only image shall be shown
 
         if is_dynamic:
             try:
@@ -825,7 +819,7 @@ class LayoutHandler:
 
         link_node = nodes.reference(text, text, refuri=url)
 
-        if image_url is not None:
+        if image_url:
             image_node = self.image(image_url, image_height, image_width)
             link_node.append(image_node)
 

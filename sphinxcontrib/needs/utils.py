@@ -71,7 +71,7 @@ def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=Fal
                         temp_need = all_needs[link_id]
                         ref_col['refuri'] = app.builder.get_relative_uri(fromdocname, temp_need['docname'])
                         ref_col['refuri'] += "#" + temp_need["id"]
-                        if link_part is not None:
+                        if link_part:
                             ref_col['refuri'] += '.' + link_part
 
                 except KeyError:

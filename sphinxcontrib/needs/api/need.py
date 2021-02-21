@@ -177,7 +177,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
         env.needs_all_needs = {}
 
     if need_id in env.needs_all_needs.keys():
-        if id is not None:
+        if id:
             raise NeedsDuplicatedId("A need with ID {} already exists! "
                                     "This is not allowed. Document {}[{}] Title: {}.".format(need_id, docname,
                                                                                              lineno, title))
@@ -307,7 +307,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
     # We just add a basic need node and render the rst-based content, because this can not be done later.
     # style_classes = ['need', type_name, 'need-{}'.format(type_name.lower())]  # Used < 0.4.4
     style_classes = ['need', 'need-{}'.format(need_type.lower())]
-    if style is not None and style != '':
+    if style:
         style_classes.append(style)
 
     node_need = sphinxcontrib.needs.directives.need.Need(
@@ -324,13 +324,13 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
     needs_info['content_node'] = node_need
 
     return_nodes = [target_node] + [node_need]
-    if pre_content is not None:
+    if pre_content:
         node_need_pre_content = _render_template(pre_content, docname, lineno, state)
         pre_container = nodes.container()
         pre_container += node_need_pre_content.children
         return_nodes = [pre_container] + return_nodes
 
-    if post_content is not None:
+    if post_content:
         node_need_post_content = _render_template(post_content, docname, lineno, state)
         post_container = nodes.container()
         post_container += node_need_post_content.children
