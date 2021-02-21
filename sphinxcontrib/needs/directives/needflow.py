@@ -62,7 +62,7 @@ class NeedflowDirective(FilterBase):
         targetnode = nodes.target('', '', ids=[targetid])
 
         link_types = self.options.get("link_types", [])
-        if len(link_types) > 0:
+        if link_types:
             link_types = [link_type.strip() for link_type in re.split(";|,", link_types)]
             for i in range(len(link_types)):
                 if len(link_types[i]) == 0 or link_types[i].isspace():
@@ -72,7 +72,7 @@ class NeedflowDirective(FilterBase):
 
         config_names = self.options.get("config", None)
         configs = []
-        if config_names is not None and len(config_names) > 0:
+        if config_names:
             for config_name in config_names.split(','):
                 config_name = config_name.strip()
                 if config_name != '' and config_name in env.config.needs_flow_configs:
@@ -177,7 +177,7 @@ def process_needflow(app, doctree, fromdocname):
 
         # Adding config
         config = current_needflow['config']
-        if config is not None and len(config) >= 3:
+        if config and len(config) >= 3:
             # Remove all empty lines
             config = '\n'.join([line.strip() for line in config.split('\n') if line.strip() != ''])
             puml_node["uml"] += '\n\' Config\n\n'
@@ -203,11 +203,11 @@ def process_needflow(app, doctree, fromdocname):
                     diagram_template = Template(env.config.needs_diagram_template)
                     part_text = diagram_template.render(**need_part)
                     part_colors = []
-                    if need_part["type_color"] != '':
+                    if need_part["type_color"]:
                         # We set # later, as the user may not have given a color and the node must get highlighted
                         part_colors.append(need_part["type_color"].replace('#', ''))
 
-                    if current_needflow['highlight'] is not None and current_needflow['highlight'] != '' and \
+                    if current_needflow['highlight'] and \
                             filter_single_need(need_part, current_needflow['highlight'], all_needs):
                         part_colors.append('line:FF0000')
 
@@ -228,17 +228,17 @@ def process_needflow(app, doctree, fromdocname):
                     need_id = need_info['id']
 
                 colors = []
-                if need_info["type_color"] != '':
+                if need_info["type_color"]:
                     # We set # later, as the user may not have given a color and the node must get highlighted
                     colors.append(need_info["type_color"].replace('#', ''))
 
-                if current_needflow['highlight'] is not None and current_needflow['highlight'] != '' and \
+                if current_needflow['highlight'] and \
                         filter_single_need(need_info, current_needflow['highlight'], all_needs):
                     colors.append('line:FF0000')
 
                 # Only add subelements and their {...} container, if we really need them.
                 # Otherwise plantuml may not set style correctly, if {..} is empty
-                if node_part_code != '':
+                if node_part_code:
                     node_part_code = '{{\n {} }}'.format(node_part_code)
 
                 style = need_info["type_style"]
@@ -268,8 +268,7 @@ def process_needflow(app, doctree, fromdocname):
                         else:
                             comment = ''
 
-                        if "style_part" in link_type.keys() and link_type['style_part'] is not None and \
-                                len(link_type['style_part']) > 0:
+                        if "style_part" in link_type.keys() and link_type['style_part']:
                             link_style = '[{style}]'.format(style=link_type['style_part'])
                         else:
                             link_style = "[dotted]"
@@ -280,8 +279,7 @@ def process_needflow(app, doctree, fromdocname):
                         else:
                             comment = ''
 
-                        if "style" in link_type.keys() and link_type['style'] is not None and \
-                                len(link_type['style']) > 0:
+                        if "style" in link_type.keys() and link_type['style']:
                             link_style = '[{style}]'.format(style=link_type['style'])
                         else:
                             link_style = ""
@@ -291,14 +289,12 @@ def process_needflow(app, doctree, fromdocname):
                             final_link not in [x['id_complete'] for x in found_needs if x['is_part']]:
                         continue
 
-                    if 'style_start' in link_type.keys() and link_type['style_start'] is not None and \
-                            len(link_type['style_start']) > 0:
+                    if 'style_start' in link_type.keys() and link_type['style_start']:
                         style_start = link_type['style_start']
                     else:
                         style_start = '-'
 
-                    if 'style_end' in link_type.keys() and link_type['style_end'] is not None and \
-                            len(link_type['style_end']) > 0:
+                    if 'style_end' in link_type.keys() and link_type['style_end']:
                         style_end = link_type['style_end']
                     else:
                         style_end = '->'
@@ -336,12 +332,12 @@ def process_needflow(app, doctree, fromdocname):
 
         puml_node = nodes.figure('', puml_node)
 
-        if current_needflow['align'] is not None and len(current_needflow['align']) != '':
+        if current_needflow['align']:
             puml_node['align'] = current_needflow['align']
         else:
             puml_node['align'] = 'center'
 
-        if current_needflow['caption'] is not None and len(current_needflow['caption']) != '':
+        if current_needflow['caption']:
             # Make the caption to a link to the original file.
             try:
                 if "SVG" in app.config.plantuml_output_format.upper():

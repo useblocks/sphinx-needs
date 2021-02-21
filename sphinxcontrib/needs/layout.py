@@ -632,12 +632,11 @@ class LayoutHandler:
         :param exclude:  list of extra link type names, which are excluded from output
         :return: docutils nodes
         """
-        if exclude is None:
-            exclude = []
+        exclude = exclude or []
         data_container = []
         for link_type in self.app.config.needs_extra_links:
             type_key = link_type['option']
-            if self.need[type_key] is not None and len(self.need[type_key]) > 0 and type_key not in exclude:
+            if self.need[type_key] and type_key not in exclude:
                 outgoing_line = nodes.line()
                 outgoing_label = prefix + '{}:'.format(link_type['outgoing']) + postfix + ' '
                 outgoing_line += self._parse(outgoing_label)
@@ -645,7 +644,7 @@ class LayoutHandler:
                 data_container.append(outgoing_line)
 
             type_key = link_type['option'] + '_back'
-            if self.need[type_key] is not None and len(self.need[type_key]) > 0 and type_key not in exclude:
+            if self.need[type_key] and type_key not in exclude:
                 incoming_line = nodes.line()
                 incoming_label = prefix + '{}:'.format(link_type['incoming']) + postfix + ' '
                 incoming_line += self._parse(incoming_label)
@@ -863,11 +862,11 @@ class LayoutHandler:
         # docutils does'nt allow has to add any html-attributes beside class and id to nodes.
         # So we misused "id" for this and use "__" (2x _) as separator for row-target names
 
-        if (self.need['collapse'] is not None and self.need['collapse'] is False) or \
-                (self.need['collapse'] is None and initial is False):
+        if (not self.need['collapse']) or \
+                (self.need['collapse'] is None and not initial):
             status = 'show'
-        elif (self.need['collapse'] is not None and self.need['collapse'] is True) or \
-                (self.need['collapse'] is None and initial is True):
+        elif (self.need['collapse']) or \
+                (not self.need['collapse'] and initial):
             status = 'hide'
 
         target_strings = target.split(',')

@@ -39,7 +39,7 @@ def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=Fal
     row_col = nodes.entry(classes=['needs_' + need_key])
     para_col = nodes.paragraph()
 
-    if need_key in need_info and need_info[need_key] is not None:
+    if need_key in need_info and need_info[need_key]:
         if not isinstance(need_info[need_key], (list, set)):
             data = [need_info[need_key]]
         else:

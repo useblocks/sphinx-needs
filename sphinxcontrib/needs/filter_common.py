@@ -103,7 +103,7 @@ def process_filters(all_needs, current_needlist):
             if current_needlist["status"] is None or len(current_needlist["status"]) == 0:
                 # Filtering for status was not requested
                 status_filter_passed = True
-            elif need_info["status"] is not None and need_info["status"] in current_needlist["status"]:
+            elif need_info["status"] and need_info["status"] in current_needlist["status"]:
                 # Match was found
                 status_filter_passed = True
 
