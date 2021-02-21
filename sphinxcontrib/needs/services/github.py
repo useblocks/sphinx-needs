@@ -85,14 +85,7 @@ class GithubService(BaseService):
         if self.gh_type == 'commit':
             headers['Accept'] = "application/vnd.github.cloak-preview+json"
 
-        if not specific:
-            url = self.url + self.gh_type_config[self.gh_type]['url']
-            query = '{} {}'.format(query, self.gh_type_config[self.gh_type]["query"])
-            params = {
-                'q': query,
-                'per_page': options.get('max_amount', self.max_amount)
-            }
-        else:
+        if specific:
             try:
                 specific_elements = query.split('/')
                 owner = specific_elements[0]
@@ -110,6 +103,13 @@ class GithubService(BaseService):
                 raise NeedGithubServiceException('Single option ot valid, must follow "owner/repo/number"')
 
             params = {}
+        else:
+            url = self.url + self.gh_type_config[self.gh_type]['url']
+            query = '{} {}'.format(query, self.gh_type_config[self.gh_type]["query"])
+            params = {
+                'q': query,
+                'per_page': options.get('max_amount', self.max_amount)
+            }
 
         self.log.info('Service {} requesting data for query: {}'.format(self.name, query))
 
@@ -119,7 +119,6 @@ class GithubService(BaseService):
             auth = None
 
         resp = requests.get(url, params=params, auth=auth, headers=headers)
-
 
         if resp.status_code > 299:
             extra_info = ""

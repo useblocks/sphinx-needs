@@ -363,12 +363,13 @@ def calc_sum(app, need, needs, option, filter=None, links_only=False):
 
     :return: A float number
     """
-    if not links_only:
-        check_needs = needs.values()
-    else:
+    if links_only:
         check_needs = []
         for link in need["links"]:
             check_needs.append(needs[link])
+    else:
+        check_needs = needs.values()
+
 
     calculated_sum = 0
 

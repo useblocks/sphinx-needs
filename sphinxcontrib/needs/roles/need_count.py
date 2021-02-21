@@ -23,9 +23,7 @@ def process_need_count(app, doctree, fromdocname):
         all_needs = env.needs_all_needs.values()
         filter = node_need_count['reftarget']
 
-        if not filter:
-            amount = len(all_needs)
-        else:
+        if filter:
             filters = filter.split(' ? ')
             if len(filters) == 1:
                 need_list = prepare_need_list(all_needs)  # adds parts to need_list
@@ -38,6 +36,8 @@ def process_need_count(app, doctree, fromdocname):
             elif len(filters) > 2:
                 raise NeedsInvalidFilter('Filter not valid. Got too many filter elements. Allowed are 1 or 2. '
                                          'Use " ? " only once to separate filters.')
+        else:
+            amount = len(all_needs)
 
         new_node_count = nodes.Text(str(amount), str(amount))
         node_need_count.replace_self(new_node_count)

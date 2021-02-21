@@ -848,15 +848,15 @@ class LayoutHandler:
         coll_node_collapsed = nodes.inline(classes=['needs', 'collapsed'])
         coll_node_visible = nodes.inline(classes=['needs', 'visible'])
 
-        if not collapsed.startswith('image:') and not collapsed.startswith('icon:'):
-            coll_node_collapsed.append(nodes.Text(collapsed, collapsed))
-        else:
+        if collapsed.startswith('image:') or collapsed.startswith('icon:'):
             coll_node_collapsed.append(self.image(collapsed.replace('image:', ''), width='17px', no_link=True))
-
-        if not visible.startswith('image:') and not visible.startswith('icon:'):
-            coll_node_visible.append(nodes.Text(visible, visible))
         else:
+            coll_node_collapsed.append(nodes.Text(collapsed, collapsed))
+
+        if visible.startswith('image:') or visible.startswith('icon:'):
             coll_node_visible.append(self.image(visible.replace('image:', ''), width='17px', no_link=True))
+        else:
+            coll_node_visible.append(nodes.Text(visible, visible))
 
         coll_container = nodes.inline(classes=['needs', 'collapse'])
         # docutils does'nt allow has to add any html-attributes beside class and id to nodes.

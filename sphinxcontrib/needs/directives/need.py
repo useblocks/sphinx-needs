@@ -125,14 +125,15 @@ class NeedDirective(Directive):
         # Get links
         links_string = self.options.get(name, [])
         links = []
-        if len(links_string) > 0:
+        if links_string:
             # links = [link.strip() for link in re.split(";|,", links) if not link.isspace()]
             for link in re.split(";|,", links_string):
-                if not link.isspace():
-                    links.append(link.strip())
-                else:
+                if link.isspace():
                     logger.warning('Grubby link definition found in need {}. '
                                    'Defined link contains spaces only.'.format(id))
+                else:
+                    links.append(link.strip())
+
 
             # This may have cut also dynamic function strings, as they can contain , as well.
             # So let put them together again

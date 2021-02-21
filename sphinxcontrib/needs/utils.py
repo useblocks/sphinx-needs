@@ -40,10 +40,10 @@ def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=Fal
     para_col = nodes.paragraph()
 
     if need_key in need_info and need_info[need_key]:
-        if not isinstance(need_info[need_key], (list, set)):
-            data = [need_info[need_key]]
-        else:
+        if isinstance(need_info[need_key], (list, set)):
             data = need_info[need_key]
+        else:
+            data = [need_info[need_key]]
 
         for index, datum in enumerate(data):
             link_id = datum

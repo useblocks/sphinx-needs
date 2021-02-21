@@ -373,13 +373,14 @@ def _render_template(content, docname, lineno, state):
 def _read_in_links(links_string):
     # Get links
     links = []
-    if len(links_string) > 0:
+    if links_string:
         for link in re.split(";|,", links_string):
-            if not link.isspace():
-                links.append(link.strip())
-            else:
+            if link.isspace():
                 logger.warning('Grubby link definition found in need {}. '
                                'Defined link contains spaces only.'.format(id))
+            else:
+                links.append(link.strip())
+
 
         # This may have cut also dynamic function strings, as they can contain , as well.
         # So let put them together again
