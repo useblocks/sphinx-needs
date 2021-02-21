@@ -195,23 +195,21 @@ def calculate_link(app, need_info):
 
 
 def create_legend(need_types) -> str:
-    def create_color_table(need_types) -> str:
-        table = "|= Color |= Type |"
-        for n in need_types:
-            table += "\n|<back:{color}> {color} </back>| {name} |".format(
-                color=n["color"], name=n["title"]
-            )
-        return table
+
+    def create_row(need_type) -> str:
+        return "\n|<back:{color}> {color} </back>| {name} |".format(
+            color=need_type["color"], name=need_type["title"]
+        )
+    rows = map(create_row, need_types)
+    table = "|= Color |= Type |" + "".join(rows)
 
     legend = textwrap.dedent(
         """
-
         ' Legend definition
-
         legend
         {color_table}
         endlegend
         """
     )
-    legend = legend.format(color_table=create_color_table(need_types))
+    legend = legend.format(color_table=table)
     return legend
