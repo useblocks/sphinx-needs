@@ -304,28 +304,16 @@ def add_need(
     # Template builds
     ##############################
 
-    # template
+    for template, content_type in [
+        ("template", "content"),
+        ("pre_template", "pre_content"),
+        ("post_template", "post_content"),
+    ]:
+        if needs_info[template]:
+            needs_info[content_type] = _prepare_template(app, needs_info, template)
+
     if needs_info["template"]:
-        new_content = _prepare_template(app, needs_info, "template")
-        # Overwrite current content
-        content = new_content
-        needs_info["content"] = new_content
-    else:
-        new_content = None
-
-    # pre_template
-    if needs_info["pre_template"]:
-        pre_content = _prepare_template(app, needs_info, "pre_template")
-        needs_info["pre_content"] = pre_content
-    else:
-        pre_content = None
-
-    # post_template
-    if needs_info["post_template"]:
-        post_content = _prepare_template(app, needs_info, "post_template")
-        needs_info["post_content"] = post_content
-    else:
-        post_content = None
+        content = needs_info["content"]
 
     if needs_info["hide"]:
         return [target_node]
@@ -354,18 +342,17 @@ def add_need(
 
     needs_info["content_node"] = node_need
 
-    return_nodes = [target_node] + [node_need]
-    if pre_content:
-        node_need_pre_content = _render_template(pre_content, docname, lineno, state)
-        pre_container = nodes.container()
-        pre_container += node_need_pre_content.children
-        return_nodes = node_need_pre_content.children + return_nodes
+    def add_container(node_list, content_type: str):
+        if content_type in needs_info:
+            content = _render_template(needs_info[content_type], docname, lineno, state)
+            container = nodes.container()
+            container += content.children
+            node_list.append(container)
 
-    if post_content:
-        node_need_post_content = _render_template(post_content, docname, lineno, state)
-        post_container = nodes.container()
-        post_container += node_need_post_content.children
-        return_nodes = return_nodes + node_need_post_content.children
+    return_nodes = []
+    add_container(return_nodes, "pre_content")
+    return_nodes.extend([target_node, node_need])
+    add_container(return_nodes, "post_content")
 
     return return_nodes
 
@@ -417,7 +404,7 @@ def _prepare_template(app: Sphinx, needs_info, template_key) -> str:
         )
 
     with open(template_path, "r") as template_file:
-        template_content = "".join(template_file.readlines())
+        template_content = template_file.read()
     template_obj = Template(template_content)
     new_content = template_obj.render(**needs_info)
 
