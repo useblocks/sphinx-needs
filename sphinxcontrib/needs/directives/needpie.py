@@ -68,16 +68,16 @@ class NeedpieDirective(FilterBase):
         legend = self.options.get('legend', None)
 
         explode = self.options.get('explode', None)
-        if explode is not None and len(explode) > 0:
+        if explode:
             explode = explode.split(',')
             explode = [float(ex) for ex in explode]  # Transform all values to floats
 
         labels = self.options.get('labels', None)
-        if labels is not None and len(labels) > 0:
+        if labels:
             labels = labels.split(',')
 
         colors = self.options.get('colors', None)
-        if colors is not None and len(colors) > 0:
+        if colors:
             colors = colors.split(',')
 
         shadow = 'shadow' in self.options
@@ -122,7 +122,7 @@ def process_needpie(app, doctree, fromdocname):
         current_needpie = env.need_all_needpie[id]
 
         # Set matplotlib style
-        if current_needpie['style'] is not None:
+        if current_needpie['style']:
             matplotlib.style.use(current_needpie['style'])
         else:
             matplotlib.style.use('default')
@@ -166,18 +166,18 @@ def process_needpie(app, doctree, fromdocname):
             'colors': colors,
         }
 
-        if text_color is not None:
+        if text_color:
             pie_kwargs['textprops'] = dict(color=text_color)
 
         wedges, _texts, autotexts = axes.pie(sizes, **pie_kwargs)
 
-        if text_color is not None:
+        if text_color:
             for autotext in autotexts:
                 autotext.set_color(text_color)
         axes.axis('equal')
 
         # Legend preparation
-        if current_needpie['legend'] is not None:
+        if current_needpie['legend']:
             axes.legend(wedges, labels,
                         title=str(current_needpie['legend']),
                         loc="center left",
@@ -185,7 +185,7 @@ def process_needpie(app, doctree, fromdocname):
 
         matplotlib.pyplot.setp(autotexts, size=8, weight="bold")
 
-        if current_needpie['title'] is not None and len(current_needpie['title']) > 0:
+        if current_needpie['title']:
             axes.set_title(current_needpie['title'])
 
         # Final storage

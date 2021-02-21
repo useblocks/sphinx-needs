@@ -91,10 +91,10 @@ def process_needlist(app, doctree, fromdocname):
             para = nodes.line()
             description = "%s: %s" % (need_info["id"], need_info["title"])
 
-            if current_needfilter["show_status"] and need_info["status"] is not None:
+            if current_needfilter["show_status"] and need_info["status"]:
                 description += " (%s)" % need_info["status"]
 
-            if current_needfilter["show_tags"] and need_info["tags"] is not None:
+            if current_needfilter["show_tags"] and need_info["tags"]:
                 description += " [%s]" % "; ".join(need_info["tags"])
 
             title = nodes.Text(description, description)

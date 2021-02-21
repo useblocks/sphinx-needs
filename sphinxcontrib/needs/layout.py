@@ -469,7 +469,7 @@ class LayoutHandler:
         """
 
         data_container = nodes.inline(classes=['needs_' + name])
-        if prefix is not None:
+        if prefix:
             prefix_node = self._parse(prefix)
             label_node = nodes.inline(classes=['needs_label'])
             label_node += prefix_node
@@ -714,7 +714,7 @@ class LayoutHandler:
                                'feather_{}'.format(builder_extension),
                                '{}.{}'.format(url.split(':')[1], builder_extension))
 
-            # if any(x in self.app.builder.name.upper() for x in ['PDF', 'LATEX']) is False:
+            # if not any(x in self.app.builder.name.upper() for x in ['PDF', 'LATEX']):
             #     # This is not needed for Latex. as latex puts the complete content in a single text file on root level
             #     # The url needs to be relative to the current document where the need is defined
             #     # Otherwise the link is aiming "too high".

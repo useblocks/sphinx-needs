@@ -79,7 +79,7 @@ def process_filters(all_needs, current_needlist):
     """
 
     sort_key = current_needlist["sort_by"]
-    if sort_key is not None:
+    if sort_key:
         if sort_key == "status":
             all_needs = sorted(all_needs, key=status_sorter)
         else:
@@ -150,7 +150,7 @@ def process_filters(all_needs, current_needlist):
 
     filter_list[current_needlist['target_node']] = {
         'target_node': current_needlist['target_node'],
-        'filter': current_needlist['filter'] if current_needlist['filter'] is not None else "",
+        'filter': current_needlist['filter'] or "",
         'status': current_needlist['status'],
         'tags': current_needlist['tags'],
         'types': current_needlist['types'],

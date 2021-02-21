@@ -173,7 +173,7 @@ def process_needgantt(app, doctree, fromdocname):
 
             month = MONTH_NAMES[int(start_date.strftime("%-m"))]
             start_date_plantuml = start_date.strftime("%dth of {} %Y".format(month))
-        if start_date_plantuml is not None:
+        if start_date_plantuml:
             puml_node["uml"] += 'Project starts the {}\n'.format(start_date_plantuml)
 
         # Element handling

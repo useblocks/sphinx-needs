@@ -48,7 +48,7 @@ def process_need_outgoing(app, doctree, fromdocname):
                 target_need = env.needs_all_needs[node_need_ref['reftarget']]
                 try:
                     target_need = env.needs_all_needs[link]
-                    if link_part is not None and link_part in target_need['parts'].keys():
+                    if link_part and link_part in target_need['parts'].keys():
                         part_content = target_need['parts'][link_part]['content']
                         target_title = part_content if len(part_content) < 30 else part_content[:27] + '...'
                         target_id = '.'.join([link, link_part])
@@ -56,11 +56,11 @@ def process_need_outgoing(app, doctree, fromdocname):
                         target_title = target_need["title"]
                         target_id = target_need["id"]
 
-                    if getattr(env.config, "needs_show_link_title", False) is True:
+                    if getattr(env.config, "needs_show_link_title"):
                         link_text = "{title} ({id})".format(title=target_title, id=target_id)
                     else:
                         link_text = target_id
-                    if getattr(env.config, "needs_show_link_type", False) is True:
+                    if getattr(env.config, "needs_show_link_type"):
                         link_text += " [{type}]".format(type=target_need["type_name"])
 
                     # if index+1 < len(ref_need["links"]):
@@ -77,7 +77,7 @@ def process_need_outgoing(app, doctree, fromdocname):
                     node_link_container += new_node_ref
 
                     # If we have several links, we add an empty text between them
-                    if index + 1 < len(links):
+                    if (index + 1) < len(links):
                         node_link_container += nodes.Text(", ", ", ")
 
                 except NoUri:
@@ -85,7 +85,7 @@ def process_need_outgoing(app, doctree, fromdocname):
                     pass
 
             else:
-                if node_need_ref is not None and node_need_ref.line is not None:
+                if node_need_ref and node_need_ref.line:
                     log.warning('Needs: linked need %s not found (Line %i of file %s)' % (
                         link, node_need_ref.line, node_need_ref.source))
                 else:

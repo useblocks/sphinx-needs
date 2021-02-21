@@ -276,7 +276,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
     ##############################
 
     # template
-    if needs_info['template'] is not None and len(needs_info['template']) > 0:
+    if needs_info['template']:
         new_content = _prepare_template(app, needs_info, 'template')
         # Overwrite current content
         content = new_content
@@ -285,14 +285,14 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
         new_content = None
 
     # pre_template
-    if needs_info['pre_template'] is not None and len(needs_info['pre_template']) > 0:
+    if needs_info['pre_template']:
         pre_content = _prepare_template(app, needs_info, 'pre_template')
         needs_info['pre_content'] = pre_content
     else:
         pre_content = None
 
     # post_template
-    if needs_info['post_template'] is not None and len(needs_info['post_template']) > 0:
+    if needs_info['post_template']:
         post_content = _prepare_template(app, needs_info, 'post_template')
         needs_info['post_content'] = post_content
     else:
@@ -484,7 +484,7 @@ def _merge_global_options(needs_info, global_options):
     for key, value in global_options.items():
 
         # If key already exists in needs_info, this global_option got overwritten manually in current need
-        if key in needs_info.keys() and needs_info[key] is not None and len(str(needs_info[key])) > 0:
+        if key in needs_info.keys() and needs_info[key]:
             continue
 
         if isinstance(value, tuple):
