@@ -1,19 +1,30 @@
 import os
 import urllib
-
 from datetime import datetime
+
 from docutils import nodes
 from docutils.parsers.rst import directives
+from sphinxcontrib.plantuml import (
+    generate_name,  # Need for plantuml filename calculation
+)
 
-from sphinxcontrib.needs.diagrams_common import DiagramBase, no_plantuml, \
-    add_config, get_filter_para, get_debug_container, calculate_link
-from sphinxcontrib.needs.utils import MONTH_NAMES
-
-from sphinxcontrib.plantuml import generate_name  # Need for plantuml filename calculation
-
-from sphinxcontrib.needs.filter_common import FilterBase, process_filters, filter_single_need
+from sphinxcontrib.needs.diagrams_common import (
+    DiagramBase,
+    add_config,
+    calculate_link,
+    create_legend,
+    get_debug_container,
+    get_filter_para,
+    no_plantuml,
+)
 from sphinxcontrib.needs.directives.utils import get_link_type_option
+from sphinxcontrib.needs.filter_common import (
+    FilterBase,
+    filter_single_need,
+    process_filters,
+)
 from sphinxcontrib.needs.logging import getLogger
+from sphinxcontrib.needs.utils import MONTH_NAMES
 
 logger = getLogger(__name__)
 
@@ -258,14 +269,7 @@ def process_needgantt(app, doctree, fromdocname):
 
         # Create a legend
         if current_needgantt["show_legend"]:
-            puml_node["uml"] += '\n\n\' Legend definition \n\n'
-
-            puml_node["uml"] += "legend\n"
-            puml_node["uml"] += "|= Color |= Type |\n"
-            for need in app.config.needs_types:
-                puml_node["uml"] += "|<back:{color}> {color} </back>| {name} |\n".format(
-                    color=need["color"], name=need["title"])
-            puml_node["uml"] += "endlegend\n"
+            puml_node["uml"] += create_legend(app.config.needs_types)
 
         puml_node["uml"] += "\n@enduml"
         puml_node["incdir"] = os.path.dirname(current_needgantt["docname"])

@@ -5,11 +5,13 @@ diagram related directive. E.g. needflow and needsequence.
 
 import html
 import re
+import textwrap
 
 from docutils import nodes
-from docutils.parsers.rst import Directive
-from docutils.parsers.rst import directives
+from docutils.parsers.rst import Directive, directives
+
 from sphinxcontrib.needs.logging import getLogger
+
 logger = getLogger(__name__)
 
 try:
@@ -190,3 +192,26 @@ def calculate_link(app, need_info):
         link = ""
 
     return link
+
+
+def create_legend(need_types) -> str:
+    def create_color_table(need_types) -> str:
+        table = "|= Color |= Type |"
+        for n in need_types:
+            table += "\n|<back:{color}> {color} </back>| {name} |".format(
+                color=n["color"], name=n["title"]
+            )
+        return table
+
+    legend = textwrap.dedent(
+        """
+
+        ' Legend definition
+
+        legend
+        {color_table}
+        endlegend
+        """
+    )
+    legend = legend.format(color_table=create_color_table(need_types))
+    return legend

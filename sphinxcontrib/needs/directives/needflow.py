@@ -11,7 +11,7 @@ from sphinxcontrib.plantuml import (
     generate_name,  # Need for plantuml filename calculation
 )
 
-from sphinxcontrib.needs.diagrams_common import calculate_link
+from sphinxcontrib.needs.diagrams_common import calculate_link, create_legend
 from sphinxcontrib.needs.filter_common import (
     FilterBase,
     filter_single_need,
@@ -90,10 +90,10 @@ class NeedflowDirective(FilterBase):
             'lineno': self.lineno,
             'target_node': targetnode,
             'caption': caption,
-            'show_filters': self.options.get("show_filters", False) is None,
-            'show_legend': self.options.get("show_legend", False) is None,
-            'show_link_names': self.options.get("show_link_names", False) is None,
-            'debug': self.options.get("debug", False) is None,
+            'show_filters': self.options.get("show_filters", False),
+            'show_legend': self.options.get("show_legend", False),
+            'show_link_names': self.options.get("show_link_names", False),
+            'debug': self.options.get("debug", False),
             'config_names': config_names,
             'config': '\n'.join(configs),
             'scale': scale,
@@ -321,14 +321,7 @@ def process_needflow(app, doctree, fromdocname):
 
         # Create a legend
         if current_needflow["show_legend"]:
-            puml_node["uml"] += '\n\n\' Legend definition \n\n'
-
-            puml_node["uml"] += "legend\n"
-            puml_node["uml"] += "|= Color |= Type |\n"
-            for need in app.config.needs_types:
-                puml_node["uml"] += "|<back:{color}> {color} </back>| {name} |\n".format(
-                    color=need["color"], name=need["title"])
-            puml_node["uml"] += "endlegend\n"
+            puml_node["uml"] += create_legend(app.config.needs_types)
 
         puml_node["uml"] += "\n@enduml"
         puml_node["incdir"] = os.path.dirname(current_needflow["docname"])

@@ -4,13 +4,15 @@ import urllib
 from docutils import nodes
 from docutils.parsers.rst import directives
 from jinja2 import Template
+
 try:
     from sphinx.errors import NoUri  # Sphinx 3.0
 except ImportError:
     from sphinx.environment import NoUri  # Sphinx < 3.0
-from sphinxcontrib.needs.utils import row_col_maker
 
+from sphinxcontrib.needs.diagrams_common import create_legend
 from sphinxcontrib.needs.filter_common import FilterBase, process_filters
+from sphinxcontrib.needs.utils import row_col_maker
 
 urlParse = urllib.parse.quote_plus
 
@@ -58,10 +60,10 @@ class NeedfilterDirective(FilterBase):
             'docname': env.docname,
             'lineno': self.lineno,
             'target_node': targetnode,
-            'show_tags': self.options.get("show_tags", False) is None,
-            'show_status': self.options.get("show_status", False) is None,
-            'show_filters': self.options.get("show_filters", False) is None,
-            'show_legend': self.options.get("show_legend", False) is None,
+            'show_tags': self.options.get("show_tags", False),
+            'show_status': self.options.get("show_status", False),
+            'show_filters': self.options.get("show_filters", False),
+            'show_legend': self.options.get("show_legend", False),
             'layout': self.options.get("layout", "list"),
             'export_id': self.options.get("export_id", ""),
             'env': env,
@@ -214,12 +216,7 @@ def process_needfilters(app, doctree, fromdocname):
             # Create a legend
 
             if current_needfilter["show_legend"]:
-                puml_node["uml"] += "legend\n"
-                puml_node["uml"] += "|= Color |= Type |\n"
-                for need in app.config.needs_types:
-                    puml_node["uml"] += "|<back:{color}> {color} </back>| {name} |\n".format(
-                        color=need["color"], name=need["title"])
-                puml_node["uml"] += "endlegend\n"
+                puml_node["uml"] += create_legend(app.config.needs_types)
             puml_node["uml"] += "@enduml"
             puml_node["incdir"] = os.path.dirname(current_needfilter["docname"])
             puml_node["filename"] = os.path.split(current_needfilter["docname"])[1]  # Needed for plantuml >= 0.9
