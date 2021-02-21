@@ -126,4 +126,4 @@ Table of Requirements with Titles
 
 .. needtable::
     :columns: id;title;content
-    :filter: title != ''
+    :filter: title

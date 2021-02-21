@@ -187,7 +187,7 @@ class GithubService(BaseService):
         for item in items:
             # wraps content lines, if they are too long. Respects already existing newlines.
             content_lines = ['\n   '.join(textwrap.wrap(line, 60, break_long_words=True, replace_whitespace=False))
-                             for line in item["body"].splitlines() if line.strip() != '']
+                             for line in item["body"].splitlines() if line.strip()]
 
             content = '\n\n   '.join(content_lines)
             # Reduce content length, if requested by config

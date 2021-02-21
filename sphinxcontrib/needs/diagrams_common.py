@@ -62,7 +62,7 @@ class DiagramBase(Directive):
             link_types = [link_type.strip() for link_type in re.split(";|,", link_types)]
             for i in range(len(link_types)):
                 if len(link_types[i]) == 0 or link_types[i].isspace():
-                    del (link_types[i])
+                    del link_types[i]
                     logger.warning('Scruffy link_type definition found in needsequence {}. '
                                    'Defined link_type contains spaces only.'.format(id))
 
@@ -71,7 +71,7 @@ class DiagramBase(Directive):
         if config_names:
             for config_name in config_names.split(','):
                 config_name = config_name.strip()
-                if config_name != '' and config_name in env.config.needs_flow_configs:
+                if config_name and config_name in env.config.needs_flow_configs:
                     configs.append(env.config.needs_flow_configs[config_name])
 
         scale = self.options.get("scale", '100').replace('%', '')
@@ -125,7 +125,7 @@ def add_config(config):
     uml = ''
     if config and len(config) >= 3:
         # Remove all empty lines
-        config = '\n'.join([line.strip() for line in config.split('\n') if line.strip() != ''])
+        config = '\n'.join([line.strip() for line in config.split('\n') if line.strip()])
         uml += '\n\' Config\n\n'
         uml += config
         uml += '\n\n'
