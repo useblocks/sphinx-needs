@@ -180,12 +180,12 @@ def process_needsequence(app, doctree, fromdocname):
 
         puml_node = nodes.figure('', puml_node)
 
-        if current_needsequence['align'] is not None and len(current_needsequence['align']) != '':
+        if current_needsequence['align']:
             puml_node['align'] = current_needsequence['align']
         else:
             puml_node['align'] = 'center'
 
-        if current_needsequence['caption'] is not None and len(current_needsequence['caption']) != '':
+        if current_needsequence['caption']:
             # Make the caption to a link to the original file.
             try:
                 if "SVG" in app.config.plantuml_output_format.upper():
@@ -241,7 +241,7 @@ def get_message_needs(sender, link_types, all_needs_dict, tracked_receivers=None
         for link_type in link_types:
             receiver_ids = msg_need[link_type]
             for rec_id in receiver_ids:
-                if filter is not None:
+                if filter:
                     from sphinxcontrib.needs.filter_common import filter_single_need
                     if not filter_single_need(all_needs_dict[rec_id], filter, needs=all_needs_dict.values()):
                         continue

@@ -39,11 +39,11 @@ def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=Fal
     row_col = nodes.entry(classes=['needs_' + need_key])
     para_col = nodes.paragraph()
 
-    if need_key in need_info and need_info[need_key] is not None:
-        if not isinstance(need_info[need_key], (list, set)):
-            data = [need_info[need_key]]
-        else:
+    if need_key in need_info and need_info[need_key]:
+        if isinstance(need_info[need_key], (list, set)):
             data = need_info[need_key]
+        else:
+            data = [need_info[need_key]]
 
         for index, datum in enumerate(data):
             link_id = datum
@@ -71,7 +71,7 @@ def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=Fal
                         temp_need = all_needs[link_id]
                         ref_col['refuri'] = app.builder.get_relative_uri(fromdocname, temp_need['docname'])
                         ref_col['refuri'] += "#" + temp_need["id"]
-                        if link_part is not None:
+                        if link_part:
                             ref_col['refuri'] += '.' + link_part
 
                 except KeyError:

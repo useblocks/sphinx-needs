@@ -30,7 +30,7 @@ def update_need_with_parts(env, need, part_nodes):
     for part_node in part_nodes:
         content = part_node.children[0].children[0]  # ->inline->Text
         result = part_pattern.match(content)
-        if result is not None:
+        if result:
             inline_id = result.group(1)
             part_content = result.group(2)
         else:

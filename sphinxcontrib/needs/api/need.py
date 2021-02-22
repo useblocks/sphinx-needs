@@ -177,7 +177,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
         env.needs_all_needs = {}
 
     if need_id in env.needs_all_needs.keys():
-        if id is not None:
+        if id:
             raise NeedsDuplicatedId("A need with ID {} already exists! "
                                     "This is not allowed. Document {}[{}] Title: {}.".format(need_id, docname,
                                                                                              lineno, title))
@@ -276,7 +276,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
     ##############################
 
     # template
-    if needs_info['template'] is not None and len(needs_info['template']) > 0:
+    if needs_info['template']:
         new_content = _prepare_template(app, needs_info, 'template')
         # Overwrite current content
         content = new_content
@@ -285,14 +285,14 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
         new_content = None
 
     # pre_template
-    if needs_info['pre_template'] is not None and len(needs_info['pre_template']) > 0:
+    if needs_info['pre_template']:
         pre_content = _prepare_template(app, needs_info, 'pre_template')
         needs_info['pre_content'] = pre_content
     else:
         pre_content = None
 
     # post_template
-    if needs_info['post_template'] is not None and len(needs_info['post_template']) > 0:
+    if needs_info['post_template']:
         post_content = _prepare_template(app, needs_info, 'post_template')
         needs_info['post_content'] = post_content
     else:
@@ -307,7 +307,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
     # We just add a basic need node and render the rst-based content, because this can not be done later.
     # style_classes = ['need', type_name, 'need-{}'.format(type_name.lower())]  # Used < 0.4.4
     style_classes = ['need', 'need-{}'.format(need_type.lower())]
-    if style is not None and style != '':
+    if style:
         style_classes.append(style)
 
     node_need = sphinxcontrib.needs.directives.need.Need(
@@ -324,13 +324,13 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
     needs_info['content_node'] = node_need
 
     return_nodes = [target_node] + [node_need]
-    if pre_content is not None:
+    if pre_content:
         node_need_pre_content = _render_template(pre_content, docname, lineno, state)
         pre_container = nodes.container()
         pre_container += node_need_pre_content.children
         return_nodes = [pre_container] + return_nodes
 
-    if post_content is not None:
+    if post_content:
         node_need_post_content = _render_template(post_content, docname, lineno, state)
         post_container = nodes.container()
         post_container += node_need_post_content.children
@@ -373,13 +373,14 @@ def _render_template(content, docname, lineno, state):
 def _read_in_links(links_string):
     # Get links
     links = []
-    if len(links_string) > 0:
+    if links_string:
         for link in re.split(";|,", links_string):
-            if not link.isspace():
-                links.append(link.strip())
-            else:
+            if link.isspace():
                 logger.warning('Grubby link definition found in need {}. '
                                'Defined link contains spaces only.'.format(id))
+            else:
+                links.append(link.strip())
+
 
         # This may have cut also dynamic function strings, as they can contain , as well.
         # So let put them together again
@@ -484,7 +485,7 @@ def _merge_global_options(needs_info, global_options):
     for key, value in global_options.items():
 
         # If key already exists in needs_info, this global_option got overwritten manually in current need
-        if key in needs_info.keys() and needs_info[key] is not None and len(str(needs_info[key])) > 0:
+        if key in needs_info.keys() and needs_info[key]:
             continue
 
         if isinstance(value, tuple):

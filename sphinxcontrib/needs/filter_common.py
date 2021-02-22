@@ -40,7 +40,7 @@ class FilterBase(Directive):
             tags = [tag.strip() for tag in re.split(";|,", tags) if len(tag) > 0]
 
         status = self.options.get("status", None)
-        if status is not None:
+        if status:
             try:
                 status = str(status)
                 status = [stat.strip() for stat in re.split(";|,", status)]
@@ -79,7 +79,7 @@ def process_filters(all_needs, current_needlist):
     """
 
     sort_key = current_needlist["sort_by"]
-    if sort_key is not None:
+    if sort_key:
         if sort_key == "status":
             all_needs = sorted(all_needs, key=status_sorter)
         else:
@@ -103,7 +103,7 @@ def process_filters(all_needs, current_needlist):
             if current_needlist["status"] is None or len(current_needlist["status"]) == 0:
                 # Filtering for status was not requested
                 status_filter_passed = True
-            elif need_info["status"] is not None and need_info["status"] in current_needlist["status"]:
+            elif need_info["status"] and need_info["status"] in current_needlist["status"]:
                 # Match was found
                 status_filter_passed = True
 
@@ -150,7 +150,7 @@ def process_filters(all_needs, current_needlist):
 
     filter_list[current_needlist['target_node']] = {
         'target_node': current_needlist['target_node'],
-        'filter': current_needlist['filter'] if current_needlist['filter'] is not None else "",
+        'filter': current_needlist['filter'] or "",
         'status': current_needlist['status'],
         'tags': current_needlist['tags'],
         'types': current_needlist['types'],
@@ -244,9 +244,9 @@ def filter_single_need(need, filter_string="", needs=None, current_need=None):
     :return: True, if need as passed the filter_string, else False
     """
     filter_context = need.copy()
-    if needs is not None:
+    if needs:
         filter_context['needs'] = needs
-    if current_need is not None:
+    if current_need:
         filter_context['current_need'] = current_need
 
     filter_context["search"] = re.search

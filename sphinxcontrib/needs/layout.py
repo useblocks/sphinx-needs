@@ -164,14 +164,9 @@ class LayoutHandler:
                    'needs_grid_' + self.layout['grid'],
                    'needs_layout_' + self.layout_name]
 
-        if style is not None:
-            self.style = style
-        elif self.need['style'] is not None:
-            self.style = self.need['style']
-        else:
-            self.style = getattr(self.app.config, 'needs_default_style', None)
+        self.style = style or self.need['style'] or getattr(self.app.config, 'needs_default_style', None)
 
-        if self.style and len(self.style) > 0:
+        if self.style:
             for style in self.style.strip().split(','):
                 style = style.strip()
                 classes.append('needs_style_' + style)
@@ -439,7 +434,7 @@ class LayoutHandler:
                             ))
                         result = func(*func_args, **func_kargs)
 
-                        if result is not None:
+                        if result:
                             node_line += result
                     else:
                         raise SphinxNeedLayoutException(
@@ -474,7 +469,7 @@ class LayoutHandler:
         """
 
         data_container = nodes.inline(classes=['needs_' + name])
-        if prefix is not None:
+        if prefix:
             prefix_node = self._parse(prefix)
             label_node = nodes.inline(classes=['needs_label'])
             label_node += prefix_node
@@ -637,12 +632,11 @@ class LayoutHandler:
         :param exclude:  list of extra link type names, which are excluded from output
         :return: docutils nodes
         """
-        if exclude is None:
-            exclude = []
+        exclude = exclude or []
         data_container = []
         for link_type in self.app.config.needs_extra_links:
             type_key = link_type['option']
-            if self.need[type_key] is not None and len(self.need[type_key]) > 0 and type_key not in exclude:
+            if self.need[type_key] and type_key not in exclude:
                 outgoing_line = nodes.line()
                 outgoing_label = prefix + '{}:'.format(link_type['outgoing']) + postfix + ' '
                 outgoing_line += self._parse(outgoing_label)
@@ -650,7 +644,7 @@ class LayoutHandler:
                 data_container.append(outgoing_line)
 
             type_key = link_type['option'] + '_back'
-            if self.need[type_key] is not None and len(self.need[type_key]) > 0 and type_key not in exclude:
+            if self.need[type_key] and type_key not in exclude:
                 incoming_line = nodes.line()
                 incoming_label = prefix + '{}:'.format(link_type['incoming']) + postfix + ' '
                 incoming_line += self._parse(incoming_label)
@@ -688,7 +682,7 @@ class LayoutHandler:
         :return:
         """
         data_container = nodes.inline()
-        if prefix is not None:
+        if prefix:
             prefix_node = self._parse(prefix)
             label_node = nodes.inline(classes=['needs_label'])
             label_node += prefix_node
@@ -696,11 +690,11 @@ class LayoutHandler:
 
         # from sphinx.addnodes import
         options = {}
-        if height is not None:
+        if height:
             options['height'] = height
-        if width is not None:
+        if width:
             options['width'] = width
-        if align is not None:
+        if align:
             options['align'] = align
 
         if url is None or not isinstance(url, str):
@@ -720,7 +714,7 @@ class LayoutHandler:
                                'feather_{}'.format(builder_extension),
                                '{}.{}'.format(url.split(':')[1], builder_extension))
 
-            # if any(x in self.app.builder.name.upper() for x in ['PDF', 'LATEX']) is False:
+            # if not any(x in self.app.builder.name.upper() for x in ['PDF', 'LATEX']):
             #     # This is not needed for Latex. as latex puts the complete content in a single text file on root level
             #     # The url needs to be relative to the current document where the need is defined
             #     # Otherwise the link is aiming "too high".
@@ -808,14 +802,13 @@ class LayoutHandler:
             <<link('url', 'Link', is_dynamic=True)>>  # Reads url from need[url]
         """
         data_container = nodes.inline()
-        if prefix is not None:
+        if prefix:
             prefix_node = self._parse(prefix)
             label_node = nodes.inline(classes=['needs_label'])
             label_node += prefix_node
             data_container.append(label_node)
 
-        if text is None:  # May be needed if only image shall be shown
-            text = ''
+        text = text = '' # May be needed if only image shall be shown
 
         if is_dynamic:
             try:
@@ -825,7 +818,7 @@ class LayoutHandler:
 
         link_node = nodes.reference(text, text, refuri=url)
 
-        if image_url is not None:
+        if image_url:
             image_node = self.image(image_url, image_height, image_width)
             link_node.append(image_node)
 
@@ -855,25 +848,25 @@ class LayoutHandler:
         coll_node_collapsed = nodes.inline(classes=['needs', 'collapsed'])
         coll_node_visible = nodes.inline(classes=['needs', 'visible'])
 
-        if not collapsed.startswith('image:') and not collapsed.startswith('icon:'):
-            coll_node_collapsed.append(nodes.Text(collapsed, collapsed))
-        else:
+        if collapsed.startswith('image:') or collapsed.startswith('icon:'):
             coll_node_collapsed.append(self.image(collapsed.replace('image:', ''), width='17px', no_link=True))
-
-        if not visible.startswith('image:') and not visible.startswith('icon:'):
-            coll_node_visible.append(nodes.Text(visible, visible))
         else:
+            coll_node_collapsed.append(nodes.Text(collapsed, collapsed))
+
+        if visible.startswith('image:') or visible.startswith('icon:'):
             coll_node_visible.append(self.image(visible.replace('image:', ''), width='17px', no_link=True))
+        else:
+            coll_node_visible.append(nodes.Text(visible, visible))
 
         coll_container = nodes.inline(classes=['needs', 'collapse'])
         # docutils does'nt allow has to add any html-attributes beside class and id to nodes.
         # So we misused "id" for this and use "__" (2x _) as separator for row-target names
 
-        if (self.need['collapse'] is not None and self.need['collapse'] is False) or \
-                (self.need['collapse'] is None and initial is False):
+        if (not self.need['collapse']) or \
+                (self.need['collapse'] is None and not initial):
             status = 'show'
-        elif (self.need['collapse'] is not None and self.need['collapse'] is True) or \
-                (self.need['collapse'] is None and initial is True):
+        elif (self.need['collapse']) or \
+                (not self.need['collapse'] and initial):
             status = 'hide'
 
         target_strings = target.split(',')

@@ -102,7 +102,7 @@ class NeedimportDirective(Directive):
         needs_list = needs_list_filtered
 
         # If we need to set an id prefix, we also need to manipulate all used ids in the imported data.
-        if id_prefix != "":
+        if id_prefix:
             needs_ids = needs_list.keys()
 
             for key, need in needs_list.items():

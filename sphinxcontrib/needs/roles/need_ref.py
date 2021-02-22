@@ -25,7 +25,7 @@ def process_need_ref(app, doctree, fromdocname):
                                     node_need_ref['reftarget'] + '?')
 
         # findings = re.match(r'([\w ]+)(\<(.*)\>)?', node_need_ref.children[0].rawsource)
-        # if findings.group(2) is not None:
+        # if findings.group(2):
         #     ref_id = findings.group(3)
         #     ref_name = findings.group(1)
         # else:
@@ -46,9 +46,9 @@ def process_need_ref(app, doctree, fromdocname):
         if ref_id in env.needs_all_needs:
             target_need = env.needs_all_needs[ref_id]
             try:
-                if ref_name is not None:
+                if ref_name:
                     title = ref_name
-                elif part_id is not None:
+                elif part_id:
                     title = target_need['parts'][part_id]['content']
                 else:
                     title = target_need["title"]

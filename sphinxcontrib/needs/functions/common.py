@@ -115,10 +115,10 @@ def copy(app, need, needs, option, need_id=None, lower=False, upper=False, filte
     :param filter: :ref:`filter_string`, which first result is used as copy source.
     :return: string of copied need option
     """
-    if need_id is not None:
+    if need_id:
         need = needs[need_id]
 
-    if filter is not None:
+    if filter:
         result = filter_needs(needs.values(), filter, need)
         if result:
             need = result[0]
@@ -268,7 +268,7 @@ def check_linked_values(app, need, needs, result, search_option, search_value, f
         search_value = [search_value]
 
     for link in links:
-        if filter_string is not None:
+        if filter_string:
             try:
                 if not filter_single_need(needs[link], filter_string):
                     continue
@@ -363,17 +363,18 @@ def calc_sum(app, need, needs, option, filter=None, links_only=False):
 
     :return: A float number
     """
-    if not links_only:
-        check_needs = needs.values()
-    else:
+    if links_only:
         check_needs = []
         for link in need["links"]:
             check_needs.append(needs[link])
+    else:
+        check_needs = needs.values()
+
 
     calculated_sum = 0
 
     for check_need in check_needs:
-        if filter is not None:
+        if filter:
             try:
                 if not filter_single_need(check_need, filter):
                     continue
@@ -441,7 +442,7 @@ def links_from_content(app, need, needs, need_id=None, filter=None):
     :param filter: :ref:`filter_string`, which a found need-link must pass.
     :return: List of linked need-ids in content
     """
-    if need_id is not None:
+    if need_id:
         source_need = needs[need_id]
     else:
         source_need = need
@@ -454,7 +455,7 @@ def links_from_content(app, need, needs, need_id=None, filter=None):
         elif link[1] and link[0] not in raw_links:
             raw_links.append(link[1])
 
-    if filter is not None and len(filter) > 0:
+    if filter:
         filtered_links = []
         for link in raw_links:
             if link not in filtered_links and filter_single_need(needs[link], filter):

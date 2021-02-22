@@ -66,7 +66,7 @@ def execute_func(env, need, func_string):
     func = NEEDS_FUNCTIONS[func_name]['function']
     func_return = func(env, need, env.needs_all_needs, *func_args, **func_kwargs)
 
-    if not isinstance(func_return, (str, int, float, list, unicode)) and func_return is not None:
+    if not isinstance(func_return, (str, int, float, list, unicode)) and func_return:
         raise SphinxError('Return value of function {} is of type {}. Allowed are str, int, float'.format(
             func_name, type(func_return)))
 
@@ -276,7 +276,7 @@ def _analyze_func_string(func_string, need):
     try:
         func = ast.parse(func_string)
     except SyntaxError as e:
-        need_id = need['id'] if need is not None else 'UNKNOWN'
+        need_id = need['id'] or 'UNKNOWN'
         raise SphinxError('Parsing function string failed for need {}: {}. {}'.format(need_id, func_string, e))
     try:
         func_call = func.body[0].value
@@ -301,7 +301,7 @@ def _analyze_func_string(func_string, need):
                     arg_list.append(element.s)
             func_args.append(arg_list)
         elif isinstance(arg, ast.Attribute):
-            if arg.value.id == 'need' and need is not None:
+            if arg.value.id == 'need' and need:
                 func_args.append(need[arg.attr])
             else:
                 raise FunctionParsingException('usage of need attribute not supported.')

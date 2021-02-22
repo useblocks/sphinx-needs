@@ -151,16 +151,18 @@ def process_needfilters(app, doctree, fromdocname):
                 para = nodes.line()
                 description = "%s: %s" % (need_info["id"], need_info["title"])
 
-                if current_needfilter["show_status"] and need_info["status"] is not None:
+                if current_needfilter["show_status"] and need_info["status"]:
                     description += " (%s)" % need_info["status"]
 
-                if current_needfilter["show_tags"] and need_info["tags"] is not None:
+                if current_needfilter["show_tags"] and need_info["tags"]:
                     description += " [%s]" % "; ".join(need_info["tags"])
 
                 title = nodes.Text(description, description)
 
                 # Create a reference
-                if not need_info["hide"]:
+                if need_info["hide"]:
+                    para += title
+                else:
                     ref = nodes.reference('', '')
                     ref['refdocname'] = need_info['docname']
                     ref['refuri'] = app.builder.get_relative_uri(
@@ -168,8 +170,6 @@ def process_needfilters(app, doctree, fromdocname):
                     ref['refuri'] += '#' + need_info['target_node']['refid']
                     ref.append(title)
                     para += ref
-                else:
-                    para += title
 
                 line_block.append(para)
             elif current_needfilter["layout"] == "table":

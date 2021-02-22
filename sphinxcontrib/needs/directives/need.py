@@ -125,14 +125,15 @@ class NeedDirective(Directive):
         # Get links
         links_string = self.options.get(name, [])
         links = []
-        if len(links_string) > 0:
+        if links_string:
             # links = [link.strip() for link in re.split(";|,", links) if not link.isspace()]
             for link in re.split(";|,", links_string):
-                if not link.isspace():
-                    links.append(link.strip())
-                else:
+                if link.isspace():
                     logger.warning('Grubby link definition found in need {}. '
                                    'Defined link contains spaces only.'.format(id))
+                else:
+                    links.append(link.strip())
+
 
             # This may have cut also dynamic function strings, as they can contain , as well.
             # So let put them together again
@@ -219,7 +220,7 @@ def get_sections_and_signature(need_info):
         # Checking for a signature defined "above" the need.
         # Used and set normally by directives like automodule.
         # Only check as long as we haven't found a signature
-        if signature is None and current_node.parent is not None and current_node.parent.children is not None:
+        if signature and current_node.parent and current_node.parent.children:
             for sibling in current_node.parent.children:
                 # We want to check only "above" current node, so no need to check sibling after current_node.
                 if sibling == current_node:
@@ -230,7 +231,7 @@ def get_sections_and_signature(need_info):
                         if isinstance(desc_child, desc_name) and \
                                 isinstance(desc_child.children[0], nodes.Text):
                             signature = desc_child.children[0]
-                if signature is not None:
+                if signature:
                     break
 
         current_node = getattr(current_node, 'parent', None)
@@ -329,7 +330,7 @@ def create_back_links(env, option):
                     needs[link_main][option_back].append(key)
 
                 # Handling of links to need_parts inside a need
-                if link_part is not None:
+                if link_part:
                     if link_part in needs[link_main]['parts']:
                         if option_back not in needs[link_main]['parts'][link_part].keys():
                             needs[link_main]['parts'][link_part][option_back] = []
