@@ -22,7 +22,7 @@ class GithubService(BaseService):
         self.config = config
 
         self.url = self.config.get('url', 'https://api.github.com/')
-        self.max_amount = self.config.get('max_amount', 5)
+        self.max_amount = self.config.get('max_amount', -1)
         self.max_content_lines = self.config.get('max_content_lines', -1)
         self.id_prefix = self.config.get('id_prefix', 'GITHUB_')
         self.layout = self.config.get('layout', 'github')
