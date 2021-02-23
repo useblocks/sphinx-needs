@@ -11,12 +11,12 @@ from sphinxcontrib.plantuml import (
 from sphinxcontrib.needs.diagrams_common import (
     DiagramBase,
     add_config,
+    create_legend,
     get_debug_container,
     get_filter_para,
     no_plantuml,
 )
 from sphinxcontrib.needs.filter_common import FilterBase
-
 from sphinxcontrib.needs.logging import getLogger
 
 logger = getLogger(__name__)
@@ -161,14 +161,7 @@ def process_needsequence(app, doctree, fromdocname):
 
         # Create a legend
         if current_needsequence["show_legend"]:
-            puml_node["uml"] += '\n\n\' Legend definition \n\n'
-
-            puml_node["uml"] += "legend\n"
-            puml_node["uml"] += "|= Color |= Type |\n"
-            for need in app.config.needs_types:
-                puml_node["uml"] += "|<back:{color}> {color} </back>| {name} |\n".format(
-                    color=need["color"], name=need["title"])
-            puml_node["uml"] += "endlegend\n"
+            puml_node["uml"] += create_legend(app.config.needs_types)
 
         puml_node["uml"] += "\n@enduml"
         puml_node["incdir"] = os.path.dirname(current_needsequence["docname"])
