@@ -248,25 +248,23 @@ def setup(app):
             'parallel_write_safe': True}
 
 
-def load_config(app, *args):
+def load_config(app: Sphinx, *args):
     """
     Register extra options and directive based on config from con.py
     """
     types = app.config.needs_types
-    extra_options = getattr(app.config, "needs_extra_options", app.config.needs_extra_options)
+    extra_options = app.config.needs_extra_options
 
     # Get extra links and create a dictionary of needed options.
-    extra_links_raw = getattr(app.config, "needs_extra_links", app.config.needs_extra_links)
+    extra_links_raw = app.config.needs_extra_links
     extra_links = {}
     for extra_link in extra_links_raw:
         extra_links[extra_link['option']] = directives.unchanged
 
-    title_optional = getattr(app.config, "needs_title_optional", app.config.needs_title_optional)
-    title_from_content = getattr(app.config, "needs_title_from_content", app.config.needs_title_from_content)
-    # app.needs_functions = getattr(app.config, "needs_functions", [])
+    title_optional = app.config.needs_title_optional
+    title_from_content = app.config.needs_title_from_content
     global NEEDS_FUNCTIONS_CONF
-    NEEDS_FUNCTIONS_CONF = getattr(app.config, "needs_functions", [])
-    # app.needs_functions = []
+    NEEDS_FUNCTIONS_CONF = app.config.needs_functions
 
     # Update NeedDirective to use customized options
     NeedDirective.option_spec.update(extra_options)
@@ -322,10 +320,13 @@ def prepare_env(app, env, docname):
             app.needs_services.register(name, service['class'], **service['class_init'])
 
     needs_functions = NEEDS_FUNCTIONS_CONF
+<<<<<<< HEAD
     if needs_functions is None:
         needs_functions = []
     if not isinstance(needs_functions, list):
         raise SphinxError('Config parameter needs_functions must be a list!')
+=======
+>>>>>>> bb13600... remove some redundant checks
 
     # Register built-in functions
     for need_common_func in needs_common_functions:
@@ -341,7 +342,8 @@ def prepare_env(app, env, docname):
         if option not in app.config.needs_extra_options.keys():
             app.config.needs_extra_options[option] = directives.unchanged
 
-    # The default link name. Must exist in all configurations. Therefore we set it here for the user.
+    # The default link name. Must exist in all configurations. Therefore we set it here
+    # for the user.
     common_links = []
     link_types = app.config.needs_extra_links
     basic_link_type_found = False
@@ -368,8 +370,8 @@ def prepare_env(app, env, docname):
     if not hasattr(env, 'needs_workflow'):
         # Used to store workflow status information for already executed tasks.
         # Some tasks like backlink_creation need be be performed only once.
-        # But most sphinx-events get called several times (for each single document file), which would also
-        # execute our code several times...
+        # But most sphinx-events get called several times (for each single document
+        # file), which would also execute our code several times...
         env.needs_workflow = {
             'backlink_creation_links': False,
             'dynamic_values_resolved': False
