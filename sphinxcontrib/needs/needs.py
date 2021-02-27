@@ -3,6 +3,12 @@
 from sphinx.errors import SphinxError
 from docutils import nodes
 from docutils.parsers.rst import directives
+<<<<<<< HEAD
+=======
+from sphinx.application import Sphinx
+from sphinx.config import Config
+from sphinx.errors import SphinxError
+>>>>>>> 44bd52d... tidy up
 from sphinx.roles import XRefRole
 from sphinxcontrib.needs.directives.need import Need, NeedDirective, \
     process_need_nodes, purge_needs, add_sections, html_visit, html_depart, latex_visit, latex_depart
@@ -37,14 +43,14 @@ from sphinxcontrib.needs.logging import getLogger
 
 VERSION = '0.6.0'
 
-NEEDS_FUNCTIONS_CONF = []
-
 
 class TagsDummy:
     """
     Dummy class for faking tags.has() feature during own import of conf.py
     """
-    def has(self, *args):
+
+    @staticmethod
+    def has(*_args):
         return True
 
 
@@ -251,7 +257,7 @@ def setup(app):
             'parallel_write_safe': True}
 
 
-def load_config(app: Sphinx, *args):
+def load_config(app: Sphinx, *_args):
     """
     Register extra options and directive based on config from con.py
     """
@@ -266,8 +272,6 @@ def load_config(app: Sphinx, *args):
 
     title_optional = app.config.needs_title_optional
     title_from_content = app.config.needs_title_from_content
-    global NEEDS_FUNCTIONS_CONF
-    NEEDS_FUNCTIONS_CONF = app.config.needs_functions
 
     # Update NeedDirective to use customized options
     NeedDirective.option_spec.update(extra_options)
@@ -281,19 +285,19 @@ def load_config(app: Sphinx, *args):
         NeedDirective.required_arguments = 0
         NeedDirective.optional_arguments = 1
 
-    for type in types:
+    for t in types:
         # Register requested types of needs
-        app.add_directive(type["directive"], NeedDirective)
+        app.add_directive(t["directive"], NeedDirective)
 
 
-def visitor_dummy(*args, **kwargs):
+def visitor_dummy(*_args, **_kwargs):
     """
     Dummy class for visitor methods, which does nothing.
     """
     pass
 
 
-def prepare_env(app, env, docname):
+def prepare_env(app, env, _docname):
     """
     Prepares the sphinx environment to store sphinx-needs internal data.
     """
@@ -322,6 +326,7 @@ def prepare_env(app, env, docname):
             # We found a not yet registered service
             app.needs_services.register(name, service['class'], **service['class_init'])
 
+<<<<<<< HEAD
     needs_functions = NEEDS_FUNCTIONS_CONF
 <<<<<<< HEAD
     if needs_functions is None:
@@ -330,6 +335,9 @@ def prepare_env(app, env, docname):
         raise SphinxError('Config parameter needs_functions must be a list!')
 =======
 >>>>>>> bb13600... remove some redundant checks
+=======
+    needs_functions = app.config.needs_functions
+>>>>>>> 44bd52d... tidy up
 
     # Register built-in functions
     for need_common_func in needs_common_functions:
@@ -383,7 +391,7 @@ def prepare_env(app, env, docname):
             env.needs_workflow['backlink_creation_{}'.format(link_type['option'])] = False
 
 
-def check_configuration(app, config):
+def check_configuration(_app: Sphinx, config: Config):
     """
     Checks the configuration for invalid options.
 
