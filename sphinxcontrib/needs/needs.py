@@ -60,39 +60,42 @@ def setup(app):
                           # Kept for backwards compatibility
                           dict(directive="need", title="Need", prefix="N_", color="#9856a5", style="node")],
                          'html')
-    app.add_config_value('needs_include_needs', True, 'html')
-    app.add_config_value('needs_need_name', "Need", 'html')
-    app.add_config_value('needs_spec_name', "Specification", 'html')
-    app.add_config_value('needs_id_prefix_needs', "", 'html')
-    app.add_config_value('needs_id_prefix_specs', "", 'html')
-    app.add_config_value('needs_id_length', 5, 'html')
-    app.add_config_value('needs_specs_show_needlist', False, 'html')
-    app.add_config_value('needs_id_required', False, 'html')
-    app.add_config_value('needs_id_regex', "^[A-Z0-9_]{{{id_length},}}".format(
-        id_length=app.config.needs_id_length), 'html')
-    app.add_config_value('needs_show_link_type', False, 'html')
-    app.add_config_value('needs_show_link_title', False, 'html')
-    app.add_config_value('needs_file', "needs.json", 'html')
-    app.add_config_value('needs_table_columns', "ID;TITLE;STATUS;TYPE;OUTGOING;TAGS", 'html')
-    app.add_config_value('needs_table_style', "DATATABLES", 'html')
+    app.add_config_value("needs_include_needs", True, "html", types=[bool])
+    app.add_config_value("needs_need_name", "Need", "html", types=[str])
+    app.add_config_value("needs_spec_name", "Specification", "html", types=[str])
+    app.add_config_value("needs_id_prefix_needs", "", "html", types=[str])
+    app.add_config_value("needs_id_prefix_specs", "", "html", types=[str])
+    app.add_config_value("needs_id_length", 5, "html", types=[int])
+    app.add_config_value("needs_specs_show_needlist", False, "html", types=[bool])
+    app.add_config_value("needs_id_required", False, "html", types=[bool])
+    app.add_config_value(
+        "needs_id_regex",
+        "^[A-Z0-9_]{{{id_length},}}".format(id_length=app.config.needs_id_length),
+        "html",
+    )
+    app.add_config_value("needs_show_link_type", False, "html", types=[bool])
+    app.add_config_value("needs_show_link_title", False, "html", types=[bool])
+    app.add_config_value("needs_file", "needs.json", "html")
+    app.add_config_value(
+        "needs_table_columns", "ID;TITLE;STATUS;TYPE;OUTGOING;TAGS", "html"
+    )
+    app.add_config_value("needs_table_style", "DATATABLES", "html")
 
-    app.add_config_value('needs_role_need_template', u"{title} ({id})", 'html')
-    app.add_config_value('needs_role_need_max_title_length', 30, 'html')
+    app.add_config_value("needs_role_need_template", u"{title} ({id})", "html")
+    app.add_config_value("needs_role_need_max_title_length", 30, "html", types=[int])
 
-    app.add_config_value('needs_extra_options', {}, 'html')
-    app.add_config_value('needs_title_optional', False, 'html')
-    app.add_config_value('needs_max_title_length', -1, 'html')
-    app.add_config_value('needs_title_from_content', False, 'html')
+    app.add_config_value("needs_extra_options", {}, "html")
+    app.add_config_value("needs_title_optional", False, "html", types=[bool])
+    app.add_config_value("needs_max_title_length", -1, "html", types=[int])
+    app.add_config_value("needs_title_from_content", False, "html", types=[bool])
 
-    app.add_config_value('needs_diagram_template',
-                         DEFAULT_DIAGRAM_TEMPLATE,
-                         'html')
+    app.add_config_value("needs_diagram_template", DEFAULT_DIAGRAM_TEMPLATE, "html")
 
-    app.add_config_value('needs_functions', [], 'html')
-    app.add_config_value('needs_global_options', {}, 'html')
+    app.add_config_value("needs_functions", [], "html", types=[list])
+    app.add_config_value("needs_global_options", {}, "html", types=[dict])
 
-    app.add_config_value('needs_duration_option', 'duration', 'html')
-    app.add_config_value('needs_completion_option', 'completion', 'html')
+    app.add_config_value("needs_duration_option", "duration", "html")
+    app.add_config_value("needs_completion_option", "completion", "html")
 
     # If given, only the defined status are allowed.
     # Values needed for each status:
@@ -106,7 +109,7 @@ def setup(app):
     # * name
     # * description
     # Example: [{"name": "new", "description": "new needs"}, {...}, {...}]
-    app.add_config_value('needs_tags', False, 'html')
+    app.add_config_value("needs_tags", False, "html", types=[bool])
 
     # Path of css file, which shall be used for need style
     app.add_config_value('needs_css', "modern.css", 'html')
@@ -135,10 +138,10 @@ def setup(app):
 
     app.add_config_value('needs_template_folder', 'needs_templates/', 'html')
 
-    app.add_config_value('needs_services', {}, 'html')
-    app.add_config_value('needs_service_all_data', False, 'html')
+    app.add_config_value("needs_services", {}, "html")
+    app.add_config_value("needs_service_all_data", False, "html", types=[bool])
 
-    app.add_config_value('needs_debug_no_external_calls', False, 'html')
+    app.add_config_value("needs_debug_no_external_calls", False, "html", types=[bool])
 
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
