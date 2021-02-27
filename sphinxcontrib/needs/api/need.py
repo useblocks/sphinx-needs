@@ -187,7 +187,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
                 "requirements are different.".format(' '.join(title)))
 
     # Trim title if it is too long
-    max_length = getattr(env.app.config, 'needs_max_title_length', 30)
+    max_length = env.app.config.needs_max_title_length
     if max_length == -1 or len(title) <= max_length:
         trimmed_title = title
     elif max_length <= 3:
