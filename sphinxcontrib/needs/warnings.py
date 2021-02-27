@@ -40,7 +40,7 @@ def process_warnings(app, exception):
 
     needs = env.needs_all_needs
 
-    warnings = getattr(app.config, 'needs_warnings', {})
+    warnings = app.config.needs_warnings
 
     with logging.pending_logging():
         logger.info('\nChecking sphinx-needs warnings')

@@ -69,8 +69,6 @@ needs_extra_links = [
 
 needs_flow_link_types = ['links', 'tests']
 
-needs_collapse_details = False
-
 cwd = os.path.dirname(__file__)
 plantuml = 'java -jar %s' % os.path.join(cwd, "../utils/plantuml_beta.jar")
 

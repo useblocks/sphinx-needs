@@ -134,10 +134,6 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
     # Calculate target id, to be able to set a link back
     target_node = nodes.target('', '', ids=[need_id])
 
-    # Removed 0.5.0
-    # if collapse is None:
-    #     collapse = getattr(env.app.config, "needs_collapse_details", True)
-
     # Handle status
     # Check if status is in needs_statuses. If not raise an error.
     if env.app.config.needs_statuses:
