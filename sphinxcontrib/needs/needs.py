@@ -1,14 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from sphinx.errors import SphinxError
 from docutils import nodes
 from docutils.parsers.rst import directives
-<<<<<<< HEAD
-=======
 from sphinx.application import Sphinx
 from sphinx.config import Config
 from sphinx.errors import SphinxError
->>>>>>> 44bd52d... tidy up
 from sphinx.roles import XRefRole
 from sphinxcontrib.needs.directives.need import Need, NeedDirective, \
     process_need_nodes, purge_needs, add_sections, html_visit, html_depart, latex_visit, latex_depart
@@ -326,18 +322,7 @@ def prepare_env(app, env, _docname):
             # We found a not yet registered service
             app.needs_services.register(name, service['class'], **service['class_init'])
 
-<<<<<<< HEAD
-    needs_functions = NEEDS_FUNCTIONS_CONF
-<<<<<<< HEAD
-    if needs_functions is None:
-        needs_functions = []
-    if not isinstance(needs_functions, list):
-        raise SphinxError('Config parameter needs_functions must be a list!')
-=======
->>>>>>> bb13600... remove some redundant checks
-=======
     needs_functions = app.config.needs_functions
->>>>>>> 44bd52d... tidy up
 
     # Register built-in functions
     for need_common_func in needs_common_functions:
