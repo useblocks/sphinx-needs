@@ -7,8 +7,6 @@ SPHINX_VERSIONS = ["2.2", "2.3", "2.4", "3.0", "3.2"]
 
 
 def is_supported(python: str, sphinx: str) -> bool:
-    if python == "3.5" and float(sphinx) > 2.4:
-        return False
     if python == "3.6" and float(sphinx) > 3.0:
         return False
     return True
