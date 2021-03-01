@@ -43,5 +43,3 @@ for a full list of available options, refer to the Nox documentation, and the lo
 See the Poetry documentation for a list of commands
 
 In order to run custom commands inside the isolated environment, they should be prefixed with "poetry run" (ie. `poetry run <command>`).
-
-## 
