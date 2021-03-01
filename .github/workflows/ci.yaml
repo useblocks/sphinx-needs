@@ -1,7 +1,8 @@
 name: CI
 on: [push, pull_request]
 jobs:
-  build:
+  tests:
+    name: "Test (python: ${{ matrix.python-version }}, sphinx: ${{ matrix.sphinx-version }})"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
