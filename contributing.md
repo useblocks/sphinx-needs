@@ -16,21 +16,21 @@ in order to run the tests-
 
     poetry run nosetests -w tests
 
-a Makefile is also provided
+a Makefile is provided
 
     make test
 
 ## Running Test Matrix
 
-This project also provides a test matrix for running the tests across a range of python and sphinx versions.
+This project provides a test matrix for running the tests across a range of python and sphinx versions.
 
 [Nox](https://nox.thea.codes/en/stable/) is used as a test runner.
 
 Running the matrix tests requires additional system-wide dependencies
 
-- [Install Nox](https://nox.thea.codes/en/stable/tutorial.html#installation)
-- [Install Nox-Poetry](https://pypi.org/project/nox-poetry/)
-- You will also need multiple Python versions available. You can manage these using [Pyenv](https://github.com/pyenv/pyenv)
+1. [Install Nox](https://nox.thea.codes/en/stable/tutorial.html#installation)
+2. [Install Nox-Poetry](https://pypi.org/project/nox-poetry/)
+3. You will also need multiple Python versions available. You can manage these using [Pyenv](https://github.com/pyenv/pyenv)
 
 you can run the test matrix by using the `nox` command
 
