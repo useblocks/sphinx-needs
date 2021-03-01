@@ -15,6 +15,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install Nox Dependencies
         run: |
-          python -m pip install nox nox-poetry
+          python -m pip install poetry nox nox-poetry
       - name: Run Tests
         run: nox --non-interactive --session "tests-${{ matrix.python-version }}" -- --full-trace
