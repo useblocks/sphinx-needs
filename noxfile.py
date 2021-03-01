@@ -2,7 +2,7 @@ import nox
 from nox_poetry import session
 
 
-PYTHON_VERSIONS = ["3.5", "3.6", "3.7", "3.8"]
+PYTHON_VERSIONS = ["3.6", "3.7", "3.8"]
 SPHINX_VERSIONS = ["2.2", "2.3", "2.4", "3.0", "3.2"]
 
 
