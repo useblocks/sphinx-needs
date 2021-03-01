@@ -16,3 +16,4 @@ _build
 .doctrees
 docs/github_images/
 .eggs/
+poetry.lock
