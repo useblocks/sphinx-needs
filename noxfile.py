@@ -22,7 +22,7 @@ def run_tests(session, sphinx):
     session.install(".")
     session.install(*TEST_DEPENDENCIES)
     session.run("pip", "install", f"sphinx=={sphinx}", silent=True)
-    session.run("nosetests", "-w", "tests")
+    session.run("make", "test", external=True)
 
 
 @session(python=PYTHON_VERSIONS)
