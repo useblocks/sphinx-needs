@@ -6,7 +6,7 @@ like needtable, needlist and needflow.
 import re
 import copy
 from itertools import product
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from docutils.parsers.rst import Directive
 from docutils.parsers.rst import directives
@@ -176,7 +176,7 @@ def prepare_need_list(need_list):
     return all_needs_incl_parts
 
 
-def check_need_list(list_a, list_b):
+def check_need_list(list_a, list_b) -> List[Dict[str, Any]]:
 
     def get_id(element: Dict[str, Any]) -> str:
         id = element['id']
@@ -184,12 +184,7 @@ def check_need_list(list_a, list_b):
             id = "{}.{}".format(element['id_parent'], id)
         return id
 
-    common = []
-    for a, b in product(list_a, list_b):
-        if get_id(a) == get_id(b):
-            common.append(a)
-
-    return common
+    return [a for a, b in product(list_a, list_b) if get_id(a) == get_id(b)]
 
 
 def filter_needs(needs, filter_string="", current_need=None):
