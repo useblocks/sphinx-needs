@@ -1,5 +1,4 @@
 import os
-import urllib
 from datetime import datetime
 
 from docutils import nodes
@@ -27,8 +26,6 @@ from sphinxcontrib.needs.logging import getLogger
 from sphinxcontrib.needs.utils import MONTH_NAMES
 
 logger = getLogger(__name__)
-
-urlParse = urllib.parse.quote_plus
 
 
 class Needgantt(nodes.General, nodes.Element):

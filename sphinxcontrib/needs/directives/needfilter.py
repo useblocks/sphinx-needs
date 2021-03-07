@@ -1,5 +1,5 @@
 import os
-import urllib
+from urllib.parse import urlparse
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -13,8 +13,6 @@ except ImportError:
 from sphinxcontrib.needs.diagrams_common import create_legend
 from sphinxcontrib.needs.filter_common import FilterBase, process_filters
 from sphinxcontrib.needs.utils import row_col_maker
-
-urlParse = urllib.parse.quote_plus
 
 
 class Needfilter(nodes.General, nodes.Element):
@@ -191,7 +189,7 @@ def process_needfilters(app, doctree, fromdocname):
                 # and not to current documentation. Therefore we need to add ../ to get out of the image folder.
                 try:
                     link = "../" + app.builder.get_target_uri(need_info['docname']) \
-                           + "?highlight={0}".format(urlParse(need_info['title'])) \
+                           + "?highlight={0}".format(urlparse(need_info['title'])) \
                            + "#" \
                            + need_info['target_node']['refid'] \
                         # Gets mostly called during latex generation

@@ -1,7 +1,6 @@
 import html
 import os
 import re
-import urllib
 from typing import Iterable
 
 from docutils import nodes
@@ -20,8 +19,6 @@ from sphinxcontrib.needs.filter_common import (
 from sphinxcontrib.needs.logging import getLogger
 
 logger = getLogger(__name__)
-
-urlParse = urllib.parse.quote_plus
 
 
 class Needflow(nodes.General, nodes.Element):

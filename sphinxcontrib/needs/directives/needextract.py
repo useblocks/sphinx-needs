@@ -3,16 +3,12 @@
 
 """
 
-import urllib
-
 from docutils import nodes
 from docutils.parsers.rst import directives
 
 from sphinxcontrib.needs.layout import create_need
 from sphinxcontrib.needs.filter_common import FilterBase, process_filters
 from sphinxcontrib.needs.directives.utils import no_needs_found_paragraph, used_filter_paragraph
-
-urlParse = urllib.parse.quote_plus
 
 
 class Needextract(nodes.General, nodes.Element):
