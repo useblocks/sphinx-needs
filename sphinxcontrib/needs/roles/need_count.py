@@ -9,8 +9,8 @@ from docutils import nodes
 from sphinxcontrib.needs.filter_common import filter_needs, prepare_need_list
 from sphinxcontrib.needs.api.exceptions import NeedsInvalidFilter
 
-from sphinxcontrib.needs.logging import getLogger
-log = getLogger(__name__)
+from sphinxcontrib.needs.logging import get_logger
+log = get_logger(__name__)
 
 
 class NeedCount(nodes.Inline, nodes.Element):

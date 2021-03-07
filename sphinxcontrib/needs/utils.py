@@ -3,9 +3,9 @@ import json
 from datetime import datetime
 import os
 import shutil
-from sphinxcontrib.needs.logging import getLogger
+from sphinxcontrib.needs.logging import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 NEEDS_FUNCTIONS = {}
 
@@ -127,7 +127,7 @@ class NeedsList:
                                    'content', 'content_node'}
 
     def __init__(self, config, outdir, confdir):
-        self.log = getLogger(__name__)
+        self.log = get_logger(__name__)
         self.config = config
         self.outdir = outdir
         self.confdir = confdir

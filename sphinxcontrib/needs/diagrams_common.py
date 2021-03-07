@@ -10,9 +10,9 @@ import textwrap
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
 
-from sphinxcontrib.needs.logging import getLogger
+from sphinxcontrib.needs.logging import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 try:
     from sphinx.errors import NoUri  # Sphinx 3.0

@@ -17,9 +17,9 @@ from sphinxcontrib.needs.diagrams_common import (
     no_plantuml,
 )
 from sphinxcontrib.needs.filter_common import FilterBase
-from sphinxcontrib.needs.logging import getLogger
+from sphinxcontrib.needs.logging import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 urlParse = urllib.parse.quote_plus
 

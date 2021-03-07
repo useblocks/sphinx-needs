@@ -18,10 +18,10 @@ from sphinxcontrib.needs.api.exceptions import (
     NeedsTemplateException,
 )
 from sphinxcontrib.needs.filter_common import filter_single_need
-from sphinxcontrib.needs.logging import getLogger
+from sphinxcontrib.needs.logging import get_logger
 from sphinxcontrib.needs.roles.need_part import find_parts, update_need_with_parts
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def add_need(app, state, docname, lineno, need_type, title, id=None, content="", status=None, tags=None,

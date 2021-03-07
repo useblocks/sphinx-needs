@@ -13,9 +13,9 @@ import hashlib
 import matplotlib.pyplot
 from docutils.parsers.rst import directives
 
-from sphinxcontrib.needs.logging import getLogger
+from sphinxcontrib.needs.logging import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 urlParse = urllib.parse.quote_plus
 

@@ -20,9 +20,9 @@ from sphinxcontrib.needs.builder import NeedsBuilder
 from sphinxcontrib.needs.directives.needfilter import Needfilter, NeedfilterDirective, process_needfilters
 from sphinxcontrib.needs.environment import install_styles_static_files, install_datatables_static_files, \
     install_collapse_static_files
-from sphinxcontrib.needs.roles.need_incoming import Need_incoming, process_need_incoming
-from sphinxcontrib.needs.roles.need_outgoing import Need_outgoing, process_need_outgoing
-from sphinxcontrib.needs.roles.need_ref import Need_ref, process_need_ref
+from sphinxcontrib.needs.roles.need_incoming import NeedIncoming, process_need_incoming
+from sphinxcontrib.needs.roles.need_outgoing import NeedOutgoing, process_need_outgoing
+from sphinxcontrib.needs.roles.need_ref import NeedRef, process_need_ref
 from sphinxcontrib.needs.roles.need_part import NeedPart, process_need_part
 from sphinxcontrib.needs.roles.need_count import NeedCount, process_need_count
 from sphinxcontrib.needs.functions import register_func, needs_common_functions
@@ -33,7 +33,7 @@ from sphinxcontrib.needs.defaults import DEFAULT_DIAGRAM_TEMPLATE, LAYOUTS, NEED
 from sphinxcontrib.needs.services.manager import ServiceManager
 from sphinxcontrib.needs.services.github import GithubService
 
-from sphinxcontrib.needs.logging import getLogger
+from sphinxcontrib.needs.logging import get_logger
 
 VERSION = '0.6.0'
 
@@ -49,7 +49,7 @@ class TagsDummy:
 
 
 def setup(app):
-    log = getLogger(__name__)
+    log = get_logger(__name__)
     log.debug("Starting setup of sphinx-Needs")
     app.add_builder(NeedsBuilder)
     app.add_config_value('needs_types',
@@ -174,15 +174,15 @@ def setup(app):
     # ROLES
     ########################################################################
     # Provides :need:`ABC_123` for inline links.
-    app.add_role('need', XRefRole(nodeclass=Need_ref,
+    app.add_role('need', XRefRole(nodeclass=NeedRef,
                                   innernodeclass=nodes.emphasis,
                                   warn_dangling=True))
 
-    app.add_role('need_incoming', XRefRole(nodeclass=Need_incoming,
+    app.add_role('need_incoming', XRefRole(nodeclass=NeedIncoming,
                                            innernodeclass=nodes.emphasis,
                                            warn_dangling=True))
 
-    app.add_role('need_outgoing', XRefRole(nodeclass=Need_outgoing,
+    app.add_role('need_outgoing', XRefRole(nodeclass=NeedOutgoing,
                                            innernodeclass=nodes.emphasis,
                                            warn_dangling=True))
 
