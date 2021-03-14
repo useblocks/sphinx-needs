@@ -233,8 +233,7 @@ needs_id_required = False
 # needs_css = "dark.css"
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
-cwd = os.getcwd()
-local_plantuml_path = os.path.join(cwd, "utils/plantuml.jar")
+local_plantuml_path = os.path.join(os.getcwd(), "utils", "plantuml.jar")
 
 if on_rtd:
     # Deactivated using rtd plantuml version as it looks quite old.
@@ -243,12 +242,6 @@ if on_rtd:
 else:
     cwd = os.getcwd()
     plantuml = 'java -jar {}'.format(local_plantuml_path)
-
-# If we are running on windows, we need to manipulate the path,
-# otherwise plantuml will have problems.
-if os.name == "nt":
-    plantuml = plantuml.replace("/", "\\")
-    plantuml = plantuml.replace("\\", "\\\\")
 
 # plantuml_output_format = 'png'
 plantuml_output_format = 'svg_img'

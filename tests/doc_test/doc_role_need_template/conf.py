@@ -43,15 +43,7 @@ needs_types = [
 
 needs_role_need_template = "[{id}] {title} ({status}) {type_name}/{type} - {tags} - {links} - {links_back} - {content}"
 
-cwd = os.getcwd()
-plantuml = 'java -jar %s' % os.path.join(cwd, "../utils/plantuml_beta.jar")
-
-# If we are running on windows, we need to manipulate the path,
-# otherwise plantuml will have problems.
-if os.name == "nt":
-    plantuml = plantuml.replace("/", "\\")
-    plantuml = plantuml.replace("\\", "\\\\")
-
+plantuml = 'java -jar %s' % os.path.join(os.getcwd(), "..", "utils", "plantuml_beta.jar")
 plantuml_output_format = 'svg'
 
 # Add any paths that contain templates here, relative to this directory.
