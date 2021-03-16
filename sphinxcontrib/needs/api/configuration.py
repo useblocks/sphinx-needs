@@ -5,7 +5,7 @@ All functions here are available under ``sphinxcontrib.api``. So do not import t
 """
 from docutils.parsers.rst import directives
 
-from sphinxcontrib.needs.api.exceptions import NeedsNotLoadedException, NeedsApiConfigException, NeedsApiConfigWarning
+from sphinxcontrib.needs.api.exceptions import NeedsApiConfigException, NeedsApiConfigWarning
 from sphinxcontrib.needs.functions import register_func
 import sphinxcontrib.needs.directives.need
 from sphinx.application import Sphinx
