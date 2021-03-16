@@ -12,6 +12,9 @@ TEST_DEPENDENCIES = [
     "responses",
     "sphinx_copybutton",
 ]
+LINT_DEPENDENCIES = [
+    "flake8"
+]
 
 
 def is_supported(python: str, sphinx: str) -> bool:
@@ -32,3 +35,9 @@ def tests(session, sphinx):
         run_tests(session, sphinx)
     else:
         session.skip("unsupported combination")
+
+
+@session(python="3.9")
+def lint(session):
+    session.install(*LINT_DEPENDENCIES)
+    session.run("make", "lint", external=True)
