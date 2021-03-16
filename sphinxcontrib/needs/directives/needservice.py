@@ -5,7 +5,7 @@ from docutils.parsers.rst import Directive
 from sphinxcontrib.needs.api import add_need
 from sphinxcontrib.needs.directives.need import NeedDirective
 
-from sphinxcontrib.needs.logging import getLogger
+from sphinxcontrib.needs.logging import get_logger
 
 
 class Needservice(nodes.General, nodes.Element):
@@ -27,7 +27,7 @@ class NeedserviceDirective(Directive):
 
     def __init__(self, *args, **kw):
         super(NeedserviceDirective, self).__init__(*args, **kw)
-        self.log = getLogger(__name__)
+        self.log = get_logger(__name__)
 
     @property
     def env(self):

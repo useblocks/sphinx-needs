@@ -6,16 +6,16 @@ try:
 except ImportError:
     from sphinx.environment import NoUri  # Sphinx < 3.0
 
-from sphinxcontrib.needs.logging import getLogger
-log = getLogger(__name__)
+from sphinxcontrib.needs.logging import get_logger
+log = get_logger(__name__)
 
 
-class Need_outgoing(nodes.Inline, nodes.Element):
+class NeedOutgoing(nodes.Inline, nodes.Element):
     pass
 
 
 def process_need_outgoing(app, doctree, fromdocname):
-    for node_need_ref in doctree.traverse(Need_outgoing):
+    for node_need_ref in doctree.traverse(NeedOutgoing):
         env = app.builder.env
         # Let's create a dummy node, for the case we will not be able to create a real reference
         # new_node_ref = make_refnode(app.builder,
@@ -28,7 +28,7 @@ def process_need_outgoing(app, doctree, fromdocname):
         node_link_container = nodes.inline()
         ref_need = env.needs_all_needs[node_need_ref['reftarget']]
 
-        # Lets check if Need_incoming shall follow a specific link type
+        # Lets check if NeedIncoming shall follow a specific link type
         if "link_type" in node_need_ref.attributes.keys():
             links = ref_need[node_need_ref.attributes['link_type']]
         # if not, follow back to default links

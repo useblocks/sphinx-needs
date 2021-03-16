@@ -5,16 +5,16 @@ except ImportError:
     from sphinx.environment import NoUri  # Sphinx < 3.0
 from sphinx.util.nodes import make_refnode
 
-from sphinxcontrib.needs.logging import getLogger
-log = getLogger(__name__)
+from sphinxcontrib.needs.logging import get_logger
+log = get_logger(__name__)
 
 
-class Need_ref(nodes.Inline, nodes.Element):
+class NeedRef(nodes.Inline, nodes.Element):
     pass
 
 
 def process_need_ref(app, doctree, fromdocname):
-    for node_need_ref in doctree.traverse(Need_ref):
+    for node_need_ref in doctree.traverse(NeedRef):
         env = app.builder.env
         # Let's create a dummy node, for the case we will not be able to create a real reference
         new_node_ref = make_refnode(app.builder,

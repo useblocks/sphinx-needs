@@ -613,12 +613,12 @@ class LayoutHandler:
         # else:
         #     link_name = self.app.config.needs_extra_links[name]['outgoing']
 
-        from sphinxcontrib.needs.roles.need_outgoing import Need_outgoing
-        from sphinxcontrib.needs.roles.need_incoming import Need_incoming
+        from sphinxcontrib.needs.roles.need_outgoing import NeedOutgoing
+        from sphinxcontrib.needs.roles.need_incoming import NeedIncoming
         if incoming:
-            node_links = Need_incoming(reftarget=self.need['id'], link_type='{}_back'.format(name))
+            node_links = NeedIncoming(reftarget=self.need['id'], link_type='{}_back'.format(name))
         else:
-            node_links = Need_outgoing(reftarget=self.need['id'], link_type='{}'.format(name))
+            node_links = NeedOutgoing(reftarget=self.need['id'], link_type='{}'.format(name))
         node_links.append(nodes.inline(self.need['id'], self.need['id']))
         data_container.append(node_links)
         return data_container

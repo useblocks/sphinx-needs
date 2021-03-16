@@ -2,14 +2,14 @@ from docutils import nodes
 from sphinx.util.nodes import make_refnode
 
 
-class Need_incoming(nodes.Inline, nodes.Element):
+class NeedIncoming(nodes.Inline, nodes.Element):
     pass
 
 
 def process_need_incoming(app, doctree, fromdocname):
     env = app.builder.env
 
-    for node_need_backref in doctree.traverse(Need_incoming):
+    for node_need_backref in doctree.traverse(NeedIncoming):
         # # Let's create a dummy node, for the case we will not be able to create a real reference
         # new_node_ref = make_refnode(app.builder,
         #                             fromdocname,
@@ -21,7 +21,7 @@ def process_need_incoming(app, doctree, fromdocname):
         node_link_container = nodes.inline()
         ref_need = env.needs_all_needs[node_need_backref['reftarget']]
 
-        # Lets check if Need_incoming shall follow a specific link type
+        # Lets check if NeedIncoming shall follow a specific link type
         if "link_type" in node_need_backref.attributes.keys():
             links_back = ref_need[node_need_backref.attributes['link_type']]
         # if not, follow back to default links
