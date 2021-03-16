@@ -1,6 +1,5 @@
 import os
 import re
-import urllib
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -20,8 +19,6 @@ from sphinxcontrib.needs.filter_common import FilterBase
 from sphinxcontrib.needs.logging import get_logger
 
 logger = get_logger(__name__)
-
-urlParse = urllib.parse.quote_plus
 
 
 class Needsequence(nodes.General, nodes.Element):

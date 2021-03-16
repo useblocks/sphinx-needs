@@ -4,16 +4,12 @@ like needtable, needlist and needflow.
 """
 
 import re
-import sys
-import urllib
 import copy
 
 from docutils.parsers.rst import Directive
 from docutils.parsers.rst import directives
 
 from sphinxcontrib.needs.utils import status_sorter, merge_two_dicts, logger
-
-urlParse = urllib.parse.quote_plus
 
 
 class FilterBase(Directive):

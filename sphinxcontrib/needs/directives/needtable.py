@@ -1,4 +1,3 @@
-import urllib
 import re
 
 from docutils import nodes
@@ -7,8 +6,6 @@ from sphinxcontrib.needs.utils import row_col_maker
 from sphinxcontrib.needs.filter_common import FilterBase, process_filters
 from sphinxcontrib.needs.directives.utils import no_needs_found_paragraph, used_filter_paragraph
 from sphinxcontrib.needs.functions.functions import check_and_get_content
-
-urlParse = urllib.parse.quote_plus
 
 
 class Needtable(nodes.General, nodes.Element):

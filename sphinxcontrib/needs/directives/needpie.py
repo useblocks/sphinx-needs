@@ -1,5 +1,4 @@
 import os
-import urllib
 
 import matplotlib
 from docutils import nodes
@@ -16,8 +15,6 @@ from docutils.parsers.rst import directives
 from sphinxcontrib.needs.logging import get_logger
 
 logger = get_logger(__name__)
-
-urlParse = urllib.parse.quote_plus
 
 
 class Needpie(nodes.General, nodes.Element):
