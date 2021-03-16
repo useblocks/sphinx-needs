@@ -377,7 +377,6 @@ def _read_in_links(links_string):
             else:
                 links.append(link.strip())
 
-
         # This may have cut also dynamic function strings, as they can contain , as well.
         # So let put them together again
         # ToDo: There may be a smart regex for the splitting. This would avoid this mess of code...

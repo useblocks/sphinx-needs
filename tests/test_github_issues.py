@@ -1,4 +1,3 @@
-import re
 from pathlib import Path
 from subprocess import STDOUT, check_output
 
