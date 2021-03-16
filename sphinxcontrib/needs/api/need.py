@@ -134,10 +134,6 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
     # Calculate target id, to be able to set a link back
     target_node = nodes.target('', '', ids=[need_id])
 
-    # Removed 0.5.0
-    # if collapse is None:
-    #     collapse = getattr(env.app.config, "needs_collapse_details", True)
-
     # Handle status
     # Check if status is in needs_statuses. If not raise an error.
     if env.app.config.needs_statuses:
@@ -191,7 +187,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
                 "requirements are different.".format(' '.join(title)))
 
     # Trim title if it is too long
-    max_length = getattr(env.app.config, 'needs_max_title_length', 30)
+    max_length = env.app.config.needs_max_title_length
     if max_length == -1 or len(title) <= max_length:
         trimmed_title = title
     elif max_length <= 3:

@@ -174,8 +174,6 @@ If set to **True**, details like status, links or tags are collapsed and viewabl
 
 If set to **False**, details are shown directly.
 
-If not set, the config parameter :ref:`needs_collapse_details` decides about the behavior.
-
 Allowed values:
 
  * true; yes; 1

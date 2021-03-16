@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from sphinx.errors import SphinxError
 from docutils import nodes
 from docutils.parsers.rst import directives
+from sphinx.application import Sphinx
+from sphinx.config import Config
+from sphinx.errors import SphinxError
 from sphinx.roles import XRefRole
 from sphinxcontrib.needs.directives.need import Need, NeedDirective, \
     process_need_nodes, purge_needs, add_sections, html_visit, html_depart, latex_visit, latex_depart
@@ -37,14 +39,14 @@ from sphinxcontrib.needs.logging import get_logger
 
 VERSION = '0.6.0'
 
-NEEDS_FUNCTIONS_CONF = []
-
 
 class TagsDummy:
     """
     Dummy class for faking tags.has() feature during own import of conf.py
     """
-    def has(self, *args):
+
+    @staticmethod
+    def has(*_args):
         return True
 
 
@@ -60,39 +62,42 @@ def setup(app):
                           # Kept for backwards compatibility
                           dict(directive="need", title="Need", prefix="N_", color="#9856a5", style="node")],
                          'html')
-    app.add_config_value('needs_include_needs', True, 'html')
-    app.add_config_value('needs_need_name', "Need", 'html')
-    app.add_config_value('needs_spec_name', "Specification", 'html')
-    app.add_config_value('needs_id_prefix_needs', "", 'html')
-    app.add_config_value('needs_id_prefix_specs', "", 'html')
-    app.add_config_value('needs_id_length', 5, 'html')
-    app.add_config_value('needs_specs_show_needlist', False, 'html')
-    app.add_config_value('needs_id_required', False, 'html')
-    app.add_config_value('needs_id_regex', "^[A-Z0-9_]{{{id_length},}}".format(
-        id_length=app.config.needs_id_length), 'html')
-    app.add_config_value('needs_show_link_type', False, 'html')
-    app.add_config_value('needs_show_link_title', False, 'html')
-    app.add_config_value('needs_file', "needs.json", 'html')
-    app.add_config_value('needs_table_columns', "ID;TITLE;STATUS;TYPE;OUTGOING;TAGS", 'html')
-    app.add_config_value('needs_table_style', "DATATABLES", 'html')
+    app.add_config_value("needs_include_needs", True, "html", types=[bool])
+    app.add_config_value("needs_need_name", "Need", "html", types=[str])
+    app.add_config_value("needs_spec_name", "Specification", "html", types=[str])
+    app.add_config_value("needs_id_prefix_needs", "", "html", types=[str])
+    app.add_config_value("needs_id_prefix_specs", "", "html", types=[str])
+    app.add_config_value("needs_id_length", 5, "html", types=[int])
+    app.add_config_value("needs_specs_show_needlist", False, "html", types=[bool])
+    app.add_config_value("needs_id_required", False, "html", types=[bool])
+    app.add_config_value(
+        "needs_id_regex",
+        "^[A-Z0-9_]{{{id_length},}}".format(id_length=app.config.needs_id_length),
+        "html",
+    )
+    app.add_config_value("needs_show_link_type", False, "html", types=[bool])
+    app.add_config_value("needs_show_link_title", False, "html", types=[bool])
+    app.add_config_value("needs_file", "needs.json", "html")
+    app.add_config_value(
+        "needs_table_columns", "ID;TITLE;STATUS;TYPE;OUTGOING;TAGS", "html"
+    )
+    app.add_config_value("needs_table_style", "DATATABLES", "html")
 
-    app.add_config_value('needs_role_need_template', u"{title} ({id})", 'html')
-    app.add_config_value('needs_role_need_max_title_length', 30, 'html')
+    app.add_config_value("needs_role_need_template", u"{title} ({id})", "html")
+    app.add_config_value("needs_role_need_max_title_length", 30, "html", types=[int])
 
-    app.add_config_value('needs_extra_options', {}, 'html')
-    app.add_config_value('needs_title_optional', False, 'html')
-    app.add_config_value('needs_max_title_length', -1, 'html')
-    app.add_config_value('needs_title_from_content', False, 'html')
+    app.add_config_value("needs_extra_options", {}, "html")
+    app.add_config_value("needs_title_optional", False, "html", types=[bool])
+    app.add_config_value("needs_max_title_length", -1, "html", types=[int])
+    app.add_config_value("needs_title_from_content", False, "html", types=[bool])
 
-    app.add_config_value('needs_diagram_template',
-                         DEFAULT_DIAGRAM_TEMPLATE,
-                         'html')
+    app.add_config_value("needs_diagram_template", DEFAULT_DIAGRAM_TEMPLATE, "html")
 
-    app.add_config_value('needs_functions', [], 'html')
-    app.add_config_value('needs_global_options', {}, 'html')
+    app.add_config_value("needs_functions", [], "html", types=[list])
+    app.add_config_value("needs_global_options", {}, "html", types=[dict])
 
-    app.add_config_value('needs_duration_option', 'duration', 'html')
-    app.add_config_value('needs_completion_option', 'completion', 'html')
+    app.add_config_value("needs_duration_option", "duration", "html")
+    app.add_config_value("needs_completion_option", "completion", "html")
 
     # If given, only the defined status are allowed.
     # Values needed for each status:
@@ -106,7 +111,7 @@ def setup(app):
     # * name
     # * description
     # Example: [{"name": "new", "description": "new needs"}, {...}, {...}]
-    app.add_config_value('needs_tags', False, 'html')
+    app.add_config_value("needs_tags", False, "html", types=[bool])
 
     # Path of css file, which shall be used for need style
     app.add_config_value('needs_css', "modern.css", 'html')
@@ -135,10 +140,10 @@ def setup(app):
 
     app.add_config_value('needs_template_folder', 'needs_templates/', 'html')
 
-    app.add_config_value('needs_services', {}, 'html')
-    app.add_config_value('needs_service_all_data', False, 'html')
+    app.add_config_value("needs_services", {}, "html")
+    app.add_config_value("needs_service_all_data", False, "html", types=[bool])
 
-    app.add_config_value('needs_debug_no_external_calls', False, 'html')
+    app.add_config_value("needs_debug_no_external_calls", False, "html", types=[bool])
 
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
@@ -248,25 +253,21 @@ def setup(app):
             'parallel_write_safe': True}
 
 
-def load_config(app, *args):
+def load_config(app: Sphinx, *_args):
     """
     Register extra options and directive based on config from con.py
     """
     types = app.config.needs_types
-    extra_options = getattr(app.config, "needs_extra_options", app.config.needs_extra_options)
+    extra_options = app.config.needs_extra_options
 
     # Get extra links and create a dictionary of needed options.
-    extra_links_raw = getattr(app.config, "needs_extra_links", app.config.needs_extra_links)
+    extra_links_raw = app.config.needs_extra_links
     extra_links = {}
     for extra_link in extra_links_raw:
         extra_links[extra_link['option']] = directives.unchanged
 
-    title_optional = getattr(app.config, "needs_title_optional", app.config.needs_title_optional)
-    title_from_content = getattr(app.config, "needs_title_from_content", app.config.needs_title_from_content)
-    # app.needs_functions = getattr(app.config, "needs_functions", [])
-    global NEEDS_FUNCTIONS_CONF
-    NEEDS_FUNCTIONS_CONF = getattr(app.config, "needs_functions", [])
-    # app.needs_functions = []
+    title_optional = app.config.needs_title_optional
+    title_from_content = app.config.needs_title_from_content
 
     # Update NeedDirective to use customized options
     NeedDirective.option_spec.update(extra_options)
@@ -280,19 +281,19 @@ def load_config(app, *args):
         NeedDirective.required_arguments = 0
         NeedDirective.optional_arguments = 1
 
-    for type in types:
+    for t in types:
         # Register requested types of needs
-        app.add_directive(type["directive"], NeedDirective)
+        app.add_directive(t["directive"], NeedDirective)
 
 
-def visitor_dummy(*args, **kwargs):
+def visitor_dummy(*_args, **_kwargs):
     """
     Dummy class for visitor methods, which does nothing.
     """
     pass
 
 
-def prepare_env(app, env, docname):
+def prepare_env(app, env, _docname):
     """
     Prepares the sphinx environment to store sphinx-needs internal data.
     """
@@ -321,11 +322,7 @@ def prepare_env(app, env, docname):
             # We found a not yet registered service
             app.needs_services.register(name, service['class'], **service['class_init'])
 
-    needs_functions = NEEDS_FUNCTIONS_CONF
-    if needs_functions is None:
-        needs_functions = []
-    if not isinstance(needs_functions, list):
-        raise SphinxError('Config parameter needs_functions must be a list!')
+    needs_functions = app.config.needs_functions
 
     # Register built-in functions
     for need_common_func in needs_common_functions:
@@ -341,7 +338,8 @@ def prepare_env(app, env, docname):
         if option not in app.config.needs_extra_options.keys():
             app.config.needs_extra_options[option] = directives.unchanged
 
-    # The default link name. Must exist in all configurations. Therefore we set it here for the user.
+    # The default link name. Must exist in all configurations. Therefore we set it here
+    # for the user.
     common_links = []
     link_types = app.config.needs_extra_links
     basic_link_type_found = False
@@ -368,8 +366,8 @@ def prepare_env(app, env, docname):
     if not hasattr(env, 'needs_workflow'):
         # Used to store workflow status information for already executed tasks.
         # Some tasks like backlink_creation need be be performed only once.
-        # But most sphinx-events get called several times (for each single document file), which would also
-        # execute our code several times...
+        # But most sphinx-events get called several times (for each single document
+        # file), which would also execute our code several times...
         env.needs_workflow = {
             'backlink_creation_links': False,
             'dynamic_values_resolved': False
@@ -378,7 +376,7 @@ def prepare_env(app, env, docname):
             env.needs_workflow['backlink_creation_{}'.format(link_type['option'])] = False
 
 
-def check_configuration(app, config):
+def check_configuration(_app: Sphinx, config: Config):
     """
     Checks the configuration for invalid options.
 
