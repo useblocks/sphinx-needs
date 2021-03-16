@@ -1,8 +1,11 @@
+import os
 from docutils import nodes
 import json
 from datetime import datetime
-import os
 import shutil
+
+from sphinx.application import Sphinx
+
 from sphinxcontrib.needs.logging import get_logger
 
 logger = get_logger(__name__)
