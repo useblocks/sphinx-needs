@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 from subprocess import STDOUT, check_output
 
@@ -37,26 +38,26 @@ def test_doc_github_44(app, status, warning):
     assert "Needs: outgoing linked need test_123_broken not found" in output
 
 
-# @with_app(buildername='html', srcdir='doc_test/doc_github_issue_61')
-# def test_doc_github_61(app, status, warning):
-#     """
-#     Test for https://github.com/useblocks/sphinxcontrib-needs/issues/61
-#     """
-#     # PlantUML doesn't support entity names with dashes in them, and Needs uses
-#     # the IDs as entity names, and IDs could have dashes.  To avoid this limitation,
-#     # Entity names are transformed to replace the dashes with underscores in the entity
-#     # names.
-#     # Even if there's an error creating the diagram, there's no way to tell since the
-#     # error message is embedded in the image itself. The best we can do is make sure
-#     # the transformed entity names are in the alt text of the image.
-#     app.build()
-#     html = Path(app.outdir, 'index.html').read_text()
-#     alt_text = re.findall('<img.*?alt=(.*?)>', html, re.MULTILINE + re.DOTALL)
-#     assert len(alt_text) == 5
-#     assert "A-001" in alt_text[4]
-#     assert "A-002" in alt_text[4]
-#     assert "A_001" in alt_text[4]
-#     assert "A_002" in alt_text[4]
+@with_app(buildername='html', srcdir='doc_test/doc_github_issue_61')
+def test_doc_github_61(app, status, warning):
+    """
+    Test for https://github.com/useblocks/sphinxcontrib-needs/issues/61
+    """
+    # PlantUML doesn't support entity names with dashes in them, and Needs uses
+    # the IDs as entity names, and IDs could have dashes.  To avoid this limitation,
+    # Entity names are transformed to replace the dashes with underscores in the entity
+    # names.
+    # Even if there's an error creating the diagram, there's no way to tell since the
+    # error message is embedded in the image itself. The best we can do is make sure
+    # the transformed entity names are in the alt text of the image.
+    app.build()
+    html = Path(app.outdir, 'index.html').read_text()
+    alt_text = re.findall('<img.*?alt=(.*?)>', html, re.MULTILINE + re.DOTALL)
+    assert len(alt_text) == 5
+    assert "A-001" in alt_text[4]
+    assert "A-002" in alt_text[4]
+    assert "A_001" in alt_text[4]
+    assert "A_002" in alt_text[4]
 
 
 @with_app(buildername='html', srcdir='doc_test/doc_github_issue_160')
