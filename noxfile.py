@@ -13,7 +13,8 @@ TEST_DEPENDENCIES = [
     "sphinx_copybutton",
 ]
 LINT_DEPENDENCIES = [
-    "flake8"
+    "flake8",
+    "pep8-naming",
 ]
 
 
