@@ -73,7 +73,7 @@ def process_filters(all_needs, current_needlist):
     sort_key = current_needlist["sort_by"]
     if sort_key:
         try:
-            all_needs = sorted(all_needs, key=lambda node: node[sort_key])
+            all_needs = sorted(all_needs, key=lambda node: node[sort_key] or "")
         except KeyError as e:
             logger.warning(
                 "Sorting parameter {0} not valid: Error: {1}".format(sort_key, e)
