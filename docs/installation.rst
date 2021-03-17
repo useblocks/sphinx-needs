@@ -52,7 +52,7 @@ Install PlantUML
       if on_rtd:
           plantuml = 'java -Djava.awt.headless=true -jar /usr/share/plantuml/plantuml.jar'
       else:
-          plantuml = 'java -jar %s' % os.path.join(os.getcwd(), "utils", "plantuml.jar"))
+          plantuml = 'java -jar %s' % os.path.join(os.path.dirname(__file__), "utils", "plantuml.jar"))
 
       plantuml_output_format = 'png'
 
