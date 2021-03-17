@@ -46,7 +46,7 @@ needs_tags = [
     dict(name="security", description="tag for security needs"),
 ]
 
-plantuml = 'java -jar %s' % os.path.join(os.getcwd(), "..", "utils", "plantuml_beta.jar")
+plantuml = 'java -jar %s' % os.path.join(os.path.dirname(__file__), "..", "utils", "plantuml_beta.jar")
 plantuml_output_format = 'svg'
 
 # Add any paths that contain templates here, relative to this directory.
