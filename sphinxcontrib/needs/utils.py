@@ -1,8 +1,11 @@
+import os
 from docutils import nodes
 import json
 from datetime import datetime
-import os
 import shutil
+
+from sphinx.application import Sphinx
+
 from sphinxcontrib.needs.logging import get_logger
 
 logger = get_logger(__name__)
@@ -22,7 +25,7 @@ MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', '
                'September', 'October', 'November', 'December']
 
 
-def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=False, ref_lookup=False, prefix=''):
+def row_col_maker(app: Sphinx, fromdocname, all_needs, need_info, need_key, make_ref=False, ref_lookup=False, prefix=''):
     """
     Creates and returns a column.
 
@@ -90,18 +93,7 @@ def row_col_maker(app, fromdocname, all_needs, need_info, need_key, make_ref=Fal
     return row_col
 
 
-def status_sorter(a):
-    """
-    Helper function to sort string elements, which can be None, too.
-    :param a: element, which gets sorted
-    :return:
-    """
-    if not a["status"]:
-        return ""
-    return a["status"]
-
-
-def rstjinja(app, docname, source):
+def rstjinja(app: Sphinx, docname: str, source):
     """
     Render our pages as a jinja template for fancy templating goodness.
     """
@@ -205,21 +197,3 @@ class NeedsList:
                 self.log.warning("Could not decode json file {0}".format(file))
             else:
                 self.needs_list = needs_list
-
-
-def merge_two_dicts(x, y):
-    """
-    Merges 2 dictionary.
-    Overrides values from x with values from y, if key is the same.
-
-    Needed for Python < 3.5
-
-    See: https://stackoverflow.com/a/26853961
-
-    :param x:
-    :param y:
-    :return:
-    """
-    z = x.copy()  # start with x's keys and values
-    z.update(y)  # modifies z with y's keys and values & returns None
-    return z
