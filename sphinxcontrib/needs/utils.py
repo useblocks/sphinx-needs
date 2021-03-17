@@ -25,7 +25,16 @@ MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', '
                'September', 'October', 'November', 'December']
 
 
-def row_col_maker(app: Sphinx, fromdocname, all_needs, need_info, need_key, make_ref=False, ref_lookup=False, prefix=''):
+def row_col_maker(
+    app: Sphinx,
+    fromdocname,
+    all_needs,
+    need_info,
+    need_key,
+    make_ref=False,
+    ref_lookup=False,
+    prefix=''
+):
     """
     Creates and returns a column.
 
