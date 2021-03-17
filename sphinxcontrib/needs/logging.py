@@ -9,5 +9,5 @@ else:
     logging.basicConfig()  # Only need to do this once
 
 
-def getLogger(name):
+def get_logger(name):
     return logging.getLogger(name)

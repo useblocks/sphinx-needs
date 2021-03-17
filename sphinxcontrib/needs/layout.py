@@ -14,11 +14,11 @@ from docutils.parsers.rst.states import Inliner, Struct
 from docutils.utils import new_document
 
 from urllib.parse import urlparse
-
+from sphinx.application import Sphinx
 from sphinxcontrib.needs.utils import INTERNALS
 
 
-def create_need(need_id, app, layout=None, style=None, docname=None):
+def create_need(need_id, app: Sphinx, layout=None, style=None, docname=None):
     """
     Creates a new need-node for a given layout.
 
@@ -56,17 +56,8 @@ def create_need(need_id, app, layout=None, style=None, docname=None):
 
     node_inner.attributes['ids'].append(need_id)
 
-    if layout is None:
-        if need_data['layout'] is None or len(need_data['layout']) == 0:
-            layout = getattr(app.config, 'needs_default_layout', 'clean')
-        else:
-            layout = need_data['layout']
-
-    if style is None:
-        if need_data['style'] is None or len(need_data['style']) == 0:
-            style = getattr(app.config, 'needs_default_style', 'None')
-        else:
-            style = need_data['style']
+    layout = layout or need_data['layout'] or app.config.needs_default_layout
+    style = style or need_data['style'] or app.config.needs_default_style
 
     build_need(layout, node_inner, app, style, docname)
 
@@ -145,7 +136,7 @@ class LayoutHandler:
         self.need = need
 
         self.layout_name = layout
-        available_layouts = getattr(app.config, 'needs_layouts', {})
+        available_layouts = app.config.needs_layouts
         if self.layout_name not in available_layouts.keys():
             raise SphinxNeedLayoutException(
                 'Given layout "{}" is unknown for need {}. Registered layouts are: {}'.format(
@@ -613,12 +604,12 @@ class LayoutHandler:
         # else:
         #     link_name = self.app.config.needs_extra_links[name]['outgoing']
 
-        from sphinxcontrib.needs.roles.need_outgoing import Need_outgoing
-        from sphinxcontrib.needs.roles.need_incoming import Need_incoming
+        from sphinxcontrib.needs.roles.need_outgoing import NeedOutgoing
+        from sphinxcontrib.needs.roles.need_incoming import NeedIncoming
         if incoming:
-            node_links = Need_incoming(reftarget=self.need['id'], link_type='{}_back'.format(name))
+            node_links = NeedIncoming(reftarget=self.need['id'], link_type='{}_back'.format(name))
         else:
-            node_links = Need_outgoing(reftarget=self.need['id'], link_type='{}'.format(name))
+            node_links = NeedOutgoing(reftarget=self.need['id'], link_type='{}'.format(name))
         node_links.append(nodes.inline(self.need['id'], self.need['id']))
         data_container.append(node_links)
         return data_container

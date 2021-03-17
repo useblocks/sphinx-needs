@@ -69,8 +69,6 @@ needs_extra_links = [
 
 needs_flow_link_types = ['links', 'tests']
 
-needs_collapse_details = False
-
 plantuml = 'java -jar %s' % os.path.join(os.path.dirname(__file__), "..", "utils", "plantuml_beta.jar")
 plantuml_output_format = 'svg'
 

@@ -10,9 +10,9 @@ from docutils import nodes
 import hashlib
 import re
 
-from sphinxcontrib.needs.logging import getLogger
+from sphinxcontrib.needs.logging import get_logger
 
-log = getLogger(__name__)
+log = get_logger(__name__)
 
 
 class NeedPart(nodes.Inline, nodes.Element):

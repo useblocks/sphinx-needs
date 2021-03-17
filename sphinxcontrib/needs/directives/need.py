@@ -13,9 +13,9 @@ from sphinxcontrib.needs.functions import resolve_dynamic_values, find_and_repla
 from sphinxcontrib.needs.api.exceptions import NeedsInvalidException
 from sphinxcontrib.needs.functions.functions import check_and_get_content
 from sphinxcontrib.needs.layout import build_need
-from sphinxcontrib.needs.logging import getLogger
+from sphinxcontrib.needs.logging import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 NON_BREAKING_SPACE = re.compile('\xa0+')
 
@@ -70,7 +70,7 @@ class NeedDirective(Directive):
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
-        self.log = getLogger(__name__)
+        self.log = get_logger(__name__)
         self.full_title = self._get_full_title()
 
     def run(self):
@@ -81,15 +81,13 @@ class NeedDirective(Directive):
 
         # ToDo: Keep this in directive!!!
         collapse = self.options.get("collapse", None)
-        if isinstance(collapse, str) and len(collapse) > 0:
+        if isinstance(collapse, str):
             if collapse.upper() in ["TRUE", 1, "YES"]:
                 collapse = True
             elif collapse.upper() in ["FALSE", 0, "NO"]:
                 collapse = False
             else:
                 raise Exception("collapse attribute must be true or false")
-        else:
-            collapse = getattr(env.app.config, "needs_collapse_details", None)
 
         hide = True if "hide" in self.options.keys() else False
 
@@ -296,9 +294,7 @@ def process_need_nodes(app, doctree, fromdocname):
         for index, attribute in enumerate(node_need.attributes['classes']):
             node_need.attributes['classes'][index] = check_and_get_content(attribute, need_data, env)
 
-        layout = need_data['layout']
-        if layout is None or len(layout) == 0:
-            layout = getattr(app.config, 'needs_default_layout', 'clean')
+        layout = need_data['layout'] or app.config.needs_default_layout
 
         build_need(layout, node_need, app)
 

@@ -8,9 +8,10 @@ from docutils.parsers.rst import directives
 from sphinxcontrib.needs.api.exceptions import NeedsNotLoadedException, NeedsApiConfigException, NeedsApiConfigWarning
 from sphinxcontrib.needs.functions import register_func
 import sphinxcontrib.needs.directives.need
+from sphinx.application import Sphinx
 
 
-def get_need_types(app):
+def get_need_types(app: Sphinx):
     """
     Returns a list of directive-names from all configured need_types.
 
@@ -23,11 +24,11 @@ def get_need_types(app):
     :param app: Sphinx application object
     :return: list of strings
     """
-    needs_types = getattr(app.config, 'needs_types', [])
+    needs_types = app.config.needs_types
     return [x['directive'] for x in needs_types]
 
 
-def add_need_type(app, directive, title, prefix, color='#ffffff', style='node'):
+def add_need_type(app: Sphinx, directive, title, prefix, color='#ffffff', style='node'):
     """
     Adds a new need_type to the configuration.
 
@@ -49,10 +50,8 @@ def add_need_type(app, directive, title, prefix, color='#ffffff', style='node'):
     :param style: Plantuml-style for needflow representation. Default: 'node'
     :return: None
     """
-    if not hasattr(app.config, 'needs_types'):
-        raise NeedsNotLoadedException('needs_types missing in configuration.')
 
-    needs_types = getattr(app.config, 'needs_types', [])
+    needs_types = app.config.needs_types
     type_names = [x['directive'] for x in needs_types]
 
     if directive in type_names:
@@ -84,10 +83,8 @@ def add_extra_option(app, name):
     :param name: Name as string of the extra option
     :return: None
     """
-    if not hasattr(app.config, 'needs_extra_options'):
-        raise NeedsNotLoadedException('needs_extra_options missing in configuration.')
 
-    extra_options = getattr(app.config, 'needs_extra_options', {})
+    extra_options = app.config.needs_extra_options
 
     if name in extra_options.keys():
         raise NeedsApiConfigWarning('Option {} already registered.'.format(name))

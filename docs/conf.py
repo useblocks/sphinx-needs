@@ -246,7 +246,6 @@ else:
 # plantuml_output_format = 'png'
 plantuml_output_format = 'svg_img'
 
-# needs_collapse_details = True
 needs_table_style = "datatables"
 needs_table_columns = "ID;TITLE;STATUS;OUTGOING"
 

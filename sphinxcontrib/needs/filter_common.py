@@ -4,16 +4,14 @@ like needtable, needlist and needflow.
 """
 
 import re
-import sys
-import urllib
 import copy
+from itertools import product
+from typing import Dict, Any, List
 
 from docutils.parsers.rst import Directive
 from docutils.parsers.rst import directives
 
-from sphinxcontrib.needs.utils import status_sorter, merge_two_dicts, logger
-
-urlParse = urllib.parse.quote_plus
+from sphinxcontrib.needs.utils import logger
 
 
 class FilterBase(Directive):
@@ -30,13 +28,7 @@ class FilterBase(Directive):
 
     def collect_filter_attributes(self):
         tags = str(self.options.get("tags", ""))
-        if isinstance(tags, str) and len(tags) > 0:
-
-            # Be sure our strings end with a separator. Otherwise in python2 our string will be cut in
-            # single pieces.
-            if tags[-1] not in [";", ","]:
-                tags += ";"
-
+        if tags:
             tags = [tag.strip() for tag in re.split(";|,", tags) if len(tag) > 0]
 
         status = self.options.get("status", None)
@@ -80,16 +72,12 @@ def process_filters(all_needs, current_needlist):
 
     sort_key = current_needlist["sort_by"]
     if sort_key:
-        if sort_key == "status":
-            all_needs = sorted(all_needs, key=status_sorter)
-        else:
-            try:
-                sorted_needs = sorted(all_needs, key=lambda node: node[sort_key])
-                all_needs = sorted_needs
-            except Exception as e:
-                logger.warning(
-                    "Sorting parameter {0} not valid: Error: {1}".format(sort_key, e)
-                )
+        try:
+            all_needs = sorted(all_needs, key=lambda node: node[sort_key] or "")
+        except KeyError as e:
+            logger.warning(
+                "Sorting parameter {0} not valid: Error: {1}".format(sort_key, e)
+            )
 
     found_needs_by_options = []
 
@@ -100,7 +88,7 @@ def process_filters(all_needs, current_needlist):
     if not filter_code or filter_code.isspace():
         for need_info in all_needs_incl_parts:
             status_filter_passed = False
-            if current_needlist["status"] is None or len(current_needlist["status"]) == 0:
+            if not current_needlist["status"]:
                 # Filtering for status was not requested
                 status_filter_passed = True
             elif need_info["status"] and need_info["status"] in current_needlist["status"]:
@@ -174,7 +162,7 @@ def prepare_need_list(need_list):
 
     for need in need_list:
         for part in need['parts'].values():
-            filter_part = merge_two_dicts(need, part)
+            filter_part = {**need, **part}
             filter_part['id_parent'] = need['id']
             filter_part['id_complete'] = ".".join([need['id'], filter_part['id']])
             all_needs_incl_parts.append(filter_part)
@@ -188,24 +176,15 @@ def prepare_need_list(need_list):
     return all_needs_incl_parts
 
 
-def check_need_list(list_a, list_b):
-    common_list = []
+def check_need_list(list_a, list_b) -> List[Dict[str, Any]]:
 
-    for element_a in list_a:
-        element_a_id = element_a['id']
-        if element_a['is_part']:
-            element_a_id = element_a['id_parent'] + '.' + element_a_id
+    def get_id(element: Dict[str, Any]) -> str:
+        id = element['id']
+        if element['is_part']:
+            id = "{}.{}".format(element['id_parent'], id)
+        return id
 
-        for element_b in list_b:
-            element_b_id = element_b['id']
-            if element_b['is_part']:
-                element_b_id = element_b['id_parent'] + '.' + element_b_id
-
-            if element_a_id == element_b_id:
-                common_list.append(element_a)
-                break
-
-    return common_list
+    return [a for a, b in product(list_a, list_b) if get_id(a) == get_id(b)]
 
 
 def filter_needs(needs, filter_string="", current_need=None):
@@ -219,7 +198,7 @@ def filter_needs(needs, filter_string="", current_need=None):
     :return: list of found needs
     """
 
-    if filter_string is None or filter_string == "":
+    if not filter_string:
         return needs
 
     found_needs = []
@@ -234,7 +213,7 @@ def filter_needs(needs, filter_string="", current_need=None):
     return found_needs
 
 
-def filter_single_need(need, filter_string="", needs=None, current_need=None):
+def filter_single_need(need, filter_string="", needs=None, current_need=None) -> bool:
     """
     Checks if a single need/need_part passes a filter_string
 

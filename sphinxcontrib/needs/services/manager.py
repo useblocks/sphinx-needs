@@ -2,14 +2,14 @@ from docutils.parsers.rst import directives
 
 from sphinxcontrib.needs.directives.needservice import NeedserviceDirective
 
-from sphinxcontrib.needs.logging import getLogger
+from sphinxcontrib.needs.logging import get_logger
 
 
 class ServiceManager:
     def __init__(self, app):
         self.app = app
 
-        self.log = getLogger(__name__)
+        self.log = get_logger(__name__)
         self.services = {}
 
     def register(self, name, clazz, **kwargs):
