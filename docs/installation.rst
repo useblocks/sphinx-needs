@@ -52,14 +52,7 @@ Install PlantUML
       if on_rtd:
           plantuml = 'java -Djava.awt.headless=true -jar /usr/share/plantuml/plantuml.jar'
       else:
-          cwd = os.getcwd()
-          plantuml = 'java -jar %s' % os.path.join(cwd, "utils/plantuml_beta.jar")
-
-      # If we are running on windows, we need to manipulate the path,
-      # otherwise plantuml will have problems.
-      if os.name == "nt":
-          plantuml = plantuml.replace("/", "\\")
-          plantuml = plantuml.replace("\\", "\\\\")
+          plantuml = 'java -jar %s' % os.path.join(os.path.dirname(__file__), "utils", "plantuml.jar"))
 
       plantuml_output_format = 'png'
 
@@ -76,5 +69,3 @@ Using docker
 Sphinx-Needs got also dockerized by Till Witt.
 
 See https://github.com/tlwt/sphinxneeds-docker for actual documentation and hints how to use it.
-
-
