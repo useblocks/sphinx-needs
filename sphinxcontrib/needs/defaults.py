@@ -1,7 +1,6 @@
 # flake8: noqa
 
-DEFAULT_DIAGRAM_TEMPLATE = \
-    """
+DEFAULT_DIAGRAM_TEMPLATE = """
 {%- if is_need -%}
 <size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>
 {%- else -%}
@@ -11,151 +10,89 @@ DEFAULT_DIAGRAM_TEMPLATE = \
 
 
 LAYOUT_COMMON_SIDE = {
-            'side': [
-                '<<image("field:image", align="center")>>'
-            ],
-            'head': [
-                '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>'
-            ],
-            'meta': [
-                '<<meta_all(no_links=True)>>',
-                '<<meta_links_all()>>'
-            ],
-        }
+    "side": ['<<image("field:image", align="center")>>'],
+    "head": ['<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>'],
+    "meta": ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"],
+}
 
 LAYOUTS = {
-    'test': {
-        'grid': 'simple',
-        'layout': {
-            'head': [
+    "test": {
+        "grid": "simple",
+        "layout": {
+            "head": [
                 '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>  <<collapse_button("meta", '
                 'collapsed="icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=False)>> '
             ],
-            'meta': [
-                '<<meta_all(no_links=True)>>',
-                '<<meta_links_all()>>'
-            ],
-        }
+            "meta": ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"],
+        },
     },
-    'clean': {
-        'grid': 'simple',
-        'layout': {
-            'head': [
+    "clean": {
+        "grid": "simple",
+        "layout": {
+            "head": [
                 '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>  <<collapse_button("meta", '
                 'collapsed="icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=False)>> '
             ],
-            'meta': [
-                '<<meta_all(no_links=True)>>',
-                '<<meta_links_all()>>'
+            "meta": ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"],
+        },
+    },
+    "clean_l": {"grid": "simple_side_left", "layout": LAYOUT_COMMON_SIDE},
+    "clean_lp": {"grid": "simple_side_left_partial", "layout": LAYOUT_COMMON_SIDE},
+    "clean_r": {"grid": "simple_side_right", "layout": LAYOUT_COMMON_SIDE},
+    "clean_rp": {"grid": "simple_side_right_partial", "layout": LAYOUT_COMMON_SIDE},
+    "complete": {
+        "grid": "complex",
+        "layout": {
+            "head_left": [
+                "<<meta_id()>>",
             ],
-        }
-    },
-    'clean_l': {
-        'grid': 'simple_side_left',
-        'layout': LAYOUT_COMMON_SIDE
-    },
-    'clean_lp': {
-        'grid': 'simple_side_left_partial',
-        'layout': LAYOUT_COMMON_SIDE
-    },
-    'clean_r': {
-        'grid': 'simple_side_right',
-        'layout': LAYOUT_COMMON_SIDE
-    },
-    'clean_rp': {
-        'grid': 'simple_side_right_partial',
-        'layout': LAYOUT_COMMON_SIDE
-    },
-
-    'complete': {
-        'grid': 'complex',
-        'layout': {
-            'head_left': [
-                '<<meta_id()>>',
-            ],
-            'head': [
+            "head": [
                 '<<meta("title")>>',
             ],
-            'head_right': [
-                '<<meta("type_name")>>'
-            ],
-            'meta_left': [
-                '<<meta_all(no_links=True, exclude=["layout","style"])>>'
-            ],
-            'meta_right': [
-                '<<meta_links_all()>>'
-            ],
-            'footer_left': [
+            "head_right": ['<<meta("type_name")>>'],
+            "meta_left": ['<<meta_all(no_links=True, exclude=["layout","style"])>>'],
+            "meta_right": ["<<meta_links_all()>>"],
+            "footer_left": [
                 'layout: <<meta("layout")>>',
             ],
-            'footer': [
-            ],
-            'footer_right': [
-                'style: <<meta("style")>>'
-            ]
-        }
+            "footer": [],
+            "footer_right": ['style: <<meta("style")>>'],
+        },
     },
-    'focus': {
-        'grid': 'content',
-        'layout': {
-        }
-    },
-    'focus_f': {
-        'grid': 'content_footer',
-        'layout': {
-            'footer': [
-                '<<meta_id()>>'
-            ]
-        }
-    },
-    'focus_l': {
-        'grid': 'content_side_left',
-        'layout': {
-            'side': [
-                '<<meta_id()>>'
-            ]
-        }
-    },
-    'focus_r': {
-        'grid': 'content_side_right',
-        'layout': {
-            'side': [
-                '<<meta_id()>>'
-            ]
-        }
-    },
-    'debug': {
-        'grid': 'simple',
-        'layout': {
-            'head': [
+    "focus": {"grid": "content", "layout": {}},
+    "focus_f": {"grid": "content_footer", "layout": {"footer": ["<<meta_id()>>"]}},
+    "focus_l": {"grid": "content_side_left", "layout": {"side": ["<<meta_id()>>"]}},
+    "focus_r": {"grid": "content_side_right", "layout": {"side": ["<<meta_id()>>"]}},
+    "debug": {
+        "grid": "simple",
+        "layout": {
+            "head": [
                 '<<meta_id()>> **<<meta("title")>>**',
-                '**<<collapse_button("meta", collapsed="Debug view on", visible="Debug view off", initial=True)>>**'
+                '**<<collapse_button("meta", collapsed="Debug view on", visible="Debug view off", initial=True)>>**',
             ],
-            'meta': [
-                '<<meta_all(exclude=[], defaults=False, show_empty=True)>>'
-            ]
-        }
+            "meta": ["<<meta_all(exclude=[], defaults=False, show_empty=True)>>"],
+        },
     },
 }
 
 
 NEEDFLOW_CONFIG_DEFAULTS = {
-    'monochrome': """
+    "monochrome": """
         skinparam monochrome true
     """,
-    'handwritten': """
+    "handwritten": """
         skinparam handwritten true
     """,
-    'lefttoright': """
+    "lefttoright": """
         left to right direction
     """,
-    'toptobottom': """
+    "toptobottom": """
         top to bottom direction
     """,
-    'transparent': """
+    "transparent": """
     skinparam backgroundcolor transparent
     """,
-    'tne': """
+    "tne": """
     ' Based on "Tomorrow night eighties" color theme (see https://github.com/chriskempson/tomorrow-theme)
     ' Provided by gabrieljoelc (https://github.com/gabrieljoelc/plantuml-themes)
     !define Background   #2d2d2d
@@ -215,7 +152,7 @@ NEEDFLOW_CONFIG_DEFAULTS = {
       FontColor Green
     }
     """,
-    'cplant': """
+    "cplant": """
     ' CPLANT by AOKI (https://github.com/aoki/cplant)
     !define BLACK   #363D5D
     !define RED     #F6363F
@@ -255,5 +192,5 @@ NEEDFLOW_CONFIG_DEFAULTS = {
       BackgroundColor BLACK
       BorderColor BLACK
     }
-    """
+    """,
 }

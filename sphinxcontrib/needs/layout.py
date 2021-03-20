@@ -3,18 +3,18 @@ Cares about the correct creation and handling of need layout.
 
 Based on https://github.com/useblocks/sphinxcontrib-needs/issues/102
 """
-import re
 import os
-import requests
+import re
+from urllib.parse import urlparse
 
+import requests
 from docutils import nodes
 from docutils.frontend import OptionParser
-from docutils.parsers.rst import languages, Parser
+from docutils.parsers.rst import Parser, languages
 from docutils.parsers.rst.states import Inliner, Struct
 from docutils.utils import new_document
-
-from urllib.parse import urlparse
 from sphinx.application import Sphinx
+
 from sphinxcontrib.needs.utils import INTERNALS
 
 
@@ -35,16 +35,18 @@ def create_need(need_id, app: Sphinx, layout=None, style=None, docname=None):
     needs = env.needs_all_needs
 
     if need_id not in needs.keys():
-        raise SphinxNeedLayoutException('Given need id {} does not exist.'.format(need_id))
+        raise SphinxNeedLayoutException(
+            "Given need id {} does not exist.".format(need_id)
+        )
     need_data = needs[need_id]
 
     node_container = nodes.container()
-    node_inner = needs[need_id]['content_node']
+    node_inner = needs[need_id]["content_node"]
     # Resolve internal refernces.
     # This is done for original need content automatically.
     # But as we are working on  a copy, we have to trigger this on our own.
     if docname is None:
-        docname = needs[need_id]['docname']  # needed to calculate relative references
+        docname = needs[need_id]["docname"]  # needed to calculate relative references
 
     # resolve_references() ignores the given docname and takes the docname from the pending_xref node.
     # Therefore we need to manipulate this first, before we can ask Sphinx to perform the normal
@@ -54,10 +56,10 @@ def create_need(need_id, app: Sphinx, layout=None, style=None, docname=None):
 
     node_container.append(node_inner)
 
-    node_inner.attributes['ids'].append(need_id)
+    node_inner.attributes["ids"].append(need_id)
 
-    layout = layout or need_data['layout'] or app.config.needs_default_layout
-    style = style or need_data['style'] or app.config.needs_default_style
+    layout = layout or need_data["layout"] or app.config.needs_default_layout
+    style = style or need_data["style"] or app.config.needs_default_style
 
     build_need(layout, node_inner, app, style, docname)
 
@@ -74,8 +76,9 @@ def replace_pending_xref_refdoc(node, new_refdoc):
     :return: None
     """
     from sphinx.addnodes import pending_xref
+
     if isinstance(node, pending_xref):
-        node.attributes['refdoc'] = new_refdoc
+        node.attributes["refdoc"] = new_refdoc
     else:
         for child in node.children:
             replace_pending_xref_refdoc(child, new_refdoc)
@@ -113,12 +116,12 @@ def build_need(layout, node, app, style=None, fromdocname=None):
     need_id = node.attributes["ids"][0]
     need_data = needs[need_id]
 
-    if need_data['hide']:
+    if need_data["hide"]:
         node.parent.replace(node, [])
         return
 
     if fromdocname is None:
-        fromdocname = need_data['docname']
+        fromdocname = need_data["docname"]
 
     lh = LayoutHandler(app, need_data, need_layout, node, style, fromdocname)
     new_need_node = lh.get_need_table()
@@ -131,6 +134,7 @@ class LayoutHandler:
     """
     Cares about the correct layout handling
     """
+
     def __init__(self, app, need, layout, node, style=None, fromdocname=None):
         self.app = app
         self.need = need
@@ -140,184 +144,192 @@ class LayoutHandler:
         if self.layout_name not in available_layouts.keys():
             raise SphinxNeedLayoutException(
                 'Given layout "{}" is unknown for need {}. Registered layouts are: {}'.format(
-                    self.layout_name, need['id'], ' ,'.join(available_layouts.keys())))
+                    self.layout_name, need["id"], " ,".join(available_layouts.keys())
+                )
+            )
         self.layout = available_layouts[self.layout_name]
 
         self.node = node
 
         # Used, if need is referenced from another page
         if fromdocname is None:
-            self.fromdocname = need['docname']
+            self.fromdocname = need["docname"]
         else:
             self.fromdocname = fromdocname
 
-        classes = ["need",
-                   'needs_grid_' + self.layout['grid'],
-                   'needs_layout_' + self.layout_name]
+        classes = [
+            "need",
+            "needs_grid_" + self.layout["grid"],
+            "needs_layout_" + self.layout_name,
+        ]
 
-        self.style = style or self.need['style'] or getattr(self.app.config, 'needs_default_style', None)
+        self.style = (
+            style
+            or self.need["style"]
+            or getattr(self.app.config, "needs_default_style", None)
+        )
 
         if self.style:
-            for style in self.style.strip().split(','):
+            for style in self.style.strip().split(","):
                 style = style.strip()
-                classes.append('needs_style_' + style)
+                classes.append("needs_style_" + style)
         else:
-            classes.append('needs_style_none')
+            classes.append("needs_style_none")
 
-        classes.append('needs_type_' + ''.join(self.need['type'].split()))
+        classes.append("needs_type_" + "".join(self.need["type"].split()))
 
-        self.node_table = nodes.table(classes=classes, ids=[self.need['id']])
+        self.node_table = nodes.table(classes=classes, ids=[self.need["id"]])
         self.node_tbody = nodes.tbody()
 
         self.grids = {
-            'simple': {
-                'func': self._grid_simple,
-                'configs': {
-                    'colwidths': [100],
-                    'side_left': False,
-                    'side_right': False,
-                    'footer': False
-                }
+            "simple": {
+                "func": self._grid_simple,
+                "configs": {
+                    "colwidths": [100],
+                    "side_left": False,
+                    "side_right": False,
+                    "footer": False,
+                },
             },
-            'simple_side_left': {
-                'func': self._grid_simple,
-                'configs': {
-                    'colwidths': [30, 70],
-                    'side_left': 'full',
-                    'side_right': False,
-                    'footer': False
-                }
+            "simple_side_left": {
+                "func": self._grid_simple,
+                "configs": {
+                    "colwidths": [30, 70],
+                    "side_left": "full",
+                    "side_right": False,
+                    "footer": False,
+                },
             },
-            'simple_side_right': {
-                'func': self._grid_simple,
-                'configs': {
-                    'colwidths': [70, 30],
-                    'side_left': False,
-                    'side_right': 'full',
-                    'footer': False
-                }
+            "simple_side_right": {
+                "func": self._grid_simple,
+                "configs": {
+                    "colwidths": [70, 30],
+                    "side_left": False,
+                    "side_right": "full",
+                    "footer": False,
+                },
             },
-            'simple_side_left_partial': {
-                'func': self._grid_simple,
-                'configs': {
-                    'colwidths': [20, 80],
-                    'side_left': 'part',
-                    'side_right': False,
-                    'footer': False
-                }
+            "simple_side_left_partial": {
+                "func": self._grid_simple,
+                "configs": {
+                    "colwidths": [20, 80],
+                    "side_left": "part",
+                    "side_right": False,
+                    "footer": False,
+                },
             },
-            'simple_side_right_partial': {
-                'func': self._grid_simple,
-                'configs': {
-                    'colwidths': [80, 20],
-                    'side_left': False,
-                    'side_right': 'part',
-                    'footer': False
-                }
+            "simple_side_right_partial": {
+                "func": self._grid_simple,
+                "configs": {
+                    "colwidths": [80, 20],
+                    "side_left": False,
+                    "side_right": "part",
+                    "footer": False,
+                },
             },
-
-            'complex': self._grid_complex,
-
-            'content': {
-                'func': self._grid_content,
-                'configs': {
-                    'colwidths': [100],
-                    'side_left': False,
-                    'side_right': False,
-                    'footer': False
-                }
+            "complex": self._grid_complex,
+            "content": {
+                "func": self._grid_content,
+                "configs": {
+                    "colwidths": [100],
+                    "side_left": False,
+                    "side_right": False,
+                    "footer": False,
+                },
             },
-
-            'content_footer': {
-                'func': self._grid_content,
-                'configs': {
-                    'colwidths': [100],
-                    'side_left': False,
-                    'side_right': False,
-                    'footer': True
-                }
+            "content_footer": {
+                "func": self._grid_content,
+                "configs": {
+                    "colwidths": [100],
+                    "side_left": False,
+                    "side_right": False,
+                    "footer": True,
+                },
             },
-            'content_side_left': {
-                'func': self._grid_content,
-                'configs': {
-                    'colwidths': [5, 95],
-                    'side_left': True,
-                    'side_right': False,
-                    'footer': False
-                }
+            "content_side_left": {
+                "func": self._grid_content,
+                "configs": {
+                    "colwidths": [5, 95],
+                    "side_left": True,
+                    "side_right": False,
+                    "footer": False,
+                },
             },
-            'content_side_right': {
-                'func': self._grid_content,
-                'configs': {
-                    'colwidths': [95, 5],
-                    'side_left': False,
-                    'side_right': True,
-                    'footer': False
-                }
+            "content_side_right": {
+                "func": self._grid_content,
+                "configs": {
+                    "colwidths": [95, 5],
+                    "side_left": False,
+                    "side_right": True,
+                    "footer": False,
+                },
             },
-            'content_footer_side_left': {
-                'func': self._grid_content,
-                'configs': {
-                    'colwidths': [5, 95],
-                    'side_left': True,
-                    'side_right': False,
-                    'footer': True
-                }
+            "content_footer_side_left": {
+                "func": self._grid_content,
+                "configs": {
+                    "colwidths": [5, 95],
+                    "side_left": True,
+                    "side_right": False,
+                    "footer": True,
+                },
             },
-            'content_footer_side_right': {
-                'func': self._grid_content,
-                'configs': {
-                    'colwidths': [95, 5],
-                    'side_left': False,
-                    'side_right': True,
-                    'footer': True
-                }
+            "content_footer_side_right": {
+                "func": self._grid_content,
+                "configs": {
+                    "colwidths": [95, 5],
+                    "side_left": False,
+                    "side_right": True,
+                    "footer": True,
+                },
             },
         }
 
         # Dummy Document setup
-        self.doc_settings = OptionParser(
-            components=(Parser,)
-        ).get_default_values()
+        self.doc_settings = OptionParser(components=(Parser,)).get_default_values()
         self.dummy_doc = new_document("dummy", self.doc_settings)
         self.doc_language = languages.get_language(
-            self.dummy_doc.settings.language_code)
-        self.doc_memo = Struct(document=self.dummy_doc,
-                               reporter=self.dummy_doc.reporter,
-                               language=self.doc_language,
-                               title_styles=[],
-                               section_level=0,
-                               section_bubble_up_kludge=False,
-                               inliner=None)
+            self.dummy_doc.settings.language_code
+        )
+        self.doc_memo = Struct(
+            document=self.dummy_doc,
+            reporter=self.dummy_doc.reporter,
+            language=self.doc_language,
+            title_styles=[],
+            section_level=0,
+            section_bubble_up_kludge=False,
+            inliner=None,
+        )
 
         self.functions = {
-            'meta': self.meta,
-            'meta_all': self.meta_all,
-            'meta_links': self.meta_links,
-            'meta_links_all': self.meta_links_all,
-            'meta_id': self.meta_id,
-            'image': self.image,
-            'link': self.link,
-            'collapse_button': self.collapse_button
+            "meta": self.meta,
+            "meta_all": self.meta_all,
+            "meta_links": self.meta_links,
+            "meta_links_all": self.meta_links_all,
+            "meta_id": self.meta_id,
+            "image": self.image,
+            "link": self.link,
+            "collapse_button": self.collapse_button,
         }
 
     def get_need_table(self):
-        if self.layout['grid'] not in self.grids.keys():
-            raise SphinxNeedLayoutException('Unknown layout-grid: {}. Supported are {}'.format(
-                self.layout['grid'], ', '.join(self.grids.keys())
-            ))
+        if self.layout["grid"] not in self.grids.keys():
+            raise SphinxNeedLayoutException(
+                "Unknown layout-grid: {}. Supported are {}".format(
+                    self.layout["grid"], ", ".join(self.grids.keys())
+                )
+            )
 
-        func = self.grids[self.layout['grid']]
+        func = self.grids[self.layout["grid"]]
         if callable(func):
             func()
         else:
-            func['func'](**func['configs'])
+            func["func"](**func["configs"])
 
         return self.node_table
 
     def get_section(self, section):
         try:
-            lines = self.layout['layout'][section]
+            lines = self.layout["layout"][section]
         except KeyError:
             # Return nothing, if not specific configuration is given for layout section
             return []
@@ -326,7 +338,7 @@ class LayoutHandler:
         if len(lines) == 0:
             return []
 
-        lines_container = nodes.line_block(classes=['needs_{}'.format(section)])
+        lines_container = nodes.line_block(classes=["needs_{}".format(section)])
 
         for line in lines:
             # line_block_node = nodes.line_block()
@@ -375,7 +387,7 @@ class LayoutHandler:
                 # func_elements = re.findall(r'<<([a-z_()]*)>>', node_str)
                 node_line = nodes.inline()
 
-                line_elements = re.findall(r'(<<[^<>]+>>)|([^<>]+)', node_str)
+                line_elements = re.findall(r"(<<[^<>]+>>)|([^<>]+)", node_str)
 
                 for line_element in line_elements:
                     text = line_element[1]
@@ -386,9 +398,14 @@ class LayoutHandler:
                         result = nodes.Text(text, text)
                     # Check if function_definition was detected
                     elif len(text) == 0 and len(func_def) > 1:
-                        from sphinxcontrib.needs.functions.functions import _analyze_func_string
-                        func_def_clean = func_def.replace('<<', '').replace('>>', '')
-                        func_name, func_args, func_kargs = _analyze_func_string(func_def_clean, None)
+                        from sphinxcontrib.needs.functions.functions import (
+                            _analyze_func_string,
+                        )
+
+                        func_def_clean = func_def.replace("<<", "").replace(">>", "")
+                        func_name, func_args, func_kargs = _analyze_func_string(
+                            func_def_clean, None
+                        )
 
                         # Replace place holders
                         # Looks for {{name}}, where name must be an option of need, and replaces it with the
@@ -403,7 +420,9 @@ class LayoutHandler:
                             except SphinxNeedLayoutException as e:
                                 raise SphinxNeedLayoutException(
                                     'Referenced item "{}" in {} not available in need {}'.format(
-                                        e, func_def_clean, self.need['id']))
+                                        e, func_def_clean, self.need["id"]
+                                    )
+                                )
 
                         for key, karg in func_kargs.items():
                             # If argument is not a string, nothing to replace
@@ -415,34 +434,40 @@ class LayoutHandler:
                             except SphinxNeedLayoutException as e:
                                 raise SphinxNeedLayoutException(
                                     'Referenced item "{}" in {} not available in need {}'.format(
-                                        e, func_def_clean, self.need['id']))
+                                        e, func_def_clean, self.need["id"]
+                                    )
+                                )
 
                         try:
                             func = self.functions[func_name]
                         except KeyError:
-                            raise SphinxNeedLayoutException('Used function {} unknown. Please use {}'.format(
-                                func_name, ', '.join(self.functions.keys())
-                            ))
+                            raise SphinxNeedLayoutException(
+                                "Used function {} unknown. Please use {}".format(
+                                    func_name, ", ".join(self.functions.keys())
+                                )
+                            )
                         result = func(*func_args, **func_kargs)
 
                         if result:
                             node_line += result
                     else:
                         raise SphinxNeedLayoutException(
-                            'Error during layout line parsing. This looks strange: {}'.format(
-                                line_element))
+                            "Error during layout line parsing. This looks strange: {}".format(
+                                line_element
+                            )
+                        )
 
                 return_nodes.append(node_line)
         return return_nodes
 
     def _replace_place_holder(self, data):
-        replace_items = re.findall(r'{{(.*)}}', data)
+        replace_items = re.findall(r"{{(.*)}}", data)
         for item in replace_items:
             if item not in self.need.keys():
                 raise SphinxNeedLayoutException(item)
             # To escape { we need to use 2 of them.
             # So {{ becomes {{{{
-            replace_string = '{{{{{}}}}}'.format(item)
+            replace_string = "{{{{{}}}}}".format(item)
             data = data.replace(replace_string, self.need[item])
         return data
 
@@ -459,39 +484,39 @@ class LayoutHandler:
         :return: docutils node
         """
 
-        data_container = nodes.inline(classes=['needs_' + name])
+        data_container = nodes.inline(classes=["needs_" + name])
         if prefix:
             prefix_node = self._parse(prefix)
-            label_node = nodes.inline(classes=['needs_label'])
+            label_node = nodes.inline(classes=["needs_label"])
             label_node += prefix_node
             data_container.append(label_node)
         try:
             data = self.need[name]
         except KeyError:
-            data = ''
+            data = ""
 
         if data is None and not show_empty:
             return []
         elif data is None and show_empty:
-            data = ''
+            data = ""
 
         if isinstance(data, str):
             if len(data) == 0 and not show_empty:
                 return []
-            data_node = nodes.inline(classes=['needs_data'])
+            data_node = nodes.inline(classes=["needs_data"])
             data_node.append(nodes.Text(data, data))
             data_container.append(data_node)
         elif isinstance(data, list):
             if len(data) == 0 and not show_empty:
                 return []
-            list_container = nodes.inline(classes=['needs_data_container'])
+            list_container = nodes.inline(classes=["needs_data_container"])
             for index, element in enumerate(data):
                 if index > 0:
-                    spacer = nodes.inline(classes=['needs_spacer'])
-                    spacer += nodes.Text(', ', ', ')
+                    spacer = nodes.inline(classes=["needs_spacer"])
+                    spacer += nodes.Text(", ", ", ")
                     list_container += spacer
 
-                inline = nodes.inline(classes=['needs_data'])
+                inline = nodes.inline(classes=["needs_data"])
                 inline += nodes.Text(element, element)
                 list_container += inline
             data_container += list_container
@@ -511,20 +536,31 @@ class LayoutHandler:
         :return: docutils node
         """
         from sphinx.util.nodes import make_refnode
+
         id_container = nodes.inline(classes=["needs-id"])
 
-        nodes_id_text = nodes.Text(self.need['id'], self.need['id'])
-        id_ref = make_refnode(self.app.builder,
-                              # fromdocname=self.need['docname'],
-                              fromdocname=self.fromdocname,
-                              todocname=self.need['docname'],
-                              targetid=self.need['id'],
-                              child=nodes_id_text.deepcopy(),
-                              title=self.need['id'])
+        nodes_id_text = nodes.Text(self.need["id"], self.need["id"])
+        id_ref = make_refnode(
+            self.app.builder,
+            # fromdocname=self.need['docname'],
+            fromdocname=self.fromdocname,
+            todocname=self.need["docname"],
+            targetid=self.need["id"],
+            child=nodes_id_text.deepcopy(),
+            title=self.need["id"],
+        )
         id_container += id_ref
         return id_container
 
-    def meta_all(self, prefix='', postfix='', exclude=None, no_links=False, defaults=True, show_empty=False):
+    def meta_all(
+        self,
+        prefix="",
+        postfix="",
+        exclude=None,
+        no_links=False,
+        defaults=True,
+        show_empty=False,
+    ):
         """
         ``meta_all()`` excludes by default the output of: ``docname``, ``lineno``, ``target_node``, ``refid``,
         ``content``, ``collapse``, ``parts``, ``id_parent``,
@@ -564,8 +600,10 @@ class LayoutHandler:
             exclude += default_excludes
 
         if no_links:
-            link_names = [x['option'] for x in self.app.config.needs_extra_links]
-            link_names += [x['option'] + '_back' for x in self.app.config.needs_extra_links]
+            link_names = [x["option"] for x in self.app.config.needs_extra_links]
+            link_names += [
+                x["option"] + "_back" for x in self.app.config.needs_extra_links
+            ]
             exclude += link_names
         data_container = nodes.inline()
         for data in self.need.keys():
@@ -573,7 +611,7 @@ class LayoutHandler:
                 continue
 
             data_line = nodes.line()
-            label = prefix + '{}:'.format(data) + postfix + ' '
+            label = prefix + "{}:".format(data) + postfix + " "
             result = self.meta(data, label, show_empty)
             if not (show_empty or result):
                 continue
@@ -596,25 +634,32 @@ class LayoutHandler:
         :return: docutils nodes
         """
         data_container = nodes.inline(classes=[name])
-        if name not in [x['option'] for x in self.app.config.needs_extra_links]:
-            raise SphinxNeedLayoutException('Invalid link name {} for link-type'.format(name))
+        if name not in [x["option"] for x in self.app.config.needs_extra_links]:
+            raise SphinxNeedLayoutException(
+                "Invalid link name {} for link-type".format(name)
+            )
 
         # if incoming:
         #     link_name = self.app.config.needs_extra_links[name]['incoming']
         # else:
         #     link_name = self.app.config.needs_extra_links[name]['outgoing']
 
-        from sphinxcontrib.needs.roles.need_outgoing import NeedOutgoing
         from sphinxcontrib.needs.roles.need_incoming import NeedIncoming
+        from sphinxcontrib.needs.roles.need_outgoing import NeedOutgoing
+
         if incoming:
-            node_links = NeedIncoming(reftarget=self.need['id'], link_type='{}_back'.format(name))
+            node_links = NeedIncoming(
+                reftarget=self.need["id"], link_type="{}_back".format(name)
+            )
         else:
-            node_links = NeedOutgoing(reftarget=self.need['id'], link_type='{}'.format(name))
-        node_links.append(nodes.inline(self.need['id'], self.need['id']))
+            node_links = NeedOutgoing(
+                reftarget=self.need["id"], link_type="{}".format(name)
+            )
+        node_links.append(nodes.inline(self.need["id"], self.need["id"]))
         data_container.append(node_links)
         return data_container
 
-    def meta_links_all(self, prefix='', postfix='', exclude=None):
+    def meta_links_all(self, prefix="", postfix="", exclude=None):
         """
         Documents all used link types for the current need automatically.
 
@@ -626,26 +671,38 @@ class LayoutHandler:
         exclude = exclude or []
         data_container = []
         for link_type in self.app.config.needs_extra_links:
-            type_key = link_type['option']
+            type_key = link_type["option"]
             if self.need[type_key] and type_key not in exclude:
                 outgoing_line = nodes.line()
-                outgoing_label = prefix + '{}:'.format(link_type['outgoing']) + postfix + ' '
+                outgoing_label = (
+                    prefix + "{}:".format(link_type["outgoing"]) + postfix + " "
+                )
                 outgoing_line += self._parse(outgoing_label)
-                outgoing_line += self.meta_links(link_type['option'], incoming=False)
+                outgoing_line += self.meta_links(link_type["option"], incoming=False)
                 data_container.append(outgoing_line)
 
-            type_key = link_type['option'] + '_back'
+            type_key = link_type["option"] + "_back"
             if self.need[type_key] and type_key not in exclude:
                 incoming_line = nodes.line()
-                incoming_label = prefix + '{}:'.format(link_type['incoming']) + postfix + ' '
+                incoming_label = (
+                    prefix + "{}:".format(link_type["incoming"]) + postfix + " "
+                )
                 incoming_line += self._parse(incoming_label)
-                incoming_line += self.meta_links(link_type['option'], incoming=True)
+                incoming_line += self.meta_links(link_type["option"], incoming=True)
                 data_container.append(incoming_line)
 
         return data_container
 
-    def image(self, url, height=None, width=None, align=None, no_link=False, prefix="",
-              is_external=False):
+    def image(
+        self,
+        url,
+        height=None,
+        width=None,
+        align=None,
+        no_link=False,
+        prefix="",
+        is_external=False,
+    ):
         """
 
         See https://docutils.sourceforge.io/docs/ref/rst/directives.html#images
@@ -675,35 +732,39 @@ class LayoutHandler:
         data_container = nodes.inline()
         if prefix:
             prefix_node = self._parse(prefix)
-            label_node = nodes.inline(classes=['needs_label'])
+            label_node = nodes.inline(classes=["needs_label"])
             label_node += prefix_node
             data_container.append(label_node)
 
         # from sphinx.addnodes import
         options = {}
         if height:
-            options['height'] = height
+            options["height"] = height
         if width:
-            options['width'] = width
+            options["width"] = width
         if align:
-            options['align'] = align
+            options["align"] = align
 
         if url is None or not isinstance(url, str):
-            raise SphinxNeedLayoutException('not valid url given for image function in layout')
+            raise SphinxNeedLayoutException(
+                "not valid url given for image function in layout"
+            )
 
-        if url.startswith('icon:'):
-            if any(x in self.app.builder.name.upper() for x in ['PDF', 'LATEX']):
+        if url.startswith("icon:"):
+            if any(x in self.app.builder.name.upper() for x in ["PDF", "LATEX"]):
                 # latexpdf can't handle svg files. We not to use the png format here.
-                builder_extension = 'png'
+                builder_extension = "png"
             else:
-                builder_extension = 'svg'
+                builder_extension = "svg"
 
             # url = '_static/sphinx-needs/images/{}.{}'.format(url.split(':')[1], builder_extension)
             needs_location = os.path.dirname(__file__)
-            url = os.path.join(needs_location,
-                               'images',
-                               'feather_{}'.format(builder_extension),
-                               '{}.{}'.format(url.split(':')[1], builder_extension))
+            url = os.path.join(
+                needs_location,
+                "images",
+                "feather_{}".format(builder_extension),
+                "{}.{}".format(url.split(":")[1], builder_extension),
+            )
 
             # if not any(x in self.app.builder.name.upper() for x in ['PDF', 'LATEX']):
             #     # This is not needed for Latex. as latex puts the complete content in a single text file on root level
@@ -712,12 +773,12 @@ class LayoutHandler:
             #     # Normally sphinx is doing this kind of calculation, but it looks like not in the current state
             #     subfolder_amount = self.need['docname'].count('/')
             #     url = '../' * subfolder_amount + url
-        elif url.startswith('field:'):
-            field = url.split(':')[1]
+        elif url.startswith("field:"):
+            field = url.split(":")[1]
             try:
                 value = self.need[field]
             except KeyError:
-                value = ''
+                value = ""
 
             if value is None or len(value) == 0:
                 return []
@@ -725,12 +786,12 @@ class LayoutHandler:
             url = value
 
             if not is_external and not os.path.isabs(url):
-                subfolder_amount = self.need['docname'].count('/')
-                url = '../' * subfolder_amount + url
+                subfolder_amount = self.need["docname"].count("/")
+                url = "../" * subfolder_amount + url
 
         if is_external:
             url_parsed = urlparse(url)
-            filename = os.path.basename(url_parsed.path) + '.png'
+            filename = os.path.basename(url_parsed.path) + ".png"
             path = os.path.join(self.app.srcdir, "images")
             file_path = os.path.join(path, filename)
 
@@ -742,20 +803,20 @@ class LayoutHandler:
                     pass
                 response = requests.get(url)
                 if response.status_code == 200:
-                    with open(file_path, 'wb') as f:
+                    with open(file_path, "wb") as f:
                         f.write(response.content)
 
             url = file_path
 
-        image_node = nodes.image(url, classes=['needs_image'], **options)
-        image_node['candidates'] = {'*': url}
+        image_node = nodes.image(url, classes=["needs_image"], **options)
+        image_node["candidates"] = {"*": url}
         # image_node['candidates'] = '*'
-        image_node['uri'] = url
+        image_node["uri"] = url
 
         # Sphinx voodoo needed here.
         # It is not enough to just add a doctuils nodes.image, we also have to register the imag location for sphinx
         # Otherwise the images gets not copied to the later build-output location
-        self.app.env.images.add_file(self.need['docname'], url)
+        self.app.env.images.add_file(self.need["docname"], url)
 
         # Okay, this is really ugly.
         # Sphinx does automatically wrap all images into a reference node, which links to the image file.
@@ -765,15 +826,23 @@ class LayoutHandler:
         # We do last one here and set class to "no_link", which is later used by some javascript to avoid
         # being clickable, so that the page does not "jump"
         if no_link:
-            ref_node = nodes.reference('test', '', refuri='#', classes=['no_link'])
+            ref_node = nodes.reference("test", "", refuri="#", classes=["no_link"])
             ref_node.append(image_node)
             return ref_node
 
         data_container.append(image_node)
         return data_container
 
-    def link(self, url, text=None, image_url=None, image_height=None, image_width=None,
-             prefix="", is_dynamic=False):
+    def link(
+        self,
+        url,
+        text=None,
+        image_url=None,
+        image_height=None,
+        image_width=None,
+        prefix="",
+        is_dynamic=False,
+    ):
         """
         Shows a link.
         Link can be a text, an image or both
@@ -795,17 +864,17 @@ class LayoutHandler:
         data_container = nodes.inline()
         if prefix:
             prefix_node = self._parse(prefix)
-            label_node = nodes.inline(classes=['needs_label'])
+            label_node = nodes.inline(classes=["needs_label"])
             label_node += prefix_node
             data_container.append(label_node)
 
-        text = text = ''  # May be needed if only image shall be shown
+        text = text = ""  # May be needed if only image shall be shown
 
         if is_dynamic:
             try:
                 url = self.need[url]
             except KeyError:
-                url = ''
+                url = ""
 
         link_node = nodes.reference(text, text, refuri=url)
 
@@ -817,7 +886,9 @@ class LayoutHandler:
 
         return data_container
 
-    def collapse_button(self, target='meta', collapsed='Show', visible='Close', initial=False):
+    def collapse_button(
+        self, target="meta", collapsed="Show", visible="Close", initial=False
+    ):
         """
         To show icons instead of text on the button, use collapse_button() like this::
 
@@ -832,38 +903,42 @@ class LayoutHandler:
         :param initial: If True, initial status will hide rows after loading page.
         :return: docutils nodes
         """
-        if any(x in self.app.builder.name.upper() for x in ['PDF', 'LATEX']):
+        if any(x in self.app.builder.name.upper() for x in ["PDF", "LATEX"]):
             # PDF/Latex output do not support collapse functions
             return
 
-        coll_node_collapsed = nodes.inline(classes=['needs', 'collapsed'])
-        coll_node_visible = nodes.inline(classes=['needs', 'visible'])
+        coll_node_collapsed = nodes.inline(classes=["needs", "collapsed"])
+        coll_node_visible = nodes.inline(classes=["needs", "visible"])
 
-        if collapsed.startswith('image:') or collapsed.startswith('icon:'):
-            coll_node_collapsed.append(self.image(collapsed.replace('image:', ''), width='17px', no_link=True))
+        if collapsed.startswith("image:") or collapsed.startswith("icon:"):
+            coll_node_collapsed.append(
+                self.image(collapsed.replace("image:", ""), width="17px", no_link=True)
+            )
         else:
             coll_node_collapsed.append(nodes.Text(collapsed, collapsed))
 
-        if visible.startswith('image:') or visible.startswith('icon:'):
-            coll_node_visible.append(self.image(visible.replace('image:', ''), width='17px', no_link=True))
+        if visible.startswith("image:") or visible.startswith("icon:"):
+            coll_node_visible.append(
+                self.image(visible.replace("image:", ""), width="17px", no_link=True)
+            )
         else:
             coll_node_visible.append(nodes.Text(visible, visible))
 
-        coll_container = nodes.inline(classes=['needs', 'collapse'])
+        coll_container = nodes.inline(classes=["needs", "collapse"])
         # docutils does'nt allow has to add any html-attributes beside class and id to nodes.
         # So we misused "id" for this and use "__" (2x _) as separator for row-target names
 
-        if (not self.need['collapse']) or \
-                (self.need['collapse'] is None and not initial):
-            status = 'show'
-        elif (self.need['collapse']) or \
-                (not self.need['collapse'] and initial):
-            status = 'hide'
+        if (not self.need["collapse"]) or (
+            self.need["collapse"] is None and not initial
+        ):
+            status = "show"
+        elif (self.need["collapse"]) or (not self.need["collapse"] and initial):
+            status = "hide"
 
-        target_strings = target.split(',')
+        target_strings = target.split(",")
         final_targets = [x.strip() for x in target_strings]
-        targets = ['target__' + status + '__' + '__'.join(final_targets)]
-        coll_container.attributes['ids'] = targets
+        targets = ["target__" + status + "__" + "__".join(final_targets)]
+        coll_container.attributes["ids"] = targets
         coll_container.append(coll_node_collapsed)
         coll_container.append(coll_node_visible)
 
@@ -910,7 +985,7 @@ class LayoutHandler:
         common_more_cols = 0
 
         if side_left:
-            if side_left == 'full':
+            if side_left == "full":
                 side_left_morerows = 2
             else:
                 side_left_morerows = 1
@@ -919,7 +994,7 @@ class LayoutHandler:
                 side_left_morerows += 1
 
         if side_right:
-            if side_right == 'full':
+            if side_right == "full":
                 side_right_morerows = 2
             else:
                 side_right_morerows = 1
@@ -936,39 +1011,47 @@ class LayoutHandler:
             node_tgroup += node_colspec
 
         # HEAD row
-        head_row = nodes.row(classes=['need', 'head'])
+        head_row = nodes.row(classes=["need", "head"])
 
         if side_left:
-            side_entry = nodes.entry(classes=['need', 'side'], morerows=side_left_morerows)
-            side_entry += self.get_section('side')
+            side_entry = nodes.entry(
+                classes=["need", "side"], morerows=side_left_morerows
+            )
+            side_entry += self.get_section("side")
             head_row += side_entry
 
-        head_entry = nodes.entry(classes=['need', 'head'])
-        head_entry += self.get_section('head')
+        head_entry = nodes.entry(classes=["need", "head"])
+        head_entry += self.get_section("head")
         head_row += head_entry
 
         if side_right:
-            side_entry = nodes.entry(classes=['need', 'side'], morerows=side_right_morerows)
-            side_entry += self.get_section('side')
+            side_entry = nodes.entry(
+                classes=["need", "side"], morerows=side_right_morerows
+            )
+            side_entry += self.get_section("side")
             head_row += side_entry
 
         # META row
-        meta_row = nodes.row(classes=['need', 'meta'])
-        meta_entry = nodes.entry(classes=['need', 'meta'])
-        meta_entry += self.get_section('meta')
+        meta_row = nodes.row(classes=["need", "meta"])
+        meta_entry = nodes.entry(classes=["need", "meta"])
+        meta_entry += self.get_section("meta")
         meta_row += meta_entry
 
         # CONTENT row
-        content_row = nodes.row(classes=['need', 'content'])
-        content_entry = nodes.entry(classes=['need', 'content'], morecols=common_more_cols)
+        content_row = nodes.row(classes=["need", "content"])
+        content_entry = nodes.entry(
+            classes=["need", "content"], morecols=common_more_cols
+        )
         content_entry.insert(0, self.node.children)
         content_row += content_entry
 
         # FOOTER row
         if footer:
-            footer_row = nodes.row(classes=['need', 'footer'])
-            footer_entry = nodes.entry(classes=['need', 'footer'], morecols=common_more_cols)
-            footer_entry += self.get_section('footer')
+            footer_row = nodes.row(classes=["need", "footer"])
+            footer_entry = nodes.entry(
+                classes=["need", "footer"], morecols=common_more_cols
+            )
+            footer_entry += self.get_section("footer")
             footer_row += footer_entry
 
         # Construct table
@@ -989,54 +1072,54 @@ class LayoutHandler:
             node_tgroup += node_colspec
 
         # HEAD row
-        head_row = nodes.row(classes=['head'])
+        head_row = nodes.row(classes=["head"])
         self.node_tbody += head_row
         # HEAD left
-        head_left_entry = nodes.entry(classes=['head_left'], morecols=1)
-        head_left_entry += self.get_section('head_left')
+        head_left_entry = nodes.entry(classes=["head_left"], morecols=1)
+        head_left_entry += self.get_section("head_left")
         head_row += head_left_entry
         # HEAD mid
-        head_entry = nodes.entry(classes=['head_center'], morecols=1)
-        head_entry += self.get_section('head')
+        head_entry = nodes.entry(classes=["head_center"], morecols=1)
+        head_entry += self.get_section("head")
         head_row += head_entry
         # HEAD right
-        head_right_entry = nodes.entry(classes=['head_right'], morecols=1)
-        head_right_entry += self.get_section('head_right')
+        head_right_entry = nodes.entry(classes=["head_right"], morecols=1)
+        head_right_entry += self.get_section("head_right")
         head_row += head_right_entry
 
         # META row
-        meta_row = nodes.row(classes=['meta'])
+        meta_row = nodes.row(classes=["meta"])
         self.node_tbody += meta_row
         # META left
-        meta_left_entry = nodes.entry(classes=['meta'], morecols=2)
-        meta_left_entry += self.get_section('meta_left')
+        meta_left_entry = nodes.entry(classes=["meta"], morecols=2)
+        meta_left_entry += self.get_section("meta_left")
         meta_row += meta_left_entry
         # META right
-        meta_right_entry = nodes.entry(classes=['meta'], morecols=2)
-        meta_right_entry += self.get_section('meta_right')
+        meta_right_entry = nodes.entry(classes=["meta"], morecols=2)
+        meta_right_entry += self.get_section("meta_right")
         meta_row += meta_right_entry
 
         # CONTENT row
-        content_row = nodes.row(classes=['content'])
+        content_row = nodes.row(classes=["content"])
         self.node_tbody += content_row
-        content_entry = nodes.entry(classes=['content'], morecols=5)
+        content_entry = nodes.entry(classes=["content"], morecols=5)
         content_entry.insert(0, self.node.children)
         content_row += content_entry
 
         # FOOTER row
-        footer_row = nodes.row(classes=['footer'])
+        footer_row = nodes.row(classes=["footer"])
         self.node_tbody += footer_row
         # FOOTER left
-        footer_left_entry = nodes.entry(classes=['footer_left'], morecols=1)
-        footer_left_entry += self.get_section('footer_left')
+        footer_left_entry = nodes.entry(classes=["footer_left"], morecols=1)
+        footer_left_entry += self.get_section("footer_left")
         footer_row += footer_left_entry
         # FOOTER mid
-        footer_entry = nodes.entry(classes=['footer'], morecols=1)
-        footer_entry += self.get_section('footer')
+        footer_entry = nodes.entry(classes=["footer"], morecols=1)
+        footer_entry += self.get_section("footer")
         footer_row += footer_entry
         # FOOTER right
-        footer_right_entry = nodes.entry(classes=['footer_right'], morecols=1)
-        footer_right_entry += self.get_section('footer_right')
+        footer_right_entry = nodes.entry(classes=["footer_right"], morecols=1)
+        footer_right_entry += self.get_section("footer_right")
         footer_row += footer_right_entry
 
         # Construct table
@@ -1074,27 +1157,27 @@ class LayoutHandler:
             node_tgroup += node_colspec
 
         # CONTENT row
-        content_row = nodes.row(classes=['content'])
+        content_row = nodes.row(classes=["content"])
 
         if side_left:
-            side_entry = nodes.entry(classes=['side', 'left'], morerows=side_morerows)
-            side_entry += self.get_section('side')
+            side_entry = nodes.entry(classes=["side", "left"], morerows=side_morerows)
+            side_entry += self.get_section("side")
             content_row += side_entry
 
-        content_entry = nodes.entry(classes=['content'])
+        content_entry = nodes.entry(classes=["content"])
         content_entry.insert(0, self.node.children)
         content_row += content_entry
 
         if side_right:
-            side_entry = nodes.entry(classes=['side', 'right'], morerows=side_morerows)
-            side_entry += self.get_section('side')
+            side_entry = nodes.entry(classes=["side", "right"], morerows=side_morerows)
+            side_entry += self.get_section("side")
             content_row += side_entry
 
         # FOOTER row
         if footer:
-            footer_row = nodes.row(classes=['footer'])
-            footer_entry = nodes.entry(classes=['footer'])
-            footer_entry += self.get_section('footer')
+            footer_row = nodes.row(classes=["footer"])
+            footer_entry = nodes.entry(classes=["footer"])
+            footer_entry += self.get_section("footer")
             footer_row += footer_entry
 
         # Construct table

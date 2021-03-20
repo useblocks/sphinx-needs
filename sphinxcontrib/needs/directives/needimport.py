@@ -1,11 +1,10 @@
-import os
 import json
+import os
 import re
-import six
 
+import six
 from docutils import nodes
-from docutils.parsers.rst import directives
-from docutils.parsers.rst import Directive
+from docutils.parsers.rst import Directive, directives
 from jinja2 import Template
 
 from sphinxcontrib.needs.filter_common import filter_single_need
@@ -22,12 +21,13 @@ class NeedimportDirective(Directive):
     required_arguments = 1
     optional_arguments = 0
 
-    option_spec = {'version': directives.unchanged_required,
-                   'hide': directives.flag,
-                   'filter': directives.unchanged_required,
-                   'id_prefix': directives.unchanged_required,
-                   'tags': directives.unchanged_required
-                   }
+    option_spec = {
+        "version": directives.unchanged_required,
+        "hide": directives.flag,
+        "filter": directives.unchanged_required,
+        "id_prefix": directives.unchanged_required,
+        "tags": directives.unchanged_required,
+    }
 
     final_argument_whitespace = True
 
@@ -50,7 +50,9 @@ class NeedimportDirective(Directive):
             need_import_path = os.path.join(env.app.confdir, need_import_path)
 
         if not os.path.exists(need_import_path):
-            raise ReferenceError("Could not load needs import file {0}".format(need_import_path))
+            raise ReferenceError(
+                "Could not load needs import file {0}".format(need_import_path)
+            )
 
         with open(need_import_path, "r") as needs_file:
             needs_file_content = needs_file.read()
@@ -66,9 +68,17 @@ class NeedimportDirective(Directive):
                 if not isinstance(version, six.string_types):
                     raise KeyError
             except KeyError:
-                raise CorruptedNeedsFile("Key 'current_version' missing or corrupted in {0}".format(need_import_path))
+                raise CorruptedNeedsFile(
+                    "Key 'current_version' missing or corrupted in {0}".format(
+                        need_import_path
+                    )
+                )
         if version not in needs_import_list["versions"].keys():
-            raise VersionNotFound("Version {0} not found in needs import file {1}".format(version, need_import_path))
+            raise VersionNotFound(
+                "Version {0} not found in needs import file {1}".format(
+                    version, need_import_path
+                )
+            )
 
         needs_list = needs_import_list["versions"][version]["needs"]
 
@@ -89,15 +99,17 @@ class NeedimportDirective(Directive):
                     # Support both ways of addressing the description, as "description" is used in json file, but
                     # "content" is the sphinx internal name for this kind of information
                     "content": need["description"],
-                    "description": need["description"]
+                    "description": need["description"],
                 }
                 try:
                     if filter_single_need(filter_context, filter_string):
                         needs_list_filtered[key] = need
                 except Exception as e:
-                    logger.warning("needimport: Filter {} not valid. Error: {}. {}{}".format(filter_string, e,
-                                                                                             self.docname,
-                                                                                             self.lineno))
+                    logger.warning(
+                        "needimport: Filter {} not valid. Error: {}. {}{}".format(
+                            filter_string, e, self.docname, self.lineno
+                        )
+                    )
 
         needs_list = needs_list_filtered
 
@@ -114,19 +126,24 @@ class NeedimportDirective(Directive):
                                 need["links"][n] = "".join([id_prefix, id])
                     # Manipulate descriptions
                     # ToDo: Use regex for better matches.
-                    need["description"] = need["description"].replace(id, "".join([id_prefix, id]))
+                    need["description"] = need["description"].replace(
+                        id, "".join([id_prefix, id])
+                    )
 
         # tags update
         for key, need in needs_list.items():
             need["tags"] = need["tags"] + tags
 
-        template_location = os.path.join(os.path.dirname(os.path.abspath(__file__)), "needimport_template.rst")
+        template_location = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "needimport_template.rst"
+        )
         with open(template_location, "r") as template_file:
             template_content = template_file.read()
         template = Template(template_content)
         content = template.render(needs_list=needs_list, hide=hide, id_prefix=id_prefix)
-        self.state_machine.insert_input(content.split('\n'),
-                                        self.state_machine.document.attributes['source'])
+        self.state_machine.insert_input(
+            content.split("\n"), self.state_machine.document.attributes["source"]
+        )
 
         return []
 

@@ -3,21 +3,22 @@ import hashlib
 import re
 
 from docutils import nodes
-from docutils.parsers.rst import directives
-from docutils.parsers.rst import Directive
-from sphinx.addnodes import desc_signature, desc_name
+from docutils.parsers.rst import Directive, directives
+from sphinx.addnodes import desc_name, desc_signature
 
 from sphinxcontrib.needs.api import add_need
-
-from sphinxcontrib.needs.functions import resolve_dynamic_values, find_and_replace_node_content
 from sphinxcontrib.needs.api.exceptions import NeedsInvalidException
+from sphinxcontrib.needs.functions import (
+    find_and_replace_node_content,
+    resolve_dynamic_values,
+)
 from sphinxcontrib.needs.functions.functions import check_and_get_content
 from sphinxcontrib.needs.layout import build_need
 from sphinxcontrib.needs.logging import get_logger
 
 logger = get_logger(__name__)
 
-NON_BREAKING_SPACE = re.compile('\xa0+')
+NON_BREAKING_SPACE = re.compile("\xa0+")
 
 
 class Need(nodes.General, nodes.Element):
@@ -36,6 +37,7 @@ class Need(nodes.General, nodes.Element):
 
     headline and content container get added later during event handling (process_need_nodes()).
     """
+
     child_text_separator = "\n"
 
 
@@ -45,26 +47,28 @@ class NeedDirective(Directive):
 
     It only creates a basic node-structure to support later manipulation.
     """
+
     # this enables content in the directive
     has_content = True
 
     required_arguments = 1
     optional_arguments = 0
-    option_spec = {'id': directives.unchanged_required,
-                   'status': directives.unchanged_required,
-                   'tags': directives.unchanged_required,
-                   'links': directives.unchanged_required,
-                   'collapse': directives.unchanged_required,
-                   'hide': directives.flag,
-                   'title_from_content': directives.flag,
-                   'style': directives.unchanged_required,
-                   'layout': directives.unchanged_required,
-                   'template': directives.unchanged_required,
-                   'pre_template': directives.unchanged_required,
-                   'post_template': directives.unchanged_required,
-                   'duration': directives.unchanged_required,
-                   'completion': directives.unchanged_required,
-                   }
+    option_spec = {
+        "id": directives.unchanged_required,
+        "status": directives.unchanged_required,
+        "tags": directives.unchanged_required,
+        "links": directives.unchanged_required,
+        "collapse": directives.unchanged_required,
+        "hide": directives.flag,
+        "title_from_content": directives.flag,
+        "style": directives.unchanged_required,
+        "layout": directives.unchanged_required,
+        "template": directives.unchanged_required,
+        "pre_template": directives.unchanged_required,
+        "post_template": directives.unchanged_required,
+        "duration": directives.unchanged_required,
+        "completion": directives.unchanged_required,
+    }
 
     final_argument_whitespace = True
 
@@ -94,30 +98,44 @@ class NeedDirective(Directive):
         id = self.options.get("id", None)
         content = "\n".join(self.content)
         status = self.options.get("status", None)
-        tags = self.options.get("tags", '')
+        tags = self.options.get("tags", "")
         style = self.options.get("style", None)
-        layout = self.options.get("layout", '')
+        layout = self.options.get("layout", "")
         template = self.options.get("template", None)
         pre_template = self.options.get("pre_template", None)
         post_template = self.options.get("post_template", None)
         duration = self.options.get("duration", None)
         completion = self.options.get("completion", None)
 
-        need_extra_options = {
-            'duration': duration,
-            'completion': completion
-        }
+        need_extra_options = {"duration": duration, "completion": completion}
         for extra_link in env.config.needs_extra_links:
-            need_extra_options[extra_link['option']] = self.options.get(extra_link['option'], '')
+            need_extra_options[extra_link["option"]] = self.options.get(
+                extra_link["option"], ""
+            )
 
         for extra_option in env.config.needs_extra_options.keys():
-            need_extra_options[extra_option] = self.options.get(extra_option, '')
+            need_extra_options[extra_option] = self.options.get(extra_option, "")
 
-        return add_need(env.app, self.state, self.docname, self.lineno,
-                        need_type=self.name, title=self.trimmed_title, id=id, content=content,
-                        status=status, tags=tags,
-                        hide=hide, template=template, pre_template=pre_template, post_template=post_template,
-                        collapse=collapse, style=style, layout=layout, **need_extra_options)
+        return add_need(
+            env.app,
+            self.state,
+            self.docname,
+            self.lineno,
+            need_type=self.name,
+            title=self.trimmed_title,
+            id=id,
+            content=content,
+            status=status,
+            tags=tags,
+            hide=hide,
+            template=template,
+            pre_template=pre_template,
+            post_template=post_template,
+            collapse=collapse,
+            style=style,
+            layout=layout,
+            **need_extra_options
+        )
 
     def read_in_links(self, name):
         # Get links
@@ -127,8 +145,10 @@ class NeedDirective(Directive):
             # links = [link.strip() for link in re.split(";|,", links) if not link.isspace()]
             for link in re.split(";|,", links_string):
                 if link.isspace():
-                    logger.warning('Grubby link definition found in need {}. '
-                                   'Defined link contains spaces only.'.format(id))
+                    logger.warning(
+                        "Grubby link definition found in need {}. "
+                        "Defined link contains spaces only.".format(id)
+                    )
                 else:
                     links.append(link.strip())
 
@@ -138,11 +158,13 @@ class NeedDirective(Directive):
         return _fix_list_dyn_func(links)
 
     def make_hashed_id(self, type_prefix, id_length):
-        hashable_content = self.full_title or '\n'.join(self.content)
-        return "%s%s" % (type_prefix,
-                         hashlib.sha1(hashable_content.encode("UTF-8"))
-                         .hexdigest()
-                         .upper()[:id_length])
+        hashable_content = self.full_title or "\n".join(self.content)
+        return "%s%s" % (
+            type_prefix,
+            hashlib.sha1(hashable_content.encode("UTF-8"))
+            .hexdigest()
+            .upper()[:id_length],
+        )
 
     @property
     def env(self):
@@ -150,8 +172,10 @@ class NeedDirective(Directive):
 
     @property
     def title_from_content(self):
-        return ('title_from_content' in self.options
-                or self.env.config.needs_title_from_content)
+        return (
+            "title_from_content" in self.options
+            or self.env.config.needs_title_from_content
+        )
 
     @property
     def docname(self):
@@ -164,9 +188,9 @@ class NeedDirective(Directive):
         if max_length == -1 or len(title) <= max_length:
             return title
         elif max_length <= 3:
-            return title[:self.max_title_length]
+            return title[: self.max_title_length]
         else:
-            return title[:self.max_title_length - 3] + '...'
+            return title[: self.max_title_length - 3] + "..."
 
     @property
     def max_title_length(self):
@@ -179,23 +203,25 @@ class NeedDirective(Directive):
         directive argument, first sentence of requirement (if
         `:title_from_content:` was set, and '' if no title is to be derived."""
         if len(self.arguments) > 0:  # a title was passed
-            if 'title_from_content' in self.options:
+            if "title_from_content" in self.options:
                 self.log.warning(
                     'Needs: need "{}" has :title_from_content: set, '
-                    'but a title was provided. (see file {})'
-                        .format(self.arguments[0], self.docname)
+                    "but a title was provided. (see file {})".format(
+                        self.arguments[0], self.docname
+                    )
                 )
             return self.arguments[0]
         elif self.title_from_content:
-            first_sentence = re.split(r'[.\n]', '\n'.join(self.content))[0]
+            first_sentence = re.split(r"[.\n]", "\n".join(self.content))[0]
             if not first_sentence:
-                raise NeedsInvalidException(':title_from_content: set, but '
-                                            'no content provided. '
-                                            '(Line {} of file {}'
-                                            .format(self.lineno, self.docname))
+                raise NeedsInvalidException(
+                    ":title_from_content: set, but "
+                    "no content provided. "
+                    "(Line {} of file {}".format(self.lineno, self.docname)
+                )
             return first_sentence
         else:
-            return ''
+            return ""
 
 
 def get_sections_and_signature(need_info):
@@ -203,7 +229,7 @@ def get_sections_and_signature(need_info):
     section of the current need and then its parent sections"""
     sections = []
     signature = None
-    current_node = need_info['target_node']
+    current_node = need_info["target_node"]
     while current_node:
         if isinstance(current_node, nodes.section):
             title = current_node.children[0].astext()
@@ -211,7 +237,7 @@ def get_sections_and_signature(need_info):
             # multiple non-breaking space unicode characters into the title
             # we'll replace those with a simple space to make them easier to
             # use in filters
-            title = NON_BREAKING_SPACE.sub(' ', title)
+            title = NON_BREAKING_SPACE.sub(" ", title)
             sections.append(title)
 
         # Checking for a signature defined "above" the need.
@@ -225,13 +251,14 @@ def get_sections_and_signature(need_info):
                 if isinstance(sibling, desc_signature):
                     # Check the child of the found signature for the text content/node.
                     for desc_child in sibling.children:
-                        if isinstance(desc_child, desc_name) and \
-                                isinstance(desc_child.children[0], nodes.Text):
+                        if isinstance(desc_child, desc_name) and isinstance(
+                            desc_child.children[0], nodes.Text
+                        ):
                             signature = desc_child.children[0]
                 if signature:
                     break
 
-        current_node = getattr(current_node, 'parent', None)
+        current_node = getattr(current_node, "parent", None)
     return sections, signature
 
 
@@ -240,20 +267,24 @@ def purge_needs(app, env, docname):
     Gets executed, if a doc file needs to be purged/ read in again.
     So this code delete all found needs for the given docname.
     """
-    if not hasattr(env, 'needs_all_needs'):
+    if not hasattr(env, "needs_all_needs"):
         return
-    env.needs_all_needs = {key: need for key, need in env.needs_all_needs.items() if need['docname'] != docname}
+    env.needs_all_needs = {
+        key: need
+        for key, need in env.needs_all_needs.items()
+        if need["docname"] != docname
+    }
 
 
 def add_sections(app, doctree, fromdocname):
     """Add section titles to the needs as additional attributes that can
     be used in tables and filters"""
-    needs = getattr(app.builder.env, 'needs_all_needs', {})
+    needs = getattr(app.builder.env, "needs_all_needs", {})
     for need_info in needs.values():
         sections, signature = get_sections_and_signature(need_info)
-        need_info['sections'] = sections
-        need_info['section_name'] = sections[0] if sections else ""
-        need_info['signature'] = signature if signature else ""
+        need_info["sections"] = sections
+        need_info["section_name"] = sections[0] if sections else ""
+        need_info["signature"] = signature if signature else ""
 
 
 def process_need_nodes(app, doctree, fromdocname):
@@ -283,17 +314,19 @@ def process_need_nodes(app, doctree, fromdocname):
 
     # Create back links of common links and extra links
     for links in env.config.needs_extra_links:
-        create_back_links(env, links['option'])
+        create_back_links(env, links["option"])
 
     for node_need in doctree.traverse(Need):
         need_id = node_need.attributes["ids"][0]
         need_data = needs[need_id]
 
         find_and_replace_node_content(node_need, env, need_data)
-        for index, attribute in enumerate(node_need.attributes['classes']):
-            node_need.attributes['classes'][index] = check_and_get_content(attribute, need_data, env)
+        for index, attribute in enumerate(node_need.attributes["classes"]):
+            node_need.attributes["classes"][index] = check_and_get_content(
+                attribute, need_data, env
+            )
 
-        layout = need_data['layout'] or app.config.needs_default_layout
+        layout = need_data["layout"] or app.config.needs_default_layout
 
         build_need(layout, node_need, app)
 
@@ -307,16 +340,16 @@ def create_back_links(env, option):
     :param env: sphinx enviroment
     :return: None
     """
-    option_back = '{}_back'.format(option)
-    if env.needs_workflow['backlink_creation_{}'.format(option)]:
+    option_back = "{}_back".format(option)
+    if env.needs_workflow["backlink_creation_{}".format(option)]:
         return
 
     needs = env.needs_all_needs
     for key, need in needs.items():
         for link in need[option]:
-            link_main = link.split('.')[0]
+            link_main = link.split(".")[0]
             try:
-                link_part = link.split('.')[1]
+                link_part = link.split(".")[1]
             except IndexError:
                 link_part = None
 
@@ -326,12 +359,15 @@ def create_back_links(env, option):
 
                 # Handling of links to need_parts inside a need
                 if link_part:
-                    if link_part in needs[link_main]['parts']:
-                        if option_back not in needs[link_main]['parts'][link_part].keys():
-                            needs[link_main]['parts'][link_part][option_back] = []
-                        needs[link_main]['parts'][link_part][option_back].append(key)
+                    if link_part in needs[link_main]["parts"]:
+                        if (
+                            option_back
+                            not in needs[link_main]["parts"][link_part].keys()
+                        ):
+                            needs[link_main]["parts"][link_part][option_back] = []
+                        needs[link_main]["parts"][link_part][option_back].append(key)
 
-    env.needs_workflow['backlink_creation_{}'.format(option)] = True
+    env.needs_workflow["backlink_creation_{}".format(option)] = True
 
 
 def _fix_list_dyn_func(list):
@@ -356,10 +392,10 @@ def _fix_list_dyn_func(list):
     open_func_string = False
     new_list = []
     for element in list:
-        if '[[' in element:
+        if "[[" in element:
             open_func_string = True
             new_link = [element]
-        elif ']]' in element:
+        elif "]]" in element:
             new_link.append(element)
             open_func_string = False
             element = ",".join(new_link)
@@ -384,11 +420,11 @@ def html_visit(self, node):
     Visitor method for Need-node of builder 'html'.
     Does only wrap the Need-content into an extra <div> with class=need
     """
-    self.body.append(self.starttag(node, 'div', '', CLASS='need'))
+    self.body.append(self.starttag(node, "div", "", CLASS="need"))
 
 
 def html_depart(self, node):
-    self.body.append('</div>')
+    self.body.append("</div>")
 
 
 def latex_visit(self, node):

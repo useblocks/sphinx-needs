@@ -4,11 +4,14 @@ API to get or add specific sphinx needs configuration parameters.
 All functions here are available under ``sphinxcontrib.api``. So do not import this module directly.
 """
 from docutils.parsers.rst import directives
-
-from sphinxcontrib.needs.api.exceptions import NeedsApiConfigException, NeedsApiConfigWarning
-from sphinxcontrib.needs.functions import register_func
-import sphinxcontrib.needs.directives.need
 from sphinx.application import Sphinx
+
+import sphinxcontrib.needs.directives.need
+from sphinxcontrib.needs.api.exceptions import (
+    NeedsApiConfigException,
+    NeedsApiConfigWarning,
+)
+from sphinxcontrib.needs.functions import register_func
 
 
 def get_need_types(app: Sphinx):
@@ -25,10 +28,10 @@ def get_need_types(app: Sphinx):
     :return: list of strings
     """
     needs_types = app.config.needs_types
-    return [x['directive'] for x in needs_types]
+    return [x["directive"] for x in needs_types]
 
 
-def add_need_type(app: Sphinx, directive, title, prefix, color='#ffffff', style='node'):
+def add_need_type(app: Sphinx, directive, title, prefix, color="#ffffff", style="node"):
     """
     Adds a new need_type to the configuration.
 
@@ -52,18 +55,22 @@ def add_need_type(app: Sphinx, directive, title, prefix, color='#ffffff', style=
     """
 
     needs_types = app.config.needs_types
-    type_names = [x['directive'] for x in needs_types]
+    type_names = [x["directive"] for x in needs_types]
 
     if directive in type_names:
-        raise NeedsApiConfigException('{} already exists as need type'.format(directive))
+        raise NeedsApiConfigException(
+            "{} already exists as need type".format(directive)
+        )
 
-    needs_types.append({
-        'directive': directive,
-        'title': title,
-        'prefix': prefix,
-        'color': color,
-        'style': style
-    })
+    needs_types.append(
+        {
+            "directive": directive,
+            "title": title,
+            "prefix": prefix,
+            "color": color,
+            "style": style,
+        }
+    )
     app.add_directive(directive, sphinxcontrib.needs.directives.need.NeedDirective)
 
 
@@ -87,7 +94,7 @@ def add_extra_option(app, name):
     extra_options = app.config.needs_extra_options
 
     if name in extra_options.keys():
-        raise NeedsApiConfigWarning('Option {} already registered.'.format(name))
+        raise NeedsApiConfigWarning("Option {} already registered.".format(name))
 
     extra_options[name] = directives.unchanged
 
