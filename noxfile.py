@@ -1,6 +1,7 @@
 import nox
 from nox_poetry import session
 
+DEFAULT_PYTHON_VERSION = "3.9"
 PYTHON_VERSIONS = ["3.6", "3.7", "3.8", "3.9"]
 SPHINX_VERSIONS = ["2.2", "2.3", "2.4", "3.0", "3.2"]
 TEST_DEPENDENCIES = [
@@ -39,7 +40,7 @@ def tests(session, sphinx):
         session.skip("unsupported combination")
 
 
-@session(python="3.9")
+@session(python=DEFAULT_PYTHON_VERSION)
 def lint(session):
     session.install(*LINT_DEPENDENCIES)
     session.run("make", "lint", external=True)
