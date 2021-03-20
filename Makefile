@@ -19,3 +19,8 @@ docs-html:
 .PHONY: docs-pdf
 docs-pdf:
 	poetry run make --directory docs/ latexpdf
+
+.PHONY: format
+format:
+	poetry run black ${SRC_FILES}
+	poetry run isort ${SRC_FILES}
