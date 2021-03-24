@@ -323,8 +323,6 @@ def add_need(
     # Title and meta data information gets added alter during event handling via
     # process_need_nodes(). We just add a basic need node and render the rst-based
     # content, because this can not be done later.
-    # style_classes = ['need', type_name, 'need-{}'.format(type_name.lower())]
-    # # Used < 0.4.4
     style_classes = ["need", "need-{}".format(need_type_info.directive.lower())]
     if style:
         style_classes.append(style)
