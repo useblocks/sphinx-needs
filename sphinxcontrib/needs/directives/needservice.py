@@ -26,7 +26,7 @@ class NeedserviceDirective(Directive):
     final_argument_whitespace = True
 
     def __init__(self, *args, **kw):
-        super(NeedserviceDirective, self).__init__(*args, **kw)
+        super().__init__(*args, **kw)
         self.log = get_logger(__name__)
 
     @property
