@@ -23,6 +23,7 @@ jobs:
           python -m pip install poetry nox nox-poetry
       - name: Run Tests
         run: nox --non-interactive --session "tests-${{ matrix.python-version }}(sphinx='${{ matrix.sphinx-version }}')" -- --full-trace
+
   lint:
     name: Lint
     runs-on: ubuntu-20.04
