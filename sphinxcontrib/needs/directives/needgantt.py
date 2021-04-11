@@ -220,7 +220,9 @@ def process_needgantt(app, doctree, fromdocname):
                 if not (duration and duration.isdigit()):
                     logger.warning(
                         "Duration not set or invalid for needgantt chart. "
-                        "Need: {}. Duration: {}".format(need["id"], duration)
+                        "Need: {need}. Duration: {duration}",
+                        need=need["id"],
+                        duration=duration,
                     )
                     duration = 1
                 gantt_element = "[{}] as [{}] lasts {} days\n".format(

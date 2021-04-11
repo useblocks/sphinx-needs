@@ -38,7 +38,7 @@ class NeedsBuilder(Builder):
         try:
             needs_list.write_json()
         except Exception as e:
-            log.error("Error during writing json file: {0}".format(e))
+            log.error("Error during writing json file: {e}", e=e)
         else:
             log.info("Needs successfully exported")
 

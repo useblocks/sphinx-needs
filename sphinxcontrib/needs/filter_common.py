@@ -75,7 +75,7 @@ def process_filters(all_needs, current_needlist):
             all_needs = sorted(all_needs, key=lambda node: node[sort_key] or "")
         except KeyError as e:
             logger.warning(
-                "Sorting parameter {0} not valid: Error: {1}".format(sort_key, e)
+                "Sorting parameter {key} not valid: Error: {e}", key=sort_key, e=e
             )
 
     found_needs_by_options = []
@@ -216,7 +216,9 @@ def filter_needs(needs, filter_string="", current_need=None):
             if filter_single_need(filter_need, filter_string, needs, current_need):
                 found_needs.append(filter_need)
         except Exception as e:
-            logger.warning("Filter {0} not valid: Error: {1}".format(filter_string, e))
+            logger.warning(
+                "Filter {filter} not valid: Error: {e}", filter=filter_string, e=e
+            )
 
     return found_needs
 

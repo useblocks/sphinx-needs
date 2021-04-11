@@ -45,9 +45,9 @@ def update_need_with_parts(env, need, part_nodes):
 
         if inline_id in need["parts"].keys():
             log.warning(
-                "part_need id {} in need {} is already taken. need_part may get overridden.".format(
-                    inline_id, need["id"]
-                )
+                "part_need id {id} in need {need} is already taken. need_part may get overridden.",
+                id=inline_id,
+                need=need["id"],
             )
 
         need["parts"][inline_id] = {

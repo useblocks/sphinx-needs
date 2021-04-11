@@ -166,11 +166,10 @@ def process_needflow(app, doctree, fromdocname):
         for lt in option_link_types:
             if lt not in [link["option"].upper() for link in link_types]:
                 logger.warning(
-                    "Unknown link type {link_type} in needflow {flow}. Allowed values: {link_types}".format(
-                        link_type=lt,
-                        flow=current_needflow["target_node"],
-                        link_types=",".join(link_types),
-                    )
+                    "Unknown link type {link_type} in needflow {flow}. Allowed values: {link_types}",
+                    link_type=lt,
+                    flow=current_needflow["target_node"],
+                    link_types=",".join(link_types),
                 )
 
         content = []

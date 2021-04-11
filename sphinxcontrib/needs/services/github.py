@@ -119,7 +119,9 @@ class GithubService(BaseService):
             }
 
         self.log.info(
-            "Service {} requesting data for query: {}".format(self.name, query)
+            "Service {service} requesting data for query: {query}",
+            service=self.name,
+            query=query,
         )
 
         if self.username:
@@ -168,7 +170,7 @@ class GithubService(BaseService):
     def request(self, options=None):
         if options is None:
             options = {}
-        self.log.debug("Requesting data for service {}".format(self.name))
+        self.log.debug("Requesting data for service {name}", name=self.name)
 
         if "query" not in options and "specific" not in options:
             raise NeedGithubServiceException(
@@ -324,23 +326,25 @@ class GithubService(BaseService):
                         f.write(response.content)
                 elif response.status_code == 302:
                     self.log.warning(
-                        "GitHub service {} could not download avatar image "
-                        "from {}.\n"
-                        "    Status code: {}\n"
+                        "GitHub service {service} could not download avatar image "
+                        "from {url}.\n"
+                        "    Status code: {status}\n"
                         "    Reason: Looks like the authentication provider tries to redirect you."
                         " This is not supported and is a common problem, "
-                        "if you use GitHub Enterprise.".format(
-                            self.name, avatar_url, response.status_code
-                        )
+                        "if you use GitHub Enterprise.",
+                        service=self.name,
+                        url=avatar_url,
+                        status=response.status_code,
                     )
                     avatar_file_path = default_avatar_file_path
                 else:
                     self.log.warning(
-                        "GitHub service {} could not download avatar image "
-                        "from {}.\n"
-                        "    Status code: {}".format(
-                            self.name, avatar_url, response.status_code
-                        )
+                        "GitHub service {service} could not download avatar image "
+                        "from {url}.\n"
+                        "    Status code: {status}",
+                        service=self.name,
+                        url=avatar_url,
+                        status=response.status_code,
                     )
                     avatar_file_path = default_avatar_file_path
         else:

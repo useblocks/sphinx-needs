@@ -205,10 +205,10 @@ class NeedDirective(Directive):
         if len(self.arguments) > 0:  # a title was passed
             if "title_from_content" in self.options:
                 self.log.warning(
-                    'Needs: need "{}" has :title_from_content: set, '
-                    "but a title was provided. (see file {})".format(
-                        self.arguments[0], self.docname
-                    )
+                    'Needs: need "{need}" has :title_from_content: set, '
+                    "but a title was provided. (see file {file})",
+                    need=self.arguments[0],
+                    file=self.docname,
                 )
             return self.arguments[0]
         elif self.title_from_content:

@@ -106,9 +106,11 @@ class NeedimportDirective(Directive):
                         needs_list_filtered[key] = need
                 except Exception as e:
                     logger.warning(
-                        "needimport: Filter {} not valid. Error: {}. {}{}".format(
-                            filter_string, e, self.docname, self.lineno
-                        )
+                        "needimport: Filter {filter} not valid. Error: {e}. {file}{line}",
+                        filter=filter_string,
+                        e=e,
+                        file=self.docname,
+                        line=self.lineno,
                     )
 
         needs_list = needs_list_filtered

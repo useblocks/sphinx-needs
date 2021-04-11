@@ -180,8 +180,9 @@ def add_need(
         for i in range(len(tags)):
             if len(tags[i]) == 0 or tags[i].isspace():
                 logger.warning(
-                    "Scruffy tag definition found in need {}. "
-                    "Defined tag contains spaces only.".format(need_id)
+                    "Scruffy tag definition found in need {id}. "
+                    "Defined tag contains spaces only.",
+                    id=need_id,
                 )
             else:
                 new_tags.append(tags[i])
@@ -421,8 +422,9 @@ def _read_in_links(links_string):
         for link in re.split(";|,", links_string):
             if link.isspace():
                 logger.warning(
-                    "Grubby link definition found in need {}. "
-                    "Defined link contains spaces only.".format(id)
+                    "Grubby link definition found in need {id}. "
+                    "Defined link contains spaces only.",
+                    id=id,
                 )
             else:
                 links.append(link.strip())
