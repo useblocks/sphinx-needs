@@ -7,6 +7,7 @@ Changelog
 * Bugfix: Need-service calls get mocked during tests, so that tests don't need reachable external services anymore.
 * Bugfix: No warning is thrown anymore, if :ref:`needservice` can't find a service config in ``conf.py``
   (`#168 <https://github.com/useblocks/sphinxcontrib-needs/issues/168>`_)
+* Bugfix: Using correct indention for pre and post_template function of needs.
 
 
 0.6.0
