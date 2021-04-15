@@ -78,7 +78,7 @@ class GithubService(BaseService):
         # Set need_type to use by default
         self.need_type = self.config.get('need_type', self.gh_type_config[self.gh_type]['need_type'])
 
-        super(GithubService, self).__init__()
+        super().__init__()
 
     def _send(self, query, options, specific=False):
         headers = {}
