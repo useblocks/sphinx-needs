@@ -113,11 +113,12 @@ class NeedDirective(Directive):
         for extra_option in env.config.needs_extra_options.keys():
             need_extra_options[extra_option] = self.options.get(extra_option, '')
 
-        return add_need(env.app, self.state, self.docname, self.lineno,
-                        need_type=self.name, title=self.trimmed_title, id=id, content=content,
-                        status=status, tags=tags,
-                        hide=hide, template=template, pre_template=pre_template, post_template=post_template,
-                        collapse=collapse, style=style, layout=layout, **need_extra_options)
+        need_nodes = add_need(env.app, self.state, self.docname, self.lineno,
+                              need_type=self.name, title=self.trimmed_title, id=id, content=content,
+                              status=status, tags=tags,
+                              hide=hide, template=template, pre_template=pre_template, post_template=post_template,
+                              collapse=collapse, style=style, layout=layout, **need_extra_options)
+        return need_nodes
 
     def read_in_links(self, name):
         # Get links
@@ -131,7 +132,6 @@ class NeedDirective(Directive):
                                    'Defined link contains spaces only.'.format(id))
                 else:
                     links.append(link.strip())
-
 
             # This may have cut also dynamic function strings, as they can contain , as well.
             # So let put them together again

@@ -307,7 +307,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
         style_classes.append(style)
 
     node_need = sphinxcontrib.needs.directives.need.Need(
-        '', classes=style_classes)
+        '', classes=style_classes, ids=[need_id])
 
     # Render rst-based content and add it to the need-node
 
