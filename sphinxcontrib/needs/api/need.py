@@ -324,13 +324,13 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
         node_need_pre_content = _render_template(pre_content, docname, lineno, state)
         pre_container = nodes.container()
         pre_container += node_need_pre_content.children
-        return_nodes = [pre_container] + return_nodes
+        return_nodes = node_need_pre_content.children + return_nodes
 
     if post_content:
         node_need_post_content = _render_template(post_content, docname, lineno, state)
         post_container = nodes.container()
         post_container += node_need_post_content.children
-        return_nodes = return_nodes + [post_container]
+        return_nodes = return_nodes + node_need_post_content.children
 
     return return_nodes
 
