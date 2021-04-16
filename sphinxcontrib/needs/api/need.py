@@ -132,7 +132,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
             id=need_id, regex=env.app.config.needs_id_regex))
 
     # Calculate target id, to be able to set a link back
-    target_node = nodes.target('', '', ids=[need_id])
+    target_node = nodes.target('', '', ids=[need_id],  refid=need_id)
 
     # Handle status
     # Check if status is in needs_statuses. If not raise an error.
@@ -307,7 +307,7 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
         style_classes.append(style)
 
     node_need = sphinxcontrib.needs.directives.need.Need(
-        '', classes=style_classes, ids=[need_id])
+        '', classes=style_classes, ids=[need_id], refid=need_id)
 
     # Render rst-based content and add it to the need-node
 
@@ -376,7 +376,6 @@ def _read_in_links(links_string):
                                'Defined link contains spaces only.'.format(id))
             else:
                 links.append(link.strip())
-
 
         # This may have cut also dynamic function strings, as they can contain , as well.
         # So let put them together again
