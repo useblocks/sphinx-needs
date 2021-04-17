@@ -9,6 +9,8 @@ Changelog
   (`#168 <https://github.com/useblocks/sphinxcontrib-needs/issues/168>`_)
 * Bugfix: Needs nodes get ``ids`` set directly, to avoid empty ids given by sphinx or other extensions for need-nodes.
   (`#193 <https://github.com/useblocks/sphinxcontrib-needs/issues/193>`_)
+* Bugfix: :ref:`needimport` supports extra options and extra fields.
+  (`#227 <https://github.com/useblocks/sphinxcontrib-needs/issues/227>`_)
 * Bugfix: Using correct indention for pre and post_template function of needs.
 
 

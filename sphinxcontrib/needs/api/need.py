@@ -144,7 +144,10 @@ def add_need(app, state, docname, lineno, need_type, title, id=None, content="",
     if tags is None:
         tags = []
     if len(tags) > 0:
-        tags = [tag.strip() for tag in re.split(";|,", tags)]
+
+        # tags should be a string, but it can also be already a list,which can be used.
+        if isinstance(tags, str):
+            tags = [tag.strip() for tag in re.split(";|,", tags)]
         new_tags = []  # Shall contain only valid tags
         for i in range(len(tags)):
             if len(tags[i]) == 0 or tags[i].isspace():
@@ -370,7 +373,13 @@ def _read_in_links(links_string):
     # Get links
     links = []
     if links_string:
-        for link in re.split(";|,", links_string):
+        # Check if links_string is really a string, otherwise it will be a list, which can be used
+        # without modifications
+        if isinstance(links_string, str):
+            link_list = re.split(";|,", links_string)
+        else:
+            link_list = links_string
+        for link in link_list:
             if link.isspace():
                 logger.warning('Grubby link definition found in need {}. '
                                'Defined link contains spaces only.'.format(id))

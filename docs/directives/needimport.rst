@@ -16,6 +16,9 @@ The directive **.. needimport::** can be used in all rst-documents. Simply write
       :tags: imported;external
       :hide:
       :filter: "test" in tags
+      :template: template.rst
+      :pre_template: pre_template.rst
+      :post_template: post_template.rst
 
 The directive needs an absolute or relative path as argument.
 If the path is relative, an absolute path gets calculated with the folder of the **conf.py** as basedir.
@@ -43,4 +46,13 @@ in :ref:`needfilter`.
              The sphinx project owner is responsible for a correct configuration for internal and external needs.
              There is no automatic typ transformation during an import.
 
+Customization
+-------------
+The following options can be set, which overwrite the related options in the imported need itself.
+So you can decide during import what kind of layout or style is used.
 
+* layout
+* style
+* template
+* pre_template
+* post_template
