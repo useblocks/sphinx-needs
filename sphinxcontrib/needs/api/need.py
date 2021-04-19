@@ -6,6 +6,7 @@ from docutils import nodes
 from docutils.statemachine import ViewList
 from jinja2 import Template
 from sphinx.util.nodes import nested_parse_with_titles
+from typing import List, Union
 
 import sphinxcontrib.needs.directives.need
 from sphinxcontrib.needs.api.exceptions import (
@@ -369,7 +370,7 @@ def _render_template(content, docname, lineno, state):
     return node_need_content
 
 
-def _read_in_links(links_string):
+def _read_in_links(links_string: Union[str, List[str]]):
     # Get links
     links = []
     if links_string:

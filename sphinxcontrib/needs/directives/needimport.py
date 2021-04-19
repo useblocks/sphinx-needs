@@ -119,22 +119,19 @@ class NeedimportDirective(Directive):
         for key, need in needs_list.items():
             need["tags"] = need["tags"] + tags
 
-        # template_location = os.path.join(os.path.dirname(os.path.abspath(__file__)), "needimport_template.rst")
-        # with open(template_location, "r") as template_file:
-        #     template_content = template_file.read()
-        # template = Template(template_content)
-        # content = template.render(needs_list=needs_list, hide=hide, id_prefix=id_prefix)
-        # self.state_machine.insert_input(content.split('\n'),
-        #                                 self.state_machine.document.attributes['source'])
-
         need_nodes = []
         for key, need in needs_list.items():
+            # Set some values based on given option or value from imported need.
             need['template'] = self.options.get("template", getattr(need, 'template', None))
             need['pre_template'] = self.options.get("pre_template", getattr(need, 'pre_template', None))
             need['post_template'] = self.options.get("post_template", getattr(need, 'post_template', None))
             need['layout'] = self.options.get("layout", getattr(need, 'layout', None))
             need['style'] = self.options.get("style", getattr(need, 'style', None))
+
+            # The key needs to be different for add_need() api call.
             need['need_type'] = need['type']
+
+            # Replace id, to get unique ids
             need['id'] = id_prefix + need['id']
 
             need['content'] = need['description']
