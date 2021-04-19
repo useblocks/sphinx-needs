@@ -4,6 +4,8 @@ Changelog
 0.6.1 (not released yet)
 ------------------------
 
+* Improvement: Internal change to poetry, nox and github actions.
+  (`#216 <https://github.com/useblocks/sphinxcontrib-needs/issues/216>`_)
 * Bugfix: Need-service calls get mocked during tests, so that tests don't need reachable external services anymore.
 * Bugfix: No warning is thrown anymore, if :ref:`needservice` can't find a service config in ``conf.py``
   (`#168 <https://github.com/useblocks/sphinxcontrib-needs/issues/168>`_)
