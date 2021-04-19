@@ -108,7 +108,7 @@ def split_link_types(link_types: str) -> Iterable[str]:
     def is_valid(link_type) -> bool:
         if len(link_type) == 0 or link_type.isspace():
             logger.warning('Scruffy link_type definition found in needflow {}. '
-                            'Defined link_type contains spaces only.'.format(id))
+                           'Defined link_type contains spaces only.'.format(id))
             return False
         return True
 

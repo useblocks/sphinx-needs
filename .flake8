@@ -1,0 +1,4 @@
+[flake8]
+max-line-length = 120
+per-file-ignores =
+    tests/data/service_github.py: E501

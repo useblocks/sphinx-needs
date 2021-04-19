@@ -307,6 +307,7 @@ Content
    snippets
    support
    changelog
+   contributing
    license
    contributors
 

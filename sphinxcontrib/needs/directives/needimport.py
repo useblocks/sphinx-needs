@@ -6,7 +6,6 @@ import six
 from docutils import nodes
 from docutils.parsers.rst import directives
 from docutils.parsers.rst import Directive
-from jinja2 import Template
 
 from sphinxcontrib.needs.api import add_need
 from sphinxcontrib.needs.filter_common import filter_single_need
@@ -42,7 +41,6 @@ class NeedimportDirective(Directive):
         version = self.options.get("version", None)
         filter_string = self.options.get("filter", None)
         id_prefix = self.options.get("id_prefix", "")
-        hide = True if "hide" in self.options.keys() else False
 
         tags = self.options.get("tags", [])
         if len(tags) > 0:

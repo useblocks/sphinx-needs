@@ -17,7 +17,7 @@ class ServiceManager:
             config = self.app.config.needs_services[name]
         except KeyError:
             self.log.debug('No service config found for {}. '
-                             'Add it in your conf.py to needs_services dictionary.'.format(name))
+                           'Add it in your conf.py to needs_services dictionary.'.format(name))
             config = {}
 
         # Register options from service class

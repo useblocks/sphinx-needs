@@ -26,6 +26,7 @@ class NeedfilterDirective(FilterBase):
     .. deprecated:: 0.2.0
        Use needlist, needtable or needdiagram instead
     """
+    @staticmethod
     def layout(argument):
         return directives.choice(argument, ("list", "table", "diagram"))
 
