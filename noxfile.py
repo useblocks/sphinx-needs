@@ -14,6 +14,8 @@ TEST_DEPENDENCIES = [
 LINT_DEPENDENCIES = [
     "flake8",
     "pep8-naming",
+    "flake8-isort",
+    "flake8-black",
 ]
 
 
