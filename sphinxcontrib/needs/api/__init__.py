@@ -1,4 +1,9 @@
 # flake8: noqa
 
-from .configuration import get_need_types, add_need_type, add_extra_option, add_dynamic_function
+from .configuration import (
+    add_dynamic_function,
+    add_extra_option,
+    add_need_type,
+    get_need_types,
+)
 from .need import add_need, make_hashed_id

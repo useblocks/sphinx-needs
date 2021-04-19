@@ -1,12 +1,13 @@
 from sphinx.builders import Builder
-from sphinxcontrib.needs.utils import NeedsList
+
 from sphinxcontrib.needs.logging import get_logger
+from sphinxcontrib.needs.utils import NeedsList
 
 
 class NeedsBuilder(Builder):
-    name = 'needs'
-    format = 'json'
-    file_suffix = '.txt'
+    name = "needs"
+    format = "json"
+    file_suffix = ".txt"
     links_suffix = None
 
     def write_doc(self, docname, doctree):
@@ -31,7 +32,7 @@ class NeedsBuilder(Builder):
             needs_list.add_need(version, need)
 
         for key, need_filter in filters.items():
-            if need_filter['export_id']:
+            if need_filter["export_id"]:
                 needs_list.add_filter(version, need_filter)
 
         try:

@@ -1,9 +1,9 @@
-import os
-from docutils import nodes
 import json
-from datetime import datetime
+import os
 import shutil
+from datetime import datetime
 
+from docutils import nodes
 from sphinx.application import Sphinx
 
 from sphinxcontrib.needs.logging import get_logger
@@ -13,27 +13,55 @@ logger = get_logger(__name__)
 NEEDS_FUNCTIONS = {}
 
 # List of internal need option names. They should not be used by or presented to user.
-INTERNALS = ['docname', 'lineno', 'target_node', 'refid', 'content', 'pre_content', 'post_content',
-             'collapse', 'parts', 'id_parent',
-             'id_complete', 'title', 'full_title', 'is_part', 'is_need',
-             'type_prefix', 'type_color', 'type_style', 'type', 'type_name', 'id',
-             'hide', 'hide_status', 'hide_tags', 'sections', 'section_name', 'content_node',
-             ]
+INTERNALS = [
+    "docname",
+    "lineno",
+    "target_node",
+    "refid",
+    "content",
+    "pre_content",
+    "post_content",
+    "collapse",
+    "parts",
+    "id_parent",
+    "id_complete",
+    "title",
+    "full_title",
+    "is_part",
+    "is_need",
+    "type_prefix",
+    "type_color",
+    "type_style",
+    "type",
+    "type_name",
+    "id",
+    "hide",
+    "hide_status",
+    "hide_tags",
+    "sections",
+    "section_name",
+    "content_node",
+]
 
 
-MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
-               'September', 'October', 'November', 'December']
+MONTH_NAMES = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+]
 
 
 def row_col_maker(
-    app: Sphinx,
-    fromdocname,
-    all_needs,
-    need_info,
-    need_key,
-    make_ref=False,
-    ref_lookup=False,
-    prefix=''
+    app: Sphinx, fromdocname, all_needs, need_info, need_key, make_ref=False, ref_lookup=False, prefix=""
 ):
     """
     Creates and returns a column.
@@ -48,7 +76,7 @@ def row_col_maker(
     :param prefix: string, which is used as prefix for the text output
     :return: column object (nodes.entry)
     """
-    row_col = nodes.entry(classes=['needs_' + need_key])
+    row_col = nodes.entry(classes=["needs_" + need_key])
     para_col = nodes.paragraph()
 
     if need_key in need_info and need_info[need_key]:
@@ -64,12 +92,12 @@ def row_col_maker(
             link_list = []
             for link_type in app.env.config.needs_extra_links:
                 link_list.append(link_type["option"])
-                link_list.append(link_type["option"] + '_back')
+                link_list.append(link_type["option"] + "_back")
 
             if need_key in link_list:
-                if '.' in datum:
-                    link_id = datum.split('.')[0]
-                    link_part = datum.split('.')[1]
+                if "." in datum:
+                    link_id = datum.split(".")[0]
+                    link_part = datum.split(".")[1]
 
             datum_text = prefix + str(datum)
             text_col = nodes.Text(datum_text, datum_text)
@@ -77,14 +105,14 @@ def row_col_maker(
                 try:
                     ref_col = nodes.reference("", "")
                     if not ref_lookup:
-                        ref_col['refuri'] = app.builder.get_relative_uri(fromdocname, need_info['docname'])
-                        ref_col['refuri'] += "#" + datum
+                        ref_col["refuri"] = app.builder.get_relative_uri(fromdocname, need_info["docname"])
+                        ref_col["refuri"] += "#" + datum
                     else:
                         temp_need = all_needs[link_id]
-                        ref_col['refuri'] = app.builder.get_relative_uri(fromdocname, temp_need['docname'])
-                        ref_col['refuri'] += "#" + temp_need["id"]
+                        ref_col["refuri"] = app.builder.get_relative_uri(fromdocname, temp_need["docname"])
+                        ref_col["refuri"] += "#" + temp_need["id"]
                         if link_part:
-                            ref_col['refuri'] += '.' + link_part
+                            ref_col["refuri"] += "." + link_part
 
                 except KeyError:
                     para_col += text_col
@@ -107,25 +135,43 @@ def rstjinja(app: Sphinx, docname: str, source):
     Render our pages as a jinja template for fancy templating goodness.
     """
     # Make sure we're outputting HTML
-    if app.builder.format != 'html':
+    if app.builder.format != "html":
         return
     src = source[0]
-    rendered = app.builder.templates.render_string(
-        src, app.config.html_context
-    )
+    rendered = app.builder.templates.render_string(src, app.config.html_context)
     source[0] = rendered
 
 
 class NeedsList:
-    JSON_KEY_EXCLUSIONS_NEEDS = {'links_back', 'type_color', 'hide_status',
-                                 'target_node', 'hide', 'type_prefix', 'lineno',
-                                 'collapse', 'type_style', 'hide_tags',
-                                 'content', 'content_node'}
+    JSON_KEY_EXCLUSIONS_NEEDS = {
+        "links_back",
+        "type_color",
+        "hide_status",
+        "target_node",
+        "hide",
+        "type_prefix",
+        "lineno",
+        "collapse",
+        "type_style",
+        "hide_tags",
+        "content",
+        "content_node",
+    }
 
-    JSON_KEY_EXCLUSIONS_FILTERS = {'links_back', 'type_color', 'hide_status',
-                                   'target_node', 'hide', 'type_prefix', 'lineno',
-                                   'collapse', 'type_style', 'hide_tags',
-                                   'content', 'content_node'}
+    JSON_KEY_EXCLUSIONS_FILTERS = {
+        "links_back",
+        "type_color",
+        "hide_status",
+        "target_node",
+        "hide",
+        "type_prefix",
+        "lineno",
+        "collapse",
+        "type_style",
+        "hide_tags",
+        "content",
+        "content_node",
+    }
 
     def __init__(self, config, outdir, confdir):
         self.log = get_logger(__name__)
@@ -138,15 +184,18 @@ class NeedsList:
             "project": self.project,
             "current_version": self.current_version,
             "created": "",
-            "versions": {}}
+            "versions": {},
+        }
 
     def update_or_add_version(self, version):
         if version not in self.needs_list["versions"].keys():
-            self.needs_list["versions"][version] = {"created": "",
-                                                    "needs_amount": 0,
-                                                    "needs": {},
-                                                    "filters_amount": 0,
-                                                    "filters": {}}
+            self.needs_list["versions"][version] = {
+                "created": "",
+                "needs_amount": 0,
+                "needs": {},
+                "filters_amount": 0,
+                "filters": {},
+            }
 
         if "needs" not in self.needs_list["versions"][version].keys():
             self.needs_list["versions"][version]["needs"] = {}
@@ -155,9 +204,8 @@ class NeedsList:
 
     def add_need(self, version, need_info):
         self.update_or_add_version(version)
-        writable_needs = {key: need_info[key] for key in need_info
-                          if key not in self.JSON_KEY_EXCLUSIONS_NEEDS}
-        writable_needs['description'] = need_info['content']
+        writable_needs = {key: need_info[key] for key in need_info if key not in self.JSON_KEY_EXCLUSIONS_NEEDS}
+        writable_needs["description"] = need_info["content"]
         self.needs_list["versions"][version]["needs"][need_info["id"]] = writable_needs
         self.needs_list["versions"][version]["needs_amount"] = len(self.needs_list["versions"][version]["needs"])
 
@@ -169,7 +217,7 @@ class NeedsList:
 
     def wipe_version(self, version):
         if version in self.needs_list["versions"].keys():
-            del (self.needs_list["versions"][version])
+            del self.needs_list["versions"][version]
 
     def write_json(self, file=None):
         # We need to rewrite some data, because this kind of data gets overwritten during needs.json import.

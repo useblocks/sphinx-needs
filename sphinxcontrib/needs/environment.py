@@ -31,21 +31,13 @@ def safe_add_file(filename: Path, app: Sphinx):
     """
     static_data_file = Path("_static") / filename
     if filename.suffix == ".js":
-        if (
-            hasattr(app.builder, "script_files")
-            and static_data_file not in app.builder.script_files
-        ):
+        if hasattr(app.builder, "script_files") and static_data_file not in app.builder.script_files:
             app.add_js_file(str(filename))
     elif filename.suffix == ".css":
-        if (
-            hasattr(app.builder, "css_files")
-            and static_data_file not in app.builder.css_files
-        ):
+        if hasattr(app.builder, "css_files") and static_data_file not in app.builder.css_files:
             app.add_css_file(str(filename))
     else:
-        raise NotImplementedError(
-            "File type {} not support by save_add_file".format(filename.suffix)
-        )
+        raise NotImplementedError("File type {} not support by save_add_file".format(filename.suffix))
 
 
 def safe_remove_file(filename: Path, app: Sphinx):
@@ -116,11 +108,7 @@ def install_styles_static_files(app: Sphinx, env):
 
         if not source_file_path.exists():
             source_file_path = css_root / "blank" / "blank.css"
-            logger.warning(
-                "{0} not found. Copying sphinx-internal blank.css".format(
-                    source_file_path
-                )
-            )
+            logger.warning("{0} not found. Copying sphinx-internal blank.css".format(source_file_path))
 
         dest_file = dest_dir / source_file_path.name
         dest_dir.mkdir(exist_ok=True)

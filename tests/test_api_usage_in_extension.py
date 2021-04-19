@@ -17,13 +17,13 @@ def setup(app):
 """
 
 
-dummy_extension = imp.new_module('dummy_extension.dummy')
+dummy_extension = imp.new_module("dummy_extension.dummy")
 exec(dummy_code, dummy_extension.__dict__)
-sys.modules['dummy_extension.dummy'] = dummy_extension
+sys.modules["dummy_extension.dummy"] = dummy_extension
 
 
-@with_app(buildername='html', srcdir='doc_test/api_doc')
+@with_app(buildername="html", srcdir="doc_test/api_doc")
 def test_api_configuration(app, status, warning):
     app.builder.build_all()
-    html = Path(app.outdir, 'index.html').read_text()
+    html = Path(app.outdir, "index.html").read_text()
     assert html is not None
