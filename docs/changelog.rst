@@ -17,6 +17,8 @@ Changelog
 * Bugfix: Checking for ending `/` of given github api url.
   (`#187 <https://github.com/useblocks/sphinxcontrib-needs/issues/187>`_)
 * Bugfix: Using correct indention for pre and post_template function of needs.
+* Bugfix: Certain log message don't use python internal `id` anymore.
+  (`#2257 <https://github.com/useblocks/sphinxcontrib-needs/issues/225>`_)
 
 
 0.6.0

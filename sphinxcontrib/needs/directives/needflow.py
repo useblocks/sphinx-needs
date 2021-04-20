@@ -60,7 +60,7 @@ class NeedflowDirective(FilterBase):
         targetid = "needflow-{docname}-{id}".format(docname=env.docname, id=id)
         targetnode = nodes.target("", "", ids=[targetid])
 
-        link_types = list(split_link_types(self.options.get("link_types", "")))
+        link_types = list(split_link_types(self.options.get("link_types", "links")))
 
         config_names = self.options.get("config", None)
         configs = []
@@ -108,10 +108,7 @@ class NeedflowDirective(FilterBase):
 def split_link_types(link_types: str) -> Iterable[str]:
     def is_valid(link_type) -> bool:
         if len(link_type) == 0 or link_type.isspace():
-            logger.warning(
-                "Scruffy link_type definition found in needflow {}. "
-                "Defined link_type contains spaces only.".format(id)
-            )
+            logger.warning("Scruffy link_type definition found in needflow." "Defined link_type contains spaces only.")
             return False
         return True
 
