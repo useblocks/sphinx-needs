@@ -25,7 +25,7 @@ docs-pdf:
 	poetry run make --directory docs/ clean && make --directory docs/ latexpdf
 
 
-.PHONY: linkcheck
+.PHONY: docs-linkcheck
 docs-linkcheck:
 	poetry run make --directory docs/ linkcheck
 
