@@ -14,6 +14,8 @@ Changelog
   (`#193 <https://github.com/useblocks/sphinxcontrib-needs/issues/193>`_)
 * Bugfix: :ref:`needimport` supports extra options and extra fields.
   (`#227 <https://github.com/useblocks/sphinxcontrib-needs/issues/227>`_)
+* Bugfix: Checking for ending `/` of given github api url.
+  (`#187 <https://github.com/useblocks/sphinxcontrib-needs/issues/187>`_)
 * Bugfix: Using correct indention for pre and post_template function of needs.
 
 
