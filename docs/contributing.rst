@@ -4,19 +4,19 @@ Contributing
 The following provides a guide for developers wishing to contribute
 to ``Sphinx-Needs``.
 
-.. contents:
+.. contents::
    :local:
 
 Bugs, Features and  PRs
 -----------------------
 
-| For bug reports and technical well described feature requests please use our issue tracker:
+| For **bug reports** and technical well described feature requests please use our issue tracker:
 | https://github.com/useblocks/sphinxcontrib-needs/issues
 
-| For feature ideas or questions please use our discussion board:
+| For **feature ideas** and **questions** please use our discussion board:
 | https://github.com/useblocks/sphinxcontrib-needs/discussions
 
-If you have already created a PR, awesome! Just send it in. It will be checked by our CI (test and code styles) and
+If you have already created a **PR**, awesome! Just send it in. It will be checked by our CI (test and code styles) and
 a maintainer needs to perform a review, before it can be merged.
 Your PR should  contain the following parts:
 
@@ -53,7 +53,10 @@ Use ``make list`` to get a list of available targets.
 
 Build docs
 ----------
-This will build the ``Sphinx-Needs`` documentation stored under ``docs``.
+This will build the ``Sphinx-Needs`` documentation stored under ``/docs``.
+
+It will always perform a **clean** build (calls ``make clean`` before the build).
+If you want to avoid this, run the related sphinx-commands directly under ``/docs`` (e.g. ``make docs``).
 
 ::
 
@@ -62,6 +65,12 @@ This will build the ``Sphinx-Needs`` documentation stored under ``docs``.
 or::
 
     make docs-pdf
+
+Check links in docs
+~~~~~~~~~~~~~~~~~~~~
+To check if all used links in the documentation are still valid, run::
+
+    make docs-linkcheck
 
 
 Running Tests

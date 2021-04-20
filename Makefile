@@ -18,11 +18,11 @@ test-matrix:
 
 .PHONY: docs-html
 docs-html:
-	poetry run make --directory docs/ html
+	poetry run make --directory docs/ clean && make --directory docs/ html
 
 .PHONY: docs-pdf
 docs-pdf:
-	poetry run make --directory docs/ latexpdf
+	poetry run make --directory docs/ clean && make --directory docs/ latexpdf
 
 
 .PHONY: linkcheck
