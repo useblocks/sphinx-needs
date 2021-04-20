@@ -27,6 +27,8 @@ class GithubService(BaseService):
         self.config = config
 
         self.url = self.config.get("url", "https://api.github.com/")
+        if not self.url.endswith("/"):
+            self.url = f"{self.url}/"
         self.max_amount = self.config.get("max_amount", -1)
         self.max_content_lines = self.config.get("max_content_lines", -1)
         self.id_prefix = self.config.get("id_prefix", "GITHUB_")
