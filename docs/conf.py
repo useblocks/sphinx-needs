@@ -51,7 +51,9 @@ extensions = ['sphinxcontrib.plantuml',
               'sphinxcontrib.needs',
               'sphinx.ext.autodoc',
               'matplotlib.sphinxext.plot_directive',
-              'sphinx_copybutton']
+              'sphinx_copybutton',
+              'sphinxcontrib.programoutput',
+              'sphinx_panels']
 
 add_module_names = False  # Used to shorten function name output
 autodoc_docstring_signature = True  # Used to read spec. func-defs from docstring (e.g. get rid of self)

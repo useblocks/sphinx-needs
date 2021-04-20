@@ -13,3 +13,8 @@ div.document {
 div.body {
     max-width: 880px
 }
+
+
+div.summary-down, div.summary-up {
+    display: none;
+}

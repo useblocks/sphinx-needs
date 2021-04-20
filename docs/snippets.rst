@@ -83,7 +83,7 @@ This example shows the distribution of the different need-types used in this doc
       ax1.axis('equal')
       plt.show()
 
-Read the `plot directive documentation <https://matplotlib.org/devel/plot_directive.html#module-matplotlib.sphinxext.plot_directive>`_
+Read the `plot directive documentation <https://matplotlib.org/3.1.3/devel/plot_directive.html#module-matplotlib.sphinxext.plot_directive>`_
 for more information how to use and configure it.
 
 How to create a bar chart with matplotlib?

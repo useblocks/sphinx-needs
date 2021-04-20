@@ -6,10 +6,7 @@ SPHINX_VERSIONS = ["2.2", "2.3", "2.4", "3.0", "3.2"]
 TEST_DEPENDENCIES = [
     "nose",
     "sphinx_testing",
-    "sphinxcontrib.plantuml",
-    "matplotlib",
     "responses",
-    "sphinx_copybutton",
 ]
 LINT_DEPENDENCIES = [
     "flake8",
@@ -27,6 +24,7 @@ def run_tests(session, sphinx):
     session.install(".")
     session.install(*TEST_DEPENDENCIES)
     session.run("pip", "install", f"sphinx=={sphinx}", silent=True)
+    session.run("pip", "install", "-r", "docs/requirements.txt", silent=True)
     session.run("make", "test", external=True)
 
 
@@ -43,3 +41,10 @@ def tests(session, sphinx):
 def lint(session):
     session.install(*LINT_DEPENDENCIES)
     session.run("make", "lint", external=True)
+
+
+@session(python="3.9")
+def linkcheck(session):
+    session.install(".")
+    session.run("pip", "install", "-r", "docs/requirements.txt", silent=True)
+    session.run("make", "docs-linkcheck", external=True)
