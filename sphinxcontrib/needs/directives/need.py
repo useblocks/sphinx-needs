@@ -132,7 +132,7 @@ class NeedDirective(Directive):
             collapse=collapse,
             style=style,
             layout=layout,
-            **need_extra_options
+            **need_extra_options,
         )
         return need_nodes
 
@@ -145,7 +145,8 @@ class NeedDirective(Directive):
             for link in re.split(";|,", links_string):
                 if link.isspace():
                     logger.warning(
-                        "Grubby link definition found in need {}. " "Defined link contains spaces only.".format(id)
+                        f"Grubby link definition found in need '{self.trimmed_title}'. "
+                        "Defined link contains spaces only."
                     )
                 else:
                     links.append(link.strip())
