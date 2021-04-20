@@ -49,7 +49,7 @@ List make targets
 
 Use ``make list`` to get a list of available targets.
 
-.. program-output:: make --no-print-directory --directory ../ list
+.. .. program-output:: make --no-print-directory --directory ../ list
 
 Build docs
 ----------

@@ -51,5 +51,5 @@ jobs:
       - name: Install Nox Dependencies
         run: |
           python -m pip install poetry nox nox-poetry
-      - name: Run Lint
+      - name: Run LinkCheck
         run: nox --non-interactive --session linkcheck -- --full-trace
