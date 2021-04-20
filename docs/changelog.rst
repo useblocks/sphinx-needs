@@ -4,6 +4,7 @@ Changelog
 0.6.1 (not released yet)
 ------------------------
 
+* Support: Removes support for Sphinx version <3.0 (Sphinx 2.x may still work, but it gets not tested).
 * Improvement: Internal change to poetry, nox and github actions.
   (`#216 <https://github.com/useblocks/sphinxcontrib-needs/issues/216>`_)
 * Bugfix: Need-service calls get mocked during tests, so that tests don't need reachable external services anymore.

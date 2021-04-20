@@ -167,7 +167,7 @@ colors
 
 ``:color:`` takes a comma separated list of color names and uses them for the pie pieces.
 
-See `Matplotlib documentation of supported colors <https://matplotlib.org/gallery/color/named_colors.html#sphx-glr-gallery-color-named-colors-py>`_
+See `Matplotlib documentation of supported colors <https://matplotlib.org/stable/gallery/color/named_colors.html>`_
 for a complete list of color names.
 
 But beside names also hex-values like ``#ffcc00`` are supported.
