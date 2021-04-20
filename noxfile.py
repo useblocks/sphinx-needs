@@ -2,7 +2,7 @@ import nox
 from nox_poetry import session
 
 PYTHON_VERSIONS = ["3.6", "3.7", "3.8", "3.9"]
-SPHINX_VERSIONS = ["2.2", "2.3", "2.4", "3.0", "3.2"]
+SPHINX_VERSIONS = ["2.4", "3.2", "3.3", "3.4", "3.5"]
 TEST_DEPENDENCIES = [
     "nose",
     "sphinx_testing",
@@ -46,5 +46,9 @@ def lint(session):
 @session(python="3.9")
 def linkcheck(session):
     session.install(".")
+    # LinkCheck cn handle rate limits since Sphinx 3.4, which is needed as
+    # our doc has to many links to github.
+    session.run("pip", "install", "sphinx==3.5.4", silent=True)
+
     session.run("pip", "install", "-r", "docs/requirements.txt", silent=True)
     session.run("make", "docs-linkcheck", external=True)
