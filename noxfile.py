@@ -1,7 +1,6 @@
 import nox
 from nox_poetry import session
 
-
 PYTHON_VERSIONS = ["3.6", "3.7", "3.8", "3.9"]
 SPHINX_VERSIONS = ["2.2", "2.3", "2.4", "3.0", "3.2"]
 TEST_DEPENDENCIES = [
@@ -15,6 +14,8 @@ TEST_DEPENDENCIES = [
 LINT_DEPENDENCIES = [
     "flake8",
     "pep8-naming",
+    "flake8-isort",
+    "flake8-black",
 ]
 
 

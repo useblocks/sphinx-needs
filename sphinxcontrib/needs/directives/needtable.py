@@ -2,10 +2,14 @@ import re
 
 from docutils import nodes
 from docutils.parsers.rst import directives
-from sphinxcontrib.needs.utils import row_col_maker
+
+from sphinxcontrib.needs.directives.utils import (
+    no_needs_found_paragraph,
+    used_filter_paragraph,
+)
 from sphinxcontrib.needs.filter_common import FilterBase, process_filters
-from sphinxcontrib.needs.directives.utils import no_needs_found_paragraph, used_filter_paragraph
 from sphinxcontrib.needs.functions.functions import check_and_get_content
+from sphinxcontrib.needs.utils import row_col_maker
 
 
 class Needtable(nodes.General, nodes.Element):
@@ -16,30 +20,31 @@ class NeedtableDirective(FilterBase):
     """
     Directive present filtered needs inside a table.
     """
-    option_spec = {'show_filters': directives.flag,
-                   'show_parts': directives.flag,
-                   'columns': directives.unchanged_required,
-                   'style': directives.unchanged_required,
-                   'style_row': directives.unchanged_required,
-                   'style_col': directives.unchanged_required,
-                   'sort': directives.unchanged_required}
+
+    option_spec = {
+        "show_filters": directives.flag,
+        "show_parts": directives.flag,
+        "columns": directives.unchanged_required,
+        "style": directives.unchanged_required,
+        "style_row": directives.unchanged_required,
+        "style_col": directives.unchanged_required,
+        "sort": directives.unchanged_required,
+    }
 
     # Update the options_spec with values defined in the FilterBase class
     option_spec.update(FilterBase.base_option_spec)
 
     def run(self):
         env = self.state.document.settings.env
-        if not hasattr(env, 'need_all_needtables'):
+        if not hasattr(env, "need_all_needtables"):
             env.need_all_needtables = {}
 
         # be sure, global var is available. If not, create it
-        if not hasattr(env, 'needs_all_needs'):
+        if not hasattr(env, "needs_all_needs"):
             env.needs_all_needs = {}
 
-        targetid = "needtable-{docname}-{id}".format(
-            docname=env.docname,
-            id=env.new_serialno('needtable'))
-        targetnode = nodes.target('', '', ids=[targetid])
+        targetid = "needtable-{docname}-{id}".format(docname=env.docname, id=env.new_serialno("needtable"))
+        targetnode = nodes.target("", "", ids=[targetid])
 
         columns = str(self.options.get("columns", ""))
         if len(columns) == 0:
@@ -57,23 +62,23 @@ class NeedtableDirective(FilterBase):
 
         # Add the need and all needed information
         env.need_all_needtables[targetid] = {
-            'docname': env.docname,
-            'lineno': self.lineno,
-            'target_node': targetnode,
-            'columns': columns,
-            'style': style,
-            'style_row': style_row,
-            'style_col': style_col,
-            'sort': sort,
+            "docname": env.docname,
+            "lineno": self.lineno,
+            "target_node": targetnode,
+            "columns": columns,
+            "style": style,
+            "style_row": style_row,
+            "style_col": style_col,
+            "sort": sort,
             # As the following options are flags, the content is None, if set.
             # If not set, the options.get() method returns False
-            'show_filters': True if self.options.get("show_filters", False) is None else False,
-            'show_parts': True if self.options.get("show_parts", False) is None else False,
-            'env': env,
+            "show_filters": True if self.options.get("show_filters", False) is None else False,
+            "show_parts": True if self.options.get("show_parts", False) is None else False,
+            "env": env,
         }
         env.need_all_needtables[targetid].update(self.collect_filter_attributes())
 
-        return [targetnode] + [Needtable('')]
+        return [targetnode] + [Needtable("")]
 
 
 def process_needtables(app, doctree, fromdocname):
@@ -91,15 +96,15 @@ def process_needtables(app, doctree, fromdocname):
     link_type_list = {}
     for link_type in app.config.needs_extra_links:
         link_type_list[link_type["option"].upper()] = link_type
-        link_type_list[link_type["option"].upper() + '_BACK'] = link_type
+        link_type_list[link_type["option"].upper() + "_BACK"] = link_type
         link_type_list[link_type["incoming"].upper()] = link_type
         link_type_list[link_type["outgoing"].upper()] = link_type
 
         # Extra handling tb backward compatible, as INCOMING and OUTGOING are
         # known und used column names for incoming/outgoing links
-        if link_type['option'] == 'links':
-            link_type_list['OUTGOING'] = link_type
-            link_type_list['INCOMING'] = link_type
+        if link_type["option"] == "links":
+            link_type_list["OUTGOING"] = link_type
+            link_type_list["INCOMING"] = link_type
 
     for node in doctree.traverse(Needtable):
         if not app.config.needs_include_needs:
@@ -108,7 +113,7 @@ def process_needtables(app, doctree, fromdocname):
             # But this is here the case, because we are using the attribute "ids" of a node.
             # However, I do not understand, why losing an attribute is such a big deal, so we delete everything
             # before docutils claims about it.
-            for att in ('ids', 'names', 'classes', 'dupnames'):
+            for att in ("ids", "names", "classes", "dupnames"):
                 node[att] = []
             node.replace_self([])
             continue
@@ -142,10 +147,9 @@ def process_needtables(app, doctree, fromdocname):
         for col in current_needtable["columns"]:
             header_name = col.title() if col != "ID" else col
             header_name = header_name.replace("_", " ")
-            node_columns.append(nodes.entry('', nodes.paragraph('', header_name)))
+            node_columns.append(nodes.entry("", nodes.paragraph("", header_name)))
 
-        tgroup += nodes.thead('', nodes.row(
-            '', *node_columns))
+        tgroup += nodes.thead("", nodes.row("", *node_columns))
         tbody = nodes.tbody()
         tgroup += tbody
         content += tgroup
@@ -176,70 +180,95 @@ def process_needtables(app, doctree, fromdocname):
 
             return sort
 
-        found_needs.sort(key=get_sorter(current_needtable['sort']))
+        found_needs.sort(key=get_sorter(current_needtable["sort"]))
 
         for need_info in found_needs:
-            style_row = check_and_get_content(current_needtable['style_row'], need_info, env)
-            style_row = style_row.replace(' ', '_')  # Replace whitespaces with _ to get valid css name
+            style_row = check_and_get_content(current_needtable["style_row"], need_info, env)
+            style_row = style_row.replace(" ", "_")  # Replace whitespaces with _ to get valid css name
 
             temp_need = need_info.copy()
-            if temp_need['is_need']:
-                row = nodes.row(classes=['need', style_row])
-                prefix = ''
+            if temp_need["is_need"]:
+                row = nodes.row(classes=["need", style_row])
+                prefix = ""
             else:
-                row = nodes.row(classes=['need_part', style_row])
-                temp_need['id'] = temp_need['id_complete']
+                row = nodes.row(classes=["need_part", style_row])
+                temp_need["id"] = temp_need["id_complete"]
                 prefix = app.config.needs_part_prefix
-                temp_need['title'] = temp_need['content']
+                temp_need["title"] = temp_need["content"]
 
             for col in current_needtable["columns"]:
                 if col == "ID":
-                    row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need, "id", make_ref=True,
-                                         prefix=prefix)
-                elif col == "TITLE":
                     row += row_col_maker(
-                        app, fromdocname, env.needs_all_needs, temp_need, "title",
-                        prefix=prefix)
+                        app, fromdocname, env.needs_all_needs, temp_need, "id", make_ref=True, prefix=prefix
+                    )
+                elif col == "TITLE":
+                    row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need, "title", prefix=prefix)
                 elif col in link_type_list.keys():
                     link_type = link_type_list[col]
-                    if col == 'INCOMING' or col == link_type['option'].upper() + '_BACK' or \
-                            col == link_type['incoming'].upper():
-                        row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need,
-                                             link_type['option'] + '_back', ref_lookup=True)
+                    if (
+                        col == "INCOMING"
+                        or col == link_type["option"].upper() + "_BACK"
+                        or col == link_type["incoming"].upper()
+                    ):
+                        row += row_col_maker(
+                            app,
+                            fromdocname,
+                            env.needs_all_needs,
+                            temp_need,
+                            link_type["option"] + "_back",
+                            ref_lookup=True,
+                        )
                     else:
-                        row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need,
-                                             link_type['option'], ref_lookup=True)
+                        row += row_col_maker(
+                            app, fromdocname, env.needs_all_needs, temp_need, link_type["option"], ref_lookup=True
+                        )
                 else:
                     row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need, col.lower())
             tbody += row
 
             # Need part rows
-            if current_needtable["show_parts"] and need_info['is_need']:
+            if current_needtable["show_parts"] and need_info["is_need"]:
                 for part in need_info["parts"].values():
-                    row = nodes.row(classes=['need_part'])
+                    row = nodes.row(classes=["need_part"])
                     temp_part = part.copy()  # The dict needs to be manipulated, so that row_col_maker() can be used
-                    temp_part['docname'] = need_info['docname']
+                    temp_part["docname"] = need_info["docname"]
 
                     for col in current_needtable["columns"]:
                         if col == "ID":
-                            temp_part['id'] = '.'.join([need_info['id'], part['id']])
+                            temp_part["id"] = ".".join([need_info["id"], part["id"]])
                             row += row_col_maker(
-                                app, fromdocname, env.needs_all_needs, temp_part, "id",
-                                make_ref=True, prefix=app.config.needs_part_prefix)
+                                app,
+                                fromdocname,
+                                env.needs_all_needs,
+                                temp_part,
+                                "id",
+                                make_ref=True,
+                                prefix=app.config.needs_part_prefix,
+                            )
                         elif col == "TITLE":
                             row += row_col_maker(
-                                app, fromdocname, env.needs_all_needs, temp_part, "content",
-                                prefix=app.config.needs_part_prefix)
-                        elif col in link_type_list.keys() \
-                                and (col == link_type_list[col]['option'].upper() + '_BACK'
-                                     or col == link_type_list[col]['incoming'].upper()):
+                                app,
+                                fromdocname,
+                                env.needs_all_needs,
+                                temp_part,
+                                "content",
+                                prefix=app.config.needs_part_prefix,
+                            )
+                        elif col in link_type_list.keys() and (
+                            col == link_type_list[col]["option"].upper() + "_BACK"
+                            or col == link_type_list[col]["incoming"].upper()
+                        ):
 
                             row += row_col_maker(
-                                app, fromdocname, env.needs_all_needs, temp_part,
-                                link_type_list[col]['option'] + '_back', ref_lookup=True)
+                                app,
+                                fromdocname,
+                                env.needs_all_needs,
+                                temp_part,
+                                link_type_list[col]["option"] + "_back",
+                                ref_lookup=True,
+                            )
                         else:
-                            row += row_col_maker(
-                                app, fromdocname, env.needs_all_needs, temp_part, col.lower())
+                            row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_part, col.lower())
 
                     tbody += row
 

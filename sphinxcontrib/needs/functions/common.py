@@ -8,7 +8,11 @@ Collection of common sphinx-needs functions for dynamic values
 
 import re
 
-from sphinxcontrib.needs.filter_common import filter_single_need, NeedInvalidFilter, filter_needs
+from sphinxcontrib.needs.filter_common import (
+    NeedInvalidFilter,
+    filter_needs,
+    filter_single_need,
+)
 from sphinxcontrib.needs.utils import logger
 
 
@@ -30,7 +34,7 @@ def test(app, need, needs, *args, **kwargs):
 
     :return: single test string
     """
-    return "Test output of need {}. args: {}. kwargs: {}".format(need['id'], args, kwargs)
+    return "Test output of need {}. args: {}. kwargs: {}".format(need["id"], args, kwargs)
 
 
 def copy(app, need, needs, option, need_id=None, lower=False, upper=False, filter=None):
@@ -370,7 +374,6 @@ def calc_sum(app, need, needs, option, filter=None, links_only=False):
     else:
         check_needs = needs.values()
 
-
     calculated_sum = 0
 
     for check_need in check_needs:
@@ -381,7 +384,7 @@ def calc_sum(app, need, needs, option, filter=None, links_only=False):
             except ValueError:
                 pass
             except NeedInvalidFilter as ex:
-                logger.warning('Given filter is not valid. Error: {}'.format(ex))
+                logger.warning("Given filter is not valid. Error: {}".format(ex))
         try:
             calculated_sum += float(check_need[option])
         except ValueError:
@@ -447,7 +450,7 @@ def links_from_content(app, need, needs, need_id=None, filter=None):
     else:
         source_need = need
 
-    links = re.findall(r':need:`(\w+)`|:need:`.+\<(.+)\>`', source_need['content'])
+    links = re.findall(r":need:`(\w+)`|:need:`.+\<(.+)\>`", source_need["content"])
     raw_links = []
     for link in links:
         if link[0] and link[0] not in raw_links:
@@ -463,9 +466,3 @@ def links_from_content(app, need, needs, need_id=None, filter=None):
         return filtered_links
 
     return raw_links
-
-
-
-
-
-
