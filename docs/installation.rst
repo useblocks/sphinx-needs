@@ -1,6 +1,12 @@
 Installation
 ============
 
+Using poetry
+------------
+::
+
+    poetry add sphinxcontrib-needs
+
 Using pip
 ---------
 ::
@@ -12,7 +18,8 @@ Using sources
 ::
 
     git clone https://github.com/useblocks/sphinxcontrib-needs
-    python setup.py install
+    cd sphinxcontrib-needs
+    pip install -e .
 
 
 Activation
