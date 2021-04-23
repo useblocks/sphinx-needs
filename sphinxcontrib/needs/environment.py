@@ -148,9 +148,16 @@ def install_static_files(
         destination_file.parent.mkdir(parents=True, exist_ok=True)
 
         copyfile(str(source_file), str(destination_file))
+        return destination_file
 
 
-def install_datatables_static_files(app: Sphinx, env):
+def install_lib_static_files(app: Sphinx, env):
+    """
+    Copies ccs and js files from needed js/css libs
+    :param app:
+    :param env:
+    :return:
+    """
     statics_dir = Path(app.builder.outdir) / IMAGE_DIR_NAME
     source_dir = Path(__file__).parent / "libs" / "html"
     destination_dir = statics_dir / "sphinx-needs" / "libs" / "html"
@@ -166,24 +173,6 @@ def install_datatables_static_files(app: Sphinx, env):
     )
 
     # Add the needed datatables js and css file
-    html_path = Path("sphinx-needs") / "libs" / "html"
-    for f in ["datatables.min.js", "datatables_loader.js", "datatables.min.css"]:
-        safe_add_file(html_path / f, app)
-
-
-def install_collapse_static_files(app: Sphinx, env):
-    statics_dir = Path(app.builder.outdir) / IMAGE_DIR_NAME
-    source_dir = Path(__file__).parent / "libs" / "html"
-    destination_dir = statics_dir / "sphinx-needs"
-    collapse_js = source_dir / "sphinx_needs_collapse.js"
-
-    install_static_files(
-        app,
-        source_dir,
-        destination_dir,
-        [collapse_js],
-        "Copying static files for sphinx-needs collapse support...",
-    )
-
-    safe_remove_file(collapse_js, app)
-    safe_add_file(collapse_js, app)
+    lib_path = Path("sphinx-needs") / "libs" / "html"
+    for f in ["datatables.min.js", "datatables_loader.js", "datatables.min.css", "sphinx_needs_collapse.js"]:
+        safe_add_file(lib_path / f, app)
