@@ -1,8 +1,10 @@
 Changelog
 =========
-
-0.6.1 (not released yet)
+0.6.2 (not released yet)
 ------------------------
+
+0.6.1
+-----
 
 * Support: Removes support for Sphinx version <3.0 (Sphinx 2.x may still work, but it gets not tested).
 * Improvement: Internal change to poetry, nox and github actions.
@@ -18,7 +20,9 @@ Changelog
   (`#187 <https://github.com/useblocks/sphinxcontrib-needs/issues/187>`_)
 * Bugfix: Using correct indention for pre and post_template function of needs.
 * Bugfix: Certain log message don't use python internal `id` anymore.
-  (`#2257 <https://github.com/useblocks/sphinxcontrib-needs/issues/225>`_)
+  (`#257 <https://github.com/useblocks/sphinxcontrib-needs/issues/225>`_)
+* Bugfix: JS-code for meta area collapse is working again.
+  (`#242 <https://github.com/useblocks/sphinxcontrib-needs/issues/242>`_)
 
 
 0.6.0
