@@ -67,8 +67,7 @@ from sphinxcontrib.needs.directives.needtable import (
     process_needtables,
 )
 from sphinxcontrib.needs.environment import (
-    install_collapse_static_files,
-    install_datatables_static_files,
+    install_lib_static_files,
     install_styles_static_files,
 )
 from sphinxcontrib.needs.functions import needs_common_functions, register_func
@@ -274,14 +273,10 @@ def setup(app):
     app.connect("doctree-resolved", process_need_outgoing)
     app.connect("doctree-resolved", process_need_count)
     app.connect("build-finished", process_warnings)
-    app.connect("env-updated", install_datatables_static_files)
+    app.connect("env-updated", install_lib_static_files)
 
     # Called during consistency check, which if after everything got read in.
     # app.connect('env-check-consistency', process_warnings)
-
-    # Call this after all JS files, which perform DOM manipulation, have been called.
-    # Otherwise newly added dom objects can not be collapsed
-    app.connect("env-updated", install_collapse_static_files)
 
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect("env-updated", install_styles_static_files)
