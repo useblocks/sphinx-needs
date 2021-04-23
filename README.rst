@@ -60,7 +60,7 @@ Using sources
 
     git clone https://github.com/useblocks/sphinxcontrib-needs
     cd sphinxcontrib-needs
-    pip install -e .
+    pip install .
 
 Activation
 ----------
