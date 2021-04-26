@@ -60,7 +60,8 @@ class NeedflowDirective(FilterBase):
         targetid = "needflow-{docname}-{id}".format(docname=env.docname, id=id)
         targetnode = nodes.target("", "", ids=[targetid])
 
-        link_types = list(split_link_types(self.options.get("link_types", "links")))
+        all_link_types = ",".join(x["option"] for x in env.config.needs_extra_links)
+        link_types = list(split_link_types(self.options.get("link_types", all_link_types)))
 
         config_names = self.options.get("config", None)
         configs = []
