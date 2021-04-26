@@ -200,6 +200,9 @@ Inside a filter string the following variables/functions can be used:
 * **section_name** as string, which defines the last/lowest section a need belongs to.
 * **signature** as string, which contains a function-name, possible set by
   `sphinx-autodoc <https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html>`_ above the need.
+* **parent_need** as string, which is an id of the need, which has the current need defined in its content
+  (added 0.6.2).
+* **parent_needs** as string, which is a list of need ids (added 0.6.2).
 
 Additional variables for :ref:`need_part`:
 

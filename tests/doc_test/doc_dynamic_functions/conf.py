@@ -45,7 +45,7 @@ needs_types = [
 
 needs_extra_options = {"test_func": directives.unchanged}
 
-plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "utils", "plantuml_beta.jar")
+plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "utils", "plantuml.1.2021.5.jar")
 plantuml_output_format = "svg"
 
 # Add any paths that contain templates here, relative to this directory.

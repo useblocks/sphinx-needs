@@ -213,10 +213,11 @@ class NeedDirective(Directive):
             return ""
 
 
-def get_sections_and_signature(need_info):
+def get_sections_and_signature_and_needs(need_info):
     """Gets the hierarchy of the section nodes as a list starting at the
     section of the current need and then its parent sections"""
     sections = []
+    parent_needs = []
     signature = None
     current_node = need_info["target_node"]
     while current_node:
@@ -245,8 +246,12 @@ def get_sections_and_signature(need_info):
                 if signature:
                     break
 
+        # Check if the need is nested inside another need (so part of its content)
+        if isinstance(current_node, Need):
+            parent_needs.append(current_node["refid"])  # Store the need id, not more
+
         current_node = getattr(current_node, "parent", None)
-    return sections, signature
+    return sections, signature, parent_needs
 
 
 def purge_needs(app, env, docname):
@@ -264,10 +269,15 @@ def add_sections(app, doctree, fromdocname):
     be used in tables and filters"""
     needs = getattr(app.builder.env, "needs_all_needs", {})
     for need_info in needs.values():
-        sections, signature = get_sections_and_signature(need_info)
+        sections, signature, parent_needs = get_sections_and_signature_and_needs(need_info)
         need_info["sections"] = sections
         need_info["section_name"] = sections[0] if sections else ""
         need_info["signature"] = signature if signature else ""
+        need_info["parent_needs"] = parent_needs
+        need_info["parent_need"] = parent_needs[0] if parent_needs else None
+
+        # for parent_need_id in need_info["parent_needs"]:
+        #     needs[parent_need_id]["child_needs"].append(need_info["id"])
 
 
 def process_need_nodes(app, doctree, fromdocname):

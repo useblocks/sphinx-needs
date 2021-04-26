@@ -256,6 +256,7 @@ def add_need(
         "parts": {},
         "is_part": False,
         "is_need": True,
+        "parent_need": None,
     }
     needs_extra_options = env.config.needs_extra_options.keys()
     _merge_extra_options(needs_info, kwargs, needs_extra_options)
