@@ -378,10 +378,12 @@ def prepare_env(app, env, _docname):
     common_links = []
     link_types = app.config.needs_extra_links
     basic_link_type_found = False
+    parent_needs_link_type_found = False
     for link_type in link_types:
         if link_type["option"] == "links":
             basic_link_type_found = True
-            break
+        elif link_type["option"] == "parent_needs":
+            parent_needs_link_type_found = True
 
     if not basic_link_type_found:
         common_links.append(
@@ -391,6 +393,17 @@ def prepare_env(app, env, _docname):
                 "incoming": "links incoming",
                 "copy": False,
                 "color": "#000000",
+            }
+        )
+
+    if not parent_needs_link_type_found:
+        common_links.append(
+            {
+                "option": "parent_needs",
+                "outgoing": "parent needs",
+                "incoming": "child needs",
+                "copy": False,
+                "color": "#333333",
             }
         )
 

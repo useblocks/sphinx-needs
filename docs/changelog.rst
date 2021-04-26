@@ -2,6 +2,8 @@ Changelog
 =========
 0.6.2 (not released yet)
 ------------------------
+* Improvement: Parent needs of nested needs get collected and are available in filters.
+  (`#249 <https://github.com/useblocks/sphinxcontrib-needs/issues/249>`_)
 
 0.6.1
 -----

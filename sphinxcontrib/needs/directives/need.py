@@ -276,6 +276,9 @@ def add_sections(app, doctree, fromdocname):
         need_info["parent_needs"] = parent_needs
         need_info["parent_need"] = parent_needs[0] if parent_needs else None
 
+        # for parent_need_id in need_info["parent_needs"]:
+        #     needs[parent_need_id]["child_needs"].append(need_info["id"])
+
 
 def process_need_nodes(app, doctree, fromdocname):
     """

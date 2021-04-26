@@ -299,8 +299,8 @@ The above example configuration allows the following usage::
 
 **Attention**: The used option name can not be reused in the configuration of :ref:`needs_global_options`.
 
-A link type with option-name **links** is added by default.
-You are free to overwrite the default config by defining your own type with option name **links**.
+Link types with option-name **links** and **parent_needs** are added by default.
+You are free to overwrite the default config by defining your own type with option name **links** or **parent_needs**.
 This type will be used as default configuration for all links.
 
 .. _links_style:
