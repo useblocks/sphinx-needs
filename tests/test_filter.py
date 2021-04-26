@@ -37,3 +37,16 @@ def test_filter_build_html(app, status, warning):
     assert "search_2_1" in html_4
     assert "search_2_2" in html_4
     assert "test_email" in html_4
+
+    # nested needs
+    html_5 = Path(app.outdir, "nested_needs.html").read_text()
+    assert "STORY_PARENT" in html_5
+    assert "CHILD_1_STORY" in html_5
+    assert "CHILD_2_STORY" in html_5
+    assert '<span class="needs_parent_need"><span class="needs_label">parent_need: </span><span class="needs_data">' \
+           'CHILD_1_STORY</span></span>' in html_5
+    assert '<span class="needs_parent_needs"><span class="needs_label">parent_needs: </span><span ' \
+           'class="needs_data_container"><span class="needs_data">CHILD_1_STORY</span><span class="needs_spacer">, ' \
+           '</span><span class="needs_data">STORY_PARENT</span></span></span>' in html_5
+
+

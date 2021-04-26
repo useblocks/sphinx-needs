@@ -6,6 +6,7 @@ TEST DOCUMENT
     filter_tags_or
     filter_all
     filter_search
+    nested_needs
 
 Testing simple filter
 ---------------------
