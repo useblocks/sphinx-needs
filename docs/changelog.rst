@@ -4,6 +4,9 @@ Changelog
 ------------------------
 * Improvement: Parent needs of nested needs get collected and are available in filters.
   (`#249 <https://github.com/useblocks/sphinxcontrib-needs/issues/249>`_)
+* Bugfix: Copying static files during sphinx build is working again.
+  (`#252 <https://github.com/useblocks/sphinxcontrib-needs/issues/252>`_)
+
 
 0.6.1
 -----
