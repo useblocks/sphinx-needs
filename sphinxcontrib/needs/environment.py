@@ -148,7 +148,6 @@ def install_static_files(
         destination_file.parent.mkdir(parents=True, exist_ok=True)
 
         copyfile(str(source_file), str(destination_file))
-        return destination_file
 
 
 def install_lib_static_files(app: Sphinx, env):
