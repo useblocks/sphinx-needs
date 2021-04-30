@@ -1,7 +1,14 @@
 Changelog
 =========
-0.6.2 (not released yet)
-------------------------
+
+0.6.3
+-----
+:Released: under development
+
+0.6.2
+-----
+:Released: 30.04.2021
+
 * Improvement: Parent needs of nested needs get collected and are available in filters.
   (`#249 <https://github.com/useblocks/sphinxcontrib-needs/issues/249>`_)
 * Bugfix: Copying static files during sphinx build is working again.
@@ -12,6 +19,7 @@ Changelog
 
 0.6.1
 -----
+:Released: 23.04.2021
 
 * Support: Removes support for Sphinx version <3.0 (Sphinx 2.x may still work, but it gets not tested).
 * Improvement: Internal change to poetry, nox and github actions.
