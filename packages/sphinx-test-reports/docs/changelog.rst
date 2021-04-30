@@ -1,5 +1,16 @@
 Changelog
 =========
+0.3.5
+-----
+:Released: under development
+
+
+0.3.4
+-----
+:Released: 30.04.2021
+
+* Bugfix: Removed Sphinx 4 deprecation warnings
+
 0.3.3
 -----
 * Improvement: Addes :ref:`test_report` directive.

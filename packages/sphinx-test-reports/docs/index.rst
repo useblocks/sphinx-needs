@@ -93,7 +93,7 @@ the parameters of the `ISO 26262 <https://en.wikipedia.org/wiki/ISO_26262>`_ sta
 for safety critical software in automotive companies.
 
 Other tools are:
-`sphinx-needs <http://sphinxcontrib-needs.readthedocs.io/en/latest/>`_,
-`sphinx-collections <https://sphinx-collections.readthedocs.io/en/latest/>`_ and
-`tox-envreport <http://tox-envreport.readthedocs.io/en/latest/>`_
+`sphinx-needs <http://sphinxcontrib-needs.readthedocs.io/en/latest/>`__,
+`sphinx-collections <https://sphinx-collections.readthedocs.io/en/latest/>`__ and
+`tox-envreport <http://tox-envreport.readthedocs.io/en/latest/>`__.
 
