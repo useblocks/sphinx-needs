@@ -755,7 +755,7 @@ class LayoutHandler:
             label_node += prefix_node
             data_container.append(label_node)
 
-        text = text = ""  # May be needed if only image shall be shown
+        text = text or ""  # May be needed if only image shall be shown
 
         if is_dynamic:
             try:

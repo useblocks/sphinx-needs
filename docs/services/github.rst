@@ -31,7 +31,6 @@ Each services creates normally multiple need objects for each element found by q
    :max_amount: 1
    :max_content_lines: 4
 
-
 Directive options, which can also used for normal needs, can also be set for ``needservice`` directive.
 Also the content part of ``needservice`` is added as extra data to the end of the finally created needs.
 
