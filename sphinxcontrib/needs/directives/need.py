@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import hashlib
 import re
 
@@ -158,7 +157,9 @@ class NeedDirective(Directive):
 
     def make_hashed_id(self, type_prefix, id_length):
         hashable_content = self.full_title or "\n".join(self.content)
-        return "%s%s" % (type_prefix, hashlib.sha1(hashable_content.encode("UTF-8")).hexdigest().upper()[:id_length])
+        return "{}{}".format(
+            type_prefix, hashlib.sha1(hashable_content.encode("UTF-8")).hexdigest().upper()[:id_length]
+        )
 
     @property
     def env(self):
@@ -196,8 +197,8 @@ class NeedDirective(Directive):
         if len(self.arguments) > 0:  # a title was passed
             if "title_from_content" in self.options:
                 self.log.warning(
-                    'Needs: need "{}" has :title_from_content: set, '
-                    "but a title was provided. (see file {})".format(self.arguments[0], self.docname)
+                    f'Needs: need "{self.arguments[0]}" has :title_from_content: set, '
+                    f"but a title was provided. (see file {self.docname})"
                 )
             return self.arguments[0]
         elif self.title_from_content:
@@ -206,7 +207,7 @@ class NeedDirective(Directive):
                 raise NeedsInvalidException(
                     ":title_from_content: set, but "
                     "no content provided. "
-                    "(Line {} of file {}".format(self.lineno, self.docname)
+                    f"(Line {self.lineno} of file {self.docname}"
                 )
             return first_sentence
         else:
@@ -331,8 +332,8 @@ def create_back_links(env, option):
     :param env: sphinx enviroment
     :return: None
     """
-    option_back = "{}_back".format(option)
-    if env.needs_workflow["backlink_creation_{}".format(option)]:
+    option_back = f"{option}_back"
+    if env.needs_workflow[f"backlink_creation_{option}"]:
         return
 
     needs = env.needs_all_needs
@@ -355,7 +356,7 @@ def create_back_links(env, option):
                             needs[link_main]["parts"][link_part][option_back] = []
                         needs[link_main]["parts"][link_part][option_back].append(key)
 
-    env.needs_workflow["backlink_creation_{}".format(option)] = True
+    env.needs_workflow[f"backlink_creation_{option}"] = True
 
 
 def _fix_list_dyn_func(list):

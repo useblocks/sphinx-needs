@@ -57,7 +57,7 @@ class NeedflowDirective(FilterBase):
             env.needs_all_needs = {}
 
         id = env.new_serialno("needflow")
-        targetid = "needflow-{docname}-{id}".format(docname=env.docname, id=id)
+        targetid = f"needflow-{env.docname}-{id}"
         targetnode = nodes.target("", "", ids=[targetid])
 
         all_link_types = ",".join(x["option"] for x in env.config.needs_extra_links)
@@ -73,9 +73,9 @@ class NeedflowDirective(FilterBase):
 
         scale = self.options.get("scale", "100").replace("%", "")
         if not scale.isdigit():
-            raise Exception('Needflow scale value must be a number. "{}" found'.format(scale))
+            raise Exception(f'Needflow scale value must be a number. "{scale}" found')
         if int(scale) < 1 or int(scale) > 300:
-            raise Exception('Needflow scale value must be between 1 and 300. "{}" found'.format(scale))
+            raise Exception(f'Needflow scale value must be between 1 and 300. "{scale}" found')
 
         highlight = self.options.get("highlight", "")
 
@@ -249,7 +249,7 @@ def process_needflow(app, doctree, fromdocname):
                 # Only add subelements and their {...} container, if we really need them.
                 # Otherwise plantuml may not set style correctly, if {..} is empty
                 if node_part_code:
-                    node_part_code = "{{\n {} }}".format(node_part_code)
+                    node_part_code = f"{{\n {node_part_code} }}"
 
                 style = need_info["type_style"]
 
@@ -278,7 +278,7 @@ def process_needflow(app, doctree, fromdocname):
                         final_link = link
                         if current_needflow["show_link_names"] or env.config.needs_flow_show_links:
                             desc = link_type["outgoing"] + "\\n"
-                            comment = ": {desc}".format(desc=desc)
+                            comment = f": {desc}"
                         else:
                             comment = ""
 
@@ -400,7 +400,7 @@ def process_needflow(app, doctree, fromdocname):
             else:
                 data = puml_node["uml"]
             data = "\n".join([html.escape(line) for line in data.split("\n")])
-            debug_para = nodes.raw("", "<pre>{}</pre>".format(data), format="html")
+            debug_para = nodes.raw("", f"<pre>{data}</pre>", format="html")
             debug_container += debug_para
             content += debug_container
 

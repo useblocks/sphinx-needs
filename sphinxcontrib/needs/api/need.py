@@ -46,7 +46,7 @@ def add_need(
     template=None,
     pre_template=None,
     post_template=None,
-    **kwargs
+    **kwargs,
 ):
     """
     Creates a new need and returns its node.
@@ -142,7 +142,7 @@ def add_need(
     if id is None and env.app.config.needs_id_required:
         raise NeedsNoIdException(
             "An id is missing for this need and must be set, because 'needs_id_required' "
-            "is set to True in conf.py. Need '{}' in {} ({})".format(title, docname, lineno)
+            f"is set to True in conf.py. Need '{title}' in {docname} ({lineno})"
         )
 
     if id is None:
@@ -165,7 +165,7 @@ def add_need(
     if env.app.config.needs_statuses:
         if status not in [stat["name"] for stat in env.app.config.needs_statuses]:
             raise NeedsStatusNotAllowed(
-                "Status {0} of need id {1} is not allowed " "by config value 'needs_statuses'.".format(status, need_id)
+                f"Status {status} of need id {need_id} is not allowed " "by config value 'needs_statuses'."
             )
 
     if tags is None:
@@ -178,9 +178,7 @@ def add_need(
         new_tags = []  # Shall contain only valid tags
         for i in range(len(tags)):
             if len(tags[i]) == 0 or tags[i].isspace():
-                logger.warning(
-                    "Scruffy tag definition found in need {}. " "Defined tag contains spaces only.".format(need_id)
-                )
+                logger.warning(f"Scruffy tag definition found in need {need_id}. " "Defined tag contains spaces only.")
             else:
                 new_tags.append(tags[i])
 
@@ -190,7 +188,7 @@ def add_need(
             for tag in tags:
                 if tag not in [tag["name"] for tag in env.app.config.needs_tags]:
                     raise NeedsTagNotAllowed(
-                        "Tag {0} of need id {1} is not allowed " "by config value 'needs_tags'.".format(tag, need_id)
+                        f"Tag {tag} of need id {need_id} is not allowed " "by config value 'needs_tags'."
                     )
         # This may have cut also dynamic function strings, as they can contain , as well.
         # So let put them together again
@@ -207,8 +205,8 @@ def add_need(
     if need_id in env.needs_all_needs.keys():
         if id:
             raise NeedsDuplicatedId(
-                "A need with ID {} already exists! "
-                "This is not allowed. Document {}[{}] Title: {}.".format(need_id, docname, lineno, title)
+                f"A need with ID {need_id} already exists! "
+                f"This is not allowed. Document {docname}[{lineno}] Title: {title}."
             )
         else:  # this is a generated ID
             raise NeedsDuplicatedId(
@@ -268,9 +266,9 @@ def add_need(
     for keyword in kwargs:
         if keyword not in needs_extra_options and keyword not in link_names:
             raise NeedsInvalidOption(
-                "Unknown Option {}. "
+                f"Unknown Option {keyword}. "
                 "Use needs_extra_options or needs_extra_links in conf.py"
-                "to define this option.".format(keyword)
+                "to define this option."
             )
 
     # Merge links
@@ -339,7 +337,7 @@ def add_need(
     # Title and meta data information gets added alter during event handling via process_need_nodes()
     # We just add a basic need node and render the rst-based content, because this can not be done later.
     # style_classes = ['need', type_name, 'need-{}'.format(type_name.lower())]  # Used < 0.4.4
-    style_classes = ["need", "need-{}".format(need_type.lower())]
+    style_classes = ["need", f"need-{need_type.lower()}"]
     if style:
         style_classes.append(style)
 
@@ -377,14 +375,14 @@ def _prepare_template(app, needs_info, template_key):
         template_folder = os.path.join(app.confdir, template_folder)
 
     if not os.path.isdir(template_folder):
-        raise NeedsTemplateException("Template folder does not exist: {}".format(template_folder))
+        raise NeedsTemplateException(f"Template folder does not exist: {template_folder}")
 
     template_file_name = needs_info[template_key] + ".need"
     template_path = os.path.join(template_folder, template_file_name)
     if not os.path.isfile(template_path):
-        raise NeedsTemplateException("Template does not exist: {}".format(template_path))
+        raise NeedsTemplateException(f"Template does not exist: {template_path}")
 
-    with open(template_path, "r") as template_file:
+    with open(template_path) as template_file:
         template_content = "".join(template_file.readlines())
     template_obj = Template(template_content)
     new_content = template_obj.render(**needs_info)
@@ -448,10 +446,10 @@ def make_hashed_id(app, need_type, full_title, content, id_length=None):
             type_prefix = ntype["prefix"]
             break
     if type_prefix is None:
-        raise NeedsInvalidException("Given need_type {} is unknown. File {}".format(need_type, app.env.docname))
+        raise NeedsInvalidException(f"Given need_type {need_type} is unknown. File {app.env.docname}")
 
     hashable_content = full_title or "\n".join(content)
-    return "%s%s" % (type_prefix, hashlib.sha1(hashable_content.encode("UTF-8")).hexdigest().upper()[:id_length])
+    return "{}{}".format(type_prefix, hashlib.sha1(hashable_content.encode("UTF-8")).hexdigest().upper()[:id_length])
 
 
 def _fix_list_dyn_func(list):
@@ -533,7 +531,7 @@ def _merge_global_options(needs_info, global_options):
 
         for single_value in values:
             if len(single_value) < 2 or len(single_value) > 3:
-                raise NeedsInvalidException("global option tuple has wrong amount of parameters: {}".format(key))
+                raise NeedsInvalidException(f"global option tuple has wrong amount of parameters: {key}")
             if filter_single_need(needs_info, single_value[1]):
                 # Set value, if filter has matched
                 needs_info[key] = single_value[0]

@@ -277,7 +277,7 @@ def check_linked_values(app, need, needs, result, search_option, search_value, f
                 if not filter_single_need(needs[link], filter_string):
                     continue
             except Exception as e:
-                logger.warning("CheckLinkedValues: Filter {0} not valid: Error: {1}".format(filter_string, e))
+                logger.warning(f"CheckLinkedValues: Filter {filter_string} not valid: Error: {e}")
 
         if not one_hit and not needs[link][search_option] in search_value:
             return None
@@ -384,7 +384,7 @@ def calc_sum(app, need, needs, option, filter=None, links_only=False):
             except ValueError:
                 pass
             except NeedInvalidFilter as ex:
-                logger.warning("Given filter is not valid. Error: {}".format(ex))
+                logger.warning(f"Given filter is not valid. Error: {ex}")
         try:
             calculated_sum += float(check_need[option])
         except ValueError:

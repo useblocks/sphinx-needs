@@ -4,7 +4,7 @@ from xml.etree import ElementTree
 NS = {"html": "http://www.w3.org/1999/xhtml"}
 
 
-class HtmlNeed(object):
+class HtmlNeed:
     """Helper class to parse HTML needs"""
 
     def __init__(self, need):

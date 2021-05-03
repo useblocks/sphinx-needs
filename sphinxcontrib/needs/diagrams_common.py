@@ -50,7 +50,7 @@ class DiagramBase(Directive):
     def create_target(self, target_name):
         env = self.state.document.settings.env
         id = env.new_serialno(target_name)
-        targetid = "{targetname}-{docname}-{id}".format(targetname=target_name, docname=env.docname, id=id)
+        targetid = f"{target_name}-{env.docname}-{id}"
         targetnode = nodes.target("", "", ids=[targetid])
 
         return id, targetid, targetnode
@@ -78,9 +78,9 @@ class DiagramBase(Directive):
 
         scale = self.options.get("scale", "100").replace("%", "")
         if not scale.isdigit():
-            raise Exception('Needsequence scale value must be a number. "{}" found'.format(scale))
+            raise Exception(f'Needsequence scale value must be a number. "{scale}" found')
         if int(scale) < 1 or int(scale) > 300:
-            raise Exception('Needsequence scale value must be between 1 and 300. "{}" found'.format(scale))
+            raise Exception(f'Needsequence scale value must be between 1 and 300. "{scale}" found')
 
         highlight = self.options.get("highlight", "")
 
@@ -159,7 +159,7 @@ def get_debug_container(puml_node):
     else:
         data = puml_node["uml"]
     data = "\n".join([html.escape(line) for line in data.split("\n")])
-    debug_para = nodes.raw("", "<pre>{}</pre>".format(data), format="html")
+    debug_para = nodes.raw("", f"<pre>{data}</pre>", format="html")
     debug_container += debug_para
 
     return debug_container
