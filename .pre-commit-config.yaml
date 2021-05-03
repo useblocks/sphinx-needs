@@ -17,3 +17,4 @@ repos:
           - id: flake8
             additional_dependencies:
               - pep8-naming
+              - flake8-bugbear

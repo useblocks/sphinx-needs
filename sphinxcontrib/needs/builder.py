@@ -28,10 +28,10 @@ class NeedsBuilder(Builder):
         # removed needs would stay in needs_list, if list gets not cleaned.
         needs_list.wipe_version(version)
 
-        for key, need in needs.items():
+        for need in needs.values():
             needs_list.add_need(version, need)
 
-        for key, need_filter in filters.items():
+        for need_filter in filters.values():
             if need_filter["export_id"]:
                 needs_list.add_filter(version, need_filter)
 

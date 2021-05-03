@@ -57,11 +57,11 @@ def process_need_outgoing(app, doctree, fromdocname):
                         target_title = target_need["title"]
                         target_id = target_need["id"]
 
-                    if getattr(env.config, "needs_show_link_title"):
+                    if env.config.needs_show_link_title:
                         link_text = "{title} ({id})".format(title=target_title, id=target_id)
                     else:
                         link_text = target_id
-                    if getattr(env.config, "needs_show_link_type"):
+                    if env.config.needs_show_link_type:
                         link_text += " [{type}]".format(type=target_need["type_name"])
 
                     # if index+1 < len(ref_need["links"]):
