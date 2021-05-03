@@ -14,17 +14,18 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+import datetime
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
 import sys
-import datetime
 
 from docutils.parsers.rst import directives
 
-sys.path.insert(0, os.path.abspath('../sphinxcontrib'))
+sys.path.insert(0, os.path.abspath("../sphinxcontrib"))
 
 # -- General configuration ------------------------------------------------
 
@@ -41,19 +42,21 @@ sys.path.insert(0, os.path.abspath('../sphinxcontrib'))
 # built documents.
 #
 # The short X.Y version.
-version = '0.6'
+version = "0.6"
 # The full version, including alpha/beta/rc tags.
-release = '0.6.2'
+release = "0.6.2"
 
-on_rtd = os.environ.get('READTHEDOCS') == 'True'
+on_rtd = os.environ.get("READTHEDOCS") == "True"
 
-extensions = ['sphinxcontrib.plantuml',
-              'sphinxcontrib.needs',
-              'sphinx.ext.autodoc',
-              'matplotlib.sphinxext.plot_directive',
-              'sphinx_copybutton',
-              'sphinxcontrib.programoutput',
-              'sphinx_panels']
+extensions = [
+    "sphinxcontrib.plantuml",
+    "sphinxcontrib.needs",
+    "sphinx.ext.autodoc",
+    "matplotlib.sphinxext.plot_directive",
+    "sphinx_copybutton",
+    "sphinxcontrib.programoutput",
+    "sphinx_panels",
+]
 
 add_module_names = False  # Used to shorten function name output
 autodoc_docstring_signature = True  # Used to read spec. func-defs from docstring (e.g. get rid of self)
@@ -139,23 +142,25 @@ EXTRA_CONTENT_TEMPLATE_COLLAPSE = """
 {% endif -%}
 """
 
-DEFAULT_DIAGRAM_TEMPLATE = \
+DEFAULT_DIAGRAM_TEMPLATE = (
     "<size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>"
+)
 
 # To not use the default configuration for sphinx needs, uncomment some of the following lines.
 
 # needs_template = TITLE_TEMPLATE
 # needs_diagram_template = DEFAULT_DIAGRAM_TEMPLATE
 
-needs_types = [dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),
-               dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="node"),
-               dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="node"),
-               dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="node"),
-               dict(directive="feature", title="Feature", prefix="F_", color="#FFCC00", style="node"),
-               dict(directive="user", title="User", prefix="U_", color="#777777", style="node"),
-               dict(directive="action", title="Action", prefix="A_", color="#FFCC00", style="node"),
-               dict(directive="milestone", title="Milestone", prefix="M_", color="#FF3333", style="node"),
-               ]
+needs_types = [
+    dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),
+    dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="node"),
+    dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="node"),
+    dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="node"),
+    dict(directive="feature", title="Feature", prefix="F_", color="#FFCC00", style="node"),
+    dict(directive="user", title="User", prefix="U_", color="#777777", style="node"),
+    dict(directive="action", title="Action", prefix="A_", color="#FFCC00", style="node"),
+    dict(directive="milestone", title="Milestone", prefix="M_", color="#FF3333", style="node"),
+]
 
 needs_extra_links = [
     {
@@ -165,8 +170,8 @@ needs_extra_links = [
         "copy": True,
         "style": "#AA0000",
         "style_part": "dotted,#AA0000",
-        "style_start": '-',
-        "style_end": '-o',
+        "style_start": "-",
+        "style_end": "-o",
     },
     {
         "option": "tests",
@@ -174,7 +179,7 @@ needs_extra_links = [
         "outgoing": "tests",
         "copy": True,
         "style": "#00AA00",
-        "style_part": "dotted,#00AA00"
+        "style_part": "dotted,#00AA00",
     },
     {
         "option": "triggers",
@@ -182,7 +187,7 @@ needs_extra_links = [
         "outgoing": "triggers",
         "copy": False,
         "style": "#00AA00",
-        "style_part": "solid,#777777"
+        "style_part": "solid,#777777",
     },
     {
         "option": "starts_with",
@@ -190,7 +195,7 @@ needs_extra_links = [
         "outgoing": "starts with",
         "copy": False,
         "style": "#00AA00",
-        "style_part": "solid,#777777"
+        "style_part": "solid,#777777",
     },
     {
         "option": "starts_after",
@@ -198,7 +203,7 @@ needs_extra_links = [
         "outgoing": "starts after",
         "copy": False,
         "style": "#00AA00",
-        "style_part": "solid,#777777"
+        "style_part": "solid,#777777",
     },
     {
         "option": "ends_with",
@@ -206,23 +211,22 @@ needs_extra_links = [
         "outgoing": "ends with",
         "copy": False,
         "style": "#00AA00",
-        "style_part": "solid,#777777"
-    }
-
+        "style_part": "solid,#777777",
+    },
 ]
 
 needs_flow_configs = {
-    'my_config': """
+    "my_config": """
        skinparam monochrome true
        skinparam componentStyle uml2
    """,
-    'another_config': """
+    "another_config": """
        skinparam class {
            BackgroundColor PaleGreen
            ArrowColor SeaGreen
            BorderColor SpringGreen
        }
-   """
+   """,
 }
 
 needs_show_link_type = False
@@ -234,18 +238,18 @@ needs_id_regex = "^[A-Za-z0-9_]"
 needs_id_required = False
 # needs_css = "dark.css"
 
-on_rtd = os.environ.get('READTHEDOCS') == 'True'
+on_rtd = os.environ.get("READTHEDOCS") == "True"
 local_plantuml_path = os.path.join(os.path.dirname(__file__), "utils", "plantuml.jar")
 
 if on_rtd:
     # Deactivated using rtd plantuml version as it looks quite old.
     # plantuml = 'java -Djava.awt.headless=true -jar /usr/share/plantuml/plantuml.jar'
-    plantuml = 'java -Djava.awt.headless=true -jar {}'.format(local_plantuml_path)
+    plantuml = "java -Djava.awt.headless=true -jar {}".format(local_plantuml_path)
 else:
-    plantuml = 'java -jar {}'.format(local_plantuml_path)
+    plantuml = "java -jar {}".format(local_plantuml_path)
 
 # plantuml_output_format = 'png'
-plantuml_output_format = 'svg_img'
+plantuml_output_format = "svg_img"
 
 needs_table_style = "datatables"
 needs_table_columns = "ID;TITLE;STATUS;OUTGOING"
@@ -262,78 +266,77 @@ needs_extra_options = {
 }
 
 needs_warnings = {
-    'type_check': 'type not in ["req", "spec", "impl", "test", "feature", "action", "user", "milestone", '
-                  '"issue", "pr", "commit"'  # github service types
-                  ']',
+    "type_check": 'type not in ["req", "spec", "impl", "test", "feature", "action", "user", "milestone", '
+    '"issue", "pr", "commit"'  # github service types
+    "]",
     # 'valid_status': 'status not in ["open", "in progress", "closed", "done", "implemented"] and status is not None'
 }
 
-needs_default_layout = 'clean'
+needs_default_layout = "clean"
 needs_default_style = None
 
 needs_layouts = {
-    'example': {
-        'grid': 'simple_side_right_partial',
-        'layout': {
-            'head': ['**<<meta("title")>>** for *<<meta("author")>>*'],
-            'meta': ['**status**: <<meta("status")>>',
-                     '**author**: <<meta("author")>>'],
-            'side': ['<<image("_images/{{author}}.png", align="center")>>']
-        }
+    "example": {
+        "grid": "simple_side_right_partial",
+        "layout": {
+            "head": ['**<<meta("title")>>** for *<<meta("author")>>*'],
+            "meta": ['**status**: <<meta("status")>>', '**author**: <<meta("author")>>'],
+            "side": ['<<image("_images/{{author}}.png", align="center")>>'],
+        },
     }
 }
 
 needs_service_all_data = True
 
 needs_services = {
-    'github-issues': {
-        'url': 'https://api.github.com/',
-        'max_content_lines': 20,
-        'id_prefix': 'GH_ISSUE_',
+    "github-issues": {
+        "url": "https://api.github.com/",
+        "max_content_lines": 20,
+        "id_prefix": "GH_ISSUE_",
     },
-    'github-prs': {
-        'url': 'https://api.github.com/',
-        'max_content_lines': 20,
-        'id_prefix': 'GH_PR_',
+    "github-prs": {
+        "url": "https://api.github.com/",
+        "max_content_lines": 20,
+        "id_prefix": "GH_PR_",
     },
-    'github-commits': {
-        'url': 'https://api.github.com/',
-        'max_content_lines': 20,
-        'id_prefix': 'GH_COM_',
-    }
+    "github-commits": {
+        "url": "https://api.github.com/",
+        "max_content_lines": 20,
+        "id_prefix": "GH_COM_",
+    },
 }
 
 # Get and maybe set Github credentials for services.
 # This is needed as the rate limit for not authenticated users is too low for the amount of requests we
 # need to perform for this documentation
-github_username = os.environ.get('GITHUB_USERNAME', '')
-github_token = os.environ.get('GITHUB_TOKEN', '')
+github_username = os.environ.get("GITHUB_USERNAME", "")
+github_token = os.environ.get("GITHUB_TOKEN", "")
 
-if github_username != '' and github_token != '':
-    print('GITHUB: Using as username: {}. lenth token: {}'.format(github_username, len(github_token)))
-    for service in ['github-issues', 'github-prs', 'github-commits']:
-        needs_services[service]['username'] = github_username
-        needs_services[service]['token'] = github_token
+if github_username != "" and github_token != "":
+    print("GITHUB: Using as username: {}. lenth token: {}".format(github_username, len(github_token)))
+    for service in ["github-issues", "github-prs", "github-commits"]:
+        needs_services[service]["username"] = github_username
+        needs_services[service]["token"] = github_token
 else:
-    print('GITHUB: No auth provided')
+    print("GITHUB: No auth provided")
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = ".rst"
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = "index"
 
 # General information about the project.
-project = 'Sphinx-Needs'
+project = "Sphinx-Needs"
 now = datetime.datetime.now()
 copyright = '2017-{year}, <a href="http://useblocks.com">team useblocks</a>'.format(year=now.year)
-author = 'team useblocks'
+author = "team useblocks"
 
 # The language for content autogenerated by Sphinx. Refer to documentation
 # for a list of supported languages.
@@ -345,10 +348,10 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = "sphinx"
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
@@ -358,7 +361,7 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = "alabaster"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -368,33 +371,37 @@ html_theme = 'alabaster'
 
 # html_logo = "_static/needs_logo.png"
 # html_sidebars = {'**': ['about.html', 'navigation.html', 'sourcelink.html', 'searchbox.html'], }
-html_sidebars = {'**': ['about.html', 'navigation.html', 'searchbox.html'], }
+html_sidebars = {
+    "**": ["about.html", "navigation.html", "searchbox.html"],
+}
 
 html_theme_options = {
-    'logo': 'needs_logo.png',
-    'logo_name': True,
+    "logo": "needs_logo.png",
+    "logo_name": True,
     # 'description': "an extension for sphinx",
-    'logo_text_align': "center",
-    'github_user': 'useblocks',
-    'github_repo': 'sphinxcontrib-needs',
-    'github_banner': True,
-    'github_button': True,
-    'github_type': 'star',
-    'fixed_sidebar': False,
-    'extra_nav_links': {'needs@PyPi': "https://pypi.python.org/pypi/sphinxcontrib-needs/",
-                        'needs@github': "https://github.com/useblocks/sphinxcontrib-needs",
-                        'needs@travis': "https://travis-ci.org/useblocks/sphinxcontrib-needs"}
+    "logo_text_align": "center",
+    "github_user": "useblocks",
+    "github_repo": "sphinxcontrib-needs",
+    "github_banner": True,
+    "github_button": True,
+    "github_type": "star",
+    "fixed_sidebar": False,
+    "extra_nav_links": {
+        "needs@PyPi": "https://pypi.python.org/pypi/sphinxcontrib-needs/",
+        "needs@github": "https://github.com/useblocks/sphinxcontrib-needs",
+        "needs@travis": "https://travis-ci.org/useblocks/sphinxcontrib-needs",
+    },
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'needstestdocsdoc'
+htmlhelp_basename = "needstestdocsdoc"
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -402,15 +409,12 @@ latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
-
     # The font size ('10pt', '11pt' or '12pt').
     #
     # 'pointsize': '10pt',
-
     # Additional stuff for the LaTeX preamble.
     #
     # 'preamble': '',
-
     # Latex figure (float) alignment
     #
     # 'figure_align': 'htbp',
@@ -420,18 +424,14 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'needstestdocs.tex', 'needs test docs Documentation',
-     'team useblocks', 'manual'),
+    (master_doc, "needstestdocs.tex", "needs test docs Documentation", "team useblocks", "manual"),
 ]
 
 # -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, 'needstestdocs', 'needs test docs Documentation',
-     [author], 1)
-]
+man_pages = [(master_doc, "needstestdocs", "needs test docs Documentation", [author], 1)]
 
 # -- Options for Texinfo output -------------------------------------------
 
@@ -439,9 +439,15 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'needstestdocs', 'needs test docs Documentation',
-     author, 'needstestdocs', 'One line description of project.',
-     'Miscellaneous'),
+    (
+        master_doc,
+        "needstestdocs",
+        "needs test docs Documentation",
+        author,
+        "needstestdocs",
+        "One line description of project.",
+        "Miscellaneous",
+    ),
 ]
 
 
@@ -450,12 +456,10 @@ def rstjinja(app, docname, source):
     Render our pages as a jinja template for fancy templating goodness.
     """
     # Make sure we're outputting HTML
-    if app.builder.format != 'html':
+    if app.builder.format != "html":
         return
     src = source[0]
-    rendered = app.builder.templates.render_string(
-        src, app.config.html_context
-    )
+    rendered = app.builder.templates.render_string(src, app.config.html_context)
     source[0] = rendered
 
 

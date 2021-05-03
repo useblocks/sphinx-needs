@@ -83,6 +83,16 @@ Running Tests
 Linting
 -------
 
+This project uses [pre-commit](https://pre-commit.com/) for linting.
+
+1. install pre-commit hooks (this only needs to be done once)
+
+::
+
+   poetry run pre-commit install
+
+2. run/apply lints
+
 ::
 
    make lint

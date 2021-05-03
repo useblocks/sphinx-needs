@@ -1,0 +1,19 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+    - repo: https://github.com/psf/black
+      rev: 21.4b0
+      hooks:
+          - id: black
+
+    - repo: https://github.com/pycqa/isort
+      rev: 5.8.0
+      hooks:
+          - id: isort
+
+    - repo: https://github.com/PyCQA/flake8
+      rev: 3.9.1
+      hooks:
+          - id: flake8
+            additional_dependencies:
+              - pep8-naming

@@ -24,21 +24,6 @@ jobs:
       - name: Run Tests
         run: nox --non-interactive --session "tests-${{ matrix.python-version }}(sphinx='${{ matrix.sphinx-version }}')" -- --full-trace
 
-  lint:
-    name: Lint
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set Up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: "3.9"
-      - name: Install Nox Dependencies
-        run: |
-          python -m pip install poetry nox nox-poetry
-      - name: Run Lint
-        run: nox --non-interactive --session lint -- --full-trace
-
   linkcheck:
     name: Docs-Linkcheck
     runs-on: ubuntu-20.04
@@ -53,3 +38,11 @@ jobs:
           python -m pip install poetry nox nox-poetry
       - name: Run LinkCheck
         run: nox --non-interactive --session linkcheck -- --full-trace
+
+  lint:
+    name: Lint with Pre-Commit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - uses: pre-commit/action@v2.0.2
