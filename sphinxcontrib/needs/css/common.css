@@ -4,6 +4,13 @@ table.need td {
     white-space: normal;
 }
 
+/* Needed for RTD theme.
+Manipulates it for EVERY table, so also none sphinx-needs tables
+Another solution would be to use JS, to address only divs, which have a sphinx-needs table as child.*/
+div.wy-table-responsive {
+    overflow: unset;
+}
+
 /* We need not line-block margin:24 px here, which is coming from sphinx theme */
 table.need td div.needs_side.line-block{
     margin-bottom: 0;

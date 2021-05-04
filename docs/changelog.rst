@@ -5,8 +5,10 @@ Changelog
 -----
 :Released: under development
 
-Bugfix: needflow: links  for need-parts get correctly calculated.
+* Bugfix: needflow: links  for need-parts get correctly calculated.
   (`#205 <https://github.com/useblocks/sphinxcontrib-needs/issues/205>`_)
+* Bugfix: CSS update for ReadTheDocsTheme to show tables correctly.
+  (`#263 <https://github.com/useblocks/sphinxcontrib-needs/issues/263>`_)
 
 0.6.2
 -----
