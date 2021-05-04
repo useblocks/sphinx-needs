@@ -165,7 +165,7 @@ def add_need(
     if env.app.config.needs_statuses:
         if status not in [stat["name"] for stat in env.app.config.needs_statuses]:
             raise NeedsStatusNotAllowed(
-                f"Status {status} of need id {need_id} is not allowed " "by config value 'needs_statuses'."
+                f"Status {status} of need id {need_id} is not allowed by config value 'needs_statuses'."
             )
 
     if tags is None:
@@ -188,7 +188,7 @@ def add_need(
             for tag in tags:
                 if tag not in [tag["name"] for tag in env.app.config.needs_tags]:
                     raise NeedsTagNotAllowed(
-                        f"Tag {tag} of need id {need_id} is not allowed " "by config value 'needs_tags'."
+                        f"Tag {tag} of need id {need_id} is not allowed by config value 'needs_tags'."
                     )
         # This may have cut also dynamic function strings, as they can contain , as well.
         # So let put them together again
@@ -412,9 +412,7 @@ def _read_in_links(links_string: Union[str, List[str]]):
             link_list = links_string
         for link in link_list:
             if link.isspace():
-                logger.warning(
-                    "Grubby link definition found in need {}. " "Defined link contains spaces only.".format(id)
-                )
+                logger.warning("Grubby link definition found in need. Defined link contains spaces only.")
             else:
                 links.append(link.strip())
 

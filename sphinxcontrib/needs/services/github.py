@@ -93,9 +93,7 @@ class GithubService(BaseService):
                     single_type = "pulls"
                 else:
                     single_type = "commits"
-                url = self.url + "repos/{owner}/{repo}/{single_type}/{number}".format(
-                    owner=owner, repo=repo, single_type=single_type, number=number
-                )
+                url = self.url + f"repos/{owner}/{repo}/{single_type}/{number}"
             except IndexError:
                 raise NeedGithubServiceException('Single option ot valid, must follow "owner/repo/number"')
 
@@ -130,16 +128,16 @@ class GithubService(BaseService):
                     else:
                         raise NeedGithubServiceException(
                             "Github service error during request.\n"
-                            "Status code: {}\n"
-                            "Error: {}\n"
-                            "{}".format(resp.status_code, resp.text, extra_info)
+                            f"Status code: {resp.status_code}\n"
+                            f"Error: {resp.text}\n"
+                            f"{extra_info}"
                         )
             else:
                 raise NeedGithubServiceException(
                     "Github service error during request.\n"
-                    "Status code: {}\n"
-                    "Error: {}\n"
-                    "{}".format(resp.status_code, resp.text, extra_info)
+                    f"Status code: {resp.status_code}\n"
+                    f"Error: {resp.text}\n"
+                    f"{extra_info}"
                 )
 
         if specific:
@@ -290,19 +288,19 @@ class GithubService(BaseService):
                         f.write(response.content)
                 elif response.status_code == 302:
                     self.log.warning(
-                        "GitHub service {} could not download avatar image "
-                        "from {}.\n"
-                        "    Status code: {}\n"
+                        f"GitHub service {self.name} could not download avatar image "
+                        f"from {avatar_url}.\n"
+                        f"    Status code: {response.status_code}\n"
                         "    Reason: Looks like the authentication provider tries to redirect you."
                         " This is not supported and is a common problem, "
-                        "if you use GitHub Enterprise.".format(self.name, avatar_url, response.status_code)
+                        "if you use GitHub Enterprise."
                     )
                     avatar_file_path = default_avatar_file_path
                 else:
                     self.log.warning(
-                        "GitHub service {} could not download avatar image "
-                        "from {}.\n"
-                        "    Status code: {}".format(self.name, avatar_url, response.status_code)
+                        f"GitHub service {self.name} could not download avatar image "
+                        f"from {avatar_url}.\n"
+                        f"    Status code: {response.status_code}"
                     )
                     avatar_file_path = default_avatar_file_path
         else:

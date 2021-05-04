@@ -448,9 +448,7 @@ def check_configuration(_app: Sphinx, config: Config):
     # Check if option and link are using the same name
     for link in link_types:
         if link in extra_options.keys():
-            raise NeedsConfigException(
-                "Same name for link type and extra option: {}." " This is not allowed.".format(link)
-            )
+            raise NeedsConfigException(f"Same name for link type and extra option: {link}." " This is not allowed.")
         if link + "_back" in extra_options.keys():
             raise NeedsConfigException(
                 "Same name for automatically created link type and extra option: {}."

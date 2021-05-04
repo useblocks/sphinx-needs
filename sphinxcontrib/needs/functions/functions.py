@@ -64,17 +64,15 @@ def execute_func(env, need, func_string):
 
     if not isinstance(func_return, (str, int, float, list, unicode)) and func_return:
         raise SphinxError(
-            "Return value of function {} is of type {}. Allowed are str, int, float".format(
-                func_name, type(func_return)
-            )
+            f"Return value of function {func_name} is of type {type(func_return)}. Allowed are str, int, float"
         )
 
     if isinstance(func_return, list):
         for element in func_return:
             if not isinstance(element, (str, int, float, unicode)):
                 raise SphinxError(
-                    "Element of return list of function {} is of type {}. "
-                    "Allowed are str, int, float".format(func_name, type(func_return))
+                    f"Element of return list of function {func_name} is of type {type(func_return)}. "
+                    "Allowed are str, int, float"
                 )
     return func_return
 
@@ -319,8 +317,8 @@ def _analyze_func_string(func_string, need):
                 )
         else:
             raise FunctionParsingException(
-                "Unsupported type found in function definition: {}. "
-                "Supported are numbers, strings, bool and list".format(func_string)
+                f"Unsupported type found in function definition: {func_string}. "
+                "Supported are numbers, strings, bool and list"
             )
     func_kargs = {}
     for keyword in func_call.keywords:
