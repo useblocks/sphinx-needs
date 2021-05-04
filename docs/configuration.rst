@@ -916,7 +916,7 @@ This will handle **all warnings** as exceptions.
 
    needs_warnings = {
      # req need must not have an empty status field
-     'req_with_no_status': "type == 'req' and status is None or len(status) == 0",
+     'req_with_no_status': "type == 'req' and not status",
 
      # status must be open or closed
      'invalid_status' : "status not in ['open', 'closed']",
