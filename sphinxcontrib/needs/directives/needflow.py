@@ -220,7 +220,7 @@ def process_needflow(app, doctree, fromdocname):
                     node_part_code += '{style} "{node_text}" as {id} [[{link}]] #{color}\n'.format(
                         id=make_entity_name(need_part["id_complete"]),
                         node_text=part_text,
-                        link=make_entity_name(part_link),
+                        link=part_link,
                         color=";".join(part_colors),
                         style="rectangle",
                     )
@@ -256,7 +256,6 @@ def process_needflow(app, doctree, fromdocname):
                 node_code = '{style} "{node_text}" as {id} [[{link}]] #{color} {need_parts}\n'.format(
                     id=make_entity_name(need_id),
                     node_text=node_text,
-                    # link=make_entity_name(link), color=';'.join(colors),
                     link=link,
                     color=";".join(colors),
                     style=style,
