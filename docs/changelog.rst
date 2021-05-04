@@ -5,6 +5,9 @@ Changelog
 -----
 :Released: under development
 
+Bugfix: needflow: links  for need-parts get correctly calculated.
+  (`#205 <https://github.com/useblocks/sphinxcontrib-needs/issues/205>`_)
+
 0.6.2
 -----
 :Released: 30.04.2021
