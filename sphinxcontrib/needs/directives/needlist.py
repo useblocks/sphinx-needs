@@ -88,7 +88,7 @@ def process_needlist(app, doctree, fromdocname):
         line_block = nodes.line_block()
         for need_info in found_needs:
             para = nodes.line()
-            description = "%s: %s" % (need_info["id"], need_info["title"])
+            description = "{}: {}".format(need_info["id"], need_info["title"])
 
             if current_needfilter["show_status"] and need_info["status"]:
                 description += " (%s)" % need_info["status"]

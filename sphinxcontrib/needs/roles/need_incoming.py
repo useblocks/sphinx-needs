@@ -33,11 +33,11 @@ def process_need_incoming(app, doctree, fromdocname):
             if back_link in env.needs_all_needs:
                 try:
                     target_need = env.needs_all_needs[back_link]
-                    if getattr(env.config, "needs_show_link_title"):
+                    if getattr(env.config, "needs_show_link_title", None):
                         link_text = "{title} ({id})".format(title=target_need["title"], id=target_need["id"])
                     else:
                         link_text = target_need["id"]
-                    if getattr(env.config, "needs_show_link_type"):
+                    if getattr(env.config, "needs_show_link_type", None):
                         link_text += " [{type}]".format(type=target_need["type_name"])
 
                     # if index + 1 < len(ref_need["links_back"]):

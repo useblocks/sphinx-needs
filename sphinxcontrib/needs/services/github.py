@@ -105,7 +105,7 @@ class GithubService(BaseService):
             query = "{} {}".format(query, self.gh_type_config[self.gh_type]["query"])
             params = {"q": query, "per_page": options.get("max_amount", self.max_amount)}
 
-        self.log.info("Service {} requesting data for query: {}".format(self.name, query))
+        self.log.info(f"Service {self.name} requesting data for query: {query}")
 
         if self.username:
             auth = (self.username, self.token)
@@ -149,7 +149,7 @@ class GithubService(BaseService):
     def request(self, options=None):
         if options is None:
             options = {}
-        self.log.debug("Requesting data for service {}".format(self.name))
+        self.log.debug(f"Requesting data for service {self.name}")
 
         if "query" not in options and "specific" not in options:
             raise NeedGithubServiceException('"query" or "specific" missing as option for github service.')

@@ -23,7 +23,7 @@ class ServiceManager:
         # Register options from service class
         for option in clazz.options:
             if option not in self.app.config.needs_extra_options.keys():
-                self.log.debug('Register option "{}" for service "{}"'.format(option, name))
+                self.log.debug(f'Register option "{option}" for service "{name}"')
                 self.app.config.needs_extra_options[option] = directives.unchanged
                 # Register new option directly in Service directive, as its class options got already
                 # calculated

@@ -6,6 +6,10 @@ list:
 test:
 	poetry run nosetests -w tests
 
+.PHONY: lint
+lint:
+	poetry run pre-commit run --all-files
+
 .PHONY: test-matrix
 test-matrix:
 	nox

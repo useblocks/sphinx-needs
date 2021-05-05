@@ -151,7 +151,7 @@ def process_needfilters(app, doctree, fromdocname):
         for need_info in found_needs:
             if current_needfilter["layout"] == "list":
                 para = nodes.line()
-                description = "%s: %s" % (need_info["id"], need_info["title"])
+                description = "{}: {}".format(need_info["id"], need_info["title"])
 
                 if current_needfilter["show_status"] and need_info["status"]:
                     description += " (%s)" % need_info["status"]
@@ -192,7 +192,7 @@ def process_needfilters(app, doctree, fromdocname):
                     link = (
                         "../"
                         + app.builder.get_target_uri(need_info["docname"])
-                        + "?highlight={0}".format(urlparse(need_info["title"]))
+                        + "?highlight={}".format(urlparse(need_info["title"]))
                         + "#"
                         + need_info["target_node"]["refid"]
                     )  # Gets mostly called during latex generation

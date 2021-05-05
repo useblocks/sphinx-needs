@@ -28,7 +28,7 @@ GITHUB_LAYOUT = {
         ],
         "meta_right": [
             '<<meta("type_name", prefix="type: ")>>',
-            '<<meta_all(no_links=True, exclude=["layout","style",{}, {}])>>'.format(GITHUB_DATA_STR, CONFIG_DATA_STR),
+            f'<<meta_all(no_links=True, exclude=["layout","style",{GITHUB_DATA_STR}, {CONFIG_DATA_STR}])>>',
             "<<meta_links_all()>>",
         ],
         "footer_left": [

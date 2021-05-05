@@ -32,7 +32,7 @@ def process_need_count(app, doctree, fromdocname):
                 need_list = prepare_need_list(all_needs)  # adds parts to need_list
                 amount_1 = len(filter_needs(need_list, filters[0]))
                 amount_2 = len(filter_needs(need_list, filters[1]))
-                amount = "{:2.1f}".format(amount_1 / amount_2 * 100)
+                amount = f"{amount_1 / amount_2 * 100:2.1f}"
             elif len(filters) > 2:
                 raise NeedsInvalidFilter(
                     "Filter not valid. Got too many filter elements. Allowed are 1 or 2. "

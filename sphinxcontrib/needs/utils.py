@@ -247,13 +247,13 @@ class NeedsList:
             file = os.path.join(self.confdir, file)
 
         if not os.path.exists(file):
-            self.log.warning("Could not load needs json file {0}".format(file))
+            self.log.warning(f"Could not load needs json file {file}")
         else:
-            with open(file, "r") as needs_file:
+            with open(file) as needs_file:
                 needs_file_content = needs_file.read()
             try:
                 needs_list = json.loads(needs_file_content)
             except json.JSONDecodeError:
-                self.log.warning("Could not decode json file {0}".format(file))
+                self.log.warning(f"Could not decode json file {file}")
             else:
                 self.needs_list = needs_list

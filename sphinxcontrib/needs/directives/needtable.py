@@ -131,7 +131,7 @@ def process_needtables(app, doctree, fromdocname):
             style = current_needtable["style"].upper()
 
         # Prepare table
-        classes = ["NEEDS_{style}".format(style=style)]
+        classes = [f"NEEDS_{style}"]
         content = nodes.table(classes=classes)
         tgroup = nodes.tgroup()
 

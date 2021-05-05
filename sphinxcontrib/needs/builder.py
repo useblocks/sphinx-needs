@@ -28,17 +28,17 @@ class NeedsBuilder(Builder):
         # removed needs would stay in needs_list, if list gets not cleaned.
         needs_list.wipe_version(version)
 
-        for key, need in needs.items():
+        for need in needs.values():
             needs_list.add_need(version, need)
 
-        for key, need_filter in filters.items():
+        for need_filter in filters.values():
             if need_filter["export_id"]:
                 needs_list.add_filter(version, need_filter)
 
         try:
             needs_list.write_json()
         except Exception as e:
-            log.error("Error during writing json file: {0}".format(e))
+            log.error(f"Error during writing json file: {e}")
         else:
             log.info("Needs successfully exported")
 

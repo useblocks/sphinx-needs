@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
@@ -121,7 +119,7 @@ def setup(app):
     app.add_config_value("needs_id_required", False, "html", types=[bool])
     app.add_config_value(
         "needs_id_regex",
-        "^[A-Z0-9_]{{{id_length},}}".format(id_length=app.config.needs_id_length),
+        f"^[A-Z0-9_]{{{app.config.needs_id_length},}}",
         "html",
     )
     app.add_config_value("needs_show_link_type", False, "html", types=[bool])
@@ -130,7 +128,7 @@ def setup(app):
     app.add_config_value("needs_table_columns", "ID;TITLE;STATUS;TYPE;OUTGOING;TAGS", "html")
     app.add_config_value("needs_table_style", "DATATABLES", "html")
 
-    app.add_config_value("needs_role_need_template", u"{title} ({id})", "html")
+    app.add_config_value("needs_role_need_template", "{title} ({id})", "html")
     app.add_config_value("needs_role_need_max_title_length", 30, "html", types=[int])
 
     app.add_config_value("needs_extra_options", {}, "html")
@@ -164,7 +162,7 @@ def setup(app):
     app.add_config_value("needs_css", "modern.css", "html")
 
     # Prefix for need_part output in tables
-    app.add_config_value("needs_part_prefix", u"\u2192\u00a0", "html")
+    app.add_config_value("needs_part_prefix", "\u2192\u00a0", "html")
 
     # List of additional links, which can be used by setting related option
     # Values needed for each new link:
