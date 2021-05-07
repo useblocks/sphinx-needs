@@ -1,5 +1,10 @@
-Changelog
-=========
+Changelog & License
+===================
+
+License
+-------
+
+.. include:: ../LICENSE
 
 0.6.3
 -----
@@ -9,6 +14,8 @@ Changelog
   (`#205 <https://github.com/useblocks/sphinxcontrib-needs/issues/205>`_)
 * Bugfix: CSS update for ReadTheDocsTheme to show tables correctly.
   (`#263 <https://github.com/useblocks/sphinxcontrib-needs/issues/263>`_)
+* Bugfix: CSS fix for needtable :ref:`needtable_style_row`.
+  (`#195 <https://github.com/useblocks/sphinxcontrib-needs/issues/195>`_)
 
 0.6.2
 -----

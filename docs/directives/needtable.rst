@@ -237,7 +237,7 @@ The class-attribute can then be addressed by css and specific layout can be set 
 
 .. needtable::
       :tags: ex_row_color
-      :style_row: needs_green
+      :style_row: needs_blue_border
 
 .. container:: toggle
 
@@ -249,7 +249,7 @@ The class-attribute can then be addressed by css and specific layout can be set 
 
       .. needtable::
          :tags: ex_row_color
-         :style_row: needs_green
+         :style_row: needs_blue_border
 
 Row style based on specific need value
 ......................................

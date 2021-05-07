@@ -301,18 +301,23 @@ Content
    roles
    configuration
    builders
+   api
+
+.. toctree::
+   :maxdepth: 2
+
    filter
    dynamic_functions
    services/index
    layout_styles
    examples/index
-   api
-   snippets
+
+.. toctree::
+   :maxdepth: 2
+
    support
-   changelog
    contributing
-   license
-   contributors
+   changelog
 
 
 
