@@ -16,6 +16,8 @@ License
   (`#263 <https://github.com/useblocks/sphinxcontrib-needs/issues/263>`_)
 * Bugfix: CSS fix for needtable :ref:`needtable_style_row`.
   (`#195 <https://github.com/useblocks/sphinxcontrib-needs/issues/195>`_)
+* Bugfix: ``current_need` var is accessible in all need-filters.
+  (`#169 <https://github.com/useblocks/sphinxcontrib-needs/issues/169>`_)
 
 0.6.2
 -----

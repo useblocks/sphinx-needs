@@ -225,6 +225,8 @@ def filter_single_need(need, filter_string="", needs=None, current_need=None) ->
         filter_context["needs"] = needs
     if current_need:
         filter_context["current_need"] = current_need
+    else:
+        filter_context["current_need"] = need
 
     filter_context["search"] = re.search
     result = False
