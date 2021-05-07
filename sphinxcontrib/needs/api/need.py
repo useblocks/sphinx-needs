@@ -123,8 +123,8 @@ def add_need(
         if ntype["directive"] == need_type:
             type_name = ntype["title"]
             type_prefix = ntype["prefix"]
-            type_color = ntype["color"]
-            type_style = ntype["style"]
+            type_color = ntype["color"] or "#000000"  # if no color set up user in config
+            type_style = ntype["style"] or "node"  # if no style set up user in config
             found = True
             break
     if not found:
