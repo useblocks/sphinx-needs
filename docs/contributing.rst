@@ -83,7 +83,8 @@ Running Tests
 Linting
 -------
 
-This project uses [pre-commit](https://pre-commit.com/) for linting.
+This project uses `Pre-Commit <https://pre-commit.com/>`_ for linting. This will also apply formatting using `black <https://github.com/psf/black>`_ and
+`isort <https://pycqa.github.io/isort/>`_
 
 1. install pre-commit hooks (this only needs to be done once)
 
@@ -132,15 +133,6 @@ and the local :download:`noxfile <../noxfile.py>`.
 .. dropdown:: Our noxfile.py
 
    .. literalinclude:: ../noxfile.py
-
-Formatting
-----------
-``Sphinx-Needs`` uses `black <https://github.com/psf/black>`_ and
-`isort <https://pycqa.github.io/isort/>`_ to care about its source code formatting.
-
-To run both::
-
-    make format
 
 
 Running Commands
