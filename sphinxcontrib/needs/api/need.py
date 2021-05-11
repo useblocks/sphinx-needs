@@ -46,6 +46,9 @@ def add_need(
     template=None,
     pre_template=None,
     post_template=None,
+    is_external=False,
+    external_url=None,
+    external_css="external_link",
     **kwargs
 ):
     """
@@ -57,6 +60,10 @@ def add_need(
     ``kwags`` can contain options defined in ``needs_extra_options`` and ``needs_extra_links``.
     If an entry is found in ``kwags``, which *is not* specified in the configuration or registered e.g. via
     ``add_extra_option``, an exception is raised.
+
+    If ``is_external`` is set to ``True``, no node will be created.
+    Instead the need is referencing an external url.
+    Used mostly for :ref:`external_needs` to integrate and reference needs from external documentation.
 
     **Usage**:
 
@@ -106,6 +113,9 @@ def add_need(
     :param template: Template name to use for the content of this need
     :param pre_template: Template name to use for content added before need
     :param post_template: Template name to use for the content added after need
+    :param is_external: Is true, no node is created and need is referencing external url
+    :param external_url: URL as string, which is used as target if ``is_external`` is ``True``
+    :param external_css: CSS class name as string, which is set for the <a> tag.
 
     :return: node
     """
@@ -158,7 +168,12 @@ def add_need(
         )
 
     # Calculate target id, to be able to set a link back
-    target_node = nodes.target("", "", ids=[need_id], refid=need_id)
+    if not is_external:
+        target_node = nodes.target("", "", ids=[need_id], refid=need_id)
+        external_url = None
+    else:
+        target_node = None
+        external_url = external_url
 
     # Handle status
     # Check if status is in needs_statuses. If not raise an error.
@@ -234,6 +249,7 @@ def add_need(
         "docname": docname,
         "lineno": lineno,
         "target_node": target_node,
+        "external_url": external_url,
         "content_node": None,  # gets set after rst parsing
         "type": need_type,
         "type_name": type_name,
@@ -257,6 +273,8 @@ def add_need(
         "is_part": False,
         "is_need": True,
         "parent_need": None,
+        "is_external": is_external or False,
+        "external_css": external_css or "external_link",
     }
     needs_extra_options = env.config.needs_extra_options.keys()
     _merge_extra_options(needs_info, kwargs, needs_extra_options)
@@ -314,8 +332,6 @@ def add_need(
         # Overwrite current content
         content = new_content
         needs_info["content"] = new_content
-    else:
-        new_content = None
 
     # pre_template
     if needs_info["pre_template"]:
@@ -330,6 +346,9 @@ def add_need(
         needs_info["post_content"] = post_content
     else:
         post_content = None
+
+    if needs_info["is_external"]:
+        return []
 
     if needs_info["hide"]:
         return [target_node]
@@ -369,6 +388,62 @@ def add_need(
         return_nodes = return_nodes + node_need_post_content.children
 
     return return_nodes
+
+
+def add_external_need(
+    app,
+    need_type,
+    title,
+    id=None,
+    external_url=None,
+    external_css="external_link",
+    content="",
+    status=None,
+    tags=None,
+    links_string=None,
+    **kwargs
+):
+    """
+    Adds an external need from an external source.
+    This need does not have any representation in the current documentation project.
+    However, it can be linked and filtered.
+    It's reference will open a link to another, external  sphinx documentation project.
+
+    It return an empty list (without any nodes), so no nodes will be added to the document.
+
+    :param app: Sphinx application object.
+    :param need_type: Name of the need type to create.
+    :param title: String as title.
+    :param id: ID as string. If not given, a id will get generated.
+    :param external_url: URL as string, which shall be used as link to the original need source
+    :param content: Content as single string.
+    :param status: Status as string.
+    :param tags: Tags as single string.
+    :param links_string: Links as single string.
+    :param external_css: CSS class name as string, which is set for the <a> tag.
+    :param kwargs:
+
+    :return: Empty list
+    """
+
+    kwargs["state"] = None
+    kwargs["docname"] = None
+    kwargs["lineno"] = None
+    kwargs["need_type"] = need_type
+    kwargs["id"] = id
+    kwargs["content"] = content
+    kwargs["title"] = title
+    kwargs["status"] = status
+    kwargs["tags"] = tags
+    kwargs["links_string"] = links_string
+    kwargs["is_external"] = True
+    kwargs["external_url"] = external_url
+    kwargs["external_css"] = external_css
+
+    return add_need(app=app, **kwargs)
+    # need_type=need_type, title=title, id=id,
+    # content=content, status=status, tags=tags, links_string=links_string,
+    # is_external=True, external_url=external_url, external_css=external_css)
 
 
 def _prepare_template(app, needs_info, template_key):

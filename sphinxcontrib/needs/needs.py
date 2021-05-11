@@ -70,6 +70,7 @@ from sphinxcontrib.needs.environment import (
     install_lib_static_files,
     install_styles_static_files,
 )
+from sphinxcontrib.needs.external_needs import load_external_needs
 from sphinxcontrib.needs.functions import needs_common_functions, register_func
 from sphinxcontrib.needs.logging import get_logger
 from sphinxcontrib.needs.roles.need_count import NeedCount, process_need_count
@@ -194,6 +195,8 @@ def setup(app):
 
     app.add_config_value("needs_debug_no_external_calls", False, "html", types=[bool])
 
+    app.add_config_value("needs_external_needs", [], "html")
+
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(
@@ -251,7 +254,7 @@ def setup(app):
     app.connect("env-purge-doc", purge_needs)
     app.connect("config-inited", load_config)
     app.connect("env-before-read-docs", prepare_env)
-    # app.connect('env-before-read-docs', load_config)
+    app.connect("env-before-read-docs", load_external_needs)
     app.connect("config-inited", check_configuration)
 
     # There is also the event doctree-read.
@@ -295,7 +298,7 @@ def setup(app):
 
 def load_config(app: Sphinx, *_args):
     """
-    Register extra options and directive based on config from con.py
+    Register extra options and directive based on config from conf.py
     """
     types = app.config.needs_types
     extra_options = app.config.needs_extra_options

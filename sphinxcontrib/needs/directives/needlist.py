@@ -101,6 +101,12 @@ def process_needlist(app, doctree, fromdocname):
             # Create a reference
             if need_info["hide"]:
                 para += title
+            elif need_info["is_external"]:
+                ref = nodes.reference("", "")
+                ref["refuri"] = need_info["external_url"]
+                ref["classes"].append(need_info["external_css"])
+                ref.append(title)
+                para += ref
             else:
                 ref = nodes.reference("", "")
                 ref["refdocname"] = need_info["docname"]

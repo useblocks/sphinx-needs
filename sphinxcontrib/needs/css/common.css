@@ -143,3 +143,8 @@ div.dt-buttons button {
     background-color: inherit;
     background-image: none;
 }
+
+a.external_link:after {
+    content: "\00a0\00a0🡽"
+
+}

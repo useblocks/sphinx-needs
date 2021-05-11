@@ -1142,6 +1142,49 @@ Default: ``False``.
 
     needs_service_all_data = True
 
+
+.. _needs_external_needs:
+
+needs_external_needs
+~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.7.0
+
+Allows to reference and use external needs without having their representation in your own documentation.
+(Unlike :ref:`needimport`, which creates need-objects from a local ``needs.json`` only).
+
+.. code-block:: python
+
+    needs_external_needs = [
+      {
+        'base_url': 'http://mydocs/my_project',
+        'json_url':  'http://mydocs/my_project/needs.json',
+        'version': '1.0',
+        'id_prefix': 'ext_',
+        'css_class': 'external_link',
+      },
+      {
+        'base_url': 'http://mydocs/another_project/',
+        'json_url':  'http://mydocs/another_project/data/exports/needs.json',
+        'version': '2.5',
+        'id_prefix': 'other_',
+        'css_class': 'project_x',
+      }
+    ]
+
+``needs_external_needs`` must be a list of dictionary elements and each dictionary must/can have the following
+keys:
+
+:base_url: Base url which is used to calculate the final, specific need url. Normally the path under which the ``index.html`` is provided.
+:json_url: url, which can be used to download the ``needs.json`` (or similar) file.
+:version: Defines the version to use inside the ``needs.json`` file (*optional*).
+:id_prefix: Prefix as string, which will be added to all id of external needs. Needed, if there is the risk that
+            needs from different projects may have the same id (*optional*).
+:css_class: A class name as string, which gets set in link representations like :ref:`needtable`.
+            The related css class definition must be done by the user, e.g. by :ref:`own_css`.
+            (*optional*) (*default*: ``external_link``)
+
+
 Removed options
 ---------------
 

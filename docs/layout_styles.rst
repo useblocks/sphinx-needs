@@ -528,6 +528,8 @@ Sphinx-needs provides the following css styles:
 
 .. image:: _static/need_dark.png
 
+.. _own_css:
+
 Own CSS file on sphinx level
 ++++++++++++++++++++++++++++
 

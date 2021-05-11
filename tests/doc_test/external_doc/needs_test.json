@@ -1,0 +1,543 @@
+{
+    "created": "2017-08-25T21:17:17.640061",
+    "current_version": "0.1.33",
+    "project": "Sphinx-Needs",
+    "versions": {
+        "0.1.33": {
+            "created": "2017-08-25T21:17:17.640058",
+            "needs": {
+                "TEST_01": {
+                    "description": "TEST IMPORT TITLE",
+                    "id": "TEST_01",
+                    "links": [],
+                    "status": null,
+                    "tags": [],
+                    "title": "TEST IMPORT DESCRIPTION",
+                    "type": "impl",
+                    "type_name": "Implementation"
+                },
+                "IMPL_01": {
+                    "description": "Incoming links of this spec: :need_incoming:`IMPL_01`.",
+                    "id": "IMPL_01",
+                    "links": [
+                        "OWN_ID_123"
+                    ],
+                    "status": null,
+                    "tags": [],
+                    "title": "Implementation for specification",
+                    "type": "impl",
+                    "type_name": "Implementation"
+                },
+                "OWN_ID_123": {
+                    "description": "Outgoing links of this spec: :need_outgoing:`OWN_ID_123`.",
+                    "id": "OWN_ID_123",
+                    "links": [
+                        "R_F4722"
+                    ],
+                    "status": null,
+                    "tags": [],
+                    "title": "Specification of a requirement",
+                    "type": "spec",
+                    "type_name": "Specification"
+                },
+                "REQ_001": {
+                    "description": "This is an awesome requirement and it includes a nice title,\na given id, a tag and this text as description.",
+                    "id": "REQ_001",
+                    "links": [],
+                    "status": null,
+                    "tags": [
+                        "example"
+                    ],
+                    "title": "My first requirement",
+                    "type": "req",
+                    "type_name": "Requirement"
+                },
+                "ROLES_REQ_1": {
+                    "description": "",
+                    "id": "ROLES_REQ_1",
+                    "links": [],
+                    "status": null,
+                    "tags": [],
+                    "title": "Sliced Bread",
+                    "type": "req",
+                    "type_name": "Requirement"
+                },
+                "ROLES_REQ_2": {
+                    "description": "",
+                    "id": "ROLES_REQ_2",
+                    "links": [
+                        "ROLES_REQ_1"
+                    ],
+                    "status": null,
+                    "tags": [],
+                    "title": "Butter on Bread",
+                    "type": "req",
+                    "type_name": "Requirement"
+                },
+                "R_22EB2": {
+                    "description": "",
+                    "id": "R_22EB2",
+                    "links": [],
+                    "status": "closed",
+                    "tags": [
+                        "B",
+                        "filter"
+                    ],
+                    "title": "Requirement B",
+                    "type": "req",
+                    "type_name": "Requirement"
+                },
+                "R_2A9D0": {
+                    "description": "",
+                    "id": "R_2A9D0",
+                    "links": [],
+                    "status": "open",
+                    "tags": [
+                        "A",
+                        "filter"
+                    ],
+                    "title": "Requirement A",
+                    "type": "req",
+                    "type_name": "Requirement"
+                },
+                "R_F4722": {
+                    "description": "This is my **first** requirement!!\n\n.. note:: You can use any rst code inside it :)",
+                    "id": "R_F4722",
+                    "links": [],
+                    "status": "open",
+                    "tags": [
+                        "requirement",
+                        "test",
+                        "awesome"
+                    ],
+                    "title": "My first requirement",
+                    "type": "req",
+                    "type_name": "Requirement"
+                },
+                "S_01A67": {
+                    "description": "",
+                    "id": "S_01A67",
+                    "links": [],
+                    "status": "open",
+                    "tags": [
+                        "B",
+                        "filter"
+                    ],
+                    "title": "Specification B",
+                    "type": "spec",
+                    "type_name": "Specification"
+                },
+                "S_503A1": {
+                    "description": "We haven't set an **ID** here, so sphinxcontrib-needs\nwill generated one for us.\n\nBut we have **set a link** to our first requirement and\nalso a *status* is given.",
+                    "id": "S_503A1",
+                    "links": [
+                        "REQ_001"
+                    ],
+                    "status": "done",
+                    "tags": [
+                        "important",
+                        "example"
+                    ],
+                    "title": "Spec for a requirement",
+                    "type": "spec",
+                    "type_name": "Specification"
+                },
+                "S_D70B0": {
+                    "description": "",
+                    "id": "S_D70B0",
+                    "links": [],
+                    "status": "closed",
+                    "tags": [
+                        "A",
+                        "filter"
+                    ],
+                    "title": "Specification A",
+                    "type": "spec",
+                    "type_name": "Specification"
+                },
+                "T_5CCAA": {
+                    "description": "",
+                    "id": "T_5CCAA",
+                    "links": [],
+                    "status": null,
+                    "tags": [
+                        "awesome",
+                        "filter"
+                    ],
+                    "title": "Test 1",
+                    "type": "test",
+                    "type_name": "Test Case"
+                },
+                "T_C3893": {
+                    "description": "This test checks :need:`impl_01` for :need:`OWN_ID_123` inside a\nPython 2.7 environment.",
+                    "id": "T_C3893",
+                    "links": [
+                        "OWN_ID_123",
+                        "IMPL_01"
+                    ],
+                    "status": "implemented",
+                    "hide": true,
+                    "tags": [
+                        "test",
+                        "user_interface",
+                        "python27"
+                    ],
+                    "title": "Test for XY",
+                    "type": "test",
+                    "type_name": "Test Case"
+                }
+            },
+            "needs_amount": 13
+        },
+        "1.0": {
+            "created": "2017-07-03T11:54:42.433868",
+            "needs": {
+                "IMPL_01": {
+                    "description": "Incoming links of this spec: :need_incoming:`IMPL_01`.",
+                    "id": "IMPL_01",
+                    "links": [
+                        "OWN_ID_123"
+                    ],
+                    "status": null,
+                    "tags": [],
+                    "title": "Implementation for specification",
+                    "type": "impl",
+                    "type_name": "Implementation"
+                },
+                "OWN_ID_123": {
+                    "description": "Outgoing links of this spec: :need_outgoing:`OWN_ID_123`.",
+                    "id": "OWN_ID_123",
+                    "links": [
+                        "R_F4722"
+                    ],
+                    "status": null,
+                    "tags": [],
+                    "title": "Specification of a requirement",
+                    "type": "spec",
+                    "type_name": "Specification"
+                },
+                "REQ_001": {
+                    "description": "This is an awesome requirement and it includes a nice title,\na given id, a tag and this text as description.",
+                    "id": "REQ_001",
+                    "links": [],
+                    "status": null,
+                    "tags": [
+                        "example"
+                    ],
+                    "title": "My first requirement",
+                    "type": "req",
+                    "type_name": "Requirement"
+                },
+                "ROLES_REQ_1": {
+                    "description": "",
+                    "id": "ROLES_REQ_1",
+                    "links": [],
+                    "status": null,
+                    "tags": [],
+                    "title": "Sliced Bread",
+                    "type": "req",
+                    "type_name": "Requirement"
+                },
+                "ROLES_REQ_2": {
+                    "description": "",
+                    "id": "ROLES_REQ_2",
+                    "links": [
+                        "ROLES_REQ_1"
+                    ],
+                    "status": null,
+                    "tags": [],
+                    "title": "Butter on Bread",
+                    "type": "req",
+                    "type_name": "Requirement"
+                },
+                "R_22EB2": {
+                    "description": "",
+                    "id": "R_22EB2",
+                    "links": [],
+                    "status": "closed",
+                    "tags": [
+                        "B",
+                        "filter"
+                    ],
+                    "title": "Requirement B",
+                    "type": "req",
+                    "type_name": "Requirement"
+                },
+                "R_2A9D0": {
+                    "description": "",
+                    "id": "R_2A9D0",
+                    "links": [],
+                    "status": "open",
+                    "tags": [
+                        "A",
+                        "filter"
+                    ],
+                    "title": "Requirement A",
+                    "type": "req",
+                    "type_name": "Requirement"
+                },
+                "R_F4722": {
+                    "description": "This is my **first** requirement!!\n\n.. note:: You can use any rst code inside it :)",
+                    "id": "R_F4722",
+                    "links": [],
+                    "status": "open",
+                    "tags": [
+                        "requirement",
+                        "test",
+                        "awesome"
+                    ],
+                    "title": "My first requirement",
+                    "type": "req",
+                    "type_name": "Requirement"
+                },
+                "S_01A67": {
+                    "description": "",
+                    "id": "S_01A67",
+                    "links": [],
+                    "status": "open",
+                    "tags": [
+                        "B",
+                        "filter"
+                    ],
+                    "title": "Specification B",
+                    "type": "spec",
+                    "type_name": "Specification"
+                },
+                "S_503A1": {
+                    "description": "We haven't set an **ID** here, so sphinxcontrib-needs\nwill generated one for us.\n\nBut we have **set a link** to our first requirement and\nalso a *status* is given.",
+                    "id": "S_503A1",
+                    "links": [
+                        "REQ_001"
+                    ],
+                    "status": "done",
+                    "tags": [
+                        "important",
+                        "example"
+                    ],
+                    "title": "Spec for a requirement",
+                    "type": "spec",
+                    "type_name": "Specification"
+                },
+                "S_D70B0": {
+                    "description": "",
+                    "id": "S_D70B0",
+                    "links": [],
+                    "status": "closed",
+                    "tags": [
+                        "A",
+                        "filter"
+                    ],
+                    "title": "Specification A",
+                    "type": "spec",
+                    "type_name": "Specification"
+                },
+                "T_5CCAA": {
+                    "description": "",
+                    "id": "T_5CCAA",
+                    "links": [],
+                    "status": null,
+                    "tags": [
+                        "awesome",
+                        "filter"
+                    ],
+                    "title": "Test 1",
+                    "type": "test",
+                    "type_name": "Test Case"
+                },
+                "T_C3893": {
+                    "description": "This test checks :need:`impl_01` for :need:`OWN_ID_123` inside a\nPython 2.7 environment.",
+                    "id": "T_C3893",
+                    "links": [
+                        "OWN_ID_123",
+                        "IMPL_01"
+                    ],
+                    "status": "implemented",
+                    "tags": [
+                        "test",
+                        "user_interface",
+                        "python27"
+                    ],
+                    "title": "Test for XY",
+                    "type": "test",
+                    "type_name": "Test Case"
+                }
+            },
+            "needs_amount": 13
+        },
+        "1.31": {
+            "created": "2017-07-03T13:32:58.208726",
+            "needs": {
+                "IMPL_01": {
+                    "description": "Incoming links of this spec: :need_incoming:`IMPL_01`.",
+                    "id": "IMPL_01",
+                    "links": [
+                        "OWN_ID_123"
+                    ],
+                    "status": null,
+                    "tags": [],
+                    "title": "Implementation for specification",
+                    "type": "impl",
+                    "type_name": "Implementation"
+                },
+                "OWN_ID_123": {
+                    "description": "Outgoing links of this spec: :need_outgoing:`OWN_ID_123`.",
+                    "id": "OWN_ID_123",
+                    "links": [
+                        "R_F4722"
+                    ],
+                    "status": null,
+                    "tags": [],
+                    "title": "Specification of a requirement",
+                    "type": "spec",
+                    "type_name": "Specification"
+                },
+                "REQ_001": {
+                    "description": "This is an awesome requirement and it includes a nice title,\na given id, a tag and this text as description.",
+                    "id": "REQ_001",
+                    "links": [],
+                    "status": null,
+                    "tags": [
+                        "example"
+                    ],
+                    "title": "My first requirement",
+                    "type": "req",
+                    "type_name": "Requirement"
+                },
+                "ROLES_REQ_1": {
+                    "description": "",
+                    "id": "ROLES_REQ_1",
+                    "links": [],
+                    "status": null,
+                    "tags": [],
+                    "title": "Sliced Bread",
+                    "type": "req",
+                    "type_name": "Requirement"
+                },
+                "ROLES_REQ_2": {
+                    "description": "",
+                    "id": "ROLES_REQ_2",
+                    "links": [
+                        "ROLES_REQ_1"
+                    ],
+                    "status": null,
+                    "tags": [],
+                    "title": "Butter on Bread",
+                    "type": "req",
+                    "type_name": "Requirement"
+                },
+                "R_22EB2": {
+                    "description": "",
+                    "id": "R_22EB2",
+                    "links": [],
+                    "status": "closed",
+                    "tags": [
+                        "B",
+                        "filter"
+                    ],
+                    "title": "Requirement B",
+                    "type": "req",
+                    "type_name": "Requirement"
+                },
+                "R_2A9D0": {
+                    "description": "",
+                    "id": "R_2A9D0",
+                    "links": [],
+                    "status": "open",
+                    "tags": [
+                        "A",
+                        "filter"
+                    ],
+                    "title": "Requirement A",
+                    "type": "req",
+                    "type_name": "Requirement"
+                },
+                "R_F4722": {
+                    "description": "This is my **first** requirement!!\n\n.. note:: You can use any rst code inside it :)",
+                    "id": "R_F4722",
+                    "links": [],
+                    "status": "open",
+                    "tags": [
+                        "requirement",
+                        "test",
+                        "awesome"
+                    ],
+                    "title": "My first requirement",
+                    "type": "req",
+                    "type_name": "Requirement"
+                },
+                "S_01A67": {
+                    "description": "",
+                    "id": "S_01A67",
+                    "links": [],
+                    "status": "open",
+                    "tags": [
+                        "B",
+                        "filter"
+                    ],
+                    "title": "Specification B",
+                    "type": "spec",
+                    "type_name": "Specification"
+                },
+                "S_503A1": {
+                    "description": "We haven't set an **ID** here, so sphinxcontrib-needs\nwill generated one for us.\n\nBut we have **set a link** to our first requirement and\nalso a *status* is given.",
+                    "id": "S_503A1",
+                    "links": [
+                        "REQ_001"
+                    ],
+                    "status": "done",
+                    "tags": [
+                        "important",
+                        "example"
+                    ],
+                    "title": "Spec for a requirement",
+                    "type": "spec",
+                    "type_name": "Specification"
+                },
+                "S_D70B0": {
+                    "description": "",
+                    "id": "S_D70B0",
+                    "links": [],
+                    "status": "closed",
+                    "tags": [
+                        "A",
+                        "filter"
+                    ],
+                    "title": "Specification A",
+                    "type": "spec",
+                    "type_name": "Specification"
+                },
+                "T_5CCAA": {
+                    "description": "",
+                    "id": "T_5CCAA",
+                    "links": [],
+                    "status": null,
+                    "tags": [
+                        "awesome",
+                        "filter"
+                    ],
+                    "title": "Test 1",
+                    "type": "test",
+                    "type_name": "Test Case"
+                },
+                "T_C3893": {
+                    "description": "This test checks :need:`impl_01` for :need:`OWN_ID_123` inside a\nPython 2.7 environment.",
+                    "id": "T_C3893",
+                    "links": [
+                        "OWN_ID_123",
+                        "IMPL_01"
+                    ],
+                    "status": "implemented",
+                    "tags": [
+                        "test",
+                        "user_interface",
+                        "python27"
+                    ],
+                    "title": "Test for XY",
+                    "type": "test",
+                    "type_name": "Test Case"
+                }
+            },
+            "needs_amount": 12
+        }
+    }
+}

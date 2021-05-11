@@ -82,7 +82,7 @@ def row_col_maker(
     row_col = nodes.entry(classes=["needs_" + need_key])
     para_col = nodes.paragraph()
 
-    if need_key in need_info and need_info[need_key]:
+    if need_key in need_info and need_info[need_key] is not None:
         if isinstance(need_info[need_key], (list, set)):
             data = need_info[need_key]
         else:
@@ -107,15 +107,26 @@ def row_col_maker(
             if make_ref or ref_lookup:
                 try:
                     ref_col = nodes.reference("", "")
-                    if not ref_lookup:
-                        ref_col["refuri"] = app.builder.get_relative_uri(fromdocname, need_info["docname"])
-                        ref_col["refuri"] += "#" + datum
-                    else:
+                    if make_ref:
+                        if need_info["is_external"]:
+                            # if need is external, just use the already calculated external_url
+                            ref_col["refuri"] = need_info["external_url"]
+                            ref_col["classes"].append(need_info["external_css"])
+                            row_col["classes"].append(need_info["external_css"])
+                        else:
+                            ref_col["refuri"] = app.builder.get_relative_uri(fromdocname, need_info["docname"])
+                            ref_col["refuri"] += "#" + datum
+                    elif ref_lookup:
                         temp_need = all_needs[link_id]
-                        ref_col["refuri"] = app.builder.get_relative_uri(fromdocname, temp_need["docname"])
-                        ref_col["refuri"] += "#" + temp_need["id"]
-                        if link_part:
-                            ref_col["refuri"] += "." + link_part
+                        if temp_need["is_external"]:
+                            ref_col["refuri"] = temp_need["external_url"]
+                            ref_col["classes"].append(temp_need["external_css"])
+                            row_col["classes"].append(temp_need["external_css"])
+                        else:
+                            ref_col["refuri"] = app.builder.get_relative_uri(fromdocname, temp_need["docname"])
+                            ref_col["refuri"] += "#" + temp_need["id"]
+                            if link_part:
+                                ref_col["refuri"] += "." + link_part
 
                 except KeyError:
                     para_col += text_col
@@ -143,6 +154,22 @@ def rstjinja(app: Sphinx, docname: str, source):
     src = source[0]
     rendered = app.builder.templates.render_string(src, app.config.html_context)
     source[0] = rendered
+
+
+def import_prefix_link_edit(env, needs, id_prefix):
+    needs_ids = needs.keys()
+
+    for key, need in needs.items():
+        for id in needs_ids:
+            # Manipulate links in all link types
+            for extra_link in env.config.needs_extra_links:
+                if extra_link["option"] in need.keys() and id in need[extra_link["option"]]:
+                    for n, link in enumerate(need[extra_link["option"]]):
+                        if id == link:
+                            need[extra_link["option"]][n] = "".join([id_prefix, id])
+            # Manipulate descriptions
+            # ToDo: Use regex for better matches.
+            need["description"] = need["description"].replace(id, "".join([id_prefix, id]))
 
 
 class NeedsList:
