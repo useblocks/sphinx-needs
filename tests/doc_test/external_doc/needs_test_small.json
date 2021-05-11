@@ -28,7 +28,7 @@
                     "is_need": true,
                     "is_part": false,
                     "layout": null,
-                    "links": [],
+                    "links": ["SPEC_1"],
                     "max_amount": "",
                     "max_content_lines": "",
                     "parent_need": null,

@@ -72,7 +72,7 @@ def process_need_outgoing(app, doctree, fromdocname):
                             node_need_ref["reftarget"],
                         )
                     else:
-                        new_node_ref = nodes.reference("", "")
+                        new_node_ref = nodes.reference(target_need["id"], target_need["id"])
                         new_node_ref["refuri"] = target_need["external_url"]
                         new_node_ref["classes"].append(target_need["external_css"])
 

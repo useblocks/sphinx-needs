@@ -11,7 +11,7 @@ TEST DOCUMENT EXTERNAL
 
 .. spec:: Test specification 1
    :id: SPEC_1
-   :links: REQ_1, TEST_01
+   :links: REQ_1, EXT_TEST_01
 
 
 .. needtable::
