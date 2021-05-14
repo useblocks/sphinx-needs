@@ -168,12 +168,12 @@ def add_need(
         )
 
     # Calculate target id, to be able to set a link back
-    if not is_external:
-        target_node = nodes.target("", "", ids=[need_id], refid=need_id)
-        external_url = None
-    else:
+    if is_external:
         target_node = None
         external_url = external_url
+    else:
+        target_node = nodes.target("", "", ids=[need_id], refid=need_id)
+        external_url = None
 
     # Handle status
     # Check if status is in needs_statuses. If not raise an error.

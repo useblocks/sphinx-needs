@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 from datetime import datetime
+from typing import Any, Dict, List
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -156,17 +157,27 @@ def rstjinja(app: Sphinx, docname: str, source):
     source[0] = rendered
 
 
-def import_prefix_link_edit(env, needs, id_prefix):
+def import_prefix_link_edit(needs: Dict[str, Any], id_prefix: str, needs_extra_links: List[Dict[str, Any]]):
+    """
+    Changes existing links to support given prefix.
+    Only link-ids get touched, which are part of ``needs`` (so are linking them).
+    Other links do not get the prefix, as there are treated as "external" links.
+
+    :param needs: Dict of all needs
+    :param id_prefix: Prefix as string
+    :param needs_extra_links: config var of all supported extra links. Normally coming from env.config.needs_extra_links
+    :return:
+    """
     needs_ids = needs.keys()
 
-    for key, need in needs.items():
+    for need in needs.values():
         for id in needs_ids:
             # Manipulate links in all link types
-            for extra_link in env.config.needs_extra_links:
+            for extra_link in needs_extra_links:
                 if extra_link["option"] in need.keys() and id in need[extra_link["option"]]:
                     for n, link in enumerate(need[extra_link["option"]]):
                         if id == link:
-                            need[extra_link["option"]][n] = "".join([id_prefix, id])
+                            need[extra_link["option"]][n] = f"{id_prefix}{id}"
             # Manipulate descriptions
             # ToDo: Use regex for better matches.
             need["description"] = need["description"].replace(id, "".join([id_prefix, id]))

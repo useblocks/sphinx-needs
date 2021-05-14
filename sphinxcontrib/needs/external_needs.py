@@ -37,7 +37,7 @@ def load_external_needs(app, env, _docname):
         log.debug(f"Loading {len(needs)} needs.")
 
         prefix = source.get("id_prefix", "").upper()
-        import_prefix_link_edit(env, needs, prefix)
+        import_prefix_link_edit(needs, prefix, env.config.needs_extra_links)
         for need in needs.values():
             need_params = copy.deepcopy(need)
 
