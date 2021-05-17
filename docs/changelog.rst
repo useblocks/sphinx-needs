@@ -20,6 +20,8 @@ License
   (`#169 <https://github.com/useblocks/sphinxcontrib-needs/issues/169>`_)
 * Bugfix: Sets defaults for color and style of need type configuration, if not set by user.
   (`#151 <https://github.com/useblocks/sphinxcontrib-needs/issues/151>`_)
+* Bugfix: :ref:`needtable` shows horizontal scrollbar for tables using datatables style.
+  (`#271 <https://github.com/useblocks/sphinxcontrib-needs/issues/271>`_)
 
 0.6.2
 -----
