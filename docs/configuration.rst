@@ -261,6 +261,8 @@ Each configured link should define:
 * **outgoing**: Outgoing text, which shall be used for outgoing links. E.g. "blocks".
 * **copy** (optional): True/False. If True, the links will be copied also to the common link-list (link type ``links``).
   Default: True
+* **allow_dead_links** (optional): True/False. If True, dead links are allowed and do not throw a warning.
+  See :ref:`allow_dead_links` for details. Default: False.
 * **style** (optional): A plantuml style description, e.g. "#FFCC00". Used for :ref:`needflow`. See :ref:`links_style`.
 * **style_part** (optional): Same as **style**, but get used if link is connected to a :ref:`need_part`.
   See :ref:`links_style`.
@@ -270,15 +272,16 @@ Configuration example::
 
    needs_extra_links = [
       {
-         "option": "blocks",
-         "incoming": "is blocked by",
-         "outgoing": "blocks"
+         "option": "checks",
+         "incoming": "is checked by",
+         "outgoing": "checks"
       },
       {
-         "option": "tests",
-         "incoming": "is tested by",
-         "outgoing": "tests",
+         "option": "triggers",
+         "incoming": "is triggered by",
+         "outgoing": "triggers",
          "copy": False,
+         "allow_dead_links": True,
          "style": "#00AA00"
          "style_part": "#00AA00"
          "style_start": "-",
@@ -289,19 +292,57 @@ Configuration example::
 
 The above example configuration allows the following usage::
 
-   .. req:: My requirement
-      :id: REQ_001
-      :links: SPEC_001
-      :blocks: REQ_003, REQ_017
+    .. req:: My requirement
+      :id: EXTRA_REQ_001
 
-   .. test:: Test of requirements
-      :tests: REQ_001, REQ_003
+    .. test:: Test of requirements
+      :id: EXTRA_TEST_001
+      :checks: EXTRA_REQ_001, DEAD_LINK_NOT_ALLOWED
+      :triggers: DEAD_LINK
+
+
+**Result**
+
+.. req:: My requirement
+  :id: EXTRA_REQ_001
+
+.. test:: Test of requirements
+  :id: EXTRA_TEST_001
+  :checks: EXTRA_REQ_001, DEAD_LINK_NOT_ALLOWED
+  :triggers: DEAD_LINK
 
 **Attention**: The used option name can not be reused in the configuration of :ref:`needs_global_options`.
 
 Link types with option-name **links** and **parent_needs** are added by default.
 You are free to overwrite the default config by defining your own type with option name **links** or **parent_needs**.
 This type will be used as default configuration for all links.
+
+.. _allow_dead_links:
+
+allow_dead_links
+++++++++++++++++
+
+.. versionadded:: 0.6.3
+
+By setting ``allow_dead_links`` to ``True``, referenced, but not found needs do not throw a warning.
+Instead the same text gets printed as log message on level ``INFO``.
+
+Filtering
+^^^^^^^^^
+Need objects have the two attributes ``has_dead_links`` and ``has_forbidden_dead_links``.
+``has_dead_links`` gets set to ``True``, if any dead link was found in the need.
+And ``has_forbidden_dead_links`` is set to ``True`` only, if dead links were not allowed
+(so ``allow_dead_links`` was set to ``False`` for at least one link type with dead links).
+
+HTML style
+^^^^^^^^^^
+
+Also dead links get specific css attributes on the HTML output:
+``needs_dead_link`` for all found dead links and an additional ``forbidden`` for link_types
+with ``allow_dead_links`` not set or set to ``False``.
+
+By default not allowed dead links will be shown in red , allowed ones in gray (see above example).
+
 
 .. _links_style:
 

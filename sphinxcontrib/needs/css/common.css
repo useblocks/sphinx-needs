@@ -56,6 +56,17 @@ div.need div.toggle div.line-block {
     margin-left: 30px;
 }
 
+/* DEAD Links config */
+/* allowed dead links */
+span.needs_dead_link {
+    opacity: 0.8;
+}
+/*forbidden dead links */
+span.needs_dead_link.forbidden{
+    color: #dc3545;
+}
+
+
 /* Style configuration */
 
 /* CLEAN */

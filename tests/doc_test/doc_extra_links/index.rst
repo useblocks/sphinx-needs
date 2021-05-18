@@ -6,11 +6,12 @@ Stories
 
 .. story:: My requirement
    :id: REQ_001
-   :links: REQ_002, REQ_004
-   :blocks: REQ_003
+   :links: REQ_002, REQ_004, DEAD_LINK_NOT_ALLOWED
+   :blocks: REQ_003, DEAD_LINK_ALLOWED
 
 .. story:: My requirement 2
    :id: REQ_002
+   :links: ARGH_123
 
 .. story:: My requirement 3
    :id: REQ_003
@@ -45,6 +46,11 @@ Tests
    :links: REQ_005.1
    :tests: REQ_005.1,REQ_005.cool
 
+.. test:: Test of invalid need_part links
+   :id: TEST_004
+   :links: REQ_005.1
+   :tests: REQ_005.1,REQ_005.invalid
+
 
 Lists
 -----
@@ -62,6 +68,9 @@ Tables
 
 .. needtable::
    :columns: id, incoming, outgoing, blocks, blocks_back, tests, tests_back
+
+.. needtable::
+   :columns: id, links, blocks, has_dead_links, has_forbidden_dead_links
 
 
 Flow
