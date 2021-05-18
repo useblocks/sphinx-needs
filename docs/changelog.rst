@@ -22,6 +22,8 @@ License
   (`#151 <https://github.com/useblocks/sphinxcontrib-needs/issues/151>`_)
 * Bugfix: :ref:`needtable` shows horizontal scrollbar for tables using datatables style.
   (`#271 <https://github.com/useblocks/sphinxcontrib-needs/issues/271>`_)
+* Bugfix: Using ``id_complete`` instead of ``id`` in filter code handling.
+  (`#156 <https://github.com/useblocks/sphinxcontrib-needs/issues/156>`_)
 
 0.6.2
 -----
