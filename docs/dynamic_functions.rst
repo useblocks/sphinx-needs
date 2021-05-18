@@ -53,6 +53,12 @@ test
 ~~~~
 .. autofunction:: sphinxcontrib.needs.functions.common.test
 
+.. _echo:
+
+echo
+~~~~
+.. autofunction:: sphinxcontrib.needs.functions.common.echo
+
 .. _copy:
 
 copy
