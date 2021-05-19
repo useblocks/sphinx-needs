@@ -10,6 +10,8 @@ License
 -----
 :Released: under development
 
+* Improvement: Introducing :ref:`need_func` to execute :ref:`dynamic_functions` inline.
+  (`#133 <https://github.com/useblocks/sphinxcontrib-needs/issues/133>`_)
 * Bugfix: needflow: links  for need-parts get correctly calculated.
   (`#205 <https://github.com/useblocks/sphinxcontrib-needs/issues/205>`_)
 * Bugfix: CSS update for ReadTheDocsTheme to show tables correctly.
