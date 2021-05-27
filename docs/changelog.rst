@@ -12,6 +12,8 @@ License
 
 * Improvement: Dead links (references to not found needs) are supported and configurable by :ref:`allow_dead_links`.
   (`#116 <https://github.com/useblocks/sphinxcontrib-needs/issues/116>`_)
+* Improvement: Introducing :ref:`need_func` to execute :ref:`dynamic_functions` inline.
+  (`#133 <https://github.com/useblocks/sphinxcontrib-needs/issues/133>`_)
 * Bugfix: needflow: links  for need-parts get correctly calculated.
   (`#205 <https://github.com/useblocks/sphinxcontrib-needs/issues/205>`_)
 * Bugfix: CSS update for ReadTheDocsTheme to show tables correctly.
@@ -24,6 +26,8 @@ License
   (`#151 <https://github.com/useblocks/sphinxcontrib-needs/issues/151>`_)
 * Bugfix: :ref:`needtable` shows horizontal scrollbar for tables using datatables style.
   (`#271 <https://github.com/useblocks/sphinxcontrib-needs/issues/271>`_)
+* Bugfix: Using ``id_complete`` instead of ``id`` in filter code handling.
+  (`#156 <https://github.com/useblocks/sphinxcontrib-needs/issues/156>`_)
 
 0.6.2
 -----

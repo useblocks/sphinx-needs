@@ -53,7 +53,9 @@ extensions = ['sphinxcontrib.plantuml',
               'matplotlib.sphinxext.plot_directive',
               'sphinx_copybutton',
               'sphinxcontrib.programoutput',
-              'sphinx_panels']
+              'sphinx_panels',
+              # 'sphinx_rtd_theme'  # For debugging only
+              ]
 
 add_module_names = False  # Used to shorten function name output
 autodoc_docstring_signature = True  # Used to read spec. func-defs from docstring (e.g. get rid of self)
@@ -369,6 +371,7 @@ todo_include_todos = False
 # a list of builtin themes.
 #
 html_theme = 'alabaster'
+# html_theme = 'sphinx_rtd_theme'  # For debugging only
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the

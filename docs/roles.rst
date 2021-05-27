@@ -261,3 +261,17 @@ Example:
 
 :need_count:`status == "open" and type == "spec" ? type == "spec"` % of our specifications are open.
 
+
+.. _need_func:
+
+need_func
+---------
+.. versionadded:: 0.6.3
+
+Executes :ref:`dynamic_functions` and uses its return values as content.
+
+Example::
+
+    A nice :need_func:`[[echo("first")]] test` for need_func.
+
+**Result**: A nice :need_func:`[[echo("first")]] test` for need_func.

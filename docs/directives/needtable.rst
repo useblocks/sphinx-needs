@@ -76,8 +76,17 @@ If **:columns:** is set, the value of config parameter :ref:`needs_table_columns
 
 Tables with a lot of columns will get a horizontal scrollbar in HTML output.
 
+**DataTable style**
+
 .. needtable::
   :tags: test
+  :columns: id;title;tags;status;docname;lineno,is_external,is_need;is_part;content
+
+**Normal style**
+
+.. needtable::
+  :tags: test
+  :style: table
   :columns: id;title;tags;status;docname;lineno,is_external,is_need;is_part;content
 
 
