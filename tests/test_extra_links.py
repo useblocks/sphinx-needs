@@ -13,6 +13,11 @@ def test_extra_links_html(app, status, warning):
     assert "blocked by" in html
     assert "blocks" in html
 
+    # Check for correct dead_links handling
+    assert '<span class="needs_dead_link">DEAD_LINK_ALLOWED</span>' in html
+    assert '<span class="needs_dead_link forbidden">DEAD_LINK_NOT_ALLOWED</span>' in html
+    assert '<span class="needs_dead_link forbidden">REQ_005.invalid</span>' in html
+
 
 @with_app(buildername="latex", srcdir="doc_test/doc_extra_links")
 def test_extra_links_latex(app, status, warning):

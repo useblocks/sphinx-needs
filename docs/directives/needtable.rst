@@ -69,7 +69,7 @@ This will show the columns *id*, *title* and *tags* in the given order.
       :style: table
 
 
-All values of a need (incl. :ref:`_needs_extra_options`) can be set as column.
+All values of a need (incl. :ref:`needs_extra_options`) can be set as column.
 This includes also internal values like ``docname`` (Use `:layout: debug` on a need for a complete list)
 
 If **:columns:** is set, the value of config parameter :ref:`needs_table_columns` is not used for the current table.

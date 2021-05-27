@@ -22,6 +22,7 @@ classifiers=[
         'Programming Language :: Python :: 3.8',
         'Topic :: Documentation',
         'Topic :: Utilities',
+        'Framework :: Sphinx :: Extension',
     ]
 
 packages = [

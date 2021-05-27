@@ -54,6 +54,7 @@ needs_extra_links = [
         "outgoing": "blocks",
         "copy": True,
         "style": "bold,#AA0000",
+        "allow_dead_links": True,
     },
     {
         "option": "tests",

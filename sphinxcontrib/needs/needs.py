@@ -370,7 +370,7 @@ def prepare_env(app, env, _docname):
         register_func(needs_func)
 
     # Own extra options
-    for option in ["hidden", "duration", "completion"]:
+    for option in ["hidden", "duration", "completion", "has_dead_links", "has_forbidden_dead_links"]:
         # Check if not already set by user
         if option not in app.config.needs_extra_options.keys():
             app.config.needs_extra_options[option] = directives.unchanged

@@ -306,6 +306,9 @@ def process_need_nodes(app, doctree, fromdocname):
     # Call dynamic functions and replace related note data with their return values
     resolve_dynamic_values(env)
 
+    # check if we have dead links
+    check_links(env)
+
     # Create back links of common links and extra links
     for links in env.config.needs_extra_links:
         create_back_links(env, links["option"])
@@ -321,6 +324,32 @@ def process_need_nodes(app, doctree, fromdocname):
         layout = need_data["layout"] or app.config.needs_default_layout
 
         build_need(layout, node_need, app)
+
+
+def check_links(env):
+    """
+    Checks if set links are valid or are dead (referenced need does not exist.)
+    :param env: Sphinx environment
+    :return:
+    """
+    needs = env.needs_all_needs
+    extra_links = getattr(env.config, "needs_extra_links", [])
+    for need in needs.values():
+        for link_type in extra_links:
+            dead_links_allowed = link_type.get("allow_dead_links", False)
+            for link in need[link_type["option"]]:
+                if "." in link:
+                    need_id, need_part_id = link.split(".")
+                else:
+                    need_id = link
+                    need_part_id = None
+                if need_id not in needs or (
+                    need_id in needs and need_part_id and need_part_id not in needs[need_id]["parts"]
+                ):
+                    need["has_dead_links"] = True
+                    if not dead_links_allowed:
+                        need["has_forbidden_dead_links"] = True
+                    break  # One found dead link is enough
 
 
 def create_back_links(env, option):

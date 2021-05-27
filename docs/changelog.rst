@@ -10,6 +10,8 @@ License
 -----
 :Released: under development
 
+* Improvement: Dead links (references to not found needs) are supported and configurable by :ref:`allow_dead_links`.
+  (`#116 <https://github.com/useblocks/sphinxcontrib-needs/issues/116>`_)
 * Improvement: Introducing :ref:`need_func` to execute :ref:`dynamic_functions` inline.
   (`#133 <https://github.com/useblocks/sphinxcontrib-needs/issues/133>`_)
 * Bugfix: needflow: links  for need-parts get correctly calculated.
@@ -18,7 +20,7 @@ License
   (`#263 <https://github.com/useblocks/sphinxcontrib-needs/issues/263>`_)
 * Bugfix: CSS fix for needtable :ref:`needtable_style_row`.
   (`#195 <https://github.com/useblocks/sphinxcontrib-needs/issues/195>`_)
-* Bugfix: ``current_need` var is accessible in all need-filters.
+* Bugfix: ``current_need`` var is accessible in all need-filters.
   (`#169 <https://github.com/useblocks/sphinxcontrib-needs/issues/169>`_)
 * Bugfix: Sets defaults for color and style of need type configuration, if not set by user.
   (`#151 <https://github.com/useblocks/sphinxcontrib-needs/issues/151>`_)
