@@ -54,6 +54,7 @@ extensions = ['sphinxcontrib.plantuml',
               'sphinx_copybutton',
               'sphinxcontrib.programoutput',
               'sphinx_panels',
+              'sphinx.ext.duration',
               # 'sphinx_rtd_theme'  # For debugging only
               ]
 
