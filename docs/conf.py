@@ -169,6 +169,7 @@ needs_extra_links = [
         "style_part": "dotted,#AA0000",
         "style_start": '-',
         "style_end": '-o',
+        "allow_dead_links": True,
     },
     {
         "option": "tests",
@@ -179,12 +180,21 @@ needs_extra_links = [
         "style_part": "dotted,#00AA00"
     },
     {
+        "option": "checks",
+        "incoming": "is checked by",
+        "outgoing": "checks",
+        "copy": False,
+        "style": "#00AA00",
+        "style_part": "dotted,#00AA00",
+    },
+    {
         "option": "triggers",
         "incoming": "triggered by",
         "outgoing": "triggers",
         "copy": False,
         "style": "#00AA00",
-        "style_part": "solid,#777777"
+        "style_part": "solid,#777777",
+        "allow_dead_links": True,
     },
     {
         "option": "starts_with",
