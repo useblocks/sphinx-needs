@@ -71,6 +71,7 @@ from sphinxcontrib.needs.environment import (
 from sphinxcontrib.needs.functions import needs_common_functions, register_func
 from sphinxcontrib.needs.logging import get_logger
 from sphinxcontrib.needs.roles.need_count import NeedCount, process_need_count
+from sphinxcontrib.needs.roles.need_func import NeedFunc, process_need_func
 from sphinxcontrib.needs.roles.need_incoming import NeedIncoming, process_need_incoming
 from sphinxcontrib.needs.roles.need_outgoing import NeedOutgoing, process_need_outgoing
 from sphinxcontrib.needs.roles.need_part import NeedPart, process_need_part
@@ -238,6 +239,8 @@ def setup(app):
 
     app.add_role("need_count", XRefRole(nodeclass=NeedCount, innernodeclass=nodes.inline, warn_dangling=True))
 
+    app.add_role("need_func", XRefRole(nodeclass=NeedFunc, innernodeclass=nodes.inline, warn_dangling=True))
+
     ########################################################################
     # EVENTS
     ########################################################################
@@ -270,6 +273,7 @@ def setup(app):
     app.connect("doctree-resolved", process_need_incoming)
     app.connect("doctree-resolved", process_need_outgoing)
     app.connect("doctree-resolved", process_need_count)
+    app.connect("doctree-resolved", process_need_func)
     app.connect("build-finished", process_warnings)
     app.connect("env-updated", install_lib_static_files)
 

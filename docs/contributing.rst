@@ -142,3 +142,7 @@ See the Poetry documentation for a list of commands.
 
 In order to run custom commands inside the isolated environment, they
 should be prefixed with “poetry run” (ie. ``poetry run <command>``).
+
+
+.. Include our contributors and maintainers.
+.. include:: ../AUTHORS

@@ -1,14 +1,31 @@
-Changelog
-=========
+Changelog & License
+===================
+
+License
+-------
+
+.. include:: ../LICENSE
 
 0.6.3
 -----
 :Released: under development
 
+* Improvement: Introducing :ref:`need_func` to execute :ref:`dynamic_functions` inline.
+  (`#133 <https://github.com/useblocks/sphinxcontrib-needs/issues/133>`_)
 * Bugfix: needflow: links  for need-parts get correctly calculated.
   (`#205 <https://github.com/useblocks/sphinxcontrib-needs/issues/205>`_)
 * Bugfix: CSS update for ReadTheDocsTheme to show tables correctly.
   (`#263 <https://github.com/useblocks/sphinxcontrib-needs/issues/263>`_)
+* Bugfix: CSS fix for needtable :ref:`needtable_style_row`.
+  (`#195 <https://github.com/useblocks/sphinxcontrib-needs/issues/195>`_)
+* Bugfix: ``current_need` var is accessible in all need-filters.
+  (`#169 <https://github.com/useblocks/sphinxcontrib-needs/issues/169>`_)
+* Bugfix: Sets defaults for color and style of need type configuration, if not set by user.
+  (`#151 <https://github.com/useblocks/sphinxcontrib-needs/issues/151>`_)
+* Bugfix: :ref:`needtable` shows horizontal scrollbar for tables using datatables style.
+  (`#271 <https://github.com/useblocks/sphinxcontrib-needs/issues/271>`_)
+* Bugfix: Using ``id_complete`` instead of ``id`` in filter code handling.
+  (`#156 <https://github.com/useblocks/sphinxcontrib-needs/issues/156>`_)
 
 0.6.2
 -----

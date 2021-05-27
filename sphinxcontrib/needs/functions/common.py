@@ -37,6 +37,23 @@ def test(app, need, needs, *args, **kwargs):
     return "Test output of need {}. args: {}. kwargs: {}".format(need["id"], args, kwargs)
 
 
+def echo(app, need, needs, text, *args, **kwargs):
+    """
+    .. versionadded:: 0.6.3
+
+    Just returns the given string back.
+    Mostly useful for tests.
+
+    .. code-block:: jinja
+
+       A nice :need_func:`[[echo("first")]] test` for need_func.
+
+    **Result**: A nice :need_func:`[[echo("first")]] test` for need_func.
+
+    """
+    return text
+
+
 def copy(app, need, needs, option, need_id=None, lower=False, upper=False, filter=None):
     """
     Copies the value of one need option to another

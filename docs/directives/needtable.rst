@@ -69,17 +69,26 @@ This will show the columns *id*, *title* and *tags* in the given order.
       :style: table
 
 
-Supported columns are:
-
-* id
-* title
-* type
-* status
-* tags
-* incoming
-* outgoing
+All values of a need (incl. :ref:`_needs_extra_options`) can be set as column.
+This includes also internal values like ``docname`` (Use `:layout: debug` on a need for a complete list)
 
 If **:columns:** is set, the value of config parameter :ref:`needs_table_columns` is not used for the current table.
+
+Tables with a lot of columns will get a horizontal scrollbar in HTML output.
+
+**DataTable style**
+
+.. needtable::
+  :tags: test
+  :columns: id;title;tags;status;docname;lineno,is_external,is_need;is_part;content
+
+**Normal style**
+
+.. needtable::
+  :tags: test
+  :style: table
+  :columns: id;title;tags;status;docname;lineno,is_external,is_need;is_part;content
+
 
 
 .. _needtable_show_filters:
@@ -237,7 +246,7 @@ The class-attribute can then be addressed by css and specific layout can be set 
 
 .. needtable::
       :tags: ex_row_color
-      :style_row: needs_green
+      :style_row: needs_blue_border
 
 .. container:: toggle
 
@@ -249,7 +258,7 @@ The class-attribute can then be addressed by css and specific layout can be set 
 
       .. needtable::
          :tags: ex_row_color
-         :style_row: needs_green
+         :style_row: needs_blue_border
 
 Row style based on specific need value
 ......................................

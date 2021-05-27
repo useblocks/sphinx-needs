@@ -124,16 +124,16 @@ def process_filters(all_needs, current_needlist):
         found_needs = []
 
         # Just take the ids from search result and use the related, but original need
-        found_need_ids = [x["id"] for x in found_dirty_needs]
+        found_need_ids = [x["id_complete"] for x in found_dirty_needs]
         for need in all_needs_incl_parts:
-            if need["id"] in found_need_ids:
+            if need["id_complete"] in found_need_ids:
                 found_needs.append(need)
 
     # Store basic filter configuration and result global list.
     # Needed mainly for exporting the result to needs.json (if builder "needs" is used).
     env = current_needlist["env"]
     filter_list = env.needs_all_filters
-    found_needs_ids = [need["id"] for need in found_needs]
+    found_needs_ids = [need["id_complete"] for need in found_needs]
 
     filter_list[current_needlist["target_node"]] = {
         "target_node": current_needlist["target_node"],
@@ -225,6 +225,8 @@ def filter_single_need(need, filter_string="", needs=None, current_need=None) ->
         filter_context["needs"] = needs
     if current_need:
         filter_context["current_need"] = current_need
+    else:
+        filter_context["current_need"] = need
 
     filter_context["search"] = re.search
     result = False
