@@ -444,6 +444,89 @@ the ``debug`` :ref:`layout <layouts>`.
 
 You can automatically assign templates to specific needs by using :ref:`needs_global_options`.
 
+.. _multiline_option:
+
+Multiline options
++++++++++++++++++
+In Sphinx options support multiline content, which gets interpreted like other RST input in Sphinx-Needs templates.
+
+But there is one important constraint: Don't use empty lines, as they are used to define the content end.
+Instead use ``__`` (two underscores) and to force line breaks use ``|``.
+
+**Example**
+
+*Need*
+::
+    .. req:: A really strange example
+       :id: multiline_1234
+       :status:
+         | First line
+         | Second line
+         | Followed by an empty line
+         __
+         A list example:
+         __
+         * take *this*
+         * and **this**
+         __
+         __
+         __
+         3 new lines, but 1 is shown only
+         __
+         Included directives
+         __
+         .. req:: test req
+            :id: abc_432
+            __
+            This works!
+            __
+            An image: wow
+            __
+            .. image:: /_images/needs_logo.png
+               :width: 20%
+         __
+         .. image:: /_images/needs_logo.png
+            :width: 30%
+       :template: content
+
+*Template*
+
+.. literalinclude:: /needs_templates/content.need
+
+*Result*
+
+.. req:: A really strange example
+   :id: multiline_1234
+   :status:
+     | First line
+     | Second line
+     | Followed by an empty line
+     __
+     A list example:
+     __
+     * take *this*
+     * and **this**
+     __
+     __
+     __
+     3 new lines, but 1 is shown only
+     __
+     Included directives
+     __
+     .. req:: test req
+        :id: abc_432
+        __
+        This works!
+        __
+        An image: wow
+        __
+        .. image:: /_images/needs_logo.png
+           :width: 20%
+     __
+     .. image:: /_images/needs_logo.png
+        :width: 30%
+   :template: content
+
 .. _need_pre_template:
 
 pre_template

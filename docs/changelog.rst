@@ -14,6 +14,7 @@ License
   (`#116 <https://github.com/useblocks/sphinxcontrib-needs/issues/116>`_)
 * Improvement: Introducing :ref:`need_func` to execute :ref:`dynamic_functions` inline.
   (`#133 <https://github.com/useblocks/sphinxcontrib-needs/issues/133>`_)
+* Improvement: Support for :ref:`multiline_option` in templates.
 * Bugfix: needflow: links  for need-parts get correctly calculated.
   (`#205 <https://github.com/useblocks/sphinxcontrib-needs/issues/205>`_)
 * Bugfix: CSS update for ReadTheDocsTheme to show tables correctly.

@@ -98,6 +98,8 @@ class NeedDirective(Directive):
         id = self.options.get("id", None)
         content = "\n".join(self.content)
         status = self.options.get("status", None)
+        if status:
+            status = status.replace("__", "")  # Support for multiline options, which must use __ for empty lines
         tags = self.options.get("tags", "")
         style = self.options.get("style", None)
         layout = self.options.get("layout", "")
