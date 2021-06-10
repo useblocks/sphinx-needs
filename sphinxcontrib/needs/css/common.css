@@ -25,6 +25,10 @@ table.NEEDS_TABLE {
   display: block;
   overflow-x: auto;
   white-space: nowrap;
+  width: 100%;
+  max-width: -moz-fit-content;
+  max-width: fit-content;
+  margin: 0 auto;
 }
 
 /* We need not line-block margin:24 px here, which is coming from sphinx theme */
