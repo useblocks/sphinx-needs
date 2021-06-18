@@ -1,7 +1,7 @@
 Installation
 ============
 
-Install ``Sphinx-Test-Report`` via ``pip install sphinxcontrib-test-reports``.
+Install ``Sphinx-Test-Report`` via ``pip install sphinx-test-reports``.
 
 After that the extension must to be added to the ``conf.py`` file::
 
