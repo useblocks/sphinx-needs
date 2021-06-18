@@ -84,6 +84,7 @@ from sphinxcontrib.needs.utils import INTERNALS, NEEDS_FUNCTIONS
 from sphinxcontrib.needs.warnings import process_warnings
 
 VERSION = "0.6.2"
+NEEDS_FUNCTIONS.clear()
 
 
 class TagsDummy:
@@ -336,7 +337,6 @@ def prepare_env(app, env, _docname):
     """
     Prepares the sphinx environment to store sphinx-needs internal data.
     """
-    NEEDS_FUNCTIONS.clear()
 
     if not hasattr(env, "needs_all_needs"):
         # Used to store all needed information about all needs in document

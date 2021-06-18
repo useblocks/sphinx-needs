@@ -70,4 +70,4 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.extras]
-docs = ["sphinx"]
+docs = ["sphinx>=4.0"]

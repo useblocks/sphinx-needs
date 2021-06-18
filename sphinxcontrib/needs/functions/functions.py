@@ -14,8 +14,10 @@ import re
 from docutils import nodes
 from sphinx.errors import SphinxError
 
+from sphinxcontrib.needs.logging import get_logger
 from sphinxcontrib.needs.utils import NEEDS_FUNCTIONS  # noqa: F401
 
+logger = get_logger(__name__)
 unicode = str
 ast_boolean = ast.NameConstant
 
@@ -36,9 +38,11 @@ def register_func(need_function):
 
     func_name = need_function.__name__
 
-    # if func_name in env.needs_functions.keys():
     if func_name in NEEDS_FUNCTIONS.keys():
-        raise SphinxError("sphinx-needs: Function name {} already registered.".format(func_name))
+        # We can not throw an exception here, as using sphinx-needs in different sphinx-projects with the
+        # same python interpreter session does not clean NEEDS_FUNCTIONS.
+        # This is mostly the case during tet runs.
+        logger.info(f"sphinx-needs: Function name {func_name} already registered. Ignoring the new one!")
 
     # env.needs_functions[func_name] = {
     NEEDS_FUNCTIONS[func_name] = {"name": func_name, "function": need_function}
@@ -122,7 +126,7 @@ def find_and_replace_node_content(node, env, need):
             if isinstance(func_return, list):
                 func_return = ", ".join(func_return)
 
-            new_text = new_text.replace(u"[[{}]]".format(func_string_org), func_return)
+            new_text = new_text.replace("[[{}]]".format(func_string_org), func_return)
 
         if isinstance(node, nodes.reference):
             node.attributes["refuri"] = new_text

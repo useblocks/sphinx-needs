@@ -29,6 +29,8 @@ License
   (`#271 <https://github.com/useblocks/sphinxcontrib-needs/issues/271>`_)
 * Bugfix: Using ``id_complete`` instead of ``id`` in filter code handling.
   (`#156 <https://github.com/useblocks/sphinxcontrib-needs/issues/156>`_)
+* Bugfix: Dynamic Functions registration working for external extensions.
+  (`#288 <https://github.com/useblocks/sphinxcontrib-needs/issues/288>`_)
 
 0.6.2
 -----
