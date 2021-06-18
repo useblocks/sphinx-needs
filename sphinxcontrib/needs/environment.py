@@ -72,6 +72,11 @@ def safe_remove_file(filename: Path, app: Sphinx):
 # Base implementation from sphinxcontrib-images
 # https://github.com/spinus/sphinxcontrib-images/blob/master/sphinxcontrib/images.py#L203
 def install_styles_static_files(app: Sphinx, env):
+
+    # Do not copy static_files for our "needs" builder
+    if app.builder.name == "needs":
+        return
+
     statics_dir = Path(app.builder.outdir) / IMAGE_DIR_NAME
     css_root = Path(__file__).parent / "css"
     dest_dir = statics_dir / "sphinx-needs"
@@ -126,6 +131,10 @@ def install_static_files(
     files_to_copy: Iterable[Path],
     message: str,
 ):
+    # Do not copy static_files for our "needs" builder
+    if app.builder.name == "needs":
+        return
+
     if parse_version(sphinx_version) < parse_version("1.6"):
         global status_iterator
         status_iterator = app.status_iterator
@@ -157,6 +166,10 @@ def install_lib_static_files(app: Sphinx, env):
     :param env:
     :return:
     """
+    # Do not copy static_files for our "needs" builder
+    if app.builder.name == "needs":
+        return
+
     statics_dir = Path(app.builder.outdir) / IMAGE_DIR_NAME
     source_dir = Path(__file__).parent / "libs" / "html"
     destination_dir = statics_dir / "sphinx-needs" / "libs" / "html"
