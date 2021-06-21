@@ -24,6 +24,7 @@ class NeedimportDirective(Directive):
     option_spec = {
         "version": directives.unchanged_required,
         "hide": directives.flag,
+        "collapse": directives.unchanged_required,
         "filter": directives.unchanged_required,
         "id_prefix": directives.unchanged_required,
         "tags": directives.unchanged_required,
@@ -127,6 +128,12 @@ class NeedimportDirective(Directive):
             need["post_template"] = self.options.get("post_template", getattr(need, "post_template", None))
             need["layout"] = self.options.get("layout", getattr(need, "layout", None))
             need["style"] = self.options.get("style", getattr(need, "style", None))
+            need["style"] = self.options.get("style", getattr(need, "style", None))
+            if "hide" in self.options.keys():
+                need["hide"] = True
+            else:
+                need["hide"] = getattr(need, "hide", None)
+            need["collapse"] = self.options.get("collapse", getattr(need, "collapse", None))
 
             # The key needs to be different for add_need() api call.
             need["need_type"] = need["type"]

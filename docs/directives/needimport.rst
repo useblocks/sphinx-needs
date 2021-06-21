@@ -15,6 +15,7 @@ The directive **.. needimport::** can be used in all rst-documents. Simply write
       :version: 1.0
       :tags: imported;external
       :hide:
+      :collapse: True
       :filter: "test" in tags
       :template: template.rst
       :pre_template: pre_template.rst
@@ -36,11 +37,14 @@ In most cases this should be the latest available version.
 **:tags:** are attached to the already existing ones of imported needs. This may be useful to mark easily imported
 needs and to create specialised filters for them.
 
-**:filter** imports needs only, which pass the filter criteria. Please read the :ref:`filter` documentation of the
+**:filter:** imports needs only, which pass the filter criteria. Please read the :ref:`filter` documentation of the
 **needfilter** directive for more.
 
 **:hide:** can be used to set the **:hide:** tag for all imported needs. So they do not show up but are available
 in :ref:`needfilter`.
+
+**:collapse:** will hide the meta information by default, if set to ``True``. See also :ref:`need_collapse` description
+of :ref:`need`.
 
 .. warning:: Imported needs may use different need types as the current project.
              The sphinx project owner is responsible for a correct configuration for internal and external needs.

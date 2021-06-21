@@ -6,9 +6,17 @@ License
 
 .. include:: ../LICENSE
 
-0.6.3
+0.7.0
 -----
 :Released: under development
+
+* Bugfix: ``:hide:`` and ``:collapse: True`` are working inside :ref:`needimport`.
+  (`#284 <https://github.com/useblocks/sphinxcontrib-needs/issues/284>`_,
+  `#294 <https://github.com/useblocks/sphinxcontrib-needs/issues/294>`_)
+
+0.6.3
+-----
+:Released: 18.06.2021
 
 * Improvement: Dead links (references to not found needs) are supported and configurable by :ref:`allow_dead_links`.
   (`#116 <https://github.com/useblocks/sphinxcontrib-needs/issues/116>`_)
