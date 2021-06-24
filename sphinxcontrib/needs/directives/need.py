@@ -8,6 +8,7 @@ from sphinx.addnodes import desc_name, desc_signature
 
 from sphinxcontrib.needs.api import add_need
 from sphinxcontrib.needs.api.exceptions import NeedsInvalidException
+from sphinxcontrib.needs.defaults import NEED_DEFAULT_OPTIONS
 from sphinxcontrib.needs.functions import (
     find_and_replace_node_content,
     resolve_dynamic_values,
@@ -53,22 +54,7 @@ class NeedDirective(Directive):
 
     required_arguments = 1
     optional_arguments = 0
-    option_spec = {
-        "id": directives.unchanged_required,
-        "status": directives.unchanged_required,
-        "tags": directives.unchanged_required,
-        "links": directives.unchanged_required,
-        "collapse": directives.unchanged_required,
-        "hide": directives.flag,
-        "title_from_content": directives.flag,
-        "style": directives.unchanged_required,
-        "layout": directives.unchanged_required,
-        "template": directives.unchanged_required,
-        "pre_template": directives.unchanged_required,
-        "post_template": directives.unchanged_required,
-        "duration": directives.unchanged_required,
-        "completion": directives.unchanged_required,
-    }
+    option_spec = NEED_DEFAULT_OPTIONS
 
     final_argument_whitespace = True
 

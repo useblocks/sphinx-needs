@@ -10,6 +10,7 @@ from sphinx.roles import XRefRole
 from sphinxcontrib.needs.builder import NeedsBuilder
 from sphinxcontrib.needs.defaults import (
     DEFAULT_DIAGRAM_TEMPLATE,
+    NEED_DEFAULT_OPTIONS,
     LAYOUTS,
     NEEDFLOW_CONFIG_DEFAULTS,
 )
@@ -23,6 +24,11 @@ from sphinxcontrib.needs.directives.need import (
     latex_visit,
     process_need_nodes,
     purge_needs,
+)
+from sphinxcontrib.needs.directives.needextend import (
+    Needextend,
+    NeedextendDirective,
+    process_needextend,
 )
 from sphinxcontrib.needs.directives.needextract import (
     Needextract,
@@ -211,6 +217,7 @@ def setup(app):
     app.add_node(Needgantt)
     app.add_node(Needextract)
     app.add_node(Needservice)
+    app.add_node(Needextend)
     app.add_node(NeedPart, html=(visitor_dummy, visitor_dummy), latex=(visitor_dummy, visitor_dummy))
 
     ########################################################################
@@ -228,6 +235,7 @@ def setup(app):
     app.add_directive("needimport", NeedimportDirective)
     app.add_directive("needextract", NeedextractDirective)
     app.add_directive("needservice", NeedserviceDirective)
+    app.add_directive("needextend", NeedextendDirective)
 
     ########################################################################
     # ROLES
@@ -265,8 +273,9 @@ def setup(app):
     # registered for sphinx. So some sphinx-internal tasks/functions may be called by hand again...
     # See also https://github.com/sphinx-doc/sphinx/issues/7054#issuecomment-578019701 for an example
     app.connect("doctree-resolved", add_sections)
+    app.connect("doctree-resolved", process_needextract)  # Must be done very early, as it modifies need data
     app.connect("doctree-resolved", process_need_nodes)
-    app.connect("doctree-resolved", process_needextract)
+    app.connect("doctree-resolved", process_needextend)
     app.connect("doctree-resolved", process_needfilters)
     app.connect("doctree-resolved", process_needlist)
     app.connect("doctree-resolved", process_needtables)
@@ -319,6 +328,24 @@ def load_config(app: Sphinx, *_args):
     # Update NeedDirective to use customized links
     NeedDirective.option_spec.update(extra_links)
     NeedserviceDirective.option_spec.update(extra_links)
+
+    # Update NeedextendDirective with option modifiers.
+    for key, value in NEED_DEFAULT_OPTIONS.items():
+        NeedextendDirective.option_spec.update({
+            f'+{key}': value,
+            f'-{key}': directives.flag,
+        })
+
+    for key, value in extra_links.items():
+        NeedextendDirective.option_spec.update({
+            f'+{key}': value,
+            f'-{key}': directives.flag,
+        })
+    for key, value in extra_options.items():
+        NeedextendDirective.option_spec.update({
+            f'+{key}': value,
+            f'-{key}': directives.flag,
+        })
 
     if title_optional or title_from_content:
         NeedDirective.required_arguments = 0

@@ -14,6 +14,7 @@ Directives
    needpie
    needimport
    needservice
+   needextend
 
 **Deprecated**:
 

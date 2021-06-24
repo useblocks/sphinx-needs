@@ -1,5 +1,7 @@
 # flake8: noqa
 
+from docutils.parsers.rst import directives
+
 DEFAULT_DIAGRAM_TEMPLATE = """
 {%- if is_need -%}
 <size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>
@@ -7,7 +9,6 @@ DEFAULT_DIAGRAM_TEMPLATE = """
 <size:12>{{type_name}} (part)</size>\\n**{{content|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id_parent}}.**{{id}}**</size>
 {%- endif -%}
 """
-
 
 LAYOUT_COMMON_SIDE = {
     "side": ['<<image("field:image", align="center")>>'],
@@ -74,7 +75,6 @@ LAYOUTS = {
         },
     },
 }
-
 
 NEEDFLOW_CONFIG_DEFAULTS = {
     "monochrome": """
@@ -195,5 +195,22 @@ NEEDFLOW_CONFIG_DEFAULTS = {
     """,
 }
 
-
 TITLE_REGEX = r'([\w]+) as "([\w ]+)"'
+
+
+NEED_DEFAULT_OPTIONS = {
+    "id": directives.unchanged_required,
+    "status": directives.unchanged_required,
+    "tags": directives.unchanged_required,
+    "links": directives.unchanged_required,
+    "collapse": directives.unchanged_required,
+    "hide": directives.flag,
+    "title_from_content": directives.flag,
+    "style": directives.unchanged_required,
+    "layout": directives.unchanged_required,
+    "template": directives.unchanged_required,
+    "pre_template": directives.unchanged_required,
+    "post_template": directives.unchanged_required,
+    "duration": directives.unchanged_required,
+    "completion": directives.unchanged_required,
+}
