@@ -90,6 +90,37 @@ Tables with a lot of columns will get a horizontal scrollbar in HTML output.
   :columns: id;title;tags;status;docname;lineno,is_external,is_need;is_part;content
 
 
+.. _needtable_custom_titles:
+
+Custom column titles
+....................
+Each column can get a customized title by following this syntax for its definition: ``OPTION as "My custom title"``.
+The characters ``,`` or ``;`` are not allowed.
+
+.. container:: toggle
+
+   .. container::  header
+
+      **Show example**
+
+   .. code-block:: rst
+
+        .. needtable::
+          :tags: test
+          :columns: id;title as "Headline"; tags as "Labels"
+          :style: table
+
+   .. needtable::
+      :tags: test
+      :columns: id;title as "Headline"; tags as "Labels"
+      :style: table
+
+
+
+
+
+
+
 
 .. _needtable_show_filters:
 

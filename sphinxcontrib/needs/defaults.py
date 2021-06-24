@@ -194,3 +194,6 @@ NEEDFLOW_CONFIG_DEFAULTS = {
     }
     """,
 }
+
+
+TITLE_REGEX = r'([\w]+) as "([\w ]+)"'

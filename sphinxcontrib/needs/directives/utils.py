@@ -1,6 +1,9 @@
 import re
+from typing import Tuple
 
 from docutils import nodes
+
+from sphinxcontrib.needs.defaults import TITLE_REGEX
 
 
 def no_needs_found_paragraph():
@@ -47,6 +50,25 @@ def get_link_type_option(name, env, node, default=""):
 
         final_link_types.append(link_type)
     return final_link_types
+
+
+def get_title(option_string: str) -> Tuple:
+    """
+    Returns a tuple of uppercase option and calculated title of given option string.
+
+    :param option_string:
+    :return: string
+    """
+    if option_string.upper() == "ID":
+        return "ID", "ID"
+    match = re.search(TITLE_REGEX, option_string)
+    if not match:
+        return option_string.upper(), option_string.title().replace("_", " ")
+
+    option_name = match.group(1)
+    title = match.group(2)
+
+    return option_name.upper(), title
 
 
 class SphinxNeedsLinkTypeException(BaseException):

@@ -63,7 +63,7 @@ def add_need(
 
     If ``is_external`` is set to ``True``, no node will be created.
     Instead the need is referencing an external url.
-    Used mostly for :ref:`external_needs` to integrate and reference needs from external documentation.
+    Used mostly for :ref:`needs_external_needs` to integrate and reference needs from external documentation.
 
     **Usage**:
 
