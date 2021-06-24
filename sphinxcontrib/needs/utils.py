@@ -45,6 +45,8 @@ INTERNALS = [
     # "parent_needs",
     "parent_need",
     # "child_needs",
+    "is_external",
+    "external_css",
 ]
 
 

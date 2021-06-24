@@ -12,6 +12,9 @@ log = get_logger(__name__)
 
 def load_external_needs(app, env, _docname):
     for source in app.config.needs_external_needs:
+        if source["base_url"].endswith("/"):
+            source["base_url"] = source["base_url"][:-1]
+
         log.info(f'Loading external needs from {source["json_url"]}')
 
         s = requests.Session()
@@ -53,7 +56,7 @@ def load_external_needs(app, env, _docname):
             need_params["need_type"] = need["type"]
             need_params["id"] = f'{prefix}{need["id"]}'
             need_params["external_css"] = source.get("css_class", None)
-            need_params["external_url"] = f'{source["base_url"]}/{need.get("docname", "__error__")}#{need["id"]}'
+            need_params["external_url"] = f'{source["base_url"]}/{need.get("docname", "__error__")}.html#{need["id"]}'
             need_params["content"] = need["description"]
             need_params["links"] = need.get("links", [])
             need_params["tags"] = ",".join(need.get("tags", []))

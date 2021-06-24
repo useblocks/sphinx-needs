@@ -441,9 +441,6 @@ def add_external_need(
     kwargs["external_css"] = external_css
 
     return add_need(app=app, **kwargs)
-    # need_type=need_type, title=title, id=id,
-    # content=content, status=status, tags=tags, links_string=links_string,
-    # is_external=True, external_url=external_url, external_css=external_css)
 
 
 def _prepare_template(app, needs_info, template_key):

@@ -46,7 +46,10 @@ test_dir = os.path.dirname(__file__)
 test_json = os.path.join(test_dir, "needs_test_small.json")
 # test_json = os.path.join(test_dir, 'needs_test_invalid.json')
 
-needs_external_needs = [{"base_url": f"file://{test_dir}", "json_url": f"file://{test_json}", "id_prefix": "ext_"}]
+# needs_external_needs = [{"base_url": f"file://{test_dir}", "json_url": f"file://{test_json}", "id_prefix": "ext_"}]
+needs_external_needs = [
+    {"base_url": "http://my_company.com/docs/v1/", "json_url": f"file://{test_json}", "id_prefix": "ext_"}
+]
 
 plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "utils", "plantuml.1.2021.5.jar")
 plantuml_output_format = "svg"
