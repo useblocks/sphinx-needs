@@ -12,6 +12,8 @@ License
 
 * Improvement: Providing :ref:`needs_external_needs` to allow usage and referencing of external needs.
   (`#137 <https://github.com/useblocks/sphinxcontrib-needs/issues/137>`_)
+* Improvement: Allowing :ref:`needtable_custom_titles` for :ref:`needtable`.
+  (`#299 <https://github.com/useblocks/sphinxcontrib-needs/issues/299>`_)
 * Bugfix: :ref:`needtable` shows attributes with value ``False`` again.
 * Bugfix: ``:hide:`` and ``:collapse: True`` are working inside :ref:`needimport`.
   (`#284 <https://github.com/useblocks/sphinxcontrib-needs/issues/284>`_,

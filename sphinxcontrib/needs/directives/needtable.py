@@ -4,6 +4,7 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 
 from sphinxcontrib.needs.directives.utils import (
+    get_title,
     no_needs_found_paragraph,
     used_filter_paragraph,
 )
@@ -52,7 +53,7 @@ class NeedtableDirective(FilterBase):
         if isinstance(columns, str):
             columns = [col.strip() for col in re.split(";|,", columns)]
 
-        columns = [col.upper() for col in columns]
+        columns = [get_title(col) for col in columns]
 
         style = self.options.get("style", "").upper()
         style_row = self.options.get("style_row", "")
@@ -137,16 +138,15 @@ def process_needtables(app, doctree, fromdocname):
 
         # Define Table column width
         # ToDo: Find a way to chosen to perfect width automatically.
-        for col in current_needtable["columns"]:
-            if col == "TITLE":
+        for option, title in current_needtable["columns"]:
+            if option == "TITLE":
                 tgroup += nodes.colspec(colwidth=15)
             else:
                 tgroup += nodes.colspec(colwidth=5)
 
         node_columns = []
-        for col in current_needtable["columns"]:
-            header_name = col.title() if col != "ID" else col
-            header_name = header_name.replace("_", " ")
+        for option, title in current_needtable["columns"]:
+            header_name = title
             node_columns.append(nodes.entry("", nodes.paragraph("", header_name)))
 
         tgroup += nodes.thead("", nodes.row("", *node_columns))
@@ -196,19 +196,19 @@ def process_needtables(app, doctree, fromdocname):
                 prefix = app.config.needs_part_prefix
                 temp_need["title"] = temp_need["content"]
 
-            for col in current_needtable["columns"]:
-                if col == "ID":
+            for option, title in current_needtable["columns"]:
+                if option == "ID":
                     row += row_col_maker(
                         app, fromdocname, env.needs_all_needs, temp_need, "id", make_ref=True, prefix=prefix
                     )
-                elif col == "TITLE":
+                elif option == "TITLE":
                     row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need, "title", prefix=prefix)
-                elif col in link_type_list.keys():
-                    link_type = link_type_list[col]
+                elif option in link_type_list.keys():
+                    link_type = link_type_list[option]
                     if (
-                        col == "INCOMING"
-                        or col == link_type["option"].upper() + "_BACK"
-                        or col == link_type["incoming"].upper()
+                        option == "INCOMING"
+                        or option == link_type["option"].upper() + "_BACK"
+                        or option == link_type["incoming"].upper()
                     ):
                         row += row_col_maker(
                             app,
@@ -223,7 +223,7 @@ def process_needtables(app, doctree, fromdocname):
                             app, fromdocname, env.needs_all_needs, temp_need, link_type["option"], ref_lookup=True
                         )
                 else:
-                    row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need, col.lower())
+                    row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need, option.lower())
             tbody += row
 
             # Need part rows
@@ -233,8 +233,8 @@ def process_needtables(app, doctree, fromdocname):
                     temp_part = part.copy()  # The dict needs to be manipulated, so that row_col_maker() can be used
                     temp_part["docname"] = need_info["docname"]
 
-                    for col in current_needtable["columns"]:
-                        if col == "ID":
+                    for option, title in current_needtable["columns"]:
+                        if option == "ID":
                             temp_part["id"] = ".".join([need_info["id"], part["id"]])
                             row += row_col_maker(
                                 app,
@@ -245,7 +245,7 @@ def process_needtables(app, doctree, fromdocname):
                                 make_ref=True,
                                 prefix=app.config.needs_part_prefix,
                             )
-                        elif col == "TITLE":
+                        elif option == "TITLE":
                             row += row_col_maker(
                                 app,
                                 fromdocname,
@@ -254,9 +254,9 @@ def process_needtables(app, doctree, fromdocname):
                                 "content",
                                 prefix=app.config.needs_part_prefix,
                             )
-                        elif col in link_type_list.keys() and (
-                            col == link_type_list[col]["option"].upper() + "_BACK"
-                            or col == link_type_list[col]["incoming"].upper()
+                        elif option in link_type_list.keys() and (
+                            option == link_type_list[option]["option"].upper() + "_BACK"
+                            or option == link_type_list[option]["incoming"].upper()
                         ):
 
                             row += row_col_maker(
@@ -264,11 +264,11 @@ def process_needtables(app, doctree, fromdocname):
                                 fromdocname,
                                 env.needs_all_needs,
                                 temp_part,
-                                link_type_list[col]["option"] + "_back",
+                                link_type_list[option]["option"] + "_back",
                                 ref_lookup=True,
                             )
                         else:
-                            row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_part, col.lower())
+                            row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_part, option.lower())
 
                     tbody += row
 

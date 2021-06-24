@@ -61,3 +61,11 @@ def test_doc_needtable_parts(app, status, warning):
     assert "table_001.2" in html
     assert "table_001.3" in html
     assert 'class="need_part' in html
+
+
+@with_app(buildername="html", srcdir="doc_test/doc_needtable")
+def test_doc_needtable_titles(app, status, warning):
+    app.build()
+    html = Path(app.outdir, "test_titles.html").read_text()
+    assert '<th class="head"><p>Headline</p></th>' in html
+    assert '<th class="head"><p>To this need123</p></th>' in html
