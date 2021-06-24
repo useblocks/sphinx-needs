@@ -1,6 +1,11 @@
 from docutils import nodes
 from sphinx.util.nodes import make_refnode
 
+try:
+    from sphinx.errors import NoUri  # Sphinx 3.0
+except ImportError:
+    from sphinx.environment import NoUri  # Sphinx < 3.0
+
 
 class NeedIncoming(nodes.Inline, nodes.Element):
     pass
@@ -10,14 +15,6 @@ def process_need_incoming(app, doctree, fromdocname):
     env = app.builder.env
 
     for node_need_backref in doctree.traverse(NeedIncoming):
-        # # Let's create a dummy node, for the case we will not be able to create a real reference
-        # new_node_ref = make_refnode(app.builder,
-        #                             fromdocname,
-        #                             fromdocname,
-        #                             'Unknown need',
-        #                             node_need_backref[0].deepcopy(),
-        #                             node_need_backref['reftarget'] + '?')
-
         node_link_container = nodes.inline()
         ref_need = env.needs_all_needs[node_need_backref["reftarget"]]
 
@@ -44,14 +41,19 @@ def process_need_incoming(app, doctree, fromdocname):
                     #     link_text += ", "
                     node_need_backref[0] = nodes.Text(link_text, link_text)
 
-                    new_node_ref = make_refnode(
-                        app.builder,
-                        fromdocname,
-                        target_need["docname"],
-                        target_need["target_node"]["refid"],
-                        node_need_backref[0].deepcopy(),
-                        node_need_backref["reftarget"],
-                    )
+                    if not target_need["is_external"]:
+                        new_node_ref = make_refnode(
+                            app.builder,
+                            fromdocname,
+                            target_need["docname"],
+                            target_need["target_node"]["refid"],
+                            node_need_backref[0].deepcopy(),
+                            node_need_backref["reftarget"],
+                        )
+                    else:
+                        new_node_ref = nodes.reference(target_need["id"], target_need["id"])
+                        new_node_ref["refuri"] = target_need["external_url"]
+                        new_node_ref["classes"].append(target_need["external_css"])
 
                     node_link_container += new_node_ref
 
@@ -59,8 +61,8 @@ def process_need_incoming(app, doctree, fromdocname):
                     if index + 1 < len(links_back):
                         node_link_container += nodes.Text(", ", ", ")
 
-                except Exception:
-                    # Irf the given need id can not be found, we must pass here....
+                except NoUri:
+                    # If the given need id can not be found, we must pass here....
                     pass
 
             else:

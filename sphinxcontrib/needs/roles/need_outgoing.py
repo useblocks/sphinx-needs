@@ -18,13 +18,6 @@ class NeedOutgoing(nodes.Inline, nodes.Element):
 def process_need_outgoing(app, doctree, fromdocname):
     for node_need_ref in doctree.traverse(NeedOutgoing):
         env = app.builder.env
-        # Let's create a dummy node, for the case we will not be able to create a real reference
-        # new_node_ref = make_refnode(app.builder,
-        #                             fromdocname,
-        #                             fromdocname,
-        #                             'Unknown need',
-        #                             node_need_ref[0].deepcopy(),
-        #                             node_need_ref['reftarget'] + '?')
 
         node_link_container = nodes.inline()
         ref_need = env.needs_all_needs[node_need_ref["reftarget"]]
@@ -69,14 +62,19 @@ def process_need_outgoing(app, doctree, fromdocname):
 
                     node_need_ref[0] = nodes.Text(link_text, link_text)
 
-                    new_node_ref = make_refnode(
-                        app.builder,
-                        fromdocname,
-                        target_need["docname"],
-                        target_id,
-                        node_need_ref[0].deepcopy(),
-                        node_need_ref["reftarget"],
-                    )
+                    if not target_need["is_external"]:
+                        new_node_ref = make_refnode(
+                            app.builder,
+                            fromdocname,
+                            target_need["docname"],
+                            target_id,
+                            node_need_ref[0].deepcopy(),
+                            node_need_ref["reftarget"],
+                        )
+                    else:
+                        new_node_ref = nodes.reference(target_need["id"], target_need["id"])
+                        new_node_ref["refuri"] = target_need["external_url"]
+                        new_node_ref["classes"].append(target_need["external_css"])
 
                     node_link_container += new_node_ref
 

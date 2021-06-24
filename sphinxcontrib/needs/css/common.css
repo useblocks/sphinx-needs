@@ -143,3 +143,10 @@ div.dt-buttons button {
     background-color: inherit;
     background-image: none;
 }
+
+/* Style for external need links*/
+a.external_link:after {
+    content: "🡽"
+    /* Same, but with none breaking space (&nbsp not supported in content!)*/
+    /*content: "\00a0\00a0🡽"*/
+}

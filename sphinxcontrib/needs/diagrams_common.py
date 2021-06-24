@@ -178,11 +178,12 @@ def calculate_link(app, need_info):
     :return:
     """
     try:
-        link = "../" + app.builder.get_target_uri(need_info["docname"]) + "#" + need_info["target_node"]["refid"]
-        if need_info["is_part"]:
-            link = f"{link}.{need_info['id']}"
-        # This would highlight all word from title. Deactivated with 0.5.3
-        # + "?highlight={0}".format(urlParse(need_info['title']))
+        if need_info["is_external"]:
+            link = need_info["external_url"]
+        else:
+            link = "../" + app.builder.get_target_uri(need_info["docname"]) + "#" + need_info["target_node"]["refid"]
+            if need_info["is_part"]:
+                link = f"{link}.{need_info['id']}"
 
     except NoUri:
         link = ""
