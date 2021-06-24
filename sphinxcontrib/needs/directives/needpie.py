@@ -1,3 +1,4 @@
+import math
 import os
 
 import matplotlib
@@ -157,7 +158,7 @@ def process_needpie(app, doctree, fromdocname):
             "labels": labels,
             "startangle": 90,
             "explode": explode,
-            "autopct": lambda pct: func(pct, sizes),
+            "autopct": lambda pct: label_calc(pct, sizes),
             "shadow": shadow,
             "colors": colors,
         }
@@ -203,6 +204,6 @@ def process_needpie(app, doctree, fromdocname):
         node.replace_self(image_node)
 
 
-def func(pct, allvals):
-    absolute = int(pct / 100.0 * sum(allvals))
+def label_calc(pct, allvals):
+    absolute = int(math.ceil(pct / 100.0 * sum(allvals)))
     return "{:.1f}%\n({:d})".format(pct, absolute)
