@@ -222,6 +222,8 @@ Or set it locally for each need by using :ref:`need_layout` option::
       :layout: complete
 
 
+.. _own_layouts:
+
 Defining own layouts
 ~~~~~~~~~~~~~~~~~~~~
 Own layouts can be defined by using the the config parameter :ref:`needs_layouts` in your ``conf.py`` file.

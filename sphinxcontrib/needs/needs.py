@@ -10,8 +10,8 @@ from sphinx.roles import XRefRole
 from sphinxcontrib.needs.builder import NeedsBuilder
 from sphinxcontrib.needs.defaults import (
     DEFAULT_DIAGRAM_TEMPLATE,
-    NEED_DEFAULT_OPTIONS,
     LAYOUTS,
+    NEED_DEFAULT_OPTIONS,
     NEEDFLOW_CONFIG_DEFAULTS,
 )
 from sphinxcontrib.needs.directives.need import (
@@ -139,7 +139,7 @@ def setup(app):
     app.add_config_value("needs_table_columns", "ID;TITLE;STATUS;TYPE;OUTGOING;TAGS", "html")
     app.add_config_value("needs_table_style", "DATATABLES", "html")
 
-    app.add_config_value("needs_role_need_template", u"{title} ({id})", "html")
+    app.add_config_value("needs_role_need_template", "{title} ({id})", "html")
     app.add_config_value("needs_role_need_max_title_length", 30, "html", types=[int])
 
     app.add_config_value("needs_extra_options", {}, "html")
@@ -173,7 +173,7 @@ def setup(app):
     app.add_config_value("needs_css", "modern.css", "html")
 
     # Prefix for need_part output in tables
-    app.add_config_value("needs_part_prefix", u"\u2192\u00a0", "html")
+    app.add_config_value("needs_part_prefix", "\u2192\u00a0", "html")
 
     # List of additional links, which can be used by setting related option
     # Values needed for each new link:
@@ -273,9 +273,9 @@ def setup(app):
     # registered for sphinx. So some sphinx-internal tasks/functions may be called by hand again...
     # See also https://github.com/sphinx-doc/sphinx/issues/7054#issuecomment-578019701 for an example
     app.connect("doctree-resolved", add_sections)
-    app.connect("doctree-resolved", process_needextract)  # Must be done very early, as it modifies need data
+    app.connect("doctree-resolved", process_needextend)  # Must be done very early, as it modifies need data
     app.connect("doctree-resolved", process_need_nodes)
-    app.connect("doctree-resolved", process_needextend)
+    app.connect("doctree-resolved", process_needextract)
     app.connect("doctree-resolved", process_needfilters)
     app.connect("doctree-resolved", process_needlist)
     app.connect("doctree-resolved", process_needtables)
@@ -331,21 +331,43 @@ def load_config(app: Sphinx, *_args):
 
     # Update NeedextendDirective with option modifiers.
     for key, value in NEED_DEFAULT_OPTIONS.items():
-        NeedextendDirective.option_spec.update({
-            f'+{key}': value,
-            f'-{key}': directives.flag,
-        })
+        NeedextendDirective.option_spec.update(
+            {
+                key: value,
+                f"+{key}": value,
+                f"-{key}": directives.flag,
+            }
+        )
 
     for key, value in extra_links.items():
-        NeedextendDirective.option_spec.update({
-            f'+{key}': value,
-            f'-{key}': directives.flag,
-        })
+        NeedextendDirective.option_spec.update(
+            {
+                key: value,
+                f"+{key}": value,
+                f"-{key}": directives.flag,
+                f"{key}_back": value,
+                f"+{key}_back": value,
+                f"-{key}_back": directives.flag,
+            }
+        )
+
+    # "links" is not part of the extra_links-dict, so we need
+    # to set the links_back values by hand
+    NeedextendDirective.option_spec.update(
+        {
+            "links_back": NEED_DEFAULT_OPTIONS["links"],
+            "+links_back": NEED_DEFAULT_OPTIONS["links"],
+            "-links_back": directives.flag,
+        }
+    )
     for key, value in extra_options.items():
-        NeedextendDirective.option_spec.update({
-            f'+{key}': value,
-            f'-{key}': directives.flag,
-        })
+        NeedextendDirective.option_spec.update(
+            {
+                key: value,
+                f"+{key}": value,
+                f"-{key}": directives.flag,
+            }
+        )
 
     if title_optional or title_from_content:
         NeedDirective.required_arguments = 0

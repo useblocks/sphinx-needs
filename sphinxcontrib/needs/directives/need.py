@@ -3,7 +3,7 @@ import hashlib
 import re
 
 from docutils import nodes
-from docutils.parsers.rst import Directive, directives
+from docutils.parsers.rst import Directive
 from sphinx.addnodes import desc_name, desc_signature
 
 from sphinxcontrib.needs.api import add_need

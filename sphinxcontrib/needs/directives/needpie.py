@@ -79,7 +79,7 @@ class NeedpieDirective(FilterBase):
 
         shadow = "shadow" in self.options
 
-        # Add the need and all needed information
+        # Stores infos for needpie
         env.need_all_needpie[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
