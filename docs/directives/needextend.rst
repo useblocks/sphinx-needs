@@ -33,7 +33,6 @@ The argument of ``needextend`` must be a :ref:`filter_string`, which defines the
        :status: open
        :author: Foo
        :tags: tag_1, tag_2
-       :links: extend_test_001
 
        This requirement got modified.
 
@@ -46,8 +45,6 @@ The argument of ``needextend`` must be a :ref:`filter_string`, which defines the
        :status: closed
        :+author: and me
        :+tags: new_tag
-       :-links:
-       :-links_back:
 
 
 .. req:: needextend Example 1
@@ -55,7 +52,6 @@ The argument of ``needextend`` must be a :ref:`filter_string`, which defines the
    :status: open
    :author: Foo
    :tags: tag_1, tag_2
-   :links: extend_test_001
 
    This requirement got modified.
 
@@ -68,19 +64,121 @@ The argument of ``needextend`` must be a :ref:`filter_string`, which defines the
    :status: closed
    :+author: and me
    :+tags: new_tag
-   :-links:
-   :-links_back:
 
-Removing links
+Single need modification
+------------------------
+If only one single need shall get modified, the argument of ``needextend`` can just be the need-id.
+
+.. code-block:: rst
+
+    .. req:: needextend Example 2
+       :id: extend_test_002
+       :status: open
+
+    .. needextend:: extend_test_002
+       :status: New status
+
+
+.. req:: needextend Example 2
+   :id: extend_test_002
+   :status: open
+
+.. needextend:: extend_test_002
+   :status: New status
+
+**Attention**: The given argument must fully match the regular expression defined in
+:ref:`needs_id_regex` and a need with this ID must exist!
+Otherwise the argument is taken as normal filter string.
+
+Changing links
 --------------
-``Outgoing`` and ``Incoming`` links got already calculated, when ``needextend`` gets handled.
-This means outgoing and incoming links must get handled separately. For incoming links ``_back`` must be added to
-the option name.
+Options, which are containing links, get handled in two steps:
 
-Example: Lets say ``Requirement A`` is referencing ``Requirement B``. To remove this link, set ``:-links:`` in
-a ``needextend`` for ``Requirement A``. But ``Requirement B`` will keep its "incoming link". So only one direction got
-removed.
-To remove also the incoming link, a ``needextend`` for ``Requirment B`` is needed, which contains ``:-links_back:``.
+1. Options for the need are set as above.
+2. The referenced need get updated as well and incoming links may get deleted, added or replaced.
+
+**Example**:
+
+.. code-block:: rst
+
+    .. req:: needextend Example 3
+       :id: extend_test_003
+
+       Had no outgoing links.
+       Got an outgoing link ``extend_test_004``.
+
+    .. req:: needextend Example 4
+       :id: extend_test_004
+
+       Had no links.
+       Got an incoming links ``extend_test_003`` and ``extend_test_006``.
+
+    .. req:: needextend Example 5
+       :id: extend_test_005
+       :links: extend_test_003, extend_test_004
+
+       Had the two links: ``extend_test_003`` and ``extend_test_004``.
+       Both got deleted.
+
+    .. req:: needextend Example 6
+       :id: extend_test_006
+       :links: extend_test_003
+
+       Had the link ``extend_test_003``, got another one ``extend_test_004``.
+
+    .. -- MANIPULATIONS --
+
+    .. needextend:: extend_test_003
+       :links: extend_test_004
+
+    .. needextend:: extend_test_005
+       :-links:
+
+    .. needextend:: extend_test_006
+       :+links: extend_test_004
+
+    .. needextend:: extend_test_006
+       :+links: extend_test_004
+
+       Same as above, so it should not do anything.
+       But it raises the modified-counter by one.
+
+.. req:: needextend Example 3
+   :id: extend_test_003
+
+   Had no outgoing links.
+   Got an outgoing link ``extend_test_004``.
+
+.. req:: needextend Example 4
+   :id: extend_test_004
+
+   Had no links.
+   Got an incoming links ``extend_test_003`` and ``extend_test_006``.
+
+.. req:: needextend Example 5
+   :id: extend_test_005
+   :links: extend_test_003, extend_test_004
+
+   Had the two links: ``extend_test_003`` and ``extend_test_004``.
+   Both got deleted.
+
+.. req:: needextend Example 6
+   :id: extend_test_006
+   :links: extend_test_003
+
+   Had the link ``extend_test_003``, got another one ``extend_test_004``.
+
+.. needextend:: extend_test_003
+   :links: extend_test_004
+
+.. needextend:: extend_test_005
+   :-links:
+
+.. needextend:: extend_test_006
+   :+links: extend_test_004
+
+.. needextend:: extend_test_006
+   :+links: extend_test_004
 
 Monitoring modifications
 ------------------------
@@ -94,14 +192,20 @@ Also the ``modifications`` number is increased by one. +1 for each executed ``ne
 
 To see these values, use ``:layout: debug`` on the need or by :ref:`own_layouts`.
 
-Also filtering for these values is supported::
+Also filtering for these values is supported:
+
+.. code-block:: rst
+
+    We have :need_count:`is_modified` modified needs.
 
     .. needtable::
-       :filter: is_modified
+       :filter: "needextend" in title
        :columns: id, title, is_modified, modifications
 
+We have :need_count:`is_modified` modified needs.
+
 .. needtable::
-   :filter: is_modified
+   :filter: "needextend" in title
    :columns: id, title, is_modified, modifications
    :style: table
 

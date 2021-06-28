@@ -22,6 +22,7 @@ from sphinxcontrib.needs.directives.need import (
     html_visit,
     latex_depart,
     latex_visit,
+    print_need_nodes,
     process_need_nodes,
     purge_needs,
 )
@@ -273,8 +274,9 @@ def setup(app):
     # registered for sphinx. So some sphinx-internal tasks/functions may be called by hand again...
     # See also https://github.com/sphinx-doc/sphinx/issues/7054#issuecomment-578019701 for an example
     app.connect("doctree-resolved", add_sections)
-    app.connect("doctree-resolved", process_needextend)  # Must be done very early, as it modifies need data
     app.connect("doctree-resolved", process_need_nodes)
+    app.connect("doctree-resolved", process_needextend)  # Must be done very early, as it modifies need data
+    app.connect("doctree-resolved", print_need_nodes)
     app.connect("doctree-resolved", process_needextract)
     app.connect("doctree-resolved", process_needfilters)
     app.connect("doctree-resolved", process_needlist)

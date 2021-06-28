@@ -313,7 +313,7 @@ def add_need(
             links = _read_in_links(links_string)
 
         needs_info[link_type["option"]] = links
-        needs_info["{}_back".format(link_type["option"])] = set()
+        needs_info["{}_back".format(link_type["option"])] = []
 
         if "copy" not in link_type.keys():
             link_type["copy"] = False

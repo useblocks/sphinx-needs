@@ -66,11 +66,25 @@ def process_needextend(app, doctree, fromdocname):
         + [x["option"] for x in app.config.needs_extra_links]
         + [f"{x['option']}_back" for x in app.config.needs_extra_links]
     )  # back-links (incoming)
+    link_names = [x["option"] for x in app.config.needs_extra_links]
 
     for node in doctree.traverse(Needextend):
         id = node.attributes["ids"][0]
         current_needextend = env.need_all_needextend[id]
-        found_needs = filter_needs(app.env.needs_all_needs.values(), current_needextend["filter"])
+
+        # Check if filter is just a need-id.
+        # In this case create the needed filter string
+        need_filter = current_needextend["filter"]
+        if re.fullmatch(app.config.needs_id_regex, need_filter):
+            if need_filter in app.env.needs_all_needs:
+                need_filter = f'id == "{need_filter}"'
+            else:
+                raise NeedsInvalidFilter(f"Provided id {need_filter} for needextend does not exist.")
+
+        try:
+            found_needs = filter_needs(app.env.needs_all_needs.values(), need_filter)
+        except NeedsInvalidFilter as e:
+            raise NeedsInvalidFilter(f"Filter not valid for needextend on page {current_needextend['docname']}:\n{e}")
 
         for found_need in found_needs:
             # Work in the stored needs, not on the search result
@@ -84,7 +98,16 @@ def process_needextend(app, doctree, fromdocname):
 
                     # If we need to handle a list
                     if option_name in list_names:
-                        need[option_name] += re.split(";|,", value)
+                        for link in re.split(";|,", value):
+                            if link not in need[option_name]:
+                                need[option_name].append(link)
+
+                        # If we manipulate links, we need to set all the reference in the target need
+                        # under e.g. links_back
+                        if option_name in link_names:
+                            for ref_need in re.split(";|,", value):
+                                if found_need["id"] not in app.env.needs_all_needs[ref_need][f"{option_name}_back"]:
+                                    app.env.needs_all_needs[ref_need][f"{option_name}_back"] += [found_need["id"]]
 
                     # else it must be a normal string
                     else:
@@ -95,12 +118,36 @@ def process_needextend(app, doctree, fromdocname):
                 elif option.startswith("-"):
                     option_name = option[1:]
                     if option_name in list_names:
+                        old_content = need[option_name]  # Save it, as it may be need to identify referenced needs
                         need[option_name] = []
+
+                        # If we manipulate links, we need to delete the reference in the target need as well
+                        if option_name in link_names:
+                            for ref_need in old_content:  # There may be several links
+                                app.env.needs_all_needs[ref_need][f"{option_name}_back"].remove(found_need["id"])
+
                     else:
                         need[option_name] = ""
                 else:
                     if option in list_names:
-                        need[option] = re.split(";|,", value)
+                        old_content = need[option].copy()
+
+                        need[option] = []
+                        for link in re.split(";|,", value):
+                            if link not in need[option]:
+                                need[option].append(link)
+
+                        # If add new links also as "link_s_back" to the referenced need.
+                        if option in link_names:
+                            # Remove old links
+                            for ref_need in old_content:  # There may be several links
+                                app.env.needs_all_needs[ref_need][f"{option}_back"].remove(found_need["id"])
+
+                            # Add new links
+                            for ref_need in need[option]:  # There may be several links
+                                if found_need["id"] not in app.env.needs_all_needs[ref_need][f"{option}_back"]:
+                                    app.env.needs_all_needs[ref_need][f"{option}_back"] += [found_need["id"]]
+
                     else:
                         need[option] = value
 

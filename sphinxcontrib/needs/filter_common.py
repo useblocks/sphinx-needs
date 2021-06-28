@@ -10,6 +10,7 @@ from typing import Any, Dict, List
 
 from docutils.parsers.rst import Directive, directives
 
+from sphinxcontrib.needs.api.exceptions import NeedsInvalidFilter
 from sphinxcontrib.needs.utils import logger
 
 
@@ -235,9 +236,5 @@ def filter_single_need(need, filter_string="", needs=None, current_need=None) ->
         # Otherwise the vars not not be accessed in list comprehensions.
         result = bool(eval(filter_string, filter_context))
     except Exception as e:
-        raise NeedInvalidFilter("Filter {0} not valid: Error: {1}".format(filter_string, e))
+        raise NeedsInvalidFilter("Filter {0} not valid: Error: {1}".format(filter_string, e))
     return result
-
-
-class NeedInvalidFilter(BaseException):
-    pass

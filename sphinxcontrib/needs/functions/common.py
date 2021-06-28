@@ -8,11 +8,8 @@ Collection of common sphinx-needs functions for dynamic values
 
 import re
 
-from sphinxcontrib.needs.filter_common import (
-    NeedInvalidFilter,
-    filter_needs,
-    filter_single_need,
-)
+from sphinxcontrib.needs.api.exceptions import NeedsInvalidFilter
+from sphinxcontrib.needs.filter_common import filter_needs, filter_single_need
 from sphinxcontrib.needs.utils import logger
 
 
@@ -400,7 +397,7 @@ def calc_sum(app, need, needs, option, filter=None, links_only=False):
                     continue
             except ValueError:
                 pass
-            except NeedInvalidFilter as ex:
+            except NeedsInvalidFilter as ex:
                 logger.warning("Given filter is not valid. Error: {}".format(ex))
         try:
             calculated_sum += float(check_need[option])
