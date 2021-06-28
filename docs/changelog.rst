@@ -12,6 +12,8 @@ License
 
 * Improvement: Providing :ref:`needs_external_needs` to allow usage and referencing of external needs.
   (`#137 <https://github.com/useblocks/sphinxcontrib-needs/issues/137>`_)
+* Improvement: New directive :ref:`needextend` to modify or extend existing needs.
+  (`#282 <https://github.com/useblocks/sphinxcontrib-needs/issues/282>`_)
 * Improvement: Allowing :ref:`needtable_custom_titles` for :ref:`needtable`.
   (`#299 <https://github.com/useblocks/sphinxcontrib-needs/issues/299>`_)
 * Bugfix: :ref:`needtable` shows attributes with value ``False`` again.

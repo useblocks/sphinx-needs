@@ -275,6 +275,8 @@ def add_need(
         "parent_need": None,
         "is_external": is_external or False,
         "external_css": external_css or "external_link",
+        "is_modified": False,  # needed by needextend
+        "modifications": 0,  # needed by needextend
     }
     needs_extra_options = env.config.needs_extra_options.keys()
     _merge_extra_options(needs_info, kwargs, needs_extra_options)
@@ -311,7 +313,7 @@ def add_need(
             links = _read_in_links(links_string)
 
         needs_info[link_type["option"]] = links
-        needs_info["{}_back".format(link_type["option"])] = set()
+        needs_info["{}_back".format(link_type["option"])] = []
 
         if "copy" not in link_type.keys():
             link_type["copy"] = False

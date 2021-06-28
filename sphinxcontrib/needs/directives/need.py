@@ -3,11 +3,12 @@ import hashlib
 import re
 
 from docutils import nodes
-from docutils.parsers.rst import Directive, directives
+from docutils.parsers.rst import Directive
 from sphinx.addnodes import desc_name, desc_signature
 
 from sphinxcontrib.needs.api import add_need
 from sphinxcontrib.needs.api.exceptions import NeedsInvalidException
+from sphinxcontrib.needs.defaults import NEED_DEFAULT_OPTIONS
 from sphinxcontrib.needs.functions import (
     find_and_replace_node_content,
     resolve_dynamic_values,
@@ -53,22 +54,7 @@ class NeedDirective(Directive):
 
     required_arguments = 1
     optional_arguments = 0
-    option_spec = {
-        "id": directives.unchanged_required,
-        "status": directives.unchanged_required,
-        "tags": directives.unchanged_required,
-        "links": directives.unchanged_required,
-        "collapse": directives.unchanged_required,
-        "hide": directives.flag,
-        "title_from_content": directives.flag,
-        "style": directives.unchanged_required,
-        "layout": directives.unchanged_required,
-        "template": directives.unchanged_required,
-        "pre_template": directives.unchanged_required,
-        "post_template": directives.unchanged_required,
-        "duration": directives.unchanged_required,
-        "completion": directives.unchanged_required,
-    }
+    option_spec = NEED_DEFAULT_OPTIONS
 
     final_argument_whitespace = True
 
@@ -302,8 +288,6 @@ def process_need_nodes(app, doctree, fromdocname):
     if not hasattr(env, "needs_all_needs"):
         return
 
-    needs = env.needs_all_needs
-
     # Call dynamic functions and replace related note data with their return values
     resolve_dynamic_values(env)
 
@@ -313,6 +297,19 @@ def process_need_nodes(app, doctree, fromdocname):
     # Create back links of common links and extra links
     for links in env.config.needs_extra_links:
         create_back_links(env, links["option"])
+
+
+def print_need_nodes(app, doctree, fromdocname):
+    """
+    Finally creates the need-node in the docurils node-tree.
+
+    :param app:
+    :param doctree:
+    :param fromdocname:
+    :return:
+    """
+    env = app.builder.env
+    needs = env.needs_all_needs
 
     for node_need in doctree.traverse(Need):
         need_id = node_need.attributes["ids"][0]

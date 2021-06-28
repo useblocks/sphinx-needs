@@ -11,6 +11,7 @@ from sphinxcontrib.needs.builder import NeedsBuilder
 from sphinxcontrib.needs.defaults import (
     DEFAULT_DIAGRAM_TEMPLATE,
     LAYOUTS,
+    NEED_DEFAULT_OPTIONS,
     NEEDFLOW_CONFIG_DEFAULTS,
 )
 from sphinxcontrib.needs.directives.need import (
@@ -21,8 +22,14 @@ from sphinxcontrib.needs.directives.need import (
     html_visit,
     latex_depart,
     latex_visit,
+    print_need_nodes,
     process_need_nodes,
     purge_needs,
+)
+from sphinxcontrib.needs.directives.needextend import (
+    Needextend,
+    NeedextendDirective,
+    process_needextend,
 )
 from sphinxcontrib.needs.directives.needextract import (
     Needextract,
@@ -133,7 +140,7 @@ def setup(app):
     app.add_config_value("needs_table_columns", "ID;TITLE;STATUS;TYPE;OUTGOING;TAGS", "html")
     app.add_config_value("needs_table_style", "DATATABLES", "html")
 
-    app.add_config_value("needs_role_need_template", u"{title} ({id})", "html")
+    app.add_config_value("needs_role_need_template", "{title} ({id})", "html")
     app.add_config_value("needs_role_need_max_title_length", 30, "html", types=[int])
 
     app.add_config_value("needs_extra_options", {}, "html")
@@ -167,7 +174,7 @@ def setup(app):
     app.add_config_value("needs_css", "modern.css", "html")
 
     # Prefix for need_part output in tables
-    app.add_config_value("needs_part_prefix", u"\u2192\u00a0", "html")
+    app.add_config_value("needs_part_prefix", "\u2192\u00a0", "html")
 
     # List of additional links, which can be used by setting related option
     # Values needed for each new link:
@@ -211,6 +218,7 @@ def setup(app):
     app.add_node(Needgantt)
     app.add_node(Needextract)
     app.add_node(Needservice)
+    app.add_node(Needextend)
     app.add_node(NeedPart, html=(visitor_dummy, visitor_dummy), latex=(visitor_dummy, visitor_dummy))
 
     ########################################################################
@@ -228,6 +236,7 @@ def setup(app):
     app.add_directive("needimport", NeedimportDirective)
     app.add_directive("needextract", NeedextractDirective)
     app.add_directive("needservice", NeedserviceDirective)
+    app.add_directive("needextend", NeedextendDirective)
 
     ########################################################################
     # ROLES
@@ -266,6 +275,8 @@ def setup(app):
     # See also https://github.com/sphinx-doc/sphinx/issues/7054#issuecomment-578019701 for an example
     app.connect("doctree-resolved", add_sections)
     app.connect("doctree-resolved", process_need_nodes)
+    app.connect("doctree-resolved", process_needextend)  # Must be done very early, as it modifies need data
+    app.connect("doctree-resolved", print_need_nodes)
     app.connect("doctree-resolved", process_needextract)
     app.connect("doctree-resolved", process_needfilters)
     app.connect("doctree-resolved", process_needlist)
@@ -319,6 +330,46 @@ def load_config(app: Sphinx, *_args):
     # Update NeedDirective to use customized links
     NeedDirective.option_spec.update(extra_links)
     NeedserviceDirective.option_spec.update(extra_links)
+
+    # Update NeedextendDirective with option modifiers.
+    for key, value in NEED_DEFAULT_OPTIONS.items():
+        NeedextendDirective.option_spec.update(
+            {
+                key: value,
+                f"+{key}": value,
+                f"-{key}": directives.flag,
+            }
+        )
+
+    for key, value in extra_links.items():
+        NeedextendDirective.option_spec.update(
+            {
+                key: value,
+                f"+{key}": value,
+                f"-{key}": directives.flag,
+                f"{key}_back": value,
+                f"+{key}_back": value,
+                f"-{key}_back": directives.flag,
+            }
+        )
+
+    # "links" is not part of the extra_links-dict, so we need
+    # to set the links_back values by hand
+    NeedextendDirective.option_spec.update(
+        {
+            "links_back": NEED_DEFAULT_OPTIONS["links"],
+            "+links_back": NEED_DEFAULT_OPTIONS["links"],
+            "-links_back": directives.flag,
+        }
+    )
+    for key, value in extra_options.items():
+        NeedextendDirective.option_spec.update(
+            {
+                key: value,
+                f"+{key}": value,
+                f"-{key}": directives.flag,
+            }
+        )
 
     if title_optional or title_from_content:
         NeedDirective.required_arguments = 0
