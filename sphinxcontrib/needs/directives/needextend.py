@@ -75,11 +75,11 @@ def process_needextend(app, doctree, fromdocname):
         # Check if filter is just a need-id.
         # In this case create the needed filter string
         need_filter = current_needextend["filter"]
-        if re.fullmatch(app.config.needs_id_regex, need_filter):
-            if need_filter in app.env.needs_all_needs:
-                need_filter = f'id == "{need_filter}"'
-            else:
-                raise NeedsInvalidFilter(f"Provided id {need_filter} for needextend does not exist.")
+        if need_filter in app.env.needs_all_needs:
+            need_filter = f'id == "{need_filter}"'
+        # If it looks like a need id, but we haven't found one, raise an exception
+        elif re.fullmatch(app.config.needs_id_regex, need_filter):
+            raise NeedsInvalidFilter(f"Provided id {need_filter} for needextend does not exist.")
 
         try:
             found_needs = filter_needs(app.env.needs_all_needs.values(), need_filter)
