@@ -1,6 +1,11 @@
 Need extend
 ===========
 
+.. toctree::
+
+   page_1
+   page_2
+
 .. story:: needextend Example 3
    :id: extend_test_003
 

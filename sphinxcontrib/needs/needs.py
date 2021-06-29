@@ -476,7 +476,11 @@ def prepare_env(app, env, _docname):
         # Some tasks like backlink_creation need be be performed only once.
         # But most sphinx-events get called several times (for each single document
         # file), which would also execute our code several times...
-        env.needs_workflow = {"backlink_creation_links": False, "dynamic_values_resolved": False}
+        env.needs_workflow = {
+            "backlink_creation_links": False,
+            "dynamic_values_resolved": False,
+            "needs_extended": False,
+        }
         for link_type in app.config.needs_extra_links:
             env.needs_workflow["backlink_creation_{}".format(link_type["option"])] = False
 
