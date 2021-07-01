@@ -2,7 +2,7 @@ import nox
 from nox_poetry import session
 
 PYTHON_VERSIONS = ["3.6", "3.7", "3.8", "3.9"]
-SPHINX_VERSIONS = ["3.2", "3.3", "3.4", "3.5"]
+SPHINX_VERSIONS = ["3.2", "3.3", "3.4", "3.5", "4.0"]
 TEST_DEPENDENCIES = [
     "nose",
     "sphinx_testing",
@@ -17,7 +17,10 @@ LINT_DEPENDENCIES = [
 
 
 def is_supported(python: str, sphinx: str) -> bool:
-    return not (python == "3.6" and float(sphinx) > 3.0)
+    # return not (python == "3.6" and float(sphinx) > 3.0)
+
+    # Currently we should support any combination of the above Python  and Sphinx versions
+    return True
 
 
 def run_tests(session, sphinx):

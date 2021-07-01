@@ -37,8 +37,8 @@ matplotlib = [
 ]
 sphinx-copybutton = "^0.3.0"
 sphinx = [
-    { version = ">2.2, <=3.0", python = "~3.6" },
-    { version = ">2.2, <=4.0", python = "^3.7" },
+    # { version = ">2.2, <=3.0", python = "~3.6" },
+    { version = ">2.2, <=4.1", python = "^3.6" },
 ]
 requests-file = "^1.5.1"
 requests = "^2.25.1"
