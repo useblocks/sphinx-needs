@@ -22,6 +22,8 @@ License
 * Bugfix: ``:hide:`` and ``:collapse: True`` are working inside :ref:`needimport`.
   (`#284 <https://github.com/useblocks/sphinxcontrib-needs/issues/284>`_,
   `#294 <https://github.com/useblocks/sphinxcontrib-needs/issues/294>`_)
+* Bugfix: :ref:`needpie` amount labels get calculated correctly.
+  (`#297 <https://github.com/useblocks/sphinxcontrib-needs/issues/297>`_)
 
 0.6.3
 -----

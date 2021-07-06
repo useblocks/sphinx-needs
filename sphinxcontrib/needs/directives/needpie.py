@@ -1,4 +1,3 @@
-import math
 import os
 
 import matplotlib
@@ -205,5 +204,5 @@ def process_needpie(app, doctree, fromdocname):
 
 
 def label_calc(pct, allvals):
-    absolute = int(math.ceil(pct / 100.0 * sum(allvals)))
+    absolute = int(round(pct / 100.0 * sum(allvals)))
     return "{:.1f}%\n({:d})".format(pct, absolute)
