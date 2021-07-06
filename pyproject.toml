@@ -2,7 +2,7 @@
 name = "sphinxcontrib-needs"
 
 # Don't miss updates in needs.py, conf.py and changelog.rst
-version = "0.6.3"
+version = "0.7.0"
 
 description = "Sphinx needs extension for managing needs/requirements and specifications"
 authors = ["team useblocks <info@useblocks.com>"]
