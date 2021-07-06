@@ -6,9 +6,14 @@ License
 
 .. include:: ../LICENSE
 
-0.7.0
+0.7.1
 -----
 :Released: under development
+
+
+0.7.0
+-----
+:Released: 06.07.2021
 
 * Improvement: Providing :ref:`needs_external_needs` to allow usage and referencing of external needs.
   (`#137 <https://github.com/useblocks/sphinxcontrib-needs/issues/137>`_)
