@@ -214,3 +214,5 @@ NEED_DEFAULT_OPTIONS = {
     "duration": directives.unchanged_required,
     "completion": directives.unchanged_required,
 }
+
+NEEDEXTEND_NOT_ALLOWED_OPTIONS = ["id"]

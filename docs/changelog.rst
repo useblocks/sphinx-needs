@@ -16,6 +16,8 @@ License
   (`#282 <https://github.com/useblocks/sphinxcontrib-needs/issues/282>`_)
 * Improvement: Allowing :ref:`needtable_custom_titles` for :ref:`needtable`.
   (`#299 <https://github.com/useblocks/sphinxcontrib-needs/issues/299>`_)
+* Bugfix: :ref:`needextend` does not support usage of internal options.
+  (`#318 <https://github.com/useblocks/sphinxcontrib-needs/issues/318>`_)
 * Bugfix: :ref:`needtable` shows attributes with value ``False`` again.
 * Bugfix: ``:hide:`` and ``:collapse: True`` are working inside :ref:`needimport`.
   (`#284 <https://github.com/useblocks/sphinxcontrib-needs/issues/284>`_,

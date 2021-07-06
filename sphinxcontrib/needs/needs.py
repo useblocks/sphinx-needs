@@ -12,6 +12,7 @@ from sphinxcontrib.needs.defaults import (
     DEFAULT_DIAGRAM_TEMPLATE,
     LAYOUTS,
     NEED_DEFAULT_OPTIONS,
+    NEEDEXTEND_NOT_ALLOWED_OPTIONS,
     NEEDFLOW_CONFIG_DEFAULTS,
 )
 from sphinxcontrib.needs.directives.need import (
@@ -333,6 +334,11 @@ def load_config(app: Sphinx, *_args):
 
     # Update NeedextendDirective with option modifiers.
     for key, value in NEED_DEFAULT_OPTIONS.items():
+
+        # Ignore options like "id"
+        if key in NEEDEXTEND_NOT_ALLOWED_OPTIONS:
+            continue
+
         NeedextendDirective.option_spec.update(
             {
                 key: value,

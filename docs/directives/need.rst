@@ -457,6 +457,7 @@ Instead use ``__`` (two underscores) and to force line breaks use ``|``.
 
 *Need*
 ::
+
     .. req:: A really strange example
        :id: multiline_1234
        :status:
