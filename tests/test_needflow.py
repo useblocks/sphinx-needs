@@ -13,3 +13,4 @@ def test_doc_build_html(app, status, warning):
     assert "SPEC_2" in html
     assert "STORY_1" in html
     assert "STORY_2" in html
+    assert '<figure class="align-center" id="needflow-index-0">' in html

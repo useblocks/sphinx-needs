@@ -69,7 +69,7 @@ needs_extra_links = [
 
 needs_flow_link_types = ["links", "tests"]
 
-plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "utils", "plantuml.1.2021.5.jar")
+plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "..", "..", "docs", "utils", "plantuml.jar")
 plantuml_output_format = "svg"
 
 # Add any paths that contain templates here, relative to this directory.
