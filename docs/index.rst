@@ -311,6 +311,7 @@ Content
    services/index
    layout_styles
    examples/index
+   performance
 
 .. toctree::
    :maxdepth: 2
