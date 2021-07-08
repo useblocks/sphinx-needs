@@ -1,5 +1,5 @@
-Performance testing
-===================
+Performance test
+================
 
 Config
 ------
@@ -14,41 +14,9 @@ Content
 -------
 .. contents::
 
+.. toctree::
 
-Test Data
----------
+{% for page in range(pages) %}
+   page_{{page}}
+{% endfor -%}
 
-Dummies
-~~~~~~~
-Amount of dummies: **{{dummies}}**
-
-{% for n in range(dummies) %}
-**Dummy {{n}}**
-
-.. note::  This is dummy {{n}}
-
-And some **dummy** *text* for dummy {{n}}
-
-{% endfor %}
-
-Needs
-~~~~~
-Amount of needs: **{{needs}}**
-
-{% for n in range(needs) %}
-.. story:: Test Need {{n}}
-   :id: S_{{n}}
-   :number: {{n}}
-   :links: S_{{needs-n-1}}
-{% endfor %}
-
-Needtable
-~~~~~~~~~
-Amount of needtables: **{{needtables}}**
-
-{% for n in range(needtables) %}
-.. needtable::
-   :show_filters:
-   :filter: int(number) % {{n+1}} >= {{n}}
-   :columns: id, title, number, links
-{% endfor %}

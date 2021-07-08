@@ -266,6 +266,7 @@ def setup(app):
     app.connect("env-before-read-docs", prepare_env)
     app.connect("env-before-read-docs", load_external_needs)
     app.connect("config-inited", check_configuration)
+    app.connect("env-merge-info", merge_data)
 
     # There is also the event doctree-read.
     # But it looks like in this event no references are already solved, which
@@ -303,7 +304,7 @@ def setup(app):
 
     return {
         "version": VERSION,
-        "parallel_read_safe": False,  # Must be False, otherwise IDs are not found exceptions are raised.
+        "parallel_read_safe": True,
         "parallel_write_safe": True,
     }
 
@@ -526,6 +527,30 @@ def check_configuration(_app: Sphinx, config: Config):
                 "Same name for automatically created link type and extra option: {}."
                 " This is not allowed.".format(link + "_back")
             )
+
+
+def merge_data(app, env, docnames, other):
+    """
+    Performs data merge of parallel executed workers.
+    Used only for parallel builds.
+
+    Needs to update env manually for all data Sphinx-Needs collect during read phase
+    """
+
+    # Update global needs dict
+    needs = env.needs_all_needs
+    other_needs = other.needs_all_needs
+    needs.update(other_needs)
+
+    # Update global needs dict
+    if not hasattr(env, 'need_all_needtables'):
+        env.need_all_needtables = {}
+    needtables = env.need_all_needtables
+    if hasattr(other, 'need_all_needtables'):
+        other_needtables = other.need_all_needtables
+        needtables.update(other_needtables)
+
+    # ToDO: At all other env-vars and sync them
 
 
 class NeedsConfigException(SphinxError):
