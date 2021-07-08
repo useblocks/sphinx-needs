@@ -51,7 +51,7 @@ needs_external_needs = [
     {"base_url": "http://my_company.com/docs/v1/", "json_url": f"file://{test_json}", "id_prefix": "ext_"}
 ]
 
-plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "utils", "plantuml.1.2021.5.jar")
+plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "..", "..", "docs", "utils", "plantuml.jar")
 plantuml_output_format = "svg"
 
 # Add any paths that contain templates here, relative to this directory.
