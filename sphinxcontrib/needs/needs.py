@@ -543,10 +543,10 @@ def merge_data(app, env, docnames, other):
     needs.update(other_needs)
 
     # Update global needs dict
-    if not hasattr(env, 'need_all_needtables'):
+    if not hasattr(env, "need_all_needtables"):
         env.need_all_needtables = {}
     needtables = env.need_all_needtables
-    if hasattr(other, 'need_all_needtables'):
+    if hasattr(other, "need_all_needtables"):
         other_needtables = other.need_all_needtables
         needtables.update(other_needtables)
 

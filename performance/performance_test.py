@@ -10,6 +10,7 @@ import time
 import webbrowser
 
 import click
+from jinja2 import Template
 from tabulate import tabulate
 
 
@@ -18,24 +19,7 @@ def cli():
     pass
 
 
-@cli.command()
-@click.option("--needs", default=100, type=int, help="Number of needs.")
-@click.option("--needtables", default=0, type=int, help="Number of needtables.")
-@click.option("--dummies", default=0, type=int, help="Number of standard rst dummies.")
-@click.option("--pages", default=0, type=int, help="Number of additional pages with needs.")
-@click.option("--parallel", default=1, type=int, help="Number of parallel processes to use. "
-                                                       "Same as -j for sphinx-build")
-@click.option("--keep", is_flag=True, help="Keeps the temporary build folders")
-@click.option("--browser", is_flag=True, help="Opens the project in your browser")
-@click.option("--debug", is_flag=True, help="Prints some more outputs")
-def single(needs=1000, needtables=0, dummies=0, pages=0, parallel=1, keep=False, browser=False, debug=False):
-    """
-    Start a single test run.
-    """
-    start(needs, needtables, dummies, pages, parallel, keep, browser, debug)
-
-
-def start(needs=1000, needtables=0, dummies=0, pages=0, parallel=1, keep=False, browser=False, debug=False):
+def start(needs=1000, needtables=0, dummies=0, pages=1, parallel=1, keep=False, browser=False, debug=False):
     """
     Test run implementation
     """
@@ -44,24 +28,54 @@ def start(needs=1000, needtables=0, dummies=0, pages=0, parallel=1, keep=False, 
     build_path = tempfile.mkdtemp()
 
     shutil.copytree(source_path, source_tmp_path, dirs_exist_ok=True)
+
+    # Render index files
+    source_tmp_path_index = os.path.join(source_tmp_path, "index.template")
+    source_tmp_path_index_final = os.path.join(source_tmp_path, "index.rst")
+    template = Template(open(source_tmp_path_index).read())
+    title = "Index"
+    rendered = template.render(
+        pages=pages,
+        title=title,
+        needs=needs,
+        needtables=needtables,
+        dummies=dummies,
+        parallel=parallel,
+        keep=keep,
+        browser=browser,
+        debug=debug,
+    )
+    with open(source_tmp_path_index_final, "w") as file:
+        file.write(rendered)
+
+    # Render pages
     for p in range(pages):
-        source_tmp_path_page = os.path.join(source_tmp_path, f'page.template')
-        source_tmp_path_page_final = os.path.join(source_tmp_path, f'page_{p}.rst')
-        with open(source_tmp_path_page, 'r') as file:
-            title = f'Page {p}'
-            title += "\n" + "=" * len(title)
-            filedata = file.read()
-            filedata = filedata.replace('[[TITLE]]', title)
-            filedata = filedata.replace('[[PAGE]]', str(p))
-        with open(source_tmp_path_page_final, 'w') as file:
-            file.write(filedata)
+        source_tmp_path_page = os.path.join(source_tmp_path, "page.template")
+        source_tmp_path_page_final = os.path.join(source_tmp_path, f"page_{p}.rst")
+        template = Template(open(source_tmp_path_page).read())
+        title = f"Page {p}"
+        rendered = template.render(
+            page=p,
+            title=title,
+            pages=pages,
+            needs=needs,
+            needtables=needtables,
+            dummies=dummies,
+            parallel=parallel,
+            keep=keep,
+            browser=browser,
+            debug=debug,
+        )
+        with open(source_tmp_path_page_final, "w") as file:
+            file.write(rendered)
 
     if browser:
         keep = True
 
-    print(f"* Running with {needs*pages} needs, {needtables*pages } needtables,"
-          f" {dummies * pages} dummies on {pages} pages with"
-          f" {parallel} cores")
+    print(
+        f"* Running on {pages} pages with {needs} needs, {needtables} needtables,"
+        f" {dummies} dummies per page. Using {parallel} core/s."
+    )
     start_time = time.time()
     params = [
         "sphinx-build",
@@ -126,55 +140,44 @@ def start(needs=1000, needtables=0, dummies=0, pages=0, parallel=1, keep=False, 
 
 
 @cli.command()
-@click.option("--needs", default=[1000], type=int, multiple=True, help="Number of maximum needs.")
+@click.option("--needs", default=[50, 10], type=int, multiple=True, help="Number of maximum needs.")
 @click.option("--needtables", default=-1, type=int, help="Number of maximum needtables.")
 @click.option("--dummies", default=-1, type=int, help="Number of standard rst dummies.")
-@click.option("--pages", default=0, type=int, help="Number of additional pages with needs.")
-@click.option("--parallel", default=1, type=int, help="Number of parallel processes to use. "
-                                                       "Same as -j for sphinx-build")
-@click.option("--keep", is_flag=True, help="Keeps the temporary build folders")
+@click.option("--pages", default=[5, 1], type=int, multiple=True, help="Number of additional pages with needs.")
+@click.option(
+    "--parallel",
+    default=[1, 4],
+    type=int,
+    multiple=True,
+    help="Number of parallel processes to use. Same as -j for sphinx-build",
+)
+@click.option("--keep", is_flag=True, help="Keeps the temporary src and build folders")
 @click.option("--browser", is_flag=True, help="Opens the project in your browser")
-@click.option("--debug", is_flag=True, help="Prints some more outputs")
+@click.option("--debug", is_flag=True, help="Prints more information, incl. sphinx build output")
 def series(needs, needtables=-1, dummies=-1, pages=0, parallel=1, keep=False, browser=False, debug=False):
     """
     Generate and start a series of tests.
     """
     needs = list(needs)
     configs = []
-    if len(needs) == 1:
-        # Define a default test series
-        current = needs[0]
 
-        while current >= 1:
-            configs.append(
-                {
-                    "needs": int(current),
-                    "needtables": int(current / 10) if needtables < 0 else needtables,
-                    "dummies": int(current) if dummies < 0 else dummies,
-                    "pages": pages,
-                    "parallel": parallel,
-                    "keep": keep,
-                    "browser": browser,
-                    "debug": debug,
-                },
-            )
-            current = round(current / 10)
-    else:
-        while needs:
-            current = needs.pop()
-            configs.append(
-                {
-                    "needs": int(current),
-                    "needtables": int(current / 10) if needtables < 0 else needtables,
-                    "dummies": int(current / 10) if dummies < 0 else dummies,
-                    "pages": pages,
-                    "parallel": parallel,
-                    "keep": keep,
-                    "browser": browser,
-                    "debug": debug,
-                },
-            )
+    for need in needs:
+        for page in pages:
+            for para in parallel:
+                configs.append(
+                    {
+                        "needs": int(need),
+                        "needtables": int(need / 10) if needtables < 0 else needtables,
+                        "dummies": int(need / 10) if dummies < 0 else dummies,
+                        "pages": page,
+                        "parallel": para,
+                        "keep": keep,
+                        "browser": browser,
+                        "debug": debug,
+                    },
+                )
 
+    print(f"Running {len(configs)} test configurations.")
     results = []
     for config in configs:
         result = start(**config)
@@ -183,14 +186,30 @@ def series(needs, needtables=-1, dummies=-1, pages=0, parallel=1, keep=False, br
     print("\nRESULTS:\n")
     result_table = []
     for result in results:
-        result_table.append([f"{result[1]:.2f}",
-                             result[0]["needs"] * result[0]["pages"],
-                             result[0]["needtables"] * result[0]["pages"],
-                             result[0]["dummies"] * result[0]["pages"],
-                             result[0]["pages"],
-                             result[0]["parallel"]])
-    headers = ["runtime s", "needs #", "needtables #", "dummies #", "pages #", "parallel cores"]
+        result_table.append(
+            [
+                f"{result[1]:.2f}",
+                result[0]["pages"],
+                result[0]["needs"],
+                result[0]["needs"] * result[0]["pages"],
+                result[0]["needtables"] * result[0]["pages"],
+                result[0]["dummies"] * result[0]["pages"],
+                result[0]["parallel"],
+            ]
+        )
+    headers = [
+        "runtime\nseconds",
+        "pages\noverall",
+        "needs\nper page",
+        "needs\noverall",
+        "needtables\noverall",
+        "dummies\noverall",
+        "parallel\ncore/s",
+    ]
     print(tabulate(result_table, headers=headers))
+
+    overall_runtime = sum([x[1] for x in results])
+    print(f"\nOverall runtime: {overall_runtime:.2f} seconds.")
 
 
 if "main" in __name__:

@@ -1,4 +1,5 @@
-[[TITLE]]
+{{ title}}
+{{ "=" * title|length }}
 
 Test Data
 ---------
@@ -21,10 +22,10 @@ Needs
 Amount of needs: **{{needs}}**
 
 {% for n in range(needs) %}
-.. story:: Test Need Page [[PAGE]] {{n}}
-   :id: S_[[PAGE]]_{{n}}
+.. story:: Test Need Page {{ page }} {{n}}
+   :id: S_{{page}}_{{n}}
    :number: {{n}}
-   :links: S_[[PAGE]]_{{needs-n-1}}
+   :links: S_{{page}}_{{needs-n-1}}
 {% endfor %}
 
 Needtable

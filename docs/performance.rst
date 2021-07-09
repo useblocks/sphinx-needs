@@ -9,44 +9,60 @@ The performance can be tested with different amounts of ``needs``, ``needtables`
 Test series
 -----------
 
-To start a series of test with a maximum amount of **1000 needs**, run ``python performance_test.py series``
+To start a series of test with some predefined values, run ``python performance_test.py series``
 
 .. program-output:: python ../performance/performance_test.py series
-
-The test series configuration is calculated automatically.
-The amounts of needs is reduced with each new round to 10%.
-``needtables`` and ``dummies`` starts with a value based on 10% of the needs value.
 
 But you can modify the details and set some static values by setting various parameters.
 Just run ``python performance_test.py series --help`` to get an overview
 
 .. program-output:: python ../performance/performance_test.py series --help
 
-Also if ``--needs`` is set multiple times, one performance test is executed per ``--needs``.
+Also if ``--needs``, ``--pages`` or ``parallel`` is set multiple times, one performance test is executed per it.
 
-Example:: ``python performance_test.py series --needs 150 --needs 175 --needs 200 --needtables 0 --dummies 0``
+Example:: ``python performance_test.py series --needs 1 --needs 10 --pages 1 --pages 10 --parallel 1 --parallel 4 --needtables 0 --dummies 0``.
+This will set 2 values for ``needs``, 2 for ``pages`` and 2 for parallel. So in the end it will run **8** test
+configurations (2 needs x 2 pages x 2 parallel = 8).
 
-.. program-output:: python ../performance/performance_test.py series --needs 150 --needs 175 --needs 200 --needtables 0 --dummies 0
 
-Single test
------------
-To run only one specific test, use ``python performance_test.py single``.
+.. program-output:: python ../performance/performance_test.py series --needs 1 --needs 10 --pages 1 --pages 10 --parallel 1 --parallel 4 --needtables 0 --dummies 0
 
-.. program-output:: python ../performance/performance_test.py single
+Parallel execution
+------------------
+You may have noticed, the parallel execution on multiple cores can lower the needed runtime.
 
-A more complex test, which also opens the generated documentation in the browser and prints some more debug information
-is
-``python performance_test.py single --needs 340 --needtables 2 --dummies 0 --debug --browser``
+This parallel execution is using the
+`"-j" option from sphinx-build <https://www.sphinx-doc.org/en/master/man/sphinx-build.html#cmdoption-sphinx-build-j>`_.
+This mostly brings benefit, if dozens/hundreds of files need to be read and written.
+In this case sphinx starts several workers to deal with these files in parallel.
 
-.. program-output:: python ../performance/performance_test.py single --needs 340 --needtables 2 --dummies 0 --debug --keep
+If the project contains only a few files, the benefit is not really measurable.
 
-To see all available options run ``python performance_test.py single --help``.
+Here an example of a 500 page project, build once on 1 and 8 cores. The benefit is ``~40%`` of build time, if 8 cores
+are used.
 
-.. program-output:: python ../performance/performance_test.py single --help
+.. code-block:: text
+
+      runtime s    pages #    needs per page    needs #    needtables #    dummies #    parallel cores
+    -----------  ---------  ----------------  ---------  --------------  -----------  ----------------
+         169.46        500                10       5000               0         5000                 1
+         103.08        500                10       5000               0         5000                 8
+
+Used command: ``python performance_test.py series --needs 10 --pages 500 --dummies 10 --needtables 0 --parallel 1 --parallel 8``
+
+
+
+
 
 
 Used rst template
 -----------------
 For all performance tests the same rst-template is used:
 
-.. literalinclude:: /../performance/project/index.rst
+index
+~~~~~
+.. literalinclude:: /../performance/project/index.template
+
+pages
+~~~~~
+.. literalinclude:: /../performance/project/page.template
