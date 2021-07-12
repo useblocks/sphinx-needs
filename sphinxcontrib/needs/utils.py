@@ -1,13 +1,16 @@
+from functools import wraps
 import json
 import os
 import shutil
 from datetime import datetime
+import cProfile
 from typing import Any, Dict, List
 
 from docutils import nodes
 from sphinx.application import Sphinx
 
 from sphinxcontrib.needs.logging import get_logger
+from sphinxcontrib.needs.defaults import NEEDS_PROFILING
 
 logger = get_logger(__name__)
 
@@ -299,3 +302,32 @@ class NeedsList:
                 self.log.warning("Could not decode json file {0}".format(file))
             else:
                 self.needs_list = needs_list
+
+
+def profile(keyword):
+    """
+    Activate profiling for a specific function.
+
+    Activation only happens, if given keyword is part of ``needs_profiling``.
+    """
+    def inner(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            with cProfile.Profile() as pr:
+                result = func(*args, **kwargs)
+
+            profile_folder = os.path.join(os.getcwd(), 'profile')
+            profile_file = os.path.join(profile_folder, f'{keyword}.prof')
+            if not os.path.exists(profile_file):
+                os.makedirs(profile_folder, exist_ok=True)
+            pr.dump_stats(profile_file)
+            return result
+
+        if keyword in NEEDS_PROFILING:
+            return wrapper
+        return func
+
+    return inner
+
+
+

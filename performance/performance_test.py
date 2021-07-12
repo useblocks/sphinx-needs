@@ -74,7 +74,7 @@ def start(needs=1000, needtables=0, dummies=0, pages=1, parallel=1, keep=False, 
 
     print(
         f"* Running on {pages} pages with {needs} needs, {needtables} needtables,"
-        f" {dummies} dummies per page. Using {parallel} core/s."
+        f" {dummies} dummies per page. Using {parallel} cores."
     )
     start_time = time.time()
     params = [
@@ -117,10 +117,10 @@ def start(needs=1000, needtables=0, dummies=0, pages=1, parallel=1, keep=False, 
 
     end_time = time.time()
 
-    if keep and debug:
+    if keep:
         print(f"  Project = {source_tmp_path}")
         print(f"  Build   = {project_path}")
-    if not keep:
+    else:
         if debug:
             print(f"  Deleting project: {build_path}")
         shutil.rmtree(build_path)
@@ -140,6 +140,7 @@ def start(needs=1000, needtables=0, dummies=0, pages=1, parallel=1, keep=False, 
 
 
 @cli.command()
+@click.option("--profile", default=[], type=str, multiple=True, help="Activates profiling for given area")
 @click.option("--needs", default=[50, 10], type=int, multiple=True, help="Number of maximum needs.")
 @click.option("--needtables", default=-1, type=int, help="Number of maximum needtables.")
 @click.option("--dummies", default=-1, type=int, help="Number of standard rst dummies.")
@@ -153,13 +154,18 @@ def start(needs=1000, needtables=0, dummies=0, pages=1, parallel=1, keep=False, 
 )
 @click.option("--keep", is_flag=True, help="Keeps the temporary src and build folders")
 @click.option("--browser", is_flag=True, help="Opens the project in your browser")
+@click.option("--snakeviz", is_flag=True, help="Opens snakeviz view for measured profiles in browser")
 @click.option("--debug", is_flag=True, help="Prints more information, incl. sphinx build output")
-def series(needs, needtables=-1, dummies=-1, pages=0, parallel=1, keep=False, browser=False, debug=False):
+def series(profile, needs, needtables=-1, dummies=-1, pages=0, parallel=1, keep=False, browser=False,
+           snakeviz=False, debug=False):
     """
     Generate and start a series of tests.
     """
     needs = list(needs)
     configs = []
+
+    profile_str = ",".join(profile)
+    os.environ['NEEDS_PROFILING'] = profile_str
 
     for need in needs:
         for page in pages:
@@ -204,12 +210,16 @@ def series(needs, needtables=-1, dummies=-1, pages=0, parallel=1, keep=False, br
         "needs\noverall",
         "needtables\noverall",
         "dummies\noverall",
-        "parallel\ncore/s",
+        "parallel\ncores",
     ]
     print(tabulate(result_table, headers=headers))
 
     overall_runtime = sum([x[1] for x in results])
     print(f"\nOverall runtime: {overall_runtime:.2f} seconds.")
+
+    if snakeviz:
+        for p in profile:
+            subprocess.Popen(['snakeviz', f'profile/{p}.prof'])
 
 
 if "main" in __name__:

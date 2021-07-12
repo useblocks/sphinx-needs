@@ -202,9 +202,13 @@ def filter_needs(needs, filter_string="", current_need=None):
 
     found_needs = []
 
+    # https://docs.python.org/3/library/functions.html?highlight=compile#compile
+    filter_compiled = compile(filter_string, '<string>', 'eval')
     for filter_need in needs:
         try:
-            if filter_single_need(filter_need, filter_string, needs, current_need):
+            # if filter_single_need(filter_need, filter_string, needs, current_need,
+            #                       filter_compiled=filter_compiled):
+            if True:
                 found_needs.append(filter_need)
         except Exception as e:
             logger.warning("Filter {0} not valid: Error: {1}".format(filter_string, e))
@@ -212,10 +216,12 @@ def filter_needs(needs, filter_string="", current_need=None):
     return found_needs
 
 
-def filter_single_need(need, filter_string="", needs=None, current_need=None) -> bool:
+def filter_single_need(need, filter_string="", needs=None, current_need=None, filter_compiled=None) -> bool:
     """
     Checks if a single need/need_part passes a filter_string
 
+    :param current_need:
+    :param filter_compiled: An already compiled filter_string to safe time
     :param need: need or need_part
     :param filter_string: string, which is used as input for eval()
     :param needs: list of all needs
@@ -234,7 +240,10 @@ def filter_single_need(need, filter_string="", needs=None, current_need=None) ->
     try:
         # Set filter_context as globals and not only locals in eval()!
         # Otherwise the vars not not be accessed in list comprehensions.
-        result = bool(eval(filter_string, filter_context))
+        if filter_compiled:
+            result = bool(eval(filter_compiled, filter_context))
+        else:
+            result = bool(eval(filter_string, filter_context))
     except Exception as e:
         raise NeedsInvalidFilter("Filter {0} not valid: Error: {1}".format(filter_string, e))
     return result

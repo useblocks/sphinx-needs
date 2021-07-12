@@ -1,5 +1,5 @@
-Performance
-===========
+Performance & Profiling
+=======================
 The performance of ``Sphinx-Needs`` can be tested by a script called ``performance_test.py`` inside
 folder ``/performance`` of the checked out github repository.
 
@@ -51,10 +51,6 @@ are used.
 Used command: ``python performance_test.py series --needs 10 --pages 500 --dummies 10 --needtables 0 --parallel 1 --parallel 8``
 
 
-
-
-
-
 Used rst template
 -----------------
 For all performance tests the same rst-template is used:
@@ -66,3 +62,33 @@ index
 pages
 ~~~~~
 .. literalinclude:: /../performance/project/page.template
+
+Profiling
+---------
+With option ``--profile NAME`` a code-area specific profile can be activated.
+
+Currently supported are:
+
+* NEEDTABLE: Profiles the needtable processing (incl. printing)
+* NEED_PROCESS: Profiles the need processing (without printing)
+* NEED_PRINT: Profiles the need painting (creating final nodes)
+
+If this option is used, a ``profile`` folder gets created in the current working directory and a profile file with
+``<NAME>.prof`` is created. This file contains
+`CProfile Stats <https://docs.python.org/3/library/profile.html#pstats.Stats>`_` information.
+
+``--profile`` can be used several times.
+
+Analysing profile
+~~~~~~~~~~~~~~~~~
+Use ``snakeviz`` together with ``--profile <NAME>`` to open automatically a graphical analysis of the generated
+profile file.
+
+For this ``snakeviz`` must be installed: ``pip install snakeviz``.
+
+Example::
+
+    python performance_test.py series --needs 10 --pages 10 --profile NEEDTABLE --profile NEED_PROCESS --snakeviz
+
+
+
