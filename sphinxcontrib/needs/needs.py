@@ -542,15 +542,24 @@ def merge_data(app, env, docnames, other):
     other_needs = other.needs_all_needs
     needs.update(other_needs)
 
-    # Update global needs dict
-    if not hasattr(env, "need_all_needtables"):
-        env.need_all_needtables = {}
-    needtables = env.need_all_needtables
-    if hasattr(other, "need_all_needtables"):
-        other_needtables = other.need_all_needtables
-        needtables.update(other_needtables)
+    def merge(name):
+        # Update global needs dict
+        if not hasattr(env, name):
+            setattr(env, name, {})
+        objects = getattr(env, name)
+        if hasattr(other, name):
+            other_objects = getattr(other, name)
+            objects.update(other_objects)
 
-    # ToDO: At all other env-vars and sync them
+    merge("need_all_needtables")
+    merge("need_all_needextend")
+    merge("need_all_needextracts")
+    merge("need_all_needfilters")
+    merge("need_all_needflows")
+    merge("need_all_needgantts")
+    merge("need_all_needlists")
+    merge("need_all_needpie")
+    merge("need_all_needsequences")
 
 
 class NeedsConfigException(SphinxError):

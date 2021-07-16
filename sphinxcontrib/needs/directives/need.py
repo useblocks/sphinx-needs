@@ -269,7 +269,7 @@ def add_sections(app, doctree, fromdocname):
         #     needs[parent_need_id]["child_needs"].append(need_info["id"])
 
 
-@profile('NEED_PROCESS')
+@profile("NEED_PROCESS")
 def process_need_nodes(app, doctree, fromdocname):
     """
     Event handler to add title meta data (status, tags, links, ...) information to the Need node.
@@ -301,7 +301,7 @@ def process_need_nodes(app, doctree, fromdocname):
         create_back_links(env, links["option"])
 
 
-@profile('NEED_PRINT')
+@profile("NEED_PRINT")
 def print_need_nodes(app, doctree, fromdocname):
     """
     Finally creates the need-node in the docurils node-tree.

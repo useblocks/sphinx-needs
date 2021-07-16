@@ -35,7 +35,7 @@ Amount of needtables: **{{needtables}}**
 {% for n in range(needtables) %}
 .. needtable::
    :show_filters:
-   :filter: True
+   :filter: int(number)**3 > 0 or len(links) > 0
    :columns: id, title, number, links
 {% endfor %}
 

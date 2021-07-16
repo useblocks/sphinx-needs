@@ -1,4 +1,3 @@
-import cProfile
 import re
 
 from docutils import nodes
@@ -11,7 +10,7 @@ from sphinxcontrib.needs.directives.utils import (
 )
 from sphinxcontrib.needs.filter_common import FilterBase, process_filters
 from sphinxcontrib.needs.functions.functions import check_and_get_content
-from sphinxcontrib.needs.utils import row_col_maker, profile
+from sphinxcontrib.needs.utils import profile, row_col_maker
 
 
 class Needtable(nodes.General, nodes.Element):
@@ -36,6 +35,7 @@ class NeedtableDirective(FilterBase):
     # Update the options_spec with values defined in the FilterBase class
     option_spec.update(FilterBase.base_option_spec)
 
+    @profile("NEEDTABLE_RUN")
     def run(self):
         env = self.state.document.settings.env
         if not hasattr(env, "need_all_needtables"):
@@ -83,7 +83,7 @@ class NeedtableDirective(FilterBase):
         return [targetnode] + [Needtable("")]
 
 
-@profile('NEEDTABLE')
+@profile("NEEDTABLE")
 def process_needtables(app, doctree, fromdocname):
     """
     Replace all needtables nodes with a tale of filtered noded.

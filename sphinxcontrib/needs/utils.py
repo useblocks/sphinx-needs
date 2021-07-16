@@ -1,16 +1,16 @@
-from functools import wraps
+import cProfile
 import json
 import os
 import shutil
 from datetime import datetime
-import cProfile
+from functools import wraps
 from typing import Any, Dict, List
 
 from docutils import nodes
 from sphinx.application import Sphinx
 
-from sphinxcontrib.needs.logging import get_logger
 from sphinxcontrib.needs.defaults import NEEDS_PROFILING
+from sphinxcontrib.needs.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -310,14 +310,15 @@ def profile(keyword):
 
     Activation only happens, if given keyword is part of ``needs_profiling``.
     """
+
     def inner(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             with cProfile.Profile() as pr:
                 result = func(*args, **kwargs)
 
-            profile_folder = os.path.join(os.getcwd(), 'profile')
-            profile_file = os.path.join(profile_folder, f'{keyword}.prof')
+            profile_folder = os.path.join(os.getcwd(), "profile")
+            profile_file = os.path.join(profile_folder, f"{keyword}.prof")
             if not os.path.exists(profile_file):
                 os.makedirs(profile_folder, exist_ok=True)
             pr.dump_stats(profile_file)
@@ -328,6 +329,3 @@ def profile(keyword):
         return func
 
     return inner
-
-
-

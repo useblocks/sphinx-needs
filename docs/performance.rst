@@ -1,5 +1,12 @@
+.. _performance:
+
 Performance & Profiling
 =======================
+
+.. contents::
+   :local:
+
+
 The performance of ``Sphinx-Needs`` can be tested by a script called ``performance_test.py`` inside
 folder ``/performance`` of the checked out github repository.
 
@@ -29,6 +36,8 @@ configurations (2 needs x 2 pages x 2 parallel = 8).
 
 Parallel execution
 ------------------
+:versionadded: 0.7.1
+
 You may have noticed, the parallel execution on multiple cores can lower the needed runtime.
 
 This parallel execution is using the
@@ -50,6 +59,9 @@ are used.
 
 Used command: ``python performance_test.py series --needs 10 --pages 500 --dummies 10 --needtables 0 --parallel 1 --parallel 8``
 
+The parallel execution can used by any documentation build , just use `-j` option.
+Example, which uses 4 processes in parallel: ``sphinx-build -j 4 -b html . _build/html``
+
 
 Used rst template
 -----------------
@@ -63,6 +75,8 @@ pages
 ~~~~~
 .. literalinclude:: /../performance/project/page.template
 
+.. _profiling:
+
 Profiling
 ---------
 With option ``--profile NAME`` a code-area specific profile can be activated.
@@ -75,9 +89,16 @@ Currently supported are:
 
 If this option is used, a ``profile`` folder gets created in the current working directory and a profile file with
 ``<NAME>.prof`` is created. This file contains
-`CProfile Stats <https://docs.python.org/3/library/profile.html#pstats.Stats>`_` information.
+`CProfile Stats <https://docs.python.org/3/library/profile.html#pstats.Stats>`_ information.
 
 ``--profile`` can be used several times.
+
+These profile can be also created outside the performance test with each documentation project.
+Simply set a environment variable called ``NEEDS_PROFILING`` and set the value to the needed profiles.
+
+Example for Linux: ``export NEEDS_PROFILING=NEEDTABLE,NEED_PRINT``.
+
+
 
 Analysing profile
 ~~~~~~~~~~~~~~~~~
@@ -89,6 +110,36 @@ For this ``snakeviz`` must be installed: ``pip install snakeviz``.
 Example::
 
     python performance_test.py series --needs 10 --pages 10 --profile NEEDTABLE --profile NEED_PROCESS --snakeviz
+
+.. image:: /_images/snakeviz_needtable.png
+   :width: 80%
+   :align: center
+
+Measurements
+------------
+The measurements were performed with the following setup:
+
+* Sphinx-Needs **0.7.0** on **1** core as parallel build is not supported by version.
+* Sphinx-Needs **0.7.1**, with **1** core.
+* Sphinx-Needs **0.7.1**, with **4** cores.
+
+
+.. list-table::
+   :header-rows: 1
+   :stub-columns: 1
+
+   * - Test details
+     - 0.7.0 with 1 core
+     - 0.7.1 with 1 core
+     - 0.7.1 with 4 cores
+   * - 30 pages with overall 1500 needs and 30 needtables
+     - 55.02 s
+     - 36.81 s
+     - 34.31 s
+   * - 100 pages with overall 10.000 needs and 100 needtables
+     - 6108.26 s
+     - 728.82 s
+     - 564.76 s
 
 
 

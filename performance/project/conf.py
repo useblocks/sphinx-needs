@@ -52,7 +52,7 @@ sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
 
 extensions = ["sphinxcontrib.needs"]
 
-needs_profiling = ['needtable']
+needs_profiling = ["needtable"]
 needs_types = [
     dict(directive="story", title="User Story", prefix="US_", color="#BFD8D2", style="node"),
     dict(directive="spec", title="Specification", prefix="SP_", color="#FEDCD2", style="node"),

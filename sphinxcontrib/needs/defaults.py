@@ -218,4 +218,4 @@ NEED_DEFAULT_OPTIONS = {
 
 NEEDEXTEND_NOT_ALLOWED_OPTIONS = ["id"]
 
-NEEDS_PROFILING = [x.upper() for x in os.environ.get('NEEDS_PROFILING').split(',')]
+NEEDS_PROFILING = [x.upper() for x in os.environ.get("NEEDS_PROFILING", "").split(",")]

@@ -156,8 +156,18 @@ def start(needs=1000, needtables=0, dummies=0, pages=1, parallel=1, keep=False, 
 @click.option("--browser", is_flag=True, help="Opens the project in your browser")
 @click.option("--snakeviz", is_flag=True, help="Opens snakeviz view for measured profiles in browser")
 @click.option("--debug", is_flag=True, help="Prints more information, incl. sphinx build output")
-def series(profile, needs, needtables=-1, dummies=-1, pages=0, parallel=1, keep=False, browser=False,
-           snakeviz=False, debug=False):
+def series(
+    profile,
+    needs,
+    needtables=-1,
+    dummies=-1,
+    pages=0,
+    parallel=1,
+    keep=False,
+    browser=False,
+    snakeviz=False,
+    debug=False,
+):
     """
     Generate and start a series of tests.
     """
@@ -165,7 +175,7 @@ def series(profile, needs, needtables=-1, dummies=-1, pages=0, parallel=1, keep=
     configs = []
 
     profile_str = ",".join(profile)
-    os.environ['NEEDS_PROFILING'] = profile_str
+    os.environ["NEEDS_PROFILING"] = profile_str
 
     for need in needs:
         for page in pages:
@@ -218,8 +228,16 @@ def series(profile, needs, needtables=-1, dummies=-1, pages=0, parallel=1, keep=
     print(f"\nOverall runtime: {overall_runtime:.2f} seconds.")
 
     if snakeviz:
+        print("\nStarting snakeviz servers\n")
+        procs = []
         for p in profile:
-            subprocess.Popen(['snakeviz', f'profile/{p}.prof'])
+            proc = subprocess.Popen(["snakeviz", f"profile/{p}.prof"])
+            procs.append(proc)
+
+        print(f"\nKilling snakeviz server in {len(procs)*5} secs.")
+        time.sleep(len(procs) * 5)
+        for proc in procs:
+            proc.kill()
 
 
 if "main" in __name__:
