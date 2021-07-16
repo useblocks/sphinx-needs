@@ -5,7 +5,6 @@ like needtable, needlist and needflow.
 
 import copy
 import re
-from itertools import product
 from typing import Any, Dict, List
 
 from docutils.parsers.rst import Directive, directives
@@ -84,34 +83,41 @@ def process_filters(all_needs, current_needlist):
 
     filter_code = "\n".join(current_needlist["filter_code"])
     if not filter_code or filter_code.isspace():
-        for need_info in all_needs_incl_parts:
-            status_filter_passed = False
-            if not current_needlist["status"]:
-                # Filtering for status was not requested
-                status_filter_passed = True
-            elif need_info["status"] and need_info["status"] in current_needlist["status"]:
-                # Match was found
-                status_filter_passed = True
+        if bool(current_needlist["status"] or current_needlist["tags"] or current_needlist["types"]):
+            for need_info in all_needs_incl_parts:
+                status_filter_passed = False
+                if not current_needlist["status"]:
+                    # Filtering for status was not requested
+                    status_filter_passed = True
+                elif need_info["status"] and need_info["status"] in current_needlist["status"]:
+                    # Match was found
+                    status_filter_passed = True
 
-            tags_filter_passed = False
-            if len(set(need_info["tags"]) & set(current_needlist["tags"])) > 0 or len(current_needlist["tags"]) == 0:
-                tags_filter_passed = True
+                tags_filter_passed = False
+                if (
+                    len(set(need_info["tags"]) & set(current_needlist["tags"])) > 0
+                    or len(current_needlist["tags"]) == 0
+                ):
+                    tags_filter_passed = True
 
-            type_filter_passed = False
-            if (
-                need_info["type"] in current_needlist["types"]
-                or need_info["type_name"] in current_needlist["types"]
-                or len(current_needlist["types"]) == 0
-            ):
-                type_filter_passed = True
+                type_filter_passed = False
+                if (
+                    need_info["type"] in current_needlist["types"]
+                    or need_info["type_name"] in current_needlist["types"]
+                    or len(current_needlist["types"]) == 0
+                ):
+                    type_filter_passed = True
 
-            if status_filter_passed and tags_filter_passed and type_filter_passed:
-                found_needs_by_options.append(need_info)
-
-        found_needs_by_string = filter_needs(all_needs_incl_parts, current_needlist["filter"])
-
-        found_needs = check_need_list(found_needs_by_options, found_needs_by_string)
-
+                if status_filter_passed and tags_filter_passed and type_filter_passed:
+                    found_needs_by_options.append(need_info)
+            # Get needy by filter string
+            found_needs_by_string = filter_needs(all_needs_incl_parts, current_needlist["filter"])
+            # Make a intersection of both lists
+            found_needs = intersection_of_need_results(found_needs_by_options, found_needs_by_string)
+        else:
+            # There is no other config as the one for filter string.
+            # So we only need this result.
+            found_needs = filter_needs(all_needs_incl_parts, current_needlist["filter"])
     else:
         # Provides only a copy of needs to avoid data manipulations.
         context = {
@@ -176,14 +182,15 @@ def prepare_need_list(need_list):
     return all_needs_incl_parts
 
 
-def check_need_list(list_a, list_b) -> List[Dict[str, Any]]:
-    def get_id(element: Dict[str, Any]) -> str:
-        id = element["id"]
-        if element["is_part"]:
-            id = "{}.{}".format(element["id_parent"], id)
-        return id
-
-    return [a for a, b in product(list_a, list_b) if get_id(a) == get_id(b)]
+def intersection_of_need_results(list_a, list_b) -> List[Dict[str, Any]]:
+    # def get_id(element: Dict[str, Any]) -> str:
+    #     id = element["id"]
+    #     if element["is_part"]:
+    #         id = "{}.{}".format(element["id_parent"], id)
+    #     return id
+    #
+    # return [a for a, b in product(list_a, list_b) if get_id(a) == get_id(b)]
+    return [a for a in list_a if a in list_b]
 
 
 def filter_needs(needs, filter_string="", current_need=None):
@@ -202,9 +209,11 @@ def filter_needs(needs, filter_string="", current_need=None):
 
     found_needs = []
 
+    # https://docs.python.org/3/library/functions.html?highlight=compile#compile
+    filter_compiled = compile(filter_string, "<string>", "eval")
     for filter_need in needs:
         try:
-            if filter_single_need(filter_need, filter_string, needs, current_need):
+            if filter_single_need(filter_need, filter_string, needs, current_need, filter_compiled=filter_compiled):
                 found_needs.append(filter_need)
         except Exception as e:
             logger.warning("Filter {0} not valid: Error: {1}".format(filter_string, e))
@@ -212,10 +221,12 @@ def filter_needs(needs, filter_string="", current_need=None):
     return found_needs
 
 
-def filter_single_need(need, filter_string="", needs=None, current_need=None) -> bool:
+def filter_single_need(need, filter_string="", needs=None, current_need=None, filter_compiled=None) -> bool:
     """
     Checks if a single need/need_part passes a filter_string
 
+    :param current_need:
+    :param filter_compiled: An already compiled filter_string to safe time
     :param need: need or need_part
     :param filter_string: string, which is used as input for eval()
     :param needs: list of all needs
@@ -234,7 +245,10 @@ def filter_single_need(need, filter_string="", needs=None, current_need=None) ->
     try:
         # Set filter_context as globals and not only locals in eval()!
         # Otherwise the vars not not be accessed in list comprehensions.
-        result = bool(eval(filter_string, filter_context))
+        if filter_compiled:
+            result = bool(eval(filter_compiled, filter_context))
+        else:
+            result = bool(eval(filter_string, filter_context))
     except Exception as e:
         raise NeedsInvalidFilter("Filter {0} not valid: Error: {1}".format(filter_string, e))
     return result

@@ -19,8 +19,6 @@
 import os
 import sys
 
-from docutils.parsers.rst import directives
-
 sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
 
 # -- General configuration ------------------------------------------------
@@ -33,26 +31,9 @@ sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 
-
-# def rstjinja(app, docname, source):
-#     """
-#     Render our pages as a jinja template for fancy templating goodness.
-#     """
-#     # Make sure we're outputting HTML
-#     if app.builder.format != "html":
-#         return
-#     src = source[0]
-#     rendered = app.builder.templates.render_string(src, app.config.html_context)
-#     source[0] = rendered
-#
-#
-# def setup(app):
-#     app.connect("source-read", rstjinja)
-
-
 extensions = ["sphinxcontrib.needs"]
 
-needs_profiling = ["needtable"]
+
 needs_types = [
     dict(directive="story", title="User Story", prefix="US_", color="#BFD8D2", style="node"),
     dict(directive="spec", title="Specification", prefix="SP_", color="#FEDCD2", style="node"),
@@ -60,13 +41,7 @@ needs_types = [
     dict(directive="test", title="Test Case", prefix="TC_", color="#DCB239", style="node"),
 ]
 
-needs_id_regex = "^[A-Z0-9_]{3,}"
-
-needs_extra_options = {
-    "number": directives.unchanged,
-}
-
-plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "..", "docs", "utils", "plantuml.jar")
+plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "..", "..", "docs", "utils", "plantuml.jar")
 plantuml_output_format = "svg"
 
 # Add any paths that contain templates here, relative to this directory.
@@ -129,7 +104,7 @@ html_theme = "alabaster"
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
+# html_static_path = ["_static"]
 
 # -- Options for HTMLHelp output ------------------------------------------
 

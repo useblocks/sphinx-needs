@@ -10,6 +10,12 @@ License
 -----
 :Released: under development
 
+* Improvement: Support for parallel sphinx-build when using ``-j`` option
+  (`#319 <https://github.com/useblocks/sphinxcontrib-needs/issues/319>`_)
+* Improvement: Better ``eval()`` handling for filter strings
+  (`#328 <https://github.com/useblocks/sphinxcontrib-needs/issues/328>`_)
+* Improvement: Internal :ref:`performance measurement <performance>` script
+* Improvement: :ref:`Profiling support <profiling>` for selected functions
 
 0.7.0
 -----

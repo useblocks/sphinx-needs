@@ -68,6 +68,26 @@ def test_build_html(app, status, warning):
 
 
 @responses.activate
+@with_app(buildername="html", srcdir="../docs")  # , warningiserror=True, parallel=4)
+def test_build_html_parallel(app, status, warning):
+    responses.add_callback(
+        responses.GET,
+        re.compile(r"https://api.github.com/.*"),
+        callback=random_data_callback,
+        content_type="application/json",
+    )
+    responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
+    app.builder.build_all()
+
+    # Check if static files got copied correctly.
+    build_dir = Path(app.outdir) / "_static" / "sphinx-needs" / "libs" / "html"
+    files = [f for f in build_dir.glob("**/*") if f.is_file()]
+    assert build_dir / "sphinx_needs_collapse.js" in files
+    assert build_dir / "datatables_loader.js" in files
+    assert build_dir / "DataTables-1.10.16" / "js" / "jquery.dataTables.min.js" in files
+
+
+@responses.activate
 @with_app(buildername="singlehtml", srcdir="../docs")
 def test_build_singlehtml(app, status, warning):
     responses.add_callback(

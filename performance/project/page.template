@@ -1,19 +1,5 @@
-Performance testing
-===================
-
-Config
-------
-:dummies: {{dummies}}
-:needs: {{needs}}
-:needtables: {{needtables}}
-:keep: {{keep}}
-:browser: {{browser}}
-:debug: {{debug}}
-
-Content
--------
-.. contents::
-
+{{ title}}
+{{ "=" * title|length }}
 
 Test Data
 ---------
@@ -36,10 +22,10 @@ Needs
 Amount of needs: **{{needs}}**
 
 {% for n in range(needs) %}
-.. story:: Test Need {{n}}
-   :id: S_{{n}}
+.. story:: Test Need Page {{ page }} {{n}}
+   :id: S_{{page}}_{{n}}
    :number: {{n}}
-   :links: S_{{needs-n-1}}
+   :links: S_{{page}}_{{needs-n-1}}
 {% endfor %}
 
 Needtable
@@ -49,6 +35,7 @@ Amount of needtables: **{{needtables}}**
 {% for n in range(needtables) %}
 .. needtable::
    :show_filters:
-   :filter: int(number) % {{n+1}} >= {{n}}
+   :filter: int(number)**3 > 0 or len(links) > 0
    :columns: id, title, number, links
 {% endfor %}
+
