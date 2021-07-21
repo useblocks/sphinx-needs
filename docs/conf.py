@@ -43,7 +43,7 @@ sys.path.insert(0, os.path.abspath('../sphinxcontrib'))
 # The short X.Y version.
 version = '0.7'
 # The full version, including alpha/beta/rc tags.
-release = '0.7.0'
+release = '0.7.1'
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 
@@ -55,8 +55,11 @@ extensions = ['sphinxcontrib.plantuml',
               'sphinxcontrib.programoutput',
               'sphinx_panels',
               'sphinx.ext.duration',
-              # 'sphinx_rtd_theme'  # For debugging only
               ]
+
+#os.environ['NEEDS_THEME'] = 'sphinx_rtd_theme'
+if os.getenv('NEEDS_THEME', '').lower() == 'sphinx_rtd_theme':
+    extensions.append('sphinx_rtd_theme')
 
 add_module_names = False  # Used to shorten function name output
 autodoc_docstring_signature = True  # Used to read spec. func-defs from docstring (e.g. get rid of self)
@@ -371,8 +374,7 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
-# html_theme = 'sphinx_rtd_theme'  # For debugging only
+html_theme = os.getenv('NEEDS_THEME', 'alabaster')
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the

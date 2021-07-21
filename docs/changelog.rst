@@ -6,9 +6,13 @@ License
 
 .. include:: ../LICENSE
 
-0.7.1
+0.7.2
 -----
 :Released: under development
+
+0.7.1
+-----
+:Released: 21.07.2021
 
 * Improvement: Support for parallel sphinx-build when using ``-j`` option
   (`#319 <https://github.com/useblocks/sphinxcontrib-needs/issues/319>`_)
