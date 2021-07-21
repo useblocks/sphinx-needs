@@ -7,10 +7,15 @@ table.need td {
 /* Needed for RTD theme.
 Manipulates it for EVERY table, so also none sphinx-needs tables
 Another solution would be to use JS, to address only divs, which have a sphinx-needs table as child.*/
-div.wy-table-responsive {
-    overflow: unset;
-    margin-bottom: unset;
-}
+/*div.dataTables_scrollBody div.wy-table-responsive,*/
+/*div.dataTables_scrollHeadInner div.wy-table-responsive {*/
+/*    overflow: unset;*/
+/*    margin-bottom: unset;*/
+/*}*/
+
+/*.wy-table-responsive {*/
+/*    all: unset;*/
+/*}*/
  /* Bringing Head and content columns align*/
  /*solution from https://datatables.net/forums/discussion/comment/72586/#Comment_72586*/
 /*table.dataTable,*/
