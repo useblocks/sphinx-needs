@@ -92,7 +92,7 @@ from sphinxcontrib.needs.services.manager import ServiceManager
 from sphinxcontrib.needs.utils import INTERNALS, NEEDS_FUNCTIONS
 from sphinxcontrib.needs.warnings import process_warnings
 
-VERSION = "0.7.0"
+VERSION = "0.7.1"
 NEEDS_FUNCTIONS.clear()
 
 
