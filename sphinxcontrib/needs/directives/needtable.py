@@ -86,7 +86,7 @@ class NeedtableDirective(FilterBase):
 @profile("NEEDTABLE")
 def process_needtables(app, doctree, fromdocname):
     """
-    Replace all needtables nodes with a tale of filtered noded.
+    Replace all needtables nodes with a table of filtered nodes.
 
     :param app:
     :param doctree:
@@ -231,19 +231,24 @@ def process_needtables(app, doctree, fromdocname):
             # Need part rows
             if current_needtable["show_parts"] and need_info["is_need"]:
                 for part in need_info["parts"].values():
-                    row = nodes.row(classes=["need_part"])
-                    temp_part = part.copy()  # The dict needs to be manipulated, so that row_col_maker() can be used
+                    # update the part with all information from its parent
+                    # this is required to make ID links work
+                    temp_part = part.copy()  # The dict has to be manipulated, so that row_col_maker() can be used
+                    temp_part = {**need_info, **temp_part}
+                    temp_part["id_complete"] = f"{need_info['id']}.{temp_part['id']}"
+                    temp_part["id_parent"] = need_info["id"]
                     temp_part["docname"] = need_info["docname"]
+
+                    row = nodes.row(classes=["need_part"])
 
                     for option, title in current_needtable["columns"]:
                         if option == "ID":
-                            temp_part["id"] = ".".join([need_info["id"], part["id"]])
                             row += row_col_maker(
                                 app,
                                 fromdocname,
                                 env.needs_all_needs,
                                 temp_part,
-                                "id",
+                                "id_complete",
                                 make_ref=True,
                                 prefix=app.config.needs_part_prefix,
                             )
@@ -257,10 +262,10 @@ def process_needtables(app, doctree, fromdocname):
                                 prefix=app.config.needs_part_prefix,
                             )
                         elif option in link_type_list.keys() and (
-                            option == link_type_list[option]["option"].upper() + "_BACK"
+                            option == "INCOMING"
+                            or option == link_type_list[option]["option"].upper() + "_BACK"
                             or option == link_type_list[option]["incoming"].upper()
                         ):
-
                             row += row_col_maker(
                                 app,
                                 fromdocname,

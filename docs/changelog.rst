@@ -10,6 +10,11 @@ License
 -----
 :Released: under development
 
+* Bugfix: :ref:`needtable` need parts ID column is linked
+  (`#336 <https://github.com/useblocks/sphinxcontrib-needs/issues/336>`_)
+* Bugfix: :ref:`needtable` need parts incoming column is linked
+  (`#336 <https://github.com/useblocks/sphinxcontrib-needs/issues/336>`_)
+
 0.7.1
 -----
 :Released: 21.07.2021
