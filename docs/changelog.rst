@@ -10,9 +10,9 @@ License
 -----
 :Released: under development
 
-* Bugfix: :ref:`needtable` need parts ID column is linked
+* Bugfix: :ref:`needtable` need parts 'id' column is not linked
   (`#336 <https://github.com/useblocks/sphinxcontrib-needs/issues/336>`_)
-* Bugfix: :ref:`needtable` need parts incoming column is linked
+* Bugfix: :ref:`needtable` need parts 'incoming' column is empty
   (`#336 <https://github.com/useblocks/sphinxcontrib-needs/issues/336>`_)
 
 0.7.1
