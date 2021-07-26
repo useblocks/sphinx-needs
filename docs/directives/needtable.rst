@@ -207,6 +207,7 @@ To change the prefix please read :ref:`needs_part_prefix`.
 
 .. needtable::
    :tags: test_table
+   :filter: is_need
    :show_parts:
    :columns: id;title;outgoing;incoming
    :style: table
@@ -238,6 +239,7 @@ To change the prefix please read :ref:`needs_part_prefix`.
          :links: table_001.2
 
       .. needtable::
+         :filter: is_need
          :show_parts:
          :columns: id;title;outgoing;incoming
          :style: table
