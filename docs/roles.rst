@@ -113,7 +113,7 @@ Example
       My new car must be the fastest on the world. Therefor it shall have:
 
       * :need_part:`(1)A topspeed of 300 km/h`
-      * :np:`(2) An acceleration of 200 m/s or much much more`
+      * :np:`(2) An acceleration of 200 m/s² or much much more`
 
       And we also need --> :np:`(awesome_3) a turbo button`!
 
@@ -139,8 +139,8 @@ Example
 
    My new car must be the fastest on the world. Therefor it shall have:
 
-   * :need_part:`(1)A topspeed of 300 km/h`
-   * :np:`(2) An acceleration of 200 m/s or much much more`
+   * :need_part:`(1) A topspeed of 300 km/h`
+   * :np:`(2) An acceleration of 200 m/s² or much much more`
 
    And we also need --> :np:`(awesome_3) a turbo button`!
 
@@ -190,13 +190,13 @@ Please see :ref:`needtable_show_parts` pf :ref:`needtable` configuration documen
 
    .. needtable::
       :style: table
-      :filter: 'car' in tags
+      :filter: 'car' in tags and is_need
       :show_parts:
       :columns: id, title, incoming, outgoing
 
 .. needtable::
    :style: table
-   :filter: 'car' in tags
+   :filter: 'car' in tags and is_need
    :show_parts:
    :columns: id, title, incoming, outgoing
 
