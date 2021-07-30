@@ -36,10 +36,10 @@ class JUnitParser:
 
     def parse(self):
         """
-        Creates a common python dictionary object, no matter what information are supported by the parsed xml file for
-        test results junit().
+        Creates a common python list of object, no matter what information are
+        supported by the parsed xml file for test results junit().
 
-        :return: dictionary
+        :return: list of test suites as dictionaries
         """
 
         junit_dict = []
@@ -48,7 +48,12 @@ class JUnitParser:
             tests = int(testsuite.attrib.get("tests", -1))
             errors = int(testsuite.attrib.get("errors", -1))
             failures = int(testsuite.attrib.get("failures", -1))
-            skips = int(testsuite.attrib.get("skips", testsuite.attrib.get("skip", -1)))
+            skips = int(
+                testsuite.attrib.get("skips") or
+                testsuite.attrib.get("skip") or
+                testsuite.attrib.get("skipped") or
+                -1
+            )
             passed = int(tests - sum(x for x in [errors, failures, skips] if x > 0))
 
             ts_dict = {

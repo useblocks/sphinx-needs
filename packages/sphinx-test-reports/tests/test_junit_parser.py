@@ -2,9 +2,9 @@ import os
 
 xml_path = os.path.join(os.path.dirname(__file__), "data", "xml_data.xml")
 xml_pytest_path = os.path.join(os.path.dirname(__file__), "data", "pytest_data.xml")
-xml_pytest51_path = os.path.join(
-    os.path.dirname(__file__), "data", "pytest_data_5_1.xml"
-)
+xml_pytest51_path = os.path.join(os.path.dirname(__file__), "data", "pytest_data_5_1.xml")
+xml_pytest62_path = os.path.join(os.path.dirname(__file__), "data", "pytest_data_6_2.xml")
+
 xml_nose_path = os.path.join(os.path.dirname(__file__), "data", "nose_data.xml")
 
 
@@ -89,3 +89,20 @@ def test_parse_pytest_51_xml():
 
     assert len(results) == 1
     assert results[0]["name"] == "pytest"
+
+
+def test_parse_pytest_61_gets_test_suite_attributes():
+    from sphinxcontrib.test_reports.junitparser import JUnitParser
+    parser = JUnitParser(xml_pytest62_path)
+    test_suites = parser.parse()
+
+    assert len(test_suites) == 1
+    test_suite = test_suites[0]
+
+    assert test_suite["name"] == "pytest62"
+    assert test_suite["tests"] == 6
+    assert test_suite["errors"] == 0
+    assert test_suite["failures"] == 2
+    assert test_suite["skips"] == 3
+    assert test_suite["passed"] == 1
+    assert test_suite["time"] == 4.088
