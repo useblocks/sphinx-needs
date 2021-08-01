@@ -83,7 +83,8 @@ class JUnitParser:
                     tc_dict["result"] = "skipped"
                     tc_dict["type"] = result.attrib.get("type", "unknown")
                     # tc_dict["text"] = re.sub(r"[\n\t]*", "", result.text)  # Removes newlines  and tabs
-                    tc_dict["text"] = result.text
+                    # result.text can be None for pytest xfail test cases
+                    tc_dict["text"] = result.text or ""
                     tc_dict["message"] = result.attrib.get("message", "unknown")
                 elif hasattr(testcase, "failure"):
                     result = testcase.failure
