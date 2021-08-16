@@ -141,7 +141,7 @@ def process_needextend(app, doctree, fromdocname):
                             need[option] = []
                             for link in re.split(";|,", value):
                                 if link not in need[option]:
-                                    need[option].append(link)
+                                    need[option].append(link.strip())
 
                             # If add new links also as "link_s_back" to the referenced need.
                             if option in link_names:
