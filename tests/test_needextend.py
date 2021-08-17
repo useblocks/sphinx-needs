@@ -24,5 +24,5 @@ def test_doc_needextend_html(app, status, warning):
     assert (
         '<span class="needs_data_container"><span class="needs_data">tag_1</span><span class="needs_spacer">, '
         '</span><span class="needs_data">new_tag</span><span class="needs_spacer">, '
-        '</span><span class="needs_data"> another_tag</span></span>' in page_1__html
+        '</span><span class="needs_data">another_tag</span></span>' in page_1__html
     )

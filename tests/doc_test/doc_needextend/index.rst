@@ -31,6 +31,11 @@ Need extend
 
    Had the link ``extend_test_003``, got another one ``extend_test_004``.
 
+.. story:: needextend Example 7
+   :id: extend_test_007
+   :links: extend_test_003
+
+
 .. needextend:: extend_test_003
    :links: extend_test_004
 
@@ -42,3 +47,6 @@ Need extend
 
 .. needextend:: extend_test_006
    :+links: extend_test_004
+
+.. needextend:: extend_test_007
+   :+links: extend_test_004, extend_test_005

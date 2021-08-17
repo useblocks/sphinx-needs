@@ -105,6 +105,8 @@ def process_needextend(app, doctree, fromdocname):
                         # If we need to handle a list
                         if option_name in list_names:
                             for link in re.split(";|,", value):
+                                # Remove whitespaces
+                                link = link.strip()
                                 if link not in need[option_name]:
                                     need[option_name].append(link)
 
@@ -112,6 +114,8 @@ def process_needextend(app, doctree, fromdocname):
                             # under e.g. links_back
                             if option_name in link_names:
                                 for ref_need in re.split(";|,", value):
+                                    # Remove whitespaces
+                                    ref_need = ref_need.strip()
                                     if found_need["id"] not in app.env.needs_all_needs[ref_need][f"{option_name}_back"]:
                                         app.env.needs_all_needs[ref_need][f"{option_name}_back"] += [found_need["id"]]
 
@@ -140,6 +144,8 @@ def process_needextend(app, doctree, fromdocname):
 
                             need[option] = []
                             for link in re.split(";|,", value):
+                                # Remove whitespaces
+                                link = link.strip()
                                 if link not in need[option]:
                                     need[option].append(link)
 

@@ -52,6 +52,7 @@ The argument of ``needextend`` must be a :ref:`filter_string`, which defines the
    :status: open
    :author: Foo
    :tags: tag_1, tag_2
+   :links: FEATURE_1
 
    This requirement got modified.
 
@@ -64,6 +65,8 @@ The argument of ``needextend`` must be a :ref:`filter_string`, which defines the
    :status: closed
    :+author: and me
    :+tags: new_tag
+   :+links: FEATURE_2, FEATURE_3
+
 
 Single need modification
 ------------------------
