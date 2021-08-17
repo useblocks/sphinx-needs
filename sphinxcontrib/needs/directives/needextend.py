@@ -105,20 +105,19 @@ def process_needextend(app, doctree, fromdocname):
                         # If we need to handle a list
                         if option_name in list_names:
                             for link in re.split(";|,", value):
-                                if link.strip() not in need[option_name]:
-                                    need[option_name].append(link.strip())
+                                # Remove whitespaces
+                                link = link.strip()
+                                if link not in need[option_name]:
+                                    need[option_name].append(link)
 
                             # If we manipulate links, we need to set all the reference in the target need
                             # under e.g. links_back
                             if option_name in link_names:
                                 for ref_need in re.split(";|,", value):
-                                    if (
-                                        found_need["id"]
-                                        not in app.env.needs_all_needs[ref_need.strip()][f"{option_name}_back"]
-                                    ):
-                                        app.env.needs_all_needs[ref_need.strip()][f"{option_name}_back"] += [
-                                            found_need["id"]
-                                        ]
+                                    # Remove whitespaces
+                                    ref_need = ref_need.strip()
+                                    if found_need["id"] not in app.env.needs_all_needs[ref_need][f"{option_name}_back"]:
+                                        app.env.needs_all_needs[ref_need][f"{option_name}_back"] += [found_need["id"]]
 
                         # else it must be a normal string
                         else:
@@ -145,8 +144,10 @@ def process_needextend(app, doctree, fromdocname):
 
                             need[option] = []
                             for link in re.split(";|,", value):
-                                if link.strip() not in need[option]:
-                                    need[option].append(link.strip())
+                                # Remove whitespaces
+                                link = link.strip()
+                                if link not in need[option]:
+                                    need[option].append(link)
 
                             # If add new links also as "link_s_back" to the referenced need.
                             if option in link_names:
