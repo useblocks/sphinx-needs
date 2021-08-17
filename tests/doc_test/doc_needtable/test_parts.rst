@@ -19,6 +19,7 @@ TEST Parts
    :links: table_001.2
 
 .. needtable::
+   :filter: is_need
    :show_parts:
    :columns: id;title;outgoing;incoming
    :style: table
