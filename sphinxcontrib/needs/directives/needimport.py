@@ -51,8 +51,24 @@ class NeedimportDirective(Directive):
 
         need_import_path = self.arguments[0]
 
+        old_need_import_path = need_import_path
         if not os.path.isabs(need_import_path):
-            need_import_path = os.path.join(env.app.confdir, need_import_path)
+            # Find the imported file's absolute path
+            head, file_name = os.path.split(need_import_path)
+            for root, dirs, files in os.walk(env.app.confdir):
+                for fil in files:
+                    if fil == file_name:
+                        need_import_path = os.path.join(root, fil)
+
+            # Keep this code for now to avoid breaking the current implementation and throw a warning
+            old_need_import_path = os.path.join(env.app.confdir, old_need_import_path)
+            if not os.path.exists(old_need_import_path):
+                logger.warning(
+                    "Deprecated needimport relative path calculatation based on directory of conf.py. '\
+                    Because Path {} not exists.".format(
+                        old_need_import_path
+                    )
+                )
 
         if not os.path.exists(need_import_path):
             raise ReferenceError("Could not load needs import file {0}".format(need_import_path))
