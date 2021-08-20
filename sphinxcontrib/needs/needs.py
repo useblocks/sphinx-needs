@@ -420,7 +420,10 @@ def prepare_env(app, env, _docname):
     for name, service in app.config.needs_services.items():
         if name not in app.needs_services.services.keys():
             # We found a not yet registered service
-            app.needs_services.register(name, service["class"], **service["class_init"])
+            # But only register, if service-config contains class and class_init.
+            # Otherwise the service may get registered later by an external sphinx-needs extension
+            if hasattr(service, 'class') and hasattr(service, 'class_init'):
+                app.needs_services.register(name, service["class"], **service["class_init"])
 
     needs_functions = app.config.needs_functions
 
