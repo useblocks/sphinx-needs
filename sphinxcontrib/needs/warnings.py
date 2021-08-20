@@ -41,6 +41,8 @@ def process_warnings(app, exception):
 
     warnings = app.config.needs_warnings
 
+    warnings_always_warn = app.config.needs_warnings_always_warn
+
     with logging.pending_logging():
         logger.info("\nChecking sphinx-needs warnings")
         warning_raised = False
@@ -50,10 +52,18 @@ def process_warnings(app, exception):
                 logger.info("  {}: passed".format(warning_name))
             else:
                 need_ids = [x["id"] for x in result]
-                logger.info("  {}: failed".format(warning_name))
-                logger.info("  \t\tfailed needs: {} ({})".format(len(need_ids), ", ".join(need_ids)))
-                logger.info("  \t\tused filter: {}".format(warning_filter))
-                warning_raised = True
+                if warnings_always_warn:
+                    for need_id in need_ids:
+                        logger.warning(
+                            "  {}: failed\n  \t\tfailed needs: {}\n  \t\tused filter: {}".format(
+                                warning_name, need_id, warning_filter
+                            )
+                        )
+                else:
+                    logger.info("  {}: failed".format(warning_name))
+                    logger.info("  \t\tfailed needs: {} ({})".format(len(need_ids), ", ".join(need_ids)))
+                    logger.info("  \t\tused filter: {}".format(warning_filter))
+                    warning_raised = True
 
         if warning_raised:
             logger.warning("Sphinx-Needs warnings were raised. See console / log output for details.")
