@@ -29,7 +29,7 @@ TEST
 
 .. toctree::
 
-   filter
+   subdoc/filter
 
 .. req:: Test requirement 1
    :id: REQ_1

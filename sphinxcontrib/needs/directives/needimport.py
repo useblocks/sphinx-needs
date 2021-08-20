@@ -51,29 +51,31 @@ class NeedimportDirective(Directive):
 
         need_import_path = self.arguments[0]
 
-        old_need_import_path = need_import_path
         if not os.path.isabs(need_import_path):
-            # Find the imported file's absolute path
-            head, file_name = os.path.split(need_import_path)
-            for root, dirs, files in os.walk(env.app.confdir):
-                for fil in files:
-                    if fil == file_name:
-                        need_import_path = os.path.join(root, fil)
+            # Relative path should starts from current rst file directory
+            curr_dir = os.path.dirname(self.docname)
+            new_need_import_path = os.path.join(env.app.confdir, curr_dir, need_import_path)
 
-            # Keep this code for now to avoid breaking the current implementation and throw a warning
-            old_need_import_path = os.path.join(env.app.confdir, old_need_import_path)
-            if not os.path.exists(old_need_import_path):
-                logger.warning(
-                    "Deprecated needimport relative path calculatation based on directory of conf.py. '\
-                    Because Path {} not exists.".format(
-                        old_need_import_path
+            correct_need_import_path = new_need_import_path
+            if not os.path.exists(new_need_import_path):
+                # Check the old way that calculates relative path starting from conf.py directory
+                old_need_import_path = os.path.join(env.app.confdir, need_import_path)
+                if os.path.exists(old_need_import_path):
+                    correct_need_import_path = old_need_import_path
+                    logger.warning(
+                        "Deprecated needimport relative path calculatation based on directory of conf.py used. "
+                        "Because rst file {}.rst and import file {} are in subfolder of conf.py".format(
+                            self.docname, need_import_path
+                        )
                     )
-                )
+        else:
+            # Absolute path starts with /, based on the conf.py directory. The / need to be striped
+            correct_need_import_path = os.path.join(env.app.confdir, need_import_path[1:])
 
-        if not os.path.exists(need_import_path):
-            raise ReferenceError("Could not load needs import file {0}".format(need_import_path))
+        if not os.path.exists(correct_need_import_path):
+            raise ReferenceError("Could not load needs import file {0}".format(correct_need_import_path))
 
-        with open(need_import_path, "r") as needs_file:
+        with open(correct_need_import_path, "r") as needs_file:
             needs_file_content = needs_file.read()
         try:
             needs_import_list = json.loads(needs_file_content)
@@ -87,9 +89,13 @@ class NeedimportDirective(Directive):
                 if not isinstance(version, six.string_types):
                     raise KeyError
             except KeyError:
-                raise CorruptedNeedsFile("Key 'current_version' missing or corrupted in {0}".format(need_import_path))
+                raise CorruptedNeedsFile(
+                    "Key 'current_version' missing or corrupted in {0}".format(correct_need_import_path)
+                )
         if version not in needs_import_list["versions"].keys():
-            raise VersionNotFound("Version {0} not found in needs import file {1}".format(version, need_import_path))
+            raise VersionNotFound(
+                "Version {0} not found in needs import file {1}".format(version, correct_need_import_path)
+            )
 
         needs_list = needs_import_list["versions"][version]["needs"]
 

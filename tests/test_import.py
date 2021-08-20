@@ -14,7 +14,7 @@ def test_import_json(app, status, warning):
     assert "new_tag" in html
 
     # Check filters
-    filter_html = Path(app.outdir, "filter.html").read_text()
+    filter_html = Path(app.outdir, "subdoc/filter.html").read_text()
     assert "TEST_01" not in filter_html
     assert "TEST_02" in filter_html
 
