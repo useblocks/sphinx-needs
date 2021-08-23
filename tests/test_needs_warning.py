@@ -9,6 +9,6 @@ def test_needs_warnings(app, status, warning):
     warnings = warning.getvalue()
 
     # check warnings contents
-    assert "WARNING:   invalid_status: failed" in warnings
+    assert "WARNING: invalid_status: failed" in warnings
     assert "failed needs: 2 (SP_TOO_001, US_63252)" in warnings
     assert "used filter: status not in ['open', 'closed', 'done']" in warnings

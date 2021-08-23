@@ -49,19 +49,21 @@ def process_warnings(app, exception):
         for warning_name, warning_filter in warnings.items():
             result = filter_needs(needs.values(), warning_filter)
             if len(result) == 0:
-                logger.info("  {}: passed".format(warning_name))
+                logger.info("{}: passed".format(warning_name))
             else:
                 need_ids = [x["id"] for x in result]
                 if warnings_always_warn:
                     logger.warning(
-                        "  {}: failed\n  \t\tfailed needs: {} ({})\n  \t\tused filter: {}".format(
+                        "{}: failed\n\t\tfailed needs: {} ({})\n\t\tused filter: {}".format(
                             warning_name, len(need_ids), ", ".join(need_ids), warning_filter
                         )
                     )
                 else:
-                    logger.info("  {}: failed".format(warning_name))
-                    logger.info("  \t\tfailed needs: {} ({})".format(len(need_ids), ", ".join(need_ids)))
-                    logger.info("  \t\tused filter: {}".format(warning_filter))
+                    logger.info(
+                        "{}: failed\n\t\tfailed needs: {} ({})\n\t\tused filter: {}".format(
+                            warning_name, len(need_ids), ", ".join(need_ids), warning_filter
+                        )
+                    )
                     warning_raised = True
 
         if warning_raised:
