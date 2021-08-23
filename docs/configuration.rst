@@ -988,6 +988,28 @@ Example output:
 
 Due to the nature of sphinx logging, a sphinx-warning may be printed wherever in the log.
 
+.. _needs_warnings_always_warn:
+
+needs_warnings_always_warn
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This option if set to ``True``, will allow to log not passed :ref:`needs_warnings` into a given file if using your sphinx build 
+command with ``-w``.
+
+Default: ``False``.
+
+For example, set this option to True:
+
+.. code-block:: rst
+
+    needs_warnings_always_warn = True
+
+Using sphinx build command ``sphinx-build -M html {srcdir} {outdir} -w error.log``, all the not passed :ref:`needs_warnings` will be 
+logged into file error.log as you specified.
+
+If use ``sphinx-build -M html {srcdir} {outdir} -W -w error.log``, the first not passed :ref:`needs_warnings` will stop the build and 
+be logged into the file error.log.
+
 .. _needs_layouts:
 
 needs_layouts
