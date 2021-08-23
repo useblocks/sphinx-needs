@@ -62,11 +62,16 @@ class NeedimportDirective(Directive):
                 old_need_import_path = os.path.join(env.app.confdir, need_import_path)
                 if os.path.exists(old_need_import_path):
                     correct_need_import_path = old_need_import_path
+                    # logger.warning(
+                    #     "Deprecated needimport relative path calculatation based on directory of conf.py used. "
+                    #     "Because rst file {}.rst and import file {} are in subfolder of conf.py".format(
+                    #         self.docname, need_import_path
+                    #     )
+                    # )
                     logger.warning(
-                        "Deprecated needimport relative path calculatation based on directory of conf.py used. "
-                        "Because rst file {}.rst and import file {} are in subfolder of conf.py".format(
-                            self.docname, need_import_path
-                        )
+                        "Deprecation warning: Relative path must be relative to the current document in future, "
+                        "not to the conf.py location. Use a starting '/', like '/needs.json', to make the path "
+                        "relative to conf.py."
                     )
         else:
             # Absolute path starts with /, based on the conf.py directory. The / need to be striped
