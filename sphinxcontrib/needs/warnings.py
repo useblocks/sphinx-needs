@@ -53,12 +53,11 @@ def process_warnings(app, exception):
             else:
                 need_ids = [x["id"] for x in result]
                 if warnings_always_warn:
-                    for need_id in need_ids:
-                        logger.warning(
-                            "  {}: failed\n  \t\tfailed needs: {}\n  \t\tused filter: {}".format(
-                                warning_name, need_id, warning_filter
-                            )
+                    logger.warning(
+                        "  {}: failed\n  \t\tfailed needs: {} ({})\n  \t\tused filter: {}".format(
+                            warning_name, len(need_ids), ", ".join(need_ids), warning_filter
                         )
+                    )
                 else:
                     logger.info("  {}: failed".format(warning_name))
                     logger.info("  \t\tfailed needs: {} ({})".format(len(need_ids), ", ".join(need_ids)))
