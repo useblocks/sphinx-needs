@@ -190,6 +190,7 @@ def setup(app):
     app.add_config_value("needs_flow_link_types", ["links"], "html")
 
     app.add_config_value("needs_warnings", {}, "html")
+    app.add_config_value("needs_warnings_always_warn", False, "html", types=[bool])
     app.add_config_value("needs_layouts", {}, "html")
     app.add_config_value("needs_default_layout", "clean", "html")
     app.add_config_value("needs_default_style", None, "html")
