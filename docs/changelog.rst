@@ -14,6 +14,8 @@ License
   (`#336 <https://github.com/useblocks/sphinxcontrib-needs/issues/336>`_)
 * Bugfix: :ref:`needtable` need parts 'incoming' column is empty
   (`#336 <https://github.com/useblocks/sphinxcontrib-needs/issues/336>`_)
+* Bugfix: :ref:`needimport` relative path not consistent to Sphinx default directives.
+  (`#351 <https://github.com/useblocks/sphinxcontrib-needs/issues/351>`_)
 
 0.7.1
 -----
