@@ -16,7 +16,7 @@ License
   (`#336 <https://github.com/useblocks/sphinxcontrib-needs/issues/336>`_)
 * Bugfix: :ref:`needs_warning` not written to error log.
   (`#344 <https://github.com/useblocks/sphinxcontrib-needs/issues/344>`_)
-* Improvement: Providing :ref:`needs_warnings_always_warn` to allow log not passed :ref:`needs_warnings` into a given file.
+* Improvement: Providing :ref:`needs_warnings_always_warn` to raise sphinx-warnings for each not passed :ref:`needs_warnings`.
   (`#344 <https://github.com/useblocks/sphinxcontrib-needs/issues/344>`_)
 
 0.7.1
