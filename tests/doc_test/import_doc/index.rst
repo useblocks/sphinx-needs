@@ -29,7 +29,10 @@ TEST
 
 .. toctree::
 
-   filter
+   subdoc/filter
+   subdoc/abs_path_import
+   subdoc/rel_path_import
+   subdoc/deprecated_rel_path_import
 
 .. req:: Test requirement 1
    :id: REQ_1

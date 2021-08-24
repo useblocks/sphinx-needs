@@ -52,12 +52,29 @@ class NeedimportDirective(Directive):
         need_import_path = self.arguments[0]
 
         if not os.path.isabs(need_import_path):
-            need_import_path = os.path.join(env.app.confdir, need_import_path)
+            # Relative path should starts from current rst file directory
+            curr_dir = os.path.dirname(self.docname)
+            new_need_import_path = os.path.join(env.app.confdir, curr_dir, need_import_path)
 
-        if not os.path.exists(need_import_path):
-            raise ReferenceError("Could not load needs import file {0}".format(need_import_path))
+            correct_need_import_path = new_need_import_path
+            if not os.path.exists(new_need_import_path):
+                # Check the old way that calculates relative path starting from conf.py directory
+                old_need_import_path = os.path.join(env.app.confdir, need_import_path)
+                if os.path.exists(old_need_import_path):
+                    correct_need_import_path = old_need_import_path
+                    logger.warning(
+                        "Deprecation warning: Relative path must be relative to the current document in future, "
+                        "not to the conf.py location. Use a starting '/', like '/needs.json', to make the path "
+                        "relative to conf.py."
+                    )
+        else:
+            # Absolute path starts with /, based on the conf.py directory. The / need to be striped
+            correct_need_import_path = os.path.join(env.app.confdir, need_import_path[1:])
 
-        with open(need_import_path, "r") as needs_file:
+        if not os.path.exists(correct_need_import_path):
+            raise ReferenceError("Could not load needs import file {0}".format(correct_need_import_path))
+
+        with open(correct_need_import_path, "r") as needs_file:
             needs_file_content = needs_file.read()
         try:
             needs_import_list = json.loads(needs_file_content)
@@ -71,9 +88,13 @@ class NeedimportDirective(Directive):
                 if not isinstance(version, six.string_types):
                     raise KeyError
             except KeyError:
-                raise CorruptedNeedsFile("Key 'current_version' missing or corrupted in {0}".format(need_import_path))
+                raise CorruptedNeedsFile(
+                    "Key 'current_version' missing or corrupted in {0}".format(correct_need_import_path)
+                )
         if version not in needs_import_list["versions"].keys():
-            raise VersionNotFound("Version {0} not found in needs import file {1}".format(version, need_import_path))
+            raise VersionNotFound(
+                "Version {0} not found in needs import file {1}".format(version, correct_need_import_path)
+            )
 
         needs_list = needs_import_list["versions"][version]["needs"]
 

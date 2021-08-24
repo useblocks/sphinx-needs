@@ -14,7 +14,7 @@ def test_import_json(app, status, warning):
     assert "new_tag" in html
 
     # Check filters
-    filter_html = Path(app.outdir, "filter.html").read_text()
+    filter_html = Path(app.outdir, "subdoc/filter.html").read_text()
     assert "TEST_01" not in filter_html
     assert "TEST_02" in filter_html
 
@@ -27,6 +27,31 @@ def test_import_json(app, status, warning):
 
     # :collapsed: work
     assert "collapsed_TEST_01" in html
+
+    # Check absolute path import
+    abs_path_import_html = Path(app.outdir, "subdoc/abs_path_import.html").read_text()
+    assert "small_abs_path_TEST_02" in abs_path_import_html
+
+    # Check relative path import
+    rel_path_import_html = Path(app.outdir, "subdoc/rel_path_import.html").read_text()
+    assert "small_rel_path_TEST_01" in rel_path_import_html
+
+    # Check deprecated relative path import based on conf.py
+    deprec_rel_path_import_html = Path(app.outdir, "subdoc/deprecated_rel_path_import.html").read_text()
+    assert "small_depr_rel_path_TEST_01" in deprec_rel_path_import_html
+
+    warnings = warning.getvalue()
+    assert "Deprecation warning:" in warnings
+
+
+@with_app(buildername="html", srcdir="doc_test/non_exists_file_import")  # , warningiserror=True)
+def test_import_non_exists_json(app, status, warning):
+    # Check non exists file import
+    try:
+        app.build()
+    except ReferenceError as err:
+        assert err.args[0].startswith("Could not load needs import file")
+        assert "doc_test/" in err.args[0]
 
 
 @with_app(buildername="needs", srcdir="doc_test/import_doc")  # , warningiserror=True)

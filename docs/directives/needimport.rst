@@ -22,7 +22,7 @@ The directive **.. needimport::** can be used in all rst-documents. Simply write
       :post_template: post_template.rst
 
 The directive needs an absolute or relative path as argument.
-If the path is relative, an absolute path gets calculated with the folder of the **conf.py** as basedir.
+If the path is relative, an absolute path gets calculated based on the current document location.
 
 **:id_prefix:** can be used to add a prefix in front of all imported need ids.
 This may be useful to avoid duplicated ids.

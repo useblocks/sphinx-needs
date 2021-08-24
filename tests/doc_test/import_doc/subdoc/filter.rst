@@ -8,4 +8,3 @@ Filter
 .. needimport:: needs_test_small.json
    :id_prefix: small2_
    :filter: search("AAA", title)
-
