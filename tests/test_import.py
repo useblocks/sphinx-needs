@@ -41,11 +41,7 @@ def test_import_json(app, status, warning):
     assert "small_depr_rel_path_TEST_01" in deprec_rel_path_import_html
 
     warnings = warning.getvalue()
-    assert (
-        "WARNING: Deprecation warning: Relative path must be relative to the current document in future, "
-        "not to the conf.py location. Use a starting '/', like '/needs.json', to make the path relative to conf.py."
-        in warnings
-    )
+    assert "Deprecation warning:" in warnings
 
 
 @with_app(buildername="html", srcdir="doc_test/non_exists_file_import")  # , warningiserror=True)
@@ -54,11 +50,8 @@ def test_import_non_exists_json(app, status, warning):
     try:
         app.build()
     except ReferenceError as err:
-        assert (
-            err.args[0]
-            == "Could not load needs import file /home/haiyang/work/useblocks/github/sphinxcontrib-needs/tests/"
-            "doc_test/non_exists_file_import/non_exists_file.json"
-        )
+        assert err.args[0].startswith("Could not load needs import file")
+        assert "doc_test/" in err.args[0]
 
 
 @with_app(buildername="needs", srcdir="doc_test/import_doc")  # , warningiserror=True)
