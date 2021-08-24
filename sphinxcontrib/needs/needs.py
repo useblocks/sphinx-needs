@@ -208,6 +208,9 @@ def setup(app):
 
     app.add_config_value("needs_builder_filter", "is_external==False", "html", types=[str])
 
+    # Additional classes to set for needs and needtable.
+    app.add_config_value("needs_table_classes", ["rtd-exclude-wy-table"], "html", types=[list])
+
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(

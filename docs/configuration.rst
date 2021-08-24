@@ -1209,6 +1209,21 @@ keys:
             The related css class definition must be done by the user, e.g. by :ref:`own_css`.
             (*optional*) (*default*: ``external_link``)
 
+.. _needs_table_classes:
+
+needs_table_classes
+~~~~~~~~~~~~~~~~~~~
+.. versionadded:: 0.7.2
+
+Allows to define custom CSS classes, which get set for the HTML tables of  ``need`` and ``needtable``.
+This may be needed to avoid custom table handling of some specific Sphinx theme like ReadTheDocs.
+
+.. code-block:: rst
+
+   needs_table_classes = ['my_custom_class', 'another_class']
+
+Default: ``['rtd-exclude-wy-table']``
+
 
 .. _needs_builder_filter:
 

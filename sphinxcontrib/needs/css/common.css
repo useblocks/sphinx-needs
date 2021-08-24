@@ -4,23 +4,6 @@ table.need td {
     white-space: normal;
 }
 
-/* Needed for RTD theme.
-Manipulates it for EVERY table, so also none sphinx-needs tables
-Another solution would be to use JS, to address only divs, which have a sphinx-needs table as child.*/
-div.wy-table-responsive {
-    overflow: unset;
-    margin-bottom: unset;
-}
- /* Bringing Head and content columns align*/
- /*solution from https://datatables.net/forums/discussion/comment/72586/#Comment_72586*/
-/*table.dataTable,*/
-/*table.dataTable  thead th,*/
-/*table.dataTable tbody td {*/
-/*  -webkit-box-sizing: content-box;*/
-/*  -moz-box-sizing: content-box;*/
-/*  box-sizing: content-box;*/
-/*}*/
-
 table.NEEDS_TABLE {
   display: block;
   overflow-x: auto;
@@ -43,6 +26,12 @@ table.need tr.footer div.line-block {
     margin-top: 0;
     margin-bottom: 0;
 }
+
+/* START CUSTOM ReadTheDocs theming css START */
+div.dataTables_scrollHeadInner > table.rtd-exclude-wy-table {
+    margin-bottom: 0px;
+}
+/* END CUSTOM ReadTheDocs theming css START */
 
 .toggle .header {
     display: block;
