@@ -15,7 +15,7 @@ class NeedsBuilder(Builder):
 
     def finish(self):
         log = get_logger(__name__)
-        needs = self.env.needs_all_needs
+        needs = self.env.needs_all_needs.values()  # We need a list of needs for later filter checks
         filters = self.env.needs_all_filters
         config = self.env.config
         version = config.version
@@ -28,7 +28,12 @@ class NeedsBuilder(Builder):
         # removed needs would stay in needs_list, if list gets not cleaned.
         needs_list.wipe_version(version)
 
-        for key, need in needs.items():
+        from sphinxcontrib.needs.filter_common import filter_needs
+
+        filter_string = self.app.config.needs_builder_filter
+        filtered_needs = filter_needs(needs, filter_string)
+
+        for need in filtered_needs:
             needs_list.add_need(version, need)
 
         for key, need_filter in filters.items():

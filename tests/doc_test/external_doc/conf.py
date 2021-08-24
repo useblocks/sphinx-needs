@@ -48,8 +48,11 @@ test_json = os.path.join(test_dir, "needs_test_small.json")
 
 # needs_external_needs = [{"base_url": f"file://{test_dir}", "json_url": f"file://{test_json}", "id_prefix": "ext_"}]
 needs_external_needs = [
-    {"base_url": "http://my_company.com/docs/v1/", "json_url": f"file://{test_json}", "id_prefix": "ext_"}
+    {"base_url": "http://my_company.com/docs/v1/", "json_path": "needs_test_small.json", "id_prefix": "ext_"}
 ]
+
+# Needed to export really ALL needs. The default entry would filter out all needs coming from external
+needs_builder_filter = "True"
 
 plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "..", "..", "docs", "utils", "plantuml.jar")
 plantuml_output_format = "svg"

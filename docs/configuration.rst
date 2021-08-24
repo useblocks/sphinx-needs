@@ -993,7 +993,7 @@ Due to the nature of sphinx logging, a sphinx-warning may be printed wherever in
 needs_warnings_always_warn
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This option if set to ``True``, will allow to log not passed :ref:`needs_warnings` into a given file if using your sphinx build 
+This option if set to ``True``, will allow to log not passed :ref:`needs_warnings` into a given file if using your sphinx build
 command with ``-w``.
 
 Default: ``False``.
@@ -1004,10 +1004,10 @@ For example, set this option to True:
 
     needs_warnings_always_warn = True
 
-Using sphinx build command ``sphinx-build -M html {srcdir} {outdir} -w error.log``, all the not passed :ref:`needs_warnings` will be 
+Using sphinx build command ``sphinx-build -M html {srcdir} {outdir} -w error.log``, all the not passed :ref:`needs_warnings` will be
 logged into file error.log as you specified.
 
-If use ``sphinx-build -M html {srcdir} {outdir} -W -w error.log``, the first not passed :ref:`needs_warnings` will stop the build and 
+If use ``sphinx-build -M html {srcdir} {outdir} -W -w error.log``, the first not passed :ref:`needs_warnings` will stop the build and
 be logged into the file error.log.
 
 .. _needs_layouts:
@@ -1187,7 +1187,7 @@ Allows to reference and use external needs without having their representation i
       },
       {
         'base_url': 'http://mydocs/another_project/',
-        'json_url':  'http://mydocs/another_project/data/exports/needs.json',
+        'json_path':  'my_folder/needs.json',
         'version': '2.5',
         'id_prefix': 'other_',
         'css_class': 'project_x',
@@ -1198,13 +1198,32 @@ Allows to reference and use external needs without having their representation i
 keys:
 
 :base_url: Base url which is used to calculate the final, specific need url. Normally the path under which the ``index.html`` is provided.
-:json_url: url, which can be used to download the ``needs.json`` (or similar) file.
+:json_url: An url, which can be used to download the ``needs.json`` (or similar) file.
+:json_path: A path to a locally stored ``needs.json`` file. Can not be used together with ``json_url``.
+            A relative path must be relative to the project configuration folder (where the ``conf.py`` is stored).
+            (Since version `0.7.1`)
 :version: Defines the version to use inside the ``needs.json`` file (*optional*).
 :id_prefix: Prefix as string, which will be added to all id of external needs. Needed, if there is the risk that
             needs from different projects may have the same id (*optional*).
 :css_class: A class name as string, which gets set in link representations like :ref:`needtable`.
             The related css class definition must be done by the user, e.g. by :ref:`own_css`.
             (*optional*) (*default*: ``external_link``)
+
+
+.. _needs_builder_filter:
+
+needs_builder_filter
+~~~~~~~~~~~~~~~~~~~~
+.. versionadded:: 0.7.2
+
+Defines a :ref:`filter_string`, which is used to filter needs for the builder :ref:`needs_builder`.
+
+Default is ``'is_external==False'``, so all locally defined need objects are taken into account.
+Need objects imported via :ref:`needs_external_needs` get sorted out.
+
+.. code-block:: python
+
+   needs_builder_filter = 'status=="open"'
 
 
 Removed options

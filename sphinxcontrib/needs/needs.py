@@ -206,6 +206,8 @@ def setup(app):
 
     app.add_config_value("needs_external_needs", [], "html")
 
+    app.add_config_value("needs_builder_filter", "is_external==False", "html", types=[str])
+
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(
