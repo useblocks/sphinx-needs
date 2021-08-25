@@ -12,6 +12,20 @@ def test_doc_build_html(app, status, warning):
     assert "SP_TOO_001" in html
     assert 'id="needtable-index-0"' in html
 
+    # check table caption exists
+    assert "Test table caption" in html
+
+    # check table cpation and table wrapped into figure
+    figure = """
+<figure class="align-default" id="needtable-index-0">
+<figcaption>
+<p><span class="caption-text">Test table caption<table class="NEEDS_TABLE rtd-exclude-wy-table docutils align-default">
+"""
+    assert figure in html
+
+    # negative test to check table without caption
+    assert '<table class="NEEDS_TABLE rtd-exclude-wy-table docutils align-default" id="needtable-index-1">' in html
+
 
 @with_app(buildername="html", srcdir="doc_test/doc_needtable")
 def test_doc_needtable_options(app, status, warning):
