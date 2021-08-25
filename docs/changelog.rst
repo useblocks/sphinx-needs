@@ -24,6 +24,9 @@ License
   (`#342 <https://github.com/useblocks/sphinxcontrib-needs/issues/342>`_)
 * Improvement: Added option ``json_path`` for :ref:`needs_external_needs` to support external needs from local ``needs.json`` files.
   (`#339 <https://github.com/useblocks/sphinxcontrib-needs/issues/339>`_)
+* Improvement: Providing :ref:`needs_table_classes` to allow to set custom table css classes, to better support
+  themes like ReadTheDocs.
+  (`#305 <https://github.com/useblocks/sphinxcontrib-needs/issues/305>`_)
 
 0.7.1
 -----
