@@ -47,7 +47,18 @@ def process_warnings(app, exception):
         logger.info("\nChecking sphinx-needs warnings")
         warning_raised = False
         for warning_name, warning_filter in warnings.items():
-            result = filter_needs(needs.values(), warning_filter)
+            if isinstance(warning_filter, str):
+                # filter string used
+                result = filter_needs(needs.values(), warning_filter)
+            elif hasattr(warning_filter, "__call__"):
+                # custom defined filter code used from conf.py
+                result = []
+                for need in needs.values():
+                    if warning_filter(need, logger):
+                        result.append(need)
+            else:
+                logger.warning("Unknown needs warnings filter {}!".format(warning_filter))
+
             if len(result) == 0:
                 logger.info("{}: passed".format(warning_name))
             else:

@@ -11,3 +11,7 @@ TEST DOCUMENT NEEDS WARNINGS
 .. story:: A story
    :status: in progress
    :tags: 1
+
+.. test:: Test example
+    :id: TC_001
+    :status: open

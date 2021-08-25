@@ -12,3 +12,7 @@ def test_needs_warnings(app, status, warning):
     assert "WARNING: invalid_status: failed" in warnings
     assert "failed needs: 2 (SP_TOO_001, US_63252)" in warnings
     assert "used filter: status not in ['open', 'closed', 'done']" in warnings
+
+    # check needs warning from custom defined filter code
+    assert "failed needs: 1 (TC_001)" in warnings
+    assert "used filter: <function my_custom_warning_check" in warnings
