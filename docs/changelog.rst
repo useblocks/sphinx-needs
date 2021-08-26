@@ -20,6 +20,13 @@ License
   (`#344 <https://github.com/useblocks/sphinxcontrib-needs/issues/344>`_)
 * Bugfix: :ref:`needimport` relative path not consistent to Sphinx default directives.
   (`#351 <https://github.com/useblocks/sphinxcontrib-needs/issues/351>`_)
+* Improvement: New config option :ref:`needs_builder_filter` to define a filter for the needs builder.
+  (`#342 <https://github.com/useblocks/sphinxcontrib-needs/issues/342>`_)
+* Improvement: Added option ``json_path`` for :ref:`needs_external_needs` to support external needs from local ``needs.json`` files.
+  (`#339 <https://github.com/useblocks/sphinxcontrib-needs/issues/339>`_)
+* Improvement: Providing :ref:`needs_table_classes` to allow to set custom table css classes, to better support
+  themes like ReadTheDocs.
+  (`#305 <https://github.com/useblocks/sphinxcontrib-needs/issues/305>`_)
 * Improvement: Supporting user defined filter code function for :ref:`needs_warnings`
   (`#345 <https://github.com/useblocks/sphinxcontrib-needs/issues/345>`_)
 

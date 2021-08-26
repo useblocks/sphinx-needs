@@ -1,4 +1,6 @@
 import copy
+import json
+import os
 
 import requests
 from requests_file import FileAdapter
@@ -15,16 +17,37 @@ def load_external_needs(app, env, _docname):
         if source["base_url"].endswith("/"):
             source["base_url"] = source["base_url"][:-1]
 
-        log.info(f'Loading external needs from {source["json_url"]}')
+        if source.get("json_url", False) and source.get("json_path", False):
+            raise NeedsExternalException(
+                "json_path and json_url are both configured, but only one is allowed.\n"
+                f"json_path: {source['json_path']}\n"
+                f"json_url: {source['json_url']}."
+            )
+        elif not (source.get("json_url", False) or source.get("json_path", False)):
+            raise NeedsExternalException("json_path or json_url must be configured to use external_needs.")
 
-        s = requests.Session()
-        s.mount("file://", FileAdapter())
+        if source.get("json_url", False):
+            log.info(f'Loading external needs from url {source["json_url"]}')
+            s = requests.Session()
+            s.mount("file://", FileAdapter())
+            log.info(f'Loading external needs from local file {source["json_path"]}')
+            try:
+                response = source.get(source["json_url"])
+                needs_json = response.json()  # The downloaded file MUST be json. Everything else we do not handle!
+            except Exception as e:
+                raise NeedsExternalException(f'Getting {source["json_url"]} didn\'t work. Reason: {e}')
 
-        try:
-            response = s.get(source["json_url"])
-            needs_json = response.json()  # The downloaded file MUST be json. Everything else we do not handle!
-        except Exception as e:
-            raise NeedsExternalException(f'Getting {source["json_url"]} didn\'t work. Reason: {e}')
+        if source.get("json_path", False):
+            if os.path.isabs(source["json_path"]):
+                json_path = source["json_path"]
+            else:
+                json_path = os.path.join(app.confdir, source["json_path"])
+
+            if not os.path.exists(json_path):
+                raise NeedsExternalException(f"Given json_path {json_path} does not exist.")
+
+            with open(json_path, "r") as json_file:
+                needs_json = json.load(json_file)
 
         version = source.get("version", needs_json.get("current_version", None))
         if not version:

@@ -135,6 +135,8 @@ def process_needtables(app, doctree, fromdocname):
 
         # Prepare table
         classes = ["NEEDS_{style}".format(style=style)]
+        classes.extend(app.config.needs_table_classes)
+
         content = nodes.table(classes=classes)
         tgroup = nodes.tgroup()
 
