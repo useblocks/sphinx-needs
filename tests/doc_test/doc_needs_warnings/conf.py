@@ -46,8 +46,17 @@ needs_types = [
 plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "..", "..", "docs", "utils", "plantuml.jar")
 plantuml_output_format = "svg"
 
+
+def my_custom_warning_check(need, log):
+    if need["status"] == "open":
+        log.info(f"{need['id']} status must not be 'open'.")
+        return True
+    return False
+
+
 needs_warnings = {
     "invalid_status": "status not in ['open', 'closed', 'done']",
+    "type_match": my_custom_warning_check,
 }
 
 # Needs option to set True or False to raise sphinx-warning for each not passed warning check

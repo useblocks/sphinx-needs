@@ -27,6 +27,8 @@ License
 * Improvement: Providing :ref:`needs_table_classes` to allow to set custom table css classes, to better support
   themes like ReadTheDocs.
   (`#305 <https://github.com/useblocks/sphinxcontrib-needs/issues/305>`_)
+* Improvement: Supporting user defined filter code function for :ref:`needs_warnings`
+  (`#345 <https://github.com/useblocks/sphinxcontrib-needs/issues/345>`_)
 
 0.7.1
 -----

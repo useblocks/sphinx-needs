@@ -47,21 +47,39 @@ def process_warnings(app, exception):
         logger.info("\nChecking sphinx-needs warnings")
         warning_raised = False
         for warning_name, warning_filter in warnings.items():
-            result = filter_needs(needs.values(), warning_filter)
+            if isinstance(warning_filter, str):
+                # filter string used
+                result = filter_needs(needs.values(), warning_filter)
+            elif hasattr(warning_filter, "__call__"):
+                # custom defined filter code used from conf.py
+                result = []
+                for need in needs.values():
+                    if warning_filter(need, logger):
+                        result.append(need)
+            else:
+                logger.warning("Unknown needs warnings filter {}!".format(warning_filter))
+
             if len(result) == 0:
                 logger.info("{}: passed".format(warning_name))
             else:
                 need_ids = [x["id"] for x in result]
+
+                # get the text for used filter, either from filter string or function name
+                if hasattr(warning_filter, "__call__"):
+                    warning_text = getattr(warning_filter, "__name__")
+                elif isinstance(warning_filter, str):
+                    warning_text = warning_filter
+
                 if warnings_always_warn:
                     logger.warning(
                         "{}: failed\n\t\tfailed needs: {} ({})\n\t\tused filter: {}".format(
-                            warning_name, len(need_ids), ", ".join(need_ids), warning_filter
+                            warning_name, len(need_ids), ", ".join(need_ids), warning_text
                         )
                     )
                 else:
                     logger.info(
                         "{}: failed\n\t\tfailed needs: {} ({})\n\t\tused filter: {}".format(
-                            warning_name, len(need_ids), ", ".join(need_ids), warning_filter
+                            warning_name, len(need_ids), ", ".join(need_ids), warning_text
                         )
                     )
                     warning_raised = True
