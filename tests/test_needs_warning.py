@@ -15,7 +15,7 @@ def test_needs_warnings(app, status, warning):
 
     # check needs warning from custom defined filter code
     assert "failed needs: 1 (TC_001)" in warnings
-    assert "used filter: <function my_custom_warning_check" in warnings
+    assert "used filter: my_custom_warning_check" in warnings
 
     # negative test to check needs warning if need passed the warnings-check
     assert "TC_NEG_001" not in warnings

@@ -63,6 +63,11 @@ def process_warnings(app, exception):
                 logger.info("{}: passed".format(warning_name))
             else:
                 need_ids = [x["id"] for x in result]
+
+                # get the user defined filter function name
+                if hasattr(warning_filter, "__call__"):
+                    warning_filter = getattr(warning_filter, "__name__")
+
                 if warnings_always_warn:
                     logger.warning(
                         "{}: failed\n\t\tfailed needs: {} ({})\n\t\tused filter: {}".format(
