@@ -20,6 +20,8 @@ License
   (`#344 <https://github.com/useblocks/sphinxcontrib-needs/issues/344>`_)
 * Bugfix: :ref:`needimport` relative path not consistent to Sphinx default directives.
   (`#351 <https://github.com/useblocks/sphinxcontrib-needs/issues/351>`_)
+* Improvement: Supporting user defined filter code function for :ref:`needs_warnings`
+  (`#345 <https://github.com/useblocks/sphinxcontrib-needs/issues/345>`_)
 
 0.7.1
 -----
