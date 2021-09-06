@@ -121,9 +121,9 @@ def process_needextend(app, doctree, fromdocname):
 
                         # else it must be a normal string
                         else:
-                            # If content is already stored, we need to add some whitespace
+                            # If content is already stored, we need to add some whitespace and comma
                             if need[option_name]:
-                                need[option_name] += " "
+                                need[option_name] += ", "
                             need[option_name] += value
                     elif option.startswith("-"):
                         option_name = option[1:]

@@ -31,6 +31,8 @@ License
   (`#345 <https://github.com/useblocks/sphinxcontrib-needs/issues/345>`_)
 * Improvement: Supporting caption for :ref:`needtable`
   (`#348 <https://github.com/useblocks/sphinxcontrib-needs/issues/348>`_)
+* Bugfix: :ref:`needextend` added option values from :ref:`needs_extra_options` not seperated by comma
+  (`#350 <https://github.com/useblocks/sphinxcontrib-needs/issues/350>`_)
 
 0.7.1
 -----

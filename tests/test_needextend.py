@@ -27,10 +27,9 @@ def test_doc_needextend_html(app, status, warning):
         '</span><span class="needs_data">another_tag</span></span>' in page_1__html
     )
 
-    # check output for :+option:, output should be like, checks: extend_test_003, extend_test_004
+    # check needextend output for options in needs_extra_options, output should be like,
+    # author: Foo_001, Foo_002, Foo_003
     assert (
-        '<div class="line">checks: <span class="checks"><span>'
-        '<a class="reference internal" href="#extend_test_003" title="extend_test_008">extend_test_003</a>, '
-        '<a class="reference internal" href="#extend_test_004" title="extend_test_008">extend_test_004</a></span>'
-        in index_html
+        '<span><div class="line"><span class="needs_author"><span class="needs_label">author: </span>'
+        '<span class="needs_data">Foo_001, Foo_002, Foo_003</span>' in index_html
     )

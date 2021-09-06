@@ -53,7 +53,7 @@ Need extend
 
 .. test:: needextend Example 8
    :id: extend_test_008
-   :checks: extend_test_003
+   :author: Foo_001
 
 .. needextend:: extend_test_008
-   :+checks: extend_test_004
+   :+author: Foo_002, Foo_003 
