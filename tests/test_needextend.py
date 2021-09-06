@@ -26,3 +26,11 @@ def test_doc_needextend_html(app, status, warning):
         '</span><span class="needs_data">new_tag</span><span class="needs_spacer">, '
         '</span><span class="needs_data">another_tag</span></span>' in page_1__html
     )
+
+    # check output for :+option:, output should be like, checks: extend_test_003, extend_test_004
+    assert (
+        '<div class="line">checks: <span class="checks"><span>'
+        '<a class="reference internal" href="#extend_test_003" title="extend_test_008">extend_test_003</a>, '
+        '<a class="reference internal" href="#extend_test_004" title="extend_test_008">extend_test_004</a></span>'
+        in index_html
+    )

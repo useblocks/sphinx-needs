@@ -41,6 +41,8 @@ needs_types = [
     dict(directive="test", title="Test Case", prefix="TC_", color="#DCB239", style="node"),
 ]
 
+needs_extra_links = [{"option": "checks", "incoming": "is checked by", "outgoing": "checks"}]
+
 plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "..", "..", "docs", "utils", "plantuml.jar")
 plantuml_output_format = "svg"
 

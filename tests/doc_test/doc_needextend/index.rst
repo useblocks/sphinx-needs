@@ -50,3 +50,10 @@ Need extend
 
 .. needextend:: extend_test_007
    :+links: extend_test_004, extend_test_005
+
+.. test:: needextend Example 8
+   :id: extend_test_008
+   :checks: extend_test_003
+
+.. needextend:: extend_test_008
+   :+checks: extend_test_004
