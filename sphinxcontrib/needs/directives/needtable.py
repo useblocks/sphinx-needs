@@ -22,6 +22,8 @@ class NeedtableDirective(FilterBase):
     Directive present filtered needs inside a table.
     """
 
+    optional_arguments = 1
+    final_argument_whitespace = True
     option_spec = {
         "show_filters": directives.flag,
         "show_parts": directives.flag,
@@ -62,11 +64,16 @@ class NeedtableDirective(FilterBase):
 
         sort = self.options.get("sort", "id_complete")
 
+        caption = None
+        if self.arguments:
+            caption = self.arguments[0]
+
         # Add the need and all needed information
         env.need_all_needtables[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_node": targetnode,
+            "caption": caption,
             "columns": columns,
             "style": style,
             "style_row": style_row,
@@ -287,5 +294,11 @@ def process_needtables(app, doctree, fromdocname):
         # add filter information to output
         if current_needtable["show_filters"]:
             content.append(used_filter_paragraph(current_needtable))
+
+        if current_needtable["caption"]:
+            # put caption node and table content node inside a figure node eventually
+            new_content = nodes.caption("", current_needtable["caption"])
+            new_content.append(content)
+            content = nodes.figure("", new_content)
 
         node.replace_self(content)

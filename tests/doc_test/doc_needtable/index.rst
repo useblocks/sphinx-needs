@@ -11,6 +11,10 @@ TEST DOCUMENT NEEDTABLE
 .. story:: A story
    :tags: 1
 
-.. needtable::
+.. needtable:: Test table caption
    :tags: test;my_test
+   :sort: id
+
+.. needtable::
+   :tags: test2
    :sort: id
