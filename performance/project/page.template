@@ -22,20 +22,25 @@ Needs
 Amount of needs: **{{needs}}**
 
 {% for n in range(needs) %}
-.. story:: Test Need Page {{ page }} {{n}}
-   :id: S_{{page}}_{{n}}
-   :number: {{n}}
-   :links: S_{{page}}_{{needs-n-1}}
+.. req:: Test Need Page {{ page }} {{n}}
+   :id: R_{{page}}_{{n}}
+{% if not basic %}   :number: {{n}}{% endif %}
+   :links: R_{{page}}_{{needs-n-1}}
 {% endfor %}
 
 Needtable
 ~~~~~~~~~
 Amount of needtables: **{{needtables}}**
 
+{%  if basic %}
+.. needtable::
+   :show_filters:
+   :columns: id, title, number, links
+{% else %}
 {% for n in range(needtables) %}
 .. needtable::
    :show_filters:
    :filter: int(number)**3 > 0 or len(links) > 0
    :columns: id, title, number, links
 {% endfor %}
-
+{% endif %}

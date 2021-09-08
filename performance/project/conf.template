@@ -34,26 +34,13 @@ sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
 # ones.
 
 
-# def rstjinja(app, docname, source):
-#     """
-#     Render our pages as a jinja template for fancy templating goodness.
-#     """
-#     # Make sure we're outputting HTML
-#     if app.builder.format != "html":
-#         return
-#     src = source[0]
-#     rendered = app.builder.templates.render_string(src, app.config.html_context)
-#     source[0] = rendered
-#
-#
-# def setup(app):
-#     app.connect("source-read", rstjinja)
-
-
 extensions = ["sphinxcontrib.needs"]
 
 needs_profiling = ["needtable"]
+
+{% if not basic %}
 needs_types = [
+    dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),
     dict(directive="story", title="User Story", prefix="US_", color="#BFD8D2", style="node"),
     dict(directive="spec", title="Specification", prefix="SP_", color="#FEDCD2", style="node"),
     dict(directive="impl", title="Implementation", prefix="IM_", color="#DF744A", style="node"),
@@ -65,6 +52,7 @@ needs_id_regex = "^[A-Z0-9_]{3,}"
 needs_extra_options = {
     "number": directives.unchanged,
 }
+{% endif %}
 
 plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "..", "docs", "utils", "plantuml.jar")
 plantuml_output_format = "svg"
