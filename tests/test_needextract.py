@@ -4,7 +4,7 @@ from sphinx_testing import with_app
 
 
 @with_app(buildername="html", srcdir="doc_test/doc_needextract")
-def test_doc_needextend_html(app, status, warning):
+def test_doc_needextract_html(app, status, warning):
     app.build()
     index_html = Path(app.outdir, "index.html").read_text()
 
