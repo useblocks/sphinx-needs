@@ -50,3 +50,25 @@ Need extend
 
 .. needextend:: extend_test_007
    :+links: extend_test_004, extend_test_005
+
+.. test:: needextend external filter example 01
+   :id: extend_test_example_001
+   :variant: project_x
+
+.. test:: needextend external filter example 02
+   :id: extend_test_example_002
+   :variant: project_y
+
+.. test:: needextend external filter example 03
+   :id: extend_test_example_003
+   :tags: my_tag
+
+.. test:: needextend external filter example 04
+   :id: extend_test_example_004
+   :tags: test_tag_002
+
+.. needextend:: type == "test" and variant == current_variant
+   :variant: filtered_current_variant_works
+
+.. needextend:: type == "test" and sphinx_tag in tags
+   :+tags: filtered_my_tag_works

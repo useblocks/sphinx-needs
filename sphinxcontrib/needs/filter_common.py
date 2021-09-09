@@ -58,6 +58,14 @@ class FilterBase(Directive):
         return collected_filter_options
 
 
+def load_needs_extra_filter_data(app, doctree, fromdocname):
+    """
+    Load needs external filter data from conf.py and set as global variable.
+    """
+    global NEEDS_EXTERNAL_FILTER_DATA
+    NEEDS_EXTERNAL_FILTER_DATA = app.config.needs_filter_data
+
+
 def process_filters(all_needs, current_needlist):
     """
     Filters all needs with given configuration.
@@ -201,6 +209,7 @@ def filter_needs(needs, filter_string="", current_need=None):
     :param needs: list of needs, which shall be filtered
     :param filter_string: strings, which gets evaluated against each need
     :param current_need: current need, which uses the filter.
+
     :return: list of found needs
     """
 
@@ -208,6 +217,11 @@ def filter_needs(needs, filter_string="", current_need=None):
         return needs
 
     found_needs = []
+
+    # needs external filter data
+    if NEEDS_EXTERNAL_FILTER_DATA:
+        for extern_filter, value in NEEDS_EXTERNAL_FILTER_DATA.items():
+            filter_string = filter_string.replace(extern_filter, '"{}"'.format(value))
 
     # https://docs.python.org/3/library/functions.html?highlight=compile#compile
     filter_compiled = compile(filter_string, "<string>", "eval")
