@@ -14,7 +14,5 @@ def test_doc_needextract_html(app, status, warning):
         'secret_level: </span><span class="needs_data">top_level</span>' in index_html
     )
 
-    assert (
-        '<table class="need needs_grid_simple needs_layout_clean rtd-exclude-wy-table '
-        'needs_style_green_border needs_type_story docutils" id="extract_story_001">' in index_html
-    )
+    # Check needextract table style
+    assert "needs_style_green_border needs_type_story" in index_html
