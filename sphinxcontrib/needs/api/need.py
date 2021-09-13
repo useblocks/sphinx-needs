@@ -282,7 +282,7 @@ def add_need(
     _merge_extra_options(needs_info, kwargs, needs_extra_options)
 
     needs_global_options = env.config.needs_global_options
-    _merge_global_options(needs_info, needs_global_options)
+    _merge_global_options(app, needs_info, needs_global_options)
 
     link_names = [x["option"] for x in env.config.needs_extra_links]
     for keyword in kwargs:
@@ -587,7 +587,7 @@ def _merge_extra_options(needs_info, needs_kwargs, needs_extra_options):
     return extra_keys
 
 
-def _merge_global_options(needs_info, global_options):
+def _merge_global_options(app, needs_info, global_options):
     """Add all global defined options to needs_info"""
     if global_options is None:
         return
@@ -608,7 +608,7 @@ def _merge_global_options(needs_info, global_options):
         for single_value in values:
             if len(single_value) < 2 or len(single_value) > 3:
                 raise NeedsInvalidException("global option tuple has wrong amount of parameters: {}".format(key))
-            if filter_single_need(needs_info, single_value[1]):
+            if filter_single_need(app, needs_info, single_value[1]):
                 # Set value, if filter has matched
                 needs_info[key] = single_value[0]
             elif len(single_value) == 3 and (key not in needs_info.keys() or len(str(needs_info[key])) > 0):

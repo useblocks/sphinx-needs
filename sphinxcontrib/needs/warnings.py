@@ -49,7 +49,7 @@ def process_warnings(app, exception):
         for warning_name, warning_filter in warnings.items():
             if isinstance(warning_filter, str):
                 # filter string used
-                result = filter_needs(needs.values(), warning_filter)
+                result = filter_needs(app, needs.values(), warning_filter)
             elif hasattr(warning_filter, "__call__"):
                 # custom defined filter code used from conf.py
                 result = []

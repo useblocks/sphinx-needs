@@ -82,7 +82,7 @@ def process_needextract(app, doctree, fromdocname):
         all_needs = env.needs_all_needs
         content = []
         all_needs = list(all_needs.values())
-        found_needs = process_filters(all_needs, current_needextract)
+        found_needs = process_filters(app, all_needs, current_needextract)
 
         for need_info in found_needs:
             need_extract = create_need(

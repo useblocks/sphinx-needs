@@ -79,7 +79,6 @@ from sphinxcontrib.needs.environment import (
     install_styles_static_files,
 )
 from sphinxcontrib.needs.external_needs import load_external_needs
-from sphinxcontrib.needs.filter_common import load_needs_extra_filter_data
 from sphinxcontrib.needs.functions import needs_common_functions, register_func
 from sphinxcontrib.needs.logging import get_logger
 from sphinxcontrib.needs.roles.need_count import NeedCount, process_need_count
@@ -90,7 +89,7 @@ from sphinxcontrib.needs.roles.need_part import NeedPart, process_need_part
 from sphinxcontrib.needs.roles.need_ref import NeedRef, process_need_ref
 from sphinxcontrib.needs.services.github import GithubService
 from sphinxcontrib.needs.services.manager import ServiceManager
-from sphinxcontrib.needs.utils import INTERNALS, NEEDS_FUNCTIONS, logger
+from sphinxcontrib.needs.utils import INTERNALS, NEEDS_FUNCTIONS
 from sphinxcontrib.needs.warnings import process_warnings
 
 VERSION = "0.7.1"
@@ -284,7 +283,6 @@ def setup(app):
     # doctree-read. So manipulating the doctree may result in conflicts, as e.g. images get not
     # registered for sphinx. So some sphinx-internal tasks/functions may be called by hand again...
     # See also https://github.com/sphinx-doc/sphinx/issues/7054#issuecomment-578019701 for an example
-    app.connect("doctree-resolved", load_needs_extra_filter_data)
     app.connect("doctree-resolved", add_sections)
     app.connect("doctree-resolved", process_need_nodes)
     app.connect("doctree-resolved", process_needextend)  # Must be done very early, as it modifies need data
@@ -518,16 +516,17 @@ def check_configuration(_app: Sphinx, config: Config):
     extra_options = config["needs_extra_options"]
     link_types = [x["option"] for x in config["needs_extra_links"]]
 
+    log = get_logger(__name__)
     external_filter = config["needs_filter_data"]
     # Check if external filter values is really a string
     for extern_filter, value in external_filter.items():
         if not isinstance(value, str):
-            logger.warning(
+            log.warning(
                 "External filter value: {0} from needs_filter_data {1} is not a string.".format(value, external_filter)
             )
 
     # Check if needs external filter and extra option are using the same name
-    for ext_filter in external_filter:
+    for ext_filter in external_filter.keys():
         if ext_filter in extra_options:
             raise NeedsConfigException(
                 "Same name for external filter and extra option: {}." " This is not allowed.".format(ext_filter)

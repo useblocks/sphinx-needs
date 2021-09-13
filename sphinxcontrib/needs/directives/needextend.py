@@ -86,7 +86,7 @@ def process_needextend(app, doctree, fromdocname):
                 raise NeedsInvalidFilter(f"Provided id {need_filter} for needextend does not exist.")
 
             try:
-                found_needs = filter_needs(app.env.needs_all_needs.values(), need_filter)
+                found_needs = filter_needs(app, app.env.needs_all_needs.values(), need_filter)
             except NeedsInvalidFilter as e:
                 raise NeedsInvalidFilter(
                     f"Filter not valid for needextend on page {current_needextend['docname']}:\n{e}"

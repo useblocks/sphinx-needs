@@ -58,19 +58,12 @@ class FilterBase(Directive):
         return collected_filter_options
 
 
-def load_needs_extra_filter_data(app, doctree, fromdocname):
-    """
-    Load needs external filter data from conf.py and set as global variable.
-    """
-    global NEEDS_EXTERNAL_FILTER_DATA
-    NEEDS_EXTERNAL_FILTER_DATA = app.config.needs_filter_data
-
-
-def process_filters(all_needs, current_needlist):
+def process_filters(app, all_needs, current_needlist):
     """
     Filters all needs with given configuration.
     Used by needlist, needtable and needflow.
 
+    :param app: Sphinx application object
     :param current_needlist: needlist object, which stores all filters
     :param all_needs: List of all needs inside document
 
@@ -119,13 +112,13 @@ def process_filters(all_needs, current_needlist):
                 if status_filter_passed and tags_filter_passed and type_filter_passed:
                     found_needs_by_options.append(need_info)
             # Get needy by filter string
-            found_needs_by_string = filter_needs(all_needs_incl_parts, current_needlist["filter"])
+            found_needs_by_string = filter_needs(app, all_needs_incl_parts, current_needlist["filter"])
             # Make a intersection of both lists
             found_needs = intersection_of_need_results(found_needs_by_options, found_needs_by_string)
         else:
             # There is no other config as the one for filter string.
             # So we only need this result.
-            found_needs = filter_needs(all_needs_incl_parts, current_needlist["filter"])
+            found_needs = filter_needs(app, all_needs_incl_parts, current_needlist["filter"])
     else:
         # Provides only a copy of needs to avoid data manipulations.
         context = {
@@ -201,11 +194,12 @@ def intersection_of_need_results(list_a, list_b) -> List[Dict[str, Any]]:
     return [a for a in list_a if a in list_b]
 
 
-def filter_needs(needs, filter_string="", current_need=None):
+def filter_needs(app, needs, filter_string="", current_need=None):
     """
     Filters given needs based on a given filter string.
     Returns all needs, which pass the given filter.
 
+    :param app: Sphinx application object
     :param needs: list of needs, which shall be filtered
     :param filter_string: strings, which gets evaluated against each need
     :param current_need: current need, which uses the filter.
@@ -218,16 +212,13 @@ def filter_needs(needs, filter_string="", current_need=None):
 
     found_needs = []
 
-    # needs external filter data
-    if NEEDS_EXTERNAL_FILTER_DATA:
-        for extern_filter, value in NEEDS_EXTERNAL_FILTER_DATA.items():
-            filter_string = filter_string.replace(extern_filter, '"{}"'.format(value))
-
     # https://docs.python.org/3/library/functions.html?highlight=compile#compile
     filter_compiled = compile(filter_string, "<string>", "eval")
     for filter_need in needs:
         try:
-            if filter_single_need(filter_need, filter_string, needs, current_need, filter_compiled=filter_compiled):
+            if filter_single_need(
+                app, filter_need, filter_string, needs, current_need, filter_compiled=filter_compiled
+            ):
                 found_needs.append(filter_need)
         except Exception as e:
             logger.warning("Filter {0} not valid: Error: {1}".format(filter_string, e))
@@ -235,10 +226,11 @@ def filter_needs(needs, filter_string="", current_need=None):
     return found_needs
 
 
-def filter_single_need(need, filter_string="", needs=None, current_need=None, filter_compiled=None) -> bool:
+def filter_single_need(app, need, filter_string="", needs=None, current_need=None, filter_compiled=None) -> bool:
     """
     Checks if a single need/need_part passes a filter_string
 
+    :param app: Sphinx application object
     :param current_need:
     :param filter_compiled: An already compiled filter_string to safe time
     :param need: need or need_part
@@ -253,6 +245,9 @@ def filter_single_need(need, filter_string="", needs=None, current_need=None, fi
         filter_context["current_need"] = current_need
     else:
         filter_context["current_need"] = need
+
+    # Get needs external filter data and merge to filter_context
+    filter_context.update(app.config.needs_filter_data)
 
     filter_context["search"] = re.search
     result = False

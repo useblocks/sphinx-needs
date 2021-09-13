@@ -110,7 +110,7 @@ class NeedimportDirective(Directive):
                 # "content" is the sphinx internal name for this kind of information
                 filter_context["content"] = need["description"]
                 try:
-                    if filter_single_need(filter_context, filter_string):
+                    if filter_single_need(env.app, filter_context, filter_string):
                         needs_list_filtered[key] = need
                 except Exception as e:
                     logger.warning(

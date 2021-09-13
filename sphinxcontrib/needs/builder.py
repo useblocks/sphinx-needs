@@ -31,7 +31,7 @@ class NeedsBuilder(Builder):
         from sphinxcontrib.needs.filter_common import filter_needs
 
         filter_string = self.app.config.needs_builder_filter
-        filtered_needs = filter_needs(needs, filter_string)
+        filtered_needs = filter_needs(self.app, needs, filter_string)
 
         for need in filtered_needs:
             needs_list.add_need(version, need)

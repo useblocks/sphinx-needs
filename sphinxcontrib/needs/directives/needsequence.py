@@ -148,7 +148,7 @@ def process_needsequence(app, doctree, fromdocname):
 
             # Add children of participants
             _msg_receiver_needs, p_string_new, c_string_new = get_message_needs(
-                need, current_needsequence["link_types"], all_needs_dict, filter=current_needsequence["filter"]
+                app, need, current_needsequence["link_types"], all_needs_dict, filter=current_needsequence["filter"]
             )
             p_string += p_string_new
             c_string += c_string_new
@@ -211,7 +211,7 @@ def process_needsequence(app, doctree, fromdocname):
         node.replace_self(content)
 
 
-def get_message_needs(sender, link_types, all_needs_dict, tracked_receivers=None, filter=None):
+def get_message_needs(app, sender, link_types, all_needs_dict, tracked_receivers=None, filter=None):
     msg_needs = []
     if tracked_receivers is None:
         tracked_receivers = []
@@ -232,7 +232,7 @@ def get_message_needs(sender, link_types, all_needs_dict, tracked_receivers=None
                 if filter:
                     from sphinxcontrib.needs.filter_common import filter_single_need
 
-                    if not filter_single_need(all_needs_dict[rec_id], filter, needs=all_needs_dict.values()):
+                    if not filter_single_need(app, all_needs_dict[rec_id], filter, needs=all_needs_dict.values()):
                         continue
 
                 rec_data = {"id": rec_id, "title": all_needs_dict[rec_id]["title"], "messages": []}
@@ -241,7 +241,7 @@ def get_message_needs(sender, link_types, all_needs_dict, tracked_receivers=None
 
                 if rec_id not in tracked_receivers:
                     rec_messages, p_string_new, c_string_new = get_message_needs(
-                        all_needs_dict[rec_id], link_types, all_needs_dict, tracked_receivers, filter=filter
+                        app, all_needs_dict[rec_id], link_types, all_needs_dict, tracked_receivers, filter=filter
                     )
                     p_string += p_string_new
                     c_string += c_string_new
