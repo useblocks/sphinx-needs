@@ -31,6 +31,8 @@ License
   (`#345 <https://github.com/useblocks/sphinxcontrib-needs/issues/345>`_)
 * Improvement: Supporting caption for :ref:`needtable`
   (`#348 <https://github.com/useblocks/sphinxcontrib-needs/issues/348>`_)
+* Improvement: New config option :ref:`needs_filter_data` to allow to use custom data inside a :ref:`filter_string`
+  (`#317 <https://github.com/useblocks/sphinxcontrib-needs/issues/317>`_)
 
 0.7.1
 -----

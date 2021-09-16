@@ -410,7 +410,7 @@ Use ``style_start`` and ``style_end`` like this::
 needs_filter_data
 ~~~~~~~~~~~~~~~~~
 
-This option allows to custom define extra filter.
+This option allows to use custom data inside a :ref:`filter_string`.
 
 Configuration example::
 
@@ -424,16 +424,9 @@ Configuration example::
 
 
 The defined ``needs_filter_data`` must be a dictionary. Its values can be a string variable or a custom defined 
-function. The function get execued during config loading and must return a string. 
+function. The function get execued during config loading and must return a string.
 
-Hence, this is **not allowed**::
-
-   needs_filter_data = {
-       "sphinx_tag": custom_defined_func,  # () missing to execute the function
-   }
-
-
-The value of ``needs_filter_data`` will be used as filter string and can be very poweful togehter with 
+The value of ``needs_filter_data`` will be available as data inside :ref:`filter_string` and can be very poweful togehter with 
 internal needs info to filter needs.
 
 The defined extra filter can be used like this::
@@ -451,8 +444,8 @@ or if need has :ref:`needs_extra_options` defined like::
 
 the defined extra filter can also be used like::
 
-   .. needextend:: type == "test" and variant == current_variant
-      :variant: my_external_variant
+   .. needlist::
+      :filter: variant != current_variant
 
    .. needextract::
       :filter: type == "story" and variant == current_variant

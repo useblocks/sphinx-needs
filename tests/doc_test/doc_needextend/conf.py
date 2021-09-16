@@ -19,8 +19,6 @@
 import os
 import sys
 
-from docutils.parsers.rst import directives
-
 sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
 
 # -- General configuration ------------------------------------------------
@@ -42,17 +40,6 @@ needs_types = [
     dict(directive="impl", title="Implementation", prefix="IM_", color="#DF744A", style="node"),
     dict(directive="test", title="Test Case", prefix="TC_", color="#DCB239", style="node"),
 ]
-
-
-def custom_func():
-    return "my_tag"
-
-
-needs_filter_data = {"current_variant": "project_x", "sphinx_tag": custom_func(), "variant_wrong_value": True}
-
-needs_extra_options = {
-    "variant": directives.unchanged,
-}
 
 plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "..", "..", "docs", "utils", "plantuml.jar")
 plantuml_output_format = "svg"

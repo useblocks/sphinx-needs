@@ -33,7 +33,7 @@ sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 
-extensions = ["sphinxcontrib.needs"]
+extensions = ["sphinxcontrib.needs", "sphinxcontrib.plantuml"]
 
 needs_id_regex = "^[A-Za-z0-9_]*"
 needs_types = [
@@ -43,11 +43,22 @@ needs_types = [
     dict(directive="test", title="Test Case", prefix="TC_", color="#DCB239", style="node"),
 ]
 
-needs_filter_data = {"current_secret_level": "top_level"}
+
+def custom_func():
+    return "my_tag"
+
+
+needs_filter_data = {"current_variant": "project_x", "sphinx_tag": custom_func()}
 
 needs_extra_options = {
-    "secret_level": directives.unchanged,
+    "variant": directives.unchanged,
 }
+
+needs_warnings = {
+    "variant_not_equal_current_variant": "variant != current_variant",
+}
+
+needs_warnings_always_warn = True
 
 plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "..", "..", "docs", "utils", "plantuml.jar")
 plantuml_output_format = "svg"
