@@ -426,23 +426,23 @@ Configuration example::
 The defined ``needs_filter_data`` must be a dictionary. Its values can be a string variable or a custom defined 
 function. The function get execued during config loading and must return a string.
 
-The value of ``needs_filter_data`` will be available as data inside :ref:`filter_string` and can be very poweful togehter with 
+The value of ``needs_filter_data`` will be available as data inside :ref:`filter_string` and can be very poweful together with 
 internal needs info to filter needs.
 
-The defined extra filter can be used like this::
+The defined extra filter data can be used like this::
 
    .. needextend:: type == "req" and sphinx_tag in tags
       :+tags: my_external_tag
 
 
-or if need has :ref:`needs_extra_options` defined like::
+or if project has :ref:`needs_extra_options` defined like::
 
    needs_extra_options = {
        "variant": directives.unchanged,
    }
 
 
-the defined extra filter can also be used like::
+the defined extra filter data can also be used like::
 
    .. needlist::
       :filter: variant != current_variant

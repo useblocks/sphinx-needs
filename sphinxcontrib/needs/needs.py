@@ -516,12 +516,11 @@ def check_configuration(_app: Sphinx, config: Config):
     extra_options = config["needs_extra_options"]
     link_types = [x["option"] for x in config["needs_extra_links"]]
 
-    log = get_logger(__name__)
     external_filter = getattr(config, "needs_filter_data", {})
     for extern_filter, value in external_filter.items():
         # Check if external filter values is really a string
         if not isinstance(value, str):
-            log.warning(
+            raise NeedsConfigException(
                 "External filter value: {0} from needs_filter_data {1} is not a string.".format(value, external_filter)
             )
         # Check if needs external filter and extra option are using the same name
