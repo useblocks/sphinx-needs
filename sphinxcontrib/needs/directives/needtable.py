@@ -168,7 +168,7 @@ def process_needtables(app, doctree, fromdocname):
         all_needs = list(all_needs.values())
 
         # Perform filtering of needs
-        found_needs = process_filters(all_needs, current_needtable)
+        found_needs = process_filters(app, all_needs, current_needtable)
 
         def get_sorter(key):
             """

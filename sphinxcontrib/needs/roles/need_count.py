@@ -27,11 +27,11 @@ def process_need_count(app, doctree, fromdocname):
             filters = filter.split(" ? ")
             if len(filters) == 1:
                 need_list = prepare_need_list(all_needs)  # adds parts to need_list
-                amount = len(filter_needs(need_list, filters[0]))
+                amount = len(filter_needs(app, need_list, filters[0]))
             elif len(filters) == 2:
                 need_list = prepare_need_list(all_needs)  # adds parts to need_list
-                amount_1 = len(filter_needs(need_list, filters[0]))
-                amount_2 = len(filter_needs(need_list, filters[1]))
+                amount_1 = len(filter_needs(app, need_list, filters[0]))
+                amount_2 = len(filter_needs(app, need_list, filters[1]))
                 amount = "{:2.1f}".format(amount_1 / amount_2 * 100)
             elif len(filters) > 2:
                 raise NeedsInvalidFilter(

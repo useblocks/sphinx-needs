@@ -190,7 +190,7 @@ def process_needflow(app, doctree, fromdocname):
             puml_node["uml"] += "\n\n"
 
         all_needs = list(all_needs.values())
-        found_needs = process_filters(all_needs, current_needflow)
+        found_needs = process_filters(app, all_needs, current_needflow)
 
         processed_need_part_ids = []
 
@@ -213,7 +213,7 @@ def process_needflow(app, doctree, fromdocname):
                         part_colors.append(need_part["type_color"].replace("#", ""))
 
                     if current_needflow["highlight"] and filter_single_need(
-                        need_part, current_needflow["highlight"], all_needs
+                        app, need_part, current_needflow["highlight"], all_needs
                     ):
                         part_colors.append("line:FF0000")
 
@@ -242,7 +242,7 @@ def process_needflow(app, doctree, fromdocname):
                     colors.append(need_info["type_color"].replace("#", ""))
 
                 if current_needflow["highlight"] and filter_single_need(
-                    need_info, current_needflow["highlight"], all_needs
+                    app, need_info, current_needflow["highlight"], all_needs
                 ):
                     colors.append("line:FF0000")
 

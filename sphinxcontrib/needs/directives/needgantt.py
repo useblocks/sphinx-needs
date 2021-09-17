@@ -160,7 +160,7 @@ def process_needgantt(app, doctree, fromdocname):
         puml_node["uml"] += add_config(config)
 
         all_needs = list(all_needs_dict.values())
-        found_needs = process_filters(all_needs, current_needgantt)
+        found_needs = process_filters(app, all_needs, current_needgantt)
 
         # Scale/timeline handling
         if current_needgantt["timeline"]:
@@ -193,7 +193,7 @@ def process_needgantt(app, doctree, fromdocname):
             complete = None
 
             if current_needgantt["milestone_filter"]:
-                is_milestone = filter_single_need(need, current_needgantt["milestone_filter"])
+                is_milestone = filter_single_need(app, need, current_needgantt["milestone_filter"])
             else:
                 is_milestone = False
 
@@ -241,7 +241,7 @@ def process_needgantt(app, doctree, fromdocname):
         puml_node["uml"] += "\n' Constraints definition \n\n"
         for need in found_needs:
             if current_needgantt["milestone_filter"]:
-                is_milestone = filter_single_need(need, current_needgantt["milestone_filter"])
+                is_milestone = filter_single_need(app, need, current_needgantt["milestone_filter"])
             else:
                 is_milestone = False
             constrain_types = ["starts_with_links", "starts_after_links", "ends_with_links"]

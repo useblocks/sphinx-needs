@@ -137,7 +137,7 @@ def copy(app, need, needs, option, need_id=None, lower=False, upper=False, filte
         need = needs[need_id]
 
     if filter:
-        result = filter_needs(needs.values(), filter, need)
+        result = filter_needs(app, needs.values(), filter, need)
         if result:
             need = result[0]
 
@@ -288,7 +288,7 @@ def check_linked_values(app, need, needs, result, search_option, search_value, f
     for link in links:
         if filter_string:
             try:
-                if not filter_single_need(needs[link], filter_string):
+                if not filter_single_need(app, needs[link], filter_string):
                     continue
             except Exception as e:
                 logger.warning("CheckLinkedValues: Filter {0} not valid: Error: {1}".format(filter_string, e))
@@ -393,7 +393,7 @@ def calc_sum(app, need, needs, option, filter=None, links_only=False):
     for check_need in check_needs:
         if filter:
             try:
-                if not filter_single_need(check_need, filter):
+                if not filter_single_need(app, check_need, filter):
                     continue
             except ValueError:
                 pass
@@ -475,7 +475,7 @@ def links_from_content(app, need, needs, need_id=None, filter=None):
     if filter:
         filtered_links = []
         for link in raw_links:
-            if link not in filtered_links and filter_single_need(needs[link], filter):
+            if link not in filtered_links and filter_single_need(app, needs[link], filter):
                 filtered_links.append(link)
         return filtered_links
 

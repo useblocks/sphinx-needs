@@ -129,7 +129,7 @@ def process_needpie(app, doctree, fromdocname):
             if line.isdigit():
                 sizes.append(float(line))
             else:
-                result = len(filter_needs(app.env.needs_all_needs.values(), line))
+                result = len(filter_needs(app, app.env.needs_all_needs.values(), line))
                 sizes.append(result)
 
         labels = current_needpie["labels"]

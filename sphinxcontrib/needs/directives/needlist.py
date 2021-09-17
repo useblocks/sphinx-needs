@@ -83,7 +83,7 @@ def process_needlist(app, doctree, fromdocname):
         all_needs = env.needs_all_needs
         content = []
         all_needs = list(all_needs.values())
-        found_needs = process_filters(all_needs, current_needfilter)
+        found_needs = process_filters(app, all_needs, current_needfilter)
 
         line_block = nodes.line_block()
         for need_info in found_needs:
