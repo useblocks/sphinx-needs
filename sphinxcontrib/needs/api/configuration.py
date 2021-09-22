@@ -7,6 +7,7 @@ from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
 import sphinxcontrib.needs.directives.need
+from sphinxcontrib.needs.config import NEEDS_CONFIG
 from sphinxcontrib.needs.api.exceptions import (
     NeedsApiConfigException,
     NeedsApiConfigWarning,
@@ -89,12 +90,12 @@ def add_extra_option(app, name):
     extra_options[name] = directives.unchanged
 
 
-def add_dynamic_function(app, function):
+def add_dynamic_function(app, function, name=None):
     """
     Registers a new dynamic function for sphinx-needs.
 
-    The name to call the function is automatically taken from the provided function
-    and must be unique.
+    If ``name`` is not given, the name to call the function is automatically taken from the provided function.
+    The used name must be unique.
 
     **Usage**::
 
@@ -110,6 +111,37 @@ def add_dynamic_function(app, function):
 
     :param app: Sphinx application object
     :param function: Function to register
+    :param name: Name of the dynamic function as string
     :return: None
     """
-    register_func(function)
+    register_func(function, name)
+
+
+def add_warning(app, name, function=None, filter_string=None):
+    """
+    Registers a warning.
+
+    A warning can be based on the result of a given filter_string or an own defined function.
+
+    :param app: Sphinx app object
+    :param name: Name as string for the warning
+    :param function: function to execute to check the warning
+    :param filter_string: filter_string to use for the warning
+    :return: None
+    """
+    warnings_option = NEEDS_CONFIG.create_or_get('warnings', dict)
+
+    if function is None and filter_string is None:
+        raise NeedsApiConfigException("Function or filter_string must be given for add_warning_func")
+
+    if function is not None and filter_string is not None:
+        raise NeedsApiConfigException("For add_warning_func only function or filter_string is allowed to be set, "
+                                      "not both.")
+
+    warning_check = function or filter_string
+
+    if name in warnings_option.keys():
+        raise NeedsApiConfigException(f"Warning {name} already registered.")
+
+    # warnings_option[name] = warning_check
+    NEEDS_CONFIG.add('warnings', {name: warning_check}, dict, append=True)

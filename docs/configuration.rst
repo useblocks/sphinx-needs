@@ -3,7 +3,7 @@
 Configuration
 =============
 
-All configurations take place in your project's conf.py file.
+All configurations take place in your project's ``conf.py`` file.
 
 
 .. contents::
@@ -16,6 +16,37 @@ Activation
 Add **sphinxcontrib.needs** to your extensions::
 
    extensions = ["sphinxcontrib.needs",]
+
+.. _inc_build:
+
+Incremental build support
+-------------------------
+Sphinx does not use its incremental build feature, functions are assigned directly to sphinx-needs options.
+To avoid this, please use the Sphinx-Needs API to register functions directly.
+
+This would allow Sphinx to perform incremental builds, which are much faster as normal, full builds.
+
+**Example configuration**
+
+.. code-block:: python
+
+   # conf.py
+
+   # Defining a function in conf.py is fine
+   def my_custom_warning(need, log):
+       # some checks
+       return False
+
+   # this assignment will deactivate incremental build support inside Sphinx
+   needs_warnings = {
+      'my_warning': my_custom_warning
+   }
+
+   # Better, register the function via Sphinx-Needs API
+   from sphinxcontrib.needs.api.configuration import add_warning_func
+   def setup(app):
+      add_warning_func(app, 'my_warning', my_custom_warning)
+
 
 Options
 -------
@@ -1009,7 +1040,7 @@ This will handle **all warnings** as exceptions.
            return True
        return False
 
-    
+
    needs_warnings = {
      # req need must not have an empty status field
      'req_with_no_status': "type == 'req' and not status",
@@ -1025,8 +1056,13 @@ This will handle **all warnings** as exceptions.
 The **dictionary key** is used as identifier and gets printed in log outputs.
 The **value** must be a valid filter string or a custom defined filter code function and defines a *not allowed behavior*.
 
-So use the filter string or filter code function to define how needs are not allowed to be configured/used. The defined filter 
+So use the filter string or filter code function to define how needs are not allowed to be configured/used. The defined filter
 code function must return ``True`` or ``False``.
+
+.. warning::
+
+   Assigning a function to a Sphinx option will deactivate the incremental build feature of Sphinx.
+   Please use the :ref:`Sphinx-Needs API <api_configuration>` and read :ref:`inc_build` for details
 
 Example output:
 
@@ -1042,7 +1078,7 @@ Example output:
     invalid_status: failed
         failed needs: 11 (STYLE_005, EX_ROW_1, EX_ROW_3, copy_2, clv_1, clv_2, clv_3, clv_4, clv_5, T_C3893, R_AD4A0)
         used filter: status not in ["open", "in progress", "closed", "done"] and status is not None
-    
+
     type_match: failed
         failed needs: 1 (TC_001)
         used filter: <function my_custom_warning_check at 0x7faf3fbcd1f0>

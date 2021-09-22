@@ -7,6 +7,7 @@ from sphinx.config import Config
 from sphinx.errors import SphinxError
 from sphinx.roles import XRefRole
 
+from sphinxcontrib.needs.config import NEEDS_CONFIG
 from sphinxcontrib.needs.builder import NeedsBuilder
 from sphinxcontrib.needs.defaults import (
     DEFAULT_DIAGRAM_TEMPLATE,
@@ -393,6 +394,9 @@ def load_config(app: Sphinx, *_args):
     for t in types:
         # Register requested types of needs
         app.add_directive(t["directive"], NeedDirective)
+
+    for name, check in app.config.needs_warnings.items():
+        NEEDS_CONFIG.add('warnings', {name: check}, dict, append=True)
 
 
 def visitor_dummy(*_args, **_kwargs):
