@@ -21,10 +21,10 @@ Add **sphinxcontrib.needs** to your extensions::
 
 Incremental build support
 -------------------------
-Sphinx does not use its incremental build feature, functions are assigned directly to sphinx-needs options.
-To avoid this, please use the Sphinx-Needs API to register functions directly.
+Sphinx does not use its incremental build feature, if functions are assigned directly to Sphinx options.
+To avoid this, please use the :ref:`Sphinx-Needs API <api_configuration>` to register functions directly.
 
-This would allow Sphinx to perform incremental builds, which are much faster as normal, full builds.
+This would allow Sphinx to perform incremental builds, which are much faster as full builds.
 
 **Example configuration**
 
@@ -37,15 +37,15 @@ This would allow Sphinx to perform incremental builds, which are much faster as 
        # some checks
        return False
 
-   # this assignment will deactivate incremental build support inside Sphinx
+   # This assignment will deactivate incremental build support inside Sphinx
    needs_warnings = {
       'my_warning': my_custom_warning
    }
 
    # Better, register the function via Sphinx-Needs API
-   from sphinxcontrib.needs.api.configuration import add_warning_func
+   from sphinxcontrib.needs.api.configuration import add_warning
    def setup(app):
-      add_warning_func(app, 'my_warning', my_custom_warning)
+      add_warning(app, 'my_warning', my_custom_warning)
 
 
 Options
@@ -454,10 +454,10 @@ Configuration example::
    }
 
 
-The defined ``needs_filter_data`` must be a dictionary. Its values can be a string variable or a custom defined 
+The defined ``needs_filter_data`` must be a dictionary. Its values can be a string variable or a custom defined
 function. The function get execued during config loading and must return a string.
 
-The value of ``needs_filter_data`` will be available as data inside :ref:`filter_string` and can be very poweful together with 
+The value of ``needs_filter_data`` will be available as data inside :ref:`filter_string` and can be very poweful together with
 internal needs info to filter needs.
 
 The defined extra filter data can be used like this::
