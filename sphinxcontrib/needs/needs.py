@@ -327,7 +327,7 @@ def load_config(app: Sphinx, *_args):
 
     for option in app.config.needs_extra_options:
         NEEDS_CONFIG.add("extra_options", {option: directives.unchanged}, dict, True)
-    extra_options = NEEDS_CONFIG.get("extra_options")
+    extra_options = NEEDS_CONFIG.create_or_get("extra_options", dict)
 
     # Get extra links and create a dictionary of needed options.
     extra_links_raw = app.config.needs_extra_links
