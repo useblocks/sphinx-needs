@@ -16,31 +16,12 @@ from sphinxcontrib.needs.functions import (
 from sphinxcontrib.needs.functions.functions import check_and_get_content
 from sphinxcontrib.needs.layout import build_need
 from sphinxcontrib.needs.logging import get_logger
+from sphinxcontrib.needs.nodes import Need
 from sphinxcontrib.needs.utils import profile
 
 logger = get_logger(__name__)
 
 NON_BREAKING_SPACE = re.compile("\xa0+")
-
-
-class Need(nodes.General, nodes.Element):
-    """
-    Node for containing a complete need.
-    Node structure:
-
-    - need
-      - headline container
-      - meta container ()
-      - content container
-
-    As the content container gets rendered RST input, this must already be created during
-    node handling and can not be done later during event handling.
-    Reason: nested_parse_with_titles() needs self.state, which is available only during node handling.
-
-    headline and content container get added later during event handling (process_need_nodes()).
-    """
-
-    child_text_separator = "\n"
 
 
 class NeedDirective(Directive):

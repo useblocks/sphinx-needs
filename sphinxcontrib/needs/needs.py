@@ -7,6 +7,7 @@ from sphinx.config import Config
 from sphinx.errors import SphinxError
 from sphinx.roles import XRefRole
 
+from sphinxcontrib.needs.api.configuration import add_extra_option
 from sphinxcontrib.needs.builder import NeedsBuilder
 from sphinxcontrib.needs.config import NEEDS_CONFIG
 from sphinxcontrib.needs.defaults import (
@@ -323,7 +324,10 @@ def load_config(app: Sphinx, *_args):
     Register extra options and directive based on config from conf.py
     """
     types = app.config.needs_types
-    extra_options = app.config.needs_extra_options
+
+    for option in app.config.needs_extra_options:
+        NEEDS_CONFIG.add("extra_options", {option: directives.unchanged}, dict, True)
+    extra_options = NEEDS_CONFIG.get("extra_options")
 
     # Get extra links and create a dictionary of needed options.
     extra_links_raw = app.config.needs_extra_links
@@ -410,6 +414,9 @@ def prepare_env(app, env, _docname):
     """
     Prepares the sphinx environment to store sphinx-needs internal data.
     """
+    # Be sure Sphinx-Needs config has all needed entries
+    NEEDS_CONFIG.create_or_get("extra_options", dict)
+    NEEDS_CONFIG.create_or_get("warnings", dict)
 
     if not hasattr(env, "needs_all_needs"):
         # Used to store all needed information about all needs in document
@@ -450,8 +457,10 @@ def prepare_env(app, env, _docname):
     # Own extra options
     for option in ["hidden", "duration", "completion", "has_dead_links", "has_forbidden_dead_links"]:
         # Check if not already set by user
-        if option not in app.config.needs_extra_options.keys():
-            app.config.needs_extra_options[option] = directives.unchanged
+        # if option not in app.config.needs_extra_options:
+        #     app.config.needs_extra_options[option] = directives.unchanged
+        if option not in NEEDS_CONFIG.get("extra_options"):
+            add_extra_option(app, option)
 
     # The default link name. Must exist in all configurations. Therefore we set it here
     # for the user.
@@ -535,7 +544,7 @@ def check_configuration(_app: Sphinx, config: Config):
 
     # Check for usage of internal names
     for internal in INTERNALS:
-        if internal in extra_options.keys():
+        if internal in extra_options:
             raise NeedsConfigException(
                 'Extra option "{}" already used internally. ' " Please use another name.".format(internal)
             )
@@ -546,11 +555,11 @@ def check_configuration(_app: Sphinx, config: Config):
 
     # Check if option and link are using the same name
     for link in link_types:
-        if link in extra_options.keys():
+        if link in extra_options:
             raise NeedsConfigException(
                 "Same name for link type and extra option: {}." " This is not allowed.".format(link)
             )
-        if link + "_back" in extra_options.keys():
+        if link + "_back" in extra_options:
             raise NeedsConfigException(
                 "Same name for automatically created link type and extra option: {}."
                 " This is not allowed.".format(link + "_back")

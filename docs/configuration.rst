@@ -32,10 +32,13 @@ This would allow Sphinx to perform incremental builds, which are much faster as 
 
    # conf.py
 
-   # Defining a function in conf.py is fine
+   # Defining one or more functions in conf.py is fine
    def my_custom_warning(need, log):
        # some checks
        return False
+
+   def my_dynamic_function(app, need, needs):
+       return "some text"
 
    # This assignment will deactivate incremental build support inside Sphinx
    needs_warnings = {
@@ -43,9 +46,11 @@ This would allow Sphinx to perform incremental builds, which are much faster as 
    }
 
    # Better, register the function via Sphinx-Needs API
-   from sphinxcontrib.needs.api.configuration import add_warning
+   from sphinxcontrib.needs.api.configuration import add_warning, add_dynamic_function
    def setup(app):
       add_warning(app, 'my_warning', my_custom_warning)
+      add_dynamic_function(app, my_dynamic_function)
+
 
 
 Options
@@ -128,6 +133,14 @@ It can be specified as a dict inside ``conf.py`` as follows::
     "updated": directives.unchanged,
     "impacts": directives.unchanged
    }
+
+With version *0.7.2* ``needs_extra_options`` can also be a list and using ``directives.unchanged`` is not needed
+anymore. This does not break the Sphinx incremental build feature. Please read :ref:`inc_build` for details.
+
+.. code-block:: python
+
+   needs_extra_options = ['introduced', 'updated', 'impacts']
+
 
 And used like:
 
@@ -998,6 +1011,10 @@ Inside your ``conf.py`` file ue it like this:
 
 See :ref:`dynamic_functions` for ore information.
 
+.. warning::
+
+   Assigning a function to a Sphinx option will deactivate the incremental build feature of Sphinx.
+   Please use the :ref:`Sphinx-Needs API <api_configuration>` and read :ref:`inc_build` for details.
 
 .. _needs_part_prefix:
 
@@ -1062,7 +1079,7 @@ code function must return ``True`` or ``False``.
 .. warning::
 
    Assigning a function to a Sphinx option will deactivate the incremental build feature of Sphinx.
-   Please use the :ref:`Sphinx-Needs API <api_configuration>` and read :ref:`inc_build` for details
+   Please use the :ref:`Sphinx-Needs API <api_configuration>` and read :ref:`inc_build` for details.
 
 Example output:
 

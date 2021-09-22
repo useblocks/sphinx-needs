@@ -1,5 +1,6 @@
 from docutils.parsers.rst import directives
 
+from sphinxcontrib.needs.api.configuration import NEEDS_CONFIG
 from sphinxcontrib.needs.directives.needservice import NeedserviceDirective
 from sphinxcontrib.needs.logging import get_logger
 
@@ -22,9 +23,11 @@ class ServiceManager:
 
         # Register options from service class
         for option in clazz.options:
-            if option not in self.app.config.needs_extra_options.keys():
+            extra_option_names = NEEDS_CONFIG.get("extra_options").keys()
+            if option not in extra_option_names:
                 self.log.debug('Register option "{}" for service "{}"'.format(option, name))
-                self.app.config.needs_extra_options[option] = directives.unchanged
+                # self.app.config.needs_extra_options[option] = directives.unchanged
+                NEEDS_CONFIG.add("extra_options", {option: directives.unchanged}, dict, append=True)
                 # Register new option directly in Service directive, as its class options got already
                 # calculated
                 NeedserviceDirective.option_spec[option] = directives.unchanged

@@ -8,7 +8,7 @@ from docutils.statemachine import ViewList
 from jinja2 import Template
 from sphinx.util.nodes import nested_parse_with_titles
 
-import sphinxcontrib.needs.directives.need
+from sphinxcontrib.needs.api.configuration import NEEDS_CONFIG
 from sphinxcontrib.needs.api.exceptions import (
     NeedsDuplicatedId,
     NeedsInvalidException,
@@ -20,6 +20,7 @@ from sphinxcontrib.needs.api.exceptions import (
 )
 from sphinxcontrib.needs.filter_common import filter_single_need
 from sphinxcontrib.needs.logging import get_logger
+from sphinxcontrib.needs.nodes import Need
 from sphinxcontrib.needs.roles.need_part import find_parts, update_need_with_parts
 
 logger = get_logger(__name__)
@@ -278,15 +279,16 @@ def add_need(
         "is_modified": False,  # needed by needextend
         "modifications": 0,  # needed by needextend
     }
-    needs_extra_options = env.config.needs_extra_options.keys()
-    _merge_extra_options(needs_info, kwargs, needs_extra_options)
+    # needs_extra_options = env.config.needs_extra_options.keys()
+    needs_extra_option_names = NEEDS_CONFIG.get("extra_options").keys()
+    _merge_extra_options(needs_info, kwargs, needs_extra_option_names)
 
     needs_global_options = env.config.needs_global_options
     _merge_global_options(app, needs_info, needs_global_options)
 
     link_names = [x["option"] for x in env.config.needs_extra_links]
     for keyword in kwargs:
-        if keyword not in needs_extra_options and keyword not in link_names:
+        if keyword not in needs_extra_option_names and keyword not in link_names:
             raise NeedsInvalidOption(
                 "Unknown Option {}. "
                 "Use needs_extra_options or needs_extra_links in conf.py"
@@ -364,7 +366,7 @@ def add_need(
     if style:
         style_classes.append(style)
 
-    node_need = sphinxcontrib.needs.directives.need.Need("", classes=style_classes, ids=[need_id], refid=need_id)
+    node_need = Need("", classes=style_classes, ids=[need_id], refid=need_id)
 
     # Render rst-based content and add it to the need-node
 

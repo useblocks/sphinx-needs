@@ -20,7 +20,7 @@ def process_warnings(app, exception):
     :return:
     """
 
-    # We cget called also if an exception occured during build
+    # We get called also if an exception occured during build
     # In this case the build is already broken and we do not need to check anything.
     if exception:
         return

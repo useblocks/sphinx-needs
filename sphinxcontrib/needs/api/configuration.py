@@ -6,7 +6,6 @@ All functions here are available under ``sphinxcontrib.api``. So do not import t
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
-import sphinxcontrib.needs.directives.need
 from sphinxcontrib.needs.api.exceptions import (
     NeedsApiConfigException,
     NeedsApiConfigWarning,
@@ -54,6 +53,7 @@ def add_need_type(app: Sphinx, directive, title, prefix, color="#ffffff", style=
     :param style: Plantuml-style for needflow representation. Default: 'node'
     :return: None
     """
+    import sphinxcontrib.needs.directives.need
 
     needs_types = app.config.needs_types
     type_names = [x["directive"] for x in needs_types]
@@ -82,12 +82,13 @@ def add_extra_option(app, name):
     :return: None
     """
 
-    extra_options = app.config.needs_extra_options
+    extra_options = NEEDS_CONFIG.create_or_get("extra_options", dict)
 
     if name in extra_options.keys():
         raise NeedsApiConfigWarning("Option {} already registered.".format(name))
 
-    extra_options[name] = directives.unchanged
+    NEEDS_CONFIG.add("extra_options", {name: directives.unchanged}, dict, append=True)
+    # extra_options[name] = directives.unchanged
 
 
 def add_dynamic_function(app, function, name=None):
