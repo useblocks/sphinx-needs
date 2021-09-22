@@ -312,6 +312,11 @@ def setup(app):
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect("env-updated", install_styles_static_files)
 
+    # Be sure Sphinx-Needs config gets erased before any events or external API calls get executed.
+    # So never but this inside an event.
+    NEEDS_CONFIG.create("extra_options", dict, overwrite=True)
+    NEEDS_CONFIG.create("warnings", dict, overwrite=True)
+
     return {
         "version": VERSION,
         "parallel_read_safe": True,
@@ -323,10 +328,6 @@ def load_config(app: Sphinx, *_args):
     """
     Register extra options and directive based on config from conf.py
     """
-    # Be sure Sphinx-Needs config has all needed entries
-    NEEDS_CONFIG.create_or_get("extra_options", dict)
-    NEEDS_CONFIG.create_or_get("warnings", dict)
-
     types = app.config.needs_types
 
     for option in app.config.needs_extra_options:
