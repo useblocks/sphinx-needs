@@ -7,11 +7,11 @@ from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
 import sphinxcontrib.needs.directives.need
-from sphinxcontrib.needs.config import NEEDS_CONFIG
 from sphinxcontrib.needs.api.exceptions import (
     NeedsApiConfigException,
     NeedsApiConfigWarning,
 )
+from sphinxcontrib.needs.config import NEEDS_CONFIG
 from sphinxcontrib.needs.functions import register_func
 
 
@@ -129,14 +129,15 @@ def add_warning(app, name, function=None, filter_string=None):
     :param filter_string: filter_string to use for the warning
     :return: None
     """
-    warnings_option = NEEDS_CONFIG.create_or_get('warnings', dict)
+    warnings_option = NEEDS_CONFIG.create_or_get("warnings", dict)
 
     if function is None and filter_string is None:
         raise NeedsApiConfigException("Function or filter_string must be given for add_warning_func")
 
     if function is not None and filter_string is not None:
-        raise NeedsApiConfigException("For add_warning_func only function or filter_string is allowed to be set, "
-                                      "not both.")
+        raise NeedsApiConfigException(
+            "For add_warning_func only function or filter_string is allowed to be set, " "not both."
+        )
 
     warning_check = function or filter_string
 
@@ -144,4 +145,4 @@ def add_warning(app, name, function=None, filter_string=None):
         raise NeedsApiConfigException(f"Warning {name} already registered.")
 
     # warnings_option[name] = warning_check
-    NEEDS_CONFIG.add('warnings', {name: warning_check}, dict, append=True)
+    NEEDS_CONFIG.add("warnings", {name: warning_check}, dict, append=True)

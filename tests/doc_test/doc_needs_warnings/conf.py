@@ -61,7 +61,7 @@ needs_warnings = {
 
 
 def custom_warning_func(need, log):
-    if need['status'] == 'example_3':
+    if need["status"] == "example_3":
         return True
     return False
 
@@ -69,8 +69,8 @@ def custom_warning_func(need, log):
 def setup(app):
     from sphinxcontrib.needs.api.configuration import add_warning
 
-    add_warning(app, 'api_warning_filter', filter_string="status == 'example_2'")
-    add_warning(app, 'api_warning_func', custom_warning_func)
+    add_warning(app, "api_warning_filter", filter_string="status == 'example_2'")
+    add_warning(app, "api_warning_func", custom_warning_func)
 
 
 # Needs option to set True or False to raise sphinx-warning for each not passed warning check
