@@ -323,11 +323,15 @@ def load_config(app: Sphinx, *_args):
     """
     Register extra options and directive based on config from conf.py
     """
+    # Be sure Sphinx-Needs config has all needed entries
+    NEEDS_CONFIG.create_or_get("extra_options", dict)
+    NEEDS_CONFIG.create_or_get("warnings", dict)
+
     types = app.config.needs_types
 
     for option in app.config.needs_extra_options:
         NEEDS_CONFIG.add("extra_options", {option: directives.unchanged}, dict, True)
-    extra_options = NEEDS_CONFIG.create_or_get("extra_options", dict)
+    extra_options = NEEDS_CONFIG.get("extra_options")
 
     # Get extra links and create a dictionary of needed options.
     extra_links_raw = app.config.needs_extra_links
@@ -414,10 +418,6 @@ def prepare_env(app, env, _docname):
     """
     Prepares the sphinx environment to store sphinx-needs internal data.
     """
-    # Be sure Sphinx-Needs config has all needed entries
-    NEEDS_CONFIG.create_or_get("extra_options", dict)
-    NEEDS_CONFIG.create_or_get("warnings", dict)
-
     if not hasattr(env, "needs_all_needs"):
         # Used to store all needed information about all needs in document
         env.needs_all_needs = {}
