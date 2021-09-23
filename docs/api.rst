@@ -13,6 +13,7 @@ For some implementation ideas, take a look into the Sphinx extension
 `Sphinx-Test-Reports <https://sphinx-test-reports.readthedocs.io/en/latest/>`_ and its
 `source code <https://github.com/useblocks/sphinx-test-reports/blob/master/sphinxcontrib/test_reports/test_reports.py#L51>`_.
 
+.. _api_configuration:
 
 Configuration
 -------------

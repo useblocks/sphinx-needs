@@ -3,7 +3,7 @@
 Configuration
 =============
 
-All configurations take place in your project's conf.py file.
+All configurations take place in your project's ``conf.py`` file.
 
 
 .. contents::
@@ -16,6 +16,42 @@ Activation
 Add **sphinxcontrib.needs** to your extensions::
 
    extensions = ["sphinxcontrib.needs",]
+
+.. _inc_build:
+
+Incremental build support
+-------------------------
+Sphinx does not use its incremental build feature, if functions are assigned directly to Sphinx options.
+To avoid this, please use the :ref:`Sphinx-Needs API <api_configuration>` to register functions directly.
+
+This would allow Sphinx to perform incremental builds, which are much faster as full builds.
+
+**Example configuration**
+
+.. code-block:: python
+
+   # conf.py
+
+   # Defining one or more functions in conf.py is fine
+   def my_custom_warning(need, log):
+       # some checks
+       return False
+
+   def my_dynamic_function(app, need, needs):
+       return "some text"
+
+   # This assignment will deactivate incremental build support inside Sphinx
+   needs_warnings = {
+      'my_warning': my_custom_warning
+   }
+
+   # Better, register the function via Sphinx-Needs API
+   from sphinxcontrib.needs.api.configuration import add_warning, add_dynamic_function
+   def setup(app):
+      add_warning(app, 'my_warning', my_custom_warning)
+      add_dynamic_function(app, my_dynamic_function)
+
+
 
 Options
 -------
@@ -97,6 +133,14 @@ It can be specified as a dict inside ``conf.py`` as follows::
     "updated": directives.unchanged,
     "impacts": directives.unchanged
    }
+
+With version *0.7.2* ``needs_extra_options`` can also be a list and using ``directives.unchanged`` is not needed
+anymore. This does not break the Sphinx incremental build feature. Please read :ref:`inc_build` for details.
+
+.. code-block:: python
+
+   needs_extra_options = ['introduced', 'updated', 'impacts']
+
 
 And used like:
 
@@ -423,10 +467,10 @@ Configuration example::
    }
 
 
-The defined ``needs_filter_data`` must be a dictionary. Its values can be a string variable or a custom defined 
+The defined ``needs_filter_data`` must be a dictionary. Its values can be a string variable or a custom defined
 function. The function get execued during config loading and must return a string.
 
-The value of ``needs_filter_data`` will be available as data inside :ref:`filter_string` and can be very poweful together with 
+The value of ``needs_filter_data`` will be available as data inside :ref:`filter_string` and can be very poweful together with
 internal needs info to filter needs.
 
 The defined extra filter data can be used like this::
@@ -967,6 +1011,10 @@ Inside your ``conf.py`` file ue it like this:
 
 See :ref:`dynamic_functions` for ore information.
 
+.. warning::
+
+   Assigning a function to a Sphinx option will deactivate the incremental build feature of Sphinx.
+   Please use the :ref:`Sphinx-Needs API <api_configuration>` and read :ref:`inc_build` for details.
 
 .. _needs_part_prefix:
 
@@ -1009,7 +1057,7 @@ This will handle **all warnings** as exceptions.
            return True
        return False
 
-    
+
    needs_warnings = {
      # req need must not have an empty status field
      'req_with_no_status': "type == 'req' and not status",
@@ -1025,8 +1073,13 @@ This will handle **all warnings** as exceptions.
 The **dictionary key** is used as identifier and gets printed in log outputs.
 The **value** must be a valid filter string or a custom defined filter code function and defines a *not allowed behavior*.
 
-So use the filter string or filter code function to define how needs are not allowed to be configured/used. The defined filter 
+So use the filter string or filter code function to define how needs are not allowed to be configured/used. The defined filter
 code function must return ``True`` or ``False``.
+
+.. warning::
+
+   Assigning a function to a Sphinx option will deactivate the incremental build feature of Sphinx.
+   Please use the :ref:`Sphinx-Needs API <api_configuration>` and read :ref:`inc_build` for details.
 
 Example output:
 
@@ -1042,7 +1095,7 @@ Example output:
     invalid_status: failed
         failed needs: 11 (STYLE_005, EX_ROW_1, EX_ROW_3, copy_2, clv_1, clv_2, clv_3, clv_4, clv_5, T_C3893, R_AD4A0)
         used filter: status not in ["open", "in progress", "closed", "done"] and status is not None
-    
+
     type_match: failed
         failed needs: 1 (TC_001)
         used filter: <function my_custom_warning_check at 0x7faf3fbcd1f0>

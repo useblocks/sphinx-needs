@@ -55,9 +55,23 @@ def my_custom_warning_check(need, log):
 
 
 needs_warnings = {
-    "invalid_status": "status not in ['open', 'closed', 'done']",
+    "invalid_status": "status not in ['open', 'closed', 'done', 'example_2', 'example_3']",
     "type_match": my_custom_warning_check,
 }
+
+
+def custom_warning_func(need, log):
+    if need["status"] == "example_3":
+        return True
+    return False
+
+
+def setup(app):
+    from sphinxcontrib.needs.api.configuration import add_warning
+
+    add_warning(app, "api_warning_filter", filter_string="status == 'example_2'")
+    add_warning(app, "api_warning_func", custom_warning_func)
+
 
 # Needs option to set True or False to raise sphinx-warning for each not passed warning check
 # default is False

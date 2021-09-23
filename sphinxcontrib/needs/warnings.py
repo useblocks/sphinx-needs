@@ -2,6 +2,7 @@
 Cares about handling and execution warnings.
 
 """
+from sphinxcontrib.needs.config import NEEDS_CONFIG
 from sphinxcontrib.needs.filter_common import filter_needs
 from sphinxcontrib.needs.logging import get_logger, logging
 
@@ -19,7 +20,7 @@ def process_warnings(app, exception):
     :return:
     """
 
-    # We cget called also if an exception occured during build
+    # We get called also if an exception occured during build
     # In this case the build is already broken and we do not need to check anything.
     if exception:
         return
@@ -39,7 +40,8 @@ def process_warnings(app, exception):
 
     needs = env.needs_all_needs
 
-    warnings = app.config.needs_warnings
+    # warnings = app.config.needs_warnings
+    warnings = NEEDS_CONFIG.get("warnings")
 
     warnings_always_warn = app.config.needs_warnings_always_warn
 

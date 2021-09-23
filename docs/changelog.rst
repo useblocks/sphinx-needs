@@ -10,16 +10,6 @@ License
 -----
 :Released: under development
 
-* Bugfix: :ref:`needtable` need parts 'id' column is not linked
-  (`#336 <https://github.com/useblocks/sphinxcontrib-needs/issues/336>`_)
-* Bugfix: :ref:`needtable` need parts 'incoming' column is empty
-  (`#336 <https://github.com/useblocks/sphinxcontrib-needs/issues/336>`_)
-* Bugfix: :ref:`needs_warnings` not written to error log.
-  (`#344 <https://github.com/useblocks/sphinxcontrib-needs/issues/344>`_)
-* Improvement: Providing :ref:`needs_warnings_always_warn` to raise sphinx-warnings for each not passed :ref:`needs_warnings`.
-  (`#344 <https://github.com/useblocks/sphinxcontrib-needs/issues/344>`_)
-* Bugfix: :ref:`needimport` relative path not consistent to Sphinx default directives.
-  (`#351 <https://github.com/useblocks/sphinxcontrib-needs/issues/351>`_)
 * Improvement: New config option :ref:`needs_builder_filter` to define a filter for the needs builder.
   (`#342 <https://github.com/useblocks/sphinxcontrib-needs/issues/342>`_)
 * Improvement: Added option ``json_path`` for :ref:`needs_external_needs` to support external needs from local ``needs.json`` files.
@@ -33,6 +23,18 @@ License
   (`#348 <https://github.com/useblocks/sphinxcontrib-needs/issues/348>`_)
 * Improvement: New config option :ref:`needs_filter_data` to allow to use custom data inside a :ref:`filter_string`
   (`#317 <https://github.com/useblocks/sphinxcontrib-needs/issues/317>`_)
+* Improvement: API to register warnings
+  (`#343 <https://github.com/useblocks/sphinxcontrib-needs/issues/343>`_)
+* Bugfix: :ref:`needtable` need parts 'id' column is not linked
+  (`#336 <https://github.com/useblocks/sphinxcontrib-needs/issues/336>`_)
+* Bugfix: :ref:`needtable` need parts 'incoming' column is empty
+  (`#336 <https://github.com/useblocks/sphinxcontrib-needs/issues/336>`_)
+* Bugfix: :ref:`needs_warnings` not written to error log.
+  (`#344 <https://github.com/useblocks/sphinxcontrib-needs/issues/344>`_)
+* Improvement: Providing :ref:`needs_warnings_always_warn` to raise sphinx-warnings for each not passed :ref:`needs_warnings`.
+  (`#344 <https://github.com/useblocks/sphinxcontrib-needs/issues/344>`_)
+* Bugfix: :ref:`needimport` relative path not consistent to Sphinx default directives.
+  (`#351 <https://github.com/useblocks/sphinxcontrib-needs/issues/351>`_)
 
 0.7.1
 -----

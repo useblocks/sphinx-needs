@@ -22,11 +22,12 @@ unicode = str
 ast_boolean = ast.NameConstant
 
 
-def register_func(need_function):
+def register_func(need_function, name=None):
     """
     Registers a new sphinx-needs function for the given sphinx environment.
     :param env: Sphinx environment
     :param need_function: Python method
+    :param name: Name of the function as string
     :return: None
     """
 
@@ -36,7 +37,10 @@ def register_func(need_function):
     if NEEDS_FUNCTIONS is None:
         NEEDS_FUNCTIONS = {}
 
-    func_name = need_function.__name__
+    if name is None:
+        func_name = need_function.__name__
+    else:
+        func_name = name
 
     if func_name in NEEDS_FUNCTIONS.keys():
         # We can not throw an exception here, as using sphinx-needs in different sphinx-projects with the

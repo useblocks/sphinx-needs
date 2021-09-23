@@ -19,3 +19,11 @@ TEST DOCUMENT NEEDS WARNINGS
 .. test:: Negative test example
     :id: TC_NEG_001
     :status: closed
+
+.. test:: Test example 2
+   :id: TC_002
+   :status: example_2
+
+.. test:: Test example 3
+   :id: TC_003
+   :status: example_3

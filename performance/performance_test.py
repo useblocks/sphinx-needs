@@ -19,7 +19,9 @@ def cli():
     pass
 
 
-def start(needs=1000, needtables=0, dummies=0, pages=1, parallel=1, keep=False, browser=False, debug=False):
+def start(
+    needs=1000, needtables=0, dummies=0, pages=1, parallel=1, keep=False, browser=False, debug=False, basic=False
+):
     """
     Test run implementation
     """
@@ -28,6 +30,24 @@ def start(needs=1000, needtables=0, dummies=0, pages=1, parallel=1, keep=False, 
     build_path = tempfile.mkdtemp()
 
     shutil.copytree(source_path, source_tmp_path, dirs_exist_ok=True)
+
+    # Render conf.py
+    source_tmp_path_conf = os.path.join(source_tmp_path, "conf.template")
+    source_tmp_path_conf_final = os.path.join(source_tmp_path, "conf.py")
+    template = Template(open(source_tmp_path_conf).read())
+    rendered = template.render(
+        pages=pages,
+        needs=needs,
+        needtables=needtables,
+        dummies=dummies,
+        parallel=parallel,
+        keep=keep,
+        browser=browser,
+        debug=debug,
+        basic=basic,
+    )
+    with open(source_tmp_path_conf_final, "w") as file:
+        file.write(rendered)
 
     # Render index files
     source_tmp_path_index = os.path.join(source_tmp_path, "index.template")
@@ -44,6 +64,7 @@ def start(needs=1000, needtables=0, dummies=0, pages=1, parallel=1, keep=False, 
         keep=keep,
         browser=browser,
         debug=debug,
+        basic=basic,
     )
     with open(source_tmp_path_index_final, "w") as file:
         file.write(rendered)
@@ -65,6 +86,7 @@ def start(needs=1000, needtables=0, dummies=0, pages=1, parallel=1, keep=False, 
             keep=keep,
             browser=browser,
             debug=debug,
+            basic=basic,
         )
         with open(source_tmp_path_page_final, "w") as file:
             file.write(rendered)
@@ -156,6 +178,7 @@ def start(needs=1000, needtables=0, dummies=0, pages=1, parallel=1, keep=False, 
 @click.option("--browser", is_flag=True, help="Opens the project in your browser")
 @click.option("--snakeviz", is_flag=True, help="Opens snakeviz view for measured profiles in browser")
 @click.option("--debug", is_flag=True, help="Prints more information, incl. sphinx build output")
+@click.option("--basic", is_flag=True, help="Use only default config of Sphinx-Needs (e.g. no extra options)")
 def series(
     profile,
     needs,
@@ -167,6 +190,7 @@ def series(
     browser=False,
     snakeviz=False,
     debug=False,
+    basic=False,
 ):
     """
     Generate and start a series of tests.
@@ -190,6 +214,7 @@ def series(
                         "keep": keep,
                         "browser": browser,
                         "debug": debug,
+                        "basic": basic,
                     },
                 )
 
