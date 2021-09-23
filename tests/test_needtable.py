@@ -16,27 +16,28 @@ def test_doc_build_html(app, status, warning):
     assert "Test table caption" in html
 
 
-# ToDo: Make this not so html specific, as classes and order of attributes may change
-#     # check table caption and table wrapped into figure
-#     if sphinx.version_info[0] >= 4:
-#         figure = """
-# <figcaption>
-# <p><span class="caption-text">Test table caption
-# """
-#     else:
-#         figure = """
-# <figure id="needtable-index-0">
-# <figcaption>
-# <p><span class="caption-text">Test table caption
-# """
-#     assert figure in html
-#
-#     # negative test to check table without caption
-#     if sphinx.version_info[0] >= 4:
-#         assert '<table class="NEEDS_TABLE rtd-exclude-wy-table docutils align-default" id="needtable-index-1">'
-#         in html
-#     else:
-#         assert '<table class="NEEDS_TABLE rtd-exclude-wy-table docutils" id="needtable-index-1">' in html
+@with_app(buildername="xml", srcdir="doc_test/doc_needtable")
+def test_doc_needtable_caption(app, status, warning):
+    app.build()
+    xml = Path(app.outdir, "index.xml")
+
+    import xml.etree.ElementTree as ElementTree
+
+    tree = ElementTree.parse(xml)
+
+    # check if there are only 2 needtables in this document
+    cnt = 0
+    for el in tree.findall("section/table"):
+        if el.attrib["classes"] == "NEEDS_TABLE rtd-exclude-wy-table":
+            assert el.attrib["ids"].startswith("needtable-index-")
+            cnt += 1
+    assert cnt == 2
+
+    # check only one needtable with caption/title
+    assert len(tree.findall("section/table/title")) == 1
+
+    # check needtable has correct caption/title
+    assert tree.find("section/table/title").text == "Test table caption"
 
 
 @with_app(buildername="html", srcdir="doc_test/doc_needtable")
