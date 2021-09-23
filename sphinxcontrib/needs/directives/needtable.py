@@ -120,6 +120,7 @@ def process_needtables(app, doctree, fromdocname):
         if not app.config.needs_include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
+            # If we replace a node, docutils checks, if it will not lose any attributes.
             # But this is here the case, because we are using the attribute "ids" of a node.
             # However, I do not understand, why losing an attribute is such a big deal, so we delete everything
             # before docutils claims about it.
@@ -142,7 +143,12 @@ def process_needtables(app, doctree, fromdocname):
 
         # Prepare table
         classes = ["NEEDS_{style}".format(style=style)]
-        classes.extend(app.config.needs_table_classes)
+
+        # Only add the theme specific "do not touch this table" class, if we use a style which
+        # care about table layout and styling. The normal "TABLE" style is using the Sphinx default table
+        # css classes and therefore must be handled by the themes.
+        if style != "TABLE":
+            classes.extend(app.config.needs_table_classes)
 
         content = nodes.table(classes=classes)
         tgroup = nodes.tgroup()
