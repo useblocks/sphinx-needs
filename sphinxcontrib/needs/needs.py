@@ -16,6 +16,7 @@ from sphinxcontrib.needs.defaults import (
     NEED_DEFAULT_OPTIONS,
     NEEDEXTEND_NOT_ALLOWED_OPTIONS,
     NEEDFLOW_CONFIG_DEFAULTS,
+    NEEDS_TABLES_CLASSES,
 )
 from sphinxcontrib.needs.directives.need import (
     Need,
@@ -213,7 +214,7 @@ def setup(app):
     app.add_config_value("needs_builder_filter", "is_external==False", "html", types=[str])
 
     # Additional classes to set for needs and needtable.
-    app.add_config_value("needs_table_classes", ["rtd-exclude-wy-table"], "html", types=[list])
+    app.add_config_value("needs_table_classes", NEEDS_TABLES_CLASSES, "html", types=[list])
 
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
