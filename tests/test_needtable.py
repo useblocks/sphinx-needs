@@ -28,7 +28,7 @@ def test_doc_needtable_caption(app, status, warning):
     # check if there are only 2 needtables in this document
     cnt = 0
     for el in tree.findall("section/table"):
-        if el.attrib["classes"] == "NEEDS_TABLE rtd-exclude-wy-table":
+        if "NEEDS_TABLE" in el.attrib["classes"]:
             assert el.attrib["ids"].startswith("needtable-index-")
             cnt += 1
     assert cnt == 2
