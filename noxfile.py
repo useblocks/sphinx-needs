@@ -7,6 +7,7 @@ TEST_DEPENDENCIES = [
     "nose",
     "sphinx_testing",
     "responses",
+    "lxml",
 ]
 LINT_DEPENDENCIES = [
     "flake8",
