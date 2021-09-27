@@ -17,8 +17,7 @@ needtable
    :tags: main_example
    :style: table
 
-The argument of ``needtable`` will be used as caption for the table. If argument is used, then 
-the caption and table content will be wrapped together into a figure.
+The argument of ``needtable`` will be used as caption for the table.
 
 Options
 -------

@@ -15,28 +15,26 @@ def test_doc_build_html(app, status, warning):
     # check table caption exists
     assert "Test table caption" in html
 
+    html_path = str(Path(app.outdir, "index.html"))
 
-# ToDo: Make this not so html specific, as classes and order of attributes may change
-#     # check table caption and table wrapped into figure
-#     if sphinx.version_info[0] >= 4:
-#         figure = """
-# <figcaption>
-# <p><span class="caption-text">Test table caption
-# """
-#     else:
-#         figure = """
-# <figure id="needtable-index-0">
-# <figcaption>
-# <p><span class="caption-text">Test table caption
-# """
-#     assert figure in html
-#
-#     # negative test to check table without caption
-#     if sphinx.version_info[0] >= 4:
-#         assert '<table class="NEEDS_TABLE rtd-exclude-wy-table docutils align-default" id="needtable-index-1">'
-#         in html
-#     else:
-#         assert '<table class="NEEDS_TABLE rtd-exclude-wy-table docutils" id="needtable-index-1">' in html
+    from lxml import html
+
+    tree = html.parse(html_path)
+    tables = tree.xpath("//section/table")
+
+    # check if there are only 2 needtables in this document
+    cnt = 0
+    for table in tables:
+        if "NEEDS_TABLE" in table.attrib["class"]:
+            assert table.attrib["id"].startswith("needtable-index-")
+            cnt += 1
+    assert cnt == 2
+
+    # check only one needtable with caption
+    assert len(tree.xpath("//section/table/caption")) == 1
+
+    # check needtable has correct caption
+    assert "Test table caption" == tree.xpath("//section/table/caption/span")[0].text
 
 
 @with_app(buildername="html", srcdir="doc_test/doc_needtable")

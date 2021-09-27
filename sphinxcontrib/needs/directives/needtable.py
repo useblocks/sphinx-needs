@@ -64,16 +64,16 @@ class NeedtableDirective(FilterBase):
 
         sort = self.options.get("sort", "id_complete")
 
-        caption = None
+        title = None
         if self.arguments:
-            caption = self.arguments[0]
+            title = self.arguments[0]
 
         # Add the need and all needed information
         env.need_all_needtables[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_node": targetnode,
-            "caption": caption,
+            "caption": title,
             "columns": columns,
             "style": style,
             "style_row": style_row,
@@ -302,9 +302,8 @@ def process_needtables(app, doctree, fromdocname):
             content.append(used_filter_paragraph(current_needtable))
 
         if current_needtable["caption"]:
-            # put caption node and table content node inside a figure node eventually
-            new_content = nodes.caption("", current_needtable["caption"])
-            new_content.append(content)
-            content = nodes.figure("", new_content)
+            title_text = current_needtable["caption"]
+            title = nodes.title(title_text, "", nodes.Text(title_text))
+            content.insert(0, title)
 
         node.replace_self(content)
