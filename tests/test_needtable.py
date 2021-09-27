@@ -15,29 +15,26 @@ def test_doc_build_html(app, status, warning):
     # check table caption exists
     assert "Test table caption" in html
 
+    html_path = str(Path(app.outdir, "index.html"))
 
-@with_app(buildername="xml", srcdir="doc_test/doc_needtable")
-def test_doc_needtable_caption(app, status, warning):
-    app.build()
-    xml = Path(app.outdir, "index.xml")
+    from lxml import html
 
-    import xml.etree.ElementTree as ElementTree
-
-    tree = ElementTree.parse(xml)
+    tree = html.parse(html_path)
+    tables = tree.xpath("//section/table")
 
     # check if there are only 2 needtables in this document
     cnt = 0
-    for el in tree.findall("section/table"):
-        if "NEEDS_TABLE" in el.attrib["classes"]:
-            assert el.attrib["ids"].startswith("needtable-index-")
+    for table in tables:
+        if "NEEDS_TABLE" in table.attrib["class"]:
+            assert table.attrib["id"].startswith("needtable-index-")
             cnt += 1
     assert cnt == 2
 
-    # check only one needtable with caption/title
-    assert len(tree.findall("section/table/title")) == 1
+    # check only one needtable with caption
+    assert len(tree.xpath("//section/table/caption")) == 1
 
-    # check needtable has correct caption/title
-    assert tree.find("section/table/title").text == "Test table caption"
+    # check needtable has correct caption
+    assert "Test table caption" == tree.xpath("//section/table/caption/span")[0].text
 
 
 @with_app(buildername="html", srcdir="doc_test/doc_needtable")
