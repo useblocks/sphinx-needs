@@ -8,6 +8,7 @@ from sphinx.addnodes import desc_name, desc_signature
 
 from sphinxcontrib.needs.api import add_need
 from sphinxcontrib.needs.api.exceptions import NeedsInvalidException
+from sphinxcontrib.needs.config import NEEDS_CONFIG
 from sphinxcontrib.needs.defaults import NEED_DEFAULT_OPTIONS
 from sphinxcontrib.needs.functions import (
     find_and_replace_node_content,
@@ -81,7 +82,8 @@ class NeedDirective(Directive):
         for extra_link in env.config.needs_extra_links:
             need_extra_options[extra_link["option"]] = self.options.get(extra_link["option"], "")
 
-        for extra_option in env.config.needs_extra_options.keys():
+        NEEDS_CONFIG.get("extra_options")
+        for extra_option in NEEDS_CONFIG.get("extra_options").keys():
             need_extra_options[extra_option] = self.options.get(extra_option, "")
 
         need_nodes = add_need(

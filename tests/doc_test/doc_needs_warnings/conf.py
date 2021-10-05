@@ -71,6 +71,7 @@ def setup(app):
 
     add_warning(app, "api_warning_filter", filter_string="status == 'example_2'")
     add_warning(app, "api_warning_func", custom_warning_func)
+    add_warning(app, "invalid_status", "status not in ['open', 'closed', 'done', 'example_2', 'example_3']")
 
 
 # Needs option to set True or False to raise sphinx-warning for each not passed warning check

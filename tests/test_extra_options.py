@@ -10,6 +10,12 @@ def test_custom_attributes_appear(app, status, warning):
 
     html = Path(app.outdir, "index.html").read_text()
 
+    # stdout warnings
+    warnings = warning.getvalue()
+
+    # Check for multiple registered names
+    assert 'extra_option "introduced" already registered.' in warnings
+
     # Custom options should appear
     # assert 'introduced: <cite>1.0.0</cite>' in html
     assert '<span class="needs_data">1.5.1' in html

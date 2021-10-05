@@ -7,6 +7,7 @@ from docutils import nodes
 from docutils.parsers.rst import Directive, directives
 
 from sphinxcontrib.needs.api import add_need
+from sphinxcontrib.needs.config import NEEDS_CONFIG
 from sphinxcontrib.needs.filter_common import filter_single_need
 from sphinxcontrib.needs.utils import logger
 
@@ -165,7 +166,7 @@ class NeedimportDirective(Directive):
             need["content"] = need["description"]
             # Remove unknown options, as they may be defined in source system, but not in this sphinx project
             extra_link_keys = [x["option"] for x in env.config.needs_extra_links]
-            extra_option_keys = list(env.config.needs_extra_options.keys())
+            extra_option_keys = list(NEEDS_CONFIG.get("extra_options").keys())
             default_options = [
                 "title",
                 "status",

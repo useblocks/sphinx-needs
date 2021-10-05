@@ -8,6 +8,9 @@ def test_needs_warnings(app, status, warning):
     # stdout warnings
     warnings = warning.getvalue()
 
+    # check multiple warning registration
+    assert 'invalid_status for "warnings" is already registered.' in warnings
+
     # check warnings contents
     assert "WARNING: invalid_status: failed" in warnings
     assert "failed needs: 2 (SP_TOO_001, US_63252)" in warnings
