@@ -147,7 +147,7 @@ def setup(app):
     app.add_config_value("needs_role_need_template", "{title} ({id})", "html")
     app.add_config_value("needs_role_need_max_title_length", 30, "html", types=[int])
 
-    app.add_config_value("needs_extra_options", {}, "html")
+    app.add_config_value("needs_extra_options", [], "html")
     app.add_config_value("needs_title_optional", False, "html", types=[bool])
     app.add_config_value("needs_max_title_length", -1, "html", types=[int])
     app.add_config_value("needs_title_from_content", False, "html", types=[bool])
@@ -331,6 +331,12 @@ def load_config(app: Sphinx, *_args):
     """
     log = get_logger(__name__)
     types = app.config.needs_types
+
+    if isinstance(app.config.needs_extra_options, dict):
+        log.info(
+            'Config option "needs_extra_options" supports list and dict. However new default type since '
+            "Sphinx-Needs 0.7.2 is list. Please see docs for details."
+        )
 
     existing_extra_options = NEEDS_CONFIG.get("extra_options")
     for option in app.config.needs_extra_options:
