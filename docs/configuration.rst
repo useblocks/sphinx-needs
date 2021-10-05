@@ -42,7 +42,7 @@ This would allow Sphinx to perform incremental builds, which are much faster as 
 
    # This assignment will deactivate incremental build support inside Sphinx
    needs_warnings = {
-      'my_warning': my_custom_warning
+      'my_warning_no_inc_build': my_custom_warning
    }
 
    # Better, register the function via Sphinx-Needs API
@@ -51,7 +51,13 @@ This would allow Sphinx to perform incremental builds, which are much faster as 
       add_warning(app, 'my_warning', my_custom_warning)
       add_dynamic_function(app, my_dynamic_function)
 
+.. hint::
 
+   You are free to use e.g. ``needs_warnings`` and ``add_warning()`` together in a ``conf.py`` file.
+   Sphinx-Needs creates internally a final list of elements defined by config-var and api-call.
+
+   However, you should not use the same ``id`` in a config-var and the related api-call, as this would create
+   the related element twice.
 
 Options
 -------

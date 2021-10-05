@@ -41,6 +41,13 @@ needs_extra_options = {
     "impacts": directives.unchanged,
 }
 
+
+def setup(app):
+    from sphinxcontrib.needs.api.configuration import add_extra_option
+
+    add_extra_option(app, "introduced")
+
+
 plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "..", "..", "docs", "utils", "plantuml.jar")
 plantuml_output_format = "svg"
 

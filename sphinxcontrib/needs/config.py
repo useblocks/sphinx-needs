@@ -11,12 +11,12 @@ class Config:
     def __init__(self):
         self.configs = {}
 
-    def add(self, name, value, option_type=str, append=False):
+    def add(self, name, value, option_type=str, append=False, overwrite=False):
         if name not in self.configs.keys():
             self.configs[name] = option_type()
         elif not isinstance(self.configs[name], option_type):
             raise Exception(
-                f'Type of needs config option {name} is {type(self.configs["name"])},' f"but {option_type} is given"
+                f"Type of needs config option {name} is {type(self.configs[name])}," f"but {option_type} is given"
             )
 
         if not append:

@@ -329,9 +329,13 @@ def load_config(app: Sphinx, *_args):
     """
     Register extra options and directive based on config from conf.py
     """
+    log = get_logger(__name__)
     types = app.config.needs_types
 
+    existing_extra_options = NEEDS_CONFIG.get("extra_options")
     for option in app.config.needs_extra_options:
+        if option in existing_extra_options:
+            log.warning(f'extra_option "{option}" already registered.')
         NEEDS_CONFIG.add("extra_options", {option: directives.unchanged}, dict, True)
     extra_options = NEEDS_CONFIG.get("extra_options")
 
@@ -405,8 +409,12 @@ def load_config(app: Sphinx, *_args):
         # Register requested types of needs
         app.add_directive(t["directive"], NeedDirective)
 
+    existing_warnings = NEEDS_CONFIG.get("warnings")
     for name, check in app.config.needs_warnings.items():
-        NEEDS_CONFIG.add("warnings", {name: check}, dict, append=True)
+        if name not in existing_warnings:
+            NEEDS_CONFIG.add("warnings", {name: check}, dict, append=True)
+        else:
+            log.warning(f'{name} for "warnings" is already registered.')
 
 
 def visitor_dummy(*_args, **_kwargs):
