@@ -84,6 +84,7 @@ def load_external_needs(app, env, _docname):
             need_params["content"] = need["description"]
             need_params["links"] = need.get("links", [])
             need_params["tags"] = ",".join(need.get("tags", []))
+            need_params["status"] = need.get("status", None)
 
             del need_params["description"]
 

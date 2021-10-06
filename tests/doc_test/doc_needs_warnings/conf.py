@@ -46,6 +46,10 @@ needs_types = [
 plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "..", "..", "docs", "utils", "plantuml.jar")
 plantuml_output_format = "svg"
 
+needs_external_needs = [
+    {"base_url": "http://my_company.com/docs/v1/", "json_path": "needs_test_small.json", "id_prefix": "ext_"}
+]
+
 
 def my_custom_warning_check(need, log):
     if need["status"] == "open":

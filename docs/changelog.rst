@@ -47,6 +47,8 @@ License
   (`#344 <https://github.com/useblocks/sphinxcontrib-needs/issues/344>`_)
 * Bugfix: :ref:`needimport` relative path not consistent to Sphinx default directives.
   (`#351 <https://github.com/useblocks/sphinxcontrib-needs/issues/351>`_)
+* Bugfix: :ref:`needs_external_needs` not read external need status and warnings check not exclude :ref:`needs_external_needs`
+  (`#375 <https://github.com/useblocks/sphinxcontrib-needs/issues/375>`_)
 
 0.7.1
 -----
