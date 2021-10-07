@@ -121,7 +121,6 @@ version = "0.8"
 [[package]]
 category = "main"
 description = "Docutils -- Python Documentation Utilities"
-marker = "python_version >= \"3.6\" and python_version < \"3.7\" or python_version >= \"3.7\" and python_version < \"4.0\""
 name = "docutils"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
@@ -222,6 +221,23 @@ version = ">=3.6.4"
 docs = ["sphinx", "jaraco.packaging (>=8.2)", "rst.linker (>=1.9)"]
 perf = ["ipython"]
 testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-cov", "pytest-enabler (>=1.0.1)", "packaging", "pep517", "pyfakefs", "flufl.flake8", "pytest-perf (>=0.9.2)", "pytest-black (>=0.3.7)", "pytest-mypy", "importlib-resources (>=1.3)"]
+
+[[package]]
+category = "main"
+description = "Read resources from Python packages"
+marker = "python_version < \"3.7\""
+name = "importlib-resources"
+optional = false
+python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
+version = "3.0.0"
+
+[package.dependencies]
+[package.dependencies.zipp]
+python = "<3.8"
+version = ">=0.4"
+
+[package.extras]
+docs = ["sphinx", "rst.linker", "jaraco.packaging"]
 
 [[package]]
 category = "dev"
@@ -633,6 +649,28 @@ sphinx = ">=1.8"
 code_style = ["pre-commit (2.12.1)"]
 
 [[package]]
+category = "main"
+description = "A sphinx extension for creating panels in a grid layout."
+name = "sphinx-panels"
+optional = false
+python-versions = "*"
+version = "0.6.0"
+
+[package.dependencies]
+docutils = "*"
+sphinx = ">=2,<5"
+
+[package.dependencies.importlib-resources]
+python = "<3.7"
+version = ">=3.0.0,<3.1.0"
+
+[package.extras]
+code_style = ["pre-commit (>=2.7.0,<2.8.0)"]
+live-dev = ["sphinx-autobuild", "web-compile (>=0.2.0,<0.3.0)"]
+testing = ["pytest (>=6.0.1,<6.1.0)", "pytest-regressions (>=2.0.1,<2.1.0)"]
+themes = ["sphinx-rtd-theme", "pydata-sphinx-theme (>=0.4.0,<0.5.0)", "sphinx-book-theme (>=0.0.36,<0.1.0)", "myst-parser (>=0.12.9,<0.13.0)"]
+
+[[package]]
 category = "dev"
 description = "testing utility classes and functions for Sphinx extensions"
 name = "sphinx-testing"
@@ -705,6 +743,17 @@ version = "0.21"
 
 [package.dependencies]
 Sphinx = ">=1.6"
+
+[[package]]
+category = "main"
+description = "Sphinx extension to include program output"
+name = "sphinxcontrib-programoutput"
+optional = false
+python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*"
+version = "0.17"
+
+[package.dependencies]
+Sphinx = ">=1.7.0"
 
 [[package]]
 category = "main"
@@ -783,7 +832,7 @@ secure = ["pyOpenSSL (>=0.14)", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "cer
 socks = ["PySocks (>=1.5.6,<1.5.7 || >1.5.7,<2.0)"]
 
 [[package]]
-category = "dev"
+category = "main"
 description = "Backport of pathlib-compatible object wrapper for zip files"
 marker = "python_version < \"3.8\""
 name = "zipp"
@@ -799,7 +848,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 docs = []
 
 [metadata]
-content-hash = "1e9541e68ad0d4294ab6bd1849039322fec6c2e27364df1ef4b7d078af0cf120"
+content-hash = "989839af746009fe0a8e6fb0c1806e0840e6630397e327a8d9fd89958588c349"
 python-versions = "^3.6"
 
 [metadata.files]
@@ -873,6 +922,10 @@ imagesize = [
 importlib-metadata = [
     {file = "importlib_metadata-4.8.1-py3-none-any.whl", hash = "sha256:b618b6d2d5ffa2f16add5697cf57a46c76a56229b0ed1c438322e4e95645bd15"},
     {file = "importlib_metadata-4.8.1.tar.gz", hash = "sha256:f284b3e11256ad1e5d03ab86bb2ccd6f5339688ff17a4d797a0fe7df326f23b1"},
+]
+importlib-resources = [
+    {file = "importlib_resources-3.0.0-py2.py3-none-any.whl", hash = "sha256:d028f66b66c0d5732dae86ba4276999855e162a749c92620a38c1d779ed138a7"},
+    {file = "importlib_resources-3.0.0.tar.gz", hash = "sha256:19f745a6eca188b490b1428c8d1d4a0d2368759f32370ea8fb89cad2ab1106c3"},
 ]
 isort = [
     {file = "isort-5.8.0-py3-none-any.whl", hash = "sha256:2bb1680aad211e3c9944dbce1d4ba09a989f04e238296c87fe2139faa26d655d"},
@@ -1324,6 +1377,10 @@ sphinx-copybutton = [
     {file = "sphinx-copybutton-0.3.3.tar.gz", hash = "sha256:3695987d5e98e3b223471aaed8aa7491e03e9bfc48ed655a91446fd5e30b6c25"},
     {file = "sphinx_copybutton-0.3.3-py3-none-any.whl", hash = "sha256:19850e9c1ed09c899f136ce3cfa304cb3b6d2f508528c19d8f512ccc8c66b0d4"},
 ]
+sphinx-panels = [
+    {file = "sphinx-panels-0.6.0.tar.gz", hash = "sha256:d36dcd26358117e11888f7143db4ac2301ebe90873ac00627bf1fe526bf0f058"},
+    {file = "sphinx_panels-0.6.0-py3-none-any.whl", hash = "sha256:bd64afaf85c07f8096d21c8247fc6fd757e339d1be97832c8832d6ae5ed2e61d"},
+]
 sphinx-testing = [
     {file = "sphinx-testing-1.0.1.tar.gz", hash = "sha256:ef661775b5722d7b00f67fc229104317d35637a4fb4434bf2c005afdf1da4d09"},
     {file = "sphinx_testing-1.0.1-py2.py3-none-any.whl", hash = "sha256:9f2cb1eaae0c5172800e20dd78ee3ef42d020738135511f982f9815898586bc9"},
@@ -1346,6 +1403,10 @@ sphinxcontrib-jsmath = [
 ]
 sphinxcontrib-plantuml = [
     {file = "sphinxcontrib-plantuml-0.21.tar.gz", hash = "sha256:53e1808dc2b1f3ec20c177fa3fa6d438d75ef572a25a489e330bb01130508d87"},
+]
+sphinxcontrib-programoutput = [
+    {file = "sphinxcontrib-programoutput-0.17.tar.gz", hash = "sha256:300ee9b8caee8355d25cc74b4d1c7efd12e608d2ad165e3141d31e6fbc152b7f"},
+    {file = "sphinxcontrib_programoutput-0.17-py2.py3-none-any.whl", hash = "sha256:0ef1c1d9159dbe7103077748214305eb4e0138e861feb71c0c346afc5fe97f84"},
 ]
 sphinxcontrib-qthelp = [
     {file = "sphinxcontrib-qthelp-1.0.3.tar.gz", hash = "sha256:4c33767ee058b70dba89a6fc5c1892c0d57a54be67ddd3e7875a18d14cba5a72"},
