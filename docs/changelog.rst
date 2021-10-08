@@ -25,6 +25,8 @@ License
   (`#317 <https://github.com/useblocks/sphinxcontrib-needs/issues/317>`_)
 * Improvement: API to register warnings
   (`#343 <https://github.com/useblocks/sphinxcontrib-needs/issues/343>`_)
+* Bugfix: Scrolling tables improved and ReadTheDocs Tables fixed
+  (`#305 <https://github.com/useblocks/sphinxcontrib-needs/issues/305>`_)
 * Bugfix: :ref:`needtable` need parts 'id' column is not linked
   (`#336 <https://github.com/useblocks/sphinxcontrib-needs/issues/336>`_)
 * Bugfix: :ref:`needtable` need parts 'incoming' column is empty
