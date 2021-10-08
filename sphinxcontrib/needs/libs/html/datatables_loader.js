@@ -2,7 +2,7 @@ $(document).ready(function() {
     $('table.NEEDS_DATATABLES').DataTable( {
         dom: 'lBfrtip',
         colReorder: true,
-        scrollX: true,
+        scrollX: false,
         autoWidth: false,
         buttons: [
             {

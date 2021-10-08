@@ -4,10 +4,10 @@ table.need td {
     white-space: normal;
 }
 
-table.NEEDS_TABLE {
+table.NEEDS_TABLE, table.NEEDS_DATATABLES {
   display: block;
   overflow-x: auto;
-  white-space: nowrap;
+  white-space: normal;
   width: 100%;
   max-width: -moz-fit-content;
   max-width: fit-content;
@@ -102,6 +102,11 @@ div.dataTables_length {
     margin-bottom: 10px;
 }
 
+div.dataTables_wrapper{
+    overflow-x: auto;
+    padding: 0px 5px;  /*Space needed for table borders */
+}
+
 .dataTables_wrapper .dataTables_paginate .paginate_button {
     padding: 0.15em 0.75em;
     background: none;
@@ -131,6 +136,11 @@ div.dt-buttons button {
     overflow: hidden;
     background-color: inherit;
     background-image: none;
+}
+
+/* Cares about setting the final bottom border */
+table.rtd-exclude-wy-table {
+    border: 1px solid #e1e4e5 !important;
 }
 
 /* Style for external need links*/
