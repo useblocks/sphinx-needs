@@ -21,7 +21,9 @@ class NeedsBuilder(Builder):
         version = config.version
         needs_list = NeedsList(config, self.outdir, self.confdir)
 
-        needs_list.load_json()
+        needs_file = getattr(config, "needs_file", "needs.json")
+        if needs_file:
+            needs_list.load_json()
 
         # Clean needs_list from already stored needs of the current version.
         # This is needed as needs could have been removed from documentation and if this is the case,
