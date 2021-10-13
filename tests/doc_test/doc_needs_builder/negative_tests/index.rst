@@ -1,14 +1,15 @@
 TEST DOCUMENT NEEDS Builder
 ===========================
 
-.. story:: A story
+.. story:: Story dummy
+   :id: US_EXAM_001
    :status: in progress
    :tags: 1
 
-.. test:: Test example
-    :id: TC_001
+.. test:: Example dummy
+    :id: TC_EXAM_001
     :status: open
 
-.. test:: Negative test example
-    :id: TC_NEG_001
+.. test:: Example dummy 02
+    :id: TC_EXAM_002
     :status: closed
