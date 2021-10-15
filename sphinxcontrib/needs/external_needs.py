@@ -67,26 +67,31 @@ def load_external_needs(app, env, _docname):
         for need in needs.values():
             need_params = copy.deepcopy(need)
 
-            extra_links = [x["option"] for x in app.config.needs_extra_links]
-            for key in list(need_params.keys()):
-                if (
-                    key not in app.config.needs_extra_options
-                    and key not in extra_links
-                    and key not in ["title", "type", "id", "description", "tags", "docname"]
-                ):
-                    del need_params[key]
+            # check if external needs already exist
+            ext_need_id = f'{prefix}{need["id"]}'
+            if ext_need_id not in env.needs_all_needs.keys():
+                extra_links = [x["option"] for x in app.config.needs_extra_links]
+                for key in list(need_params.keys()):
+                    if (
+                        key not in app.config.needs_extra_options
+                        and key not in extra_links
+                        and key not in ["title", "type", "id", "description", "tags", "docname"]
+                    ):
+                        del need_params[key]
 
-            need_params["need_type"] = need["type"]
-            need_params["id"] = f'{prefix}{need["id"]}'
-            need_params["external_css"] = source.get("css_class", None)
-            need_params["external_url"] = f'{source["base_url"]}/{need.get("docname", "__error__")}.html#{need["id"]}'
-            need_params["content"] = need["description"]
-            need_params["links"] = need.get("links", [])
-            need_params["tags"] = ",".join(need.get("tags", []))
+                need_params["need_type"] = need["type"]
+                need_params["id"] = f'{prefix}{need["id"]}'
+                need_params["external_css"] = source.get("css_class", None)
+                need_params[
+                    "external_url"
+                ] = f'{source["base_url"]}/{need.get("docname", "__error__")}.html#{need["id"]}'
+                need_params["content"] = need["description"]
+                need_params["links"] = need.get("links", [])
+                need_params["tags"] = ",".join(need.get("tags", []))
 
-            del need_params["description"]
+                del need_params["description"]
 
-            add_external_need(app, **need_params)
+                add_external_need(app, **need_params)
 
 
 class NeedsExternalException(BaseException):
