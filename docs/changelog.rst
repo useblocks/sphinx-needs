@@ -6,9 +6,14 @@ License
 
 .. include:: ../LICENSE
 
-0.7.2
+
+0.7.3
 -----
 :Released: under development
+
+0.7.2
+-----
+:Released: 08.10.2021
 
 * Improvement: New config option :ref:`needs_builder_filter` to define a filter for the needs builder.
   (`#342 <https://github.com/useblocks/sphinxcontrib-needs/issues/342>`_)
