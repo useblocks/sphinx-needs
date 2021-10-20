@@ -5,7 +5,7 @@ import os
 import requests
 from requests_file import FileAdapter
 
-from sphinxcontrib.needs.api import add_external_need
+from sphinxcontrib.needs.api import add_external_need, del_need
 from sphinxcontrib.needs.logging import get_logger
 from sphinxcontrib.needs.utils import import_prefix_link_edit
 
@@ -67,31 +67,39 @@ def load_external_needs(app, env, _docname):
         for need in needs.values():
             need_params = copy.deepcopy(need)
 
+            extra_links = [x["option"] for x in app.config.needs_extra_links]
+            for key in list(need_params.keys()):
+                if (
+                    key not in app.config.needs_extra_options
+                    and key not in extra_links
+                    and key not in ["title", "type", "id", "description", "tags", "docname"]
+                ):
+                    del need_params[key]
+
+            need_params["need_type"] = need["type"]
+            need_params["id"] = f'{prefix}{need["id"]}'
+            need_params["external_css"] = source.get("css_class", None)
+            need_params["external_url"] = f'{source["base_url"]}/{need.get("docname", "__error__")}.html#{need["id"]}'
+            need_params["content"] = need["description"]
+            need_params["links"] = need.get("links", [])
+            need_params["tags"] = ",".join(need.get("tags", []))
+
+            del need_params["description"]
+
             # check if external needs already exist
-            ext_need_id = f'{prefix}{need["id"]}'
-            if ext_need_id not in env.needs_all_needs.keys():
-                extra_links = [x["option"] for x in app.config.needs_extra_links]
-                for key in list(need_params.keys()):
-                    if (
-                        key not in app.config.needs_extra_options
-                        and key not in extra_links
-                        and key not in ["title", "type", "id", "description", "tags", "docname"]
-                    ):
-                        del need_params[key]
+            ext_need_id = need_params["id"]
+            if ext_need_id in env.needs_all_needs.keys():
+                # check need_params for more detail
+                if (
+                    need_params["type"] == env.needs_all_needs[ext_need_id]["type"]
+                    and need_params["title"] == env.needs_all_needs[ext_need_id]["title"]
+                    and env.needs_all_needs[ext_need_id]["is_external"]
+                    and source["base_url"] in env.needs_all_needs[ext_need_id]["external_url"]
+                ):
+                    # delete the already existing external need from api need
+                    del_need(app, ext_need_id)
 
-                need_params["need_type"] = need["type"]
-                need_params["id"] = f'{prefix}{need["id"]}'
-                need_params["external_css"] = source.get("css_class", None)
-                need_params[
-                    "external_url"
-                ] = f'{source["base_url"]}/{need.get("docname", "__error__")}.html#{need["id"]}'
-                need_params["content"] = need["description"]
-                need_params["links"] = need.get("links", [])
-                need_params["tags"] = ",".join(need.get("tags", []))
-
-                del need_params["description"]
-
-                add_external_need(app, **need_params)
+            add_external_need(app, **need_params)
 
 
 class NeedsExternalException(BaseException):

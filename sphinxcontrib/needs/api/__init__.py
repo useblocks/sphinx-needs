@@ -6,4 +6,4 @@ from .configuration import (
     add_need_type,
     get_need_types,
 )
-from .need import add_external_need, add_need, make_hashed_id
+from .need import add_external_need, add_need, del_need, make_hashed_id
