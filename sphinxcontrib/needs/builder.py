@@ -1,3 +1,5 @@
+import os
+
 from sphinx.builders import Builder
 
 from sphinxcontrib.needs.logging import get_logger
@@ -42,12 +44,25 @@ class NeedsBuilder(Builder):
             if need_filter["export_id"]:
                 needs_list.add_filter(version, need_filter)
 
-        try:
-            needs_list.write_json()
-        except Exception as e:
-            log.error("Error during writing json file: {0}".format(e))
+        if not needs_file:
+            # check if .json file exists in conf.py directory
+            found_json = None
+            for fl in os.listdir(self.confdir):
+                if ".json" in fl:
+                    found_json = fl
+            if found_json:
+                found_file = os.path.join(self.confdir, found_json)
+                if os.path.exists(found_file):
+                    log.info("{} found, but will not be used because needs_file not configured.".format(found_json))
         else:
-            log.info("Needs successfully exported")
+            # Get needs_file json from needs_file which can be path or file
+            needs_file_json = os.path.basename(needs_file)
+            try:
+                needs_list.write_json(needs_file_json)
+            except Exception as e:
+                log.error("Error during writing json file: {0}".format(e))
+            else:
+                log.info("Needs successfully exported")
 
     def get_outdated_docs(self):
         return ""

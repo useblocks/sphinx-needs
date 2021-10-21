@@ -46,7 +46,7 @@ needs_types = [
 plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "..", "..", "docs", "utils", "plantuml.jar")
 plantuml_output_format = "svg"
 
-needs_file = "custume_needs_test.json"
+needs_file = "custom_needs_test.json"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
