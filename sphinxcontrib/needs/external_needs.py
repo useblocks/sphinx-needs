@@ -6,6 +6,7 @@ import requests
 from requests_file import FileAdapter
 
 from sphinxcontrib.needs.api import add_external_need, del_need
+from sphinxcontrib.needs.api.exceptions import NeedsDuplicatedId
 from sphinxcontrib.needs.logging import get_logger
 from sphinxcontrib.needs.utils import import_prefix_link_edit
 
@@ -91,13 +92,13 @@ def load_external_needs(app, env, _docname):
             if ext_need_id in env.needs_all_needs.keys():
                 # check need_params for more detail
                 if (
-                    need_params["type"] == env.needs_all_needs[ext_need_id]["type"]
-                    and need_params["title"] == env.needs_all_needs[ext_need_id]["title"]
-                    and env.needs_all_needs[ext_need_id]["is_external"]
+                    env.needs_all_needs[ext_need_id]["is_external"]
                     and source["base_url"] in env.needs_all_needs[ext_need_id]["external_url"]
                 ):
                     # delete the already existing external need from api need
                     del_need(app, ext_need_id)
+                else:
+                    raise NeedsDuplicatedId("A need with ID {} already exists!".format(ext_need_id))
 
             add_external_need(app, **need_params)
 
