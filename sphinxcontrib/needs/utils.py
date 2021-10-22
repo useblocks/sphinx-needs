@@ -283,9 +283,7 @@ class NeedsList:
         if os.path.exists(doc_tree_folder):
             shutil.rmtree(doc_tree_folder)
 
-    def load_json(self, file=None):
-        if file is None:
-            file = getattr(self.config, "needs_file", "needs.json")
+    def load_json(self, file):
         if not os.path.isabs(file):
             file = os.path.join(self.confdir, file)
 
