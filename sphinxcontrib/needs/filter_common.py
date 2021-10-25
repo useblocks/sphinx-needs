@@ -58,7 +58,7 @@ class FilterBase(Directive):
         return collected_filter_options
 
 
-def process_filters(app, all_needs, current_needlist):
+def process_filters(app, all_needs, current_needlist, include_external=True):
     """
     Filters all needs with given configuration.
     Used by needlist, needtable and needflow.
@@ -66,6 +66,7 @@ def process_filters(app, all_needs, current_needlist):
     :param app: Sphinx application object
     :param current_needlist: needlist object, which stores all filters
     :param all_needs: List of all needs inside document
+    :param include_external: Boolean, which decides to include external needs or not
 
     :return: list of needs, which passed the filters
     """
@@ -77,10 +78,19 @@ def process_filters(app, all_needs, current_needlist):
         except KeyError as e:
             logger.warning("Sorting parameter {0} not valid: Error: {1}".format(sort_key, e))
 
+    # check if include external needs
+    checked_all_needs = []
+    if not include_external:
+        for need in all_needs:
+            if not need["is_external"]:
+                checked_all_needs.append(need)
+    else:
+        checked_all_needs = all_needs
+
     found_needs_by_options = []
 
     # Add all need_parts of given needs to the search list
-    all_needs_incl_parts = prepare_need_list(all_needs)
+    all_needs_incl_parts = prepare_need_list(checked_all_needs)
 
     filter_code = "\n".join(current_needlist["filter_code"])
     if not filter_code or filter_code.isspace():
@@ -112,13 +122,17 @@ def process_filters(app, all_needs, current_needlist):
                 if status_filter_passed and tags_filter_passed and type_filter_passed:
                     found_needs_by_options.append(need_info)
             # Get needy by filter string
-            found_needs_by_string = filter_needs(app, all_needs_incl_parts, current_needlist["filter"])
+            found_needs_by_string = filter_needs(
+                app, all_needs_incl_parts, current_needlist["filter"], include_external=include_external
+            )
             # Make a intersection of both lists
             found_needs = intersection_of_need_results(found_needs_by_options, found_needs_by_string)
         else:
             # There is no other config as the one for filter string.
             # So we only need this result.
-            found_needs = filter_needs(app, all_needs_incl_parts, current_needlist["filter"])
+            found_needs = filter_needs(
+                app, all_needs_incl_parts, current_needlist["filter"], include_external=include_external
+            )
     else:
         # Provides only a copy of needs to avoid data manipulations.
         context = {
@@ -194,7 +208,7 @@ def intersection_of_need_results(list_a, list_b) -> List[Dict[str, Any]]:
     return [a for a in list_a if a in list_b]
 
 
-def filter_needs(app, needs, filter_string="", current_need=None):
+def filter_needs(app, needs, filter_string="", current_need=None, include_external=True):
     """
     Filters given needs based on a given filter string.
     Returns all needs, which pass the given filter.
@@ -203,6 +217,7 @@ def filter_needs(app, needs, filter_string="", current_need=None):
     :param needs: list of needs, which shall be filtered
     :param filter_string: strings, which gets evaluated against each need
     :param current_need: current need, which uses the filter.
+    :param include_external: Boolean, which decides to include external needs or not
 
     :return: list of found needs
     """
@@ -210,14 +225,23 @@ def filter_needs(app, needs, filter_string="", current_need=None):
     if not filter_string:
         return needs
 
+    # Check if include external needs
+    checked_needs = []
+    if not include_external:
+        for need in needs:
+            if not need["is_external"]:
+                checked_needs.append(need)
+    else:
+        checked_needs = needs
+
     found_needs = []
 
     # https://docs.python.org/3/library/functions.html?highlight=compile#compile
     filter_compiled = compile(filter_string, "<string>", "eval")
-    for filter_need in needs:
+    for filter_need in checked_needs:
         try:
             if filter_single_need(
-                app, filter_need, filter_string, needs, current_need, filter_compiled=filter_compiled
+                app, filter_need, filter_string, checked_needs, current_need, filter_compiled=filter_compiled
             ):
                 found_needs.append(filter_need)
         except Exception as e:

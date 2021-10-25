@@ -73,7 +73,7 @@ def load_external_needs(app, env, _docname):
                 if (
                     key not in app.config.needs_extra_options
                     and key not in extra_links
-                    and key not in ["title", "type", "id", "description", "tags", "docname"]
+                    and key not in ["title", "type", "id", "description", "tags", "docname", "status"]
                 ):
                     del need_params[key]
 

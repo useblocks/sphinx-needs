@@ -40,12 +40,6 @@ def process_warnings(app, exception):
 
     needs = env.needs_all_needs
 
-    # Exclude external needs for warning check
-    checked_needs = {}
-    for need_id, need in needs.items():
-        if not need["is_external"]:
-            checked_needs[need_id] = need
-
     # warnings = app.config.needs_warnings
     warnings = NEEDS_CONFIG.get("warnings")
 
@@ -54,14 +48,25 @@ def process_warnings(app, exception):
     with logging.pending_logging():
         logger.info("\nChecking sphinx-needs warnings")
         warning_raised = False
+        include_external = False
         for warning_name, warning_filter in warnings.items():
             if isinstance(warning_filter, str):
                 # filter string used
-                result = filter_needs(app, checked_needs.values(), warning_filter)
+                result = filter_needs(app, needs.values(), warning_filter, include_external=include_external)
             elif hasattr(warning_filter, "__call__"):
                 # custom defined filter code used from conf.py
                 result = []
-                for need in checked_needs.values():
+
+                # check if include external needs
+                checked_needs = []
+                if not include_external:
+                    for need in needs.values():
+                        if not need["is_external"]:
+                            checked_needs.append(need)
+                else:
+                    checked_needs = needs.values()
+
+                for need in checked_needs:
                     if warning_filter(need, logger):
                         result.append(need)
             else:
