@@ -268,22 +268,120 @@ which is linked by :need_incoming:`req_001`.
 
 
 
-Motivation
-----------
+Ecosystem
+---------
+In the last years additional information and extensions have been created, which are based or related to Sphinx-Needs:
 
-This sphinx extension is based on the needs of a software development team inside
-a german automotive company.
 
-The project team was searching for a small and practical way of managing requirements and more to
-fulfill the parameters of the `ISO 26262 <https://en.wikipedia.org/wiki/ISO_26262>`_
-standard for safety critical software in the Python environment.
+.. panels::
+   :container: container-lg pb-3
+   :column: col-lg-6 col-md-6 col-sm-4 col-xs-4 p-2
+   :img-top-cls: pl-5 pr-5 pt-2 pb-2
 
-Sphinx-Needs is part of a software bundle, which was designed to support the development of
-`ISO 26262 <https://en.wikipedia.org/wiki/ISO_26262>`_ compliant software.
-Other tools are:
-`sphinx-test-reports <https://sphinx-test-reports.readthedocs.io/en/latest/>`_,
-`sphinx-collections <https://sphinx-collections.readthedocs.io/en/latest/>`_ and
-`tox-envreport <http://tox-envreport.readthedocs.io/en/latest/>`_.
+   ---
+   :img-top: /_static/sphinx-needs-card.png
+   :img-top-cls: + bg-light
+
+   Sphinx-Needs.com
+   ^^^^^^^^^^^^^^^^
+   Webpage to present most important Sphinx-Needs functions and related extensions.
+
+   Good entrypoint to understand the benefits and to get an idea about the complete ecosystem of Sphinx-Needs.
+
+   +++
+
+   .. link-button:: https://sphinx-needs.com
+       :type: url
+       :text: Sphinx-Needs.com
+       :classes: btn-secondary btn-block
+
+   ---
+   :img-top: /_static/sphinx-needs-card.png
+
+   Sphinx-Needs
+   ^^^^^^^^^^^^
+   Base extension, which provides all of its functionality under the MIT license for free.
+
+   Create, update, link, filter and present need objects like Requirements, Specifications, Bugs and much more.
+
+   +++
+
+   .. link-button:: https://sphinxcontrib-needs.readthedocs.io/en/latest/
+       :type: url
+       :text: Technical docs
+       :classes: btn-secondary btn-block
+
+   ---
+   :img-top: /_static/sphinx-needs-enterprise-card.png
+
+   Sphinx-Needs Enterprise
+   ^^^^^^^^^^^^^^^^^^^^^^^
+   Synchronizes Sphinx-Needs data with external, company internal systems like CodeBeamer, Jira or Azure Boards.
+
+   Provides scripts to baseline data and make CI usage easier.
+   +++
+
+   .. link-button:: http://useblocks.com/sphinx-needs-enterprise/
+       :type: url
+       :text: Technical docs
+       :classes: btn-secondary btn-block
+
+   ---
+   :img-top: /_static/sphinx-test-reports-logo.png
+
+   Sphinx-Test-Reports
+   ^^^^^^^^^^^^^^^^^^^
+   Extension to import test results from xml files as need objects.
+
+   Created need objects can be filtered and e.g. linked to specification objects.
+   +++
+
+   .. link-button:: https://sphinx-test-reports.readthedocs.io/en/latest/
+       :type: url
+       :text: Technical docs
+       :classes: btn-secondary btn-block
+
+
+Further Sphinx extensions
+^^^^^^^^^^^^^^^^^^^^^^^^^
+During the work with Sphinx-Needs in bigger, company internal projects, other Sphinx extensions have been created
+to support the work in teams of the automotive industry:
+
+.. panels::
+   :container: container-lg pb-3
+   :column: col-lg-6 col-md-6 col-sm-4 col-xs-4 p-2
+   :img-top-cls: pl-5 pr-5 pt-2 pb-2
+
+   ---
+   :img-top: /_static/sphinx_collections_logo.png
+
+
+   Extension to collect or generate files from different sources and include them into the Sphinx source folder.
+
+   Sources like git repositories, jinja based files or symlinks are supported.
+
+   +++
+
+   .. link-button:: https://sphinx-collections.readthedocs.io/en/latest/
+       :type: url
+       :text: Technical docs
+       :classes: btn-secondary btn-block
+
+   ---
+   :img-top: /_static/sphinx_bazel_logo.png
+
+
+   Provides a Bazel domain in Sphinx documentations and allows the automated import of Bazel files and their
+   documentation.
+
+   +++
+
+   .. link-button:: https://sphinx-bazel.readthedocs.io/en/latest/
+       :type: url
+       :text: Technical docs
+       :classes: btn-secondary btn-block
+
+
 
 One more thing ...
 ------------------
