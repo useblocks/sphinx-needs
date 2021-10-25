@@ -8,7 +8,7 @@ from sphinx_testing import with_app
 def test_doc_needs_builder(app, status, warning):
     app.build()
 
-    needs_json = Path(app.outdir, app.config.needs_file)
+    needs_json = Path(app.outdir, "needs.json")
     with open(needs_json, "r") as needs_file:
         needs_file_content = needs_file.read()
 
@@ -31,6 +31,4 @@ def test_doc_needs_build_without_needs_file(app, status, warning):
 
     out = subprocess.run(["sphinx-build", "-b", "needs", srcdir, out_dir], capture_output=True)
     assert not out.stderr
-    assert "custom_needs_test.json found, but will not be used because needs_file not configured." in out.stdout.decode(
-        "utf-8"
-    )
+    assert "needs.json found, but will not be used because needs_file not configured." in out.stdout.decode("utf-8")

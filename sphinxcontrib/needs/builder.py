@@ -27,15 +27,10 @@ class NeedsBuilder(Builder):
             needs_file = getattr(config, "needs_file")
             needs_list.load_json(needs_file)
         else:
-            # check if .json file exists in conf.py directory
-            found_json = None
-            for fl in os.listdir(self.confdir):
-                if ".json" in fl:
-                    found_json = fl
-            if found_json:
-                found_file = os.path.join(self.confdir, found_json)
-                if os.path.exists(found_file):
-                    log.info("{} found, but will not be used because needs_file not configured.".format(found_json))
+            # check if needs.json file exists in conf.py directory
+            needs_json = os.path.join(self.confdir, "needs.json")
+            if os.path.exists(needs_json):
+                log.info("needs.json found, but will not be used because needs_file not configured.")
 
         # Clean needs_list from already stored needs of the current version.
         # This is needed as needs could have been removed from documentation and if this is the case,
@@ -54,14 +49,8 @@ class NeedsBuilder(Builder):
             if need_filter["export_id"]:
                 needs_list.add_filter(version, need_filter)
 
-        # write_json needs a default value incase needs_file not configured
-        if not getattr(config, "needs_file"):
-            needs_file = "needs.json"
-
-        # Get needs_file json from needs_file which can be path or file
-        needs_file_json = os.path.basename(needs_file)
         try:
-            needs_list.write_json(needs_file_json)
+            needs_list.write_json()
         except Exception as e:
             log.error("Error during writing json file: {0}".format(e))
         else:

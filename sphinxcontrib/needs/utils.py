@@ -267,7 +267,7 @@ class NeedsList:
         if version in self.needs_list["versions"].keys():
             del self.needs_list["versions"][version]
 
-    def write_json(self, needs_file):
+    def write_json(self, needs_file="needs.json"):
         # We need to rewrite some data, because this kind of data gets overwritten during needs.json import.
         self.needs_list["created"] = datetime.now().isoformat()
         self.needs_list["current_version"] = self.current_version
