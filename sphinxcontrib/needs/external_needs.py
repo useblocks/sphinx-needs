@@ -98,7 +98,10 @@ def load_external_needs(app, env, _docname):
                     # delete the already existing external need from api need
                     del_need(app, ext_need_id)
                 else:
-                    raise NeedsDuplicatedId("A need with ID {} already exists!".format(ext_need_id))
+                    raise NeedsDuplicatedId(
+                        f'During external needs handling, an identical ID was detected: {ext_need_id} \
+                            from needs_external_needs url: {source["base_url"]}'
+                    )
 
             add_external_need(app, **need_params)
 
