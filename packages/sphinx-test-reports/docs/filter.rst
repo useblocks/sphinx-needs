@@ -123,6 +123,6 @@ The used ``:filter:`` allows needs only, if they have an outgoing or incoming li
 
 **Example**
 
-.. needflow::
+.. .. needflow::
    :types: Test-File, Test-Suite, Test-Case
-   :filter: (len(links) > 0 or len(links_back) > 0) and "example" not in tags and "auto" not in tags
+   :filter: (len(links) > 0 or len(links_back) > 0) and "example" not in tags and "auto" not in tags and "pytest_sphinx" not in tags

@@ -82,6 +82,121 @@ Content
    support
    changelog
 
+
+Sphinx-Needs Ecosystem
+----------------------
+In the last years additional information and extensions have been created, which are based or related to Sphinx-Needs:
+
+
+.. panels::
+   :container: container-lg pb-3
+   :column: col-lg-6 col-md-6 col-sm-4 col-xs-4 p-2
+   :img-top-cls: pl-5 pr-5 pt-2 pb-2
+
+   ---
+   :img-top: /_static/sphinx-needs-card.png
+   :img-top-cls: + bg-light
+
+   Sphinx-Needs.com
+   ^^^^^^^^^^^^^^^^
+   Webpage to present most important Sphinx-Needs functions and related extensions.
+
+   Good entrypoint to understand the benefits and to get an idea about the complete ecosystem of Sphinx-Needs.
+
+   +++
+
+   .. link-button:: https://sphinx-needs.com
+       :type: url
+       :text: Sphinx-Needs.com
+       :classes: btn-secondary btn-block
+
+   ---
+   :img-top: /_static/sphinx-needs-card.png
+
+   Sphinx-Needs
+   ^^^^^^^^^^^^
+   Base extension, which provides all of its functionality under the MIT license for free.
+
+   Create, update, link, filter and present need objects like Requirements, Specifications, Bugs and much more.
+
+   +++
+
+   .. link-button:: https://sphinxcontrib-needs.readthedocs.io/en/latest/
+       :type: url
+       :text: Technical docs
+       :classes: btn-secondary btn-block
+
+   ---
+   :img-top: /_static/sphinx-needs-enterprise-card.png
+
+   Sphinx-Needs Enterprise
+   ^^^^^^^^^^^^^^^^^^^^^^^
+   Synchronizes Sphinx-Needs data with external, company internal systems like CodeBeamer, Jira or Azure Boards.
+
+   Provides scripts to baseline data and make CI usage easier.
+   +++
+
+   .. link-button:: http://useblocks.com/sphinx-needs-enterprise/
+       :type: url
+       :text: Technical docs
+       :classes: btn-secondary btn-block
+
+   ---
+   :img-top: /_static/sphinx-test-reports-card.png
+
+   Sphinx-Test-Reports
+   ^^^^^^^^^^^^^^^^^^^
+   Extension to import test results from xml files as need objects.
+
+   Created need objects can be filtered and e.g. linked to specification objects.
+   +++
+
+   .. link-button:: https://sphinx-test-reports.readthedocs.io/en/latest/
+       :type: url
+       :text: Technical docs
+       :classes: btn-secondary btn-block
+
+
+Further Sphinx extensions
+^^^^^^^^^^^^^^^^^^^^^^^^^
+During the work with Sphinx-Needs in bigger, company internal projects, other Sphinx extensions have been created
+to support the work in teams of the automotive industry:
+
+.. panels::
+   :container: container-lg pb-3
+   :column: col-lg-6 col-md-6 col-sm-4 col-xs-4 p-2
+   :img-top-cls: pl-5 pr-5 pt-2 pb-2
+
+   ---
+   :img-top: /_static/sphinx_collections_logo.png
+
+
+   Extension to collect or generate files from different sources and include them into the Sphinx source folder.
+
+   Sources like git repositories, jinja based files or symlinks are supported.
+
+   +++
+
+   .. link-button:: https://sphinx-collections.readthedocs.io/en/latest/
+       :type: url
+       :text: Technical docs
+       :classes: btn-secondary btn-block
+
+   ---
+   :img-top: /_static/sphinx_bazel_logo.png
+
+
+   Provides a Bazel domain in Sphinx documentations and allows the automated import of Bazel files and their
+   documentation.
+
+   +++
+
+   .. link-button:: https://sphinx-bazel.readthedocs.io/en/latest/
+       :type: url
+       :text: Technical docs
+       :classes: btn-secondary btn-block
+
+
 Motivation
 ----------
 ``Sphinx-Test-Reports`` was created for an automotive project, which needs to document test results and their used

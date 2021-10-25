@@ -42,10 +42,11 @@ release = '0.3.4'
 # ones.
 extensions = ["sphinxcontrib.needs",
               "sphinxcontrib.test_reports",
-              'sphinxcontrib.plantuml']
+              'sphinxcontrib.plantuml',
+              'sphinx_panels']
 
 cwd = os.getcwd()
-plantuml = 'java -jar %s' % os.path.join(cwd, "utils/plantuml_beta.jar")
+plantuml = 'java -jar %s' % os.path.join(cwd, "utils/plantuml.jar")
 
 # If we are running on windows, we need to manipulate the path,
 # otherwise plantuml will have problems.
