@@ -267,17 +267,15 @@ class NeedsList:
         if version in self.needs_list["versions"].keys():
             del self.needs_list["versions"][version]
 
-    def write_json(self, file=None):
+    def write_json(self, needs_file="needs.json"):
         # We need to rewrite some data, because this kind of data gets overwritten during needs.json import.
         self.needs_list["created"] = datetime.now().isoformat()
         self.needs_list["current_version"] = self.current_version
         self.needs_list["project"] = self.project
 
         needs_json = json.dumps(self.needs_list, indent=4, sort_keys=True)
-        file = os.path.join(self.outdir, "needs.json")
+        file = os.path.join(self.outdir, needs_file)
 
-        # if file is None:
-        #     file = getattr(self.config, "needs_file", "needs.json")
         with open(file, "w") as needs_file:
             needs_file.write(needs_json)
 
@@ -285,9 +283,7 @@ class NeedsList:
         if os.path.exists(doc_tree_folder):
             shutil.rmtree(doc_tree_folder)
 
-    def load_json(self, file=None):
-        if file is None:
-            file = getattr(self.config, "needs_file", "needs.json")
+    def load_json(self, file):
         if not os.path.isabs(file):
             file = os.path.join(self.confdir, file)
 

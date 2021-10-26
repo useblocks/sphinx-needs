@@ -11,6 +11,9 @@ License
 -----
 :Released: under development
 
+* Bugfix: Fixed :ref:`needs_builder` handling warnings about missing needs.json when :ref:`needs_file` not configured
+  (`#340 <https://github.com/useblocks/sphinxcontrib-needs/issues/340>`_)
+
 0.7.2
 -----
 :Released: 08.10.2021
