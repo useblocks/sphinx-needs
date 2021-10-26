@@ -26,3 +26,6 @@ def test_needs_warnings(app, status, warning):
     # Check for warning registered via config api
     assert "WARNING: api_warning_filter: failed" in warnings
     assert "WARNING: api_warning_func: failed" in warnings
+
+    # Check warnings not including external needs
+    assert "EXT_TEST_01" not in warnings

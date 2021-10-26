@@ -40,6 +40,12 @@ def process_warnings(app, exception):
 
     needs = env.needs_all_needs
 
+    # Exclude external needs for warnings check
+    checked_needs = {}
+    for need_id, need in needs.items():
+        if not need["is_external"]:
+            checked_needs[need_id] = need
+
     # warnings = app.config.needs_warnings
     warnings = NEEDS_CONFIG.get("warnings")
 
@@ -51,11 +57,11 @@ def process_warnings(app, exception):
         for warning_name, warning_filter in warnings.items():
             if isinstance(warning_filter, str):
                 # filter string used
-                result = filter_needs(app, needs.values(), warning_filter)
+                result = filter_needs(app, checked_needs.values(), warning_filter)
             elif hasattr(warning_filter, "__call__"):
                 # custom defined filter code used from conf.py
                 result = []
-                for need in needs.values():
+                for need in checked_needs.values():
                     if warning_filter(need, logger):
                         result.append(need)
             else:

@@ -15,6 +15,8 @@ License
   (`#340 <https://github.com/useblocks/sphinxcontrib-needs/issues/340>`_)
 * Bugfix: unstable build with :ref:`needs_external_needs`
   (`#341 <https://github.com/useblocks/sphinxcontrib-needs/issues/341>`_)
+* Bugfix: :ref:`needs_external_needs` reads external need status now and warnings gets not checked for :ref:`needs_external_needs`
+  (`#375 <https://github.com/useblocks/sphinxcontrib-needs/issues/375>`_)
 
 0.7.2
 -----

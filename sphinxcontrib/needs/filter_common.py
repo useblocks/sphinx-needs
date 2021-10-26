@@ -58,7 +58,7 @@ class FilterBase(Directive):
         return collected_filter_options
 
 
-def process_filters(app, all_needs, current_needlist):
+def process_filters(app, all_needs, current_needlist, include_external=True):
     """
     Filters all needs with given configuration.
     Used by needlist, needtable and needflow.
@@ -66,6 +66,7 @@ def process_filters(app, all_needs, current_needlist):
     :param app: Sphinx application object
     :param current_needlist: needlist object, which stores all filters
     :param all_needs: List of all needs inside document
+    :param include_external: Boolean, which decides to include external needs or not
 
     :return: list of needs, which passed the filters
     """
@@ -77,10 +78,19 @@ def process_filters(app, all_needs, current_needlist):
         except KeyError as e:
             logger.warning("Sorting parameter {0} not valid: Error: {1}".format(sort_key, e))
 
+    # check if include external needs
+    checked_all_needs = []
+    if not include_external:
+        for need in all_needs:
+            if not need["is_external"]:
+                checked_all_needs.append(need)
+    else:
+        checked_all_needs = all_needs
+
     found_needs_by_options = []
 
     # Add all need_parts of given needs to the search list
-    all_needs_incl_parts = prepare_need_list(all_needs)
+    all_needs_incl_parts = prepare_need_list(checked_all_needs)
 
     filter_code = "\n".join(current_needlist["filter_code"])
     if not filter_code or filter_code.isspace():

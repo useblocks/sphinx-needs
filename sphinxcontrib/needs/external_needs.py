@@ -73,7 +73,7 @@ def load_external_needs(app, env, _docname):
                 if (
                     key not in app.config.needs_extra_options
                     and key not in extra_links
-                    and key not in ["title", "type", "id", "description", "tags", "docname"]
+                    and key not in ["title", "type", "id", "description", "tags", "docname", "status"]
                 ):
                     del need_params[key]
 
@@ -84,6 +84,7 @@ def load_external_needs(app, env, _docname):
             need_params["content"] = need["description"]
             need_params["links"] = need.get("links", [])
             need_params["tags"] = ",".join(need.get("tags", []))
+            need_params["status"] = need.get("status", None)
 
             del need_params["description"]
 
