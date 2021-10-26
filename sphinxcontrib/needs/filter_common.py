@@ -122,17 +122,13 @@ def process_filters(app, all_needs, current_needlist, include_external=True):
                 if status_filter_passed and tags_filter_passed and type_filter_passed:
                     found_needs_by_options.append(need_info)
             # Get needy by filter string
-            found_needs_by_string = filter_needs(
-                app, all_needs_incl_parts, current_needlist["filter"], include_external=include_external
-            )
+            found_needs_by_string = filter_needs(app, all_needs_incl_parts, current_needlist["filter"])
             # Make a intersection of both lists
             found_needs = intersection_of_need_results(found_needs_by_options, found_needs_by_string)
         else:
             # There is no other config as the one for filter string.
             # So we only need this result.
-            found_needs = filter_needs(
-                app, all_needs_incl_parts, current_needlist["filter"], include_external=include_external
-            )
+            found_needs = filter_needs(app, all_needs_incl_parts, current_needlist["filter"])
     else:
         # Provides only a copy of needs to avoid data manipulations.
         context = {
@@ -208,7 +204,7 @@ def intersection_of_need_results(list_a, list_b) -> List[Dict[str, Any]]:
     return [a for a in list_a if a in list_b]
 
 
-def filter_needs(app, needs, filter_string="", current_need=None, include_external=True):
+def filter_needs(app, needs, filter_string="", current_need=None):
     """
     Filters given needs based on a given filter string.
     Returns all needs, which pass the given filter.
@@ -217,7 +213,6 @@ def filter_needs(app, needs, filter_string="", current_need=None, include_extern
     :param needs: list of needs, which shall be filtered
     :param filter_string: strings, which gets evaluated against each need
     :param current_need: current need, which uses the filter.
-    :param include_external: Boolean, which decides to include external needs or not
 
     :return: list of found needs
     """
@@ -225,23 +220,14 @@ def filter_needs(app, needs, filter_string="", current_need=None, include_extern
     if not filter_string:
         return needs
 
-    # Check if include external needs
-    checked_needs = []
-    if not include_external:
-        for need in needs:
-            if not need["is_external"]:
-                checked_needs.append(need)
-    else:
-        checked_needs = needs
-
     found_needs = []
 
     # https://docs.python.org/3/library/functions.html?highlight=compile#compile
     filter_compiled = compile(filter_string, "<string>", "eval")
-    for filter_need in checked_needs:
+    for filter_need in needs:
         try:
             if filter_single_need(
-                app, filter_need, filter_string, checked_needs, current_need, filter_compiled=filter_compiled
+                app, filter_need, filter_string, needs, current_need, filter_compiled=filter_compiled
             ):
                 found_needs.append(filter_need)
         except Exception as e:
