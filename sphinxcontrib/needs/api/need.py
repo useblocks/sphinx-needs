@@ -394,6 +394,19 @@ def add_need(
     return return_nodes
 
 
+def del_need(app, id):
+    """
+    Deletes an existing need.
+
+    :param app: Sphinx application object.
+    :param id: Sphinx need id.
+    """
+    if id in app.env.needs_all_needs.keys():
+        del app.env.needs_all_needs[id]
+    else:
+        logger.warning("Given need id {} not exists!".format(id))
+
+
 def add_external_need(
     app,
     need_type,
