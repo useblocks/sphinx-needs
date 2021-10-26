@@ -1,3 +1,5 @@
+import os
+
 from sphinx.builders import Builder
 
 from sphinxcontrib.needs.logging import get_logger
@@ -21,7 +23,14 @@ class NeedsBuilder(Builder):
         version = config.version
         needs_list = NeedsList(config, self.outdir, self.confdir)
 
-        needs_list.load_json()
+        if getattr(config, "needs_file"):
+            needs_file = getattr(config, "needs_file")
+            needs_list.load_json(needs_file)
+        else:
+            # check if needs.json file exists in conf.py directory
+            needs_json = os.path.join(self.confdir, "needs.json")
+            if os.path.exists(needs_json):
+                log.info("needs.json found, but will not be used because needs_file not configured.")
 
         # Clean needs_list from already stored needs of the current version.
         # This is needed as needs could have been removed from documentation and if this is the case,

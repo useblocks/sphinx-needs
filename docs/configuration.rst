@@ -130,25 +130,14 @@ needs_extra_options
 The option allows the addition of extra options that can be specified on
 needs.
 
-It can be specified as a dict inside ``conf.py`` as follows::
-
-  from docutils.parsers.rst import directives
-
-   needs_extra_options = {
-    "introduced": directives.unchanged,
-    "updated": directives.unchanged,
-    "impacts": directives.unchanged
-   }
-
-With version *0.7.2* ``needs_extra_options`` can also be a list and using ``directives.unchanged`` is not needed
-anymore. This does not break the Sphinx incremental build feature. Please read :ref:`inc_build` for details.
+It can be specified as a list inside ``conf.py`` as follows:
 
 .. code-block:: python
 
    needs_extra_options = ['introduced', 'updated', 'impacts']
 
 
-And used like:
+And use it like:
 
 .. code-block:: rst
 
@@ -163,10 +152,6 @@ Default value = ``{'hidden': directives.unchanged}``
 
 The ``hidden`` option is a globally available option, which is always hidden and
 can be used to easily execute :ref:`dynamic_functions`.
-
-The key of the dict represents the option/attribute name that can be associated
-with the need, and the value represents the `option conversion function <http://docutils.sourceforge.net/docs/howto/rst-directives.html#option-conversion-functions>`_
-to apply to the associated value.
 
 Extra options automatically appear in needs, if a value is set.
 By using :ref:`needs_hide_options` the output of such options can be hidden.
@@ -220,6 +205,19 @@ By using :ref:`needs_hide_options` the output of such options can be hidden.
 
    .. needfilter::
       :filter: "filter_me" in another_option
+
+Before version **0.7.2** ``needs_extra_options`` needs to be a dict and using ``directives.unchanged`` as value.
+But this has broken the Sphinx incremental build feature. Please read :ref:`inc_build` for details.
+
+Configuration **before 0.7.2** (do not use for newer versions!)::
+
+  from docutils.parsers.rst import directives
+
+   needs_extra_options = {
+    "introduced": directives.unchanged,
+    "updated": directives.unchanged,
+    "impacts": directives.unchanged
+   }
 
 
 .. _needs_global_options:
