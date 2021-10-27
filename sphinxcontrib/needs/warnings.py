@@ -72,6 +72,12 @@ def process_warnings(app, exception):
             else:
                 need_ids = [x["id"] for x in result]
 
+                # Manipulate Sphinx statuscode is needed here
+                # Because Sphinx statuscode got calculated in very early build phase and based on warning_count
+                # Sphinx-needs warnings check hasn't happened yet
+                # see deatils in https://github.com/sphinx-doc/sphinx/blob/81a4fd973d4cfcb25d01a7b0be62cdb28f82406d/sphinx/application.py#L345 # noqa
+                app.statuscode = 1
+
                 # get the text for used filter, either from filter string or function name
                 if hasattr(warning_filter, "__call__"):
                     warning_text = getattr(warning_filter, "__name__")
