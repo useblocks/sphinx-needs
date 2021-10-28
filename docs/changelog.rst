@@ -11,6 +11,7 @@ License
 -----
 :Released: under development
 
+* Improvement: Schema check for ``need.json`` files implemented.
 * Bugfix: Fixed :ref:`needs_builder` handling warnings about missing needs.json when :ref:`needs_file` not configured
   (`#340 <https://github.com/useblocks/sphinxcontrib-needs/issues/340>`_)
 * Bugfix: unstable build with :ref:`needs_external_needs`

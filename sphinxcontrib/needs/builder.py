@@ -3,7 +3,9 @@ import os
 from sphinx.builders import Builder
 
 from sphinxcontrib.needs.logging import get_logger
-from sphinxcontrib.needs.utils import NeedsList
+from sphinxcontrib.needs.needsfile import NeedsList
+
+log = get_logger(__name__)
 
 
 class NeedsBuilder(Builder):
@@ -16,7 +18,6 @@ class NeedsBuilder(Builder):
         pass
 
     def finish(self):
-        log = get_logger(__name__)
         needs = self.env.needs_all_needs.values()  # We need a list of needs for later filter checks
         filters = self.env.needs_all_filters
         config = self.env.config

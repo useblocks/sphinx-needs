@@ -32,3 +32,8 @@ def test_doc_needs_build_without_needs_file(app, status, warning):
     out = subprocess.run(["sphinx-build", "-b", "needs", srcdir, out_dir], capture_output=True)
     assert not out.stderr
     assert "needs.json found, but will not be used because needs_file not configured." in out.stdout.decode("utf-8")
+
+
+@with_app(buildername="needs", srcdir="../docs")
+def test_needs_official_doc(app, status, warning):
+    app.build()
