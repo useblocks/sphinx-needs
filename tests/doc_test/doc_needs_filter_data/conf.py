@@ -22,6 +22,7 @@ import sys
 from docutils.parsers.rst import directives
 
 sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
+sys.path.insert(0, os.path.abspath("./"))
 
 # -- General configuration ------------------------------------------------
 

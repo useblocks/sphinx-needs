@@ -388,7 +388,34 @@ If ``filter code`` is used, all other filter related options (like ``status`` or
    So be sure to trust the input/writers.
 
 
+.. _filter_func:
 
+Filter function
+---------------
 
+.. versionadded:: 0.7.3
 
+Nearly same behavior as :ref:`filter_code`, but the code gets read from an external python file and a function must be
+referenced.
+
+:option name: filter-func
+:default: None
+
+Usage inside a rst file:
+
+.. code-block:: rst
+
+    .. needtable:: Filter function example
+       :filter-func: filter_file.own_filter_code
+
+The code of the referenced file ``filter_file.py`` with function ``own_filter_code``:
+
+.. literalinclude:: ../tests/doc_test/doc_needs_filter_data/filter_code_func.py
+   :language: python
+
+The function gets executed by ``Sphinx-Needs`` and it must provide two keyword arguments: ``needs`` and ``results``.
+
+Also the given package/module must be importable by the used Python environment.
+So it must be part of the Python Path variable. To update this, add
+``sys.path.insert(0, os.path.abspath("folder/to/filter_files"))`` to your ``conf.py`` file.
 

@@ -46,3 +46,19 @@ def test_doc_needs_filter_data_html(app, status, warning):
     assert "WARNING: variant_not_equal_current_variant: failed" in warnings
     assert "failed needs: 1 (extern_filter_story_002)" in warnings
     assert "used filter: variant != current_variant" in warnings
+
+
+@with_app(buildername="html", srcdir="doc_test/doc_needs_filter_data")
+def test_doc_needs_filter_code(app, status, warning):
+    app.build()
+    code_html = Path(app.outdir, "filter_code.html").read_text()
+
+    assert '<span class="caption-text">Filter code table</span>' in code_html
+    assert '<span class="caption-text">Filter code func table</span>' in code_html
+
+    # code content data
+    assert "extern_filter_story_001" in code_html
+    assert "extern_filter_story_002" in code_html
+
+    # code func data
+    assert "extern_filter_test_003" in code_html

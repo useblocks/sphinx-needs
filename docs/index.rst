@@ -3,6 +3,9 @@
 
 .. only:: html
 
+   .. image:: https://img.shields.io/pypi/dm/sphinxcontrib-needs.svg
+       :target: https://pypi.python.org/pypi/sphinxcontrib-needs
+       :alt: Downloads
    .. image:: https://img.shields.io/pypi/l/sphinxcontrib-needs.svg
        :target: https://pypi.python.org/pypi/sphinxcontrib-needs
        :alt: License
