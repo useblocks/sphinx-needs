@@ -12,11 +12,15 @@ License
 :Released: under development
 
 * Improvement: Schema check for ``need.json`` files implemented.
+* Improvement: New option for ``needtable`` and co: :ref:`filter_func`, which allows to reference and use python code
+  as filter code from external files
+  (`#340 <https://github.com/useblocks/sphinxcontrib-needs/issues/340>`_)
 * Bugfix: Fixed :ref:`needs_builder` handling warnings about missing needs.json when :ref:`needs_file` not configured
   (`#340 <https://github.com/useblocks/sphinxcontrib-needs/issues/340>`_)
 * Bugfix: unstable build with :ref:`needs_external_needs`
-  (`#341 <https://github.com/useblocks/sphinxcontrib-needs/issues/341>`_)
-* Bugfix: :ref:`needs_external_needs` reads external need status now and warnings gets not checked for :ref:`needs_external_needs`
+  (`#399 <https://github.com/useblocks/sphinxcontrib-needs/issues/399>`_)
+* Bugfix: :ref:`needs_external_needs` reads external need status now and warnings gets not checked for
+  :ref:`needs_external_needs`
   (`#375 <https://github.com/useblocks/sphinxcontrib-needs/issues/375>`_)
 
 0.7.2

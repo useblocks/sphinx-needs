@@ -4,13 +4,14 @@ like needtable, needlist and needflow.
 """
 
 import copy
+import importlib
 import re
 from typing import Any, Dict, List
 
 from docutils.parsers.rst import Directive, directives
 
 from sphinxcontrib.needs.api.exceptions import NeedsInvalidFilter
-from sphinxcontrib.needs.utils import logger
+from sphinxcontrib.needs.utils import logger as log
 
 
 class FilterBase(Directive):
@@ -21,6 +22,7 @@ class FilterBase(Directive):
         "tags": directives.unchanged_required,
         "types": directives.unchanged_required,
         "filter": directives.unchanged_required,
+        "filter-func": directives.unchanged_required,
         "sort_by": directives.unchanged,
         "export_id": directives.unchanged,
     }
@@ -53,6 +55,7 @@ class FilterBase(Directive):
             "filter": self.options.get("filter", None),
             "sort_by": self.options.get("sort_by", None),
             "filter_code": self.content,
+            "filter_func": self.options.get("filter-func", None),
             "export_id": self.options.get("export_id", ""),
         }
         return collected_filter_options
@@ -76,7 +79,7 @@ def process_filters(app, all_needs, current_needlist, include_external=True):
         try:
             all_needs = sorted(all_needs, key=lambda node: node[sort_key] or "")
         except KeyError as e:
-            logger.warning("Sorting parameter {0} not valid: Error: {1}".format(sort_key, e))
+            log.warning("Sorting parameter {0} not valid: Error: {1}".format(sort_key, e))
 
     # check if include external needs
     checked_all_needs = []
@@ -92,8 +95,29 @@ def process_filters(app, all_needs, current_needlist, include_external=True):
     # Add all need_parts of given needs to the search list
     all_needs_incl_parts = prepare_need_list(checked_all_needs)
 
-    filter_code = "\n".join(current_needlist["filter_code"])
-    if not filter_code or filter_code.isspace():
+    # Check if external filter code is defined
+    filter_func = None
+    filter_code = None
+    filter_func_ref = current_needlist.get("filter_func", None)
+    if filter_func_ref:
+        try:
+            filter_module, filter_function = filter_func_ref.rsplit(".")
+        except ValueError:
+            log.warn(f'Filter function not valid "{filter_func_ref}". Example: my_module:my_func')
+            return []  # No needs found because of invalid filter function
+
+        try:
+            final_module = importlib.import_module(filter_module)
+            filter_func = getattr(final_module, filter_function)
+        except Exception:
+            log.warn(f"Could not import filter function: {filter_func_ref}")
+            return []
+
+    # Get filter_code from
+    if not filter_code:
+        filter_code = "\n".join(current_needlist["filter_code"])
+
+    if (not filter_code or filter_code.isspace()) and not filter_func:
         if bool(current_needlist["status"] or current_needlist["tags"] or current_needlist["types"]):
             for need_info in all_needs_incl_parts:
                 status_filter_passed = False
@@ -135,7 +159,14 @@ def process_filters(app, all_needs, current_needlist, include_external=True):
             "needs": copy.deepcopy(all_needs_incl_parts),
             "results": [],
         }
-        exec(filter_code, context)
+
+        if filter_code:  # code from content
+            exec(filter_code, context)
+        elif filter_func:  # code from external file
+            filter_func(**context)
+        else:
+            log.warning("Something went wrong running filter")
+            return []
 
         # The filter results may be dirty, as it may continue manipulated needs.
         found_dirty_needs = context["results"]
@@ -231,7 +262,7 @@ def filter_needs(app, needs, filter_string="", current_need=None):
             ):
                 found_needs.append(filter_need)
         except Exception as e:
-            logger.warning("Filter {0} not valid: Error: {1}".format(filter_string, e))
+            log.warning("Filter {0} not valid: Error: {1}".format(filter_string, e))
 
     return found_needs
 
