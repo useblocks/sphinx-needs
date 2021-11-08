@@ -6,10 +6,14 @@ License
 
 .. include:: ../LICENSE
 
+0.7.4
+-----
+:Released: under development
+
 
 0.7.3
 -----
-:Released: under development
+:Released: 08.11.2021
 
 * Improvement: Schema check for ``need.json`` files implemented.
 * Improvement: New option for ``needtable`` and co: :ref:`filter_func`, which allows to reference and use python code
