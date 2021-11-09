@@ -17,7 +17,6 @@ _build
 docs/github_images/
 .eggs/
 docs/_images/need_pie_*.png
-poetry.lock
 
 .devcontainer/
 .vscode/

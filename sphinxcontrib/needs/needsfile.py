@@ -15,31 +15,6 @@ from sphinxcontrib.needs.logging import get_logger
 
 log = get_logger(__name__)
 
-SCHEMA = {
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id": "http://json-schema.org/draft-07/schema#",
-    "title": "needs.json schema",
-    "type": "object",
-    "properties": {
-        "created": {"type": "string"},
-        "current_version": {"type": "string"},
-        "project": {"type": "string"},
-        "versions": {
-            "type": "object",
-            "properties": {
-                "created": {"type": "string"},
-                "filters": {"type": "object"},
-                "filters_amount": {"type": "number"},
-                "needs": {
-                    "type": "object",
-                    "properties": {"title": {"type": "string"}},
-                },
-                "needs_amount": {"type": "number"},
-            },
-        },
-    },
-}
-
 
 class NeedsList:
     JSON_KEY_EXCLUSIONS_NEEDS = {
@@ -157,6 +132,8 @@ class NeedsList:
                 self.log.warning("Could not decode json file {0}".format(file))
             else:
                 self.needs_list = needs_list
+
+            self.log.debug(f"needs.json file loaded: {file}")
 
 
 def check_needs_file(path):

@@ -22,7 +22,6 @@ import os
 import sys
 import datetime
 
-from docutils.parsers.rst import directives
 
 sys.path.insert(0, os.path.abspath('../sphinxcontrib'))
 
@@ -43,7 +42,7 @@ sys.path.insert(0, os.path.abspath('../sphinxcontrib'))
 # The short X.Y version.
 version = '0.7'
 # The full version, including alpha/beta/rc tags.
-release = '0.7.2'
+release = '0.7.3'
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 
@@ -267,15 +266,7 @@ needs_table_style = "datatables"
 needs_table_columns = "ID;TITLE;STATUS;OUTGOING"
 
 needs_template_collapse = EXTRA_CONTENT_TEMPLATE_COLLAPSE
-needs_extra_options = {
-    "my_extra_option": directives.unchanged,
-    "another_option": directives.unchanged,
-    "author": directives.unchanged,
-    "comment": directives.unchanged,
-    "amount": directives.unchanged,
-    "hours": directives.unchanged,
-    "image": directives.unchanged,
-}
+needs_extra_options = ["my_extra_option", "another_option", "author", "comment", "amount", "hours", "image"]
 
 needs_warnings = {
     'type_check': 'type not in ["req", "spec", "impl", "test", "feature", "action", "user", "milestone", '

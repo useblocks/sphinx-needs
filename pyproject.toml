@@ -2,7 +2,7 @@
 name = "sphinxcontrib-needs"
 
 # Don't miss updates in needs.py, conf.py and changelog.rst
-version = "0.7.2"
+version = "0.7.3"
 
 description = "Sphinx needs extension for managing needs/requirements and specifications"
 authors = ["team useblocks <info@useblocks.com>"]
@@ -32,14 +32,14 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.6"
 sphinxcontrib-plantuml = "^0.21"
-matplotlib = [
-    { version = "^3.1.0", python = "^3.6" },
-]
+matplotlib = ">3.1.0"
+
 sphinx-copybutton = "^0.3.0"
 sphinx = [
     { version = ">2.2, <=3.0", python = "~3.6" },
-    { version = ">2.2", python = "^3.7" },
+    { version = ">2.2", python = ">=3.7" },
 ]
+
 requests-file = "^1.5.1"
 requests = "^2.25.1"
 sphinxcontrib-programoutput = "^0.17"
@@ -65,6 +65,9 @@ isort = "^5.7.0"
 flake8-isort = "^4.0.0"
 flake8-black = "^0.2.1"
 
+# pyparsing 3.0.5 does not work with current "packaging" lib
+pyparsing = "!=3.0.5"  # 3.0.5 error: https://github.com/pyparsing/pyparsing/issues/329
+
 [tool.black]
 line-length = 120
 
@@ -75,6 +78,6 @@ profile = "black"
 docs = ["sphinx>=4.0"]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=1.0.7"]
 build-backend = "poetry.core.masonry.api"
 
