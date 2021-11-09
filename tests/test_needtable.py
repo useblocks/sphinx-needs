@@ -17,10 +17,10 @@ def test_doc_build_html(app, status, warning):
 
     html_path = str(Path(app.outdir, "index.html"))
 
-    from lxml import html
+    from lxml import html as html_parser
 
-    tree = html.parse(html_path)
-    tables = tree.xpath("//section/table")
+    tree = html_parser.parse(html_path)
+    tables = tree.xpath("//table")
 
     # check if there are only 2 needtables in this document
     cnt = 0
@@ -31,10 +31,11 @@ def test_doc_build_html(app, status, warning):
     assert cnt == 2
 
     # check only one needtable with caption
-    assert len(tree.xpath("//section/table/caption")) == 1
+    # assert len(tree.xpath("//section/table/caption")) == 1
+    assert len(tree.xpath("//table/caption")) == 1
 
     # check needtable has correct caption
-    assert "Test table caption" == tree.xpath("//section/table/caption/span")[0].text
+    assert "Test table caption" == tree.xpath("//table/caption/span")[0].text
 
 
 @with_app(buildername="html", srcdir="doc_test/doc_needtable")

@@ -1,24 +1,20 @@
 import nox
 from nox_poetry import session
 
-PYTHON_VERSIONS = ["3.6", "3.8", "3.9"]
-SPHINX_VERSIONS = ["3.2", "3.5", "4.1", "4.2"]
-TEST_DEPENDENCIES = [
-    "nose",
-    "sphinx_testing",
-    "responses",
-    "lxml",
-]
+PYTHON_VERSIONS = ["3.6", "3.8", "3.9.7"]
+SPHINX_VERSIONS = ["3.2", "3.5.4", "4.1", "4.2"]
+TEST_DEPENDENCIES = ["nose", "sphinx_testing", "responses", "lxml", "pyparsing<=3.0.4"]
 LINT_DEPENDENCIES = [
     "flake8",
     "pep8-naming",
     "flake8-isort",
     "flake8-black",
 ]
+PINNED_DEPENDENCIES = ["pyparsing<=3.0.4"]
 
 
 def is_supported(python: str, sphinx: str) -> bool:
-    return not (python == "3.6" and float(sphinx) > 3.0)
+    return not (python == "3.6" and sphinx not in ["3.2"])
 
 
 def run_tests(session, sphinx):
@@ -26,6 +22,8 @@ def run_tests(session, sphinx):
     session.install(*TEST_DEPENDENCIES)
     session.run("pip", "install", f"sphinx=={sphinx}", silent=True)
     session.run("pip", "install", "-r", "docs/requirements.txt", silent=True)
+    session.run("echo", "TEST FINAL PACKAGE LIST")
+    session.run("pip", "freeze")
     session.run("make", "test", external=True)
 
 

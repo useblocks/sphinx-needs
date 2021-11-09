@@ -133,7 +133,7 @@ class NeedsList:
             else:
                 self.needs_list = needs_list
 
-            self.log.debug(f'needs.json file loaded: {file}')
+            self.log.debug(f"needs.json file loaded: {file}")
 
 
 def check_needs_file(path):
