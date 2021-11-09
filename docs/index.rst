@@ -346,7 +346,7 @@ In the last years additional information and extensions have been created, which
 
 
 Further Sphinx extensions
-^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~
 During the work with Sphinx-Needs in bigger, company internal projects, other Sphinx extensions have been created
 to support the work in teams of the automotive industry:
 
