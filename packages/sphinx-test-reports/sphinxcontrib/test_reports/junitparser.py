@@ -49,10 +49,10 @@ class JUnitParser:
             errors = int(testsuite.attrib.get("errors", -1))
             failures = int(testsuite.attrib.get("failures", -1))
             skips = int(
-                testsuite.attrib.get("skips") or
-                testsuite.attrib.get("skip") or
-                testsuite.attrib.get("skipped") or
-                -1
+                testsuite.attrib.get("skips")
+                or testsuite.attrib.get("skip")
+                or testsuite.attrib.get("skipped")
+                or -1
             )
             passed = int(tests - sum(x for x in [errors, failures, skips] if x > 0))
 
