@@ -1,4 +1,5 @@
 import os
+
 from lxml import etree, objectify
 
 
@@ -15,12 +16,14 @@ class JUnitParser:
         self.valid_xml = None
 
         if not os.path.exists(self.junit_xml_path):
-            raise JUnitFileMissing("The given file does not exist: {0}".format(self.junit_xml_path))
+            raise JUnitFileMissing(
+                "The given file does not exist: {0}".format(self.junit_xml_path)
+            )
         self.junit_xml_doc = etree.parse(self.junit_xml_path)
 
         self.junit_xml_string = etree.tostring(self.junit_xml_doc)
         self.junit_xml_object = objectify.fromstring(self.junit_xml_string)
-        if self.junit_xml_object.tag == 'testsuites':
+        if self.junit_xml_object.tag == "testsuites":
             self.junit_xml_object = self.junit_xml_object.testsuite
         self.junit_xml_string = str(self.junit_xml_string)
 
@@ -56,7 +59,7 @@ class JUnitParser:
                 "skips": skips,
                 "passed": passed,
                 "time": float(testsuite.attrib.get("time", -1)),
-                "testcases": []
+                "testcases": [],
             }
 
             for testcase in testsuite.testcase:
@@ -90,10 +93,10 @@ class JUnitParser:
                     tc_dict["text"] = ""
                     tc_dict["message"] = ""
 
-                if hasattr(testcase, 'system-out'):
-                    tc_dict['system-out'] = testcase['system-out'].text
+                if hasattr(testcase, "system-out"):
+                    tc_dict["system-out"] = testcase["system-out"].text
                 else:
-                    tc_dict['system-out'] = ""
+                    tc_dict["system-out"] = ""
 
                 ts_dict["testcases"].append(tc_dict)
 

@@ -1,15 +1,16 @@
-
 import os
+
 xml_path = os.path.join(os.path.dirname(__file__), "data", "xml_data.xml")
 xml_pytest_path = os.path.join(os.path.dirname(__file__), "data", "pytest_data.xml")
-xml_pytest51_path = os.path.join(os.path.dirname(__file__),
-                                 "data",
-                                 "pytest_data_5_1.xml")
+xml_pytest51_path = os.path.join(
+    os.path.dirname(__file__), "data", "pytest_data_5_1.xml"
+)
 xml_nose_path = os.path.join(os.path.dirname(__file__), "data", "nose_data.xml")
 
 
 def test_init_parser():
     from sphinxcontrib.test_reports.junitparser import JUnitParser
+
     parser = JUnitParser(xml_path)
 
     assert parser is not None
@@ -17,6 +18,7 @@ def test_init_parser():
 
 def test_xml_object():
     from sphinxcontrib.test_reports.junitparser import JUnitParser
+
     parser = JUnitParser(xml_path)
     obj = parser.junit_xml_object
     assert obj.tag == "testsuite"
@@ -26,6 +28,7 @@ def test_xml_object():
 
 def test_parse_easy_xml():
     from sphinxcontrib.test_reports.junitparser import JUnitParser
+
     parser = JUnitParser(xml_path)
     assert hasattr(parser, "parse")
     results = parser.parse()
@@ -39,6 +42,7 @@ def test_parse_easy_xml():
 
 def test_parse_nosetest_xml():
     from sphinxcontrib.test_reports.junitparser import JUnitParser
+
     parser = JUnitParser(xml_nose_path)
     assert hasattr(parser, "parse")
     results = parser.parse()
@@ -57,6 +61,7 @@ def test_parse_nosetest_xml():
 
 def test_parse_pytest_xml():
     from sphinxcontrib.test_reports.junitparser import JUnitParser
+
     parser = JUnitParser(xml_pytest_path)
     assert hasattr(parser, "parse")
     results = parser.parse()
@@ -77,6 +82,7 @@ def test_parse_pytest_xml():
 
 def test_parse_pytest_51_xml():
     from sphinxcontrib.test_reports.junitparser import JUnitParser
+
     parser = JUnitParser(xml_pytest51_path)
     assert hasattr(parser, "parse")
     results = parser.parse()

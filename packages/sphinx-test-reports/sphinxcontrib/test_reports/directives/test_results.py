@@ -1,4 +1,5 @@
 import os
+
 from docutils import nodes
 from docutils.parsers.rst import Directive
 
@@ -13,6 +14,7 @@ class TestResultsDirective(Directive):
     """
     Directive for showing test results.
     """
+
     has_content = True
     required_arguments = 1
     optional_arguments = 0
@@ -21,7 +23,7 @@ class TestResultsDirective(Directive):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.header = ('class', 'name', 'status', 'reason')
+        self.header = ("class", "name", "status", "reason")
         self.colwidths = (1, 1, 1, 2)
 
     def run(self):
@@ -41,13 +43,18 @@ class TestResultsDirective(Directive):
         for testsuite in results:
             section = nodes.section()
             section += nodes.title(text=testsuite["name"])
-            section += nodes.paragraph(text="Tests: {tests}, Failures: {failure}, Errors: {error}, "
-                                            "Skips: {skips}".format(tests=testsuite["tests"],
-                                                                    failure=testsuite["failures"],
-                                                                    error=testsuite["errors"],
-                                                                    skips=testsuite["skips"]
-                                                                    ))
-            section += nodes.paragraph(text="Time: {time}".format(time=testsuite["time"]))
+            section += nodes.paragraph(
+                text="Tests: {tests}, Failures: {failure}, Errors: {error}, "
+                "Skips: {skips}".format(
+                    tests=testsuite["tests"],
+                    failure=testsuite["failures"],
+                    error=testsuite["errors"],
+                    skips=testsuite["skips"],
+                )
+            )
+            section += nodes.paragraph(
+                text="Time: {time}".format(time=testsuite["time"])
+            )
 
             table = nodes.table()
             section += table
@@ -71,15 +78,25 @@ class TestResultsDirective(Directive):
         return main_section
 
     def _create_testcase_row(self, testcase):
-        row_cells = (testcase["classname"], testcase["name"],
-                     testcase["result"], "\n\n".join([testcase["message"] if testcase["message"] != "unknown" else "",
-                                                      testcase["text"]]))
+        row_cells = (
+            testcase["classname"],
+            testcase["name"],
+            testcase["result"],
+            "\n\n".join(
+                [
+                    testcase["message"] if testcase["message"] != "unknown" else "",
+                    testcase["text"],
+                ]
+            ),
+        )
 
-        row = nodes.row(classes=['tr_' + testcase["result"]])
+        row = nodes.row(classes=["tr_" + testcase["result"]])
         for index, cell in enumerate(row_cells):
-            entry = nodes.entry(classes=['tr_' + testcase["result"], self.header[index]])
+            entry = nodes.entry(
+                classes=["tr_" + testcase["result"], self.header[index]]
+            )
             row += entry
-            entry += nodes.paragraph(text=cell, classes=['tr_' + testcase["result"]])
+            entry += nodes.paragraph(text=cell, classes=["tr_" + testcase["result"]])
         return row
 
     def _create_table_row(self, row_cells):

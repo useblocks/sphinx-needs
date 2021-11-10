@@ -4,10 +4,11 @@ Changelog
 -----
 :Released: under development
 
+* Bugfix: Minor bugfixes
 
 0.3.4
 -----
-:Released: 30.04.2021
+:Released: 30.04.2021 (Recalled, contains major bugs)
 
 * Bugfix: Removed Sphinx 4 deprecation warnings
 

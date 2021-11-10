@@ -5,3 +5,7 @@ python-coveralls
 tox
 nose
 sphinx_testing
+flake8
+isort
+black
+nox
