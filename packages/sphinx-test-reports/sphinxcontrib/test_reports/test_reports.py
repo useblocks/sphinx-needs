@@ -34,6 +34,9 @@ else:
     import logging
 
 
+VERSION = "0.3.5"
+
+
 def setup(app):
     """
     Setup following directives:
@@ -80,7 +83,11 @@ def setup(app):
     app.connect("config-inited", tr_preparation)
     app.connect("config-inited", sphinx_needs_update)
 
-    return {"version": "0.3.4"}  # identifies the version of our extension
+    return {
+        "version": VERSION,  # identifies the version of our extension
+        "parallel_read_safe": True,  # support parallel modes
+        "parallel_write_safe": True,
+    }
 
 
 def tr_preparation(app, *args):
