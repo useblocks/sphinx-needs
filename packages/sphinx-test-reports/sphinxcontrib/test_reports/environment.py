@@ -73,8 +73,8 @@ def safe_remove_file(filename, app):
 # Base implementation from sphinxcontrib-images
 # https://github.com/spinus/sphinxcontrib-images/blob/master/sphinxcontrib/images.py#L203
 def install_styles_static_files(app, env):
-    STATICS_DIR_PATH = os.path.join(app.builder.outdir, STATICS_DIR_NAME)
-    dest_path = os.path.join(STATICS_DIR_PATH, "sphinx-test-results")
+    statics_dir_path = os.path.join(app.builder.outdir, STATICS_DIR_NAME)
+    dest_path = os.path.join(statics_dir_path, "sphinx-test-results")
 
     files_to_copy = ["common.css"]
 
@@ -114,4 +114,4 @@ def install_styles_static_files(app, env):
 
         copyfile(source_file_path, dest_file_path)
 
-        safe_add_file(os.path.relpath(dest_file_path, STATICS_DIR_PATH), app)
+        safe_add_file(os.path.relpath(dest_file_path, statics_dir_path), app)

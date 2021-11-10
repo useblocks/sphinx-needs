@@ -27,4 +27,3 @@ docs-linkcheck:
 .PHONY: format
 format:
 	black ${SRC_FILES}
-	isort ${SRC_FILES}
