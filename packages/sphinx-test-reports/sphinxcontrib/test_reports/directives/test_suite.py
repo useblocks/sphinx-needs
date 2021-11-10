@@ -5,7 +5,7 @@ from docutils.parsers.rst import directives
 from sphinxcontrib.needs.api import add_need
 
 import sphinxcontrib.test_reports.directives.test_case
-from sphinxcontrib.test_reports.directives import TestCommonDirective
+from sphinxcontrib.test_reports.directives.test_common import TestCommonDirective
 from sphinxcontrib.test_reports.exceptions import TestReportInvalidOption
 
 

@@ -5,9 +5,8 @@ from docutils.parsers.rst import directives
 from sphinxcontrib.needs.api import add_need
 
 import sphinxcontrib.test_reports.directives.test_suite
-from sphinxcontrib.test_reports.directives import TestCommonDirective
-from sphinxcontrib.test_reports.exceptions import \
-    TestReportIncompleteConfiguration
+from sphinxcontrib.test_reports.directives.test_common import TestCommonDirective
+from sphinxcontrib.test_reports.exceptions import TestReportIncompleteConfiguration
 
 
 class TestFile(nodes.General, nodes.Element):

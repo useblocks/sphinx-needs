@@ -3,7 +3,7 @@ import os
 from docutils import nodes
 from docutils.parsers.rst import directives
 
-from sphinxcontrib.test_reports.directives import TestCommonDirective
+from sphinxcontrib.test_reports.directives.test_common import TestCommonDirective
 
 
 class TestReport(nodes.General, nodes.Element):
