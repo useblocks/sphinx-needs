@@ -11,9 +11,9 @@
     :alt: Supported versions
 .. image:: https://readthedocs.org/projects/sphinx-test-reports/badge/?version=latest
     :target: https://readthedocs.org/projects/sphinx-test-reports/
-.. image:: https://travis-ci.org/useblocks/sphinx-test-reports.svg?branch=master
-    :target: https://travis-ci.org/useblocks/sphinx-test-reports
-    :alt: Travis-CI Build Status
+.. image:: https://github.com/useblocks/sphinx-test-reports/actions/workflows/ci.yaml/badge.svg
+    :target: https://github.com/useblocks/sphinx-test-reports/actions/
+    :alt: CI Build Status
 .. image:: https://img.shields.io/pypi/v/sphinx-test-reports.svg
     :target: https://pypi.python.org/pypi/sphinx-test-reports
     :alt: PyPI Package latest release

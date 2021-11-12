@@ -1,8 +1,8 @@
 import nox
 from nox import session
 
-PYTHON_VERSIONS = ["3.6", "3.8", "3.9"]
-SPHINX_VERSIONS = ["3.2", "3.5", "4.1", "4.2"]
+PYTHON_VERSIONS = ["3.6", "3.8", "3.9", "3.10"]
+SPHINX_VERSIONS = ["3.5", "4.1", "4.3"]
 TEST_DEPENDENCIES = [
     "nose",
     "sphinx_testing",
@@ -16,7 +16,10 @@ LINT_DEPENDENCIES = [
 
 
 def is_supported(python: str, sphinx: str) -> bool:
-    return not (python == "3.6" and float(sphinx) > 3.0)
+    return not (
+        (python == "3.6" and float(sphinx) > 3.0)
+        or (python == "3.10" and float(sphinx) < 4.3)
+    )
 
 
 def run_tests(session, sphinx):

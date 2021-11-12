@@ -8,7 +8,7 @@ requires = ['sphinx>2.0', 'lxml', 'sphinxcontrib-needs>=0.5.6']
 
 setup(
     name='sphinx-test-reports',
-    version='0.3.5',
+    version='0.3.6',
     url='http://github.com/useblocks/sphinx-test-reports',
     download_url='http://pypi.python.org/pypi/sphinx-test-reports',
     license='MIT',
@@ -28,6 +28,9 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Topic :: Documentation',
         'Topic :: Utilities',
     ],

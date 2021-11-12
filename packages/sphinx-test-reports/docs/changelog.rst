@@ -1,10 +1,23 @@
 Changelog
 =========
-0.3.5
+
+0.3.7
 -----
 :Released: under development
 
-* Improvement: Added support for parallel modes
+0.3.6
+-----
+:Released: 12.11.2021
+
+* Improvement: Added support for parallel modes.
+  `#20 <https://github.com/useblocks/sphinx-test-reports/issues/20>`_
+* Improvement: Support getting skipped tests.
+  `#18 <https://github.com/useblocks/sphinx-test-reports/issues/18>`_
+
+0.3.5
+-----
+:Released: 18.06.2021
+
 * Bugfix: Minor bugfixes
 
 0.3.4
