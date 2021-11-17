@@ -10,6 +10,8 @@ License
 -----
 :Released: under development
 
+* Improvement: Adds :ref:`needs_string_links` to support easy string2link transformations.
+  (`#404 <https://github.com/useblocks/sphinxcontrib-needs/issues/404>`_)
 
 0.7.3
 -----
