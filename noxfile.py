@@ -11,6 +11,7 @@ LINT_DEPENDENCIES = [
     "flake8-black",
 ]
 
+
 def is_supported(python: str, sphinx: str) -> bool:
     return not (python == "3.6" and sphinx not in ["3.2"])
 
