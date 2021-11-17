@@ -179,7 +179,6 @@ def process_needtables(app, doctree, fromdocname):
         except Exception as e:
             raise e
 
-
         def get_sorter(key):
             """
             Returns a sort-function for a given need-key.

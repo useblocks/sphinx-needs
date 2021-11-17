@@ -1385,12 +1385,14 @@ needs_string_links
 ~~~~~~~~~~~~~~~~~~
 .. versionadded:: 0.7.4
 
-Replaces need-option values with a clickable link.
+Transforms a given option value to a link.
+
+Helpful to e.g. generate a link to a ticket system based on the given ticket number only.
 
 .. code-block:: python
 
     needs_string_links = {
-        'jira_link': {
+        'custom_name': {
             'regex': "...",
             'link_url' : "...",
             'link_name': '...'
@@ -1398,17 +1400,31 @@ Replaces need-option values with a clickable link.
         }
     }
 
-Example:
+:regex: Must be a valid regular expression. Named capture groups are supported.
+:link_url: The final url as string. Supports Jinja.
+:link_name: The final link name as string. Supports Jinja.
+:options: List of option names, for which the regex shall be checked.
+
+``link_name`` and ``link_url`` support the `Jinja2 <https://jinja.palletsprojects.com>`__ syntax.
+All named capture group values get injected, so that parts of the option-value can be reused for
+link name and url.
+
+**Example**:
+{% raw %}
 
 .. code-block:: python
 
+    # conf.py
+
     needs_string_links = {
+        # Adds link to the Sphinx-Needs configuration page
         'config_link': {
             'regex': r'^(?P<value>\w+)$',
             'link_url': 'https://sphinxcontrib-needs.readthedocs.io/en/latest/configuration.html#{{value | replace("_", "-")}}',
             'link_name': 'Sphinx-Needs docs for {{value | replace("_", "-") }}',
             'options': ['config']
         },
+        # Links to the related github issue
         'github_link': {
             'regex': r'^(?P<value>\w+)$',
             'link_url': 'https://github.com/useblocks/sphinxcontrib-needs/issues/{{value}}',
@@ -1416,6 +1432,7 @@ Example:
             'options': ['github']
         }
     }
+{% endraw %}
 
 .. code-block:: rst
 
@@ -1425,6 +1442,7 @@ Example:
       :github: 404
 
       Replaces the string from ``:config:`` and ``:github:`` with a link to the related website.
+
 
 
 .. spec:: Use needs_string_links
