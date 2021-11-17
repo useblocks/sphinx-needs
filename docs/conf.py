@@ -266,7 +266,8 @@ needs_table_style = "datatables"
 needs_table_columns = "ID;TITLE;STATUS;OUTGOING"
 
 needs_template_collapse = EXTRA_CONTENT_TEMPLATE_COLLAPSE
-needs_extra_options = ["my_extra_option", "another_option", "author", "comment", "amount", "hours", "image"]
+needs_extra_options = ["my_extra_option", "another_option", "author", "comment", "amount", "hours", "image",
+                       "config", "github"]
 
 needs_warnings = {
     'type_check': 'type not in ["req", "spec", "impl", "test", "feature", "action", "user", "milestone", '
@@ -307,6 +308,21 @@ needs_services = {
         'url': 'https://api.github.com/',
         'max_content_lines': 20,
         'id_prefix': 'GH_COM_',
+    }
+}
+
+needs_string_links = {
+    'config_link': {
+        'regex': r'^(?P<value>\w+)$',
+        'link_url': 'https://sphinxcontrib-needs.readthedocs.io/en/latest/configuration.html#{{value | replace("_", "-")}}',
+        'link_name': 'Sphinx-Needs docs for {{value | replace("_", "-") }}',
+        'options': ['config']
+    },
+    'github_link': {
+        'regex': r'^(?P<value>\w+)$',
+        'link_url': 'https://github.com/useblocks/sphinxcontrib-needs/issues/{{value}}',
+        'link_name': 'GitHub #{{value}}',
+        'options': ['github']
     }
 }
 
@@ -352,7 +368,12 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', ]
+
+# Control extra excludes like the performance page via env-var.
+excludes = os.getenv('SPHINX_EXCLUDE', '').split(',')
+
+exclude_patterns += excludes
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'

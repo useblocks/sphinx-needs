@@ -13,6 +13,7 @@ from docutils.frontend import OptionParser
 from docutils.parsers.rst import Parser, languages
 from docutils.parsers.rst.states import Inliner, Struct
 from docutils.utils import new_document
+from jinja2 import Environment, BaseLoader
 from sphinx.application import Sphinx
 
 from sphinxcontrib.needs.utils import INTERNALS
@@ -86,7 +87,7 @@ def build_need(layout, node, app, style=None, fromdocname=None):
     """
     Builds a need based on a given layout for a given need-node.
 
-    The created table must have ethe following docutils structure::
+    The created table must have the following docutils structure::
 
         - table
         -- tgroup
@@ -245,6 +246,14 @@ class LayoutHandler:
             "link": self.link,
             "collapse_button": self.collapse_button,
         }
+
+        # Prepare string_links dict, so that regex and templates get not recompiled too often.
+        self.string_links = app.config.needs_string_links
+        for link_name, link_conf in self.string_links.items():
+            link_conf['url_template'] = Environment(loader=BaseLoader).from_string(link_conf['link_url'])
+            link_conf['name_template'] = Environment(loader=BaseLoader).from_string(link_conf['link_name'])
+            link_conf['regex_compiled'] = re.compile(link_conf['regex'])
+
 
     def get_need_table(self):
         if self.layout["grid"] not in self.grids.keys():
@@ -432,9 +441,34 @@ class LayoutHandler:
         if isinstance(data, str):
             if len(data) == 0 and not show_empty:
                 return []
-            data_node = nodes.inline(classes=["needs_data"])
-            data_node.append(nodes.Text(data, data))
-            data_container.append(data_node)
+            matching_link_confs = []
+            for link_name, link_conf in self.string_links.items():
+                if name in link_conf['options']:
+                    matching_link_confs.append(link_conf)
+
+            if not matching_link_confs:
+                # Normal text handling
+                data_node = nodes.inline(classes=["needs_data"])
+                data_node.append(nodes.Text(data, data))
+                data_container.append(data_node)
+            else:
+                link_name = None
+                link_url = None
+                for link_conf in matching_link_confs:
+                    match = link_conf['regex_compiled'].search(data)
+                    if match:
+                        render_content = match.groupdict()
+                        link_url = link_conf['url_template'].render(**render_content)
+                        link_name = link_conf['name_template'].render(**render_content)
+                        break  # We only handle the first matching string_link
+                data_node = nodes.inline(classes=["needs_data"])
+                if link_name:
+                    data_node.append(nodes.reference(link_name, link_name, refuri=link_url))
+                else:
+                    # if no string_link match was made, we handle it as normal string value
+                    data_node.append(nodes.Text(data, data))
+                data_container.append(data_node)
+
         elif isinstance(data, list):
             if len(data) == 0 and not show_empty:
                 return []

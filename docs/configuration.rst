@@ -1379,6 +1379,62 @@ Need objects imported via :ref:`needs_external_needs` get sorted out.
 
    needs_builder_filter = 'status=="open"'
 
+.. _needs_string_links:
+
+needs_string_links
+~~~~~~~~~~~~~~~~~~
+.. versionadded:: 0.7.4
+
+Replaces need-option values with a clickable link.
+
+.. code-block:: python
+
+    needs_string_links = {
+        'jira_link': {
+            'regex': "...",
+            'link_url' : "...",
+            'link_name': '...'
+            'options': ['status', '...']
+        }
+    }
+
+Example:
+
+.. code-block:: python
+
+    needs_string_links = {
+        'config_link': {
+            'regex': r'^(?P<value>\w+)$',
+            'link_url': 'https://sphinxcontrib-needs.readthedocs.io/en/latest/configuration.html#{{value | replace("_", "-")}}',
+            'link_name': 'Sphinx-Needs docs for {{value | replace("_", "-") }}',
+            'options': ['config']
+        },
+        'github_link': {
+            'regex': r'^(?P<value>\w+)$',
+            'link_url': 'https://github.com/useblocks/sphinxcontrib-needs/issues/{{value}}',
+            'link_name': 'GitHub #{{value}}',
+            'options': ['github']
+        }
+    }
+
+.. code-block:: rst
+
+   .. spec:: Use needs_string_links
+      :id: EXAMPLE_STRING_LINKS
+      :config: needs_string_links
+      :github: 404
+
+      Replaces the string from ``:config:`` and ``:github:`` with a link to the related website.
+
+
+.. spec:: Use needs_string_links
+   :id: EXAMPLE_STRING_LINKS
+   :config: needs_string_links
+   :github: 404
+
+   Replaces the string from ``:config:`` and ``:github:`` with a link to the related website.
+
+
 
 Removed options
 ---------------

@@ -49,9 +49,8 @@ needs_types = [
 
 needs_id_regex = "^[A-Z0-9_]{3,}"
 
-needs_extra_options = {
-    "number": directives.unchanged,
-}
+needs_extra_options = ["number"]
+
 {% endif %}
 
 plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "..", "docs", "utils", "plantuml.jar")

@@ -174,7 +174,11 @@ def process_needtables(app, doctree, fromdocname):
         all_needs = list(all_needs.values())
 
         # Perform filtering of needs
-        found_needs = process_filters(app, all_needs, current_needtable)
+        try:
+            found_needs = process_filters(app, all_needs, current_needtable)
+        except Exception as e:
+            raise e
+
 
         def get_sorter(key):
             """

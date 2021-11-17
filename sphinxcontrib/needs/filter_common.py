@@ -155,10 +155,13 @@ def process_filters(app, all_needs, current_needlist, include_external=True):
             found_needs = filter_needs(app, all_needs_incl_parts, current_needlist["filter"])
     else:
         # Provides only a copy of needs to avoid data manipulations.
-        context = {
-            "needs": copy.deepcopy(all_needs_incl_parts),
-            "results": [],
-        }
+        try:
+            context = {
+                "needs": copy.deepcopy(all_needs_incl_parts),
+                "results": [],
+            }
+        except Exception as e:
+            raise e
 
         if filter_code:  # code from content
             exec(filter_code, context)
