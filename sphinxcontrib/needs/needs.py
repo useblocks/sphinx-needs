@@ -216,6 +216,8 @@ def setup(app):
     # Additional classes to set for needs and needtable.
     app.add_config_value("needs_table_classes", NEEDS_TABLES_CLASSES, "html", types=[list])
 
+    app.add_config_value("needs_string_links", {}, "html", types=[dict])
+
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(

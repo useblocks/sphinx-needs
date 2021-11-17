@@ -13,9 +13,10 @@ from docutils.frontend import OptionParser
 from docutils.parsers.rst import Parser, languages
 from docutils.parsers.rst.states import Inliner, Struct
 from docutils.utils import new_document
+from jinja2 import BaseLoader, Environment
 from sphinx.application import Sphinx
 
-from sphinxcontrib.needs.utils import INTERNALS
+from sphinxcontrib.needs.utils import INTERNALS, logger
 
 
 def create_need(need_id, app: Sphinx, layout=None, style=None, docname=None):
@@ -86,7 +87,7 @@ def build_need(layout, node, app, style=None, fromdocname=None):
     """
     Builds a need based on a given layout for a given need-node.
 
-    The created table must have ethe following docutils structure::
+    The created table must have the following docutils structure::
 
         - table
         -- tgroup
@@ -245,6 +246,21 @@ class LayoutHandler:
             "link": self.link,
             "collapse_button": self.collapse_button,
         }
+
+        # Prepare string_links dict, so that regex and templates get not recompiled too often.
+        #
+        # Do not set needs_string_links here and update it.
+        # This would lead to deepcopy()-errors, as needs_string_links gets some "pickled" and jinja Environment is
+        # too complex for this.
+        self.string_links = {}
+        for link_name, link_conf in app.config.needs_string_links.items():
+            self.string_links[link_name] = {
+                "url_template": Environment(loader=BaseLoader).from_string(link_conf["link_url"]),
+                "name_template": Environment(loader=BaseLoader).from_string(link_conf["link_name"]),
+                "regex_compiled": re.compile(link_conf["regex"]),
+                "options": link_conf["options"],
+                "name": link_name,
+            }
 
     def get_need_table(self):
         if self.layout["grid"] not in self.grids.keys():
@@ -432,9 +448,47 @@ class LayoutHandler:
         if isinstance(data, str):
             if len(data) == 0 and not show_empty:
                 return []
-            data_node = nodes.inline(classes=["needs_data"])
-            data_node.append(nodes.Text(data, data))
+            # data_node = nodes.inline(classes=["needs_data"])
+            # data_node.append(nodes.Text(data, data))
+            # data_container.append(data_node)
+
+            matching_link_confs = []
+            for link_name, link_conf in self.string_links.items():
+                if name in link_conf["options"]:
+                    matching_link_confs.append(link_conf)
+
+            string_link_error = False
+            if matching_link_confs:
+                try:
+                    link_name = None
+                    link_url = None
+                    for link_conf in matching_link_confs:
+                        match = link_conf["regex_compiled"].search(data)
+                        if match:
+                            render_content = match.groupdict()
+                            link_url = link_conf["url_template"].render(**render_content)
+                            link_name = link_conf["name_template"].render(**render_content)
+                            break  # We only handle the first matching string_link
+                    data_node = nodes.inline(classes=["needs_data"])
+                    if link_name:
+                        data_node.append(nodes.reference(link_name, link_name, refuri=link_url))
+                    else:
+                        # if no string_link match was made, we handle it as normal string value
+                        data_node.append(nodes.Text(data, data))
+
+                except Exception as e:
+                    logger.warning(
+                        f'Problems dealing with string 2 link transformation for value "{data}" of '
+                        f'option "{name}". Error: {e}'
+                    )
+                    string_link_error = True  # Create normal text output
+            elif not matching_link_confs or string_link_error:
+                # Normal text handling
+                data_node = nodes.inline(classes=["needs_data"])
+                data_node.append(nodes.Text(data, data))
+
             data_container.append(data_node)
+
         elif isinstance(data, list):
             if len(data) == 0 and not show_empty:
                 return []
