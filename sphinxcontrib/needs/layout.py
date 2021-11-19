@@ -867,7 +867,8 @@ class LayoutHandler:
 
         if (not self.need["collapse"]) or (self.need["collapse"] is None and not initial):
             status = "show"
-        elif (self.need["collapse"]) or (not self.need["collapse"] and initial):
+
+        if (self.need["collapse"]) or (not self.need["collapse"] and initial):
             status = "hide"
 
         target_strings = target.split(",")
