@@ -80,7 +80,7 @@ class NeedserviceDirective(Directive):
 
             if app.config.needs_service_all_data:
                 for name, value in missing_options.items():
-                    content.append("\n:{}: {}".format(name, value))
+                    content.append(f"\n:{name}: {value}")
 
             # content.insert(0, '.. code-block:: text\n')
             options["content"] = "\n".join(content)

@@ -54,7 +54,7 @@ class NeedpieDirective(FilterBase):
             env.needs_all_needs = {}
 
         id = env.new_serialno("needpie")
-        targetid = "needpie-{docname}-{id}".format(docname=env.docname, id=id)
+        targetid = f"needpie-{env.docname}-{id}"
         targetnode = nodes.target("", "", ids=[targetid])
 
         content = self.content
@@ -189,7 +189,7 @@ def process_needpie(app, doctree, fromdocname):
             os.mkdir(image_folder)
         # We need to calculate an unique pie-image file name
         hash_value = hashlib.sha256(id.encode()).hexdigest()[:5]
-        rel_file_path = os.path.join("_images", "need_pie_{}.png".format(hash_value))
+        rel_file_path = os.path.join("_images", f"need_pie_{hash_value}.png")
         if rel_file_path not in env.images:
             fig.savefig(os.path.join(env.app.srcdir, rel_file_path), format="png")
             env.images[rel_file_path] = ["_images", os.path.split(rel_file_path)[-1]]
@@ -205,4 +205,4 @@ def process_needpie(app, doctree, fromdocname):
 
 def label_calc(pct, allvals):
     absolute = int(round(pct / 100.0 * sum(allvals)))
-    return "{:.1f}%\n({:d})".format(pct, absolute)
+    return f"{pct:.1f}%\n({absolute:d})"

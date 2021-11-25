@@ -9,7 +9,7 @@ def test_doc_needs_builder(app, status, warning):
     app.build()
 
     needs_json = Path(app.outdir, "needs.json")
-    with open(needs_json, "r") as needs_file:
+    with open(needs_json) as needs_file:
         needs_file_content = needs_file.read()
 
     needs_list = json.loads(needs_file_content)

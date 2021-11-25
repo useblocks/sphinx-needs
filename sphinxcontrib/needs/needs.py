@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
@@ -135,7 +133,7 @@ def setup(app):
     app.add_config_value("needs_id_required", False, "html", types=[bool])
     app.add_config_value(
         "needs_id_regex",
-        "^[A-Z0-9_]{{{id_length},}}".format(id_length=app.config.needs_id_length),
+        f"^[A-Z0-9_]{{{app.config.needs_id_length},}}",
         "html",
     )
     app.add_config_value("needs_show_link_type", False, "html", types=[bool])
@@ -551,7 +549,7 @@ def check_configuration(_app: Sphinx, config: Config):
         # Check if external filter values is really a string
         if not isinstance(value, str):
             raise NeedsConfigException(
-                "External filter value: {0} from needs_filter_data {1} is not a string.".format(value, external_filter)
+                f"External filter value: {value} from needs_filter_data {external_filter} is not a string."
             )
         # Check if needs external filter and extra option are using the same name
         if extern_filter in extra_options:
