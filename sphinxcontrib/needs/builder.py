@@ -24,8 +24,8 @@ class NeedsBuilder(Builder):
         version = config.version
         needs_list = NeedsList(config, self.outdir, self.confdir)
 
-        if getattr(config, "needs_file"):
-            needs_file = getattr(config, "needs_file")
+        if config.needs_file:
+            needs_file = config.needs_file
             needs_list.load_json(needs_file)
         else:
             # check if needs.json file exists in conf.py directory
@@ -46,7 +46,7 @@ class NeedsBuilder(Builder):
         for need in filtered_needs:
             needs_list.add_need(version, need)
 
-        for key, need_filter in filters.items():
+        for need_filter in filters.values():
             if need_filter["export_id"]:
                 needs_list.add_filter(version, need_filter)
 

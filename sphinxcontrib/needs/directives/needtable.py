@@ -155,14 +155,14 @@ def process_needtables(app, doctree, fromdocname):
 
         # Define Table column width
         # ToDo: Find a way to chosen to perfect width automatically.
-        for option, title in current_needtable["columns"]:
+        for option, _title in current_needtable["columns"]:
             if option == "TITLE":
                 tgroup += nodes.colspec(colwidth=15)
             else:
                 tgroup += nodes.colspec(colwidth=5)
 
         node_columns = []
-        for option, title in current_needtable["columns"]:
+        for _option, title in current_needtable["columns"]:
             header_name = title
             node_columns.append(nodes.entry("", nodes.paragraph("", header_name)))
 
@@ -216,7 +216,7 @@ def process_needtables(app, doctree, fromdocname):
                 prefix = app.config.needs_part_prefix
                 temp_need["title"] = temp_need["content"]
 
-            for option, title in current_needtable["columns"]:
+            for option, _title in current_needtable["columns"]:
                 if option == "ID":
                     row += row_col_maker(
                         app, fromdocname, env.needs_all_needs, temp_need, "id", make_ref=True, prefix=prefix
@@ -259,7 +259,7 @@ def process_needtables(app, doctree, fromdocname):
 
                     row = nodes.row(classes=["need_part"])
 
-                    for option, title in current_needtable["columns"]:
+                    for option, _title in current_needtable["columns"]:
                         if option == "ID":
                             row += row_col_maker(
                                 app,
