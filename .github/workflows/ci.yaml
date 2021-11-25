@@ -39,12 +39,8 @@ jobs:
       - name: Set Up Python
         uses: actions/setup-python@v2
         with:
-          python-version: "3.9.7"  # 3.9.8 crashes
-      - name: Install Nox Dependencies
-        run: |
-          python -m pip install poetry nox nox-poetry pyparsing==3.0.4
-      - name: Run Lint
-        run: nox --non-interactive --session lint -- --full-trace
+          python-version: "3.9"
+      - uses: pre-commit/action@v2.0.3
 
   linkcheck:
     name: Docs-Linkcheck
