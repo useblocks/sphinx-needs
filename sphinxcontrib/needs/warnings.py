@@ -78,9 +78,8 @@ def process_warnings(app, exception):
                 # see deatils in https://github.com/sphinx-doc/sphinx/blob/81a4fd973d4cfcb25d01a7b0be62cdb28f82406d/sphinx/application.py#L345 # noqa
                 # To be clear, app.keep_going = -W and --keep-going, and will overrite -W after
                 # see details in https://github.com/sphinx-doc/sphinx/blob/4.x/sphinx/application.py#L182
-                if app.statuscode == 0:
-                    if app.keep_going or app.warningiserror:
-                        app.statuscode = 1
+                if app.statuscode == 0 and (app.keep_going or app.warningiserror):
+                    app.statuscode = 1
 
                 # get the text for used filter, either from filter string or function name
                 if hasattr(warning_filter, "__call__"):

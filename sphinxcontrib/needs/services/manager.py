@@ -36,7 +36,7 @@ class ServiceManager:
         self.services[name] = clazz(self.app, name, config, **kwargs)
 
     def get(self, name):
-        if name in self.services.keys():
+        if name in self.services:
             return self.services[name]
         else:
             raise NeedsServiceException(

@@ -26,11 +26,7 @@ def random_data_callback(request):
     if re.match(r"/search/issues", request.path_url):
         data = GITHUB_ISSUE_SEARCH_ANSWER
         data["items"][0]["number"] = randrange(10000)
-    elif re.match(r"/.+/issue/.+", request.path_url):
-        data = GITHUB_SPECIFIC_ISSUE_ANSWER
-        data["number"] = randrange(10000)
-    elif re.match(r"/.+/pulls/.+", request.path_url):
-        # data = GITHUB_SEARCH_COMMIT_ANSWER
+    elif re.match(r"/.+/issue/.+", request.path_url) or re.match(r"/.+/pulls/.+", request.path_url):
         data = GITHUB_SPECIFIC_ISSUE_ANSWER
         data["number"] = randrange(10000)
     elif re.match(r"/search/commits", request.path_url):

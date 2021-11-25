@@ -178,11 +178,10 @@ def add_need(
 
     # Handle status
     # Check if status is in needs_statuses. If not raise an error.
-    if env.app.config.needs_statuses:
-        if status not in [stat["name"] for stat in env.app.config.needs_statuses]:
-            raise NeedsStatusNotAllowed(
-                "Status {0} of need id {1} is not allowed " "by config value 'needs_statuses'.".format(status, need_id)
-            )
+    if env.app.config.needs_statuses and status not in [stat["name"] for stat in env.app.config.needs_statuses]:
+        raise NeedsStatusNotAllowed(
+            "Status {0} of need id {1} is not allowed " "by config value 'needs_statuses'.".format(status, need_id)
+        )
 
     if tags is None:
         tags = []
@@ -220,7 +219,7 @@ def add_need(
     if not hasattr(env, "needs_all_needs"):
         env.needs_all_needs = {}
 
-    if need_id in env.needs_all_needs.keys():
+    if need_id in env.needs_all_needs:
         if id:
             raise NeedsDuplicatedId(
                 "A need with ID {} already exists! "
@@ -300,11 +299,11 @@ def add_need(
 
     for link_type in env.config.needs_extra_links:
         # Check, if specific link-type got some arguments during method call
-        if link_type["option"] not in list(kwargs.keys()) and link_type["option"] not in needs_global_options.keys():
+        if link_type["option"] not in kwargs and link_type["option"] not in needs_global_options:
             # if not we set no links, but entry in needS_info must be there
             links = []
-        elif link_type["option"] in needs_global_options.keys() and (
-            link_type["option"] not in list(kwargs.keys()) or len(str(kwargs[link_type["option"]])) == 0
+        elif link_type["option"] in needs_global_options and (
+            link_type["option"] not in kwargs or len(str(kwargs[link_type["option"]])) == 0
         ):
             # If it is in global option, value got already set during prior handling of them
             links_string = needs_info[link_type["option"]]
@@ -317,7 +316,7 @@ def add_need(
         needs_info[link_type["option"]] = links
         needs_info["{}_back".format(link_type["option"])] = []
 
-        if "copy" not in link_type.keys():
+        if "copy" not in link_type:
             link_type["copy"] = False
 
         if link_type["copy"] and link_type["option"] != "links":
@@ -401,7 +400,7 @@ def del_need(app, id):
     :param app: Sphinx application object.
     :param id: Sphinx need id.
     """
-    if id in app.env.needs_all_needs.keys():
+    if id in app.env.needs_all_needs:
         del app.env.needs_all_needs[id]
     else:
         logger.warning("Given need id {} not exists!".format(id))
@@ -609,7 +608,7 @@ def _merge_global_options(app, needs_info, global_options):
     for key, value in global_options.items():
 
         # If key already exists in needs_info, this global_option got overwritten manually in current need
-        if key in needs_info.keys() and needs_info[key]:
+        if key in needs_info and needs_info[key]:
             continue
 
         if isinstance(value, tuple):

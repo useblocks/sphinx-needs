@@ -130,7 +130,7 @@ class NeedimportDirective(Directive):
                 for id in needs_ids:
                     # Manipulate links in all link types
                     for extra_link in env.config.needs_extra_links:
-                        if extra_link["option"] in need.keys() and id in need[extra_link["option"]]:
+                        if extra_link["option"] in need and id in need[extra_link["option"]]:
                             for n, link in enumerate(need[extra_link["option"]]):
                                 if id == link:
                                     need[extra_link["option"]][n] = "".join([id_prefix, id])
@@ -151,7 +151,7 @@ class NeedimportDirective(Directive):
             need["layout"] = self.options.get("layout", getattr(need, "layout", None))
             need["style"] = self.options.get("style", getattr(need, "style", None))
             need["style"] = self.options.get("style", getattr(need, "style", None))
-            if "hide" in self.options.keys():
+            if "hide" in self.options:
                 need["hide"] = True
             else:
                 need["hide"] = getattr(need, "hide", None)

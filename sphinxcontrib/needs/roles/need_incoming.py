@@ -19,7 +19,7 @@ def process_need_incoming(app, doctree, fromdocname):
         ref_need = env.needs_all_needs[node_need_backref["reftarget"]]
 
         # Lets check if NeedIncoming shall follow a specific link type
-        if "link_type" in node_need_backref.attributes.keys():
+        if "link_type" in node_need_backref.attributes:
             links_back = ref_need[node_need_backref.attributes["link_type"]]
         # if not, follow back to default links
         else:

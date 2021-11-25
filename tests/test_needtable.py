@@ -35,7 +35,7 @@ def test_doc_build_html(app, status, warning):
     assert len(tree.xpath("//table/caption")) == 1
 
     # check needtable has correct caption
-    assert "Test table caption" == tree.xpath("//table/caption/span")[0].text
+    assert tree.xpath("//table/caption/span")[0].text == "Test table caption"
 
 
 @with_app(buildername="html", srcdir="doc_test/doc_needtable")

@@ -13,10 +13,10 @@ def test_export_id(app, status, warning):
 
     content_obj = json.loads(content)
     assert content_obj is not None
-    assert "created" in content_obj.keys()
-    assert "FLOW_1" in content_obj["versions"]["1.0"]["filters"].keys()
-    assert "TABLE_1" in content_obj["versions"]["1.0"]["filters"].keys()
-    assert "LIST_1" in content_obj["versions"]["1.0"]["filters"].keys()
+    assert "created" in content_obj
+    assert "FLOW_1" in content_obj["versions"]["1.0"]["filters"]
+    assert "TABLE_1" in content_obj["versions"]["1.0"]["filters"]
+    assert "LIST_1" in content_obj["versions"]["1.0"]["filters"]
 
 
 @with_app(buildername="html", srcdir="doc_test/doc_export_id")

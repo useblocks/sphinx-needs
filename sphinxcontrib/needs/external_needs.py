@@ -90,7 +90,7 @@ def load_external_needs(app, env, _docname):
 
             # check if external needs already exist
             ext_need_id = need_params["id"]
-            if ext_need_id in env.needs_all_needs.keys():
+            if ext_need_id in env.needs_all_needs:
                 # check need_params for more detail
                 if (
                     env.needs_all_needs[ext_need_id]["is_external"]

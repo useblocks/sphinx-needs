@@ -52,7 +52,7 @@ class NeedextractDirective(FilterBase):
             "export_id": self.options.get("export_id", ""),
             "layout": self.options.get("layout", None),
             "style": self.options.get("style", None),
-            "show_filters": True if self.options.get("show_filters", False) is None else False,
+            "show_filters": self.options.get("show_filters", False) is None,
         }
         env.need_all_needextracts[targetid].update(self.collect_filter_attributes())
 

@@ -12,7 +12,7 @@ class Config:
         self.configs = {}
 
     def add(self, name, value, option_type=str, append=False, overwrite=False):
-        if name not in self.configs.keys():
+        if name not in self.configs:
             self.configs[name] = option_type()
         elif not isinstance(self.configs[name], option_type):
             raise Exception(
@@ -28,12 +28,12 @@ class Config:
                 self.configs[name] += value
 
     def create(self, name, option_type=str, overwrite=False):
-        if name in self.configs.keys() and not overwrite:
+        if name in self.configs and not overwrite:
             raise Exception(f"option {name} exists.")
         self.configs[name] = option_type()
 
     def create_or_get(self, name, option_type=str):
-        if name not in self.configs.keys():
+        if name not in self.configs:
             self.configs[name] = option_type()
         return self.configs.get(name, None)
 
