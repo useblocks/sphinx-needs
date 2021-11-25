@@ -65,10 +65,10 @@ def process_warnings(app, exception):
                     if warning_filter(need, logger):
                         result.append(need)
             else:
-                logger.warning("Unknown needs warnings filter {}!".format(warning_filter))
+                logger.warning(f"Unknown needs warnings filter {warning_filter}!")
 
             if len(result) == 0:
-                logger.info("{}: passed".format(warning_name))
+                logger.info(f"{warning_name}: passed")
             else:
                 need_ids = [x["id"] for x in result]
 

@@ -59,7 +59,7 @@ def add_need_type(app: Sphinx, directive, title, prefix, color="#ffffff", style=
     type_names = [x["directive"] for x in needs_types]
 
     if directive in type_names:
-        raise NeedsApiConfigException("{} already exists as need type".format(directive))
+        raise NeedsApiConfigException(f"{directive} already exists as need type")
 
     needs_types.append({"directive": directive, "title": title, "prefix": prefix, "color": color, "style": style})
     app.add_directive(directive, sphinxcontrib.needs.directives.need.NeedDirective)
@@ -85,7 +85,7 @@ def add_extra_option(app, name):
     extra_options = NEEDS_CONFIG.create_or_get("extra_options", dict)
 
     if name in extra_options.keys():
-        raise NeedsApiConfigWarning("Option {} already registered.".format(name))
+        raise NeedsApiConfigWarning(f"Option {name} already registered.")
 
     NEEDS_CONFIG.add("extra_options", {name: directives.unchanged}, dict, append=True)
     # extra_options[name] = directives.unchanged

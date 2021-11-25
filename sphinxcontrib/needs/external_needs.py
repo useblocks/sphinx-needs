@@ -47,7 +47,7 @@ def load_external_needs(app, env, _docname):
             if not os.path.exists(json_path):
                 raise NeedsExternalException(f"Given json_path {json_path} does not exist.")
 
-            with open(json_path, "r") as json_file:
+            with open(json_path) as json_file:
                 needs_json = json.load(json_file)
 
         version = source.get("version", needs_json.get("current_version", None))

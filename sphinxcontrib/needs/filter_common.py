@@ -79,7 +79,7 @@ def process_filters(app, all_needs, current_needlist, include_external=True):
         try:
             all_needs = sorted(all_needs, key=lambda node: node[sort_key] or "")
         except KeyError as e:
-            log.warning("Sorting parameter {0} not valid: Error: {1}".format(sort_key, e))
+            log.warning(f"Sorting parameter {sort_key} not valid: Error: {e}")
 
     # check if include external needs
     checked_all_needs = []
@@ -265,7 +265,7 @@ def filter_needs(app, needs, filter_string="", current_need=None):
             ):
                 found_needs.append(filter_need)
         except Exception as e:
-            log.warning("Filter {0} not valid: Error: {1}".format(filter_string, e))
+            log.warning(f"Filter {filter_string} not valid: Error: {e}")
 
     return found_needs
 
@@ -303,5 +303,5 @@ def filter_single_need(app, need, filter_string="", needs=None, current_need=Non
         else:
             result = bool(eval(filter_string, filter_context))
     except Exception as e:
-        raise NeedsInvalidFilter("Filter {0} not valid: Error: {1}".format(filter_string, e))
+        raise NeedsInvalidFilter(f"Filter {filter_string} not valid: Error: {e}")
     return result

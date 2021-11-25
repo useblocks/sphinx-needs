@@ -114,7 +114,7 @@ class NeedsList:
             file = os.path.join(self.confdir, file)
 
         if not os.path.exists(file):
-            self.log.warning("Could not load needs json file {0}".format(file))
+            self.log.warning(f"Could not load needs json file {file}")
         else:
             errors = check_needs_file(file)
             # We only care for schema errors here, all other possible errors
@@ -124,12 +124,12 @@ class NeedsList:
                 for error in errors["schema"]:
                     self.log.info(f'  {error.message} -> {".".join(error.path)}')
 
-            with open(file, "r") as needs_file:
+            with open(file) as needs_file:
                 needs_file_content = needs_file.read()
             try:
                 needs_list = json.loads(needs_file_content)
             except json.JSONDecodeError:
-                self.log.warning("Could not decode json file {0}".format(file))
+                self.log.warning(f"Could not decode json file {file}")
             else:
                 self.needs_list = needs_list
 
@@ -147,10 +147,10 @@ def check_needs_file(path):
     :return: Dict, with error reports
     """
     schema_path = os.path.join(os.path.dirname(__file__), "needsfile.json")
-    with open(schema_path, "r") as schema_file:
+    with open(schema_path) as schema_file:
         needs_schema = json.load(schema_file)
 
-    with open(path, "r") as needs_file:
+    with open(path) as needs_file:
         needs_data = json.load(needs_file)
 
     validator = Draft7Validator(needs_schema)

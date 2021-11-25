@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import hashlib
 import re
 
@@ -130,7 +129,9 @@ class NeedDirective(Directive):
 
     def make_hashed_id(self, type_prefix, id_length):
         hashable_content = self.full_title or "\n".join(self.content)
-        return "%s%s" % (type_prefix, hashlib.sha1(hashable_content.encode("UTF-8")).hexdigest().upper()[:id_length])
+        return "{}{}".format(
+            type_prefix, hashlib.sha1(hashable_content.encode("UTF-8")).hexdigest().upper()[:id_length]
+        )
 
     @property
     def env(self):
@@ -345,8 +346,8 @@ def create_back_links(env, option):
     :param env: sphinx enviroment
     :return: None
     """
-    option_back = "{}_back".format(option)
-    if env.needs_workflow["backlink_creation_{}".format(option)]:
+    option_back = f"{option}_back"
+    if env.needs_workflow[f"backlink_creation_{option}"]:
         return
 
     needs = env.needs_all_needs
@@ -369,7 +370,7 @@ def create_back_links(env, option):
                             needs[link_main]["parts"][link_part][option_back] = []
                         needs[link_main]["parts"][link_part][option_back].append(key)
 
-    env.needs_workflow["backlink_creation_{}".format(option)] = True
+    env.needs_workflow[f"backlink_creation_{option}"] = True
 
 
 def _fix_list_dyn_func(list):

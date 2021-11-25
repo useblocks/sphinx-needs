@@ -60,7 +60,7 @@ def process_need_ref(app, doctree, fromdocname):
                 # Shorten title, if necessary
                 max_length = app.config.needs_role_need_max_title_length
                 if max_length > 3:
-                    title = title if len(title) < max_length else u"{}...".format(title[: max_length - 3])
+                    title = title if len(title) < max_length else f"{title[: max_length - 3]}..."
 
                 link_text = app.config.needs_role_need_template.format(
                     title=title,

@@ -5,7 +5,6 @@ from pathlib import Path
 from random import randrange
 
 import responses
-import six
 from nose.tools import raises
 from sphinx_testing import with_app
 
@@ -172,7 +171,7 @@ def test_build_needs(app, status, warning):
     # Validate individual needs data
     current_needs = current_version_data["needs"]
     expected_keys = ("description", "id", "links", "sections", "status", "tags", "title", "type_name")
-    for need in six.itervalues(current_needs):
+    for need in current_needs.values():
         assert all(key in need for key in expected_keys)
 
 

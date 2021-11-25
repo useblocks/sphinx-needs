@@ -36,7 +36,7 @@ def create_need(need_id, app: Sphinx, layout=None, style=None, docname=None):
     needs = env.needs_all_needs
 
     if need_id not in needs.keys():
-        raise SphinxNeedLayoutException("Given need id {} does not exist.".format(need_id))
+        raise SphinxNeedLayoutException(f"Given need id {need_id} does not exist.")
     need_data = needs[need_id]
 
     node_container = nodes.container()
@@ -287,7 +287,7 @@ class LayoutHandler:
         if len(lines) == 0:
             return []
 
-        lines_container = nodes.line_block(classes=["needs_{}".format(section)])
+        lines_container = nodes.line_block(classes=[f"needs_{section}"])
 
         for line in lines:
             # line_block_node = nodes.line_block()
@@ -399,7 +399,7 @@ class LayoutHandler:
                             node_line += result
                     else:
                         raise SphinxNeedLayoutException(
-                            "Error during layout line parsing. This looks strange: {}".format(line_element)
+                            f"Error during layout line parsing. This looks strange: {line_element}"
                         )
 
                 return_nodes.append(node_line)
@@ -412,7 +412,7 @@ class LayoutHandler:
                 raise SphinxNeedLayoutException(item)
             # To escape { we need to use 2 of them.
             # So {{ becomes {{{{
-            replace_string = "{{{{{}}}}}".format(item)
+            replace_string = f"{{{{{item}}}}}"
             data = data.replace(replace_string, self.need[item])
         return data
 
@@ -584,7 +584,7 @@ class LayoutHandler:
                 continue
 
             data_line = nodes.line()
-            label = prefix + "{}:".format(data) + postfix + " "
+            label = prefix + f"{data}:" + postfix + " "
             result = self.meta(data, label, show_empty)
             if not (show_empty or result):
                 continue
@@ -608,7 +608,7 @@ class LayoutHandler:
         """
         data_container = nodes.inline(classes=[name])
         if name not in [x["option"] for x in self.app.config.needs_extra_links]:
-            raise SphinxNeedLayoutException("Invalid link name {} for link-type".format(name))
+            raise SphinxNeedLayoutException(f"Invalid link name {name} for link-type")
 
         # if incoming:
         #     link_name = self.app.config.needs_extra_links[name]['incoming']
@@ -619,9 +619,9 @@ class LayoutHandler:
         from sphinxcontrib.needs.roles.need_outgoing import NeedOutgoing
 
         if incoming:
-            node_links = NeedIncoming(reftarget=self.need["id"], link_type="{}_back".format(name))
+            node_links = NeedIncoming(reftarget=self.need["id"], link_type=f"{name}_back")
         else:
-            node_links = NeedOutgoing(reftarget=self.need["id"], link_type="{}".format(name))
+            node_links = NeedOutgoing(reftarget=self.need["id"], link_type=f"{name}")
         node_links.append(nodes.inline(self.need["id"], self.need["id"]))
         data_container.append(node_links)
         return data_container
@@ -714,7 +714,7 @@ class LayoutHandler:
             url = os.path.join(
                 needs_location,
                 "images",
-                "feather_{}".format(builder_extension),
+                f"feather_{builder_extension}",
                 "{}.{}".format(url.split(":")[1], builder_extension),
             )
 

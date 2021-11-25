@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Sphinx-needs functions module
 =============================
@@ -130,7 +128,7 @@ def find_and_replace_node_content(node, env, need):
             if isinstance(func_return, list):
                 func_return = ", ".join(func_return)
 
-            new_text = new_text.replace("[[{}]]".format(func_string_org), func_return)
+            new_text = new_text.replace(f"[[{func_string_org}]]", func_return)
 
         if isinstance(node, nodes.reference):
             node.attributes["refuri"] = new_text
@@ -192,9 +190,9 @@ def resolve_dynamic_values(env):
                         continue
                     # Replace original function string with return value of function call
                     if func_return is None:
-                        need[need_option] = need[need_option].replace("[[{}]]".format(func_call), "")
+                        need[need_option] = need[need_option].replace(f"[[{func_call}]]", "")
                     else:
-                        need[need_option] = need[need_option].replace("[[{}]]".format(func_call), str(func_return))
+                        need[need_option] = need[need_option].replace(f"[[{func_call}]]", str(func_return))
 
                     if need[need_option] == "":
                         need[need_option] = None
@@ -216,7 +214,7 @@ def resolve_dynamic_values(env):
                     else:
                         # Replace original function string with return value of function call
                         if isinstance(need[need_option], (str, int, float)):
-                            new_values.append(element.replace("[[{}]]".format(func_call), str(func_return)))
+                            new_values.append(element.replace(f"[[{func_call}]]", str(func_return)))
                         else:
                             if isinstance(need[need_option], (list, set)):
                                 if isinstance(func_return, (list, set)):
@@ -255,7 +253,7 @@ def check_and_get_content(content, need, env):
     func_return = execute_func(env, need, func_call)  # Execute function call and get return value
 
     # Replace the function_call with the calculated value
-    content = content.replace("[[{}]]".format(func_call), func_return)
+    content = content.replace(f"[[{func_call}]]", func_return)
     return content
 
 
@@ -292,12 +290,12 @@ def _analyze_func_string(func_string, need):
         func = ast.parse(func_string)
     except SyntaxError as e:
         need_id = need["id"] or "UNKNOWN"
-        raise SphinxError("Parsing function string failed for need {}: {}. {}".format(need_id, func_string, e))
+        raise SphinxError(f"Parsing function string failed for need {need_id}: {func_string}. {e}")
     try:
         func_call = func.body[0].value
         func_name = func_call.func.id
     except AttributeError:
-        raise SphinxError("Given dynamic function string is not a valid python call. Got: {}".format(func_string))
+        raise SphinxError(f"Given dynamic function string is not a valid python call. Got: {func_string}")
 
     func_args = []
     for arg in func_call.args:

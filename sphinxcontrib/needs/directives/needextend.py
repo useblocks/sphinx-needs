@@ -37,7 +37,7 @@ class NeedextendDirective(Directive):
             env.needs_all_needs = {}
 
         id = env.new_serialno("needextend")
-        targetid = "needextend-{docname}-{id}".format(docname=env.docname, id=id)
+        targetid = f"needextend-{env.docname}-{id}"
         targetnode = nodes.target("", "", ids=[targetid])
 
         extend_filter = self.arguments[0] if self.arguments else None

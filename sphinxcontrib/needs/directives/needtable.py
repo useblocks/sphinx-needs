@@ -142,7 +142,7 @@ def process_needtables(app, doctree, fromdocname):
             style = current_needtable["style"].upper()
 
         # Prepare table
-        classes = ["NEEDS_{style}".format(style=style)]
+        classes = [f"NEEDS_{style}"]
 
         # Only add the theme specific "do not touch this table" class, if we use a style which
         # care about table layout and styling. The normal "TABLE" style is using the Sphinx default table
