@@ -35,6 +35,10 @@ def test_doc_build_html(app, status, warning):
     # check needtable has correct caption
     assert tree.xpath("//table/caption/span")[0].text == "Test table caption"
 
+    # Test colwidths
+
+    # colwidths_html_path = str(Path(app.outdir, "test_colwidths.html"))
+
 
 @with_app(buildername="html", srcdir="doc_test/doc_needtable")
 def test_doc_needtable_options(app, status, warning):
