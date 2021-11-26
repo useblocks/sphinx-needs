@@ -6,7 +6,7 @@ list:
 
 .PHONY: lint
 lint:
-	poetry run flake8 ${SRC_FILES}
+	pre-commit run --all-files
 
 .PHONY: test
 test:

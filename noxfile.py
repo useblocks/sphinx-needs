@@ -4,12 +4,6 @@ from nox_poetry import session
 PYTHON_VERSIONS = ["3.6", "3.8", "3.9.7"]
 SPHINX_VERSIONS = ["3.2", "3.5.4", "4.1", "4.2"]
 TEST_DEPENDENCIES = ["nose", "sphinx_testing", "responses", "lxml", "pyparsing!=3.0.4"]
-LINT_DEPENDENCIES = [
-    "flake8",
-    "pep8-naming",
-    "flake8-isort",
-    "flake8-black",
-]
 
 
 def is_supported(python: str, sphinx: str) -> bool:
@@ -33,12 +27,6 @@ def tests(session, sphinx):
         run_tests(session, sphinx)
     else:
         session.skip("unsupported combination")
-
-
-@session(python="3.9")
-def lint(session):
-    session.install(*LINT_DEPENDENCIES)
-    session.run("make", "lint", external=True)
 
 
 @session(python="3.9")

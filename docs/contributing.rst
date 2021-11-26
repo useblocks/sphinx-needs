@@ -43,6 +43,14 @@ installed in an isolated environment by Poetry.
 
        poetry install
 
+3. `Install Pre-Commit <https://pre-commit.com/>`__
+
+4. Install the Pre-Commit hooks
+
+   ::
+
+      pre-commit install
+
 List make targets
 -----------------
 ``Sphinx-Needs`` uses ``make`` to invoke most development related actions.
@@ -80,8 +88,11 @@ Running Tests
 
    make test
 
-Linting
--------
+Linting & Formatting
+--------------------
+
+``Sphinx-Needs`` uses `black <https://github.com/psf/black>`_ and
+`isort <https://pycqa.github.io/isort/>`_ to care about its source code formatting.
 
 ::
 
@@ -122,15 +133,6 @@ and the local :download:`noxfile <../noxfile.py>`.
 .. dropdown:: Our noxfile.py
 
    .. literalinclude:: ../noxfile.py
-
-Formatting
-----------
-``Sphinx-Needs`` uses `black <https://github.com/psf/black>`_ and
-`isort <https://pycqa.github.io/isort/>`_ to care about its source code formatting.
-
-To run both::
-
-    make format
 
 
 Running Commands
