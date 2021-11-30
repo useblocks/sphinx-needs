@@ -71,5 +71,20 @@ def get_title(option_string: str) -> Tuple:
     return option_name.upper(), title
 
 
+def get_option_list(options, name):
+    """
+    Gets and creates a list of a given directive option value in a safe way
+    :param options: List of options
+    :param name: Name of the option
+    :return: List with strings
+    """
+    values = str(options.get(name, ""))
+    values_list = []
+    if isinstance(values, str):
+        values_list = [value.strip() for value in re.split(";|,", values)]
+
+    return values_list
+
+
 class SphinxNeedsLinkTypeException(BaseException):
     """Raised if problems with link types happen"""

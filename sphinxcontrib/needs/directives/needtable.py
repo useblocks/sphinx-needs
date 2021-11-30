@@ -5,6 +5,7 @@ from docutils.parsers.rst import directives
 
 from sphinxcontrib.needs.api.exceptions import NeedsInvalidException
 from sphinxcontrib.needs.directives.utils import (
+    get_option_list,
     get_title,
     no_needs_found_paragraph,
     used_filter_paragraph,
@@ -34,6 +35,7 @@ class NeedtableDirective(FilterBase):
         "style_row": directives.unchanged_required,
         "style_col": directives.unchanged_required,
         "sort": directives.unchanged_required,
+        "class": directives.unchanged_required,
     }
 
     # Update the options_spec with values defined in the FilterBase class
@@ -70,6 +72,8 @@ class NeedtableDirective(FilterBase):
                     f"colwidths: {len(colwidths_list)} and columns: {len(columns)}"
                 )
 
+        classes = get_option_list(self.options, "class")
+
         style = self.options.get("style", "").upper()
         style_row = self.options.get("style_row", "")
         style_col = self.options.get("style_col", "")
@@ -86,6 +90,7 @@ class NeedtableDirective(FilterBase):
             "lineno": self.lineno,
             "target_node": targetnode,
             "caption": title,
+            "classes": classes,
             "columns": columns,
             "colwidths": colwidths_list,
             "style": style,
@@ -155,7 +160,7 @@ def process_needtables(app, doctree, fromdocname):
             style = current_needtable["style"].upper()
 
         # Prepare table
-        classes = [f"NEEDS_{style}"]
+        classes = [f"NEEDS_{style}"] + current_needtable["classes"]
 
         # Only add the theme specific "do not touch this table" class, if we use a style which
         # care about table layout and styling. The normal "TABLE" style is using the Sphinx default table
@@ -325,4 +330,11 @@ def process_needtables(app, doctree, fromdocname):
             title = nodes.title(title_text, "", nodes.Text(title_text))
             content.insert(0, title)
 
-        node.replace_self(content)
+        # Put the table in a div-wrapper, so that we can control overflow / scroll layout
+        if style == "TABLE":
+            table_wrapper = nodes.container(classes=["needstable_wrapper"])
+            table_wrapper.insert(0, content)
+            node.replace_self(table_wrapper)
+
+        else:
+            node.replace_self(content)

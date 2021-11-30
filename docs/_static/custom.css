@@ -18,3 +18,8 @@ div.body {
 div.summary-down, div.summary-up {
     display: none;
 }
+
+
+table.class_red_border {
+    border: 3px solid red;
+}

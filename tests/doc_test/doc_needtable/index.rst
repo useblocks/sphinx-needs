@@ -18,3 +18,4 @@ TEST DOCUMENT NEEDTABLE
 .. needtable::
    :tags: test2
    :sort: id
+   :class: awesome_test_class, another_test_class

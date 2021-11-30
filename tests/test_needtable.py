@@ -24,7 +24,6 @@ def test_doc_build_html(app, status, warning):
     cnt = 0
     for table in tables:
         if "NEEDS_TABLE" in table.attrib["class"]:
-            assert table.attrib["id"].startswith("needtable-index-")
             cnt += 1
     assert cnt == 2
 
@@ -34,6 +33,10 @@ def test_doc_build_html(app, status, warning):
 
     # check needtable has correct caption
     assert tree.xpath("//table/caption/span")[0].text == "Test table caption"
+
+    # Test classes
+    assert "awesome_test_class" in html
+    assert "another_test_class" in html
 
     # Test colwidths
     colwidths_html_path = Path(app.outdir, "test_colwidths.html").read_text()

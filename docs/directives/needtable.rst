@@ -34,6 +34,7 @@ Supported options:
  * :ref:`needtable_show_parts`
  * :ref:`needtable_style_row`
  * :ref:`needtable_sort`
+ * :ref:`needtable_class`
  * Common filters:
     * :ref:`option_status`
     * :ref:`option_tags`
@@ -449,3 +450,33 @@ In this case, ``status`` is given for sort. So *EX_ROW_3* is above of *EX_ROW_2*
    The default DatabTables table uses Javascript to sort results by its own.
 
 
+.. _needtable_class:
+
+class
+~~~~~
+.. versionadded:: 0.7.4
+
+``class`` allows to set additional class-names for a ``needtable``. Mostly used for HTML output.
+It supports comma separated values and classes will be added to the already set classes by Sphinx-Needs.
+
+**Example**
+
+rst file::
+
+  .. needtable::
+     :tags: test
+     :columns: id,title,status
+     :style: table
+     :class: class_red_border
+
+custom css file::
+
+    table.class_red_border {
+        border: 3px solid red;
+    }
+
+.. needtable::
+     :tags: test
+     :columns: id,title,status
+     :style: table
+     :class: class_red_border
