@@ -6,9 +6,13 @@ License
 
 .. include:: ../LICENSE
 
-0.7.4
+0.7.5
 -----
 :Released: under development
+
+0.7.4
+-----
+:Released: 30.11.2021
 
 * Improvement: Adds :ref:`needservice_debug` flag for :ref:`needservice`.
 * Improvement: Better css table handling.
