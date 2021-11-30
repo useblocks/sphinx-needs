@@ -61,12 +61,13 @@ class NeedtableDirective(FilterBase):
         columns = [get_title(col) for col in columns]
 
         colwidths = str(self.options.get("colwidths", ""))
+        colwidths_list = []
         if colwidths:
-            colwidths = [int(width.strip()) for width in re.split(";|,", colwidths)]
-            if len(columns) != len(colwidths):
+            colwidths_list = [int(width.strip()) for width in re.split(";|,", colwidths)]
+            if len(columns) != len(colwidths_list):
                 raise NeedsInvalidException(
                     f"Amount of elements in colwidths and columns do not match: "
-                    f"colwidths: {len(colwidths)} and columns: {len(columns)}"
+                    f"colwidths: {len(colwidths_list)} and columns: {len(columns)}"
                 )
 
         style = self.options.get("style", "").upper()
@@ -86,7 +87,7 @@ class NeedtableDirective(FilterBase):
             "target_node": targetnode,
             "caption": title,
             "columns": columns,
-            "colwidths": colwidths,
+            "colwidths": colwidths_list,
             "style": style,
             "style_row": style_row,
             "style_col": style_col,
@@ -171,7 +172,7 @@ def process_needtables(app, doctree, fromdocname):
             option, _title = value
 
             if colwidths:  # Get values from given colwidths option
-                tgroup += nodes.colspec(colwidth=int(colwidths[index]))
+                tgroup += nodes.colspec(colwidth=colwidths[index])
             elif option == "TITLE":  # if nothing in colwidths...
                 tgroup += nodes.colspec(colwidth=15)
             else:
