@@ -10,7 +10,7 @@ from tests.util import extract_needs_from_html
 NS = {"html": "http://www.w3.org/1999/xhtml"}
 
 
-class HtmlNeed(object):
+class HtmlNeed:
     """Helper class to parse HTML needs"""
 
     def __init__(self, need):

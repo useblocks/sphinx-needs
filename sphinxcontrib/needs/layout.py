@@ -5,6 +5,7 @@ Based on https://github.com/useblocks/sphinxcontrib-needs/issues/102
 """
 import os
 import re
+from contextlib import suppress
 from urllib.parse import urlparse
 
 import requests
@@ -749,10 +750,8 @@ class LayoutHandler:
 
             # Download only, if file not downloaded yet
             if not os.path.exists(file_path):
-                try:
+                with suppress(FileExistsError):
                     os.mkdir(path)
-                except FileExistsError:
-                    pass
                 response = requests.get(url)
                 if response.status_code == 200:
                     with open(file_path, "wb") as f:

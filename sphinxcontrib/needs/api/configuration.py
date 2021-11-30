@@ -84,7 +84,7 @@ def add_extra_option(app, name):
 
     extra_options = NEEDS_CONFIG.create_or_get("extra_options", dict)
 
-    if name in extra_options.keys():
+    if name in extra_options:
         raise NeedsApiConfigWarning("Option {} already registered.".format(name))
 
     NEEDS_CONFIG.add("extra_options", {name: directives.unchanged}, dict, append=True)
@@ -142,7 +142,7 @@ def add_warning(app, name, function=None, filter_string=None):
 
     warning_check = function or filter_string
 
-    if name in warnings_option.keys():
+    if name in warnings_option:
         raise NeedsApiConfigException(f"Warning {name} already registered.")
 
     # warnings_option[name] = warning_check

@@ -102,10 +102,9 @@ def row_col_maker(
                 link_list.append(link_type["option"])
                 link_list.append(link_type["option"] + "_back")
 
-            if need_key in link_list:
-                if "." in datum:
-                    link_id = datum.split(".")[0]
-                    link_part = datum.split(".")[1]
+            if need_key in link_list and "." in datum:
+                link_id = datum.split(".")[0]
+                link_part = datum.split(".")[1]
 
             datum_text = prefix + str(datum)
             text_col = nodes.Text(datum_text, datum_text)
@@ -178,7 +177,7 @@ def import_prefix_link_edit(needs: Dict[str, Any], id_prefix: str, needs_extra_l
         for id in needs_ids:
             # Manipulate links in all link types
             for extra_link in needs_extra_links:
-                if extra_link["option"] in need.keys() and id in need[extra_link["option"]]:
+                if extra_link["option"] in need and id in need[extra_link["option"]]:
                     for n, link in enumerate(need[extra_link["option"]]):
                         if id == link:
                             need[extra_link["option"]][n] = f"{id_prefix}{id}"

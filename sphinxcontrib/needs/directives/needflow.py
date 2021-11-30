@@ -281,7 +281,7 @@ def process_needflow(app, doctree, fromdocname):
                         else:
                             comment = ""
 
-                        if "style_part" in link_type.keys() and link_type["style_part"]:
+                        if "style_part" in link_type and link_type["style_part"]:
                             link_style = "[{style}]".format(style=link_type["style_part"])
                         else:
                             link_style = "[dotted]"
@@ -292,7 +292,7 @@ def process_needflow(app, doctree, fromdocname):
                         else:
                             comment = ""
 
-                        if "style" in link_type.keys() and link_type["style"]:
+                        if "style" in link_type and link_type["style"]:
                             link_style = "[{style}]".format(style=link_type["style"])
                         else:
                             link_style = ""
@@ -303,12 +303,12 @@ def process_needflow(app, doctree, fromdocname):
                     ]:
                         continue
 
-                    if "style_start" in link_type.keys() and link_type["style_start"]:
+                    if "style_start" in link_type and link_type["style_start"]:
                         style_start = link_type["style_start"]
                     else:
                         style_start = "-"
 
-                    if "style_end" in link_type.keys() and link_type["style_end"]:
+                    if "style_end" in link_type and link_type["style_end"]:
                         style_end = link_type["style_end"]
                     else:
                         style_end = "->"

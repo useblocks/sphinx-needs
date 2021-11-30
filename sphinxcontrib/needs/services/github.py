@@ -1,6 +1,7 @@
 import os
 import textwrap
 import time
+from contextlib import suppress
 from urllib.parse import urlparse
 
 import requests
@@ -48,20 +49,13 @@ class GithubService(BaseService):
             "commit": {"url": "search/commits", "query": "", "need_type": "commit"},
         }
 
-        try:
+        with suppress(NeedsApiConfigException):
+            # Issue already exists, so we are fine
             add_need_type(self.app, "issue", "Issue", "IS_", "#cccccc", "card")
-        except NeedsApiConfigException:
-            pass  # Issue already exists, so we are fine
-
-        try:
+            # PR already exists, so we are fine
             add_need_type(self.app, "pr", "PullRequest", "PR_", "#aaaaaa", "card")
-        except NeedsApiConfigException:
-            pass  # PR already exists, so we are fine
-
-        try:
+            # Commit already exists, so we are fine
             add_need_type(self.app, "commit", "Commit", "C_", "#888888", "card")
-        except NeedsApiConfigException:
-            pass  # Commit already exists, so we are fine
 
         if "gh_type" in kwargs:
             self.gh_type = kwargs["gh_type"]
@@ -163,8 +157,8 @@ class GithubService(BaseService):
             specific = True
 
         response = self._send(query, options, specific=specific)
-        if "items" not in response.keys():
-            if "errors" in response.keys():
+        if "items" not in response:
+            if "errors" in response:
                 raise NeedGithubServiceException(
                     "GitHub service query error: {}\n" "Used query: {}".format(response["errors"][0]["message"], query)
                 )
@@ -276,10 +270,8 @@ class GithubService(BaseService):
         if self.download_avatars:
             # Download only, if file not downloaded yet
             if not os.path.exists(avatar_file_path):
-                try:
+                with suppress(FileExistsError):
                     os.mkdir(path)
-                except FileExistsError:
-                    pass
                 if self.username and self.token:
                     auth = (self.username, self.token)
                 else:

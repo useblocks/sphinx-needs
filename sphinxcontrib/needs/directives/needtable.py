@@ -81,8 +81,8 @@ class NeedtableDirective(FilterBase):
             "sort": sort,
             # As the following options are flags, the content is None, if set.
             # If not set, the options.get() method returns False
-            "show_filters": True if self.options.get("show_filters", False) is None else False,
-            "show_parts": True if self.options.get("show_parts", False) is None else False,
+            "show_filters": self.options.get("show_filters", False) is None,
+            "show_parts": self.options.get("show_parts", False) is None,
             "env": env,
         }
         env.need_all_needtables[targetid].update(self.collect_filter_attributes())
@@ -223,13 +223,9 @@ def process_needtables(app, doctree, fromdocname):
                     )
                 elif option == "TITLE":
                     row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need, "title", prefix=prefix)
-                elif option in link_type_list.keys():
+                elif option in link_type_list:
                     link_type = link_type_list[option]
-                    if (
-                        option == "INCOMING"
-                        or option == link_type["option"].upper() + "_BACK"
-                        or option == link_type["incoming"].upper()
-                    ):
+                    if option in ["INCOMING", link_type["option"].upper() + "_BACK", link_type["incoming"].upper()]:
                         row += row_col_maker(
                             app,
                             fromdocname,
@@ -279,10 +275,13 @@ def process_needtables(app, doctree, fromdocname):
                                 "content",
                                 prefix=app.config.needs_part_prefix,
                             )
-                        elif option in link_type_list.keys() and (
-                            option == "INCOMING"
-                            or option == link_type_list[option]["option"].upper() + "_BACK"
-                            or option == link_type_list[option]["incoming"].upper()
+                        elif option in link_type_list and (
+                            option
+                            in [
+                                "INCOMING",
+                                link_type_list[option]["option"].upper() + "_BACK",
+                                link_type_list[option]["incoming"].upper(),
+                            ]
                         ):
                             row += row_col_maker(
                                 app,

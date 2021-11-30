@@ -59,7 +59,7 @@ def test_import_builder(app, status, warning):
     app.build()
     needs_text = Path(app.outdir, "needs.json").read_text()
     needs = json.loads(needs_text)
-    assert "created" in needs.keys()
+    assert "created" in needs
     need = needs["versions"]["1.0"]["needs"]["REQ_1"]
 
     check_keys = [

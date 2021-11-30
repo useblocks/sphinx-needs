@@ -8,6 +8,8 @@ import subprocess
 import tempfile
 import time
 import webbrowser
+from contextlib import suppress
+from pathlib import Path
 
 import click
 from jinja2 import Template
@@ -34,7 +36,7 @@ def start(
     # Render conf.py
     source_tmp_path_conf = os.path.join(source_tmp_path, "conf.template")
     source_tmp_path_conf_final = os.path.join(source_tmp_path, "conf.py")
-    template = Template(open(source_tmp_path_conf).read())
+    template = Template(Path(source_tmp_path_conf).read_text())
     rendered = template.render(
         pages=pages,
         needs=needs,
@@ -52,7 +54,7 @@ def start(
     # Render index files
     source_tmp_path_index = os.path.join(source_tmp_path, "index.template")
     source_tmp_path_index_final = os.path.join(source_tmp_path, "index.rst")
-    template = Template(open(source_tmp_path_index).read())
+    template = Template(Path(source_tmp_path_index).read_text())
     title = "Index"
     rendered = template.render(
         pages=pages,
@@ -73,7 +75,7 @@ def start(
     for p in range(pages):
         source_tmp_path_page = os.path.join(source_tmp_path, "page.template")
         source_tmp_path_page_final = os.path.join(source_tmp_path, f"page_{p}.rst")
-        template = Template(open(source_tmp_path_page).read())
+        template = Template(Path(source_tmp_path_page).read_text())
         title = f"Page {p}"
         rendered = template.render(
             page=p,
@@ -151,10 +153,8 @@ def start(
     result_time = end_time - start_time
 
     if browser:
-        try:
+        with suppress(Exception):
             webbrowser.open_new_tab(project_path)
-        except Exception:
-            pass
 
     print(f"  Duration: {result_time:.2f} seconds")
 

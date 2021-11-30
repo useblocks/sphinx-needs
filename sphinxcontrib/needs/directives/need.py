@@ -62,7 +62,7 @@ class NeedDirective(Directive):
             else:
                 raise Exception("collapse attribute must be true or false")
 
-        hide = True if "hide" in self.options.keys() else False
+        hide = "hide" in self.options
 
         id = self.options.get("id", None)
         content = "\n".join(self.content)
@@ -363,11 +363,10 @@ def create_back_links(env, option):
                     needs[link_main][option_back].append(key)
 
                 # Handling of links to need_parts inside a need
-                if link_part:
-                    if link_part in needs[link_main]["parts"]:
-                        if option_back not in needs[link_main]["parts"][link_part].keys():
-                            needs[link_main]["parts"][link_part][option_back] = []
-                        needs[link_main]["parts"][link_part][option_back].append(key)
+                if link_part and link_part in needs[link_main]["parts"]:
+                    if option_back not in needs[link_main]["parts"][link_part].keys():
+                        needs[link_main]["parts"][link_part][option_back] = []
+                    needs[link_main]["parts"][link_part][option_back].append(key)
 
     env.needs_workflow["backlink_creation_{}".format(option)] = True
 

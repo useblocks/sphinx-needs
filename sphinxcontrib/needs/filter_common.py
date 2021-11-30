@@ -121,11 +121,12 @@ def process_filters(app, all_needs, current_needlist, include_external=True):
         if bool(current_needlist["status"] or current_needlist["tags"] or current_needlist["types"]):
             for need_info in all_needs_incl_parts:
                 status_filter_passed = False
-                if not current_needlist["status"]:
-                    # Filtering for status was not requested
-                    status_filter_passed = True
-                elif need_info["status"] and need_info["status"] in current_needlist["status"]:
-                    # Match was found
+                if (
+                    not current_needlist["status"]
+                    or need_info["status"]
+                    and need_info["status"] in current_needlist["status"]
+                ):
+                    # Filtering for status was not requested or match was found
                     status_filter_passed = True
 
                 tags_filter_passed = False

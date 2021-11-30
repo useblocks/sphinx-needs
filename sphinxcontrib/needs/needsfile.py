@@ -90,7 +90,7 @@ class NeedsList:
         self.needs_list["versions"][version]["filters_amount"] = len(self.needs_list["versions"][version]["filters"])
 
     def wipe_version(self, version):
-        if version in self.needs_list["versions"].keys():
+        if version in self.needs_list["versions"]:
             del self.needs_list["versions"][version]
 
     def write_json(self, needs_file="needs.json"):
@@ -159,7 +159,7 @@ def check_needs_file(path):
     # In future there may be additional types of validations.
     # So lets already use a dict for all errors
     errors = {"schema": schema_errors}
-    errors["has_errors"] = True if any([bool(errors) for errors in errors.values()]) else False
+    errors["has_errors"] = any([bool(errors) for errors in errors.values()])
 
     return errors
 

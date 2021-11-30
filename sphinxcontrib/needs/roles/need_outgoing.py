@@ -23,7 +23,7 @@ def process_need_outgoing(app, doctree, fromdocname):
         ref_need = env.needs_all_needs[node_need_ref["reftarget"]]
 
         # Lets check if NeedIncoming shall follow a specific link type
-        if "link_type" in node_need_ref.attributes.keys():
+        if "link_type" in node_need_ref.attributes:
             links = ref_need[node_need_ref.attributes["link_type"]]
             link_type = node_need_ref.attributes["link_type"]
         # if not, follow back to default links
@@ -45,7 +45,7 @@ def process_need_outgoing(app, doctree, fromdocname):
             ):
                 try:
                     target_need = env.needs_all_needs[link]
-                    if link_part and link_part in target_need["parts"].keys():
+                    if link_part and link_part in target_need["parts"]:
                         part_content = target_need["parts"][link_part]["content"]
                         target_title = part_content if len(part_content) < 30 else part_content[:27] + "..."
                         target_id = ".".join([link, link_part])

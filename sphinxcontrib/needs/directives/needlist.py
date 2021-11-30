@@ -48,9 +48,9 @@ class NeedlistDirective(FilterBase):
             "docname": env.docname,
             "lineno": self.lineno,
             "target_node": targetnode,
-            "show_tags": True if self.options.get("show_tags", False) is None else False,
-            "show_status": True if self.options.get("show_status", False) is None else False,
-            "show_filters": True if self.options.get("show_filters", False) is None else False,
+            "show_tags": self.options.get("show_tags", False) is None,
+            "show_status": self.options.get("show_status", False) is None,
+            "show_filters": self.options.get("show_filters", False) is None,
             "export_id": self.options.get("export_id", ""),
             "env": env,
         }

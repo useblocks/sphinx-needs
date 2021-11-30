@@ -38,10 +38,10 @@ def update_need_with_parts(env, need, part_nodes):
             part_content = content
             inline_id = hashlib.sha1(part_content.encode("UTF-8")).hexdigest().upper()[:3]
 
-        if "parts" not in need.keys():
+        if "parts" not in need:
             need["parts"] = {}
 
-        if inline_id in need["parts"].keys():
+        if inline_id in need["parts"]:
             log.warning(
                 "part_need id {} in need {} is already taken. need_part may get overridden.".format(
                     inline_id, need["id"]

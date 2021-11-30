@@ -11,6 +11,7 @@ repos:
         additional_dependencies:
           - flake8-bugbear
           - pep8-naming
+          - flake8-simplify
 
   - repo: https://github.com/pycqa/isort
     rev: 5.9.3

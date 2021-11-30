@@ -42,7 +42,7 @@ def register_func(need_function, name=None):
     else:
         func_name = name
 
-    if func_name in NEEDS_FUNCTIONS.keys():
+    if func_name in NEEDS_FUNCTIONS:
         # We can not throw an exception here, as using sphinx-needs in different sphinx-projects with the
         # same python interpreter session does not clean NEEDS_FUNCTIONS.
         # This is mostly the case during tet runs.
@@ -303,9 +303,7 @@ def _analyze_func_string(func_string, need):
     for arg in func_call.args:
         if isinstance(arg, ast.Num):
             func_args.append(arg.n)
-        elif isinstance(arg, ast.Str):
-            func_args.append(arg.s)
-        elif isinstance(arg, ast.BoolOp):
+        elif isinstance(arg, (ast.Str, ast.BoolOp)):
             func_args.append(arg.s)
         elif isinstance(arg, ast.List):
             arg_list = []
