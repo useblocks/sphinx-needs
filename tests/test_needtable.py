@@ -35,6 +35,10 @@ def test_doc_build_html(app, status, warning):
     # check needtable has correct caption
     assert tree.xpath("//table/caption/span")[0].text == "Test table caption"
 
+    # Test classes
+    assert "awesome_test_class" in html
+    assert "another_test_class" in html
+
     # Test colwidths
     colwidths_html_path = Path(app.outdir, "test_colwidths.html").read_text()
     assert '<col style="width: 50%" />' in colwidths_html_path

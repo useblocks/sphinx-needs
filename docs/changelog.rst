@@ -10,6 +10,9 @@ License
 -----
 :Released: under development
 
+* Improvement: Better css table handling.
+* Improvement: Adds :ref:`needtable_class` to :ref:`needtable` to set own css classes for tables.
+  (`#421 <https://github.com/useblocks/sphinxcontrib-needs/issues/421>`_)
 * Improvement: Adds :ref:`needs_string_links` to support easy string2link transformations.
   (`#404 <https://github.com/useblocks/sphinxcontrib-needs/issues/404>`_)
 * Improvement: Adds :ref:`needtable_colwidths` to :ref:`needtable` directive, to allow the definition of column widths.
