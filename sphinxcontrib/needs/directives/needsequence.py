@@ -114,7 +114,7 @@ def process_needsequence(app, doctree, fromdocname):
             continue
 
         plantuml_block_text = ".. plantuml::\n" "\n" "   @startuml" "   @enduml"
-        puml_node = plantuml(plantuml_block_text, **dict())
+        puml_node = plantuml(plantuml_block_text)
         puml_node["uml"] = "@startuml\n"
 
         # Adding config

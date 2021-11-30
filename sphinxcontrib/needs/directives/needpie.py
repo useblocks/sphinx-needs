@@ -151,7 +151,7 @@ def process_needpie(app, doctree, fromdocname):
         shadow = current_needpie["shadow"]
         text_color = current_needpie["text_color"]
 
-        fig, axes = matplotlib.pyplot.subplots(figsize=(8, 4), subplot_kw=dict(aspect="equal"))
+        fig, axes = matplotlib.pyplot.subplots(figsize=(8, 4), subplot_kw={"aspect": "equal"})
 
         pie_kwargs = {
             "labels": labels,
@@ -163,7 +163,7 @@ def process_needpie(app, doctree, fromdocname):
         }
 
         if text_color:
-            pie_kwargs["textprops"] = dict(color=text_color)
+            pie_kwargs["textprops"] = {"color": text_color}
 
         wedges, _texts, autotexts = axes.pie(sizes, **pie_kwargs)
 
