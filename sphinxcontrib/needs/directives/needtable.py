@@ -3,6 +3,7 @@ import re
 from docutils import nodes
 from docutils.parsers.rst import directives
 
+from sphinxcontrib.needs.api.exceptions import NeedsInvalidException
 from sphinxcontrib.needs.directives.utils import (
     get_title,
     no_needs_found_paragraph,
@@ -28,6 +29,7 @@ class NeedtableDirective(FilterBase):
         "show_filters": directives.flag,
         "show_parts": directives.flag,
         "columns": directives.unchanged_required,
+        "colwidths": directives.unchanged_required,
         "style": directives.unchanged_required,
         "style_row": directives.unchanged_required,
         "style_col": directives.unchanged_required,
@@ -58,6 +60,16 @@ class NeedtableDirective(FilterBase):
 
         columns = [get_title(col) for col in columns]
 
+        colwidths = str(self.options.get("colwidths", ""))
+        colwidths_list = []
+        if colwidths:
+            colwidths_list = [int(width.strip()) for width in re.split(";|,", colwidths)]
+            if len(columns) != len(colwidths_list):
+                raise NeedsInvalidException(
+                    f"Amount of elements in colwidths and columns do not match: "
+                    f"colwidths: {len(colwidths_list)} and columns: {len(columns)}"
+                )
+
         style = self.options.get("style", "").upper()
         style_row = self.options.get("style_row", "")
         style_col = self.options.get("style_col", "")
@@ -75,6 +87,7 @@ class NeedtableDirective(FilterBase):
             "target_node": targetnode,
             "caption": title,
             "columns": columns,
+            "colwidths": colwidths_list,
             "style": style,
             "style_row": style_row,
             "style_col": style_col,
@@ -154,9 +167,13 @@ def process_needtables(app, doctree, fromdocname):
         tgroup = nodes.tgroup()
 
         # Define Table column width
-        # ToDo: Find a way to chosen to perfect width automatically.
-        for option, _title in current_needtable["columns"]:
-            if option == "TITLE":
+        colwidths = current_needtable["colwidths"]
+        for index, value in enumerate(current_needtable["columns"]):
+            option, _title = value
+
+            if colwidths:  # Get values from given colwidths option
+                tgroup += nodes.colspec(colwidth=colwidths[index])
+            elif option == "TITLE":  # if nothing in colwidths...
                 tgroup += nodes.colspec(colwidth=15)
             else:
                 tgroup += nodes.colspec(colwidth=5)

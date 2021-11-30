@@ -28,6 +28,7 @@ Options
 Supported options:
 
  * :ref:`needtable_columns`
+ * :ref:`needtable_colwidths`
  * :ref:`needtable_show_filters`
  * :ref:`needtable_style`
  * :ref:`needtable_show_parts`
@@ -89,6 +90,34 @@ Tables with a lot of columns will get a horizontal scrollbar in HTML output.
   :tags: test
   :style: table
   :columns: id;title;tags;status;docname;lineno,is_external,is_need;is_part;content
+
+.. _needtable_colwidths:
+
+colwidths
+~~~~~~~~~
+
+.. versionadded:: 0.7.4
+
+Defines the width of each column as a comma separated list of lengths or percentages.
+
+It has the same meaning as the ``width options`` of
+`listtable <https://docutils.sourceforge.io/docs/ref/rst/directives.html#list-table>`_ directive.
+
+Example::
+
+  .. needtable::
+     :tags: test
+     :columns: id,title,status
+     :colwidths: 50,40,10
+     :style: table
+
+.. needtable::
+     :tags: test
+     :columns: id,title,status
+     :colwidths: 50,40,10
+     :style: table
+
+
 
 
 .. _needtable_custom_titles:
