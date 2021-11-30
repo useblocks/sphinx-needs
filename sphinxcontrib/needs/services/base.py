@@ -7,3 +7,6 @@ class BaseService:
 
     def request(self, *args, **kwargs):
         raise NotImplementedError("Must be implemented by the service!")
+
+    def debug(self, *args, **kwargs):
+        raise NotImplementedError("Must be implemented by the service!")

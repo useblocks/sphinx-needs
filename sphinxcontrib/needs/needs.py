@@ -109,7 +109,10 @@ class TagsDummy:
 
 def setup(app):
     log = get_logger(__name__)
-    log.debug("Starting setup of sphinx-Needs")
+    log.debug("Starting setup of Sphinx-Needs")
+    log.debug("Load Sphinx-Data-Viewer for Sphinx-Needs")
+    app.setup_extension("sphinx_data_viewer")
+
     app.add_builder(NeedsBuilder)
     app.add_config_value(
         "needs_types",
