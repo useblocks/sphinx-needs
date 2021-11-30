@@ -10,6 +10,7 @@ License
 -----
 :Released: under development
 
+* Improvement: Adds :ref:`needservice_debug` flag for :ref:`needservice`.
 * Improvement: Better css table handling.
 * Improvement: Adds :ref:`needtable_class` to :ref:`needtable` to set own css classes for tables.
   (`#421 <https://github.com/useblocks/sphinxcontrib-needs/issues/421>`_)

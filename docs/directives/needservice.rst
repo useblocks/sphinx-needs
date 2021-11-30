@@ -41,6 +41,20 @@ For services provided by ``Sphinx-Needs`` please take a look into :ref:`services
 
        Extra content for each new need
 
+.. _needservice_debug:
+
+debug
+~~~~~
+Set ``debug`` to get debug-output of the needservice only. No needs will be created.
+
+Useful to understand the return values of services or to figure out, why a connection can not be established.
+
+.. code-block:: rst
+
+    .. needservice:: <service>
+       :debug:
+
+
 Content
 -------
 The content of **needservice** is used as content for all created need objects.

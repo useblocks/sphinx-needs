@@ -18,7 +18,7 @@
 import os
 import sys
 
-from tests.test_services.test_service_basics import TestService
+from tests.test_services.test_service_basics import NoDebugService, TestService
 
 sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
 
@@ -50,7 +50,13 @@ needs_services = {
             "custom_init": True,
         },
         "custom_option": "custom_option_True",
-    }
+    },
+    "no_debug_service": {
+        "class": NoDebugService,
+        "class_init": {
+            "custom_init": True,
+        },
+    },
 }
 
 plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "..", "..", "docs", "utils", "plantuml.jar")

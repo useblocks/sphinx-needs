@@ -147,6 +147,12 @@ Example of a basic service:
 
             return data
 
+        def debug(self, options):
+            # Allows to send back data, which may be helpful for debugging.
+            # debug_data needs do be serializable via json.dump.()
+            debug_data = {'custom_debug': 'data'}
+            return debug_data
+
 **Configuration inside conf.py**:
 
 .. code-block:: python
@@ -170,4 +176,17 @@ Example of a basic service:
     .. needservice:: my-service
        :status: open
 
+    .. needservice:: my-service
+       :debug:
+
 This would create 2 need objects with titles ``My Issue 1`` and ``My Issue 2``.
+
+To get the debug output of the service, use the ``debug`` flag:
+
+.. code-block:: rst
+
+    .. needservice:: my-service
+       :debug:
+
+Sphinx-Needs uses the extension `Sphinx-Data-Viewer <https://sphinx-data-viewer.readthedocs.io>`_ to represent the
+debug data in a nice and structured way.

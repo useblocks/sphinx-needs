@@ -45,6 +45,7 @@ requests = "^2.25.1"
 sphinxcontrib-programoutput = "^0.17"
 sphinx-panels = "^0.6.0"
 jsonschema = "3.2.0"
+sphinx-data-viewer = "^0.1.1"
 
 [tool.poetry.dev-dependencies]
 
