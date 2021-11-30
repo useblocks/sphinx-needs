@@ -37,7 +37,7 @@ def safe_add_file(filename: Path, app: Sphinx):
         if hasattr(app.builder, "css_files") and static_data_file not in app.builder.css_files:
             app.add_css_file(str(filename))
     else:
-        raise NotImplementedError("File type {} not support by save_add_file".format(filename.suffix))
+        raise NotImplementedError(f"File type {filename.suffix} not support by save_add_file")
 
 
 def safe_remove_file(filename: Path, app: Sphinx):
@@ -83,7 +83,7 @@ def install_styles_static_files(app: Sphinx, env):
 
     def find_css_files() -> Iterable[Path]:
         for theme in ["modern", "dark", "blank"]:
-            if app.config.needs_css == "{}.css".format(theme):
+            if app.config.needs_css == f"{theme}.css":
                 css_dir = css_root / theme
                 return [f for f in css_dir.glob("**/*") if f.is_file()]
         return [app.config.needs_css]
@@ -93,7 +93,7 @@ def install_styles_static_files(app: Sphinx, env):
 
     # Be sure no "old" css layout is already set
     for theme in ["common", "modern", "dark", "blank"]:
-        path = Path("sphinx-needs") / "{}.css".format(theme)
+        path = Path("sphinx-needs") / f"{theme}.css"
         safe_remove_file(path, app)
 
     if parse_version(sphinx_version) < parse_version("1.6"):
@@ -113,7 +113,7 @@ def install_styles_static_files(app: Sphinx, env):
 
         if not source_file_path.exists():
             source_file_path = css_root / "blank" / "blank.css"
-            logger.warning("{0} not found. Copying sphinx-internal blank.css".format(source_file_path))
+            logger.warning(f"{source_file_path} not found. Copying sphinx-internal blank.css")
 
         dest_file = dest_dir / source_file_path.name
         dest_dir.mkdir(exist_ok=True)
@@ -147,10 +147,10 @@ def install_static_files(
         source_file = Path(source_file_path)
 
         if not source_file.is_absolute():
-            raise IOError("Path must be absolute. Got: {}".format(source_file))
+            raise OSError(f"Path must be absolute. Got: {source_file}")
 
         if not source_file.exists():
-            raise IOError("File not found: {}".format(source_file))
+            raise OSError(f"File not found: {source_file}")
 
         relative_path = source_file.relative_to(source_dir)
         destination_file = destination_dir / relative_path

@@ -2,7 +2,6 @@ import json
 import os
 import re
 
-import six
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
 
@@ -73,9 +72,9 @@ class NeedimportDirective(Directive):
             correct_need_import_path = os.path.join(env.app.confdir, need_import_path[1:])
 
         if not os.path.exists(correct_need_import_path):
-            raise ReferenceError("Could not load needs import file {0}".format(correct_need_import_path))
+            raise ReferenceError(f"Could not load needs import file {correct_need_import_path}")
 
-        with open(correct_need_import_path, "r") as needs_file:
+        with open(correct_need_import_path) as needs_file:
             needs_file_content = needs_file.read()
         try:
             needs_import_list = json.loads(needs_file_content)
@@ -86,16 +85,12 @@ class NeedimportDirective(Directive):
         if version is None:
             try:
                 version = needs_import_list["current_version"]
-                if not isinstance(version, six.string_types):
+                if not isinstance(version, str):
                     raise KeyError
             except KeyError:
-                raise CorruptedNeedsFile(
-                    "Key 'current_version' missing or corrupted in {0}".format(correct_need_import_path)
-                )
+                raise CorruptedNeedsFile(f"Key 'current_version' missing or corrupted in {correct_need_import_path}")
         if version not in needs_import_list["versions"].keys():
-            raise VersionNotFound(
-                "Version {0} not found in needs import file {1}".format(version, correct_need_import_path)
-            )
+            raise VersionNotFound(f"Version {version} not found in needs import file {correct_need_import_path}")
 
         needs_list = needs_import_list["versions"][version]["needs"]
 

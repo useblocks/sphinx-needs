@@ -62,7 +62,7 @@ def update_need_with_parts(env, need, part_nodes):
         part_id_show = inline_id
         part_node["reftarget"] = part_id_ref
 
-        part_link_text = " {}".format(part_id_show)
+        part_link_text = f" {part_id_show}"
         part_link_node = nodes.Text(part_link_text, part_link_text)
         part_text_node = nodes.Text(part_content, part_content)
 

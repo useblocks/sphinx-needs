@@ -249,7 +249,7 @@ def series(
     ]
     print(tabulate(result_table, headers=headers))
 
-    overall_runtime = sum([x[1] for x in results])
+    overall_runtime = sum(x[1] for x in results)
     print(f"\nOverall runtime: {overall_runtime:.2f} seconds.")
 
     if snakeviz:
