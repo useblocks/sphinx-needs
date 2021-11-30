@@ -126,7 +126,7 @@ class NeedimportDirective(Directive):
         if id_prefix:
             needs_ids = needs_list.keys()
 
-            for key, need in needs_list.items():
+            for need in needs_list.values():
                 for id in needs_ids:
                     # Manipulate links in all link types
                     for extra_link in env.config.needs_extra_links:
@@ -139,11 +139,11 @@ class NeedimportDirective(Directive):
                     need["description"] = need["description"].replace(id, "".join([id_prefix, id]))
 
         # tags update
-        for key, need in needs_list.items():
+        for need in needs_list.values():
             need["tags"] = need["tags"] + tags
 
         need_nodes = []
-        for key, need in needs_list.items():
+        for need in needs_list.values():
             # Set some values based on given option or value from imported need.
             need["template"] = self.options.get("template", getattr(need, "template", None))
             need["pre_template"] = self.options.get("pre_template", getattr(need, "pre_template", None))

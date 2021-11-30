@@ -58,7 +58,7 @@ def process_warnings(app, exception):
             if isinstance(warning_filter, str):
                 # filter string used
                 result = filter_needs(app, checked_needs.values(), warning_filter)
-            elif hasattr(warning_filter, "__call__"):
+            elif callable(warning_filter):
                 # custom defined filter code used from conf.py
                 result = []
                 for need in checked_needs.values():
@@ -83,8 +83,8 @@ def process_warnings(app, exception):
                         app.statuscode = 1
 
                 # get the text for used filter, either from filter string or function name
-                if hasattr(warning_filter, "__call__"):
-                    warning_text = getattr(warning_filter, "__name__")
+                if callable(warning_filter):
+                    warning_text = warning_filter.__name__
                 elif isinstance(warning_filter, str):
                     warning_text = warning_filter
 

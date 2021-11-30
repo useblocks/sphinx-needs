@@ -453,7 +453,7 @@ class LayoutHandler:
             # data_container.append(data_node)
 
             matching_link_confs = []
-            for link_name, link_conf in self.string_links.items():
+            for link_conf in self.string_links.values():
                 if name in link_conf["options"]:
                     matching_link_confs.append(link_conf)
 

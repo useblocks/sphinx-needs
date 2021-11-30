@@ -74,7 +74,7 @@ def process_needextend(app, doctree, fromdocname):
         )  # back-links (incoming)
         link_names = [x["option"] for x in app.config.needs_extra_links]
 
-        for extend_name, current_needextend in env.need_all_needextend.items():
+        for current_needextend in env.need_all_needextend.values():
 
             # Check if filter is just a need-id.
             # In this case create the needed filter string
