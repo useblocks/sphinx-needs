@@ -166,18 +166,16 @@ def process_needtables(app, doctree, fromdocname):
         tgroup = nodes.tgroup()
 
         # Define Table column width
-        colwidths_counter = 0
         colwidths = current_needtable["colwidths"]
-        for option, title in current_needtable["columns"]:
+        for index, value in enumerate(current_needtable["columns"]):
+            option, _title = value
 
             if colwidths:  # Get values from given colwidths option
-                tgroup += nodes.colspec(colwidth=int(colwidths[colwidths_counter]))
+                tgroup += nodes.colspec(colwidth=int(colwidths[index]))
             elif option == "TITLE":  # if nothing in colwidths...
                 tgroup += nodes.colspec(colwidth=15)
             else:
                 tgroup += nodes.colspec(colwidth=5)
-
-            colwidths_counter += 1
 
         node_columns = []
         for _option, title in current_needtable["columns"]:
