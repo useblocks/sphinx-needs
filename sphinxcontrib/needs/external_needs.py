@@ -1,6 +1,8 @@
 import copy
 import json
 import os
+import pathlib
+from urllib.parse import urlparse
 
 import requests
 from requests_file import FileAdapter
@@ -17,6 +19,17 @@ def load_external_needs(app, env, _docname):
     for source in app.config.needs_external_needs:
         if source["base_url"].endswith("/"):
             source["base_url"] = source["base_url"][:-1]
+
+        # check if given base_url is just local file path by checking its URL schemes
+        parsed_url = urlparse(source["base_url"])
+        if not parsed_url.scheme:
+            # check if given base_url is relative file path
+            if os.path.isabs(source["base_url"]):
+                base_url_path = source["base_url"]
+            else:
+                base_url_path = os.path.abspath(os.path.join(app.confdir, source["base_url"]))
+            # convert path to file:// URL
+            source["base_url"] = pathlib.Path(base_url_path).as_uri()
 
         if source.get("json_url", False) and source.get("json_path", False):
             raise NeedsExternalException(
