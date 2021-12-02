@@ -22,7 +22,11 @@ test-matrix:
 
 .PHONY: docs-html
 docs-html:
-	poetry run make --directory docs/ clean && make --directory docs/ html
+	poetry run sphinx-build -a -E -j auto -b html docs/ docs/_build
+
+.PHONY: docs-html
+docs-html-fast:
+	poetry run sphinx-build -j auto -b html docs/ docs/_build
 
 .PHONY: docs-pdf
 docs-pdf:
