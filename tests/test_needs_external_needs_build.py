@@ -29,16 +29,28 @@ def test_doc_build_html(app, status, warning):
     assert "updating environment: 0 added, 0 changed, 0 removed" in output_second.stdout.decode("utf-8")
 
 
-@with_app(buildername="html", srcdir="doc_test/doc_needs_external_needs_rel_base_path")
+@with_app(buildername="html", srcdir="doc_test/doc_needs_external_needs")
 def test_external_needs_base_url_relative_path(app, status, warning):
     app.build()
 
-    base_url_path = app.config.needs_external_needs[0]["base_url"]
-    assert base_url_path == "../../../doc_needs_external_needs/_build/html"
-
     html = Path(app.outdir, "index.html").read_text()
+
+    # check base_url full path
+    base_url_full_path = app.config.needs_external_needs[0]["base_url"]
+    assert base_url_full_path == "http://my_company.com/docs/v1"
+
     assert (
         '<a class="external_link reference external" '
-        'href="../../../doc_needs_external_needs/_build/html/index.html#TEST_01">'
+        'href="http://my_company.com/docs/v1/index.html#TEST_01">'
         "EXT_TEST_01: TEST_01 DESCRIPTION</a>" in html
+    )
+
+    # check base_url relative path
+    base_url_rel_path = app.config.needs_external_needs[1]["base_url"]
+    assert base_url_rel_path == "../../_build/html"
+
+    assert (
+        '<a class="external_link reference external" '
+        'href="../../_build/html/index.html#TEST_01">'
+        "EXT_REL_PATH_TEST_01: TEST_01 DESCRIPTION</a>" in html
     )
