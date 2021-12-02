@@ -48,7 +48,7 @@ plantuml_output_format = "svg"
 
 external_needs_json = "../doc_needs_external_needs/needs_test_small.json"
 needs_external_needs = [
-    {"base_url": "../doc_needs_external_needs/_build/html", "json_path": external_needs_json, "id_prefix": "ext_"}
+    {"base_url": "../../../doc_needs_external_needs/_build/html", "json_path": external_needs_json, "id_prefix": "ext_"}
 ]
 
 # Add any paths that contain templates here, relative to this directory.
