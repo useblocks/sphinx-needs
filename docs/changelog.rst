@@ -10,6 +10,8 @@ License
 -----
 :Released: under development
 
+* Improvement: :ref:`needs_external_needs` supports relative path for :ref:`base_url`.
+
 0.7.4
 -----
 :Released: 30.11.2021

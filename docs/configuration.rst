@@ -1311,6 +1311,13 @@ Allows to reference and use external needs without having their representation i
         'version': '2.5',
         'id_prefix': 'other_',
         'css_class': 'project_x',
+      },
+      {
+        'base_url': '<relative_path_from_my_build_html_to_my_project>/<relative_path_to_another_project_build_html>',
+        'json_path':  'my_folder/needs.json',
+        'version': '2.5',
+        'id_prefix': 'ext_',
+        'css_class': 'project_x',
       }
     ]
 
@@ -1318,6 +1325,7 @@ Allows to reference and use external needs without having their representation i
 keys:
 
 :base_url: Base url which is used to calculate the final, specific need url. Normally the path under which the ``index.html`` is provided.
+           Base url supports also relative path, which starts from project build html folder (normally where ``index.html`` is located).
 :json_url: An url, which can be used to download the ``needs.json`` (or similar) file.
 :json_path: A path to a locally stored ``needs.json`` file. Can not be used together with ``json_url``.
             A relative path must be relative to the project configuration folder (where the ``conf.py`` is stored).
