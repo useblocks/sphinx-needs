@@ -179,6 +179,7 @@ Allowed values:
  * true; yes; 1
  * false; no; 0
 
+Default: False
 
 .. code-block:: rst
 
