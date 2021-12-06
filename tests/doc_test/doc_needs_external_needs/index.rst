@@ -15,3 +15,8 @@ TEST DOCUMENT NEEDS EXTERNAL NEEDS
 
 .. needlist::
    :tags: ext_test
+
+.. toctree::
+
+   subfolder_a/index
+   subfolder_b/subfolder_c/index

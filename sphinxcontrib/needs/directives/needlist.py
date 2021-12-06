@@ -2,6 +2,7 @@
 
 
 """
+import os
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -103,7 +104,14 @@ def process_needlist(app, doctree, fromdocname):
                 para += title
             elif need_info["is_external"]:
                 ref = nodes.reference("", "")
-                ref["refuri"] = need_info["external_url"]
+
+                # check / to determine the relative path to conf.py directory
+                if "/" in fromdocname:
+                    sub_level = len(fromdocname.split("/")) - 1
+                    ref["refuri"] = os.path.join(sub_level * "../", need_info["external_url"])
+                else:
+                    ref["refuri"] = need_info["external_url"]
+
                 ref["classes"].append(need_info["external_css"])
                 ref.append(title)
                 para += ref
