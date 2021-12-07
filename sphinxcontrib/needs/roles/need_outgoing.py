@@ -1,3 +1,6 @@
+import os
+from urllib.parse import urlparse
+
 from docutils import nodes
 from sphinx.util.nodes import make_refnode
 
@@ -74,6 +77,19 @@ def process_need_outgoing(app, doctree, fromdocname):
                     else:
                         new_node_ref = nodes.reference(target_need["id"], target_need["id"])
                         new_node_ref["refuri"] = target_need["external_url"]
+
+                        # check if given base_url is url or relative path
+                        parsed_url = urlparse(target_need["external_url"])
+                        if not parsed_url.scheme and not os.path.isabs(target_need["external_url"]):
+                            # get path sep considering plattform dependency, '\' for Windows, '/' fro Unix
+                            curr_path_sep = os.path.sep
+                            # check / or \ to determine the relative path to conf.py directory
+                            if curr_path_sep in fromdocname:
+                                sub_level = len(fromdocname.split(curr_path_sep)) - 1
+                                new_node_ref["refuri"] = os.path.join(
+                                    sub_level * (".." + curr_path_sep), target_need["external_url"]
+                                )
+
                         new_node_ref["classes"].append(target_need["external_css"])
 
                     node_link_container += new_node_ref
