@@ -212,7 +212,7 @@ def process_needgantt(app, doctree, fromdocname):
                     duration = 1
                 gantt_element = "[{}] as [{}] lasts {} days\n".format(need["title"], need["id"], duration)
 
-            el_link_string += "[{}] links to [[{}]]\n".format(need["title"], calculate_link(app, need))
+            el_link_string += "[{}] links to [[{}]]\n".format(need["title"], calculate_link(app, need, fromdocname))
 
             if complete:
                 complete = complete.replace("%", "")
