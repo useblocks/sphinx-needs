@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import sphinx
 from sphinx_testing import with_app
 
 
@@ -72,12 +73,13 @@ def test_external_needs_base_url_relative_path(app, status, warning):
     assert root_table_hrefs[4].text == "EXT_TEST_01"
 
     # check needflow usage for base_url in root level
-    root_flow_hrefs = root_tree.xpath("//figure/p/object/a/img")
-    assert root_tree.xpath("//figure/figcaption/p/span/a")[0].text == "My needflow"
-    # check base_url url in root level
-    assert "as EXT_TEST_01 [[http://my_company.com/docs/v1/index.html#TEST_01]]" in root_flow_hrefs[0].attrib["alt"]
-    # check base_url relative path in root level
-    assert "as EXT_REL_PATH_TEST_01 [[../../_build/html/index.html#TEST_01]]" in root_flow_hrefs[0].attrib["alt"]
+    if not sphinx.__version__.startswith("3.5"):
+        root_flow_hrefs = root_tree.xpath("//figure/p/object/a/img")
+        assert root_tree.xpath("//figure/figcaption/p/span/a")[0].text == "My needflow"
+        # check base_url url in root level
+        assert "as EXT_TEST_01 [[http://my_company.com/docs/v1/index.html#TEST_01]]" in root_flow_hrefs[0].attrib["alt"]
+        # check base_url relative path in root level
+        assert "as EXT_REL_PATH_TEST_01 [[../../_build/html/index.html#TEST_01]]" in root_flow_hrefs[0].attrib["alt"]
 
     # check role need_outgoing and need_incoming for base_url in root level
     for element in root_tree.xpath("//p/span/a"):
@@ -117,12 +119,13 @@ def test_external_needs_base_url_relative_path(app, status, warning):
     assert sub_table_hrefs[4].text == "EXT_TEST_01"
 
     # check needflow usage for base_url in subfolder level
-    sub_flow_hrefs = sub_tree.xpath("//figure/p/object/a/img")
-    assert sub_tree.xpath("//figure/figcaption/p/span/a")[0].text == "My needflow"
-    # check base_url url in root level
-    assert "as EXT_TEST_01 [[http://my_company.com/docs/v1/index.html#TEST_01]]" in sub_flow_hrefs[0].attrib["alt"]
-    # check base_url relative path in subfolder level, one level deeper than base_url
-    assert "as EXT_REL_PATH_TEST_01 [[../../../_build/html/index.html#TEST_01]]" in sub_flow_hrefs[0].attrib["alt"]
+    if not sphinx.__version__.startswith("3.5"):
+        sub_flow_hrefs = sub_tree.xpath("//figure/p/object/a/img")
+        assert sub_tree.xpath("//figure/figcaption/p/span/a")[0].text == "My needflow"
+        # check base_url url in root level
+        assert "as EXT_TEST_01 [[http://my_company.com/docs/v1/index.html#TEST_01]]" in sub_flow_hrefs[0].attrib["alt"]
+        # check base_url relative path in subfolder level, one level deeper than base_url
+        assert "as EXT_REL_PATH_TEST_01 [[../../../_build/html/index.html#TEST_01]]" in sub_flow_hrefs[0].attrib["alt"]
 
     # check role need_outgoing and need_incoming for base_url in subfolder level
     for element in sub_tree.xpath("//p/span/a"):
@@ -162,14 +165,18 @@ def test_external_needs_base_url_relative_path(app, status, warning):
     assert sub_sub_table_hrefs[4].text == "EXT_TEST_01"
 
     # check needflow usage for base_url in subsubfolder level
-    sub_sub_flow_hrefs = sub_sub_tree.xpath("//figure/p/object/a/img")
-    assert sub_sub_tree.xpath("//figure/figcaption/p/span/a")[0].text == "My needflow"
-    # check base_url url in subsubfolder level
-    assert "as EXT_TEST_01 [[http://my_company.com/docs/v1/index.html#TEST_01]]" in sub_sub_flow_hrefs[0].attrib["alt"]
-    # check base_url relative path in subsubfolder level, two level deeper than base_url
-    assert (
-        "as EXT_REL_PATH_TEST_01 [[../../../../_build/html/index.html#TEST_01]]" in sub_sub_flow_hrefs[0].attrib["alt"]
-    )
+    if not sphinx.__version__.startswith("3.5"):
+        sub_sub_flow_hrefs = sub_sub_tree.xpath("//figure/p/object/a/img")
+        assert sub_sub_tree.xpath("//figure/figcaption/p/span/a")[0].text == "My needflow"
+        # check base_url url in subsubfolder level
+        assert (
+            "as EXT_TEST_01 [[http://my_company.com/docs/v1/index.html#TEST_01]]" in sub_sub_flow_hrefs[0].attrib["alt"]
+        )
+        # check base_url relative path in subsubfolder level, two level deeper than base_url
+        assert (
+            "as EXT_REL_PATH_TEST_01 [[../../../../_build/html/index.html#TEST_01]]"
+            in sub_sub_flow_hrefs[0].attrib["alt"]
+        )
 
     # check role need_outgoing and need_incoming for base_url in subsubfolder level
     for element in sub_sub_tree.xpath("//p/span/a"):
