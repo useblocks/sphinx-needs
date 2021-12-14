@@ -28,6 +28,11 @@ from sphinxcontrib.needs.directives.need import (
     process_need_nodes,
     purge_needs,
 )
+from sphinxcontrib.needs.directives.needbar import (
+    Needbar,
+    NeedbarDirective,
+    process_needbar,
+)
 from sphinxcontrib.needs.directives.needextend import (
     Needextend,
     NeedextendDirective,
@@ -224,6 +229,7 @@ def setup(app):
     app.add_node(
         Needfilter,
     )
+    app.add_node(Needbar)
     app.add_node(Needimport)
     app.add_node(Needlist)
     app.add_node(Needtable)
@@ -241,6 +247,7 @@ def setup(app):
     ########################################################################
 
     # Define directives
+    app.add_directive("needbar", NeedbarDirective)
     app.add_directive("needfilter", NeedfilterDirective)
     app.add_directive("needlist", NeedlistDirective)
     app.add_directive("needtable", NeedtableDirective)
@@ -293,6 +300,7 @@ def setup(app):
     app.connect("doctree-resolved", process_need_nodes)
     app.connect("doctree-resolved", process_needextend)  # Must be done very early, as it modifies need data
     app.connect("doctree-resolved", print_need_nodes)
+    app.connect("doctree-resolved", process_needbar)
     app.connect("doctree-resolved", process_needextract)
     app.connect("doctree-resolved", process_needfilters)
     app.connect("doctree-resolved", process_needlist)
@@ -606,6 +614,7 @@ def merge_data(app, env, docnames, other):
             other_objects = getattr(other, name)
             objects.update(other_objects)
 
+    merge("need_all_needbar")
     merge("need_all_needtables")
     merge("need_all_needextend")
     merge("need_all_needextracts")

@@ -11,6 +11,7 @@ License
 :Released: under development
 
 * Improvement: :ref:`needs_external_needs` supports relative path for :ref:`base_url`.
+* Added needbar support to render bars.
 
 0.7.4
 -----
