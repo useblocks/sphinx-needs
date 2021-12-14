@@ -3,7 +3,7 @@
 needbar
 ========
 
-.. versionadded:: 0.1.0
+.. versionadded:: 0.7.5
 
 ``needbar`` adds a bar-chart to your documentation:
 
