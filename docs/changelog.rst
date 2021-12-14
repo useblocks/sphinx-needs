@@ -11,6 +11,7 @@ License
 :Released: under development
 
 * Improvement: :ref:`needs_external_needs` supports relative path for :ref:`base_url`.
+* Changed needgantt format string according to C89 defined value. 
 
 0.7.4
 -----
