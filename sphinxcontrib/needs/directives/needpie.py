@@ -118,6 +118,7 @@ def process_needpie(app, doctree, fromdocname):
         current_needpie = env.need_all_needpie[id]
 
         # Set matplotlib style
+        style_previous_to_script_execution = matplotlib.rcParams
         if current_needpie["style"]:
             matplotlib.style.use(current_needpie["style"])
         else:
@@ -202,6 +203,14 @@ def process_needpie(app, doctree, fromdocname):
 
         node.replace_self(image_node)
 
+        #cleanup matplotlib
+        #Reset the style configuration:
+        matplotlib.rcParams = style_previous_to_script_execution
+
+        #close the figure, to free consumed memory. 
+        #Otherwise we will get: RuntimeWarning from matplotlib:
+        #More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`)
+        matplotlib.pyplot.close(fig) 
 
 def label_calc(pct, allvals):
     absolute = int(round(pct / 100.0 * sum(allvals)))
