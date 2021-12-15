@@ -258,9 +258,6 @@ def process_needbar(app, doctree, fromdocname):
                     line.append(column)
                 else:
                     value = row + column * len(local_data_number) + column
-                    if current_needbar["horizontal"]:
-                        #In horitzontal printing, it is better to print the values sorted like the legend
-                        value = -1 * value
                     line.append(value)
             index.append(line)
         
@@ -322,9 +319,16 @@ def process_needbar(app, doctree, fromdocname):
                     axes.bar_label(bar)
         
         if not current_needbar["horizontal"]:
-            axes.set_xticks((numpy.array(index[0])+numpy.array(index[len(local_data_number)-1]))/2, labels=xlabels)
+            #We want to support even older version of matplotlib, which do not support axes.set_xticks(labels)
+            x_pos = (numpy.array(index[0])+numpy.array(index[len(local_data_number)-1]))/2
+            axes.set_xticks(x_pos)
+            axes.set_xticklabels(labels=xlabels)
         else:
-            axes.set_yticks((numpy.array(index[0])+numpy.array(index[len(local_data_number)-1]))/2, labels=xlabels)
+            #We want to support even older version of matplotlib, which do not support axes.set_yticks(labels)
+            y_pos = (numpy.array(index[0])+numpy.array(index[len(local_data_number)-1]))/2
+            axes.set_yticks(y_pos)
+            axes.set_yticklabels(labels=xlabels)
+            axes.invert_yaxis()  # labels read top-to-bottom
         
         xlabels_rotation = current_needbar["xlabels_rotation"]
         if xlabels_rotation:
