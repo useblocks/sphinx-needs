@@ -35,7 +35,7 @@ class NeedpieDirective(FilterBase):
     final_argument_whitespace = True
 
     option_spec = {
-        "legend": directives.unchanged,
+        "legend": directives.flag,
         "explode": directives.unchanged_required,
         "labels": directives.unchanged_required,
         "style": directives.unchanged_required,
@@ -61,7 +61,7 @@ class NeedpieDirective(FilterBase):
         title = self.arguments[0] if self.arguments else ""
         text_color = self.options.get("text_color", None)
         style = self.options.get("style", None)
-        legend = self.options.get("legend", None)
+        legend = "legend" in self.options
 
         explode = self.options.get("explode", None)
         if explode:
