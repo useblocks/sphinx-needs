@@ -12,6 +12,8 @@ License
 
 * Bugfix: Changed needgantt format string according to C89 defined value.
   (`#445 <https://github.com/useblocks/sphinxcontrib-needs/issues/445>`_)
+* Bugfix: needpie option ``:legend:`` is not been rendered
+  (`#448 <https://github.com/useblocks/sphinxcontrib-needs/issues/448>`_)
 * Improvement: :ref:`needs_external_needs` supports relative path for :ref:`base_url`.
 
 
