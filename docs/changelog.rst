@@ -10,7 +10,10 @@ License
 -----
 :Released: under development
 
+* Bugfix: Changed needgantt format string according to C89 defined value.
+  (`#445 <https://github.com/useblocks/sphinxcontrib-needs/issues/445>`_)
 * Improvement: :ref:`needs_external_needs` supports relative path for :ref:`base_url`.
+
 
 0.7.4
 -----
