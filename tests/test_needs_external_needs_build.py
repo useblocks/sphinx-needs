@@ -79,7 +79,7 @@ def test_external_needs_base_url_relative_path(app, status, warning):
         # check base_url url in root level
         assert "as EXT_TEST_01 [[http://my_company.com/docs/v1/index.html#TEST_01]]" in root_flow_hrefs[0].attrib["alt"]
         # check base_url relative path in root level
-        assert "as EXT_REL_PATH_TEST_01 [[../../_build/html/index.html#TEST_01]]" in root_flow_hrefs[0].attrib["alt"]
+        assert "as EXT_REL_PATH_TEST_01 [[../../../_build/html/index.html#TEST_01]]" in root_flow_hrefs[0].attrib["alt"]
 
     # check role need_outgoing and need_incoming for base_url in root level
     for element in root_tree.xpath("//p/span/a"):
@@ -174,8 +174,7 @@ def test_external_needs_base_url_relative_path(app, status, warning):
         )
         # check base_url relative path in subsubfolder level, two level deeper than base_url
         assert (
-            "as EXT_REL_PATH_TEST_01 [[../../../../_build/html/index.html#TEST_01]]"
-            in sub_sub_flow_hrefs[0].attrib["alt"]
+            "as EXT_REL_PATH_TEST_01 [[../../../_build/html/index.html#TEST_01]]" in sub_sub_flow_hrefs[0].attrib["alt"]
         )
 
     # check role need_outgoing and need_incoming for base_url in subsubfolder level
