@@ -7,7 +7,7 @@ This directive adds a results table of a given junit xml file to the current pag
 
 .. code-block:: rst
 
-	.. test-results: my/path/to/test.xml
+	.. test-results:: my/path/to/test.xml
 
 
 .. test-results:: ../tests/data/xml_data.xml
