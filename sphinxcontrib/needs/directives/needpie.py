@@ -207,7 +207,7 @@ def process_needpie(app, doctree, fromdocname):
         # Reset the style configuration:
         matplotlib.rcParams = style_previous_to_script_execution
 
-        # Close the figure, to free consumed memory. 
+        # Close the figure, to free consumed memory.
         # Otherwise we will get: RuntimeWarning from matplotlib:
         matplotlib.pyplot.close(fig)
 
