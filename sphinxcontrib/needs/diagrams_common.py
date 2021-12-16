@@ -4,15 +4,14 @@ diagram related directive. E.g. needflow and needsequence.
 """
 
 import html
-import os
 import re
 import textwrap
-from urllib.parse import urlparse
 
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
 
 from sphinxcontrib.needs.logging import get_logger
+from sphinxcontrib.needs.utils import check_and_calc_base_url_rel_path
 
 logger = get_logger(__name__)
 
@@ -182,18 +181,7 @@ def calculate_link(app, need_info, fromdocname):
     """
     try:
         if need_info["is_external"]:
-            link = need_info["external_url"]
-
-            # check if given base_url is url or relative path
-            parsed_url = urlparse(need_info["external_url"])
-            if not parsed_url.scheme and not os.path.isabs(need_info["external_url"]):
-                # get path sep considering plattform dependency, '\' for Windows, '/' fro Unix
-                curr_path_sep = os.path.sep
-                # check / or \ to determine the relative path to conf.py directory
-                if curr_path_sep in fromdocname:
-                    sub_level = len(fromdocname.split(curr_path_sep)) - 1
-                    link = os.path.join(sub_level * (".." + curr_path_sep), need_info["external_url"])
-
+            link = check_and_calc_base_url_rel_path(need_info["external_url"], fromdocname)
         else:
             link = "../" + app.builder.get_target_uri(need_info["docname"]) + "#" + need_info["target_node"]["refid"]
             if need_info["is_part"]:

@@ -2,9 +2,6 @@
 
 
 """
-import os
-from urllib.parse import urlparse
-
 from docutils import nodes
 from docutils.parsers.rst import directives
 
@@ -13,6 +10,7 @@ from sphinxcontrib.needs.directives.utils import (
     used_filter_paragraph,
 )
 from sphinxcontrib.needs.filter_common import FilterBase, process_filters
+from sphinxcontrib.needs.utils import check_and_calc_base_url_rel_path
 
 
 class Needlist(nodes.General, nodes.Element):
@@ -106,16 +104,7 @@ def process_needlist(app, doctree, fromdocname):
             elif need_info["is_external"]:
                 ref = nodes.reference("", "")
 
-                ref["refuri"] = need_info["external_url"]
-                # check if given base_url is url or relative path
-                parsed_url = urlparse(need_info["external_url"])
-                if not parsed_url.scheme and not os.path.isabs(need_info["external_url"]):
-                    # get path sep considering plattform dependency, '\' for Windows, '/' fro Unix
-                    curr_path_sep = os.path.sep
-                    # check / or \ to determine the relative path to conf.py directory
-                    if curr_path_sep in fromdocname:
-                        sub_level = len(fromdocname.split(curr_path_sep)) - 1
-                        ref["refuri"] = os.path.join(sub_level * (".." + curr_path_sep), need_info["external_url"])
+                ref["refuri"] = check_and_calc_base_url_rel_path(need_info["external_url"], fromdocname)
 
                 ref["classes"].append(need_info["external_css"])
                 ref.append(title)
