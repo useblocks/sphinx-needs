@@ -203,13 +203,14 @@ def process_needpie(app, doctree, fromdocname):
 
         node.replace_self(image_node)
 
-        #cleanup matplotlib
-        #Reset the style configuration:
+        # Cleanup matplotlib
+        # Reset the style configuration:
         matplotlib.rcParams = style_previous_to_script_execution
 
-        #close the figure, to free consumed memory. 
-        #Otherwise we will get: RuntimeWarning from matplotlib:
-        matplotlib.pyplot.close(fig) 
+        # Close the figure, to free consumed memory. 
+        # Otherwise we will get: RuntimeWarning from matplotlib:
+        matplotlib.pyplot.close(fig)
+
 
 def label_calc(pct, allvals):
     absolute = int(round(pct / 100.0 * sum(allvals)))
