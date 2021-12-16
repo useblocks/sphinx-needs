@@ -118,6 +118,7 @@ def process_needpie(app, doctree, fromdocname):
         current_needpie = env.need_all_needpie[id]
 
         # Set matplotlib style
+        style_previous_to_script_execution = matplotlib.rcParams
         if current_needpie["style"]:
             matplotlib.style.use(current_needpie["style"])
         else:
@@ -201,6 +202,14 @@ def process_needpie(app, doctree, fromdocname):
         image_node["candidates"] = {"*": rel_file_path}
 
         node.replace_self(image_node)
+
+        # Cleanup matplotlib
+        # Reset the style configuration:
+        matplotlib.rcParams = style_previous_to_script_execution
+
+        # Close the figure, to free consumed memory.
+        # Otherwise we will get: RuntimeWarning from matplotlib:
+        matplotlib.pyplot.close(fig)
 
 
 def label_calc(pct, allvals):
