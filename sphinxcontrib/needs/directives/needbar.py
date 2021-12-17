@@ -288,8 +288,13 @@ def process_needbar(app, doctree, fromdocname):
             text_color = current_needbar["text_color"].strip()
             matplotlib.rcParams["text.color"] = text_color
             matplotlib.rcParams["axes.labelcolor"] = text_color
-            matplotlib.rcParams["xtick.labelcolor"] = text_color
-            matplotlib.rcParams["ytick.labelcolor"] = text_color
+            try:
+                matplotlib.rcParams["xtick.labelcolor"] = text_color
+                matplotlib.rcParams["ytick.labelcolor"] = text_color
+            except KeyError:
+                # labelcolor is not support in this matplotlib version. Use color instead.
+                matplotlib.rcParams["xtick.color"] = text_color
+                matplotlib.rcParams["ytick.color"] = text_color
 
         # get bar colors
         colors = current_needbar["colors"]
@@ -315,10 +320,6 @@ def process_needbar(app, doctree, fromdocname):
 
         # 8. create figure
         figure, axes = matplotlib.pyplot.subplots()
-        urls = ["https://www.heise.de"]
-        urls.append("../index.html")
-        urls.append("../index.html")
-        urls.append("needbar_")
         for x in range(len(local_data_number)):
             if not current_needbar["horizontal"]:
                 bar = axes.bar(
@@ -327,7 +328,6 @@ def process_needbar(app, doctree, fromdocname):
                     bottom=y_offset,
                     label=ylabels[x],
                     color=colors[x],
-                    url=urls[x % len(urls)],
                 )
             else:
                 bar = axes.barh(
@@ -336,7 +336,6 @@ def process_needbar(app, doctree, fromdocname):
                     left=y_offset,
                     label=ylabels[x],
                     color=colors[x],
-                    url=urls[x % len(urls)],
                 )
 
             if current_needbar["show_sum"]:
