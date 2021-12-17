@@ -35,7 +35,7 @@ class NeedpieDirective(FilterBase):
     final_argument_whitespace = True
 
     option_spec = {
-        "legend": directives.unchanged,
+        "legend": directives.flag,
         "explode": directives.unchanged_required,
         "labels": directives.unchanged_required,
         "style": directives.unchanged_required,
@@ -61,7 +61,7 @@ class NeedpieDirective(FilterBase):
         title = self.arguments[0] if self.arguments else ""
         text_color = self.options.get("text_color", None)
         style = self.options.get("style", None)
-        legend = self.options.get("legend", None)
+        legend = "legend" in self.options
 
         explode = self.options.get("explode", None)
         if explode:
@@ -118,6 +118,7 @@ def process_needpie(app, doctree, fromdocname):
         current_needpie = env.need_all_needpie[id]
 
         # Set matplotlib style
+        style_previous_to_script_execution = matplotlib.rcParams
         if current_needpie["style"]:
             matplotlib.style.use(current_needpie["style"])
         else:
@@ -201,6 +202,14 @@ def process_needpie(app, doctree, fromdocname):
         image_node["candidates"] = {"*": rel_file_path}
 
         node.replace_self(image_node)
+
+        # Cleanup matplotlib
+        # Reset the style configuration:
+        matplotlib.rcParams = style_previous_to_script_execution
+
+        # Close the figure, to free consumed memory.
+        # Otherwise we will get: RuntimeWarning from matplotlib:
+        matplotlib.pyplot.close(fig)
 
 
 def label_calc(pct, allvals):
