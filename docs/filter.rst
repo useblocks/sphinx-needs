@@ -155,6 +155,7 @@ The usage of a filter string is supported/required by:
 * :ref:`needtable`
 * :ref:`needflow`
 * :ref:`needpie`
+* :ref:`needbar`
 
 
 The filter string must be a valid Python expression:

@@ -5,7 +5,6 @@ import matplotlib
 import numpy
 from docutils import nodes
 
-from sphinxcontrib.needs.api.exceptions import NeedsInvalidException
 from sphinxcontrib.needs.filter_common import FilterBase, filter_needs
 
 if not os.environ.get("DISPLAY"):
@@ -27,7 +26,7 @@ class NeedbarDirective(FilterBase):
     """
     Directive to plot diagrams with the help of matplotlib
 
-    .. versionadded: 0.1.0
+    .. versionadded: 0.7.5
     """
 
     has_content = True
@@ -74,7 +73,7 @@ class NeedbarDirective(FilterBase):
 
         content = self.content
         if not content:
-            raise NeedsInvalidException(f"{error_id} content cannot be empty.")
+            raise Exception(f"{error_id} content cannot be empty.")
 
         title = self.arguments[0].strip() if self.arguments else None
 
@@ -200,7 +199,7 @@ def process_needbar(app, doctree, fromdocname):
             else:
                 # We can only process content with the same lenght for each line
                 if test_columns_length != len(row_data):
-                    raise NeedsInvalidException(f"{error_id}: each content line must have the same length")
+                    raise Exception(f"{error_id}: each content line must have the same length")
 
         # 3. process the labels (maybe from content)
         xlabels = current_needbar["xlabels"]
@@ -232,13 +231,13 @@ def process_needbar(app, doctree, fromdocname):
 
         # ensure length of xlabels == content columns
         if not len(xlabels) == len(local_data[0]):
-            raise NeedsInvalidException(
+            raise Exception(
                 f"{error_id} length of xlabels: {len(xlabels)} is not equal with sum of columns: {len(local_data[0])}"
             )
 
         # ensure length of ylabels == content rows
         if not len(ylabels) == len(local_data):
-            raise NeedsInvalidException(
+            raise Exception(
                 f"{error_id} length of ylabels: {len(ylabels)} is not equal with sum of rows: {len(local_data)}"
             )
 
