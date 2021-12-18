@@ -339,14 +339,20 @@ def process_needbar(app, doctree, fromdocname):
                 )
 
             if current_needbar["show_sum"]:
-                axes.bar_label(bar, label_type="center")  # show label in the middel of each bar
+                try:
+                    axes.bar_label(bar, label_type="center")  # show label in the middel of each bar
+                except AttributeError:  # bar_label is not support in older matplotlib versions
+                    current_needbar["show_sum"] = None
 
             if current_needbar["stacked"]:
                 y_offset = y_offset + numpy.array(local_data_number[x])
 
                 # show for a stacked bar the overall value
                 if current_needbar["show_sum"] and x == len(local_data_number) - 1:
-                    axes.bar_label(bar)
+                    try:
+                        axes.bar_label(bar)
+                    except AttributeError:  # bar_label is not support in older matplotlib versions
+                        current_needbar["show_sum"] = None
 
         if not current_needbar["horizontal"]:
             # We want to support even older version of matplotlib, which do not support axes.set_xticks(labels)
