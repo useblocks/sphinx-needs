@@ -204,7 +204,7 @@ def process_needflow(app, doctree, fromdocname):
                 node_part_code = ""
                 valid_need_parts = [x for x in found_needs if x["is_part"] and x["id_parent"] == need_info["id"]]
                 for need_part in valid_need_parts:
-                    part_link = calculate_link(app, need_part)
+                    part_link = calculate_link(app, need_part, fromdocname)
                     diagram_template = Template(env.config.needs_diagram_template)
                     part_text = diagram_template.render(**need_part)
                     part_colors = []
@@ -227,7 +227,7 @@ def process_needflow(app, doctree, fromdocname):
 
                     processed_need_part_ids.append(need_part["id_complete"])
 
-                link = calculate_link(app, need_info)
+                link = calculate_link(app, need_info, fromdocname)
 
                 diagram_template = Template(env.config.needs_diagram_template)
                 node_text = diagram_template.render(**need_info)

@@ -2,7 +2,6 @@
 
 
 """
-
 from docutils import nodes
 from docutils.parsers.rst import directives
 
@@ -11,6 +10,7 @@ from sphinxcontrib.needs.directives.utils import (
     used_filter_paragraph,
 )
 from sphinxcontrib.needs.filter_common import FilterBase, process_filters
+from sphinxcontrib.needs.utils import check_and_calc_base_url_rel_path
 
 
 class Needlist(nodes.General, nodes.Element):
@@ -103,7 +103,9 @@ def process_needlist(app, doctree, fromdocname):
                 para += title
             elif need_info["is_external"]:
                 ref = nodes.reference("", "")
-                ref["refuri"] = need_info["external_url"]
+
+                ref["refuri"] = check_and_calc_base_url_rel_path(need_info["external_url"], fromdocname)
+
                 ref["classes"].append(need_info["external_css"])
                 ref.append(title)
                 para += ref
