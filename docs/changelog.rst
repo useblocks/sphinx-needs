@@ -25,7 +25,8 @@ License
   (`#457 <https://github.com/useblocks/sphinxcontrib-needs/issues/457>`_)
 * Bugfix: Changed :ref:`needs_external_needs` Fix issue when loading needs from URL.
   (`#459 <https://github.com/useblocks/sphinxcontrib-needs/issues/459>`_)
-
+* Bugfix: Changed :ref:`needs_external_needs` getting from URL was using parameter related to local file.
+  (`#458 <https://github.com/useblocks/sphinxcontrib-needs/issues/458>`_)
 
 0.7.4
 -----

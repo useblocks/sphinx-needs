@@ -46,11 +46,9 @@ plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "..", 
 plantuml_output_format = "svg"
 
 needs_external_needs = [
-    # add an empty json_path value, else failure. See ticket 458.
     {
         "base_url": "http://my_company.com/docs/v1/",
         "json_url": "http://my_company.com/docs/v1/remote-needs.json",
-        "json_path": "",
         "id_prefix": "ext_remote_",
     },
 ]
