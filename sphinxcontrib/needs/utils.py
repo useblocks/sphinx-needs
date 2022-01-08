@@ -2,6 +2,7 @@ import cProfile
 import os
 from functools import wraps
 from typing import Any, Dict, List
+from urllib.parse import urlparse
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -113,8 +114,7 @@ def row_col_maker(
                     ref_col = nodes.reference("", "")
                     if make_ref:
                         if need_info["is_external"]:
-                            # if need is external, just use the already calculated external_url
-                            ref_col["refuri"] = need_info["external_url"]
+                            ref_col["refuri"] = check_and_calc_base_url_rel_path(need_info["external_url"], fromdocname)
                             ref_col["classes"].append(need_info["external_css"])
                             row_col["classes"].append(need_info["external_css"])
                         else:
@@ -123,7 +123,7 @@ def row_col_maker(
                     elif ref_lookup:
                         temp_need = all_needs[link_id]
                         if temp_need["is_external"]:
-                            ref_col["refuri"] = temp_need["external_url"]
+                            ref_col["refuri"] = check_and_calc_base_url_rel_path(temp_need["external_url"], fromdocname)
                             ref_col["classes"].append(temp_need["external_css"])
                             row_col["classes"].append(temp_need["external_css"])
                         else:
@@ -211,3 +211,24 @@ def profile(keyword):
         return func
 
     return inner
+
+
+def check_and_calc_base_url_rel_path(external_url, fromdocname):
+    """
+    Check given base_url from needs_external_needs and calculate relative path if base_url is relative path.
+
+    :param external_url: Caculated external_url from base_url in needs_external_needs
+    :param fromdocname: document name
+    :return: calculated external_url
+    """
+    ref_uri = external_url
+    # check if given base_url is url or relative path
+    parsed_url = urlparse(external_url)
+    # get path sep considering plattform dependency, '\' for Windows, '/' fro Unix
+    curr_path_sep = os.path.sep
+    # check / or \ to determine the relative path to conf.py directory
+    if not parsed_url.scheme and not os.path.isabs(external_url) and curr_path_sep in fromdocname:
+        sub_level = len(fromdocname.split(curr_path_sep)) - 1
+        ref_uri = os.path.join(sub_level * (".." + curr_path_sep), external_url)
+
+    return ref_uri

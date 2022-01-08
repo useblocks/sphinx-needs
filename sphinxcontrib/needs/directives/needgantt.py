@@ -179,7 +179,7 @@ def process_needgantt(app, doctree, fromdocname):
                     'File: {}:current_needgantt["lineno"]'.format(start_date_string, current_needgantt["docname"])
                 )
 
-            month = MONTH_NAMES[int(start_date.strftime("%-m"))]
+            month = MONTH_NAMES[int(start_date.strftime("%m"))]
             start_date_plantuml = start_date.strftime(f"%dth of {month} %Y")
         if start_date_plantuml:
             puml_node["uml"] += f"Project starts the {start_date_plantuml}\n"
@@ -212,7 +212,7 @@ def process_needgantt(app, doctree, fromdocname):
                     duration = 1
                 gantt_element = "[{}] as [{}] lasts {} days\n".format(need["title"], need["id"], duration)
 
-            el_link_string += "[{}] links to [[{}]]\n".format(need["title"], calculate_link(app, need))
+            el_link_string += "[{}] links to [[{}]]\n".format(need["title"], calculate_link(app, need, fromdocname))
 
             if complete:
                 complete = complete.replace("%", "")

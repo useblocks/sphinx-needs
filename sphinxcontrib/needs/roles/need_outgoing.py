@@ -7,6 +7,7 @@ except ImportError:
     from sphinx.environment import NoUri  # Sphinx < 3.0
 
 from sphinxcontrib.needs.logging import get_logger
+from sphinxcontrib.needs.utils import check_and_calc_base_url_rel_path
 
 log = get_logger(__name__)
 
@@ -73,7 +74,9 @@ def process_need_outgoing(app, doctree, fromdocname):
                         )
                     else:
                         new_node_ref = nodes.reference(target_need["id"], target_need["id"])
-                        new_node_ref["refuri"] = target_need["external_url"]
+                        new_node_ref["refuri"] = check_and_calc_base_url_rel_path(
+                            target_need["external_url"], fromdocname
+                        )
                         new_node_ref["classes"].append(target_need["external_css"])
 
                     node_link_container += new_node_ref

@@ -11,6 +11,14 @@ License
 :Released: under development
 
 * Improvement: :ref:`needs_external_needs` supports relative path for :ref:`base_url`.
+* Bugfix: Changed :ref:`needgantt` strftime format string according to C89 defined value.
+  (`#445 <https://github.com/useblocks/sphinxcontrib-needs/issues/445>`_)
+* Bugfix: :ref:`needpie` option :legend: is correctls rendered
+  (`#448 <https://github.com/useblocks/sphinxcontrib-needs/issues/448>`_)
+* Bugfix: :ref:`needpie` figures are closed after creation, to free memory and suppress matplotlib warning
+  (`#450 <https://github.com/useblocks/sphinxcontrib-needs/issues/450>`_)
+* Improvement: :ref:`needbar` is introduced
+  (`#452 <https://github.com/useblocks/sphinxcontrib-needs/issues/452>`_)
 
 0.7.4
 -----
