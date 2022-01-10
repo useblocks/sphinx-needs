@@ -34,5 +34,6 @@
              },
              "additionalProperties": false
         }
-    }
+    },
+    "required": ["current_version", "project"]
 }
