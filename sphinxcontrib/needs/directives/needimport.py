@@ -8,6 +8,7 @@ from docutils.parsers.rst import Directive, directives
 from sphinxcontrib.needs.api import add_need
 from sphinxcontrib.needs.config import NEEDS_CONFIG
 from sphinxcontrib.needs.filter_common import filter_single_need
+from sphinxcontrib.needs.needsfile import check_needs_file
 from sphinxcontrib.needs.utils import logger
 
 
@@ -73,6 +74,12 @@ class NeedimportDirective(Directive):
 
         if not os.path.exists(correct_need_import_path):
             raise ReferenceError(f"Could not load needs import file {correct_need_import_path}")
+
+        errors = check_needs_file(correct_need_import_path)
+        if errors["schema"]:
+            logger.info(f"Schema validation errors detected in file {correct_need_import_path}:")
+            for error in errors["schema"]:
+                logger.info(f'  {error.message} -> {".".join(error.path)}')
 
         with open(correct_need_import_path) as needs_file:
             needs_file_content = needs_file.read()
