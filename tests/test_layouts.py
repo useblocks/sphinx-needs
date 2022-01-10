@@ -23,6 +23,9 @@ def test_doc_build_html(app, status, warning):
     assert "title_example_layout" in html
 
     needs = extract_needs_from_html(html)
-    assert len(needs) == 4
+    assert len(needs) == 5
 
     assert '<tr class="footer row-even"><td class="footer_left" colspan="2">' in html
+
+    # check simple_footer grid layout
+    assert "custom footer for" in html

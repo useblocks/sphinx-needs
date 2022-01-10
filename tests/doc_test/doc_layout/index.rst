@@ -12,3 +12,6 @@ TEST DOCUMENT
 
 .. spec:: title_example_layout
    :layout: example
+
+.. spec:: title_layout_footer_grid
+   :layout: footer_grid
