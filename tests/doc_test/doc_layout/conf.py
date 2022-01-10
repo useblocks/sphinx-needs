@@ -55,7 +55,15 @@ needs_layouts = {
             "meta": ['**status**: <<meta("status")>>', '**author**: <<meta("author")>>'],
             "side": ['<<image("_images/{{author}}.png", align="center")>>'],
         },
-    }
+    },
+    "footer_grid": {
+        "grid": "simple_footer",
+        "layout": {
+            "head": ['**<<meta("title")>>** for *<<meta("author")>>*'],
+            "meta": ['**status**: <<meta("status")>>', '**author**: <<meta("author")>>'],
+            "footer": ['**custom footer for <<meta("title")>>**'],
+        },
+    },
 }
 
 

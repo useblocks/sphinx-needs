@@ -180,6 +180,10 @@ class LayoutHandler:
                 "func": self._grid_simple,
                 "configs": {"colwidths": [100], "side_left": False, "side_right": False, "footer": False},
             },
+            "simple_footer": {
+                "func": self._grid_simple,
+                "configs": {"colwidths": [100], "side_left": False, "side_right": False, "footer": True},
+            },
             "simple_side_left": {
                 "func": self._grid_simple,
                 "configs": {"colwidths": [30, 70], "side_left": "full", "side_right": False, "footer": False},

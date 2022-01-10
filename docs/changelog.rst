@@ -19,6 +19,8 @@ License
   (`#450 <https://github.com/useblocks/sphinxcontrib-needs/issues/450>`_)
 * Improvement: :ref:`needbar` is introduced
   (`#452 <https://github.com/useblocks/sphinxcontrib-needs/issues/452>`_)
+* Bugfix: Added implementation for simple_footer grid in Layouts Grids
+  (`#457 <https://github.com/useblocks/sphinxcontrib-needs/issues/457>`_)
 
 0.7.4
 -----
