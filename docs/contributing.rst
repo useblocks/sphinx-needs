@@ -51,6 +51,10 @@ installed in an isolated environment by Poetry.
 
       pre-commit install
 
+5. For running tests install also the dependencies of our official documentation:
+   ``pip install -r docs/requirements.txt``
+
+
 List make targets
 -----------------
 ``Sphinx-Needs`` uses ``make`` to invoke most development related actions.
@@ -83,6 +87,11 @@ To check if all used links in the documentation are still valid, run::
 
 Running Tests
 -------------
+.. hint::
+
+   Please be sure to have the dependencies of the official documentation installed:
+   ``pip install -r docs/requirements.txt``
+
 
 ::
 
