@@ -21,6 +21,8 @@ License
   (`#452 <https://github.com/useblocks/sphinxcontrib-needs/issues/452>`_)
 * Bugfix: Added implementation for simple_footer grid in Layouts Grids
   (`#457 <https://github.com/useblocks/sphinxcontrib-needs/issues/457>`_)
+* Bugfix: Changed :ref:`needs_external_needs` Fix issue when loading needs from URL.
+  (`#459 <https://github.com/useblocks/sphinxcontrib-needs/issues/459>`_)
 
 0.7.4
 -----

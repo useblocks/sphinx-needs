@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import requests_mock
 import sphinx
 from sphinx_testing import with_app
 
@@ -185,3 +186,69 @@ def test_external_needs_base_url_relative_path(app, status, warning):
         # check link for need_incoming
         if element.text == "EXT_REL_PATH_TEST_02":
             assert element.attrib["href"] == "../../../../_build/html/index.html#TEST_02"
+
+
+@with_app(buildername="html", srcdir="doc_test/doc_needs_external_needs_remote")
+def test_external_needs_json_url(app, status, warning):
+
+    # Mock API calls performed to get remote file
+    remote_json = {
+        "created": "2021-05-11T13:54:22.331741",
+        "current_version": "1.0",
+        "project": "needs test docs",
+        "versions": {
+            "1.0": {
+                "created": "2021-05-11T13:54:22.331724",
+                "filters": {},
+                "filters_amount": 0,
+                "needs": {
+                    "TEST_101": {
+                        "id": "TEST_101",
+                        "description": "TEST_101 DESCRIPTION",
+                        "docname": "index",
+                        "external_css": "external_link",
+                        "external_url": "http://my_company.com/docs/v1/index.html#TEST_01",
+                        "title": "TEST_101 TITLE",
+                        "type": "impl",
+                        "tags": ["ext_test"],
+                    }
+                },
+            }
+        },
+    }
+
+    with requests_mock.Mocker() as m:
+        m.get("http://my_company.com/docs/v1/remote-needs.json", json=remote_json)
+        app.build()
+
+    # check base_url full path from conf.py
+    base_url_full_path = app.config.needs_external_needs[0]["base_url"]
+    assert base_url_full_path == "http://my_company.com/docs/v1"
+
+    # check base_url relative path from conf.py
+    json_url = app.config.needs_external_needs[0]["json_url"]
+    assert json_url == "http://my_company.com/docs/v1/remote-needs.json"
+
+    from lxml import html as html_parser
+
+    # check usage in project root level
+    html_path = str(Path(app.outdir, "index.html"))
+    root_tree = html_parser.parse(html_path)
+
+    # check needlist usage for base_url in root level
+    root_list_hrefs = root_tree.xpath("//div/a")
+    for ext_link in root_list_hrefs:
+        if "class" in ext_link.attrib:
+            assert ext_link.attrib["class"] == "external_link reference external"
+    # check usage from remote URL
+    assert root_list_hrefs[0].attrib["href"] == "http://my_company.com/docs/v1/index.html#TEST_101"
+    assert root_list_hrefs[0].text == "EXT_REMOTE_TEST_101: TEST_101 TITLE"
+
+    # check needtable usage for base_url in root level
+    root_table_hrefs = root_tree.xpath("//table/tbody/tr/td/p/a")
+    for external_link in root_table_hrefs:
+        if "class" in external_link.attrib:
+            assert external_link.attrib["class"] == "external_link reference external"
+    # check for remote url
+    assert root_table_hrefs[0].attrib["href"] == "http://my_company.com/docs/v1/index.html#TEST_101"
+    assert root_table_hrefs[0].text == "EXT_REMOTE_TEST_101"
