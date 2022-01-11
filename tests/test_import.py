@@ -44,6 +44,28 @@ def test_import_json(app, status, warning):
     assert "Deprecation warning:" in warnings
 
 
+def test_json_schema_console_check():
+    """Checks the console output for hints about json schema validation errors"""
+    import os
+    import subprocess
+
+    srcdir = "doc_test/import_doc_invalid"
+    out_dir = os.path.join(srcdir, "_build")
+    out = subprocess.run(["sphinx-build", "-b", "html", srcdir, out_dir], capture_output=True)
+
+    assert "Schema validation errors detected" in str(out.stdout)
+
+
+@with_app(buildername="html", srcdir="doc_test/import_doc_invalid")
+def test_json_schema_file_check(app, status, warning):
+    """Checks that an invalid json-file gets normally still imported and is used as normal (if possible)"""
+    app.build()
+    html = Path(app.outdir, "index.html").read_text()
+    assert "TEST_01" in html
+    assert "test_TEST_01" in html
+    assert "new_tag" in html
+
+
 @with_app(buildername="html", srcdir="doc_test/non_exists_file_import")  # , warningiserror=True)
 def test_import_non_exists_json(app, status, warning):
     # Check non exists file import

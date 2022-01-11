@@ -31,9 +31,8 @@ def load_external_needs(app, env, _docname):
             log.info(f'Loading external needs from url {source["json_url"]}')
             s = requests.Session()
             s.mount("file://", FileAdapter())
-            log.info(f'Loading external needs from local file {source["json_path"]}')
             try:
-                response = source.get(source["json_url"])
+                response = s.get(source["json_url"])
                 needs_json = response.json()  # The downloaded file MUST be json. Everything else we do not handle!
             except Exception as e:
                 raise NeedsExternalException(f'Getting {source["json_url"]} didn\'t work. Reason: {e}')

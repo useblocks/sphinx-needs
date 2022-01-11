@@ -18,8 +18,6 @@
 import os
 import sys
 
-from docutils.parsers.rst import directives
-
 sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
 
 # -- General configuration ------------------------------------------------
@@ -32,7 +30,9 @@ sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 
-extensions = ["sphinxcontrib.needs"]
+extensions = ["sphinxcontrib.needs", "sphinxcontrib.plantuml"]
+
+needs_table_style = "TABLE"
 
 
 needs_types = [
@@ -42,33 +42,16 @@ needs_types = [
     {"directive": "test", "title": "Test Case", "prefix": "TC_", "color": "#DCB239", "style": "node"},
 ]
 
-needs_extra_options = {
-    "author": directives.unchanged,
-}
-
-
-needs_layouts = {
-    "example": {
-        "grid": "simple_side_right_partial",
-        "layout": {
-            "head": ['**<<meta("title")>>** for *<<meta("author")>>*'],
-            "meta": ['**status**: <<meta("status")>>', '**author**: <<meta("author")>>'],
-            "side": ['<<image("_images/{{author}}.png", align="center")>>'],
-        },
-    },
-    "footer_grid": {
-        "grid": "simple_footer",
-        "layout": {
-            "head": ['**<<meta("title")>>** for *<<meta("author")>>*'],
-            "meta": ['**status**: <<meta("status")>>', '**author**: <<meta("author")>>'],
-            "footer": ['**custom footer for <<meta("title")>>**'],
-        },
-    },
-}
-
-
 plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "..", "..", "docs", "utils", "plantuml.jar")
 plantuml_output_format = "svg"
+
+needs_external_needs = [
+    {
+        "base_url": "http://my_company.com/docs/v1/",
+        "json_url": "http://my_company.com/docs/v1/remote-needs.json",
+        "id_prefix": "ext_remote_",
+    },
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -130,7 +113,7 @@ html_theme = "alabaster"
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
+# html_static_path = ["_static"]
 
 # -- Options for HTMLHelp output ------------------------------------------
 
