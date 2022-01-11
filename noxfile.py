@@ -3,7 +3,7 @@ from nox_poetry import session
 
 PYTHON_VERSIONS = ["3.6", "3.8", "3.9.7"]
 SPHINX_VERSIONS = ["3.2", "3.5.4", "4.1", "4.2"]
-TEST_DEPENDENCIES = ["nose", "sphinx_testing", "responses", "lxml", "pyparsing!=3.0.4"]
+TEST_DEPENDENCIES = ["nose", "sphinx_testing", "responses", "lxml", "pyparsing!=3.0.4", "requests-mock"]
 
 
 def is_supported(python: str, sphinx: str) -> bool:
