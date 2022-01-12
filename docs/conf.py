@@ -278,6 +278,9 @@ needs_extra_options = [
     "image",
     "config",
     "github",
+    "value_string",
+    "value",  # used in examples for role need_value
+    "unit",  # used in examples for role need_value
 ]
 
 needs_warnings = {

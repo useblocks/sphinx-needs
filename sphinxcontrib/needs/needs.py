@@ -93,6 +93,7 @@ from sphinxcontrib.needs.roles.need_incoming import NeedIncoming, process_need_i
 from sphinxcontrib.needs.roles.need_outgoing import NeedOutgoing, process_need_outgoing
 from sphinxcontrib.needs.roles.need_part import NeedPart, process_need_part
 from sphinxcontrib.needs.roles.need_ref import NeedRef, process_need_ref
+from sphinxcontrib.needs.roles.need_value import NeedValue, process_need_value
 from sphinxcontrib.needs.services.github import GithubService
 from sphinxcontrib.needs.services.manager import ServiceManager
 from sphinxcontrib.needs.utils import INTERNALS, NEEDS_FUNCTIONS
@@ -151,6 +152,7 @@ def setup(app):
     app.add_config_value("needs_table_style", "DATATABLES", "html")
 
     app.add_config_value("needs_role_need_template", "{title} ({id})", "html")
+    app.add_config_value("needs_role_need_value", "value_string", "html")
     app.add_config_value("needs_role_need_max_title_length", 30, "html", types=[int])
 
     app.add_config_value("needs_extra_options", [], "html")
@@ -266,6 +268,8 @@ def setup(app):
     # Provides :need:`ABC_123` for inline links.
     app.add_role("need", XRefRole(nodeclass=NeedRef, innernodeclass=nodes.emphasis, warn_dangling=True))
 
+    app.add_role("need_value", XRefRole(nodeclass=NeedValue, innernodeclass=nodes.emphasis, warn_dangling=True))
+
     app.add_role("need_incoming", XRefRole(nodeclass=NeedIncoming, innernodeclass=nodes.emphasis, warn_dangling=True))
 
     app.add_role("need_outgoing", XRefRole(nodeclass=NeedOutgoing, innernodeclass=nodes.emphasis, warn_dangling=True))
@@ -311,6 +315,7 @@ def setup(app):
     app.connect("doctree-resolved", process_needgantt)
     app.connect("doctree-resolved", process_need_part)
     app.connect("doctree-resolved", process_need_ref)
+    app.connect("doctree-resolved", process_need_value)
     app.connect("doctree-resolved", process_need_incoming)
     app.connect("doctree-resolved", process_need_outgoing)
     app.connect("doctree-resolved", process_need_count)

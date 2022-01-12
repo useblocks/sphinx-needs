@@ -275,3 +275,41 @@ Example::
     A nice :need_func:`[[echo("first")]] test` for need_func.
 
 **Result**: A nice :need_func:`[[echo("first")]] test` for need_func.
+
+
+.. _need_value:
+
+need_value
+----------
+.. versionadded:: 0.7.5
+
+The role ``:need_value:`` will add a "value string" and a link to the need.
+
+It is mostly used if you want to refer to values defined in a need.
+
+Example
+~~~~~~~
+
+.. req:: Valued Bread
+   :id: value_bread_req_1
+   :value: 30
+   :unit: cm
+   :value_string: {value} {unit} ({id})
+
+.. code-block:: jinja
+
+   The Bread is :need_value:`value_bread_req_1` long.
+
+**Result**:
+
+The Bread is :need_value:`value_bread_req_1` long.
+
+.. note::
+
+   The value_string option definition can be easily customized by using the
+   configuration parameters :ref:`needs_role_need_value`.
+   The value_string must be a string, which supports standard and custumized options.
+   The options of Python's `.format() <https://docs.python.org/3.4/library/functions.html#format>`_ 
+   function are supported, with execption of empty {}.
+   Please see https://pyformat.info/ for more information.
+   RST-attributes like ``**bold**`` are **not** supported.

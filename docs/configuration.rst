@@ -1631,3 +1631,15 @@ If true, need details like status, tags or links are collapsed and shown only af
 Default value: True
 
 Can be overwritten for each single need by setting :ref:`need_collapse`.
+
+
+.. _needs_role_need_value:
+
+needs_role_need_value
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.7.5
+
+Defines the :ref:`needs_extra_options` which shall be used as value string.
+
+If the role :ref:`need_value` is used, sphinx-needs will create a value representation with the defined value_string of the referenced need.

@@ -15,6 +15,8 @@ License
 * Improvement: :ref:`needs_external_needs` supports relative path for :ref:`base_url`.
 * Improvement: ``needs.json`` schema gets checked during a :ref:`needimport`
   (`#456 <https://github.com/useblocks/sphinxcontrib-needs/issues/456>`_)
+* Improvement: :ref:`need_value` is introduced
+  (`#439 <https://github.com/useblocks/sphinxcontrib-needs/discussions/439>`_)
 * Bugfix: Changed :ref:`needgantt` strftime format string according to C89 defined value.
   (`#445 <https://github.com/useblocks/sphinxcontrib-needs/issues/445>`_)
 * Bugfix: :ref:`needpie` option :legend: is correctls rendered
