@@ -2,12 +2,12 @@ name: CI
 on: [pull_request]
 jobs:
   tests:
-    name: "Test (python: ${{ matrix.python-version }}, sphinx: ${{ matrix.sphinx-version }})"
+    name: "${{ matrix.os }}: py${{ matrix.python-version }} sphinx: ${{ matrix.sphinx-version }}"
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true  # Set on "false" to get the results of ALL builds
       matrix:
-        os: [ubuntu-20.04]
+        os: ["ubuntu-latest"]
         # 3.9.8 seems to be broken with type_ast
         # https://www.mail-archive.com/debian-bugs-dist@lists.debian.org/msg1829077.html
         python-version: ["3.6", "3.8", "3.9.7"]
@@ -16,6 +16,11 @@ jobs:
         exclude:
           - python-version: "3.6"
             sphinx-version: "3.2"
+        include:
+          # Check only newest setups for win server
+          - os: "windows-latest"
+            python-version: "3.9.7"
+            sphinx-version: "4.2"
     steps:
       - uses: actions/checkout@v2
       - name: Set Up Python ${{ matrix.python-version }}
