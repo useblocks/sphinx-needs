@@ -232,7 +232,7 @@ description = "File identification library for Python"
 name = "identify"
 optional = false
 python-versions = ">=3.6.1"
-version = "2.4.2"
+version = "2.4.3"
 
 [package.extras]
 license = ["ukkonen"]
@@ -698,6 +698,22 @@ six = "*"
 
 [[package]]
 category = "dev"
+description = "Mock out responses from the requests package"
+name = "requests-mock"
+optional = false
+python-versions = "*"
+version = "1.9.3"
+
+[package.dependencies]
+requests = ">=2.3,<3"
+six = "*"
+
+[package.extras]
+fixture = ["fixtures"]
+test = ["fixtures", "mock", "purl", "pytest", "sphinx", "testrepository (>=0.0.18)", "testtools"]
+
+[[package]]
+category = "dev"
 description = "A utility library for mocking out the `requests` Python library."
 name = "responses"
 optional = false
@@ -1010,7 +1026,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 docs = []
 
 [metadata]
-content-hash = "d6aee92a5e683167f41813477bfacc6bb3e23e0c5f948633c54a70d96c0f7117"
+content-hash = "72a3f111becd1630fc9490f1f0a60094f489136869782de5ebb84e7b20caf2a6"
 python-versions = "^3.6"
 
 [metadata.files]
@@ -1086,8 +1102,8 @@ fonttools = [
 identify = [
     {file = "identify-1.6.2-py2.py3-none-any.whl", hash = "sha256:8f9879b5b7cca553878d31548a419ec2f227d3328da92fe8202bc5e546d5cbc3"},
     {file = "identify-1.6.2.tar.gz", hash = "sha256:1c2014f6985ed02e62b2e6955578acf069cb2c54859e17853be474bfe7e13bed"},
-    {file = "identify-2.4.2-py2.py3-none-any.whl", hash = "sha256:67c1e66225870dce721228176637a8ef965e8dd58450bcc7592249d0dfc4da6c"},
-    {file = "identify-2.4.2.tar.gz", hash = "sha256:93e8ec965e888f2212aa5c24b2b662f4832c39acb1d7196a70ea45acb626a05e"},
+    {file = "identify-2.4.3-py2.py3-none-any.whl", hash = "sha256:ac9c919c8ac5b90d03f8e1bce6dedcbd8a3b2a59c46737c04ed852e2d307af29"},
+    {file = "identify-2.4.3.tar.gz", hash = "sha256:8d80d877441073e7222ff272da45ca5ca1d901412790544b446e7d363ad5e9f0"},
 ]
 idna = [
     {file = "idna-3.3-py3-none-any.whl", hash = "sha256:84d9dd047ffa80596e0f246e2eab0b391788b0503584e8945f2368256d2735ff"},
@@ -1663,6 +1679,10 @@ requests = [
 requests-file = [
     {file = "requests-file-1.5.1.tar.gz", hash = "sha256:07d74208d3389d01c38ab89ef403af0cfec63957d53a0081d8eca738d0247d8e"},
     {file = "requests_file-1.5.1-py2.py3-none-any.whl", hash = "sha256:dfe5dae75c12481f68ba353183c53a65e6044c923e64c24b2209f6c7570ca953"},
+]
+requests-mock = [
+    {file = "requests-mock-1.9.3.tar.gz", hash = "sha256:8d72abe54546c1fc9696fa1516672f1031d72a55a1d66c85184f972a24ba0eba"},
+    {file = "requests_mock-1.9.3-py2.py3-none-any.whl", hash = "sha256:0a2d38a117c08bb78939ec163522976ad59a6b7fdd82b709e23bb98004a44970"},
 ]
 responses = [
     {file = "responses-0.12.1-py2.py3-none-any.whl", hash = "sha256:ef265bd3200bdef5ec17912fc64a23570ba23597fd54ca75c18650fa1699213d"},
