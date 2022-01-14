@@ -33,8 +33,20 @@ jobs:
       - name: Final package list
         run: |
           pip freeze
-      - name: Run Tests
+
+      - name: Windows test folder clean up
+        # Delete test/__init__py on Windows, otherwise nosetests will not detect any tests.
+        if: runner.os == 'Windows'
+        run: rm tests/__init__.py
+
+      - name: Run Tests on Windows
         run: nox --non-interactive --session "tests-${{ matrix.python-version }}(sphinx='${{ matrix.sphinx-version }}')" -- --full-trace
+        continue-on-error: True
+        if: runner.os == 'Windows'
+
+      - name: Run Tests on Linux
+        run: nox --non-interactive --session "tests-${{ matrix.python-version }}(sphinx='${{ matrix.sphinx-version }}')" -- --full-trace
+        if: runner.os == 'Linux'
 
   lint:
     name: Lint
