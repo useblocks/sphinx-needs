@@ -1,4 +1,5 @@
 import cProfile
+import importlib
 import os
 from functools import wraps
 from typing import Any, Dict, List
@@ -232,3 +233,26 @@ def check_and_calc_base_url_rel_path(external_url, fromdocname):
         ref_uri = os.path.join(sub_level * (".." + curr_path_sep), external_url)
 
     return ref_uri
+
+
+def check_and_get_external_filter_func(current_needlist):
+    """Check and import filter function from external python file."""
+    # Check if external filter code is defined
+    filter_func = None
+
+    filter_func_ref = current_needlist.get("filter_func", None)
+    if filter_func_ref:
+        try:
+            filter_module, filter_function = filter_func_ref.rsplit(".")
+        except ValueError:
+            logger.warn(f'Filter function not valid "{filter_func_ref}". Example: my_module:my_func')
+            return []  # No needs found because of invalid filter function
+
+        try:
+            final_module = importlib.import_module(filter_module)
+            filter_func = getattr(final_module, filter_function)
+        except Exception:
+            logger.warn(f"Could not import filter function: {filter_func_ref}")
+            return []
+
+    return filter_func

@@ -24,6 +24,8 @@ The argument of the ``needpie`` will be used as title for the pie.
 Each content line gets interpreted either as static float/int value or as a :ref:`filter_string`.
 The amount of found needs by the filter string is then used as value.
 
+``needpie`` supports also own defined filters with the help of Python code through :ref:`filter_func`.
+
 Options
 -------
 

@@ -1,3 +1,4 @@
+import copy
 import os
 
 import matplotlib
@@ -13,6 +14,7 @@ import matplotlib.pyplot
 from docutils.parsers.rst import directives
 
 from sphinxcontrib.needs.logging import get_logger
+from sphinxcontrib.needs.utils import check_and_get_external_filter_func
 
 logger = get_logger(__name__)
 
@@ -43,6 +45,9 @@ class NeedpieDirective(FilterBase):
         "text_color": directives.unchanged_required,
         "shadow": directives.flag,
     }
+
+    # Update the options_spec with values defined in the FilterBase class
+    option_spec.update(FilterBase.base_option_spec)
 
     def run(self):
         env = self.state.document.settings.env
@@ -94,6 +99,7 @@ class NeedpieDirective(FilterBase):
             "shadow": shadow,
             "text_color": text_color,
         }
+        env.need_all_needpie[targetid].update(self.collect_filter_attributes())
 
         return [targetnode] + [Needpie("")]
 
@@ -124,14 +130,36 @@ def process_needpie(app, doctree, fromdocname):
         else:
             matplotlib.style.use("default")
 
+        # disable filter_code since it's content been used differently by needpie
+        current_needpie["filter_code"] = None
+
         content = current_needpie["content"]
+
         sizes = []
-        for line in content:
-            if line.isdigit():
-                sizes.append(float(line))
-            else:
-                result = len(filter_needs(app, app.env.needs_all_needs.values(), line))
-                sizes.append(result)
+        if content and not current_needpie["filter_func"]:
+            for line in content:
+                if line.isdigit():
+                    sizes.append(float(line))
+                else:
+                    result = len(filter_needs(app, app.env.needs_all_needs.values(), line))
+                    sizes.append(result)
+        if current_needpie["filter_func"] and not content:
+            try:
+                # check and get filter_func
+                filter_func = check_and_get_external_filter_func(current_needpie)
+                # execute filter_func code
+                # Provides only a copy of needs to avoid data manipulations.
+                context = {
+                    "needs": copy.deepcopy(list(env.needs_all_needs.values())),
+                    "results": [],
+                }
+                if filter_func:
+                    filter_func(**context)
+                sizes = context["results"]
+            except Exception as e:
+                raise e
+        if current_needpie["filter_func"] and content:
+            logger.error("filter_func and content can't be used at the same time for needpie.")
 
         labels = current_needpie["labels"]
         if labels is None:

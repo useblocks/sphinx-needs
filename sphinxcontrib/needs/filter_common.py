@@ -4,13 +4,13 @@ like needtable, needlist and needflow.
 """
 
 import copy
-import importlib
 import re
 from typing import Any, Dict, List
 
 from docutils.parsers.rst import Directive, directives
 
 from sphinxcontrib.needs.api.exceptions import NeedsInvalidFilter
+from sphinxcontrib.needs.utils import check_and_get_external_filter_func
 from sphinxcontrib.needs.utils import logger as log
 
 
@@ -96,25 +96,11 @@ def process_filters(app, all_needs, current_needlist, include_external=True):
     all_needs_incl_parts = prepare_need_list(checked_all_needs)
 
     # Check if external filter code is defined
-    filter_func = None
+    filter_func = check_and_get_external_filter_func(current_needlist)
+
     filter_code = None
-    filter_func_ref = current_needlist.get("filter_func", None)
-    if filter_func_ref:
-        try:
-            filter_module, filter_function = filter_func_ref.rsplit(".")
-        except ValueError:
-            log.warn(f'Filter function not valid "{filter_func_ref}". Example: my_module:my_func')
-            return []  # No needs found because of invalid filter function
-
-        try:
-            final_module = importlib.import_module(filter_module)
-            filter_func = getattr(final_module, filter_function)
-        except Exception:
-            log.warn(f"Could not import filter function: {filter_func_ref}")
-            return []
-
     # Get filter_code from
-    if not filter_code:
+    if not filter_code and current_needlist["filter_code"]:
         filter_code = "\n".join(current_needlist["filter_code"])
 
     if (not filter_code or filter_code.isspace()) and not filter_func:
