@@ -155,15 +155,23 @@ def process_needpie(app, doctree, fromdocname):
                     filter_func(**context)
                 sizes = context["results"]
                 # check items in sizes
+                if not isinstance(sizes, list):
+                    logger.error(
+                        f"The returned values {sizes} from the given filter_func {filter_func} is not valid."
+                        " It must be a list."
+                    )
                 for item in sizes:
                     if not isinstance(item, int) and not isinstance(item, float):
-                        logger.error(f"{item} in sizes {sizes} is not a integer or float number.")
+                        logger.error(
+                            f"The returned values {sizes} from the given filter_func is not valid. "
+                            "It must be a list with items of type int/float."
+                        )
             except Exception as e:
                 raise e
         elif current_needpie["filter_func"] and content:
             logger.error("filter_func and content can't be used at the same time for needpie.")
         else:
-            logger.error("Both filter_func and content not used for needpie.")
+            logger.error("Both filter_func and content are not used for needpie.")
 
         labels = current_needpie["labels"]
         if labels is None:
