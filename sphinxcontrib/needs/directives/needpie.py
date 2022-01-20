@@ -46,8 +46,8 @@ class NeedpieDirective(FilterBase):
         "shadow": directives.flag,
     }
 
-    # Update the options_spec with values defined in the FilterBase class
-    option_spec.update(FilterBase.base_option_spec)
+    # Update the options_spec only with value filter-func defined in the FilterBase class
+    option_spec["filter-func"] = FilterBase.base_option_spec["filter-func"]
 
     def run(self):
         env = self.state.document.settings.env
@@ -99,7 +99,8 @@ class NeedpieDirective(FilterBase):
             "shadow": shadow,
             "text_color": text_color,
         }
-        env.need_all_needpie[targetid].update(self.collect_filter_attributes())
+        # update filter-func with needed information defined in FilterBase class
+        env.need_all_needpie[targetid]["filter_func"] = self.collect_filter_attributes()["filter_func"]
 
         return [targetnode] + [Needpie("")]
 
@@ -130,9 +131,6 @@ def process_needpie(app, doctree, fromdocname):
         else:
             matplotlib.style.use("default")
 
-        # disable filter_code since it's content been used differently by needpie
-        current_needpie["filter_code"] = None
-
         content = current_needpie["content"]
 
         sizes = []
@@ -143,7 +141,7 @@ def process_needpie(app, doctree, fromdocname):
                 else:
                     result = len(filter_needs(app, app.env.needs_all_needs.values(), line))
                     sizes.append(result)
-        if current_needpie["filter_func"] and not content:
+        elif current_needpie["filter_func"] and not content:
             try:
                 # check and get filter_func
                 filter_func = check_and_get_external_filter_func(current_needpie)
@@ -156,10 +154,16 @@ def process_needpie(app, doctree, fromdocname):
                 if filter_func:
                     filter_func(**context)
                 sizes = context["results"]
+                # check items in sizes
+                for item in sizes:
+                    if not isinstance(item, int) and not isinstance(item, float):
+                        logger.error(f"{item} in sizes {sizes} is not a integer or float number.")
             except Exception as e:
                 raise e
-        if current_needpie["filter_func"] and content:
+        elif current_needpie["filter_func"] and content:
             logger.error("filter_func and content can't be used at the same time for needpie.")
+        else:
+            logger.error("Both filter_func and content not used for needpie.")
 
         labels = current_needpie["labels"]
         if labels is None:
