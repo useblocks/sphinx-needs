@@ -28,8 +28,11 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: poetry_build
+          path: dist/
       - name: Display structure of downloaded files
         run: ls -R
+      - name: install Poetry
+        run: python -m pip install poetry
       - name: poetry configure TestPyPI Repo
         run: poetry config repositories.test-pypi https://test.pypi.org/legacy/
       - name: poetry configure TestPyPI Token
@@ -50,6 +53,8 @@ jobs:
       - name: Display structure of downloaded files
         run: ls -R
       # PyPi Release
+      - name: install Poetry
+        run: python -m pip install poetry
       - name: poetry configure PyPI Token
         run: poetry config pypi-token.pypi ${{ secrets.PYPI }}
         if: startsWith(github.ref, 'refs/tags')
