@@ -1,0 +1,27 @@
+name: Publish Sphinx-Needs distributions 📦 to PyPI and TestPyPI
+on: push
+jobs:
+  build-n-publish:
+    name: Build and publish Sphinx-Needs 📦 to PyPI and TestPyPI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.9
+      - name: poetry configure TestPyPI Repo
+        run: poetry config repositories.test-pypi https://test.pypi.org/legacy/
+      - name: poetry configure TestPyPI Token
+        run:  poetry config pypi-token.test-pypi ${{ secrets.PYPI_TEST }}
+      - name: poetry build
+        run: poetry build
+      - name: poetry publish TestPyPi
+        run: poetry publish -r test-pypi
+      - name: poetry configure PyPI Token
+        run: poetry config pypi-token.pypi ${{ secrets.PYPI }}
+        if: startsWith(github.ref, 'refs/tags')
+      - name: poetry publish PyPi
+        run: poetry publish -r pypi
+        if: startsWith(github.ref, 'refs/tags')
+
