@@ -157,13 +157,13 @@ def process_needpie(app, doctree, fromdocname):
                 # check items in sizes
                 if not isinstance(sizes, list):
                     logger.error(
-                        f"The returned values {sizes} from the given filter_func {filter_func} is not valid."
+                        f"The returned values from the given filter_func {filter_func} is not valid."
                         " It must be a list."
                     )
                 for item in sizes:
                     if not isinstance(item, int) and not isinstance(item, float):
                         logger.error(
-                            f"The returned values {sizes} from the given filter_func is not valid. "
+                            f"The returned values from the given filter_func {filter_func} is not valid. "
                             "It must be a list with items of type int/float."
                         )
             except Exception as e:
