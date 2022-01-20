@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from sphinx_testing import with_app
+import pytest
 
 
-@with_app(buildername="html", srcdir="doc_test/doc_needlist")
+@pytest.mark.sphinx(buildername="html", testroot="doc_needlist")
 def test_doc_build_html(app, status, warning):
     app.build()
     html = Path(app.outdir, "index.html").read_text()

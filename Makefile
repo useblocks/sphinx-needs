@@ -10,11 +10,11 @@ lint:
 
 .PHONY: test
 test:
-	poetry run nosetests -v -w tests
+	poetry run pytest -n auto --tb=long tests/test_needlist.py
 
 .PHONY: test
 test-short:
-	poetry run nosetests -v -w tests -I .*official.*
+	poetry run pytest -n auto --tb=long --ignore-glob="*official*" tests/test_needlist.py
 
 .PHONY: test-matrix
 test-matrix:
