@@ -1,8 +1,8 @@
-name: Publish Sphinx-Needs distributions 📦 to PyPI and TestPyPI
+name: Release
 on: push
 jobs:
   build-n-publish:
-    name: Build and publish Sphinx-Needs 📦 to PyPI and TestPyPI
+    name: Publish on PyPI and TestPyPI
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
@@ -10,6 +10,8 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: 3.9
+      - name: install Poetry
+        run: python -m pip install poetry
       - name: poetry configure TestPyPI Repo
         run: poetry config repositories.test-pypi https://test.pypi.org/legacy/
       - name: poetry configure TestPyPI Token
