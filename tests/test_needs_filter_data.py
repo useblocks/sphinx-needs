@@ -67,3 +67,6 @@ def test_doc_needs_filter_code(app, status, warning):
 
     # code func data
     assert "extern_filter_test_003" in code_html
+
+    # check needpie filter func code data
+    assert '<img alt="_images/need_pie_' in code_html
