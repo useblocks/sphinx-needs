@@ -72,4 +72,4 @@ jobs:
       - name: poetry configure PyPI Token
         run: poetry config pypi-token.pypi ${{ secrets.PYPI }}
       - name: poetry publish PyPi
-        run: poetry publish -r pypi
+        run: poetry publish 
