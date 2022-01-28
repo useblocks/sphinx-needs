@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 
@@ -33,11 +35,10 @@ def test_needs_warnings(app, status, warning):
 
 @pytest.mark.sphinx(buildername="html", testroot="doc_needs_warnings_return_status_code")
 def test_needs_warnings_return_status_code(app, status, warning):
-    import os
     import subprocess
 
-    srcdir = "doc_test/test-doc_needs_warnings_return_status_code"
-    out_dir = os.path.join(srcdir, "_build")
+    srcdir = Path(app.srcdir)
+    out_dir = srcdir / "_build"
 
     # Check return code when "-W --keep-going" not used
     out_normal = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
