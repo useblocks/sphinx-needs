@@ -1,7 +1,7 @@
-from sphinx_testing import with_app
+import pytest
 
 
-@with_app(buildername="html", srcdir="doc_test/doc_needs_warnings")  # , warningiserror=True)
+@pytest.mark.sphinx(buildername="html", testroot="doc_needs_warnings")
 def test_needs_warnings(app, status, warning):
     app.build()
 
@@ -31,12 +31,12 @@ def test_needs_warnings(app, status, warning):
     assert "EXT_TEST_01" not in warnings
 
 
-@with_app(buildername="html", srcdir="doc_test/doc_needs_warnings_return_status_code")
+@pytest.mark.sphinx(buildername="html", testroot="doc_needs_warnings_return_status_code")
 def test_needs_warnings_return_status_code(app, status, warning):
     import os
     import subprocess
 
-    srcdir = "doc_test/doc_needs_warnings_return_status_code"
+    srcdir = "doc_test/test-doc_needs_warnings_return_status_code"
     out_dir = os.path.join(srcdir, "_build")
 
     # Check return code when "-W --keep-going" not used
