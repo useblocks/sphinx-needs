@@ -3,6 +3,7 @@
 
 """
 import re
+from contextlib import suppress
 
 from docutils import nodes
 from docutils.parsers.rst import Directive
@@ -134,8 +135,10 @@ def process_needextend(app, doctree, fromdocname):
                             # If we manipulate links, we need to delete the reference in the target need as well
                             if option_name in link_names:
                                 for ref_need in old_content:  # There may be several links
-                                    app.env.needs_all_needs[ref_need][f"{option_name}_back"].remove(found_need["id"])
-
+                                    with suppress(ValueError):
+                                        app.env.needs_all_needs[ref_need][f"{option_name}_back"].remove(
+                                            found_need["id"]
+                                        )
                         else:
                             need[option_name] = ""
                     else:

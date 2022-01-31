@@ -297,8 +297,8 @@ def setup(app):
     # registered for sphinx. So some sphinx-internal tasks/functions may be called by hand again...
     # See also https://github.com/sphinx-doc/sphinx/issues/7054#issuecomment-578019701 for an example
     app.connect("doctree-resolved", add_sections)
-    app.connect("doctree-resolved", process_need_nodes)
     app.connect("doctree-resolved", process_needextend)  # Must be done very early, as it modifies need data
+    app.connect("doctree-resolved", process_need_nodes)
     app.connect("doctree-resolved", print_need_nodes)
     app.connect("doctree-resolved", process_needbar)
     app.connect("doctree-resolved", process_needextract)
