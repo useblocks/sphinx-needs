@@ -17,4 +17,15 @@ def app(app, sphinx_test_tempdir):
     yield app
 
     # tear down action to clean up test tmpdir
-    shutil.rmtree(sphinx_test_tempdir, True)
+    clean_up_tmpdir(sphinx_test_tempdir)
+
+
+def copy_srcdir_to_tmpdir(srcdir, tmp):
+    tmproot = tmp / srcdir
+    srcdir = path(__file__).parent.abspath() / srcdir
+    shutil.copytree(srcdir, tmproot)
+    return tmproot
+
+
+def clean_up_tmpdir(targetdir):
+    shutil.rmtree(targetdir, True)
