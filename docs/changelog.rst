@@ -11,6 +11,10 @@ License
 -----
 :Released: under development
 
+* Improvement: Adds :ref:`needs_build_json` config option to build ``needs.json`` in parallel to other output formats
+  (`#485 <https://github.com/useblocks/sphinxcontrib-needs/issues/485>`_)
+
+
 0.7.5
 -----
 :Released: 21.01.2022

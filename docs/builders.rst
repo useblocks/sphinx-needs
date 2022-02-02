@@ -20,6 +20,12 @@ Usage
 
     sphinx-build -b needs source_dir build_dir
 
+
+.. hint::
+
+   As alternative also :ref:`needs_build_json` can be used to create a ``needs.json`` file directly during the build
+   of another output format like ``html``.
+
 History data
 ++++++++++++
 
