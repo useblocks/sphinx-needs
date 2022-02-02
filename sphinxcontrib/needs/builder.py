@@ -71,3 +71,14 @@ class NeedsBuilder(Builder):
 
     def get_target_uri(self, docname, typ=None):
         return ""
+
+
+def build_needs_json(app, exception):
+
+    # Do not create an additional needs.json, if builder is already "needs".
+    if isinstance(app.builder, NeedsBuilder):
+        return
+
+    needs_builder = NeedsBuilder(app)
+    needs_builder.set_environment(app.env)
+    needs_builder.finish()

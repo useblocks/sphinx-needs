@@ -21,3 +21,6 @@ docs/_images/need_pie_*.png
 .devcontainer/
 .vscode/
 .dockerignore
+
+
+need_bar_*.png

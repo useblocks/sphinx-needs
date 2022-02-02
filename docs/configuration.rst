@@ -1474,6 +1474,30 @@ link name and url.
    Replaces the string from ``:config:`` and ``:github:`` with a link to the related website.
 
 
+.. _needs_build_json:
+
+needs_build_json
+~~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.7.6
+
+Builds a ``needs.json`` file also during other builds, like ``html``.
+
+This allows to have one single Sphinx-Build for two output formats, which may save some time.
+
+All other ``needs.json`` related configuration values, like :ref:`needs_file`, are taken into account.
+
+Example::
+
+      needs_build_json = True
+
+Default: False
+
+.. hint::
+
+   The created ``needs.json`` file gets stored in the ``outdir`` of the current builder.
+   So if ``html`` is used as builder, the final location is e.g. ``_build/html/needs.json``.
+
 
 Removed options
 ---------------
