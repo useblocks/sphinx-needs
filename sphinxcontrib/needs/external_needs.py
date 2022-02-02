@@ -55,10 +55,13 @@ def load_external_needs(app, env, _docname):
                 'No version defined in "needs_external_needs" or by "current_version" from loaded json file'
             )
 
-        try:
-            needs = needs_json["versions"][version]["needs"]
-        except KeyError:
-            raise NeedsExternalException(f'Version {version} not found in json file from {source["json_url"]}')
+        if version not in needs_json["versions"]:
+            raise NeedsExternalException(
+                f'Version {version} not found in json file from {source["json_path"]}.\n'
+                f'Found versions {", ".join(needs_json["versions"])}'
+            )
+
+        needs = needs_json["versions"][version]["needs"]
 
         log.debug(f"Loading {len(needs)} needs.")
 
