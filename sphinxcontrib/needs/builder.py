@@ -75,6 +75,9 @@ class NeedsBuilder(Builder):
 
 def build_needs_json(app, exception):
 
+    if not app.env.config.needs_build_json:
+        return
+
     # Do not create an additional needs.json, if builder is already "needs".
     if isinstance(app.builder, NeedsBuilder):
         return

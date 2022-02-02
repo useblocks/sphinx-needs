@@ -1,0 +1,33 @@
+Running 8 test configurations.
+* Running on 5 pages with 50 needs, 5 needtables, 5 dummies per page. Using 1 cores.
+  Duration: 8.05 seconds
+* Running on 5 pages with 50 needs, 5 needtables, 5 dummies per page. Using 4 cores.
+  Duration: 6.75 seconds
+* Running on 1 pages with 50 needs, 5 needtables, 5 dummies per page. Using 1 cores.
+  Duration: 2.16 seconds
+* Running on 1 pages with 50 needs, 5 needtables, 5 dummies per page. Using 4 cores.
+  Duration: 2.36 seconds
+* Running on 5 pages with 10 needs, 1 needtables, 1 dummies per page. Using 1 cores.
+  Duration: 2.39 seconds
+* Running on 5 pages with 10 needs, 1 needtables, 1 dummies per page. Using 4 cores.
+  Duration: 2.34 seconds
+* Running on 1 pages with 10 needs, 1 needtables, 1 dummies per page. Using 1 cores.
+  Duration: 1.69 seconds
+* Running on 1 pages with 10 needs, 1 needtables, 1 dummies per page. Using 4 cores.
+  Duration: 1.70 seconds
+
+RESULTS:
+
+  runtime      pages       needs      needs    needtables    dummies    parallel
+  seconds    overall    per page    overall       overall    overall       cores
+---------  ---------  ----------  ---------  ------------  ---------  ----------
+     8.05          5          50        250            25         25           1
+     6.75          5          50        250            25         25           4
+     2.16          1          50         50             5          5           1
+     2.36          1          50         50             5          5           4
+     2.39          5          10         50             5          5           1
+     2.34          5          10         50             5          5           4
+     1.69          1          10         10             1          1           1
+     1.7           1          10         10             1          1           4
+
+Overall runtime: 27.45 seconds.

@@ -1,0 +1,19 @@
+Usage: performance_test.py series [OPTIONS]
+
+  Generate and start a series of tests.
+
+Options:
+  --profile TEXT        Activates profiling for given area
+  --needs INTEGER       Number of maximum needs.
+  --needtables INTEGER  Number of maximum needtables.
+  --dummies INTEGER     Number of standard rst dummies.
+  --pages INTEGER       Number of additional pages with needs.
+  --parallel INTEGER    Number of parallel processes to use. Same as -j for
+                        sphinx-build
+  --keep                Keeps the temporary src and build folders
+  --browser             Opens the project in your browser
+  --snakeviz            Opens snakeviz view for measured profiles in browser
+  --debug               Prints more information, incl. sphinx build output
+  --basic               Use only default config of Sphinx-Needs (e.g. no extra
+                        options)
+  --help                Show this message and exit.
