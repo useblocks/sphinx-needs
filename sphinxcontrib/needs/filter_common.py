@@ -96,7 +96,7 @@ def process_filters(app, all_needs, current_needlist, include_external=True):
     all_needs_incl_parts = prepare_need_list(checked_all_needs)
 
     # Check if external filter code is defined
-    filter_func = check_and_get_external_filter_func(current_needlist)
+    filter_func, filter_args = check_and_get_external_filter_func(current_needlist)
 
     filter_code = None
     # Get filter_code from
@@ -153,6 +153,12 @@ def process_filters(app, all_needs, current_needlist, include_external=True):
         if filter_code:  # code from content
             exec(filter_code, context)
         elif filter_func:  # code from external file
+            args = []
+            if filter_args:
+                args = filter_args.split(",")
+            for index, arg in enumerate(args):
+                # All rgs are strings, but we must transform them to requested type, e.g. 1 -> int, "1" -> str
+                context[f"arg{index+1}"] = arg
             filter_func(**context)
         else:
             log.warning("Something went wrong running filter")

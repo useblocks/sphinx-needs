@@ -14,7 +14,7 @@ def test_doc_needs_filter_data_html(app, status, warning):
         return
 
     # Check need_count works
-    assert "The amount of needs that belong to current variants: 2" in index_html
+    assert "The amount of needs that belong to current variants: 6" in index_html
 
     # Check needlist works
     assert (
@@ -70,3 +70,6 @@ def test_doc_needs_filter_code(app, status, warning):
 
     # check needpie filter func code data
     assert '<img alt="_images/need_pie_' in code_html
+
+    code_args_html = Path(app.outdir, "filter_code_args.html").read_text()
+    assert '<a class="reference external" href="#impl1">impl1</a>' in code_args_html

@@ -411,8 +411,12 @@ Usage inside a rst file:
 
 The code of the referenced file ``filter_file.py`` with function ``own_filter_code``:
 
-.. literalinclude:: ../tests/doc_test/doc_needs_filter_data/filter_code_func.py
-   :language: python
+.. code-block:: python
+
+   def own_filter_code(needs, results, **kwargs):
+       for need in needs:
+           if need["type"] == "test":
+               results.append(need)
 
 The function gets executed by ``Sphinx-Needs`` and it must provide two keyword arguments: ``needs`` and ``results``.
 
@@ -420,3 +424,58 @@ Also the given package/module must be importable by the used Python environment.
 So it must be part of the Python Path variable. To update this, add
 ``sys.path.insert(0, os.path.abspath("folder/to/filter_files"))`` to your ``conf.py`` file.
 
+Arguments
+~~~~~~~~~
+.. versionadded:: 0.7.6
+
+Filter function are supporting arguments: ``filter_file.own_filter_code(value_1,value_2)``.
+
+Please note, that the part between ``(...)`` is just a comma separated list and each element will be given as string
+to the function.
+
+The functions get the values as part of ``**kwargs`` with the name is ``arg<pos>``, starting from ``1``.
+
+Example:
+
+.. code-block:: rst
+
+    .. needtable:: Filter function example
+       :filter-func: filter_file.own_filter_code(1,2.5,open)
+
+
+.. code-block::
+
+   def own_filter_code(needs, results, **kwargs):
+       for need in needs:
+           if int(need["price"]) > int(kwargs["arg1"]) or need["status"] == kwargs["arg3"]:
+               results.append(need)
+
+The function developer is responsible to perform any needed typecast.
+
+Needpie
+~~~~~~~
+:ref:`needpie` also supports filter-code.
+But instead of needs, a list of resulting numbers must be returned.
+
+Example:
+
+.. code-block:: rst
+
+   .. needpie:: Filter code func pie
+      :labels: new,done
+      :filter-func: filter_code_func.my_pie_filter_code_args(new,done)
+
+
+.. code-block:: python
+
+   def my_pie_filter_code_args(needs, results, **kwargs):
+       cnt_x = 0
+       cnt_y = 0
+       for need in needs:
+           if need["status"] == kwargs['arg1']:
+               cnt_x += 1
+           if need["status"] == kwargs['arg2']:
+               cnt_y += 1
+
+      results.append(cnt_x)
+      results.append(cnt_y)

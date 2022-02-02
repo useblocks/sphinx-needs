@@ -144,13 +144,20 @@ def process_needpie(app, doctree, fromdocname):
         elif current_needpie["filter_func"] and not content:
             try:
                 # check and get filter_func
-                filter_func = check_and_get_external_filter_func(current_needpie)
+                filter_func, filter_args = check_and_get_external_filter_func(current_needpie)
                 # execute filter_func code
                 # Provides only a copy of needs to avoid data manipulations.
                 context = {
                     "needs": copy.deepcopy(list(env.needs_all_needs.values())),
                     "results": [],
                 }
+                args = []
+                if filter_args:
+                    args = filter_args.split(",")
+                for index, arg in enumerate(args):
+                    # All rgs are strings, but we must transform them to requested type, e.g. 1 -> int, "1" -> str
+                    context[f"arg{index + 1}"] = arg
+
                 if filter_func:
                     filter_func(**context)
                 sizes = context["results"]
