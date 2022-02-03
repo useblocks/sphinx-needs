@@ -2,7 +2,7 @@ import imp
 import sys
 from pathlib import Path
 
-from sphinx_testing import with_app
+import pytest
 
 dummy_code = """
 def setup(app):
@@ -14,18 +14,26 @@ exec(dummy_code, dummy_extension.__dict__)
 sys.modules["dummy_extension.dummy"] = dummy_extension
 
 
-@with_app(buildername="html", srcdir="doc_test/api_doc")
-def test_api_get_types(app, status, warning):
+@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/api_doc")])
+def test_api_get_types(create_app, buildername):
     from sphinxcontrib.needs.api import get_need_types
+
+    make_app = create_app[0]
+    srcdir = create_app[1]
+    app = make_app(buildername, srcdir=srcdir)
 
     need_types = get_need_types(app)
     assert "story" in need_types
     assert "req" not in need_types
 
 
-@with_app(buildername="html", srcdir="doc_test/api_doc_awesome")
-def test_api_add_type(app, status, warning):
+@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/api_doc_awesome")])
+def test_api_add_type(create_app, buildername):
     from sphinxcontrib.needs.api import add_need_type
+
+    make_app = create_app[0]
+    srcdir = create_app[1]
+    app = make_app(buildername, srcdir=srcdir)
 
     add_need_type(app, "awesome", "Awesome", "AW_", "#000000", "cloud")
     need_types = app.config.needs_types

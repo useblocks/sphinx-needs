@@ -4,9 +4,8 @@ import uuid
 from pathlib import Path
 from random import randrange
 
+import pytest
 import responses
-from nose.tools import raises
-from sphinx_testing import with_app
 
 from sphinxcontrib.needs.api.need import NeedsNoIdException
 from tests.data.service_github import (
@@ -43,8 +42,8 @@ def random_data_callback(request):
 
 
 @responses.activate
-@with_app(buildername="html", srcdir="../docs")  # , warningiserror=True)
-def test_build_html(app, status, warning):
+@pytest.mark.parametrize("buildername, srcdir", [("html", "../docs")])
+def test_build_html(create_app, buildername):
     responses.add_callback(
         responses.GET,
         re.compile(r"https://api.github.com/.*"),
@@ -52,6 +51,9 @@ def test_build_html(app, status, warning):
         content_type="application/json",
     )
     responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
+    make_app = create_app[0]
+    srcdir = create_app[1]
+    app = make_app(buildername, srcdir=srcdir)
     app.builder.build_all()
 
     # Check if static files got copied correctly.
@@ -63,8 +65,8 @@ def test_build_html(app, status, warning):
 
 
 @responses.activate
-@with_app(buildername="html", srcdir="../docs")  # , warningiserror=True, parallel=4)
-def test_build_html_parallel(app, status, warning):
+@pytest.mark.parametrize("buildername, srcdir", [("html", "../docs")])
+def test_build_html_parallel(create_app, buildername):
     responses.add_callback(
         responses.GET,
         re.compile(r"https://api.github.com/.*"),
@@ -72,6 +74,9 @@ def test_build_html_parallel(app, status, warning):
         content_type="application/json",
     )
     responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
+    make_app = create_app[0]
+    srcdir = create_app[1]
+    app = make_app(buildername, srcdir=srcdir)
     app.builder.build_all()
 
     # Check if static files got copied correctly.
@@ -82,8 +87,11 @@ def test_build_html_parallel(app, status, warning):
     assert build_dir / "DataTables-1.10.16" / "js" / "jquery.dataTables.min.js" in files
 
 
-@with_app(buildername="html", srcdir="doc_test/generic_doc")  # , warningiserror=True, parallel=4)
-def test_html_head_files(app, status, warning):
+@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/generic_doc")])
+def test_html_head_files(create_app, buildername):
+    make_app = create_app[0]
+    srcdir = create_app[1]
+    app = make_app(buildername, srcdir=srcdir)
     app.builder.build_all()
 
     from lxml import html as html_parser
@@ -106,8 +114,8 @@ def test_html_head_files(app, status, warning):
 
 
 @responses.activate
-@with_app(buildername="singlehtml", srcdir="../docs")
-def test_build_singlehtml(app, status, warning):
+@pytest.mark.parametrize("buildername, srcdir", [("singlehtml", "../docs")])
+def test_build_singlehtml(create_app, buildername):
     responses.add_callback(
         responses.GET,
         re.compile(r"https://api.github.com/.*"),
@@ -115,12 +123,15 @@ def test_build_singlehtml(app, status, warning):
         content_type="application/json",
     )
     responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
+    make_app = create_app[0]
+    srcdir = create_app[1]
+    app = make_app(buildername, srcdir=srcdir)
     app.builder.build_all()
 
 
 @responses.activate
-@with_app(buildername="latex", srcdir="../docs")
-def test_build_latex(app, status, warning):
+@pytest.mark.parametrize("buildername, srcdir", [("latex", "../docs")])
+def test_build_latex(create_app, buildername):
     responses.add_callback(
         responses.GET,
         re.compile(r"https://api.github.com/.*"),
@@ -128,12 +139,15 @@ def test_build_latex(app, status, warning):
         content_type="application/json",
     )
     responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
+    make_app = create_app[0]
+    srcdir = create_app[1]
+    app = make_app(buildername, srcdir=srcdir)
     app.builder.build_all()
 
 
 @responses.activate
-@with_app(buildername="epub", srcdir="../docs")
-def test_build_epub(app, status, warning):
+@pytest.mark.parametrize("buildername, srcdir", [("epub", "../docs")])
+def test_build_epub(create_app, buildername):
     responses.add_callback(
         responses.GET,
         re.compile(r"https://api.github.com/.*"),
@@ -141,12 +155,15 @@ def test_build_epub(app, status, warning):
         content_type="application/json",
     )
     responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
+    make_app = create_app[0]
+    srcdir = create_app[1]
+    app = make_app(buildername, srcdir=srcdir)
     app.builder.build_all()
 
 
 @responses.activate
-@with_app(buildername="json", srcdir="../docs")
-def test_build_json(app, status, warning):
+@pytest.mark.parametrize("buildername, srcdir", [("json", "../docs")])
+def test_build_json(create_app, buildername):
     responses.add_callback(
         responses.GET,
         re.compile(r"https://api.github.com/.*"),
@@ -154,12 +171,15 @@ def test_build_json(app, status, warning):
         content_type="application/json",
     )
     responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
+    make_app = create_app[0]
+    srcdir = create_app[1]
+    app = make_app(buildername, srcdir=srcdir)
     app.builder.build_all()
 
 
 @responses.activate
-@with_app(buildername="needs", srcdir="../docs")
-def test_build_needs(app, status, warning):
+@pytest.mark.parametrize("buildername, srcdir", [("needs", "../docs")])
+def test_build_needs(create_app, buildername):
     responses.add_callback(
         responses.GET,
         re.compile(r"https://api.github.com/.*"),
@@ -167,6 +187,11 @@ def test_build_needs(app, status, warning):
         content_type="application/json",
     )
     responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
+
+    make_app = create_app[0]
+    srcdir = create_app[1]
+    app = make_app(buildername, srcdir=srcdir)
+
     app.builder.build_all()
     json_text = Path(app.outdir, "needs.json").read_text()
     needs_data = json.loads(json_text)
@@ -195,15 +220,19 @@ def test_build_needs(app, status, warning):
 
 
 # Test with needs_id_required=True and missing ids in docs.
-@raises(NeedsNoIdException)
 @responses.activate
-@with_app(buildername="html", srcdir="../docs", confoverrides={"needs_id_required": True})
-def test_id_required_build_html(app, status, warning):
-    responses.add_callback(
-        responses.GET,
-        re.compile(r"https://api.github.com/.*"),
-        callback=random_data_callback,
-        content_type="application/json",
-    )
-    responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
-    app.builder.build_all()
+@pytest.mark.parametrize("buildername, srcdir, confoverrides", [("html", "../docs", {"needs_id_required": True})])
+def test_id_required_build_html(create_app, buildername, confoverrides):
+    with pytest.raises(NeedsNoIdException):
+        responses.add_callback(
+            responses.GET,
+            re.compile(r"https://api.github.com/.*"),
+            callback=random_data_callback,
+            content_type="application/json",
+        )
+        responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
+        make_app = create_app[0]
+        srcdir = create_app[1]
+        app = make_app(buildername, srcdir=srcdir, confoverrides=confoverrides)
+
+        app.builder.build_all()

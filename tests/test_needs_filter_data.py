@@ -1,10 +1,14 @@
 from pathlib import Path
 
-from sphinx_testing import with_app
+import pytest
 
 
-@with_app(buildername="html", srcdir="doc_test/doc_needs_filter_data")
-def test_doc_needs_filter_data_html(app, status, warning):
+@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/doc_needs_filter_data")])
+def test_doc_needs_filter_data_html(create_app, buildername):
+    make_app = create_app[0]
+    srcdir = create_app[1]
+    app = make_app(buildername, srcdir=srcdir)
+
     app.build()
     index_html = Path(app.outdir, "index.html").read_text()
 
@@ -45,6 +49,7 @@ def test_doc_needs_filter_data_html(app, status, warning):
     )
 
     # check needs_warnings works
+    warning = app._warning
     warnings = warning.getvalue()
 
     # check warnings contents
@@ -53,8 +58,12 @@ def test_doc_needs_filter_data_html(app, status, warning):
     assert "used filter: variant != current_variant" in warnings
 
 
-@with_app(buildername="html", srcdir="doc_test/doc_needs_filter_data")
-def test_doc_needs_filter_code(app, status, warning):
+@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/doc_needs_filter_data")])
+def test_doc_needs_filter_code(create_app, buildername):
+    make_app = create_app[0]
+    srcdir = create_app[1]
+    app = make_app(buildername, srcdir=srcdir)
+
     app.build()
     code_html = Path(app.outdir, "filter_code.html").read_text()
 

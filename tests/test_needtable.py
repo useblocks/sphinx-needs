@@ -1,10 +1,14 @@
 from pathlib import Path
 
-from sphinx_testing import with_app
+import pytest
 
 
-@with_app(buildername="html", srcdir="doc_test/doc_needtable")
-def test_doc_build_html(app, status, warning):
+@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/doc_needtable")])
+def test_doc_build_html(create_app, buildername):
+    make_app = create_app[0]
+    srcdir = create_app[1]
+    app = make_app(buildername, srcdir=srcdir)
+
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert "SP_TOO_001" in html
@@ -45,9 +49,13 @@ def test_doc_build_html(app, status, warning):
     assert '<col style="width: 10%" />' in colwidths_html_path
 
 
-@with_app(buildername="html", srcdir="doc_test/doc_needtable")
-def test_doc_needtable_options(app, status, warning):
+@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/doc_needtable")])
+def test_doc_needtable_options(create_app, buildername):
     import sphinx
+
+    make_app = create_app[0]
+    srcdir = create_app[1]
+    app = make_app(buildername, srcdir=srcdir)
 
     app.build()
     html = Path(app.outdir, "test_options.html").read_text()
@@ -76,8 +84,12 @@ def test_doc_needtable_options(app, status, warning):
     assert column_order in html
 
 
-@with_app(buildername="html", srcdir="doc_test/doc_needtable")
-def test_doc_needtable_styles(app, status, warning):
+@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/doc_needtable")])
+def test_doc_needtable_styles(create_app, buildername):
+    make_app = create_app[0]
+    srcdir = create_app[1]
+    app = make_app(buildername, srcdir=srcdir)
+
     app.build()
     html = Path(app.outdir, "test_styles.html").read_text()
     assert "style_1" in html
@@ -85,8 +97,12 @@ def test_doc_needtable_styles(app, status, warning):
     assert "NEEDS_DATATABLES" in html
 
 
-@with_app(buildername="html", srcdir="doc_test/doc_needtable")
-def test_doc_needtable_parts(app, status, warning):
+@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/doc_needtable")])
+def test_doc_needtable_parts(create_app, buildername):
+    make_app = create_app[0]
+    srcdir = create_app[1]
+    app = make_app(buildername, srcdir=srcdir)
+
     app.build()
     html = Path(app.outdir, "test_parts.html").read_text()
     assert "table_001.1" in html
@@ -95,8 +111,12 @@ def test_doc_needtable_parts(app, status, warning):
     assert 'class="need_part' in html
 
 
-@with_app(buildername="html", srcdir="doc_test/doc_needtable")
-def test_doc_needtable_titles(app, status, warning):
+@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/doc_needtable")])
+def test_doc_needtable_titles(create_app, buildername):
+    make_app = create_app[0]
+    srcdir = create_app[1]
+    app = make_app(buildername, srcdir=srcdir)
+
     app.build()
     html = Path(app.outdir, "test_titles.html").read_text()
     assert '<th class="head"><p>Headline</p></th>' in html

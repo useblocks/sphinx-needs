@@ -1,10 +1,14 @@
 from pathlib import Path
 
-from sphinx_testing import with_app
+import pytest
 
 
-@with_app(buildername="latex", srcdir="doc_test/doc_build_latex")
-def test_doc_build_latex(app, status, warning):
+@pytest.mark.parametrize("buildername, srcdir", [("latex", "doc_test/doc_build_latex")])
+def test_doc_build_latex(create_app, buildername):
+    make_app = create_app[0]
+    srcdir = create_app[1]
+    app = make_app(buildername, srcdir=srcdir)
+
     app.build()
 
     latex_file = Path(app.outdir, "needstestdocs.tex")

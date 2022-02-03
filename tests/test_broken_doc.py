@@ -1,13 +1,16 @@
-from nose.tools import raises
-from sphinx_testing import with_app
+import pytest
 
 from sphinxcontrib.needs.api.need import NeedsDuplicatedId
 
 
-@raises(NeedsDuplicatedId)
-@with_app(buildername="html", srcdir="doc_test/broken_doc")
-def test_doc_build_html(app, status, warning):
-    app.build()
-    html = (app.outdir / "index.html").read_text()
-    assert "<h1>BROKEN DOCUMENT" in html
-    assert "SP_TOO_001" in html
+@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/broken_doc")])
+def test_doc_build_html(create_app, buildername):
+    with pytest.raises(NeedsDuplicatedId):
+        make_app = create_app[0]
+        srcdir = create_app[1]
+        app = make_app(buildername, srcdir=srcdir)
+
+        app.build()
+        html = (app.outdir / "index.html").read_text()
+        assert "<h1>BROKEN DOCUMENT" in html
+        assert "SP_TOO_001" in html

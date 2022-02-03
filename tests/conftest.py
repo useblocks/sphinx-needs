@@ -7,25 +7,24 @@ from sphinx.testing.path import path
 pytest_plugins = "sphinx.testing.fixtures"
 
 
-@pytest.fixture(scope="session")
-def rootdir():
-    return path(__file__).parent.abspath() / "doc_test"
-
-
-@pytest.fixture(scope="function")
-def app(app, sphinx_test_tempdir):
-    yield app
-
-    # tear down action to clean up test tmpdir
-    clean_up_tmpdir(sphinx_test_tempdir)
-
-
 def copy_srcdir_to_tmpdir(srcdir, tmp):
-    tmproot = tmp / srcdir
     srcdir = path(__file__).parent.abspath() / srcdir
+    tmproot = tmp / path(srcdir).basename()
     shutil.copytree(srcdir, tmproot)
     return tmproot
 
 
 def clean_up_tmpdir(targetdir):
     shutil.rmtree(targetdir, True)
+
+
+@pytest.fixture()
+def create_app(make_app, sphinx_test_tempdir, srcdir):
+    # copy test srcdir to test temporary directory sphinx_test_tempdir
+    srcdir = copy_srcdir_to_tmpdir(srcdir, sphinx_test_tempdir)
+
+    # return sphinx.testing fixture make_app and new srcdir which in sphinx_test_tempdir
+    yield make_app, srcdir
+
+    # cleanup test temporary directory
+    clean_up_tmpdir(sphinx_test_tempdir)

@@ -1,11 +1,15 @@
 import json
 from pathlib import Path
 
-from sphinx_testing import with_app
+import pytest
 
 
-@with_app(buildername="html", srcdir="doc_test/external_doc")  # , warningiserror=True)
-def test_external_html(app, status, warning):
+@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/external_doc")])
+def test_external_html(create_app, buildername):
+    make_app = create_app[0]
+    srcdir = create_app[1]
+    app = make_app(buildername, srcdir=srcdir)
+
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert (
@@ -14,8 +18,12 @@ def test_external_html(app, status, warning):
     )
 
 
-@with_app(buildername="needs", srcdir="doc_test/external_doc")  # , warningiserror=True)
-def test_external_json(app, status, warning):
+@pytest.mark.parametrize("buildername, srcdir", [("needs", "doc_test/external_doc")])
+def test_external_json(create_app, buildername):
+    make_app = create_app[0]
+    srcdir = create_app[1]
+    app = make_app(buildername, srcdir=srcdir)
+
     app.build()
     json_data = Path(app.outdir, "needs.json").read_text()
     needs = json.loads(json_data)
