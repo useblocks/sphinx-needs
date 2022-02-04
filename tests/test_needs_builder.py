@@ -51,8 +51,8 @@ def test_needs_official_doc(create_app, buildername):
     app.build()
 
 
-@with_app(buildername="html", srcdir="doc_test/doc_needs_builder_parallel")
-def test_needs_html_and_json(app, status, warning):
+@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/doc_needs_builder_parallel")])
+def test_needs_html_and_json(create_app, buildername):
     """
     Build html output and needs.json in one sphinx-build
     """
@@ -60,12 +60,16 @@ def test_needs_html_and_json(app, status, warning):
     import os
     import subprocess
 
+    make_app = create_app[0]
+    srcdir = create_app[1]
+    app = make_app(buildername, srcdir=srcdir)
+
     app.build()
 
     needs_json_path = os.path.join(app.outdir, "needs.json")
     assert os.path.exists(needs_json_path)
 
-    srcdir = "doc_test/doc_needs_builder_parallel"
+    srcdir = app.srcdir
     build_dir = os.path.join(app.outdir, "../needs")
     subprocess.run(["sphinx-build", "-b", "needs", srcdir, build_dir], capture_output=True)
     needs_json_path_2 = os.path.join(build_dir, "needs.json")
