@@ -101,6 +101,22 @@ inside your ``conf.py`` file::
 
    needs_functions = [my_own_function]
 
+.. warning::
+
+   Assigning a function to a Sphinx option will deactivate the incremental build feature of Sphinx.
+   Please use the :ref:`Sphinx-Needs API <api_configuration>` and read :ref:`inc_build` for details.
+
+   Better use the following way in our ``conf.py`` file::
+
+         from sphinxcontrib.needs.api import add_dynamic_function
+
+            def my_function(app, need, needs, *args, **kwargs):
+                # Do magic here
+                return "some data"
+
+            def setup(app):
+                  add_dynamic_function(app, my_function)
+
 Reference function
 ~~~~~~~~~~~~~~~~~~
 

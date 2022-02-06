@@ -18,12 +18,14 @@ Test series
 
 To start a series of test with some predefined values, run ``python performance_test.py series``
 
-.. program-output:: python ../performance/performance_test.py series
+.. .. program-output:: python ../performance/performance_test.py series
+.. literalinclude:: series_output.txt
 
 But you can modify the details and set some static values by setting various parameters.
 Just run ``python performance_test.py series --help`` to get an overview
 
-.. program-output:: python ../performance/performance_test.py series --help
+.. .. program-output:: python ../performance/performance_test.py series --help
+.. literalinclude:: help.txt
 
 Also if ``--needs``, ``--pages`` or ``parallel`` is set multiple times, one performance test is executed per it.
 
@@ -32,7 +34,8 @@ This will set 2 values for ``needs``, 2 for ``pages`` and 2 for parallel. So in 
 configurations (2 needs x 2 pages x 2 parallel = 8).
 
 
-.. program-output:: python ../performance/performance_test.py series --needs 1 --needs 10 --pages 1 --pages 10 --parallel 1 --parallel 4 --needtables 0 --dummies 0
+.. .. program-output:: python ../performance/performance_test.py series --needs 1 --needs 10 --pages 1 --pages 10 --parallel 1 --parallel 4 --needtables 0 --dummies 0
+.. literalinclude:: complex.txt
 
 Parallel execution
 ------------------

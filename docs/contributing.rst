@@ -155,3 +155,15 @@ should be prefixed with “poetry run” (ie. ``poetry run <command>``).
 
 .. Include our contributors and maintainers.
 .. include:: ../AUTHORS
+
+Publishing a new release
+------------------------
+There is a release pipeline installed for the CI.
+
+This gets triggered automatically, if a tag is created and pushed.
+The tag most follow ``[0-9].[0-9]+.[0-9]``. Otherwise the release jobs get not triggerd.
+So other tags can still be used.
+
+The release jobs will build the source and wheel distribution and try to upload them
+to ``test.pypi.org`` and ``pypy.org``.
+

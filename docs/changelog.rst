@@ -6,15 +6,28 @@ License
 
 .. include:: ../LICENSE
 
-0.7.5
+
+0.7.6
 -----
 :Released: under development
+
+* Improvement: :ref:`filter_func` support arguments.
+  (`#429 <https://github.com/useblocks/sphinxcontrib-needs/issues/429>`_)
+* Improvement: Adds :ref:`needs_build_json` config option to build ``needs.json`` in parallel to other output formats.
+  (`#485 <https://github.com/useblocks/sphinxcontrib-needs/issues/485>`_)
+
+
+0.7.5
+-----
+:Released: 21.01.2022
 
 * Improvement: :ref:`needbar` is introduced
   (`#452 <https://github.com/useblocks/sphinxcontrib-needs/issues/452>`_)
 * Improvement: :ref:`needs_external_needs` supports relative path for :ref:`base_url`.
 * Improvement: ``needs.json`` schema gets checked during a :ref:`needimport`
   (`#456 <https://github.com/useblocks/sphinxcontrib-needs/issues/456>`_)
+* Improvement: Supports :ref:`filter_func` for :ref:`needpie`
+  (`#400 <https://github.com/useblocks/sphinxcontrib-needs/issues/400>`_)
 * Bugfix: Changed :ref:`needgantt` strftime format string according to C89 defined value.
   (`#445 <https://github.com/useblocks/sphinxcontrib-needs/issues/445>`_)
 * Bugfix: :ref:`needpie` option :legend: is correctls rendered

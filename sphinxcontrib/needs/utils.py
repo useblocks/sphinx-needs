@@ -1,5 +1,7 @@
 import cProfile
+import importlib
 import os
+import re
 from functools import wraps
 from typing import Any, Dict, List
 from urllib.parse import urlparse
@@ -232,3 +234,32 @@ def check_and_calc_base_url_rel_path(external_url, fromdocname):
         ref_uri = os.path.join(sub_level * (".." + curr_path_sep), external_url)
 
     return ref_uri
+
+
+def check_and_get_external_filter_func(current_needlist):
+    """Check and import filter function from external python file."""
+    # Check if external filter code is defined
+    filter_func = None
+    filter_args = []
+
+    filter_func_ref = current_needlist.get("filter_func", None)
+
+    if filter_func_ref:
+        try:
+            filter_module, filter_function = filter_func_ref.rsplit(".")
+        except ValueError:
+            logger.warn(f'Filter function not valid "{filter_func_ref}". Example: my_module:my_func')
+            return []  # No needs found because of invalid filter function
+
+        result = re.search(r"^([\w]+)(?:\((.*)\))*$", filter_function)
+        filter_function = result.group(1)
+        filter_args = result.group(2) or []
+
+        try:
+            final_module = importlib.import_module(filter_module)
+            filter_func = getattr(final_module, filter_function)
+        except Exception:
+            logger.warn(f"Could not import filter function: {filter_func_ref}")
+            return []
+
+    return filter_func, filter_args
