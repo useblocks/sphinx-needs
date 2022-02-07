@@ -20,6 +20,10 @@ def clean_up_tmpdir(targetdir):
 
 @pytest.fixture()
 def create_app(make_app, sphinx_test_tempdir, srcdir):
+    # copy plantuml.jar to current test temdir
+    plantuml_jar_file = path(__file__).parent.abspath() / "doc_test/utils"
+    shutil.copytree(plantuml_jar_file, sphinx_test_tempdir / "utils")
+
     # copy test srcdir to test temporary directory sphinx_test_tempdir
     srcdir = copy_srcdir_to_tmpdir(srcdir, sphinx_test_tempdir)
 

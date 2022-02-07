@@ -5,7 +5,6 @@ import requests_mock
 import sphinx
 
 
-@pytest.mark.xfail(reason="can't access plantuml jar file in docs/ since test doc copied to tempdir")
 @pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/doc_needs_external_needs")])
 def test_doc_build_html(create_app, buildername):
     import subprocess
@@ -36,7 +35,6 @@ def test_doc_build_html(create_app, buildername):
     assert "updating environment: 0 added, 0 changed, 0 removed" in output_second.stdout.decode("utf-8")
 
 
-@pytest.mark.xfail(reason="can't access plantuml jar file in docs/ since test doc copied to tempdir")
 @pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/doc_needs_external_needs")])
 def test_external_needs_base_url_relative_path(create_app, buildername):
     make_app = create_app[0]

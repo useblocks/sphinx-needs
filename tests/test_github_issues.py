@@ -45,7 +45,6 @@ def test_doc_github_44(create_app, buildername):
     assert "Needs: outgoing linked need test_123_broken not found" in output
 
 
-@pytest.mark.xfail(reason="len(alt_text) is 4 not 5, need to investigate")
 @pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/doc_github_issue_61")])
 def test_doc_github_61(create_app, buildername):
     """
