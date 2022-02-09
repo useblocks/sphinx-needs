@@ -4,12 +4,9 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/external_doc")])
-def test_external_html(create_app, buildername):
-    make_app = create_app[0]
-    srcdir = create_app[1]
-    app = make_app(buildername, srcdir=srcdir)
-
+@pytest.mark.parametrize("create_app", [{"buildername": "html", "srcdir": "doc_test/external_doc"}], indirect=True)
+def test_external_html(create_app):
+    app = create_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert (
@@ -18,12 +15,9 @@ def test_external_html(create_app, buildername):
     )
 
 
-@pytest.mark.parametrize("buildername, srcdir", [("needs", "doc_test/external_doc")])
-def test_external_json(create_app, buildername):
-    make_app = create_app[0]
-    srcdir = create_app[1]
-    app = make_app(buildername, srcdir=srcdir)
-
+@pytest.mark.parametrize("create_app", [{"buildername": "needs", "srcdir": "doc_test/external_doc"}], indirect=True)
+def test_external_json(create_app):
+    app = create_app
     app.build()
     json_data = Path(app.outdir, "needs.json").read_text()
     needs = json.loads(json_data)

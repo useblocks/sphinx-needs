@@ -3,17 +3,15 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/doc_needs_warnings")])
-def test_needs_warnings(create_app, buildername):
-    make_app = create_app[0]
-    srcdir = create_app[1]
-    app = make_app(buildername, srcdir=srcdir)
-
-    warning = app._warning
-
+@pytest.mark.parametrize(
+    "create_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_warnings"}], indirect=True
+)
+def test_needs_warnings(create_app):
+    app = create_app
     app.build()
 
     # stdout warnings
+    warning = app._warning
     warnings = warning.getvalue()
 
     # check multiple warning registration
@@ -39,13 +37,13 @@ def test_needs_warnings(create_app, buildername):
     assert "EXT_TEST_01" not in warnings
 
 
-@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/doc_needs_warnings_return_status_code")])
-def test_needs_warnings_return_status_code(create_app, buildername):
+@pytest.mark.parametrize(
+    "create_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_warnings_return_status_code"}], indirect=True
+)
+def test_needs_warnings_return_status_code(create_app):
     import subprocess
 
-    make_app = create_app[0]
-    srcdir = create_app[1]
-    app = make_app(buildername, srcdir=srcdir)
+    app = create_app
 
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"

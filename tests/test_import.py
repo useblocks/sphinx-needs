@@ -4,12 +4,9 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/import_doc")])
-def test_import_json(create_app, buildername):
-    make_app = create_app[0]
-    srcdir = create_app[1]
-    app = make_app(buildername, srcdir=srcdir)
-
+@pytest.mark.parametrize("create_app", [{"buildername": "html", "srcdir": "doc_test/import_doc"}], indirect=True)
+def test_import_json(create_app):
+    app = create_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert "TEST IMPORT TITLE" in html
@@ -49,15 +46,15 @@ def test_import_json(create_app, buildername):
     assert "Deprecation warning:" in warnings
 
 
-@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/import_doc_invalid")])
-def test_json_schema_console_check(create_app, buildername):
+@pytest.mark.parametrize(
+    "create_app", [{"buildername": "html", "srcdir": "doc_test/import_doc_invalid"}], indirect=True
+)
+def test_json_schema_console_check(create_app):
     """Checks the console output for hints about json schema validation errors"""
     import os
     import subprocess
 
-    make_app = create_app[0]
-    srcdir = create_app[1]
-    app = make_app(buildername, srcdir=srcdir)
+    app = create_app
 
     srcdir = Path(app.srcdir)
     out_dir = os.path.join(srcdir, "_build")
@@ -66,13 +63,12 @@ def test_json_schema_console_check(create_app, buildername):
     assert "Schema validation errors detected" in str(out.stdout)
 
 
-@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/import_doc_invalid")])
-def test_json_schema_file_check(create_app, buildername):
+@pytest.mark.parametrize(
+    "create_app", [{"buildername": "html", "srcdir": "doc_test/import_doc_invalid"}], indirect=True
+)
+def test_json_schema_file_check(create_app):
     """Checks that an invalid json-file gets normally still imported and is used as normal (if possible)"""
-    make_app = create_app[0]
-    srcdir = create_app[1]
-    app = make_app(buildername, srcdir=srcdir)
-
+    app = create_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert "TEST_01" in html
@@ -80,26 +76,22 @@ def test_json_schema_file_check(create_app, buildername):
     assert "new_tag" in html
 
 
-@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/non_exists_file_import")])
-def test_import_non_exists_json(create_app, buildername):
+@pytest.mark.parametrize(
+    "create_app", [{"buildername": "html", "srcdir": "doc_test/non_exists_file_import"}], indirect=True
+)
+def test_import_non_exists_json(create_app):
     # Check non exists file import
     try:
-        make_app = create_app[0]
-        srcdir = create_app[1]
-        app = make_app(buildername, srcdir=srcdir)
-
+        app = create_app
         app.build()
     except ReferenceError as err:
         assert err.args[0].startswith("Could not load needs import file")
         assert "non_exists_file_import/" in err.args[0]
 
 
-@pytest.mark.parametrize("buildername, srcdir", [("needs", "doc_test/import_doc")])
-def test_import_builder(create_app, buildername):
-    make_app = create_app[0]
-    srcdir = create_app[1]
-    app = make_app(buildername, srcdir=srcdir)
-
+@pytest.mark.parametrize("create_app", [{"buildername": "needs", "srcdir": "doc_test/import_doc"}], indirect=True)
+def test_import_builder(create_app):
+    app = create_app
     app.build()
     needs_text = Path(app.outdir, "needs.json").read_text()
     needs = json.loads(needs_text)

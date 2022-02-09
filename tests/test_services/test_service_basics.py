@@ -51,12 +51,9 @@ class NoDebugService(BaseService):
         return []
 
 
-@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/service_doc")])
-def test_service_creation(create_app, buildername):
-    make_app = create_app[0]
-    srcdir = create_app[1]
-    app = make_app(buildername, srcdir=srcdir)
-
+@pytest.mark.parametrize("create_app", [{"buildername": "html", "srcdir": "doc_test/service_doc"}], indirect=True)
+def test_service_creation(create_app):
+    app = create_app
     app.build()
     assert isinstance(app.needs_services, ServiceManager)
 

@@ -4,12 +4,11 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/doc_dynamic_functions")])
-def test_doc_dynamic_functions(create_app, buildername):
-    make_app = create_app[0]
-    srcdir = create_app[1]
-    app = make_app(buildername, srcdir=srcdir)
-
+@pytest.mark.parametrize(
+    "create_app", [{"buildername": "html", "srcdir": "doc_test/doc_dynamic_functions"}], indirect=True
+)
+def test_doc_dynamic_functions(create_app):
+    app = create_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert "This is id SP_TOO_001" in html
@@ -29,12 +28,9 @@ def test_doc_dynamic_functions(create_app, buildername):
     assert '<a class="reference external" href="http://www.TEST_5">link</a>' in html
 
 
-@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/doc_df_calc_sum")])
-def test_doc_df_calc_sum(create_app, buildername):
-    make_app = create_app[0]
-    srcdir = create_app[1]
-    app = make_app(buildername, srcdir=srcdir)
-
+@pytest.mark.parametrize("create_app", [{"buildername": "html", "srcdir": "doc_test/doc_df_calc_sum"}], indirect=True)
+def test_doc_df_calc_sum(create_app):
+    app = create_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert "43210" in html  # all hours
@@ -42,12 +38,11 @@ def test_doc_df_calc_sum(create_app, buildername):
     assert "210" in html  # hours of filtered needs
 
 
-@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/doc_df_check_linked_values")])
-def test_doc_df_linked_values(create_app, buildername):
-    make_app = create_app[0]
-    srcdir = create_app[1]
-    app = make_app(buildername, srcdir=srcdir)
-
+@pytest.mark.parametrize(
+    "create_app", [{"buildername": "html", "srcdir": "doc_test/doc_df_check_linked_values"}], indirect=True
+)
+def test_doc_df_linked_values(create_app):
+    app = create_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert "all_good" in html
@@ -55,12 +50,11 @@ def test_doc_df_linked_values(create_app, buildername):
     assert "all_awesome" in html
 
 
-@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/doc_df_user_functions")])
-def test_doc_df_user_functions(create_app, buildername):
-    make_app = create_app[0]
-    srcdir = create_app[1]
-    app = make_app(buildername, srcdir=srcdir)
-
+@pytest.mark.parametrize(
+    "create_app", [{"buildername": "html", "srcdir": "doc_test/doc_df_user_functions"}], indirect=True
+)
+def test_doc_df_user_functions(create_app):
+    app = create_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert "Awesome" in html

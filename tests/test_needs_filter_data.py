@@ -3,12 +3,11 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/doc_needs_filter_data")])
-def test_doc_needs_filter_data_html(create_app, buildername):
-    make_app = create_app[0]
-    srcdir = create_app[1]
-    app = make_app(buildername, srcdir=srcdir)
-
+@pytest.mark.parametrize(
+    "create_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_filter_data"}], indirect=True
+)
+def test_doc_needs_filter_data_html(create_app):
+    app = create_app
     app.build()
     index_html = Path(app.outdir, "index.html").read_text()
 
@@ -58,12 +57,11 @@ def test_doc_needs_filter_data_html(create_app, buildername):
     assert "used filter: variant != current_variant" in warnings
 
 
-@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/doc_needs_filter_data")])
-def test_doc_needs_filter_code(create_app, buildername):
-    make_app = create_app[0]
-    srcdir = create_app[1]
-    app = make_app(buildername, srcdir=srcdir)
-
+@pytest.mark.parametrize(
+    "create_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_filter_data"}], indirect=True
+)
+def test_doc_needs_filter_code(create_app):
+    app = create_app
     app.build()
     code_html = Path(app.outdir, "filter_code.html").read_text()
 

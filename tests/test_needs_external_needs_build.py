@@ -5,13 +5,13 @@ import requests_mock
 import sphinx
 
 
-@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/doc_needs_external_needs")])
-def test_doc_build_html(create_app, buildername):
+@pytest.mark.parametrize(
+    "create_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_external_needs"}], indirect=True
+)
+def test_doc_build_html(create_app):
     import subprocess
 
-    make_app = create_app[0]
-    srcdir = create_app[1]
-    app = make_app(buildername, srcdir=srcdir)
+    app = create_app
 
     src_dir = Path(app.srcdir)
     out_dir = Path(app.outdir)
@@ -35,12 +35,11 @@ def test_doc_build_html(create_app, buildername):
     assert "updating environment: 0 added, 0 changed, 0 removed" in output_second.stdout.decode("utf-8")
 
 
-@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/doc_needs_external_needs")])
-def test_external_needs_base_url_relative_path(create_app, buildername):
-    make_app = create_app[0]
-    srcdir = create_app[1]
-    app = make_app(buildername, srcdir=srcdir)
-
+@pytest.mark.parametrize(
+    "create_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_external_needs"}], indirect=True
+)
+def test_external_needs_base_url_relative_path(create_app):
+    app = create_app
     app.build()
 
     # check base_url full path from conf.py
@@ -196,11 +195,11 @@ def test_external_needs_base_url_relative_path(create_app, buildername):
             assert element.attrib["href"] == "../../../../_build/html/index.html#TEST_02"
 
 
-@pytest.mark.parametrize("buildername, srcdir", [("html", "doc_test/doc_needs_external_needs_remote")])
-def test_external_needs_json_url(create_app, buildername):
-    make_app = create_app[0]
-    srcdir = create_app[1]
-    app = make_app(buildername, srcdir=srcdir)
+@pytest.mark.parametrize(
+    "create_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_external_needs_remote"}], indirect=True
+)
+def test_external_needs_json_url(create_app):
+    app = create_app
 
     # Mock API calls performed to get remote file
     remote_json = {
