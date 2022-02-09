@@ -33,7 +33,6 @@ sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
 extensions = ["sphinxcontrib.needs", "sphinxcontrib.plantuml"]
 needs_id_regex = "^[A-Z0-9]-[A-Z0-9]+"
 
-# plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "..", "..", "docs", "utils", "plantuml.jar")
 plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "utils", "plantuml.jar")
 plantuml_output_format = "svg"
 
