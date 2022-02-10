@@ -5,6 +5,12 @@ needpie
 
 .. versionadded:: 0.5.0
 
+.. versionchanged:: nextversion
+
+   Matplotlib dependency (required for needpie) now moved to optional extra.
+   Install the extra via `pip install sphinxcontrib-needs[matplotlib]` to enable
+   support for this directive.
+
 ``needpie`` adds a pie-chart to your documentation::
 
    .. needpie:: My pie chart
