@@ -2,7 +2,19 @@ import math
 import os
 from typing import Sequence
 
-import matplotlib
+try:
+    import matplotlib
+except ImportError:
+    # Dependency "matplotlib" missing, install package with extra to fix
+    # Swallow original exception, to give a specific, helpful message instead
+    raise ImportError(
+        "Missing matplotlib dependency required for needbar directive. "
+        "Please install sphinxcontrib-needs with optional [matplotlib] flag"
+    )
+
+# Since numpy is NOT direct dep, but dep of matplotlib instead, we can assume
+# that if we are here = didn't raise ImportError on matplotlib above, we have
+# numpy available = no need for check + help message
 import numpy
 from docutils import nodes
 from sphinx.application import Sphinx
