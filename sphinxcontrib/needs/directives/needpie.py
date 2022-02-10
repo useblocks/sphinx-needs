@@ -1,7 +1,13 @@
 import copy
 import os
 
-import matplotlib
+try:
+    import matplotlib
+except ImportError:
+    # Dependency "matplotlib" missing, install package with extra to fix
+    # Swallow original exception, to give a specific, helpful message instead
+    raise ImportError("Missing matplotlib dependency required for needpie directive. "
+                      "Please install sphinxcontrib-needs with optional [matplotlib] flag")
 from docutils import nodes
 
 from sphinxcontrib.needs.filter_common import FilterBase, filter_needs
