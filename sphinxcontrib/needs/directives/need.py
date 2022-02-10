@@ -206,7 +206,7 @@ def get_sections_and_signature_and_needs(need_info):
         # Checking for a signature defined "above" the need.
         # Used and set normally by directives like automodule.
         # Only check as long as we haven't found a signature
-        if signature and current_node.parent and current_node.parent.children:
+        if not signature and current_node.parent and current_node.parent.children:
             for sibling in current_node.parent.children:
                 # We want to check only "above" current node, so no need to check sibling after current_node.
                 if sibling == current_node:
@@ -220,10 +220,12 @@ def get_sections_and_signature_and_needs(need_info):
                     break
 
         # Check if the need is nested inside another need (so part of its content)
-        if isinstance(current_node, Need):
+        # and we only want to find our parent and not add grands, too.
+        if isinstance(current_node, Need) and len(parent_needs) == 0:
             parent_needs.append(current_node["refid"])  # Store the need id, not more
 
         current_node = getattr(current_node, "parent", None)
+
     return sections, signature, parent_needs
 
 
@@ -242,15 +244,36 @@ def add_sections(app, doctree, fromdocname):
     be used in tables and filters"""
     needs = getattr(app.builder.env, "needs_all_needs", {})
     for need_info in needs.values():
-        sections, signature, parent_needs = get_sections_and_signature_and_needs(need_info)
-        need_info["sections"] = sections
-        need_info["section_name"] = sections[0] if sections else ""
-        need_info["signature"] = signature if signature else ""
-        need_info["parent_needs"] = parent_needs
-        need_info["parent_need"] = parent_needs[0] if parent_needs else None
+        # first we initilaize to default values
+        if "sections" not in need_info:
+            need_info["sections"] = []
 
-        # for parent_need_id in need_info["parent_needs"]:
-        #     needs[parent_need_id]["child_needs"].append(need_info["id"])
+        if "section_name" not in need_info:
+            need_info["section_name"] = ""
+
+        if "signature" not in need_info:
+            need_info["signature"] = ""
+
+        if "parent_needs" not in need_info:
+            need_info["parent_needs"] = []
+
+        if "parent_need" not in need_info:
+            need_info["parent_need"] = ""
+
+        # fetch values from need
+        sections, signature, parent_needs = get_sections_and_signature_and_needs(need_info)
+
+        # append / set values from need
+        if sections:
+            need_info["sections"] = sections
+            need_info["section_name"] = sections[0]
+
+        if signature:
+            need_info["signature"] = signature
+
+        if parent_needs:
+            need_info["parent_needs"] = parent_needs
+            need_info["parent_need"] = parent_needs[0]
 
 
 @profile("NEED_PROCESS")

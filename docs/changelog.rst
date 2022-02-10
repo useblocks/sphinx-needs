@@ -15,6 +15,8 @@ License
   (`#429 <https://github.com/useblocks/sphinxcontrib-needs/issues/429>`_)
 * Improvement: Adds :ref:`needs_build_json` config option to build ``needs.json`` in parallel to other output formats.
   (`#485 <https://github.com/useblocks/sphinxcontrib-needs/issues/485>`_)
+* Bugfix: Support embedded needs in embedded needs.
+  (`#486 <https://github.com/useblocks/sphinxcontrib-needs/issues/486>`_)
 
 
 0.7.5
