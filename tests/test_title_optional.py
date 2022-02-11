@@ -26,8 +26,8 @@ class HtmlNeed:
         return title[0].text if title is not None else None  # title[0] aims to the span_data element
 
 
-@pytest.mark.parametrize("create_app", [{"buildername": "html", "srcdir": "doc_test/title_optional"}], indirect=True)
-def test_title_optional_scenarios(create_app):
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/title_optional"}], indirect=True)
+def test_title_optional_scenarios(test_app):
 
     # Somehow the xml-tree in extract_needs_from_html() works not correctly with py37 and specific
     # extracts, which are needed for sphinx >3.0 only.
@@ -35,7 +35,7 @@ def test_title_optional_scenarios(create_app):
     if sys.version_info[0] == 3 and sys.version_info[1] == 7 and sphinx.version_info[0] >= 3:
         return True
 
-    app = create_app
+    app = test_app
     app.build()
 
     html = Path(app.outdir, "index.html").read_text()

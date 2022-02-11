@@ -7,12 +7,12 @@ import sphinx
 
 
 @pytest.mark.parametrize(
-    "create_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_external_needs"}], indirect=True
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_external_needs"}], indirect=True
 )
-def test_doc_build_html(create_app):
+def test_doc_build_html(test_app):
     import subprocess
 
-    app = create_app
+    app = test_app
 
     src_dir = Path(app.srcdir)
     out_dir = Path(app.outdir)
@@ -38,10 +38,10 @@ def test_doc_build_html(create_app):
 
 @pytest.mark.skipif(sys.platform == "win32", reason="assert fails on windows, need to fix later.")
 @pytest.mark.parametrize(
-    "create_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_external_needs"}], indirect=True
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_external_needs"}], indirect=True
 )
-def test_external_needs_base_url_relative_path(create_app):
-    app = create_app
+def test_external_needs_base_url_relative_path(test_app):
+    app = test_app
     app.build()
 
     # check base_url full path from conf.py
@@ -198,10 +198,10 @@ def test_external_needs_base_url_relative_path(create_app):
 
 
 @pytest.mark.parametrize(
-    "create_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_external_needs_remote"}], indirect=True
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_external_needs_remote"}], indirect=True
 )
-def test_external_needs_json_url(create_app):
-    app = create_app
+def test_external_needs_json_url(test_app):
+    app = test_app
 
     # Mock API calls performed to get remote file
     remote_json = {

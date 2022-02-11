@@ -3,9 +3,9 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize("create_app", [{"buildername": "html", "srcdir": "doc_test/doc_extra_links"}], indirect=True)
-def test_extra_links_html(create_app):
-    app = create_app
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_extra_links"}], indirect=True)
+def test_extra_links_html(test_app):
+    app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert "TEST_001" in html
@@ -20,9 +20,9 @@ def test_extra_links_html(create_app):
     assert '<span class="needs_dead_link forbidden">REQ_005.invalid</span>' in html
 
 
-@pytest.mark.parametrize("create_app", [{"buildername": "latex", "srcdir": "doc_test/doc_extra_links"}], indirect=True)
-def test_extra_links_latex(create_app):
-    app = create_app
+@pytest.mark.parametrize("test_app", [{"buildername": "latex", "srcdir": "doc_test/doc_extra_links"}], indirect=True)
+def test_extra_links_latex(test_app):
+    app = test_app
     app.build()
     tex = Path(app.outdir, "needstestdocs.tex").read_text()
     assert "TEST_001" in tex

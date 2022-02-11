@@ -16,10 +16,8 @@ import pytest
 #     assert 'OWN_ID_123' in html
 
 
-@pytest.mark.parametrize(
-    "create_app", [{"buildername": "html", "srcdir": "doc_test/doc_github_issue_44"}], indirect=True
-)
-def test_doc_github_44(create_app):
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_github_issue_44"}], indirect=True)
+def test_doc_github_44(test_app):
     """
     https://github.com/useblocks/sphinxcontrib-needs/issues/44
     """
@@ -27,7 +25,7 @@ def test_doc_github_44(create_app):
     # I have no glue how to get it from an app.build(), because stdout redirecting does not work. Maybe because
     # nosetest is doing something similar for each test.
     # So we call the needed command directly, but still use the sphinx_testing app to create the outdir for us.
-    app = create_app
+    app = test_app
 
     output = str(
         check_output(
@@ -45,10 +43,8 @@ def test_doc_github_44(create_app):
     assert "Needs: outgoing linked need test_123_broken not found" in output
 
 
-@pytest.mark.parametrize(
-    "create_app", [{"buildername": "html", "srcdir": "doc_test/doc_github_issue_61"}], indirect=True
-)
-def test_doc_github_61(create_app):
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_github_issue_61"}], indirect=True)
+def test_doc_github_61(test_app):
     """
     Test for https://github.com/useblocks/sphinxcontrib-needs/issues/61
     """
@@ -59,7 +55,7 @@ def test_doc_github_61(create_app):
     # Even if there's an error creating the diagram, there's no way to tell since the
     # error message is embedded in the image itself. The best we can do is make sure
     # the transformed entity names are in the alt text of the image.
-    app = create_app
+    app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     alt_text = re.findall("<img.*?alt=(.*?)>", html, re.MULTILINE + re.DOTALL)
@@ -71,10 +67,10 @@ def test_doc_github_61(create_app):
 
 
 @pytest.mark.parametrize(
-    "create_app", [{"buildername": "html", "srcdir": "doc_test/doc_github_issue_160"}], indirect=True
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_github_issue_160"}], indirect=True
 )
-def test_doc_github_160(create_app):
-    app = create_app
+def test_doc_github_160(test_app):
+    app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert '<a class="reference internal" href="#A-001" title="A-002">A-001</a>' in html

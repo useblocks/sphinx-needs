@@ -15,7 +15,7 @@ def copy_srcdir_to_tmpdir(srcdir, tmp):
 
 
 @pytest.fixture(scope="function")
-def create_app(make_app, sphinx_test_tempdir, request):
+def test_app(make_app, sphinx_test_tempdir, request):
     # get builder parameters from test case
     builder_params = request.param
 

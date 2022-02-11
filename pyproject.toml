@@ -45,7 +45,7 @@ sphinx-data-viewer = "^0.1.1"  # needservice debug output
 pre-commit = "^2"
 # test dependencies
 lxml = "^4.6.5"
-pytest = "^6.2.5"
+pytest = ">6.2.5"
 pytest-xdist="*"  # parallelisation
 responses = "^0.12.1"
 requests-mock = ">=1.9.3"

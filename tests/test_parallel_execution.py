@@ -4,11 +4,11 @@ import pytest
 
 
 @pytest.mark.parametrize(
-    "create_app", [{"buildername": "html", "srcdir": "doc_test/parallel_doc", "parallel": 4}], indirect=True
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/parallel_doc", "parallel": 4}], indirect=True
 )
-def test_doc_build_html(create_app):
+def test_doc_build_html(test_app):
     # app.builder.build_all()
-    app = create_app
+    app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert app.statuscode == 0

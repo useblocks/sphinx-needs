@@ -4,10 +4,10 @@ import pytest
 
 
 @pytest.mark.parametrize(
-    "create_app", [{"buildername": "html", "srcdir": "doc_test/doc_role_need_template"}], indirect=True
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_role_need_template"}], indirect=True
 )
-def test_doc_build_html(create_app):
-    app = create_app
+def test_doc_build_html(test_app):
+    app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert "ROLE NEED TEMPLATE" in html

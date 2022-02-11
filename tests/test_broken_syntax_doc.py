@@ -3,9 +3,9 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize("create_app", [{"buildername": "html", "srcdir": "doc_test/broken_syntax_doc"}], indirect=True)
-def test_doc_broken_syntax(create_app):
-    app = create_app
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/broken_syntax_doc"}], indirect=True)
+def test_doc_broken_syntax(test_app):
+    app = test_app
 
     app.build()
     html = Path(app.outdir, "index.html").read_text()

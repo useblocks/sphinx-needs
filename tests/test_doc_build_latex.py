@@ -3,9 +3,9 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize("create_app", [{"buildername": "latex", "srcdir": "doc_test/doc_build_latex"}], indirect=True)
-def test_doc_build_latex(create_app):
-    app = create_app
+@pytest.mark.parametrize("test_app", [{"buildername": "latex", "srcdir": "doc_test/doc_build_latex"}], indirect=True)
+def test_doc_build_latex(test_app):
+    app = test_app
 
     app.build()
 

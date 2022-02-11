@@ -3,10 +3,10 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize("create_app", [{"buildername": "html", "srcdir": "doc_test/generic_doc"}], indirect=True)
-def test_doc_build_html(create_app):
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/generic_doc"}], indirect=True)
+def test_doc_build_html(test_app):
     # app.builder.build_all()
-    app = create_app
+    app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert "<h1>TEST DOCUMENT" in html

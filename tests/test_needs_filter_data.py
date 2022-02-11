@@ -4,10 +4,10 @@ import pytest
 
 
 @pytest.mark.parametrize(
-    "create_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_filter_data"}], indirect=True
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_filter_data"}], indirect=True
 )
-def test_doc_needs_filter_data_html(create_app):
-    app = create_app
+def test_doc_needs_filter_data_html(test_app):
+    app = test_app
     app.build()
     index_html = Path(app.outdir, "index.html").read_text()
 
@@ -58,10 +58,10 @@ def test_doc_needs_filter_data_html(create_app):
 
 
 @pytest.mark.parametrize(
-    "create_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_filter_data"}], indirect=True
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_filter_data"}], indirect=True
 )
-def test_doc_needs_filter_code(create_app):
-    app = create_app
+def test_doc_needs_filter_code(test_app):
+    app = test_app
     app.build()
     code_html = Path(app.outdir, "filter_code.html").read_text()
 

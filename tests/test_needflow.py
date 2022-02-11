@@ -3,14 +3,14 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize("create_app", [{"buildername": "html", "srcdir": "doc_test/doc_needflow"}], indirect=True)
-def test_doc_build_html(create_app):
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needflow"}], indirect=True)
+def test_doc_build_html(test_app):
     import sphinx
 
     if sphinx.__version__.startswith("3.5"):
         return
 
-    app = create_app
+    app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert "SPEC_1" in html

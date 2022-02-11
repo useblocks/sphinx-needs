@@ -3,9 +3,9 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize("create_app", [{"buildername": "html", "srcdir": "doc_test/filter_doc"}], indirect=True)
-def test_filter_build_html(create_app):
-    app = create_app
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/filter_doc"}], indirect=True)
+def test_filter_build_html(test_app):
+    app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert "story_a_1" in html

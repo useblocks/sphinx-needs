@@ -4,11 +4,9 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize(
-    "create_app", [{"buildername": "needs", "srcdir": "doc_test/doc_needs_builder"}], indirect=True
-)
-def test_doc_needs_builder(create_app):
-    app = create_app
+@pytest.mark.parametrize("test_app", [{"buildername": "needs", "srcdir": "doc_test/doc_needs_builder"}], indirect=True)
+def test_doc_needs_builder(test_app):
+    app = test_app
     app.build()
 
     needs_json = Path(app.outdir, "needs.json")
@@ -25,13 +23,13 @@ def test_doc_needs_builder(create_app):
 
 
 @pytest.mark.parametrize(
-    "create_app", [{"buildername": "needs", "srcdir": "doc_test/doc_needs_builder_negative_tests"}], indirect=True
+    "test_app", [{"buildername": "needs", "srcdir": "doc_test/doc_needs_builder_negative_tests"}], indirect=True
 )
-def test_doc_needs_build_without_needs_file(create_app):
+def test_doc_needs_build_without_needs_file(test_app):
     import os
     import subprocess
 
-    app = create_app
+    app = test_app
 
     srcdir = Path(app.srcdir)
     out_dir = os.path.join(srcdir, "_build")
@@ -41,16 +39,16 @@ def test_doc_needs_build_without_needs_file(create_app):
     assert "needs.json found, but will not be used because needs_file not configured." in out.stdout.decode("utf-8")
 
 
-@pytest.mark.parametrize("create_app", [{"buildername": "needs", "srcdir": "../docs"}], indirect=True)
-def test_needs_official_doc(create_app):
-    app = create_app
+@pytest.mark.parametrize("test_app", [{"buildername": "needs", "srcdir": "../docs"}], indirect=True)
+def test_needs_official_doc(test_app):
+    app = test_app
     app.build()
 
 
 @pytest.mark.parametrize(
-    "create_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_builder_parallel"}], indirect=True
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_builder_parallel"}], indirect=True
 )
-def test_needs_html_and_json(create_app):
+def test_needs_html_and_json(test_app):
     """
     Build html output and needs.json in one sphinx-build
     """
@@ -58,7 +56,7 @@ def test_needs_html_and_json(create_app):
     import os
     import subprocess
 
-    app = create_app
+    app = test_app
     app.build()
 
     needs_json_path = os.path.join(app.outdir, "needs.json")

@@ -3,9 +3,9 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize("create_app", [{"buildername": "html", "srcdir": "doc_test/doc_needextend"}], indirect=True)
-def test_doc_needextend_html(create_app):
-    app = create_app
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needextend"}], indirect=True)
+def test_doc_needextend_html(test_app):
+    app = test_app
     app.build()
     index_html = Path(app.outdir, "index.html").read_text()
     assert "extend_test_003" in index_html

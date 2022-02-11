@@ -3,11 +3,9 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize(
-    "create_app", [{"buildername": "html", "srcdir": "doc_test/doc_global_options"}], indirect=True
-)
-def test_doc_global_option(create_app):
-    app = create_app
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_global_options"}], indirect=True)
+def test_doc_global_option(test_app):
+    app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
 

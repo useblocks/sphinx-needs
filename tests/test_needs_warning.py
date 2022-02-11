@@ -3,11 +3,9 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize(
-    "create_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_warnings"}], indirect=True
-)
-def test_needs_warnings(create_app):
-    app = create_app
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_warnings"}], indirect=True)
+def test_needs_warnings(test_app):
+    app = test_app
     app.build()
 
     # stdout warnings
@@ -38,12 +36,12 @@ def test_needs_warnings(create_app):
 
 
 @pytest.mark.parametrize(
-    "create_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_warnings_return_status_code"}], indirect=True
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_warnings_return_status_code"}], indirect=True
 )
-def test_needs_warnings_return_status_code(create_app):
+def test_needs_warnings_return_status_code(test_app):
     import subprocess
 
-    app = create_app
+    app = test_app
 
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"

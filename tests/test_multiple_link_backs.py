@@ -4,11 +4,9 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize(
-    "create_app", [{"buildername": "html", "srcdir": "doc_test/multiple_link_backs"}], indirect=True
-)
-def test_multiple_link_backs(create_app):
-    app = create_app
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/multiple_link_backs"}], indirect=True)
+def test_multiple_link_backs(test_app):
+    app = test_app
 
     app.builder.build_all()
     html = Path(app.outdir, "index.html").read_text()
