@@ -6,8 +6,10 @@ try:
 except ImportError:
     # Dependency "matplotlib" missing, install package with extra to fix
     # Swallow original exception, to give a specific, helpful message instead
-    raise ImportError("Missing matplotlib dependency required for needbar directive. "
-                      "Please install sphinxcontrib-needs with optional [matplotlib] flag")
+    raise ImportError(
+        "Missing matplotlib dependency required for needbar directive. "
+        "Please install sphinxcontrib-needs with optional [matplotlib] flag"
+    )
 
 # Since numpy is NOT direct dep, but dep of matplotlib instead, we can assume
 # that if we are here = didn't raise ImportError on matplotlib above, we have
