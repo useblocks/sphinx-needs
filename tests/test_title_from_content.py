@@ -1,14 +1,14 @@
 import sys
 from pathlib import Path
 
+import pytest
 import sphinx
-from sphinx_testing import with_app
 
 from tests.util import extract_needs_from_html
 
 
-@with_app(buildername="html", srcdir="doc_test/title_from_content")
-def test_title_from_content_scenarios(app, status, warning):
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/title_from_content"}], indirect=True)
+def test_title_from_content_scenarios(test_app):
 
     # Somehow the xml-tree in extract_needs_from_html() works not correctly with py37 and specific
     # extracts, which are needed for sphinx >3.0 only.
@@ -16,6 +16,7 @@ def test_title_from_content_scenarios(app, status, warning):
     if sys.version_info[0] == 3 and sys.version_info[1] == 7 and sphinx.version_info[0] >= 3:
         return True
 
+    app = test_app
     app.build()
 
     html = Path(app.outdir, "index.html").read_text()

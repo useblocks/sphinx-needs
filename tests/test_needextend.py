@@ -1,10 +1,11 @@
 from pathlib import Path
 
-from sphinx_testing import with_app
+import pytest
 
 
-@with_app(buildername="html", srcdir="doc_test/doc_needextend")
-def test_doc_needextend_html(app, status, warning):
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needextend"}], indirect=True)
+def test_doc_needextend_html(test_app):
+    app = test_app
     app.build()
     index_html = Path(app.outdir, "index.html").read_text()
     assert "extend_test_003" in index_html

@@ -1,10 +1,11 @@
 from pathlib import Path
 
-from sphinx_testing import with_app
+import pytest
 
 
-@with_app(buildername="html", srcdir="doc_test/doc_need_count")
-def test_doc_need_count(app, status, warning):
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_need_count"}], indirect=True)
+def test_doc_need_count(test_app):
+    app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert "result_1-3" in html

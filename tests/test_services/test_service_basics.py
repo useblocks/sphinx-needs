@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from sphinx_testing import with_app
+import pytest
 
 from sphinxcontrib.needs.services.base import BaseService
 from sphinxcontrib.needs.services.manager import ServiceManager
@@ -51,8 +51,9 @@ class NoDebugService(BaseService):
         return []
 
 
-@with_app(buildername="html", srcdir="doc_test/service_doc")
-def test_service_creation(app, status, warning):
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/service_doc"}], indirect=True)
+def test_service_creation(test_app):
+    app = test_app
     app.build()
     assert isinstance(app.needs_services, ServiceManager)
 

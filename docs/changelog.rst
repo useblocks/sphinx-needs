@@ -15,7 +15,8 @@ License
   (`#429 <https://github.com/useblocks/sphinxcontrib-needs/issues/429>`_)
 * Improvement: Adds :ref:`needs_build_json` config option to build ``needs.json`` in parallel to other output formats.
   (`#485 <https://github.com/useblocks/sphinxcontrib-needs/issues/485>`_)
-
+* Improvement: Migrate tests to Pytest and Sphinx internal testing structure.
+  (`#471 <https://github.com/useblocks/sphinxcontrib-needs/issues/471>`_)
 
 0.7.5
 -----
