@@ -86,7 +86,7 @@ def test_import_non_exists_json(create_app):
         app.build()
     except ReferenceError as err:
         assert err.args[0].startswith("Could not load needs import file")
-        assert "non_exists_file_import/" in err.args[0]
+        assert "non_exists_file_import" in err.args[0]
 
 
 @pytest.mark.parametrize("create_app", [{"buildername": "needs", "srcdir": "doc_test/import_doc"}], indirect=True)
