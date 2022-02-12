@@ -5,13 +5,13 @@ Using poetry
 ------------
 ::
 
-    poetry add sphinxcontrib-needs
+    poetry add sphinxcontrib-needs[all]
 
 Using pip
 ---------
 ::
 
-    pip install sphinxcontrib-needs
+    pip install sphinxcontrib-needs[all]
 
 Using sources
 -------------
@@ -19,9 +19,9 @@ Using sources
 
     git clone https://github.com/useblocks/sphinxcontrib-needs
     cd sphinxcontrib-needs
-    pip install .
+    pip install .[all]
     # or
-    poetry install
+    poetry install --extras all
 
 
 Activation
@@ -32,6 +32,19 @@ For final activation, please add `sphinxcontrib.needs` to the project's extensio
    extensions = ["sphinxcontrib.needs",]
 
 For the full configuration, please read :ref:`config`.
+
+.. _install_matplotlib_numpy:
+
+Matplotlib/NumPy support
+----------------
+
+:ref:`needpie` and :ref:`needbar` uses `Matplotlib <https://matplotlib.org>`_ and `Numpy <https://numpy.org>`_ for generating graphs.
+
+The recommended install method (via `sphinxcontrib-needs[all]`) downloads
+matplotlib by default as well as all other optional extras.
+
+If you don't use the graphs feature, it's possible to install the lighter
+`sphinxcontrib-needs` without optional dependencies.
 
 .. _install_plantuml:
 

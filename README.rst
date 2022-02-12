@@ -45,14 +45,18 @@ Using poetry
 ------------
 ::
 
+    poetry add sphinxcontrib-needs[all]
+    # Lighter install without matplotlib or PlantUML = no dependency graphs or + pie charts
     poetry add sphinxcontrib-needs
-
 
 Using pip
 ---------
 ::
 
+    pip install sphinxcontrib-needs[all]
+    # Lighter install without matplotlib or PlantUML = no dependency graphs or + pie charts
     pip install sphinxcontrib-needs
+
 
 Using sources
 -------------
@@ -60,6 +64,8 @@ Using sources
 
     git clone https://github.com/useblocks/sphinxcontrib-needs
     cd sphinxcontrib-needs
+    pip install .[all]
+    # Lighter install without matplotlib or PlantUML = no dependency graphs or + pie charts
     pip install .
 
 Activation

@@ -67,6 +67,7 @@ profile = "black"
 [tool.poetry.extras]
 docs = ["sphinx>=4.0"]
 matplotlib = ["matplotlib"]
+all = ["matplotlib"]
 
 [build-system]
 requires = ["poetry-core>=1.0.7"]
