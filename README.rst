@@ -52,26 +52,31 @@ Using poetry
 
 .. code-block:: bash
 
-    poetry add sphinx-needs
+    poetry add sphinx-needs[all]
+    # Lighter install without matplotlib = no pie charts
+    poetry add sphinxcontrib-needs
 
 Using pip
 ---------
 
 .. code-block:: bash
 
+    pip install sphinx-needs[all]
+    # Lighter install without matplotlib = no pie charts
     pip install sphinx-needs
 
 .. note::
 
    Prior version **1.0.1** the package was named ``sphinxcontrib-needs``.
 
+
 Using sources
 -------------
 
 .. code-block:: bash
 
-    git clone https://github.com/useblocks/sphinx-needs
-    cd sphinx-needs
+    pip install .[all]
+    # Lighter install without matplotlib = no pie charts
     pip install .
     # or
     poetry install

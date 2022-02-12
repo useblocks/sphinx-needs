@@ -6,14 +6,14 @@ Using poetry
 
 .. code-block:: bash
 
-    poetry add sphinx-needs
+    poetry add sphinx-needs[all]
 
 Using pip
 ---------
 
 .. code-block:: bash
 
-    pip install sphinx-needs
+    pip install sphinx-needs[all]
 
 .. note::
 
@@ -26,9 +26,9 @@ Using sources
 
     git clone https://github.com/useblocks/sphinx-needs
     cd sphinx-needs
-    pip install .
+    pip install .[all]
     # or
-    poetry install
+    poetry install --extras all
 
 
 Activation
@@ -45,6 +45,19 @@ For the full configuration, please read :ref:`config`.
 .. note::
 
    Prior version **1.0.1** the extensions was called ``sphinxcontrib.needs``.
+
+.. _install_matplotlib_numpy:
+
+Matplotlib/NumPy support
+----------------
+
+:ref:`needpie` and :ref:`needbar` uses `Matplotlib <https://matplotlib.org>`_ and `Numpy <https://numpy.org>`_ for generating graphs.
+
+The recommended install method (via `sphinxcontrib-needs[all]`) downloads
+matplotlib by default as well as all other optional extras.
+
+If you don't use the graphs feature, it's possible to install the lighter
+`sphinxcontrib-needs` without optional dependencies.
 
 .. _install_plantuml:
 
