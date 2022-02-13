@@ -3,6 +3,13 @@
 needfilter
 ==========
 
+.. versionchanged:: nextversion
+
+   PlantUML dependency (required for needfilter) now moved to optional extra.
+   Install the extra via `pip install
+   sphinxcontrib-needs[sphinxcontrib-plantuml]` or `sphinxcontrib-needs[all]` to
+   enable support for this directive.
+
 .. deprecated:: 0.2.0
 
 .. note:: Deprecated! Please use the more powerful directives :ref:`needlist`, :ref:`needtable` or  :ref:`needflow` instead of needfilter.

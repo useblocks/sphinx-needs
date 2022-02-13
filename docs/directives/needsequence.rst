@@ -5,6 +5,14 @@ needsequence
 
 .. versionadded:: 0.5.5
 
+.. versionchanged:: nextversion
+
+   PlantUML dependency (required for needsequence) now moved to optional extra.
+   Install the extra via `pip install
+   sphinxcontrib-needs[sphinxcontrib-plantuml]` or `sphinxcontrib-needs[all]` to
+   enable support for this directive.
+
+
 ``needsequence`` adds a sequence-chart to your documentation::
 
     .. needsequence:: My sequence chart

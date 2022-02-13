@@ -5,6 +5,14 @@ needgantt
 
 .. versionadded:: 0.5.5
 
+.. versionchanged:: nextversion
+
+   PlantUML dependency (required for needgantt) now moved to optional extra.
+   Install the extra via `pip install
+   sphinxcontrib-needs[sphinxcontrib-plantuml]` or `sphinxcontrib-needs[all]` to
+   enable support for this directive.
+
+
 ``needgantt`` adds a gantt-chart to your documentation::
 
     .. needgantt:: Bug handling gantt
