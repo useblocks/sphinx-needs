@@ -102,9 +102,13 @@ def process_needfilters(app, doctree, fromdocname):
             content = []
             try:
                 if "sphinxcontrib.plantuml" not in app.config.extensions:
-                    raise ImportError
+                    raise ImportError(
+                        "Missing sphinxcontrib-plantuml dependency required for needsequence directive. "
+                        "Please install sphinxcontrib-needs with optional [sphinxcontrib-plantuml] flag"
+                    )
                 from sphinxcontrib.plantuml import plantuml
             except ImportError:
+                # FIXME: See diagrams_common.py function no_plantuml which seems to be duplicate?
                 content = nodes.error()
                 para = nodes.paragraph()
                 text = nodes.Text("PlantUML is not available!", "PlantUML is not available!")

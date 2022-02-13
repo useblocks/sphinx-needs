@@ -3,17 +3,28 @@ import re
 
 from docutils import nodes
 from docutils.parsers.rst import directives
-from sphinxcontrib.plantuml import (
-    generate_name,  # Need for plantuml filename calculation
-)
 
+try:
+    # Need for plantuml filename calculation
+    from sphinxcontrib.plantuml import generate_name
+except ImportError:
+    # Dependency "plantuml" missing, install package with extra to fix
+    # Swallow original exception, to give a specific, helpful message instead
+    raise ImportError(
+        "Missing sphinxcontrib-plantuml dependency required for needsequence directive. "
+        "Please install sphinxcontrib-needs with optional [sphinxcontrib-plantuml] flag"
+    )
+
+
+from sphinxcontrib.needs.diagrams_common import (
+    no_plantuml,  # FIXME: What do we do about that function? Still useful, but unreachable
+)
 from sphinxcontrib.needs.diagrams_common import (
     DiagramBase,
     add_config,
     create_legend,
     get_debug_container,
     get_filter_para,
-    no_plantuml,
 )
 from sphinxcontrib.needs.filter_common import FilterBase
 from sphinxcontrib.needs.logging import get_logger
