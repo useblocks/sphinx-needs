@@ -17,6 +17,8 @@ License
   (`#485 <https://github.com/useblocks/sphinxcontrib-needs/issues/485>`_)
 * Improvement: Migrate tests to Pytest and Sphinx internal testing structure.
   (`#471 <https://github.com/useblocks/sphinxcontrib-needs/issues/471>`_)
+* Bugfix: :ref:`needs_builder` supports incremental build.
+  (`#481 <https://github.com/useblocks/sphinxcontrib-needs/issues/481>`_)
 
 0.7.5
 -----
