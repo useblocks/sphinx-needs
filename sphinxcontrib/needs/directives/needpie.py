@@ -44,10 +44,10 @@ class NeedpieDirective(FilterBase):
         "colors": directives.unchanged_required,
         "text_color": directives.unchanged_required,
         "shadow": directives.flag,
+        "filter-func": FilterBase.base_option_spec["filter-func"],
     }
 
     # Update the options_spec only with value filter-func defined in the FilterBase class
-    option_spec["filter-func"] = FilterBase.base_option_spec["filter-func"]
 
     def run(self):
         env = self.state.document.settings.env
