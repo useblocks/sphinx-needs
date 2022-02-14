@@ -21,7 +21,7 @@ class NeedsBuilder(Builder):
         needs = self.env.needs_all_needs.values()  # We need a list of needs for later filter checks
         filters = self.env.needs_all_filters
         config = self.env.config
-        version = config.version
+        version = getattr(config, 'version', 'unset')
         needs_list = NeedsList(config, self.outdir, self.confdir)
 
         if config.needs_file:
@@ -37,7 +37,7 @@ class NeedsBuilder(Builder):
         # This is needed as needs could have been removed from documentation and if this is the case,
         # removed needs would stay in needs_list, if list gets not cleaned.
         needs_list.wipe_version(version)
-
+        #
         from sphinxcontrib.needs.filter_common import filter_needs
 
         filter_string = self.app.config.needs_builder_filter
@@ -58,7 +58,8 @@ class NeedsBuilder(Builder):
             log.info("Needs successfully exported")
 
     def get_outdated_docs(self):
-        return ""
+        yield
+        #return ""
 
     def prepare_writing(self, docnames):
         pass

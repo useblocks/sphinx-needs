@@ -105,9 +105,9 @@ class NeedsList:
         with open(file, "w") as needs_file:
             needs_file.write(needs_json)
 
-        doc_tree_folder = os.path.join(self.outdir, ".doctrees")
-        if os.path.exists(doc_tree_folder):
-            shutil.rmtree(doc_tree_folder)
+        # doc_tree_folder = os.path.join(self.outdir, ".doctrees")
+        # if os.path.exists(doc_tree_folder):
+        #     shutil.rmtree(doc_tree_folder)
 
     def load_json(self, file):
         if not os.path.isabs(file):
