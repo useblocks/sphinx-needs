@@ -21,7 +21,7 @@ class NeedsBuilder(Builder):
         needs = self.env.needs_all_needs.values()  # We need a list of needs for later filter checks
         filters = self.env.needs_all_filters
         config = self.env.config
-        version = getattr(config, 'version', 'unset')
+        version = getattr(config, "version", "unset")
         needs_list = NeedsList(config, self.outdir, self.confdir)
 
         if config.needs_file:
@@ -59,7 +59,7 @@ class NeedsBuilder(Builder):
 
     def get_outdated_docs(self):
         yield
-        #return ""
+        # return ""
 
     def prepare_writing(self, docnames):
         pass
