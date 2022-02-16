@@ -392,14 +392,14 @@ def process_needbar(app, doctree, fromdocname):
             axes.legend()
 
         # 9. final storage
-        image_folder = os.path.join(env.app.srcdir, "_images")
+        image_folder = os.path.join(env.app.outdir, "_images")
         if not os.path.exists(image_folder):
             os.mkdir(image_folder)
         # We need to calculate an unique bar-image file name
         hash_value = hashlib.sha256(id.encode()).hexdigest()[:5]
         rel_file_path = os.path.join("_images", f"need_bar_{hash_value}.png")
         if rel_file_path not in env.images:
-            figure.savefig(os.path.join(env.app.srcdir, rel_file_path))
+            figure.savefig(os.path.join(env.app.outdir, rel_file_path))
             env.images[rel_file_path] = ["_images", os.path.split(rel_file_path)[-1]]
 
         image_node = nodes.image()
