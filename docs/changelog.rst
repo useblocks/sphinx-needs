@@ -19,7 +19,7 @@ License
   (`#471 <https://github.com/useblocks/sphinxcontrib-needs/issues/471>`_)
 * Bugfix: :ref:`needs_builder` supports incremental build (no doctree deletion).
   (`#481 <https://github.com/useblocks/sphinxcontrib-needs/issues/481>`_)
-* Bugfix: :ref:`needs_builder` Fix generating needpie and needbar images in source folder
+* Bugfix: :Fix generating needpie and needbar images in source folder
   (`#413 <https://github.com/useblocks/sphinxcontrib-needs/issues/413>`_)
 
 0.7.5
