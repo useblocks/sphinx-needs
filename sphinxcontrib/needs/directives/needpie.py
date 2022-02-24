@@ -232,14 +232,14 @@ def process_needpie(app, doctree, fromdocname):
             axes.set_title(current_needpie["title"])
 
         # Final storage
-        image_folder = os.path.join(env.app.outdir, "_images")
+        image_folder = os.path.join(env.app.srcdir, "_images")
         if not os.path.exists(image_folder):
             os.mkdir(image_folder)
         # We need to calculate an unique pie-image file name
         hash_value = hashlib.sha256(id.encode()).hexdigest()[:5]
         rel_file_path = os.path.join("_images", f"need_pie_{hash_value}.png")
         if rel_file_path not in env.images:
-            fig.savefig(os.path.join(env.app.outdir, rel_file_path), format="png")
+            fig.savefig(os.path.join(env.app.srcdir, rel_file_path), format="png")
             env.images[rel_file_path] = ["_images", os.path.split(rel_file_path)[-1]]
 
         image_node = nodes.image()
