@@ -6,7 +6,7 @@ from sphinx.errors import SphinxError
 from sphinx.roles import XRefRole
 
 from sphinxcontrib.needs.api.configuration import add_extra_option
-from sphinxcontrib.needs.builder import NeedsBuilder, build_needs_json
+from sphinxcontrib.needs.builder import NeedsBuilder, delete_temp_dir, build_needs_json
 from sphinxcontrib.needs.config import NEEDS_CONFIG
 from sphinxcontrib.needs.defaults import (
     DEFAULT_DIAGRAM_TEMPLATE,
@@ -317,6 +317,7 @@ def setup(app):
     app.connect("doctree-resolved", process_need_outgoing)
     app.connect("doctree-resolved", process_need_count)
     app.connect("doctree-resolved", process_need_func)
+    app.connect("build-finished", delete_temp_dir)
     app.connect("build-finished", process_warnings)
     app.connect("build-finished", build_needs_json)
     app.connect("env-updated", install_lib_static_files)

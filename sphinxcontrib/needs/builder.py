@@ -1,4 +1,5 @@
 import os
+import shutil
 
 from sphinx.builders import Builder
 
@@ -86,3 +87,10 @@ def build_needs_json(app, exception):
     needs_builder = NeedsBuilder(app)
     needs_builder.set_environment(app.env)
     needs_builder.finish()
+    
+    
+def delete_temp_dir(app, exception):
+
+    tempdir = os.path.join(app.srcdir, '_temp_needs')
+    if os.path.exists(tempdir) and os.path.isdir(tempdir):
+        shutil.rmtree(tempdir)
