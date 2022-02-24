@@ -242,7 +242,6 @@ def process_needpie(app, doctree, fromdocname):
             fig.savefig(os.path.join(env.app.srcdir, rel_file_path), format="png")
             env.images[rel_file_path] = ["_temp_needs", os.path.split(rel_file_path)[-1]]
 
-
         image_node = nodes.image()
         image_node["uri"] = rel_file_path
 
