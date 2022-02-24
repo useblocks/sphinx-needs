@@ -6,7 +6,7 @@ from sphinx.errors import SphinxError
 from sphinx.roles import XRefRole
 
 from sphinxcontrib.needs.api.configuration import add_extra_option
-from sphinxcontrib.needs.builder import NeedsBuilder, delete_temp_dir, build_needs_json
+from sphinxcontrib.needs.builder import NeedsBuilder, build_needs_json, delete_temp_dir
 from sphinxcontrib.needs.config import NEEDS_CONFIG
 from sphinxcontrib.needs.defaults import (
     DEFAULT_DIAGRAM_TEMPLATE,
