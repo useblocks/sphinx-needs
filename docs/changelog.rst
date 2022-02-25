@@ -19,6 +19,8 @@ License
   (`#471 <https://github.com/useblocks/sphinxcontrib-needs/issues/471>`_)
 * Bugfix: :ref:`needs_builder` supports incremental build (no doctree deletion).
   (`#481 <https://github.com/useblocks/sphinxcontrib-needs/issues/481>`_)
+* Bugfix: :ref:`needs_external_needs` working with :ref:`role_need`.
+  (`#483 <https://github.com/useblocks/sphinxcontrib-needs/issues/483>`_)
 
 0.7.5
 -----

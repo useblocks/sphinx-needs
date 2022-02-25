@@ -7,6 +7,7 @@ except ImportError:
 from sphinx.util.nodes import make_refnode
 
 from sphinxcontrib.needs.logging import get_logger
+from sphinxcontrib.needs.utils import check_and_calc_base_url_rel_path
 
 log = get_logger(__name__)
 
@@ -47,6 +48,7 @@ def process_need_ref(app, doctree, fromdocname):
             ref_id = ref_id_complete
             part_id = None
 
+        ref_id = ref_id.upper()
         if ref_id in env.needs_all_needs:
             target_need = env.needs_all_needs[ref_id]
             try:
@@ -76,14 +78,19 @@ def process_need_ref(app, doctree, fromdocname):
 
                 node_need_ref[0].children[0] = nodes.Text(link_text, link_text)
 
-                new_node_ref = make_refnode(
-                    app.builder,
-                    fromdocname,
-                    target_need["docname"],
-                    node_need_ref["reftarget"],
-                    node_need_ref[0].deepcopy(),
-                    node_need_ref["reftarget"],
-                )
+                if not target_need["is_external"]:
+                    new_node_ref = make_refnode(
+                        app.builder,
+                        fromdocname,
+                        target_need["docname"],
+                        node_need_ref["reftarget"],
+                        node_need_ref[0].deepcopy(),
+                        node_need_ref["reftarget"],
+                    )
+                else:
+                    new_node_ref = nodes.reference(target_need["id"], target_need["id"])
+                    new_node_ref["refuri"] = check_and_calc_base_url_rel_path(target_need["external_url"], fromdocname)
+                    new_node_ref["classes"].append(target_need["external_css"])
             except NoUri:
                 # If the given need id can not be found, we must pass here....
                 pass
