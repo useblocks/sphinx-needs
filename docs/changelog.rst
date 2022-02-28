@@ -6,10 +6,13 @@ License
 
 .. include:: ../LICENSE
 
+0.7.7
+-----
+:Released: under development
 
 0.7.6
 -----
-:Released: under development
+:Released: 28.02.2022
 
 * Improvement: :ref:`filter_func` support arguments.
   (`#429 <https://github.com/useblocks/sphinxcontrib-needs/issues/429>`_)
