@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - name: Set up Python 3.9
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v3
         with:
           python-version: 3.9
       - name: install Poetry
@@ -30,7 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - name: Set up Python 3.9
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v3
         with:
           python-version: 3.9
       - uses: actions/download-artifact@v2
@@ -57,7 +57,7 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - name: Set up Python 3.9
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v3
         with:
           python-version: 3.9
       - uses: actions/download-artifact@v2
