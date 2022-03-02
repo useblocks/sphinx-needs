@@ -34,3 +34,8 @@ TEST DOCUMENT Needpie
    "b" in tags
    "c" in tags
 
+
+
+.. toctree::
+
+   page
