@@ -1,12 +1,15 @@
 import json
+import os.path
 import re
 import sys
+import tempfile
 import uuid
 from pathlib import Path
 from random import randrange
 
 import pytest
 import responses
+import sphinx.application
 
 from sphinxcontrib.needs.api.need import NeedsNoIdException
 from tests.data.service_github import (
@@ -229,3 +232,27 @@ def test_id_required_build_html(test_app):
 
         app = test_app
         app.builder.build_all()
+
+
+@responses.activate
+def test_sphinx_api_build():
+    """
+    Tests a build via the Sphinx Build API.
+    It looks like that there are scenarios where this specific build makes trouble but no others.
+    """
+    responses.add_callback(
+        responses.GET,
+        re.compile(r"https://api.github.com/.*"),
+        callback=random_data_callback,
+        content_type="application/json",
+    )
+    responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
+
+    temp_dir = tempfile.mkdtemp()
+    src_dir = os.path.join(os.path.dirname(__file__), "../", "docs")
+
+    sphinx_app = sphinx.application.Sphinx(
+        srcdir=src_dir, confdir=src_dir, outdir=temp_dir, doctreedir=temp_dir, buildername="html", parallel=4
+    )
+    sphinx_app.build()
+    assert sphinx_app.statuscode == 0
