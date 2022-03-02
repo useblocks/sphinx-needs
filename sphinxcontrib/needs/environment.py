@@ -35,10 +35,10 @@ def safe_add_file(filename: PurePosixPath, app: Sphinx):
 
     if filename.suffix == ".js":
         # Make sure the calculated (posix)-path is not already registered as "web"-path
-        if hasattr(app.builder, "script_files") and static_data_file not in app.builder.script_files:
+        if hasattr(app.builder, "script_files") and str(static_data_file) not in app.builder.script_files:
             app.add_js_file(str(filename))
     elif filename.suffix == ".css":
-        if hasattr(app.builder, "css_files") and static_data_file not in app.builder.css_files:
+        if hasattr(app.builder, "css_files") and str(static_data_file) not in app.builder.css_files:
             app.add_css_file(str(filename))
     else:
         raise NotImplementedError(f"File type {filename.suffix} not support by save_add_file")
