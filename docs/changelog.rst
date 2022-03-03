@@ -10,6 +10,9 @@ License
 -----
 :Released: under development
 
+* Bugfix: Correct image registration to support build via Sphinx API.
+  (`#505 <https://github.com/useblocks/sphinxcontrib-needs/issues/505>`_)
+
 0.7.6
 -----
 :Released: 28.02.2022

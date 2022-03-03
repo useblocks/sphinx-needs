@@ -1,4 +1,5 @@
 import os
+import shutil
 import tempfile
 from pathlib import Path
 
@@ -19,14 +20,16 @@ def test_sphinx_api_needpie():
     """
     Tests a build via the Sphinx Build API.
     """
-    temp_dir = tempfile.mkdtemp()
+    temp_dir = Path(tempfile.mkdtemp())
+    build_dir = temp_dir / "_build"
     src_dir = os.path.join(os.path.dirname(__file__), "doc_test/doc_needpie")
+    shutil.copytree(src_dir, temp_dir, dirs_exist_ok=True)
 
     with open(os.path.join(temp_dir, "warnings.txt"), "w") as warnings:
         sphinx_app = sphinx.application.Sphinx(
-            srcdir=src_dir,
-            confdir=src_dir,
-            outdir=temp_dir,
+            srcdir=temp_dir,
+            confdir=temp_dir,
+            outdir=build_dir,
             doctreedir=temp_dir,
             buildername="html",
             parallel=4,
@@ -34,5 +37,10 @@ def test_sphinx_api_needpie():
         )
         sphinx_app.build()
         assert sphinx_app.statuscode == 0
+
+        # touch file to force sphinx to purge stuff
+        with open(temp_dir / "index.rst", "a") as f:
+            f.write("\n\nNew content to force rebuild")
+
         sphinx_app.build()
         assert sphinx_app.statuscode == 0
