@@ -4,7 +4,7 @@ import tempfile
 import sphinx
 
 
-def test_sphinx_api_needpie():
+def test_file_registration():
     """
     Tests a build via the Sphinx Build API.
     """

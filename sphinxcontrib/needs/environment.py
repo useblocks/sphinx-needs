@@ -17,7 +17,7 @@ if parse_version(sphinx_version) >= parse_version("1.6"):
 IMAGE_DIR_NAME = "_static"
 
 
-def safe_add_file(filename: PurePosixPath, app: Sphinx):
+def safe_add_file(filename: Path, app: Sphinx):
     """
     Adds files to builder resources only, if the given filename was not already
     registered.
@@ -31,6 +31,7 @@ def safe_add_file(filename: PurePosixPath, app: Sphinx):
     """
 
     # Use PurePosixPath, so that the path can be used as "web"-path
+    filename = PurePosixPath(filename)
     static_data_file = PurePosixPath("_static") / filename
 
     if filename.suffix == ".js":
@@ -57,6 +58,7 @@ def safe_remove_file(filename: Path, app: Sphinx):
     :return: None
     """
     static_data_file = Path("_static") / filename
+    static_data_file = PurePosixPath(static_data_file)
 
     def remove_file(file: Path, attribute: str):
         files = getattr(app.builder, attribute, [])

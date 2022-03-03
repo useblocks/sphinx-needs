@@ -12,6 +12,8 @@ License
 
 * Bugfix: Correct image registration to support build via Sphinx API.
   (`#505 <https://github.com/useblocks/sphinxcontrib-needs/issues/505>`_)
+* Bugfix: Correct css/js file registration on windows.
+  (`#455 <https://github.com/useblocks/sphinxcontrib-needs/issues/455>`_)
 
 0.7.6
 -----
