@@ -240,7 +240,8 @@ def process_needpie(app, doctree, fromdocname):
         rel_file_path = os.path.join("_images", f"need_pie_{hash_value}.png")
         if rel_file_path not in env.images:
             fig.savefig(os.path.join(env.app.srcdir, rel_file_path), format="png")
-            env.images[rel_file_path] = ["_images", os.path.split(rel_file_path)[-1]]
+            # env.images[rel_file_path] = ["_images", os.path.split(rel_file_path)[-1]]
+            env.images.add_file(fromdocname, rel_file_path)
 
         image_node = nodes.image()
         image_node["uri"] = rel_file_path
