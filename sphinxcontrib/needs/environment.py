@@ -17,7 +17,7 @@ if parse_version(sphinx_version) >= parse_version("1.6"):
 IMAGE_DIR_NAME = "_static"
 
 
-def safe_add_file(filename: PurePosixPath, app: Sphinx):
+def safe_add_file(filename: Path, app: Sphinx):
     """
     Adds files to builder resources only, if the given filename was not already
     registered.
@@ -31,14 +31,15 @@ def safe_add_file(filename: PurePosixPath, app: Sphinx):
     """
 
     # Use PurePosixPath, so that the path can be used as "web"-path
+    filename = PurePosixPath(filename)
     static_data_file = PurePosixPath("_static") / filename
 
     if filename.suffix == ".js":
         # Make sure the calculated (posix)-path is not already registered as "web"-path
-        if hasattr(app.builder, "script_files") and static_data_file not in app.builder.script_files:
+        if hasattr(app.builder, "script_files") and str(static_data_file) not in app.builder.script_files:
             app.add_js_file(str(filename))
     elif filename.suffix == ".css":
-        if hasattr(app.builder, "css_files") and static_data_file not in app.builder.css_files:
+        if hasattr(app.builder, "css_files") and str(static_data_file) not in app.builder.css_files:
             app.add_css_file(str(filename))
     else:
         raise NotImplementedError(f"File type {filename.suffix} not support by save_add_file")
@@ -57,6 +58,7 @@ def safe_remove_file(filename: Path, app: Sphinx):
     :return: None
     """
     static_data_file = Path("_static") / filename
+    static_data_file = PurePosixPath(static_data_file)
 
     def remove_file(file: Path, attribute: str):
         files = getattr(app.builder, attribute, [])
