@@ -48,7 +48,6 @@ def process_need_ref(app, doctree, fromdocname):
             ref_id = ref_id_complete
             part_id = None
 
-        ref_id = ref_id.upper()
         if ref_id in env.needs_all_needs:
             target_need = env.needs_all_needs[ref_id]
             try:
@@ -78,7 +77,7 @@ def process_need_ref(app, doctree, fromdocname):
 
                 node_need_ref[0].children[0] = nodes.Text(link_text, link_text)
 
-                if not target_need["is_external"]:
+                if not target_need.get("is_external", False):
                     new_node_ref = make_refnode(
                         app.builder,
                         fromdocname,
