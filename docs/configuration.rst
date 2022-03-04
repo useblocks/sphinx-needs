@@ -1004,16 +1004,16 @@ Must be a list of python functions.
 
 Default value: ``[]``
 
-Inside your ``conf.py`` file ue it like this:
+Inside your ``conf.py`` file use it like this:
 
 .. code-block:: python
 
    needs_functions == [my_own_function]
 
    def my_own_function(app, need, needs):
-       return "Awesome"]
+       return "Awesome"
 
-See :ref:`dynamic_functions` for ore information.
+See :ref:`dynamic_functions` for more information.
 
 .. warning::
 
