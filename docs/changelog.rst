@@ -6,10 +6,16 @@ License
 
 .. include:: ../LICENSE
 
-0.7.7
+0.7.8
 -----
 :Released: under development
 
+0.7.7
+-----
+:Released: 04.03.2022
+
+* Bugfix: ``need`` role supporting lower and upper IDs.
+  (`#508 <https://github.com/useblocks/sphinxcontrib-needs/issues/508>`_)
 * Bugfix: Correct image registration to support build via Sphinx API.
   (`#505 <https://github.com/useblocks/sphinxcontrib-needs/issues/505>`_)
 * Bugfix: Correct css/js file registration on windows.
