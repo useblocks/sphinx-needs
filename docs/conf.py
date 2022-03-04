@@ -42,7 +42,7 @@ sys.path.insert(0, os.path.abspath("../sphinxcontrib"))
 # The short X.Y version.
 version = "0.7"
 # The full version, including alpha/beta/rc tags.
-release = "0.7.6"
+release = "0.7.7"
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
 
