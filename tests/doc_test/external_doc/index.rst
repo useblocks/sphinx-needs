@@ -23,4 +23,4 @@ TEST DOCUMENT EXTERNAL
 
 
 
-Test need ref: :need:`ext_TEST_01`
+Test need ref: :need:`EXT_TEST_01`
