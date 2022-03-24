@@ -258,8 +258,8 @@ def check_and_get_external_filter_func(current_needlist):
         try:
             final_module = importlib.import_module(filter_module)
             filter_func = getattr(final_module, filter_function)
-        except Exception:
+        except Exception as e:
             logger.warn(f"Could not import filter function: {filter_func_ref}")
-            return []
+            raise e
 
     return filter_func, filter_args

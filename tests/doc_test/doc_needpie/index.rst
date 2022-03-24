@@ -39,3 +39,4 @@ TEST DOCUMENT Needpie
 .. toctree::
 
    page
+   strange_cases

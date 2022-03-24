@@ -169,10 +169,11 @@ def process_needpie(app, doctree, fromdocname):
                     )
                 for item in sizes:
                     if not isinstance(item, int) and not isinstance(item, float):
-                        logger.error(
+                        error = (
                             f"The returned values from the given filter_func {filter_func.__name__} is not valid. "
                             "It must be a list with items of type int/float."
                         )
+                        raise NeedPieException(error)
             except Exception as e:
                 raise e
         elif current_needpie["filter_func"] and content:
@@ -261,5 +262,12 @@ def process_needpie(app, doctree, fromdocname):
 
 
 def label_calc(pct, allvals):
-    absolute = int(round(pct / 100.0 * sum(allvals)))
+    if sum(allvals) > 0:
+        absolute = int(round(pct / 100.0 * sum(allvals)))
+    else:
+        absolute = 0
     return f"{pct:.1f}%\n({absolute:d})"
+
+
+class NeedPieException(BaseException):
+    """Exception of Needpie"""
