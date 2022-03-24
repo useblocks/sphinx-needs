@@ -38,3 +38,17 @@ Strange Cases
    0
    0
    45454
+
+.. needpie:: Extra long labels
+   :labels: looooooooooooooooooooooooooooooooooooooooooooooooooooooong_label_1, looooooooooooooooooooooooooooooooooooooooooooooooooooooong_label_2, looooooooooooooooooooooooooooooooooooooooooooooooooooooong_label_3
+
+   1
+   2
+   20
+
+.. needpie:: long floats
+   :labels: A, B, C
+
+   0.000000000000000000000000000000000000000000000000000000000001
+   0.0000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000004
+   0.005

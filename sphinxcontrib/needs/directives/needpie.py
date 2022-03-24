@@ -136,9 +136,11 @@ def process_needpie(app, doctree, fromdocname):
         sizes = []
         if content and not current_needpie["filter_func"]:
             for line in content:
-                if line.isdigit():
+                # if it can be converted to a float, it's a number
+                try:
                     sizes.append(float(line))
-                else:
+                # if not, we interpret it as filter_string
+                except ValueError:
                     result = len(filter_needs(app, app.env.needs_all_needs.values(), line))
                     sizes.append(result)
         elif current_needpie["filter_func"] and not content:
