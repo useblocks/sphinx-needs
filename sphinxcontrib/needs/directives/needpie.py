@@ -213,7 +213,7 @@ def process_needpie(app, doctree, fromdocname):
         if text_color:
             pie_kwargs["textprops"] = {"color": text_color}
 
-        wedges, _texts, autotexts = axes.pie(sizes, **pie_kwargs)
+        wedges, _texts, autotexts = axes.pie(sizes, normalize=False, **pie_kwargs)
 
         if text_color:
             for autotext in autotexts:
