@@ -2,6 +2,7 @@ import copy
 import os
 
 import matplotlib
+import numpy as np
 from docutils import nodes
 
 from sphinxcontrib.needs.filter_common import FilterBase, filter_needs
@@ -213,7 +214,9 @@ def process_needpie(app, doctree, fromdocname):
         if text_color:
             pie_kwargs["textprops"] = {"color": text_color}
 
-        wedges, _texts, autotexts = axes.pie(sizes, normalize=False, **pie_kwargs)
+        wedges, _texts, autotexts = axes.pie(
+            sizes, normalize=False if np.asarray(sizes, np.float32).sum() < 1 else True, **pie_kwargs
+        )
 
         if text_color:
             for autotext in autotexts:

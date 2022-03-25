@@ -10,6 +10,10 @@ License
 -----
 :Released: under development
 
+* Bugfix: :ref:`needpie` causing a crash in some cases on newer matplotlib versions.
+  (`#513 <https://github.com/useblocks/sphinxcontrib-needs/issues/513>`_,
+  `#517 <https://github.com/useblocks/sphinxcontrib-needs/issues/517>`_)
+
 0.7.7
 -----
 :Released: 04.03.2022
