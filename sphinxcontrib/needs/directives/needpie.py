@@ -214,9 +214,7 @@ def process_needpie(app, doctree, fromdocname):
         if text_color:
             pie_kwargs["textprops"] = {"color": text_color}
 
-        wedges, _texts, autotexts = axes.pie(
-            sizes, normalize=False if np.asarray(sizes, np.float32).sum() < 1 else True, **pie_kwargs
-        )
+        wedges, _texts, autotexts = axes.pie(sizes, normalize=np.asarray(sizes, np.float32).sum() >= 1, **pie_kwargs)
 
         if text_color:
             for autotext in autotexts:
