@@ -193,6 +193,9 @@ def process_needtables(app, doctree, fromdocname):
         tgroup += tbody
         content += tgroup
 
+        # Add lineno to node
+        content.line = current_needtable["lineno"]
+
         all_needs = list(all_needs.values())
 
         # Perform filtering of needs

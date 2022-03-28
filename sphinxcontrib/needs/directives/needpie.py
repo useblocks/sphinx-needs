@@ -250,6 +250,9 @@ def process_needpie(app, doctree, fromdocname):
         # look at uri value for source path, relative to the srcdir folder
         image_node["candidates"] = {"*": rel_file_path}
 
+        # Add lineno to node
+        image_node.line = current_needpie["lineno"]
+
         node.replace_self(image_node)
 
         # Cleanup matplotlib

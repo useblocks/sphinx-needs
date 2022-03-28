@@ -406,6 +406,9 @@ def process_needbar(app, doctree, fromdocname):
         image_node = nodes.image()
         image_node["uri"] = rel_file_path
 
+        # Add lineno to node
+        image_node.line = current_needbar["lineno"]
+
         # normaly the title is more understandable for a person who needs alt
         if current_needbar["title"]:
             image_node["alt"] = current_needbar["title"].strip()

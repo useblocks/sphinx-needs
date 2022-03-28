@@ -300,6 +300,9 @@ def process_needgantt(app, doctree, fromdocname):
             flow_ref = nodes.reference("t", current_needgantt["caption"], refuri=img_location)
             puml_node += nodes.caption("", "", flow_ref)
 
+        # Add lineno to node
+        puml_node.line = current_needgantt["lineno"]
+
         content.append(puml_node)
 
         if len(content) == 0:
