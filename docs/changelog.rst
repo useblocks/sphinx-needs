@@ -15,6 +15,8 @@ License
   `#517 <https://github.com/useblocks/sphinxcontrib-needs/issues/517>`_)
 * Bugfix: Empty and invalid ``need.json`` files throw user-friendly exceptions.
   (`#441 <https://github.com/useblocks/sphinxcontrib-needs/issues/441>`_)
+* Improvement: Provides line number info for needs node.
+  (`<https://github.com/useblocks/sphinxcontrib-needs/issues/499>`_)
 
 0.7.7
 -----
