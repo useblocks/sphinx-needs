@@ -13,6 +13,8 @@ License
 * Bugfix: :ref:`needpie` causing a crash in some cases on newer matplotlib versions.
   (`#513 <https://github.com/useblocks/sphinxcontrib-needs/issues/513>`_,
   `#517 <https://github.com/useblocks/sphinxcontrib-needs/issues/517>`_)
+* Bugfix: Empty and invalid ``need.json`` files throw user-friendly exceptions.
+  (`#441 <https://github.com/useblocks/sphinxcontrib-needs/issues/441>`_)
 
 0.7.7
 -----
