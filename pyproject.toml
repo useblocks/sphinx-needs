@@ -52,7 +52,7 @@ requests-mock = ">=1.9.3"
 
 
 # formatting dependencies
-black = "^20.8b1"
+black = "^22.3"
 isort = "^5.7.0"
 
 # pyparsing 3.0.5 does not work with current "packaging" lib

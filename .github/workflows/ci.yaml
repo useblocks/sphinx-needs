@@ -51,6 +51,9 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: "3.9"
+      - name: Install package and deps
+        run: |
+          poetry install
       - uses: pre-commit/action@v2.0.3
 
   linkcheck:
