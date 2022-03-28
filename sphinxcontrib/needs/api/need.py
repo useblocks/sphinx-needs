@@ -365,6 +365,9 @@ def add_need(
 
     node_need = Need("", classes=style_classes, ids=[need_id], refid=need_id)
 
+    # Add lineno to node
+    node_need.line = needs_info["lineno"]
+
     # Render rst-based content and add it to the need-node
 
     node_need_content = _render_template(content, docname, lineno, state)
