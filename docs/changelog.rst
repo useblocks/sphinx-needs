@@ -12,7 +12,7 @@ License
 
 0.7.8
 -----
-:Released: 29.03.2021
+:Released: 29.03.2022
 
 * Improvement: Provides line number info for needs node.
   (`#499 <https://github.com/useblocks/sphinxcontrib-needs/issues/499>`_)
