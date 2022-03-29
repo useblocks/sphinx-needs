@@ -10,6 +10,9 @@ License
 -----
 :Released: under development
 
+* Bugfix: :ref:`needextract` not correctly rendering nested :ref:`need`s.
+  (`#329 <https://github.com/useblocks/sphinxcontrib-needs/issues/329>`_)
+
 0.7.8
 -----
 :Released: 29.03.2022
@@ -18,9 +21,9 @@ License
   (`#499 <https://github.com/useblocks/sphinxcontrib-needs/issues/499>`_)
 * Bugfix: :ref:`needpie` causing a crash in some cases on newer matplotlib versions.
   (`#513 <https://github.com/useblocks/sphinxcontrib-needs/issues/513>`_,
-* Bugfix: :ref:`needpie` takes need-parts in account for filtering.
-  (`#514 <https://github.com/useblocks/sphinxcontrib-needs/issues/514>`_,
   `#517 <https://github.com/useblocks/sphinxcontrib-needs/issues/517>`_)
+* Bugfix: :ref:`needpie` takes need-parts in account for filtering.
+  (`#514 <https://github.com/useblocks/sphinxcontrib-needs/issues/514>`_)
 * Bugfix: Empty and invalid ``need.json`` files throw user-friendly exceptions.
   (`#441 <https://github.com/useblocks/sphinxcontrib-needs/issues/441>`_)
 
