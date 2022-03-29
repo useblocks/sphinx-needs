@@ -5,7 +5,11 @@ import matplotlib
 import numpy
 from docutils import nodes
 
-from sphinxcontrib.needs.filter_common import FilterBase, filter_needs
+from sphinxcontrib.needs.filter_common import (
+    FilterBase,
+    filter_needs,
+    prepare_need_list,
+)
 
 if not os.environ.get("DISPLAY"):
     matplotlib.use("Agg")
@@ -250,6 +254,8 @@ def process_needbar(app, doctree, fromdocname):
 
         # 5. process content
         local_data_number = []
+        need_list = list(prepare_need_list(app.env.needs_all_needs.values()))  # adds parts to need_list
+
         for line in local_data:
             line_number = []
             for element in line:
@@ -257,7 +263,7 @@ def process_needbar(app, doctree, fromdocname):
                 if element.isdigit():
                     line_number.append(float(element))
                 else:
-                    result = len(filter_needs(app, app.env.needs_all_needs.values(), element))
+                    result = len(filter_needs(app, need_list, element))
                     line_number.append(float(result))
             local_data_number.append(line_number)
 

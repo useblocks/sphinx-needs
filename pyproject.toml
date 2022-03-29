@@ -30,7 +30,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = ">3.6.2,<4.0"
 sphinx = [
     { version = ">2.2, <=3.0", python = "~3.6" },
     { version = ">2.2", python = ">=3.7" },
@@ -52,7 +52,7 @@ requests-mock = ">=1.9.3"
 
 
 # formatting dependencies
-black = "^20.8b1"
+black = "^22.3"
 isort = "^5.7.0"
 
 # pyparsing 3.0.5 does not work with current "packaging" lib
