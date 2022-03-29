@@ -22,7 +22,7 @@ jobs:
             python-version: "3.9.7"
             sphinx-version: "4.2"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set Up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
         with:
@@ -46,7 +46,7 @@ jobs:
     name: Lint
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set Up Python
         uses: actions/setup-python@v3
         with:
@@ -57,7 +57,7 @@ jobs:
     name: Docs-Linkcheck
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set Up Python
         uses: actions/setup-python@v3
         with:
