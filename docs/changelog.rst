@@ -11,7 +11,7 @@ License
 :Released: under development
 
 * Improvement: Provides line number info for needs node.
-  (`<https://github.com/useblocks/sphinxcontrib-needs/issues/499>`_)
+  (`#499 <https://github.com/useblocks/sphinxcontrib-needs/issues/499>`_)
 * Bugfix: :ref:`needpie` causing a crash in some cases on newer matplotlib versions.
   (`#513 <https://github.com/useblocks/sphinxcontrib-needs/issues/513>`_,
 * Bugfix: :ref:`needpie` takes need-parts in account for filtering.
