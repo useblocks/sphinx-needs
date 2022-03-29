@@ -6,13 +6,24 @@ License
 
 .. include:: ../LICENSE
 
-0.7.8
+0.7.9
 -----
 :Released: under development
 
+0.7.8
+-----
+:Released: 29.03.2022
+
+* Improvement: Provides line number info for needs node.
+  (`#499 <https://github.com/useblocks/sphinxcontrib-needs/issues/499>`_)
 * Bugfix: :ref:`needpie` causing a crash in some cases on newer matplotlib versions.
   (`#513 <https://github.com/useblocks/sphinxcontrib-needs/issues/513>`_,
+* Bugfix: :ref:`needpie` takes need-parts in account for filtering.
+  (`#514 <https://github.com/useblocks/sphinxcontrib-needs/issues/514>`_,
   `#517 <https://github.com/useblocks/sphinxcontrib-needs/issues/517>`_)
+* Bugfix: Empty and invalid ``need.json`` files throw user-friendly exceptions.
+  (`#441 <https://github.com/useblocks/sphinxcontrib-needs/issues/441>`_)
+
 
 0.7.7
 -----

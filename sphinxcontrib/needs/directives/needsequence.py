@@ -194,6 +194,9 @@ def process_needsequence(app, doctree, fromdocname):
             flow_ref = nodes.reference("t", current_needsequence["caption"], refuri=img_locaton)
             puml_node += nodes.caption("", "", flow_ref)
 
+        # Add lineno to node
+        puml_node.line = current_needsequence["lineno"]
+
         content.append(puml_node)
 
         if len(content) == 0:
