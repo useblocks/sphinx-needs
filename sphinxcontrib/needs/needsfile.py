@@ -146,7 +146,13 @@ def check_needs_file(path):
         needs_schema = json.load(schema_file)
 
     with open(path) as needs_file:
-        needs_data = json.load(needs_file)
+        try:
+            needs_data = json.load(needs_file)
+        except json.JSONDecodeError as e:
+            raise SphinxNeedsFileException(
+                f'Problems loading json file "{path}". '
+                f"Maybe it is empty or has an invalid json format. Original exception: {e}"
+            )
 
     validator = Draft7Validator(needs_schema)
     schema_errors = list(validator.iter_errors(needs_data))
@@ -170,3 +176,7 @@ if "main" in __name__:
     except IndexError:
         needs_file = "needs.json"
     check_needs_file(needs_file)
+
+
+class SphinxNeedsFileException(BaseException):
+    """Exception for any file handling problems inside Sphinx-Needs"""

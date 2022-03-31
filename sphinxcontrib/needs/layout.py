@@ -42,6 +42,7 @@ def create_need(need_id, app: Sphinx, layout=None, style=None, docname=None):
 
     node_container = nodes.container()
     node_inner = needs[need_id]["content_node"]
+    node_container.append(node_inner)
     # Resolve internal refernces.
     # This is done for original need content automatically.
     # But as we are working on  a copy, we have to trigger this on our own.
@@ -51,17 +52,20 @@ def create_need(need_id, app: Sphinx, layout=None, style=None, docname=None):
     # resolve_references() ignores the given docname and takes the docname from the pending_xref node.
     # Therefore we need to manipulate this first, before we can ask Sphinx to perform the normal
     # reference handling for us.
-    replace_pending_xref_refdoc(node_inner, docname)
-    env.resolve_references(node_inner, docname, env.app.builder)
+    replace_pending_xref_refdoc(node_container, docname)
+    env.resolve_references(node_container, docname, env.app.builder)
 
-    node_container.append(node_inner)
-
-    node_inner.attributes["ids"].append(need_id)
+    node_container.attributes["ids"].append(need_id)
 
     layout = layout or need_data["layout"] or app.config.needs_default_layout
     style = style or need_data["style"] or app.config.needs_default_style
 
-    build_need(layout, node_inner, app, style, docname)
+    build_need(layout, node_container, app, style, docname)
+
+    # set the layout and style for the new need
+    node_container[0].attributes = node_container.parent.children[0].attributes
+
+    node_container.attributes["ids"] = []
 
     return node_container
 

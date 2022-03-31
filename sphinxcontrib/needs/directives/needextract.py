@@ -92,6 +92,10 @@ def process_needextract(app, doctree, fromdocname):
                 style=current_needextract["style"],
                 docname=current_needextract["docname"],
             )
+
+            # Add lineno to node
+            need_extract.line = current_needextract["lineno"]
+
             content.append(need_extract)
 
         if len(content) == 0:

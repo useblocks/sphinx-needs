@@ -2,9 +2,14 @@ import copy
 import os
 
 import matplotlib
+import numpy as np
 from docutils import nodes
 
-from sphinxcontrib.needs.filter_common import FilterBase, filter_needs
+from sphinxcontrib.needs.filter_common import (
+    FilterBase,
+    filter_needs,
+    prepare_need_list,
+)
 
 if not os.environ.get("DISPLAY"):
     matplotlib.use("Agg")
@@ -134,12 +139,13 @@ def process_needpie(app, doctree, fromdocname):
         content = current_needpie["content"]
 
         sizes = []
+        need_list = list(prepare_need_list(app.env.needs_all_needs.values()))  # adds parts to need_list
         if content and not current_needpie["filter_func"]:
             for line in content:
                 if line.isdigit():
                     sizes.append(float(line))
                 else:
-                    result = len(filter_needs(app, app.env.needs_all_needs.values(), line))
+                    result = len(filter_needs(app, need_list, line))
                     sizes.append(result)
         elif current_needpie["filter_func"] and not content:
             try:
@@ -148,7 +154,7 @@ def process_needpie(app, doctree, fromdocname):
                 # execute filter_func code
                 # Provides only a copy of needs to avoid data manipulations.
                 context = {
-                    "needs": copy.deepcopy(list(env.needs_all_needs.values())),
+                    "needs": copy.deepcopy(need_list),
                     "results": [],
                 }
                 args = []
@@ -213,7 +219,7 @@ def process_needpie(app, doctree, fromdocname):
         if text_color:
             pie_kwargs["textprops"] = {"color": text_color}
 
-        wedges, _texts, autotexts = axes.pie(sizes, **pie_kwargs)
+        wedges, _texts, autotexts = axes.pie(sizes, normalize=np.asarray(sizes, np.float32).sum() >= 1, **pie_kwargs)
 
         if text_color:
             for autotext in autotexts:
@@ -248,6 +254,9 @@ def process_needpie(app, doctree, fromdocname):
 
         # look at uri value for source path, relative to the srcdir folder
         image_node["candidates"] = {"*": rel_file_path}
+
+        # Add lineno to node
+        image_node.line = current_needpie["lineno"]
 
         node.replace_self(image_node)
 

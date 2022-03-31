@@ -86,6 +86,9 @@ def process_needlist(app, doctree, fromdocname):
         found_needs = process_filters(app, all_needs, current_needfilter)
 
         line_block = nodes.line_block()
+
+        # Add lineno to node
+        line_block.line = current_needfilter["lineno"]
         for need_info in found_needs:
             para = nodes.line()
             description = "{}: {}".format(need_info["id"], need_info["title"])
