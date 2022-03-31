@@ -24,8 +24,11 @@ TEST
    :id_prefix: test_
    :tags: imported; new_tag
 
-
-
+No_NEEDS
+--------
+.. needimport:: needs_test_no_needs.json
+   :id_prefix: no_
+   :tags: imported; new_tag
 
 .. toctree::
 

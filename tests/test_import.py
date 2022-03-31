@@ -72,6 +72,16 @@ def test_json_schema_file_check(test_app):
     assert "new_tag" in html
 
 
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/import_doc_empty"}], indirect=True)
+def test_empty_file_check(test_app):
+    """Checks that an empty needs.json throws an exception"""
+    app = test_app
+    from sphinxcontrib.needs.needsfile import SphinxNeedsFileException
+
+    with pytest.raises(SphinxNeedsFileException):
+        app.build()
+
+
 @pytest.mark.parametrize(
     "test_app", [{"buildername": "html", "srcdir": "doc_test/non_exists_file_import"}], indirect=True
 )
