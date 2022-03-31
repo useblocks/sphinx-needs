@@ -21,7 +21,7 @@
         }
 
         function main() {
-            loadJSON('../needs/needs.json', function (response) {
+            loadJSON('{{ needs_file }}', function (response) {
                 const needs = JSON.parse(response);
                 const current_version = needs['current_version'];
                 const versions = needs['versions'];
@@ -30,7 +30,7 @@
 
                 const id = getParameterByName('id');
                 var pathname = new URL(window.location.href).pathname;
-                pathname = pathname.substring(0, pathname.lastIndexOf('permalink.html'));
+                pathname = pathname.substring(0, pathname.lastIndexOf('{{ permalink_file }}'));
 
                 const keys = Object.keys(needs_obj);
 

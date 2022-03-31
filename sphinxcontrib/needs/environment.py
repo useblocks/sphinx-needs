@@ -2,6 +2,7 @@ from pathlib import Path, PurePosixPath
 from typing import Iterable
 
 import sphinx
+from jinja2 import Environment, PackageLoader, select_autoescape
 from pkg_resources import parse_version
 from sphinx.application import Sphinx
 from sphinx.util.console import brown
@@ -194,3 +195,34 @@ def install_lib_static_files(app: Sphinx, env):
     lib_path = Path("sphinx-needs") / "libs" / "html"
     for f in ["datatables.min.js", "datatables_loader.js", "datatables.min.css", "sphinx_needs_collapse.js"]:
         safe_add_file(lib_path / f, app)
+
+
+def install_permalink_file(app: Sphinx, env):
+    """
+    Creates permalink.html in build dir
+    :param app:
+    :param env:
+    :return:
+    """
+    # Do not copy static_files for our "needs" builder
+    if app.builder.name == "needs":
+        return
+
+    # load jinja template
+    jinja_env = Environment(
+        loader=PackageLoader("needs"),
+        autoescape=select_autoescape()
+    )
+    template = jinja_env.get_template("permalink.html")
+
+    # save file to build dir
+    out_file = Path(app.builder.outdir) / env.config.needs_permalink_file
+    with open(out_file, 'w', encoding='utf-8') as f:
+        f.write(
+            template.render(
+                permalink_file=env.config.needs_permalink_file,
+                needs_file=env.config.needs_permalink_data
+                )
+            )
+
+    # import pdb; pdb.set_trace()
