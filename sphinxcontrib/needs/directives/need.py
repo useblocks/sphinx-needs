@@ -308,7 +308,7 @@ def print_need_nodes(app, doctree, fromdocname):
 
         layout = need_data["layout"] or app.config.needs_default_layout
 
-        build_need(layout, node_need, app)
+        build_need(layout, node_need, app, fromdocname=fromdocname)
 
 
 def check_links(env):
