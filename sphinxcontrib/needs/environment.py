@@ -209,20 +209,12 @@ def install_permalink_file(app: Sphinx, env):
         return
 
     # load jinja template
-    jinja_env = Environment(
-        loader=PackageLoader("needs"),
-        autoescape=select_autoescape()
-    )
+    jinja_env = Environment(loader=PackageLoader("needs"), autoescape=select_autoescape())
     template = jinja_env.get_template("permalink.html")
 
     # save file to build dir
     out_file = Path(app.builder.outdir) / env.config.needs_permalink_file
-    with open(out_file, 'w', encoding='utf-8') as f:
+    with open(out_file, "w", encoding="utf-8") as f:
         f.write(
-            template.render(
-                permalink_file=env.config.needs_permalink_file,
-                needs_file=env.config.needs_permalink_data
-                )
-            )
-
-    # import pdb; pdb.set_trace()
+            template.render(permalink_file=env.config.needs_permalink_file, needs_file=env.config.needs_permalink_data)
+        )
