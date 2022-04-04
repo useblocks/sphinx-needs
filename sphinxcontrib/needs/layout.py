@@ -254,6 +254,7 @@ class LayoutHandler:
             "image": self.image,
             "link": self.link,
             "collapse_button": self.collapse_button,
+            "permalink": self.permalink,
         }
 
         # Prepare string_links dict, so that regex and templates get not recompiled too often.
@@ -767,7 +768,12 @@ class LayoutHandler:
 
             url = file_path
 
-        image_node = nodes.image(url, classes=["needs_image"], **options)
+        if no_link:
+            classes = ["needs_image", "no-scaled-link"]
+        else:
+            classes = ["needs_image"]
+
+        image_node = nodes.image(url, classes=classes, **options)
         image_node["candidates"] = {"*": url}
         # image_node['candidates'] = '*'
         image_node["uri"] = url
@@ -776,18 +782,6 @@ class LayoutHandler:
         # It is not enough to just add a doctuils nodes.image, we also have to register the imag location for sphinx
         # Otherwise the images gets not copied to the later build-output location
         self.app.env.images.add_file(self.need["docname"], url)
-
-        # Okay, this is really ugly.
-        # Sphinx does automatically wrap all images into a reference node, which links to the image file.
-        # See Bug: https://github.com/sphinx-doc/sphinx/issues/7032
-        # This behavior can only be avoided by not using width/height attributes or by adding our
-        # own reference node.
-        # We do last one here and set class to "no_link", which is later used by some javascript to avoid
-        # being clickable, so that the page does not "jump"
-        if no_link:
-            ref_node = nodes.reference("test", "", refuri="#", classes=["no_link"])
-            ref_node.append(image_node)
-            return ref_node
 
         data_container.append(image_node)
         return data_container
@@ -829,7 +823,7 @@ class LayoutHandler:
         link_node = nodes.reference(text, text, refuri=url)
 
         if image_url:
-            image_node = self.image(image_url, image_height, image_width)
+            image_node = self.image(image_url, image_height, image_width, no_link=True)
             link_node.append(image_node)
 
         data_container.append(link_node)
@@ -886,6 +880,107 @@ class LayoutHandler:
         coll_container.append(coll_node_visible)
 
         return coll_container
+
+    def permalink(self, image_url=None, image_height=None, image_width=None, text=None, prefix=""):
+        """
+        Shows a permanent link to the need.
+        Link can be a text, an image or both
+
+        :param image_url: image for an image link
+        :param image_height: None
+        :param image_width: None
+        :param text: text for a text link
+        :param prefix: Additional string infront of the string
+        :return:
+
+        Examples::
+
+            <<permalink()>>
+            <<permalink(image_url="icon:link")>>
+            <<permalink(text='¶')>>
+        """
+
+        if image_url is None and text is None:
+            image_url = "icon:share-2"
+            image_width = "17px"
+
+        config = self.app.config
+        permalink = config.needs_permalink_file
+        id = self.need["id"]
+        permalink_url = permalink + "?id=" + id
+
+        return self.link(
+            url=permalink_url,
+            text=text,
+            image_url=image_url,
+            image_width=image_width,
+            image_height=image_height,
+            prefix=prefix,
+        )
+
+    # def permalink(self, height=None, width=None, align=None):
+    #     """_summary_
+    #     """
+
+    #     if width is None and height is None:
+    #         height = "17px"
+
+    #     config = self.app.config
+    #     permalink = config.needs_permalink_file
+    #     id = self.need["id"]
+    #     permalink_url = permalink + "?id=" + id
+
+    #     # data_container = nodes.inline()
+    #     # link_node = nodes.reference("", "", refuri=url)
+    #     # image_node = self.image(url="icon:share-2", height=height, width=width, no_link=True)
+    #     # link_node.append(image_node)
+    #     # data_container.append(link_node)
+
+    #     # return data_container
+
+    #     # return self.image("icon:share-2", height=height, width=width, align=align)
+    #     # return self.link(url=url, text='PERMALINK')
+    #     return self.link(url=permalink_url, image_url="icon:share-2", image_width=width, image_height=height)
+
+    #     # data_container = nodes.inline()
+
+    #     # options = {}
+    #     # if height:
+    #     #     options["height"] = height
+    #     # if width:
+    #     #     options["width"] = width
+    #     # if align:
+    #     #     options["align"] = align
+
+    #     # if any(x in self.app.builder.name.upper() for x in ["PDF", "LATEX"]):
+    #     #     # latexpdf can't handle svg files. We not to use the png format here.
+    #     #     builder_extension = "png"
+    #     # else:
+    #     #     builder_extension = "svg"
+
+    #     # needs_location = os.path.dirname(__file__)
+    #     # url = os.path.join(
+    #     #     needs_location,
+    #     #     "images",
+    #     #     f"feather_{builder_extension}",
+    #     #     "{}.{}".format("share-2", builder_extension),
+    #     # )
+
+    #     # image_node = nodes.image(url, classes=["needs_image", "no-scaled-link"], **options)
+    #     # image_node["candidates"] = {"*": url}
+    #     # image_node["uri"] = url
+    #     # # image_node["target"] = permalink_url
+
+    #     # # Sphinx voodoo needed here.
+    #     # # It is not enough to just add a doctuils nodes.image, we also have to register the imag location for sphinx
+    #     # # Otherwise the images gets not copied to the later build-output location
+    #     # self.app.env.images.add_file(self.need["docname"], url)
+
+    #     # link_node = nodes.reference("", "", refuri=permalink_url)
+    #     # link_node.append(image_node)
+
+    #     # data_container.append(link_node)
+    #     # return data_container
 
     def _grid_simple(self, colwidths, side_left, side_right, footer):
         """

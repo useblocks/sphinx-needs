@@ -227,8 +227,10 @@ def setup(app):
 
     app.add_config_value("needs_build_json", False, "html", types=[bool])
 
-    # Permalink related config values
-    app.add_config_value("needs_permalink_file", "permalink.html", "html")
+    # Permalink related config values.
+    # path to permalink.html; absolute path from web-root
+    app.add_config_value("needs_permalink_file", "/permalink.html", "html")
+    # path to needs.json relative to permalink.html
     app.add_config_value("needs_permalink_data", "needs.json", "html")
 
     # Define nodes
