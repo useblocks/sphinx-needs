@@ -294,11 +294,21 @@ needs_layouts = {
     "example": {
         "grid": "simple_side_right_partial",
         "layout": {
-            "head": ['**<<meta("title")>>** for *<<meta("author")>>*'],
+            "head": ['**<<meta("title")>>** for *<<meta("author")>>*>>'],
             "meta": ['**status**: <<meta("status")>>', '**author**: <<meta("author")>>'],
             "side": ['<<image("_images/{{author}}.png", align="center")>>'],
         },
-    }
+    },
+    "permalink_example": {
+        "grid": "simple",
+        "layout": {
+            "head": [
+                '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>> <<permalink()>> <<collapse_button("meta", '
+                'collapsed="icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=False)>> '
+            ],
+            "meta": ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"],
+        },
+    },
 }
 
 needs_service_all_data = True
@@ -335,6 +345,9 @@ needs_string_links = {
         "options": ["github"],
     },
 }
+
+# build needs.json to make permalinks work
+needs_build_json = True
 
 # Get and maybe set Github credentials for services.
 # This is needed as the rate limit for not authenticated users is too low for the amount of requests we

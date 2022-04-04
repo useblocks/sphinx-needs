@@ -44,6 +44,14 @@ Different need layouts and styles
    This example uses the value from **author** to reference an image.
    See :ref:`layouts_styles` for the complete explanation.
 
+.. req:: A requirement with a permalink
+   :id: EX_REQ_5
+   :tags: example
+   :status: open
+   :layout: permalink_example
+
+   This is like a normal requirement looks like but additionally a permalink icon is shown next to the ID.
+
 Used rst-code for all three examples:
 
 .. code-block:: rst
@@ -83,6 +91,15 @@ Used rst-code for all three examples:
 
       This example uses the value from **author** to reference an image.
       See :ref:`layouts_styles` for the complete explanation.
+
+   .. req:: A requirement with a permalink
+      :id: EX_REQ_5
+      :tags: example
+      :status: open
+      :layout: permalink_example
+
+      This is like a normal requirement looks like but additionally
+      a permalink icon is shown next to the ID.      
 
 Referencing and filtering needs
 -------------------------------
