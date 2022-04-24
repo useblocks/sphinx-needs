@@ -1503,7 +1503,7 @@ Default: False
 needs_permalink_file
 ~~~~~~~~~~~~~~~~~~~~
 
-The option specifies the path to the location of the permalink html file,
+The option specifies the name of the permalink html file,
 which will be copied to the html build directory during build.
 
 The permalink web site will load a ``needs.json`` file as sepcified
@@ -1511,30 +1511,30 @@ by :ref:`needs_permalink_data` and re-direct the web browser to the html documen
 of the need, which is specified by appending the need ID as a query
 parameter, e.g., ``http://localhost:8000/permalink.html?id=REQ_4711``. 
 
-It is an absolute path to the file on the web server.
-
 Example:
 
 .. code-block:: python
 
-    needs_permalink_file = "/html/my_permalink.html"
+    needs_permalink_file = "my_permalink.html"
 
 Results in a file ``my_permalink.html`` in the
 html build directory.
 If this directory is served on ``localhost:8000``, then the file will be
-available at ``http://localhost:8000/html/my_permalink.html``.
+available at ``http://localhost:8000/my_permalink.html``.
 
-Default value: ``/permalink.html``
+Default value: ``permalink.html``
 
 .. _needs_permalink_data:
 
 needs_permalink_data
 ~~~~~~~~~~~~~~~~~~~~
 
-This options sets a path relative to the web root to specify the
-location of a ``needs.json`` file. 
+This options sets the location of a ``needs.json`` file. 
 This file is used to create permanent links for needs as described 
 in :ref:`needs_permalink_file`.
+
+The path can be a relative path (relative to the permalink html file),
+an absolute path (on the web server) or an URL.
 
 Default value: ``needs.json``
 

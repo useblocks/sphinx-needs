@@ -229,7 +229,7 @@ def setup(app):
 
     # Permalink related config values.
     # path to permalink.html; absolute path from web-root
-    app.add_config_value("needs_permalink_file", "/permalink.html", "html")
+    app.add_config_value("needs_permalink_file", "permalink.html", "html")
     # path to needs.json relative to permalink.html
     app.add_config_value("needs_permalink_data", "needs.json", "html")
 
