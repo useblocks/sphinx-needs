@@ -294,7 +294,7 @@ needs_layouts = {
     "example": {
         "grid": "simple_side_right_partial",
         "layout": {
-            "head": ['**<<meta("title")>>** for *<<meta("author")>>*>>'],
+            "head": ['**<<meta("title")>>** for *<<meta("author")>>*'],
             "meta": ['**status**: <<meta("status")>>', '**author**: <<meta("author")>>'],
             "side": ['<<image("_images/{{author}}.png", align="center")>>'],
         },
