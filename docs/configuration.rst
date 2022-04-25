@@ -1506,7 +1506,7 @@ needs_permalink_file
 The option specifies the name of the permalink html file,
 which will be copied to the html build directory during build.
 
-The permalink web site will load a ``needs.json`` file as sepcified
+The permalink web site will load a ``needs.json`` file as specified
 by :ref:`needs_permalink_data` and re-direct the web browser to the html document
 of the need, which is specified by appending the need ID as a query
 parameter, e.g., ``http://localhost:8000/permalink.html?id=REQ_4711``. 
