@@ -907,7 +907,11 @@ class LayoutHandler:
         config = self.app.config
         permalink = config.needs_permalink_file
         id = self.need["id"]
-        permalink_url = permalink + "?id=" + id
+        docname = self.need["docname"]
+        permalink_url = ""
+        for _ in range(0, len(docname.split("/")) - 1):
+            permalink_url += "../"
+        permalink_url += permalink + "?id=" + id
 
         return self.link(
             url=permalink_url,
