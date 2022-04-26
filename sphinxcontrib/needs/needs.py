@@ -82,6 +82,7 @@ from sphinxcontrib.needs.directives.needtable import (
 )
 from sphinxcontrib.needs.environment import (
     install_lib_static_files,
+    install_permalink_file,
     install_styles_static_files,
 )
 from sphinxcontrib.needs.external_needs import load_external_needs
@@ -226,6 +227,12 @@ def setup(app):
 
     app.add_config_value("needs_build_json", False, "html", types=[bool])
 
+    # Permalink related config values.
+    # path to permalink.html; absolute path from web-root
+    app.add_config_value("needs_permalink_file", "permalink.html", "html")
+    # path to needs.json relative to permalink.html
+    app.add_config_value("needs_permalink_data", "needs.json", "html")
+
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(
@@ -320,6 +327,7 @@ def setup(app):
     app.connect("build-finished", process_warnings)
     app.connect("build-finished", build_needs_json)
     app.connect("env-updated", install_lib_static_files)
+    app.connect("env-updated", install_permalink_file)
 
     # Called during consistency check, which if after everything got read in.
     # app.connect('env-check-consistency', process_warnings)

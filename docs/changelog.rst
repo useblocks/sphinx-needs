@@ -10,6 +10,8 @@ License
 -----
 :Released: under development
 
+* Improvement: Add permanent link layout function.
+  (`#390 <https://github.com/useblocks/sphinxcontrib-needs/issues/390>`_)
 * Bugfix: :ref:`needextract` not correctly rendering nested :ref:`need`s.
   (`#329 <https://github.com/useblocks/sphinxcontrib-needs/issues/329>`_)
 
