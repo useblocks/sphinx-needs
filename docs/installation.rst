@@ -72,7 +72,7 @@ ReadTheDocs provides ``plantuml.jar`` already on their system, so there is no ne
 source version control system.
 
 
-Using docker
+Using Docker
 ------------
 
 Sphinx-Needs is also available as a Docker Image.
