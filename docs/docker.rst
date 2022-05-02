@@ -3,37 +3,39 @@
 Sphinx-Needs Docker Image
 =========================
 
-Base Docker Image for Sphinx-Needs.
-
 Status
 ------
 
-+-----------+----------------------------------------------------------+
-| Registry  | Status                                                   |
-+===========+==========================================================+
-| ``useblocks/sphinxneeds:latest`` |                                                          |
-+-----------+----------------------------------------------------------+
-| ``useblocks/sphinxneeds-latexpdf:latest`` |                                                          |
-+-----------+----------------------------------------------------------+
+===========================================   ====================
+Image                                         Build Status   
+===========================================   ====================
+``useblocks/sphinxneeds:latest``              |sphinxneeds-status|
+``useblocks/sphinxneeds-latexpdf:latest``     |sphinxneeds-status|
+===========================================   ==================== 
+
+.. |sphinxneeds-status| image:: https://github.com/useblocks/sphinxcontrib-needs/actions/workflows/docker.yaml/badge.svg
+   :target: https://github.com/useblocks/sphinxcontrib-needs/actions/workflows/docker.yaml
+
+
 
 Image Variants
 --------------
 
-The sphinxneeds images come in two flavors, each designed for a specific
-use case containing sphinx-needs. 
+The Sphinx-Needs docker images come in two flavors, each designed for a specific
+use case. 
 
-``sphinxneeds:<version>``
-~~~~~~~~~~~~~~~~~~~~~~~~~
+``sphinxneeds:<tag>``
+~~~~~~~~~~~~~~~~~~~~~
 
-This is the defacto image (size ~ 350M). If you are unsure about what
-your needs are, you probably want to use this one. It is designed to be
-used both as a throw away container (mount your source code and start
-the container to start your app), as well as the base to build other
-images off of.
+This is the defacto image (size ~ 350MB). If you are unsure about what
+your requirements are, you probably want to use this one. It is designed to be
+used both as a throw away container (mount your documentation and start
+the container), as well as the base to build your own images.
 
-**NOTE** The image does not include latex packages and therefore does
-not support PDF generation. Please use the latex-pdf version below for
-such usecases.
+.. note::
+   The image does not include latex packages and therefore does 
+   not support PDF generation. Please use the latex-pdf version below for 
+   such usecases.
 
 Included Tools
 ^^^^^^^^^^^^^^
@@ -58,12 +60,11 @@ following tools.
 | jre                    |
 +------------------------+
 
-``sphinxneeds-latexpdf:<version>``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``sphinxneeds-latexpdf:<tag>``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This image includes all the tools in the ``sphinxneeds:latest`` image
-and additionally pdf generation tools. The image is approx ~ 1.5GB
-large.
+and additionally pdf generation tools. The image is ~ 1.5GB large.
 
 
 Included Tools
@@ -99,25 +100,21 @@ Getting Started
 Prerequisites
 ~~~~~~~~~~~~~
 
-Prerequisites
-~~~~~~~~~~~~~
-
-To use the image, to install and configure `Docker <https://www.docker.com/>`__  
+To use the images, install and configure `Docker <https://www.docker.com/>`__.
 
 
 Pulling the Image from Docker Hub
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
 The image can be pulled by
 
-::
+.. code:: bash
 
    docker pull useblocks/sphinxneeds:latest
 
 or
 
-::
+.. code:: bash
 
    docker pull useblocks/sphinxneeds-latexpdf:latest
 
@@ -125,7 +122,7 @@ A specific version can be pulled with a version tag.
 
 For example,
 
-::
+.. code:: bash
 
    docker pull useblocks/sphinxneeds:0.7.8
 
@@ -134,15 +131,17 @@ Build The Image Locally
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 | To build the image locally, execute the following.
-  ``bash ./build_docker.sh``
-| **Note:** The script allows to choose between html and pdf version and
-  the Sphinx-Needs version to be installed.
+
+.. code:: bash
+
+   cd docker && ./build_docker.sh
+   
+.. note::
+   The script allows to choose between html and pdf version and
+   the Sphinx-Needs version to be installed.
 
 Usage
 -----
-
-The main use case of the image is to use in as the base-image for
-sphinx-needs in pipelines.
 
 Linux
 ~~~~~
@@ -165,7 +164,7 @@ Windows (Powershell)
 
    docker run --rm -it -v ${PWD}:/sphinxneeds useblocks/sphinxneeds:latest <build-command>
 
-``<build-command>``\ s to be used are
+``<build-command>``\ s to be used are:
 
 Generate HTML
 ~~~~~~~~~~~~~
@@ -187,10 +186,9 @@ Generate PDF
 
        make latexpdf
 
-The generated docs can be found in the ``docs/_build/`` folder.
+.. note:: Make sure ``useblocks/sphinxneeds-latexpdf:latest`` is installed for PDF generation.
 
 To enter a shell, execute:
-
 
 Linux
 ~~~~~
