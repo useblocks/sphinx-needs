@@ -75,6 +75,6 @@ source version control system.
 Using docker
 ------------
 
-Sphinx-Needs got also dockerized by Till Witt.
+Sphinx-Needs is also available as a Docker Image.
 
-See https://github.com/tlwt/sphinxneeds-docker for actual documentation and hints how to use it.
+See :ref:`docker` for the documentation and hints how to use it.
