@@ -1,4 +1,4 @@
-name: Docker Build HTML Image
+name: Docker Build Image
 
 on:
   # Allow manual trigger
@@ -11,17 +11,25 @@ on:
         default: 'n'
   push:
     tags:
-      - '[0-9].[0-9]+.[0-9]+' 
-      
+      - '[0-9].[0-9]+.[0-9]+'
+    branches:
+    - 'feature/**'          
 env:
-  DOCKER_REGISTRY_PATH: useblocks
-  IMAGE_NAME: sphinxneeds
-  BASE_IMAGE: sphinxdoc/sphinx:latest
+  DOCKER_REGISTRY_USER: useblocks
   NEEDS_VERSION: 0.7.8
 
 jobs:
   build:
-    # The type of runner that the job will run on
+    strategy:
+      matrix:
+        base-image: ["sphinxdoc/sphinx:latest", "sphinxdoc/sphinx-latexpdf:latest"]
+        image: ["sphinxneeds", "sphinxneeds-latexpdf"]
+        exclude:
+        - base-image: "sphinxdoc/sphinx:latest"
+          image: "sphinxneeds-latexpdf"
+        - base-image: "sphinxdoc/sphinx-latexpdf:latest"
+          image: "sphinxneeds"       
+    name: "Image: ${{ matrix.image }} | Baseimage: ${{ matrix.base-image }}"    
     runs-on: ubuntu-latest
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE
@@ -36,13 +44,13 @@ jobs:
         uses: docker/metadata-action@v3
         with:
           images: |
-            ${{ env.DOCKER_REGISTRY_PATH }}/${{ env.IMAGE_NAME }}
+            ${{ env.DOCKER_REGISTRY_USER }}/${{ matrix.image }}
           flavor: |
             latest=true
           tags: |
             type=semver,pattern={{version}}
             type=ref,event=branch
-            type=ref,event=pr           
+            type=ref,event=pr 
       - 
         # Check if deployment is needed (if no manual trigger was done, defaults to 'y')
         name: Check if deployment is needed
@@ -66,6 +74,6 @@ jobs:
           file: Dockerfile
           build-args: |            
             NEEDS_VERSION=${{ env.NEEDS_VERSION }}
-            BASE_IMAGE=${{ env.BASE_IMAGE }}                 
+            BASE_IMAGE=${{ matrix.base-image }}                 
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}}          
