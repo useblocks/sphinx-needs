@@ -6,12 +6,12 @@ Sphinx-Needs Docker Image
 Status
 ------
 
-===========================================   ====================
-Image                                         Build Status   
-===========================================   ====================
-``useblocks/sphinxneeds:latest``              |sphinxneeds-status|
-``useblocks/sphinxneeds-latexpdf:latest``     |sphinxneeds-status|
-===========================================   ==================== 
+=======================================  ====================
+Image                                    Build Status   
+=======================================  ====================
+``danwos/sphinxneeds:latest``            |sphinxneeds-status|
+``danwos/sphinxneeds-latexpdf:latest``   |sphinxneeds-status|
+=======================================  ==================== 
 
 .. |sphinxneeds-status| image:: https://github.com/useblocks/sphinxcontrib-needs/actions/workflows/docker.yaml/badge.svg
    :target: https://github.com/useblocks/sphinxcontrib-needs/actions/workflows/docker.yaml
@@ -110,13 +110,13 @@ The image can be pulled by
 
 .. code:: bash
 
-   docker pull useblocks/sphinxneeds:latest
+   docker pull danwos/sphinxneeds:latest
 
 or
 
 .. code:: bash
 
-   docker pull useblocks/sphinxneeds-latexpdf:latest
+   docker pull danwos/sphinxneeds-latexpdf:latest
 
 A specific version can be pulled with a version tag.
 
@@ -124,7 +124,7 @@ For example,
 
 .. code:: bash
 
-   docker pull useblocks/sphinxneeds:0.7.8
+   docker pull danwos/sphinxneeds:0.7.8
 
 
 Build The Image Locally
@@ -148,21 +148,21 @@ Linux
 
 .. code:: bash
 
-   docker run --rm -it -v $(pwd):/sphinxneeds useblocks/sphinxneeds:latest <build-command>
+   docker run --rm -it -v $(pwd):/sphinxneeds danwos/sphinxneeds:latest <build-command>
 
 Windows (cmd)
 ~~~~~~~~~~~~~
 
 .. code:: bash
 
-   docker run --rm -it -v %cd%:/sphinxneeds useblocks/sphinxneeds:latest <build-command>
+   docker run --rm -it -v %cd%:/sphinxneeds danwos/sphinxneeds:latest <build-command>
 
 Windows (Powershell)
 ~~~~~~~~~~~~~~~~~~~~
 
 .. code:: bash
 
-   docker run --rm -it -v ${PWD}:/sphinxneeds useblocks/sphinxneeds:latest <build-command>
+   docker run --rm -it -v ${PWD}:/sphinxneeds danwos/sphinxneeds:latest <build-command>
 
 ``<build-command>``\ s to be used are:
 
@@ -177,7 +177,7 @@ For example,
 
 .. code:: bash
 
-   docker run --rm -it -v $(pwd):/sphinxneeds useblocks/sphinxneeds:latest make html
+   docker run --rm -it -v $(pwd):/sphinxneeds danwos/sphinxneeds:latest make html
 
 Generate PDF
 ~~~~~~~~~~~~
@@ -186,7 +186,7 @@ Generate PDF
 
        make latexpdf
 
-.. note:: Make sure ``useblocks/sphinxneeds-latexpdf:latest`` is installed for PDF generation.
+.. note:: Make sure ``danwos/sphinxneeds-latexpdf:latest`` is installed for PDF generation.
 
 To enter a shell, execute:
 
@@ -195,7 +195,7 @@ Linux
 
 .. code:: bash
 
-   docker run --rm -it -v $(pwd):/sphinxneeds useblocks/sphinxneeds:latest bash
+   docker run --rm -it -v $(pwd):/sphinxneeds danwos/sphinxneeds:latest bash
 
 
 Windows (cmd)
@@ -203,7 +203,7 @@ Windows (cmd)
 
 .. code:: bash
 
-   docker run --rm -it -v %cd%:/sphinxneeds useblocks/sphinxneeds:latest bash
+   docker run --rm -it -v %cd%:/sphinxneeds danwos/sphinxneeds:latest bash
 
 
 Windows (Powershell)
@@ -211,6 +211,6 @@ Windows (Powershell)
 
 .. code:: bash
 
-   docker run --rm -it -v ${PWD}:/sphinxneeds useblocks/sphinxneeds:latest bash
+   docker run --rm -it -v ${PWD}:/sphinxneeds danwos/sphinxneeds:latest bash
 
 Once inside the docker container shell, execute a ``<build-command>``
