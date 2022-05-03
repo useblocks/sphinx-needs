@@ -6,11 +6,11 @@ echo -n "Build HTML version or PDF version (h/p)? The PDF version has a larger i
 read BUILD_TYPE
 if [ "$BUILD_TYPE" == "p" ]; then
     BASE_IMAGE=sphinxdoc/sphinx-latexpdf:latest
-    IMAGE_NAME=useblocks/sphinxneeds-latexpdf:latest    
+    IMAGE_NAME=danwos/sphinxneeds-latexpdf:latest    
     echo "Building PDF Image..."
 else
     BASE_IMAGE=sphinxdoc/sphinx:latest
-    IMAGE_NAME=useblocks/sphinxneeds:latest
+    IMAGE_NAME=danwos/sphinxneeds:latest
     echo "Building HTML Image..."
 fi
 
