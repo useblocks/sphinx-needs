@@ -45,8 +45,7 @@ jobs:
           flavor: |
             latest=true
           tags: |
-            type=pep440,pattern={{raw}}
-            type=ref,event=branch
+            type=pep440,pattern={{major}}.{{minor}}
       - 
         # Check if deployment is needed (if no manual trigger was done, defaults to 'y')
         name: Check if deployment is needed
