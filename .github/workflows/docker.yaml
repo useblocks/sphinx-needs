@@ -45,7 +45,7 @@ jobs:
           flavor: |
             latest=true
           tags: |
-            type=semver,pattern={{version}}
+            type=pep440,pattern={{version}}
             type=ref,event=branch
             type=ref,event=pr 
       - 
