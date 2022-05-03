@@ -11,7 +11,7 @@ on:
         default: 'n'
   push:
     tags:
-      - '[0-9].[0-9]+.[0-9]+'      
+      - '*.*.*'    
 env:
   NEEDS_VERSION: 0.7.8
 
@@ -45,9 +45,7 @@ jobs:
           flavor: |
             latest=true
           tags: |
-            type=semver,pattern={{version}}
-            type=ref,event=branch
-            type=ref,event=pr 
+            type=pep440,pattern={{version}}
       - 
         # Check if deployment is needed (if no manual trigger was done, defaults to 'y')
         name: Check if deployment is needed
