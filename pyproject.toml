@@ -30,7 +30,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = ">3.6.2,<4.0"
+python = ">=3.6.8,<4.0"
 sphinx = [
     { version = ">2.2, <=3.0", python = "~3.6" },
     { version = ">2.2", python = ">=3.7" },
@@ -50,13 +50,14 @@ pytest-xdist="*"  # parallelisation
 responses = "^0.12.1"
 requests-mock = ">=1.9.3"
 
+sphinx-immaterial = { version = ">0.6.7", optional = true }
 
 # formatting dependencies
 black = "^22.3"
 isort = "^5.7.0"
 
 # pyparsing 3.0.5 does not work with current "packaging" lib
-pyparsing = "!=3.0.5"  # 3.0.5 error: https://github.com/pyparsing/pyparsing/issues/329
+pyparsing = "==3.0.8"  # 3.0.5 error: https://github.com/pyparsing/pyparsing/issues/329
 
 [tool.black]
 line-length = 120
@@ -93,6 +94,7 @@ ignore_errors = true
 
 [tool.poetry.extras]
 docs = ["sphinx>=4.0"]
+immaterial = ["sphinx-immaterial"]
 
 [build-system]
 requires = ["poetry-core @ git+https://github.com/python-poetry/poetry-core.git@master"]
