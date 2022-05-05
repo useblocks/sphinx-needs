@@ -61,30 +61,6 @@ extensions = [
 add_module_names = False  # Used to shorten function name output
 autodoc_docstring_signature = True  # Used to read spec. func-defs from docstring (e.g. get rid of self)
 
-# NEEDS CONFIGURATION
-
-# TITLE_TEMPLATE = """
-# .. _{{id}}:
-#
-# {{type_name}}: **{{title}}** ({{id}})
-#
-#     {{content|indent(4) }}
-#
-#     {% if status -%}
-#     **status**: {{status}}
-#     {% endif %}
-#
-#     {% if tags -%}
-#     **tags**: {{"; ".join(tags)}}
-#     {% endif %}
-#
-#     {% if links -%}
-#     **links**:
-#     {% for link in links -%}
-#         :ref:`{{link}} <{{link}}>` {%if loop.index < links|length -%}; {% endif -%}
-#     {% endfor -%}
-#     {% endif %}
-# """
 
 NOTE_TEMPLATE = """
 .. _{{id}}:
@@ -422,8 +398,7 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-# html_theme = os.getenv("NEEDS_THEME", "sphinx_immaterial")
-html_theme = os.getenv("NEEDS_THEME", "alabaster")
+html_theme = os.getenv("NEEDS_THEME", "sphinx_immaterial")
 
 
 # Theme options are theme-specific and customize the look and feel of a theme
@@ -456,6 +431,9 @@ html_sidebars = {
 #     },
 # }
 
+
+# extensions.append("sphinx_immaterial")
+# html_theme = "sphinx_immaterial"
 html_logo = "./_static/needs_logo.png"
 html_favicon = "./_static/needs_logo.png"
 # material theme options (see theme.conf for more information)
@@ -504,7 +482,11 @@ html_theme_options = {
             },
         },
     ],
-    "toc_title_is_page_title": True,
+    "font": {
+        "text": "Recursive, sans-serif",  # used for all the pages' text
+        "code": "Recursive, Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace"  # used for literal code blocks
+    },
+    "toc_title_is_page_title": True
 }
 
 
