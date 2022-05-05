@@ -482,10 +482,6 @@ html_theme_options = {
             },
         },
     ],
-    "font": {
-        "text": "Recursive, sans-serif",  # used for all the pages' text
-        "code": "Recursive, Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace"  # used for literal code blocks
-    },
     "toc_title_is_page_title": True
 }
 
