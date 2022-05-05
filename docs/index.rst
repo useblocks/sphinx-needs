@@ -28,6 +28,8 @@ Requirements, Bugs, Test cases, ... inside Sphinx
 =================================================
 
 .. image:: _static/needs_logo_big.png
+   :alt: Sphinx-Needs Logo
+   :align: center
 
 Sphinx-Needs allows the definition, linking and filtering of need-objects, which are by default:
 
