@@ -57,7 +57,6 @@ extensions = [
     "sphinx.ext.duration",
 ]
 
-
 add_module_names = False  # Used to shorten function name output
 autodoc_docstring_signature = True  # Used to read spec. func-defs from docstring (e.g. get rid of self)
 
@@ -447,7 +446,7 @@ html_sidebars = {
 # extensions.append("sphinx_immaterial")
 # html_theme = "sphinx_immaterial"
 html_logo = "./_static/needs_logo.png"
-html_favicon = "./_static/needs_favicon.png"
+html_favicon = "./_static/needs_logo.png"
 # material theme options (see theme.conf for more information)
 html_theme_options = {
     "icon": {
@@ -479,7 +478,7 @@ html_theme_options = {
             "primary": "blue",
             "accent": "light-blue",
             "toggle": {
-                "icon": "material/weather-night",
+                "icon": "material/weather-sunny",
                 "name": "Switch to dark mode",
             },
         },
@@ -487,13 +486,17 @@ html_theme_options = {
             "media": "(prefers-color-scheme: dark)",
             "scheme": "slate",
             "primary": "blue",
-            "accent": "yellow",
+            "accent": "cyan",
             "toggle": {
-                "icon": "material/weather-sunny",
+                "icon": "material/weather-night",
                 "name": "Switch to light mode",
             },
         },
     ],
+    "font": {
+        "text": "Recursive, sans-serif",  # used for all the pages' text
+        "code": "Recursive, Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace"  # used for literal code blocks
+    },
     "toc_title_is_page_title": True
 }
 
