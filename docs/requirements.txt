@@ -8,3 +8,4 @@ sphinx-panels
 # For generating the performance test results.
 click
 tabulate
+sphinx-immaterial

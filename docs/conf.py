@@ -23,7 +23,7 @@ import datetime
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath("../sphinxcontrib"))
+sys.path.append(os.path.abspath("../sphinxcontrib"))
 
 # -- General configuration ------------------------------------------------
 
@@ -47,8 +47,8 @@ release = "0.7.9"
 on_rtd = os.environ.get("READTHEDOCS") == "True"
 
 extensions = [
-    "sphinxcontrib.plantuml",
     "sphinxcontrib.needs",
+    "sphinxcontrib.plantuml",
     "sphinx.ext.autodoc",
     "matplotlib.sphinxext.plot_directive",
     "sphinx_copybutton",
@@ -58,8 +58,8 @@ extensions = [
 ]
 
 # os.environ['NEEDS_THEME'] = 'sphinx_rtd_theme'
-if os.getenv("NEEDS_THEME", "").lower() == "sphinx_rtd_theme":
-    extensions.append("sphinx_rtd_theme")
+# if os.getenv("NEEDS_THEME", "").lower() == "sphinx_rtd_theme":
+#     extensions.append("sphinx_rtd_theme")
 
 add_module_names = False  # Used to shorten function name output
 autodoc_docstring_signature = True  # Used to read spec. func-defs from docstring (e.g. get rid of self)
@@ -282,8 +282,8 @@ needs_extra_options = [
 
 needs_warnings = {
     "type_check": 'type not in ["req", "spec", "impl", "test", "feature", "action", "user", "milestone", '
-    '"issue", "pr", "commit"'  # github service types
-    "]",
+                  '"issue", "pr", "commit"'  # github service types
+                  "]",
     # 'valid_status': 'status not in ["open", "in progress", "closed", "done", "implemented"] and status is not None'
 }
 
@@ -411,6 +411,9 @@ todo_include_todos = False
 #
 html_theme = os.getenv("NEEDS_THEME", "alabaster")
 
+if html_theme != "alabaster":
+    extensions.append(html_theme)
+
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
@@ -423,28 +426,86 @@ html_sidebars = {
     "**": ["about.html", "navigation.html", "searchbox.html"],
 }
 
+# html_theme_options = {
+#     "logo": "needs_logo.png",
+#     "logo_name": True,
+#     # 'description': "an extension for sphinx",
+#     "logo_text_align": "center",
+#     "github_user": "useblocks",
+#     "github_repo": "sphinxcontrib-needs",
+#     "github_banner": True,
+#     "github_button": True,
+#     "github_type": "star",
+#     "fixed_sidebar": False,
+#     "extra_nav_links": {
+#         "needs@PyPi": "https://pypi.python.org/pypi/sphinxcontrib-needs/",
+#         "needs@github": "https://github.com/useblocks/sphinxcontrib-needs",
+#         "needs@travis": "https://travis-ci.org/useblocks/sphinxcontrib-needs",
+#     },
+# }
+
+# extensions.append("sphinx_immaterial")
+# html_theme = "sphinx_immaterial"
+html_logo = "./_static/needs_logo.png"
+html_favicon = "./_static/needs_logo.png"
+# material theme options (see theme.conf for more information)
 html_theme_options = {
-    "logo": "needs_logo.png",
-    "logo_name": True,
-    # 'description': "an extension for sphinx",
-    "logo_text_align": "center",
-    "github_user": "useblocks",
-    "github_repo": "sphinxcontrib-needs",
-    "github_banner": True,
-    "github_button": True,
-    "github_type": "star",
-    "fixed_sidebar": False,
-    "extra_nav_links": {
-        "needs@PyPi": "https://pypi.python.org/pypi/sphinxcontrib-needs/",
-        "needs@github": "https://github.com/useblocks/sphinxcontrib-needs",
-        "needs@travis": "https://travis-ci.org/useblocks/sphinxcontrib-needs",
+    "icon": {
+        "repo": "fontawesome/brands/github-square",
     },
+    "site_url": "https://sphinxcontrib-needs.readthedocs.io/",
+    "repo_url": "https://github.com/useblocks/sphinxcontrib-needs",
+    "repo_name": "Sphinx-Needs",
+    "repo_type": "github",
+    "edit_uri": "blob/master/docs",
+    # "google_analytics": ["UA-XXXXX", "auto"],
+    "globaltoc_collapse": True,
+    "features": [
+        # "navigation.expand",
+        # "navigation.tabs",
+        # "toc.integrate",
+        "navigation.sections",
+        # "navigation.instant",
+        # "header.autohide",
+        "navigation.top",
+        # "navigation.tracking",
+        # "search.highlight",
+        "search.share",
+    ],
+    "palette": [
+        {
+            "media": "(prefers-color-scheme: light)",
+            "scheme": "default",
+            "primary": "blue",
+            "accent": "light-blue",
+            "toggle": {
+                "icon": "material/weather-sunny",
+                "name": "Switch to dark mode",
+            },
+        },
+        {
+            "media": "(prefers-color-scheme: dark)",
+            "scheme": "slate",
+            "primary": "blue",
+            "accent": "cyan",
+            "toggle": {
+                "icon": "material/weather-night",
+                "name": "Switch to light mode",
+            },
+        },
+    ],
+    "font": {
+        "text": "Recursive, sans-serif",  # used for all the pages' text
+        "code": "Recursive, Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace"  # used for literal code blocks
+    },
+    "toc_title_is_page_title": True
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+html_css_files = ['custom.css']
 
 # -- Options for HTMLHelp output ------------------------------------------
 
