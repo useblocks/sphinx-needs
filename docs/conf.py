@@ -58,6 +58,7 @@ extensions = [
     "sphinx_immaterial",
 ]
 
+
 add_module_names = False  # Used to shorten function name output
 autodoc_docstring_signature = True  # Used to read spec. func-defs from docstring (e.g. get rid of self)
 
