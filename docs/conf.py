@@ -57,9 +57,6 @@ extensions = [
     "sphinx.ext.duration",
 ]
 
-# os.environ['NEEDS_THEME'] = 'sphinx_rtd_theme'
-# if os.getenv("NEEDS_THEME", "").lower() == "sphinx_rtd_theme":
-#     extensions.append("sphinx_rtd_theme")
 
 add_module_names = False  # Used to shorten function name output
 autodoc_docstring_signature = True  # Used to read spec. func-defs from docstring (e.g. get rid of self)
@@ -251,7 +248,6 @@ needs_id_regex = "^[A-Za-z0-9_]*"
 needs_id_required = False
 # needs_css = "dark.css"
 
-on_rtd = os.environ.get("READTHEDOCS") == "True"
 local_plantuml_path = os.path.join(os.path.dirname(__file__), "utils", "plantuml.jar")
 
 if on_rtd:
