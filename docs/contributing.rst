@@ -167,3 +167,65 @@ So other tags can still be used.
 The release jobs will build the source and wheel distribution and try to upload them
 to ``test.pypi.org`` and ``pypy.org``.
 
+Debugging Sphinx-Needs Language Server features
+-----------------------------------------------
+Sphinx-Needs provides some language server functions for the `Esbonio Language Server <https://github.com/swyddfa/esbonio>`_.
+
+The complete functionality can used in VsCode by using the extension
+`vscode-restructuredtext <https://github.com/vscode-restructuredtext/vscode-restructuredtext>`_.
+The whole configuration is done automatically and Sphinx-Needs features gets loaded, if the Sphinx-Needs extension
+is part of ´extensions` variable inside `conf.py`.
+
+Debugging
+~~~~~~~~~
+Most information is coming from https://docs.restructuredtext.net/articles/development.html.
+
+1. Check out the source code of all the following projects:
+
+   * *vscode-restructuredtext*: links...
+   * *esbonio*
+
+2. Follow https://docs.restructuredtext.net/articles/development.html to install all dependencies, compile it and get
+   the Development host running in VsCode.
+
+3. Create a test folder inside the project with a Sphinx projects using Sphinx-Needs, for example under `/docs` by using
+   `sphinx-quickstart`.
+
+4. Add the following to `docs/.vscode/settings.json`::
+
+      {
+          "esbonio.server.sourceFolder": "/Path/to/checked_out/esbonio/lib/esbonio",
+          "esbonio.server.debugLaunch": false,
+          "esbonio.server.logLevel": "debug",
+      }
+5. Test it by pressing F5 (running the preconfigured tasks `Launch Extension`)
+6. Open another instance of VsCode for the checked out esbonio folder.
+7. Add this to `.vscode/launch.json` under `configurations`::
+
+        {
+            "name": "Python: Remote Attach",
+            "type": "python",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}/lib/esbonio",
+                    "remoteRoot": "."
+                }
+            ]
+        },
+
+8. Test it by running the new task `Python: Remote Attach`. For this the task `Launch Extension` from
+   VsCode-restructuredText Extension must be already running, as this one starts a python debug server.
+
+9. Now you set set breakpoints anywhere in the esbonio code.
+
+
+Debugging Sphinx-Needs functions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To debugging Sphinx-Needs Language Server functions, you can repeat the steps 6-9 from above with the Sphinx-Needs
+repository.
