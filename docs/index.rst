@@ -376,6 +376,8 @@ In the last years, we have created additional information and extensions, which 
 
             :octicon:`book;1em;sd-text-primary` Technical Docs
 
+.. grid:: 2
+    :gutter: 2
 
 Other Sphinx extensions
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -417,6 +419,133 @@ we have created other Sphinx extensions to support the work of teams in the auto
         Provides a Bazel domain in Sphinx documentation and allows the automated import of Bazel files and their documentation.
         +++
 
+=======
+    .. grid-item-card::
+        :columns: 12 6 6 6
+        :link: https://sphinx-needs.com
+        :img-top: /_static/sphinx-needs-card.png
+        :class-card: border
+
+        Sphinx-Needs.com
+        ^^^^^^^^^^^^^^^^
+        Webpage to present most important Sphinx-Needs functions and related extensions.
+
+        Good entrypoint to understand the benefits and to get an idea about the complete ecosystem of Sphinx-Needs.
+        +++
+
+        .. button-link:: https://sphinx-needs.com
+            :color: primary
+            :outline:
+            :align: center
+            :expand:
+
+            :octicon:`globe;1em;sd-text-primary` Sphinx-Needs.com
+
+    .. grid-item-card::
+        :columns: 12 6 6 6
+        :link: https://sphinxcontrib-needs.readthedocs.io/en/latest/
+        :img-top: /_static/sphinx-needs-card.png
+        :class-card: border
+
+        Sphinx-Needs
+        ^^^^^^^^^^^^
+        Base extension, which provides all of its functionality under the MIT license for free.
+
+        Create, update, link, filter and present need objects like Requirements, Specifications, Bugs and much more.
+        +++
+
+        .. button-link:: https://sphinxcontrib-needs.readthedocs.io/en/latest/
+            :color: primary
+            :outline:
+            :align: center
+            :expand:
+
+            :octicon:`book;1em;sd-text-primary` Technical Docs
+
+    .. grid-item-card::
+        :columns: 12 6 6 6
+        :link: http://useblocks.com/sphinx-needs-enterprise/
+        :img-top: /_static/sphinx-needs-enterprise-card.png
+        :class-card: border
+
+        Sphinx-Needs Enterprise
+        ^^^^^^^^^^^^^^^^^^^^^^^
+        Synchronizes Sphinx-Needs data with external, company internal systems like CodeBeamer, Jira or Azure Boards.
+
+        Provides scripts to baseline data and make CI usage easier.
+        +++
+
+        .. button-link:: http://useblocks.com/sphinx-needs-enterprise/
+            :color: primary
+            :outline:
+            :align: center
+            :expand:
+
+            :octicon:`book;1em;sd-text-primary` Technical Docs
+
+    .. grid-item-card::
+        :columns: 12 6 6 6
+        :link: https://sphinx-test-reports.readthedocs.io/en/latest/
+        :img-top: /_static/sphinx-needs-card.png
+        :class-card: border
+
+        Sphinx-Test-Reports
+        ^^^^^^^^^^^^^^^^^^^
+        Extension to import test results from xml files as need objects.
+
+        Created need objects can be filtered and e.g. linked to specification objects.
+        +++
+
+        .. button-link:: https://sphinx-test-reports.readthedocs.io/en/latest/
+            :color: primary
+            :outline:
+            :align: center
+            :expand:
+
+            :octicon:`book;1em;sd-text-primary` Technical Docs
+
+
+Other Sphinx extensions
+~~~~~~~~~~~~~~~~~~~~~~~
+During the work with Sphinx-Needs in bigger, company internal projects, other Sphinx extensions have been created
+to support the work in teams of the automotive industry:
+
+.. grid:: 2
+    :gutter: 2
+
+    .. grid-item-card::
+        :columns: 12 6 6 6
+        :link: https://sphinx-collections.readthedocs.io/en/latest/
+        :img-top: /_static/sphinx_collections_logo.png
+        :class-card: border
+
+        Sphinx Collections
+        ^^^^^^^^^^^^^^^^^^
+        Extension to collect or generate files from different sources and include them into the Sphinx source folder.
+
+        Sources like git repositories, jinja based files or symlinks are supported.
+        +++
+
+        .. button-link:: https://sphinx-collections.readthedocs.io/en/latest/
+            :color: primary
+            :outline:
+            :align: center
+            :expand:
+
+            :octicon:`book;1em;sd-text-primary` Technical Docs
+
+    .. grid-item-card::
+        :columns: 12 6 6 6
+        :link: https://sphinx-bazel.readthedocs.io/en/latest/
+        :img-top: /_static/sphinx_bazel_logo.png
+        :class-card: border
+
+        Sphinx Bazel
+        ^^^^^^^^^^^^
+        Provides a Bazel domain in Sphinx documentations and allows the automated import of Bazel files and their
+        documentation.
+        +++
+
         .. button-link:: https://sphinx-bazel.readthedocs.io/en/latest/
             :color: primary
             :outline:
@@ -426,10 +555,6 @@ we have created other Sphinx extensions to support the work of teams in the auto
             :octicon:`book;1em;sd-text-primary` Technical Docs
 
 
-One more thing ...
-------------------
-
-`j4p4n <https://openclipart.org/detail/281179/engineers>`_ designed the Sphinx-Needs logo.
 
 .. toctree::
    :maxdepth: 2

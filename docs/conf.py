@@ -475,7 +475,7 @@ html_theme_options = {
             "media": "(prefers-color-scheme: dark)",
             "scheme": "slate",
             "primary": "blue",
-            "accent": "cyan",
+            "accent": "yellow",
             "toggle": {
                 "icon": "material/weather-night",
                 "name": "Switch to light mode",
