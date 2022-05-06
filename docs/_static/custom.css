@@ -94,3 +94,7 @@ div.dt-buttons {
 .border{
     border: 1px solid var(--md-typeset-color);
 }
+/*Remove READTHEDOCS version badge*/
+.injected {
+    display: none!important;
+}
