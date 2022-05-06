@@ -475,7 +475,7 @@ html_theme_options = {
             "primary": "blue",
             "accent": "light-blue",
             "toggle": {
-                "icon": "material/weather-sunny",
+                "icon": "material/weather-night",
                 "name": "Switch to dark mode",
             },
         },
@@ -485,7 +485,7 @@ html_theme_options = {
             "primary": "blue",
             "accent": "yellow",
             "toggle": {
-                "icon": "material/weather-night",
+                "icon": "material/weather-sunny",
                 "name": "Switch to light mode",
             },
         },

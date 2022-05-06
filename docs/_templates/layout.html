@@ -5,3 +5,23 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     {{ super() }}
 {%- endblock %}
+
+{%- block footer %}
+    {{ super() }}
+
+    <script>
+        var footer_copyright = document.querySelector(".md-footer-copyright__highlight");
+        var this_year = new Date().getFullYear();
+        var copyright_span = document.createElement('span');
+        var company_link = document.createElement('a');
+
+        footer_copyright.innerHTML = "";
+        copyright_span.innerHTML = `&copy; Copyright 2017-${this_year}, `;
+        company_link.href = "http://useblocks.com";
+        company_link.textContent = "team useblocks";
+
+        footer_copyright.append(copyright_span);
+        footer_copyright.lastChild.append(company_link);
+    </script>
+
+{%- endblock %}
