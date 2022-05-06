@@ -178,7 +178,7 @@ div.dt-buttons {
 }
 
 .dataTables_wrapper .dataTables_filter input {
-    max-width: 130px!important;
+    max-width: 100px!important;
 }
 
 .border{
