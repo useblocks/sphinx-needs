@@ -185,6 +185,20 @@ div.dt-buttons {
     border: 1px solid var(--md-typeset-color);
 }
 
+img[alt="card-img-top"] {
+    padding: 1em;
+}
+
+table.wy-table-responsive, table.need {
+    overflow-x: auto !important;
+}
+
+table.needs_style_red a, table.needs_style_yellow a,
+table.needs_style_blue a, table.needs_style_green a {
+    color: #040472;
+    text-decoration: underline;
+}
+
 /*Remove READTHEDOCS version badge*/
 .injected {
     display: none!important;
