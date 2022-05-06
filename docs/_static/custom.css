@@ -99,7 +99,7 @@ img[alt="card-img-top"] {
     padding: 1em;
 }
 
-table.wy-table-responsive, table.need {
+div.wy-table-responsive {
     overflow-x: auto !important;
 }
 
