@@ -13,7 +13,7 @@ on:
     tags:
       - '*.*.*'    
 env:
-  NEEDS_VERSION: 0.7.9
+  NEEDS_VERSION: 0.7.10
 
 jobs:
   build:
