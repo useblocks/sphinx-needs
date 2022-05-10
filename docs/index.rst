@@ -301,6 +301,7 @@ In the last years, we have created additional information and extensions, which 
         Sphinx-Needs.com
         ^^^^^^^^^^^^^^^^
         The website presents the essential Sphinx-Needs functions and related extensions.
+<<<<<<< HEAD
 
         Also, it is a good entry point to understand the benefits and get an idea about the complete ecosystem of Sphinx-Needs.
         +++
@@ -429,8 +430,10 @@ we have created other Sphinx extensions to support the work of teams in the auto
         Sphinx-Needs.com
         ^^^^^^^^^^^^^^^^
         Webpage to present most important Sphinx-Needs functions and related extensions.
+=======
+>>>>>>> a838dd1 (Proofread index.rst)
 
-        Good entrypoint to understand the benefits and to get an idea about the complete ecosystem of Sphinx-Needs.
+        Also, it is a good entry point to understand the benefits and get an idea about the complete ecosystem of Sphinx-Needs.
         +++
 
         .. button-link:: https://sphinx-needs.com
@@ -449,9 +452,9 @@ we have created other Sphinx extensions to support the work of teams in the auto
 
         Sphinx-Needs
         ^^^^^^^^^^^^
-        Base extension, which provides all of its functionality under the MIT license for free.
+        Create, update, link, filter and present need objects like Requirements, Specifications, Bugs and many more.
 
-        Create, update, link, filter and present need objects like Requirements, Specifications, Bugs and much more.
+        The base extension provides all of its functionality under the MIT license for free.
         +++
 
         .. button-link:: https://sphinxcontrib-needs.readthedocs.io/en/latest/
@@ -470,9 +473,9 @@ we have created other Sphinx extensions to support the work of teams in the auto
 
         Sphinx-Needs Enterprise
         ^^^^^^^^^^^^^^^^^^^^^^^
-        Synchronizes Sphinx-Needs data with external, company internal systems like CodeBeamer, Jira or Azure Boards.
+        Synchronize Sphinx-Needs data with external, company internal systems like CodeBeamer, Jira or Azure Boards.
 
-        Provides scripts to baseline data and make CI usage easier.
+        Provides scripts to baseline data and makes CI usage easier.
         +++
 
         .. button-link:: http://useblocks.com/sphinx-needs-enterprise/
@@ -491,9 +494,9 @@ we have created other Sphinx extensions to support the work of teams in the auto
 
         Sphinx-Test-Reports
         ^^^^^^^^^^^^^^^^^^^
-        Extension to import test results from xml files as need objects.
+        Extension to import test results from XML files as **need** objects.
 
-        Created need objects can be filtered and e.g. linked to specification objects.
+        Created **need** objects can be filtered and linked to specification objects.
         +++
 
         .. button-link:: https://sphinx-test-reports.readthedocs.io/en/latest/
@@ -507,8 +510,8 @@ we have created other Sphinx extensions to support the work of teams in the auto
 
 Other Sphinx extensions
 ~~~~~~~~~~~~~~~~~~~~~~~
-During the work with Sphinx-Needs in bigger, company internal projects, other Sphinx extensions have been created
-to support the work in teams of the automotive industry:
+During the use of Sphinx-Needs in popular companies’ internal projects,
+we have created other Sphinx extensions to support the work of teams in the automotive industry:
 
 .. grid:: 2
     :gutter: 2
@@ -521,9 +524,9 @@ to support the work in teams of the automotive industry:
 
         Sphinx Collections
         ^^^^^^^^^^^^^^^^^^
-        Extension to collect or generate files from different sources and include them into the Sphinx source folder.
+        Extension to collect or generate files from different sources and include them in the Sphinx source folder.
 
-        Sources like git repositories, jinja based files or symlinks are supported.
+        It supports sources like Git repositories, Jinja based files or symlinks.
         +++
 
         .. button-link:: https://sphinx-collections.readthedocs.io/en/latest/
@@ -542,8 +545,7 @@ to support the work in teams of the automotive industry:
 
         Sphinx Bazel
         ^^^^^^^^^^^^
-        Provides a Bazel domain in Sphinx documentations and allows the automated import of Bazel files and their
-        documentation.
+        Provides a Bazel domain in Sphinx documentation and allows the automated import of Bazel files and their documentation.
         +++
 
         .. button-link:: https://sphinx-bazel.readthedocs.io/en/latest/
@@ -555,6 +557,13 @@ to support the work in teams of the automotive industry:
             :octicon:`book;1em;sd-text-primary` Technical Docs
 
 
+<<<<<<< HEAD
+=======
+One more thing ...
+------------------
+
+`j4p4n <https://openclipart.org/detail/281179/engineers>`_ designed the Sphinx-Needs logo.
+>>>>>>> a838dd1 (Proofread index.rst)
 
 .. toctree::
    :maxdepth: 2
