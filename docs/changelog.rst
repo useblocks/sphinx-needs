@@ -18,7 +18,7 @@ License
   (`#390 <https://github.com/useblocks/sphinxcontrib-needs/issues/390>`_)
 * Improvement: Support for Sphinx-Needs Docker Image.
   (`#531 <https://github.com/useblocks/sphinxcontrib-needs/issues/531>`_)  
-* Bugfix: :ref:`needextract` not correctly rendering nested :ref:`need`s.
+* Bugfix: :ref:`needextract` not correctly rendering nested needs.
   (`#329 <https://github.com/useblocks/sphinxcontrib-needs/issues/329>`_)
 
 0.7.8
