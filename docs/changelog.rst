@@ -6,9 +6,13 @@ License
 
 .. include:: ../LICENSE
 
+0.7.10
+------
+:Released: under development
+
 0.7.9
 -----
-:Released: under development
+:Released: 10.05.2022
 
 * Improvement: Add permanent link layout function.
   (`#390 <https://github.com/useblocks/sphinxcontrib-needs/issues/390>`_)
