@@ -50,7 +50,7 @@ RUN \
     if [ -n "$NEEDS_VERSION" ] && [ "$NEEDS_VERSION" = "pre-release" ]; then \
       pip3 install --no-cache-dir git+https://github.com/useblocks/sphinxcontrib-needs; \
     elif [ -n "$NEEDS_VERSION" ]; then \
-      pip3 install --no-cache-dir sphinxcontrib-needs==$NEEDS_VERSION; \
+      pip3 install --no-cache-dir git+https://github.com/useblocks/sphinxcontrib-needs@$NEEDS_Version; \
     else \
       pip3 install --no-cache-dir sphinxcontrib-needs; \
     fi
