@@ -194,13 +194,33 @@ Most information is coming from https://docs.restructuredtext.net/articles/devel
 4. Add the following to `docs/.vscode/settings.json`::
 
       {
-          "esbonio.server.sourceFolder": "/Path/to/checked_out/esbonio/lib/esbonio",
-          "esbonio.server.debugLaunch": false,
+          "esbonio.server.sourceFolder": "/Path/to/checked_out/esbonio/lib/esbonio",  # absolute path
+          "esbonio.server.debugLaunch": true,
           "esbonio.server.logLevel": "debug",
       }
-5. Test it by pressing F5 (running the preconfigured tasks `Launch Extension`)
-6. Open another instance of VsCode for the checked out esbonio folder.
-7. Add this to `.vscode/launch.json` under `configurations`::
+
+5. Add the args *${workspaceFolder}/docs* to configuration `Launch Extension` in `.vscode/launch.json` like this::
+
+      {
+			"name": "Launch Extension",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceRoot}",
+				"${workspaceFolder}/docs",
+			],
+			"sourceMaps": true,
+			"outFiles": ["${workspaceRoot}/out/extension.js"],
+			"preLaunchTask": "watch"
+		},
+
+6. Test it by pressing F5 (running the preconfigured tasks `Launch Extension`)
+
+   * In the opened extensionDevelopmentHost instance, select the correct python interpretor. e.g. vscode-restructuredtext/.venv/bin/python 
+
+7. Open another instance of VsCode for the checked out esbonio folder.
+8. Add this to `.vscode/launch.json` under `configurations`::
 
         {
             "name": "Python: Remote Attach",
@@ -218,14 +238,25 @@ Most information is coming from https://docs.restructuredtext.net/articles/devel
             ]
         },
 
-8. Test it by running the new task `Python: Remote Attach`. For this the task `Launch Extension` from
+9. Test it by running the new task `Python: Remote Attach`. For this the task `Launch Extension` from
    VsCode-restructuredText Extension must be already running, as this one starts a python debug server.
 
-9. Now you set set breakpoints anywhere in the esbonio code.
+10. Now you set set breakpoints anywhere in the esbonio code.
 
 
 Debugging Sphinx-Needs functions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To debugging Sphinx-Needs Language Server functions, you can repeat the steps 6-9 from above with the Sphinx-Needs
+To debugging Sphinx-Needs Language Server functions, you can repeat the steps 7-10 from above with the Sphinx-Needs
 repository.
+
+Note:
+
+* For step 8: adapt the localRoot path accordingly, e.g. "${workspaceFolder}/../esbonio/lib/esbonio"
+
+* When you made a change in sphinx-needs repository, 
+
+   * go to vscode-restructuredtext repository,
+   * pip install -e relativ/path/to/repo/sphinx-needs,
+
+This way, when you debug again, it will stop at breakpoints.
