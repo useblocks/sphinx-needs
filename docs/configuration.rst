@@ -13,9 +13,9 @@ All configurations take place in your project's ``conf.py`` file.
 Activation
 ----------
 
-Add **sphinxcontrib.needs** to your extensions::
+Add **sphinx_needs** to your extensions::
 
-   extensions = ["sphinxcontrib.needs",]
+   extensions = ["sphinx_needs",]
 
 .. _inc_build:
 
@@ -46,7 +46,7 @@ This would allow Sphinx to perform incremental builds, which are much faster as 
    }
 
    # Better, register the function via Sphinx-Needs API
-   from sphinxcontrib.needs.api.configuration import add_warning, add_dynamic_function
+   from sphinx_needs.api.configuration import add_warning, add_dynamic_function
    def setup(app):
       add_warning(app, 'my_warning', my_custom_warning)
       add_dynamic_function(app, my_dynamic_function)
@@ -1022,7 +1022,7 @@ See :ref:`dynamic_functions` for more information.
 
    Better use the following way in our ``conf.py`` file::
 
-         from sphinxcontrib.needs.api import add_dynamic_function
+         from sphinx_needs.api import add_dynamic_function
 
             def my_function(app, need, needs, *args, **kwargs):
                 # Do magic here

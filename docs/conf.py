@@ -40,15 +40,15 @@ sys.path.insert(0, os.path.abspath("../sphinxcontrib"))
 # built documents.
 #
 # The short X.Y version.
-version = "0.7"
+version = "1.0"
 # The full version, including alpha/beta/rc tags.
-release = "0.7.9"
+release = "1.0.1"
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
 
 extensions = [
     "sphinxcontrib.plantuml",
-    "sphinxcontrib.needs",
+    "sphinx_needs",
     "sphinx.ext.autodoc",
     "matplotlib.sphinxext.plot_directive",
     "sphinx_copybutton",
@@ -153,6 +153,7 @@ DEFAULT_DIAGRAM_TEMPLATE = (
 
 # needs_template = TITLE_TEMPLATE
 # needs_diagram_template = DEFAULT_DIAGRAM_TEMPLATE
+
 
 needs_types = [
     dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),
@@ -346,6 +347,15 @@ needs_string_links = {
     },
 }
 
+needs_external_needs = [
+    {
+        "base_url": "https://sphinxcontrib-needs.readthedocs.io/en/latest",
+        "json_path": "examples/needs.json",
+        "id_prefix": "EXT_",
+        "css_class": "external_link",
+    },
+]
+
 # build needs.json to make permalinks work
 needs_build_json = True
 
@@ -440,6 +450,7 @@ html_theme_options = {
         "needs@travis": "https://travis-ci.org/useblocks/sphinxcontrib-needs",
     },
 }
+
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
