@@ -133,7 +133,7 @@ Referencing and filtering needs
 
 As :need:`IMPL_01` shows, the linked :need:`OWN_ID_123` is realisable.
 
-This is a link to an imported need from an external project: :need:`EXT_TEST_REQ`.
+.. This is a link to an imported need from an external project: :need:`EXT_TEST_REQ`.
 
 
 **Filter result as table**
