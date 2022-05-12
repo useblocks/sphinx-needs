@@ -17,16 +17,16 @@ For some implementation ideas, take a look into the Sphinx extension
 
 Configuration
 -------------
-.. automodule:: sphinxcontrib.needs.api.configuration
+.. automodule:: sphinx_needs.api.configuration
    :members:
 
 Need
 ----
-.. automodule:: sphinxcontrib.needs.api.need
+.. automodule:: sphinx_needs.api.need
    :members:
 
 
 Exceptions
 ----------
-.. automodule:: sphinxcontrib.needs.api.exceptions
+.. automodule:: sphinx_needs.api.exceptions
    :members:
