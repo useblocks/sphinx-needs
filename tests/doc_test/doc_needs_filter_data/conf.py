@@ -33,7 +33,7 @@ sys.path.insert(0, os.path.abspath("./"))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 
-extensions = ["sphinxcontrib.needs", "sphinxcontrib.plantuml"]
+extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
 
 needs_id_regex = "^[A-Za-z0-9_]*"
 needs_types = [

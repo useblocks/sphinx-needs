@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from sphinxcontrib.needs.services.base import BaseService
-from sphinxcontrib.needs.services.manager import ServiceManager
+from sphinx_needs.services.base import BaseService
+from sphinx_needs.services.manager import ServiceManager
 
 
 class TestService(BaseService):

@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 
-extensions = ["sphinxcontrib.needs"]
+extensions = ["sphinx_needs"]
 
 needs_table_style = "TABLE"
 
@@ -70,7 +70,7 @@ def custom_warning_func(need, log):
 
 
 def setup(app):
-    from sphinxcontrib.needs.api.configuration import add_warning
+    from sphinx_needs.api.configuration import add_warning
 
     add_warning(app, "api_warning_filter", filter_string="status == 'example_2'")
     add_warning(app, "api_warning_func", custom_warning_func)

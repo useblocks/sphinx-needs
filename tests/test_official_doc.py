@@ -11,7 +11,7 @@ import pytest
 import responses
 import sphinx.application
 
-from sphinxcontrib.needs.api.need import NeedsNoIdException
+from sphinx_needs.api.need import NeedsNoIdException
 from tests.data.service_github import (
     GITHUB_ISSUE_SEARCH_ANSWER,
     GITHUB_SEARCH_COMMIT_ANSWER,
