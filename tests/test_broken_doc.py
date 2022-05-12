@@ -1,6 +1,6 @@
 import pytest
 
-from sphinxcontrib.needs.api.need import NeedsDuplicatedId
+from sphinx_needs.api.need import NeedsDuplicatedId
 
 
 @pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/broken_doc"}], indirect=True)

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from sphinxcontrib.needs.api.need import NeedsTagNotAllowed
+from sphinx_needs.api.need import NeedsTagNotAllowed
 
 
 @pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/broken_tags"}], indirect=True)

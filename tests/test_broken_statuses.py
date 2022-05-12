@@ -1,6 +1,6 @@
 import pytest
 
-from sphinxcontrib.needs.api.need import NeedsStatusNotAllowed
+from sphinx_needs.api.need import NeedsStatusNotAllowed
 
 
 @pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/broken_statuses"}], indirect=True)
