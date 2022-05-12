@@ -353,14 +353,14 @@ needs_string_links = {
     },
 }
 
-needs_external_needs = [
-    {
-        "base_url": "https://sphinxcontrib-needs.readthedocs.io/en/latest",
-        "json_path": "examples/needs.json",
-        "id_prefix": "EXT_",
-        "css_class": "external_link",
-    },
-]
+# needs_external_needs = [
+#     {
+#         "base_url": "https://sphinxcontrib-needs.readthedocs.io/en/latest",
+#         "json_path": "examples/needs.json",
+#         "id_prefix": "EXT_",
+#         "css_class": "external_link",
+#     },
+# ]
 
 # build needs.json to make permalinks work
 needs_build_json = True
