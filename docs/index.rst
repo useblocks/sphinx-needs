@@ -28,6 +28,12 @@ Requirements, Bugs, Test cases, ... inside Sphinx
 =================================================
 
 .. image:: _static/needs_logo_big.png
+   :alt: Sphinx-Needs Logo
+   :align: center
+   :class: needs-logo-big
+
+Sphinx-Needs is an extension for the `Python <https://python.org>`_ based documentation framework `Sphinx <https://www.sphinx-doc.org>`_,
+which you can simply extend by different extensions to fulfill nearly any requirement of a software development team.
 
 Sphinx-Needs allows the definition, linking and filtering of need-objects, which are by default:
 
@@ -36,20 +42,17 @@ Sphinx-Needs allows the definition, linking and filtering of need-objects, which
 * implementations
 * test cases.
 
-This list can be easily customized via :ref:`configuration <needs_types>`.
-For instance to support bugs, user stories or features.
-
-Sphinx-Needs is an extension for the Python based documentation framework `Sphinx <https://www.sphinx-doc.org>`_,
-which can be easily extended by different extensions to fulfill nearly any requirement of a software development team.
+You can easily customize the list above via :ref:`configuration <needs_types>`.
+For instance, you can customize the need objects to support bugs, user stories or features.
 
 .. req:: What is a need
    :id: REQ_1
    :tags: introduction
 
-   A need is a generic object, which can become everything you want for your sphinx documentation:
-   A requirement, a test case, a user story, a bug, an employee, a product or anything else.
+   A **need** is a generic object which can become anything you want for your Sphinx documentation:
+   a requirement, a test case, a user story, a bug, an employee, a product, or anything else.
 
-   But whatever you chose it shall be and how many of them you need, each need is handled the same way.
+   But regardless of whatever you choose it to be and how many of them you require, we handle each **need** object the same way.
 
 .. spec:: Content of each need
    :id: SPEC_1
@@ -60,12 +63,12 @@ which can be easily extended by different extensions to fulfill nearly any requi
    Each need contains:
 
    * a **title** (required)
-   * an **unique id** (optional. Gets calculated based on title if not given)
-   * a **description**, which supports fully rst and sphinx extensions (optional)
+   * an **unique id** (optional) - gets generated based on the title if not given
+   * a **description** (optional) - supports rst and sphinx extensions fully
    * a **status** (optional)
    * several **tags** (optional)
    * several **links** to other needs (optional)
-   * project specific options (optional, see :ref:`needs_extra_options`)
+   * project specific options (optional) - see :ref:`needs_extra_options`
    * a **layout** (optional)
    * a **style** (optional)
 
@@ -74,8 +77,9 @@ which can be easily extended by different extensions to fulfill nearly any requi
    :tags: introduction
    :links: SPEC_1
 
-   Needs can be :ref:`easily filtered <filter>` and presented in :ref:`lists<needlist>`, :ref:`tables <needtable>`,
-   :ref:`diagrams <needflow>` and :ref:`pie charts <needpie>`.
+   We can easily :ref:`filter <filter>` **needs** and present them as :ref:`lists <needlist>`, :ref:`tables <needtable>`,
+   :ref:`diagrams <needflow>`, and :ref:`pie charts <needpie>`.
+
 
 **Table example**
 
@@ -94,9 +98,10 @@ which can be easily extended by different extensions to fulfill nearly any requi
    :tags: introduction
    :links: SPEC_1
 
-   For external synchronization (e.g. with JIRA, a spreadsheet, ...)
-   the builder :ref:`needs_builder` is available to export all created needs to a single json file.
-   And also importing needs from external files is supported by using :ref:`needimport`.
+   For external synchronization (e.g. with JIRA, a spreadsheet,…),
+   the :ref:`needs builder <needs_builder>` can help export all created **needs** to a single *JSON* file.
+
+   Also, there is support for importing needs from external files, which you can do by using the :ref:`needimport` directive.
 
    .. code-block:: bash
 
@@ -118,44 +123,45 @@ which can be easily extended by different extensions to fulfill nearly any requi
    :tags: introduction
    :links: SPEC_1
 
-   For complex data chains between needs, :ref:`dynamic_functions` can be used to load and set
-   changeable data automatically during documentation generation phase.
+   To handle complex data chains between **needs**, you can use :ref:`dynamic_functions`
+   to load and set changeable data automatically during the documentation generation phase.
+
 
 .. feature:: Customizing everything
    :id: FEATURE_5
    :tags: introduction
    :links: SPEC_1
    :layout: complete
-   :style: yellow
+   :style: green
 
-   ``Sphinx-needs`` allows to customize needs-types, needs-options, colors, layouts, ids, checks, ... .
+   ``Sphinx-Needs`` allows customizing needs-types, needs-options, colors, layouts, IDs, checks, ....
 
-   The pages :ref:`config` and :ref:`layouts_styles` are full of possibilities to adopt ``Sphinx-needs`` for your
-   own processes and workflows.
+   The pages :ref:`config` and :ref:`layouts_styles` contains instructions on how to adopt ``Sphinx-Needs`` for your
+   processes and workflows.
 
 .. feature:: API for other extensions
    :id: FEATURE_6
    :tags: introduction
    :links: SPEC_1
 
-   The :ref:`api` allows other sphinx-extension to build specific solutions around and with ``Sphinx-Needs``.
+   The :ref:`api` allows other Sphinx-extensions to build specific solutions around and with ``Sphinx-Needs``.
 
-   For instance `Sphinx-Test-Reports <https://sphinx-test-reports.readthedocs.io/en/latest/>`_ creates needs from
-   test results and makes them searchable and linkable to other need-types.
+   For instance, `Sphinx-Test-Reports <https://sphinx-test-reports.readthedocs.io/en/latest/>`_ create **needs** from
+   test results and make them searchable and linkable to other need-types.
 
 .. feature:: Developed for safe process executions
    :id: FEATURE_7
    :tags: introduction
    :links: SPEC_1
 
-   ``Sphinx-needs`` allows to define the exact allowed way of using and configuring needs.
+   ``Sphinx-Needs`` allows you to define the exact way of using and configuring **needs** objects.
 
-   Use :ref:`needs_statuses`, :ref:`needs_tags` or :ref:`needs_warnings` to check for not allowed configurations,
+   Use :ref:`needs_statuses`, :ref:`needs_tags` or :ref:`needs_warnings` to check for configurations not allowed,
    e.g. wrong status names.
 
-   Or force the usage of exactly defined need-ids by setting :ref:`needs_id_required` and :ref:`needs_id_regex`.
+   Or force the usage of specifically defined need-ids by setting :ref:`needs_id_required` and :ref:`needs_id_regex`.
 
-   See :ref:`config` for more options to get a sphinx documentation valid with ISO 26262, DO-178B/C or any other
+   See :ref:`config` for more options to get a Sphinx documentation valid with ISO 26262, DO-178B/C or any other
    safety standard.
 
 
@@ -175,8 +181,7 @@ Input
       :id: req_001
       :tags: main_example
 
-      This is an awesome requirement and it includes a nice title,
-      a given id, a tag and this text as description.
+      This need is a requirement, and it includes a title, an ID, a tag and this text as a description.
 
    .. spec:: Spec for a requirement
       :links: req_001
@@ -184,14 +189,11 @@ Input
       :tags: important; main_example
       :collapse: false
 
-      We haven't set an **ID** here, so sphinx-needs
-      will generated one for us.
+      We didn't set the **ID** option here, so ``Sphinx-Needs`` will generate one for us.
 
-      But we have **set a link** to our first requirement and
-      also a *status* is given.
+      But we have set a **link** to our previous requirement and have set the **status** option.
 
-      We also have set **collapse** to false, so that all
-      meta-data is shown directly under the title.
+      Also, we have enabled **collapse** to false to show all meta-data directly under the title.
 
    **Some text**
 
@@ -228,8 +230,8 @@ Result
    :id: req_001
    :tags: main_example
 
-   This is an awesome requirement and it includes a nice title,
-   a given id, a tag and this text as description.
+   This need is a requirement, and it includes a title, an ID, a tag and this text as a description.
+
 
 .. spec:: Spec for a requirement
    :links: req_001
@@ -237,13 +239,11 @@ Result
    :tags: important; main_example
    :collapse: false
 
-   We haven't set an **ID** here, so sphinxcontrib-needs
-   will generated one for us.
+   We didn't set the **ID** option here, so ``Sphinx-Needs`` will generate one for us.
 
-   But we have **set a link** to our first requirement and
-   also a *status* is given.
+   But we have set a **link** to our previous requirement and have set the **status** option.
 
-   We also have set **collapse** to false, so that all meta-data is shown directly under the title.
+   Also, we have enabled **collapse** to false to show all meta-data directly under the title.
 
 **Some text**
 
@@ -273,129 +273,153 @@ which is linked by :need_incoming:`req_001`.
 
 Ecosystem
 ---------
-In the last years additional information and extensions have been created, which are based or related to Sphinx-Needs:
+In the last years, we have created additional information and extensions, which are based on or related to Sphinx-Needs:
+
+.. grid:: 2
+    :gutter: 2
+
+    .. grid-item-card::
+        :columns: 12 6 6 6
+        :link: https://sphinx-needs.com
+        :img-top: /_static/sphinx-needs-card.png
+        :class-card: border
+
+        Sphinx-Needs.com
+        ^^^^^^^^^^^^^^^^
+        The website presents the essential Sphinx-Needs functions and related extensions.
+
+        Also, it is a good entry point to understand the benefits and get an idea about the complete ecosystem of Sphinx-Needs.
+        +++
+
+        .. button-link:: https://sphinx-needs.com
+            :color: primary
+            :outline:
+            :align: center
+            :expand:
+
+            :octicon:`globe;1em;sd-text-primary` Sphinx-Needs.com
+
+    .. grid-item-card::
+        :columns: 12 6 6 6
+        :link: https://sphinxcontrib-needs.readthedocs.io/en/latest/
+        :img-top: /_static/sphinx-needs-card.png
+        :class-card: border
+
+        Sphinx-Needs
+        ^^^^^^^^^^^^
+        Create, update, link, filter and present need objects like Requirements, Specifications, Bugs and many more.
+
+        The base extension provides all of its functionality under the MIT license for free.
+        +++
+
+        .. button-link:: https://sphinxcontrib-needs.readthedocs.io/en/latest/
+            :color: primary
+            :outline:
+            :align: center
+            :expand:
+
+            :octicon:`book;1em;sd-text-primary` Technical Docs
+
+    .. grid-item-card::
+        :columns: 12 6 6 6
+        :link: http://useblocks.com/sphinx-needs-enterprise/
+        :img-top: /_static/sphinx-needs-enterprise-card.png
+        :class-card: border
+
+        Sphinx-Needs Enterprise
+        ^^^^^^^^^^^^^^^^^^^^^^^
+        Synchronize Sphinx-Needs data with external, company internal systems like CodeBeamer, Jira or Azure Boards.
+
+        Provides scripts to baseline data and makes CI usage easier.
+        +++
+
+        .. button-link:: http://useblocks.com/sphinx-needs-enterprise/
+            :color: primary
+            :outline:
+            :align: center
+            :expand:
+
+            :octicon:`book;1em;sd-text-primary` Technical Docs
+
+    .. grid-item-card::
+        :columns: 12 6 6 6
+        :link: https://sphinx-test-reports.readthedocs.io/en/latest/
+        :img-top: /_static/sphinx-needs-card.png
+        :class-card: border
+
+        Sphinx-Test-Reports
+        ^^^^^^^^^^^^^^^^^^^
+        Extension to import test results from XML files as **need** objects.
+
+        Created **need** objects can be filtered and linked to specification objects.
+        +++
+
+        .. button-link:: https://sphinx-test-reports.readthedocs.io/en/latest/
+            :color: primary
+            :outline:
+            :align: center
+            :expand:
+
+            :octicon:`book;1em;sd-text-primary` Technical Docs
 
 
-.. panels::
-   :container: container-lg pb-3
-   :column: col-lg-6 col-md-6 col-sm-4 col-xs-4 p-2
-   :img-top-cls: pl-5 pr-5 pt-2 pb-2
+Other Sphinx extensions
+~~~~~~~~~~~~~~~~~~~~~~~
+During the use of Sphinx-Needs in popular companies’ internal projects,
+we have created other Sphinx extensions to support the work of teams in the automotive industry:
 
-   ---
-   :img-top: /_static/sphinx-needs-card.png
-   :img-top-cls: + bg-light
+.. grid:: 2
+    :gutter: 2
 
-   Sphinx-Needs.com
-   ^^^^^^^^^^^^^^^^
-   Webpage to present most important Sphinx-Needs functions and related extensions.
+    .. grid-item-card::
+        :columns: 12 6 6 6
+        :link: https://sphinx-collections.readthedocs.io/en/latest/
+        :img-top: /_static/sphinx_collections_logo.png
+        :class-card: border
 
-   Good entrypoint to understand the benefits and to get an idea about the complete ecosystem of Sphinx-Needs.
+        Sphinx Collections
+        ^^^^^^^^^^^^^^^^^^
+        Extension to collect or generate files from different sources and include them in the Sphinx source folder.
 
-   +++
+        It supports sources like Git repositories, Jinja based files or symlinks.
+        +++
 
-   .. link-button:: https://sphinx-needs.com
-       :type: url
-       :text: Sphinx-Needs.com
-       :classes: btn-secondary btn-block
+        .. button-link:: https://sphinx-collections.readthedocs.io/en/latest/
+            :color: primary
+            :outline:
+            :align: center
+            :expand:
 
-   ---
-   :img-top: /_static/sphinx-needs-card.png
+            :octicon:`book;1em;sd-text-primary` Technical Docs
 
-   Sphinx-Needs
-   ^^^^^^^^^^^^
-   Base extension, which provides all of its functionality under the MIT license for free.
+    .. grid-item-card::
+        :columns: 12 6 6 6
+        :link: https://sphinx-bazel.readthedocs.io/en/latest/
+        :img-top: /_static/sphinx_bazel_logo.png
+        :class-card: border
 
-   Create, update, link, filter and present need objects like Requirements, Specifications, Bugs and much more.
+        Sphinx Bazel
+        ^^^^^^^^^^^^
+        Provides a Bazel domain in Sphinx documentation and allows the automated import of Bazel files and their documentation.
+        +++
 
-   +++
+        .. button-link:: https://sphinx-bazel.readthedocs.io/en/latest/
+            :color: primary
+            :outline:
+            :align: center
+            :expand:
 
-   .. link-button:: https://sphinxcontrib-needs.readthedocs.io/en/latest/
-       :type: url
-       :text: Technical docs
-       :classes: btn-secondary btn-block
-
-   ---
-   :img-top: /_static/sphinx-needs-enterprise-card.png
-
-   Sphinx-Needs Enterprise
-   ^^^^^^^^^^^^^^^^^^^^^^^
-   Synchronizes Sphinx-Needs data with external, company internal systems like CodeBeamer, Jira or Azure Boards.
-
-   Provides scripts to baseline data and make CI usage easier.
-   +++
-
-   .. link-button:: http://useblocks.com/sphinx-needs-enterprise/
-       :type: url
-       :text: Technical docs
-       :classes: btn-secondary btn-block
-
-   ---
-   :img-top: /_static/sphinx-test-reports-logo.png
-
-   Sphinx-Test-Reports
-   ^^^^^^^^^^^^^^^^^^^
-   Extension to import test results from xml files as need objects.
-
-   Created need objects can be filtered and e.g. linked to specification objects.
-   +++
-
-   .. link-button:: https://sphinx-test-reports.readthedocs.io/en/latest/
-       :type: url
-       :text: Technical docs
-       :classes: btn-secondary btn-block
-
-
-Further Sphinx extensions
-~~~~~~~~~~~~~~~~~~~~~~~~~
-During the work with Sphinx-Needs in bigger, company internal projects, other Sphinx extensions have been created
-to support the work in teams of the automotive industry:
-
-.. panels::
-   :container: container-lg pb-3
-   :column: col-lg-6 col-md-6 col-sm-4 col-xs-4 p-2
-   :img-top-cls: pl-5 pr-5 pt-2 pb-2
-
-   ---
-   :img-top: /_static/sphinx_collections_logo.png
-
-
-   Extension to collect or generate files from different sources and include them into the Sphinx source folder.
-
-   Sources like git repositories, jinja based files or symlinks are supported.
-
-   +++
-
-   .. link-button:: https://sphinx-collections.readthedocs.io/en/latest/
-       :type: url
-       :text: Technical docs
-       :classes: btn-secondary btn-block
-
-   ---
-   :img-top: /_static/sphinx_bazel_logo.png
-
-
-   Provides a Bazel domain in Sphinx documentations and allows the automated import of Bazel files and their
-   documentation.
-
-   +++
-
-   .. link-button:: https://sphinx-bazel.readthedocs.io/en/latest/
-       :type: url
-       :text: Technical docs
-       :classes: btn-secondary btn-block
-
+            :octicon:`book;1em;sd-text-primary` Technical Docs
 
 
 One more thing ...
 ------------------
 
-The sphinx-needs logo was designed by `j4p4n <https://openclipart.org/detail/281179/engineers>`_.
-
-Content
--------
+`j4p4n <https://openclipart.org/detail/281179/engineers>`_ designed the Sphinx-Needs logo.
 
 .. toctree::
    :maxdepth: 2
+   :hidden:
 
    installation
    directives/index
@@ -406,6 +430,7 @@ Content
 
 .. toctree::
    :maxdepth: 2
+   :hidden:
 
    filter
    dynamic_functions
@@ -416,6 +441,7 @@ Content
 
 .. toctree::
    :maxdepth: 2
+   :hidden:
 
    support
    contributing
