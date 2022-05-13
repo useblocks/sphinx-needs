@@ -8,7 +8,6 @@ from typing import List, Tuple
 from esbonio.lsp import LanguageFeature
 from esbonio.lsp.rst import CompletionContext
 from esbonio.lsp.sphinx import SphinxLanguageServer
-
 from pygls.lsp.types import (
     CompletionItem,
     CompletionItemKind,
@@ -35,7 +34,6 @@ def col_to_word_index(col: int, words: List[str]) -> int:
 
 def get_lines(ls, params) -> List[str]:
     """Get all text lines in the current document."""
-    # text_doc = ls.workspace.get_document(params.text_document.uri)
     text_doc = params.doc
     ls.logger.debug(f"text_doc: {text_doc}")
     source = text_doc.source
@@ -87,9 +85,7 @@ def doc_completion_items(ls, docs: List[str], doc_pattern: str) -> List[Completi
     if max_path_length == current_path_length == 0:
         sub_paths = all_paths
         return [
-            CompletionItem(
-                label=sub_path, kind=CompletionItemKind.File, detail="path to needs doc"
-            )
+            CompletionItem(label=sub_path, kind=CompletionItemKind.File, detail="path to needs doc")
             for sub_path in sub_paths
         ]
 
@@ -97,9 +93,7 @@ def doc_completion_items(ls, docs: List[str], doc_pattern: str) -> List[Completi
     sub_paths = []
     for path in all_paths:
         if path.count("/") >= current_path_length:
-            new_path = "/".join(
-                path.split("/")[current_path_length : current_path_length + 1]
-            )
+            new_path = "/".join(path.split("/")[current_path_length : current_path_length + 1])
             if new_path not in sub_paths:
                 sub_paths.append(new_path)
     sub_paths.sort()
@@ -110,22 +104,15 @@ def doc_completion_items(ls, docs: List[str], doc_pattern: str) -> List[Completi
             kind = CompletionItemKind.File
         else:
             kind = 19  # Folder
-        items.append(
-            CompletionItem(label=sub_path, kind=kind, detail="path to needs doc")
-        )
+        items.append(CompletionItem(label=sub_path, kind=kind, detail="path to needs doc"))
     return items
 
 
-def complete_need_link(
-    ls, params: CompletionContext, lines: List[str], line: str, word: str
-):
+def complete_need_link(ls, params: CompletionContext, lines: List[str], line: str, word: str):
     # specify the need type, e.g.,
     # ->req
     if word.count(">") == 1:
-        return [
-            CompletionItem(label=need_type, detail="need type")
-            for need_type in ls.needs_store.types
-        ]
+        return [CompletionItem(label=need_type, detail="need type") for need_type in ls.needs_store.types]
 
     word_parts = word.split(">")
 
@@ -134,9 +121,7 @@ def complete_need_link(
     if word.count(">") == 2:
         requested_type = word_parts[1]  # e.g., req, test, ...
         if requested_type in ls.needs_store.types:
-            return doc_completion_items(
-                ls, ls.needs_store.docs_per_type[requested_type], word_parts[2]
-            )
+            return doc_completion_items(ls, ls.needs_store.docs_per_type[requested_type], word_parts[2])
 
     # specify the exact need, e.g.,
     # ->req>fusion/index.rst>REQ_001
@@ -156,9 +141,7 @@ def complete_need_link(
                     additional_text_edits=[
                         TextEdit(
                             range=Range(
-                                start=Position(
-                                    line=line_number, character=start_char
-                                ),
+                                start=Position(line=line_number, character=start_char),
                                 end=Position(
                                     line=line_number,
                                     character=start_char + len(substitution),
@@ -182,13 +165,10 @@ def generate_hash(user_name, doc_uri, need_prefix, line_number):
     ).hexdigest()
 
 
-def generate_need_id(
-    ls, params, lines: List[str], word: str, need_type: str = None
-) -> str:
+def generate_need_id(ls, params, lines: List[str], word: str, need_type: str = None) -> str:
     """Generate a need ID including hash suffix."""
 
     user_name = getpass.getuser()
-    #doc_uri = params.text_document.uri
     doc_uri = params.doc.uri
     line_number = params.position.line
 
@@ -215,9 +195,7 @@ def complete_directive(ls, params, lines: List[str], word: str):
     for need_type, title in ls.needs_store.declared_types.items():
         text = (
             " " + need_type + ":: ${1:title}\n"
-            "\t:id: ${2:"
-            + generate_need_id(ls, params, lines, word, need_type=need_type)
-            + "}\n"
+            "\t:id: ${2:" + generate_need_id(ls, params, lines, word, need_type=need_type) + "}\n"
             "\t:status: open\n\n"
             "\t${3:content}.\n$0"
         )
@@ -239,9 +217,7 @@ def complete_role_or_option(ls, params, lines: List[str], word: str):
         CompletionItem(
             label=":id:",
             detail="needs option",
-            insert_text="id: ${1:"
-            + generate_need_id(ls, params, lines, word)
-            + "}\n$0",
+            insert_text="id: ${1:" + generate_need_id(ls, params, lines, word) + "}\n$0",
             insert_text_format=InsertTextFormat.Snippet,
             kind=CompletionItemKind.Snippet,
         ),
@@ -257,20 +233,17 @@ def complete_role_or_option(ls, params, lines: List[str], word: str):
 
 class NeedlsFeatures(LanguageFeature):
     """Sphinx-Needs features support for the language server."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
         self.needs_store = NeedsStore()
 
-    # TODO: need to finish this later after testing
     # Open-Needs-IDE language features completion triggers: '>', '/', ':', '.'
-    completion_triggers = [re.compile(r'(?P<test>.*)')]
+    completion_triggers = [re.compile(r"(>)|(\.\.)|(:)|(\/)")]
 
     def complete(self, context: CompletionContext) -> List[CompletionItem]:
-        self.logger.debug(f"Needls context: {context}")
-
-        # TODO: how to trigger load needs.json???? where to find needs.json???
-        needs_json = "../../../vscode-restructuredtext/docs/_build/needs/needs.json"
+        # load needs.json
+        needs_json = os.path.join(self.rst.app.confdir, "_build/needs/needs.json")
         self.needs_store.load_needs(needs_json)
 
         self.logger.debug(f"NeedsStore needs: {self.needs_store.needs}")
@@ -281,13 +254,10 @@ class NeedlsFeatures(LanguageFeature):
         lines, word = get_lines_and_word(self, context)
         line_number = context.position.line
         if line_number >= len(lines):
-            self.logger.info(
-                f"line {line_number} is empty, no completion trigger characters detected"
-            )
+            self.logger.info(f"line {line_number} is empty, no completion trigger characters detected")
             return []
         line = lines[line_number]
 
-        # TODO: why not fully working???
         # if word starts with '->' or ':need:->', complete_need_link
         if word.startswith("->") or word.startswith(":need:`->"):
             new_word = word.replace(":need:`->", "->")
@@ -302,15 +272,10 @@ class NeedlsFeatures(LanguageFeature):
         if word.startswith(".."):
             return complete_directive(self, context, lines, word)
 
+        return []
 
 
 def esbonio_setup(rst: SphinxLanguageServer):
     rst.logger.debug("Starting register Sphinx-Needs language features...")
     needls_features = NeedlsFeatures(rst)
     rst.add_feature(needls_features)
-
-    sphinx_needs_feature = rst.get_feature("sphinxcontrib.needs.esbonio.NeedlsFeatures")
-    rst.logger.debug(f"Registered Sphinx-Needs language features: {sphinx_needs_feature}.")
-
-    if sphinx_needs_feature:
-        rst.logger.debug(f"Successfully registered Sphinx-Needs language features: {sphinx_needs_feature}.")

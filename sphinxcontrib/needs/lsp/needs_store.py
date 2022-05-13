@@ -4,8 +4,8 @@
 # --------------------------------------------------------------------------
 
 import importlib.util
-import logging
 import json
+import logging
 import os
 import sys
 
@@ -19,9 +19,7 @@ class NeedsStore:
         self.docs_per_type = {}  # key: need type, val: list of doc names (str)
         self.needs_per_doc = {}  # key: docname; val: list of needs
         self.types = []  # list of need types actually defined in needs.json
-        self.declared_types = (
-            {}
-        )  # types declared in conf.py: {'need directive': 'need title'}
+        self.declared_types = {}  # types declared in conf.py: {'need directive': 'need title'}
         self.needs = {}
         self.needs_initialized = False
         self.docs_root = None
@@ -42,9 +40,7 @@ class NeedsStore:
 
     def set_conf_py(self, conf_py_path: str) -> None:
         if not os.path.exists(conf_py_path):
-            raise FileNotFoundError(
-                f"Given custom configuration file {conf_py_path} not found."
-            )
+            raise FileNotFoundError(f"Given custom configuration file {conf_py_path} not found.")
         self.conf_py_path = conf_py_path
 
     def set_declared_types(self) -> None:
@@ -59,9 +55,7 @@ class NeedsStore:
 
         spec = importlib.util.spec_from_file_location(module_name, conf_py_path)
         if spec is None:
-            raise ImportError(
-                f"Created module spec {spec} from {conf_py_name} not exists."
-            )
+            raise ImportError(f"Created module spec {spec} from {conf_py_name} not exists.")
 
         module = importlib.util.module_from_spec(spec)
         sys.modules[module_name] = module

@@ -254,9 +254,5 @@ Note:
 
 * For step 8: adapt the localRoot path accordingly, e.g. "${workspaceFolder}/../esbonio/lib/esbonio"
 
-* When you made a change in sphinx-needs repository, 
-
-   * go to vscode-restructuredtext repository,
-   * pip install -e relativ/path/to/repo/sphinx-needs,
-
-This way, when you debug again, it will stop at breakpoints.
+* If it doesn't stop at breakpoints, set a breakpoint at `sphinxcontrib/needs/__init__.py`, where you import `esbonio_setup`.
+  When debugger stops there, choose **step in** to continue debug.
