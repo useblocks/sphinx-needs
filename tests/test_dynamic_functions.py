@@ -1,11 +1,14 @@
 import re
 from pathlib import Path
 
-from sphinx_testing import with_app
+import pytest
 
 
-@with_app(buildername="html", srcdir="doc_test/doc_dynamic_functions")
-def test_doc_dynamic_functions(app, status, warning):
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_dynamic_functions"}], indirect=True
+)
+def test_doc_dynamic_functions(test_app):
+    app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert "This is id SP_TOO_001" in html
@@ -25,8 +28,9 @@ def test_doc_dynamic_functions(app, status, warning):
     assert '<a class="reference external" href="http://www.TEST_5">link</a>' in html
 
 
-@with_app(buildername="html", srcdir="doc_test/doc_df_calc_sum")
-def test_doc_df_calc_sum(app, status, warning):
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_df_calc_sum"}], indirect=True)
+def test_doc_df_calc_sum(test_app):
+    app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert "43210" in html  # all hours
@@ -34,8 +38,11 @@ def test_doc_df_calc_sum(app, status, warning):
     assert "210" in html  # hours of filtered needs
 
 
-@with_app(buildername="html", srcdir="doc_test/doc_df_check_linked_values")
-def test_doc_df_linked_values(app, status, warning):
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_df_check_linked_values"}], indirect=True
+)
+def test_doc_df_linked_values(test_app):
+    app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert "all_good" in html
@@ -43,8 +50,11 @@ def test_doc_df_linked_values(app, status, warning):
     assert "all_awesome" in html
 
 
-@with_app(buildername="html", srcdir="doc_test/doc_df_user_functions")
-def test_doc_df_user_functions(app, status, warning):
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_df_user_functions"}], indirect=True
+)
+def test_doc_df_user_functions(test_app):
+    app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert "Awesome" in html

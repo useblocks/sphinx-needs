@@ -1,11 +1,13 @@
 import re
 from pathlib import Path
 
-from sphinx_testing import with_app
+import pytest
 
 
-@with_app(buildername="html", srcdir="doc_test/multiple_link_backs")
-def test_multiple_link_backs(app, status, warning):
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/multiple_link_backs"}], indirect=True)
+def test_multiple_link_backs(test_app):
+    app = test_app
+
     app.builder.build_all()
     html = Path(app.outdir, "index.html").read_text()
 

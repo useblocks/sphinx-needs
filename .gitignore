@@ -1,5 +1,7 @@
 .idea
-.venv
+.venv*
+.pvenv
+
 .envrc
 *.pyc
 *.egg-info

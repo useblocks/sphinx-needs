@@ -1,10 +1,11 @@
 from pathlib import Path
 
-from sphinx_testing import with_app
+import pytest
 
 
-@with_app(buildername="html", srcdir="doc_test/doc_global_options")
-def test_doc_global_option(app, status, warning):
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_global_options"}], indirect=True)
+def test_doc_global_option(test_app):
+    app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
 

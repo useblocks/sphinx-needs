@@ -5,7 +5,6 @@ Creates, checks and imports ``needs.json`` files.
 """
 import json
 import os
-import shutil
 import sys
 from datetime import datetime
 
@@ -105,10 +104,6 @@ class NeedsList:
         with open(file, "w") as needs_file:
             needs_file.write(needs_json)
 
-        doc_tree_folder = os.path.join(self.outdir, ".doctrees")
-        if os.path.exists(doc_tree_folder):
-            shutil.rmtree(doc_tree_folder)
-
     def load_json(self, file):
         if not os.path.isabs(file):
             file = os.path.join(self.confdir, file)
@@ -151,7 +146,13 @@ def check_needs_file(path):
         needs_schema = json.load(schema_file)
 
     with open(path) as needs_file:
-        needs_data = json.load(needs_file)
+        try:
+            needs_data = json.load(needs_file)
+        except json.JSONDecodeError as e:
+            raise SphinxNeedsFileException(
+                f'Problems loading json file "{path}". '
+                f"Maybe it is empty or has an invalid json format. Original exception: {e}"
+            )
 
     validator = Draft7Validator(needs_schema)
     schema_errors = list(validator.iter_errors(needs_data))
@@ -175,3 +176,7 @@ if "main" in __name__:
     except IndexError:
         needs_file = "needs.json"
     check_needs_file(needs_file)
+
+
+class SphinxNeedsFileException(BaseException):
+    """Exception for any file handling problems inside Sphinx-Needs"""

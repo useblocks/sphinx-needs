@@ -40,7 +40,7 @@ needs_extra_options = {
     "impacts": directives.unchanged,
 }
 
-plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "..", "..", "docs", "utils", "plantuml.jar")
+plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "utils", "plantuml.jar")
 plantuml_output_format = "svg"
 
 # Add any paths that contain templates here, relative to this directory.

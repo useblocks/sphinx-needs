@@ -1,10 +1,11 @@
 from pathlib import Path
 
-from sphinx_testing import with_app
+import pytest
 
 
-@with_app(buildername="html", srcdir="doc_test/doc_extra_links")
-def test_extra_links_html(app, status, warning):
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_extra_links"}], indirect=True)
+def test_extra_links_html(test_app):
+    app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert "TEST_001" in html
@@ -19,8 +20,9 @@ def test_extra_links_html(app, status, warning):
     assert '<span class="needs_dead_link forbidden">REQ_005.invalid</span>' in html
 
 
-@with_app(buildername="latex", srcdir="doc_test/doc_extra_links")
-def test_extra_links_latex(app, status, warning):
+@pytest.mark.parametrize("test_app", [{"buildername": "latex", "srcdir": "doc_test/doc_extra_links"}], indirect=True)
+def test_extra_links_latex(test_app):
+    app = test_app
     app.build()
     tex = Path(app.outdir, "needstestdocs.tex").read_text()
     assert "TEST_001" in tex

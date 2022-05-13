@@ -1,11 +1,12 @@
 import json
 from pathlib import Path
 
-from sphinx_testing import with_app
+import pytest
 
 
-@with_app(buildername="html", srcdir="doc_test/external_doc")  # , warningiserror=True)
-def test_external_html(app, status, warning):
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/external_doc"}], indirect=True)
+def test_external_html(test_app):
+    app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert (
@@ -13,9 +14,15 @@ def test_external_html(app, status, warning):
         "EXT_TEST_02</a>" in html
     )
 
+    assert (
+        '<p>Test need ref: <a class="external_link reference external"'
+        ' href="http://my_company.com/docs/v1/index.html#TEST_01">EXT_TEST_01</a></p>' in html
+    )
 
-@with_app(buildername="needs", srcdir="doc_test/external_doc")  # , warningiserror=True)
-def test_external_json(app, status, warning):
+
+@pytest.mark.parametrize("test_app", [{"buildername": "needs", "srcdir": "doc_test/external_doc"}], indirect=True)
+def test_external_json(test_app):
+    app = test_app
     app.build()
     json_data = Path(app.outdir, "needs.json").read_text()
     needs = json.loads(json_data)

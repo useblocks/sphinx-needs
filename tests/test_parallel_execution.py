@@ -1,11 +1,14 @@
 from pathlib import Path
 
-from sphinx_testing import with_app
+import pytest
 
 
-@with_app(buildername="html", srcdir="doc_test/parallel_doc", parallel=4, warningiserror=True)
-def test_doc_build_html(app, status, warning):
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/parallel_doc", "parallel": 4}], indirect=True
+)
+def test_doc_build_html(test_app):
     # app.builder.build_all()
+    app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert app.statuscode == 0

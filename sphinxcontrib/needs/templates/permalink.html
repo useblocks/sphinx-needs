@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>sphinx-needs permalink</title>
+
+    <script>
+        function loadJSON(filename, callback) {
+            var xobj = new XMLHttpRequest();
+            xobj.overrideMimeType('application/json');
+            xobj.open('GET', filename, true);
+            xobj.onreadystatechange = function () {
+                if (xobj.readyState == 4 && xobj.status == '200') {
+                    callback(xobj.responseText);
+                }
+            };
+            xobj.send(null);
+        }
+
+        function main() {
+            loadJSON('{{ needs_file }}', function (response) {
+                const needs = JSON.parse(response);
+                const current_version = needs['current_version'];
+                const versions = needs['versions'];
+                const version = versions[current_version];
+                const needs_obj = version['needs'];
+
+                const id = getParameterByName('id');
+                var pathname = new URL(window.location.href).pathname;
+                pathname = pathname.substring(0, pathname.lastIndexOf('{{ permalink_file }}'));
+
+                const keys = Object.keys(needs_obj);
+
+                var docname = 'index';
+
+                keys.forEach((key, index) => {
+                    if (key === id) {
+                        const need = needs_obj[key];
+                        docname = need['docname'];
+                        return;
+                    }
+                });
+
+                window.location.replace(pathname + docname + '.html#' + id);
+            });
+        }
+
+        function getParameterByName(name, url = window.location.href) {
+            name = name.replace(/[\[\]]/g, '\\$&');
+            var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+                results = regex.exec(url);
+            if (!results) return null;
+            if (!results[2]) return '';
+            return decodeURIComponent(results[2].replace(/\+/g, ' '));
+        }
+
+        window.addEventListener('DOMContentLoaded', main);
+    </script>
+
+</head>
+
+<body>
+</body>
+
+</html>

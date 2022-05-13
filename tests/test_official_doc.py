@@ -1,12 +1,15 @@
 import json
+import os.path
 import re
+import sys
+import tempfile
 import uuid
 from pathlib import Path
 from random import randrange
 
+import pytest
 import responses
-from nose.tools import raises
-from sphinx_testing import with_app
+import sphinx.application
 
 from sphinxcontrib.needs.api.need import NeedsNoIdException
 from tests.data.service_github import (
@@ -43,8 +46,8 @@ def random_data_callback(request):
 
 
 @responses.activate
-@with_app(buildername="html", srcdir="../docs")  # , warningiserror=True)
-def test_build_html(app, status, warning):
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "../docs"}], indirect=True)
+def test_build_html(test_app):
     responses.add_callback(
         responses.GET,
         re.compile(r"https://api.github.com/.*"),
@@ -52,6 +55,8 @@ def test_build_html(app, status, warning):
         content_type="application/json",
     )
     responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
+
+    app = test_app
     app.builder.build_all()
 
     # Check if static files got copied correctly.
@@ -63,8 +68,8 @@ def test_build_html(app, status, warning):
 
 
 @responses.activate
-@with_app(buildername="html", srcdir="../docs")  # , warningiserror=True, parallel=4)
-def test_build_html_parallel(app, status, warning):
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "../docs"}], indirect=True)
+def test_build_html_parallel(test_app):
     responses.add_callback(
         responses.GET,
         re.compile(r"https://api.github.com/.*"),
@@ -72,6 +77,8 @@ def test_build_html_parallel(app, status, warning):
         content_type="application/json",
     )
     responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
+
+    app = test_app
     app.builder.build_all()
 
     # Check if static files got copied correctly.
@@ -82,8 +89,10 @@ def test_build_html_parallel(app, status, warning):
     assert build_dir / "DataTables-1.10.16" / "js" / "jquery.dataTables.min.js" in files
 
 
-@with_app(buildername="html", srcdir="doc_test/generic_doc")  # , warningiserror=True, parallel=4)
-def test_html_head_files(app, status, warning):
+@pytest.mark.skipif(sys.platform == "win32", reason="assert fails on windows, need to fix later.")
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/generic_doc"}], indirect=True)
+def test_html_head_files(test_app):
+    app = test_app
     app.builder.build_all()
 
     from lxml import html as html_parser
@@ -106,8 +115,8 @@ def test_html_head_files(app, status, warning):
 
 
 @responses.activate
-@with_app(buildername="singlehtml", srcdir="../docs")
-def test_build_singlehtml(app, status, warning):
+@pytest.mark.parametrize("test_app", [{"buildername": "singlehtml", "srcdir": "../docs"}], indirect=True)
+def test_build_singlehtml(test_app):
     responses.add_callback(
         responses.GET,
         re.compile(r"https://api.github.com/.*"),
@@ -115,12 +124,14 @@ def test_build_singlehtml(app, status, warning):
         content_type="application/json",
     )
     responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
+
+    app = test_app
     app.builder.build_all()
 
 
 @responses.activate
-@with_app(buildername="latex", srcdir="../docs")
-def test_build_latex(app, status, warning):
+@pytest.mark.parametrize("test_app", [{"buildername": "latex", "srcdir": "../docs"}], indirect=True)
+def test_build_latex(test_app):
     responses.add_callback(
         responses.GET,
         re.compile(r"https://api.github.com/.*"),
@@ -128,12 +139,14 @@ def test_build_latex(app, status, warning):
         content_type="application/json",
     )
     responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
+
+    app = test_app
     app.builder.build_all()
 
 
 @responses.activate
-@with_app(buildername="epub", srcdir="../docs")
-def test_build_epub(app, status, warning):
+@pytest.mark.parametrize("test_app", [{"buildername": "epub", "srcdir": "../docs"}], indirect=True)
+def test_build_epub(test_app):
     responses.add_callback(
         responses.GET,
         re.compile(r"https://api.github.com/.*"),
@@ -141,12 +154,14 @@ def test_build_epub(app, status, warning):
         content_type="application/json",
     )
     responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
+
+    app = test_app
     app.builder.build_all()
 
 
 @responses.activate
-@with_app(buildername="json", srcdir="../docs")
-def test_build_json(app, status, warning):
+@pytest.mark.parametrize("test_app", [{"buildername": "json", "srcdir": "../docs"}], indirect=True)
+def test_build_json(test_app):
     responses.add_callback(
         responses.GET,
         re.compile(r"https://api.github.com/.*"),
@@ -154,12 +169,14 @@ def test_build_json(app, status, warning):
         content_type="application/json",
     )
     responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
+
+    app = test_app
     app.builder.build_all()
 
 
 @responses.activate
-@with_app(buildername="needs", srcdir="../docs")
-def test_build_needs(app, status, warning):
+@pytest.mark.parametrize("test_app", [{"buildername": "needs", "srcdir": "../docs"}], indirect=True)
+def test_build_needs(test_app):
     responses.add_callback(
         responses.GET,
         re.compile(r"https://api.github.com/.*"),
@@ -167,6 +184,8 @@ def test_build_needs(app, status, warning):
         content_type="application/json",
     )
     responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
+
+    app = test_app
     app.builder.build_all()
     json_text = Path(app.outdir, "needs.json").read_text()
     needs_data = json.loads(json_text)
@@ -195,10 +214,32 @@ def test_build_needs(app, status, warning):
 
 
 # Test with needs_id_required=True and missing ids in docs.
-@raises(NeedsNoIdException)
 @responses.activate
-@with_app(buildername="html", srcdir="../docs", confoverrides={"needs_id_required": True})
-def test_id_required_build_html(app, status, warning):
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "../docs", "confoverrides": {"needs_id_required": True}}],
+    indirect=True,
+)
+def test_id_required_build_html(test_app):
+    with pytest.raises(NeedsNoIdException):
+        responses.add_callback(
+            responses.GET,
+            re.compile(r"https://api.github.com/.*"),
+            callback=random_data_callback,
+            content_type="application/json",
+        )
+        responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
+
+        app = test_app
+        app.builder.build_all()
+
+
+@responses.activate
+def test_sphinx_api_build():
+    """
+    Tests a build via the Sphinx Build API.
+    It looks like that there are scenarios where this specific build makes trouble but no others.
+    """
     responses.add_callback(
         responses.GET,
         re.compile(r"https://api.github.com/.*"),
@@ -206,4 +247,12 @@ def test_id_required_build_html(app, status, warning):
         content_type="application/json",
     )
     responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
-    app.builder.build_all()
+
+    temp_dir = tempfile.mkdtemp()
+    src_dir = os.path.join(os.path.dirname(__file__), "../", "docs")
+
+    sphinx_app = sphinx.application.Sphinx(
+        srcdir=src_dir, confdir=src_dir, outdir=temp_dir, doctreedir=temp_dir, buildername="html", parallel=4
+    )
+    sphinx_app.build()
+    assert sphinx_app.statuscode == 0

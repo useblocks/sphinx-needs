@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Set Up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Nox Dependencies
@@ -34,14 +34,8 @@ jobs:
         run: |
           pip freeze
 
-      - name: Windows test folder clean up
-        # Delete test/__init__py on Windows, otherwise nosetests will not detect any tests.
-        if: runner.os == 'Windows'
-        run: rm tests/__init__.py
-
       - name: Run Tests on Windows
         run: nox --non-interactive --session "tests-${{ matrix.python-version }}(sphinx='${{ matrix.sphinx-version }}')" -- --full-trace
-        continue-on-error: True
         if: runner.os == 'Windows'
 
       - name: Run Tests on Linux
@@ -54,7 +48,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Set Up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: "3.9"
       - uses: pre-commit/action@v2.0.3
@@ -65,7 +59,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Set Up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: "3.9"
       - name: Install Nox Dependencies

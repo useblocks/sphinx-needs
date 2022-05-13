@@ -5,7 +5,11 @@ import matplotlib
 import numpy
 from docutils import nodes
 
-from sphinxcontrib.needs.filter_common import FilterBase, filter_needs
+from sphinxcontrib.needs.filter_common import (
+    FilterBase,
+    filter_needs,
+    prepare_need_list,
+)
 
 if not os.environ.get("DISPLAY"):
     matplotlib.use("Agg")
@@ -250,6 +254,8 @@ def process_needbar(app, doctree, fromdocname):
 
         # 5. process content
         local_data_number = []
+        need_list = list(prepare_need_list(app.env.needs_all_needs.values()))  # adds parts to need_list
+
         for line in local_data:
             line_number = []
             for element in line:
@@ -257,7 +263,7 @@ def process_needbar(app, doctree, fromdocname):
                 if element.isdigit():
                     line_number.append(float(element))
                 else:
-                    result = len(filter_needs(app, app.env.needs_all_needs.values(), element))
+                    result = len(filter_needs(app, need_list, element))
                     line_number.append(float(result))
             local_data_number.append(line_number)
 
@@ -400,10 +406,14 @@ def process_needbar(app, doctree, fromdocname):
         rel_file_path = os.path.join("_images", f"need_bar_{hash_value}.png")
         if rel_file_path not in env.images:
             figure.savefig(os.path.join(env.app.srcdir, rel_file_path))
-            env.images[rel_file_path] = ["_images", os.path.split(rel_file_path)[-1]]
+            # env.images[rel_file_path] = ["_images", os.path.split(rel_file_path)[-1]]
+            env.images.add_file(fromdocname, rel_file_path)
 
         image_node = nodes.image()
         image_node["uri"] = rel_file_path
+
+        # Add lineno to node
+        image_node.line = current_needbar["lineno"]
 
         # normaly the title is more understandable for a person who needs alt
         if current_needbar["title"]:

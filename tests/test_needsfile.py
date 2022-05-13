@@ -1,6 +1,7 @@
-from sphinx_testing import with_app
+import pytest
 
 
-@with_app(buildername="needs", srcdir="doc_test/doc_needsfile")
-def test_doc_build_html(app, status, warning):
+@pytest.mark.parametrize("test_app", [{"buildername": "needs", "srcdir": "doc_test/doc_needsfile"}], indirect=True)
+def test_doc_build_html(test_app):
+    app = test_app
     app.build()

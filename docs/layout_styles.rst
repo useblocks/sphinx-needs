@@ -362,6 +362,7 @@ Available layout functions are:
 * :func:`meta_id <sphinxcontrib.needs.layout.LayoutHandler.meta_id>`
 * :func:`image <sphinxcontrib.needs.layout.LayoutHandler.image>`
 * :func:`link <sphinxcontrib.needs.layout.LayoutHandler.link>`
+* :func:`permalink <sphinxcontrib.needs.layout.LayoutHandler.permalink>`
 * :func:`collapse_button <sphinxcontrib.needs.layout.LayoutHandler.collapse_button>`
 
 .. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.meta(name, prefix=None, show_empty=False)
@@ -377,6 +378,8 @@ Available layout functions are:
 .. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.image(url, height=None, width=None, align=None, no_link=False)
 
 .. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.link(url, text=None, image_url=None, image_height=None, image_width=None)
+
+.. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.permalink(image_url=None, image_height=None, image_width=None, text=None)
 
 .. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.collapse_button(target='meta', collapsed='Show', visible='Close', initial=False)
 

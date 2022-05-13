@@ -2,9 +2,14 @@ import copy
 import os
 
 import matplotlib
+import numpy as np
 from docutils import nodes
 
-from sphinxcontrib.needs.filter_common import FilterBase, filter_needs
+from sphinxcontrib.needs.filter_common import (
+    FilterBase,
+    filter_needs,
+    prepare_need_list,
+)
 
 if not os.environ.get("DISPLAY"):
     matplotlib.use("Agg")
@@ -44,10 +49,10 @@ class NeedpieDirective(FilterBase):
         "colors": directives.unchanged_required,
         "text_color": directives.unchanged_required,
         "shadow": directives.flag,
+        "filter-func": FilterBase.base_option_spec["filter-func"],
     }
 
     # Update the options_spec only with value filter-func defined in the FilterBase class
-    option_spec["filter-func"] = FilterBase.base_option_spec["filter-func"]
 
     def run(self):
         env = self.state.document.settings.env
@@ -134,12 +139,13 @@ def process_needpie(app, doctree, fromdocname):
         content = current_needpie["content"]
 
         sizes = []
+        need_list = list(prepare_need_list(app.env.needs_all_needs.values()))  # adds parts to need_list
         if content and not current_needpie["filter_func"]:
             for line in content:
                 if line.isdigit():
                     sizes.append(float(line))
                 else:
-                    result = len(filter_needs(app, app.env.needs_all_needs.values(), line))
+                    result = len(filter_needs(app, need_list, line))
                     sizes.append(result)
         elif current_needpie["filter_func"] and not content:
             try:
@@ -148,7 +154,7 @@ def process_needpie(app, doctree, fromdocname):
                 # execute filter_func code
                 # Provides only a copy of needs to avoid data manipulations.
                 context = {
-                    "needs": copy.deepcopy(list(env.needs_all_needs.values())),
+                    "needs": copy.deepcopy(need_list),
                     "results": [],
                 }
                 args = []
@@ -213,7 +219,7 @@ def process_needpie(app, doctree, fromdocname):
         if text_color:
             pie_kwargs["textprops"] = {"color": text_color}
 
-        wedges, _texts, autotexts = axes.pie(sizes, **pie_kwargs)
+        wedges, _texts, autotexts = axes.pie(sizes, normalize=np.asarray(sizes, np.float32).sum() >= 1, **pie_kwargs)
 
         if text_color:
             for autotext in autotexts:
@@ -240,13 +246,17 @@ def process_needpie(app, doctree, fromdocname):
         rel_file_path = os.path.join("_images", f"need_pie_{hash_value}.png")
         if rel_file_path not in env.images:
             fig.savefig(os.path.join(env.app.srcdir, rel_file_path), format="png")
-            env.images[rel_file_path] = ["_images", os.path.split(rel_file_path)[-1]]
+            # env.images[rel_file_path] = ["_images", os.path.split(rel_file_path)[-1]]
+            env.images.add_file(fromdocname, rel_file_path)
 
         image_node = nodes.image()
         image_node["uri"] = rel_file_path
 
         # look at uri value for source path, relative to the srcdir folder
         image_node["candidates"] = {"*": rel_file_path}
+
+        # Add lineno to node
+        image_node.line = current_needpie["lineno"]
 
         node.replace_self(image_node)
 

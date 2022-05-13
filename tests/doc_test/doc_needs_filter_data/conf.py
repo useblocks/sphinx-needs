@@ -60,7 +60,7 @@ needs_warnings = {
 
 needs_warnings_always_warn = True
 
-plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "..", "..", "docs", "utils", "plantuml.jar")
+plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "utils", "plantuml.jar")
 plantuml_output_format = "svg"
 
 # Add any paths that contain templates here, relative to this directory.

@@ -1,15 +1,17 @@
 import re
 from pathlib import Path
 
-from sphinx_testing import with_app
+import pytest
 
 
-@with_app(buildername="html", srcdir="doc_test/extra_options")
-def test_custom_attributes_appear(app, status, warning):
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/extra_options"}], indirect=True)
+def test_custom_attributes_appear(test_app):
+    app = test_app
     app.build()
 
     html = Path(app.outdir, "index.html").read_text()
 
+    warning = app._warning
     # stdout warnings
     warnings = warning.getvalue()
 

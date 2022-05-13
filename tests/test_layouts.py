@@ -1,13 +1,13 @@
 import sys
 
+import pytest
 import sphinx
-from sphinx_testing import with_app
 
 from tests.util import extract_needs_from_html
 
 
-@with_app(buildername="html", srcdir="doc_test/doc_layout")
-def test_doc_build_html(app, status, warning):
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_layout"}], indirect=True)
+def test_doc_build_html(test_app):
 
     # Somehow the xml-tree in extract_needs_from_html() works not correctly with py37 and specific
     # extracts, which are needed for sphinx >3.0 only.
@@ -15,6 +15,7 @@ def test_doc_build_html(app, status, warning):
     if sys.version_info[0] == 3 and sys.version_info[1] == 7 and sphinx.version_info[0] >= 3:
         return True
 
+    app = test_app
     app.build()
     html = (app.outdir / "index.html").read_text()
     assert "title_clean_layout" in html

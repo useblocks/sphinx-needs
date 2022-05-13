@@ -6,18 +6,64 @@ License
 
 .. include:: ../LICENSE
 
+0.7.10
+------
+:Released: under development
+
+* Bugfix: Support embedded needs in embedded needs.
+  (`#486 <https://github.com/useblocks/sphinxcontrib-needs/issues/486>`_)
+
+0.7.9
+-----
+:Released: 10.05.2022
+
+* Improvement: Add permanent link layout function.
+  (`#390 <https://github.com/useblocks/sphinxcontrib-needs/issues/390>`_)
+* Improvement: Support for Sphinx-Needs Docker Image.
+  (`#531 <https://github.com/useblocks/sphinxcontrib-needs/issues/531>`_)  
+* Bugfix: :ref:`needextract` not correctly rendering nested needs.
+  (`#329 <https://github.com/useblocks/sphinxcontrib-needs/issues/329>`_)
+
+0.7.8
+-----
+:Released: 29.03.2022
+
+* Improvement: Provides line number info for needs node.
+  (`#499 <https://github.com/useblocks/sphinxcontrib-needs/issues/499>`_)
+* Bugfix: :ref:`needpie` causing a crash in some cases on newer matplotlib versions.
+  (`#513 <https://github.com/useblocks/sphinxcontrib-needs/issues/513>`_,
+  `#517 <https://github.com/useblocks/sphinxcontrib-needs/issues/517>`_)
+* Bugfix: :ref:`needpie` takes need-parts in account for filtering.
+  (`#514 <https://github.com/useblocks/sphinxcontrib-needs/issues/514>`_)
+* Bugfix: Empty and invalid ``need.json`` files throw user-friendly exceptions.
+  (`#441 <https://github.com/useblocks/sphinxcontrib-needs/issues/441>`_)
+
+
+0.7.7
+-----
+:Released: 04.03.2022
+
+* Bugfix: ``need`` role supporting lower and upper IDs.
+  (`#508 <https://github.com/useblocks/sphinxcontrib-needs/issues/508>`_)
+* Bugfix: Correct image registration to support build via Sphinx API.
+  (`#505 <https://github.com/useblocks/sphinxcontrib-needs/issues/505>`_)
+* Bugfix: Correct css/js file registration on windows.
+  (`#455 <https://github.com/useblocks/sphinxcontrib-needs/issues/455>`_)
 
 0.7.6
 -----
-:Released: under development
+:Released: 28.02.2022
 
 * Improvement: :ref:`filter_func` support arguments.
   (`#429 <https://github.com/useblocks/sphinxcontrib-needs/issues/429>`_)
 * Improvement: Adds :ref:`needs_build_json` config option to build ``needs.json`` in parallel to other output formats.
   (`#485 <https://github.com/useblocks/sphinxcontrib-needs/issues/485>`_)
-* Bugfix: Support embedded needs in embedded needs.
-  (`#486 <https://github.com/useblocks/sphinxcontrib-needs/issues/486>`_)
-
+* Improvement: Migrate tests to Pytest and Sphinx internal testing structure.
+  (`#471 <https://github.com/useblocks/sphinxcontrib-needs/issues/471>`_)
+* Bugfix: :ref:`needs_builder` supports incremental build (no doctree deletion).
+  (`#481 <https://github.com/useblocks/sphinxcontrib-needs/issues/481>`_)
+* Bugfix: :ref:`needs_external_needs` working with :ref:`role_need`.
+  (`#483 <https://github.com/useblocks/sphinxcontrib-needs/issues/483>`_)
 
 0.7.5
 -----

@@ -20,3 +20,7 @@ TEST DOCUMENT EXTERNAL
 .. needlist::
 
 .. needflow::
+
+
+
+Test need ref: :need:`EXT_TEST_01`
