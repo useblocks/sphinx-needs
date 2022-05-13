@@ -75,6 +75,7 @@ from sphinxcontrib.needs.directives.needsequence import (
     process_needsequence,
 )
 from sphinxcontrib.needs.directives.needservice import Needservice, NeedserviceDirective
+from sphinxcontrib.needs.directives.needreport import NeedReportDirective
 from sphinxcontrib.needs.directives.needtable import (
     Needtable,
     NeedtableDirective,
@@ -232,6 +233,8 @@ def setup(app):
     app.add_config_value("needs_permalink_file", "permalink.html", "html")
     # path to needs.json relative to permalink.html
     app.add_config_value("needs_permalink_data", "needs.json", "html")
+    # path to needs_report_template file which is based on the conf.py directory.
+    app.add_config_value("needs_report_template", "", "html", types=[str])
 
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
@@ -268,6 +271,7 @@ def setup(app):
     app.add_directive("needextract", NeedextractDirective)
     app.add_directive("needservice", NeedserviceDirective)
     app.add_directive("needextend", NeedextendDirective)
+    app.add_directive("needreport", NeedReportDirective)
 
     ########################################################################
     # ROLES
