@@ -31,9 +31,9 @@ class NeedReportDirective(Directive):
                 error_msg
             )
 
-        types = self.options.get("types", None)
-        extra_links = self.options.get("links", None)
-        extra_options = self.options.get("options", None)
+        types = str(self.options.get("types", None))
+        extra_links = str(self.options.get("links", None))
+        extra_options = str(self.options.get("options", None))
 
         needs_types = []
         needs_extra_links = []
