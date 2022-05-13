@@ -189,9 +189,9 @@ img[alt="card-img-top"] {
     padding: 1em;
 }
 
-div.wy-table-responsive {
+/*div.wy-table-responsive table {
     overflow-x: auto !important;
-}
+}*/
 
 table.needs_style_red a, table.needs_style_yellow a,
 table.needs_style_blue a, table.needs_style_green a {
@@ -202,4 +202,8 @@ table.needs_style_blue a, table.needs_style_green a {
 /*Remove READTHEDOCS version badge*/
 .injected {
     display: none!important;
+}
+
+table.class_red_border {
+    border: 3px solid red;
 }
