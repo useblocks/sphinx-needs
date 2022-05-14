@@ -64,6 +64,34 @@ line-length = 120
 [tool.isort]
 profile = "black"
 
+[tool.mypy]
+strict = true
+show_error_codes = true
+files = "sphinxcontrib"
+
+[[tool.mypy.overrides]]
+module = [
+  'sphinxcontrib.needs.api.*',
+  'sphinxcontrib.needs.builder.*',
+  'sphinxcontrib.needs.config.*',
+  'sphinxcontrib.needs.diagrams_common.*',
+  'sphinxcontrib.needs.directives.*',
+  'sphinxcontrib.needs.environment.*',
+  'sphinxcontrib.needs.external_needs.*',
+  'sphinxcontrib.needs.filter_common.*',
+  'sphinxcontrib.needs.functions.*',
+  'sphinxcontrib.needs.layout.*',
+  'sphinxcontrib.needs.logging.*',
+  'sphinxcontrib.needs.needs.*',
+  'sphinxcontrib.needs.needsfile.*',
+  'sphinxcontrib.needs.nodes.*',
+  'sphinxcontrib.needs.roles.*',
+  'sphinxcontrib.needs.services.*',
+  'sphinxcontrib.needs.utils.*',
+  'sphinxcontrib.needs.warnings.*',
+]
+ignore_errors = true
+
 [tool.poetry.extras]
 docs = ["sphinx>=4.0"]
 
