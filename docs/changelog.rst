@@ -10,6 +10,9 @@ License
 ------
 :Released: under development
 
+* Bugfix: Support embedded needs in embedded needs.
+  (`#486 <https://github.com/useblocks/sphinxcontrib-needs/issues/486>`_)
+
 0.7.9
 -----
 :Released: 10.05.2022
