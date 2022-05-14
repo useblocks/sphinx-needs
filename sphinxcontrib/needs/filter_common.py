@@ -5,13 +5,15 @@ like needtable, needlist and needflow.
 
 import copy
 import re
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List, Union
 
 from docutils.parsers.rst import Directive, directives
 
 from sphinxcontrib.needs.api.exceptions import NeedsInvalidFilter
 from sphinxcontrib.needs.utils import check_and_get_external_filter_func
 from sphinxcontrib.needs.utils import logger as log
+
+NeedsFilterData = Dict[str, Union[str, Callable[[], str]]]
 
 
 class FilterBase(Directive):
@@ -269,12 +271,12 @@ def filter_needs(app, needs, filter_string="", current_need=None):
 
 
 def filter_single_need(
-    needs_filter_data, need, filter_string="", needs=None, current_need=None, filter_compiled=None
+    needs_filter_data: NeedsFilterData, need, filter_string="", needs=None, current_need=None, filter_compiled=None
 ) -> bool:
     """
     Checks if a single need/need_part passes a filter_string
 
-    :param app: Sphinx application object
+    :param needs_filter_data: Custom needs filters
     :param current_need:
     :param filter_compiled: An already compiled filter_string to safe time
     :param need: need or need_part
