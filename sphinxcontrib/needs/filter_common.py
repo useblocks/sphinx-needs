@@ -254,7 +254,12 @@ def filter_needs(app, needs, filter_string="", current_need=None):
     for filter_need in needs:
         try:
             if filter_single_need(
-                app, filter_need, filter_string, needs, current_need, filter_compiled=filter_compiled
+                app.config.needs_filter_data,
+                filter_need,
+                filter_string,
+                needs,
+                current_need,
+                filter_compiled=filter_compiled,
             ):
                 found_needs.append(filter_need)
         except Exception as e:
@@ -263,7 +268,9 @@ def filter_needs(app, needs, filter_string="", current_need=None):
     return found_needs
 
 
-def filter_single_need(app, need, filter_string="", needs=None, current_need=None, filter_compiled=None) -> bool:
+def filter_single_need(
+    needs_filter_data, need, filter_string="", needs=None, current_need=None, filter_compiled=None
+) -> bool:
     """
     Checks if a single need/need_part passes a filter_string
 
@@ -284,7 +291,7 @@ def filter_single_need(app, need, filter_string="", needs=None, current_need=Non
         filter_context["current_need"] = need
 
     # Get needs external filter data and merge to filter_context
-    filter_context.update(app.config.needs_filter_data)
+    filter_context.update(needs_filter_data)
 
     filter_context["search"] = re.search
     result = False
