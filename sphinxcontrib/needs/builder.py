@@ -61,13 +61,13 @@ class NeedsBuilder(Builder):
         yield
         # return ""
 
-    def prepare_writing(self, docnames):
+    def prepare_writing(self, docnames) -> None:
         pass
 
-    def write_doc_serialized(self, docname, doctree):
+    def write_doc_serialized(self, docname, doctree) -> None:
         pass
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         pass
 
     def get_target_uri(self, docname, typ=None):

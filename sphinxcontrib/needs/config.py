@@ -8,7 +8,7 @@ class Config:
     So this Config class somehow collects possible configurations and stores it in a save way.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.configs = {}
 
     def add(self, name, value, option_type=str, append=False, overwrite=False):
