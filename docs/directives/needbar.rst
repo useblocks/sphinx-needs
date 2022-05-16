@@ -7,6 +7,8 @@ needbar
 
 ``needbar`` adds a bar-chart to your documentation:
 
+|ex|
+
 .. code-block:: rst
 
    .. needbar::
@@ -15,6 +17,8 @@ needbar
       10,15,10
       15,10,20
       20,15,10
+
+|out|
 
 .. needbar::
 
@@ -29,8 +33,6 @@ The amount of found needs by the filter string is then used as value.
 Options
 -------
 
-.. contents::
-   :local:
 
 Example with all options used:
 
@@ -85,14 +87,9 @@ Example with all options used:
 title
 ~~~~~
 
-If a ``title`` is given, it will be used as a headline in the bar chart.
+You can specify the headline of the bar chart using the ``title`` argument.
 
-.. needbar:: Title example
-
-   5,20,15
-   10,15,10
-   15,10,20
-   20,15,10
+|ex|
 
 .. code-block:: rst
 
@@ -103,14 +100,19 @@ If a ``title`` is given, it will be used as a headline in the bar chart.
       15,10,20
       20,15,10
 
-It is even possible to create bar charts without title.
+|out|
 
-.. needbar::
+.. needbar:: Title example
 
    5,20,15
    10,15,10
    15,10,20
    20,15,10
+
+
+It is possible to create bar charts without title.
+
+|ex|
 
 .. code-block:: rst
 
@@ -121,16 +123,28 @@ It is even possible to create bar charts without title.
       15,10,20
       20,15,10
 
+|out|
+
+.. needbar::
+
+   5,20,15
+   10,15,10
+   15,10,20
+   20,15,10
+
 
 content
 ~~~~~~~
 
-Here we are using ``FROM_DATA`` with the `labels`_ to fetch the ``xlabels`` and ``ylabels`` from the content.
-It is possible to use white spaces to format the table to be easily readed.
-Each content value gets interpreted either as static float/int value or as a :ref:`filter_string`.
-The amount of found needs by the filter string is then used as value.
+In the example below, we fetch the ``:xlabels:`` and ``:ylabels:`` options from the content using ``FROM_DATA`` with the `labels`_.
+You can use white spaces to format the table to improve readability.
 
-This is a more realistic example with data fetched from filters, together with hard coded data:
+From the content, we interpret each value either as a static float/int value or as a :ref:`filter_string`.
+We get the bar chart's data (values) from the amount of **need** objects found by the filter string.
+
+Below is a more realistic example with data fetched from filters, together with hardcoded data:
+
+|ex|
 
 .. code-block:: rst
 
@@ -140,36 +154,31 @@ This is a more realistic example with data fetched from filters, together with h
       :ylabels: FROM_DATA
 
                    ,                           open ,                          in progress ,                          closed ,                          done ,                          implemented , number
-        Requirement,  type=='req' and status=='open', type=='req' and status=='in progress', type=='req' and status=='closed', type=='req' and status=='done', type=='req' and status=='implemented', 5
-               Test, type=='test' and status=='open',type=='test' and status=='in progress',type=='test' and status=='closed',type=='test' and status=='done',type=='test' and status=='implemented', 7
-      Specification, type=='spec' and status=='open',type=='spec' and status=='in progress',type=='spec' and status=='closed',type=='spec' and status=='done',type=='spec' and status=='implemented', 9
+        Requirement, type=='req' and status=='open', type=='req' and status=='in progress', type=='req' and status=='closed', type=='req' and status=='done', type=='req' and status=='implemented', 5
+               Test, type=='test' and status=='open', type=='test' and status=='in progress', type=='test' and status=='closed', type=='test' and status=='done', type=='test' and status=='implemented', 7
+      Specification, type=='spec' and status=='open', type=='spec' and status=='in progress', type=='spec' and status=='closed', type=='spec' and status=='done', type=='spec' and status=='implemented', 9
+
+|out|
 
 .. needbar:: A more real bar chart
    :legend:
    :xlabels: FROM_DATA
    :ylabels: FROM_DATA
 
-                ,                           open ,                          in progress ,                          closed ,                          done ,                          implemented , number
-     Requirement,  type=='req' and status=='open', type=='req' and status=='in progress', type=='req' and status=='closed', type=='req' and status=='done', type=='req' and status=='implemented', 5
-            Test, type=='test' and status=='open',type=='test' and status=='in progress',type=='test' and status=='closed',type=='test' and status=='done',type=='test' and status=='implemented', 7
-   Specification, type=='spec' and status=='open',type=='spec' and status=='in progress',type=='spec' and status=='closed',type=='spec' and status=='done',type=='spec' and status=='implemented', 9
+                   ,                           open ,                          in progress ,                          closed ,                          done ,                          implemented , number
+        Requirement, type=='req' and status=='open', type=='req' and status=='in progress', type=='req' and status=='closed', type=='req' and status=='done', type=='req' and status=='implemented', 5
+               Test, type=='test' and status=='open', type=='test' and status=='in progress', type=='test' and status=='closed', type=='test' and status=='done', type=='test' and status=='implemented', 7
+      Specification, type=='spec' and status=='open', type=='spec' and status=='in progress', type=='spec' and status=='closed', type=='spec' and status=='done', type=='spec' and status=='implemented', 9
 
 
 legend
 ~~~~~~
 
-If ``:legend:`` is given, a legend will be placed in the bar chart.
+You can place a legend on the barchart by setting the ``:legend:`` flag.
 
-``:legend:`` is a flag and does not support any values.
+The ``:legend:`` flag does not support any values.
 
-
-.. needbar:: Legend example
-   :legend:
-
-   5,20,15
-   10,15,10
-   15,10,20
-   20,15,10
+|ex|
 
 .. code-block:: rst
 
@@ -181,24 +190,26 @@ If ``:legend:`` is given, a legend will be placed in the bar chart.
       15,10,20
       20,15,10
 
+|out|
 
-axis title
-~~~~~~~~~~
-
-If titles are given via ``:x_axis_title:`` or ``:y_axis_title:``, the axis get titles placed in the bar chart.
-
-.. hint::
-   If you use `horizontal`_ or `transpose`_, the meaning of ``:x_axis_title:`` and ``:y_axis_title:`` still have to old meaning.
-   So you have to change the description accordingly.
-
-.. needbar:: Axis title example
-   :x_axis_title: types
-   :y_axis_title: numbers
+.. needbar:: Legend example
+   :legend:
 
    5,20,15
    10,15,10
    15,10,20
    20,15,10
+
+axis title
+~~~~~~~~~~
+
+You can enable axis titles on the barchart by setting the ``:x_axis_title:`` or ``:y_axis_title:`` options.
+
+.. hint::
+   If you use `horizontal`_ or `transpose`_, the meaning of ``:x_axis_title:`` and ``:y_axis_title:`` must be understandable.
+   So you have to change the description accordingly.
+
+|ex|
 
 .. code-block:: rst
 
@@ -211,6 +222,17 @@ If titles are given via ``:x_axis_title:`` or ``:y_axis_title:``, the axis get t
       15,10,20
       20,15,10
 
+|out|
+
+.. needbar:: Axis title example
+   :x_axis_title: types
+   :y_axis_title: numbers
+
+   5,20,15
+   10,15,10
+   15,10,20
+   20,15,10
+
 
 labels
 ~~~~~~
@@ -218,24 +240,16 @@ labels
 | Use ``:xlabels:`` to set labels for columns of the data.
 | Use ``:ylabels:`` to set labels for row of the data.
 
-``:xlabels:`` and/or ``:xlabels:`` must get a comma separated string and the amount of labels must match the amount of
-values/lines from content. It is even possible to use ``FROM_DATA`` as string to fetch the labels from the content
+You can define the ``:xlabels:`` and/or ``:ylabels:`` by setting a comma separated string.
+The amount of labels must match the amount of values/lines from content. |br|
+Also, you can set the ``:xlabels:`` and/or ``:ylabels:`` value to ``FROM_DATA`` to fetch the labels from the content.
 
 .. hint::
-   In a normal bar chart, the ``:xlabels:`` are used for the labels of the x-axis on the chart.
-   The ``:ylabels:`` are used for the labels of legend.
-   But if you use `horizontal`_ or `transpose`_, the meaning of ``:x_axis_title:`` and ``:y_axis_title:`` will automatically be changed.
+   In a normal bar chart, we use the ``:xlabels:`` as the labels of the x-axis on the chart and the ``:ylabels:`` as the labels of legend.
 
-.. needbar:: Labels example 1
-   :legend:
-   :xlabels: a, b, c
-   :ylabels: Z, Y, X, W
+   But if you use `horizontal`_ or `transpose`_, the meaning of ``:x_axis_title:`` and ``:y_axis_title:`` will change automatically.
 
-    5,20,15
-   10,15,10
-   15,10,20
-   20,15,10
-
+|ex|
 
 .. code-block:: rst
 
@@ -248,17 +262,6 @@ values/lines from content. It is even possible to use ``FROM_DATA`` as string to
       10,15,10
       15,10,20
       20,15,10
-
-.. needbar:: Labels example 2
-   :legend:
-   :xlabels: FROM_DATA
-   :ylabels: FROM_DATA
-
-    , a, b, c
-   Z, 5,20,15
-   Y,10,15,10
-   X,15,10,20
-   W,20,15,10
 
 
 .. code-block:: rst
@@ -275,20 +278,38 @@ values/lines from content. It is even possible to use ``FROM_DATA`` as string to
       W,20,15,10
 
 
-stacked
-~~~~~~~
+|out|
 
-If ``:stacked:`` is given, the bar chart will be rendered in a stacked design.
+.. needbar:: Labels example 1
+   :legend:
+   :xlabels: a, b, c
+   :ylabels: Z, Y, X, W
 
-``:stacked:`` is a flag and does not support any values.
-
-.. needbar:: stacked example
-   :stacked:
-
-   5,20,15
+    5,20,15
    10,15,10
    15,10,20
    20,15,10
+
+.. needbar:: Labels example 2
+   :legend:
+   :xlabels: FROM_DATA
+   :ylabels: FROM_DATA
+
+    , a, b, c
+   Z, 5,20,15
+   Y,10,15,10
+   X,15,10,20
+   W,20,15,10
+
+
+stacked
+~~~~~~~
+
+You can render the barchart in a stacked design by setting ``:stacked:`` flag.
+
+The ``:stacked:`` flag does not support any values.
+
+|ex|
 
 .. code-block:: rst
 
@@ -300,22 +321,24 @@ If ``:stacked:`` is given, the bar chart will be rendered in a stacked design.
       15,10,20
       20,15,10
 
+|out|
 
-show_sum
-~~~~~~~~
-
-If ``:show_sum:`` is given, the bar chart will be rendered with detailed information of the height of each bar.
-Especially useful in ``stacked`` option.
-
-``:show_sum:`` is a flag and does not support any values.
-
-.. needbar:: show_sum example 1
-   :show_sum:
+.. needbar:: stacked example
+   :stacked:
 
    5,20,15
    10,15,10
    15,10,20
    20,15,10
+
+show_sum
+~~~~~~~~
+
+You can render the barchart with detailed information of the height of each bar by setting the ``:show_sum:`` flag.
+
+The ``:show_sum:`` flag does not support any values and it's useful with the ``stacked`` option  enabled.
+
+|ex|
 
 .. code-block:: rst
 
@@ -326,16 +349,6 @@ Especially useful in ``stacked`` option.
       10,15,10
       15,10,20
       20,15,10
-
-
-.. needbar:: show_sum example 2
-   :stacked:
-   :show_sum:
-
-   5,20,15
-   10,15,10
-   15,10,20
-   20,15,10
 
 .. code-block:: rst
 
@@ -348,26 +361,38 @@ Especially useful in ``stacked`` option.
       15,10,20
       20,15,10
 
+|out|
 
-horizontal
-~~~~~~~~~~
-
-If ``:horizontal:`` is given, the bar chart will be rendered with horizontal bars.
-
-``:horizontal:`` is a flag and does not support any values.
-
-.. hint::
-   The meaning of `labels`_ will be automatically change with the usage of ``:horizontal:``.
-   ``:x_axis_title:`` or is now been used as labels for the y axis. ``:y_axis_title:`` is still the values in the `legend`_. 
-
-.. needbar:: horizontal example 1
-   :horizontal:
+.. needbar:: show_sum example 1
+   :show_sum:
 
    5,20,15
    10,15,10
    15,10,20
    20,15,10
 
+.. needbar:: show_sum example 2
+   :stacked:
+   :show_sum:
+
+   5,20,15
+   10,15,10
+   15,10,20
+   20,15,10
+
+
+horizontal
+~~~~~~~~~~
+
+You can render the bar chart with horizontal bars by setting the ``:horizontal:`` flag.
+
+The ``:horizontal:`` flag does not support any values and it's useful with the ``stacked`` option  enabled.
+
+.. hint::
+   The meaning of `labels`_ will change automatically with the usage of ``:horizontal:``. We will use the
+   ``:x_axis_title:`` as labels for the y-axis and use the ``:y_axis_title:`` as the values in the `legend`_.
+
+|ex|
 
 .. code-block:: rst
 
@@ -378,21 +403,6 @@ If ``:horizontal:`` is given, the bar chart will be rendered with horizontal bar
       10,15,10
       15,10,20
       20,15,10
-
-.. needbar:: horizontal example 2
-   :stacked:
-   :legend:
-   :show_sum:
-   :horizontal:
-   :xlabels: FROM_DATA
-   :ylabels: FROM_DATA
-
-    , a, b, c
-   Z, 5,20,15
-   Y,10,15,10
-   X,15,10,20
-   W,20,15,10
-
 
 .. code-block:: rst
 
@@ -410,30 +420,44 @@ If ``:horizontal:`` is given, the bar chart will be rendered with horizontal bar
       X,15,10,20
       W,20,15,10
 
+|out|
 
-transpose
-~~~~~~~~~
-
-If ``:transpose:`` is given, the data in the content are `transposed <https://en.wikipedia.org/wiki/Transpose>`_.
-The idea is, you can try to see the data from different point of view, without refactoring.
-Especially helpful with big content tables.
-
-``:transpose:`` is a flag and does not support any values.
-
-.. hint::
-   ``:x_axis_title:`` and ``:y_axis_title:`` fetched from the content data or specified with `labels`_ are transposed, too. 
-   But extra given `axis title`_ not.
-   Please remember with transpose the length and height of the content data get changed,
-   so think even about the length of matching elements, like `colors`_.
-   So please review the impact of ``:transpose:``.
-
-.. needbar:: transpose example 1
-   :transpose:
+.. needbar:: horizontal example 1
+   :horizontal:
 
    5,20,15
    10,15,10
    15,10,20
    20,15,10
+
+.. needbar:: horizontal example 2
+   :stacked:
+   :legend:
+   :show_sum:
+   :horizontal:
+   :xlabels: FROM_DATA
+   :ylabels: FROM_DATA
+
+    , a, b, c
+   Z, 5,20,15
+   Y,10,15,10
+   X,15,10,20
+   W,20,15,10
+
+
+transpose
+~~~~~~~~~
+
+You can `transpose <https://en.wikipedia.org/wiki/Transpose>`_ the data in the content by setting the ``:transpose:`` flag.
+The idea is, you can try to see the data from different point of view, without refactoring.
+
+The ``:transpose:`` flag does not support any values and it's useful with big content tables.
+
+.. hint::
+   * Using the ``:transpose:`` flag, transposes the ``:x_axis_title:`` and ``:y_axis_title:`` fetched from the content data or specified with `labels`_ but does not transpose the extra `axis title`_.
+   * Remember that with the ``:transpose:`` flag, the length and height of the content data changes, not to think about the width of matching elements, like `colors`_. Please review the impact of ``:transpose:`` before using it.
+
+|ex|
 
 .. code-block:: rst
 
@@ -444,21 +468,6 @@ Especially helpful with big content tables.
       10,15,10
       15,10,20
       20,15,10
-
-
-.. needbar:: transpose example 2
-   :legend:
-   :stacked:
-   :show_sum:
-   :transpose:
-   :xlabels: FROM_DATA
-   :ylabels: FROM_DATA
-
-    , a, b, c
-   Z, 5,20,15
-   Y,10,15,10
-   X,15,10,20
-   W,20,15,10
 
 .. code-block:: rst
 
@@ -476,6 +485,30 @@ Especially helpful with big content tables.
       X,15,10,20
       W,20,15,10
 
+|out|
+
+.. needbar:: transpose example 1
+   :transpose:
+
+   5,20,15
+   10,15,10
+   15,10,20
+   20,15,10
+
+.. needbar:: transpose example 2
+   :legend:
+   :stacked:
+   :show_sum:
+   :transpose:
+   :xlabels: FROM_DATA
+   :ylabels: FROM_DATA
+
+    , a, b, c
+   Z, 5,20,15
+   Y,10,15,10
+   X,15,10,20
+   W,20,15,10
+
 
 rotation
 ~~~~~~~~
@@ -483,18 +516,7 @@ rotation
 | Use ``:xlabels_rotation:`` to set rotation of labels for x-axis on the diagram.
 | Use ``:ylabels_rotation:`` to set rotation of labels for y-axis on the diagram.
 
-.. needbar:: rotation example
-   :legend:
-   :xlabels: a, b, c
-   :xlabels_rotation: 90
-   :ylabels: Z, Y, X, W
-   :ylabels_rotation: 40
-
-    5,20,15
-   10,15,10
-   15,10,20
-   20,15,10
-
+|ex|
 
 .. code-block:: rst
 
@@ -510,33 +532,50 @@ rotation
       15,10,20
       20,15,10
 
+|out|
+
+.. needbar:: rotation example
+   :legend:
+   :xlabels: a, b, c
+   :xlabels_rotation: 90
+   :ylabels: Z, Y, X, W
+   :ylabels_rotation: 40
+
+    5,20,15
+   10,15,10
+   15,10,20
+   20,15,10
+
 
 separator
 ~~~~~~~~~
 
-With ``:separator:`` a customized separator between the values in the data of the content can be specified.
-Idea is to overcome possible use of ``,`` in a filter rule.
-Other options will be processed as defined there.
+You can specify a custom separator between the values in the content by setting the ``:separator:`` flag.
+This ensures the use of ``,`` (the default separator) in a filter rule. Other options will be processed as defined there.
 
-``:separator:`` is a string and support any symbols.
+The ``:separator:`` is a string that supports any symbols.
 
-.. needbar:: separator example
-   :separator: ;
-
-   5;20;15
-   10;15;10
-   15;10;20
-   20;15;10
+|ex|
 
 .. code-block:: rst
 
    .. needbar:: separator example
-      :separator: ;
+      :separator: -
 
-      5;20;15
-      10;15;10
-      15;10;20
-      20;15;10
+      5-20-15
+      10-15-10
+      15-10-20
+      20-15-10
+
+|out|
+
+.. needbar:: separator example
+   :separator: -
+
+   5-20-15
+   10-15-10
+   15-10-20
+   20-15-10
 
 
 colors
@@ -547,25 +586,14 @@ colors
 See `Matplotlib documentation of supported colors <https://matplotlib.org/stable/gallery/color/named_colors.html>`_
 for a complete list of color names.
 
-But beside names also hex-values like ``#ffcc00`` are supported.
+But besides names, ``:colors:`` options also supports hex-values like ``#ffcc00``.
 
 .. hint::
-   In a normal bar chart, the ``:colors:`` are used for the legend and bars itself.
-   So depending on horizontal or transpose, the length have to be same to ``:xlabels:`` or ``:ylabels:``.
-   If the length does not fit, it will be filled with the colors again and you will get a warning.
+   In a normal bar chart, we use the ``:colors:`` for the legend and bars itself.
+   When you use `horizontal`_ or `transpose`_, the bar's length must be equal to ``:xlabels:`` or ``:ylabels:``.
+   If the length does not fit, it will fill the bar with the colors again and you will get a warning.
 
-.. needbar:: colors example
-   :legend:
-   :colors: lightcoral, gold, #555555, #888888
-   :xlabels: FROM_DATA
-   :ylabels: FROM_DATA
-
-    , a, b, c
-   Z, 5,20,15
-   Y,10,15,10
-   X,15,10,20
-   W,20,15,10
-
+|ex|
 
 .. code-block:: rst
 
@@ -581,15 +609,11 @@ But beside names also hex-values like ``#ffcc00`` are supported.
       X,15,10,20
       W,20,15,10
 
+|out|
 
-text_color
-~~~~~~~~~~
-
-``:text_color:`` defines the color for text inside the bar chart and the labels.
-
-.. needbar:: text_color example
+.. needbar:: colors example
    :legend:
-   :text_color: green
+   :colors: lightcoral, gold, #555555, #888888
    :xlabels: FROM_DATA
    :ylabels: FROM_DATA
 
@@ -599,6 +623,13 @@ text_color
    X,15,10,20
    W,20,15,10
 
+
+text_color
+~~~~~~~~~~
+
+``:text_color:`` defines the color for text inside the bar chart and the labels.
+
+|ex|
 
 .. code-block:: rst
 
@@ -613,6 +644,20 @@ text_color
       Y,10,15,10
       X,15,10,20
       W,20,15,10
+
+|out|
+
+.. needbar:: text_color example
+   :legend:
+   :text_color: green
+   :xlabels: FROM_DATA
+   :ylabels: FROM_DATA
+
+    , a, b, c
+   Z, 5,20,15
+   Y,10,15,10
+   X,15,10,20
+   W,20,15,10
 
 
 style
@@ -630,18 +675,7 @@ Useful styles are for example:
 * dark_background
 * grayscale
 
-.. needbar:: style example
-   :legend:
-   :style: Solarize_Light2
-   :xlabels: FROM_DATA
-   :ylabels: FROM_DATA
-
-    , a, b, c
-   Z, 5,20,15
-   Y,10,15,10
-   X,15,10,20
-   W,20,15,10
-
+|ex|
 
 .. code-block:: rst
 
@@ -657,3 +691,16 @@ Useful styles are for example:
       X,15,10,20
       W,20,15,10
 
+|out|
+
+.. needbar:: style example
+   :legend:
+   :style: Solarize_Light2
+   :xlabels: FROM_DATA
+   :ylabels: FROM_DATA
+
+    , a, b, c
+   Z, 5,20,15
+   Y,10,15,10
+   X,15,10,20
+   W,20,15,10

@@ -30,8 +30,8 @@ You can define the type using the correct directive, like ``.. req::`` or ``.. t
 
 The code example above creates a new requirement, with a title, content, given id, a status and several tags.
 
-All the options for the requirement directive (``..req::``) are optional,
-but you must set a title as an argument (i.e. if you do not specify :ref:`needs_title_from_content`n the conf.py file).
+All the options for the requirement directive (``.. req::``) are optional,
+but you must set a title as an argument (i.e. if you do not specify :ref:`needs_title_from_content` in the conf.py file).
 
 .. note::
 
@@ -433,21 +433,21 @@ template
 
 .. versionadded:: 0.5.2
 
-By setting ``template`` the content of the need gets replaced by the content of the specified template.
+By setting ``template``, the content of the need gets replaced by the content of the specified template.
 
-``Sphinx-Needs`` templates support the template language `Jinja <https://jinja.palletsprojects.com/>`_
-and gives access to all need data, including the original content.
+``Sphinx-Needs`` templates support the `Jinja <https://jinja.palletsprojects.com/>`_ templating language
+and give access to all need data, including the original content.
 
-The template name must be the same as a file name in the ``Sphinx-Needs`` template folder, without the file extension.
-So a file named ``my_template.need`` must be referenced like this: ``:template: my_template``.
-``Sphinx-Needs`` templates must always use the file extension ``.need``.
+The template name must be equal to the filename in the ``Sphinx-Needs`` template folder, without the file extension.
+For example, if the filename is ``my_template.need``, you can reference it like this: ``:template: my_template``.
+``Sphinx-Needs`` templates must have the file extension ``.need``.
 
-The location of all template files is specified by :ref:`needs_template_folder`, which is by
-default ``needs_templates/``.
+You can specify the location of all template files by configuring the :ref:`needs_template_folder`, which is by
+default ``needs_templates/``, in the **conf.py** file.
 
-There can be several templates in parallel, but only one can be set for a need.
+You can have several templates, but can set only one for a need.
 
-**Example**
+|ex|
 
 *Template:* spec_template.need
 
@@ -466,7 +466,7 @@ There can be several templates in parallel, but only one can be set for a need.
 
       This is my **specification** content.
 
-*Result*
+|out|
 
 .. spec:: My specification
    :status: open
@@ -477,7 +477,7 @@ There can be several templates in parallel, but only one can be set for a need.
 
    This is my **specification** content.
 
-A list of available need-value names can be found in the documentation of :ref:`filter_string` or by using
+You can find a list of need-value names in the documentation for :ref:`filter_string` or by using
 the ``debug`` :ref:`layout <layouts>`.
 
 You can automatically assign templates to specific needs by using :ref:`needs_global_options`.
@@ -486,12 +486,12 @@ You can automatically assign templates to specific needs by using :ref:`needs_gl
 
 Multiline options
 +++++++++++++++++
-In Sphinx options support multiline content, which gets interpreted like other RST input in Sphinx-Needs templates.
+In Sphinx, options support multi-line content, which you can interpret like other RST input in Sphinx-Needs templates.
 
-But there is one important constraint: Don't use empty lines, as they are used to define the content end.
-Instead use ``__`` (two underscores) and to force line breaks use ``|``.
+But there is one important constraint: Don’t use empty lines, as we use them in defining the content end.
+Instead, you can use ``__`` (two underscores) to define the content end and can use ``|`` to force line breaks.
 
-**Example**
+|ex|
 
 *Need*
 ::
@@ -532,7 +532,7 @@ Instead use ``__`` (two underscores) and to force line breaks use ``|``.
 
 .. literalinclude:: /needs_templates/content.need
 
-*Result*
+|out|
 
 .. req:: A really strange example
    :id: multiline_1234
@@ -573,10 +573,10 @@ pre_template
 
 .. versionadded:: 0.5.4
 
-Adds specific content **before** the whole need.
-This may be useful to e.g. set a section name before each need.
+Adds specific content from a template *before* a **need**.
+For example, you can use it to set a section name before each **need**.
 
-**Example**
+|ex|
 
 *Template:* spec_pre_template.need
 
@@ -593,7 +593,7 @@ This may be useful to e.g. set a section name before each need.
 
       This is my **specification** content.
 
-*Result*
+|out|
 
 .. spec:: My specification
    :id: TEMPL_PRE_SPEC
@@ -609,10 +609,10 @@ post_template
 
 .. versionadded:: 0.5.4
 
-Adds specific content **after** the whole need.
-This may be useful to show some need-specific analytics, like dependency diagrams or table of linked needs.
+Adds specific content from a template *after* a **need**.
+You can use it to show some need-specific analytics, like dependency diagrams or table of linked needs.
 
-**Example**
+|ex|
 
 *Template:* spec_post_template.need
 
@@ -630,7 +630,7 @@ This may be useful to show some need-specific analytics, like dependency diagram
 
       This is my **specification** content.
 
-*Result*
+|out|
 
 .. spec:: My specification
    :id: TEMPL_POST_SPEC
@@ -648,10 +648,9 @@ duration
 
 .. versionadded:: 0.5.5
 
-Used to track the duration of a need.
+Track the duration of a need.
 
-It is used by default by :ref:`needgantt` and interpreted as days.
-But the need itself allows any value.
+The need allows any value but the :ref:`needgantt` directive uses and interprets it as days by default.
 
 
 .. _need_completion:
@@ -661,21 +660,26 @@ completion
 
 .. versionadded:: 0.5.5
 
-Used to track the completion of a need.
+Track the completion of a need.
 
-It is used by default by :ref:`needgantt` and interpreted as percentage.
-But the need itself allows any value.
+The need allows any value but the :ref:`needgantt` directive uses and interprets it as percentage by default.
+
 
 Customized Options
 ------------------
 
 Sphinx-Needs supports the definition and filtering of customized options for needs.
 
-Please see :ref:`needs_extra_options` for detailed information and examples.
+You can read :ref:`needs_extra_options` for detailed information and examples.
 
 
 Removed Options
 ---------------
+
+.. note::
+
+    To remove options from the ``Sphinx-Needs`` output in ``versions >= 0.5.0``, you must provide your own layout,
+    which does not include these options. See :ref:`layouts_styles` for more information.
 
 .. _need_hide_status:
 
@@ -683,12 +687,7 @@ hide_status
 ~~~~~~~~~~~
 *removed: 0.5.0*
 
-.. note::
-
-   To remove options from output in ``Sphinx-Needs`` version >= ``0.5.0`` you must provide your own layout, which
-   does not include these options. See :ref:`layouts_styles` for more information.
-
-You can also use **:hide_status:**  to hide status information for a need.
+Hide the status information of a need.
 
 .. _need_hide_tags:
 
@@ -696,9 +695,4 @@ hide_tags
 ~~~~~~~~~
 *removed: 0.5.0*
 
-.. note::
-
-   To remove options from output in ``Sphinx-Needs`` version >= ``0.5.0`` you must provide your own layout, which
-   does not include these options. See :ref:`layouts_styles` for more information.
-
-Or use **:hide_tags:** to hide the tags of a need.
+Hide the tags of a need.
