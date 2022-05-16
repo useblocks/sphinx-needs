@@ -248,6 +248,8 @@ be used and a warning will be issued.
 
 |ex|
 
+.. code-block:: rst
+
     .. req::
        :title_from_content:
 
