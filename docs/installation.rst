@@ -71,9 +71,9 @@ The final configuration contains already a setup for building and deploying the 
 ReadTheDocs provides ``plantuml.jar`` already on their system, so do not store it inside your source version control system.
 
 
-Using docker
+Using Docker
 ------------
 
-Sphinx-Needs got also dockerized by Till Witt.
+Sphinx-Needs is also available as a Docker Image.
 
-See https://github.com/tlwt/sphinxneeds-docker for actual documentation and hints on using it.
+See :ref:`docker` for the documentation and hints how to use it.

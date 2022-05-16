@@ -6,12 +6,21 @@ License
 
 .. include:: ../LICENSE
 
+0.7.10
+------
+:Released: under development
+
+* Bugfix: Support embedded needs in embedded needs.
+  (`#486 <https://github.com/useblocks/sphinxcontrib-needs/issues/486>`_)
+
 0.7.9
 -----
-:Released: under development
+:Released: 10.05.2022
 
 * Improvement: Add permanent link layout function.
   (`#390 <https://github.com/useblocks/sphinxcontrib-needs/issues/390>`_)
+* Improvement: Support for Sphinx-Needs Docker Image.
+  (`#531 <https://github.com/useblocks/sphinxcontrib-needs/issues/531>`_)  
 * Bugfix: :ref:`needextract` not correctly rendering nested :ref:`needs <need>`.
   (`#329 <https://github.com/useblocks/sphinxcontrib-needs/issues/329>`_)
 
