@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.abspath("../../sphinxcontrib-needs"))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 
-extensions = ["sphinxcontrib.needs"]
+extensions = ["sphinx_needs"]
 needs_title_optional = True
 needs_max_title_length = 50
 smartquotes_action = "qD"

@@ -27,9 +27,9 @@ Using sources
 Activation
 ----------
 
-For final activation, please add `sphinxcontrib.needs` to the project's extension list of your **conf.py** file::
+For final activation, please add `sphinx_needs` to the project's extension list of your **conf.py** file::
 
-   extensions = ["sphinxcontrib.needs",]
+   extensions = ["sphinx_needs",]
 
 For the full configuration, please read :ref:`config`.
 
@@ -53,7 +53,7 @@ Install PlantUML
 #. Add ``sphinxcontrib.plantuml`` to the sphinx extension list in ``conf.py``::
 
       extensions = ['sphinxcontrib.plantuml',
-                    'sphinxcontrib.needs']
+                    'sphinx_needs']
 
 #. Configure plantuml in ``conf.py``::
 

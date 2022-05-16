@@ -84,7 +84,7 @@ All you need to do is to set the Python service class, which must be mentioned u
 
 .. code-block:: python
 
-    from sphinxcontrib.needs.services.xy import NeededService
+    from sphinx_needs.services.xy import NeededService
 
     needs_services = {
         'my-company-service': {
@@ -114,7 +114,7 @@ Example of a basic service:
 
 .. code-block:: python
 
-    from sphinxcontrib.needs.services.base import BaseService
+    from sphinx_needs.services.base import BaseService
 
     class MyService(BaseService):
 

@@ -6,7 +6,7 @@ import pytest
 
 dummy_code = """
 def setup(app):
-    from sphinxcontrib.needs.api import get_need_types
+    from sphinx_needs.api import get_need_types
 
     def after_config(app, config):
         print(get_need_types(app))

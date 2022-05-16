@@ -12,6 +12,7 @@ License
 
 * Bugfix: Support embedded needs in embedded needs.
   (`#486 <https://github.com/useblocks/sphinxcontrib-needs/issues/486>`_)
+* Bugfix: Correct references in :ref:`needtable`s to be external or internal instead of always external.
 
 0.7.9
 -----
