@@ -12,7 +12,7 @@ License
 
 * Improvement: Add permanent link layout function.
   (`#390 <https://github.com/useblocks/sphinxcontrib-needs/issues/390>`_)
-* Bugfix: :ref:`needextract` not correctly rendering nested :ref:`need`s.
+* Bugfix: :ref:`needextract` not correctly rendering nested :ref:`needs <need>`.
   (`#329 <https://github.com/useblocks/sphinxcontrib-needs/issues/329>`_)
 
 0.7.8
@@ -62,7 +62,7 @@ License
 
 * Improvement: :ref:`needbar` is introduced
   (`#452 <https://github.com/useblocks/sphinxcontrib-needs/issues/452>`_)
-* Improvement: :ref:`needs_external_needs` supports relative path for :ref:`base_url`.
+* Improvement: :ref:`needs_external_needs` supports relative path for ``base_url``.
 * Improvement: ``needs.json`` schema gets checked during a :ref:`needimport`
   (`#456 <https://github.com/useblocks/sphinxcontrib-needs/issues/456>`_)
 * Improvement: Supports :ref:`filter_func` for :ref:`needpie`
