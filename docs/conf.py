@@ -551,6 +551,17 @@ texinfo_documents = [
     ),
 ]
 
+rst_epilog = """
+.. |ex| replace:: **Example** 
+
+.. |out| replace:: **Output** 
+
+.. |br| raw:: html 
+
+   <br>
+
+"""
+
 
 def rstjinja(app, docname, source):
     """

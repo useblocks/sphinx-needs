@@ -263,13 +263,13 @@ Search for all commits of Sphinx-Needs, which have ``Python`` in their message.
 
 .. code-block:: rst
 
-    .. needservice:: github-commits
-       :query: repo:useblocks/sphinxcontrib-needs python
-       :max_amount: 2
+   .. needservice:: github-commits
+      :query: repo:useblocks/sphinxcontrib-needs python
+      :max_amount: 2
 
 .. needservice:: github-commits
-   :query: repo:useblocks/sphinxcontrib-needs python
-   :max_amount: 2
+    :query: repo:useblocks/sphinxcontrib-needs python
+    :max_amount: 2
 
 **Specific commit**
 
