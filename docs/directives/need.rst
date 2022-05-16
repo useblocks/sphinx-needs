@@ -1,11 +1,12 @@
 .. _need:
 
-need/ req (or any other defined need type)
-==========================================
+need / req (or any other defined need type)
+===========================================
 
-Creates a need with specified type. The type is defined by using the correct directive, like
-``.. req::`` or ``.. test::``.
+Creates a **need** object with a specified type.
+You can define the type using the correct directive, like ``.. req::`` or ``.. test::``.
 
+.. rubric:: **Example**
 
 .. code-block:: rst
 
@@ -17,6 +18,8 @@ Creates a need with specified type. The type is defined by using the correct dir
 
        Our users needs to get logged in via our login forms on **/login.php**.
 
+.. rubric:: **Output**
+
 .. req:: User needs to login
    :id: ID123
    :status: open
@@ -25,17 +28,18 @@ Creates a need with specified type. The type is defined by using the correct dir
 
    Our users needs to get logged in via our login forms on **/login.php**.
 
-This creates a new requirement, with a title, content, given id, a status and several tags.
+The code example above creates a new requirement, with a title, content, given id, a status and several tags.
 
-All options are optional, only the title as argument must be given (if :ref:`needs_title_from_content` is not set).
+All the options for the requirement directive (``..req::``) are optional,
+but you must set a title as an argument (i.e. if you do not specify :ref:`needs_title_from_content`n the conf.py file).
 
 .. note::
 
-    By default the above example works also with `.. spec::`, `.. impl::`, `.. test::` and all other need types,
+    By default, the above example works also with ``.. spec::``, ``.. impl::``, ``.. test::`` and all other need types,
     which are configured via :ref:`needs_types`.
 
-Options
--------
+Options for Need Type
+---------------------
 
 Supported options:
 
@@ -57,33 +61,35 @@ Supported options:
 
 id
 ~~
-The given ID must match the regular expression of config parameter :ref:`needs_id_regex`.
-If it does not match, the build stops.
+The given ID must match the regular expression (regex) value for the :ref:`needs_id_regex` parameter in **conf.py**.
+The Sphinx build stops if the ID does not match the regex value.
 
-If no **id** is given, a short hash value is calculated based on the title. If the title gets not changed, the
-id will be stable for all upcoming documentation generations.
+If you do not specify the id option, we calculate a short hash value based on the title.
+If you don’t change the title, the id will work for all upcoming documentation generations.
 
 .. _need_status:
 
 status
 ~~~~~~
-A need can only have one status and its selection may be restricted by config parameter :ref:`needs_statuses`.
+A need can only have one status, and the :ref:`needs_statuses` configuration parameter may restrict its selection.
 
 
 .. _need_tags:
 
 tags
 ~~~~
-**Tags** must be separated by "**;**", like tag1; tag2;tag3. Whitespaces get removed.
+You can give multiple tags by separating each with **;** symbol, like ``tag1;tag2;tag3``. White spaces get removed.
 
 .. _need_links:
 
 links
 ~~~~~
-**links** can be used to create a link to one or several other needs, no matter what kind of type they are.
-All you need is the related ID.
+The ``links`` option can create a link to one or several other needs, no matter the need type.
+All you must specify is the ID for the need.
 
-You can easily set links to multiple needs by using ";" as separator.
+You can easily set links to multiple needs by using **;** as a separator.
+
+|ex|
 
 .. code-block:: rst
 
@@ -96,6 +102,8 @@ You can easily set links to multiple needs by using ";" as separator.
       :links: REQ_LINK_1
 
       This sets a link to id ``REQ_LINK_1``.
+
+|out|
 
 .. req:: Link example Target
    :id: REQ_LINK_1
@@ -113,7 +121,9 @@ You can easily set links to multiple needs by using ";" as separator.
 extra links
 +++++++++++
 
-By using :ref:`needs_extra_links` you can use the configured link-types to set additional on other options.
+By using :ref:`needs_extra_links <needs_extra_links>`, you can use the configured link-types to set additional **need** options.
+
+|ex|
 
 .. code-block:: python
 
@@ -144,6 +154,7 @@ By using :ref:`needs_extra_links` you can use the configured link-types to set a
 
       Perform some tests
 
+|out|
 
 .. req:: test me
    :id: test_req
@@ -163,16 +174,17 @@ By using :ref:`needs_extra_links` you can use the configured link-types to set a
 
 hide
 ~~~~
-There is an option **:hide:**, if this is set (no value is needed), the need will not be printed in
-documentation. But it will show up in need filters!
+There is a **:hide:** option. If this is set (no value is needed), the need will not be printed in the
+documentation. But you can use it with **need filters**.
 
 .. _need_collapse:
 
 collapse
 ~~~~~~~~
-If set to **True**, details like status, links or tags are collapsed and viewable only after a click on the need title.
+If set to **True**, the details section containing status, links or tags is not visible.
+You can view the details by clicking on the forward arrow symbol near the need title.
 
-If set to **False**, details are shown directly.
+If set to **False**, the need shows the details section.
 
 Allowed values:
 
@@ -180,6 +192,8 @@ Allowed values:
  * false; no; 0
 
 Default: False
+
+|ex|
 
 .. code-block:: rst
 
@@ -194,6 +208,8 @@ Default: False
       :collapse: False
 
       Title, tags, links and everything else is shown directly.
+
+|out|
 
 .. req:: Collapse is set to True
    :tags: collapse; example
@@ -215,27 +231,30 @@ title_from_content
 
 .. versionadded:: 0.2.3
 
-When this flag is provided on an individual need, a title will be derived
-from the first sentence of the content.  If not title and no content is provided
+When this flag is provided on a need, a title will be derived
+from the first sentence of the content.  If the title or content is not provided
 then the build process will fail.
 
 The derived title will respect the :ref:`needs_max_title_length` and provide an
-ellided title if needed.  By default there is no limit to the title length.
+elided title if needed.  By default there is no limit to the title length.
 
-When using this setting be sure to exercise caution that special formatting
-that you would not want in the title (bulleted lists, nested directives, etc.)
-do not appear in the first sentence.
+.. note::
+
+    When using this setting ensure that the first sentence does not contain
+    any special formatting you would not want in the title (bulleted lists, nested directives, etc.)
 
 If a title is provided and the flag is present, then the provided title will
 be used and a warning will be issued.
 
-Example::
+|ex|
 
     .. req::
-        :title_from_content:
+       :title_from_content:
 
-        The first sentence will be the title.  Anything after the first
-        sentence will not be part of the title.
+       The first sentence will be the title.  Anything after the first
+       sentence will not be part of the title.
+
+|out|
 
 The resulting requirement would have the title derived from the first
 sentence of the requirement.
@@ -255,6 +274,8 @@ layout
 
 ``layout`` can be used to set a specific grid and content mapping.
 
+|ex|
+
 .. code-block:: rst
 
    .. req:: My layout requirement 1
@@ -264,12 +285,16 @@ layout
 
       Some **content** of LAYOUT_1
 
+|out|
+
 .. req:: My layout requirement 1
    :id: LAYOUT_1
    :tags: layout_example
    :layout: clean
 
    Some **content** of LAYOUT_1
+
+|ex|
 
 .. code-block:: rst
 
@@ -280,12 +305,16 @@ layout
 
       Some **content** of LAYOUT_2
 
+|out|
+
 .. req:: My layout requirement 2
    :id: LAYOUT_2
    :tags: layout_example
    :layout: complete
 
    Some **content** of LAYOUT_2
+
+|ex|
 
 .. code-block:: rst
 
@@ -295,6 +324,8 @@ layout
       :layout: focus
 
       Some **content** of LAYOUT_3
+
+|out|
 
 .. req:: My layout requirement 3
    :id: LAYOUT_3
@@ -315,7 +346,9 @@ style
 
 ``style`` can be used to set a specific class-attribute for the need representation.
 
-The class-attribute can then be addressed by css to specify the layout of the need.
+The class-attribute can then be selected with **CSS** to specify the layout of the need.
+
+**Examples**
 
 .. req:: My styled requirement
    :id: STYLE_001
@@ -357,11 +390,13 @@ The class-attribute can then be addressed by css to specify the layout of the ne
       :id: STYLE_004
       :style: yellow, blue_border
 
-By using :ref:`dynamic_functions` the value of ``style`` can be automatically
-combined with values from other need options.
+By using :ref:`dynamic_functions`, the value of ``style`` can be automatically
+derived from the values of other need options.
 
 Here ``style`` is set to ``[[copy('status')]]``,
-which leads to the css class ``needs_style_open`` if style is set to ``open``.
+which leads to the CSS class ``needs_style_open`` if the ``status`` option is set to ``open``.
+
+**Examples**
 
 .. req:: My automatically styled requirement
    :id: STYLE_005
