@@ -57,8 +57,6 @@ This kind of Need object can then be used by :ref:`needuml` to generate complex 
 To use this content type, set ``content`` to ``plantuml`` in the :ref:`needs_types` configuration.
 
 
-
-
 Options for Need Type
 ---------------------
 
@@ -270,6 +268,7 @@ be used and a warning will be issued.
 |ex|
 
 .. code-block:: rst
+
 
     .. req::
        :title_from_content:

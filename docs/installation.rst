@@ -55,7 +55,6 @@ Install PlantUML
       extensions = ['sphinxcontrib.plantuml',
                     'sphinx_needs']
 
-
 #. Configure plantuml in ``conf.py``::
 
       on_rtd = os.environ.get('READTHEDOCS') == 'True'
@@ -78,3 +77,5 @@ Using Docker
 Sphinx-Needs is also available as a Docker Image.
 
 See :ref:`docker` for the documentation and hints how to use it.
+
+
