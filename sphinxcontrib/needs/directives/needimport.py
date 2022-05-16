@@ -76,9 +76,9 @@ class NeedimportDirective(Directive):
             raise ReferenceError(f"Could not load needs import file {correct_need_import_path}")
 
         errors = check_needs_file(correct_need_import_path)
-        if errors["schema"]:
+        if errors.schema:
             logger.info(f"Schema validation errors detected in file {correct_need_import_path}:")
-            for error in errors["schema"]:
+            for error in errors.schema:
                 logger.info(f'  {error.message} -> {".".join(error.path)}')
 
         with open(correct_need_import_path) as needs_file:
