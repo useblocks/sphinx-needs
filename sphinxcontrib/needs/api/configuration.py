@@ -31,7 +31,7 @@ def get_need_types(app: Sphinx):
     return [x["directive"] for x in needs_types]
 
 
-def add_need_type(app: Sphinx, directive, title, prefix, color="#ffffff", style="node"):
+def add_need_type(app: Sphinx, directive: str, title: str, prefix, color="#ffffff", style="node"):
     """
     Adds a new need_type to the configuration.
 
@@ -65,7 +65,7 @@ def add_need_type(app: Sphinx, directive, title, prefix, color="#ffffff", style=
     app.add_directive(directive, sphinxcontrib.needs.directives.need.NeedDirective)
 
 
-def add_extra_option(app, name):
+def add_extra_option(app: Sphinx, name: str):
     """
     Adds an extra option to the configuration. This option can then later be used inside needs or ``add_need``.
 
