@@ -113,7 +113,14 @@ def row_col_maker(
             text_col = nodes.Text(datum_text, datum_text)
             if make_ref or ref_lookup:
                 try:
-                    ref_col = nodes.reference("", "")
+                    if need_info["is_external"]:
+                        ref_col = nodes.reference("", "")
+                    else:
+                        # Mark reference as "internal" so that if the rinohtype builder is being used it produces an
+                        # internal reference within the generated PDF instead of an external link. This replicates the
+                        # behaviour of references created with the sphinx utility `make_refnode`.
+                        ref_col = nodes.reference("", "", internal=True)
+
                     if make_ref:
                         if need_info["is_external"]:
                             ref_col["refuri"] = check_and_calc_base_url_rel_path(need_info["external_url"], fromdocname)
