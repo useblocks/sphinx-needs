@@ -1,19 +1,13 @@
 from pathlib import Path, PurePosixPath
 from typing import Iterable
 
-import sphinx
 from jinja2 import Environment, PackageLoader, select_autoescape
-from pkg_resources import parse_version
 from sphinx.application import Sphinx
+from sphinx.util import status_iterator
 from sphinx.util.console import brown
 from sphinx.util.osutil import copyfile
 
 from sphinxcontrib.needs.utils import logger
-
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import status_iterator  # NOQA Sphinx 1.5
-
 
 IMAGE_DIR_NAME = "_static"
 
@@ -103,10 +97,6 @@ def install_styles_static_files(app: Sphinx, env):
         path = Path("sphinx-needs") / f"{theme}.css"
         safe_remove_file(path, app)
 
-    if parse_version(sphinx_version) < parse_version("1.6"):
-        global status_iterator
-        status_iterator = app.status_iterator
-
     for source_file_path in status_iterator(
         files_to_copy,
         "Copying static files for sphinx-needs custom style support...",
@@ -141,10 +131,6 @@ def install_static_files(
     # Do not copy static_files for our "needs" builder
     if app.builder.name == "needs":
         return
-
-    if parse_version(sphinx_version) < parse_version("1.6"):
-        global status_iterator
-        status_iterator = app.status_iterator
 
     for source_file_path in status_iterator(
         files_to_copy,

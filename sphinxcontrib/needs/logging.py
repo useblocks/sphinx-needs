@@ -1,14 +1,6 @@
-import sphinx
-from pkg_resources import parse_version
-
-sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
-
-    logging.basicConfig()  # Only need to do this once
+from sphinx.util import logging
+from sphinx.util.logging import SphinxLoggerAdapter
 
 
-def get_logger(name):
+def get_logger(name: str) -> SphinxLoggerAdapter:
     return logging.getLogger(name)
