@@ -3,7 +3,10 @@ import os
 
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
-from jinja2 import BaseLoader, Environment
+from jinja2 import BaseLoader, Environment, Template
+
+from sphinx_needs.diagrams_common import calculate_link
+from sphinx_needs.directives.needflow import make_entity_name
 
 
 class Needuml(nodes.General, nodes.Element):
@@ -23,6 +26,7 @@ class NeedumlDirective(Directive):
         "scale": directives.unchanged_required,
         "debug": directives.flag,
         "config": directives.unchanged_required,
+        "extra": directives.unchanged_required,
     }
 
     def run(self):
@@ -50,6 +54,14 @@ class NeedumlDirective(Directive):
                 if config_name and config_name in env.config.needs_flow_configs:
                     configs.append(env.config.needs_flow_configs[config_name])
 
+        extra_dict = {}
+        extras = self.options.get("extra", None)
+        if extras:
+            extras = extras.split(",")
+            for extra in extras:
+                key, value = extra.split(":")
+                extra_dict[key] = value
+
         env.need_all_needumls[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
@@ -61,6 +73,7 @@ class NeedumlDirective(Directive):
             "config_names": config_names,
             "config": "\n".join(configs),
             "debug": "debug" in self.options,
+            "extra": extra_dict,
         }
 
         return [targetnode] + [Needuml("")]
@@ -73,22 +86,41 @@ class JinjaFunctions:
     Provides access to sphinx-app and all Needs objects.
     """
 
-    def __init__(self, app):
+    def __init__(self, app, fromdocname):
         self.needs = app.builder.env.needs_all_needs
+        self.app = app
+        self.fromdocname = fromdocname
 
-    def uml(self, need_id):
-        need = self.needs[need_id]
-        if need["type_content"] == "plantuml":
-            uml_content = need["content"]
+    def uml(self, need_id, **kwargs):
+        need_info = self.needs[need_id]
+        if need_info["type_content"] == "plantuml":
+            uml_content = need_info["content"]
 
             # We need to rerender the fetched content, as it may contain also Jinja statements.
             mem_template = Environment(loader=BaseLoader).from_string(uml_content)
-            data = {"needs": self.needs, "uml": self.uml}
+            data = {"needs": self.needs, "uml": self.uml, "need": self.need}
+            data.update(kwargs)
             uml = mem_template.render(**data)
         else:
-            uml = f'{need["type_style"]} "{need["title"][:20]}" as {need["id"]} {need["type_color"]}'
-
+            uml = self.need(need_id)
         return uml
+
+    def need(self, need_id):
+        need_info = self.needs[need_id]
+        link = calculate_link(self.app, need_info, self.fromdocname)
+
+        diagram_template = Template(self.app.builder.env.config.needs_diagram_template)
+        node_text = diagram_template.render(**need_info)
+
+        need_uml = '{style} "{node_text}" as {id} [[{link}]] #{color}\n'.format(
+            id=make_entity_name(need_id),
+            node_text=node_text,
+            link=link,
+            color=need_info["type_color"].replace("#", ""),
+            style=need_info["type_style"],
+        )
+
+        return need_uml
 
 
 def process_needuml(app, doctree, fromdocname):
@@ -136,12 +168,15 @@ def process_needuml(app, doctree, fromdocname):
         mem_template = Environment(loader=BaseLoader).from_string(uml_content)
 
         # Get all needed Jinja Helper Functions
-        jinja_utils = JinjaFunctions(app)
+        jinja_utils = JinjaFunctions(app, fromdocname)
+        # Make the helpers available during rendering
+        data = {"needs": all_needs, "uml": jinja_utils.uml, "need": jinja_utils.need}
 
-        data = {"needs": all_needs, "uml": jinja_utils.uml}
+        data.update(current_needuml["extra"])
+
         uml_content = mem_template.render(**data)
         # Add needuml specific content
-        puml_node["uml"] = "@startuml\n"
+        puml_node["uml"] = "@startuml\nallowmixing\n"
 
         # Adding config
         config = current_needuml["config"]

@@ -165,7 +165,9 @@ DEFAULT_DIAGRAM_TEMPLATE = (
 
 needs_types = [
     # Architecture types
+    dict(directive="int", title="Interface", content="plantuml", prefix="I_", color="#BFD8D2", style="card"),
     dict(directive="comp", title="Component", content="plantuml", prefix="C_", color="#BFD8D2", style="card"),
+    dict(directive="sys", title="System", content="plantuml", prefix="S_", color="#BFD8D2", style="card"),
     # Normal types
     dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),
     dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="node"),
@@ -292,7 +294,7 @@ needs_extra_options = [
 ]
 
 needs_warnings = {
-    "type_check": 'type not in ["comp", "req", "spec", "impl", "test", "feature", "action", "user", "milestone", '
+    "type_check": 'type not in ["int", "sys", "comp", "req", "spec", "impl", "test", "feature", "action", "user", "milestone", '
     '"issue", "pr", "commit"'  # github service types
     "]",
     # 'valid_status': 'status not in ["open", "in progress", "closed", "done", "implemented"] and status is not None'

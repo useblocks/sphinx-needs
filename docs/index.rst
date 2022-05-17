@@ -438,7 +438,6 @@ One more thing ...
    installation
    directives/index
    roles
-   architecture
    configuration
    builders
    api
