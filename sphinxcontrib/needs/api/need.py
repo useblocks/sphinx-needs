@@ -1,11 +1,12 @@
 import hashlib
 import os
 import re
-from typing import List, Union
+from typing import List, Optional, Union
 
 from docutils import nodes
 from docutils.statemachine import ViewList
 from jinja2 import Template
+from sphinx.application import Sphinx
 from sphinx.util.nodes import nested_parse_with_titles
 
 from sphinxcontrib.needs.api.configuration import NEEDS_CONFIG
@@ -27,17 +28,17 @@ logger = get_logger(__name__)
 
 
 def add_need(
-    app,
+    app: Sphinx,
     state,
-    docname,
-    lineno,
+    docname: str,
+    lineno: int,
     need_type,
-    title,
-    id=None,
-    content="",
-    status=None,
+    title: str,
+    id: Optional[str] = None,
+    content: str = "",
+    status: Optional[str] = None,
     tags=None,
-    links_string=None,
+    links_string: Optional[str] = None,
     hide=False,
     hide_tags=False,
     hide_status=False,
@@ -512,7 +513,7 @@ def _read_in_links(links_string: Union[str, List[str]]):
     return _fix_list_dyn_func(links)
 
 
-def make_hashed_id(app, need_type, full_title, content, id_length=None):
+def make_hashed_id(app: Sphinx, need_type: str, full_title, content, id_length=None):
     """
     Creates an ID based on title or need.
 
@@ -540,7 +541,7 @@ def make_hashed_id(app, need_type, full_title, content, id_length=None):
     return "{}{}".format(type_prefix, hashlib.sha1(hashable_content.encode("UTF-8")).hexdigest().upper()[:id_length])
 
 
-def _fix_list_dyn_func(list):
+def _fix_list_dyn_func(list: List[str]) -> List[str]:
     """
     This searches a list for dynamic function fragments, which may have been cut by generic searches for ",|;".
 
@@ -599,7 +600,7 @@ def _merge_extra_options(needs_info, needs_kwargs, needs_extra_options):
     return extra_keys
 
 
-def _merge_global_options(app, needs_info, global_options):
+def _merge_global_options(app: Sphinx, needs_info, global_options):
     """Add all global defined options to needs_info"""
     if global_options is None:
         return

@@ -8,12 +8,14 @@ Collection of common sphinx-needs functions for dynamic values
 
 import re
 
+from sphinx.application import Sphinx
+
 from sphinxcontrib.needs.api.exceptions import NeedsInvalidFilter
 from sphinxcontrib.needs.filter_common import filter_needs, filter_single_need
 from sphinxcontrib.needs.utils import logger
 
 
-def test(app, need, needs, *args, **kwargs):
+def test(app: Sphinx, need, needs, *args, **kwargs):
     """
     Test function for dynamic functions in sphinx needs.
 
@@ -34,7 +36,7 @@ def test(app, need, needs, *args, **kwargs):
     return "Test output of need {}. args: {}. kwargs: {}".format(need["id"], args, kwargs)
 
 
-def echo(app, need, needs, text, *args, **kwargs):
+def echo(app: Sphinx, need, needs, text, *args, **kwargs):
     """
     .. versionadded:: 0.6.3
 
