@@ -207,3 +207,12 @@ table.needs_style_blue a, table.needs_style_green a {
 table.class_red_border {
     border: 3px solid red;
 }
+
+div.dt-button-collection button.dt-button.active:not(.disabled){
+    color: #000!important;
+    border: 1px solid #000!important;
+}
+
+.md-typeset pre {
+    overflow-x: auto;
+}
