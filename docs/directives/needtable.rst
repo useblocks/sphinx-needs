@@ -7,35 +7,41 @@ needtable
 
 **needtable** generates a table, based on the result of given filters.
 
+|ex|
+
 .. code-block:: rst
 
    .. needtable:: Example table
       :tags: main_example
       :style: table
 
+|out|
+
 .. needtable:: Example table
    :tags: main_example
    :style: table
 
-The argument of ``needtable`` will be used as caption for the table.
+We use the argument of a ``needtable`` as caption for the table.
 
 Options
 -------
 
-.. note:: **needtable** supports the full filtering possibilities of sphinx-needs.
-          Please see :ref:`filter` for more information.
+.. note::
+
+    **needtable** supports the full filtering possibilities of **Sphinx-Needs**.
+    Please see :ref:`filter` for more information.
 
 Supported options:
 
- * :ref:`needtable_columns`
- * :ref:`needtable_colwidths`
- * :ref:`needtable_show_filters`
- * :ref:`needtable_style`
- * :ref:`needtable_show_parts`
- * :ref:`needtable_style_row`
- * :ref:`needtable_sort`
- * :ref:`needtable_class`
- * Common filters:
+* :ref:`needtable_columns`
+* :ref:`needtable_colwidths`
+* :ref:`needtable_show_filters`
+* :ref:`needtable_style`
+* :ref:`needtable_show_parts`
+* :ref:`needtable_style_row`
+* :ref:`needtable_sort`
+* :ref:`needtable_class`
+* Common filters:
     * :ref:`option_status`
     * :ref:`option_tags`
     * :ref:`option_types`
@@ -46,14 +52,14 @@ Supported options:
 
 columns
 ~~~~~~~
-Needs a comma/semicolon separated string, which is used to define the position of specific columns.
+A comma/semicolon separated string used to define the position of specific columns.
 For instance::
 
     .. needtable::
        :columns: id;title;tags
 
 
-This will show the columns *id*, *title* and *tags* in the given order.
+This will show the columns *id*, *title* and *tags* in the order given.
 
 .. container:: toggle
 
@@ -61,21 +67,24 @@ This will show the columns *id*, *title* and *tags* in the given order.
 
       **Show example**
 
+   |ex|
+
    .. code-block:: rst
 
       .. needtable::
          :columns: id;title;tags
+
+   |out|
 
    .. needtable::
       :tags: test
       :columns: id;title;tags
       :style: table
 
+You can set all options of a need (incl. :ref:`needs_extra_options`) as a column.
+This also includes internal options like ``docname`` (Use `:layout: debug` on a need for a complete list)
 
-All values of a need (incl. :ref:`needs_extra_options`) can be set as column.
-This includes also internal values like ``docname`` (Use `:layout: debug` on a need for a complete list)
-
-If **:columns:** is set, the value of config parameter :ref:`needs_table_columns` is not used for the current table.
+If you set **:columns:**, the current table will not use the value of config parameter :ref:`needs_table_columns`.
 
 Tables with a lot of columns will get a horizontal scrollbar in HTML output.
 
@@ -99,18 +108,22 @@ colwidths
 
 .. versionadded:: 0.7.4
 
-Defines the width of each column as a comma separated list of lengths or percentages.
+A comma separated list of lengths or percentages used to define the width of each column.
 
 It has the same meaning as the ``width options`` of
 `listtable <https://docutils.sourceforge.io/docs/ref/rst/directives.html#list-table>`_ directive.
 
-Example::
+|ex|
+
+.. code-block:: rst
 
   .. needtable::
      :tags: test
      :columns: id,title,status
      :colwidths: 50,40,10
      :style: table
+
+|out|
 
 .. needtable::
      :tags: test
@@ -119,13 +132,11 @@ Example::
      :style: table
 
 
-
-
 .. _needtable_custom_titles:
 
 Custom column titles
 ....................
-Each column can get a customized title by following this syntax for its definition: ``OPTION as "My custom title"``.
+You can customize each column title by following this syntax for its definition: ``OPTION as "My custom title"``.
 The characters ``,`` or ``;`` are not allowed.
 
 .. container:: toggle
@@ -134,6 +145,8 @@ The characters ``,`` or ``;`` are not allowed.
 
       **Show example**
 
+   |ex|
+
    .. code-block:: rst
 
         .. needtable::
@@ -141,16 +154,12 @@ The characters ``,`` or ``;`` are not allowed.
           :columns: id;title as "Headline"; tags as "Labels"
           :style: table
 
+   |out|
+
    .. needtable::
       :tags: test
       :columns: id;title as "Headline"; tags as "Labels"
       :style: table
-
-
-
-
-
-
 
 
 .. _needtable_show_filters:
@@ -158,11 +167,7 @@ The characters ``,`` or ``;`` are not allowed.
 show_filters
 ~~~~~~~~~~~~
 
-If set, the used filter is added in front of the table::
-
-   .. needtable::
-      :show_filters:
-
+If set, we add the used filter above the table:
 
 .. container:: toggle
 
@@ -170,11 +175,17 @@ If set, the used filter is added in front of the table::
 
       **Show example**
 
+   |ex|
+
    .. code-block:: rst
 
       .. needtable::
          :tags: test
+         :columns: id;title;tags
          :show_filters:
+         :style: table
+
+   |out|
 
    .. needtable::
       :tags: test
@@ -187,7 +198,7 @@ If set, the used filter is added in front of the table::
 
 style
 ~~~~~
-Allows to set a specific style for the current table.
+Allows you to set a specific style for the current table.
 
 Supported values are:
 
@@ -202,8 +213,9 @@ Overrides config parameter :ref:`needs_table_style` if set.
 
       **Show example**
 
-   .. code-block:: rst
+   |ex|
 
+   .. code-block:: rst
 
       .. needtable::
          :style: table
@@ -212,6 +224,8 @@ Overrides config parameter :ref:`needs_table_style` if set.
          :style: datatables
 
    Table with ``:style: table``:
+
+   |out|
 
    .. needtable::
          :tags: awesome
@@ -232,9 +246,11 @@ show_parts
 
 Adds an extra table row for each :ref:`need_part` found inside a filtered need.
 
-The part rows are added directly under the related need rows and their id and title get a prefix.
+It adds the part rows directly under the related need’s row, and their id and title get a prefix.
 
 To change the prefix please read :ref:`needs_part_prefix`.
+
+|ex|
 
 .. needtable::
    :tags: test_table
@@ -243,11 +259,13 @@ To change the prefix please read :ref:`needs_part_prefix`.
    :columns: id;title;outgoing;incoming
    :style: table
 
+
+
 .. container:: toggle
 
    .. container::  header
 
-      **Show example configuration**
+      **Show above example's configuration**
 
    .. code-block:: rst
 
@@ -304,31 +322,32 @@ style_row
 
 .. versionadded:: 0.4.1
 
-``style_row`` can be used to set a specific class-attribute for the table-row representation.
+You can use the ``style_row`` option to set a specific class-attribute for the table-row representation and use **CSS** to select the class-attribute
 
-The class-attribute can then be addressed by css and specific layout can be set for the row.
+Also, you can set specific layout for the row.
+
+|ex|
+
+.. code-block:: rst
+
+  .. needtable::
+     :tags: ex_row_color
+     :style_row: needs_blue_border
+
+|out|
 
 .. needtable::
       :tags: ex_row_color
       :style_row: needs_blue_border
 
-.. container:: toggle
-
-   .. container::  header
-
-      **Show used configuration**
-
-   .. code-block:: rst
-
-      .. needtable::
-         :tags: ex_row_color
-         :style_row: needs_blue_border
 
 Row style based on specific need value
 ......................................
 
-:ref:`dynamic_functions` can be used to calculate a value for ``style_row`` based on a specific value of the
+You can use :ref:`dynamic_functions` to derive the value for ``style_row`` based on a specific value of the
 documented need in the row.
+
+|ex|
 
 .. needtable::
    :tags: ex_row_color
@@ -409,18 +428,20 @@ sort
 ~~~~
 .. versionadded:: 0.4.3
 
-``.. needtable::`` provides a ``sort`` option to sort the filter-results for a given key.
+Option to sort the filtered-results based on a key.
 
-The sort-value must be compatible to the options supported by :ref:`filter_string` and the addressed need-value
-must be from type ``string``, ``float`` or ``int``.
+The sort-value must be compatible with the options supported by the :ref:`filter_string`, and the addressed need-value
+must have the type ``string``, ``float`` or ``int``.
 
-If no sort option is given, ``id_complete`` is used by default:
+|ex|
+
+By default, we use ``id_complete`` if we don't set a sort option.
 
 .. needtable::
    :tags: ex_row_color
    :style: table
 
-In this case, ``status`` is given for sort. So *EX_ROW_3* is above of *EX_ROW_2*.
+In this case, we set the sort option to ``status``. So *EX_ROW_3* is above of *EX_ROW_2*.
 
 .. needtable::
    :tags: ex_row_color
@@ -446,8 +467,8 @@ In this case, ``status`` is given for sort. So *EX_ROW_3* is above of *EX_ROW_2*
 
 .. note::
 
-   Sorting may only work if the standard sphinx-table is used for output: ``:style: table``.
-   The default DatabTables table uses Javascript to sort results by its own.
+   Sorting only works if you use the standard sphinx-table for output: ``:style: table``.
+   By default, tables generated with DatabTables uses Javascript to sort results.
 
 
 .. _needtable_class:
@@ -456,12 +477,14 @@ class
 ~~~~~
 .. versionadded:: 0.7.4
 
-``class`` allows to set additional class-names for a ``needtable``. Mostly used for HTML output.
-It supports comma separated values and classes will be added to the already set classes by Sphinx-Needs.
+You can set additional class-names for a ``needtable`` using the ``class`` option. Mostly used for HTML output.
+It supports comma separated values and will add classes to the already set classes by Sphinx-Needs.
 
-**Example**
+|ex|
 
-rst file::
+.. rubric:: rst file:
+
+.. code-block:: rst
 
   .. needtable::
      :tags: test
@@ -469,11 +492,16 @@ rst file::
      :style: table
      :class: class_red_border
 
-custom css file::
+.. rubric:: custom css file:
+
+.. code-block:: css
 
     table.class_red_border {
         border: 3px solid red;
     }
+
+
+|out|
 
 .. needtable::
      :tags: test

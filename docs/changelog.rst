@@ -226,7 +226,7 @@ License
 * Improvement: Internal change to poetry, nox and github actions.
   (`#216 <https://github.com/useblocks/sphinxcontrib-needs/issues/216>`_)
 * Bugfix: Need-service calls get mocked during tests, so that tests don't need reachable external services anymore.
-* Bugfix: No warning is thrown anymore, if :ref:`needservice` can't find a service config in ``conf.py``
+* Bugfix: No warning is thrown anymore, if :ref:`needservice` can't find a service config in **conf.py**
   (`#168 <https://github.com/useblocks/sphinxcontrib-needs/issues/168>`_)
 * Bugfix: Needs nodes get ``ids`` set directly, to avoid empty ids given by sphinx or other extensions for need-nodes.
   (`#193 <https://github.com/useblocks/sphinxcontrib-needs/issues/193>`_)
@@ -267,7 +267,7 @@ License
 * Improvement: Added two new need-options: :ref:`need_duration` and :ref:`need_completion`
 * Improvement: Configuration option :ref:`needs_duration_option` and :ref:`needs_completion_option` added
 * Bugfix: Using of `tags.has() <https://www.sphinx-doc.org/en/master/usage/configuration.html#conf-tags>`_ in
-  ``conf.py`` does not raise an exception anymore. (`#142 <https://github.com/useblocks/sphinxcontrib-needs/issues/142>`_)
+  **conf.py** does not raise an exception anymore. (`#142 <https://github.com/useblocks/sphinxcontrib-needs/issues/142>`_)
 * Improvement: Clean up of internal configuration handling and avoiding needs_functions to get pickled by sphinx.
 
 

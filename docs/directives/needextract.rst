@@ -20,7 +20,7 @@ For instance a supplier should get a copy of requirements, but shall not see all
 Options
 -------
 
-.. note:: **needextract** supports the full filtering possibilities of sphinx-needs.
+.. note:: **needextract** supports the full filtering possibilities of **Sphinx-Needs**.
           Please see :ref:`filter` for more information.
 
 

@@ -8,7 +8,7 @@ Layouts & Styles
 Layouts are defined by a preconfigured table grid and the data, which shall be shown inside specific grid cells.
 Styles define mostly the color of a need.
 
-Both features can be set directly during need-configuration or inside the sphinx ``conf.py`` file.
+Both features can be set directly during need-configuration or inside the sphinx **conf.py** file.
 
 ``Sphinx-Needs`` provides some preconfigured, ready-to-use standard layouts:
 
@@ -211,7 +211,7 @@ Using layouts
 ~~~~~~~~~~~~~
 There are two ways of setting a layout for a need:
 
-Set it globally via :ref:`needs_default_layout` in your ``conf.py`` file::
+Set it globally via :ref:`needs_default_layout` in your **conf.py** file::
 
    # conf.py
    needs_default_layout = 'complete'
@@ -226,7 +226,7 @@ Or set it locally for each need by using :ref:`need_layout` option::
 
 Defining own layouts
 ~~~~~~~~~~~~~~~~~~~~
-Own layouts can be defined by using the the config parameter :ref:`needs_layouts` in your ``conf.py`` file.
+Own layouts can be defined by using the the config parameter :ref:`needs_layouts` in your **conf.py** file.
 
 ``needs_layouts`` must be a dictionary and each key represents a layout. A layout must define the used grid-system and
 a layout-structure. Example::
@@ -491,7 +491,7 @@ Using styles
 ~~~~~~~~~~~~
 There are two ways of setting a style for a need:
 
-Set it globally via :ref:`needs_default_style` in your ``conf.py`` file::
+Set it globally via :ref:`needs_default_style` in your **conf.py** file::
 
    # conf.py
    needs_default_style = 'red'

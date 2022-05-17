@@ -5,12 +5,16 @@ needlist
 
 .. versionadded:: 0.2.0
 
-**needlist** creates a list, which elements are based on the result of given filters.
+**needlist** creates a list of elements based on the result of given filters.
+
+|ex|
 
 .. code-block:: rst
 
    .. needlist::
       :tags: main_example
+
+|out|
 
 .. needlist::
    :tags: main_example
@@ -18,28 +22,30 @@ needlist
 Options
 -------
 
-.. note:: **needlist** supports the full filtering possibilities of sphinx-needs.
-          Please see :ref:`filter` for more information.
+.. note::
+
+    **needlist** supports the full filtering possibilities of **Sphinx-Needs**.
+    Please see :ref:`filter` for more information.
 
 Supported options:
 
- * :ref:`needlist_show_status`
- * :ref:`needlist_show_tags`
- * :ref:`needlist_show_filters`
- * Common filters:
-    * :ref:`option_status`
-    * :ref:`option_tags`
-    * :ref:`option_types`
-    * :ref:`option_filter`
+* :ref:`needlist_show_status`
+* :ref:`needlist_show_tags`
+* :ref:`needlist_show_filters`
+* Common filters:
+    + :ref:`option_status`
+    + :ref:`option_tags`
+    + :ref:`option_types`
+    + :ref:`option_filter`
 
 
 .. _needlist_show_status:
 
 show_status
 ~~~~~~~~~~~
-Flag for adding status information of found needs to list result.
+Flag for adding status information to the needs list results filtered.
 
-If a filtered need has no status information, no status output is written for this need.
+If a filtered need has no status information, we write no status output for the need.
 
 .. container:: toggle
 
@@ -47,11 +53,15 @@ If a filtered need has no status information, no status output is written for th
 
       **Show example**
 
+   |ex|
+
    .. code-block:: rst
 
       .. needlist::
          :show_status:
          :status: done; implemented
+
+   |out|
 
    .. needlist::
       :show_status:
@@ -61,9 +71,9 @@ If a filtered need has no status information, no status output is written for th
 
 show_tags
 ~~~~~~~~~
-Flag for adding tag information of found needs to list result.
+Flag for adding tag information to the needs list results filtered.
 
-If a filtered need has no tag information, no tag output is written for this need.
+If a filtered need has no tag information, we write no tag output for the need.
 
 .. container:: toggle
 
@@ -71,11 +81,15 @@ If a filtered need has no tag information, no tag output is written for this nee
 
       **Show example**
 
+   |ex|
+
    .. code-block:: rst
 
       .. needlist::
          :show_tags:
          :status: done; implemented
+
+   |out|
 
    .. needlist::
       :show_tags:
@@ -87,8 +101,7 @@ If a filtered need has no tag information, no tag output is written for this nee
 show_filters
 ~~~~~~~~~~~~
 
-If set, the used filter is added below of result list:
-
+If set, we add the used filter below the needlist results:
 
 .. container:: toggle
 
@@ -96,11 +109,15 @@ If set, the used filter is added below of result list:
 
       **Show example**
 
+   |ex|
+
    .. code-block:: rst
 
       .. needlist::
          :show_filters:
          :status: done; implemented
+
+   |out|
 
    .. needlist::
       :show_filters:
