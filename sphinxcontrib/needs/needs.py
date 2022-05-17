@@ -179,7 +179,7 @@ def setup(app):
     # * name
     # * description
     # Example: [{"name": "new", "description": "new needs"}, {...}, {...}]
-    app.add_config_value("needs_tags", False, "html", types=[bool])
+    app.add_config_value("needs_tags", [], "html", types=[list])
 
     # Path of css file, which shall be used for need style
     app.add_config_value("needs_css", "modern.css", "html")

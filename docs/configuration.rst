@@ -821,9 +821,9 @@ Activate it by setting it like this::
         dict(name="security", description="tag for security needs"),
     ]
 
-If parameter is not set or set to *False*, no checks will be performed.
+If parameter is not set or set to *[]*, no checks will be performed.
 
-Default value: *False*.
+Default value: *[]*.
 
 
 .. _needs_css:
