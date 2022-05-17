@@ -94,7 +94,7 @@ Registration
 ~~~~~~~~~~~~
 
 Every dynamic function must be registered by using configuration parameter :ref:`needs_functions`
-inside your ``conf.py`` file::
+inside your **conf.py** file::
 
    def my_own_function(app, need, needs):
        return "Awesome"
@@ -106,7 +106,7 @@ inside your ``conf.py`` file::
    Assigning a function to a Sphinx option will deactivate the incremental build feature of Sphinx.
    Please use the :ref:`Sphinx-Needs API <api_configuration>` and read :ref:`inc_build` for details.
 
-   Better use the following way in our ``conf.py`` file::
+   Better use the following way in our **conf.py** file::
 
          from sphinxcontrib.needs.api import add_dynamic_function
 

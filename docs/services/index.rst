@@ -80,7 +80,7 @@ configuration, e.g. issues should be reported from GitHub cloud repositories and
 internal GitHub Enterprise instance.
 
 All you need to do is to set the Python service class, which must be mentioned under the key ``class`` in
-``needs_services`` of your ``conf.py`` file.
+``needs_services`` of your **conf.py** file.
 
 .. code-block:: python
 

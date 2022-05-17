@@ -46,11 +46,9 @@ def test_filter_build_html(test_app):
     assert "CHILD_2_STORY" in html_5
     assert (
         '<div class="line">child needs: <span class="parent_needs"><span><a class="reference internal" '
-        'href="#CHILD_1_STORY" title="STORY_PARENT">CHILD_1_STORY</a>, <a class="reference internal" '
-        'href="#CHILD_2_STORY" title="STORY_PARENT">CHILD_2_STORY</a></span></span></div>' in html_5
+        'href="#CHILD_1_STORY" title="STORY_PARENT">CHILD_1_STORY</a></span></span></div>' not in html_5
     )
     assert (
         '<div class="line">parent needs: <span class="parent_needs"><span><a class="reference internal" '
-        'href="#CHILD_1_STORY" title="CHILD_2_STORY">CHILD_1_STORY</a>, <a class="reference internal" '
-        'href="#STORY_PARENT" title="CHILD_2_STORY">STORY_PARENT</a></span></span></div>' in html_5
+        'href="#CHILD_1_STORY" title="CHILD_2_STORY">CHILD_1_STORY</a></span></span></div>' not in html_5
     )
