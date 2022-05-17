@@ -7,6 +7,7 @@ import json
 import os
 import sys
 from datetime import datetime
+from typing import Any, List
 
 from jsonschema import Draft7Validator
 
@@ -114,9 +115,9 @@ class NeedsList:
             errors = check_needs_file(file)
             # We only care for schema errors here, all other possible errors
             # are not important for need-imports.
-            if errors["schema"]:
+            if errors.schema:
                 self.log.info(f"Schema validation errors detected in file {file}:")
-                for error in errors["schema"]:
+                for error in errors.schema:
                     self.log.info(f'  {error.message} -> {".".join(error.path)}')
 
             with open(file) as needs_file:
@@ -131,7 +132,12 @@ class NeedsList:
             self.log.debug(f"needs.json file loaded: {file}")
 
 
-def check_needs_file(path):
+class Errors:
+    def __init__(self, schema_errors: List[Any]):
+        self.schema = schema_errors
+
+
+def check_needs_file(path: str) -> Errors:
     """
     Checks a given json-file, if it passes our needs.json structure tests.
 
@@ -158,11 +164,8 @@ def check_needs_file(path):
     schema_errors = list(validator.iter_errors(needs_data))
 
     # In future there may be additional types of validations.
-    # So lets already use a dict for all errors
-    errors = {"schema": schema_errors}
-    errors["has_errors"] = any([bool(errors) for errors in errors.values()])
-
-    return errors
+    # So lets already use a class for all errors
+    return Errors(schema_errors)
 
 
 if "main" in __name__:
