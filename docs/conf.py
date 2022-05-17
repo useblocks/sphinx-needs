@@ -60,6 +60,7 @@ extensions = [
     "sphinxcontrib.programoutput",
     "sphinx_design",
     "sphinx.ext.duration",
+    "sphinx_immaterial",
 ]
 
 add_module_names = False  # Used to shorten function name output
@@ -163,6 +164,9 @@ DEFAULT_DIAGRAM_TEMPLATE = (
 >>>>>>> 9ec322b (Refactoring sphinxcontrib.needs to sphinx_needs)
 
 needs_types = [
+    # Architecture types
+    dict(directive="comp", title="Component", content="plantuml", prefix="C_", color="#BFD8D2", style="card"),
+    # Normal types
     dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),
     dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="node"),
     dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="node"),
@@ -288,9 +292,9 @@ needs_extra_options = [
 ]
 
 needs_warnings = {
-    "type_check": 'type not in ["req", "spec", "impl", "test", "feature", "action", "user", "milestone", '
-                  '"issue", "pr", "commit"'  # github service types
-                  "]",
+    "type_check": 'type not in ["comp", "req", "spec", "impl", "test", "feature", "action", "user", "milestone", '
+    '"issue", "pr", "commit"'  # github service types
+    "]",
     # 'valid_status': 'status not in ["open", "in progress", "closed", "done", "implemented"] and status is not None'
 }
 
@@ -425,9 +429,9 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = os.getenv("NEEDS_THEME", "alabaster")
+html_theme = os.getenv("NEEDS_THEME", "sphinx_immaterial")
 
-if html_theme != "alabaster":
+if html_theme != "sphinx_immaterial":
     extensions.append(html_theme)
 
 # Theme options are theme-specific and customize the look and feel of a theme
@@ -460,8 +464,6 @@ html_sidebars = {
 #     },
 # }
 
-# extensions.append("sphinx_immaterial")
-# html_theme = "sphinx_immaterial"
 html_logo = "./_static/needs_logo.png"
 html_favicon = "./_static/needs_logo.png"
 # material theme options (see theme.conf for more information)
@@ -510,7 +512,7 @@ html_theme_options = {
             },
         },
     ],
-    "toc_title_is_page_title": True
+    "toc_title_is_page_title": True,
 }
 
 
@@ -518,7 +520,7 @@ html_theme_options = {
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
-html_css_files = ['custom.css']
+html_css_files = ["custom.css"]
 
 # -- Options for HTMLHelp output ------------------------------------------
 

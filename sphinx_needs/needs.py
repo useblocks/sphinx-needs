@@ -74,6 +74,7 @@ from sphinx_needs.directives.needtable import (
     NeedtableDirective,
     process_needtables,
 )
+from sphinx_needs.directives.needuml import Needuml, NeedumlDirective, process_needuml
 from sphinx_needs.environment import (
     install_lib_static_files,
     install_permalink_file,
@@ -245,6 +246,7 @@ def setup(app):
     app.add_node(Needextract)
     app.add_node(Needservice)
     app.add_node(Needextend)
+    app.add_node(Needuml)
     app.add_node(NeedPart, html=(visitor_dummy, visitor_dummy), latex=(visitor_dummy, visitor_dummy))
 
     ########################################################################
@@ -264,7 +266,11 @@ def setup(app):
     app.add_directive("needextract", NeedextractDirective)
     app.add_directive("needservice", NeedserviceDirective)
     app.add_directive("needextend", NeedextendDirective)
+<<<<<<< HEAD
     app.add_directive("needreport", NeedReportDirective)
+=======
+    app.add_directive("needuml", NeedumlDirective)
+>>>>>>> 9c3e39e (Adds arch/plantuml objects and needuml directive)
 
     ########################################################################
     # ROLES
@@ -315,6 +321,7 @@ def setup(app):
     app.connect("doctree-resolved", process_needpie)
     app.connect("doctree-resolved", process_needsequence)
     app.connect("doctree-resolved", process_needgantt)
+    app.connect("doctree-resolved", process_needuml)
     app.connect("doctree-resolved", process_need_part)
     app.connect("doctree-resolved", process_need_ref)
     app.connect("doctree-resolved", process_need_incoming)

@@ -78,6 +78,9 @@ LAYOUTS = {
 }
 
 NEEDFLOW_CONFIG_DEFAULTS = {
+    "mixing": """
+        allowmixing
+    """,
     "monochrome": """
         skinparam monochrome true
     """,

@@ -69,27 +69,28 @@ profile = "black"
 [tool.mypy]
 strict = true
 show_error_codes = true
-files = "sphinxcontrib"
+files = "sphinx_needs"
 
 [[tool.mypy.overrides]]
 module = [
-  'sphinxcontrib.needs.api.*',
-  'sphinxcontrib.needs.builder.*',
-  'sphinxcontrib.needs.config.*',
-  'sphinxcontrib.needs.diagrams_common.*',
-  'sphinxcontrib.needs.directives.*',
-  'sphinxcontrib.needs.environment.*',
-  'sphinxcontrib.needs.external_needs.*',
-  'sphinxcontrib.needs.filter_common.*',
-  'sphinxcontrib.needs.functions.*',
-  'sphinxcontrib.needs.layout.*',
-  'sphinxcontrib.needs.needs.*',
-  'sphinxcontrib.needs.needsfile.*',
-  'sphinxcontrib.needs.nodes.*',
-  'sphinxcontrib.needs.roles.*',
-  'sphinxcontrib.needs.services.*',
-  'sphinxcontrib.needs.utils.*',
-  'sphinxcontrib.needs.warnings.*',
+  'sphinx_needs.api.*',
+  'sphinx_needs.builder.*',
+  'sphinx_needs.config.*',
+  'sphinx_needs.diagrams_common.*',
+  'sphinx_needs.directives.*',
+  'sphinx_needs.environment.*',
+  'sphinx_needs.external_needs.*',
+  'sphinx_needs.filter_common.*',
+  'sphinx_needs.functions.*',
+  'sphinx_needs.layout.*',
+  'sphinx_needs.logging.*',
+  'sphinx_needs.needs.*',
+  'sphinx_needs.needsfile.*',
+  'sphinx_needs.nodes.*',
+  'sphinx_needs.roles.*',
+  'sphinx_needs.services.*',
+  'sphinx_needs.utils.*',
+  'sphinx_needs.warnings.*',
 ]
 ignore_errors = true
 

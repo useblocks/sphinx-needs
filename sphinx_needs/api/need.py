@@ -103,6 +103,7 @@ def add_need(
     :param title: String as title.
     :param id: ID as string. If not given, a id will get generated.
     :param content: Content as single string.
+    :param content_type: Type of the content. Can be "sphinx" or "plantuml".
     :param status: Status as string.
     :param tags: Tags as single string.
     :param links_string: Links as single string.
@@ -134,6 +135,7 @@ def add_need(
     for ntype in types:
         if ntype["directive"] == need_type:
             type_name = ntype["title"]
+            type_content = ntype.get("content", "sphinx")
             type_prefix = ntype["prefix"]
             type_color = ntype["color"] or "#000000"  # if no color set up user in config
             type_style = ntype["style"] or "node"  # if no style set up user in config
@@ -254,6 +256,7 @@ def add_need(
         "type_prefix": type_prefix,
         "type_color": type_color,
         "type_style": type_style,
+        "type_content": type_content,
         "status": status,
         "tags": tags,
         "id": need_id,
@@ -370,7 +373,11 @@ def add_need(
 
     # Render rst-based content and add it to the need-node
 
-    node_need_content = _render_template(content, docname, lineno, state)
+    if type_content == "plantuml":
+        node_need_content = _render_plantuml_template(content, docname, lineno, state)
+    else:
+        node_need_content = _render_template(content, docname, lineno, state)
+
     need_parts = find_parts(node_need_content)
     update_need_with_parts(env, needs_info, need_parts)
 
@@ -484,6 +491,19 @@ def _prepare_template(app, needs_info, template_key):
 def _render_template(content, docname, lineno, state):
     rst = ViewList()
     for line in content.split("\n"):
+        rst.append(line, docname, lineno)
+    node_need_content = nodes.Element()
+    node_need_content.document = state.document
+    nested_parse_with_titles(state, rst, node_need_content)
+    return node_need_content
+
+
+def _render_plantuml_template(content, docname, lineno, state):
+    rst = ViewList()
+    rst.append(".. needuml::", docname, lineno)
+    rst.append("", docname, lineno)  # Empty option line for needuml
+    for line in content.split("\n"):
+        line = f"   {line}"  # indent content under needuml
         rst.append(line, docname, lineno)
     node_need_content = nodes.Element()
     node_need_content.document = state.document
