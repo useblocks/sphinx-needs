@@ -3,7 +3,7 @@
 Configuration
 =============
 
-All configurations take place in your project's ``conf.py`` file.
+All configurations take place in your project's **conf.py** file.
 
 
 .. contents::
@@ -53,7 +53,7 @@ This would allow Sphinx to perform incremental builds, which are much faster as 
 
 .. hint::
 
-   You are free to use e.g. ``needs_warnings`` and ``add_warning()`` together in a ``conf.py`` file.
+   You are free to use e.g. ``needs_warnings`` and ``add_warning()`` together in a **conf.py** file.
    Sphinx-Needs creates internally a final list of elements defined by config-var and api-call.
 
    However, you should not use the same ``id`` in a config-var and the related api-call, as this would create
@@ -130,7 +130,7 @@ needs_extra_options
 The option allows the addition of extra options that can be specified on
 needs.
 
-It can be specified as a list inside ``conf.py`` as follows:
+It can be specified as a list inside **conf.py** as follows:
 
 .. code-block:: python
 
@@ -1004,7 +1004,7 @@ Must be a list of python functions.
 
 Default value: ``[]``
 
-Inside your ``conf.py`` file use it like this:
+Inside your **conf.py** file use it like this:
 
 .. code-block:: python
 
@@ -1020,7 +1020,7 @@ See :ref:`dynamic_functions` for more information.
    Assigning a function to a Sphinx option will deactivate the incremental build feature of Sphinx.
    Please use the :ref:`Sphinx-Needs API <api_configuration>` and read :ref:`inc_build` for details.
 
-   Better use the following way in our ``conf.py`` file::
+   Better use the following way in our **conf.py** file::
 
          from sphinxcontrib.needs.api import add_dynamic_function
 
@@ -1341,7 +1341,7 @@ keys:
            Base url supports also relative path, which starts from project build html folder (normally where ``index.html`` is located).
 :json_url: An url, which can be used to download the ``needs.json`` (or similar) file.
 :json_path: A path to a locally stored ``needs.json`` file. Can not be used together with ``json_url``.
-            A relative path must be relative to the project configuration folder (where the ``conf.py`` is stored).
+            A relative path must be relative to the project configuration folder (where the **conf.py** is stored).
             (Since version `0.7.1`)
 :version: Defines the version to use inside the ``needs.json`` file (*optional*).
 :id_prefix: Prefix as string, which will be added to all id of external needs. Needed, if there is the risk that

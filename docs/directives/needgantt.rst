@@ -296,7 +296,7 @@ duration_option
 Defines which option to take for a duration value.
 The value gets interpreted in days, no matter what the name of the option is.
 
-Can be set for the complete documentation by using :ref:`needs_duration_option` in ``conf.py``.
+Can be set for the complete documentation by using :ref:`needs_duration_option` in **conf.py**.
 
 Default: :ref:`need_duration`
 
@@ -334,7 +334,7 @@ completion_option
 Defines which option to take for a completion value.
 The value gets interpreted in percentage.
 
-Can be set for the complete documentation by using :ref:`needs_completion_option` in ``conf.py``.
+Can be set for the complete documentation by using :ref:`needs_completion_option` in **conf.py**.
 
 Default: :ref:`need_completion`
 
