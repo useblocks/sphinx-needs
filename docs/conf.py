@@ -47,13 +47,8 @@ release = "1.0.1"
 on_rtd = os.environ.get("READTHEDOCS") == "True"
 
 extensions = [
-<<<<<<< HEAD
-    "sphinxcontrib.needs",
-    "sphinxcontrib.plantuml",
-=======
     "sphinxcontrib.plantuml",
     "sphinx_needs",
->>>>>>> 9ec322b (Refactoring sphinxcontrib.needs to sphinx_needs)
     "sphinx.ext.autodoc",
     "matplotlib.sphinxext.plot_directive",
     "sphinx_copybutton",
@@ -156,12 +151,8 @@ DEFAULT_DIAGRAM_TEMPLATE = (
 # needs_template = TITLE_TEMPLATE
 # needs_diagram_template = DEFAULT_DIAGRAM_TEMPLATE
 
-<<<<<<< HEAD
 # Absolute path to the needs_report_template_file based on the conf.py directory
 # needs_report_template = "/needs_templates/report_template.need"   # Use custom report template
-
-=======
->>>>>>> 9ec322b (Refactoring sphinxcontrib.needs to sphinx_needs)
 
 needs_types = [
     # Architecture types

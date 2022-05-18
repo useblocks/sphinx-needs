@@ -61,14 +61,13 @@ from sphinx_needs.directives.needlist import (
     process_needlist,
 )
 from sphinx_needs.directives.needpie import Needpie, NeedpieDirective, process_needpie
+from sphinx_needs.directives.needreport import NeedReportDirective
 from sphinx_needs.directives.needsequence import (
     Needsequence,
     NeedsequenceDirective,
     process_needsequence,
 )
-
 from sphinx_needs.directives.needservice import Needservice, NeedserviceDirective
-from sphinx_needs.directives.needreport import NeedReportDirective
 from sphinx_needs.directives.needtable import (
     Needtable,
     NeedtableDirective,
@@ -266,11 +265,8 @@ def setup(app):
     app.add_directive("needextract", NeedextractDirective)
     app.add_directive("needservice", NeedserviceDirective)
     app.add_directive("needextend", NeedextendDirective)
-<<<<<<< HEAD
     app.add_directive("needreport", NeedReportDirective)
-=======
     app.add_directive("needuml", NeedumlDirective)
->>>>>>> 9c3e39e (Adds arch/plantuml objects and needuml directive)
 
     ########################################################################
     # ROLES
