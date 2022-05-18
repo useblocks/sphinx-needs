@@ -82,6 +82,7 @@ module = [
   'sphinxcontrib.needs.filter_common.*',
   'sphinxcontrib.needs.functions.*',
   'sphinxcontrib.needs.layout.*',
+  'sphinxcontrib.needs.lsp.*',
   'sphinxcontrib.needs.needs.*',
   'sphinxcontrib.needs.needsfile.*',
   'sphinxcontrib.needs.nodes.*',
