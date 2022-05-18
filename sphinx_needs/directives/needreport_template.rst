@@ -1,4 +1,3 @@
-<<<<<<< HEAD:sphinx_needs/directives/needreport_template.rst
 {# Output for needs_types #}
 {% if types|length != 0 %}
 .. container:: toggle
@@ -64,4 +63,3 @@
    {% endfor %}
 {% endif %}
 {# Output for needs_options #}
-
