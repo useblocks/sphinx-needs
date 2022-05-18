@@ -2,7 +2,7 @@ import nox
 from nox_poetry import session
 
 PYTHON_VERSIONS = ["3.8", "3.9.7", "3.10"]
-SPHINX_VERSIONS = ["3.2", "3.5.4", "4.1", "4.2"]
+SPHINX_VERSIONS = ["4.0.3", "4.3.2", "4.5.0"]
 TEST_DEPENDENCIES = [
     "pytest",
     "pytest-xdist",

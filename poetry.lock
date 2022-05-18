@@ -867,7 +867,7 @@ immaterial = []
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7.0,<4.0"
-content-hash = "726c12352a99eb6213b6734d25afb12eca33fa0e63990198b04e477542d67632"
+content-hash = "ef52b4b9fe40a3ab8feb903f0a5083eec4a267dac4bbee22dd568196e5596329"
 
 [metadata.files]
 alabaster = [

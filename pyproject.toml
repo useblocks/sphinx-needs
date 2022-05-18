@@ -32,7 +32,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.7.0,<4.0"
-sphinx = ">2.2"
+sphinx = ">=4.0"
 
 matplotlib = ">3.1.0"  # needpie
 requests-file = "^1.5.1"  # external links
