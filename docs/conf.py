@@ -146,10 +146,14 @@ DEFAULT_DIAGRAM_TEMPLATE = (
     "<size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>"
 )
 
-# To not use the default configuration for sphinx needs, uncomment some of the following lines.
+# You can uncomment some of the following lines to override the default configuration for Sphinx-Needs.
 
 # needs_template = TITLE_TEMPLATE
 # needs_diagram_template = DEFAULT_DIAGRAM_TEMPLATE
+
+# Absolute path to the needs_report_template_file based on the conf.py directory
+# needs_report_template = "/needs_templates/report_template.need"   # Use custom report template
+
 
 needs_types = [
     dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),
