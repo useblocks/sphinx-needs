@@ -1,17 +1,22 @@
 """Suport Sphinx-Needs language features."""
 import getpass
 import os
+import pathlib
 import re
 from hashlib import blake2b
 from typing import List, Tuple
 
 from esbonio.lsp import LanguageFeature
-from esbonio.lsp.rst import CompletionContext
+from esbonio.lsp.rst import CompletionContext, DefinitionContext, HoverContext
 from esbonio.lsp.sphinx import SphinxLanguageServer
 from pygls.lsp.types import (
     CompletionItem,
     CompletionItemKind,
+    Hover,
     InsertTextFormat,
+    Location,
+    MarkupContent,
+    MarkupKind,
     Position,
     Range,
     TextEdit,
@@ -54,6 +59,15 @@ def get_word(ls, params) -> str:
 
 def get_lines_and_word(ls, params) -> Tuple[List[str], str]:
     return (get_lines(ls, params), get_word(ls, params))
+
+
+def get_need_type_and_id(ls, params) -> Tuple[str, str]:
+    """Return tupel (need_type, need_id) for a given document position."""
+    word = get_word(ls, params)
+    for need in ls.needs_store.needs.values():
+        if need["id"] in word:
+            return (need["type"], need["id"])
+    return (None, None)
 
 
 def doc_completion_items(ls, docs: List[str], doc_pattern: str) -> List[CompletionItem]:
@@ -273,6 +287,88 @@ class NeedlsFeatures(LanguageFeature):
             return complete_directive(self, context, lines, word)
 
         return []
+
+    def hover(self, context: HoverContext):
+        self.logger.debug(f"hover params: {context}")
+
+        # load needs.json
+        needs_json = os.path.join(self.rst.app.confdir, "_build/needs/needs.json")
+        self.needs_store.load_needs(needs_json)
+        try:
+            need_id = get_need_type_and_id(self, context)[1]
+        except IndexError:
+            return None
+        if not need_id:
+            return None
+
+        try:
+            title = self.needs_store.needs[need_id]["title"]
+            description = self.needs_store.needs[need_id]["description"]
+            return Hover(
+                contents=MarkupContent(
+                    kind=MarkupKind.Markdown,
+                    value=f"**{title}**\n\n```\n{description}\n```",
+                )
+            )
+        except KeyError:
+            # need is not in the database
+            return None
+
+    definition_triggers = [re.compile(r".*")]
+
+    def definition(self, context: DefinitionContext):
+        """Return location of definition of a need."""
+        # load needs.json
+        needs_json = os.path.join(self.rst.app.confdir, "_build/needs/needs.json")
+        self.needs_store.load_needs(needs_json)
+
+        if not self.needs_store.is_setup():
+            return
+
+        need_type, need_id = get_need_type_and_id(self, context)
+
+        # get need defining doc
+        try:
+            need = self.needs_store.needs[need_id]
+        except KeyError:
+            return None
+
+        doc_path = os.path.join(self.rst.app.confdir, need["docname"])
+        if os.path.exists(doc_path + ".rst"):
+            doc_path = doc_path + ".rst"
+        elif os.path.exists(doc_path + ".rest"):
+            doc_path = doc_path + ".rest"
+        else:
+            return None
+        doc_uri = pathlib.Path(doc_path).as_uri()
+
+        # get the need definition position (line, col) from file
+        with open(doc_path) as file:
+            source_lines = file.readlines()
+        # get the line number
+        line_count = 0
+        line_no = None
+        pattern = f":id: {need_id}"
+        for line in source_lines:
+            if pattern in line:
+                line_no = line_count
+                break
+            line_count = line_count + 1
+        if not line_no:
+            return None
+
+        # get line of directive (e.g., .. req::)
+        line_directive = None
+        pattern = f".. {need_type}::"
+        for line_count in range(line_no - 1, -1, -1):
+            if pattern in source_lines[line_count]:
+                line_directive = line_count
+                break
+        if not line_directive:
+            return None
+
+        pos = Position(line=line_directive, character=0)
+        return [Location(uri=doc_uri, range=Range(start=pos, end=pos))]
 
 
 def esbonio_setup(rst: SphinxLanguageServer):
