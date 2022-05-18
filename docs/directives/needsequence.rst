@@ -5,11 +5,17 @@ needsequence
 
 .. versionadded:: 0.5.5
 
-``needsequence`` adds a sequence-chart to your documentation::
+``needsequence`` adds a sequence-chart to your documentation.
+
+|ex|
+
+.. code-block:: rst
 
     .. needsequence:: My sequence chart
        :start: USER_A, USER_D
        :link_types: links, triggers
+
+|out|
 
 .. needsequence:: My sequence chart
    :start: USER_A, USER_D
@@ -71,16 +77,17 @@ needsequence
        :triggers: USER_D
        :style: yellow_border
 
-Sequence diagrams supports special needs-combinations, in which one type represents some kind of an ``participant``
-and another, linked need is representing the ``message``.
+Sequence diagrams supports special needs-combinations, in which one type represents some kind of a ``participant``
+and another, linked need is representing the ``message``. |br|
 Examples for this relationship are: Sender-Receiver communication , Role-Activity processes or Tool-Artifact relations.
 
 ``needsequence`` needs at least one start-need, defined by its ``id`` in the ``:start:`` option.
-This need is the first ``participant``. The next, linked need(s) is representing the ``message``.
-Needs linked from a ``message`` are interpreted as ``participant`` again and so on.
+
+The first need represents the ``participant``. The next, linked need(s) is representing the ``message``.
+Needs linked from a ``message`` are interpreted as ``participant`` again and so on. |br|
 So the linking must be really clean to get nice, meaningful sequence diagrams out of it.
 
-The used need-type itself is unimportant.
+The used need-type is unimportant.
 
 .. uml::
    :caption: Participant-Message flow
@@ -125,46 +132,47 @@ The above, linked example gets interpreted for ``needsequence`` as follows:
 Options
 -------
 
-.. contents::
-   :local:
-
 start
 ~~~~~
 
-``start`` takes a comma separated list of need ids, which shall be used as starting point for
-further examination for sequence data.
+The ``:start:`` option takes a comma separated list of need ids and uses it as the starting point for
+further examination of sequence data.
 
-First need of ``start`` gets painted first. This includes all related messages and other participants.
+First need of ``:start:`` gets painted first. The need includes all related messages and other participants.
 
-After that the next need id is taken from ``start``. And if it was not already part of the prior
-examination, it is handled the same way otherwise it is ignored.
+After the first need, we take the next need id from the ``:start:`` option.
+And if it was not already part of the prior examination, we handle it the same way, otherwise, we ignore it.
 
 link_types
 ~~~~~~~~~~
 
-``link_types`` takes a comma separated list of link type names, which shall be followed
-during examination. Other link_types get ignored and therefore all participants or messages, which
-are accessible by the ignored linked type only.
-
+``:link_types:`` option takes a comma separated list of link type names followed during examination. |br|
+Because of that, we ignore other link_types and all participants or messages accessible by the ignored link_types.
 
 Default: ``links``
 
 filter
 ~~~~~~
 
-The ``filter`` string is used to filter participants.
-All participants must fulfil the filter_string, otherwise they get ignored.
+You can use the ``:filter:`` option to filter participants.
+We ignore all participants that does not fulfill the filter_string.
 See :ref:`filter_string` for more information.
 
 Default: None (no active filtering)
 
-This function can be used to filter out for instance a specific participant.
-As example, same ``needsequence`` from the beginning, but without ``USER_C / Expert``::
+You can use this function to filter out a specific participant.
+As an example, we use the same ``needsequence`` from the beginning, but without ``USER_C / Expert``:
+
+|ex|
+
+.. code-block:: rst
 
     .. needsequence:: My filtered sequence chart
        :start: USER_A, USER_D
        :link_types: links, triggers
        :filter: "Expert" not in title
+
+|out|
 
 .. needsequence:: My filtered sequence chart
    :start: USER_A, USER_D
