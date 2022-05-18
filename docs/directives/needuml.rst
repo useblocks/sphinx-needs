@@ -8,7 +8,7 @@ needuml
 `Sphinxcontrib-PlantUML <https://github.com/sphinx-contrib/plantuml/>`_.
 So it allows to define PlantUML diagrams.
 
-The different is, that it also supports `Jinja <https://jinja.palletsprojects.com/>`_ statements, which allows
+But it supports `Jinja <https://jinja.palletsprojects.com/>`_ statements, which allows
 to use loops, if-clauses, and it injects data from need-objects.
 
 .. code-block:: rst
