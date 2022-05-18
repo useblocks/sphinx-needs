@@ -5,11 +5,17 @@ needgantt
 
 .. versionadded:: 0.5.5
 
-``needgantt`` adds a gantt-chart to your documentation::
+``needgantt`` adds a gantt-chart to your documentation.
+
+|ex|
+
+.. code-block:: rst
 
     .. needgantt:: Bug handling gantt
        :tags: gantt_example
        :milestone_filter: type == 'milestone'
+
+|out|
 
 .. needgantt:: Bug handling gantt
    :tags: gantt_example
@@ -80,10 +86,10 @@ needgantt
    So if you get any syntax errors during the build, please download the
    `latest PlantUML <http://sourceforge.net/projects/plantuml/files/plantuml.jar/download>`__ version.
 
-If ``svg`` is set as output format for PlantUML, the tasks elements are linked to their related need.
+If ``svg`` is set as output format for PlantUML, we link the tasks elements to their related need.
 
-Color is taken from :ref:`needs_types` configuration.
-This behavior can be deactivated by setting :ref:`needgantt_no_color`.
+We take the colors for the chart from the :ref:`needs_types` configuration.
+You can deactivate this behavior by setting :ref:`needgantt_no_color`.
 
 ``needgantt`` supports the following relationship between tasks and milestones:
 
@@ -91,11 +97,11 @@ This behavior can be deactivated by setting :ref:`needgantt_no_color`.
 * **starts after**: see :ref:`needgantt_starts_after_links`
 * **ends with**: see :ref:`needgantt_ends_with_links`
 
-The task length is defined by default by the need-option :ref:`need_duration`.
-Its value is interpreted in days.
+By default, the need-option :ref:`need_duration` defines the task length.
+We interpret the value in days.
 
-The task completion is defined by default by the need-option :ref:`need_completion`.
-Its value is interpreted as percentage and should be between 0 and 100.
+By default, the need-option :ref:`need_completion` defines the task completion.
+We interpret the value as percentage and should be between 0 and 100.
 
 Options
 -------
@@ -103,28 +109,28 @@ Options
 
 Supported options:
 
- * :ref:`needgantt_milestone_filer`
- * :ref:`needgantt_starts_with_links`
- * :ref:`needgantt_starts_after_links`
- * :ref:`needgantt_ends_with_links`
- * :ref:`needgantt_start_date`
- * :ref:`needgantt_timeline`
- * :ref:`needgantt_no_color`
- * :ref:`needgantt_duration_option`
- * :ref:`needgantt_completion_option`
- * Common filters:
+* :ref:`needgantt_milestone_filter`
+* :ref:`needgantt_starts_with_links`
+* :ref:`needgantt_starts_after_links`
+* :ref:`needgantt_ends_with_links`
+* :ref:`needgantt_start_date`
+* :ref:`needgantt_timeline`
+* :ref:`needgantt_no_color`
+* :ref:`needgantt_duration_option`
+* :ref:`needgantt_completion_option`
+* Common filters:
     * :ref:`option_status`
     * :ref:`option_tags`
     * :ref:`option_types`
     * :ref:`option_filter`
 
-.. _needgantt_milestone_filer:
+.. _needgantt_milestone_filter:
 
 milestone_filter
 ~~~~~~~~~~~~~~~~
 
-``milestone_filter`` gets executed on each need found by ``filter`` or any user related filter option.
-If it is a match, the gets represented as milestone instead of a task in gantt chart.
+We execute the ``milestone_filter`` on each need found by ``filter`` or any user related filter option.
+If it is a match, we represent the need as a milestone instead of a task in gantt chart.
 
 ``milestone_filter`` must be a valid :ref:`filter_string`.
 
@@ -133,9 +139,11 @@ If it is a match, the gets represented as milestone instead of a task in gantt c
 starts_with_links
 ~~~~~~~~~~~~~~~~~
 
-List of link names, which shall be used to define task relationship ``starts_with``.
+List of link names used to define task relationship, ``starts_with``.
 
 Default: None
+
+|ex|
 
 .. code-block:: rst
 
@@ -143,35 +151,45 @@ Default: None
       :tags: gantt_ex_starts_with
       :starts_with_links: starts_with
 
+|out|
+
 .. needgantt:: Starts_with example
    :tags: gantt_ex_starts_with
    :starts_with_links: starts_with
 
-.. action:: Create example
-   :id: ACT_CREATE_EX_SW
-   :tags: gantt_ex_starts_with
-   :duration: 12
+.. container:: toggle
 
-.. action:: Read example
-   :id: ACT_READ_EX_SW
-   :tags: gantt_ex_starts_with
-   :links: ACT_CREATE_EX_SW
-   :duration: 8
+    .. container:: header
 
-.. action:: Understand example
-   :id: ACT_UNDERSTAND_EX_SW
-   :tags: gantt_ex_starts_with
-   :starts_with: ACT_READ_EX_SW
-   :duration: 12
+        **Show the needs used in the above example**
+
+    .. action:: Create example
+       :id: ACT_CREATE_EX_SW
+       :tags: gantt_ex_starts_with
+       :duration: 12
+
+    .. action:: Read example
+       :id: ACT_READ_EX_SW
+       :tags: gantt_ex_starts_with
+       :links: ACT_CREATE_EX_SW
+       :duration: 8
+
+    .. action:: Understand example
+       :id: ACT_UNDERSTAND_EX_SW
+       :tags: gantt_ex_starts_with
+       :starts_with: ACT_READ_EX_SW
+       :duration: 12
 
 .. _needgantt_starts_after_links:
 
 starts_after_links
 ~~~~~~~~~~~~~~~~~~
 
-List of link names, which shall be used to define task relationship ``starts_after``.
+List of link names used to define task relationship, ``starts_after``.
 
 Default: links
+
+|ex|
 
 .. code-block:: rst
 
@@ -179,29 +197,39 @@ Default: links
       :tags: gantt_ex_starts_after
       :starts_after_links: starts_after
 
+|out|
+
 .. needgantt:: Starts_with example
    :tags: gantt_ex_starts_after
    :starts_after_links: starts_after
 
-.. action:: Create example
-   :id: ACT_CREATE_EX_SA
-   :tags: gantt_ex_starts_after
-   :duration: 12
+.. container:: toggle
 
-.. action:: Read example
-   :id: ACT_READ_EX_SA
-   :tags: gantt_ex_starts_after
-   :starts_after: ACT_CREATE_EX_SA
-   :duration: 8
+    .. container:: header
+
+        **Show the needs used in the above example**
+
+    .. action:: Create example
+       :id: ACT_CREATE_EX_SA
+       :tags: gantt_ex_starts_after
+       :duration: 12
+
+    .. action:: Read example
+       :id: ACT_READ_EX_SA
+       :tags: gantt_ex_starts_after
+       :starts_after: ACT_CREATE_EX_SA
+       :duration: 8
 
 .. _needgantt_ends_with_links:
 
 ends_with_links
 ~~~~~~~~~~~~~~~
 
-List of link names, which shall be used to define task relationship ``ends_with``.
+List of link names used to define task relationship, ``ends_with``.
 
 Default: None
+
+|ex|
 
 .. code-block:: rst
 
@@ -209,30 +237,40 @@ Default: None
       :tags: gantt_ex_ends_with
       :ends_with_links: ends_with
 
+|out|
+
 .. needgantt:: Ends_with example
    :tags: gantt_ex_ends_with
    :ends_with_links: ends_with
 
-.. action:: Create example
-   :id: ACT_CREATE_EX_EW
-   :tags: gantt_ex_ends_with
-   :duration: 12
+.. container:: toggle
 
-.. action:: Read example
-   :id: ACT_READ_EX_EW
-   :tags: gantt_ex_ends_with
-   :ends_with: ACT_CREATE_EX_EW
-   :duration: 8
+    .. container:: header
+
+        **Show the needs used in the above example**
+
+    .. action:: Create example
+       :id: ACT_CREATE_EX_EW
+       :tags: gantt_ex_ends_with
+       :duration: 12
+
+    .. action:: Read example
+       :id: ACT_READ_EX_EW
+       :tags: gantt_ex_ends_with
+       :ends_with: ACT_CREATE_EX_EW
+       :duration: 8
 
 .. _needgantt_start_date:
 
 start_date
 ~~~~~~~~~~~
 
-Optional start date of the gantt chart.
-All tasks and milestones dates get calculated based on this base values.
+Optional start date for the gantt chart.
+We calculate all tasks and milestones dates based on the ``:start_date:`` option's value.
 
-Must be use the format ``YYYY-MM-DD``. Example: 2020-03-25
+Date format must be ``YYYY-MM-DD``. Example: 2020-03-25
+
+|ex|
 
 .. code-block:: rst
 
@@ -240,6 +278,8 @@ Must be use the format ``YYYY-MM-DD``. Example: 2020-03-25
       :tags: gantt_example
       :milestone_filter: type == 'milestone'
       :start_date: 2020-03-25
+
+|out|
 
 .. needgantt:: Bug handling gantt
    :tags: gantt_example
@@ -258,7 +298,9 @@ Allowed values: ``daily``, ``weekly``, ``monthly``.
 
 Default: ``daily``
 
-Works only, if :ref:`needgantt_start_date` is set as well.
+Works only, if you set :ref:`needgantt_start_date` option.
+
+|ex|
 
 .. code-block:: rst
 
@@ -267,6 +309,8 @@ Works only, if :ref:`needgantt_start_date` is set as well.
       :milestone_filter: type == 'milestone'
       :start_date: 2020-03-25
       :timeline: weekly
+
+|out|
 
 .. needgantt:: Bug handling gantt
    :tags: gantt_example
@@ -279,9 +323,8 @@ Works only, if :ref:`needgantt_start_date` is set as well.
 no_color
 ~~~~~~~~
 
-Tasks and milestone color is taken from need-typ configuration.
-
-If the default PlantUML colors shall be taken, set this flag.
+We derive the tasks and milestone color from the need-type configuration,
+else we use the default PlantUML colors.
 
 .. needgantt:: Bug handling gantt
    :tags: gantt_example
@@ -293,12 +336,14 @@ If the default PlantUML colors shall be taken, set this flag.
 duration_option
 ~~~~~~~~~~~~~~~
 
-Defines which option to take for a duration value.
-The value gets interpreted in days, no matter what the name of the option is.
+Defines the option to use as the duration value.
+We interpret the value in days, no matter what the name of the option is.
 
-Can be set for the complete documentation by using :ref:`needs_duration_option` in **conf.py**.
+You can set the duration option globally by using :ref:`needs_duration_option` in **conf.py**.
 
 Default: :ref:`need_duration`
+
+|ex|
 
 .. code-block:: rst
 
@@ -306,24 +351,32 @@ Default: :ref:`need_duration`
       :tags: gantt_ex_duration
       :duration_option: hours
 
+|out|
+
 .. needgantt:: Duration example
    :tags: gantt_ex_duration
    :duration_option: hours
 
-.. action:: Create example
-   :id: ACT_CREATE_EX
-   :tags: gantt_ex_duration
-   :hours: 12
+.. container:: toggle
 
-.. action:: Read example
-   :id: ACT_READ_EX
-   :tags: gantt_ex_duration
-   :links: ACT_CREATE_EX
-   :hours: 3
-   :duration: 100
+    .. container:: header
+
+        **Show the needs used in the above example**
+
+    .. action:: Create example
+       :id: ACT_CREATE_EX
+       :tags: gantt_ex_duration
+       :hours: 12
+
+    .. action:: Read example
+       :id: ACT_READ_EX
+       :tags: gantt_ex_duration
+       :links: ACT_CREATE_EX
+       :hours: 3
+       :duration: 100
 
 
-   ``duration`` option gets ignored in the above ``needgantt``.
+       ``duration`` option gets ignored in the above ``needgantt``.
 
 
 .. _needgantt_completion_option:
@@ -331,12 +384,14 @@ Default: :ref:`need_duration`
 completion_option
 ~~~~~~~~~~~~~~~~~
 
-Defines which option to take for a completion value.
-The value gets interpreted in percentage.
+Defines the option to use as the completion value.
+We interpret the value in percentage.
 
-Can be set for the complete documentation by using :ref:`needs_completion_option` in **conf.py**.
+You can set the completion option globally by using :ref:`needs_completion_option` in **conf.py**.
 
 Default: :ref:`need_completion`
+
+|ex|
 
 .. code-block:: rst
 
@@ -344,20 +399,28 @@ Default: :ref:`need_completion`
       :tags: gantt_ex_completion
       :completion_option: amount
 
+|out|
+
 .. needgantt:: Completion example
    :tags: gantt_ex_completion
    :completion_option: amount
 
-.. action:: Create example
-   :id: ACT_CREATE_EX_C
-   :tags: gantt_ex_completion
-   :duration: 12
-   :amount: 90%
+.. container:: toggle
+
+    .. container:: header
+
+        **Show the needs used in the above example**
+
+    .. action:: Create example
+       :id: ACT_CREATE_EX_C
+       :tags: gantt_ex_completion
+       :duration: 12
+       :amount: 90%
 
 
-.. action:: Read example
-   :id: ACT_READ_EX_C
-   :tags: gantt_ex_completion
-   :links: ACT_CREATE_EX_C
-   :duration: 12
-   :amount: 40
+    .. action:: Read example
+       :id: ACT_READ_EX_C
+       :tags: gantt_ex_completion
+       :links: ACT_CREATE_EX_C
+       :duration: 12
+       :amount: 40
