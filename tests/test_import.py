@@ -76,7 +76,7 @@ def test_json_schema_file_check(test_app):
 def test_empty_file_check(test_app):
     """Checks that an empty needs.json throws an exception"""
     app = test_app
-    from sphinxcontrib.needs.needsfile import SphinxNeedsFileException
+    from sphinx_needs.needsfile import SphinxNeedsFileException
 
     with pytest.raises(SphinxNeedsFileException):
         app.build()

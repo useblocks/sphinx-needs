@@ -30,13 +30,34 @@ You can define the type using the correct directive, like ``.. req::`` or ``.. t
 
 The code example above creates a new requirement, with a title, content, given id, a status and several tags.
 
-All the options for the requirement directive (``.. req::``) are optional,
-but you must set a title as an argument (i.e. if you do not specify :ref:`needs_title_from_content` in the conf.py file).
+All the options for the requirement directive (``..req::``) are optional,
+but you must set a title as an argument (i.e. if you do not specify :ref:`needs_title_from_content`n the conf.py file).
 
 .. note::
 
     By default, the above example works also with ``.. spec::``, ``.. impl::``, ``.. test::`` and all other need types,
     which are configured via :ref:`needs_types`.
+
+Content area
+------------
+
+rst / md
+~~~~~~~~
+Content of a Sphinx-Needs objects can be any kind of content which can be handled by Sphinx.
+This is by default rst-based text with support for all loaded extensions.
+
+Markdown-Support is available by using the `MyST Parser <https://myst-parser.readthedocs.io/en/latest/>`_ extension.
+
+plantuml
+~~~~~~~~
+A Sphinx-Need object can also be used to store a single PlantUML based diagram.
+
+This kind of Need object can then be used by :ref:`needuml` to generate complex diagrams.
+
+To use this content type, set ``content`` to ``plantuml`` in the :ref:`needs_types` configuration.
+
+
+
 
 Options for Need Type
 ---------------------

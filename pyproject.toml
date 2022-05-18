@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "sphinxcontrib-needs"
+name = "sphinx-needs"
 
 # !! Don't miss updates in needs.py, conf.py, changelog.rst, and .github/workflows/docker !!!
-version = "0.7.10"
+version = "1.0.1"
 
 description = "Sphinx needs extension for managing needs/requirements and specifications"
 authors = ["team useblocks <info@useblocks.com>"]
@@ -26,7 +26,8 @@ classifiers=[
     ]
 
 packages = [
-    {include = "sphinxcontrib", from = "."}
+    {include = "sphinx_needs"}
+#    {include = "sphinxcontrib", from = "."}
 ]
 
 [tool.poetry.dependencies]
@@ -50,6 +51,7 @@ pytest-xdist="*"  # parallelisation
 responses = "^0.12.1"
 requests-mock = ">=1.9.3"
 
+sphinx-immaterial = { version = ">0.6.7", optional = true }
 
 # formatting dependencies
 black = "^22.3"
@@ -64,13 +66,39 @@ line-length = 120
 [tool.isort]
 profile = "black"
 
-sphinx-immaterial = { version = ">0.6.7", optional = true }
+[tool.mypy]
+strict = true
+show_error_codes = true
+files = "sphinx_needs"
+
+[[tool.mypy.overrides]]
+module = [
+  'sphinx_needs.api.*',
+  'sphinx_needs.builder.*',
+  'sphinx_needs.config.*',
+  'sphinx_needs.diagrams_common.*',
+  'sphinx_needs.directives.*',
+  'sphinx_needs.environment.*',
+  'sphinx_needs.external_needs.*',
+  'sphinx_needs.filter_common.*',
+  'sphinx_needs.functions.*',
+  'sphinx_needs.layout.*',
+  'sphinx_needs.logging.*',
+  'sphinx_needs.needs.*',
+  'sphinx_needs.needsfile.*',
+  'sphinx_needs.nodes.*',
+  'sphinx_needs.roles.*',
+  'sphinx_needs.services.*',
+  'sphinx_needs.utils.*',
+  'sphinx_needs.warnings.*',
+]
+ignore_errors = true
 
 [tool.poetry.extras]
 docs = ["sphinx>=4.0"]
 immaterial = ["sphinx-immaterial"]
 
 [build-system]
-requires = ["poetry-core @ git+https://github.com/python-poetry/poetry-core.git@master"]
+requires = ["poetry-core>=1.0.8"]
 build-backend = "poetry.core.masonry.api"
 

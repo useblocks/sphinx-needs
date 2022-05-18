@@ -149,8 +149,19 @@ For instance, you can customize the need objects to support bugs, user stories o
    For instance, `Sphinx-Test-Reports <https://sphinx-test-reports.readthedocs.io/en/latest/>`_ create **needs** from
    test results and make them searchable and linkable to other need-types.
 
-.. feature:: Developed for safe process executions
+.. feature:: Supports PlantUML for reusable Architecture elements
    :id: FEATURE_7
+   :tags: introduction
+   :links: SPEC_1
+
+   Sphinx-Needs allows to create specific objects for architecture elements, which can be reused  and recombined
+   in different flows and also higher architecture elements. Based on `PlantUML <https://plantuml.com>`__.
+
+   Take a look into the :ref:`needuml` directive to get an impression how powerful this mechanism is.
+
+
+.. feature:: Developed for safe process executions
+   :id: FEATURE_8
    :tags: introduction
    :links: SPEC_1
 
@@ -163,6 +174,9 @@ For instance, you can customize the need objects to support bugs, user stories o
 
    See :ref:`config` for more options to get a Sphinx documentation valid with ISO 26262, DO-178B/C or any other
    safety standard.
+
+
+
 
 
 Example

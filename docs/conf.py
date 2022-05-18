@@ -40,23 +40,23 @@ sys.path.append(os.path.abspath("../sphinxcontrib"))
 # built documents.
 #
 # The short X.Y version.
-version = "0.7"
+version = "1.0"
 # The full version, including alpha/beta/rc tags.
-release = "0.7.9"
+release = "1.0.1"
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
 
 extensions = [
-    "sphinxcontrib.needs",
     "sphinxcontrib.plantuml",
+    "sphinx_needs",
     "sphinx.ext.autodoc",
     "matplotlib.sphinxext.plot_directive",
     "sphinx_copybutton",
     "sphinxcontrib.programoutput",
     "sphinx_design",
     "sphinx.ext.duration",
+    "sphinx_immaterial",
 ]
-
 
 add_module_names = False  # Used to shorten function name output
 autodoc_docstring_signature = True  # Used to read spec. func-defs from docstring (e.g. get rid of self)
@@ -154,8 +154,12 @@ DEFAULT_DIAGRAM_TEMPLATE = (
 # Absolute path to the needs_report_template_file based on the conf.py directory
 # needs_report_template = "/needs_templates/report_template.need"   # Use custom report template
 
-
 needs_types = [
+    # Architecture types
+    dict(directive="int", title="Interface", content="plantuml", prefix="I_", color="#BFD8D2", style="card"),
+    dict(directive="comp", title="Component", content="plantuml", prefix="C_", color="#BFD8D2", style="card"),
+    dict(directive="sys", title="System", content="plantuml", prefix="S_", color="#BFD8D2", style="card"),
+    # Normal types
     dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),
     dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="node"),
     dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="node"),
@@ -281,9 +285,9 @@ needs_extra_options = [
 ]
 
 needs_warnings = {
-    "type_check": 'type not in ["req", "spec", "impl", "test", "feature", "action", "user", "milestone", '
-                  '"issue", "pr", "commit"'  # github service types
-                  "]",
+    "type_check": 'type not in ["int", "sys", "comp", "req", "spec", "impl", "test", "feature", "action", "user", "milestone", '
+    '"issue", "pr", "commit"'  # github service types
+    "]",
     # 'valid_status': 'status not in ["open", "in progress", "closed", "done", "implemented"] and status is not None'
 }
 
@@ -345,6 +349,15 @@ needs_string_links = {
         "options": ["github"],
     },
 }
+
+# needs_external_needs = [
+#     {
+#         "base_url": "https://sphinxcontrib-needs.readthedocs.io/en/latest",
+#         "json_path": "examples/needs.json",
+#         "id_prefix": "EXT_",
+#         "css_class": "external_link",
+#     },
+# ]
 
 # build needs.json to make permalinks work
 needs_build_json = True
@@ -409,9 +422,9 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = os.getenv("NEEDS_THEME", "alabaster")
+html_theme = os.getenv("NEEDS_THEME", "sphinx_immaterial")
 
-if html_theme != "alabaster":
+if html_theme != "sphinx_immaterial":
     extensions.append(html_theme)
 
 # Theme options are theme-specific and customize the look and feel of a theme
@@ -444,10 +457,8 @@ html_sidebars = {
 #     },
 # }
 
-# extensions.append("sphinx_immaterial")
-# html_theme = "sphinx_immaterial"
 html_logo = "./_static/needs_logo.png"
-html_favicon = "./_static/needs_favicon.png"
+html_favicon = "./_static/needs_logo.png"
 # material theme options (see theme.conf for more information)
 html_theme_options = {
     "icon": {
@@ -479,7 +490,7 @@ html_theme_options = {
             "primary": "blue",
             "accent": "light-blue",
             "toggle": {
-                "icon": "material/weather-night",
+                "icon": "material/weather-sunny",
                 "name": "Switch to dark mode",
             },
         },
@@ -487,21 +498,22 @@ html_theme_options = {
             "media": "(prefers-color-scheme: dark)",
             "scheme": "slate",
             "primary": "blue",
-            "accent": "yellow",
+            "accent": "cyan",
             "toggle": {
-                "icon": "material/weather-sunny",
+                "icon": "material/weather-night",
                 "name": "Switch to light mode",
             },
         },
     ],
-    "toc_title_is_page_title": True
+    "toc_title_is_page_title": True,
 }
+
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
-html_css_files = ['custom.css']
+html_css_files = ["custom.css"]
 
 # -- Options for HTMLHelp output ------------------------------------------
 
@@ -558,7 +570,7 @@ texinfo_documents = [
 rst_epilog = """
 .. |ex| replace:: **Example** 
 
-.. |out| replace:: **Result** 
+.. |out| replace:: **Output** 
 
 .. |br| raw:: html 
 

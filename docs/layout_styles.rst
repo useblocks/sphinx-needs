@@ -355,33 +355,33 @@ A layout function may look like ``<<meta(arg1, arg2, kwarg=data)>>``
 
 Available layout functions are:
 
-* :func:`meta <sphinxcontrib.needs.layout.LayoutHandler.meta>`
-* :func:`meta_all <sphinxcontrib.needs.layout.LayoutHandler.meta_all>`
-* :func:`meta_links <sphinxcontrib.needs.layout.LayoutHandler.meta_links>`
-* :func:`meta_links_all <sphinxcontrib.needs.layout.LayoutHandler.meta_links_all>`
-* :func:`meta_id <sphinxcontrib.needs.layout.LayoutHandler.meta_id>`
-* :func:`image <sphinxcontrib.needs.layout.LayoutHandler.image>`
-* :func:`link <sphinxcontrib.needs.layout.LayoutHandler.link>`
-* :func:`permalink <sphinxcontrib.needs.layout.LayoutHandler.permalink>`
-* :func:`collapse_button <sphinxcontrib.needs.layout.LayoutHandler.collapse_button>`
+* :func:`meta <sphinx_needs.layout.LayoutHandler.meta>`
+* :func:`meta_all <sphinx_needs.layout.LayoutHandler.meta_all>`
+* :func:`meta_links <sphinx_needs.layout.LayoutHandler.meta_links>`
+* :func:`meta_links_all <sphinx_needs.layout.LayoutHandler.meta_links_all>`
+* :func:`meta_id <sphinx_needs.layout.LayoutHandler.meta_id>`
+* :func:`image <sphinx_needs.layout.LayoutHandler.image>`
+* :func:`link <sphinx_needs.layout.LayoutHandler.link>`
+* :func:`permalink <sphinx_needs.layout.LayoutHandler.permalink>`
+* :func:`collapse_button <sphinx_needs.layout.LayoutHandler.collapse_button>`
 
-.. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.meta(name, prefix=None, show_empty=False)
+.. autofunction:: sphinx_needs.layout.LayoutHandler.meta(name, prefix=None, show_empty=False)
 
-.. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.meta_id()
+.. autofunction:: sphinx_needs.layout.LayoutHandler.meta_id()
 
-.. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.meta_all(prefix='', postfix='', exclude=None, no_links=False, defaults=True, show_empty=False)
+.. autofunction:: sphinx_needs.layout.LayoutHandler.meta_all(prefix='', postfix='', exclude=None, no_links=False, defaults=True, show_empty=False)
 
-.. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.meta_links(name, incoming=False)
+.. autofunction:: sphinx_needs.layout.LayoutHandler.meta_links(name, incoming=False)
 
-.. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.meta_links_all(prefix='', postfix='', exclude=None)
+.. autofunction:: sphinx_needs.layout.LayoutHandler.meta_links_all(prefix='', postfix='', exclude=None)
 
-.. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.image(url, height=None, width=None, align=None, no_link=False)
+.. autofunction:: sphinx_needs.layout.LayoutHandler.image(url, height=None, width=None, align=None, no_link=False)
 
-.. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.link(url, text=None, image_url=None, image_height=None, image_width=None)
+.. autofunction:: sphinx_needs.layout.LayoutHandler.link(url, text=None, image_url=None, image_height=None, image_width=None)
 
-.. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.permalink(image_url=None, image_height=None, image_width=None, text=None)
+.. autofunction:: sphinx_needs.layout.LayoutHandler.permalink(image_url=None, image_height=None, image_width=None, text=None)
 
-.. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.collapse_button(target='meta', collapsed='Show', visible='Close', initial=False)
+.. autofunction:: sphinx_needs.layout.LayoutHandler.collapse_button(target='meta', collapsed='Show', visible='Close', initial=False)
 
 .. _styles:
 

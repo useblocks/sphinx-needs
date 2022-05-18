@@ -27,9 +27,9 @@ Using sources
 Activation
 ----------
 
-For final activation, please add `sphinxcontrib.needs` to the project's extension list of your **conf.py** file::
+For final activation, please add `sphinx_needs` to the project's extension list of your **conf.py** file::
 
-   extensions = ["sphinxcontrib.needs",]
+   extensions = ["sphinx_needs",]
 
 For the full configuration, please read :ref:`config`.
 
@@ -50,12 +50,13 @@ Install PlantUML
    http://sourceforge.net/projects/plantuml/files/plantuml.jar/download
 #. Make a new folder called ``utils`` inside your docs folder. Copy the ``plantuml.jar`` file into the ``utils`` folder.
 #. Install the plantuml sphinx extension: ``pip install sphinxcontrib-plantuml``.
-#. Add ``sphinxcontrib.plantuml`` to the sphinx extension list in **conf.py**::
+#. Add ``sphinxcontrib.plantuml`` to the sphinx extension list in ``conf.py``::
 
       extensions = ['sphinxcontrib.plantuml',
-                    'sphinxcontrib.needs']
+                    'sphinx_needs']
 
-#. Configure plantuml in **conf.py**::
+
+#. Configure plantuml in ``conf.py``::
 
       on_rtd = os.environ.get('READTHEDOCS') == 'True'
       if on_rtd:

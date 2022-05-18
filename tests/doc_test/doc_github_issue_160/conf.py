@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 
-extensions = ["sphinxcontrib.needs", "sphinxcontrib.plantuml"]
+extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
 needs_id_regex = "^[A-Z0-9]-[A-Z0-9]+"
 
 plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "utils", "plantuml.jar")

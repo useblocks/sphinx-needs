@@ -291,6 +291,8 @@ You can apply multiple configurations together by separating them via ``,`` symb
 
    - * config name
      * description
+   - * mixing
+     * Allows mixing of different PlantUML diagram types (e.g. Class and Deploy diagrams)
    - * monochrome
      * Changes all colors to monochrome colors
    - * handwritten

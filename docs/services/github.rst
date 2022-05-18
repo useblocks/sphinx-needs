@@ -220,7 +220,7 @@ Please see the this example for a ``Github Enterprise`` configuration in your **
 
 .. code-block:: python
 
-    from sphinxcontrib.needs.services.github import GithubService
+    from sphinx_needs.services.github import GithubService
 
     needs_services = {
         # Cloud GitHub configuration

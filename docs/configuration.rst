@@ -8,9 +8,11 @@ All configurations take place in your project's **conf.py** file.
 Activation
 ----------
 
-Add **sphinxcontrib.needs** to your extensions::
+Add **sphinx_needs** to your extensions.
 
-   extensions = ["sphinxcontrib.needs",]
+.. code-block:: python
+
+   extensions = ["sphinx_needs",]
 
 .. _inc_build:
 
@@ -41,7 +43,7 @@ This would allow Sphinx to perform incremental builds, which are much faster as 
    }
 
    # Better, register the function via Sphinx-Needs API
-   from sphinxcontrib.needs.api.configuration import add_warning, add_dynamic_function
+   from sphinx_needs.api.configuration import add_warning, add_dynamic_function
    def setup(app):
       add_warning(app, 'my_warning', my_custom_warning)
       add_dynamic_function(app, my_dynamic_function)
@@ -88,6 +90,8 @@ By default it is set to::
                    dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="node"),
                    dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="node"),
                    dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="node"),
+                   # PlantUML based content
+                   dict(directive="arch", title="Architecture", content="plantuml", prefix="A_", color="#9856a5", style="node")
                    # Kept for backwards compatibility
                    dict(directive="need", title="Need", prefix="N_", color="#9856a5", style="node")
                ]
@@ -96,6 +100,7 @@ needs_types must be a list of dictionaries, where each dictionary **must** conta
 
 * **directive**: Name of the directive. For instance "req", which can be used via `.. req::` in documents
 * **title**: Title, which is used as human readable name in lists
+* **content**: Supported content type. Can be ``sphinx`` or ``plantuml``. Default: ``sphinx``.
 * **prefix**: A prefix for generated IDs, to easily identify that an ID belongs to a specific type. Can also be ""
 * **color**: A color as hex value. Used in diagrams and some days maybe in other representations as well.
 * **style**: A plantuml node type, like node, artifact, frame, storage or database. See `plantuml documentation <http://plantuml.com/deployment-diagram>`_ for more.
@@ -574,7 +579,7 @@ See also :ref:`needflow config option <needflow_config>` for more details and al
 needs_report_template
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 1.0
+.. versionadded:: 1.0.1
 
 You can customise the layout of :ref:`needsreport` using `Jinja <http://jinja.pocoo.org/>`_.
 
@@ -913,9 +918,9 @@ Activate it by setting it like this::
         dict(name="security", description="tag for security needs"),
     ]
 
-If parameter is not set or set to *False*, no checks will be performed.
+If parameter is not set or set to *[]*, no checks will be performed.
 
-Default value: *False*.
+Default value: *[]*.
 
 
 .. _needs_css:
@@ -1114,7 +1119,7 @@ See :ref:`dynamic_functions` for more information.
 
    Better use the following way in our **conf.py** file::
 
-         from sphinxcontrib.needs.api import add_dynamic_function
+         from sphinx_needs.api import add_dynamic_function
 
             def my_function(app, need, needs, *args, **kwargs):
                 # Do magic here
@@ -1799,3 +1804,11 @@ If true, need details like status, tags or links are collapsed and shown only af
 Default value: True
 
 Can be overwritten for each single need by setting :ref:`need_collapse`.
+
+Configuration Used
+------------------
+
+.. needreport::
+   :types:
+   :options:
+   :links:
