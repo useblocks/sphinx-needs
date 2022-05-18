@@ -17,6 +17,7 @@ Directives
    needservice
    needextend
    needuml
+   needsreport
 
 **Deprecated**:
 
