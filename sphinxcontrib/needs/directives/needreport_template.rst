@@ -1,32 +1,65 @@
-{% if types %}
+{# Output for needs_types #}
+{% if types|length != 0 %}
+.. container:: toggle
 
-.. container:: needs_report_table
+   .. container::  header
 
-    .. raw:: html
+      **Need Types**
 
-        <table class="colwidths-auto docutils align-left">
-            <thead>
-                <tr><th class="head align-center" colspan="4"><p>Need Types</p></th></tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><b>TITLE</b></td>
-                    <td><b>DIRECTIVE</b></td>
-                    <td><b>PREFIX</b></td>
-                    <td><b>STYLE</b></td>
-                </tr>
+   .. list-table::
+      :widths: 40 20 20 20
+      :header-rows: 1
 
-                {% for type in types %}
-                    {% set type_index = (loop.index - 1) % 2 %}
-                    <tr class="{% if type_index == 0 %} row-even {% else %} row-odd {% endif %}">
-                        <td>{{ type.title }}</td>
-                        <td>{{ type.directive }}</td>
-                        <td>{{ type.prefix }}</td>
-                        <td>{{ type.style }}</td>
-                    </tr>
-                {% endfor %}
-
-            </tbody>
-        </table>
-
+      * - TITLE
+        - DIRECTIVE
+        - PREFIX
+        - STYLE
+      {% for type in types %}
+      * - {{ type.title }}
+        - {{ type.directive }}
+        - `{{ type.prefix }}`
+        - {{ type.style }}
+      {% endfor %}
 {% endif %}
+{# Output for needs_types #}
+
+{# Output for needs_extra_links #}
+{% if links|length != 0 %}
+.. container:: toggle
+
+   .. container::  header
+
+      **Need Extra Links**
+
+   .. list-table::
+      :widths: 10 30 30 5 20
+      :header-rows: 1
+
+      * - OPTION
+        - INCOMING
+        - OUTGOING
+        - COPY
+        - ALLOW DEAD LINKS
+      {% for link in links %}
+      * - {{ link.option | capitalize }}
+        - {{ link.incoming | capitalize }}
+        - {{ link.outgoing | capitalize }}
+        - {{ link.get('copy', None) | capitalize }}
+        - {{ link.get('allow_dead_links', False) | capitalize }}
+      {% endfor %}
+{% endif %}
+{# Output for needs_extra_links #}
+
+{# Output for needs_options #}
+{% if options|length != 0 %}
+.. container:: toggle
+
+   .. container::  header
+
+      **Need Extra Options**
+
+   {% for option in options %}
+   * {{ option }}
+   {% endfor %}
+{% endif %}
+{# Output for needs_options #}
