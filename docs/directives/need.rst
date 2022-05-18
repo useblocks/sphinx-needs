@@ -31,6 +31,7 @@ You can define the type using the correct directive, like ``.. req::`` or ``.. t
 The code example above creates a new requirement, with a title, content, given id, a status and several tags.
 
 All the options for the requirement directive (``.. req::``) are optional,
+
 but you must set a title as an argument (i.e. if you do not specify :ref:`needs_title_from_content` in the conf.py file).
 
 .. note::
