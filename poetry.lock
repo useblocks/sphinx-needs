@@ -474,6 +474,14 @@ category = "main"
 optional = false
 python-versions = ">=3.6.8"
 
+[[package]]
+name = "pyparsing"
+version = "3.0.8"
+description = "pyparsing module - Classes and methods to define and execute parsing grammars"
+category = "main"
+optional = false
+python-versions = ">=3.6.8"
+
 [package.extras]
 diagrams = ["railroad-diagrams", "jinja2"]
 

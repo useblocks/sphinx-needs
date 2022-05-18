@@ -32,7 +32,7 @@ sys.path.insert(0, os.path.abspath("../../sphinxcontrib-needs"))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 
-extensions = ["sphinxcontrib.needs"]
+extensions = ["sphinx_needs"]
 
 needs_extra_options = {
     "introduced": directives.unchanged,
@@ -42,7 +42,7 @@ needs_extra_options = {
 
 
 def setup(app):
-    from sphinxcontrib.needs.api.configuration import add_extra_option
+    from sphinx_needs.api.configuration import add_extra_option
 
     add_extra_option(app, "introduced")
 

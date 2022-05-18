@@ -79,4 +79,4 @@ def test_doc_needs_filter_code(test_app):
     assert '<img alt="_images/need_pie_' in code_html
 
     code_args_html = Path(app.outdir, "filter_code_args.html").read_text()
-    assert '<a class="reference external" href="#impl1">impl1</a>' in code_args_html
+    assert '<a class="reference internal" href="#impl1">impl1</a>' in code_args_html

@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 
-extensions = ["sphinxcontrib.needs", "dummy_extension.dummy"]
+extensions = ["sphinx_needs", "dummy_extension.dummy"]
 
 
 needs_types = [

@@ -51,25 +51,25 @@ The following functions are available in all sphinx-needs installations.
 
 test
 ~~~~
-.. autofunction:: sphinxcontrib.needs.functions.common.test
+.. autofunction:: sphinx_needs.functions.common.test
 
 .. _echo:
 
 echo
 ~~~~
-.. autofunction:: sphinxcontrib.needs.functions.common.echo
+.. autofunction:: sphinx_needs.functions.common.echo
 
 .. _copy:
 
 copy
 ~~~~
-.. autofunction:: sphinxcontrib.needs.functions.common.copy
+.. autofunction:: sphinx_needs.functions.common.copy
 
 .. _check_linked_values:
 
 check_linked_values
 ~~~~~~~~~~~~~~~~~~~
-.. autofunction:: sphinxcontrib.needs.functions.common.check_linked_values
+.. autofunction:: sphinx_needs.functions.common.check_linked_values
 
 
 .. _calc_sum:
@@ -77,14 +77,14 @@ check_linked_values
 calc_sum
 ~~~~~~~~
 
-.. autofunction:: sphinxcontrib.needs.functions.common.calc_sum
+.. autofunction:: sphinx_needs.functions.common.calc_sum
 
 .. _links_content:
 
 links_from_content
 ~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: sphinxcontrib.needs.functions.common.links_from_content
+.. autofunction:: sphinx_needs.functions.common.links_from_content
 
 
 Develop own functions
@@ -108,7 +108,7 @@ inside your **conf.py** file::
 
    Better use the following way in our **conf.py** file::
 
-         from sphinxcontrib.needs.api import add_dynamic_function
+         from sphinx_needs.api import add_dynamic_function
 
             def my_function(app, need, needs, *args, **kwargs):
                 # Do magic here
