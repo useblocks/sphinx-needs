@@ -8,8 +8,11 @@ in need configurations.
 
 import ast
 import re
+from typing import Any, Callable, List, Optional, Union
 
 from docutils import nodes
+from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
 from sphinx.errors import SphinxError
 
 from sphinx_needs.logging import get_logger
@@ -19,8 +22,11 @@ logger = get_logger(__name__)
 unicode = str
 ast_boolean = ast.NameConstant
 
+# this input args should actually be of type `Need` and `List[Need]`, however `Need` is *currently* untyped.
+DynamicFunction = Callable[[Sphinx, Any, Any], Union[str, int, float, List[Union[str, int, float]]]]
 
-def register_func(need_function, name=None):
+
+def register_func(need_function: DynamicFunction, name: Optional[str] = None):
     """
     Registers a new sphinx-needs function for the given sphinx environment.
     :param env: Sphinx environment
@@ -50,7 +56,7 @@ def register_func(need_function, name=None):
     NEEDS_FUNCTIONS[func_name] = {"name": func_name, "function": need_function}
 
 
-def execute_func(env, need, func_string):
+def execute_func(env: BuildEnvironment, need, func_string: str):
     """
     Executes a given function string.
     :param env: Sphinx environment
@@ -90,7 +96,7 @@ def execute_func(env, need, func_string):
 func_pattern = re.compile(r"\[\[(.*?)\]\]")  # RegEx to detect function strings
 
 
-def find_and_replace_node_content(node, env, need):
+def find_and_replace_node_content(node, env: BuildEnvironment, need):
     """
     Search inside a given node and its children for nodes of type Text,
     if found check if it contains a function string and run/replace it.
@@ -148,7 +154,7 @@ def find_and_replace_node_content(node, env, need):
     return node
 
 
-def resolve_dynamic_values(env):
+def resolve_dynamic_values(env: BuildEnvironment):
     """
     Resolve dynamic values inside need data.
 
@@ -228,7 +234,7 @@ def resolve_dynamic_values(env):
     env.needs_workflow["dynamic_values_resolved"] = True
 
 
-def check_and_get_content(content, need, env):
+def check_and_get_content(content: str, need, env: BuildEnvironment) -> str:
     """
     Checks if the given content is a function call.
     If not, content is returned.
@@ -273,7 +279,7 @@ def _detect_and_execute(content, need, env):
     return func_call, func_return
 
 
-def _analyze_func_string(func_string, need):
+def _analyze_func_string(func_string: str, need):
     """
     Analyze given function string and extract:
 

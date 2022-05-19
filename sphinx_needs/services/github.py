@@ -5,6 +5,7 @@ from contextlib import suppress
 from urllib.parse import urlparse
 
 import requests
+from sphinx.application import Sphinx
 
 from sphinx_needs.api import add_need_type
 from sphinx_needs.api.exceptions import NeedsApiConfigException
@@ -22,7 +23,7 @@ from sphinx_needs.services.config.github import (
 class GithubService(BaseService):
     options = CONFIG_OPTIONS + EXTRA_DATA_OPTIONS + EXTRA_LINK_OPTIONS + EXTRA_IMAGE_OPTIONS
 
-    def __init__(self, app, name, config, **kwargs):
+    def __init__(self, app: Sphinx, name: str, config, **kwargs) -> None:
         self.app = app
         self.name = name
         self.config = config
@@ -70,7 +71,7 @@ class GithubService(BaseService):
 
         super().__init__()
 
-    def _send(self, query, options, specific=False):
+    def _send(self, query, options, specific: bool = False):
         headers = {}
         if self.gh_type == "commit":
             headers["Accept"] = "application/vnd.github.cloak-preview+json"
@@ -253,7 +254,7 @@ class GithubService(BaseService):
 
         return data
 
-    def _get_avatar(self, avatar_url):
+    def _get_avatar(self, avatar_url: str) -> str:
         """
         Download and store avatar image
 
@@ -275,7 +276,7 @@ class GithubService(BaseService):
                 if self.username and self.token:
                     auth = (self.username, self.token)
                 else:
-                    auth = ()
+                    auth = None
                 response = requests.get(avatar_url, auth=auth, allow_redirects=False)
                 if response.status_code == 200:
                     with open(avatar_file_path, "wb") as f:
@@ -302,7 +303,7 @@ class GithubService(BaseService):
 
         return avatar_file_path
 
-    def _add_given_options(self, options, element_data):
+    def _add_given_options(self, options, element_data) -> None:
         """
         Add data from options, which was defined by user but is not set by this service
 

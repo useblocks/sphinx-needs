@@ -1,18 +1,22 @@
+from typing import Dict
+
 from docutils.parsers.rst import directives
+from sphinx.application import Sphinx
 
 from sphinx_needs.api.configuration import NEEDS_CONFIG
 from sphinx_needs.directives.needservice import NeedserviceDirective
 from sphinx_needs.logging import get_logger
+from sphinx_needs.services.base import BaseService
 
 
 class ServiceManager:
-    def __init__(self, app):
+    def __init__(self, app: Sphinx):
         self.app = app
 
         self.log = get_logger(__name__)
-        self.services = {}
+        self.services: Dict[str, BaseService] = {}
 
-    def register(self, name, clazz, **kwargs):
+    def register(self, name: str, clazz, **kwargs) -> None:
         try:
             config = self.app.config.needs_services[name]
         except KeyError:
@@ -35,7 +39,7 @@ class ServiceManager:
         # Init service with custom config
         self.services[name] = clazz(self.app, name, config, **kwargs)
 
-    def get(self, name):
+    def get(self, name: str) -> BaseService:
         if name in self.services:
             return self.services[name]
         else:

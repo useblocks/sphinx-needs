@@ -2,14 +2,19 @@
 Cares about handling and execution warnings.
 
 """
+from typing import Optional
+
+from sphinx.application import Sphinx
+from sphinx.util import logging
+
 from sphinx_needs.config import NEEDS_CONFIG
 from sphinx_needs.filter_common import filter_needs
-from sphinx_needs.logging import get_logger, logging
+from sphinx_needs.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-def process_warnings(app, exception):
+def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
     """
     Checks the configured warnings.
 

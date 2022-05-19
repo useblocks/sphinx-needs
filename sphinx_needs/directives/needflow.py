@@ -1,11 +1,12 @@
 import html
 import os
 import re
-from typing import Iterable
+from typing import Iterable, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
 from jinja2 import Template
+from sphinx.application import Sphinx
 from sphinxcontrib.plantuml import (
     generate_name,  # Need for plantuml filename calculation
 )
@@ -43,7 +44,7 @@ class NeedflowDirective(FilterBase):
     # Update the options_spec with values defined in the FilterBase class
     option_spec.update(FilterBase.base_option_spec)
 
-    def run(self):
+    def run(self) -> Sequence[nodes.Node]:
         env = self.state.document.settings.env
         if not hasattr(env, "need_all_needflows"):
             env.need_all_needflows = {}
@@ -123,7 +124,7 @@ def make_entity_name(name):
     return name
 
 
-def process_needflow(app, doctree, fromdocname):
+def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str):
     # Replace all needflow nodes with a list of the collected needs.
     # Augment each need with a backlink to the original location.
     env = app.builder.env

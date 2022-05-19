@@ -73,7 +73,14 @@ MONTH_NAMES = [
 
 
 def row_col_maker(
-    app: Sphinx, fromdocname, all_needs, need_info, need_key, make_ref=False, ref_lookup=False, prefix=""
+    app: Sphinx,
+    fromdocname: str,
+    all_needs,
+    need_info,
+    need_key,
+    make_ref: bool = False,
+    ref_lookup: bool = False,
+    prefix: str = "",
 ):
     """
     Creates and returns a column.
@@ -158,7 +165,7 @@ def row_col_maker(
     return row_col
 
 
-def rstjinja(app: Sphinx, docname: str, source):
+def rstjinja(app: Sphinx, docname: str, source: List[str]) -> None:
     """
     Render our pages as a jinja template for fancy templating goodness.
     """
@@ -170,7 +177,7 @@ def rstjinja(app: Sphinx, docname: str, source):
     source[0] = rendered
 
 
-def import_prefix_link_edit(needs: Dict[str, Any], id_prefix: str, needs_extra_links: List[Dict[str, Any]]):
+def import_prefix_link_edit(needs: Dict[str, Any], id_prefix: str, needs_extra_links: List[Dict[str, Any]]) -> None:
     """
     Changes existing links to support given prefix.
     Only link-ids get touched, which are part of ``needs`` (so are linking them).
@@ -196,7 +203,7 @@ def import_prefix_link_edit(needs: Dict[str, Any], id_prefix: str, needs_extra_l
             need["description"] = need["description"].replace(id, "".join([id_prefix, id]))
 
 
-def profile(keyword):
+def profile(keyword: str):
     """
     Activate profiling for a specific function.
 
@@ -223,7 +230,7 @@ def profile(keyword):
     return inner
 
 
-def check_and_calc_base_url_rel_path(external_url, fromdocname):
+def check_and_calc_base_url_rel_path(external_url: str, fromdocname: str) -> str:
     """
     Check given base_url from needs_external_needs and calculate relative path if base_url is relative path.
 

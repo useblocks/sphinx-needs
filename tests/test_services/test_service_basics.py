@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from sphinx.application import Sphinx
 
 from sphinx_needs.services.base import BaseService
 from sphinx_needs.services.manager import ServiceManager
@@ -10,7 +11,7 @@ class TestService(BaseService):
 
     options = ["custom_option", "exists"]
 
-    def __init__(self, app, name, config, **kwargs):
+    def __init__(self, _app: Sphinx, _name: str, config, **kwargs) -> None:
         self.custom_option = config.get("custom_option", False)
 
         super().__init__()
@@ -44,10 +45,10 @@ class NoDebugService(BaseService):
 
     options = []
 
-    def __init__(self, app, name, config, **kwargs):
+    def __init__(self, _app: Sphinx, _name: str, config, **kwargs):
         super().__init__()
 
-    def request(self, options):
+    def request(self, _options):
         return []
 
 

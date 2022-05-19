@@ -8,6 +8,7 @@ import re
 from typing import Any, Dict, List
 
 from docutils.parsers.rst import Directive, directives
+from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.utils import check_and_get_external_filter_func
@@ -61,7 +62,7 @@ class FilterBase(Directive):
         return collected_filter_options
 
 
-def process_filters(app, all_needs, current_needlist, include_external=True):
+def process_filters(app: Sphinx, all_needs, current_needlist, include_external: bool = True):
     """
     Filters all needs with given configuration.
     Used by needlist, needtable and needflow.
@@ -194,7 +195,7 @@ def process_filters(app, all_needs, current_needlist, include_external=True):
     return found_needs
 
 
-def prepare_need_list(need_list):
+def prepare_need_list(need_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     # all_needs_incl_parts = need_list.copy()
     try:
         all_needs_incl_parts = need_list[:]
@@ -231,7 +232,7 @@ def intersection_of_need_results(list_a, list_b) -> List[Dict[str, Any]]:
     return [a for a in list_a if a in list_b]
 
 
-def filter_needs(app, needs, filter_string="", current_need=None):
+def filter_needs(app: Sphinx, needs, filter_string: str = "", current_need=None):
     """
     Filters given needs based on a given filter string.
     Returns all needs, which pass the given filter.
@@ -263,7 +264,9 @@ def filter_needs(app, needs, filter_string="", current_need=None):
     return found_needs
 
 
-def filter_single_need(app, need, filter_string="", needs=None, current_need=None, filter_compiled=None) -> bool:
+def filter_single_need(
+    app: Sphinx, need, filter_string: str = "", needs=None, current_need=None, filter_compiled=None
+) -> bool:
     """
     Checks if a single need/need_part passes a filter_string
 

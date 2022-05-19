@@ -1,5 +1,6 @@
 import os
 import re
+from typing import Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -41,7 +42,7 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
     option_spec.update(FilterBase.base_option_spec)
     option_spec.update(DiagramBase.base_option_spec)
 
-    def run(self):
+    def run(self) -> Sequence[nodes.Node]:
         env = self.state.document.settings.env
         # Creates env.need_all_needsequences safely and other vars
         self.prepare_env("needsequences")

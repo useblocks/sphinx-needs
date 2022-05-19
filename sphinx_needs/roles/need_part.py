@@ -8,8 +8,11 @@ Most voodoo is done in need.py
 """
 import hashlib
 import re
+from typing import List
 
 from docutils import nodes
+from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.logging import get_logger
 
@@ -20,14 +23,14 @@ class NeedPart(nodes.Inline, nodes.Element):
     pass
 
 
-def process_need_part(app, doctree, fromdocname):
+def process_need_part(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     pass
 
 
 part_pattern = re.compile(r"\(([\w-]+)\)(.*)")
 
 
-def update_need_with_parts(env, need, part_nodes):
+def update_need_with_parts(env: BuildEnvironment, need, part_nodes: List[NeedPart]) -> None:
     for part_node in part_nodes:
         content = part_node.children[0].children[0]  # ->inline->Text
         result = part_pattern.match(content)
@@ -63,8 +66,8 @@ def update_need_with_parts(env, need, part_nodes):
         part_node["reftarget"] = part_id_ref
 
         part_link_text = f" {part_id_show}"
-        part_link_node = nodes.Text(part_link_text, part_link_text)
-        part_text_node = nodes.Text(part_content, part_content)
+        part_link_node = nodes.Text(part_link_text)
+        part_text_node = nodes.Text(part_content)
 
         from sphinx.util.nodes import make_refnode
 
@@ -78,7 +81,7 @@ def update_need_with_parts(env, need, part_nodes):
         part_node.append(node_need_part_line)
 
 
-def find_parts(node):
+def find_parts(node: nodes.Element) -> List[NeedPart]:
     found_nodes = []
     for child in node.children:
         if isinstance(child, NeedPart):

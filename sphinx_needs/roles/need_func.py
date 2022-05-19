@@ -3,6 +3,7 @@ Provide the role ``need_func``, which executes a dynamic function.
 """
 
 from docutils import nodes
+from sphinx.application import Sphinx
 
 from sphinx_needs.functions.functions import check_and_get_content
 from sphinx_needs.logging import get_logger
@@ -14,9 +15,9 @@ class NeedFunc(nodes.Inline, nodes.Element):
     pass
 
 
-def process_need_func(app, doctree, fromdocname):
+def process_need_func(app: Sphinx, doctree: nodes.document, _fromdocname: str) -> None:
     env = app.builder.env
     for node_need_func in doctree.traverse(NeedFunc):
         result = check_and_get_content(node_need_func.attributes["reftarget"], {"id": "need_func_dummy"}, env)
-        new_node_func = nodes.Text(str(result), str(result))
+        new_node_func = nodes.Text(str(result))
         node_need_func.replace_self(new_node_func)

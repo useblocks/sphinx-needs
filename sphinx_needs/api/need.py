@@ -39,18 +39,18 @@ def add_need(
     status: Optional[str] = None,
     tags=None,
     links_string: Optional[str] = None,
-    hide=False,
-    hide_tags=False,
-    hide_status=False,
+    hide: bool = False,
+    hide_tags: bool = False,
+    hide_status: bool = False,
     collapse=None,
     style=None,
     layout=None,
     template=None,
-    pre_template=None,
-    post_template=None,
-    is_external=False,
-    external_url=None,
-    external_css="external_link",
+    pre_template: Optional[str] = None,
+    post_template: Optional[str] = None,
+    is_external: bool = False,
+    external_url: Optional[str] = None,
+    external_css: str = "external_link",
     **kwargs,
 ):
     """
@@ -401,7 +401,7 @@ def add_need(
     return return_nodes
 
 
-def del_need(app, id):
+def del_need(app: Sphinx, id) -> None:
     """
     Deletes an existing need.
 
@@ -415,13 +415,13 @@ def del_need(app, id):
 
 
 def add_external_need(
-    app,
+    app: Sphinx,
     need_type,
     title,
     id=None,
-    external_url=None,
-    external_css="external_link",
-    content="",
+    external_url: Optional[str] = None,
+    external_css: str = "external_link",
+    content: str = "",
     status=None,
     tags=None,
     links_string=None,
@@ -467,7 +467,7 @@ def add_external_need(
     return add_need(app=app, **kwargs)
 
 
-def _prepare_template(app, needs_info, template_key):
+def _prepare_template(app: Sphinx, needs_info, template_key) -> str:
     template_folder = app.config.needs_template_folder
     if not os.path.isabs(template_folder):
         template_folder = os.path.join(app.confdir, template_folder)
@@ -488,7 +488,7 @@ def _prepare_template(app, needs_info, template_key):
     return new_content
 
 
-def _render_template(content, docname, lineno, state):
+def _render_template(content: str, docname: str, lineno: int, state) -> nodes.Element:
     rst = ViewList()
     for line in content.split("\n"):
         rst.append(line, docname, lineno)
@@ -498,7 +498,7 @@ def _render_template(content, docname, lineno, state):
     return node_need_content
 
 
-def _render_plantuml_template(content, docname, lineno, state):
+def _render_plantuml_template(content: str, docname: str, lineno: int, state) -> nodes.Element:
     rst = ViewList()
     rst.append(".. needuml::", docname, lineno)
     rst.append("", docname, lineno)  # Empty option line for needuml
@@ -511,7 +511,7 @@ def _render_plantuml_template(content, docname, lineno, state):
     return node_need_content
 
 
-def _read_in_links(links_string: Union[str, List[str]]):
+def _read_in_links(links_string: Union[str, List[str]]) -> List[str]:
     # Get links
     links = []
     if links_string:
@@ -533,7 +533,7 @@ def _read_in_links(links_string: Union[str, List[str]]):
     return _fix_list_dyn_func(links)
 
 
-def make_hashed_id(app: Sphinx, need_type: str, full_title, content, id_length=None):
+def make_hashed_id(app: Sphinx, need_type: str, full_title: str, content: str, id_length: Optional[int] = None) -> str:
     """
     Creates an ID based on title or need.
 
@@ -620,7 +620,7 @@ def _merge_extra_options(needs_info, needs_kwargs, needs_extra_options):
     return extra_keys
 
 
-def _merge_global_options(app: Sphinx, needs_info, global_options):
+def _merge_global_options(app: Sphinx, needs_info, global_options) -> None:
     """Add all global defined options to needs_info"""
     if global_options is None:
         return

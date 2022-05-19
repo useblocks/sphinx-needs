@@ -1,9 +1,14 @@
 import hashlib
 import re
+from typing import Any, Dict, List, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import Directive
+from docutils.parsers.rst.states import RSTState, RSTStateMachine
+from docutils.statemachine import StringList
 from sphinx.addnodes import desc_name, desc_signature
+from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.api import add_need
 from sphinx_needs.api.exceptions import NeedsInvalidException
@@ -37,19 +42,30 @@ class NeedDirective(Directive):
 
     final_argument_whitespace = True
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def __init__(
+        self,
+        name: str,
+        arguments: List[str],
+        options: Dict[str, Any],
+        content: StringList,
+        lineno: int,
+        content_offset: int,
+        block_text: str,
+        state: RSTState,
+        state_machine: RSTStateMachine,
+    ):
+        super().__init__(name, arguments, options, content, lineno, content_offset, block_text, state, state_machine)
         self.log = get_logger(__name__)
         self.full_title = self._get_full_title()
 
-    def run(self):
+    def run(self) -> Sequence[nodes.Node]:
         #############################################################################################
         # Get environment
         #############################################################################################
         env = self.env
 
         # ToDo: Keep this in directive!!!
-        collapse = self.options.get("collapse", None)
+        collapse = self.options.get("collapse")
         if isinstance(collapse, str):
             if collapse.upper() in ["TRUE", 1, "YES"]:
                 collapse = True
@@ -60,19 +76,19 @@ class NeedDirective(Directive):
 
         hide = "hide" in self.options
 
-        id = self.options.get("id", None)
+        id = self.options.get("id")
         content = "\n".join(self.content)
-        status = self.options.get("status", None)
+        status = self.options.get("status")
         if status:
             status = status.replace("__", "")  # Support for multiline options, which must use __ for empty lines
         tags = self.options.get("tags", "")
-        style = self.options.get("style", None)
+        style = self.options.get("style")
         layout = self.options.get("layout", "")
-        template = self.options.get("template", None)
-        pre_template = self.options.get("pre_template", None)
-        post_template = self.options.get("post_template", None)
-        duration = self.options.get("duration", None)
-        completion = self.options.get("completion", None)
+        template = self.options.get("template")
+        pre_template = self.options.get("pre_template")
+        post_template = self.options.get("post_template")
+        duration = self.options.get("duration")
+        completion = self.options.get("completion")
 
         need_extra_options = {"duration": duration, "completion": completion}
         for extra_link in env.config.needs_extra_links:
@@ -104,9 +120,9 @@ class NeedDirective(Directive):
         )
         return need_nodes
 
-    def read_in_links(self, name):
+    def read_in_links(self, name: str) -> List[str]:
         # Get links
-        links_string = self.options.get(name, [])
+        links_string = self.options.get(name)
         links = []
         if links_string:
             # links = [link.strip() for link in re.split(";|,", links) if not link.isspace()]
@@ -124,14 +140,14 @@ class NeedDirective(Directive):
             # ToDo: There may be a smart regex for the splitting. This would avoid this mess of code...
         return _fix_list_dyn_func(links)
 
-    def make_hashed_id(self, type_prefix, id_length):
+    def make_hashed_id(self, type_prefix: str, id_length: int) -> str:
         hashable_content = self.full_title or "\n".join(self.content)
         return "{}{}".format(
             type_prefix, hashlib.sha1(hashable_content.encode("UTF-8")).hexdigest().upper()[:id_length]
         )
 
     @property
-    def env(self):
+    def env(self) -> BuildEnvironment:
         return self.state.document.settings.env
 
     @property
@@ -139,11 +155,11 @@ class NeedDirective(Directive):
         return "title_from_content" in self.options or self.env.config.needs_title_from_content
 
     @property
-    def docname(self):
-        return self.state.document.settings.env.docname
+    def docname(self) -> str:
+        return self.env.docname
 
     @property
-    def trimmed_title(self):
+    def trimmed_title(self) -> str:
         title = self.full_title
         max_length = self.max_title_length
         if max_length == -1 or len(title) <= max_length:
@@ -154,11 +170,11 @@ class NeedDirective(Directive):
             return title[: self.max_title_length - 3] + "..."
 
     @property
-    def max_title_length(self):
-        return self.state.document.settings.env.config.needs_max_title_length
+    def max_title_length(self) -> int:
+        return self.env.config.needs_max_title_length
 
     # ToDo. Keep this in directive
-    def _get_full_title(self):
+    def _get_full_title(self) -> str:
         """
         Determines the title for the need in order of precedence:
         directive argument, first sentence of requirement (if
@@ -187,7 +203,7 @@ def get_sections_and_signature_and_needs(need_info):
     """Gets the hierarchy of the section nodes as a list starting at the
     section of the current need and then its parent sections"""
     sections = []
-    parent_needs = []
+    parent_needs: List[str] = []
     signature = None
     current_node = need_info["target_node"]
     while current_node:
@@ -226,7 +242,7 @@ def get_sections_and_signature_and_needs(need_info):
     return sections, signature, parent_needs
 
 
-def purge_needs(app, env, docname):
+def purge_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> None:
     """
     Gets executed, if a doc file needs to be purged/ read in again.
     So this code delete all found needs for the given docname.
@@ -236,7 +252,7 @@ def purge_needs(app, env, docname):
     env.needs_all_needs = {key: need for key, need in env.needs_all_needs.items() if need["docname"] != docname}
 
 
-def add_sections(app, doctree, fromdocname):
+def add_sections(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     """Add section titles to the needs as additional attributes that can
     be used in tables and filters"""
     needs = getattr(app.builder.env, "needs_all_needs", {})
@@ -274,7 +290,7 @@ def add_sections(app, doctree, fromdocname):
 
 
 @profile("NEED_PROCESS")
-def process_need_nodes(app, doctree, fromdocname):
+def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     """
     Event handler to add title meta data (status, tags, links, ...) information to the Need node.
 
@@ -306,7 +322,7 @@ def process_need_nodes(app, doctree, fromdocname):
 
 
 @profile("NEED_PRINT")
-def print_need_nodes(app, doctree, fromdocname):
+def print_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     """
     Finally creates the need-node in the docurils node-tree.
 
@@ -331,7 +347,7 @@ def print_need_nodes(app, doctree, fromdocname):
         build_need(layout, node_need, app, fromdocname=fromdocname)
 
 
-def check_links(env):
+def check_links(env: BuildEnvironment) -> None:
     """
     Checks if set links are valid or are dead (referenced need does not exist.)
     :param env: Sphinx environment
@@ -357,7 +373,7 @@ def check_links(env):
                     break  # One found dead link is enough
 
 
-def create_back_links(env, option):
+def create_back_links(env: BuildEnvironment, option) -> None:
     """
     Create back-links in all found needs.
     But do this only once, as all needs are already collected and this sorting is for all
@@ -392,7 +408,7 @@ def create_back_links(env, option):
     env.needs_workflow[f"backlink_creation_{option}"] = True
 
 
-def _fix_list_dyn_func(list):
+def _fix_list_dyn_func(list: List[str]) -> List[str]:
     """
     This searches a list for dynamic function fragments, which may have been cut by generic searches for ",|;".
 
@@ -437,7 +453,7 @@ def _fix_list_dyn_func(list):
 # Need-Node.
 
 
-def html_visit(self, node):
+def html_visit(self, node) -> None:
     """
     Visitor method for Need-node of builder 'html'.
     Does only wrap the Need-content into an extra <div> with class=need
@@ -445,13 +461,13 @@ def html_visit(self, node):
     self.body.append(self.starttag(node, "div", "", CLASS="need"))
 
 
-def html_depart(self, node):
+def html_depart(self, node) -> None:
     self.body.append("</div>")
 
 
-def latex_visit(self, node):
+def latex_visit(self, node) -> None:
     pass
 
 
-def latex_depart(self, node):
+def latex_depart(self, node) -> None:
     pass

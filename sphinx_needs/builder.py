@@ -1,5 +1,8 @@
 import os
+from typing import Iterable, Optional, Set
 
+from docutils import nodes
+from sphinx.application import Sphinx
 from sphinx.builders import Builder
 
 from sphinx_needs.logging import get_logger
@@ -14,10 +17,10 @@ class NeedsBuilder(Builder):
     file_suffix = ".txt"
     links_suffix = None
 
-    def write_doc(self, docname, doctree):
+    def write_doc(self, docname: str, doctree: nodes.document) -> None:
         pass
 
-    def finish(self):
+    def finish(self) -> None:
         needs = self.env.needs_all_needs.values()  # We need a list of needs for later filter checks
         filters = self.env.needs_all_filters
         config = self.env.config
@@ -57,24 +60,23 @@ class NeedsBuilder(Builder):
         else:
             log.info("Needs successfully exported")
 
-    def get_outdated_docs(self):
-        yield
-        # return ""
+    def get_outdated_docs(self) -> Iterable[str]:
+        return []
 
-    def prepare_writing(self, docnames) -> None:
+    def prepare_writing(self, docnames: Set[str]) -> None:
         pass
 
-    def write_doc_serialized(self, docname, doctree) -> None:
+    def write_doc_serialized(self, docname: str, doctree: nodes.document) -> None:
         pass
 
     def cleanup(self) -> None:
         pass
 
-    def get_target_uri(self, docname, typ=None):
+    def get_target_uri(self, docname: str, typ: Optional[str] = None) -> str:
         return ""
 
 
-def build_needs_json(app, exception):
+def build_needs_json(app: Sphinx, exception) -> None:
 
     if not app.env.config.needs_build_json:
         return

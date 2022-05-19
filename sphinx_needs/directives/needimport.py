@@ -1,6 +1,7 @@
 import json
 import os
 import re
+from typing import Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
@@ -38,7 +39,7 @@ class NeedimportDirective(Directive):
 
     final_argument_whitespace = True
 
-    def run(self):
+    def run(self) -> Sequence[nodes.Node]:
         needs_list = {}
         version = self.options.get("version", None)
         filter_string = self.options.get("filter", None)
@@ -201,7 +202,7 @@ class NeedimportDirective(Directive):
         return need_nodes
 
     @property
-    def docname(self):
+    def docname(self) -> str:
         return self.state.document.settings.env.docname
 
 

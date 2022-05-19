@@ -47,7 +47,7 @@ class NeedsList:
         "content_node",
     }
 
-    def __init__(self, config, outdir, confdir):
+    def __init__(self, config, outdir, confdir) -> None:
         self.config = config
         self.outdir = outdir
         self.confdir = confdir
@@ -61,7 +61,7 @@ class NeedsList:
         }
         self.log = log
 
-    def update_or_add_version(self, version):
+    def update_or_add_version(self, version) -> None:
         if version not in self.needs_list["versions"].keys():
             self.needs_list["versions"][version] = {
                 "created": "",
@@ -76,14 +76,14 @@ class NeedsList:
 
         self.needs_list["versions"][version]["created"] = datetime.now().isoformat()
 
-    def add_need(self, version, need_info):
+    def add_need(self, version, need_info) -> None:
         self.update_or_add_version(version)
         writable_needs = {key: need_info[key] for key in need_info if key not in self.JSON_KEY_EXCLUSIONS_NEEDS}
         writable_needs["description"] = need_info["content"]
         self.needs_list["versions"][version]["needs"][need_info["id"]] = writable_needs
         self.needs_list["versions"][version]["needs_amount"] = len(self.needs_list["versions"][version]["needs"])
 
-    def add_filter(self, version, need_filter):
+    def add_filter(self, version, need_filter) -> None:
         self.update_or_add_version(version)
         writable_filters = {key: need_filter[key] for key in need_filter if key not in self.JSON_KEY_EXCLUSIONS_FILTERS}
         self.needs_list["versions"][version]["filters"][need_filter["export_id"].upper()] = writable_filters
@@ -93,7 +93,7 @@ class NeedsList:
         if version in self.needs_list["versions"]:
             del self.needs_list["versions"][version]
 
-    def write_json(self, needs_file="needs.json"):
+    def write_json(self, needs_file: str = "needs.json") -> None:
         # We need to rewrite some data, because this kind of data gets overwritten during needs.json import.
         self.needs_list["created"] = datetime.now().isoformat()
         self.needs_list["current_version"] = self.current_version
@@ -102,10 +102,10 @@ class NeedsList:
         needs_json = json.dumps(self.needs_list, indent=4, sort_keys=True)
         file = os.path.join(self.outdir, needs_file)
 
-        with open(file, "w") as needs_file:
-            needs_file.write(needs_json)
+        with open(file, "w") as f:
+            f.write(needs_json)
 
-    def load_json(self, file):
+    def load_json(self, file) -> None:
         if not os.path.isabs(file):
             file = os.path.join(self.confdir, file)
 

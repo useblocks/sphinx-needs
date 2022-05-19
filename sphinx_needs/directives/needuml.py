@@ -1,5 +1,6 @@
 import html
 import os
+from typing import Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
@@ -29,7 +30,7 @@ class NeedumlDirective(Directive):
         "extra": directives.unchanged_required,
     }
 
-    def run(self):
+    def run(self) -> Sequence[nodes.Node]:
         env = self.state.document.settings.env
         if not hasattr(env, "need_all_needumls"):
             env.need_all_needumls = {}

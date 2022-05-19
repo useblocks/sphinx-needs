@@ -1,4 +1,5 @@
 from docutils import nodes
+from sphinx.application import Sphinx
 from sphinx.util.nodes import make_refnode
 
 try:
@@ -16,7 +17,7 @@ class NeedOutgoing(nodes.Inline, nodes.Element):
     pass
 
 
-def process_need_outgoing(app, doctree, fromdocname):
+def process_need_outgoing(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     for node_need_ref in doctree.traverse(NeedOutgoing):
         env = app.builder.env
 
@@ -61,7 +62,7 @@ def process_need_outgoing(app, doctree, fromdocname):
                     if env.config.needs_show_link_type:
                         link_text += " [{type}]".format(type=target_need["type_name"])
 
-                    node_need_ref[0] = nodes.Text(link_text, link_text)
+                    node_need_ref[0] = nodes.Text(link_text)
 
                     if not target_need["is_external"]:
                         new_node_ref = make_refnode(
@@ -91,7 +92,7 @@ def process_need_outgoing(app, doctree, fromdocname):
                 link_text = f"{link}"
                 if link_part:
                     link_text += f".{link_part}"
-                dead_link_text = nodes.Text(link_text, link_text)
+                dead_link_text = nodes.Text(link_text)
                 dead_link_para = nodes.inline(classes=["needs_dead_link"])
                 dead_link_para.append(dead_link_text)
                 node_link_container += dead_link_para
@@ -127,9 +128,9 @@ def process_need_outgoing(app, doctree, fromdocname):
 
             # If we have several links, we add an empty text between them
             if (index + 1) < len(links):
-                node_link_container += nodes.Text(", ", ", ")
+                node_link_container += nodes.Text(", ")
 
         if len(node_link_container.children) == 0:
-            node_link_container += nodes.Text("None", "None")
+            node_link_container += nodes.Text("None")
 
         node_need_ref.replace_self(node_link_container)

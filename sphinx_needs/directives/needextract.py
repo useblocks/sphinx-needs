@@ -3,8 +3,11 @@
 
 """
 
+from typing import Sequence
+
 from docutils import nodes
 from docutils.parsers.rst import directives
+from sphinx.application import Sphinx
 
 from sphinx_needs.directives.utils import (
     no_needs_found_paragraph,
@@ -31,7 +34,7 @@ class NeedextractDirective(FilterBase):
     # Update the options_spec with values defined in the FilterBase class
     option_spec.update(FilterBase.base_option_spec)
 
-    def run(self):
+    def run(self) -> Sequence[nodes.Node]:
         env = self.state.document.settings.env
         if not hasattr(env, "need_all_needextracts"):
             env.need_all_needextracts = {}
@@ -59,7 +62,7 @@ class NeedextractDirective(FilterBase):
         return [targetnode] + [Needextract("")]
 
 
-def process_needextract(app, doctree, fromdocname):
+def process_needextract(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     """
     Replace all needextrac nodes with a list of the collected needs.
     """

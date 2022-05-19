@@ -1,4 +1,5 @@
 import os
+from typing import Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
@@ -19,7 +20,7 @@ class NeedReportDirective(Directive):
         # 'services': directives.unchanged
     }
 
-    def run(self):
+    def run(self) -> Sequence[nodes.Node]:
         env = self.state.document.settings.env
 
         if len(self.options.keys()) == 0:  # Check if options is empty

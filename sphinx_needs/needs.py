@@ -1,7 +1,10 @@
+from typing import Any, Dict
+
 from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 from sphinx.config import Config
+from sphinx.environment import BuildEnvironment
 from sphinx.errors import SphinxError
 from sphinx.roles import XRefRole
 
@@ -107,7 +110,7 @@ class TagsDummy:
         return True
 
 
-def setup(app):
+def setup(app: Sphinx) -> Dict[str, Any]:
     log = get_logger(__name__)
     log.debug("Starting setup of Sphinx-Needs")
     log.debug("Load Sphinx-Data-Viewer for Sphinx-Needs")
@@ -347,7 +350,7 @@ def setup(app):
     }
 
 
-def load_config(app: Sphinx, *_args):
+def load_config(app: Sphinx, *_args) -> None:
     """
     Register extra options and directive based on config from conf.py
     """
@@ -445,14 +448,14 @@ def load_config(app: Sphinx, *_args):
             log.warning(f'{name} for "warnings" is already registered.')
 
 
-def visitor_dummy(*_args, **_kwargs):
+def visitor_dummy(*_args, **_kwargs) -> None:
     """
     Dummy class for visitor methods, which does nothing.
     """
     pass
 
 
-def prepare_env(app, env, _docname):
+def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
     """
     Prepares the sphinx environment to store sphinx-needs internal data.
     """
@@ -553,7 +556,7 @@ def prepare_env(app, env, _docname):
             env.needs_workflow["backlink_creation_{}".format(link_type["option"])] = False
 
 
-def check_configuration(_app: Sphinx, config: Config):
+def check_configuration(_app: Sphinx, config: Config) -> None:
     """
     Checks the configuration for invalid options.
 
@@ -603,7 +606,7 @@ def check_configuration(_app: Sphinx, config: Config):
             )
 
 
-def merge_data(app, env, docnames, other):
+def merge_data(app: Sphinx, env: BuildEnvironment, docnames, other):
     """
     Performs data merge of parallel executed workers.
     Used only for parallel builds.
@@ -616,7 +619,7 @@ def merge_data(app, env, docnames, other):
     other_needs = other.needs_all_needs
     needs.update(other_needs)
 
-    def merge(name):
+    def merge(name: str) -> None:
         # Update global needs dict
         if not hasattr(env, name):
             setattr(env, name, {})

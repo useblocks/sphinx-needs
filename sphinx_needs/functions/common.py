@@ -6,6 +6,7 @@ Collection of common sphinx-needs functions for dynamic values
 
 import contextlib
 import re
+from typing import List, Optional
 
 from sphinx.application import Sphinx
 
@@ -14,7 +15,7 @@ from sphinx_needs.filter_common import filter_needs, filter_single_need
 from sphinx_needs.utils import logger
 
 
-def test(app: Sphinx, need, needs, *args, **kwargs):
+def test(app: Sphinx, need, needs, *args, **kwargs) -> str:
     """
     Test function for dynamic functions in sphinx needs.
 
@@ -32,10 +33,10 @@ def test(app: Sphinx, need, needs, *args, **kwargs):
 
     :return: single test string
     """
-    return "Test output of need {}. args: {}. kwargs: {}".format(need["id"], args, kwargs)
+    return f"Test output of need {need['id']}. args: {args}. kwargs: {kwargs}"
 
 
-def echo(app: Sphinx, need, needs, text, *args, **kwargs):
+def echo(app: Sphinx, need, needs, text: str, *args, **kwargs) -> str:
     """
     .. versionadded:: 0.6.3
 
@@ -52,7 +53,7 @@ def echo(app: Sphinx, need, needs, text, *args, **kwargs):
     return text
 
 
-def copy(app, need, needs, option, need_id=None, lower=False, upper=False, filter=None):
+def copy(app: Sphinx, need, needs, option, need_id=None, lower: bool = False, upper: bool = False, filter=None) -> str:
     """
     Copies the value of one need option to another
 
@@ -150,7 +151,16 @@ def copy(app, need, needs, option, need_id=None, lower=False, upper=False, filte
     return need[option]
 
 
-def check_linked_values(app, need, needs, result, search_option, search_value, filter_string=None, one_hit=False):
+def check_linked_values(
+    app: Sphinx,
+    need,
+    needs,
+    result,
+    search_option,
+    search_value,
+    filter_string: Optional[str] = None,
+    one_hit: bool = False,
+):
     """
     Returns a specific value, if for all linked needs a given option has a given value.
 
@@ -302,7 +312,7 @@ def check_linked_values(app, need, needs, result, search_option, search_value, f
     return result
 
 
-def calc_sum(app, need, needs, option, filter=None, links_only=False):
+def calc_sum(app: Sphinx, need, needs, option, filter=None, links_only: bool = False) -> float:
     """
     Sums the values of a given option in filtered needs up to single number.
 
@@ -389,7 +399,7 @@ def calc_sum(app, need, needs, option, filter=None, links_only=False):
     else:
         check_needs = needs.values()
 
-    calculated_sum = 0
+    calculated_sum = 0.0
 
     for check_need in check_needs:
         if filter:
@@ -407,7 +417,7 @@ def calc_sum(app, need, needs, option, filter=None, links_only=False):
     return calculated_sum
 
 
-def links_from_content(app, need, needs, need_id=None, filter=None):
+def links_from_content(app: Sphinx, need, needs, need_id=None, filter=None) -> List[str]:
     """
     Extracts links from content of a need.
 
