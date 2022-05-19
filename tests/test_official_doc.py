@@ -130,7 +130,7 @@ def test_build_singlehtml(test_app):
 
 
 @responses.activate
-@pytest.mark.parametrize("test_app", [{"buildername": "latex", "srcdir": "../docs"}], indirect=True)
+@pytest.mark.parametrize("test_app", [{"buildername": "latex", "srcdir": "doc_test/doc_basic"}], indirect=True)
 def test_build_latex(test_app):
     responses.add_callback(
         responses.GET,
@@ -145,7 +145,7 @@ def test_build_latex(test_app):
 
 
 @responses.activate
-@pytest.mark.parametrize("test_app", [{"buildername": "epub", "srcdir": "../docs"}], indirect=True)
+@pytest.mark.parametrize("test_app", [{"buildername": "epub", "srcdir": "doc_test/doc_basic"}], indirect=True)
 def test_build_epub(test_app):
     responses.add_callback(
         responses.GET,
