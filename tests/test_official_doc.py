@@ -160,7 +160,7 @@ def test_build_epub(test_app):
 
 
 @responses.activate
-@pytest.mark.parametrize("test_app", [{"buildername": "json", "srcdir": "../docs"}], indirect=True)
+@pytest.mark.parametrize("test_app", [{"buildername": "json", "srcdir": "doc_test/doc_basic"}], indirect=True)
 def test_build_json(test_app):
     responses.add_callback(
         responses.GET,
@@ -249,10 +249,16 @@ def test_sphinx_api_build():
     responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
 
     temp_dir = tempfile.mkdtemp()
-    src_dir = os.path.join(os.path.dirname(__file__), "../", "docs")
+    src_dir = os.path.join(os.path.dirname(__file__), "doc_test", "doc_basic")
 
     sphinx_app = sphinx.application.Sphinx(
-        srcdir=src_dir, confdir=src_dir, outdir=temp_dir, doctreedir=temp_dir, buildername="html", parallel=4
+        srcdir=src_dir,
+        confdir=src_dir,
+        outdir=temp_dir,
+        doctreedir=temp_dir,
+        buildername="html",
+        parallel=4,
+        freshenv=True,
     )
     sphinx_app.build()
     assert sphinx_app.statuscode == 0
