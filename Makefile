@@ -10,8 +10,7 @@ lint:
 
 .PHONY: test
 test:
-	# poetry run pytest -n auto --tb=long tests/
-	poetry run pytest --tb=long tests/
+	poetry run pytest -n auto --tb=long tests/
 
 .PHONY: test
 test-short:
