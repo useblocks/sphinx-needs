@@ -1,4 +1,5 @@
 """Pytest conftest module containing common test configuration and fixtures."""
+import glob
 import os
 import shutil
 
@@ -18,6 +19,11 @@ def copy_srcdir_to_tmpdir(srcdir, tmp):
 
 @pytest.fixture(scope="function")
 def test_app(make_app, sphinx_test_tempdir, request):
+    # Clean tempfolder, if it as content
+    files = glob.glob(f"{sphinx_test_tempdir}/.*")
+    for f in files:
+        os.remove(f)
+
     # get builder parameters from test case
     builder_params = request.param
 
