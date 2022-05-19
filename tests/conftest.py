@@ -1,6 +1,6 @@
 """Pytest conftest module containing common test configuration and fixtures."""
-import shutil
 import os
+import shutil
 
 import pytest
 from sphinx.testing.path import path

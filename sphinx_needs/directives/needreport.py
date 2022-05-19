@@ -13,9 +13,9 @@ class NeedsReportException(SphinxError):
 class NeedReportDirective(Directive):
     final_argument_whitespace = True
     option_spec = {
-        'types': directives.unchanged,
-        'links': directives.unchanged,
-        'options': directives.unchanged
+        "types": directives.unchanged,
+        "links": directives.unchanged,
+        "options": directives.unchanged
         # 'services': directives.unchanged
     }
 
@@ -24,12 +24,10 @@ class NeedReportDirective(Directive):
 
         if len(self.options.keys()) == 0:  # Check if options is empty
             error_file, error_line = self.state_machine.input_lines.items[0]
-            error_msg = "{0}:{1}: NeedsReportError: No options specified to generate needs report.".format(
+            error_msg = "{}:{}: NeedsReportError: No options specified to generate needs report.".format(
                 error_file, error_line + self.state_machine.input_lines.data.index(".. needreport::") + 1
             )
-            raise NeedsReportException(
-                error_msg
-            )
+            raise NeedsReportException(error_msg)
 
         types = self.options.get("types", None)
         extra_links = self.options.get("links", None)
@@ -46,11 +44,7 @@ class NeedReportDirective(Directive):
         if extra_options is not None and isinstance(extra_options, str):
             needs_extra_options = env.app.config.needs_extra_options
 
-        report_info = {
-            'types': needs_types,
-            'options': needs_extra_options,
-            'links': needs_extra_links
-        }
+        report_info = {"types": needs_types, "options": needs_extra_options, "links": needs_extra_links}
 
         need_report_template_path: str = env.app.config.needs_report_template
         # Absolute path starts with /, based on the conf.py directory. The / need to be striped
@@ -66,13 +60,10 @@ class NeedReportDirective(Directive):
         with open(correct_need_report_template_path) as needs_report_template_file:
             needs_report_template_file_content = needs_report_template_file.read()
 
-        template = Template(needs_report_template_file_content,
-                            autoescape=True)
+        template = Template(needs_report_template_file_content, autoescape=True)
 
         text = template.render(**report_info)
-        self.state_machine.insert_input(
-            text.split('\n'),
-            self.state_machine.document.attributes['source'])
+        self.state_machine.insert_input(text.split("\n"), self.state_machine.document.attributes["source"])
 
         report_node = nodes.raw()
         return [report_node]
