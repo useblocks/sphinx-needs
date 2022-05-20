@@ -41,8 +41,7 @@ def test_app(make_app, sphinx_test_tempdir, request):
         parallel=builder_params.get("parallel", 0),
     )
 
-    try:
-        yield app
-    finally:
-        # cleanup test temporary directory
-        shutil.rmtree(sphinx_test_tempdir, True)
+    yield app
+
+    # cleanup test temporary directory
+    shutil.rmtree(sphinx_test_tempdir, True)
