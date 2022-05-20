@@ -1,17 +1,17 @@
 """
 A Common directive, from which all other test directives inherit the shared functions.
 """
+# fmt: off
 import os
 
 from docutils.parsers.rst import Directive
 from sphinx.util import logging
 from sphinxcontrib.needs.api import make_hashed_id
 
-from sphinxcontrib.test_reports.exceptions import (
-    SphinxError,
-    TestReportFileNotSetException,
-)
+from sphinxcontrib.test_reports.exceptions import SphinxError, TestReportFileNotSetException
 from sphinxcontrib.test_reports.junitparser import JUnitParser
+
+# fmt: on
 
 
 class TestCommonDirective(Directive):
@@ -20,7 +20,7 @@ class TestCommonDirective(Directive):
     """
 
     def __init__(self, *args, **kwargs):
-        super(TestCommonDirective, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.env = self.state.document.settings.env
         self.app = self.env.app
         if not hasattr(self.app, "testreport_data"):

@@ -7,10 +7,9 @@ def tr_link(app, need, needs, test_option, target_option, *args, **kwargs):
     for need_target in needs.values():
         if target_option not in need_target:
             continue
+
         if (
-            test_opt == need_target[target_option]
-            and test_opt is not None
-            and len(test_opt) > 0
+            test_opt == need_target[target_option] and test_opt is not None and len(test_opt) > 0  # fmt: skip
         ):
             links.append(need_target["id"])
 

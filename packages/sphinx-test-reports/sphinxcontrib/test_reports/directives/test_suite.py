@@ -36,11 +36,16 @@ class TestSuiteDirective(TestCommonDirective):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def run(self):
+    def run(self, nested=False, count=-1):
         self.prepare_basic_options()
         self.load_test_file()
 
+        if nested:
+            # access n-th nested suite here
+            self.results = self.results[0]["testsuites"]
+
         suite_name = self.options.get("suite", None)
+
         if suite_name is None:
             raise TestReportInvalidOption("Suite not given!")
 
@@ -50,9 +55,13 @@ class TestSuiteDirective(TestCommonDirective):
                 suite = suite_obj
                 break
 
+            elif nested:  # access correct nested testsuite here
+                suite = self.results[count]
+                break
+
         if suite is None:
             raise TestReportInvalidOption(
-                "Suite {} not found in test file {}".format(suite_name, self.test_file)
+                f"Suite {suite_name} not found in test file {self.test_file}"
             )
 
         cases = suite["tests"]
@@ -86,12 +95,62 @@ class TestSuiteDirective(TestCommonDirective):
             errors=errors,
         )
 
-        if "auto_cases" in self.options.keys():
+        # TODO double nested logic
+        # nested testsuite present, if testcases are present -> reached most inner testsuite
+        access_count = 0
+        if len(suite_obj["testcases"]) == 0:
+
+            for suite in suite_obj["testsuites"]:
+
+                suite_id = self.test_id
+                suite_id += (
+                    "_"
+                    + hashlib.sha1(suite["name"].encode("UTF-8"))  # noqa: W503
+                    .hexdigest()
+                    .upper()[:3]
+                )
+
+                options = self.options
+                options["suite"] = suite["name"]
+                options["id"] = suite_id
+
+                if "links" not in self.options:
+                    options["links"] = self.test_id
+                elif self.test_id not in options["links"]:
+                    options["links"] = options["links"] + ";" + self.test_id
+
+                arguments = [suite["name"]]
+                suite_directive = (
+                    sphinxcontrib.test_reports.directives.test_suite.TestSuiteDirective(
+                        self.app.config.tr_suite[0],
+                        arguments,
+                        options,
+                        "",
+                        self.lineno,  # no content
+                        self.content_offset,
+                        self.block_text,
+                        self.state,
+                        self.state_machine,
+                    )
+                )
+
+                is_nested = len(suite_obj["testsuites"]) > 0
+
+                # create suite_directive for each nested suite, directive appends content in html files
+                # access_count keeps track of which nested testsuite to access in the directive
+                main_section += suite_directive.run(nested=True, count=access_count)
+                access_count += 1
+
+        # suite has testcases
+        if "auto_cases" in self.options.keys() and len(suite_obj["testcases"]) > 0:
+
+            case_count = 0
+
             for case in suite["testcases"]:
                 case_id = self.test_id
                 case_id += (
                     "_"
-                    + hashlib.sha1(
+                    + hashlib.sha1(  # noqa: W503
                         case["classname"].encode("UTF-8") + case["name"].encode("UTF-8")
                     )
                     .hexdigest()
@@ -123,6 +182,13 @@ class TestSuiteDirective(TestCommonDirective):
                     )
                 )
 
-                main_section += case_directive.run()
+                is_nested = len(suite_obj["testsuites"]) > 0 or nested
+
+                # depending if nested or not, runs case directive to add content to testcases
+                # count is for correct suite access, if multiple present, case_count is for correct case access
+                main_section += case_directive.run(is_nested, count, case_count)
+
+                if is_nested:
+                    case_count += 1
 
         return main_section

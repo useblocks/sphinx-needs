@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # testreport test docs documentation build configuration file, created by
 # sphinx-quickstart on Tue Mar 28 11:37:14 2017.

@@ -1,29 +1,15 @@
+# fmt: off
 import sphinx
-
 # from docutils import nodes
 from pkg_resources import parse_version
-from sphinxcontrib.needs.api import (
-    add_dynamic_function,
-    add_extra_option,
-    add_need_type,
-)
+from sphinxcontrib.needs.api import add_dynamic_function, add_extra_option, add_need_type
 
 from sphinxcontrib.test_reports.directives.test_case import TestCase, TestCaseDirective
-from sphinxcontrib.test_reports.directives.test_file import TestFile, TestFileDirective
-from sphinxcontrib.test_reports.directives.test_report import (
-    TestReport,
-    TestReportDirective,
-)
-from sphinxcontrib.test_reports.directives.test_suite import (
-    TestSuite,
-    TestSuiteDirective,
-)
-
 from sphinxcontrib.test_reports.directives.test_env import EnvReport, EnvReportDirective
-from sphinxcontrib.test_reports.directives.test_results import (
-    TestResults,
-    TestResultsDirective,
-)
+from sphinxcontrib.test_reports.directives.test_file import TestFile, TestFileDirective
+from sphinxcontrib.test_reports.directives.test_report import TestReport, TestReportDirective
+from sphinxcontrib.test_reports.directives.test_results import TestResults, TestResultsDirective
+from sphinxcontrib.test_reports.directives.test_suite import TestSuite, TestSuiteDirective
 from sphinxcontrib.test_reports.environment import install_styles_static_files
 from sphinxcontrib.test_reports.functions import tr_link
 
@@ -33,6 +19,7 @@ if parse_version(sphinx_version) >= parse_version("1.6"):
 else:
     import logging
 
+# fmt: on
 
 VERSION = "0.3.6"
 

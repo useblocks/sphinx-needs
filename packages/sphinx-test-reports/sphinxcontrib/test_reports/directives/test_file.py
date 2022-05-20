@@ -46,7 +46,7 @@ class TestFileDirective(TestCommonDirective):
             main_section = []
             content = nodes.error()
             para = nodes.paragraph()
-            text_string = "Test file not found: {}".format(self.test_file)
+            text_string = f"Test file not found: {self.test_file}"
             text = nodes.Text(text_string, text_string)
             para += text
             content.append(para)
@@ -54,12 +54,12 @@ class TestFileDirective(TestCommonDirective):
             return main_section
 
         suites = len(self.results)
-        cases = sum([int(x["tests"]) for x in self.results])
+        cases = sum(int(x["tests"]) for x in self.results)
 
-        passed = sum([x["passed"] for x in self.results])
-        skipped = sum([x["skips"] for x in self.results])
-        errors = sum([x["errors"] for x in self.results])
-        failed = sum([x["failures"] for x in self.results])
+        passed = sum(x["passed"] for x in self.results)
+        skipped = sum(x["skips"] for x in self.results)
+        errors = sum(x["errors"] for x in self.results)
+        failed = sum(x["failures"] for x in self.results)
 
         main_section = []
         docname = self.state.document.settings.env.docname
@@ -87,8 +87,9 @@ class TestFileDirective(TestCommonDirective):
 
         if (
             "auto_cases" in self.options.keys()
-            and "auto_suites" not in self.options.keys()
+            and "auto_suites" not in self.options.keys()  # noqa W 503
         ):
+
             raise TestReportIncompleteConfiguration(
                 "option auto_cases must be used together with "
                 "auto_suites for test-file directives."
@@ -99,7 +100,7 @@ class TestFileDirective(TestCommonDirective):
                 suite_id = self.test_id
                 suite_id += (
                     "_"
-                    + hashlib.sha1(suite["name"].encode("UTF-8"))
+                    + hashlib.sha1(suite["name"].encode("UTF-8"))  # noqa: W503
                     .hexdigest()
                     .upper()[:3]
                 )

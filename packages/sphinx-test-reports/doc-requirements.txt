@@ -3,3 +3,4 @@ sphinxcontrib-needs>=0.7.2
 sphinx-test-reports>=0.3.3
 sphinxcontrib-plantuml
 sphinx-panels >= 0.6
+Jinja2<3.1

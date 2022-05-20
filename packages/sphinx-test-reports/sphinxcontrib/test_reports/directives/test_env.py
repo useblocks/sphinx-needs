@@ -38,7 +38,7 @@ class EnvReportDirective(Directive):
     final_argument_whitespace = True
 
     def __init__(self, *args, **kwargs):
-        super(EnvReportDirective, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.data_option = self.options.get("data", None)
         self.environments = self.options.get("env", None)
 
@@ -72,20 +72,17 @@ class EnvReportDirective(Directive):
             json_path = os.path.join(root_path, json_path)
 
         if not os.path.exists(json_path):
-            raise JsonFileNotFound(
-                "The given file does not exist: {0}".format(json_path)
-            )
+            raise JsonFileNotFound(f"The given file does not exist: {json_path}")
 
-        fp_json = open(json_path, "r")
-
-        try:
-            results = json.load(fp_json)
-        except ValueError:
-            raise InvalidJsonFile(
-                "The given file {0} is not a valid JSON".format(
-                    json_path.split("/")[-1]
+        with open(json_path) as fp_json:
+            try:
+                results = json.load(fp_json)
+            except ValueError:
+                raise InvalidJsonFile(
+                    "The given file {} is not a valid JSON".format(
+                        json_path.split("/")[-1]
+                    )
                 )
-            )
 
         # check to see if environment is present in JSON or not
         if self.req_env_list is not None:
@@ -95,9 +92,7 @@ class EnvReportDirective(Directive):
                     not_present_env.append(req_env)
             for not_env in not_present_env:
                 self.req_env_list.remove(not_env)
-                logger.warning(
-                    "environment '{0}' is not present in JSON file".format(not_env)
-                )
+                logger.warning(f"environment '{not_env}' is not present in JSON file")
             del not_present_env
 
         # Construction idea taken from http://agateau.com/2015/docutils-snippets/
@@ -124,7 +119,7 @@ class EnvReportDirective(Directive):
                     for opt in self.data_option_list:
                         if opt not in temp_dict2[enviro]:
                             logger.warning(
-                                "option '{0}' is not present in JSON file".format(opt)
+                                f"option '{opt}' is not present in JSON file"
                             )
 
                 del temp_dict
@@ -152,7 +147,7 @@ class EnvReportDirective(Directive):
                 for opt in self.data_option_list:
                     if opt not in temp_dict2[enviro]:
                         logger.warning(
-                            "option '{0}' is not present in '{1}' environment file".format(
+                            "option '{}' is not present in '{}' environment file".format(
                                 opt, enviro
                             )
                         )
@@ -206,9 +201,7 @@ class EnvReportDirective(Directive):
         if data_option is not None:
             if len(data_option) != 0:
                 for opt in data_option:
-                    logger.warning(
-                        "option '{0}' is not present in JSON file".format(opt)
-                    )
+                    logger.warning(f"option '{opt}' is not present in JSON file")
             del data_option
 
         return main_section

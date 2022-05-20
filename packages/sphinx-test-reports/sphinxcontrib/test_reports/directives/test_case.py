@@ -35,11 +35,16 @@ class TestCaseDirective(TestCommonDirective):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def run(self):
+    def run(self, nested=False, suite_count=-1, case_count=-1):
         self.prepare_basic_options()
         self.load_test_file()
 
+        if nested and suite_count >= 0:
+            # access n-th nested suite here
+            self.results = self.results[0]["testsuites"][suite_count]
+
         suite_name = self.options.get("suite", None)
+
         if suite_name is None:
             raise TestReportInvalidOption("Suite not given!")
 
@@ -50,27 +55,51 @@ class TestCaseDirective(TestCommonDirective):
 
         suite = None
         for suite_obj in self.results:
-            if suite_obj["name"] == suite_name:
+
+            if nested:  # nested testsuites
+                suite = self.results
+                break
+
+            elif suite_obj["name"] == suite_name:
                 suite = suite_obj
                 break
 
         if suite is None:
             raise TestReportInvalidOption(
-                "Suite {} not found in test file {}".format(suite_name, self.test_file)
+                f"Suite {suite_name} not found in test file {self.test_file}"
             )
 
         case = None
+
         for case_obj in suite["testcases"]:
-            if case_obj["name"] == case_full_name and class_name is None:
+
+            if (
+                case_obj["name"] == case_full_name  # noqa: SIM114
+                and class_name is None  # noqa: W503
+            ):
                 case = case_obj
                 break
-            elif case_obj["classname"] == class_name and case_full_name is None:
+
+            elif (
+                case_obj["classname"] == class_name  # noqa: SIM114
+                and case_full_name is None  # noqa: W503
+            ):
                 case = case_obj
                 break
+
             elif (
                 case_obj["name"] == case_full_name
-                and case_obj["classname"] == class_name
+                and case_obj["classname"] == class_name  # noqa: W503
             ):
+                case = case_obj
+                break
+
+            elif nested and case_count >= 0:
+                # access correct case in list
+                case = suite["testcases"][case_count]
+                break
+
+            elif nested:
                 case = case_obj
                 break
 

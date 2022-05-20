@@ -17,7 +17,7 @@ class JUnitParser:
 
         if not os.path.exists(self.junit_xml_path):
             raise JUnitFileMissing(
-                "The given file does not exist: {0}".format(self.junit_xml_path)
+                f"The given file does not exist: {self.junit_xml_path}"
             )
         self.junit_xml_doc = etree.parse(self.junit_xml_path)
 
@@ -42,18 +42,62 @@ class JUnitParser:
         :return: list of test suites as dictionaries
         """
 
-        junit_dict = []
+        def parse_testcase(xml_object):
 
-        for testsuite in self.junit_xml_object:
+            testcase = xml_object
+
+            tc_dict = {
+                "classname": testcase.attrib.get("classname", "unknown"),
+                "file": testcase.attrib.get("file", "unknown"),
+                "line": int(testcase.attrib.get("line", -1)),
+                "name": testcase.attrib.get("name", "unknown"),
+                "time": float(testcase.attrib.get("time", -1)),
+            }
+
+            # The following data is normally a subnode (e.g. skipped/failure).
+            # We integrate it right into the testcase for better handling
+            if hasattr(testcase, "skipped"):
+                result = testcase.skipped
+                tc_dict["result"] = "skipped"
+                tc_dict["type"] = result.attrib.get("type", "unknown")
+                # tc_dict["text"] = re.sub(r"[\n\t]*", "", result.text)  # Removes newlines  and tabs
+                # result.text can be None for pytest xfail test cases
+                tc_dict["text"] = result.text or ""
+                tc_dict["message"] = result.attrib.get("message", "unknown")
+            elif hasattr(testcase, "failure"):
+                result = testcase.failure
+                tc_dict["result"] = "failure"
+                tc_dict["type"] = result.attrib.get("type", "unknown")
+                # tc_dict["text"] = re.sub(r"[\n\t]*", "", result.text)  # Removes newlines and tabs
+                tc_dict["text"] = result.text
+                tc_dict["message"] = ""
+            else:
+                tc_dict["result"] = "passed"
+                tc_dict["type"] = ""
+                tc_dict["text"] = ""
+                tc_dict["message"] = ""
+
+            if hasattr(testcase, "system-out"):
+                tc_dict["system-out"] = testcase["system-out"].text
+            else:
+                tc_dict["system-out"] = ""
+
+            return tc_dict
+
+        def parse_testsuite(xml_object):
+
+            testsuite = xml_object
+
             tests = int(testsuite.attrib.get("tests", -1))
             errors = int(testsuite.attrib.get("errors", -1))
             failures = int(testsuite.attrib.get("failures", -1))
+
+            # fmt: off
             skips = int(
-                testsuite.attrib.get("skips")
-                or testsuite.attrib.get("skip")
-                or testsuite.attrib.get("skipped")
-                or -1
+                testsuite.attrib.get("skips") or testsuite.attrib.get("skip") or testsuite.attrib.get("skipped") or -1
             )
+            # fmt: on
+
             passed = int(tests - sum(x for x in [errors, failures, skips] if x > 0))
 
             ts_dict = {
@@ -65,48 +109,30 @@ class JUnitParser:
                 "passed": passed,
                 "time": float(testsuite.attrib.get("time", -1)),
                 "testcases": [],
+                "testsuites": [],
             }
 
-            for testcase in testsuite.testcase:
-                tc_dict = {
-                    "classname": testcase.attrib.get("classname", "unknown"),
-                    "file": testcase.attrib.get("file", "unknown"),
-                    "line": int(testcase.attrib.get("line", -1)),
-                    "name": testcase.attrib.get("name", "unknown"),
-                    "time": float(testcase.attrib.get("time", -1)),
-                }
+            # add nested testsuite objects to
+            if hasattr(testsuite, "testsuite"):
 
-                # The following data is normally a subnode (e.g. skipped/failure).
-                # We integrate it right into the testcase for better handling
-                if hasattr(testcase, "skipped"):
-                    result = testcase.skipped
-                    tc_dict["result"] = "skipped"
-                    tc_dict["type"] = result.attrib.get("type", "unknown")
-                    # tc_dict["text"] = re.sub(r"[\n\t]*", "", result.text)  # Removes newlines  and tabs
-                    # result.text can be None for pytest xfail test cases
-                    tc_dict["text"] = result.text or ""
-                    tc_dict["message"] = result.attrib.get("message", "unknown")
-                elif hasattr(testcase, "failure"):
-                    result = testcase.failure
-                    tc_dict["result"] = "failure"
-                    tc_dict["type"] = result.attrib.get("type", "unknown")
-                    # tc_dict["text"] = re.sub(r"[\n\t]*", "", result.text)  # Removes newlines and tabs
-                    tc_dict["text"] = result.text
-                    tc_dict["message"] = ""
-                else:
-                    tc_dict["result"] = "passed"
-                    tc_dict["type"] = ""
-                    tc_dict["text"] = ""
-                    tc_dict["message"] = ""
+                for ts in testsuite.testsuite:
+                    # dict from inner parse
+                    inner_testsuite = parse_testsuite(ts)
+                    ts_dict["testsuites"].append(inner_testsuite)
 
-                if hasattr(testcase, "system-out"):
-                    tc_dict["system-out"] = testcase["system-out"].text
-                else:
-                    tc_dict["system-out"] = ""
+            elif hasattr(testsuite, "testcase"):
 
-                ts_dict["testcases"].append(tc_dict)
+                for tc in testsuite.testcase:
+                    new_testcase = parse_testcase(tc)
+                    ts_dict["testcases"].append(new_testcase)
 
-            junit_dict.append(ts_dict)
+            return ts_dict
+
+        # main flow starts here
+
+        junit_dict = []
+        complete_testsuite = parse_testsuite(self.junit_xml_object)
+        junit_dict.append(complete_testsuite)
 
         return junit_dict
 

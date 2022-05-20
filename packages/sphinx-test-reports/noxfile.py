@@ -16,9 +16,9 @@ LINT_DEPENDENCIES = [
 
 
 def is_supported(python: str, sphinx: str) -> bool:
+
     return not (
-        (python == "3.6" and float(sphinx) > 3.0)
-        or (python == "3.10" and float(sphinx) < 4.3)
+        (python == "3.6" and float(sphinx) > 3.0) or (python == "3.10" and float(sphinx) < 4.3)  # fmt: skip
     )
 
 
