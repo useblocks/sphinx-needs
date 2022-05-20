@@ -68,7 +68,7 @@ def test_build_html(test_app):
 
 
 @responses.activate
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "../docs"}], indirect=True)
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/generic_doc"}], indirect=True)
 def test_build_html_parallel(test_app):
     responses.add_callback(
         responses.GET,
