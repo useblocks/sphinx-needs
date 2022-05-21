@@ -206,7 +206,7 @@ def prepare_need_list(need_list):
 
     for need in need_list:
         for part in need["parts"].values():
-            filter_part = {**need, **part}
+            filter_part = {**need, **part}  # noqa: SIM904
             filter_part["id_parent"] = need["id"]
             filter_part["id_complete"] = ".".join([need["id"], filter_part["id"]])
             all_needs_incl_parts.append(filter_part)
