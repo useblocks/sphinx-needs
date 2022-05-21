@@ -295,7 +295,7 @@ License
 
 0.5.2
 -----
-* Improvement: ``Sphinx-Needs`` configuration gets checked before build. (`#118 <https://github.com/useblocks/sphinxcontrib-needs/issues/118>`_)
+* Improvement: **Sphinx-Needs** configuration gets checked before build. (`#118 <https://github.com/useblocks/sphinxcontrib-needs/issues/118>`_)
 * Improvement: ``meta_links_all`` :ref:`layout function <layout_functions>` now supports an exclude parameter
 * Improvement: :ref:`needflow`'s :ref:`connection line and arrow type <needflow_style_start>` can be configured.
 * Improvement: Configurations added for :ref:`needflow`. Use :ref:`needs_flow_configs` to define them and :ref:`needflow_config` for activation.

@@ -62,22 +62,6 @@ To use this content type, set ``content`` to ``plantuml`` in the :ref:`needs_typ
 Options for Need Type
 ---------------------
 
-Supported options:
-
-* :ref:`need_id`
-* :ref:`need_status`
-* :ref:`need_tags`
-* :ref:`need_links`
-* :ref:`need_hide`
-* :ref:`need_collapse`
-* :ref:`need_layout`
-* :ref:`need_style`
-* :ref:`need_template`
-* :ref:`need_pre_template`
-* :ref:`need_post_template`
-* :ref:`need_duration`
-* :ref:`need_completion`
-
 .. _need_id:
 
 id
@@ -456,12 +440,12 @@ template
 
 By setting ``template``, the content of the need gets replaced by the content of the specified template.
 
-``Sphinx-Needs`` templates support the `Jinja <https://jinja.palletsprojects.com/>`_ templating language
+**Sphinx-Needs** templates support the `Jinja <https://jinja.palletsprojects.com/>`_ templating language
 and give access to all need data, including the original content.
 
-The template name must be equal to the filename in the ``Sphinx-Needs`` template folder, without the file extension.
+The template name must be equal to the filename in the **Sphinx-Needs** template folder, without the file extension.
 For example, if the filename is ``my_template.need``, you can reference it like this: ``:template: my_template``.
-``Sphinx-Needs`` templates must have the file extension ``.need``.
+**Sphinx-Needs** templates must have the file extension ``.need``.
 
 You can specify the location of all template files by configuring the :ref:`needs_template_folder`, which is by
 default ``needs_templates/``, in the **conf.py** file.
@@ -699,7 +683,7 @@ Removed Options
 
 .. note::
 
-    To remove options from the ``Sphinx-Needs`` output in ``versions >= 0.5.0``, you must provide your own layout,
+    To remove options from the **Sphinx-Needs** output in ``versions >= 0.5.0``, you must provide your own layout,
     which does not include these options. See :ref:`layouts_styles` for more information.
 
 .. _need_hide_status:

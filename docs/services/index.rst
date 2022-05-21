@@ -4,11 +4,11 @@ Services
 ========
 .. versionadded:: 0.6.0
 
-Services are used by ``Sphinx-Needs`` to get information from external services and create need objects based on this
+Services are used by **Sphinx-Needs** to get information from external services and create need objects based on this
 information.
 For example this could be issues from GitHub, requirements from Doors, tickets from Jira, rows from Excel, or whatever.
 
-Up to now ``Sphinx-Needs`` provides the following services:
+Up to now **Sphinx-Needs** provides the following services:
 
 .. toctree::
    :maxdepth: 1

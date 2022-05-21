@@ -1,6 +1,6 @@
 {# Output for needs_types #}
 {% if types|length != 0 %}
-.. container:: toggle
+.. container:: toggle needs_report_table
 
    .. container::  header
 
@@ -25,7 +25,7 @@
 
 {# Output for needs_extra_links #}
 {% if links|length != 0 %}
-.. container:: toggle
+.. container:: toggle needs_report_table
 
    .. container::  header
 
@@ -52,7 +52,7 @@
 
 {# Output for needs_options #}
 {% if options|length != 0 %}
-.. container:: toggle
+.. container:: toggle needs_report_table
 
    .. container::  header
 

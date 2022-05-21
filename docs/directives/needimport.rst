@@ -4,11 +4,13 @@ needimport
 ==========
 .. versionadded:: 0.1.33
 
-Allows the import of needs from a json file.
+``needimport`` allows the import of needs from a JSON file.
 
-The builder :ref:`needs_builder` should be used to generate a valid file.
+You can generate a valid file using the builder :ref:`needs_builder`.
 
-The directive **.. needimport::** can be used in all rst-documents. Simply write::
+|ex|
+
+.. code-block:: rst
 
    .. needimport:: needs.json
       :id_prefix: imp_
@@ -22,38 +24,67 @@ The directive **.. needimport::** can be used in all rst-documents. Simply write
       :post_template: post_template.rst
 
 The directive needs an absolute or relative path as argument.
-If the path is relative, an absolute path gets calculated based on the current document location.
+If the path is relative, we derive an absolute path based on the location of the document being compiled.
 
-**:id_prefix:** can be used to add a prefix in front of all imported need ids.
+Options
+-------
+
+id_prefix
+~~~~~~~~~
+
+You can set ``:id_prefix`` to add a prefix in front of all imported need ids.
 This may be useful to avoid duplicated ids.
 
-.. note:: when using **:id_prefix:** also all ids used for links and inside descriptions get replaced,
-          if the id belongs to an imported need.
+.. note::
 
-**:version:** allows to specify a specific version for the import. This version must exist inside the imported file.
-If no version is given, the **current_version** attribute from the json file is used.
+    When using ``:id_prefix:``, we replace all ids used for links and inside descriptions,
+    if the id belongs to an imported need.
+
+version
+~~~~~~~
+
+You can specify a specific version for the import using the ``:version:`` option.
+This version must exist inside the imported file.
+
+If no version is given, we use the ``current_version`` attribute from the JSON file.
 In most cases this should be the latest available version.
 
-**:tags:** are attached to the already existing ones of imported needs. This may be useful to mark easily imported
-needs and to create specialised filters for them.
+tags
+~~~~
 
-**:filter:** imports needs only, which pass the filter criteria. Please read the :ref:`filter` documentation of the
-**needfilter** directive for more.
+You can attach tags to existing tags of imported needs using the ``:tags:`` option.
+This may be useful to mark easily imported needs and to create specialised filters for them.
 
-**:hide:** can be used to set the **:hide:** tag for all imported needs. So they do not show up but are available
-in :ref:`needfilter`.
+filter
+~~~~~~
 
-**:collapse:** will hide the meta information by default, if set to ``True``. See also :ref:`need_collapse` description
-of :ref:`need`.
+You can use the ``:filter:`` option to imports only the needs which pass the filter criteria.
 
-.. warning:: Imported needs may use different need types as the current project.
-             The sphinx project owner is responsible for a correct configuration for internal and external needs.
-             There is no automatic typ transformation during an import.
+Please read :ref:`filter` for more information.
+
+hide
+~~~~
+
+You can use the ``:hide:`` option to set the **hide** tag for all imported needs.
+So they do not show up but are available in :ref:`needfilter`.
+
+collapse
+~~~~~~~~
+
+The ``:collapse:`` will hide the meta-data information by default, if set to ``True``.
+See also :ref:`need_collapse` description of :ref:`need`.
+
+.. warning::
+
+    * Imported needs may use different need types as the current project.
+    * The sphinx project owner is responsible for a correct configuration for internal and external needs.
+    * There is no automatic type transformation during an import.
 
 Customization
 -------------
+
 The following options can be set, which overwrite the related options in the imported need itself.
-So you can decide during import what kind of layout or style is used.
+So you can decide what kind of layout or style to use during import.
 
 * layout
 * style

@@ -567,7 +567,7 @@ texinfo_documents = [
 ]
 
 rst_epilog = """
-.. |ex| replace:: **Example** 
+.. |ex| replace:: **Code** 
 
 .. |out| replace:: **Output** 
 

@@ -1266,7 +1266,7 @@ a layout-structure. Example::
 
 .. note::
 
-   ``Sphinx-Needs`` provides some default layouts. These layouts can **not** be overwritten.
+   **Sphinx-Needs** provides some default layouts. These layouts can **not** be overwritten.
    See :ref:`layout list <layouts>` for more information.
 
 .. _needs_default_layout:
@@ -1315,7 +1315,7 @@ needs_template_folder
 
 .. versionadded:: 0.5.2
 
-``needs_template_folder`` allows the definition of your own ``Sphinx-Needs`` template folder.
+``needs_template_folder`` allows the definition of your own **Sphinx-Needs** template folder.
 By default this is ``needs_templates/``.
 
 The folder must already exist, otherwise an exception gets thrown, if a need tries to use a template.
@@ -1763,7 +1763,7 @@ needs_hide_options
 
 .. note::
 
-   To remove options from output in ``Sphinx-Needs`` version >= ``0.5.0`` you must provide your own layout, which
+   To remove options from output in **Sphinx-Needs** version >= ``0.5.0`` you must provide your own layout, which
    does not include these options. See :ref:``layouts_styles`` for more information.
 
 Can be used to hide specific options from general output in rendered document::

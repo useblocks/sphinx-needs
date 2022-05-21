@@ -27,13 +27,6 @@ needsreport
 Options
 -------
 
-Supported options:
-
-* :ref:`types`
-* :ref:`links`
-* :ref:`options`
-
-
 .. _types:
 
 types

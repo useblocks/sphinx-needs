@@ -33,7 +33,6 @@ The amount of found needs by the filter string is then used as value.
 Options
 -------
 
-
 Example with all options used:
 
 .. needbar:: My full bar chart

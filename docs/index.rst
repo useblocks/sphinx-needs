@@ -113,7 +113,7 @@ For instance, you can customize the need objects to support bugs, user stories o
    :tags: introduction
    :links: SPEC_1
 
-   ``Sphinx-Needs`` can request issues and other data from external services like :ref:`GitHub <github_service>`.
+   **Sphinx-Needs** can request issues and other data from external services like :ref:`GitHub <github_service>`.
 
    Embed tickets, requirements and other external information from specific services
    into your documentation by using :ref:`services`.
@@ -134,9 +134,9 @@ For instance, you can customize the need objects to support bugs, user stories o
    :layout: complete
    :style: green
 
-   ``Sphinx-Needs`` allows customizing needs-types, needs-options, colors, layouts, IDs, checks, ....
+   **Sphinx-Needs** allows customizing needs-types, needs-options, colors, layouts, IDs, checks, ....
 
-   The pages :ref:`config` and :ref:`layouts_styles` contains instructions on how to adopt ``Sphinx-Needs`` for your
+   The pages :ref:`config` and :ref:`layouts_styles` contains instructions on how to adopt **Sphinx-Needs** for your
    processes and workflows.
 
 .. feature:: API for other extensions
@@ -144,7 +144,7 @@ For instance, you can customize the need objects to support bugs, user stories o
    :tags: introduction
    :links: SPEC_1
 
-   The :ref:`api` allows other Sphinx-extensions to build specific solutions around and with ``Sphinx-Needs``.
+   The :ref:`api` allows other Sphinx-extensions to build specific solutions around and with **Sphinx-Needs**.
 
    For instance, `Sphinx-Test-Reports <https://sphinx-test-reports.readthedocs.io/en/latest/>`_ create **needs** from
    test results and make them searchable and linkable to other need-types.
@@ -165,7 +165,7 @@ For instance, you can customize the need objects to support bugs, user stories o
    :tags: introduction
    :links: SPEC_1
 
-   ``Sphinx-Needs`` allows you to define the exact way of using and configuring **needs** objects.
+   **Sphinx-Needs** allows you to define the exact way of using and configuring **needs** objects.
 
    Use :ref:`needs_statuses`, :ref:`needs_tags` or :ref:`needs_warnings` to check for configurations not allowed,
    e.g. wrong status names.
@@ -203,7 +203,7 @@ Input
       :tags: important; main_example
       :collapse: false
 
-      We didn't set the **ID** option here, so ``Sphinx-Needs`` will generate one for us.
+      We didn't set the **ID** option here, so **Sphinx-Needs** will generate one for us.
 
       But we have set a **link** to our previous requirement and have set the **status** option.
 
@@ -253,7 +253,7 @@ Result
    :tags: important; main_example
    :collapse: false
 
-   We didn't set the **ID** option here, so ``Sphinx-Needs`` will generate one for us.
+   We didn't set the ``:id:`` option here, so **Sphinx-Needs** will generate one for us.
 
    But we have set a **link** to our previous requirement and have set the **status** option.
 

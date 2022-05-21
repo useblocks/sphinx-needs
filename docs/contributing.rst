@@ -2,7 +2,7 @@ Contributing
 ============
 
 The following provides a guide for developers wishing to contribute
-to ``Sphinx-Needs``.
+to **Sphinx-Needs**.
 
 .. contents::
    :local:
@@ -30,7 +30,7 @@ Your PR should  contain the following parts:
 Installing Dependencies
 -----------------------
 
-``Sphinx-Needs`` requires only
+**Sphinx-Needs** requires only
 `Poetry <https://python-poetry.org/>`__ to be installed as a system
 dependency, the rest of the dependencies are ‘bootstrapped’ and
 installed in an isolated environment by Poetry.
@@ -57,7 +57,7 @@ installed in an isolated environment by Poetry.
 
 List make targets
 -----------------
-``Sphinx-Needs`` uses ``make`` to invoke most development related actions.
+**Sphinx-Needs** uses ``make`` to invoke most development related actions.
 
 Use ``make list`` to get a list of available targets.
 
@@ -65,7 +65,7 @@ Use ``make list`` to get a list of available targets.
 
 Build docs
 ----------
-This will build the ``Sphinx-Needs`` documentation stored under ``/docs``.
+This will build the **Sphinx-Needs** documentation stored under ``/docs``.
 
 It will always perform a **clean** build (calls ``make clean`` before the build).
 If you want to avoid this, run the related sphinx-commands directly under ``/docs`` (e.g. ``make docs``).
@@ -100,7 +100,7 @@ Running Tests
 Linting & Formatting
 --------------------
 
-``Sphinx-Needs`` uses `black <https://github.com/psf/black>`_ and
+**Sphinx-Needs** uses `black <https://github.com/psf/black>`_ and
 `isort <https://pycqa.github.io/isort/>`_ to care about its source code formatting.
 
 ::

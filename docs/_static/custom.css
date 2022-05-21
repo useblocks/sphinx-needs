@@ -107,9 +107,9 @@ img[alt="card-img-top"] {
     padding: 1em;
 }
 
-/*div.wy-table-responsive table {
+div.needs-report-table {
     overflow-x: auto !important;
-}*/
+}
 
 table.needs_style_red a, table.needs_style_yellow a,
 table.needs_style_blue a, table.needs_style_green a {

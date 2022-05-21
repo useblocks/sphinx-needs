@@ -3,14 +3,14 @@
 Layouts & Styles
 ================
 
-``Sphinx-Needs`` provides functions to manipulate the layout and the style of a need.
+**Sphinx-Needs** provides functions to manipulate the layout and the style of a need.
 
 Layouts are defined by a preconfigured table grid and the data, which shall be shown inside specific grid cells.
 Styles define mostly the color of a need.
 
 Both features can be set directly during need-configuration or inside the sphinx **conf.py** file.
 
-``Sphinx-Needs`` provides some preconfigured, ready-to-use standard layouts:
+**Sphinx-Needs** provides some preconfigured, ready-to-use standard layouts:
 
    * clean
    * complete
@@ -29,7 +29,7 @@ Layouts are using a predefined :ref:`grid system <grids>` and define which data 
 There can be multiple layouts using the same :ref:`grid system <grids>`, but maybe showing different data.
 E.g. a layout for bugs and one for specifications.
 
-``Sphinx-Needs`` comes with some predefined layouts.
+**Sphinx-Needs** comes with some predefined layouts.
 But the user is free to create own layouts and use only them.
 
 Most useful layouts are:
@@ -44,7 +44,7 @@ Most useful layouts are:
      * Comment
    - * clean
      * :ref:`grid_simple`
-     * The standard ``Sphinx-Needs`` layout
+     * The standard **Sphinx-Needs** layout
    - * complete
      * :ref:`grid_complex`
      * Divided head, meta, footer rows. Showing really all user-added data.
@@ -253,7 +253,7 @@ This line can contain :ref:`layout_functions`, which care about getting need-dat
 
 .. note::
 
-   ``Sphinx-Needs`` provides some default layouts. These layouts can **not** be overwritten.
+   **Sphinx-Needs** provides some default layouts. These layouts can **not** be overwritten.
    See :ref:`layout list <layouts>` for more information.
 
 .. note::
@@ -388,7 +388,7 @@ Available layout functions are:
 Styles
 ------
 Styles handle mostly colors for background, border and co. for a need.
-Their definition is done in css files, so that ``Sphinx-Needs`` only cares about setting the correct class in HTML
+Their definition is done in css files, so that **Sphinx-Needs** only cares about setting the correct class in HTML
 output. This also means that styles do not have any impact to the need design in PDFs and other output formats.
 
 Default styles are:
@@ -564,7 +564,7 @@ The above line contains the following css classes:
 * needs_layout_complex: Used layout
 * needs_style_needs_blue: Used style
 
-Please note, that the classes added by ``Sphinx-Needs`` always contain a prefix:
+Please note, that the classes added by **Sphinx-Needs** always contain a prefix:
 ``needs_grid_``, ``needs_layout_``, ``needs_style_``.
 So if a user defined layout has the name ``specification_layout``, the related css class is
 ``needs_layout_specification_layout``
@@ -582,7 +582,7 @@ Simple grids
 
 simple
 ++++++
-This is the default layout used by ``Sphinx-Needs``.
+This is the default layout used by **Sphinx-Needs**.
 
 +---------+
 | head    |
