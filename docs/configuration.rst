@@ -1804,11 +1804,3 @@ If true, need details like status, tags or links are collapsed and shown only af
 Default value: True
 
 Can be overwritten for each single need by setting :ref:`need_collapse`.
-
-Configuration Used
-------------------
-
-.. needreport::
-   :types:
-   :options:
-   :links:
