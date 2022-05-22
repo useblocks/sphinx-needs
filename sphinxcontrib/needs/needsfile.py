@@ -4,9 +4,9 @@ Cares about the correct handling with ``needs.json`` files.
 Creates, checks and imports ``needs.json`` files.
 """
 import json
-import os
 import sys
 from datetime import datetime
+from pathlib import Path
 from typing import Any, List
 
 from jsonschema import Draft7Validator
@@ -47,7 +47,7 @@ class NeedsList:
         "content_node",
     }
 
-    def __init__(self, config, outdir, confdir):
+    def __init__(self, config, outdir: Path, confdir: Path):
         self.config = config
         self.outdir = outdir
         self.confdir = confdir
@@ -100,16 +100,16 @@ class NeedsList:
         self.needs_list["project"] = self.project
 
         needs_json = json.dumps(self.needs_list, indent=4, sort_keys=True)
-        file = os.path.join(self.outdir, needs_file)
+        file = self.outdir / needs_file
 
         with open(file, "w") as needs_file:
             needs_file.write(needs_json)
 
-    def load_json(self, file):
-        if not os.path.isabs(file):
-            file = os.path.join(self.confdir, file)
+    def load_json(self, file: Path):
+        if not file.is_absolute():
+            file = self.confdir / file
 
-        if not os.path.exists(file):
+        if not file.exists():
             self.log.warning(f"Could not load needs json file {file}")
         else:
             errors = check_needs_file(file)
@@ -137,7 +137,7 @@ class Errors:
         self.schema = schema_errors
 
 
-def check_needs_file(path: str) -> Errors:
+def check_needs_file(path: Path) -> Errors:
     """
     Checks a given json-file, if it passes our needs.json structure tests.
 
@@ -147,7 +147,7 @@ def check_needs_file(path: str) -> Errors:
     :param path: File path to a needs.json file
     :return: Dict, with error reports
     """
-    schema_path = os.path.join(os.path.dirname(__file__), "needsfile.json")
+    schema_path = Path(__file__).parent / "needsfile.json"
     with open(schema_path) as schema_file:
         needs_schema = json.load(schema_file)
 
