@@ -1,6 +1,7 @@
 import json
 import os
 import re
+from pathlib import Path
 
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
@@ -50,12 +51,12 @@ class NeedimportDirective(Directive):
 
         env = self.state.document.settings.env
 
-        need_import_path = self.arguments[0]
+        need_import_path = Path(self.arguments[0])
 
-        if not os.path.isabs(need_import_path):
+        if not need_import_path.is_absolute():
             # Relative path should starts from current rst file directory
             curr_dir = os.path.dirname(self.docname)
-            new_need_import_path = os.path.join(env.app.confdir, curr_dir, need_import_path)
+            new_need_import_path = Path(env.app.confdir) / curr_dir / need_import_path
 
             correct_need_import_path = new_need_import_path
             if not os.path.exists(new_need_import_path):
@@ -70,9 +71,9 @@ class NeedimportDirective(Directive):
                     )
         else:
             # Absolute path starts with /, based on the conf.py directory. The / need to be striped
-            correct_need_import_path = os.path.join(env.app.confdir, need_import_path[1:])
+            correct_need_import_path = Path(env.app.confdir) / need_import_path[1:]
 
-        if not os.path.exists(correct_need_import_path):
+        if not correct_need_import_path.exists():
             raise ReferenceError(f"Could not load needs import file {correct_need_import_path}")
 
         errors = check_needs_file(correct_need_import_path)

@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from sphinx.builders import Builder
 
@@ -22,10 +23,10 @@ class NeedsBuilder(Builder):
         filters = self.env.needs_all_filters
         config = self.env.config
         version = getattr(config, "version", "unset")
-        needs_list = NeedsList(config, self.outdir, self.confdir)
+        needs_list = NeedsList(config, Path(self.outdir), Path(self.confdir))
 
         if config.needs_file:
-            needs_file = config.needs_file
+            needs_file = Path(config.needs_file)
             needs_list.load_json(needs_file)
         else:
             # check if needs.json file exists in conf.py directory
