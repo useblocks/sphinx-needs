@@ -58,10 +58,33 @@ extensions = [
     "sphinx_immaterial",
 ]
 
-
 add_module_names = False  # Used to shorten function name output
 autodoc_docstring_signature = True  # Used to read spec. func-defs from docstring (e.g. get rid of self)
 
+# NEEDS CONFIGURATION
+
+# TITLE_TEMPLATE = """
+# .. _{{id}}:
+#
+# {{type_name}}: **{{title}}** ({{id}})
+#
+#     {{content|indent(4) }}
+#
+#     {% if status -%}
+#     **status**: {{status}}
+#     {% endif %}
+#
+#     {% if tags -%}
+#     **tags**: {{"; ".join(tags)}}
+#     {% endif %}
+#
+#     {% if links -%}
+#     **links**:
+#     {% for link in links -%}
+#         :ref:`{{link}} <{{link}}>` {%if loop.index < links|length -%}; {% endif -%}
+#     {% endfor -%}
+#     {% endif %}
+# """
 
 NOTE_TEMPLATE = """
 .. _{{id}}:
@@ -400,6 +423,8 @@ todo_include_todos = False
 # a list of builtin themes.
 #
 html_theme = os.getenv("NEEDS_THEME", "sphinx_immaterial")
+# html_theme = os.getenv("NEEDS_THEME", "alabaster")
+
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -431,11 +456,8 @@ html_sidebars = {
 #     },
 # }
 
-
-# extensions.append("sphinx_immaterial")
-# html_theme = "sphinx_immaterial"
 html_logo = "./_static/needs_logo.png"
-html_favicon = "./_static/needs_favicon.png"
+html_favicon = "./_static/needs_logo.png"
 # material theme options (see theme.conf for more information)
 html_theme_options = {
     "icon": {
@@ -475,7 +497,7 @@ html_theme_options = {
             "media": "(prefers-color-scheme: dark)",
             "scheme": "slate",
             "primary": "blue",
-            "accent": "yellow",
+            "accent": "cyan",
             "toggle": {
                 "icon": "material/weather-sunny",
                 "name": "Switch to light mode",
@@ -545,9 +567,9 @@ texinfo_documents = [
 ]
 
 rst_epilog = """
-.. |ex| replace:: **Example** 
+.. |ex| replace:: **Code** 
 
-.. |out| replace:: **Result** 
+.. |out| replace:: **Output** 
 
 .. |br| raw:: html 
 

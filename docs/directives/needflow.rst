@@ -45,24 +45,6 @@ Options
    **needflow** supports the full filtering possibilities of **Sphinx-Needs**.
    Please see :ref:`filter` for more information.
 
-Supported options:
-
-* :ref:`needflow_show_filters`
-* :ref:`needflow_show_legend`
-* :ref:`needflow_show_link_names`
-* :ref:`needflow_link_types`
-* :ref:`needflow_config`
-* :ref:`needflow_scale`
-* :ref:`needflow_align`
-* :ref:`needflow_highlight`
-* :ref:`needflow_debug`
-* Common filters:
-    * :ref:`option_status`
-    * :ref:`option_tags`
-    * :ref:`option_types`
-    * :ref:`option_filter`
-
-
 .. _needflow_show_filters:
 
 show_filters
@@ -283,7 +265,7 @@ You can apply multiple configurations together by separating them via ``,`` symb
    :show_link_names:
    :config: monochrome,lefttoright,handwritten
 
-``Sphinx-Needs`` provides some necessary configurations already. They are:
+**Sphinx-Needs** provides some necessary configurations already. They are:
 
 .. list-table::
    :header-rows: 1
@@ -419,4 +401,13 @@ Helpful to identify reasons why a PlantUML build may have thrown errors.
    :link_types: tests, blocks
    :config:  lefttoright, handwritten
    :debug:
+
+
+common filters
+~~~~~~~~~~~~~~
+
+* :ref:`option_status`
+* :ref:`option_tags`
+* :ref:`option_types`
+* :ref:`option_filter`
 

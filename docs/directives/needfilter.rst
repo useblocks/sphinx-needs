@@ -5,14 +5,18 @@ needfilter
 
 .. deprecated:: 0.2.0
 
-.. note:: Deprecated! Please use the more powerful directives :ref:`needlist`, :ref:`needtable` or  :ref:`needflow` instead of needfilter.
-	        **needfilter** will be removed with version 1.0.0!
+.. note::
 
-Example::
+   Deprecated! Please use the more powerful directives :ref:`needlist`, :ref:`needtable` or  :ref:`needflow` instead of needfilter.
+   **needfilter** will be removed in version 1.0.0!
+
+|ex|
+
+.. code-block:: rst
 
     .. needfilter::
        :status: open;in_progress
-       :tags: user; login
+       :tags: user;login
        :types: req;Specification
        :filter: "my_tag" in tags and ("another_tag" in tags or "closed" in status)
        :show_status:
@@ -22,40 +26,55 @@ Example::
        :sort_by: id
        :layout: list
 
-This prints a list with all found needs, which match the filters for status, tags and types.
+This prints a list of needs matching the filters for the ``:status:``, ``:tags:`` and ``:types:`` options.
 
-For **:status:**, **:tags:** and **:types:** values are separated by "**;**".
-**:filter:** gets evaluated.
+Separate the values for the ``:status:``, ``:tags:`` and ``:types:`` options with "**;**".
+The ``:filter:`` gets evaluated.
 
-The logic, if a need belongs to the needfilter result list, is as followed::
+The logic to check if a need belongs to the ``needfilter`` result list, is:
+
+.. code:: jinja
 
     status = (open OR in_progress) AND tags = (user OR login) AND types = (req OR spec) AND eval(filter) is True
 
-For **:types:** the type itself and the human-readable type_title can be used as filter value.
+Options
+-------
 
-If **:show_status:** / **:show_tags:** is given, the related information will be shown after the name of the need.
+types
+~~~~~
+For the ``:types:`` option, you can use the type itself and the human-readable type_title as filter value.
 
-To show the used filters under a list, set **:show_filters:**
+show_status / show_tags
+~~~~~~~~~~~~~~~~~~~~~~~
+If you set the ``:show_status:`` / ``:show_tags:`` options, the related information will be shown after the name of the need.
 
-**:show_legend:** is supported only by **:layout:diagram**. It adds a legend with colors to the generated diagram.
+show_filters
+~~~~~~~~~~~~
+To show the used filters under a list, set the ``:show_filters:`` option.
 
-The showed list is unsorted as long as the parameter **:sort_by:** is not used.
-Valid options for **:sort_by:** are **id** and **status**.
+show_legend
+~~~~~~~~~~~
+The ``:show_legend:`` option is supported only if ``:layout: diagram``. It adds a legend with colors to the generated diagram.
+
+sort_by
+~~~~~~~
+You can sort the showed list by setting the ``:sort_by:`` option.
+Valid options for ``:sort_by:`` are *id* and *status*.
 
 .. note:: Please read the common filter page :ref:`filter` for more detailed information about filter possibilities.
 
 
-`:layout:`
-~~~~~~~~~~
+layout
+~~~~~~
 Three different types of layouts are available:
 
 * list (default)
 * table
 * diagram
 
-Only **list** supports each needfilter option.
+Only the **list** layout supports each ``needfilter`` option.
 
-**table** and **diagram** are supporting the filter options only (status, tags, types, filter) and their design is somehow fix.
+**table** and **diagram** only supports filter options (status, tags, types, filter) and their design is somehow fix.
 
 diagram
 +++++++

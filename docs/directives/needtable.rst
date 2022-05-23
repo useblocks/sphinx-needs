@@ -31,22 +31,6 @@ Options
     **needtable** supports the full filtering possibilities of **Sphinx-Needs**.
     Please see :ref:`filter` for more information.
 
-Supported options:
-
-* :ref:`needtable_columns`
-* :ref:`needtable_colwidths`
-* :ref:`needtable_show_filters`
-* :ref:`needtable_style`
-* :ref:`needtable_show_parts`
-* :ref:`needtable_style_row`
-* :ref:`needtable_sort`
-* :ref:`needtable_class`
-* Common filters:
-    * :ref:`option_status`
-    * :ref:`option_tags`
-    * :ref:`option_types`
-    * :ref:`option_filter`
-
 
 .. _needtable_columns:
 
@@ -508,3 +492,11 @@ It supports comma separated values and will add classes to the already set class
      :columns: id,title,status
      :style: table
      :class: class_red_border
+
+common filters
+~~~~~~~~~~~~~~
+
+* :ref:`option_status`
+* :ref:`option_tags`
+* :ref:`option_types`
+* :ref:`option_filter`

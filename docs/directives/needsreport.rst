@@ -3,7 +3,7 @@
 needsreport
 ===========
 
-.. versionadded:: 1.0
+.. versionadded:: 1.0.1
 
 **needsreport** documents the following configurations from **conf.py**:
 
@@ -26,13 +26,6 @@ needsreport
 
 Options
 -------
-
-Supported options:
-
-* :ref:`types`
-* :ref:`links`
-* :ref:`options`
-
 
 .. _types:
 

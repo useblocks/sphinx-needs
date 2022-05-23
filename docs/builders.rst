@@ -23,20 +23,20 @@ Usage
 
 .. hint::
 
-   As alternative also :ref:`needs_build_json` can be used to create a ``needs.json`` file directly during the build
+   As an alternative, you can use :ref:`needs_build_json` to create a ``needs.json`` file directly during the build
    of another output format like ``html``.
 
 History data
 ++++++++++++
 
-The builder stores the needs under a version, which is taken from your conf.py.
+The builder stores the needs under a version taken from your **conf.py**.
 
 If a **needs.json** is imported (see :ref:`needs_file`) and you raise the documentation version, the new version is stored beside the old
 version(s) inside the **needs.json**.
 
 .. hint::
    If you generate and store/archive (e.g. in git) the **needs.json** file
-   every time you raise your documentation version, you will get nice history data.
+   every time you raise your documentation version, you will get a nice history data.
 
 .. _filter_export:
 
@@ -46,12 +46,14 @@ Exporting filters
 .. versionadded:: 0.3.11
 
 The results and filter configuration of a filter based directive, like :ref:`needlist`, :ref:`needtable`
-or :ref:`needflow`, get exported, if the option :ref:`export_id` is used in the related directive.
+or :ref:`needflow` gets exported, if the option :ref:`export_id` is used in the related directive.
 
 This allows to export specified filter results only.
 
 
-Example::
+Example:
+
+.. code-block:: rst
 
    .. needtable::
       :status: open
