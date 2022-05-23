@@ -3,7 +3,7 @@
 needsreport
 ===========
 
-.. versionadded:: 1.0
+.. versionadded:: 1.0.1
 
 **needsreport** documents the following configurations from **conf.py**:
 

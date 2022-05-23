@@ -8,7 +8,9 @@ All configurations take place in your project's **conf.py** file.
 Activation
 ----------
 
-Add **sphinx_needs** to your extensions::
+Add **sphinx_needs** to your extensions.
+
+.. code-block:: python
 
    extensions = ["sphinx_needs",]
 
@@ -577,7 +579,7 @@ See also :ref:`needflow config option <needflow_config>` for more details and al
 needs_report_template
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 1.0
+.. versionadded:: 1.0.1
 
 You can customise the layout of :ref:`needsreport` using `Jinja <http://jinja.pocoo.org/>`_.
 
@@ -1802,3 +1804,11 @@ If true, need details like status, tags or links are collapsed and shown only af
 Default value: True
 
 Can be overwritten for each single need by setting :ref:`need_collapse`.
+
+Configuration Used
+------------------
+
+.. needreport::
+   :types:
+   :options:
+   :links:
