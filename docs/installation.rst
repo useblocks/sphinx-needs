@@ -3,19 +3,22 @@ Installation
 
 Using poetry
 ------------
-::
+
+.. code-block:: bash
 
     poetry add sphinxcontrib-needs
 
 Using pip
 ---------
-::
+
+.. code-block:: bash
 
     pip install sphinxcontrib-needs
 
 Using sources
 -------------
-::
+
+.. code-block:: bash
 
     git clone https://github.com/useblocks/sphinxcontrib-needs
     cd sphinxcontrib-needs
@@ -27,7 +30,9 @@ Using sources
 Activation
 ----------
 
-For final activation, please add `sphinx_needs` to the project's extension list of your **conf.py** file::
+For final activation, please add `sphinx_needs` to the project's extension list of your **conf.py** file.
+
+.. code-block:: python
 
    extensions = ["sphinx_needs",]
 
@@ -46,22 +51,27 @@ Both must be available and correctly configured to work.
 Install PlantUML
 ~~~~~~~~~~~~~~~~
 
-#. Download the latest version of the plantuml.jar file:
+1. Download the latest version of the plantuml.jar file:
    http://sourceforge.net/projects/plantuml/files/plantuml.jar/download
-#. Make a new folder called ``utils`` inside your docs folder. Copy the ``plantuml.jar`` file into the ``utils`` folder.
-#. Install the plantuml sphinx extension: ``pip install sphinxcontrib-plantuml``.
-#. Add ``sphinxcontrib.plantuml`` to the sphinx extension list in **conf.py**::
+2. Make a new folder called ``utils`` inside your docs folder. Copy the ``plantuml.jar`` file into the ``utils`` folder.
+3. Install the plantuml sphinx extension: ``pip install sphinxcontrib-plantuml``.
+4. Add ``sphinxcontrib.plantuml`` to the sphinx extension list in ``conf.py``
+
+.. code-block:: python
 
       extensions = ['sphinxcontrib.plantuml',
                     'sphinx_needs']
 
-#. Configure plantuml in **conf.py**::
 
-      on_rtd = os.environ.get('READTHEDOCS') == 'True'
-      if on_rtd:
-          plantuml = 'java -Djava.awt.headless=true -jar /usr/share/plantuml/plantuml.jar'
-      else:
-          plantuml = 'java -jar %s' % os.path.join(os.path.dirname(__file__), "utils", "plantuml.jar"))
+5. Configure plantuml in ``conf.py``
+
+.. code-block:: python
+
+  on_rtd = os.environ.get('READTHEDOCS') == 'True'
+  if on_rtd:
+      plantuml = 'java -Djava.awt.headless=true -jar /usr/share/plantuml/plantuml.jar'
+  else:
+      plantuml = 'java -jar %s' % os.path.join(os.path.dirname(__file__), "utils", "plantuml.jar"))
 
       plantuml_output_format = 'png'
 

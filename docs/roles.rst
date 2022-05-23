@@ -3,15 +3,13 @@
 Roles
 =====
 
-Roles can be used to get short information of needs inside single sentences::
+You can use Roles to get short information of needs inside single sentences.
+
+|ex|
+
+..  code-block:: rst
 
     My specification :need:`my_spec` is used to fulfill requirements :need_incoming:`my_spec`
-
-Available roles:
-
-.. contents::
-   :local:
-   :depth: 1
 
 .. _role_need:
 
@@ -20,7 +18,7 @@ need
 
 The role ``:need:`` will add title, id and a link to the need.
 
-It is mostly used to reference an existing need, without the need to keep title and link location manually in sync.
+We use it to reference an existing need, without the need to keep title and link location manually in sync.
 
 Example
 ~~~~~~~
@@ -28,20 +26,22 @@ Example
 .. req:: Sliced Bread
    :id: roles_req_1
 
-.. code-block:: jinja
+|ex|
+
+.. code-block:: rst
 
    The requirement :need:`roles_req_1` is the most important one.
 
    But we can also set :need:`a custom link name <roles_req_1>`.
 
-**Result**:
+|out|
 
 | The requirement :need:`roles_req_1` is the most important one.
 | But we can also set :need:`a custom link name <roles_req_1>`.
 
 .. note::
 
-   The string representation can be easily customized by using the
+   You can customize the string representation by using the
    configuration parameters :ref:`needs_role_need_template` and
    :ref:`needs_role_need_max_title_length`.
 
@@ -62,11 +62,15 @@ Example
    :id: roles_req_2
    :links: roles_req_1
 
+|ex|
+
 .. code-block:: jinja
 
    To get butter on our bread, we need to fulfill :need_outgoing:`roles_req_2`
 
-**Result**: To get butter on our bread, we need to fulfill :need_outgoing:`roles_req_2`
+|out|
+
+To get butter on our bread, we need to fulfill :need_outgoing:`roles_req_2`
 
 
 .. _role_need_incoming:
@@ -75,17 +79,21 @@ need_incoming
 -------------
 .. versionadded:: 0.1.25
 
-``:need_incoming:`` prints a list IDs of needs, which have set outgoing links to the given need.
+``:need_incoming:`` prints a list of IDs of needs which have set outgoing links to the given need.
 
 Example
 ~~~~~~~
+
+|ex|
 
 .. code-block:: jinja
 
    The realisation of **Sliced Bread** is really important because the needs :need_incoming:`roles_req_1` are based on
    it.
 
-**Result**: The realisation of **Sliced Bread** is really important because the
+|out|
+
+The realisation of **Sliced Bread** is really important because the
 needs :need_incoming:`roles_req_1` are based on it.
 
 
@@ -95,7 +103,7 @@ need_part / np
 ----------------
 .. versionadded:: 0.3.0
 
-``:need_part:`` or as shortcut ``:np:`` can be used inside needs to set a sub-id for a specific sentence/part.
+You can use ``:need_part:`` or as shortcut ``:np:`` inside needs to set a sub-id for a specific sentence/part.
 This sub-ids can be linked and referenced in other need functions like links and co.
 
 The used need_part id can be freely chosen, but should not contain any whitespaces or dots.
@@ -103,7 +111,9 @@ The used need_part id can be freely chosen, but should not contain any whitespac
 Example
 ~~~~~~~
 
-.. code-block:: jinja
+|ex|
+
+.. code-block:: rst
 
    .. req:: Car must be awesome
       :id: my_car_1
@@ -112,7 +122,7 @@ Example
 
       My new car must be the fastest on the world. Therefor it shall have:
 
-      * :need_part:`(1)A topspeed of 300 km/h`
+      * :need_part:`(1)A top speed of 300 km/h`
       * :np:`(2) An acceleration of 200 m/s² or much much more`
 
       And we also need --> :np:`(awesome_3) a turbo button`!
@@ -130,7 +140,7 @@ Example
 
    Reference to a part of a need from outside need scope: :need:`my_car_1.2`.
 
-**Result**
+|out|
 
 .. req:: Car must be awesome
    :id: my_car_1
@@ -139,7 +149,7 @@ Example
 
    My new car must be the fastest on the world. Therefor it shall have:
 
-   * :need_part:`(1) A topspeed of 300 km/h`
+   * :need_part:`(1) A top speed of 300 km/h`
    * :np:`(2) An acceleration of 200 m/s² or much much more`
 
    And we also need --> :np:`(awesome_3) a turbo button`!
@@ -163,15 +173,20 @@ Reference to a part of a need from outside need scope: :need:`my_car_1.2`.
 Links to need_parts are shown as dotted line to the upper need inside :ref:`needflow` diagrams.
 They are also getting the part_id as link description.
 
+|ex|
+
 .. code-block:: rst
 
    .. needflow::
       :filter: id in ["my_car_1","impl_my_car_1"]
 
+|out|
+
 {% if READTHEDOCS %}
 ..
 
 .. image:: _static/need_part_as_flow.png
+   :align: center
 
 {% else %}
 
@@ -184,7 +199,9 @@ They are also getting the part_id as link description.
 
 **Presentation in needtable**
 
-Please see :ref:`needtable_show_parts` pf :ref:`needtable` configuration documentation.
+Please see :ref:`needtable_show_parts` of :ref:`needtable` configuration documentation.
+
+|ex|
 
 .. code-block:: rst
 
@@ -193,6 +210,8 @@ Please see :ref:`needtable_show_parts` pf :ref:`needtable` configuration documen
       :filter: 'car' in tags and is_need
       :show_parts:
       :columns: id, title, incoming, outgoing
+
+|out|
 
 .. needtable::
    :style: table
@@ -214,6 +233,8 @@ See :ref:`filter_string` for more information.
 Example
 ~~~~~~~
 
+|ex|
+
 .. code-block:: rst
 
    All needs: :need_count:`True`
@@ -223,6 +244,8 @@ Example
    Needs with title longer 10 chars: :need_count:`search("[\\w\\s]{10,}", title)`
    All need_parts: :need_count:`is_part`
    All needs containing need_parts: :need_count:`is_need and len(parts)>0`
+
+|out|
 
 | All needs: :need_count:`True`
 | Specification needs: :need_count:`type=='spec'`
@@ -238,9 +261,10 @@ Example
    one ``\`` needs to be represented by ``\\``.
 
 .. note::
+
    ``need_count`` executes the given filter on needs and need_parts!
-   So if you use :ref:`need_part` , the result may contain the amount of found needs **and** found need_parts.
-   To avoid is, add ``is_need`` or ``is_part`` to your filter.
+   So if you use :ref:`need_part` , the result may contain the amount of found needs *and* found need_parts.
+   To avoid this, add ``is_need`` or ``is_part`` to your filter.
 
 
 .. _need_count_ratio:
@@ -253,11 +277,13 @@ Ratio
 To calculate the ratio of one filter to another filter, you can define two filters separated by ``_?_``
 (question mark surrounded by one space on each side).
 
-Example:
+|ex|
 
-.. code-block::
+.. code-block:: rst
 
    :need_count:`status = open and type == "spec" ? type == "spec"`% of our specifications are open.
+
+|out|
 
 :need_count:`status == "open" and type == "spec" ? type == "spec"` % of our specifications are open.
 
@@ -268,10 +294,14 @@ need_func
 ---------
 .. versionadded:: 0.6.3
 
-Executes :ref:`dynamic_functions` and uses its return values as content.
+Executes :ref:`dynamic_functions` and uses the return values as content.
 
-Example::
+|ex|
+
+.. code-block:: rst
 
     A nice :need_func:`[[echo("first")]] test` for need_func.
 
-**Result**: A nice :need_func:`[[echo("first")]] test` for need_func.
+|out|
+
+A nice :need_func:`[[echo("first")]] test` for need_func.

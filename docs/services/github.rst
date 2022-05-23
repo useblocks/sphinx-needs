@@ -80,7 +80,7 @@ Setting ``query`` or ``specific`` option is mandatory for services ``github-issu
 
    You can higher this limit to **30 requests**, if you provide a username and token in the service config.
 
-   ``Sphinx-Needs`` will support you with the current rate limit status, if a request got rejected.
+   **Sphinx-Needs** will support you with the current rate limit status, if a request got rejected.
 
 query
 +++++
@@ -273,7 +273,7 @@ Search for all commits of Sphinx-Needs, which have ``Python`` in their message.
 
 **Specific commit**
 
-Document commit ``a4a596`` of ``Sphinx-Needs``.
+Document commit ``a4a596`` of **Sphinx-Needs**.
 
 .. code-block:: rst
 

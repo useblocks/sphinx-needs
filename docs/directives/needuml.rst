@@ -3,6 +3,7 @@
 {% raw %}
 needuml
 =======
+
 .. versionadded:: 1.0.1
 
 ``neduml`` behaves exactly like the ``uml`` directive from the Sphinx extension
@@ -11,6 +12,8 @@ So it allows to define PlantUML diagrams.
 
 But it supports `Jinja <https://jinja.palletsprojects.com/>`_ statements, which allows
 to use loops, if-clauses, and it injects data from need-objects.
+
+|ex|
 
 .. code-block:: rst
 
@@ -22,6 +25,8 @@ to use loops, if-clauses, and it injects data from need-objects.
         implement
         {{needs['FEATURE_1'].status}}
       }
+
+|out|
 
 .. needuml::
    :scale: 50%
@@ -35,13 +40,12 @@ to use loops, if-clauses, and it injects data from need-objects.
 Options
 -------
 
-.. contents::
-   :local:
-
 extra
 ~~~~~
-Allows to inject additional key-value pairs into the needuml rendering.
-``extra`` must be a comma-separated list, containing `key:value` pairs.
+Allows to inject additional key-value pairs into the ``needuml`` rendering.
+``:extra:`` must be a comma-separated list, containing *key:value* pairs.
+
+|ex|
 
 .. code-block:: rst
 
@@ -52,6 +56,8 @@ Allows to inject additional key-value pairs into the needuml rendering.
       card "{{work}}" as b
       a -> b
 
+|out|
+
 .. needuml::
    :extra: name:Roberto,work:RocketLab
 
@@ -61,7 +67,7 @@ Allows to inject additional key-value pairs into the needuml rendering.
 
 .. note::
 
-   ``extra`` values are only available in the current PlantUML code.
+   ``:extra:`` values are only available in the current PlantUML code.
    It is not available in code loaded via :ref:`jinja_uml`.
 
 scale
@@ -78,9 +84,11 @@ See needflow :ref:`needflow_config` for details.
 debug
 ~~~~~
 
-If ``debug`` is set, a debug-output of the generated PlantUML code gets added after the generated image.
+If ``:debug:`` is set, a debug-output of the generated PlantUML code gets added after the generated image.
 
 Helpful to identify reasons why a PlantUML build may have thrown errors.
+
+|ex|
 
 .. code-block:: rst
 
@@ -90,6 +98,7 @@ Helpful to identify reasons why a PlantUML build may have thrown errors.
       node "RocketLab" {
          card "Peter"
       }
+|out|
 
 .. needuml::
    :debug:
@@ -104,13 +113,17 @@ When using Jinja statements, the following objects and functions are available.
 
 needs
 ~~~~~
-A Python dictionary, which contains all Needs. The ``need_id`` is used as key.
+A Python dictionary containing all Needs. The ``need_id`` is used as key.
+
+|ex|
 
 .. code-block:: rst
 
    .. needuml::
 
       node "{{needs["FEATURE_1"].title}}"
+
+|out|
 
 .. needuml::
 
@@ -122,10 +135,11 @@ A Python dictionary, which contains all Needs. The ``need_id`` is used as key.
 need(id)
 ~~~~~~~~
 Loads a Sphinx-Need object as PlantUML object.
-The used layout is the same one as used for :ref:`needflow`.
+We use the same layout used for :ref:`needflow`.
 
 This functions represents each Need the same way.
 
+|ex|
 
 .. code-block:: rst
 
@@ -134,6 +148,7 @@ This functions represents each Need the same way.
       {{need("COMP_001")}}
       {{need("FEATURE_1")}}
 
+|out|
 
 .. needuml::
 
@@ -150,6 +165,7 @@ This depends on the used :ref:`needs_types` and its ``content`` value.
 If ``content="plantuml"``, the stored PlantUML diagram gets completely imported.
 Otherwise a Sphinx-Needs objects representation is used (same as in :ref:`jinja_need`).
 
+|ex|
 
 .. code-block:: rst
 
@@ -158,6 +174,7 @@ Otherwise a Sphinx-Needs objects representation is used (same as in :ref:`jinja_
       {{uml("COMP_001")}}
       {{uml("FEATURE_1")}}
 
+|out|
 
 .. needuml::
 
@@ -167,23 +184,11 @@ Otherwise a Sphinx-Needs objects representation is used (same as in :ref:`jinja_
 Additional keyword arguments
 ++++++++++++++++++++++++++++
 
-``uml()`` supports to set additional parameters, which are then available in the loaded PlantUML code.
+:ref:`uml() <jinja_uml>` supports additional keyword parameters which are then available in the loaded PlantUML code.
 
-**Example Need object**
+Example of a Need object with PlantUML code as content.
 
-.. comp:: Variant A or B
-   :id: COMP_A_B
-
-   {% if variant == "A" %}
-    class "A" as cl
-   {% elif variant == "B" %}
-    class "B" as cl {
-        attribute_x
-        function_x()
-    }
-   {% else %}
-    class "Unknown" as cl
-   {% endif %}
+|ex|
 
 .. code-block:: rst
 
@@ -201,7 +206,26 @@ Additional keyword arguments
         class "Unknown" as cl
       {% endif %}
 
-**Example for Variant A**
+|out|
+
+.. comp:: Variant A or B
+   :id: COMP_A_B
+
+   {% if variant == "A" %}
+    class "A" as cl
+   {% elif variant == "B" %}
+    class "B" as cl {
+        attribute_x
+        function_x()
+    }
+   {% else %}
+    class "Unknown" as cl
+   {% endif %}
+
+
+Passing ``variant="A"`` parameter to the :ref:`uml() <jinja_uml>` function, we get the following:
+
+|ex|
 
 .. code-block:: rst
 
@@ -209,17 +233,23 @@ Additional keyword arguments
 
       {{uml("COMP_A_B", variant="A")}}
 
+|out|
+
 .. needuml::
 
    {{uml("COMP_A_B", variant="A")}}
 
-**Example for Variant B**
+Passing ``variant="B"`` parameter to the :ref:`uml() <jinja_uml>` function, we get the following:
+
+|ex|
 
 .. code-block:: rst
 
    .. needuml::
 
       {{uml("COMP_A_B", variant="B")}}
+
+|out|
 
 .. needuml::
 
@@ -228,8 +258,8 @@ Additional keyword arguments
 
 Chaining diagrams
 +++++++++++++++++
-As PlantUML Need objects are using internally ``needuml`` to define their diagrams, all
-features are available and ``uml()`` can be used multiple time on different levels of a planned architecture.
+PlantUML Need objects uses the ``needuml`` directive internally to define their diagrams.
+All features are available and ``uml()`` can be used multiple time on different levels of a planned architecture.
 
 
 .. tab-set::
@@ -314,8 +344,10 @@ features are available and ``uml()`` can be used multiple time on different leve
                   me --> rocket: doing
 
 
-Examples
---------
+NeedUml Examples
+----------------
+
+|ex|
 
 .. code-block:: rst
 
@@ -343,6 +375,7 @@ Examples
       card "and much more..." as much #ffcc00
       much -> sn
 
+|out|
 
 .. needuml::
    :scale: 50%
@@ -371,6 +404,30 @@ Examples
    much -> sn
 
 {% endraw %}
+
+|ex|
+
+.. code-block:: rst
+
+    .. comp:: Component X
+       :id: COMP_001
+
+       class "Class X" as class_x {
+         attribute_1
+         attribute_2
+         function_1()
+         function_2()
+         function_3()
+       }
+
+        class "Class Y" as class_y {
+             attribute_1
+             function_1()
+        }
+
+        class_x o-- class_y
+
+|out|
 
 .. comp:: Component X
    :id: COMP_001
