@@ -56,27 +56,8 @@ This kind of Need object can then be used by :ref:`needuml` to generate complex 
 
 To use this content type, set ``content`` to ``plantuml`` in the :ref:`needs_types` configuration.
 
-
-
-
 Options for Need Type
 ---------------------
-
-Supported options:
-
-* :ref:`need_id`
-* :ref:`need_status`
-* :ref:`need_tags`
-* :ref:`need_links`
-* :ref:`need_hide`
-* :ref:`need_collapse`
-* :ref:`need_layout`
-* :ref:`need_style`
-* :ref:`need_template`
-* :ref:`need_pre_template`
-* :ref:`need_post_template`
-* :ref:`need_duration`
-* :ref:`need_completion`
 
 .. _need_id:
 
@@ -261,8 +242,8 @@ elided title if needed.  By default there is no limit to the title length.
 
 .. note::
 
-    When using this setting ensure that the first sentence does not contain
-    any special formatting you would not want in the title (bulleted lists, nested directives, etc.)
+   When using this setting ensure that the first sentence does not contain
+   any special formatting you would not want in the title (bulleted lists, nested directives, etc.)
 
 If a title is provided and the flag is present, then the provided title will
 be used and a warning will be issued.
