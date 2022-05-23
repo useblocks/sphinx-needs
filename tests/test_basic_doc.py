@@ -46,7 +46,7 @@ def random_data_callback(request):
 
 
 @responses.activate
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "../docs"}], indirect=True)
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_basic"}], indirect=True)
 def test_build_html(test_app):
     responses.add_callback(
         responses.GET,
@@ -115,7 +115,7 @@ def test_html_head_files(test_app):
 
 
 @responses.activate
-@pytest.mark.parametrize("test_app", [{"buildername": "singlehtml", "srcdir": "../docs"}], indirect=True)
+@pytest.mark.parametrize("test_app", [{"buildername": "singlehtml", "srcdir": "doc_test/doc_basic"}], indirect=True)
 def test_build_singlehtml(test_app):
     responses.add_callback(
         responses.GET,
@@ -175,7 +175,7 @@ def test_build_json(test_app):
 
 
 @responses.activate
-@pytest.mark.parametrize("test_app", [{"buildername": "needs", "srcdir": "../docs"}], indirect=True)
+@pytest.mark.parametrize("test_app", [{"buildername": "needs", "srcdir": "doc_test/doc_basic"}], indirect=True)
 def test_build_needs(test_app):
     responses.add_callback(
         responses.GET,
@@ -217,7 +217,7 @@ def test_build_needs(test_app):
 @responses.activate
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "../docs", "confoverrides": {"needs_id_required": True}}],
+    [{"buildername": "html", "srcdir": "doc_test/doc_basic", "confoverrides": {"needs_id_required": True}}],
     indirect=True,
 )
 def test_id_required_build_html(test_app):

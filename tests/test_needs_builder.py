@@ -39,12 +39,6 @@ def test_doc_needs_build_without_needs_file(test_app):
     assert "needs.json found, but will not be used because needs_file not configured." in out.stdout.decode("utf-8")
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "needs", "srcdir": "../docs"}], indirect=True)
-def test_needs_official_doc(test_app):
-    app = test_app
-    app.build()
-
-
 @pytest.mark.parametrize(
     "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_builder_parallel"}], indirect=True
 )
