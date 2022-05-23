@@ -300,7 +300,7 @@ In the last years, we have created additional information and extensions, which 
 
         Sphinx-Needs.com
         ^^^^^^^^^^^^^^^^
-        The website presents the essential Sphinx-Needs functions and related extensions.
+        Webpage to present most important Sphinx-Needs functions and related extensions.
 
         Also, it is a good entry point to understand the benefits and get an idea about the complete ecosystem of Sphinx-Needs.
         +++
@@ -425,11 +425,6 @@ we have created other Sphinx extensions to support the work of teams in the auto
 
             :octicon:`book;1em;sd-text-primary` Technical Docs
 
-
-One more thing ...
-------------------
-
-`j4p4n <https://openclipart.org/detail/281179/engineers>`_ designed the Sphinx-Needs logo.
 
 .. toctree::
    :maxdepth: 2

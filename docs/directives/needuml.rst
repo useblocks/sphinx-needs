@@ -3,6 +3,7 @@
 {% raw %}
 needuml
 =======
+.. versionadded:: 1.0.1
 
 ``neduml`` behaves exactly like the ``uml`` directive from the Sphinx extension
 `Sphinxcontrib-PlantUML <https://github.com/sphinx-contrib/plantuml/>`_.
