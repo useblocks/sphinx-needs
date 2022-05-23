@@ -52,7 +52,7 @@ Different need layouts and styles
 
    This is like a normal requirement looks like but additionally a permalink icon is shown next to the ID.
 
-Used rst-code for all three examples:
+Used rst-code for all examples:
 
 .. code-block:: rst
 
@@ -132,6 +132,9 @@ Referencing and filtering needs
    Python 2.7 environment.
 
 As :need:`IMPL_01` shows, the linked :need:`OWN_ID_123` is realisable.
+
+.. This is a link to an imported need from an external project: :need:`EXT_TEST_REQ`.
+
 
 **Filter result as table**
 

@@ -7,7 +7,9 @@ needflow
 
 **needflow** creates a flowchart of filtered needs.
 
-If an argument is provided, this is taken as caption for the generated image.
+If you provide an argument, we use it as caption for the generated image.
+
+|ex|
 
 .. code-block:: rst
 
@@ -16,6 +18,8 @@ If an argument is provided, this is taken as caption for the generated image.
       :tags: flow_example
       :link_types: tests, blocks
       :show_link_names:
+
+|out|
 
 .. needflow:: My first needflow
    :filter: is_need
@@ -36,21 +40,23 @@ Please read :ref:`install_plantuml` for a step-by-step installation explanation.
 Options
 -------
 
-.. note:: **needflow** supports the full filtering possibilities of sphinx-needs.
-          Please see :ref:`filter` for more information.
+.. note::
+
+   **needflow** supports the full filtering possibilities of **Sphinx-Needs**.
+   Please see :ref:`filter` for more information.
 
 Supported options:
 
- * :ref:`needflow_show_filters`
- * :ref:`needflow_show_legend`
- * :ref:`needflow_show_link_names`
- * :ref:`needflow_link_types`
- * :ref:`needflow_config`
- * :ref:`needflow_scale`
- * :ref:`needflow_align`
- * :ref:`needflow_highlight`
- * :ref:`needflow_debug`
- * Common filters:
+* :ref:`needflow_show_filters`
+* :ref:`needflow_show_legend`
+* :ref:`needflow_show_link_names`
+* :ref:`needflow_link_types`
+* :ref:`needflow_config`
+* :ref:`needflow_scale`
+* :ref:`needflow_align`
+* :ref:`needflow_highlight`
+* :ref:`needflow_debug`
+* Common filters:
     * :ref:`option_status`
     * :ref:`option_tags`
     * :ref:`option_types`
@@ -64,6 +70,7 @@ show_filters
 
 Adds information of used filters below generated flowchart.
 
+|ex|
 
 .. code-block:: rst
 
@@ -71,6 +78,7 @@ Adds information of used filters below generated flowchart.
       :tags: main_example
       :show_filters:
 
+|out|
 
 .. needflow::
    :tags: main_example
@@ -85,11 +93,15 @@ show_legend
 Adds a legend below generated flowchart. The legends contains all defined need-types and their configured color
 for flowcharts.
 
+|ex|
+
 .. code-block:: rst
 
    .. needflow::
       :tags: main_example
       :show_legend:
+
+|out|
 
 .. needflow::
    :tags: main_example
@@ -104,8 +116,9 @@ show_link_names
 
 Adds the link type name beside connections.
 
-Can be configured globally by setting :ref:`needs_flow_show_links` in ``conf.py``.
+You can configure it globally by setting :ref:`needs_flow_show_links` in **conf.py**.
 
+|ex|
 
 .. code-block:: rst
 
@@ -114,6 +127,8 @@ Can be configured globally by setting :ref:`needs_flow_show_links` in ``conf.py`
       :show_link_names:
 
 Setup data can be found in test case document `tests/doc_test/doc_extra_links`
+
+|out|
 
 .. needflow::
    :tags: main_example
@@ -126,24 +141,29 @@ link_types
 
 .. versionadded:: 0.3.11
 
-Defines which link types shall be shown in the needflow.
-Must contain a comma separated list of link_typ option names::
+Defines the link types to show in the needflow.
+Must contain a comma separated list of link type names.
+
+.. code-block:: rst
 
     .. needflow::
        :link_types: links,blocks
 
 
-By default all link_types are shown.
+By default, we show all link_types.
 
 An identical link can show up twice in the generated needflow, if the ``copy``
 option of a specific link type was set to ``True``.
-In this case the link_type **"link"** contains also the copies of the specified link_type and therefore
+
+In this case, the link_type **"link"** also contains the copies of the specified link_type and therefore
 there will be two identical connections in the needflow.
 You can avoid this by not setting **"links**" in the ``link_type`` option.
 
-This option can be set globally via configuration option :ref:`needs_flow_link_types`.
+You can set this option globally via the configuration option :ref:`needs_flow_link_types`.
 
 See also :ref:`needs_extra_links` for more details about specific link types.
+
+|ex|
 
 .. code-block:: rst
 
@@ -175,6 +195,8 @@ See also :ref:`needs_extra_links` for more details about specific link types.
       :tags: flow_example
       :link_types: tests, blocks
       :show_link_names:
+
+|out|
 
 .. req:: A requirement
    :id: req_flow_001
@@ -212,7 +234,10 @@ config
 
 .. versionadded:: 0.5.2
 
-Allows to specify a configuration, which must be provided by setting :ref:`needs_flow_configs`.
+You can specify a configuration using the ``:config:`` option but you should
+set the :ref:`needs_flow_configs` configuration parameter in **conf.py**.
+
+|ex|
 
 .. code-block:: rst
 
@@ -224,6 +249,8 @@ Allows to specify a configuration, which must be provided by setting :ref:`needs
       :show_link_names:
       :config: monochrome
 
+|out|
+
 .. needflow::
    :filter: is_need
    :tags: flow_example
@@ -232,7 +259,9 @@ Allows to specify a configuration, which must be provided by setting :ref:`needs
    :show_link_names:
    :config: monochrome
 
-Multiple configurations can be set together by separating them via ``,``.
+You can apply multiple configurations together by separating them via ``,`` symbol.
+
+|ex|
 
 .. code-block:: rst
 
@@ -244,6 +273,8 @@ Multiple configurations can be set together by separating them via ``,``.
       :show_link_names:
       :config: monochrome,lefttoright,handwritten
 
+|out|
+
 .. needflow::
    :filter: is_need
    :tags: flow_example
@@ -252,7 +283,7 @@ Multiple configurations can be set together by separating them via ``,``.
    :show_link_names:
    :config: monochrome,lefttoright,handwritten
 
-``Sphinx-Needs`` provides already some useful configurations:
+``Sphinx-Needs`` provides some necessary configurations already. They are:
 
 .. list-table::
    :header-rows: 1
@@ -260,6 +291,8 @@ Multiple configurations can be set together by separating them via ``,``.
 
    - * config name
      * description
+   - * mixing
+     * Allows mixing of different PlantUML diagram types (e.g. Class and Deploy diagrams)
    - * monochrome
      * Changes all colors to monochrome colors
    - * handwritten
@@ -282,11 +315,13 @@ scale
 
 .. versionadded:: 0.5.3
 
-``scale`` allows to set a scale factor for the final flow chart.
+You can set a scale factor for the final flow chart using the ``scale`` option.
 
 ``:scale: 50`` will set width and height to ``50%`` of the original image size.
 
-Numbers between ``1`` and ``300`` are supported.
+We also support the numbers between ``1`` and ``300``.
+
+|ex|
 
 .. code-block:: rst
 
@@ -295,6 +330,8 @@ Numbers between ``1`` and ``300`` are supported.
       :tags: flow_example
       :link_types: tests, blocks
       :scale: 50
+
+|out|
 
 .. needflow::
    :filter: is_need
@@ -309,8 +346,10 @@ highlight
 
 .. versionadded:: 0.5.3
 
-``highlight`` takes a single :ref:`filter_string` as value and sets the border to **red** for each need of the needflow,
-which also passes the given filter string.
+The ``:highlight:`` option takes a single :ref:`filter_string` as a value and
+sets the border for each need of the needflow to **red** if the need also passes the filter string.
+
+|ex|
 
 .. code-block:: rst
 
@@ -318,6 +357,8 @@ which also passes the given filter string.
       :tags: flow_example
       :link_types: tests, blocks
       :highlight: id in ['spec_flow_002', 'subspec_2'] or type == 'req'
+
+|out|
 
 .. needflow::
    :tags: flow_example
@@ -329,8 +370,10 @@ which also passes the given filter string.
 align
 ~~~~~
 
-Set ``align`` value for PlantUML image.
+You can set the alignment for the PlantUML image using the ``align`` option.
 Allowed values are: ``left``, ``center``, ``right``
+
+|ex|
 
 .. code-block:: rst
 
@@ -338,6 +381,8 @@ Allowed values are: ``left``, ``center``, ``right``
       :filter: is_need
       :tags: flow_example
       :align: center
+
+|out|
 
 .. needflow::
    :filter: is_need and type == 'spec'
@@ -351,11 +396,13 @@ debug
 
 .. versionadded:: 0.5.2
 
-If ``debug`` is set, a debug-output of the generated PlantUML code gets added after the generated image.
+If you set the ``:debug:``, we add a debug-output of the generated PlantUML code after the generated image.
 
 Helpful to identify reasons why a PlantUML build may have thrown errors.
 
-Example::
+|ex|
+
+.. code-block:: rst
 
    .. needflow::
       :filter: is_need
@@ -363,6 +410,8 @@ Example::
       :link_types: tests, blocks
       :config:  lefttoright, handwritten
       :debug:
+
+|out|
 
 .. needflow::
    :filter: is_need

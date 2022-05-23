@@ -128,7 +128,7 @@ This query fetches a specific pull request with the id 161.
 Common Configuration
 --------------------
 All GitHub related services have a common set of configuration options
-and their configuration must be done in :ref:`needs_services` inside the project's ``conf.py`` file.
+and their configuration must be done in :ref:`needs_services` inside the project's **conf.py** file.
 
 :ref:`needs_services` must contain a key with the service name, e.g. ``github-issues``
 
@@ -216,11 +216,11 @@ GitHub by default.
 If a company internal ``GitHub Enterprise`` instance shall be addressed, you should configure an additional service to
 deal with both (cloud and company instance) and being able to set company specific configuration options.
 
-Please see the this example for a ``Github Enterprise`` configuration in your ``conf.py`` file:
+Please see the this example for a ``Github Enterprise`` configuration in your **conf.py** file:
 
 .. code-block:: python
 
-    from sphinxcontrib.needs.services.github import GithubService
+    from sphinx_needs.services.github import GithubService
 
     needs_services = {
         # Cloud GitHub configuration
@@ -263,13 +263,13 @@ Search for all commits of Sphinx-Needs, which have ``Python`` in their message.
 
 .. code-block:: rst
 
-    .. needservice:: github-commits
-       :query: repo:useblocks/sphinxcontrib-needs python
-       :max_amount: 2
+   .. needservice:: github-commits
+      :query: repo:useblocks/sphinxcontrib-needs python
+      :max_amount: 2
 
 .. needservice:: github-commits
-   :query: repo:useblocks/sphinxcontrib-needs python
-   :max_amount: 2
+    :query: repo:useblocks/sphinxcontrib-needs python
+    :max_amount: 2
 
 **Specific commit**
 

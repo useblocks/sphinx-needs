@@ -1,5 +1,6 @@
 """Pytest conftest module containing common test configuration and fixtures."""
 import shutil
+from tempfile import mkdtemp
 
 import pytest
 from sphinx.testing.path import path
@@ -15,8 +16,11 @@ def copy_srcdir_to_tmpdir(srcdir, tmp):
 
 
 @pytest.fixture(scope="function")
-def test_app(make_app, sphinx_test_tempdir, request):
-    # get builder parameters from test case
+def test_app(make_app, request):
+    # We create a temp-folder on our own, as the util-functions from sphinx and pytest make troubles.
+    # It seems like they reuse certain-temp names
+    sphinx_test_tempdir = path(mkdtemp())
+
     builder_params = request.param
 
     # copy plantuml.jar to current test temdir
@@ -41,8 +45,7 @@ def test_app(make_app, sphinx_test_tempdir, request):
         parallel=builder_params.get("parallel", 0),
     )
 
-    try:
-        yield app
-    finally:
-        # cleanup test temporary directory
-        shutil.rmtree(sphinx_test_tempdir, True)
+    yield app
+
+    # cleanup test temporary directory
+    shutil.rmtree(sphinx_test_tempdir, False)

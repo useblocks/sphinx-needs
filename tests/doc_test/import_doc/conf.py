@@ -29,7 +29,7 @@ import os
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 
-extensions = ["sphinxcontrib.needs"]
+extensions = ["sphinx_needs"]
 
 needs_id_regex = "^[A-Za-z0-9_]"
 

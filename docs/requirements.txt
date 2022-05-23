@@ -4,7 +4,8 @@ sphinxcontrib-needs
 matplotlib
 sphinx-copybutton
 sphinxcontrib-programoutput
-sphinx-panels
+sphinx-design
 # For generating the performance test results.
 click
 tabulate
+sphinx-immaterial

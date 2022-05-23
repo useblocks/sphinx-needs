@@ -8,7 +8,7 @@ Layouts & Styles
 Layouts are defined by a preconfigured table grid and the data, which shall be shown inside specific grid cells.
 Styles define mostly the color of a need.
 
-Both features can be set directly during need-configuration or inside the sphinx ``conf.py`` file.
+Both features can be set directly during need-configuration or inside the sphinx **conf.py** file.
 
 ``Sphinx-Needs`` provides some preconfigured, ready-to-use standard layouts:
 
@@ -211,7 +211,7 @@ Using layouts
 ~~~~~~~~~~~~~
 There are two ways of setting a layout for a need:
 
-Set it globally via :ref:`needs_default_layout` in your ``conf.py`` file::
+Set it globally via :ref:`needs_default_layout` in your **conf.py** file::
 
    # conf.py
    needs_default_layout = 'complete'
@@ -226,7 +226,7 @@ Or set it locally for each need by using :ref:`need_layout` option::
 
 Defining own layouts
 ~~~~~~~~~~~~~~~~~~~~
-Own layouts can be defined by using the the config parameter :ref:`needs_layouts` in your ``conf.py`` file.
+Own layouts can be defined by using the the config parameter :ref:`needs_layouts` in your **conf.py** file.
 
 ``needs_layouts`` must be a dictionary and each key represents a layout. A layout must define the used grid-system and
 a layout-structure. Example::
@@ -355,33 +355,33 @@ A layout function may look like ``<<meta(arg1, arg2, kwarg=data)>>``
 
 Available layout functions are:
 
-* :func:`meta <sphinxcontrib.needs.layout.LayoutHandler.meta>`
-* :func:`meta_all <sphinxcontrib.needs.layout.LayoutHandler.meta_all>`
-* :func:`meta_links <sphinxcontrib.needs.layout.LayoutHandler.meta_links>`
-* :func:`meta_links_all <sphinxcontrib.needs.layout.LayoutHandler.meta_links_all>`
-* :func:`meta_id <sphinxcontrib.needs.layout.LayoutHandler.meta_id>`
-* :func:`image <sphinxcontrib.needs.layout.LayoutHandler.image>`
-* :func:`link <sphinxcontrib.needs.layout.LayoutHandler.link>`
-* :func:`permalink <sphinxcontrib.needs.layout.LayoutHandler.permalink>`
-* :func:`collapse_button <sphinxcontrib.needs.layout.LayoutHandler.collapse_button>`
+* :func:`meta <sphinx_needs.layout.LayoutHandler.meta>`
+* :func:`meta_all <sphinx_needs.layout.LayoutHandler.meta_all>`
+* :func:`meta_links <sphinx_needs.layout.LayoutHandler.meta_links>`
+* :func:`meta_links_all <sphinx_needs.layout.LayoutHandler.meta_links_all>`
+* :func:`meta_id <sphinx_needs.layout.LayoutHandler.meta_id>`
+* :func:`image <sphinx_needs.layout.LayoutHandler.image>`
+* :func:`link <sphinx_needs.layout.LayoutHandler.link>`
+* :func:`permalink <sphinx_needs.layout.LayoutHandler.permalink>`
+* :func:`collapse_button <sphinx_needs.layout.LayoutHandler.collapse_button>`
 
-.. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.meta(name, prefix=None, show_empty=False)
+.. autofunction:: sphinx_needs.layout.LayoutHandler.meta(name, prefix=None, show_empty=False)
 
-.. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.meta_id()
+.. autofunction:: sphinx_needs.layout.LayoutHandler.meta_id()
 
-.. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.meta_all(prefix='', postfix='', exclude=None, no_links=False, defaults=True, show_empty=False)
+.. autofunction:: sphinx_needs.layout.LayoutHandler.meta_all(prefix='', postfix='', exclude=None, no_links=False, defaults=True, show_empty=False)
 
-.. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.meta_links(name, incoming=False)
+.. autofunction:: sphinx_needs.layout.LayoutHandler.meta_links(name, incoming=False)
 
-.. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.meta_links_all(prefix='', postfix='', exclude=None)
+.. autofunction:: sphinx_needs.layout.LayoutHandler.meta_links_all(prefix='', postfix='', exclude=None)
 
-.. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.image(url, height=None, width=None, align=None, no_link=False)
+.. autofunction:: sphinx_needs.layout.LayoutHandler.image(url, height=None, width=None, align=None, no_link=False)
 
-.. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.link(url, text=None, image_url=None, image_height=None, image_width=None)
+.. autofunction:: sphinx_needs.layout.LayoutHandler.link(url, text=None, image_url=None, image_height=None, image_width=None)
 
-.. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.permalink(image_url=None, image_height=None, image_width=None, text=None)
+.. autofunction:: sphinx_needs.layout.LayoutHandler.permalink(image_url=None, image_height=None, image_width=None, text=None)
 
-.. autofunction:: sphinxcontrib.needs.layout.LayoutHandler.collapse_button(target='meta', collapsed='Show', visible='Close', initial=False)
+.. autofunction:: sphinx_needs.layout.LayoutHandler.collapse_button(target='meta', collapsed='Show', visible='Close', initial=False)
 
 .. _styles:
 
@@ -491,7 +491,7 @@ Using styles
 ~~~~~~~~~~~~
 There are two ways of setting a style for a need:
 
-Set it globally via :ref:`needs_default_style` in your ``conf.py`` file::
+Set it globally via :ref:`needs_default_style` in your **conf.py** file::
 
    # conf.py
    needs_default_style = 'red'

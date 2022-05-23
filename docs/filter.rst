@@ -422,7 +422,7 @@ The function gets executed by ``Sphinx-Needs`` and it must provide two keyword a
 
 Also the given package/module must be importable by the used Python environment.
 So it must be part of the Python Path variable. To update this, add
-``sys.path.insert(0, os.path.abspath("folder/to/filter_files"))`` to your ``conf.py`` file.
+``sys.path.insert(0, os.path.abspath("folder/to/filter_files"))`` to your **conf.py** file.
 
 Arguments
 ~~~~~~~~~

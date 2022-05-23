@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 
-extensions = ["sphinxcontrib.needs", "sphinxcontrib.plantuml"]
+extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
 
 # figures, tables and code-blocks are automatically numbered if they have a caption
 numfig = True

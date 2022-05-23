@@ -3,19 +3,14 @@
 Configuration
 =============
 
-All configurations take place in your project's ``conf.py`` file.
-
-
-.. contents::
-   :local:
-   :depth: 2
+All configurations take place in your project's **conf.py** file.
 
 Activation
 ----------
 
-Add **sphinxcontrib.needs** to your extensions::
+Add **sphinx_needs** to your extensions::
 
-   extensions = ["sphinxcontrib.needs",]
+   extensions = ["sphinx_needs",]
 
 .. _inc_build:
 
@@ -46,14 +41,14 @@ This would allow Sphinx to perform incremental builds, which are much faster as 
    }
 
    # Better, register the function via Sphinx-Needs API
-   from sphinxcontrib.needs.api.configuration import add_warning, add_dynamic_function
+   from sphinx_needs.api.configuration import add_warning, add_dynamic_function
    def setup(app):
       add_warning(app, 'my_warning', my_custom_warning)
       add_dynamic_function(app, my_dynamic_function)
 
 .. hint::
 
-   You are free to use e.g. ``needs_warnings`` and ``add_warning()`` together in a ``conf.py`` file.
+   You are free to use e.g. ``needs_warnings`` and ``add_warning()`` together in a **conf.py** file.
    Sphinx-Needs creates internally a final list of elements defined by config-var and api-call.
 
    However, you should not use the same ``id`` in a config-var and the related api-call, as this would create
@@ -93,6 +88,8 @@ By default it is set to::
                    dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="node"),
                    dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="node"),
                    dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="node"),
+                   # PlantUML based content
+                   dict(directive="arch", title="Architecture", content="plantuml", prefix="A_", color="#9856a5", style="node")
                    # Kept for backwards compatibility
                    dict(directive="need", title="Need", prefix="N_", color="#9856a5", style="node")
                ]
@@ -101,6 +98,7 @@ needs_types must be a list of dictionaries, where each dictionary **must** conta
 
 * **directive**: Name of the directive. For instance "req", which can be used via `.. req::` in documents
 * **title**: Title, which is used as human readable name in lists
+* **content**: Supported content type. Can be ``sphinx`` or ``plantuml``. Default: ``sphinx``.
 * **prefix**: A prefix for generated IDs, to easily identify that an ID belongs to a specific type. Can also be ""
 * **color**: A color as hex value. Used in diagrams and some days maybe in other representations as well.
 * **style**: A plantuml node type, like node, artifact, frame, storage or database. See `plantuml documentation <http://plantuml.com/deployment-diagram>`_ for more.
@@ -130,7 +128,7 @@ needs_extra_options
 The option allows the addition of extra options that can be specified on
 needs.
 
-It can be specified as a list inside ``conf.py`` as follows:
+It can be specified as a list inside **conf.py** as follows:
 
 .. code-block:: python
 
@@ -576,6 +574,103 @@ This configurations can then be used like this:
 
 See also :ref:`needflow config option <needflow_config>` for more details and already available configurations.
 
+needs_report_template
+~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.0
+
+You can customise the layout of :ref:`needsreport` using `Jinja <http://jinja.pocoo.org/>`_.
+
+Set the value of ``needs_report_template`` to the path of the template you want to use.
+
+.. note::
+
+   The path must be an absolute path based on the **conf.py** directory.
+   Example: ``needs_report_template = '/needs_templates/report_template.need'``
+
+   The template file should be a plain file with any of the following file extensions: ``.rst``, ``.need``, or ``.txt``.
+
+If you do not set ``needs_report_template``, the default template used is:
+
+.. code-block:: jinja
+
+   {% raw -%}
+
+   {# Output for needs_types #}
+   {% if types|length != 0 %}
+   .. container:: toggle
+
+      .. container::  header
+
+        **Need Types**
+
+      .. list-table::
+        :widths: 40 20 20 20
+        :header-rows: 1
+
+        * - TITLE
+          - DIRECTIVE
+          - PREFIX
+          - STYLE
+        {% for type in types %}
+        * - {{ type.title }}
+          - {{ type.directive }}
+          - `{{ type.prefix }}`
+          - {{ type.style }}
+        {% endfor %}
+   {% endif %}
+   {# Output for needs_types #}
+
+   {# Output for needs_extra_links #}
+   {% if links|length != 0 %}
+   .. container:: toggle
+
+      .. container::  header
+
+        **Need Extra Links**
+
+      .. list-table::
+        :widths: 10 30 30 5 20
+        :header-rows: 1
+
+        * - OPTION
+          - INCOMING
+          - OUTGOING
+          - COPY
+          - ALLOW DEAD LINKS
+        {% for link in links %}
+        * - {{ link.option | capitalize }}
+          - {{ link.incoming | capitalize }}
+          - {{ link.outgoing | capitalize }}
+          - {{ link.get('copy', None) | capitalize }}
+          - {{ link.get('allow_dead_links', False) | capitalize }}
+        {% endfor %}
+   {% endif %}
+   {# Output for needs_extra_links #}
+
+   {# Output for needs_options #}
+   {% if options|length != 0 %}
+   .. container:: toggle
+
+      .. container::  header
+
+        **Need Extra Options**
+
+      {% for option in options %}
+      * {{ option }}
+      {% endfor %}
+   {% endif %}
+   {# Output for needs_options #}
+
+   {% endraw %}
+
+
+Available Jinja variables are:
+
+* types - list of need types
+* links - list of extra need links
+* options - list of extra need options
+
 needs_diagram_template
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1004,7 +1099,7 @@ Must be a list of python functions.
 
 Default value: ``[]``
 
-Inside your ``conf.py`` file use it like this:
+Inside your **conf.py** file use it like this:
 
 .. code-block:: python
 
@@ -1020,9 +1115,9 @@ See :ref:`dynamic_functions` for more information.
    Assigning a function to a Sphinx option will deactivate the incremental build feature of Sphinx.
    Please use the :ref:`Sphinx-Needs API <api_configuration>` and read :ref:`inc_build` for details.
 
-   Better use the following way in our ``conf.py`` file::
+   Better use the following way in our **conf.py** file::
 
-         from sphinxcontrib.needs.api import add_dynamic_function
+         from sphinx_needs.api import add_dynamic_function
 
             def my_function(app, need, needs, *args, **kwargs):
                 # Do magic here
@@ -1341,7 +1436,7 @@ keys:
            Base url supports also relative path, which starts from project build html folder (normally where ``index.html`` is located).
 :json_url: An url, which can be used to download the ``needs.json`` (or similar) file.
 :json_path: A path to a locally stored ``needs.json`` file. Can not be used together with ``json_url``.
-            A relative path must be relative to the project configuration folder (where the ``conf.py`` is stored).
+            A relative path must be relative to the project configuration folder (where the **conf.py** is stored).
             (Since version `0.7.1`)
 :version: Defines the version to use inside the ``needs.json`` file (*optional*).
 :id_prefix: Prefix as string, which will be added to all id of external needs. Needed, if there is the risk that

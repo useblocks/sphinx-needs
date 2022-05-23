@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "sphinxcontrib-needs"
+name = "sphinx-needs"
 
 # !! Don't miss updates in needs.py, conf.py, changelog.rst, and .github/workflows/docker !!!
-version = "0.7.10"
+version = "1.0.1"
 
 description = "Sphinx needs extension for managing needs/requirements and specifications"
 authors = ["team useblocks <info@useblocks.com>"]
@@ -26,15 +26,14 @@ classifiers=[
     ]
 
 packages = [
-    {include = "sphinxcontrib", from = "."}
+    {include = "sphinx_needs"}
+#    {include = "sphinxcontrib", from = "."}
 ]
 
 [tool.poetry.dependencies]
-python = ">3.6.2,<4.0"
-sphinx = [
-    { version = ">2.2, <=3.0", python = "~3.6" },
-    { version = ">2.2", python = ">=3.7" },
-]
+python = ">=3.7.0,<4.0"
+sphinx = ">=4.0"
+
 matplotlib = ">3.1.0"  # needpie
 requests-file = "^1.5.1"  # external links
 requests = "^2.25.1"  # external_links
@@ -45,18 +44,19 @@ sphinx-data-viewer = "^0.1.1"  # needservice debug output
 pre-commit = "^2"
 # test dependencies
 lxml = "^4.6.5"
-pytest = ">6.2.5"
+pytest = "^6.2.5"
 pytest-xdist="*"  # parallelisation
 responses = "^0.12.1"
 requests-mock = ">=1.9.3"
 
+sphinx-immaterial = { version = ">0.6.7", optional = true }
 
 # formatting dependencies
 black = "^22.3"
 isort = "^5.7.0"
 
 # pyparsing 3.0.5 does not work with current "packaging" lib
-pyparsing = "!=3.0.5"  # 3.0.5 error: https://github.com/pyparsing/pyparsing/issues/329
+pyparsing = "==3.0.8"  # 3.0.5 error: https://github.com/pyparsing/pyparsing/issues/329
 
 [tool.black]
 line-length = 120
@@ -67,34 +67,36 @@ profile = "black"
 [tool.mypy]
 strict = true
 show_error_codes = true
-files = "sphinxcontrib"
+files = "sphinx_needs"
 
 [[tool.mypy.overrides]]
 module = [
-  'sphinxcontrib.needs.api.*',
-  'sphinxcontrib.needs.builder.*',
-  'sphinxcontrib.needs.config.*',
-  'sphinxcontrib.needs.diagrams_common.*',
-  'sphinxcontrib.needs.directives.*',
-  'sphinxcontrib.needs.environment.*',
-  'sphinxcontrib.needs.external_needs.*',
-  'sphinxcontrib.needs.filter_common.*',
-  'sphinxcontrib.needs.functions.*',
-  'sphinxcontrib.needs.layout.*',
-  'sphinxcontrib.needs.needs.*',
-  'sphinxcontrib.needs.needsfile.*',
-  'sphinxcontrib.needs.nodes.*',
-  'sphinxcontrib.needs.roles.*',
-  'sphinxcontrib.needs.services.*',
-  'sphinxcontrib.needs.utils.*',
-  'sphinxcontrib.needs.warnings.*',
+  'sphinx_needs.api.*',
+  'sphinx_needs.builder.*',
+  'sphinx_needs.config.*',
+  'sphinx_needs.diagrams_common.*',
+  'sphinx_needs.directives.*',
+  'sphinx_needs.environment.*',
+  'sphinx_needs.external_needs.*',
+  'sphinx_needs.filter_common.*',
+  'sphinx_needs.functions.*',
+  'sphinx_needs.layout.*',
+  'sphinx_needs.logging.*',
+  'sphinx_needs.needs.*',
+  'sphinx_needs.needsfile.*',
+  'sphinx_needs.nodes.*',
+  'sphinx_needs.roles.*',
+  'sphinx_needs.services.*',
+  'sphinx_needs.utils.*',
+  'sphinx_needs.warnings.*',
 ]
 ignore_errors = true
 
 [tool.poetry.extras]
 docs = ["sphinx>=4.0"]
+immaterial = ["sphinx-immaterial"]
 
 [build-system]
-requires = ["poetry-core @ git+https://github.com/python-poetry/poetry-core.git@master"]
+requires = ["poetry-core>=1.0.8"]
 build-backend = "poetry.core.masonry.api"
 

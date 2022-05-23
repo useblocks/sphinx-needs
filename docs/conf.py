@@ -23,7 +23,7 @@ import datetime
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath("../sphinxcontrib"))
+sys.path.append(os.path.abspath("../sphinxcontrib"))
 
 # -- General configuration ------------------------------------------------
 
@@ -40,54 +40,28 @@ sys.path.insert(0, os.path.abspath("../sphinxcontrib"))
 # built documents.
 #
 # The short X.Y version.
-version = "0.7"
+version = "1.0"
 # The full version, including alpha/beta/rc tags.
-release = "0.7.9"
+release = "1.0.1"
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
 
 extensions = [
     "sphinxcontrib.plantuml",
-    "sphinxcontrib.needs",
+    "sphinx_needs",
     "sphinx.ext.autodoc",
     "matplotlib.sphinxext.plot_directive",
     "sphinx_copybutton",
     "sphinxcontrib.programoutput",
-    "sphinx_panels",
+    "sphinx_design",
     "sphinx.ext.duration",
+    "sphinx_immaterial",
 ]
 
-# os.environ['NEEDS_THEME'] = 'sphinx_rtd_theme'
-if os.getenv("NEEDS_THEME", "").lower() == "sphinx_rtd_theme":
-    extensions.append("sphinx_rtd_theme")
 
 add_module_names = False  # Used to shorten function name output
 autodoc_docstring_signature = True  # Used to read spec. func-defs from docstring (e.g. get rid of self)
 
-# NEEDS CONFIGURATION
-
-# TITLE_TEMPLATE = """
-# .. _{{id}}:
-#
-# {{type_name}}: **{{title}}** ({{id}})
-#
-#     {{content|indent(4) }}
-#
-#     {% if status -%}
-#     **status**: {{status}}
-#     {% endif %}
-#
-#     {% if tags -%}
-#     **tags**: {{"; ".join(tags)}}
-#     {% endif %}
-#
-#     {% if links -%}
-#     **links**:
-#     {% for link in links -%}
-#         :ref:`{{link}} <{{link}}>` {%if loop.index < links|length -%}; {% endif -%}
-#     {% endfor -%}
-#     {% endif %}
-# """
 
 NOTE_TEMPLATE = """
 .. _{{id}}:
@@ -149,12 +123,20 @@ DEFAULT_DIAGRAM_TEMPLATE = (
     "<size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>"
 )
 
-# To not use the default configuration for sphinx needs, uncomment some of the following lines.
+# You can uncomment some of the following lines to override the default configuration for Sphinx-Needs.
 
 # needs_template = TITLE_TEMPLATE
 # needs_diagram_template = DEFAULT_DIAGRAM_TEMPLATE
 
+# Absolute path to the needs_report_template_file based on the conf.py directory
+# needs_report_template = "/needs_templates/report_template.need"   # Use custom report template
+
 needs_types = [
+    # Architecture types
+    dict(directive="int", title="Interface", content="plantuml", prefix="I_", color="#BFD8D2", style="card"),
+    dict(directive="comp", title="Component", content="plantuml", prefix="C_", color="#BFD8D2", style="card"),
+    dict(directive="sys", title="System", content="plantuml", prefix="S_", color="#BFD8D2", style="card"),
+    # Normal types
     dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),
     dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="node"),
     dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="node"),
@@ -251,7 +233,6 @@ needs_id_regex = "^[A-Za-z0-9_]*"
 needs_id_required = False
 # needs_css = "dark.css"
 
-on_rtd = os.environ.get("READTHEDOCS") == "True"
 local_plantuml_path = os.path.join(os.path.dirname(__file__), "utils", "plantuml.jar")
 
 if on_rtd:
@@ -281,7 +262,7 @@ needs_extra_options = [
 ]
 
 needs_warnings = {
-    "type_check": 'type not in ["req", "spec", "impl", "test", "feature", "action", "user", "milestone", '
+    "type_check": 'type not in ["int", "sys", "comp", "req", "spec", "impl", "test", "feature", "action", "user", "milestone", '
     '"issue", "pr", "commit"'  # github service types
     "]",
     # 'valid_status': 'status not in ["open", "in progress", "closed", "done", "implemented"] and status is not None'
@@ -346,6 +327,15 @@ needs_string_links = {
     },
 }
 
+# needs_external_needs = [
+#     {
+#         "base_url": "https://sphinxcontrib-needs.readthedocs.io/en/latest",
+#         "json_path": "examples/needs.json",
+#         "id_prefix": "EXT_",
+#         "css_class": "external_link",
+#     },
+# ]
+
 # build needs.json to make permalinks work
 needs_build_json = True
 
@@ -409,7 +399,7 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = os.getenv("NEEDS_THEME", "alabaster")
+html_theme = os.getenv("NEEDS_THEME", "sphinx_immaterial")
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -423,28 +413,84 @@ html_sidebars = {
     "**": ["about.html", "navigation.html", "searchbox.html"],
 }
 
+# html_theme_options = {
+#     "logo": "needs_logo.png",
+#     "logo_name": True,
+#     # 'description': "an extension for sphinx",
+#     "logo_text_align": "center",
+#     "github_user": "useblocks",
+#     "github_repo": "sphinxcontrib-needs",
+#     "github_banner": True,
+#     "github_button": True,
+#     "github_type": "star",
+#     "fixed_sidebar": False,
+#     "extra_nav_links": {
+#         "needs@PyPi": "https://pypi.python.org/pypi/sphinxcontrib-needs/",
+#         "needs@github": "https://github.com/useblocks/sphinxcontrib-needs",
+#         "needs@travis": "https://travis-ci.org/useblocks/sphinxcontrib-needs",
+#     },
+# }
+
+
+# extensions.append("sphinx_immaterial")
+# html_theme = "sphinx_immaterial"
+html_logo = "./_static/needs_logo.png"
+html_favicon = "./_static/needs_favicon.png"
+# material theme options (see theme.conf for more information)
 html_theme_options = {
-    "logo": "needs_logo.png",
-    "logo_name": True,
-    # 'description': "an extension for sphinx",
-    "logo_text_align": "center",
-    "github_user": "useblocks",
-    "github_repo": "sphinxcontrib-needs",
-    "github_banner": True,
-    "github_button": True,
-    "github_type": "star",
-    "fixed_sidebar": False,
-    "extra_nav_links": {
-        "needs@PyPi": "https://pypi.python.org/pypi/sphinxcontrib-needs/",
-        "needs@github": "https://github.com/useblocks/sphinxcontrib-needs",
-        "needs@travis": "https://travis-ci.org/useblocks/sphinxcontrib-needs",
+    "icon": {
+        "repo": "fontawesome/brands/github-square",
     },
+    "site_url": "https://sphinxcontrib-needs.readthedocs.io/",
+    "repo_url": "https://github.com/useblocks/sphinxcontrib-needs",
+    "repo_name": "Sphinx-Needs",
+    "repo_type": "github",
+    "edit_uri": "blob/master/docs",
+    # "google_analytics": ["UA-XXXXX", "auto"],
+    "globaltoc_collapse": True,
+    "features": [
+        # "navigation.expand",
+        # "navigation.tabs",
+        # "toc.integrate",
+        "navigation.sections",
+        # "navigation.instant",
+        # "header.autohide",
+        "navigation.top",
+        # "navigation.tracking",
+        # "search.highlight",
+        "search.share",
+    ],
+    "palette": [
+        {
+            "media": "(prefers-color-scheme: light)",
+            "scheme": "default",
+            "primary": "blue",
+            "accent": "light-blue",
+            "toggle": {
+                "icon": "material/weather-night",
+                "name": "Switch to dark mode",
+            },
+        },
+        {
+            "media": "(prefers-color-scheme: dark)",
+            "scheme": "slate",
+            "primary": "blue",
+            "accent": "yellow",
+            "toggle": {
+                "icon": "material/weather-sunny",
+                "name": "Switch to light mode",
+            },
+        },
+    ],
+    "toc_title_is_page_title": True,
 }
+
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+html_css_files = ["custom.css"]
 
 # -- Options for HTMLHelp output ------------------------------------------
 
@@ -497,6 +543,17 @@ texinfo_documents = [
         "Miscellaneous",
     ),
 ]
+
+rst_epilog = """
+.. |ex| replace:: **Example** 
+
+.. |out| replace:: **Result** 
+
+.. |br| raw:: html 
+
+   <br>
+
+"""
 
 
 def rstjinja(app, docname, source):
