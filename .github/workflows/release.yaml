@@ -24,7 +24,7 @@ jobs:
 
   # Test-PyPi release
   publish_test:
-    name: Pusblish on TestPyPi
+    name: Publish on TestPyPi
     runs-on: ubuntu-latest
     needs: build
     steps:
@@ -51,7 +51,7 @@ jobs:
 
   # Get calls only, if publish on Test-PyPi has worked.
   publish_oficial:
-    name: Pusblish on PyPi
+    name: Publish on PyPi
     runs-on: ubuntu-latest
     needs: publish_test
     steps:

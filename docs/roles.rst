@@ -28,7 +28,7 @@ Example
 
 |ex|
 
-.. code-block:: jinja
+.. code-block:: rst
 
    The requirement :need:`roles_req_1` is the most important one.
 
@@ -113,7 +113,7 @@ Example
 
 |ex|
 
-.. code-block:: jinja
+.. code-block:: rst
 
    .. req:: Car must be awesome
       :id: my_car_1
@@ -186,6 +186,7 @@ They are also getting the part_id as link description.
 ..
 
 .. image:: _static/need_part_as_flow.png
+   :align: center
 
 {% else %}
 
@@ -278,7 +279,7 @@ To calculate the ratio of one filter to another filter, you can define two filte
 
 |ex|
 
-.. code-block::
+.. code-block:: rst
 
    :need_count:`status = open and type == "spec" ? type == "spec"`% of our specifications are open.
 
