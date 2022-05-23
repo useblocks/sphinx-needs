@@ -6,14 +6,18 @@ Using poetry
 
 .. code-block:: bash
 
-    poetry add sphinxcontrib-needs
+    poetry add sphinx-needs
 
 Using pip
 ---------
 
 .. code-block:: bash
 
-    pip install sphinxcontrib-needs
+    pip install sphinx-needs
+
+.. note::
+
+   Prior version **1.0.1** the package was named ``sphinxcontrib-needs``.
 
 Using sources
 -------------
@@ -39,6 +43,10 @@ For final activation, please add `sphinx_needs` to the project's extension list 
 For the full configuration, please read :ref:`config`.
 
 .. _install_plantuml:
+
+.. note::
+
+   Prior version **1.0.1** the extensions was called ``sphinxcontrib.needs``.
 
 PlantUML support
 ----------------
