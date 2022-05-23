@@ -6,10 +6,11 @@ License
 
 .. include:: ../LICENSE
 
-0.7.10
-------
-:Released: under development
+1.0.1
+-----
+Under development
 
+* Improvement: Provides :ref:`needuml` for powerful, reusabel Need objects.
 * Bugfix: Support embedded needs in embedded needs.
   (`#486 <https://github.com/useblocks/sphinxcontrib-needs/issues/486>`_)
 * Bugfix: Correct references in :ref:`needtables <needtable>` to be external or internal instead of always external.
@@ -17,7 +18,7 @@ License
 
 0.7.9
 -----
-:Released: 10.05.2022
+Released: 10.05.2022
 
 * Improvement: Add permanent link layout function.
   (`#390 <https://github.com/useblocks/sphinxcontrib-needs/issues/390>`_)
@@ -28,7 +29,7 @@ License
 
 0.7.8
 -----
-:Released: 29.03.2022
+Released: 29.03.2022
 
 * Improvement: Provides line number info for needs node.
   (`#499 <https://github.com/useblocks/sphinxcontrib-needs/issues/499>`_)
@@ -43,7 +44,7 @@ License
 
 0.7.7
 -----
-:Released: 04.03.2022
+Released: 04.03.2022
 
 * Bugfix: ``need`` role supporting lower and upper IDs.
   (`#508 <https://github.com/useblocks/sphinxcontrib-needs/issues/508>`_)
@@ -54,7 +55,7 @@ License
 
 0.7.6
 -----
-:Released: 28.02.2022
+Released: 28.02.2022
 
 * Improvement: :ref:`filter_func` support arguments.
   (`#429 <https://github.com/useblocks/sphinxcontrib-needs/issues/429>`_)
@@ -69,7 +70,7 @@ License
 
 0.7.5
 -----
-:Released: 21.01.2022
+Released: 21.01.2022
 
 * Improvement: :ref:`needbar` is introduced
   (`#452 <https://github.com/useblocks/sphinxcontrib-needs/issues/452>`_)
@@ -93,7 +94,7 @@ License
 
 0.7.4
 -----
-:Released: 30.11.2021
+Released: 30.11.2021
 
 * Improvement: Adds :ref:`needservice_debug` flag for :ref:`needservice`.
 * Improvement: Better css table handling.
@@ -106,7 +107,7 @@ License
 
 0.7.3
 -----
-:Released: 08.11.2021
+Released: 08.11.2021
 
 * Improvement: Schema check for ``need.json`` files implemented.
 * Improvement: New option for ``needtable`` and co: :ref:`filter_func`, which allows to reference and use python code
@@ -122,7 +123,7 @@ License
 
 0.7.2
 -----
-:Released: 08.10.2021
+Released: 08.10.2021
 
 * Improvement: New config option :ref:`needs_builder_filter` to define a filter for the needs builder.
   (`#342 <https://github.com/useblocks/sphinxcontrib-needs/issues/342>`_)
@@ -154,7 +155,7 @@ License
 
 0.7.1
 -----
-:Released: 21.07.2021
+Released: 21.07.2021
 
 * Improvement: Support for parallel sphinx-build when using ``-j`` option
   (`#319 <https://github.com/useblocks/sphinxcontrib-needs/issues/319>`_)
@@ -165,7 +166,7 @@ License
 
 0.7.0
 -----
-:Released: 06.07.2021
+Released: 06.07.2021
 
 * Improvement: Providing :ref:`needs_external_needs` to allow usage and referencing of external needs.
   (`#137 <https://github.com/useblocks/sphinxcontrib-needs/issues/137>`_)
@@ -184,7 +185,7 @@ License
 
 0.6.3
 -----
-:Released: 18.06.2021
+Released: 18.06.2021
 
 * Improvement: Dead links (references to not found needs) are supported and configurable by :ref:`allow_dead_links`.
   (`#116 <https://github.com/useblocks/sphinxcontrib-needs/issues/116>`_)
@@ -210,7 +211,7 @@ License
 
 0.6.2
 -----
-:Released: 30.04.2021
+Released: 30.04.2021
 
 * Improvement: Parent needs of nested needs get collected and are available in filters.
   (`#249 <https://github.com/useblocks/sphinxcontrib-needs/issues/249>`_)
@@ -222,7 +223,7 @@ License
 
 0.6.1
 -----
-:Released: 23.04.2021
+Released: 23.04.2021
 
 * Support: Removes support for Sphinx version <3.0 (Sphinx 2.x may still work, but it gets not tested).
 * Improvement: Internal change to poetry, nox and github actions.
