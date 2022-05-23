@@ -24,13 +24,13 @@
        :target: https://github.com/psf/black
        :alt: black code style
 
-Requirements, Bugs, Test cases, ... inside Sphinx
-=================================================
-
-.. image:: _static/needs_logo_big.png
+.. image:: _static/sphinx-needs-logo-bg.png
    :alt: Sphinx-Needs Logo
    :align: center
-   :class: needs-logo-big
+   :width: 100%
+
+Requirements, Bugs, Test cases, ... inside Sphinx
+=================================================
 
 Sphinx-Needs is an extension for the `Python <https://python.org>`_ based documentation framework `Sphinx <https://www.sphinx-doc.org>`_,
 which you can simply extend by different extensions to fulfill nearly any requirement of a software development team.
@@ -44,6 +44,9 @@ Sphinx-Needs allows the definition, linking and filtering of need-objects, which
 
 You can easily customize the list above via :ref:`configuration <needs_types>`.
 For instance, you can customize the need objects to support bugs, user stories or features.
+
+Introduction
+------------
 
 .. req:: What is a need
    :id: REQ_1
