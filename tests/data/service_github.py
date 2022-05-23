@@ -1,4 +1,3 @@
-# :noqa
 # Debug data set, which is used for all requests against github api by official docs.
 # Needed to avoid external service calls during tests
 

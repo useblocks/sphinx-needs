@@ -3,9 +3,8 @@ Collection of common sphinx-needs functions for dynamic values
 
 .. note:: The function parameters ``app``, ``need``, ``needs`` are set automatically and can not be overridden by user.
 """
-# flake8: noqa
 
-
+import contextlib
 import re
 
 from sphinx.application import Sphinx
@@ -295,7 +294,7 @@ def check_linked_values(app, need, needs, result, search_option, search_value, f
             except Exception as e:
                 logger.warning(f"CheckLinkedValues: Filter {filter_string} not valid: Error: {e}")
 
-        if not one_hit and not needs[link][search_option] in search_value:
+        if not one_hit and needs[link][search_option] not in search_value:
             return None
         elif one_hit and needs[link][search_option] in search_value:
             return result
@@ -401,10 +400,9 @@ def calc_sum(app, need, needs, option, filter=None, links_only=False):
                 pass
             except NeedsInvalidFilter as ex:
                 logger.warning(f"Given filter is not valid. Error: {ex}")
-        try:
+
+        with contextlib.suppress(ValueError):
             calculated_sum += float(check_need[option])
-        except ValueError:
-            pass
 
     return calculated_sum
 
