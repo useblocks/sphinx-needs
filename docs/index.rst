@@ -24,10 +24,10 @@
        :target: https://github.com/psf/black
        :alt: black code style
 
-.. image:: _static/sphinx-needs-logo.png
+.. image:: _static/sphinx-needs-logo-bg.png
    :alt: Sphinx-Needs Logo
    :align: center
-   :width: 70%
+   :width: 100%
 
 Requirements, Bugs, Test cases, ... inside Sphinx
 =================================================
@@ -44,6 +44,9 @@ Sphinx-Needs allows the definition, linking and filtering of need-objects, which
 
 You can easily customize the list above via :ref:`configuration <needs_types>`.
 For instance, you can customize the need objects to support bugs, user stories or features.
+
+Introduction
+------------
 
 .. req:: What is a need
    :id: REQ_1
