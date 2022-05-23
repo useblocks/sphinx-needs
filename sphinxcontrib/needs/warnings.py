@@ -75,7 +75,7 @@ def process_warnings(app, exception):
                 # Set Sphinx statuscode to 1, only if -W is used with sphinx-build
                 # Because Sphinx statuscode got calculated in very early build phase and based on warning_count
                 # Sphinx-needs warnings check hasn't happened yet
-                # see deatils in https://github.com/sphinx-doc/sphinx/blob/81a4fd973d4cfcb25d01a7b0be62cdb28f82406d/sphinx/application.py#L345 # noqa
+                # see deatils in https://github.com/sphinx-doc/sphinx/blob/81a4fd973d4cfcb25d01a7b0be62cdb28f82406d/sphinx/application.py#L345
                 # To be clear, app.keep_going = -W and --keep-going, and will overrite -W after
                 # see details in https://github.com/sphinx-doc/sphinx/blob/4.x/sphinx/application.py#L182
                 if app.statuscode == 0 and (app.keep_going or app.warningiserror):

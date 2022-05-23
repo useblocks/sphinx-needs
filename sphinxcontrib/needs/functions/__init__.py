@@ -1,4 +1,3 @@
-# flake8: noqa
 from sphinxcontrib.needs.functions.common import (
     calc_sum,
     check_linked_values,
@@ -7,7 +6,7 @@ from sphinxcontrib.needs.functions.common import (
     links_from_content,
     test,
 )
-from sphinxcontrib.needs.functions.functions import (
+from sphinxcontrib.needs.functions.functions import (  # noqa: F401
     FunctionParsingException,
     execute_func,
     find_and_replace_node_content,
