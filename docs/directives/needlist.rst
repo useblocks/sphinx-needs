@@ -27,17 +27,6 @@ Options
     **needlist** supports the full filtering possibilities of **Sphinx-Needs**.
     Please see :ref:`filter` for more information.
 
-Supported options:
-
-* :ref:`needlist_show_status`
-* :ref:`needlist_show_tags`
-* :ref:`needlist_show_filters`
-* Common filters:
-    + :ref:`option_status`
-    + :ref:`option_tags`
-    + :ref:`option_types`
-    + :ref:`option_filter`
-
 
 .. _needlist_show_status:
 
@@ -122,3 +111,11 @@ If set, we add the used filter below the needlist results:
    .. needlist::
       :show_filters:
       :status: done; implemented
+
+common filters
+~~~~~~~~~~~~~~
+
+* :ref:`option_status`
+* :ref:`option_tags`
+* :ref:`option_types`
+* :ref:`option_filter`

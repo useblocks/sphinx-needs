@@ -18,7 +18,6 @@ Directives
    needextend
    needsreport
    needuml
-   needsreport
 
 **Deprecated**:
 

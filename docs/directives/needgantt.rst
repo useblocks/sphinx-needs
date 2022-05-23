@@ -25,7 +25,7 @@ needgantt
 
     .. container::  header
 
-        Show used needs for above example...
+        **Show used needs for above example**
 
     .. action:: Find & Report bug
        :id: ACT_BUG
@@ -105,24 +105,6 @@ We interpret the value as percentage and should be between 0 and 100.
 
 Options
 -------
-
-
-Supported options:
-
-* :ref:`needgantt_milestone_filter`
-* :ref:`needgantt_starts_with_links`
-* :ref:`needgantt_starts_after_links`
-* :ref:`needgantt_ends_with_links`
-* :ref:`needgantt_start_date`
-* :ref:`needgantt_timeline`
-* :ref:`needgantt_no_color`
-* :ref:`needgantt_duration_option`
-* :ref:`needgantt_completion_option`
-* Common filters:
-    * :ref:`option_status`
-    * :ref:`option_tags`
-    * :ref:`option_types`
-    * :ref:`option_filter`
 
 .. _needgantt_milestone_filter:
 
@@ -424,3 +406,12 @@ Default: :ref:`need_completion`
        :links: ACT_CREATE_EX_C
        :duration: 12
        :amount: 40
+
+
+common filters
+~~~~~~~~~~~~~~
+
+* :ref:`option_status`
+* :ref:`option_tags`
+* :ref:`option_types`
+* :ref:`option_filter`
