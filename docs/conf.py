@@ -482,7 +482,7 @@ html_theme_options = {
             },
         },
     ],
-    "toc_title_is_page_title": True
+    "toc_title_is_page_title": True,
 }
 
 

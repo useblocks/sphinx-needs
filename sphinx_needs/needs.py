@@ -68,7 +68,6 @@ from sphinx_needs.directives.needsequence import (
     process_needsequence,
 )
 from sphinx_needs.directives.needservice import Needservice, NeedserviceDirective
-from sphinx_needs.directives.needreport import NeedReportDirective
 from sphinx_needs.directives.needtable import (
     Needtable,
     NeedtableDirective,
