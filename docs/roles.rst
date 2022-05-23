@@ -122,7 +122,7 @@ Example
 
       My new car must be the fastest on the world. Therefor it shall have:
 
-      * :need_part:`(1)A topspeed of 300 km/h`
+      * :need_part:`(1)A top speed of 300 km/h`
       * :np:`(2) An acceleration of 200 m/s² or much much more`
 
       And we also need --> :np:`(awesome_3) a turbo button`!
@@ -149,7 +149,7 @@ Example
 
    My new car must be the fastest on the world. Therefor it shall have:
 
-   * :need_part:`(1) A topspeed of 300 km/h`
+   * :need_part:`(1) A top speed of 300 km/h`
    * :np:`(2) An acceleration of 200 m/s² or much much more`
 
    And we also need --> :np:`(awesome_3) a turbo button`!
@@ -199,7 +199,7 @@ They are also getting the part_id as link description.
 
 **Presentation in needtable**
 
-Please see :ref:`needtable_show_parts` pf :ref:`needtable` configuration documentation.
+Please see :ref:`needtable_show_parts` of :ref:`needtable` configuration documentation.
 
 |ex|
 
