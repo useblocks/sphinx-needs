@@ -17,7 +17,7 @@ jobs:
           # Check only newest setups for win server
           - os: "windows-latest"
             python-version: "3.9.7"
-            sphinx-version: "4.2"
+            sphinx-version: "4.3.2"
     steps:
       - uses: actions/checkout@v2
       - name: Set Up Python ${{ matrix.python-version }}
