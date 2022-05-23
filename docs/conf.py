@@ -434,8 +434,8 @@ html_sidebars = {
 
 # extensions.append("sphinx_immaterial")
 # html_theme = "sphinx_immaterial"
-html_logo = "./_static/needs_logo.png"
-html_favicon = "./_static/needs_favicon.png"
+html_logo = "./_static/sphinx-needs-logo-white.png"
+html_favicon = "./_static/sphinx-needs-logo-favicon.png"
 # material theme options (see theme.conf for more information)
 html_theme_options = {
     "icon": {
