@@ -5,7 +5,11 @@ needpie
 
 .. versionadded:: 0.5.0
 
-``needpie`` adds a pie-chart to your documentation::
+``needpie`` adds a pie-chart to your documentation.
+
+|ex|
+
+.. code-block:: rst
 
    .. needpie:: My pie chart
 
@@ -13,39 +17,25 @@ needpie
       type == 'spec'
       10
 
+|out|
+
 .. needpie:: My pie chart
 
    type == 'req'
    type == 'spec'
    10
 
-The argument of the ``needpie`` will be used as title for the pie.
+If you provide an argument for the ``needpie``, we use it as the title.
 
 Each content line gets interpreted either as static float/int value or as a :ref:`filter_string`.
 The amount of found needs by the filter string is then used as value.
 
-``needpie`` supports also own defined filters with the help of Python code through :ref:`filter_func`.
+You can use :ref:`filter_func` with Python codes to define custom filters for ``needpie``.
 
 Options
 -------
 
-.. contents::
-   :local:
-
-Example with all options used:
-
-.. needpie:: Requirement status
-   :labels: Open, In progress, Closed
-   :legend:
-   :shadow:
-   :explode: 0, 0.3, 0
-   :colors: #ffcc00, #444444, limegreen
-   :text_color: crimson
-   :style: dark_background
-
-   type == 'req' and status == 'open'
-   type == 'req' and status == 'in progress'
-   type == 'req' and status == 'closed'
+**Example with all options used:**
 
 .. code-block:: rst
 
@@ -62,6 +52,21 @@ Example with all options used:
       type == 'req' and status == 'in progress'
       type == 'req' and status == 'closed'
 
+|out|
+
+.. needpie:: Requirement status
+   :labels: Open, In progress, Closed
+   :legend:
+   :shadow:
+   :explode: 0, 0.3, 0
+   :colors: #ffcc00, #444444, limegreen
+   :text_color: crimson
+   :style: dark_background
+
+   type == 'req' and status == 'open'
+   type == 'req' and status == 'in progress'
+   type == 'req' and status == 'closed'
+
 
 labels
 ~~~~~~
@@ -71,12 +76,16 @@ Use ``:labels:`` to set labels for each value.
 ``:labels:`` must get a comma separated string and the amount of labels must match the amount of
 values/lines from content.
 
+|ex|
+
 .. needpie:: Requirement status
    :labels: Open, In progress, Closed
 
    type == 'req' and status == 'open'
    type == 'req' and status == 'in progress'
    type == 'req' and status == 'closed'
+
+|out|
 
 .. code-block:: rst
 
@@ -90,10 +99,11 @@ values/lines from content.
 legend
 ~~~~~~
 
-If ``:legend:`` is given, a legend will be placed to the right side of the pie chart.
+You can place a legend on the right side of the pie chart by setting the ``:legend:`` flag.
 
-``:legend:`` is a flag and does not support any values.
+The ``:legend:`` flag does not support any values.
 
+|ex|
 
 .. needpie:: Requirement status
    :labels: Open, In progress, Closed
@@ -102,6 +112,8 @@ If ``:legend:`` is given, a legend will be placed to the right side of the pie c
    type == 'req' and status == 'open'
    type == 'req' and status == 'in progress'
    type == 'req' and status == 'closed'
+
+|out|
 
 .. code-block:: rst
 
@@ -117,11 +129,13 @@ explode
 ~~~~~~~
 
 ``:explode:`` takes a comma-separated list of floats and defines how much space a specific pie-part
-shall be moved of from center.
+moves of from center.
 
 The amount of values for ``:explode:`` must match the amount of values / content lines.
 
 Useful values for ``:explode:`` are between ``0`` and ``0.3``
+
+|ex|
 
 .. needpie:: Requirement status
    :explode: 0,0.2,0
@@ -130,6 +144,7 @@ Useful values for ``:explode:`` are between ``0`` and ``0.3``
    type == 'req' and status == 'in progress'
    type == 'req' and status == 'closed'
 
+|out|
 
 .. code-block:: rst
 
@@ -145,6 +160,8 @@ shadow
 
 ``:shadow:`` activates a shadow in the pie chart. It does not support any further values.
 
+|ex|
+
 .. needpie:: Requirement status
    :explode: 0,0.2,0
    :shadow:
@@ -153,6 +170,7 @@ shadow
    type == 'req' and status == 'in progress'
    type == 'req' and status == 'closed'
 
+|out|
 
 .. code-block:: rst
 
@@ -172,7 +190,9 @@ colors
 See `Matplotlib documentation of supported colors <https://matplotlib.org/stable/gallery/color/named_colors.html>`_
 for a complete list of color names.
 
-But beside names also hex-values like ``#ffcc00`` are supported.
+But besides names, the ``:colors:`` option also supports hex-values like ``#ffcc00``.
+
+|ex|
 
 .. needpie:: Requirement status
    :colors: lightcoral, gold, #555555
@@ -181,6 +201,7 @@ But beside names also hex-values like ``#ffcc00`` are supported.
    type == 'req' and status == 'in progress'
    type == 'req' and status == 'closed'
 
+|out|
 
 .. code-block:: rst
 
@@ -195,7 +216,10 @@ text_color
 ~~~~~~~~~~
 
 ``:text_color:`` defines the color for text inside the pie pieces and the labels.
-The legend and title color are not changed.
+
+.. note:: Setting the ``:text_color:`` option does not change the legend and title color.
+
+|ex|
 
 .. needpie:: Requirement status
    :text_color: w
@@ -204,6 +228,7 @@ The legend and title color are not changed.
    type == 'req' and status == 'in progress'
    type == 'req' and status == 'closed'
 
+|out|
 
 .. code-block:: rst
 
@@ -229,6 +254,8 @@ Useful styles are for example:
 * dark_background
 * grayscale
 
+|ex|
+
 .. needpie:: Requirement status
    :style: Solarize_Light2
 
@@ -236,6 +263,7 @@ Useful styles are for example:
    type == 'req' and status == 'in progress'
    type == 'req' and status == 'closed'
 
+|out|
 
 .. code-block:: rst
 

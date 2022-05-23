@@ -7,7 +7,7 @@ Performance & Profiling
    :local:
 
 
-The performance of ``Sphinx-Needs`` can be tested by a script called ``performance_test.py`` inside
+The performance of **Sphinx-Needs** can be tested by a script called ``performance_test.py`` inside
 folder ``/performance`` of the checked out github repository.
 
 The performance can be tested with different amounts of ``needs``, ``needtables`` and not Sphinx-Needs related

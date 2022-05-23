@@ -3,7 +3,7 @@
 Filtering needs
 ===============
 
-``Sphinx-needs`` supports the filtering of need and need_parts by using easy to use options or powerful filter string.
+**Sphinx-Needs** supports the filtering of need and need_parts by using easy to use options or powerful filter string.
 
 Available options are specific to the used directive, whereas the filter string is supported by all directives and
 roles, which provide filter capabilities.
@@ -418,7 +418,7 @@ The code of the referenced file ``filter_file.py`` with function ``own_filter_co
            if need["type"] == "test":
                results.append(need)
 
-The function gets executed by ``Sphinx-Needs`` and it must provide two keyword arguments: ``needs`` and ``results``.
+The function gets executed by **Sphinx-Needs** and it must provide two keyword arguments: ``needs`` and ``results``.
 
 Also the given package/module must be importable by the used Python environment.
 So it must be part of the Python Path variable. To update this, add
