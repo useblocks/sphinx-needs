@@ -337,7 +337,7 @@ In the last years, we have created additional information and extensions, which 
 
     .. grid-item-card::
         :columns: 12 6 6 6
-        :link: http://useblocks.com/sphinx-needs-enterprise/
+        :link: https://useblocks.com/sphinx-needs-enterprise/
         :img-top: /_static/sphinx-needs-enterprise-card.png
         :class-card: border
 

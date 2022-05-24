@@ -98,7 +98,16 @@ div.dt-buttons {
 .dataTables_wrapper .dataTables_filter input {
     max-width: 100px !important;
 }
+@media screen and (max-width: 640px){
+.dataTables_wrapper .dataTables_filter {
+    float: none !important;
+    text-align: center !important;
+}
 
+.dataTables_wrapper .dataTables_filter input {
+    max-width: inherit !important;
+}
+}
 .border {
     border: 1px solid var(--md-typeset-color);
 }
