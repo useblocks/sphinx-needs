@@ -545,9 +545,9 @@ texinfo_documents = [
 ]
 
 rst_epilog = """
-.. |ex| replace:: **Example** 
+.. |ex| replace:: **Code** 
 
-.. |out| replace:: **Result** 
+.. |out| replace:: **Output** 
 
 .. |br| raw:: html 
 

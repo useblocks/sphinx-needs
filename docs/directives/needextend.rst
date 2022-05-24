@@ -227,10 +227,3 @@ We have :need_count:`is_modified` modified needs.
    :filter: "needextend" in title
    :columns: id, title, is_modified, modifications
    :style: table
-
-
-
-
-
-
-
