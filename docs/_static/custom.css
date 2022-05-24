@@ -107,7 +107,7 @@ img[alt="card-img-top"] {
     padding: 1em;
 }
 
-div.needs-report-table {
+div.needs-report-table, div.wy-table-responsive {
     overflow-x: auto !important;
 }
 
