@@ -76,7 +76,7 @@ module = [
   'sphinx_needs.config.*',
   'sphinx_needs.diagrams_common.*',
   'sphinx_needs.directives.*',
-  'sphinx_needs.environment.*',
+  #'sphinx_needs.environment.*',
   'sphinx_needs.external_needs.*',
   'sphinx_needs.filter_common.*',
   'sphinx_needs.functions.*',

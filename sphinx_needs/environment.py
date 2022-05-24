@@ -1,8 +1,9 @@
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import Iterable
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
 from sphinx.util import status_iterator
 from sphinx.util.console import brown
 from sphinx.util.osutil import copyfile
@@ -12,7 +13,7 @@ from sphinx_needs.utils import logger
 IMAGE_DIR_NAME = "_static"
 
 
-def safe_add_file(filename: Path, app: Sphinx):
+def safe_add_file(filename: Path, app: Sphinx) -> None:
     """
     Adds files to builder resources only, if the given filename was not already
     registered.
@@ -25,9 +26,7 @@ def safe_add_file(filename: Path, app: Sphinx):
     :return: None
     """
 
-    # Use PurePosixPath, so that the path can be used as "web"-path
-    filename = PurePosixPath(filename)
-    static_data_file = PurePosixPath("_static") / filename
+    static_data_file = Path("_static") / filename
 
     if filename.suffix == ".js":
         # Make sure the calculated (posix)-path is not already registered as "web"-path
@@ -40,7 +39,7 @@ def safe_add_file(filename: Path, app: Sphinx):
         raise NotImplementedError(f"File type {filename.suffix} not support by save_add_file")
 
 
-def safe_remove_file(filename: Path, app: Sphinx):
+def safe_remove_file(filename: Path, app: Sphinx) -> None:
     """
     Removes a given resource file from builder resources.
 
@@ -53,9 +52,8 @@ def safe_remove_file(filename: Path, app: Sphinx):
     :return: None
     """
     static_data_file = Path("_static") / filename
-    static_data_file = PurePosixPath(static_data_file)
 
-    def remove_file(file: Path, attribute: str):
+    def remove_file(file: Path, attribute: str) -> None:
         files = getattr(app.builder, attribute, [])
         if str(file) in files:
             files.remove(str(file))
@@ -72,7 +70,7 @@ def safe_remove_file(filename: Path, app: Sphinx):
 
 # Base implementation from sphinxcontrib-images
 # https://github.com/spinus/sphinxcontrib-images/blob/master/sphinxcontrib/images.py#L203
-def install_styles_static_files(app: Sphinx, env):
+def install_styles_static_files(app: Sphinx, env: BuildEnvironment) -> None:
 
     # Do not copy static_files for our "needs" builder
     if app.builder.name == "needs":
@@ -127,7 +125,7 @@ def install_static_files(
     destination_dir: Path,
     files_to_copy: Iterable[Path],
     message: str,
-):
+) -> None:
     # Do not copy static_files for our "needs" builder
     if app.builder.name == "needs":
         return
@@ -152,7 +150,7 @@ def install_static_files(
         copyfile(str(source_file), str(destination_file))
 
 
-def install_lib_static_files(app: Sphinx, env):
+def install_lib_static_files(app: Sphinx, env: BuildEnvironment) -> None:
     """
     Copies ccs and js files from needed js/css libs
     :param app:
@@ -183,7 +181,7 @@ def install_lib_static_files(app: Sphinx, env):
         safe_add_file(lib_path / f, app)
 
 
-def install_permalink_file(app: Sphinx, env):
+def install_permalink_file(app: Sphinx, env: BuildEnvironment) -> None:
     """
     Creates permalink.html in build dir
     :param app:
