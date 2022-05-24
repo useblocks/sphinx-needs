@@ -1,12 +1,13 @@
 import re
-from typing import Tuple
+from typing import List, Tuple
 
 from docutils import nodes
+from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.defaults import TITLE_REGEX
 
 
-def no_needs_found_paragraph():
+def no_needs_found_paragraph() -> nodes.paragraph:
     nothing_found = "No needs passed the filters"
     para = nodes.paragraph()
     nothing_found_node = nodes.Text(nothing_found, nothing_found)
@@ -14,7 +15,7 @@ def no_needs_found_paragraph():
     return para
 
 
-def used_filter_paragraph(current_needfilter):
+def used_filter_paragraph(current_needfilter) -> nodes.paragraph:
     para = nodes.paragraph()
     filter_text = "Used filter:"
     filter_text += (
@@ -36,7 +37,7 @@ def used_filter_paragraph(current_needfilter):
     return para
 
 
-def get_link_type_option(name, env, node, default=""):
+def get_link_type_option(name: str, env: BuildEnvironment, node, default: str = "") -> List[str]:
     link_types = [x.strip() for x in re.split(";|,", node.options.get(name, default))]
     conf_link_types = env.config.needs_extra_links
     conf_link_types_name = [x["option"] for x in conf_link_types]
@@ -52,7 +53,7 @@ def get_link_type_option(name, env, node, default=""):
     return final_link_types
 
 
-def get_title(option_string: str) -> Tuple:
+def get_title(option_string: str) -> Tuple[str, str]:
     """
     Returns a tuple of uppercase option and calculated title of given option string.
 
@@ -71,7 +72,7 @@ def get_title(option_string: str) -> Tuple:
     return option_name.upper(), title
 
 
-def get_option_list(options, name):
+def get_option_list(options, name: str) -> List[str]:
     """
     Gets and creates a list of a given directive option value in a safe way
     :param options: List of options

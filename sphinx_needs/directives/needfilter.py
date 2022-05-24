@@ -1,4 +1,5 @@
 import os
+from typing import Sequence
 from urllib.parse import urlparse
 
 from docutils import nodes
@@ -9,6 +10,8 @@ try:
     from sphinx.errors import NoUri  # Sphinx 3.0
 except ImportError:
     from sphinx.environment import NoUri  # Sphinx < 3.0
+
+from sphinx.application import Sphinx
 
 from sphinx_needs.diagrams_common import create_legend
 from sphinx_needs.filter_common import FilterBase, process_filters
@@ -43,7 +46,7 @@ class NeedfilterDirective(FilterBase):
     # Update the options_spec with values defined in the FilterBase class
     option_spec.update(FilterBase.base_option_spec)
 
-    def run(self):
+    def run(self) -> Sequence[nodes.Node]:
         env = self.state.document.settings.env
         if not hasattr(env, "need_all_needfilters"):
             env.need_all_needfilters = {}
@@ -73,7 +76,7 @@ class NeedfilterDirective(FilterBase):
         return [targetnode] + [Needfilter("")]
 
 
-def process_needfilters(app, doctree, fromdocname):
+def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     # Replace all needlist nodes with a list of the collected needs.
     # Augment each need with a backlink to the original location.
     env = app.builder.env

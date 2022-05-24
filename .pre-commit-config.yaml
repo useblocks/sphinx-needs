@@ -15,12 +15,12 @@ repos:
           - pep8-naming
 
   - repo: https://github.com/pycqa/isort
-    rev: 5.9.3
+    rev: 5.10.1
     hooks:
       - id: isort
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v2.29.1
+    rev: v2.32.1
     hooks:
       - id: pyupgrade
         args:
@@ -35,3 +35,4 @@ repos:
           - types-requests==2.27.25
           - types-setuptools==57.4.14
           - types-docutils==0.18.3
+          - docutils-stubs==0.0.22

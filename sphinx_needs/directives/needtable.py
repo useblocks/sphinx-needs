@@ -1,7 +1,9 @@
 import re
+from typing import Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
+from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsInvalidException
 from sphinx_needs.directives.utils import (
@@ -42,7 +44,7 @@ class NeedtableDirective(FilterBase):
     option_spec.update(FilterBase.base_option_spec)
 
     @profile("NEEDTABLE_RUN")
-    def run(self):
+    def run(self) -> Sequence[nodes.Node]:
         env = self.state.document.settings.env
         if not hasattr(env, "need_all_needtables"):
             env.need_all_needtables = {}
@@ -109,7 +111,7 @@ class NeedtableDirective(FilterBase):
 
 
 @profile("NEEDTABLE")
-def process_needtables(app, doctree, fromdocname):
+def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     """
     Replace all needtables nodes with a table of filtered nodes.
 

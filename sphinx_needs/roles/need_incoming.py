@@ -1,4 +1,5 @@
 from docutils import nodes
+from sphinx.application import Sphinx
 from sphinx.util.nodes import make_refnode
 
 from sphinx_needs.utils import check_and_calc_base_url_rel_path
@@ -13,7 +14,7 @@ class NeedIncoming(nodes.Inline, nodes.Element):
     pass
 
 
-def process_need_incoming(app, doctree, fromdocname):
+def process_need_incoming(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     env = app.builder.env
 
     for node_need_backref in doctree.traverse(NeedIncoming):
@@ -41,7 +42,7 @@ def process_need_incoming(app, doctree, fromdocname):
 
                     # if index + 1 < len(ref_need["links_back"]):
                     #     link_text += ", "
-                    node_need_backref[0] = nodes.Text(link_text, link_text)
+                    node_need_backref[0] = nodes.Text(link_text)
 
                     if not target_need["is_external"]:
                         new_node_ref = make_refnode(
@@ -63,7 +64,7 @@ def process_need_incoming(app, doctree, fromdocname):
 
                     # If we have several links, we add an empty text between them
                     if index + 1 < len(links_back):
-                        node_link_container += nodes.Text(", ", ", ")
+                        node_link_container += nodes.Text(", ")
 
                 except NoUri:
                     # If the given need id can not be found, we must pass here....
@@ -73,6 +74,6 @@ def process_need_incoming(app, doctree, fromdocname):
                 env.warn_node("Needs: need %s not found" % node_need_backref["reftarget"], node_need_backref)
 
         if len(node_link_container.children) == 0:
-            node_link_container += nodes.Text("None", "None")
+            node_link_container += nodes.Text("None")
 
         node_need_backref.replace_self(node_link_container)

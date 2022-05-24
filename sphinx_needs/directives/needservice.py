@@ -1,5 +1,10 @@
+from typing import Any, Dict, List, Sequence
+
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
+from docutils.parsers.rst.states import RSTState, RSTStateMachine
+from docutils.statemachine import StringList
+from sphinx.environment import BuildEnvironment
 from sphinx_data_viewer.api import get_data_viewer_node
 
 from sphinx_needs.api import add_need
@@ -26,16 +31,27 @@ class NeedserviceDirective(Directive):
 
     final_argument_whitespace = True
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def __init__(
+        self,
+        name: str,
+        arguments: List[str],
+        options: Dict[str, Any],
+        content: StringList,
+        lineno: int,
+        content_offset: int,
+        block_text: str,
+        state: RSTState,
+        state_machine: RSTStateMachine,
+    ):
+        super().__init__(name, arguments, options, content, lineno, content_offset, block_text, state, state_machine)
         self.log = get_logger(__name__)
 
     @property
-    def env(self):
+    def env(self) -> BuildEnvironment:
         return self.state.document.settings.env
 
-    def run(self):
-        docname = self.state.document.settings.env.docname
+    def run(self) -> Sequence[nodes.Node]:
+        docname = self.env.docname
         app = self.env.app
         needs_services = self.env.app.needs_services
 

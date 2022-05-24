@@ -6,6 +6,7 @@ Based on https://github.com/useblocks/sphinxcontrib-needs/issues/102
 import os
 import re
 from contextlib import suppress
+from typing import List, Optional
 from urllib.parse import urlparse
 
 import requests
@@ -20,7 +21,7 @@ from sphinx.application import Sphinx
 from sphinx_needs.utils import INTERNALS, logger
 
 
-def create_need(need_id, app: Sphinx, layout=None, style=None, docname=None):
+def create_need(need_id: str, app: Sphinx, layout=None, style=None, docname: Optional[str] = None) -> nodes.container:
     """
     Creates a new need-node for a given layout.
 
@@ -70,7 +71,7 @@ def create_need(need_id, app: Sphinx, layout=None, style=None, docname=None):
     return node_container
 
 
-def replace_pending_xref_refdoc(node, new_refdoc):
+def replace_pending_xref_refdoc(node, new_refdoc: str) -> None:
     """
     Overwrites the refdoc attribute of all pending_xref nodes.
     This is needed, if a doctree with references gets copied used somewhereelse in the documentation.
@@ -88,7 +89,7 @@ def replace_pending_xref_refdoc(node, new_refdoc):
             replace_pending_xref_refdoc(child, new_refdoc)
 
 
-def build_need(layout, node, app, style=None, fromdocname=None):
+def build_need(layout, node, app: Sphinx, style=None, fromdocname: Optional[str] = None) -> None:
     """
     Builds a need based on a given layout for a given need-node.
 
@@ -139,7 +140,7 @@ class LayoutHandler:
     Cares about the correct layout handling
     """
 
-    def __init__(self, app, need, layout, node, style=None, fromdocname=None):
+    def __init__(self, app: Sphinx, need, layout, node, style=None, fromdocname: Optional[str] = None) -> None:
         self.app = app
         self.need = need
 
@@ -272,7 +273,7 @@ class LayoutHandler:
                 "name": link_name,
             }
 
-    def get_need_table(self):
+    def get_need_table(self) -> nodes.table:
         if self.layout["grid"] not in self.grids.keys():
             raise SphinxNeedLayoutException(
                 "Unknown layout-grid: {}. Supported are {}".format(self.layout["grid"], ", ".join(self.grids.keys()))
@@ -310,7 +311,7 @@ class LayoutHandler:
 
         return lines_container
 
-    def _parse(self, line):
+    def _parse(self, line: str) -> List[nodes.Node]:
         """
         Parses a single line/string for inline rst statements, like strong, emphasis, literal, ...
 
@@ -426,7 +427,7 @@ class LayoutHandler:
             data = data.replace(replace_string, self.need[item])
         return data
 
-    def meta(self, name, prefix=None, show_empty=False):
+    def meta(self, name: str, prefix: Optional[str] = None, show_empty: bool = False):
         """
         Returns the specific meta data of a need inside docutils nodes.
         Usage::
@@ -484,7 +485,7 @@ class LayoutHandler:
                         data_node.append(nodes.reference(link_name, link_name, refuri=link_url))
                     else:
                         # if no string_link match was made, we handle it as normal string value
-                        data_node.append(nodes.Text(data, data))
+                        data_node.append(nodes.Text(data))
 
                 except Exception as e:
                     logger.warning(
@@ -495,7 +496,7 @@ class LayoutHandler:
             elif not matching_link_confs or string_link_error:
                 # Normal text handling
                 data_node = nodes.inline(classes=["needs_data"])
-                data_node.append(nodes.Text(data, data))
+                data_node.append(nodes.Text(data))
 
             data_container.append(data_node)
 
@@ -506,15 +507,15 @@ class LayoutHandler:
             for index, element in enumerate(data):
                 if index > 0:
                     spacer = nodes.inline(classes=["needs_spacer"])
-                    spacer += nodes.Text(", ", ", ")
+                    spacer += nodes.Text(", ")
                     list_container += spacer
 
                 inline = nodes.inline(classes=["needs_data"])
-                inline += nodes.Text(element, element)
+                inline += nodes.Text(element)
                 list_container += inline
             data_container += list_container
         else:
-            data_container.append(nodes.Text(data, data))
+            data_container.append(nodes.Text(data))
 
         return data_container
 
@@ -532,7 +533,7 @@ class LayoutHandler:
 
         id_container = nodes.inline(classes=["needs-id"])
 
-        nodes_id_text = nodes.Text(self.need["id"], self.need["id"])
+        nodes_id_text = nodes.Text(self.need["id"])
         id_ref = make_refnode(
             self.app.builder,
             # fromdocname=self.need['docname'],
@@ -545,7 +546,15 @@ class LayoutHandler:
         id_container += id_ref
         return id_container
 
-    def meta_all(self, prefix="", postfix="", exclude=None, no_links=False, defaults=True, show_empty=False):
+    def meta_all(
+        self,
+        prefix: str = "",
+        postfix: str = "",
+        exclude=None,
+        no_links: bool = False,
+        defaults: bool = True,
+        show_empty: bool = False,
+    ):
         """
         ``meta_all()`` excludes by default the output of: ``docname``, ``lineno``, ``target_node``, ``refid``,
         ``content``, ``collapse``, ``parts``, ``id_parent``,
@@ -607,7 +616,7 @@ class LayoutHandler:
 
         return data_container
 
-    def meta_links(self, name, incoming=False):
+    def meta_links(self, name: str, incoming: bool = False):
         """
         Documents the set links of a given link type.
         The documented links are all full clickable links to the target needs.
@@ -636,7 +645,7 @@ class LayoutHandler:
         data_container.append(node_links)
         return data_container
 
-    def meta_links_all(self, prefix="", postfix="", exclude=None):
+    def meta_links_all(self, prefix: str = "", postfix: str = "", exclude=None):
         """
         Documents all used link types for the current need automatically.
 
@@ -666,7 +675,9 @@ class LayoutHandler:
 
         return data_container
 
-    def image(self, url, height=None, width=None, align=None, no_link=False, prefix="", is_external=False):
+    def image(
+        self, url, height=None, width=None, align=None, no_link=False, prefix: str = "", is_external: bool = False
+    ) -> nodes.inline:
         """
 
         See https://docutils.sourceforge.io/docs/ref/rst/directives.html#images
@@ -786,7 +797,16 @@ class LayoutHandler:
         data_container.append(image_node)
         return data_container
 
-    def link(self, url, text=None, image_url=None, image_height=None, image_width=None, prefix="", is_dynamic=False):
+    def link(
+        self,
+        url,
+        text: Optional[str] = None,
+        image_url=None,
+        image_height=None,
+        image_width=None,
+        prefix: str = "",
+        is_dynamic: bool = False,
+    ) -> nodes.inline:
         """
         Shows a link.
         Link can be a text, an image or both
@@ -830,7 +850,9 @@ class LayoutHandler:
 
         return data_container
 
-    def collapse_button(self, target="meta", collapsed="Show", visible="Close", initial=False):
+    def collapse_button(
+        self, target="meta", collapsed="Show", visible="Close", initial: bool = False
+    ) -> Optional[nodes.inline]:
         """
         To show icons instead of text on the button, use collapse_button() like this::
 
@@ -855,12 +877,12 @@ class LayoutHandler:
         if collapsed.startswith("image:") or collapsed.startswith("icon:"):
             coll_node_collapsed.append(self.image(collapsed.replace("image:", ""), width="17px", no_link=True))
         else:
-            coll_node_collapsed.append(nodes.Text(collapsed, collapsed))
+            coll_node_collapsed.append(nodes.Text(collapsed))
 
         if visible.startswith("image:") or visible.startswith("icon:"):
             coll_node_visible.append(self.image(visible.replace("image:", ""), width="17px", no_link=True))
         else:
-            coll_node_visible.append(nodes.Text(visible, visible))
+            coll_node_visible.append(nodes.Text(visible))
 
         coll_container = nodes.inline(classes=["needs", "collapse"])
         # docutils does'nt allow has to add any html-attributes beside class and id to nodes.
@@ -881,7 +903,7 @@ class LayoutHandler:
 
         return coll_container
 
-    def permalink(self, image_url=None, image_height=None, image_width=None, text=None, prefix=""):
+    def permalink(self, image_url=None, image_height=None, image_width=None, text=None, prefix: str = ""):
         """
         Shows a permanent link to the need.
         Link can be a text, an image or both
@@ -1032,7 +1054,7 @@ class LayoutHandler:
             self.node_tbody += footer_row
         node_tgroup += self.node_tbody
 
-    def _grid_complex(self):
+    def _grid_complex(self) -> None:
         node_tgroup = nodes.tgroup(cols=6)
         self.node_table += node_tgroup
 

@@ -1,4 +1,5 @@
 import os
+from typing import Any, Dict
 
 from docutils.parsers.rst import directives
 
@@ -201,7 +202,7 @@ NEEDFLOW_CONFIG_DEFAULTS = {
 TITLE_REGEX = r'([\w]+) as "([\w ]+)"'
 
 
-NEED_DEFAULT_OPTIONS = {
+NEED_DEFAULT_OPTIONS: Dict[str, Any] = {
     "id": directives.unchanged_required,
     "status": directives.unchanged_required,
     "tags": directives.unchanged_required,

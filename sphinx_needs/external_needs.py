@@ -4,6 +4,8 @@ import os
 
 import requests
 from requests_file import FileAdapter
+from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.api import add_external_need, del_need
 from sphinx_needs.api.exceptions import NeedsDuplicatedId
@@ -13,7 +15,7 @@ from sphinx_needs.utils import import_prefix_link_edit
 log = get_logger(__name__)
 
 
-def load_external_needs(app, env, _docname):
+def load_external_needs(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
     for source in app.config.needs_external_needs:
         if source["base_url"].endswith("/"):
             source["base_url"] = source["base_url"][:-1]

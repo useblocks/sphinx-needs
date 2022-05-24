@@ -7,10 +7,13 @@ import html
 import os
 import re
 import textwrap
+from typing import Tuple
 from urllib.parse import urlparse
 
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
+from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.logging import get_logger
 
@@ -49,8 +52,8 @@ class DiagramBase(Directive):
 
         return env_var
 
-    def create_target(self, target_name):
-        env = self.state.document.settings.env
+    def create_target(self, target_name: str) -> Tuple[int, str, nodes.target]:
+        env: BuildEnvironment = self.state.document.settings.env
         id = env.new_serialno(target_name)
         targetid = f"{target_name}-{env.docname}-{id}"
         targetnode = nodes.target("", "", ids=[targetid])
@@ -106,7 +109,7 @@ class DiagramBase(Directive):
         return collected_diagram_options
 
 
-def make_entity_name(name):
+def make_entity_name(name: str) -> str:
     """Creates a valid PlantUML entity name from the given value."""
     invalid_chars = "-=!#$%^&*[](){}/~'`<>:;"
     for char in invalid_chars:
@@ -114,7 +117,7 @@ def make_entity_name(name):
     return name
 
 
-def no_plantuml(node):
+def no_plantuml(node) -> None:
     """Adds a hint that plantuml is not available"""
     content = nodes.error()
     para = nodes.paragraph()
@@ -124,7 +127,7 @@ def no_plantuml(node):
     node.replace_self(content)
 
 
-def add_config(config):
+def add_config(config) -> str:
     """Adds config section"""
     uml = ""
     if config and len(config) >= 3:
@@ -136,7 +139,7 @@ def add_config(config):
     return uml
 
 
-def get_filter_para(node_element):
+def get_filter_para(node_element) -> nodes.paragraph:
     """Return paragraph containing the used filter description"""
     para = nodes.paragraph()
     filter_text = "Used filter:"
@@ -153,7 +156,7 @@ def get_filter_para(node_element):
     return para
 
 
-def get_debug_container(puml_node):
+def get_debug_container(puml_node) -> nodes.container:
     """Return container containing the raw plantuml code"""
     debug_container = nodes.container()
     if isinstance(puml_node, nodes.figure):
@@ -167,7 +170,7 @@ def get_debug_container(puml_node):
     return debug_container
 
 
-def calculate_link(app, need_info, fromdocname):
+def calculate_link(app: Sphinx, need_info, _fromdocname: str) -> str:
     """
     Link calculation
     All links we can get from docutils functions will be relative.
@@ -182,7 +185,7 @@ def calculate_link(app, need_info, fromdocname):
     """
     try:
         if need_info["is_external"]:
-            link = need_info["external_url"]
+            link: str = need_info["external_url"]
             # check if need_info["external_url"] is relative path
             parsed_url = urlparse(need_info["external_url"])
             if not parsed_url.scheme and not os.path.isabs(need_info["external_url"]):

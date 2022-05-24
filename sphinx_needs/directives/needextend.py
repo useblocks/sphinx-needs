@@ -3,9 +3,11 @@
 
 """
 import re
+from typing import Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import Directive
+from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.filter_common import filter_needs
@@ -27,7 +29,7 @@ class NeedextendDirective(Directive):
 
     option_spec = {}
 
-    def run(self):
+    def run(self) -> Sequence[nodes.Node]:
         env = self.state.document.settings.env
         if not hasattr(env, "need_all_needextend"):
             env.need_all_needextend = {}
@@ -56,7 +58,7 @@ class NeedextendDirective(Directive):
         return [targetnode] + [Needextend("")]
 
 
-def process_needextend(app, doctree, fromdocname):
+def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str):
     """
     Perform all modifications on needs
     """

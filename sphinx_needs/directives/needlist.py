@@ -2,8 +2,11 @@
 
 
 """
+from typing import Sequence
+
 from docutils import nodes
 from docutils.parsers.rst import directives
+from sphinx.application import Sphinx
 
 from sphinx_needs.directives.utils import (
     no_needs_found_paragraph,
@@ -31,7 +34,7 @@ class NeedlistDirective(FilterBase):
     # Update the options_spec with values defined in the FilterBase class
     option_spec.update(FilterBase.base_option_spec)
 
-    def run(self):
+    def run(self) -> Sequence[nodes.Node]:
         env = self.state.document.settings.env
         if not hasattr(env, "need_all_needlists"):
             env.need_all_needlists = {}
@@ -59,7 +62,7 @@ class NeedlistDirective(FilterBase):
         return [targetnode] + [Needlist("")]
 
 
-def process_needlist(app, doctree, fromdocname):
+def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     """
     Replace all needlist nodes with a list of the collected needs.
     Augment each need with a backlink to the original location.

@@ -4,6 +4,8 @@ try:
     from sphinx.errors import NoUri  # Sphinx 3.0
 except ImportError:
     from sphinx.environment import NoUri  # Sphinx < 3.0
+
+from sphinx.application import Sphinx
 from sphinx.util.nodes import make_refnode
 
 from sphinx_needs.logging import get_logger
@@ -16,7 +18,7 @@ class NeedRef(nodes.Inline, nodes.Element):
     pass
 
 
-def process_need_ref(app, doctree, fromdocname):
+def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     for node_need_ref in doctree.traverse(NeedRef):
         env = app.builder.env
         # Let's create a dummy node, for the case we will not be able to create a real reference
@@ -75,7 +77,7 @@ def process_need_ref(app, doctree, fromdocname):
                     links_back=";".join(target_need["links_back"]),
                 )
 
-                node_need_ref[0].children[0] = nodes.Text(link_text, link_text)
+                node_need_ref[0].children[0] = nodes.Text(link_text)
 
                 if not target_need.get("is_external", False):
                     new_node_ref = make_refnode(

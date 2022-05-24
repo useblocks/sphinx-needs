@@ -1,9 +1,11 @@
 import math
 import os
+from typing import Sequence
 
 import matplotlib
 import numpy
 from docutils import nodes
+from sphinx.application import Sphinx
 
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
 
@@ -56,7 +58,7 @@ class NeedbarDirective(FilterBase):
     # Algorithm:
     # 1. define constants
     # 2. Stores infos for needbar
-    def run(self):
+    def run(self) -> Sequence[nodes.Node]:
         # 1. define constants
         env = self.state.document.settings.env
         if not hasattr(env, "need_all_needbar"):
@@ -159,7 +161,7 @@ class NeedbarDirective(FilterBase):
 # 8. create figure
 # 9. final storage
 # 10. cleanup matplotlib
-def process_needbar(app, doctree, fromdocname):
+def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str):
     env = app.builder.env
 
     # NEEDFLOW

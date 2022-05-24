@@ -3,15 +3,19 @@ API to get or add specific sphinx needs configuration parameters.
 
 All functions here are available under ``sphinxcontrib.api``. So do not import this module directly.
 """
+from typing import Any, Callable, List, Optional
+
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
+from sphinx.util.logging import SphinxLoggerAdapter
 
 from sphinx_needs.api.exceptions import NeedsApiConfigException, NeedsApiConfigWarning
 from sphinx_needs.config import NEEDS_CONFIG
 from sphinx_needs.functions import register_func
+from sphinx_needs.functions.functions import DynamicFunction
 
 
-def get_need_types(app: Sphinx):
+def get_need_types(app: Sphinx) -> List[str]:
     """
     Returns a list of directive-names from all configured need_types.
 
@@ -28,7 +32,9 @@ def get_need_types(app: Sphinx):
     return [x["directive"] for x in needs_types]
 
 
-def add_need_type(app: Sphinx, directive: str, title: str, prefix, color="#ffffff", style="node"):
+def add_need_type(
+    app: Sphinx, directive: str, title: str, prefix: str, color: str = "#ffffff", style: str = "node"
+) -> None:
     """
     Adds a new need_type to the configuration.
 
@@ -62,7 +68,7 @@ def add_need_type(app: Sphinx, directive: str, title: str, prefix, color="#fffff
     app.add_directive(directive, sphinx_needs.directives.need.NeedDirective)
 
 
-def add_extra_option(app: Sphinx, name: str):
+def add_extra_option(app: Sphinx, name: str) -> None:
     """
     Adds an extra option to the configuration. This option can then later be used inside needs or ``add_need``.
 
@@ -88,7 +94,7 @@ def add_extra_option(app: Sphinx, name: str):
     # extra_options[name] = directives.unchanged
 
 
-def add_dynamic_function(app, function, name=None):
+def add_dynamic_function(app: Sphinx, function: DynamicFunction, name: Optional[str] = None) -> None:
     """
     Registers a new dynamic function for sphinx-needs.
 
@@ -115,7 +121,13 @@ def add_dynamic_function(app, function, name=None):
     register_func(function, name)
 
 
-def add_warning(app, name, function=None, filter_string=None):
+# 'Need' is untyped, so we temporarily use 'Any' here
+WarningCheck = Callable[[Any, SphinxLoggerAdapter], bool]
+
+
+def add_warning(
+    app: Sphinx, name: str, function: Optional[WarningCheck] = None, filter_string: Optional[str] = None
+) -> None:
     """
     Registers a warning.
 

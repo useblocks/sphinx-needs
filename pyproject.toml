@@ -67,28 +67,45 @@ profile = "black"
 [tool.mypy]
 strict = true
 show_error_codes = true
+implicit_reexport = true
 files = "sphinx_needs"
 
 [[tool.mypy.overrides]]
 module = [
-  'sphinx_needs.api.*',
-  'sphinx_needs.builder.*',
-  'sphinx_needs.config.*',
-  'sphinx_needs.diagrams_common.*',
-  'sphinx_needs.directives.*',
-  'sphinx_needs.environment.*',
-  'sphinx_needs.external_needs.*',
-  'sphinx_needs.filter_common.*',
-  'sphinx_needs.functions.*',
-  'sphinx_needs.layout.*',
-  'sphinx_needs.logging.*',
-  'sphinx_needs.needs.*',
-  'sphinx_needs.needsfile.*',
-  'sphinx_needs.nodes.*',
-  'sphinx_needs.roles.*',
-  'sphinx_needs.services.*',
-  'sphinx_needs.utils.*',
-  'sphinx_needs.warnings.*',
+  'sphinx_needs.api.exceptions',
+  'sphinx_needs.api.need',
+  'sphinx_needs.builder',
+  'sphinx_needs.diagrams_common',
+  'sphinx_needs.directives.need',
+  'sphinx_needs.directives.needbar',
+  'sphinx_needs.directives.needextend',
+  'sphinx_needs.directives.needextract',
+  'sphinx_needs.directives.needfilter',
+  'sphinx_needs.directives.needflow',
+  'sphinx_needs.directives.needgantt',
+  'sphinx_needs.directives.needimport',
+  'sphinx_needs.directives.needlist',
+  'sphinx_needs.directives.needpie',
+  'sphinx_needs.directives.needreport',
+  'sphinx_needs.directives.needsequence',
+  'sphinx_needs.directives.needservice',
+  'sphinx_needs.directives.needtable',
+  'sphinx_needs.directives.needuml',
+  'sphinx_needs.directives.utils',
+  'sphinx_needs.environment',
+  'sphinx_needs.external_needs',
+  'sphinx_needs.filter_common',
+  'sphinx_needs.functions.common',
+  'sphinx_needs.functions.functions',
+  'sphinx_needs.layout',
+  'sphinx_needs.needs',
+  'sphinx_needs.needsfile',
+  'sphinx_needs.roles.need_part',
+  'sphinx_needs.roles.need_ref',
+  'sphinx_needs.services.base',
+  'sphinx_needs.services.github',
+  'sphinx_needs.services.manager',
+  'sphinx_needs.utils',
 ]
 ignore_errors = true
 
