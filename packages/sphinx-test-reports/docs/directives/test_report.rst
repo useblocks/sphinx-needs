@@ -1,4 +1,4 @@
-.. _test_report:
+.. _test-report:
 
 test-report
 ===========

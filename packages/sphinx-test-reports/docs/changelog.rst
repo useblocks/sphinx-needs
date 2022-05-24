@@ -28,7 +28,7 @@ Changelog
 
 0.3.3
 -----
-* Improvement: Addes :ref:`test_report` directive.
+* Improvement: Added :ref:`test-report` directive.
 * Improvement: Introduces :ref:`tr_file`, :ref:`tr_suite` and :ref:`tr_case` options to customize names.
 * Improvement: Not found files will throw warning instead of exception so that build goes on.
 * Improvement: Provides css_classes ``tr_passed``, ``tr_failure``, ``tr_skipped`` to colorize needs and their rows in tables.
