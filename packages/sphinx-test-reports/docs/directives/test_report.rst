@@ -53,9 +53,3 @@ Result:
 
       Used as simple link target. See Sphinx-Needs for details.
 
-Template
---------
-The following rst-code is used to generate the report.
-
-.. literalinclude:: ../../sphinxcontrib/test_reports/directives/test_report_template.txt
-   :language: rst

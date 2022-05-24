@@ -69,3 +69,13 @@ By default ``tr_case`` is set to::
 
 Please read :ref:`tr_file` for more details.
 
+tr_report_template
+------------------
+
+``tr_report_template`` allows to specify a custom template for testcase visualisation. Provide a relative path
+(from conf.py) or provide an absolute path to your template.
+
+**A simple example with a scrambled order:**
+
+.. literalinclude:: ./custom_test_report_template.txt
+   :language: rst

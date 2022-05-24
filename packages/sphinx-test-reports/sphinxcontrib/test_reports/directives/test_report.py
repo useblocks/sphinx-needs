@@ -5,6 +5,7 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 
 from sphinxcontrib.test_reports.directives.test_common import TestCommonDirective
+from sphinxcontrib.test_reports.exceptions import InvalidConfigurationError
 
 # fmt: on
 
@@ -39,9 +40,25 @@ class TestReportDirective(TestCommonDirective):
         self.prepare_basic_options()
         self.load_test_file()
 
-        with open(
-            os.path.join(os.path.dirname(__file__), "test_report_template.txt")
-        ) as template_file:
+        # if user provides a custom template, use it
+        tr_template = self.app.config.tr_report_template
+
+        template_path = ""
+
+        if os.path.isabs(tr_template):
+            template_path = tr_template
+
+        else:
+            template_path = os.path.join(self.app.confdir, os.path.relpath(tr_template))
+
+        if not os.path.isfile(template_path):
+            raise InvalidConfigurationError(
+                "could not find a template file with name {} in conf.py directory".format(
+                    template_path
+                )
+            )
+
+        with open(template_path) as template_file:
             template = "".join(template_file.readlines())
 
         if self.test_links is not None and len(self.test_links) > 0:
@@ -61,6 +78,7 @@ class TestReportDirective(TestCommonDirective):
             "links_string": links_string,
             "title": self.test_name,
             "content": self.content,
+            "template_path": template_path,
         }
 
         template_ready = template.format(**template_data)

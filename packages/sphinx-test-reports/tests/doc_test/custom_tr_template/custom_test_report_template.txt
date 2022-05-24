@@ -2,12 +2,17 @@
 
 **Template used**: {template_path}
 
-**Statistics**
+**Imported data**
 
-| Test suites: :need_count:`'{id}' in tags and type=='{suite_need}'`
-| Test cases: :need_count:`'{id}' in tags and type=='{case_need}'`
-| Failed test cases: :need_count:`'{id}' in tags and 'failure' == result and type=='{case_need}'`
-| Skipped test cases: :need_count:`'{id}' in tags and 'skipped' == result and type=='{case_need}'`
+.. {file_type}:: {title}
+   :id: {id}{links_string}
+   :tags: {tags}
+   :file: {file}
+   :auto_suites:
+   :auto_cases:
+
+   {content}
+
 
 **Test cases**:
 
@@ -30,22 +35,20 @@
    :columns: id, title, result
    :style_row: tr_[[copy('result')]]
 
-**Imported data**
 
+**Statistics**
 
-.. {file_type}:: {title}
-   :id: {id}{links_string}
-   :tags: {tags}
-   :file: {file}
-   :auto_suites:
-   :auto_cases:
-
-   {content}
+| Test suites: :need_count:`'{id}' in tags and type=='{suite_need}'`
+| Test cases: :need_count:`'{id}' in tags and type=='{case_need}'`
+| Failed test cases: :need_count:`'{id}' in tags and 'failure' == result and type=='{case_need}'`
+| Skipped test cases: :need_count:`'{id}' in tags and 'skipped' == result and type=='{case_need}'`
 
 
 Template
 --------
 The following rst-code is used to generate the report.
 
-.. literalinclude:: ../../sphinxcontrib/test_reports/directives/test_report_template.txt
+.. literalinclude:: ../custom_test_report_template.txt
    :language: rst
+
+

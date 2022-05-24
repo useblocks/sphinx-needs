@@ -1,4 +1,6 @@
 # fmt: off
+import os
+
 import sphinx
 # from docutils import nodes
 from pkg_resources import parse_version
@@ -51,6 +53,12 @@ def setup(app):
         ["test-case", "testcase", "Test-Case", "TC_", "#999999", "rectangle"],
         "html",
     )
+
+    # adds option for custom template
+    template_dir = os.path.join(
+        os.path.dirname(__file__), "directives/test_report_template.txt"
+    )
+    app.add_config_value("tr_report_template", template_dir, "html")
 
     # nodes
     app.add_node(TestResults)

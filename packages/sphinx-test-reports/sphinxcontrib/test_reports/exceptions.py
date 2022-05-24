@@ -23,3 +23,9 @@ class TestReportIncompleteConfiguration(SphinxWarning):
     """
     Raised if given arguments / options are not correct configured
     """
+
+
+class InvalidConfigurationError(SphinxError):
+    """
+    Raised if wrong values given in conf.py
+    """

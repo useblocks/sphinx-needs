@@ -65,7 +65,7 @@ plantuml_output_format = "png"
 templates_path = ["_templates"]
 
 # Add a custom test report template. Please add a relative path from this conf.py
-# tr_report_template = "./custom_test_report_template.txt"
+tr_report_template = "./custom_test_report_template.txt"
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
