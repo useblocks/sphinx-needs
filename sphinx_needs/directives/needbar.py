@@ -79,40 +79,40 @@ class NeedbarDirective(FilterBase):
 
         title = self.arguments[0].strip() if self.arguments else None
 
-        text_color = self.options.get("text_color", None)
+        text_color = self.options.get("text_color")
         if text_color:
             text_color = text_color.strip()
 
-        style = self.options.get("style", None)
+        style = self.options.get("style")
         style = style.strip() if style else matplotlib.style.use("default")
 
         legend = "legend" in self.options
 
-        colors = self.options.get("colors", None)
+        colors = self.options.get("colors")
         if colors:
             colors = [x.strip() for x in colors.split(",")]
 
-        x_axis_title = self.options.get("x_axis_title", None)
+        x_axis_title = self.options.get("x_axis_title")
         if x_axis_title:
             x_axis_title = x_axis_title.strip()
-        xlabels = self.options.get("xlabels", None)
+        xlabels = self.options.get("xlabels")
         if xlabels:
             xlabels = [x.strip() for x in xlabels.split(",")]
-        xlabels_rotation = self.options.get("xlabels_rotation", None)
+        xlabels_rotation = self.options.get("xlabels_rotation")
         if xlabels_rotation:
             xlabels_rotation = xlabels_rotation.strip()
 
-        y_axis_title = self.options.get("y_axis_title", None)
+        y_axis_title = self.options.get("y_axis_title")
         if y_axis_title:
             y_axis_title = y_axis_title.strip()
-        ylabels = self.options.get("ylabels", None)
+        ylabels = self.options.get("ylabels")
         if ylabels:
             ylabels = [y.strip() for y in ylabels.split(",")]
-        ylabels_rotation = self.options.get("ylabels_rotation", None)
+        ylabels_rotation = self.options.get("ylabels_rotation")
         if ylabels_rotation:
             ylabels_rotation = ylabels_rotation.strip()
 
-        separator = self.options.get("separator", None)
+        separator = self.options.get("separator")
         if not separator:
             separator = ","
 
@@ -147,7 +147,7 @@ class NeedbarDirective(FilterBase):
             "text_color": text_color,
         }
 
-        return [targetnode] + [Needbar("")]
+        return [targetnode, Needbar("")]
 
 
 # Algorithm:

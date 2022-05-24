@@ -31,7 +31,7 @@ class NeedfilterDirective(FilterBase):
     """
 
     @staticmethod
-    def layout(argument):
+    def layout(argument: str) -> str:
         return directives.choice(argument, ("list", "table", "diagram"))
 
     option_spec = {
@@ -73,7 +73,7 @@ class NeedfilterDirective(FilterBase):
         }
         env.need_all_needfilters[targetid].update(self.collect_filter_attributes())
 
-        return [targetnode] + [Needfilter("")]
+        return [targetnode, Needfilter("")]
 
 
 def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:

@@ -60,7 +60,7 @@ class NeedflowDirective(FilterBase):
         all_link_types = ",".join(x["option"] for x in env.config.needs_extra_links)
         link_types = list(split_link_types(self.options.get("link_types", all_link_types)))
 
-        config_names = self.options.get("config", None)
+        config_names = self.options.get("config")
         configs = []
         if config_names:
             for config_name in config_names.split(","):
@@ -94,17 +94,17 @@ class NeedflowDirective(FilterBase):
             "config": "\n".join(configs),
             "scale": scale,
             "highlight": highlight,
-            "align": self.options.get("align", None),
+            "align": self.options.get("align"),
             "link_types": link_types,
             "env": env,
         }
         env.need_all_needflows[targetid].update(self.collect_filter_attributes())
 
-        return [targetnode] + [Needflow("")]
+        return [targetnode, Needflow("")]
 
 
 def split_link_types(link_types: str) -> Iterable[str]:
-    def is_valid(link_type) -> bool:
+    def is_valid(link_type: str) -> bool:
         if len(link_type) == 0 or link_type.isspace():
             logger.warning("Scruffy link_type definition found in needflow." "Defined link_type contains spaces only.")
             return False
@@ -116,7 +116,7 @@ def split_link_types(link_types: str) -> Iterable[str]:
     )
 
 
-def make_entity_name(name):
+def make_entity_name(name: str) -> str:
     """Creates a valid PlantUML entity name from the given value."""
     invalid_chars = "-=!#$%^&*[](){}/~'`<>:;"
     for char in invalid_chars:
@@ -124,7 +124,7 @@ def make_entity_name(name):
     return name
 
 
-def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str):
+def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     # Replace all needflow nodes with a list of the collected needs.
     # Augment each need with a backlink to the original location.
     env = app.builder.env

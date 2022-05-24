@@ -7,7 +7,7 @@ from jinja2 import Template
 from sphinx.errors import SphinxError
 
 
-class NeedsReportException(SphinxError):
+class NeedsReportException(SphinxError):  # type: ignore[misc]
     pass
 
 
@@ -20,7 +20,7 @@ class NeedReportDirective(Directive):
         # 'services': directives.unchanged
     }
 
-    def run(self) -> Sequence[nodes.Node]:
+    def run(self) -> Sequence[nodes.raw]:
         env = self.state.document.settings.env
 
         if len(self.options.keys()) == 0:  # Check if options is empty
@@ -30,9 +30,9 @@ class NeedReportDirective(Directive):
             )
             raise NeedsReportException(error_msg)
 
-        types = self.options.get("types", None)
-        extra_links = self.options.get("links", None)
-        extra_options = self.options.get("options", None)
+        types = self.options.get("types")
+        extra_links = self.options.get("links")
+        extra_options = self.options.get("options")
 
         needs_types = []
         needs_extra_links = []

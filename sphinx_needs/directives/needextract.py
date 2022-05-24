@@ -53,13 +53,13 @@ class NeedextractDirective(FilterBase):
             "target_node": targetnode,
             "env": env,
             "export_id": self.options.get("export_id", ""),
-            "layout": self.options.get("layout", None),
-            "style": self.options.get("style", None),
-            "show_filters": self.options.get("show_filters", False) is None,
+            "layout": self.options.get("layout"),
+            "style": self.options.get("style"),
+            "show_filters": "show_filters" in self.options,
         }
         env.need_all_needextracts[targetid].update(self.collect_filter_attributes())
 
-        return [targetnode] + [Needextract("")]
+        return [targetnode, Needextract("")]
 
 
 def process_needextract(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
