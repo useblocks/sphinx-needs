@@ -8,10 +8,6 @@ Filtering needs
 Available options are specific to the used directive, whereas the filter string is supported by all directives and
 roles, which provide filter capabilities.
 
-.. contents::
-   :depth: 1
-   :local:
-
 .. _filter_options:
 
 Filter options

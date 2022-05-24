@@ -4,9 +4,6 @@ Contributing
 The following provides a guide for developers wishing to contribute
 to **Sphinx-Needs**.
 
-.. contents::
-   :local:
-
 Bugs, Features and  PRs
 -----------------------
 
@@ -39,20 +36,23 @@ installed in an isolated environment by Poetry.
 
 2. Install project dependencies
 
-   ::
+.. code-block:: bash
 
-       poetry install
+    poetry install
 
 3. `Install Pre-Commit <https://pre-commit.com/>`__
 
 4. Install the Pre-Commit hooks
 
-   ::
+.. code-block:: bash
 
-      pre-commit install
+    pre-commit install
 
-5. For running tests install also the dependencies of our official documentation:
-   ``pip install -r docs/requirements.txt``
+5. For running tests, install the dependencies of our official documentation:
+
+.. code-block:: bash
+
+   pip install -r docs/requirements.txt
 
 
 List make targets
@@ -70,17 +70,21 @@ This will build the **Sphinx-Needs** documentation stored under ``/docs``.
 It will always perform a **clean** build (calls ``make clean`` before the build).
 If you want to avoid this, run the related sphinx-commands directly under ``/docs`` (e.g. ``make docs``).
 
-::
+.. code-block:: bash
 
     make docs-html
 
-or::
+or
+
+.. code-block:: bash
 
     make docs-pdf
 
 Check links in docs
 ~~~~~~~~~~~~~~~~~~~~
-To check if all used links in the documentation are still valid, run::
+To check if all used links in the documentation are still valid, run:
+
+.. code-block:: bash
 
     make docs-linkcheck
 
@@ -90,11 +94,10 @@ Running Tests
 .. hint::
 
    Please be sure to have the dependencies of the official documentation installed:
-   ``pip install -r docs/requirements.txt``
 
+.. code-block:: bash
 
-::
-
+   pip install -r docs/requirements.txt
    make test
 
 Linting & Formatting
@@ -103,9 +106,9 @@ Linting & Formatting
 **Sphinx-Needs** uses `black <https://github.com/psf/black>`_ and
 `isort <https://pycqa.github.io/isort/>`_ to care about its source code formatting.
 
-::
+.. code-block:: bash
 
-   make lint
+    make lint
 
 Running Test Matrix
 -------------------
@@ -126,15 +129,15 @@ Running the matrix tests requires additional system-wide dependencies
 
 You can run the test matrix by using the ``nox`` command
 
-::
+.. code-block:: bash
 
-   nox
+    nox
 
 or using the provided Makefile
 
-::
+.. code-block:: bash
 
-   make test-matrix
+    make test-matrix
 
 For a full list of available options, refer to the Nox documentation,
 and the local :download:`noxfile <../noxfile.py>`.

@@ -16,10 +16,6 @@ Both features can be set directly during need-configuration or inside the sphinx
    * complete
    * focus
 
-.. contents::
-   :local:
-   :depth: 2
-
 .. _layouts:
 
 Layouts

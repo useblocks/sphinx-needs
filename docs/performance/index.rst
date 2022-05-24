@@ -3,10 +3,6 @@
 Performance & Profiling
 =======================
 
-.. contents::
-   :local:
-
-
 The performance of **Sphinx-Needs** can be tested by a script called ``performance_test.py`` inside
 folder ``/performance`` of the checked out github repository.
 
@@ -143,6 +139,3 @@ The measurements were performed with the following setup:
      - 6108.26 s
      - 728.82 s
      - 564.76 s
-
-
-

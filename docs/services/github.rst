@@ -15,9 +15,6 @@ Therefore the below configuration is valid for all three services.
 
 Each services creates normally multiple need objects for each element found by querying the GitHub API.
 
-.. contents::
-   :local:
-
 **Example of an imported github issue**:
 
 .. code-block:: rst

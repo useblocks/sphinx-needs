@@ -273,8 +273,3 @@ Useful styles are for example:
       type == 'req' and status == 'open'
       type == 'req' and status == 'in progress'
       type == 'req' and status == 'closed'
-
-
-
-
-

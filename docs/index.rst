@@ -28,6 +28,7 @@
    :alt: Sphinx-Needs Logo
    :align: center
    :width: 100%
+   :class: needs-logo-big
 
 Requirements, Bugs, Test cases, ... inside Sphinx
 =================================================
@@ -44,9 +45,6 @@ Sphinx-Needs allows the definition, linking and filtering of need-objects, which
 
 You can easily customize the list above via :ref:`configuration <needs_types>`.
 For instance, you can customize the need objects to support bugs, user stories or features.
-
-Introduction
-------------
 
 .. req:: What is a need
    :id: REQ_1
@@ -429,6 +427,11 @@ we have created other Sphinx extensions to support the work of teams in the auto
             :octicon:`book;1em;sd-text-primary` Technical Docs
 
 
+One more thing ...
+------------------
+
+`j4p4n <https://openclipart.org/detail/281179/engineers>`_ designed the Sphinx-Needs logo.
+
 .. toctree::
    :maxdepth: 2
    :hidden:
@@ -458,8 +461,3 @@ we have created other Sphinx extensions to support the work of teams in the auto
    support
    contributing
    changelog
-
-
-
-
-

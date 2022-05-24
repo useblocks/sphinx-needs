@@ -4,8 +4,6 @@
 needuml
 =======
 
-.. versionadded:: 1.0.1
-
 ``neduml`` behaves exactly like the ``uml`` directive from the Sphinx extension
 `Sphinxcontrib-PlantUML <https://github.com/sphinx-contrib/plantuml/>`_.
 So it allows to define PlantUML diagrams.
