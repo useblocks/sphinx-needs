@@ -605,7 +605,7 @@ needs_report_template
 
 .. versionadded:: 1.0.1
 
-You can customize the layout of :ref:`needsreport` using `Jinja <http://jinja.pocoo.org/>`_.
+You can customize the layout of :ref:`needreport` using `Jinja <http://jinja.pocoo.org/>`_.
 
 Set the value of ``needs_report_template`` to the path of the template you want to use.
 

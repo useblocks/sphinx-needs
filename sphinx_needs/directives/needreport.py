@@ -25,7 +25,7 @@ class NeedReportDirective(Directive):
 
         if len(self.options.keys()) == 0:  # Check if options is empty
             error_file, error_line = self.state_machine.input_lines.items[0]
-            error_msg = "{}:{}: NeedsReportError: No options specified to generate needs report.".format(
+            error_msg = "{}:{}: NeedReportError: No options specified to generate need report.".format(
                 error_file, error_line + self.state_machine.input_lines.data.index(".. needreport::") + 1
             )
             raise NeedsReportException(error_msg)
