@@ -107,6 +107,11 @@ div.dt-buttons {
 .dataTables_wrapper .dataTables_filter input {
     max-width: inherit !important;
 }
+
+div.wy-table-responsive {
+    overflow-x: auto !important;
+}
+
 }
 .border {
     border: 1px solid var(--md-typeset-color);
@@ -116,7 +121,7 @@ img[alt="card-img-top"] {
     padding: 1em;
 }
 
-div.needs-report-table, div.wy-table-responsive {
+div.needs-report-table {
     overflow-x: auto !important;
 }
 
