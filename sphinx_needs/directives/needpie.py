@@ -1,10 +1,11 @@
 import copy
 import os
-from typing import Sequence
+from typing import Iterable, Sequence
 
 import matplotlib
 import numpy as np
 from docutils import nodes
+from sphinx.application import Sphinx
 
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
 
@@ -66,20 +67,20 @@ class NeedpieDirective(FilterBase):
 
         content = self.content
         title = self.arguments[0] if self.arguments else ""
-        text_color = self.options.get("text_color", None)
-        style = self.options.get("style", None)
+        text_color = self.options.get("text_color")
+        style = self.options.get("style")
         legend = "legend" in self.options
 
-        explode = self.options.get("explode", None)
+        explode = self.options.get("explode")
         if explode:
             explode = explode.split(",")
             explode = [float(ex) for ex in explode]  # Transform all values to floats
 
-        labels = self.options.get("labels", None)
+        labels = self.options.get("labels")
         if labels:
             labels = labels.split(",")
 
-        colors = self.options.get("colors", None)
+        colors = self.options.get("colors")
         if colors:
             colors = colors.split(",")
 
@@ -104,10 +105,10 @@ class NeedpieDirective(FilterBase):
         # update filter-func with needed information defined in FilterBase class
         env.need_all_needpie[targetid]["filter_func"] = self.collect_filter_attributes()["filter_func"]
 
-        return [targetnode] + [Needpie("")]
+        return [targetnode, Needpie("")]
 
 
-def process_needpie(app, doctree, fromdocname):
+def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     env = app.builder.env
 
     # NEEDFLOW
@@ -163,7 +164,7 @@ def process_needpie(app, doctree, fromdocname):
 
                 if filter_func:
                     filter_func(**context)
-                sizes = context["results"]
+                sizes = context["results"]  # type: ignore[assignment]
                 # check items in sizes
                 if not isinstance(sizes, list):
                     logger.error(
@@ -266,6 +267,6 @@ def process_needpie(app, doctree, fromdocname):
         matplotlib.pyplot.close(fig)
 
 
-def label_calc(pct, allvals):
+def label_calc(pct: float, allvals: Iterable[float]) -> str:
     absolute = int(round(pct / 100.0 * sum(allvals)))
     return f"{pct:.1f}%\n({absolute:d})"

@@ -4,7 +4,7 @@ import re
 from typing import List, Optional, Union
 
 from docutils import nodes
-from docutils.statemachine import ViewList
+from docutils.statemachine import StringList
 from jinja2 import Template
 from sphinx.application import Sphinx
 from sphinx.util.nodes import nested_parse_with_titles
@@ -489,7 +489,7 @@ def _prepare_template(app: Sphinx, needs_info, template_key) -> str:
 
 
 def _render_template(content: str, docname: str, lineno: int, state) -> nodes.Element:
-    rst = ViewList()
+    rst = StringList()
     for line in content.split("\n"):
         rst.append(line, docname, lineno)
     node_need_content = nodes.Element()
@@ -499,7 +499,7 @@ def _render_template(content: str, docname: str, lineno: int, state) -> nodes.El
 
 
 def _render_plantuml_template(content: str, docname: str, lineno: int, state) -> nodes.Element:
-    rst = ViewList()
+    rst = StringList()
     rst.append(".. needuml::", docname, lineno)
     rst.append("", docname, lineno)  # Empty option line for needuml
     for line in content.split("\n"):

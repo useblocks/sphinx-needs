@@ -7,7 +7,7 @@ import html
 import os
 import re
 import textwrap
-from typing import Tuple
+from typing import Any, Dict, List, Tuple
 from urllib.parse import urlparse
 
 from docutils import nodes
@@ -40,7 +40,7 @@ class DiagramBase(Directive):
         "debug": directives.flag,
     }
 
-    def prepare_env(self, env_var):
+    def prepare_env(self, env_var: str) -> str:
         env = self.state.document.settings.env
         env_var = "need_all_" + env_var
         if not hasattr(env, env_var):
@@ -60,7 +60,7 @@ class DiagramBase(Directive):
 
         return id, targetid, targetnode
 
-    def collect_diagram_attributes(self):
+    def collect_diagram_attributes(self) -> Dict[str, Any]:
         env = self.state.document.settings.env
 
         link_types = self.options.get("link_types", "links")
@@ -94,16 +94,16 @@ class DiagramBase(Directive):
             caption = self.arguments[0]
 
         collected_diagram_options = {
-            "show_legend": self.options.get("show_legend", False) is None,
-            "show_filters": self.options.get("show_filters", False) is None,
-            "show_link_names": self.options.get("show_link_names", False) is None,
+            "show_legend": "show_legend" in self.options,
+            "show_filters": "show_filters" in self.options,
+            "show_link_names": "show_link_names" in self.options,
             "link_types": link_types,
             "config": "\n".join(configs),
             "config_names": config_names,
             "scale": scale,
             "highlight": highlight,
             "align": self.options.get("align", None),
-            "debug": self.options.get("debug", False) is None,
+            "debug": "debug" in self.options,
             "caption": caption,
         }
         return collected_diagram_options
@@ -117,7 +117,7 @@ def make_entity_name(name: str) -> str:
     return name
 
 
-def no_plantuml(node) -> None:
+def no_plantuml(node: nodes.Element) -> None:
     """Adds a hint that plantuml is not available"""
     content = nodes.error()
     para = nodes.paragraph()
@@ -127,7 +127,7 @@ def no_plantuml(node) -> None:
     node.replace_self(content)
 
 
-def add_config(config) -> str:
+def add_config(config: str) -> str:
     """Adds config section"""
     uml = ""
     if config and len(config) >= 3:
@@ -139,7 +139,7 @@ def add_config(config) -> str:
     return uml
 
 
-def get_filter_para(node_element) -> nodes.paragraph:
+def get_filter_para(node_element: nodes.Element) -> nodes.paragraph:
     """Return paragraph containing the used filter description"""
     para = nodes.paragraph()
     filter_text = "Used filter:"
@@ -156,7 +156,7 @@ def get_filter_para(node_element) -> nodes.paragraph:
     return para
 
 
-def get_debug_container(puml_node) -> nodes.container:
+def get_debug_container(puml_node: nodes.Node) -> nodes.container:
     """Return container containing the raw plantuml code"""
     debug_container = nodes.container()
     if isinstance(puml_node, nodes.figure):
@@ -170,7 +170,7 @@ def get_debug_container(puml_node) -> nodes.container:
     return debug_container
 
 
-def calculate_link(app: Sphinx, need_info, _fromdocname: str) -> str:
+def calculate_link(app: Sphinx, need_info: Dict[str, Any], _fromdocname: str) -> str:
     """
     Link calculation
     All links we can get from docutils functions will be relative.
@@ -202,8 +202,8 @@ def calculate_link(app: Sphinx, need_info, _fromdocname: str) -> str:
     return link
 
 
-def create_legend(need_types) -> str:
-    def create_row(need_type) -> str:
+def create_legend(need_types: List[Dict[str, Any]]) -> str:
+    def create_row(need_type: Dict[str, Any]) -> str:
         return "\n|<back:{color}> {color} </back>| {name} |".format(color=need_type["color"], name=need_type["title"])
 
     rows = map(create_row, need_types)

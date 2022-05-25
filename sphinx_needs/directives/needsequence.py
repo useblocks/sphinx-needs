@@ -4,6 +4,7 @@ from typing import Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
+from sphinx.application import Sphinx
 from sphinxcontrib.plantuml import (
     generate_name,  # Need for plantuml filename calculation
 )
@@ -71,7 +72,7 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
         return [targetnode] + [Needsequence("")]
 
 
-def process_needsequence(app, doctree, fromdocname):
+def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str):
     # Replace all needsequence nodes with a list of the collected needs.
     env = app.builder.env
 
@@ -215,7 +216,7 @@ def process_needsequence(app, doctree, fromdocname):
         node.replace_self(content)
 
 
-def get_message_needs(app, sender, link_types, all_needs_dict, tracked_receivers=None, filter=None):
+def get_message_needs(app: Sphinx, sender, link_types, all_needs_dict, tracked_receivers=None, filter=None):
     msg_needs = []
     if tracked_receivers is None:
         tracked_receivers = []

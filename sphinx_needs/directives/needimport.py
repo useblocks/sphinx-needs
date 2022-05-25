@@ -1,10 +1,11 @@
 import json
 import os
 import re
-from typing import Sequence
+from typing import Sequence, cast
 
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
+from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.api import add_need
 from sphinx_needs.config import NEEDS_CONFIG
@@ -49,19 +50,17 @@ class NeedimportDirective(Directive):
         if len(tags) > 0:
             tags = [tag.strip() for tag in re.split(";|,", tags)]
 
-        env = self.state.document.settings.env
-
         need_import_path = self.arguments[0]
 
         if not os.path.isabs(need_import_path):
             # Relative path should starts from current rst file directory
             curr_dir = os.path.dirname(self.docname)
-            new_need_import_path = os.path.join(env.app.confdir, curr_dir, need_import_path)
+            new_need_import_path = os.path.join(self.env.app.confdir, curr_dir, need_import_path)
 
             correct_need_import_path = new_need_import_path
             if not os.path.exists(new_need_import_path):
                 # Check the old way that calculates relative path starting from conf.py directory
-                old_need_import_path = os.path.join(env.app.confdir, need_import_path)
+                old_need_import_path = os.path.join(self.env.app.confdir, need_import_path)
                 if os.path.exists(old_need_import_path):
                     correct_need_import_path = old_need_import_path
                     logger.warning(
@@ -71,7 +70,7 @@ class NeedimportDirective(Directive):
                     )
         else:
             # Absolute path starts with /, based on the conf.py directory. The / need to be striped
-            correct_need_import_path = os.path.join(env.app.confdir, need_import_path[1:])
+            correct_need_import_path = os.path.join(self.env.app.confdir, need_import_path[1:])
 
         if not os.path.exists(correct_need_import_path):
             raise ReferenceError(f"Could not load needs import file {correct_need_import_path}")
@@ -114,7 +113,7 @@ class NeedimportDirective(Directive):
                 # "content" is the sphinx internal name for this kind of information
                 filter_context["content"] = need["description"]
                 try:
-                    if filter_single_need(env.app, filter_context, filter_string):
+                    if filter_single_need(self.env.app, filter_context, filter_string):
                         needs_list_filtered[key] = need
                 except Exception as e:
                     logger.warning(
@@ -132,7 +131,7 @@ class NeedimportDirective(Directive):
             for need in needs_list.values():
                 for id in needs_ids:
                     # Manipulate links in all link types
-                    for extra_link in env.config.needs_extra_links:
+                    for extra_link in self.env.config.needs_extra_links:
                         if extra_link["option"] in need and id in need[extra_link["option"]]:
                             for n, link in enumerate(need[extra_link["option"]]):
                                 if id == link:
@@ -168,7 +167,7 @@ class NeedimportDirective(Directive):
 
             need["content"] = need["description"]
             # Remove unknown options, as they may be defined in source system, but not in this sphinx project
-            extra_link_keys = [x["option"] for x in env.config.needs_extra_links]
+            extra_link_keys = [x["option"] for x in self.env.config.needs_extra_links]
             extra_option_keys = list(NEEDS_CONFIG.get("extra_options").keys())
             default_options = [
                 "title",
@@ -196,14 +195,18 @@ class NeedimportDirective(Directive):
             need["docname"] = self.docname
             need["lineno"] = self.lineno
 
-            nodes = add_need(env.app, self.state, **need)
+            nodes = add_need(self.env.app, self.state, **need)
             need_nodes.extend(nodes)
 
         return need_nodes
 
     @property
+    def env(self) -> BuildEnvironment:
+        return cast(BuildEnvironment, self.state.document.settings.env)
+
+    @property
     def docname(self) -> str:
-        return self.state.document.settings.env.docname
+        return self.env.docname  # type: ignore[no-any-return]
 
 
 class VersionNotFound(BaseException):

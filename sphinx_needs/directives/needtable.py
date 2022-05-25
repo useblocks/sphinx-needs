@@ -101,7 +101,7 @@ class NeedtableDirective(FilterBase):
             "sort": sort,
             # As the following options are flags, the content is None, if set.
             # If not set, the options.get() method returns False
-            "show_filters": self.options.get("show_filters", False) is None,
+            "show_filters": "show_filters" in self.options,
             "show_parts": self.options.get("show_parts", False) is None,
             "env": env,
         }

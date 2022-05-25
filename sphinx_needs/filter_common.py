@@ -28,12 +28,12 @@ class FilterBase(Directive):
         "export_id": directives.unchanged,
     }
 
-    def collect_filter_attributes(self):
+    def collect_filter_attributes(self) -> Dict[str, Any]:
         tags = str(self.options.get("tags", ""))
         if tags:
             tags = [tag.strip() for tag in re.split(";|,", tags) if len(tag) > 0]
 
-        status = self.options.get("status", None)
+        status = self.options.get("status")
         if status:
             try:
                 status = str(status)
@@ -53,10 +53,10 @@ class FilterBase(Directive):
             "status": status,
             "tags": tags,
             "types": types,
-            "filter": self.options.get("filter", None),
-            "sort_by": self.options.get("sort_by", None),
+            "filter": self.options.get("filter"),
+            "sort_by": self.options.get("sort_by"),
             "filter_code": self.content,
-            "filter_func": self.options.get("filter-func", None),
+            "filter_func": self.options.get("filter-func"),
             "export_id": self.options.get("export_id", ""),
         }
         return collected_filter_options
