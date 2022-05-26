@@ -15,6 +15,7 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.logging import get_logger
+from sphinx_needs.utils import unwrap
 
 log = get_logger(__name__)
 
@@ -31,6 +32,8 @@ part_pattern = re.compile(r"\(([\w-]+)\)(.*)")
 
 
 def update_need_with_parts(env: BuildEnvironment, need, part_nodes: List[NeedPart]) -> None:
+    app = unwrap(env.app)
+    builder = unwrap(app.builder)
     for part_node in part_nodes:
         content = part_node.children[0].children[0]  # ->inline->Text
         result = part_pattern.match(content)
@@ -71,7 +74,7 @@ def update_need_with_parts(env: BuildEnvironment, need, part_nodes: List[NeedPar
 
         from sphinx.util.nodes import make_refnode
 
-        part_ref_node = make_refnode(env.app.builder, need["docname"], need["docname"], part_id_ref, part_link_node)
+        part_ref_node = make_refnode(builder, need["docname"], need["docname"], part_id_ref, part_link_node)
         part_ref_node["classes"] += ["needs-id"]
 
         part_node.children = []

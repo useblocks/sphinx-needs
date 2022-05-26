@@ -23,6 +23,7 @@ from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import get_logger
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
+from sphinx_needs.utils import unwrap
 
 logger = get_logger(__name__)
 
@@ -408,8 +409,9 @@ def del_need(app: Sphinx, id) -> None:
     :param app: Sphinx application object.
     :param id: Sphinx need id.
     """
-    if id in app.env.needs_all_needs:
-        del app.env.needs_all_needs[id]
+    env = unwrap(app.env)
+    if id in env.needs_all_needs:
+        del env.needs_all_needs[id]
     else:
         logger.warning(f"Given need id {id} not exists!")
 

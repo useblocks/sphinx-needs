@@ -19,6 +19,7 @@ from sphinx_needs.diagrams_common import (
 )
 from sphinx_needs.filter_common import FilterBase
 from sphinx_needs.logging import get_logger
+from sphinx_needs.utils import unwrap
 
 logger = get_logger(__name__)
 
@@ -74,7 +75,8 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
 
 def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str):
     # Replace all needsequence nodes with a list of the collected needs.
-    env = app.builder.env
+    builder = unwrap(app.builder)
+    env = unwrap(builder.env)
 
     link_types = env.config.needs_extra_links
     # allowed_link_types_options = [link.upper() for link in env.config.needs_flow_link_types]

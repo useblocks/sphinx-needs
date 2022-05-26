@@ -1,15 +1,10 @@
 from docutils import nodes
-
-try:
-    from sphinx.errors import NoUri  # Sphinx 3.0
-except ImportError:
-    from sphinx.environment import NoUri  # Sphinx < 3.0
-
 from sphinx.application import Sphinx
 from sphinx.util.nodes import make_refnode
 
+from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import check_and_calc_base_url_rel_path
+from sphinx_needs.utils import check_and_calc_base_url_rel_path, unwrap
 
 log = get_logger(__name__)
 
@@ -19,11 +14,12 @@ class NeedRef(nodes.Inline, nodes.Element):
 
 
 def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
+    builder = unwrap(app.builder)
+    env = unwrap(builder.env)
     for node_need_ref in doctree.traverse(NeedRef):
-        env = app.builder.env
         # Let's create a dummy node, for the case we will not be able to create a real reference
         new_node_ref = make_refnode(
-            app.builder,
+            builder,
             fromdocname,
             fromdocname,
             "Unknown need",
@@ -81,7 +77,7 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
 
                 if not target_need.get("is_external", False):
                     new_node_ref = make_refnode(
-                        app.builder,
+                        builder,
                         fromdocname,
                         target_need["docname"],
                         node_need_ref["reftarget"],

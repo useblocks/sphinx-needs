@@ -8,7 +8,7 @@ from sphinx.util import status_iterator
 from sphinx.util.console import brown
 from sphinx.util.osutil import copyfile
 
-from sphinx_needs.utils import logger
+from sphinx_needs.utils import logger, unwrap
 
 IMAGE_DIR_NAME = "_static"
 
@@ -25,17 +25,17 @@ def safe_add_file(filename: Path, app: Sphinx) -> None:
     :param app: app object
     :return: None
     """
-
+    builder = unwrap(app.builder)
     # Use PurePosixPath, so that the path can be used as "web"-path
     filename = PurePosixPath(filename)
     static_data_file = PurePosixPath("_static") / filename
 
     if filename.suffix == ".js":
         # Make sure the calculated (posix)-path is not already registered as "web"-path
-        if hasattr(app.builder, "script_files") and str(static_data_file) not in app.builder.script_files:
+        if hasattr(builder, "script_files") and str(static_data_file) not in builder.script_files:
             app.add_js_file(str(filename))
     elif filename.suffix == ".css":
-        if hasattr(app.builder, "css_files") and str(static_data_file) not in app.builder.css_files:
+        if hasattr(builder, "css_files") and str(static_data_file) not in builder.css_files:
             app.add_css_file(str(filename))
     else:
         raise NotImplementedError(f"File type {filename.suffix} not support by save_add_file")
@@ -74,12 +74,12 @@ def safe_remove_file(filename: Path, app: Sphinx) -> None:
 # Base implementation from sphinxcontrib-images
 # https://github.com/spinus/sphinxcontrib-images/blob/master/sphinxcontrib/images.py#L203
 def install_styles_static_files(app: Sphinx, env: BuildEnvironment) -> None:
-
+    builder = unwrap(app.builder)
     # Do not copy static_files for our "needs" builder
-    if app.builder.name == "needs":
+    if builder.name == "needs":
         return
 
-    statics_dir = Path(app.builder.outdir) / IMAGE_DIR_NAME
+    statics_dir = Path(builder.outdir) / IMAGE_DIR_NAME
     css_root = Path(__file__).parent / "css"
     dest_dir = statics_dir / "sphinx-needs"
 
@@ -129,8 +129,9 @@ def install_static_files(
     files_to_copy: Iterable[Path],
     message: str,
 ) -> None:
+    builder = unwrap(app.builder)
     # Do not copy static_files for our "needs" builder
-    if app.builder.name == "needs":
+    if builder.name == "needs":
         return
 
     for source_file_path in status_iterator(
@@ -160,11 +161,12 @@ def install_lib_static_files(app: Sphinx, env: BuildEnvironment) -> None:
     :param env:
     :return:
     """
+    builder = unwrap(app.builder)
     # Do not copy static_files for our "needs" builder
-    if app.builder.name == "needs":
+    if builder.name == "needs":
         return
 
-    statics_dir = Path(app.builder.outdir) / IMAGE_DIR_NAME
+    statics_dir = Path(builder.outdir) / IMAGE_DIR_NAME
     source_dir = Path(__file__).parent / "libs" / "html"
     destination_dir = statics_dir / "sphinx-needs" / "libs" / "html"
 
@@ -191,8 +193,9 @@ def install_permalink_file(app: Sphinx, env: BuildEnvironment) -> None:
     :param env:
     :return:
     """
+    builder = unwrap(app.builder)
     # Do not copy static_files for our "needs" builder
-    if app.builder.name == "needs":
+    if builder.name == "needs":
         return
 
     # load jinja template
@@ -200,7 +203,7 @@ def install_permalink_file(app: Sphinx, env: BuildEnvironment) -> None:
     template = jinja_env.get_template("permalink.html")
 
     # save file to build dir
-    out_file = Path(app.builder.outdir) / Path(env.config.needs_permalink_file).name
+    out_file = Path(builder.outdir) / Path(env.config.needs_permalink_file).name
     with open(out_file, "w", encoding="utf-8") as f:
         f.write(
             template.render(permalink_file=env.config.needs_permalink_file, needs_file=env.config.needs_permalink_data)
