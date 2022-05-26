@@ -7,7 +7,7 @@ from jinja2 import Template
 from sphinx.errors import SphinxError
 
 
-class NeedsReportException(SphinxError):  # type: ignore[misc]
+class NeedsReportException(SphinxError):
     pass
 
 

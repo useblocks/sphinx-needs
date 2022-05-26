@@ -18,7 +18,7 @@ from docutils.utils import new_document
 from jinja2 import BaseLoader, Environment
 from sphinx.application import Sphinx
 
-from sphinx_needs.utils import INTERNALS, logger
+from sphinx_needs.utils import INTERNALS, logger, unwrap
 
 
 def create_need(need_id: str, app: Sphinx, layout=None, style=None, docname: Optional[str] = None) -> nodes.container:
@@ -287,16 +287,16 @@ class LayoutHandler:
 
         return self.node_table
 
-    def get_section(self, section):
+    def get_section(self, section: str) -> Optional[nodes.line_block]:
         try:
             lines = self.layout["layout"][section]
         except KeyError:
             # Return nothing, if not specific configuration is given for layout section
-            return []
+            return None
 
         # Needed for PDF/Latex output, where empty line_blocks raise exceptions during build
         if len(lines) == 0:
-            return []
+            return None
 
         lines_container = nodes.line_block(classes=[f"needs_{section}"])
 
@@ -704,6 +704,10 @@ class LayoutHandler:
         :param is_external: If ``True`` url references an external image, which needs to be downloaded
         :return:
         """
+
+        builder = unwrap(self.app.builder)
+        env = unwrap(builder.env)
+
         data_container = nodes.inline()
         if prefix:
             prefix_node = self._parse(prefix)
@@ -724,7 +728,7 @@ class LayoutHandler:
             raise SphinxNeedLayoutException("not valid url given for image function in layout")
 
         if url.startswith("icon:"):
-            if any(x in self.app.builder.name.upper() for x in ["PDF", "LATEX"]):
+            if any(x in builder.name.upper() for x in ["PDF", "LATEX"]):
                 # latexpdf can't handle svg files. We not to use the png format here.
                 builder_extension = "png"
             else:
@@ -792,16 +796,16 @@ class LayoutHandler:
         # Sphinx voodoo needed here.
         # It is not enough to just add a doctuils nodes.image, we also have to register the imag location for sphinx
         # Otherwise the images gets not copied to the later build-output location
-        self.app.env.images.add_file(self.need["docname"], url)
+        env.images.add_file(self.need["docname"], url)
 
         data_container.append(image_node)
         return data_container
 
     def link(
         self,
-        url,
+        url: str,
         text: Optional[str] = None,
-        image_url=None,
+        image_url: Optional[str] = None,
         image_height=None,
         image_width=None,
         prefix: str = "",
@@ -851,7 +855,7 @@ class LayoutHandler:
         return data_container
 
     def collapse_button(
-        self, target="meta", collapsed="Show", visible="Close", initial: bool = False
+        self, target: str = "meta", collapsed: str = "Show", visible: str = "Close", initial: bool = False
     ) -> Optional[nodes.inline]:
         """
         To show icons instead of text on the button, use collapse_button() like this::
@@ -867,9 +871,10 @@ class LayoutHandler:
         :param initial: If True, initial status will hide rows after loading page.
         :return: docutils nodes
         """
-        if any(x in self.app.builder.name.upper() for x in ["PDF", "LATEX"]):
+        builder = unwrap(self.app.builder)
+        if any(x in builder.name.upper() for x in ["PDF", "LATEX"]):
             # PDF/Latex output do not support collapse functions
-            return
+            return None
 
         coll_node_collapsed = nodes.inline(classes=["needs", "collapsed"])
         coll_node_visible = nodes.inline(classes=["needs", "visible"])
@@ -903,7 +908,14 @@ class LayoutHandler:
 
         return coll_container
 
-    def permalink(self, image_url=None, image_height=None, image_width=None, text=None, prefix: str = ""):
+    def permalink(
+        self,
+        image_url: Optional[str] = None,
+        image_height=None,
+        image_width=None,
+        text: Optional[str] = None,
+        prefix: str = "",
+    ):
         """
         Shows a permanent link to the need.
         Link can be a text, an image or both

@@ -36,3 +36,4 @@ repos:
           - types-setuptools==57.4.14
           - types-docutils==0.18.3
           - docutils-stubs==0.0.22
+          - sphinx==4.5.0

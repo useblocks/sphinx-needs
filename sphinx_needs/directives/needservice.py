@@ -1,3 +1,4 @@
+import typing
 from typing import Any, Dict, List, Sequence
 
 from docutils import nodes
@@ -10,6 +11,8 @@ from sphinx_data_viewer.api import get_data_viewer_node
 from sphinx_needs.api import add_need
 from sphinx_needs.directives.need import NeedDirective
 from sphinx_needs.logging import get_logger
+from sphinx_needs.services.base import BaseService
+from sphinx_needs.utils import unwrap
 
 
 class Needservice(nodes.General, nodes.Element):
@@ -48,15 +51,15 @@ class NeedserviceDirective(Directive):
 
     @property
     def env(self) -> BuildEnvironment:
-        return self.state.document.settings.env
+        return typing.cast(BuildEnvironment, self.state.document.settings.env)
 
     def run(self) -> Sequence[nodes.Node]:
         docname = self.env.docname
         app = self.env.app
-        needs_services = self.env.app.needs_services
+        needs_services: Dict[str, BaseService] = getattr(app, "needs_services", {})
 
         service_name = self.arguments[0]
-        service = needs_services.get(service_name)
+        service = unwrap(needs_services.get(service_name))
         section = []
 
         if "debug" not in self.options:

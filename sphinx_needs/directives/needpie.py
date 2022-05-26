@@ -17,7 +17,7 @@ import matplotlib.pyplot
 from docutils.parsers.rst import directives
 
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import check_and_get_external_filter_func
+from sphinx_needs.utils import check_and_get_external_filter_func, unwrap
 
 logger = get_logger(__name__)
 
@@ -109,7 +109,8 @@ class NeedpieDirective(FilterBase):
 
 
 def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
-    env = app.builder.env
+    builder = unwrap(app.builder)
+    env = unwrap(builder.env)
 
     # NEEDFLOW
     for node in doctree.traverse(Needpie):
@@ -137,7 +138,7 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str) -> N
         content = current_needpie["content"]
 
         sizes = []
-        need_list = list(prepare_need_list(app.env.needs_all_needs.values()))  # adds parts to need_list
+        need_list = list(prepare_need_list(env.needs_all_needs.values()))  # adds parts to need_list
         if content and not current_needpie["filter_func"]:
             for line in content:
                 if line.isdigit():

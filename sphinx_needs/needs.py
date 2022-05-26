@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -106,7 +106,7 @@ class TagsDummy:
     """
 
     @staticmethod
-    def has(*_args):
+    def has(*_args: Any) -> bool:
         return True
 
 
@@ -606,7 +606,7 @@ def check_configuration(_app: Sphinx, config: Config) -> None:
             )
 
 
-def merge_data(app: Sphinx, env: BuildEnvironment, docnames, other):
+def merge_data(app: Sphinx, env: BuildEnvironment, docnames: List[str], other: BuildEnvironment):
     """
     Performs data merge of parallel executed workers.
     Used only for parallel builds.

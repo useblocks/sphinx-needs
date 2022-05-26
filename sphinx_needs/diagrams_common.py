@@ -15,14 +15,10 @@ from docutils.parsers.rst import Directive, directives
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
+from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
 
 logger = get_logger(__name__)
-
-try:
-    from sphinx.errors import NoUri  # Sphinx 3.0
-except ImportError:
-    from sphinx.environment import NoUri  # Sphinx < 3.0
 
 
 class DiagramBase(Directive):

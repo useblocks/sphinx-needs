@@ -8,6 +8,7 @@ from docutils import nodes
 from sphinx.application import Sphinx
 
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
+from sphinx_needs.utils import unwrap
 
 if not os.environ.get("DISPLAY"):
     matplotlib.use("Agg")
@@ -162,7 +163,8 @@ class NeedbarDirective(FilterBase):
 # 9. final storage
 # 10. cleanup matplotlib
 def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str):
-    env = app.builder.env
+    builder = unwrap(app.builder)
+    env = unwrap(builder.env)
 
     # NEEDFLOW
     for node in doctree.traverse(Needbar):
@@ -252,7 +254,7 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str):
 
         # 5. process content
         local_data_number = []
-        need_list = list(prepare_need_list(app.env.needs_all_needs.values()))  # adds parts to need_list
+        need_list = list(prepare_need_list(env.needs_all_needs.values()))  # adds parts to need_list
 
         for line in local_data:
             line_number = []

@@ -3,7 +3,7 @@ import importlib
 import os
 import re
 from functools import wraps
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, TypeVar
 from urllib.parse import urlparse
 
 from docutils import nodes
@@ -95,6 +95,9 @@ def row_col_maker(
     :param prefix: string, which is used as prefix for the text output
     :return: column object (nodes.entry)
     """
+    builder = unwrap(app.builder)
+    env = unwrap(builder.env)
+
     row_col = nodes.entry(classes=["needs_" + need_key])
     para_col = nodes.paragraph()
 
@@ -109,7 +112,7 @@ def row_col_maker(
             link_part = None
 
             link_list = []
-            for link_type in app.env.config.needs_extra_links:
+            for link_type in env.config.needs_extra_links:
                 link_list.append(link_type["option"])
                 link_list.append(link_type["option"] + "_back")
 
@@ -135,7 +138,7 @@ def row_col_maker(
                             ref_col["classes"].append(need_info["external_css"])
                             row_col["classes"].append(need_info["external_css"])
                         else:
-                            ref_col["refuri"] = app.builder.get_relative_uri(fromdocname, need_info["docname"])
+                            ref_col["refuri"] = builder.get_relative_uri(fromdocname, need_info["docname"])
                             ref_col["refuri"] += "#" + datum
                     elif ref_lookup:
                         temp_need = all_needs[link_id]
@@ -144,7 +147,7 @@ def row_col_maker(
                             ref_col["classes"].append(temp_need["external_css"])
                             row_col["classes"].append(temp_need["external_css"])
                         else:
-                            ref_col["refuri"] = app.builder.get_relative_uri(fromdocname, temp_need["docname"])
+                            ref_col["refuri"] = builder.get_relative_uri(fromdocname, temp_need["docname"])
                             ref_col["refuri"] += "#" + temp_need["id"]
                             if link_part:
                                 ref_col["refuri"] += "." + link_part
@@ -169,11 +172,12 @@ def rstjinja(app: Sphinx, docname: str, source: List[str]) -> None:
     """
     Render our pages as a jinja template for fancy templating goodness.
     """
+    builder = unwrap(app.builder)
     # Make sure we're outputting HTML
-    if app.builder.format != "html":
+    if builder.format != "html":
         return
     src = source[0]
-    rendered = app.builder.templates.render_string(src, app.config.html_context)
+    rendered = builder.templates.render_string(src, app.config.html_context)
     source[0] = rendered
 
 
@@ -278,3 +282,11 @@ def check_and_get_external_filter_func(current_needlist):
             return []
 
     return filter_func, filter_args
+
+
+T = TypeVar("T")
+
+
+def unwrap(obj: Optional[T]) -> T:
+    assert obj is not None
+    return obj

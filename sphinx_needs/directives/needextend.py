@@ -11,6 +11,7 @@ from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.filter_common import filter_needs
+from sphinx_needs.utils import unwrap
 
 
 class Needextend(nodes.General, nodes.Element):
@@ -62,7 +63,8 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str):
     """
     Perform all modifications on needs
     """
-    env = app.builder.env
+    builder = unwrap(app.builder)
+    env = unwrap(builder.env)
     if not hasattr(env, "need_all_needextend"):
         env.need_all_needextend = {}
 
@@ -81,14 +83,14 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str):
             # Check if filter is just a need-id.
             # In this case create the needed filter string
             need_filter = current_needextend["filter"]
-            if need_filter in app.env.needs_all_needs:
+            if need_filter in env.needs_all_needs:
                 need_filter = f'id == "{need_filter}"'
             # If it looks like a need id, but we haven't found one, raise an exception
             elif re.fullmatch(app.config.needs_id_regex, need_filter):
                 raise NeedsInvalidFilter(f"Provided id {need_filter} for needextend does not exist.")
 
             try:
-                found_needs = filter_needs(app, app.env.needs_all_needs.values(), need_filter)
+                found_needs = filter_needs(app, env.needs_all_needs.values(), need_filter)
             except NeedsInvalidFilter as e:
                 raise NeedsInvalidFilter(
                     f"Filter not valid for needextend on page {current_needextend['docname']}:\n{e}"
@@ -96,7 +98,7 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str):
 
             for found_need in found_needs:
                 # Work in the stored needs, not on the search result
-                need = app.env.needs_all_needs[found_need["id"]]
+                need = env.needs_all_needs[found_need["id"]]
                 need["is_modified"] = True
                 need["modifications"] += 1
 
@@ -118,8 +120,8 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str):
                                 for ref_need in re.split(";|,", value):
                                     # Remove whitespaces
                                     ref_need = ref_need.strip()
-                                    if found_need["id"] not in app.env.needs_all_needs[ref_need][f"{option_name}_back"]:
-                                        app.env.needs_all_needs[ref_need][f"{option_name}_back"] += [found_need["id"]]
+                                    if found_need["id"] not in env.needs_all_needs[ref_need][f"{option_name}_back"]:
+                                        env.needs_all_needs[ref_need][f"{option_name}_back"] += [found_need["id"]]
 
                         # else it must be a normal string
                         else:
@@ -136,7 +138,7 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str):
                             # If we manipulate links, we need to delete the reference in the target need as well
                             if option_name in link_names:
                                 for ref_need in old_content:  # There may be several links
-                                    app.env.needs_all_needs[ref_need][f"{option_name}_back"].remove(found_need["id"])
+                                    env.needs_all_needs[ref_need][f"{option_name}_back"].remove(found_need["id"])
 
                         else:
                             need[option_name] = ""
@@ -155,12 +157,12 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str):
                             if option in link_names:
                                 # Remove old links
                                 for ref_need in old_content:  # There may be several links
-                                    app.env.needs_all_needs[ref_need][f"{option}_back"].remove(found_need["id"])
+                                    env.needs_all_needs[ref_need][f"{option}_back"].remove(found_need["id"])
 
                                 # Add new links
                                 for ref_need in need[option]:  # There may be several links
-                                    if found_need["id"] not in app.env.needs_all_needs[ref_need][f"{option}_back"]:
-                                        app.env.needs_all_needs[ref_need][f"{option}_back"] += [found_need["id"]]
+                                    if found_need["id"] not in env.needs_all_needs[ref_need][f"{option}_back"]:
+                                        env.needs_all_needs[ref_need][f"{option}_back"] += [found_need["id"]]
 
                         else:
                             need[option] = value
