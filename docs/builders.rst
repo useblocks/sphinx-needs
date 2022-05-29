@@ -11,7 +11,7 @@ needs
 
 The **needs** builder exports all found needs and selected filter results to a single json file.
 
-The build creates a folder **needs** and a file called **needs.json** inside a given build-folder.
+The build creates a folder called **needs** and a file called **needs.json** inside the given build-folder.
 
 Usage
 +++++
@@ -23,7 +23,7 @@ Usage
 
 .. hint::
 
-   As an alternative, you can use :ref:`needs_build_json` to create a ``needs.json`` file directly during the build
+   As an alternative, you can set the :ref:`needs_build_json` parameter in **conf.py** to create a ``needs.json`` file directly during the build
    of another output format like ``html``.
 
 History data
@@ -51,7 +51,7 @@ or :ref:`needflow` gets exported, if the option :ref:`export_id` is used in the 
 This allows to export specified filter results only.
 
 
-Example:
+|ex|
 
 .. code-block:: rst
 

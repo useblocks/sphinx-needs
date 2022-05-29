@@ -177,9 +177,6 @@ For instance, you can customize the need objects to support bugs, user stories o
    safety standard.
 
 
-
-
-
 Example
 -------
 
@@ -359,7 +356,7 @@ In the last years, we have created additional information and extensions, which 
     .. grid-item-card::
         :columns: 12 6 6 6
         :link: https://sphinx-test-reports.readthedocs.io/en/latest/
-        :img-top: /_static/sphinx-needs-card.png
+        :img-top: /_static/sphinx-test-reports-logo.png
         :class-card: border
 
         Sphinx-Test-Reports

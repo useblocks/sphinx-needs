@@ -10,7 +10,8 @@ License
 -----
 Under development
 
-* Improvement: Provides :ref:`needuml` for powerful, reusabel Need objects.
+* Improvement: Provides :ref:`needuml` for powerful, reusable Need objects.
+* Improvement: Provides :ref:`needreport` for documenting configuration used in a **Sphinx-Needs** project's **conf.py**.
 * Bugfix: Support embedded needs in embedded needs.
   (`#486 <https://github.com/useblocks/sphinxcontrib-needs/issues/486>`_)
 * Bugfix: Correct references in :ref:`needtables <needtable>` to be external or internal instead of always external.
@@ -22,7 +23,7 @@ Released: 10.05.2022
 
 * Improvement: Add permanent link layout function.
   (`#390 <https://github.com/useblocks/sphinxcontrib-needs/issues/390>`_)
-* Improvement: Support for Sphinx-Needs Docker Image.
+* Improvement: Support for **Sphinx-Needs** Docker Image.
   (`#531 <https://github.com/useblocks/sphinxcontrib-needs/issues/531>`_)  
 * Bugfix: :ref:`needextract` not correctly rendering nested :ref:`needs <need>`.
   (`#329 <https://github.com/useblocks/sphinxcontrib-needs/issues/329>`_)
@@ -296,7 +297,7 @@ Released: 23.04.2021
 
 0.5.2
 -----
-* Improvement: **Sphinx-Needs** configuration gets checked before build. (`#118 <https://github.com/useblocks/sphinxcontrib-needs/issues/118>`_)
+* Improvement: ****Sphinx-Needs**** configuration gets checked before build. (`#118 <https://github.com/useblocks/sphinxcontrib-needs/issues/118>`_)
 * Improvement: ``meta_links_all`` :ref:`layout function <layout_functions>` now supports an exclude parameter
 * Improvement: :ref:`needflow`'s :ref:`connection line and arrow type <needflow_style_start>` can be configured.
 * Improvement: Configurations added for :ref:`needflow`. Use :ref:`needs_flow_configs` to define them and :ref:`needflow_config` for activation.

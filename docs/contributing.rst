@@ -1,27 +1,27 @@
 Contributing
 ============
 
-The following provides a guide for developers wishing to contribute
+This page provides a guide for developers wishing to contribute
 to **Sphinx-Needs**.
 
 Bugs, Features and  PRs
 -----------------------
 
-| For **bug reports** and technical well described feature requests please use our issue tracker:
+For **bug reports** and well-described **technical feature requests**, please use our issue tracker:
 | https://github.com/useblocks/sphinxcontrib-needs/issues
 
-| For **feature ideas** and **questions** please use our discussion board:
+For **feature ideas** and **questions**, please use our discussion board:
 | https://github.com/useblocks/sphinxcontrib-needs/discussions
 
-If you have already created a **PR**, awesome! Just send it in. It will be checked by our CI (test and code styles) and
-a maintainer needs to perform a review, before it can be merged.
-Your PR should  contain the following parts:
+If you have already created a **PR**, you can send it in. Our CI workflow will check (test and code styles) and
+a maintainer will perform a review, before we can merge it.
+Your PR should conform with the following rules:
 
 * A meaningful description or link, which describes the change
 * The changed code (for sure :) )
 * Test cases for the change (important!)
-* Updated documentation, if behavior gets changed or new options/directives are introduced.
-* Update of ``docs/changelog.rst``.
+* Updated documentation, if you change a behavior or introduce a new option(s)/directive(s).
+* Update of :ref:`changelog <Changelog & License>`.
 * If this is your first PR, feel free to add your name in the ``AUTHORS`` file.
 
 Installing Dependencies
@@ -29,7 +29,7 @@ Installing Dependencies
 
 **Sphinx-Needs** requires only
 `Poetry <https://python-poetry.org/>`__ to be installed as a system
-dependency, the rest of the dependencies are ‘bootstrapped’ and
+dependency, the rest of the dependencies are 'bootstrapped' and
 installed in an isolated environment by Poetry.
 
 1. `Install Poetry <https://python-poetry.org/docs/#installation>`__
@@ -65,20 +65,23 @@ Use ``make list`` to get a list of available targets.
 
 Build docs
 ----------
-This will build the **Sphinx-Needs** documentation stored under ``/docs``.
-
-It will always perform a **clean** build (calls ``make clean`` before the build).
-If you want to avoid this, run the related sphinx-commands directly under ``/docs`` (e.g. ``make docs``).
+To build the **Sphinx-Needs** documentation stored under ``/docs``, run:
 
 .. code-block:: bash
 
+    # HTML output
     make docs-html
 
 or
 
 .. code-block:: bash
 
+    # PDF output
     make docs-pdf
+
+
+It will always perform a **clean** build (calls ``make clean`` before the build).
+If you want to avoid this, run the related sphinx-commands directly under ``/docs`` (e.g. ``make docs``).
 
 Check links in docs
 ~~~~~~~~~~~~~~~~~~~~
@@ -104,7 +107,7 @@ Linting & Formatting
 --------------------
 
 **Sphinx-Needs** uses `black <https://github.com/psf/black>`_ and
-`isort <https://pycqa.github.io/isort/>`_ to care about its source code formatting.
+`isort <https://pycqa.github.io/isort/>`_ to format its source code.
 
 .. code-block:: bash
 
@@ -114,7 +117,7 @@ Running Test Matrix
 -------------------
 
 This project provides a test matrix for running the tests across a range
-of python and sphinx versions. This is used primarily for continuous
+of Python and Sphinx versions. This is used primarily for continuous
 integration.
 
 `Nox <https://nox.thea.codes/en/stable/>`__ is used as a test runner.
@@ -153,7 +156,7 @@ Running Commands
 See the Poetry documentation for a list of commands.
 
 In order to run custom commands inside the isolated environment, they
-should be prefixed with “poetry run” (ie. ``poetry run <command>``).
+should be prefixed with ``poetry run`` (ie. ``poetry run <command>``).
 
 
 .. Include our contributors and maintainers.
@@ -164,8 +167,7 @@ Publishing a new release
 There is a release pipeline installed for the CI.
 
 This gets triggered automatically, if a tag is created and pushed.
-The tag most follow ``[0-9].[0-9]+.[0-9]``. Otherwise the release jobs get not triggerd.
-So other tags can still be used.
+The tag must follow the format: ``[0-9].[0-9]+.[0-9]``. Otherwise the release jobs won't trigger.
 
 The release jobs will build the source and wheel distribution and try to upload them
 to ``test.pypi.org`` and ``pypy.org``.

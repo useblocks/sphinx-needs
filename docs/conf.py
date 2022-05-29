@@ -432,8 +432,6 @@ html_sidebars = {
 # }
 
 
-# extensions.append("sphinx_immaterial")
-# html_theme = "sphinx_immaterial"
 html_logo = "./_static/sphinx-needs-logo-white.png"
 html_favicon = "./_static/sphinx-needs-logo-favicon.png"
 # material theme options (see theme.conf for more information)
@@ -446,13 +444,12 @@ html_theme_options = {
     "repo_name": "Sphinx-Needs",
     "repo_type": "github",
     "edit_uri": "blob/master/docs",
-    # "google_analytics": ["UA-XXXXX", "auto"],
     "globaltoc_collapse": True,
     "features": [
         # "navigation.expand",
         # "navigation.tabs",
         # "toc.integrate",
-        "navigation.sections",
+        # "navigation.sections",
         # "navigation.instant",
         # "header.autohide",
         "navigation.top",
