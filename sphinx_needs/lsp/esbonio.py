@@ -4,10 +4,10 @@ import os
 import pathlib
 import re
 from hashlib import blake2b
-from typing import List, Tuple
+from typing import List, Optional, Tuple, Union
 
 from esbonio.lsp import LanguageFeature
-from esbonio.lsp.rst import CompletionContext, DefinitionContext
+from esbonio.lsp.rst import CompletionContext, DefinitionContext, HoverContext
 from esbonio.lsp.sphinx import SphinxLanguageServer
 from pygls.lsp.types import (
     CompletionItem,
@@ -21,10 +21,130 @@ from pygls.lsp.types import (
 
 from sphinx_needs.lsp.needs_store import NeedsStore
 
-try:
-    from esbonio.lsp.rst import HoverContext
-except ImportError:
-    HoverContext = None  # HoverContext not merged by esbonio yet
+
+class NeedlsFeatures(LanguageFeature):  # type: ignore[misc]
+    """Sphinx-Needs features support for the language server."""
+
+    def __init__(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        super().__init__(*args, **kwargs)
+        self.needs_store = NeedsStore()
+
+    # Open-Needs-IDE language features completion triggers: '>', '/', ':', '.'
+    completion_triggers = [re.compile(r"(>)|(\.\.)|(:)|(\/)")]
+
+    def complete(self, context: CompletionContext) -> List[CompletionItem]:
+        # load needs.json
+        needs_json = os.path.join(self.rst.app.confdir, "_build/needs/needs.json")
+        self.needs_store.load_needs(needs_json)
+
+        self.logger.debug(f"NeedsStore needs: {self.needs_store.needs}")
+        # check if needs initialzed
+        if not self.needs_store.needs_initialized:
+            return []
+
+        lines, word = get_lines_and_word(self, context)
+        line_number = context.position.line
+        if line_number >= len(lines):
+            self.logger.info(f"line {line_number} is empty, no completion trigger characters detected")
+            return []
+        line = lines[line_number]
+
+        # if word starts with '->' or ':need:->', complete_need_link
+        if word.startswith("->") or word.startswith(":need:`->"):
+            new_word = word.replace(":need:`->", "->")
+            new_word = new_word.replace("`", "")  # in case need:`->...>...`
+            return complete_need_link(self, context, lines, line, new_word)
+
+        # if word starts with ':', complete_role_or_option
+        if word.startswith(":"):
+            return complete_role_or_option(self, context, lines, word)
+
+        # if word starts with '..', complete_directive
+        if word.startswith(".."):
+            return complete_directive(self, context, lines, word)
+
+        return []
+
+    hover_triggers = [re.compile(r".*")]
+
+    def hover(self, context: HoverContext) -> str:
+        """Return textDocument/hover response value."""
+        self.logger.debug(f"hover params: {context}")
+
+        # load needs.json
+        needs_json = os.path.join(self.rst.app.confdir, "_build/needs/needs.json")
+        self.needs_store.load_needs(needs_json)
+        try:
+            need_id = get_need_type_and_id(self, context)[1]
+        except IndexError:
+            return ""
+        if not need_id:
+            return ""
+
+        try:
+            title = self.needs_store.needs[need_id]["title"]
+            description = self.needs_store.needs[need_id]["description"]
+            hover_value = f"**{title}**\n\n```\n{description}\n```"
+            return hover_value
+        except KeyError:
+            # need is not in the database
+            return ""
+
+    definition_triggers = [re.compile(r".*")]
+
+    def definition(self, context: DefinitionContext) -> List[Location]:
+        """Return location of definition of a need."""
+        # load needs.json
+        needs_json = os.path.join(self.rst.app.confdir, "_build/needs/needs.json")
+        self.needs_store.load_needs(needs_json)
+
+        if not self.needs_store.is_setup():
+            return []
+
+        need_type, need_id = get_need_type_and_id(self, context)
+
+        # get need defining doc
+        try:
+            need = self.needs_store.needs[need_id]
+        except KeyError:
+            return []
+
+        doc_path = os.path.join(self.rst.app.confdir, need["docname"])
+        if os.path.exists(doc_path + ".rst"):
+            doc_path = doc_path + ".rst"
+        elif os.path.exists(doc_path + ".rest"):
+            doc_path = doc_path + ".rest"
+        else:
+            return []
+        doc_uri = pathlib.Path(doc_path).as_uri()
+
+        # get the need definition position (line, col) from file
+        with open(doc_path) as file:
+            source_lines = file.readlines()
+        # get the line number
+        line_count = 0
+        line_no = None
+        pattern = f":id: {need_id}"
+        for line in source_lines:
+            if pattern in line:
+                line_no = line_count
+                break
+            line_count = line_count + 1
+        if not line_no:
+            return []
+
+        # get line of directive (e.g., .. req::)
+        line_directive = None
+        pattern = f".. {need_type}::"
+        for line_count in range(line_no - 1, -1, -1):
+            if pattern in source_lines[line_count]:
+                line_directive = line_count
+                break
+        if not line_directive:
+            return []
+
+        pos = Position(line=line_directive, character=0)
+        return [Location(uri=doc_uri, range=Range(start=pos, end=pos))]
 
 
 def col_to_word_index(col: int, words: List[str]) -> int:
@@ -39,15 +159,15 @@ def col_to_word_index(col: int, words: List[str]) -> int:
     return index - 1
 
 
-def get_lines(ls, params) -> List[str]:
+def get_lines(ls: NeedlsFeatures, params: Union[CompletionContext, DefinitionContext, HoverContext]) -> List[str]:
     """Get all text lines in the current document."""
     text_doc = params.doc
     ls.logger.debug(f"text_doc: {text_doc}")
     source = text_doc.source
-    return source.splitlines()
+    return source.splitlines()  # type: ignore[no-any-return]
 
 
-def get_word(ls, params) -> str:
+def get_word(ls: NeedlsFeatures, params: Union[CompletionContext, DefinitionContext, HoverContext]) -> str:
     """Return the word in a line of text at a character position."""
     line_no, col = params.position
     lines = get_lines(ls, params)
@@ -56,15 +176,17 @@ def get_word(ls, params) -> str:
     line = lines[line_no]
     words = line.split()
     index = col_to_word_index(col, words)
-    return words[index]
+    return words[index]  # type: ignore[no-any-return]
 
 
-def get_lines_and_word(ls, params) -> Tuple[List[str], str]:
+def get_lines_and_word(ls: NeedlsFeatures, params: CompletionContext) -> Tuple[List[str], str]:
     return (get_lines(ls, params), get_word(ls, params))
 
 
-def get_need_type_and_id(ls, params) -> Tuple[str, str]:
-    """Return tupel (need_type, need_id) for a given document position."""
+def get_need_type_and_id(
+    ls: NeedlsFeatures, params: Union[DefinitionContext, HoverContext]
+) -> Tuple[Optional[str], Optional[str]]:
+    """Return tuple (need_type, need_id) for a given document position."""
     word = get_word(ls, params)
     for need in ls.needs_store.needs.values():
         if need["id"] in word:
@@ -72,14 +194,14 @@ def get_need_type_and_id(ls, params) -> Tuple[str, str]:
     return (None, None)
 
 
-def doc_completion_items(ls, docs: List[str], doc_pattern: str) -> List[CompletionItem]:
+def doc_completion_items(ls: NeedlsFeatures, docs: List[str], doc_pattern: str) -> List[CompletionItem]:
     """Return completion items for a given doc pattern."""
 
     # calc all doc paths that start with the given pattern
     all_paths = [doc for doc in docs if doc.startswith(doc_pattern)]
 
     if len(all_paths) == 0:
-        return
+        return []
 
     # leave if there is just one path
     if len(all_paths) == 1:
@@ -124,7 +246,9 @@ def doc_completion_items(ls, docs: List[str], doc_pattern: str) -> List[Completi
     return items
 
 
-def complete_need_link(ls, params: CompletionContext, lines: List[str], line: str, word: str):
+def complete_need_link(
+    ls: NeedlsFeatures, params: CompletionContext, lines: List[str], line: str, word: str
+) -> List[CompletionItem]:
     # specify the need type, e.g.,
     # ->req
     if word.count(">") == 1:
@@ -171,8 +295,10 @@ def complete_need_link(ls, params: CompletionContext, lines: List[str], line: st
                 if need["type"] == requested_type
             ]
 
+    return []
 
-def generate_hash(user_name, doc_uri, need_prefix, line_number):
+
+def generate_hash(user_name: str, doc_uri: str, need_prefix: str, line_number: int) -> str:
     salt = os.urandom(blake2b.SALT_SIZE)  # pylint: disable=no-member
     return blake2b(
         f"{user_name}{doc_uri}{need_prefix}{line_number}".encode(),
@@ -181,7 +307,9 @@ def generate_hash(user_name, doc_uri, need_prefix, line_number):
     ).hexdigest()
 
 
-def generate_need_id(ls, params, lines: List[str], word: str, need_type: str = None) -> str:
+def generate_need_id(
+    ls: NeedlsFeatures, params: CompletionContext, lines: List[str], word: str, need_type: Optional[str] = None
+) -> str:
     """Generate a need ID including hash suffix."""
 
     user_name = getpass.getuser()
@@ -191,11 +319,11 @@ def generate_need_id(ls, params, lines: List[str], word: str, need_type: str = N
     if not need_type:
         try:
             match = re.search(".. ([a-z]+)::", lines[line_number - 1])
-            need_type = match.group(1)
+            need_type = match.group(1)  # type: ignore[union-attr]
         except AttributeError:
             return "ID"
 
-    need_prefix = need_type.upper()
+    need_prefix = need_type.upper()  # type: ignore[union-attr]
     hash_part = generate_hash(user_name, doc_uri, need_prefix, line_number)
     need_id = need_prefix + "_" + hash_part
     # re-generate hash if ID is already in use
@@ -205,7 +333,9 @@ def generate_need_id(ls, params, lines: List[str], word: str, need_type: str = N
     return need_id
 
 
-def complete_directive(ls, params, lines: List[str], word: str):
+def complete_directive(
+    ls: NeedlsFeatures, params: CompletionContext, lines: List[str], word: str
+) -> List[CompletionItem]:
     # need_type ~ req, work, act, ...
     items = []
     for need_type, title in ls.needs_store.declared_types.items():
@@ -228,7 +358,9 @@ def complete_directive(ls, params, lines: List[str], word: str):
     return items
 
 
-def complete_role_or_option(ls, params, lines: List[str], word: str):
+def complete_role_or_option(
+    ls: NeedlsFeatures, params: CompletionContext, lines: List[str], word: str
+) -> List[CompletionItem]:
     return [
         CompletionItem(
             label=":id:",
@@ -247,132 +379,7 @@ def complete_role_or_option(ls, params, lines: List[str], word: str):
     ]
 
 
-class NeedlsFeatures(LanguageFeature):
-    """Sphinx-Needs features support for the language server."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.needs_store = NeedsStore()
-
-    # Open-Needs-IDE language features completion triggers: '>', '/', ':', '.'
-    completion_triggers = [re.compile(r"(>)|(\.\.)|(:)|(\/)")]
-
-    def complete(self, context: CompletionContext) -> List[CompletionItem]:
-        # load needs.json
-        needs_json = os.path.join(self.rst.app.confdir, "_build/needs/needs.json")
-        self.needs_store.load_needs(needs_json)
-
-        self.logger.debug(f"NeedsStore needs: {self.needs_store.needs}")
-        # check if needs initialzed
-        if not self.needs_store.needs_initialized:
-            return []
-
-        lines, word = get_lines_and_word(self, context)
-        line_number = context.position.line
-        if line_number >= len(lines):
-            self.logger.info(f"line {line_number} is empty, no completion trigger characters detected")
-            return []
-        line = lines[line_number]
-
-        # if word starts with '->' or ':need:->', complete_need_link
-        if word.startswith("->") or word.startswith(":need:`->"):
-            new_word = word.replace(":need:`->", "->")
-            new_word = new_word.replace("`", "")  # in case need:`->...>...`
-            return complete_need_link(self, context, lines, line, new_word)
-
-        # if word starts with ':', complete_role_or_option
-        if word.startswith(":"):
-            return complete_role_or_option(self, context, lines, word)
-
-        # if word starts with '..', complete_directive
-        if word.startswith(".."):
-            return complete_directive(self, context, lines, word)
-
-        return []
-
-    hover_triggers = [re.compile(r".*")]
-
-    def hover(self, context: HoverContext):
-        """Return textDocument/hover response value."""
-        self.logger.debug(f"hover params: {context}")
-
-        # load needs.json
-        needs_json = os.path.join(self.rst.app.confdir, "_build/needs/needs.json")
-        self.needs_store.load_needs(needs_json)
-        try:
-            need_id = get_need_type_and_id(self, context)[1]
-        except IndexError:
-            return ""
-        if not need_id:
-            return ""
-
-        try:
-            title = self.needs_store.needs[need_id]["title"]
-            description = self.needs_store.needs[need_id]["description"]
-            hover_value = f"**{title}**\n\n```\n{description}\n```"
-            return hover_value
-        except KeyError:
-            # need is not in the database
-            return ""
-
-    definition_triggers = [re.compile(r".*")]
-
-    def definition(self, context: DefinitionContext):
-        """Return location of definition of a need."""
-        # load needs.json
-        needs_json = os.path.join(self.rst.app.confdir, "_build/needs/needs.json")
-        self.needs_store.load_needs(needs_json)
-
-        if not self.needs_store.is_setup():
-            return
-
-        need_type, need_id = get_need_type_and_id(self, context)
-
-        # get need defining doc
-        try:
-            need = self.needs_store.needs[need_id]
-        except KeyError:
-            return None
-
-        doc_path = os.path.join(self.rst.app.confdir, need["docname"])
-        if os.path.exists(doc_path + ".rst"):
-            doc_path = doc_path + ".rst"
-        elif os.path.exists(doc_path + ".rest"):
-            doc_path = doc_path + ".rest"
-        else:
-            return None
-        doc_uri = pathlib.Path(doc_path).as_uri()
-
-        # get the need definition position (line, col) from file
-        with open(doc_path) as file:
-            source_lines = file.readlines()
-        # get the line number
-        line_count = 0
-        line_no = None
-        pattern = f":id: {need_id}"
-        for line in source_lines:
-            if pattern in line:
-                line_no = line_count
-                break
-            line_count = line_count + 1
-        if not line_no:
-            return None
-
-        # get line of directive (e.g., .. req::)
-        line_directive = None
-        pattern = f".. {need_type}::"
-        for line_count in range(line_no - 1, -1, -1):
-            if pattern in source_lines[line_count]:
-                line_directive = line_count
-                break
-        if not line_directive:
-            return None
-
-        pos = Position(line=line_directive, character=0)
-        return [Location(uri=doc_uri, range=Range(start=pos, end=pos))]
-
-
-def esbonio_setup(rst: SphinxLanguageServer):
+def esbonio_setup(rst: SphinxLanguageServer) -> None:
     rst.logger.debug("Starting register Sphinx-Needs language features...")
     needls_features = NeedlsFeatures(rst)
     rst.add_feature(needls_features)

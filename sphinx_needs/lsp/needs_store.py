@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import sys
+from typing import Any, Dict, List, Optional
 
 from sphinx_needs.lsp.exceptions import NeedlsConfigException
 
@@ -15,15 +16,15 @@ from sphinx_needs.lsp.exceptions import NeedlsConfigException
 class NeedsStore:
     """Abstraction of needs database."""
 
-    def __init__(self):
-        self.docs_per_type = {}  # key: need type, val: list of doc names (str)
-        self.needs_per_doc = {}  # key: docname; val: list of needs
-        self.types = []  # list of need types actually defined in needs.json
-        self.declared_types = {}  # types declared in conf.py: {'need directive': 'need title'}
-        self.needs = {}
-        self.needs_initialized = False
-        self.docs_root = None
-        self.conf_py_path = None
+    def __init__(self) -> None:
+        self.docs_per_type: Dict[str, List[str]] = {}  # key: need type, val: list of doc names (str)
+        self.needs_per_doc: Dict[Optional[str], List[Dict[Optional[str], Any]]] = {}  # key: docname; val: list of needs
+        self.types: List[str] = []  # list of need types actually defined in needs.json
+        self.declared_types: Dict[str, str] = {}  # types declared in conf.py: {'need directive': 'need title'}
+        self.needs: Dict[Optional[str], Dict[Optional[str], Any]] = {}
+        self.needs_initialized: bool = False
+        self.docs_root: Optional[str] = None
+        self.conf_py_path: str = ""
 
     def is_setup(self) -> bool:
         """Return True if database is ready for use."""
@@ -60,7 +61,7 @@ class NeedsStore:
         module = importlib.util.module_from_spec(spec)
         sys.modules[module_name] = module
         try:
-            spec.loader.exec_module(module)
+            spec.loader.exec_module(module)  # type: ignore[union-attr]
         except Exception as e:
             logging.error(f"Failed to exccute module {module} -> {e}")
 

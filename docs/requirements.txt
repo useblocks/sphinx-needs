@@ -9,4 +9,4 @@ sphinx-design
 click
 tabulate
 sphinx-immaterial
-esbonio
+esbonio>=0.13.0
