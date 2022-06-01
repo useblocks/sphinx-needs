@@ -39,6 +39,8 @@ requests-file = "^1.5.1"  # external links
 requests = "^2.25.1"  # external_links
 jsonschema = "3.2.0"  # needsimport schema validation
 sphinx-data-viewer = "^0.1.1"  # needservice debug output
+esbonio = ">=0.11.3"  # IDE language features
+pygls = "*"  # esbonio dependency
 
 [tool.poetry.dev-dependencies]
 pre-commit = "^2"
