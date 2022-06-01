@@ -102,6 +102,22 @@ If only one single need shall get modified, the argument of ``needextend`` can j
     :ref:`needs_id_regex` and a need with this ID must exist!
     Otherwise the argument is taken as normal filter string.
 
+Setting default option values
+-----------------------------
+You can use ``needextend``'s filter string to set default option values for a group of needs.
+
+|ex|
+
+The following example would set the status of all needs in the document
+``docs/directives/needextend.rst``, which do not have the status set explicitly, to ``open``.
+
+.. code-block:: rst
+
+   .. needextend:: (docname == "docs/directives/needextend") and (status is None)
+      :status: open
+
+See also: :ref:`needs_global_options` for setting a default option value for all needs.
+
 Changing links
 --------------
 Options containing links get handled in two steps:
