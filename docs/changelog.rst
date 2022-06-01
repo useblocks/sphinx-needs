@@ -10,7 +10,7 @@ License
 -----
 Under development
 
-* Improvement: Provides :ref:`needuml` for powerful, reusabel Need objects.
+* Improvement: Provides :ref:`needuml` for powerful, reusable Need objects.
 * Bugfix: Support embedded needs in embedded needs.
   (`#486 <https://github.com/useblocks/sphinxcontrib-needs/issues/486>`_)
 * Bugfix: Correct references in :ref:`needtables <needtable>` to be external or internal instead of always external.
