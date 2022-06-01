@@ -257,7 +257,7 @@ def add_sections(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None
     be used in tables and filters"""
     needs = getattr(app.builder.env, "needs_all_needs", {})
     for need_info in needs.values():
-        # first we initilaize to default values
+        # first we initialize to default values
         if "sections" not in need_info:
             need_info["sections"] = []
 
@@ -324,7 +324,7 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
 @profile("NEED_PRINT")
 def print_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     """
-    Finally creates the need-node in the docurils node-tree.
+    Finally creates the need-node in the docutils node-tree.
 
     :param app:
     :param doctree:
@@ -379,8 +379,7 @@ def create_back_links(env: BuildEnvironment, option) -> None:
     But do this only once, as all needs are already collected and this sorting is for all
     needs and not only for the ones of the current document.
 
-    :param env: sphinx enviroment
-    :return: None
+    :param env: sphinx environment
     """
     option_back = f"{option}_back"
     if env.needs_workflow[f"backlink_creation_{option}"]:

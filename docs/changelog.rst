@@ -228,8 +228,8 @@ Released: 23.04.2021
 * Support: Removes support for Sphinx version <3.0 (Sphinx 2.x may still work, but it gets not tested).
 * Improvement: Internal change to poetry, nox and github actions.
   (`#216 <https://github.com/useblocks/sphinxcontrib-needs/issues/216>`_)
-* Bugfix: Need-service calls get mocked during tests, so that tests don't need reachable external services anymore.
-* Bugfix: No warning is thrown anymore, if :ref:`needservice` can't find a service config in **conf.py**
+* Bugfix: Need-service calls get mocked during tests, so that tests don't need reachable external services any more.
+* Bugfix: No warning is thrown any more, if :ref:`needservice` can't find a service config in **conf.py**
   (`#168 <https://github.com/useblocks/sphinxcontrib-needs/issues/168>`_)
 * Bugfix: Needs nodes get ``ids`` set directly, to avoid empty ids given by sphinx or other extensions for need-nodes.
   (`#193 <https://github.com/useblocks/sphinxcontrib-needs/issues/193>`_)
@@ -238,7 +238,7 @@ Released: 23.04.2021
 * Bugfix: Checking for ending `/` of given github api url.
   (`#187 <https://github.com/useblocks/sphinxcontrib-needs/issues/187>`_)
 * Bugfix: Using correct indention for pre and post_template function of needs.
-* Bugfix: Certain log message don't use python internal `id` anymore.
+* Bugfix: Certain log message don't use python internal `id` any more.
   (`#257 <https://github.com/useblocks/sphinxcontrib-needs/issues/225>`_)
 * Bugfix: JS-code for meta area collapse is working again.
   (`#242 <https://github.com/useblocks/sphinxcontrib-needs/issues/242>`_)
@@ -270,7 +270,7 @@ Released: 23.04.2021
 * Improvement: Added two new need-options: :ref:`need_duration` and :ref:`need_completion`
 * Improvement: Configuration option :ref:`needs_duration_option` and :ref:`needs_completion_option` added
 * Bugfix: Using of `tags.has() <https://www.sphinx-doc.org/en/master/usage/configuration.html#conf-tags>`_ in
-  **conf.py** does not raise an exception anymore. (`#142 <https://github.com/useblocks/sphinxcontrib-needs/issues/142>`_)
+  **conf.py** does not raise an exception any more. (`#142 <https://github.com/useblocks/sphinxcontrib-needs/issues/142>`_)
 * Improvement: Clean up of internal configuration handling and avoiding needs_functions to get pickled by sphinx.
 
 
@@ -385,7 +385,7 @@ custom css definitions you need to update them.
 
 0.3.13
 ------
-* Bugfix: Filters on needs with ``id_parent`` or ``id_complete`` do not raise an exception anymore and filters
+* Bugfix: Filters on needs with ``id_parent`` or ``id_complete`` do not raise an exception any more and filters
   gets executed correctly.
 
 0.3.12
@@ -519,7 +519,7 @@ custom css definitions you need to update them.
 
 0.1.49
 ------
-* Bugfix: Supporting plantnuml >= 0.9 (`#38 <https://github.com/useblocks/sphinxcontrib-needs/issues/38>`_)
+* Bugfix: Supporting plantuml >= 0.9 (`#38 <https://github.com/useblocks/sphinxcontrib-needs/issues/38>`_)
 * Bugfix: need_outgoing does not crash, if given need-id does not exist (`#32 <https://github.com/useblocks/sphinxcontrib-needs/issues/32>`_)
 
 0.1.48
@@ -575,7 +575,7 @@ custom css definitions you need to update them.
 0.1.38
 ------
 * Improvement: **:links:**, **:tags:** and other list-based options can handle "," as delimiter
-   (beside documented ";"). No spooky errors are thrown anymore if "," is used accidentally.
+   (beside documented ";"). No spooky errors are thrown any more if "," is used accidentally.
 
 0.1.37
 ------
@@ -608,7 +608,7 @@ custom css definitions you need to update them.
 ------
 * Bugfix: Setting correct working directory during conf.py import
 * Bugfix: Better config handling, if Sphinx builds gets called multiple times during one single python process. (Configs from prio sphinx builds may still be active.)
-* Bugifx: Some cleanups for using Sphinx >= 1.6
+* Bugifx: Some clean ups for using Sphinx >= 1.6
 
 0.1.31
 ------
