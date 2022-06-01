@@ -206,7 +206,7 @@ class NeedimportDirective(Directive):
 
     @property
     def docname(self) -> str:
-        return self.env.docname  # type: ignore[no-any-return]
+        return self.env.docname
 
 
 class VersionNotFound(BaseException):

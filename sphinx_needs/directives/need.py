@@ -1,5 +1,6 @@
 import hashlib
 import re
+import typing
 from typing import Any, Dict, List, Sequence
 
 from docutils import nodes
@@ -19,7 +20,7 @@ from sphinx_needs.functions.functions import check_and_get_content
 from sphinx_needs.layout import build_need
 from sphinx_needs.logging import get_logger
 from sphinx_needs.nodes import Need
-from sphinx_needs.utils import profile
+from sphinx_needs.utils import profile, unwrap
 
 logger = get_logger(__name__)
 
@@ -208,7 +209,7 @@ def get_sections_and_signature_and_needs(need_info):
     current_node = need_info["target_node"]
     while current_node:
         if isinstance(current_node, nodes.section):
-            title = current_node.children[0].astext()
+            title = typing.cast(str, current_node.children[0].astext())  # type: ignore[no-untyped-call]
             # If using auto-section numbering, then Sphinx inserts
             # multiple non-breaking space unicode characters into the title
             # we'll replace those with a simple space to make them easier to
@@ -255,7 +256,10 @@ def purge_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> None:
 def add_sections(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     """Add section titles to the needs as additional attributes that can
     be used in tables and filters"""
-    needs = getattr(app.builder.env, "needs_all_needs", {})
+    builder = unwrap(app.builder)
+    env = unwrap(builder.env)
+
+    needs = getattr(env, "needs_all_needs", {})
     for need_info in needs.values():
         # first we initialize to default values
         if "sections" not in need_info:
@@ -304,7 +308,8 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
             node.parent.remove(node)
         return
 
-    env = app.builder.env
+    builder = unwrap(app.builder)
+    env = unwrap(builder.env)
 
     # If no needs were defined, we do not need to do anything
     if not hasattr(env, "needs_all_needs"):
@@ -331,7 +336,8 @@ def print_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
     :param fromdocname:
     :return:
     """
-    env = app.builder.env
+    builder = unwrap(app.builder)
+    env = unwrap(builder.env)
     needs = env.needs_all_needs
 
     for node_need in doctree.traverse(Need):

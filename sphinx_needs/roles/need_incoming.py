@@ -2,12 +2,8 @@ from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.util.nodes import make_refnode
 
-from sphinx_needs.utils import check_and_calc_base_url_rel_path
-
-try:
-    from sphinx.errors import NoUri  # Sphinx 3.0
-except ImportError:
-    from sphinx.environment import NoUri  # Sphinx < 3.0
+from sphinx_needs.errors import NoUri
+from sphinx_needs.utils import check_and_calc_base_url_rel_path, unwrap
 
 
 class NeedIncoming(nodes.Inline, nodes.Element):
@@ -15,7 +11,8 @@ class NeedIncoming(nodes.Inline, nodes.Element):
 
 
 def process_need_incoming(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
-    env = app.builder.env
+    builder = unwrap(app.builder)
+    env = unwrap(builder.env)
 
     for node_need_backref in doctree.traverse(NeedIncoming):
         node_link_container = nodes.inline()
@@ -46,7 +43,7 @@ def process_need_incoming(app: Sphinx, doctree: nodes.document, fromdocname: str
 
                     if not target_need["is_external"]:
                         new_node_ref = make_refnode(
-                            app.builder,
+                            builder,
                             fromdocname,
                             target_need["docname"],
                             target_need["target_node"]["refid"],

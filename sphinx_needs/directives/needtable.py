@@ -14,7 +14,7 @@ from sphinx_needs.directives.utils import (
 )
 from sphinx_needs.filter_common import FilterBase, process_filters
 from sphinx_needs.functions.functions import check_and_get_content
-from sphinx_needs.utils import profile, row_col_maker
+from sphinx_needs.utils import profile, row_col_maker, unwrap
 
 
 class Needtable(nodes.General, nodes.Element):
@@ -120,7 +120,8 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     :param fromdocname:
     :return:
     """
-    env = app.builder.env
+    builder = unwrap(app.builder)
+    env = unwrap(builder.env)
 
     # Create a link_type dictionary, which keys-list can be easily used to find columns
     link_type_list = {}

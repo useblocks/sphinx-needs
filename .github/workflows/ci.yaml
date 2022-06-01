@@ -50,4 +50,9 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: "3.9"
+      - name: Install Poetry
+        run: |
+          curl -sL https://install.python-poetry.org | python -
+      - name: Install Dependencies
+        run: poetry install
       - uses: pre-commit/action@v2.0.3
