@@ -15,6 +15,8 @@ Under development
   (`#486 <https://github.com/useblocks/sphinxcontrib-needs/issues/486>`_)
 * Bugfix: Correct references in :ref:`needtables <needtable>` to be external or internal instead of always external.
 * Bugfix: Correct documentation and configuration in :ref:`need_tags` to *list* type.
+* Improvement: Provides initial support for Sphinx-Needs IDE language features.
+  (`#584 <https://github.com/useblocks/sphinxcontrib-needs/pull/584>`_)
 
 0.7.9
 -----
