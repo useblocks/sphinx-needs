@@ -60,10 +60,14 @@ class NeedsStore:
 
         module = importlib.util.module_from_spec(spec)
         sys.modules[module_name] = module
-        try:
-            spec.loader.exec_module(module)  # type: ignore[union-attr]
-        except Exception as e:
-            logging.error(f"Failed to exccute module {module} -> {e}")
+
+        if spec.loader:
+            try:
+                spec.loader.exec_module(module)
+            except Exception as e:
+                logging.error(f"Failed to exccute module {module} -> {e}")
+        else:
+            raise ImportError(f"Python ModuleSpec Loader{spec.loader} not found.")
 
         need_types = getattr(module, "needs_types", [])
         if not need_types:

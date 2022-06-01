@@ -22,11 +22,11 @@ from pygls.lsp.types import (
 from sphinx_needs.lsp.needs_store import NeedsStore
 
 
-class NeedlsFeatures(LanguageFeature):  # type: ignore[misc]
+class NeedlsFeatures(LanguageFeature):
     """Sphinx-Needs features support for the language server."""
 
-    def __init__(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
-        super().__init__(*args, **kwargs)
+    def __init__(self, rst: SphinxLanguageServer) -> None:
+        super().__init__(rst)
         self.needs_store = NeedsStore()
 
     # Open-Needs-IDE language features completion triggers: '>', '/', ':', '.'
@@ -164,7 +164,8 @@ def get_lines(ls: NeedlsFeatures, params: Union[CompletionContext, DefinitionCon
     text_doc = params.doc
     ls.logger.debug(f"text_doc: {text_doc}")
     source = text_doc.source
-    return source.splitlines()  # type: ignore[no-any-return]
+    lines: List[str] = source.splitlines()
+    return lines
 
 
 def get_word(ls: NeedlsFeatures, params: Union[CompletionContext, DefinitionContext, HoverContext]) -> str:
@@ -176,7 +177,8 @@ def get_word(ls: NeedlsFeatures, params: Union[CompletionContext, DefinitionCont
     line = lines[line_no]
     words = line.split()
     index = col_to_word_index(col, words)
-    return words[index]  # type: ignore[no-any-return]
+    word: str = words[index]
+    return word
 
 
 def get_lines_and_word(ls: NeedlsFeatures, params: CompletionContext) -> Tuple[List[str], str]:
@@ -241,7 +243,7 @@ def doc_completion_items(ls: NeedlsFeatures, docs: List[str], doc_pattern: str) 
         if sub_path.find(".rst") > -1:
             kind = CompletionItemKind.File
         else:
-            kind = 19  # Folder
+            kind = CompletionItemKind.Folder
         items.append(CompletionItem(label=sub_path, kind=kind, detail="path to needs doc"))
     return items
 
@@ -317,13 +319,16 @@ def generate_need_id(
     line_number = params.position.line
 
     if not need_type:
-        try:
-            match = re.search(".. ([a-z]+)::", lines[line_number - 1])
-            need_type = match.group(1)  # type: ignore[union-attr]
-        except AttributeError:
+        match = re.search(".. ([a-z]+)::", lines[line_number - 1])
+        if match:
+            need_type = match.group(1)
+            if not need_type:
+                return "ID"
+        else:
             return "ID"
 
-    need_prefix = need_type.upper()  # type: ignore[union-attr]
+    need_prefix = need_type.upper()
+
     hash_part = generate_hash(user_name, doc_uri, need_prefix, line_number)
     need_id = need_prefix + "_" + hash_part
     # re-generate hash if ID is already in use
