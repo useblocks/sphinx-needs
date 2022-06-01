@@ -6,9 +6,13 @@ import re
 from hashlib import blake2b
 from typing import List, Optional, Tuple, Union
 
-from esbonio.lsp import LanguageFeature
-from esbonio.lsp.rst import CompletionContext, DefinitionContext, HoverContext
-from esbonio.lsp.sphinx import SphinxLanguageServer
+from esbonio.lsp import LanguageFeature  # type: ignore[attr-defined]
+from esbonio.lsp.rst import (  # type: ignore[attr-defined]
+    CompletionContext,
+    DefinitionContext,
+    HoverContext,
+)
+from esbonio.lsp.sphinx import SphinxLanguageServer  # type: ignore[attr-defined]
 from pygls.lsp.types import (
     CompletionItem,
     CompletionItemKind,
@@ -22,7 +26,7 @@ from pygls.lsp.types import (
 from sphinx_needs.lsp.needs_store import NeedsStore
 
 
-class NeedlsFeatures(LanguageFeature):
+class NeedlsFeatures(LanguageFeature):  # type: ignore[misc]
     """Sphinx-Needs features support for the language server."""
 
     def __init__(self, rst: SphinxLanguageServer) -> None:
