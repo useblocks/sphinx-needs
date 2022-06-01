@@ -37,7 +37,7 @@ the container), as well as the base to build your own images.
 .. note::
    The image does not include latex packages and therefore does 
    not support PDF generation. Please use the latex-pdf version below for 
-   such usecases.
+   such use cases.
 
 Included Tools
 ^^^^^^^^^^^^^^

@@ -64,7 +64,7 @@ class NeedextractDirective(FilterBase):
 
 def process_needextract(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     """
-    Replace all needextrac nodes with a list of the collected needs.
+    Replace all needextract nodes with a list of the collected needs.
     """
     env = app.builder.env
 

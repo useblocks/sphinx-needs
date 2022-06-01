@@ -164,7 +164,7 @@ Publishing a new release
 There is a release pipeline installed for the CI.
 
 This gets triggered automatically, if a tag is created and pushed.
-The tag most follow ``[0-9].[0-9]+.[0-9]``. Otherwise the release jobs get not triggerd.
+The tag most follow ``[0-9].[0-9]+.[0-9]``. Otherwise the release jobs get not triggered.
 So other tags can still be used.
 
 The release jobs will build the source and wheel distribution and try to upload them

@@ -413,7 +413,7 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str):
         # Add lineno to node
         image_node.line = current_needbar["lineno"]
 
-        # normaly the title is more understandable for a person who needs alt
+        # normally the title is more understandable for a person who needs alt
         if current_needbar["title"]:
             image_node["alt"] = current_needbar["title"].strip()
 

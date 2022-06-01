@@ -9,7 +9,7 @@ table.NEEDS_TABLE, table.NEEDS_DATATABLES {
   overflow-x: auto;
   white-space: normal;
   width: 100%;
-  /* If this is set, col->width does not work anymore*/
+  /* If this is set, col->width does not work any more*/
   /*max-width: -moz-fit-content;*/
   /*max-width: fit-content;*/
   margin: 0 auto;
