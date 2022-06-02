@@ -41,6 +41,12 @@ class NeedlsFeatures(LanguageFeature):  # type: ignore[misc]
         needs_json = os.path.join(self.rst.app.confdir, "_build/needs/needs.json")
         self.needs_store.load_needs(needs_json)
 
+        # check and set conf.py path
+        conf_py_path = os.path.join(self.rst.app.confdir, "conf.py")
+        self.needs_store.set_conf_py(conf_py_path)
+        # set declared need types
+        self.needs_store.set_declared_types()
+
         self.logger.debug(f"NeedsStore needs: {self.needs_store.needs}")
         # check if needs initialzed
         if not self.needs_store.needs_initialized:
