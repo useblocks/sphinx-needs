@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import sys
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from sphinx_needs.lsp.exceptions import NeedlsConfigException
@@ -23,34 +24,30 @@ class NeedsStore:
         self.declared_types: Dict[str, str] = {}  # types declared in conf.py: {'need directive': 'need title'}
         self.needs: Dict[Optional[str], Dict[Optional[str], Any]] = {}
         self.needs_initialized: bool = False
-        self.conf_py_path: str = ""
+        self.conf_py_path: Path = Path()
 
     def is_setup(self) -> bool:
         """Return True if database is ready for use."""
 
-        if not self.needs_initialized:
-            return False
+        return self.needs_initialized
 
-        return True
-
-    def set_conf_py(self, conf_py_path: str) -> None:
-        if not os.path.exists(conf_py_path):
-            raise FileNotFoundError(f"Given custom configuration file {conf_py_path} not found.")
-        self.conf_py_path = conf_py_path
+    def set_conf_py(self, conf_py: Path) -> None:
+        if not conf_py.exists():
+            raise FileNotFoundError(f"Given custom configuration file {conf_py} not found.")
+        self.conf_py_path = conf_py
 
     def set_declared_types(self) -> None:
         module_name = "conf"
-        work_dir = os.getcwd()
-        conf_py_path = self.conf_py_path
-        conf_py_dir = os.path.dirname(conf_py_path)
-        conf_py_name = os.path.basename(conf_py_path)
+        work_dir = Path.cwd()
+        conf_py = self.conf_py_path
+        conf_py_dir = conf_py.parent
         os.chdir(conf_py_dir)
 
-        logging.info(f"Loading need_types from {conf_py_name}...")
+        logging.info(f"Loading need_types from {conf_py.name}...")
 
-        spec = importlib.util.spec_from_file_location(module_name, conf_py_path)
+        spec = importlib.util.spec_from_file_location(module_name, conf_py)
         if spec is None:
-            raise ImportError(f"Created module spec {spec} from {conf_py_name} not exists.")
+            raise ImportError(f"Created module spec {spec} from {conf_py.name} not exists.")
 
         module = importlib.util.module_from_spec(spec)
         sys.modules[module_name] = module
@@ -65,21 +62,21 @@ class NeedsStore:
 
         need_types = getattr(module, "needs_types", [])
         if not need_types:
-            raise NeedlsConfigException(f"No 'need_types' defined on {conf_py_name}")
+            raise NeedlsConfigException(f"No 'need_types' defined on {conf_py.name}")
 
         self.declared_types = {}
         for item in need_types:
             self.declared_types[item["directive"]] = item["title"]
         os.chdir(work_dir)
 
-    def load_needs(self, json_file: str) -> None:
+    def load_needs(self, json_file: Path) -> None:
 
         self.docs_per_type = {}
         self.needs_per_doc = {}
         self.types = []
         self.needs = {}
 
-        if not os.path.exists(json_file):
+        if not json_file.exists():
             raise FileNotFoundError(f"JSON file not found: {json_file}")
 
         with open(json_file, encoding="utf-8") as file:
