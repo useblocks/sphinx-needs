@@ -17,6 +17,7 @@ Under development
 * Bugfix: Correct documentation and configuration in :ref:`need_tags` to *list* type.
 * Improvement: Provides initial support for Sphinx-Needs IDE language features.
   (`#584 <https://github.com/useblocks/sphinxcontrib-needs/pull/584>`_)
+* Improvement: Support snippet for auto directive completion for Sphinx-Needs IDE language features.
 
 0.7.9
 -----
