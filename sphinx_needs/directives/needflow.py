@@ -160,11 +160,7 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
                 )
 
         content = []
-        try:
-            if "sphinxcontrib.plantuml" not in app.config.extensions:
-                raise ImportError
-            from sphinxcontrib.plantuml import plantuml
-        except ImportError:
+        if "sphinxcontrib.plantuml" not in app.config.extensions:
             content = nodes.error()
             para = nodes.paragraph()
             text = nodes.Text("PlantUML is not available!", "PlantUML is not available!")
@@ -172,6 +168,8 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
             content.append(para)
             node.replace_self(content)
             continue
+
+        from sphinxcontrib.plantuml import plantuml
 
         plantuml_block_text = ".. plantuml::\n" "\n" "   @startuml" "   @enduml"
         puml_node = plantuml(plantuml_block_text)
