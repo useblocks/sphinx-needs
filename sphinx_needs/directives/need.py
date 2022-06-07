@@ -1,15 +1,15 @@
 import hashlib
 import re
 import typing
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from docutils import nodes
-from docutils.parsers.rst import Directive
 from docutils.parsers.rst.states import RSTState, RSTStateMachine
 from docutils.statemachine import StringList
 from sphinx.addnodes import desc_name, desc_signature
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
+from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api import add_need
 from sphinx_needs.api.exceptions import NeedsInvalidException
@@ -27,7 +27,7 @@ logger = get_logger(__name__)
 NON_BREAKING_SPACE = re.compile("\xa0+")
 
 
-class NeedDirective(Directive):
+class NeedDirective(SphinxDirective):
     """
     Collects mainly all needed need-information and renders its rst-based content.
 
@@ -148,10 +148,6 @@ class NeedDirective(Directive):
         )
 
     @property
-    def env(self) -> BuildEnvironment:
-        return self.state.document.settings.env
-
-    @property
     def title_from_content(self):
         return "title_from_content" in self.options or self.env.config.needs_title_from_content
 
@@ -172,7 +168,8 @@ class NeedDirective(Directive):
 
     @property
     def max_title_length(self) -> int:
-        return self.env.config.needs_max_title_length
+        max_title_length: int = self.env.config.needs_max_title_length
+        return max_title_length
 
     # ToDo. Keep this in directive
     def _get_full_title(self) -> str:
@@ -200,7 +197,7 @@ class NeedDirective(Directive):
             return ""
 
 
-def get_sections_and_signature_and_needs(need_info):
+def get_sections_and_signature_and_needs(need_info) -> Tuple[List[str], Optional[nodes.Text], List[str]]:
     """Gets the hierarchy of the section nodes as a list starting at the
     section of the current need and then its parent sections"""
     sections = []

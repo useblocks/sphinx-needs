@@ -3,7 +3,7 @@
 
 """
 
-from typing import Sequence
+from typing import List, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -15,6 +15,7 @@ from sphinx_needs.directives.utils import (
 )
 from sphinx_needs.filter_common import FilterBase, process_filters
 from sphinx_needs.layout import create_need
+from sphinx_needs.utils import unwrap
 
 
 class Needextract(nodes.General, nodes.Element):
@@ -66,7 +67,7 @@ def process_needextract(app: Sphinx, doctree: nodes.document, fromdocname: str) 
     """
     Replace all needextract nodes with a list of the collected needs.
     """
-    env = app.builder.env
+    env = unwrap(app.env)
 
     for node in doctree.traverse(Needextract):
         if not app.config.needs_include_needs:
@@ -83,7 +84,7 @@ def process_needextract(app: Sphinx, doctree: nodes.document, fromdocname: str) 
         id = node.attributes["ids"][0]
         current_needextract = env.need_all_needextracts[id]
         all_needs = env.needs_all_needs
-        content = []
+        content: List[nodes.Element] = []
         all_needs = list(all_needs.values())
         found_needs = process_filters(app, all_needs, current_needextract)
 

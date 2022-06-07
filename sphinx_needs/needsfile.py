@@ -89,7 +89,7 @@ class NeedsList:
         self.needs_list["versions"][version]["filters"][need_filter["export_id"].upper()] = writable_filters
         self.needs_list["versions"][version]["filters_amount"] = len(self.needs_list["versions"][version]["filters"])
 
-    def wipe_version(self, version):
+    def wipe_version(self, version: str) -> None:
         if version in self.needs_list["versions"]:
             del self.needs_list["versions"][version]
 

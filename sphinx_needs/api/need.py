@@ -1,9 +1,10 @@
 import hashlib
 import os
 import re
-from typing import List, Optional, Union
+from typing import Any, List, Optional, Union
 
 from docutils import nodes
+from docutils.parsers.rst.states import RSTState
 from docutils.statemachine import StringList
 from jinja2 import Template
 from sphinx.application import Sphinx
@@ -127,7 +128,7 @@ def add_need(
     # Get environment
     #############################################################################################
     env = app.env
-    types = env.app.config.needs_types
+    types = app.config.needs_types
     type_name = ""
     type_prefix = ""
     type_color = ""
@@ -154,7 +155,7 @@ def add_need(
     # TODO: Check, if id was already given. If True, recalculate id
     # id = self.options.get("id", ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for
     # _ in range(5)))
-    if id is None and env.app.config.needs_id_required:
+    if id is None and app.config.needs_id_required:
         raise NeedsNoIdException(
             "An id is missing for this need and must be set, because 'needs_id_required' "
             "is set to True in conf.py. Need '{}' in {} ({})".format(title, docname, lineno)
@@ -165,10 +166,10 @@ def add_need(
     else:
         need_id = id
 
-    if env.app.config.needs_id_regex and not re.match(env.app.config.needs_id_regex, need_id):
+    if app.config.needs_id_regex and not re.match(app.config.needs_id_regex, need_id):
         raise NeedsInvalidException(
             "Given ID '{id}' does not match configured regex '{regex}'".format(
-                id=need_id, regex=env.app.config.needs_id_regex
+                id=need_id, regex=app.config.needs_id_regex
             )
         )
 
@@ -181,7 +182,7 @@ def add_need(
 
     # Handle status
     # Check if status is in needs_statuses. If not raise an error.
-    if env.app.config.needs_statuses and status not in [stat["name"] for stat in env.app.config.needs_statuses]:
+    if app.config.needs_statuses and status not in [stat["name"] for stat in app.config.needs_statuses]:
         raise NeedsStatusNotAllowed(
             f"Status {status} of need id {need_id} is not allowed " "by config value 'needs_statuses'."
         )
@@ -202,9 +203,9 @@ def add_need(
 
         tags = new_tags
         # Check if tag is in needs_tags. If not raise an error.
-        if env.app.config.needs_tags:
+        if app.config.needs_tags:
             for tag in tags:
-                if tag not in [tag["name"] for tag in env.app.config.needs_tags]:
+                if tag not in [tag["name"] for tag in app.config.needs_tags]:
                     raise NeedsTagNotAllowed(
                         f"Tag {tag} of need id {need_id} is not allowed " "by config value 'needs_tags'."
                     )
@@ -237,7 +238,7 @@ def add_need(
             )
 
     # Trim title if it is too long
-    max_length = env.app.config.needs_max_title_length
+    max_length = app.config.needs_max_title_length
     if max_length == -1 or len(title) <= max_length:
         trimmed_title = title
     elif max_length <= 3:
@@ -284,10 +285,10 @@ def add_need(
     needs_extra_option_names = NEEDS_CONFIG.get("extra_options").keys()
     _merge_extra_options(needs_info, kwargs, needs_extra_option_names)
 
-    needs_global_options = env.config.needs_global_options
+    needs_global_options = app.config.needs_global_options
     _merge_global_options(app, needs_info, needs_global_options)
 
-    link_names = [x["option"] for x in env.config.needs_extra_links]
+    link_names = [x["option"] for x in app.config.needs_extra_links]
     for keyword in kwargs:
         if keyword not in needs_extra_option_names and keyword not in link_names:
             raise NeedsInvalidOption(
@@ -299,7 +300,7 @@ def add_need(
     # Merge links
     copy_links = []
 
-    for link_type in env.config.needs_extra_links:
+    for link_type in app.config.needs_extra_links:
         # Check, if specific link-type got some arguments during method call
         if link_type["option"] not in kwargs and link_type["option"] not in needs_global_options:
             # if not we set no links, but entry in needS_info must be there
@@ -402,7 +403,7 @@ def add_need(
     return return_nodes
 
 
-def del_need(app: Sphinx, id) -> None:
+def del_need(app: Sphinx, id: str) -> None:
     """
     Deletes an existing need.
 
@@ -419,15 +420,15 @@ def del_need(app: Sphinx, id) -> None:
 def add_external_need(
     app: Sphinx,
     need_type,
-    title,
-    id=None,
+    title: Optional[str] = None,
+    id: Optional[str] = None,
     external_url: Optional[str] = None,
     external_css: str = "external_link",
     content: str = "",
-    status=None,
-    tags=None,
-    links_string=None,
-    **kwargs,
+    status: Optional[str] = None,
+    tags: Optional[str] = None,
+    links_string: Optional[str] = None,
+    **kwargs: Any,
 ):
     """
     Adds an external need from an external source.
@@ -469,7 +470,7 @@ def add_external_need(
     return add_need(app=app, **kwargs)
 
 
-def _prepare_template(app: Sphinx, needs_info, template_key) -> str:
+def _prepare_template(app: Sphinx, needs_info, template_key: str) -> str:
     template_folder = app.config.needs_template_folder
     if not os.path.isabs(template_folder):
         template_folder = os.path.join(app.confdir, template_folder)
@@ -490,7 +491,7 @@ def _prepare_template(app: Sphinx, needs_info, template_key) -> str:
     return new_content
 
 
-def _render_template(content: str, docname: str, lineno: int, state) -> nodes.Element:
+def _render_template(content: str, docname: str, lineno: int, state: RSTState) -> nodes.Element:
     rst = StringList()
     for line in content.split("\n"):
         rst.append(line, docname, lineno)
@@ -500,7 +501,7 @@ def _render_template(content: str, docname: str, lineno: int, state) -> nodes.El
     return node_need_content
 
 
-def _render_plantuml_template(content: str, docname: str, lineno: int, state) -> nodes.Element:
+def _render_plantuml_template(content: str, docname: str, lineno: int, state: RSTState) -> nodes.Element:
     rst = StringList()
     rst.append(".. needuml::", docname, lineno)
     rst.append("", docname, lineno)  # Empty option line for needuml
