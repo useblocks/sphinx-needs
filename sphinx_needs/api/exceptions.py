@@ -42,6 +42,14 @@ class NeedsInvalidException(SphinxError):
     pass
 
 
+class NeedsConstraintNotAllowed(SphinxError):
+    pass
+
+
+class NeedsConstraintFailed(SphinxError):
+    pass
+
+
 class NeedsInvalidOption(SphinxError):
     pass
 
