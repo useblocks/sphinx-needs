@@ -1,9 +1,16 @@
 Changelog
 =========
 
-0.3.7
+0.3.8
 -----
 :Released: under development
+
+0.3.7
+-----
+:Released: 09.06.2022
+
+* Improvement: Nested test suites are supported (like in Robot Framework 5.0)
+  `#30 <https://github.com/useblocks/sphinx-test-reports/issues/30>`_
 
 0.3.6
 -----
