@@ -12,6 +12,7 @@ TEST DOCUMENT NEEDS CONSTRAINTS
     :id: SP_TOO_002
     :status: dev
     :tags: hello;there
-    :constraints: security; critical;
+    :constraints: critical
+    :style: red_border
 
     asdf

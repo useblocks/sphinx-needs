@@ -501,7 +501,7 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
         register_func(needs_func)
 
     # Own extra options
-    for option in ["hidden", "duration", "completion", "has_dead_links", "has_forbidden_dead_links"]:
+    for option in ["hidden", "duration", "completion", "has_dead_links", "has_forbidden_dead_links", "constraints"]:
         # Check if not already set by user
         # if option not in app.config.needs_extra_options:
         #     app.config.needs_extra_options[option] = directives.unchanged

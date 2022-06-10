@@ -330,7 +330,6 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     
     """
 
-    # TODO external needs not reachable?
     for node_need in doctree.traverse(Need):
         need_id = node_need.attributes["ids"][0]
         need_data = needs[need_id]

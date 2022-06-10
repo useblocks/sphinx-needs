@@ -53,8 +53,10 @@ INTERNALS = [
     "external_css",
     "is_modified",
     "modifications",
+    "constraints",
+    "constraints_passed",
+    "constraints_results",
 ]
-
 
 MONTH_NAMES = [
     "January",

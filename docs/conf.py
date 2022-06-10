@@ -544,6 +544,21 @@ texinfo_documents = [
     ),
 ]
 
+# contains different constraints
+needs_constraints = {
+    "critical": {"check_0": "'critical' in tags", "check_1": "'security_req' in links", "severity": "CRITICAL"},
+    "security": {"check_0": "'security' in tags", "severity": "HIGH"},
+    "team": {"check_0": "'team_req' in links", "severity": "LOW"},
+}
+
+# defines what to do fi a constraint is not met
+needs_constraint_failed_options = {"CRITICAL": ["warn", "break"], "HIGH": ["warn"], "MEDIUM": ["warn"], "LOW": ["warn"]}
+
+needs_global_options = {
+    # setting style for objects that failed a constraint
+    "style": ("red_border", "constraints_passed == False")
+}
+
 rst_epilog = """
 .. |ex| replace:: **Code** 
 

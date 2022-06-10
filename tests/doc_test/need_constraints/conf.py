@@ -195,33 +195,25 @@ texinfo_documents = [
     ),
 ]
 
-needs_extra_options = ["constraints", "assignees"]
 
-# TODO constraints passed bool
-# TODO constraints_results needs_constraints.keys() as key: bool
-
-"""
-constraints_results
-"security": {
-        "check_0": True
-        "check_1": True,
-        "severity": "CRITICAL"
-        "passed": True
-    },
-
-
-"""
+needs_extra_options = []
 
 
 needs_constraints = {
-    "security": {"check_0": "'security' in tags", "check_1": "len(assignees) >= 2", "severity": "CRITICAL"},
-    "team": {"check_0": "len(assignees) >= 2", "severity": "MEDIUM"},
-    "critical": {"check_0": "'critical' in tags", "check_1": "len(assignees) >= 2", "severity": "CRITICAL"},
+    "security": {"check_0": "'security' in tags", "severity": "CRITICAL"},
+    "team": {"check_0": "'team_requirement' in links", "severity": "MEDIUM"},
+    "critical": {"check_0": "'critical' in tags", "severity": "CRITICAL"},
 }
 
 # TODO add option for not braking builds when developing
-# TODO need styles for "mark"
 
-needs_constraint_failed_options = {"CRITICAL": ["warn"], "HIGH": ["warn"], "MEDIUM": ["mark"], "LOW": ["mark"]}
+# TODO add style option to dict, per severity, check if style already present + check add to style do not override
 
-needs_constraints_failed_color = "red-border"
+# needs_constraint_failed_options = {"CRITICAL": ["warn", "break"], "HIGH": ["warn"], "MEDIUM": ["warn"], "LOW": []}
+
+needs_constraint_failed_options = {
+    "CRITICAL": {"on_fail": ["warn"], "style": ["red_bar"], "force_style": True},
+    "HIGH": {"on_fail": ["warn"], "style": ["orange_bar"], "force_style": True},
+    "MEDIUM": {"on_fail": ["warn"], "style": ["yellow_bar"], "force_style": False},
+    "LOW": {"on_fail": [], "style": ["yellow_bar"], "force_style": False},
+}

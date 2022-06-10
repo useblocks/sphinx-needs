@@ -156,37 +156,3 @@ def add_warning(
 
     # warnings_option[name] = warning_check
     NEEDS_CONFIG.add("warnings", {name: warning_check}, dict, append=True)
-
-
-# TODO find correct checks for add_constraint
-def add_constraint(
-    app: Sphinx, name: str, function: Optional[WarningCheck] = None, filter_string: Optional[str] = None
-) -> None:
-    """
-    Registers a constraint.
-
-    A warning can be based on the result of a given filter_string or an own defined function.
-
-    :param app: Sphinx app object
-    :param name: Name as string for the warning
-    :param function: function to execute to check the warning
-    :param filter_string: filter_string to use for the warning
-    :return: None
-    """
-    constraint_option = NEEDS_CONFIG.create_or_get("constraints", dict)
-
-    if function is None and filter_string is None:
-        raise NeedsApiConfigException("Function or filter_string must be given for add_constraint_func")
-
-    if function is not None and filter_string is not None:
-        raise NeedsApiConfigException(
-            "For add_constraint_func only function or filter_string is allowed to be set, " "not both."
-        )
-
-    warning_check = function or filter_string
-
-    if name in warnings_option:
-        raise NeedsApiConfigException(f"Warning {name} already registered.")
-
-    # warnings_option[name] = warning_check
-    NEEDS_CONFIG.add("warnings", {name: warning_check}, dict, append=True)

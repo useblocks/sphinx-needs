@@ -1703,6 +1703,122 @@ an absolute path (on the web server) or an URL.
 
 Default value: ``needs.json``
 
+
+.. _needs_constraints:
+
+needs_constraints
+~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    needs_constraints = {
+
+        "critical": {
+            "check_0": "'critical' in tags",
+            "check_1": "'security_req' in links",
+            "severity": "CRITICAL"
+        },
+
+        "security": {
+            "check_0": "'security' in tags",
+            "severity": "HIGH"
+        },
+
+        "team1": {
+            "check_0": "author == \"Bob\"",
+            "severity": "LOW"
+        },
+
+    }
+
+needs_constraints needs to be enabled by adding "constraints" to :ref:`needs_extra_options`
+
+needs_constraints contains a dictionary which contains dictionaries describing a single constraint. A single constraint's name serves as the key for the inner dictionary.
+Inside there are (multiple) checks and a severity. Each check describes an executable constraint which allows to set conditions the specific need has to fulfill.
+Depending on the severity, different behaviours in case of failure can be configured. See :ref:`needs_constraint_failed_options`
+
+Each need now contains additional attributes named "constraints_passed" and "constraints_results".
+
+constraints_passed is a bool showing if ALL constraints of a corresponding need were passed.
+
+constraints_results is a dictionary similar in structure to needs_constraints above. Instead of executable python statements, inner values contain a bool describing if check_0, check_1 ... passed successfully.
+
+
+.. code-block:: rst
+
+    .. req::
+        :id: security_req
+
+        This is a requirement describing OPSEC processes.
+
+    .. req::
+        :tags: critical
+        :links: security_req
+        :constraints: critical
+
+        Example of a successful constraint.
+
+    .. req::
+        :constraints: team
+
+        Example of a failed constraint with medium severity. Note the style from the severity option "mark"
+
+
+.. req::
+    :id: security_req
+
+    This is a requirement describing OPSEC processes.
+
+.. req::
+    :tags: critical
+    :links: security_req
+    :constraints: critical
+    :layout: debug
+
+    Example of a successful constraint.
+
+.. req::
+    :id: FAIL_01
+    :links: security_req
+    :constraints: team
+    :layout: debug
+
+    Example of a failed constraint with medium severity. Note the style from the severity option "mark"
+
+.. _needs_constraint_failed_options:
+
+needs_constraint_failed_options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    needs_constraint_failed_options = {
+        "CRITICAL": ["warn", "break"],
+        "HIGH": ["warn"],
+        "MEDIUM": ["warn"],
+        "LOW": []
+
+    }
+
+needs_constraint_failed_options must be a dictionary which stores keywords on what to do if a certain constraint fails. Dictionary keys correspond to the severity set when creating a constraint. Keys must be
+
+- "warn" creates a warning in the sphinx.logger if a constraint is not met. Use -W in your Sphinx build command to stop the whole build, if a warning is raised. This will handle all warnings as exceptions.
+
+- "break" breaks the buildprocess and raises a NeedsConstraintFailed Exception when a constraint is not met
+
+You can mark objects where constraints have failed via the :ref:`global_option_filters`
+
+This sphinx project contains the following in its conf.py to mark objects with failed constraints with a red border.
+
+.. code-block:: python
+
+    needs_global_options = {
+        # Without default value
+        'style': ('red_border', "constraints_passed == False", "')
+    }
+
+
+
 Removed options
 ---------------
 

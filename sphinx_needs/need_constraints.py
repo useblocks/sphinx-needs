@@ -1,17 +1,11 @@
-from docutils import nodes
-from sphinx.application import Sphinx
-
 from sphinx_needs.api.exceptions import NeedsConstraintFailed, NeedsConstraintNotAllowed
-from sphinx_needs.config import NEEDS_CONFIG
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import get_logger
-from sphinx_needs.nodes import Need
-from sphinx_needs.utils import profile
 
 logger = get_logger(__name__)
 
 
-def process_constraints(app, need) -> None:
+def process_constraints(app, need):
     """
     Finally creates the need-node in the docurils node-tree.
 
@@ -20,8 +14,6 @@ def process_constraints(app, need) -> None:
     :param fromdocname:
     :return:
     """
-
-    # TODO fix initial value for constraints_passed
 
     config_constraints = app.config.needs_constraints
 
@@ -40,12 +32,14 @@ def process_constraints(app, need) -> None:
             # access constraints defined in conf.py
             executable_constraints = config_constraints[constraint]
 
+            results_list = []
             for name, cmd in executable_constraints.items():
                 # compile constraint and check single need if it fulfills constraint
                 if name != "severity":
 
                     # check current need if it meets constraint given in check_0, check_1 in conf.py ...
                     constraint_passed = filter_single_need(app, need, cmd)
+                    results_list.append(constraint_passed)
 
                     if not constraint_passed:
                         # prepare structure
@@ -63,7 +57,11 @@ def process_constraints(app, need) -> None:
                         # severity of failed constraint
                         severity = executable_constraints["severity"]
 
-                        actions_on_fail = constraint_failed_options[severity]
+                        # configureable force of constraint failed style
+                        force_style = constraint_failed_options[severity]["force_style"]
+
+                        actions_on_fail = constraint_failed_options[severity]["on_fail"]
+                        style_on_fail = constraint_failed_options[severity]["style"]
 
                         if "warn" in actions_on_fail:
                             logger.warning(
@@ -73,23 +71,36 @@ def process_constraints(app, need) -> None:
                         if "break" in actions_on_fail:
 
                             raise NeedsConstraintFailed(
-                                f"CRITICAL constraint: >> {cmd} << for need "
+                                f"FAILED a breaking constraint: >> {cmd} << for need "
                                 f"{need_id} FAILED! breaking build process"
                             )
 
-                        if "mark" in actions_on_fail:
+                        old_style = need["style"]
 
-                            need["style"] = app.config.needs_constraints_failed_color
+                        if len(old_style) > 0:
+                            new_styles = "".join(", " + x for x in style_on_fail)
+                        else:
+                            new_styles = "".join(x for x in style_on_fail)
+
+                        if force_style:
+                            need["style"] = new_styles
+                        else:
+                            constraint_failed_style = old_style + new_styles
+                            need["style"] = constraint_failed_style
+
+                        a = 1
 
                     else:
-                        need["constraints_results"][name] = constraint_passed
+
+                        # constraint is met, fill corresponding need attributes
+                        if constraint not in need["constraints_results"].keys():
+                            need["constraints_results"][constraint] = {}
+                        need["constraints_results"][constraint][name] = constraint_passed
 
             # access all previous results, if one check failed, set constraints_passed to False for easy filtering
-            results = [x[1] for x in need["constraints_results"].items()]
-
-            if False in results:
+            if False in results_list:
                 need["constraints_passed"] = False
             else:
                 need["constraints_passed"] = True
 
-    return
+    return need

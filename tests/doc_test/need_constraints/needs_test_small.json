@@ -44,9 +44,7 @@
                     "tags": ["tag1", "tag2", "asd"],
                     "title": "",
                     "type": "spec",
-                    "type_name": "Specification",
-                    "constraints": ["security", "critical", "team"],
-                    "assignees": ["Alice", "Bob"]
+                    "type_name": "Specification"
                 }
             }
         }
