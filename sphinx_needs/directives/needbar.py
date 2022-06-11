@@ -364,8 +364,10 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str):
                     current_needbar["show_sum"] = None
                     current_needbar["show_top_sum"] = None
 
-            # "show_top_sum"                   and  not stacked                    or          end of stack
-            if current_needbar["show_top_sum"] and (not current_needbar["stacked"] or (x == len(local_data_number) - 1)):
+            if current_needbar["show_top_sum"] and (
+                not current_needbar["stacked"] or (x == len(local_data_number) - 1)
+            ):
+                # "show_top_sum" and ( not stacked or end of stack )
                 try:
                     bar_label = axes.bar_label(bar)
                     bar_labels.append(bar_label)
