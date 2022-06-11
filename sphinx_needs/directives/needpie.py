@@ -251,7 +251,7 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str) -> N
 
         # Legend preparation
         if current_needpie["legend"]:
-            legend = axes.legend(wedges, labels, title="legend", loc="center left", bbox_to_anchor=(0.8, 0, 0.5, 1))
+            axes.legend(wedges, labels, title="legend", loc="center left", bbox_to_anchor=(0.8, 0, 0.5, 1))
 
         matplotlib.pyplot.setp(autotexts, size=8, weight="bold")
 
