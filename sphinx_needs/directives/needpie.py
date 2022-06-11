@@ -220,6 +220,23 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str) -> N
 
         wedges, _texts, autotexts = axes.pie(sizes, normalize=np.asarray(sizes, np.float32).sum() >= 1, **pie_kwargs)
 
+        ratio = 20 # we will remove all labels with size smaller 5%
+        legend_enforced = False
+        for i in range(len(sizes)):
+            #remove leading and following spaces from the labels
+            labels[i] = labels[i].strip()
+            if (sizes[i] < (sum(sizes) / ratio) or sizes[i] == 0):
+                _texts[i].set_visible(False)
+                autotexts[i].set_visible(False)
+                current_needpie["legend"] = True
+                legend_enforced = True
+
+        # We have to add the percent and absolut number to the legend,
+        # as not all elements are now visible.
+        if legend_enforced:
+            for i in range(len(sizes)):
+                labels[i] = "{label} {percent:.1f}% ({size:.0f})".format(label= labels[i], percent = 100 * sizes[i] / sum(sizes), size = sizes[i])
+
         if text_color:
             for autotext in autotexts:
                 autotext.set_color(text_color)
@@ -227,8 +244,8 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str) -> N
 
         # Legend preparation
         if current_needpie["legend"]:
-            axes.legend(
-                wedges, labels, title=str(current_needpie["legend"]), loc="center left", bbox_to_anchor=(0.8, 0, 0.5, 1)
+            legend = axes.legend(
+                wedges, labels, title="legend", loc="center left", bbox_to_anchor=(0.8, 0, 0.5, 1)
             )
 
         matplotlib.pyplot.setp(autotexts, size=8, weight="bold")

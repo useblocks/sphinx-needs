@@ -273,3 +273,39 @@ Useful styles are for example:
       type == 'req' and status == 'open'
       type == 'req' and status == 'in progress'
       type == 'req' and status == 'closed'
+
+overlapping labels
+~~~~~~~~~~~~~~~~~~
+
+In the past we had overlapping labels. See following diagram.
+
+.. image:: ../_static/need_pie_overlapping_labels.png
+  :alt: Example of a needpie with overlapping labels
+
+Now overlapping labels are removed, and we automatically add a legend with removed information.
+
+|ex|
+
+.. needpie:: Requirement status
+   :labels: New, Open, In progress, Closed, Outdated, Removed
+   
+   90
+   7
+   6
+   5
+   0
+   0
+
+|out|
+
+.. code-block:: rst
+
+   .. needpie:: Requirement status
+      :labels: New, Open, In progress, Closed, Outdated, Removed
+      
+      90
+      7
+      6
+      5
+      0
+      0
