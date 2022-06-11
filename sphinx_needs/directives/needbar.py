@@ -365,7 +365,7 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str):
                     current_needbar["show_top_sum"] = None
 
             if current_needbar["show_top_sum"]:
-                # Not stacked                     or          end of stack 
+                # Not stacked                     or          end of stack
                 if not current_needbar["stacked"] or (x == len(local_data_number) - 1):
                     try:
                         bar_label = axes.bar_label(bar)
@@ -373,7 +373,6 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str):
                     except AttributeError:  # bar_label is not support in older matplotlib versions
                         current_needbar["show_sum"] = None
                         current_needbar["show_top_sum"] = None
-
 
         sum_rotation = current_needbar["sum_rotation"]
         if sum_rotation and (current_needbar["show_top_sum"] or current_needbar["show_sum"]):
