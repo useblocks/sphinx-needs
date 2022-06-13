@@ -1724,7 +1724,7 @@ needs_constraints
             "severity": "HIGH"
         },
 
-        "team1": {
+        "team": {
             "check_0": "author == \"Bob\"",
             "severity": "LOW"
         },
@@ -1761,7 +1761,7 @@ constraints_results is a dictionary similar in structure to needs_constraints ab
     .. req::
         :constraints: team
 
-        Example of a failed constraint with medium severity. Note the style from the severity option "mark"
+        Example of a failed constraint with medium severity. Note the style from :ref:`needs_constraint_failed_options`
 
 
 .. req::
@@ -1773,17 +1773,15 @@ constraints_results is a dictionary similar in structure to needs_constraints ab
     :tags: critical
     :links: security_req
     :constraints: critical
-    :layout: debug
 
     Example of a successful constraint.
 
 .. req::
     :id: FAIL_01
-    :links: security_req
+    :author: "Alice"
     :constraints: team
-    :layout: debug
 
-    Example of a failed constraint with medium severity. Note the style from the severity option "mark"
+    Example of a failed constraint with medium severity. Note the style from :ref:`needs_constraint_failed_options`
 
 .. _needs_constraint_failed_options:
 
@@ -1793,29 +1791,41 @@ needs_constraint_failed_options
 .. code-block:: python
 
     needs_constraint_failed_options = {
-        "CRITICAL": ["warn", "break"],
-        "HIGH": ["warn"],
-        "MEDIUM": ["warn"],
-        "LOW": []
+        "CRITICAL": {
+            "on_fail": ["warn"],
+            "style": ["red_bar"],
+            "force_style": True
+        },
 
+        "HIGH": {
+            "on_fail": ["warn"],
+            "style": ["orange_bar"],
+            "force_style": True
+        },
+
+        "MEDIUM": {
+            "on_fail": ["warn"],
+            "style": ["yellow_bar"],
+            "force_style": False
+        },
+
+        "LOW": {
+            "on_fail": [],
+            "style": ["yellow_bar"],
+            "force_style": False
+        }
     }
 
-needs_constraint_failed_options must be a dictionary which stores keywords on what to do if a certain constraint fails. Dictionary keys correspond to the severity set when creating a constraint. Keys must be
-
-- "warn" creates a warning in the sphinx.logger if a constraint is not met. Use -W in your Sphinx build command to stop the whole build, if a warning is raised. This will handle all warnings as exceptions.
+needs_constraint_failed_options must be a dictionary which stores what to do if a certain constraint fails. Dictionary keys correspond to the severity set when creating a constraint. Each entry describes in an "on_fail" action what to do:
 
 - "break" breaks the buildprocess and raises a NeedsConstraintFailed Exception when a constraint is not met
+- "warn" creates a warning in the sphinx.logger if a constraint is not met. Use -W in your Sphinx build command to stop the whole build, if a warning is raised. This will handle all warnings as exceptions.
 
-You can mark objects where constraints have failed via the :ref:`global_option_filters`
 
-This sphinx project contains the following in its conf.py to mark objects with failed constraints with a red border.
+style sets the style of the failed object see :ref:`_styles` for available styles. **Please be aware of conflicting styles and avoid them. The default styles above are not used anywhere else in a default project**
 
-.. code-block:: python
+If "force style" is set, all other styles are removed and just the constrain_failed style remains.
 
-    needs_global_options = {
-        # Without default value
-        'style': ('red_border', "constraints_passed == False", "')
-    }
 
 
 

@@ -25,7 +25,7 @@ def process_constraints(app, need):
 
         if constraint not in [x for x in config_constraints.keys()]:
             raise NeedsConstraintNotAllowed(
-                f"Constraint {constraint} of need id {need_id} is not allowed " "by config value 'needs_constraints'."
+                f"Constraint {constraint} of need id {need_id} is not allowed by config value 'needs_constraints'."
             )
         else:
 
@@ -77,10 +77,11 @@ def process_constraints(app, need):
 
                         old_style = need["style"]
 
-                        if len(old_style) > 0:
+                        if old_style and len(old_style) > 0:
                             new_styles = "".join(", " + x for x in style_on_fail)
                         else:
-                            new_styles = "".join(x for x in style_on_fail)
+                            old_style = ""
+                            new_styles = "".join(x + "," for x in style_on_fail)
 
                         if force_style:
                             need["style"] = new_styles

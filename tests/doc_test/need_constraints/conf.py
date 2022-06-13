@@ -205,11 +205,6 @@ needs_constraints = {
     "critical": {"check_0": "'critical' in tags", "severity": "CRITICAL"},
 }
 
-# TODO add option for not braking builds when developing
-
-# TODO add style option to dict, per severity, check if style already present + check add to style do not override
-
-# needs_constraint_failed_options = {"CRITICAL": ["warn", "break"], "HIGH": ["warn"], "MEDIUM": ["warn"], "LOW": []}
 
 needs_constraint_failed_options = {
     "CRITICAL": {"on_fail": ["warn"], "style": ["red_bar"], "force_style": True},

@@ -409,6 +409,16 @@ Default styles are:
      * Yellow border, but normal background
    - * **blue_border**
      * Blue border, but normal background
+   - * **red_bar**
+     * 10 % of width red on right side, rest with normal background
+   - * **orange_bar**
+     * 10 % of width orange on right side, rest with normal background
+   - * **yellow_bar**
+     * 10 % of width yellow on right side, rest with normal background
+   - * **green_bar**
+     * 10 % of width green on right side, rest with normal background
+   - * **blue_bar**
+     * 10 % of width blue on right side, rest with normal background
    - * **discreet_border**
      * Border color is only a little bit lighter/darker as the page background
    - * **clean**
@@ -465,6 +475,31 @@ Default styles are:
    :id: EX_STYLE_BLUE_BORDER
    :tags: example
    :style: blue_border
+
+.. req:: Red bar
+   :id: EX_STYLE_RED_BAR
+   :tags: example
+   :style: red_bar
+
+.. req:: Orange bar
+   :id: EX_STYLE_ORANGE_BAR
+   :tags: example
+   :style: orange_bar
+
+.. req:: Yellow bar
+   :id: EX_STYLE_YELLOW_BAR
+   :tags: example
+   :style: yellow_bar
+
+.. req:: Green bar
+   :id: EX_STYLE_GREEN_BAR
+   :tags: example
+   :style: green_bar
+
+.. req:: Blue bar
+   :id: EX_STYLE_BLUE_BAR
+   :tags: example
+   :style: blue_bar
 
 .. req:: Discreet border
    :id: EX_STYLE_DISCREET_BORDER
