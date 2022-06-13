@@ -170,7 +170,7 @@ class NeedbarDirective(FilterBase):
 # 8. create figure
 # 9. final storage
 # 10. cleanup matplotlib
-def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str):
+def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
 

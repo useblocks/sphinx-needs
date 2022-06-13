@@ -3,7 +3,7 @@
 
 """
 import re
-from typing import Sequence
+from typing import Any, Callable, Dict, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import Directive
@@ -28,7 +28,7 @@ class NeedextendDirective(Directive):
     optional_arguments = 0
     final_argument_whitespace = True
 
-    option_spec = {}
+    option_spec: Dict[str, Callable[[str], Any]] = {}
 
     def run(self) -> Sequence[nodes.Node]:
         env = self.state.document.settings.env
@@ -56,10 +56,10 @@ class NeedextendDirective(Directive):
             "modifications": self.options,
         }
 
-        return [targetnode] + [Needextend("")]
+        return [targetnode, Needextend("")]
 
 
-def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str):
+def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     """
     Perform all modifications on needs
     """
@@ -172,7 +172,7 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str):
         removed_needextend_node(node)
 
 
-def removed_needextend_node(node):
+def removed_needextend_node(node) -> None:
     """
     # Remove needextend from docutils node-tree, so that no output gets generated for it.
     # Ok, this is really dirty.
