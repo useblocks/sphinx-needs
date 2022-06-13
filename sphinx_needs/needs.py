@@ -638,7 +638,7 @@ def merge_data(app: Sphinx, env: BuildEnvironment, docnames: List[str], other: B
     merge("need_all_needlists")
     merge("need_all_needpie")
     merge("need_all_needsequences")
-    merge("need_all_needumls")
+    merge("needs_all_needumls")
 
 
 class NeedsConfigException(SphinxError):

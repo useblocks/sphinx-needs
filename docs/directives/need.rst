@@ -38,25 +38,92 @@ but you must set a title as an argument (i.e. if you do not specify :ref:`needs_
     By default, the above example works also with ``.. spec::``, ``.. impl::``, ``.. test::`` and all other need types,
     which are configured via :ref:`needs_types`.
 
-Content area
-------------
+.. _need_diagram:
 
-rst / md
-~~~~~~~~
-Content of a Sphinx-Needs objects can be any kind of content which can be handled by Sphinx.
-This is by default rst-based text with support for all loaded extensions.
+Diagram support
+---------------
+A need objects can also define it's own PlantUML representation.
+Therefor Sphinx-Needs looks for the first occurrence of a :ref:`needuml` directive inside the content
+and stores its PlantUML code under the option name ``diagram``.
 
-Markdown-Support is available by using the `MyST Parser <https://myst-parser.readthedocs.io/en/latest/>`_ extension.
+This diagram data can then be used in other :ref:`needuml` calls to combine and reuse PlantUML elements.
 
-plantuml
-~~~~~~~~
-A Sphinx-Need object can also be used to store a single PlantUML based diagram.
+{% raw %}
 
-This kind of Need object can then be used by :ref:`needuml` to generate complex diagrams.
+|ex|
 
-To use this content type, set ``content`` to ``plantuml`` in the :ref:`needs_types` configuration.
+.. code-block:: rst
+
+   .. spec:: Interfaces
+      :id: SP_INT
+      :status: open
+
+      This are the provided interfaces:
+
+      .. needuml::
+
+         circle "Int A" as int_a
+         circle "Int B" as int_b
+         circle "Int C" as int_c
+
+   Reuse of :need:`SP_INT` inside a :ref:`needuml`:
+
+   .. needuml::
+
+      {{uml("SP_INT")}}
+      node "My System" as system
+
+      system => int_a
+
+|out|
+
+.. spec:: Interfaces
+   :id: SP_INT
+   :status: open
+
+   This are the provided interfaces:
+
+   .. needuml::
+
+      circle "Int A" as int_a
+      circle "Int B" as int_b
+      circle "Int C" as int_c
+
+Reuse of :need:`SP_INT` inside a :ref:`needuml`:
+
+.. needuml::
+
+   {{uml("SP_INT")}}
+   node "My System" as system
+
+   system => int_a
+
+{% endraw %}
+
+This simple mechanism is really powerful to design reusable and configurable SW architecture diagrams.
+For more examples and details, please read :ref:`needuml`.
+
+Filter for diagrams
+~~~~~~~~~~~~~~~~~~~
+The option ``diagram`` can be easily used for filtering. For instance to show all need objects, which
+are representing some kind of a diagram.
 
 
+|ex|
+
+.. code-block:: rst
+
+   .. needtable::
+      :filter: diagram
+      :style: table
+      :columns: id, type, title
+
+|out|
+
+.. needtable::
+   :filter: diagram
+   :style: table
+   :columns: id, type, title
 
 
 Options for Need Type

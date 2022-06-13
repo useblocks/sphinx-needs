@@ -97,8 +97,6 @@ By default it is set to:
                    dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="node"),
                    dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="node"),
                    dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="node"),
-                   # PlantUML based content
-                   dict(directive="arch", title="Architecture", content="plantuml", prefix="A_", color="#9856a5", style="node")
                    # Kept for backwards compatibility
                    dict(directive="need", title="Need", prefix="N_", color="#9856a5", style="node")
                ]
@@ -107,7 +105,6 @@ By default it is set to:
 
 * **directive**: Name of the directive. For instance, you can use "req" via `.. req::` in documents
 * **title**: Title, used as human readable name in lists
-* **content**: Supported content type. Can be ``sphinx`` or ``plantuml``. Default: ``sphinx``.
 * **prefix**: A prefix for generated IDs, to easily identify that an ID belongs to a specific type. Can also be ""
 * **color**: A color as hex value. Used in diagrams and some days maybe in other representations as well. Can also be ""
 * **style**: A plantuml node type, like node, artifact, frame, storage or database. See `plantuml documentation <http://plantuml.com/deployment-diagram>`_ for more.

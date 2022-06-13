@@ -20,6 +20,7 @@ from sphinx_needs.api.exceptions import (
     NeedsTagNotAllowed,
     NeedsTemplateException,
 )
+from sphinx_needs.directives.needuml import Needuml
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import get_logger
 from sphinx_needs.nodes import Need
@@ -105,7 +106,6 @@ def add_need(
     :param title: String as title.
     :param id: ID as string. If not given, a id will get generated.
     :param content: Content as single string.
-    :param content_type: Type of the content. Can be "sphinx" or "plantuml".
     :param status: Status as string.
     :param tags: Tags as single string.
     :param links_string: Links as single string.
@@ -137,7 +137,6 @@ def add_need(
     for ntype in types:
         if ntype["directive"] == need_type:
             type_name = ntype["title"]
-            type_content = ntype.get("content", "sphinx")
             type_prefix = ntype["prefix"]
             type_color = ntype["color"] or "#000000"  # if no color set up user in config
             type_style = ntype["style"] or "node"  # if no style set up user in config
@@ -258,7 +257,6 @@ def add_need(
         "type_prefix": type_prefix,
         "type_color": type_color,
         "type_style": type_style,
-        "type_content": type_content,
         "status": status,
         "tags": tags,
         "id": need_id,
@@ -266,6 +264,7 @@ def add_need(
         "full_title": title,
         "content": content,
         "collapse": collapse,
+        "diagram": None,  # extracted later
         "style": style,
         "layout": layout,
         "template": template,
@@ -373,12 +372,18 @@ def add_need(
     # Add lineno to node
     node_need.line = needs_info["lineno"]
 
-    # Render rst-based content and add it to the need-node
+    node_need_content = _render_template(content, docname, lineno, state)
 
-    if type_content == "plantuml":
-        node_need_content = _render_plantuml_template(content, docname, lineno, state)
-    else:
-        node_need_content = _render_template(content, docname, lineno, state)
+    # Extract first plantuml diagram
+    for child in node_need_content.children:
+        if isinstance(child, Needuml):
+            needuml_id = child.rawsource
+            try:
+                needuml = env.needs_all_needumls.get(needuml_id)
+                needs_info["diagram"] = needuml["content"]
+            except KeyError:
+                pass
+            break  # We only handle the first needuml-node as the main one.
 
     need_parts = find_parts(node_need_content)
     update_need_with_parts(env, needs_info, need_parts)

@@ -32,8 +32,8 @@ class NeedumlDirective(Directive):
 
     def run(self) -> Sequence[nodes.Node]:
         env = self.state.document.settings.env
-        if not hasattr(env, "need_all_needumls"):
-            env.need_all_needumls = {}
+        if not hasattr(env, "needs_all_needumls"):
+            env.needs_all_needumls = {}
 
         targetid = "needuml-{docname}-{id}".format(docname=env.docname, id=env.new_serialno("needuml"))
         targetnode = nodes.target("", "", ids=[targetid])
@@ -63,7 +63,7 @@ class NeedumlDirective(Directive):
                 key, value = extra.split(":")
                 extra_dict[key] = value
 
-        env.need_all_needumls[targetid] = {
+        env.needs_all_needumls[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_node": targetnode,
@@ -77,7 +77,7 @@ class NeedumlDirective(Directive):
             "extra": extra_dict,
         }
 
-        return [targetnode] + [Needuml("")]
+        return [targetnode] + [Needuml(targetid)]
 
 
 class JinjaFunctions:
@@ -94,8 +94,8 @@ class JinjaFunctions:
 
     def uml(self, need_id, **kwargs):
         need_info = self.needs[need_id]
-        if need_info["type_content"] == "plantuml":
-            uml_content = need_info["content"]
+        if need_info["diagram"]:
+            uml_content = need_info["diagram"]
 
             # We need to rerender the fetched content, as it may contain also Jinja statements.
             mem_template = Environment(loader=BaseLoader).from_string(uml_content)
@@ -130,7 +130,7 @@ def process_needuml(app, doctree, fromdocname):
 
     for node in doctree.traverse(Needuml):
         id = node.attributes["ids"][0]
-        current_needuml = env.need_all_needumls[id]
+        current_needuml = env.needs_all_needumls[id]
 
         try:
             if "sphinxcontrib.plantuml" not in app.config.extensions:
