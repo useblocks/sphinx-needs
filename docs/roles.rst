@@ -20,11 +20,16 @@ The role ``:need:`` will add title, id and a link to the need.
 
 We use it to reference an existing need, without the need to keep title and link location manually in sync.
 
+With ``[[`` and ``]]`` you can refer to defined and set :ref:`extra options <needs_extra_options>`. 
+
 Example
 ~~~~~~~
 
 .. req:: Sliced Bread
    :id: roles_req_1
+   :status: open
+   :value: 20
+   :unit: slices
 
 |ex|
 
@@ -34,24 +39,29 @@ Example
 
    But we can also set :need:`a custom link name <roles_req_1>`.
 
-   And we can change the text even more :need:`our specific link text ({{id}}) ({{status}}) <roles_req_1>`
+   And we can change the text even more e.g. :need:`[[value]] [[unit]] of [[title]] ([[id]] [[status]]) <roles_req_1>`.
 
 |out|
 
 | The requirement :need:`roles_req_1` is the most important one.
 | But we can also set :need:`a custom link name <roles_req_1>`.
-| And we can change the text even more :need:`our more specific link name ({{id}}) ({{status}}) <roles_req_1>`.
+| And we can change the text even more e.g. :need:`[[value]] [[unit]] of [[title]] ([[id]] [[status]]) <roles_req_1>`.
 
 .. note::
 
    You can customize the string representation by using the
    configuration parameters :ref:`needs_role_need_template` and
    :ref:`needs_role_need_max_title_length`.
-   If we find a `{` in the custumized string, we handle it 
+   If we find a `[[` in the custumized string, we handle it 
    according to Python's `.format() <https://docs.python.org/3.4/library/functions.html#format>`_ 
    function.
    Please see https://pyformat.info/ for more information.
    RST-attributes like ``**bold**`` are **not** supported.
+
+.. warning::
+
+   If your refer to an :ref:`external need <needs_external_needs>`, the algorithem is different
+   and you will only get the need id as link text.
 
 
 .. _role_need_outgoing:
