@@ -52,15 +52,15 @@ Example
    You can customize the string representation by using the
    configuration parameters :ref:`needs_role_need_template` and
    :ref:`needs_role_need_max_title_length`.
-   If we find a `[[` in the custumized string, we handle it 
-   according to Python's `.format() <https://docs.python.org/3.4/library/functions.html#format>`_ 
+   If we find a ``[[`` in the customized string, we handle it 
+   according to Python's ``{`` `.format() <https://docs.python.org/3.4/library/functions.html#format>`_ 
    function.
    Please see https://pyformat.info/ for more information.
    RST-attributes like ``**bold**`` are **not** supported.
 
 .. warning::
 
-   If your refer to an :ref:`external need <needs_external_needs>`, the algorithem is different
+   If your refer to an :ref:`external need <needs_external_needs>`, the algorithm is different
    and you will only get the need id as link text.
 
 
