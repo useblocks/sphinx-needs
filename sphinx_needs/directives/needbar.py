@@ -91,30 +91,21 @@ class NeedbarDirective(FilterBase):
 
         text_color = self.options["text_color"].strip()
 
-        style = self.options.get("style")
-        style = style.strip() if style else matplotlib.style.use("default")
+        style = self.options["style"].strip()
 
-        legend = "legend" in self.options
-
-        colors = typing.cast(List[str], self.options.get("colors"))
+        colors = typing.cast(List[str], self.options["colors"])
 
         x_axis_title = self.options["x_axis_title"].strip()
-        xlabels = typing.cast(List[str], self.options.get("xlabels"))
-        xlabels_rotation = self.options.get("xlabels_rotation")
-        if xlabels_rotation:
-            xlabels_rotation = xlabels_rotation.strip()
+        xlabels = typing.cast(List[str], self.options["xlabels"])
+        xlabels_rotation = self.options["xlabels_rotation"].strip()
 
         y_axis_title = self.options["y_axis_title"].strip()
-        ylabels = typing.cast(List[str], self.options.get("ylabels"))
-        ylabels_rotation = self.options.get("ylabels_rotation")
-        if ylabels_rotation:
-            ylabels_rotation = ylabels_rotation.strip()
+        ylabels = typing.cast(List[str], self.options["ylabels"])
+        ylabels_rotation = self.options["ylabels_rotation"].strip()
 
-        separator = self.options.get("separator", ",")
+        separator = self.options["separator"]
 
-        sum_rotation = self.options.get("sum_rotation")
-        if sum_rotation:
-            sum_rotation = sum_rotation.strip()
+        sum_rotation = self.options["sum_rotation"].strip()
 
         # 2. Stores infos for needbar
         env.need_all_needbar[targetid] = {
@@ -125,7 +116,7 @@ class NeedbarDirective(FilterBase):
             "error_id": error_id,
             "title": title,
             "content": content,
-            "legend": legend,
+            "legend": "legend" in self.options,
             "x_axis_title": x_axis_title,
             "xlabels": xlabels,
             "xlabels_rotation": xlabels_rotation,
