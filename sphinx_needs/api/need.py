@@ -1,7 +1,7 @@
 import hashlib
 import os
 import re
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState
@@ -29,6 +29,9 @@ from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
 from sphinx_needs.utils import unwrap
 
 logger = get_logger(__name__)
+
+
+NeedInfo = Dict[str, Any]
 
 
 def add_need(
