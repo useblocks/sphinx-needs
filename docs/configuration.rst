@@ -1747,31 +1747,33 @@ constraints_results is a dictionary similar in structure to needs_constraints ab
 .. code-block:: rst
 
     .. req::
-        :id: security_req
+        :id: SECURITY_REQ
 
-        This is a requirement describing OPSEC processes.
+        This is a requirement describing security processes.
 
     .. req::
         :tags: critical
-        :links: security_req
+        :links: SECURITY_REQ
         :constraints: critical
 
         Example of a successful constraint.
 
     .. req::
+        :id: FAIL_01
+        :author: "Alice"
         :constraints: team
 
         Example of a failed constraint with medium severity. Note the style from :ref:`needs_constraint_failed_options`
 
 
 .. req::
-    :id: security_req
+    :id: SECURITY_REQ
 
-    This is a requirement describing OPSEC processes.
+    This is a requirement describing security processes.
 
 .. req::
     :tags: critical
-    :links: security_req
+    :links: SECURITY_REQ
     :constraints: critical
 
     Example of a successful constraint.
@@ -1824,7 +1826,7 @@ needs_constraint_failed_options must be a dictionary which stores what to do if 
 
 style sets the style of the failed object see :ref:`_styles` for available styles. **Please be aware of conflicting styles and avoid them. The default styles above are not used anywhere else in a default project**
 
-If "force style" is set, all other styles are removed and just the constrain_failed style remains.
+If "force style" is set, all other styles are removed and just the constraint_failed style remains.
 
 
 

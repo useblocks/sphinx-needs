@@ -546,7 +546,7 @@ texinfo_documents = [
 
 # contains different constraints
 needs_constraints = {
-    "critical": {"check_0": "'critical' in tags", "check_1": "'security_req' in links", "severity": "CRITICAL"},
+    "critical": {"check_0": "'critical' in tags", "check_1": "'SECURITY_REQ' in links", "severity": "CRITICAL"},
     "security": {"check_0": "'security' in tags", "severity": "HIGH"},
     "team": {"check_0": "author == \"Bob\"", "severity": "LOW"},
 }

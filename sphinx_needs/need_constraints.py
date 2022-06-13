@@ -84,12 +84,11 @@ def process_constraints(app, need):
                             new_styles = "".join(x + "," for x in style_on_fail)
 
                         if force_style:
-                            need["style"] = new_styles
+                            need["style"] = new_styles.strip(", ")
                         else:
                             constraint_failed_style = old_style + new_styles
                             need["style"] = constraint_failed_style
 
-                        a = 1
 
                     else:
 
