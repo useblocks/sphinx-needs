@@ -32,7 +32,7 @@ def test_need_constraints(test_app):
     assert "red_bar" in html1
     assert "red_border" not in html1
 
-    # test medium severity without force_style
+    # test medium severity without force_style, appends to style
     assert "blue_border, yellow_bar" in html1
 
 
@@ -44,13 +44,3 @@ def test_need_constraints_config(test_app):
     # check that correct exception is raised
     with pytest.raises(NeedsConstraintNotAllowed):
         app.build()
-
-
-"""
-    test -W
-    test styles, force style, old + new style
-    
-    constraint not in config
-    check correct values in constraints_passed + constraints_result
-    
-"""
