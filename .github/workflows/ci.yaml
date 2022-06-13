@@ -53,6 +53,8 @@ jobs:
       - name: Install Poetry
         run: |
           curl -sL https://install.python-poetry.org | python -
+      - name: Update Pip
+        run: poetry run pip install -U pip setuptools
       - name: Install Dependencies
         run: poetry install
       - uses: pre-commit/action@v3.0.0
