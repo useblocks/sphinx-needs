@@ -13,6 +13,7 @@ from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api import add_need
 from sphinx_needs.api.exceptions import NeedsInvalidException
+from sphinx_needs.api.need import NeedInfo
 from sphinx_needs.config import NEEDS_CONFIG
 from sphinx_needs.defaults import NEED_DEFAULT_OPTIONS
 from sphinx_needs.functions import find_and_replace_node_content, resolve_dynamic_values
@@ -344,7 +345,7 @@ def print_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
     """
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
-    needs = env.needs_all_needs
+    needs: Dict[str, NeedInfo] = getattr(env, "needs_all_needs", {})
 
     for node_need in doctree.findall(Need):
         need_id = node_need.attributes["ids"][0]
@@ -365,7 +366,7 @@ def check_links(env: BuildEnvironment) -> None:
     :param env: Sphinx environment
     :return:
     """
-    needs = env.needs_all_needs
+    needs: Dict[str, NeedInfo] = getattr(env, "needs_all_needs", {})
     extra_links = getattr(env.config, "needs_extra_links", [])
     for need in needs.values():
         for link_type in extra_links:

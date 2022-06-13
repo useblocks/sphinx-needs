@@ -157,9 +157,9 @@ def get_debug_container(puml_node: nodes.Node) -> nodes.container:
     """Return container containing the raw plantuml code"""
     debug_container = nodes.container()
     if isinstance(puml_node, nodes.figure):
-        data = puml_node.children[0]["uml"]
+        data = puml_node.children[0]["uml"]  # type: ignore[index]
     else:
-        data = puml_node["uml"]
+        data = puml_node["uml"]  # type: ignore[index]
     data = "\n".join([html.escape(line) for line in data.split("\n")])
     debug_para = nodes.raw("", f"<pre>{data}</pre>", format="html")
     debug_container += debug_para

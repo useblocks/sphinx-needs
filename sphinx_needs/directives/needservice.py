@@ -60,7 +60,7 @@ class NeedserviceDirective(Directive):
 
         service_name = self.arguments[0]
         service = unwrap(needs_services.get(service_name))
-        section = []
+        section: List[nodes.Node] = []
 
         if "debug" not in self.options:
             service_data = service.request(self.options)

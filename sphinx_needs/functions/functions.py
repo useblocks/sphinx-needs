@@ -15,6 +15,7 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.errors import SphinxError
 
+from sphinx_needs.api.need import NeedInfo
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import NEEDS_FUNCTIONS  # noqa: F401
 
@@ -96,7 +97,7 @@ def execute_func(env: BuildEnvironment, need, func_string: str):
 func_pattern = re.compile(r"\[\[(.*?)\]\]")  # RegEx to detect function strings
 
 
-def find_and_replace_node_content(node, env: BuildEnvironment, need):
+def find_and_replace_node_content(node: nodes.Node, env: BuildEnvironment, need: NeedInfo):
     """
     Search inside a given node and its children for nodes of type Text,
     if found check if it contains a function string and run/replace it.

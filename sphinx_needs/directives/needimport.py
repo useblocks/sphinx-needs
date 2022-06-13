@@ -1,9 +1,10 @@
 import json
 import os
 import re
-from typing import Sequence, cast
+from typing import List, Sequence, cast
 
 from docutils import nodes
+from docutils.nodes import Node
 from docutils.parsers.rst import Directive, directives
 from sphinx.environment import BuildEnvironment
 
@@ -144,7 +145,7 @@ class NeedimportDirective(Directive):
         for need in needs_list.values():
             need["tags"] = need["tags"] + tags
 
-        need_nodes = []
+        need_nodes: List[Node] = []
         for need in needs_list.values():
             # Set some values based on given option or value from imported need.
             need["template"] = self.options.get("template", getattr(need, "template", None))

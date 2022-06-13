@@ -92,7 +92,6 @@ namespace_packages = true
 module = [
   'sphinx_needs.api.need',
   'sphinx_needs.builder',
-  'sphinx_needs.diagrams_common',
   'sphinx_needs.directives.need',
   'sphinx_needs.directives.needbar',
   'sphinx_needs.directives.needextend',
