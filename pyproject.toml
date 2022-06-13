@@ -68,6 +68,7 @@ isort = "^5.7.0"
 
 # pyparsing 3.0.5 does not work with current "packaging" lib
 pyparsing = "==3.0.8"  # 3.0.5 error: https://github.com/pyparsing/pyparsing/issues/329
+typing-extensions = "^4.2.0"
 
 
 [tool.pytest.ini_options]

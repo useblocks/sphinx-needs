@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 from docutils.parsers.rst import directives
 
@@ -202,12 +202,23 @@ NEEDFLOW_CONFIG_DEFAULTS = {
 TITLE_REGEX = r'([\w]+) as "([\w ]+)"'
 
 
+def boolean_required(value: Union[str, bool]) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        if value.lower() in ("true", "yes", "y", "1"):
+            return True
+        if value.lower() in ("false", "no", "n", "0"):
+            return False
+    raise ValueError(f"Invalid boolean value: {value}")
+
+
 NEED_DEFAULT_OPTIONS: Dict[str, Any] = {
     "id": directives.unchanged_required,
     "status": directives.unchanged_required,
     "tags": directives.unchanged_required,
     "links": directives.unchanged_required,
-    "collapse": directives.unchanged_required,
+    "collapse": boolean_required,
     "hide": directives.flag,
     "title_from_content": directives.flag,
     "style": directives.unchanged_required,

@@ -1,7 +1,8 @@
 import hashlib
 import os
 import re
-from typing import Any, List, Optional, Union
+import sys
+from typing import Any, Dict, List, Optional, Union
 
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState
@@ -28,7 +29,51 @@ from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
 from sphinx_needs.utils import unwrap
 
+if sys.version_info < (3, 8):
+    from typing_extensions import TypedDict
+else:
+    from typing import TypedDict
+
 logger = get_logger(__name__)
+
+
+class NeedInfo(TypedDict):
+    """
+    NeedInfo is a dictionary containing all the information required to construct a 'need'.
+    """
+
+    docname: str
+    lineno: int
+    target_node: Optional[nodes.target]
+    external_url: Optional[str]
+    content_node: Optional[nodes.Node]  # gets set after rst parsing
+    type: str
+    type_name: str
+    type_prefix: str
+    type_color: str
+    type_style: str
+    type_content: str
+    status: Optional[str]
+    tags: List[str]
+    id: str
+    title: str
+    full_title: str
+    content: str
+    collapse: bool
+    style: Optional[str]
+    layout: Optional[str]
+    template: Optional[str]
+    pre_template: Optional[str]
+    post_template: Optional[str]
+    hide: bool
+    parts: Dict[str, "NeedInfo"]
+    is_part: bool
+    is_need: bool
+    parent_need: Optional[str]
+    is_external: bool
+    external_css: str
+    is_modified: bool  # needed by needextend
+    modifications: int  # needed by needextend
 
 
 def add_need(
@@ -48,9 +93,9 @@ def add_need(
     hide: bool = False,
     hide_tags: bool = False,
     hide_status: bool = False,
-    collapse=None,
-    style=None,
-    layout=None,
+    collapse: bool = False,
+    style: Optional[str] = None,
+    layout: Optional[str] = None,
     template=None,
     pre_template: Optional[str] = None,
     post_template: Optional[str] = None,

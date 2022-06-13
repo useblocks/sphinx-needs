@@ -67,14 +67,8 @@ class NeedDirective(SphinxDirective):
         env = self.env
 
         # ToDo: Keep this in directive!!!
-        collapse = self.options.get("collapse")
-        if isinstance(collapse, str):
-            if collapse.upper() in ["TRUE", 1, "YES"]:
-                collapse = True
-            elif collapse.upper() in ["FALSE", 0, "NO"]:
-                collapse = False
-            else:
-                raise Exception("collapse attribute must be true or false")
+        # 'collapse' is guaranteed to be a boolean. see `sphinx_needs.defaults.NEED_DEFAULT_OPTIONS`
+        collapse = typing.cast(bool, self.options.get("collapse"))
 
         hide = "hide" in self.options
 
