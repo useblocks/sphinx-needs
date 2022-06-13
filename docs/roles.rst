@@ -34,16 +34,24 @@ Example
 
    But we can also set :need:`a custom link name <roles_req_1>`.
 
+   And we can change the text even more :need:`our specific link text ({{id}}) ({{status}}) <roles_req_1>`
+
 |out|
 
 | The requirement :need:`roles_req_1` is the most important one.
 | But we can also set :need:`a custom link name <roles_req_1>`.
+| And we can change the text even more :need:`our more specific link name ({{id}}) ({{status}}) <roles_req_1>`.
 
 .. note::
 
    You can customize the string representation by using the
    configuration parameters :ref:`needs_role_need_template` and
    :ref:`needs_role_need_max_title_length`.
+   If we find a `{` in the custumized string, we handle it 
+   according to Python's `.format() <https://docs.python.org/3.4/library/functions.html#format>`_ 
+   function.
+   Please see https://pyformat.info/ for more information.
+   RST-attributes like ``**bold**`` are **not** supported.
 
 
 .. _role_need_outgoing:

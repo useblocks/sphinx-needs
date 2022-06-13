@@ -22,6 +22,8 @@ Under development
   (`#498 <https://github.com/useblocks/sphinxcontrib-needs/issues/498>`_)
 * Improvement: Added `show_top_sum` to :ref:`Needbar <needbar>` and make it possible to rotate the bar labels.
   (`#516 <https://github.com/useblocks/sphinxcontrib-needs/issues/516>`_)
+* Improvement: Added customizable link text of :ref:`:Need: <needref>`.
+  (`#439 <https://github.com/useblocks/sphinxcontrib-needs/discussions/439>`_)
 
 0.7.9
 -----
