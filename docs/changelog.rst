@@ -20,6 +20,8 @@ Under development
 * Improvement: Support snippet for auto directive completion for Sphinx-Needs IDE language features.
 * Bugfix: Handle overlapping labels in :ref:`needpie`.
   (`#498 <https://github.com/useblocks/sphinxcontrib-needs/issues/498>`_)
+* Improvement: Added `show_top_sum` to :ref:`Needbar <needbar>` and make it possible to rotate the bar labels.
+  (`#516 <https://github.com/useblocks/sphinxcontrib-needs/issues/516>`_)
 
 0.7.9
 -----

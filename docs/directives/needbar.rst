@@ -35,7 +35,7 @@ Options
 
 Example with all options used:
 
-.. needbar:: My full bar chart
+.. needbar:: Full bar chart
    :legend:
    :colors: #ffcc88, #ffcc00, #444444
    :text_color: crimson
@@ -48,7 +48,9 @@ Example with all options used:
    :ylabels_rotation: 45
    :separator: ;
    :stacked:
+   :show_top_sum:
    :show_sum:
+   :sum_rotation: 90
    :transpose:
    :horizontal:
 
@@ -60,7 +62,7 @@ Example with all options used:
 
 .. code-block:: rst
 
-   .. needbar:: My full bar chart
+   .. needbar:: Full bar chart
       :legend:
       :colors: #ffcc88, #ffcc00, #444444
       :text_color: crimson
@@ -73,7 +75,9 @@ Example with all options used:
       :ylabels_rotation: 45
       :separator: ;
       :stacked:
+      :show_top_sum:
       :show_sum:
+      :sum_rotation: 90
       :transpose:
       :horizontal:
 
@@ -212,7 +216,7 @@ You can enable axis titles on the barchart by setting the ``:x_axis_title:`` or 
 
 .. code-block:: rst
 
-   .. needbar:: Legend example
+   .. needbar:: Axis title example
       :x_axis_title: types
       :y_axis_title: numbers
 
@@ -380,6 +384,58 @@ The ``:show_sum:`` flag does not support any values and it's useful with the ``s
    20,15,10
 
 
+show_top_sum
+~~~~~~~~~~~~
+
+You can render the barchart with detailed information of the height of each bar above by setting the ``:show_top_sum:`` flag.
+
+The ``:show_sum:`` flag does not support any values and it's useful with the ``stacked`` option  enabled.
+
+|ex|
+
+.. code-block:: rst
+
+   .. needbar:: show_top_sum example 1
+      :show_top_sum:
+
+      5,20,15
+      10,15,10
+      15,10,20
+      20,15,10
+
+.. code-block:: rst
+
+   .. needbar:: show_top_sum example 2
+      :stacked:
+      :show_sum:
+      :show_top_sum:
+
+      5,20,15
+      10,15,10
+      15,10,20
+      20,15,10
+
+|out|
+
+.. needbar:: show_top_sum example 1
+   :show_top_sum:
+
+   5,20,15
+   10,15,10
+   15,10,20
+   20,15,10
+
+.. needbar:: show_top_sum example 2
+   :stacked:
+   :show_sum:
+   :show_top_sum:
+
+   5,20,15
+   10,15,10
+   15,10,20
+   20,15,10
+
+
 horizontal
 ~~~~~~~~~~
 
@@ -514,6 +570,8 @@ rotation
 
 | Use ``:xlabels_rotation:`` to set rotation of labels for x-axis on the diagram.
 | Use ``:ylabels_rotation:`` to set rotation of labels for y-axis on the diagram.
+| Use ``:sum_rotation:`` to set rotation of labels for bars on the diagram.
+
 
 |ex|
 
@@ -525,6 +583,9 @@ rotation
       :xlabels_rotation: 90
       :ylabels: Z, Y, X, W
       :ylabels_rotation: 40
+      :show_top_sum:
+      :show_sum:
+      :sum_rotation: 90
 
        5,20,15
       10,15,10
@@ -539,6 +600,9 @@ rotation
    :xlabels_rotation: 90
    :ylabels: Z, Y, X, W
    :ylabels_rotation: 40
+   :show_top_sum:
+   :show_sum:
+   :sum_rotation: 90
 
     5,20,15
    10,15,10
