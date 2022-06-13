@@ -47,7 +47,7 @@ class NeedbarDirective(FilterBase):
 
     option_spec = {
         "style": directives.unchanged_required,
-        "colors": directives.unchanged_required,
+        "colors": split_list_required,
         "text_color": directives.unchanged_required,
         "x_axis_title": directives.unchanged_required,
         "xlabels": split_list_required,
@@ -89,47 +89,32 @@ class NeedbarDirective(FilterBase):
 
         title = self.arguments[0].strip() if self.arguments else None
 
-        text_color = self.options.get("text_color")
-        if text_color:
-            text_color = text_color.strip()
+        text_color = self.options["text_color"].strip()
 
         style = self.options.get("style")
         style = style.strip() if style else matplotlib.style.use("default")
 
         legend = "legend" in self.options
 
-        colors = self.options.get("colors")
-        if colors:
-            colors = [x.strip() for x in colors.split(",")]
+        colors = typing.cast(List[str], self.options.get("colors"))
 
-        x_axis_title = self.options.get("x_axis_title")
-        if x_axis_title:
-            x_axis_title = x_axis_title.strip()
+        x_axis_title = self.options["x_axis_title"].strip()
         xlabels = typing.cast(List[str], self.options.get("xlabels"))
         xlabels_rotation = self.options.get("xlabels_rotation")
         if xlabels_rotation:
             xlabels_rotation = xlabels_rotation.strip()
 
-        y_axis_title = self.options.get("y_axis_title")
-        if y_axis_title:
-            y_axis_title = y_axis_title.strip()
+        y_axis_title = self.options["y_axis_title"].strip()
         ylabels = typing.cast(List[str], self.options.get("ylabels"))
         ylabels_rotation = self.options.get("ylabels_rotation")
         if ylabels_rotation:
             ylabels_rotation = ylabels_rotation.strip()
 
-        separator = self.options.get("separator")
-        if not separator:
-            separator = ","
+        separator = self.options.get("separator", ",")
 
-        stacked = "stacked" in self.options
-        show_sum = "show_sum" in self.options
-        show_top_sum = "show_top_sum" in self.options
         sum_rotation = self.options.get("sum_rotation")
         if sum_rotation:
             sum_rotation = sum_rotation.strip()
-        transpose = "transpose" in self.options
-        horizontal = "horizontal" in self.options
 
         # 2. Stores infos for needbar
         env.need_all_needbar[targetid] = {
@@ -148,12 +133,12 @@ class NeedbarDirective(FilterBase):
             "ylabels": ylabels,
             "ylabels_rotation": ylabels_rotation,
             "separator": separator,
-            "stacked": stacked,
-            "show_sum": show_sum,
-            "show_top_sum": show_top_sum,
+            "stacked": "stacked" in self.options,
+            "show_sum": "show_sum" in self.options,
+            "show_top_sum": "show_top_sum" in self.options,
             "sum_rotation": sum_rotation,
-            "transpose": transpose,
-            "horizontal": horizontal,
+            "transpose": "transpose" in self.options,
+            "horizontal": "horizontal" in self.options,
             "style": style,
             "colors": colors,
             "text_color": text_color,
