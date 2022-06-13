@@ -1,6 +1,7 @@
 import math
 import os
-from typing import Sequence
+import typing
+from typing import List, Sequence
 
 import matplotlib
 import numpy
@@ -25,6 +26,12 @@ class Needbar(nodes.General, nodes.Element):
     pass
 
 
+def split_list_required(comma_separated_list: str) -> List[str]:
+    if not isinstance(comma_separated_list, str):
+        raise ValueError("value must be a comma-separated list string")
+    return [x.strip() for x in comma_separated_list.split(",")]
+
+
 class NeedbarDirective(FilterBase):
     """
     Directive to plot diagrams with the help of matplotlib
@@ -43,10 +50,10 @@ class NeedbarDirective(FilterBase):
         "colors": directives.unchanged_required,
         "text_color": directives.unchanged_required,
         "x_axis_title": directives.unchanged_required,
-        "xlabels": directives.unchanged_required,
+        "xlabels": split_list_required,
         "xlabels_rotation": directives.unchanged_required,
         "y_axis_title": directives.unchanged_required,
-        "ylabels": directives.unchanged_required,
+        "ylabels": split_list_required,
         "ylabels_rotation": directives.unchanged_required,
         "separator": directives.unchanged_required,
         "legend": directives.flag,
@@ -98,9 +105,7 @@ class NeedbarDirective(FilterBase):
         x_axis_title = self.options.get("x_axis_title")
         if x_axis_title:
             x_axis_title = x_axis_title.strip()
-        xlabels = self.options.get("xlabels")
-        if xlabels:
-            xlabels = [x.strip() for x in xlabels.split(",")]
+        xlabels = typing.cast(List[str], self.options.get("xlabels"))
         xlabels_rotation = self.options.get("xlabels_rotation")
         if xlabels_rotation:
             xlabels_rotation = xlabels_rotation.strip()
@@ -108,9 +113,7 @@ class NeedbarDirective(FilterBase):
         y_axis_title = self.options.get("y_axis_title")
         if y_axis_title:
             y_axis_title = y_axis_title.strip()
-        ylabels = self.options.get("ylabels")
-        if ylabels:
-            ylabels = [y.strip() for y in ylabels.split(",")]
+        ylabels = typing.cast(List[str], self.options.get("ylabels"))
         ylabels_rotation = self.options.get("ylabels_rotation")
         if ylabels_rotation:
             ylabels_rotation = ylabels_rotation.strip()
