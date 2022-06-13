@@ -1,8 +1,7 @@
 import hashlib
 import os
 import re
-import sys
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, List, Optional, Union
 
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState
@@ -29,70 +28,12 @@ from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
 from sphinx_needs.utils import unwrap
 
-if sys.version_info < (3, 8):
-    from typing_extensions import TypedDict
-else:
-    from typing import TypedDict
-
 logger = get_logger(__name__)
-
-
-class NeedInfo(TypedDict):
-    """
-    NeedInfo is a dictionary containing all the information required to construct a 'need'.
-    """
-
-    docname: str
-    lineno: int
-    target_node: Optional[nodes.target]
-    external_url: Optional[str]
-    content_node: Optional[nodes.Node]  # gets set after rst parsing
-    type: str
-    type_name: str
-    type_prefix: str
-    type_color: str
-    type_style: str
-    type_content: str
-    status: Optional[str]
-    tags: List[str]
-    id: str
-    title: str
-    full_title: str
-    content: str
-    collapse: bool
-    style: Optional[str]
-    layout: Optional[str]
-    template: Optional[str]
-    pre_template: Optional[str]
-    post_template: Optional[str]
-    hide: bool
-    parts: Dict[str, "NeedInfo"]
-    is_part: bool
-    is_need: bool
-    parent_need: Optional[str]
-    is_external: bool
-    external_css: str
-    is_modified: bool  # needed by needextend
-    modifications: int  # needed by needextend
-
-
-def _split_tags(need_id: str, tags: Union[List[str], str, None]) -> List[str]:
-    if tags is None:
-        return []
-    if isinstance(tags, str):
-        valid_tags = []  # Shall contain only valid tags
-        for tag in [tag.strip() for tag in re.split(";|,", tags)]:
-            if len(tag) == 0 or tag.isspace():
-                logger.warning(f"Scruffy tag definition found in need {need_id}. " "Defined tag contains spaces only.")
-            else:
-                valid_tags.append(tags)
-        return valid_tags
-    return tags
 
 
 def add_need(
     app: Sphinx,
-    state: RSTState,
+    state,
     docname: str,
     lineno: int,
     need_type,
@@ -107,17 +48,17 @@ def add_need(
     hide: bool = False,
     hide_tags: bool = False,
     hide_status: bool = False,
-    collapse: bool = False,
-    style: Optional[str] = None,
-    layout: Optional[str] = None,
+    collapse=None,
+    style=None,
+    layout=None,
     template=None,
     pre_template: Optional[str] = None,
     post_template: Optional[str] = None,
     is_external: bool = False,
     external_url: Optional[str] = None,
     external_css: str = "external_link",
-    **kwargs: Any,
-) -> Sequence[nodes.Node]:
+    **kwargs,
+):
     """
     Creates a new need and returns its node.
 
@@ -250,8 +191,21 @@ def add_need(
             f"Status {status} of need id {need_id} is not allowed " "by config value 'needs_statuses'."
         )
 
-    tags = _split_tags(need_id, tags)
-    if tags:
+    if tags is None:
+        tags = []
+    if len(tags) > 0:
+
+        # tags should be a string, but it can also be already a list,which can be used.
+        if isinstance(tags, str):
+            tags = [tag.strip() for tag in re.split(";|,", tags)]
+        new_tags = []  # Shall contain only valid tags
+        for i in range(len(tags)):
+            if len(tags[i]) == 0 or tags[i].isspace():
+                logger.warning(f"Scruffy tag definition found in need {need_id}. " "Defined tag contains spaces only.")
+            else:
+                new_tags.append(tags[i])
+
+        tags = new_tags
         # Check if tag is in needs_tags. If not raise an error.
         if app.config.needs_tags:
             for tag in tags:
@@ -263,7 +217,7 @@ def add_need(
         # This may have cut also dynamic function strings, as they can contain , as well.
         # So let put them together again
         # ToDo: There may be a smart regex for the splitting. This would avoid this mess of code...
-        tags = _fix_list_dyn_func(tags)
+    tags = _fix_list_dyn_func(tags)
 
     if constraints is None:
         constraints = []
@@ -329,7 +283,7 @@ def add_need(
         trimmed_title = title[: max_length - 3] + "..."
 
     # Add the need and all needed information
-    needs_info: NeedInfo = {
+    needs_info = {
         "docname": docname,
         "lineno": lineno,
         "target_node": target_node,

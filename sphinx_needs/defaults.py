@@ -202,13 +202,13 @@ NEEDFLOW_CONFIG_DEFAULTS = {
 TITLE_REGEX = r'([\w]+) as "([\w ]+)"'
 
 
-def boolean_required(value: Union[str, bool]) -> bool:
+def boolean_required(value: Union[str, bool, int]) -> bool:
     if isinstance(value, bool):
         return value
-    if isinstance(value, str):
-        if value.lower() in ("true", "yes", "y", "1"):
+    if isinstance(value, (str, int)):
+        if str(value).lower() in ("true", "yes", "y", "1"):
             return True
-        if value.lower() in ("false", "no", "n", "0"):
+        if str(value).lower() in ("false", "no", "n", "0"):
             return False
     raise ValueError(f"Invalid boolean value: {value}")
 
