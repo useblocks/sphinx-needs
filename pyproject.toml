@@ -43,6 +43,7 @@ esbonio = ">=0.11.3"  # IDE language features
 pygls = "*"  # esbonio dependency
 
 [tool.poetry.dev-dependencies]
+sphinxcontrib-plantuml = "^0"
 pre-commit = "^2"
 # test dependencies
 lxml = "^4.6.5"
