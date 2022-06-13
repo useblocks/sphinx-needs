@@ -55,4 +55,4 @@ jobs:
           curl -sL https://install.python-poetry.org | python -
       - name: Install Dependencies
         run: poetry install
-      - uses: pre-commit/action@v2.0.3
+      - uses: pre-commit/action@v3.0.0
