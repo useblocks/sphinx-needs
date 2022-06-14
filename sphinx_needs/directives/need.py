@@ -293,7 +293,8 @@ def add_sections(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None
 @profile("NEED_PROCESS")
 def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     """
-    Event handler to add title meta data (status, tags, links, ...) information to the Need node.
+    Event handler to add title meta data (status, tags, links, ...) information to the Need node. Also processes
+    constraints.
 
     :param app:
     :param doctree:
@@ -321,14 +322,13 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     for links in env.config.needs_extra_links:
         create_back_links(env, links["option"])
 
-    needs = env.needs_all_needs
-
     """
     The output of this phase is a doctree for each source file; that is a tree of docutils nodes.
-    
+
     https://www.sphinx-doc.org/en/master/extdev/index.html
-    
+
     """
+    needs = env.needs_all_needs
 
     for node_need in doctree.traverse(Need):
         need_id = node_need.attributes["ids"][0]

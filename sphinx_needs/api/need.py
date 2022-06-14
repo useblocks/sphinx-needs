@@ -109,7 +109,8 @@ def add_need(
     :param content_type: Type of the content. Can be "sphinx" or "plantuml".
     :param status: Status as string.
     :param tags: Tags as single string.
-    :param constraints: Constraints as single string.
+    :param constraints: Constraints as single, comma separated, string.
+    :param constraints_passed: Contains bool describing if all constraints have passed
     :param links_string: Links as single string.
     :param hide: boolean value.
     :param hide_tags: boolean value. (Not used with Sphinx-Needs >0.5.0)
@@ -237,7 +238,7 @@ def add_need(
         # Check if constraint is in needs_constraints. If not raise an error.
         if env.app.config.needs_constraints:
             for constraint in constraints:
-                if constraint not in [x for x in env.app.config.needs_constraints.keys()]:
+                if constraint not in env.app.config.needs_constraints.keys():
                     raise NeedsConstraintNotAllowed(
                         f"Constraint {constraint} of need id {need_id} is not allowed "
                         "by config value 'needs_constraints'."
@@ -482,7 +483,7 @@ def add_external_need(
     :param content: Content as single string.
     :param status: Status as string.
     :param tags: Tags as single string.
-    :param constraints: constraints as single string.
+    :param constraints: constraints as single, comma separated string.
     :param links_string: Links as single string.
     :param external_css: CSS class name as string, which is set for the <a> tag.
     :param kwargs:

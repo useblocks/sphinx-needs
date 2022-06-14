@@ -302,7 +302,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.connect("config-inited", load_config)
     app.connect("env-before-read-docs", prepare_env)
     app.connect("env-before-read-docs", load_external_needs)
-    app.connect("config-inited", check_configuration)  # TODO check here for constraints?
+    app.connect("config-inited", check_configuration)
     app.connect("env-merge-info", merge_data)
 
     # There is also the event doctree-read.
@@ -312,7 +312,6 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     # doctree-read. So manipulating the doctree may result in conflicts, as e.g. images get not
     # registered for sphinx. So some sphinx-internal tasks/functions may be called by hand again...
     # See also https://github.com/sphinx-doc/sphinx/issues/7054#issuecomment-578019701 for an example
-
     app.connect("doctree-resolved", add_sections)
     app.connect("doctree-resolved", process_need_nodes)
     app.connect("doctree-resolved", process_needextend)  # Must be done very early, as it modifies need data

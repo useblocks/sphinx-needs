@@ -22,7 +22,7 @@ def process_constraints(app, need):
     for constraint in constraints:
 
         # check if constraint is defined in config
-        if constraint not in [x for x in config_constraints.keys()]:
+        if constraint not in config_constraints.keys():
             raise NeedsConstraintNotAllowed(
                 f"Constraint {constraint} of need id {need_id} is not allowed by config value 'needs_constraints'."
             )
@@ -106,4 +106,3 @@ def process_constraints(app, need):
                 need["constraints_passed"] = False
             else:
                 need["constraints_passed"] = True
-
