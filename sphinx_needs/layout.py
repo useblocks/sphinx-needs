@@ -134,6 +134,11 @@ def build_need(layout, node, app: Sphinx, style=None, fromdocname: Optional[str]
     # We need to replace the current need-node (containing content only) with our new table need node.
     node.parent.replace(node, new_need_node)
 
+# read configuration
+# ensure dict of array of arrays of tuble
+def getgridsfromconfig(app: Sphinx,):# -> dict:
+    needs_grids = app.config.needs_grids
+    return needs_grids
 
 class LayoutHandler:
     """
@@ -232,6 +237,14 @@ class LayoutHandler:
             },
         }
 
+        #_grid_customer
+        needs_grids = getgridsfromconfig(app)
+        for k, v in needs_grids.items():
+            self.grids[k] = {
+                            "func": self._grid_customer,
+                            "configs": {"customer_format": v},
+                            }
+
         # Dummy Document setup
         self.doc_settings = OptionParser(components=(Parser,)).get_default_values()
         self.dummy_doc = new_document("dummy", self.doc_settings)
@@ -256,6 +269,7 @@ class LayoutHandler:
             "link": self.link,
             "collapse_button": self.collapse_button,
             "permalink": self.permalink,
+            "content": self.content,
         }
 
         # Prepare string_links dict, so that regex and templates get not recompiled too often.
@@ -297,6 +311,10 @@ class LayoutHandler:
         # Needed for PDF/Latex output, where empty line_blocks raise exceptions during build
         if len(lines) == 0:
             return None
+        elif len(lines) == 1:
+            line_parsed = self._parse(lines[0])
+            line_ready = self._func_replace(line_parsed)
+            return line_ready
 
         lines_container = nodes.line_block(classes=[f"needs_{section}"])
 
@@ -325,6 +343,7 @@ class LayoutHandler:
             raise SphinxNeedLayoutException(message)
         return result
 
+    #todo: refactore to better integrate changes
     def _func_replace(self, section_nodes):
         """
         Replaces a function definition like ``<<meta(a, ,b)>>`` with the related docutils nodes.
@@ -354,8 +373,11 @@ class LayoutHandler:
                     func_def = line_element[0]
                     # Check if normal string was detected
                     if len(text) > 0 and len(func_def) == 0:
-                        node_line += nodes.Text(text, text)
-                        result = nodes.Text(text, text)
+                        if len(section_nodes) == 1:
+                            node_line = nodes.Text(text, text)
+                        else:
+                            node_line += nodes.Text(text, text)
+                        #result = nodes.Text(text, text)#dead code?
                     # Check if function_definition was detected
                     elif len(text) == 0 and len(func_def) > 1:
                         from sphinx_needs.functions.functions import (
@@ -407,14 +429,21 @@ class LayoutHandler:
                         result = func(*func_args, **func_kargs)
 
                         if result:
-                            node_line += result
+                            if len(section_nodes) == 1:
+                                node_line = result
+                            else:
+                                node_line += result
                     else:
                         raise SphinxNeedLayoutException(
                             f"Error during layout line parsing. This looks strange: {line_element}"
                         )
 
                 return_nodes.append(node_line)
-        return return_nodes
+
+        if len(section_nodes) == 1:
+            return return_nodes[0]
+        else:
+            return return_nodes
 
     def _replace_place_holder(self, data):
         replace_items = re.findall(r"{{(.*)}}", data)
@@ -956,6 +985,18 @@ class LayoutHandler:
             prefix=prefix,
         )
 
+    def content(self):
+        """
+        adds content to a need in a grid.
+
+        Examples::
+            <<content()>>
+        """
+
+        data_container = self.node.children
+
+        return data_container
+
     def _grid_simple(self, colwidths, side_left, side_right, footer):
         """
         Creates most "simple" grid layouts.
@@ -1048,7 +1089,7 @@ class LayoutHandler:
         # CONTENT row
         content_row = nodes.row(classes=["need", "content"])
         content_entry = nodes.entry(classes=["need", "content"], morecols=common_more_cols)
-        content_entry.insert(0, self.node.children)
+        content_entry += self.get_section("content")
         content_row += content_entry
 
         # FOOTER row
@@ -1190,6 +1231,32 @@ class LayoutHandler:
             self.node_tbody += footer_row
         node_tgroup += self.node_tbody
 
+    def _grid_customer(self, customer_format) -> None:
+        node_tgroup = nodes.tgroup(cols = len(customer_format["widths"]))
+        self.node_table += node_tgroup
+
+        for width in customer_format["widths"]:
+            node_colspec = nodes.colspec(colwidth = width)
+            node_tgroup += node_colspec
+
+        for r_k, r_v in customer_format["layout"].items():
+            row = nodes.row(classes=[r_k])
+            self.node_tbody += row
+
+            for c_k, c_v in r_v.items():
+                if "colspan" in c_v and "rowspan" in c_v:
+                    entry = nodes.entry(classes=[c_k], morecols=(c_v["colspan"]-1), morerows=(c_v["rowspan"]-1))
+                elif "colspan" in c_v:
+                    entry = nodes.entry(classes=[c_k], morecols=(c_v["colspan"]-1))
+                elif "rowspan" in c_v:
+                    entry = nodes.entry(classes=[c_k], morerows=(c_v["rowspan"]-1))
+                else:
+                    entry = nodes.entry(classes=[c_k], )
+                entry += self.get_section(c_k)
+                row += entry
+
+        # Construct table
+        node_tgroup += self.node_tbody
 
 class SphinxNeedLayoutException(BaseException):
     """Raised if problems with layout handling occurs"""

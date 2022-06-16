@@ -46,6 +46,30 @@ Sphinx-Needs allows the definition, linking and filtering of need-objects, which
 You can easily customize the list above via :ref:`configuration <needs_types>`.
 For instance, you can customize the need objects to support bugs, user stories or features.
 
+Example for customizable grids. 
+
+.. req:: Sphinx-Needs shall support customizable grids
+   :id: REQ_GRIDS_1
+   :tags: introduction
+   
+   Sphinx-Needs shall support customizable grids
+
+.. test:: How to customize layouts with grids 1
+   :id: TEST_Layout_1
+   :tests: REQ_GRIDS_1
+   :tags: introduction
+   :layout: customer_layout2
+
+   Example for a customer gird 1
+
+.. test:: How to customize layouts with grids 2
+   :id: TEST_Layout_2
+   :tests: REQ_GRIDS_1
+   :tags: introduction
+   :layout: customer_layout
+
+   Example for a customer gird 1
+
 .. req:: What is a need
    :id: REQ_1
    :tags: introduction

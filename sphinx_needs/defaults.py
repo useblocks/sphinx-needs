@@ -15,6 +15,7 @@ LAYOUT_COMMON_SIDE = {
     "side": ['<<image("field:image", align="center")>>'],
     "head": ['<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>'],
     "meta": ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"],
+    "content": ["<<content()>>"],
 }
 
 LAYOUTS = {
@@ -26,6 +27,7 @@ LAYOUTS = {
                 'collapsed="icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=False)>> '
             ],
             "meta": ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"],
+            "content": ["<<content()>>"],
         },
     },
     "clean": {
@@ -36,6 +38,7 @@ LAYOUTS = {
                 'collapsed="icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=False)>> '
             ],
             "meta": ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"],
+            "content": ["<<content()>>"],
         },
     },
     "clean_l": {"grid": "simple_side_left", "layout": LAYOUT_COMMON_SIDE},
@@ -59,12 +62,13 @@ LAYOUTS = {
             ],
             "footer": [],
             "footer_right": ['style: <<meta("style")>>'],
+            "content": ["<<content()>>"],
         },
     },
-    "focus": {"grid": "content", "layout": {}},
-    "focus_f": {"grid": "content_footer", "layout": {"footer": ["<<meta_id()>>"]}},
-    "focus_l": {"grid": "content_side_left", "layout": {"side": ["<<meta_id()>>"]}},
-    "focus_r": {"grid": "content_side_right", "layout": {"side": ["<<meta_id()>>"]}},
+    "focus": {"grid": "content", "layout": {"content": ["<<content()>>"],}},
+    "focus_f": {"grid": "content_footer", "layout": {"footer": ["<<meta_id()>>"], "content": ["<<content()>>"],}},
+    "focus_l": {"grid": "content_side_left", "layout": {"side": ["<<meta_id()>>"], "content": ["<<content()>>"],}},
+    "focus_r": {"grid": "content_side_right", "layout": {"side": ["<<meta_id()>>"],"content": ["<<content()>>"],}},
     "debug": {
         "grid": "simple",
         "layout": {
@@ -73,6 +77,7 @@ LAYOUTS = {
                 '**<<collapse_button("meta", collapsed="Debug view on", visible="Debug view off", initial=True)>>**',
             ],
             "meta": ["<<meta_all(exclude=[], defaults=False, show_empty=True)>>"],
+            "content": ["<<content()>>"],
         },
     },
 }

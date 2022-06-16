@@ -200,6 +200,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
 
     app.add_config_value("needs_warnings", {}, "html")
     app.add_config_value("needs_warnings_always_warn", False, "html", types=[bool])
+    app.add_config_value("needs_grids", {}, "html")
     app.add_config_value("needs_layouts", {}, "html")
     app.add_config_value("needs_default_layout", "clean", "html")
     app.add_config_value("needs_default_style", None, "html")
@@ -454,6 +455,129 @@ def visitor_dummy(*_args, **_kwargs) -> None:
     """
     pass
 
+#todo: test isattributeset
+def isattributeset(grid: {}, attributes: []) -> bool:
+    inside = False
+    if any(name in attributes for name in grid):
+        inside = True
+        return inside
+    else:
+        for row in grid.values():
+            if any(name in attributes for name in row):
+                inside = True
+                return inside
+            else:
+                for column in row.values():
+                    if any(name in attributes for name in column):
+                        inside = True
+                        return inside
+    return inside
+
+#todo: test childchildisempty
+def childchildisempty(grid:{}) -> bool:
+    inside = True
+    
+    for row in grid.values():
+        for column in row.values():
+            if len(column) > 0:
+                inside = False
+                return inside
+    return inside            
+
+#todo: test calcmaxgridsize
+def calcmaxgridsize(grid):
+    l = 0
+    lengths = []
+    for rows_k, rows_v in grid.items():
+        if len(rows_v) > 1 and len(rows_v) not in lengths:
+            lengths.append(len(rows_v))     
+    if len(lengths) == 0:
+        l = 1
+    elif len(lengths) == 1:
+        l = lengths[0]
+    else:
+        from math import lcm
+        l = lcm(*lengths)
+    return l
+
+#todo: test setcolspan
+def setcolspan(width, grid):
+    new_grid = {}
+    for row_k, row_v in grid.items():
+        if len(row_v) == 0:
+            colspan = width
+        else:
+            colspan = int(width / len(row_v))
+
+        new_column = {}
+        for column_k, column_v in row_v.items():
+            new_element = column_v
+            new_element["colspan"] = colspan
+            new_column[column_k] = new_element
+        new_grid[row_k] = new_column
+    return new_grid
+
+# todo: split out read configuration
+# todo: test getgridsfromconfig
+def getgridsfromconfig(app: Sphinx,):# -> dict:
+    needs_grids = app.config.needs_grids
+    
+    new_needs_grids = {}
+    for needs_grid_k, needs_grid_v in needs_grids.items():
+        if isinstance(needs_grid_v["widths"], list):
+            new_needs_grids[needs_grid_k] = needs_grid_v
+        elif isinstance(needs_grid_v["widths"], str):
+            if needs_grid_v["widths"] == "auto":
+                #notallowedattributes = ['colspan', 'rowspan', ]
+                #if not isattributeset(needs_grid_v[1], notallowedattributes):
+                if childchildisempty(needs_grid_v["layout"]):
+                    columns = calcmaxgridsize(needs_grid_v["layout"])
+                    new_widths = []
+                    for i in range(columns):
+                        if columns == 0:
+                            new_widths.append(100)
+                        else:
+                            new_widths.append( 100 / columns)
+                    new_layout = setcolspan(columns, needs_grid_v["layout"])
+
+                    new_grid ={}
+                    new_grid["widths"] = new_widths
+                    new_grid["layout"] = new_layout
+                    
+                    new_needs_grids[needs_grid_k] = new_grid
+
+                else:
+                    #todo: add exception handling
+                    print("exception" + " using auto, in "+needs_grid_k+" with an attribute set in a cell")
+                    pass
+            else:
+                #todo: add exception handling
+                print("exception" + " unknown option in "+needs_grid_k+" with an attribute set to " + str(needs_grid_v[0] ) )
+                pass
+        else:
+            #todo: add exception handling
+            print("exception" + " unknown option in "+needs_grid_k+" with an attribute set to " + str(needs_grid_v[0] ) )
+            pass
+        
+        row_names = []
+        cell_names = []
+        
+        for row_k, row_v in needs_grid_v["layout"].items():
+            if row_k not in row_names:
+                row_names.append(row_k)
+            else:
+                #todo: add exception handling
+                print("exception: "+ row_k + " already in grid "+ needs_grid_k)
+                pass
+            
+            for column_k, column_v in row_v.items():
+                if column_k not in cell_names:
+                    cell_names.append(column_k)
+                else:
+                    #todo: add exception handling
+                    print("exception: "+ column_k + " already in grid "+ needs_grid_k)
+                    pass
+    return new_needs_grids
 
 def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
     """
@@ -537,6 +661,8 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
         )
 
     app.config.needs_extra_links = common_links + app.config.needs_extra_links
+
+    app.config.needs_grids = getgridsfromconfig(app)
 
     app.config.needs_layouts = {**LAYOUTS, **app.config.needs_layouts}
 

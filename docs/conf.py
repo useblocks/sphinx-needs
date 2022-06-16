@@ -285,6 +285,38 @@ needs_warnings = {
 needs_default_layout = "clean"
 needs_default_style = None
 
+needs_grids = {
+    "customer_grid3": {
+        "widths": "auto" ,
+        "layout": {
+            "head":    {"head_left": {},    "head_center": {},    "head_right": {}    },
+            "meta":    {"meta_left": {},    "meta_center": {},    "meta_right": {}    },
+            "mid":     {"mid_left": {},     "mid_center": {},     "mid_right": {}     },
+            "footer":  {"footer_left": {},  "footer_center": {},  "footer_right": {}  },
+            "sfooter": {"sfooter_left": {}, "sfooter_center": {}, "sfooter_right": {} },
+        },
+    },
+    "customer_grid": {
+        "widths": "auto" ,
+        "layout": {
+            "head":   {"head_left": {},                        "head_right": {}   },
+            "meta":   {"meta_left": {},   "meta_center": {},   "meta_right": {}   },
+            "mid":    {"mid_left": {},    "mid_center": {},    "mid_right": {}    },
+            "footer": {"footer_left": {}, "footer_center": {}, "footer_right": {} },
+            "sub_footer": {"sub_footer_left": {}, "sub_footer_center": {}, "sub_footer_right": {} },
+        },
+    },
+    "customer_grid2": {
+        "widths": [20, 30, 30, 20,],
+        "layout": {
+            "head":   {"head_left":   {'colspan': 1,}, "head_center":  {'colspan': 1,},              "head_center2": {'colspan': 1,}, "head_right":   {'colspan': 1,}, },
+            "meta":   {"meta_left":   {'colspan': 1,}, "meta_center":  {'colspan': 1,},              "meta_center2": {'colspan': 1,}, "meta_right":   {'colspan': 1,}, },
+            "mid":    {"mid_left":    {'colspan': 1,}, "content":   {'colspan': 2, 'rowspan': 2,},                                 "mid_right":    {'colspan': 1,}, },
+            "footer": {"footer_left": {'colspan': 1,},                                                                                "footer_right": {'colspan': 1,},  },
+        },
+    },
+}
+
 needs_layouts = {
     "example": {
         "grid": "simple_side_right_partial",
@@ -304,7 +336,68 @@ needs_layouts = {
             "meta": ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"],
         },
     },
+    "customer_layout": {
+        "grid": "simple_side_right_partial",
+        "layout": {
+            "head": ['**<<meta("title")>>** for *<<meta("author")>>*'],
+            "meta": ['**status**: <<meta("status")>>', '**author**: <<meta("author")>>'],
+            "side": ['<<image("_images/{{author}}.png", align="center")>>'],
+        },
+    },
+    "customer_layout2": {
+        "grid": "simple_side_right_partial",
+        "layout": {
+            "head": ['**<<meta("title")>>** for *<<meta("author")>>*'],
+            "meta": ['**status**: <<meta("status")>>', '**author**: <<meta("author")>>'],
+            "side": ['<<image("_images/{{author}}.png", align="center")>>'],
+        },
+    },
 }
+
+needs_layouts_grid = {
+    "customer_layout": {
+        "grid": "customer_grid",
+        "layout": {
+            "head_left": ['<<meta("type_name")>>'],
+            "head_right": ['**<<meta("title")>>**'],
+            "meta_left": ['<<meta_id()>>'],
+            "meta_center": ['<<meta_all(no_links=True)>>'],
+            "meta_right": ["<<meta_links_all()>>"],
+            "mid_left": ["mid_left"],
+            "content": ["<<content()>>"],
+            "mid_right": ["mid_right"],
+            "footer_left": ["footer_left"],
+            "footer_center": ["footer_center"],
+            "footer_right": ["footer_right"],
+            "sub_footer_left": ["sub_footer_left"],
+            "sub_footer_center": ["sub_footer_center"],
+            "sub_footer_right": ["sub_footer_right"],
+        },
+    },
+    "customer_layout2": {
+        "grid": "customer_grid2",
+        "layout": {
+            "head_left": ["head_left"],
+            "head_center": ["head_center"],
+            "head_center2": ["head_center2"],
+            "head_right": ["head_right"],
+            "meta_left": ["meta_left"],
+            "meta_center": ["meta_center"],
+            "meta_center2": ["meta_center2"],
+            "meta_right": ["meta_right"],
+            "mid_left": ["mid_left"],
+            "content": ["content"],
+            "mid_right": ["mid_right"],
+            "footer_left": ["footer_left"],
+            "footer_right": ["footer_right"],
+        },
+    },
+}
+
+# we are overwritting the config with the new configured grid. 
+# it is implmented like this, to get a config working with easy switchable config between custom grid and normal sphinx needs.
+if True:
+    needs_layouts.update(needs_layouts_grid) 
 
 needs_service_all_data = True
 
