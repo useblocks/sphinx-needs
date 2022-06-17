@@ -427,7 +427,7 @@ class LayoutHandler:
             data = data.replace(replace_string, self.need[item])
         return data
 
-    def meta(self, name: str, prefix: Optional[str] = None, show_empty: bool = False):
+    def meta(self, name: str, prefix: Optional[str] = None, show_multiline: bool = True, show_uml: bool = True, show_empty: bool = False):
         """
         Returns the specific meta data of a need inside docutils nodes.
         Usage::
@@ -439,7 +439,6 @@ class LayoutHandler:
         :param show_empty: If false and requested need-value is None or '', no output is returned. Default: false
         :return: docutils node
         """
-
         data_container = nodes.inline(classes=["needs_" + name])
         if prefix:
             prefix_node = self._parse(prefix)
@@ -456,7 +455,28 @@ class LayoutHandler:
         elif data is None and show_empty:
             data = ""
 
-        if isinstance(data, str):
+        try:
+            ismultiline = self.need["attribute_metadata"][name]["multiline"]
+        except:
+            ismultiline = False
+
+        try:
+            isuml = self.need["attribute_metadata"][name]["uml"]
+        except:
+            isuml = False
+
+        if isuml:
+            if not show_uml:
+                return []
+            pass
+        if ismultiline:
+            if not show_multiline:
+                return []
+            for index, element in enumerate(data):
+                inline = nodes.container(classes=["needs_data"])
+                inline += nodes.Text(element)
+                data_container += inline
+        elif isinstance(data, str):
             if len(data) == 0 and not show_empty:
                 return []
             # data_node = nodes.inline(classes=["needs_data"])
@@ -553,6 +573,8 @@ class LayoutHandler:
         exclude=None,
         no_links: bool = False,
         defaults: bool = True,
+        show_multiline: bool = True,
+        show_uml: bool = True,
         show_empty: bool = False,
     ):
         """
@@ -604,7 +626,7 @@ class LayoutHandler:
 
             data_line = nodes.line()
             label = prefix + f"{data}:" + postfix + " "
-            result = self.meta(data, label, show_empty)
+            result = self.meta(name = data, prefix = label, show_multiline = show_multiline, show_uml = show_uml, show_empty = show_empty)
             if not (show_empty or result):
                 continue
             if isinstance(result, list):

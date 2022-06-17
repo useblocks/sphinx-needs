@@ -53,6 +53,7 @@ INTERNALS = [
     "external_css",
     "is_modified",
     "modifications",
+    "attribute_metadata",
 ]
 
 

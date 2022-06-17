@@ -86,6 +86,7 @@ module = [
   'sphinx_needs.builder',
   'sphinx_needs.diagrams_common',
   'sphinx_needs.directives.need',
+  'sphinx_needs.directives.needattribute',
   'sphinx_needs.directives.needbar',
   'sphinx_needs.directives.needextend',
   'sphinx_needs.directives.needextract',

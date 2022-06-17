@@ -5,6 +5,7 @@ Directives
    :maxdepth: 1
 
    need
+   needattribute
    needbar
    needlist
    needtable

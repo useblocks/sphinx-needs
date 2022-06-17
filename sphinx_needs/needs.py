@@ -31,7 +31,9 @@ from sphinx_needs.directives.need import (
     process_need_nodes,
     purge_needs,
 )
+from sphinx_needs.directives.needattribute import Needattribute, NeedattributeDirective, process_needattribute
 from sphinx_needs.directives.needbar import Needbar, NeedbarDirective, process_needbar
+
 from sphinx_needs.directives.needextend import (
     Needextend,
     NeedextendDirective,
@@ -234,6 +236,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
 
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
+    app.add_node(Needattribute)
     app.add_node(
         Needfilter,
     )
@@ -257,6 +260,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
 
     # Define directives
     app.add_directive("needbar", NeedbarDirective)
+    app.add_directive("needattribute", NeedattributeDirective)
     app.add_directive("needfilter", NeedfilterDirective)
     app.add_directive("needlist", NeedlistDirective)
     app.add_directive("needtable", NeedtableDirective)
@@ -309,6 +313,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     # See also https://github.com/sphinx-doc/sphinx/issues/7054#issuecomment-578019701 for an example
     app.connect("doctree-resolved", add_sections)
     app.connect("doctree-resolved", process_need_nodes)
+    app.connect("doctree-resolved", process_needattribute)
     app.connect("doctree-resolved", process_needextend)  # Must be done very early, as it modifies need data
     app.connect("doctree-resolved", print_need_nodes)
     app.connect("doctree-resolved", process_needbar)

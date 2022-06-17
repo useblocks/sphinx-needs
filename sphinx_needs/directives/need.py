@@ -22,6 +22,8 @@ from sphinx_needs.logging import get_logger
 from sphinx_needs.nodes import Need
 from sphinx_needs.utils import profile, unwrap
 
+from typing import Dict, Any
+
 logger = get_logger(__name__)
 
 NON_BREAKING_SPACE = re.compile("\xa0+")
@@ -42,6 +44,8 @@ class NeedDirective(SphinxDirective):
     option_spec = NEED_DEFAULT_OPTIONS
 
     final_argument_whitespace = True
+
+    
 
     def __init__(
         self,
