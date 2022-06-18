@@ -1,7 +1,7 @@
 .. _needattribute:
 
 needattribute
-========
+=============
 
 .. versionadded:: 0.7.5
 
@@ -17,9 +17,9 @@ needattribute
 
         .. needattribute:: value
 
-            hello
-            du
-            da
+            multi
+            line
+            text
 
 |out|
 
@@ -30,8 +30,8 @@ needattribute
 
    .. needattribute:: value
 
-      hello
-      du
-      da
+      multi
+      line
+      text
 
 
