@@ -273,6 +273,9 @@ needs_extra_options = [
     "image",
     "config",
     "github",
+    "multi_line_attribute",  # used in needattribute
+    "structure_model",  # used in needattribute
+    "activity_diagram",  # used in needattribute
 ]
 
 needs_warnings = {

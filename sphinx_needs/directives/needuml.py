@@ -123,48 +123,33 @@ class JinjaFunctions:
 
         return need_uml
 
+# why does we have to have app, fromdocname as parameters here?
+# Reason jinja and importer check. I would say, encapsulation is worngly used in the solution and shall be refactored.
+def generate_plantuml_image_from_uml_text(app, fromdocname, content: str = '', docname: str = '', caption: str = '',
+scale: str = '', align: str = None, extra: dict = None, config: list = None, debug: bool = False, disable_jinja: bool = False) -> list:
 
-def process_needuml(app, doctree, fromdocname):
     env = app.builder.env
     all_needs = env.needs_all_needs
 
-    for node in doctree.traverse(Needuml):
-        id = node.attributes["ids"][0]
-        current_needuml = env.need_all_needumls[id]
+    new_node_content = []
 
-        try:
-            if "sphinxcontrib.plantuml" not in app.config.extensions:
-                raise ImportError
-            from sphinxcontrib.plantuml import plantuml
-        except ImportError:
-            content = nodes.error()
-            para = nodes.paragraph()
-            text = nodes.Text("PlantUML is not available!", "PlantUML is not available!")
-            para += text
-            content.append(para)
-            node.replace_self(content)
-            continue
+    # todo: this is really ugly, could we generate a "one time warning" and return in all other cases nothing?
+    try:
+        if "sphinxcontrib.plantuml" not in app.config.extensions:
+            raise ImportError
+        from sphinxcontrib.plantuml import plantuml
+    except ImportError:
+        error_node = nodes.error()
+        para = nodes.paragraph()
+        text = nodes.Text("PlantUML is not available!", "PlantUML is not available!")
+        para += text
+        error_node.append(para)
+        new_node_content.append(error_node)
+        return new_node_content
 
-        content = []
-
-        # Create basic uml node
-        plantuml_block_text = ".. plantuml::\n\n   @startuml\n   @enduml"
-        puml_node = plantuml(plantuml_block_text)
-
-        try:
-            scale = int(current_needuml["scale"])
-        except ValueError:
-            scale = 100
-        # if scale != 100:
-        puml_node["scale"] = scale
-
-        if current_needuml["align"]:
-            puml_node["align"] = current_needuml["align"]
-        else:
-            puml_node["align"] = "center"
-
-        # Replace PlantUML entry-code, so that the uml-code is "clean"
-        uml_content = current_needuml["content"].replace("@startuml", "").replace("@enduml", "")
+    # Replace PlantUML entry-code, so that the uml-code is "clean"
+    uml_content = content.replace("@startuml", "").replace("@enduml", "")
+    if not disable_jinja:
         # Render uml content with jinja
         mem_template = Environment(loader=BaseLoader).from_string(uml_content)
 
@@ -173,44 +158,84 @@ def process_needuml(app, doctree, fromdocname):
         # Make the helpers available during rendering
         data = {"needs": all_needs, "uml": jinja_utils.uml, "need": jinja_utils.need}
 
-        data.update(current_needuml["extra"])
+        data.update(extra)
 
         uml_content = mem_template.render(**data)
-        # Add needuml specific content
-        puml_node["uml"] = "@startuml\nallowmixing\n"
+    
+    # Create basic uml node
+    plantuml_block_text = ".. plantuml::\n\n   @startuml\n   @enduml"
+    puml_node = plantuml(plantuml_block_text)
 
-        # Adding config
-        config = current_needuml["config"]
-        if config and len(config) >= 3:
-            # Remove all empty lines
-            config = "\n".join([line.strip() for line in config.split("\n") if line.strip()])
-            puml_node["uml"] += "\n' Config\n\n"
-            puml_node["uml"] += config
-            puml_node["uml"] += "\n\n"
+    try:
+        scale = int(scale)
+    except ValueError:
+        scale = 100
+    # if scale != 100:
+    puml_node["scale"] = scale
 
-        puml_node["uml"] += f"\n{uml_content}"
+    if align:
+        puml_node["align"] = align
+    else:
+        puml_node["align"] = "center"
+    
+    # Add needuml specific content
+    puml_node["uml"] = "@startuml\nallowmixing\n"
 
-        puml_node["uml"] += "\n@enduml\n"
+    # Adding config
+    if config and len(config) >= 3:
+        # Remove all empty lines
+        config = "\n".join([line.strip() for line in config.split("\n") if line.strip()])
+        puml_node["uml"] += "\n' Config\n\n"
+        puml_node["uml"] += config
+        puml_node["uml"] += "\n\n"
 
-        puml_node["incdir"] = os.path.dirname(current_needuml["docname"])
-        puml_node["filename"] = os.path.split(current_needuml["docname"])[1]  # Needed for plantuml >= 0.9
+    puml_node["uml"] += f"\n{uml_content}"
 
-        content.append(puml_node)
+    puml_node["uml"] += "\n@enduml\n"
 
-        if current_needuml["caption"]:
-            title_text = current_needuml["caption"]
-            title = nodes.title(title_text, "", nodes.Text(title_text))
-            content.insert(0, title)
+    puml_node["incdir"] = os.path.dirname(docname)
+    puml_node["filename"] = os.path.split(docname)[1]  # Needed for plantuml >= 0.9
 
-        if current_needuml["debug"]:
-            debug_container = nodes.container()
-            if isinstance(puml_node, nodes.figure):
-                data = puml_node.children[0]["uml"]
-            else:
-                data = puml_node["uml"]
-            data = "\n".join([html.escape(line) for line in data.split("\n")])
-            debug_para = nodes.raw("", f"<pre>{data}</pre>", format="html")
-            debug_container += debug_para
-            content += debug_container
+    new_node_content.append(puml_node)
+
+    if caption:
+        title_text = caption
+        title = nodes.title(title_text, "", nodes.Text(title_text))
+        new_node_content.insert(0, title)
+
+    if debug:
+        debug_container = nodes.container()
+        if isinstance(puml_node, nodes.figure):
+            data = puml_node.children[0]["uml"]
+        else:
+            data = puml_node["uml"]
+        data = "\n".join([html.escape(line) for line in data.split("\n")])
+        debug_para = nodes.raw("", f"<pre>{data}</pre>", format="html")
+        debug_container += debug_para
+        new_node_content += debug_container
+
+    return new_node_content
+
+def process_needuml(app, doctree, fromdocname):
+    env = app.builder.env
+    all_needs = env.needs_all_needs
+
+    for node in doctree.traverse(Needuml):
+
+        id = node.attributes["ids"][0]
+        current_needuml = env.need_all_needumls[id]
+
+        content = generate_plantuml_image_from_uml_text(
+            app = app,
+            fromdocname = fromdocname,
+            content = current_needuml["content"],
+            docname = current_needuml["docname"],
+            caption = current_needuml["caption"],
+            scale = current_needuml["scale"],
+            align = current_needuml["align"],
+            extra = current_needuml["extra"],
+            config = current_needuml["config"],
+            debug = current_needuml["debug"]
+            )
 
         node.replace_self(content)

@@ -468,9 +468,28 @@ class LayoutHandler:
         if isuml:
             if not show_uml:
                 return []
-            pass
-        if ismultiline:
+            if len(data) == 0 and not show_empty:
+                return []
+
+            data_str = "\n".join(data)
+
+            import sphinx_needs.directives.needuml as needuml
+            umlnodes = needuml.generate_plantuml_image_from_uml_text(
+                app = self.app,
+                fromdocname = self.fromdocname,
+                content = data_str,
+                docname = self.need["docname"],
+                #debug = True,
+                disable_jinja = True,
+                )
+            # I had to disable jinja, as it creates some exceptions
+
+            for umlnode in umlnodes:
+                data_container.append(umlnode)
+        elif ismultiline:
             if not show_multiline:
+                return []
+            if len(data) == 0 and not show_empty:
                 return []
             for index, element in enumerate(data):
                 inline = nodes.container(classes=["needs_data"])
