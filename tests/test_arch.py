@@ -7,7 +7,7 @@ import pytest
 def test_doc_build_html(test_app):
     app = test_app
     app.build()
-    html = Path(app.outdir, "index.html").read_text()
+    html = Path(app.outdir, "index.html").read_text(encoding="utf8")
 
     assert "<object data=" in html  # PlantUML got generated
     assert "peter --&gt; max" in html  # First Spec diagram is loaded
