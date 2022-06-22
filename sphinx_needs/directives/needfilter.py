@@ -15,7 +15,7 @@ from sphinx.application import Sphinx
 
 from sphinx_needs.diagrams_common import create_legend
 from sphinx_needs.filter_common import FilterBase, process_filters
-from sphinx_needs.utils import row_col_maker
+from sphinx_needs.utils import row_col_maker, unwrap
 
 
 class Needfilter(nodes.General, nodes.Element):
@@ -31,7 +31,7 @@ class NeedfilterDirective(FilterBase):
     """
 
     @staticmethod
-    def layout(argument):
+    def layout(argument: str) -> str:
         return directives.choice(argument, ("list", "table", "diagram"))
 
     option_spec = {
@@ -73,13 +73,14 @@ class NeedfilterDirective(FilterBase):
         }
         env.need_all_needfilters[targetid].update(self.collect_filter_attributes())
 
-        return [targetnode] + [Needfilter("")]
+        return [targetnode, Needfilter("")]
 
 
 def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     # Replace all needlist nodes with a list of the collected needs.
     # Augment each need with a backlink to the original location.
-    env = app.builder.env
+    builder = unwrap(app.builder)
+    env = unwrap(builder.env)
 
     # NEEDFILTER
     for node in doctree.traverse(Needfilter):
@@ -170,7 +171,7 @@ def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str) 
                 else:
                     ref = nodes.reference("", "")
                     ref["refdocname"] = need_info["docname"]
-                    ref["refuri"] = app.builder.get_relative_uri(fromdocname, need_info["docname"])
+                    ref["refuri"] = builder.get_relative_uri(fromdocname, need_info["docname"])
                     ref["refuri"] += "#" + need_info["target_node"]["refid"]
                     ref.append(title)
                     para += ref
@@ -194,7 +195,7 @@ def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str) 
                 try:
                     link = (
                         "../"
-                        + app.builder.get_target_uri(need_info["docname"])
+                        + builder.get_target_uri(need_info["docname"])
                         + "?highlight={}".format(urlparse(need_info["title"]))
                         + "#"
                         + need_info["target_node"]["refid"]

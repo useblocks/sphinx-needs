@@ -63,8 +63,8 @@ class NeedganttDirective(FilterBase, DiagramBase):
         starts_after_links = get_link_type_option("starts_after_links", env, self, "links")
         ends_with_links = get_link_type_option("ends_with_links", env, self)
 
-        milestone_filter = self.options.get("milestone_filter", None)
-        start_date = self.options.get("start_date", None)
+        milestone_filter = self.options.get("milestone_filter")
+        start_date = self.options.get("start_date")
         if start_date:
             try:
                 datetime.strptime(start_date, "%Y-%m-%d")
@@ -77,7 +77,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
         else:
             start_date = None  # If None we do not set a start date later
 
-        timeline = self.options.get("timeline", None)
+        timeline = self.options.get("timeline")
         timeline_options = ["daily", "weekly", "monthly"]
         if timeline and timeline not in timeline_options:
             raise NeedGanttException(

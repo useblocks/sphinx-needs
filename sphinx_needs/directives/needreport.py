@@ -20,19 +20,19 @@ class NeedReportDirective(Directive):
         # 'services': directives.unchanged
     }
 
-    def run(self) -> Sequence[nodes.Node]:
+    def run(self) -> Sequence[nodes.raw]:
         env = self.state.document.settings.env
 
         if len(self.options.keys()) == 0:  # Check if options is empty
             error_file, error_line = self.state_machine.input_lines.items[0]
-            error_msg = "{}:{}: NeedsReportError: No options specified to generate needs report.".format(
+            error_msg = "{}:{}: NeedReportError: No options specified to generate need report.".format(
                 error_file, error_line + self.state_machine.input_lines.data.index(".. needreport::") + 1
             )
             raise NeedsReportException(error_msg)
 
-        types = self.options.get("types", None)
-        extra_links = self.options.get("links", None)
-        extra_options = self.options.get("options", None)
+        types = self.options.get("types")
+        extra_links = self.options.get("links")
+        extra_options = self.options.get("options")
 
         needs_types = []
         needs_extra_links = []

@@ -1,14 +1,15 @@
 import hashlib
 import re
-from typing import Any, Dict, List, Sequence
+import typing
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from docutils import nodes
-from docutils.parsers.rst import Directive
 from docutils.parsers.rst.states import RSTState, RSTStateMachine
 from docutils.statemachine import StringList
 from sphinx.addnodes import desc_name, desc_signature
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
+from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api import add_need
 from sphinx_needs.api.exceptions import NeedsInvalidException
@@ -20,14 +21,14 @@ from sphinx_needs.layout import build_need
 from sphinx_needs.logging import get_logger
 from sphinx_needs.need_constraints import process_constraints
 from sphinx_needs.nodes import Need
-from sphinx_needs.utils import profile
+from sphinx_needs.utils import profile, unwrap
 
 logger = get_logger(__name__)
 
 NON_BREAKING_SPACE = re.compile("\xa0+")
 
 
-class NeedDirective(Directive):
+class NeedDirective(SphinxDirective):
     """
     Collects mainly all needed need-information and renders its rst-based content.
 
@@ -148,10 +149,6 @@ class NeedDirective(Directive):
         )
 
     @property
-    def env(self) -> BuildEnvironment:
-        return self.state.document.settings.env
-
-    @property
     def title_from_content(self):
         return "title_from_content" in self.options or self.env.config.needs_title_from_content
 
@@ -172,7 +169,8 @@ class NeedDirective(Directive):
 
     @property
     def max_title_length(self) -> int:
-        return self.env.config.needs_max_title_length
+        max_title_length: int = self.env.config.needs_max_title_length
+        return max_title_length
 
     # ToDo. Keep this in directive
     def _get_full_title(self) -> str:
@@ -200,7 +198,7 @@ class NeedDirective(Directive):
             return ""
 
 
-def get_sections_and_signature_and_needs(need_info):
+def get_sections_and_signature_and_needs(need_info) -> Tuple[List[str], Optional[nodes.Text], List[str]]:
     """Gets the hierarchy of the section nodes as a list starting at the
     section of the current need and then its parent sections"""
     sections = []
@@ -209,7 +207,7 @@ def get_sections_and_signature_and_needs(need_info):
     current_node = need_info["target_node"]
     while current_node:
         if isinstance(current_node, nodes.section):
-            title = current_node.children[0].astext()
+            title = typing.cast(str, current_node.children[0].astext())  # type: ignore[no-untyped-call]
             # If using auto-section numbering, then Sphinx inserts
             # multiple non-breaking space unicode characters into the title
             # we'll replace those with a simple space to make them easier to
@@ -256,9 +254,12 @@ def purge_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> None:
 def add_sections(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     """Add section titles to the needs as additional attributes that can
     be used in tables and filters"""
-    needs = getattr(app.builder.env, "needs_all_needs", {})
+    builder = unwrap(app.builder)
+    env = unwrap(builder.env)
+
+    needs = getattr(env, "needs_all_needs", {})
     for need_info in needs.values():
-        # first we initilaize to default values
+        # first we initialize to default values
         if "sections" not in need_info:
             need_info["sections"] = []
 
@@ -306,7 +307,8 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
             node.parent.remove(node)
         return
 
-    env = app.builder.env
+    builder = unwrap(app.builder)
+    env = unwrap(builder.env)
 
     # If no needs were defined, we do not need to do anything
     if not hasattr(env, "needs_all_needs"):
@@ -340,14 +342,15 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
 @profile("NEED_PRINT")
 def print_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     """
-    Finally creates the need-node in the docurils node-tree.
+    Finally creates the need-node in the docutils node-tree.
 
     :param app:
     :param doctree:
     :param fromdocname:
     :return:
     """
-    env = app.builder.env
+    builder = unwrap(app.builder)
+    env = unwrap(builder.env)
     needs = env.needs_all_needs
 
     for node_need in doctree.traverse(Need):
@@ -395,8 +398,7 @@ def create_back_links(env: BuildEnvironment, option) -> None:
     But do this only once, as all needs are already collected and this sorting is for all
     needs and not only for the ones of the current document.
 
-    :param env: sphinx enviroment
-    :return: None
+    :param env: sphinx environment
     """
     option_back = f"{option}_back"
     if env.needs_workflow[f"backlink_creation_{option}"]:

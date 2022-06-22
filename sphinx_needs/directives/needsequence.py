@@ -4,6 +4,7 @@ from typing import Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
+from sphinx.application import Sphinx
 from sphinxcontrib.plantuml import (
     generate_name,  # Need for plantuml filename calculation
 )
@@ -18,6 +19,7 @@ from sphinx_needs.diagrams_common import (
 )
 from sphinx_needs.filter_common import FilterBase
 from sphinx_needs.logging import get_logger
+from sphinx_needs.utils import unwrap
 
 logger = get_logger(__name__)
 
@@ -71,9 +73,10 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
         return [targetnode] + [Needsequence("")]
 
 
-def process_needsequence(app, doctree, fromdocname):
+def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str):
     # Replace all needsequence nodes with a list of the collected needs.
-    env = app.builder.env
+    builder = unwrap(app.builder)
+    env = unwrap(builder.env)
 
     link_types = env.config.needs_extra_links
     # allowed_link_types_options = [link.upper() for link in env.config.needs_flow_link_types]
@@ -215,7 +218,7 @@ def process_needsequence(app, doctree, fromdocname):
         node.replace_self(content)
 
 
-def get_message_needs(app, sender, link_types, all_needs_dict, tracked_receivers=None, filter=None):
+def get_message_needs(app: Sphinx, sender, link_types, all_needs_dict, tracked_receivers=None, filter=None):
     msg_needs = []
     if tracked_receivers is None:
         tracked_receivers = []

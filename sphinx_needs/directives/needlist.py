@@ -2,7 +2,7 @@
 
 
 """
-from typing import Sequence
+from typing import List, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -13,7 +13,7 @@ from sphinx_needs.directives.utils import (
     used_filter_paragraph,
 )
 from sphinx_needs.filter_common import FilterBase, process_filters
-from sphinx_needs.utils import check_and_calc_base_url_rel_path
+from sphinx_needs.utils import check_and_calc_base_url_rel_path, unwrap
 
 
 class Needlist(nodes.General, nodes.Element):
@@ -32,7 +32,7 @@ class NeedlistDirective(FilterBase):
     }
 
     # Update the options_spec with values defined in the FilterBase class
-    option_spec.update(FilterBase.base_option_spec)
+    option_spec.update(FilterBase.base_option_spec)  # type: ignore[arg-type]
 
     def run(self) -> Sequence[nodes.Node]:
         env = self.state.document.settings.env
@@ -51,15 +51,15 @@ class NeedlistDirective(FilterBase):
             "docname": env.docname,
             "lineno": self.lineno,
             "target_node": targetnode,
-            "show_tags": self.options.get("show_tags", False) is None,
-            "show_status": self.options.get("show_status", False) is None,
-            "show_filters": self.options.get("show_filters", False) is None,
+            "show_tags": "show_tags" in self.options,
+            "show_status": "show_status" in self.options,
+            "show_filters": "show_filters" in self.options,
             "export_id": self.options.get("export_id", ""),
             "env": env,
         }
         env.need_all_needlists[targetid].update(self.collect_filter_attributes())
 
-        return [targetnode] + [Needlist("")]
+        return [targetnode, Needlist("")]
 
 
 def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
@@ -67,7 +67,8 @@ def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
     Replace all needlist nodes with a list of the collected needs.
     Augment each need with a backlink to the original location.
     """
-    env = app.builder.env
+    builder = unwrap(app.builder)
+    env = unwrap(builder.env)
 
     for node in doctree.traverse(Needlist):
         if not app.config.needs_include_needs:
@@ -84,7 +85,7 @@ def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
         id = node.attributes["ids"][0]
         current_needfilter = env.need_all_needlists[id]
         all_needs = env.needs_all_needs
-        content = []
+        content: List[nodes.Node] = []
         all_needs = list(all_needs.values())
         found_needs = process_filters(app, all_needs, current_needfilter)
 
@@ -118,7 +119,7 @@ def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
             else:
                 ref = nodes.reference("", "")
                 ref["refdocname"] = need_info["docname"]
-                ref["refuri"] = app.builder.get_relative_uri(fromdocname, need_info["docname"])
+                ref["refuri"] = builder.get_relative_uri(fromdocname, need_info["docname"])
                 ref["refuri"] += "#" + need_info["target_node"]["refid"]
                 ref.append(title)
                 para += ref
