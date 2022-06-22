@@ -50,6 +50,10 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
+      - name: Install/Update  build dependencies
+        run: |
+          python -m pip install --upgrade setuptools
+          python -m pip install --upgrade pip
       - name: Install Poetry
         run: |
           curl -sL https://install.python-poetry.org | python -
