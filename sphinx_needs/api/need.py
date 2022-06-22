@@ -12,6 +12,7 @@ from sphinx.util.nodes import nested_parse_with_titles
 
 from sphinx_needs.api.configuration import NEEDS_CONFIG
 from sphinx_needs.api.exceptions import (
+    NeedsConstraintNotAllowed,
     NeedsDuplicatedId,
     NeedsInvalidException,
     NeedsInvalidOption,
@@ -41,6 +42,8 @@ def add_need(
     content: str = "",
     status: Optional[str] = None,
     tags=None,
+    constraints=None,
+    constraints_passed=None,
     links_string: Optional[str] = None,
     hide: bool = False,
     hide_tags: bool = False,
@@ -108,6 +111,8 @@ def add_need(
     :param content: Content as single string.
     :param status: Status as string.
     :param tags: Tags as single string.
+    :param constraints: Constraints as single, comma separated, string.
+    :param constraints_passed: Contains bool describing if all constraints have passed
     :param links_string: Links as single string.
     :param hide: boolean value.
     :param hide_tags: boolean value. (Not used with Sphinx-Needs >0.5.0)
@@ -213,6 +218,37 @@ def add_need(
         # ToDo: There may be a smart regex for the splitting. This would avoid this mess of code...
     tags = _fix_list_dyn_func(tags)
 
+    if constraints is None:
+        constraints = []
+    if len(constraints) > 0:
+
+        # tags should be a string, but it can also be already a list,which can be used.
+        if isinstance(constraints, str):
+            constraints = [constraint.strip() for constraint in re.split(";|,", constraints)]
+
+        new_constraints = []  # Shall contain only valid constraints
+        for i in range(len(constraints)):
+            if len(constraints[i]) == 0 or constraints[i].isspace():
+                logger.warning(
+                    f"Scruffy tag definition found in need {need_id}. " "Defined constraint contains spaces only."
+                )
+            else:
+                new_constraints.append(constraints[i])
+
+        constraints = new_constraints
+        # Check if constraint is in needs_constraints. If not raise an error.
+        if env.app.config.needs_constraints:
+            for constraint in constraints:
+                if constraint not in env.app.config.needs_constraints.keys():
+                    raise NeedsConstraintNotAllowed(
+                        f"Constraint {constraint} of need id {need_id} is not allowed "
+                        "by config value 'needs_constraints'."
+                    )
+        # This may have cut also dynamic function strings, as they can contain , as well.
+        # So let put them together again
+        # ToDo: There may be a smart regex for the splitting. This would avoid this mess of code...
+    constraints = _fix_list_dyn_func(constraints)
+
     #############################################################################################
     # Add need to global need list
     #############################################################################################
@@ -259,6 +295,9 @@ def add_need(
         "type_style": type_style,
         "status": status,
         "tags": tags,
+        "constraints": constraints,
+        "constraints_passed": None,
+        "constraints_results": {},
         "id": need_id,
         "title": trimmed_title,
         "full_title": title,
@@ -432,6 +471,7 @@ def add_external_need(
     content: str = "",
     status: Optional[str] = None,
     tags: Optional[str] = None,
+    constraints: Optional[str] = None,
     links_string: Optional[str] = None,
     **kwargs: Any,
 ):
@@ -451,6 +491,7 @@ def add_external_need(
     :param content: Content as single string.
     :param status: Status as string.
     :param tags: Tags as single string.
+    :param constraints: constraints as single, comma separated string.
     :param links_string: Links as single string.
     :param external_css: CSS class name as string, which is set for the <a> tag.
     :param kwargs:
@@ -467,6 +508,7 @@ def add_external_need(
     kwargs["title"] = title
     kwargs["status"] = status
     kwargs["tags"] = tags
+    kwargs["constraints"] = constraints
     kwargs["links_string"] = links_string
     kwargs["is_external"] = True
     kwargs["external_url"] = external_url

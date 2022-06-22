@@ -558,6 +558,22 @@ texinfo_documents = [
     ),
 ]
 
+# contains different constraints
+needs_constraints = {
+    "critical": {"check_0": "'critical' in tags", "check_1": "'SECURITY_REQ' in links", "severity": "CRITICAL"},
+    "security": {"check_0": "'security' in tags", "severity": "HIGH"},
+    "team": {"check_0": 'author == "Bob"', "severity": "LOW"},
+}
+
+# defines what to do if a constraint is not met
+needs_constraint_failed_options = {
+    "CRITICAL": {"on_fail": ["warn"], "style": ["red_bar"], "force_style": True},
+    "HIGH": {"on_fail": ["warn"], "style": ["orange_bar"], "force_style": True},
+    "MEDIUM": {"on_fail": ["warn"], "style": ["yellow_bar"], "force_style": False},
+    "LOW": {"on_fail": [], "style": ["yellow_bar"], "force_style": False},
+}
+
+
 rst_epilog = """
 .. |ex| replace:: **Example**
 

@@ -217,6 +217,9 @@ NEED_DEFAULT_OPTIONS: Dict[str, Any] = {
     "post_template": directives.unchanged_required,
     "duration": directives.unchanged_required,
     "completion": directives.unchanged_required,
+    "constraints": directives.unchanged_required,
+    "constraints_passed": directives.unchanged_required,
+    "constraints_results": directives.unchanged_required,
 }
 
 NEEDEXTEND_NOT_ALLOWED_OPTIONS = ["id"]

@@ -1700,6 +1700,134 @@ an absolute path (on the web server) or an URL.
 
 Default value: ``needs.json``
 
+
+.. _needs_constraints:
+
+needs_constraints
+~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    needs_constraints = {
+
+        "critical": {
+            "check_0": "'critical' in tags",
+            "check_1": "'security_req' in links",
+            "severity": "CRITICAL"
+        },
+
+        "security": {
+            "check_0": "'security' in tags",
+            "severity": "HIGH"
+        },
+
+        "team": {
+            "check_0": "author == \"Bob\"",
+            "severity": "LOW"
+        },
+
+    }
+
+needs_constraints needs to be enabled by adding "constraints" to :ref:`needs_extra_options`
+
+needs_constraints contains a dictionary which contains dictionaries describing a single constraint. A single constraint's name serves as the key for the inner dictionary.
+Inside there are (multiple) checks and a severity. Each check describes an executable constraint which allows to set conditions the specific need has to fulfill.
+Depending on the severity, different behaviours in case of failure can be configured. See :ref:`needs_constraint_failed_options`
+
+Each need now contains additional attributes named "constraints_passed" and "constraints_results".
+
+constraints_passed is a bool showing if ALL constraints of a corresponding need were passed.
+
+constraints_results is a dictionary similar in structure to needs_constraints above. Instead of executable python statements, inner values contain a bool describing if check_0, check_1 ... passed successfully.
+
+
+.. code-block:: rst
+
+    .. req::
+        :id: SECURITY_REQ
+
+        This is a requirement describing security processes.
+
+    .. req::
+        :tags: critical
+        :links: SECURITY_REQ
+        :constraints: critical
+
+        Example of a successful constraint.
+
+    .. req::
+        :id: FAIL_01
+        :author: "Alice"
+        :constraints: team
+
+        Example of a failed constraint with medium severity. Note the style from :ref:`needs_constraint_failed_options`
+
+
+.. req::
+    :id: SECURITY_REQ
+
+    This is a requirement describing security processes.
+
+.. req::
+    :tags: critical
+    :links: SECURITY_REQ
+    :constraints: critical
+
+    Example of a successful constraint.
+
+.. req::
+    :id: FAIL_01
+    :author: "Alice"
+    :constraints: team
+
+    Example of a failed constraint with medium severity. Note the style from :ref:`needs_constraint_failed_options`
+
+.. _needs_constraint_failed_options:
+
+needs_constraint_failed_options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    needs_constraint_failed_options = {
+        "CRITICAL": {
+            "on_fail": ["warn"],
+            "style": ["red_bar"],
+            "force_style": True
+        },
+
+        "HIGH": {
+            "on_fail": ["warn"],
+            "style": ["orange_bar"],
+            "force_style": True
+        },
+
+        "MEDIUM": {
+            "on_fail": ["warn"],
+            "style": ["yellow_bar"],
+            "force_style": False
+        },
+
+        "LOW": {
+            "on_fail": [],
+            "style": ["yellow_bar"],
+            "force_style": False
+        }
+    }
+
+needs_constraint_failed_options must be a dictionary which stores what to do if a certain constraint fails. Dictionary keys correspond to the severity set when creating a constraint. Each entry describes in an "on_fail" action what to do:
+
+- "break" breaks the buildprocess and raises a NeedsConstraintFailed Exception when a constraint is not met.
+- "warn" creates a warning in the sphinx.logger if a constraint is not met. Use -W in your Sphinx build command to stop the whole build, if a warning is raised. This will handle all warnings as exceptions.
+
+
+"style" sets the style of the failed object see :ref:`_styles` for available styles. **Please be aware of conflicting styles!**
+
+If "force style" is set, all other styles are removed and just the constraint_failed style remains.
+
+
+
+
 Removed options
 ---------------
 

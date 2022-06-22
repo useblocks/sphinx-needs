@@ -232,6 +232,11 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     # path to needs_report_template file which is based on the conf.py directory.
     app.add_config_value("needs_report_template", "", "html", types=[str])
 
+    # add constraints option
+    app.add_config_value("needs_constraints", {}, "html", types=[dict])
+    app.add_config_value("needs_constraint_failed_options", {}, "html", types=[dict])
+    app.add_config_value("needs_constraints_failed_color", "", "html")
+
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(
@@ -495,7 +500,7 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
         register_func(needs_func)
 
     # Own extra options
-    for option in ["hidden", "duration", "completion", "has_dead_links", "has_forbidden_dead_links"]:
+    for option in ["hidden", "duration", "completion", "has_dead_links", "has_forbidden_dead_links", "constraints"]:
         # Check if not already set by user
         # if option not in app.config.needs_extra_options:
         #     app.config.needs_extra_options[option] = directives.unchanged
