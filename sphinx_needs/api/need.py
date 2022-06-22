@@ -471,7 +471,7 @@ def add_external_need(
     content: str = "",
     status: Optional[str] = None,
     tags: Optional[str] = None,
-    constraints: Optional[str]=None,
+    constraints: Optional[str] = None,
     links_string: Optional[str] = None,
     **kwargs: Any,
 ):

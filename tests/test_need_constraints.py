@@ -25,7 +25,7 @@ def test_need_constraints(test_app):
     # test if constraints_results / constraints_passed is properly set
     html = Path(app.outdir, "index.html").read_text()
     assert "<span class=\"needs_label\">constraints_results: </span>{'critical': {'check_0': False}}</span>" in html
-    assert "<span class=\"needs_label\">constraints_passed: </span>False</span>" in html
+    assert '<span class="needs_label">constraints_passed: </span>False</span>' in html
 
     # test force_style
     html1 = Path(app.outdir, "style_test.html").read_text()
@@ -36,8 +36,9 @@ def test_need_constraints(test_app):
     assert "blue_border, yellow_bar" in html1
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/need_constraints_failed"}],
-                         indirect=True)
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/need_constraints_failed"}], indirect=True
+)
 def test_need_constraints_config(test_app):
     app = test_app
 
