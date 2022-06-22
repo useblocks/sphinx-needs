@@ -34,7 +34,6 @@ INTERNALS = [
     "is_part",
     "is_need",
     "type_prefix",
-    "type_content",
     "type_color",
     "type_style",
     "type",
@@ -53,6 +52,7 @@ INTERNALS = [
     "external_css",
     "is_modified",
     "modifications",
+    "diagram",
 ]
 
 

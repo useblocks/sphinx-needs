@@ -8,16 +8,14 @@ needuml
 `Sphinxcontrib-PlantUML <https://github.com/sphinx-contrib/plantuml/>`_.
 So it allows to define PlantUML diagrams.
 
-But it supports `Jinja <https://jinja.palletsprojects.com/>`_ statements, which allows
-to use loops, if-clauses, and it injects data from need-objects.
+But gives you access to need object data by supporting `Jinja <https://jinja.palletsprojects.com/>`_ statements,
+which allows you to use loops, if-clauses, and it injects data from need-objects.
 
 |ex|
 
 .. code-block:: rst
 
    .. needuml::
-      :scale: 50%
-      :align: center
 
       class "{{needs['FEATURE_1'].title}}" {
         implement
@@ -27,8 +25,6 @@ to use loops, if-clauses, and it injects data from need-objects.
 |out|
 
 .. needuml::
-   :scale: 50%
-   :align: center
 
    class "{{needs['FEATURE_1'].title}}" {
      implement
@@ -68,16 +64,11 @@ Allows to inject additional key-value pairs into the ``needuml`` rendering.
    ``:extra:`` values are only available in the current PlantUML code.
    It is not available in code loaded via :ref:`jinja_uml`.
 
-scale
-~~~~~
-
-align
-~~~~~
-
 config
 ~~~~~~
+Allows to preconfigure PlantUML and set certain layout options.
 
-See needflow :ref:`needflow_config` for details.
+For details please take a look into needflow :ref:`needflow_config`.
 
 debug
 ~~~~~
@@ -96,6 +87,7 @@ Helpful to identify reasons why a PlantUML build may have thrown errors.
       node "RocketLab" {
          card "Peter"
       }
+
 |out|
 
 .. needuml::
@@ -158,10 +150,11 @@ This functions represents each Need the same way.
 uml(id)
 ~~~~~~~
 Loads a Sphinx-Need object as PlantUML object or reuses the stored PlantUML code inside the Sphinx-Need object.
-This depends on the used :ref:`needs_types` and its ``content`` value.
 
-If ``content="plantuml"``, the stored PlantUML diagram gets completely imported.
-Otherwise a Sphinx-Needs objects representation is used (same as in :ref:`jinja_need`).
+If diagram code is available in the need data under ``diagram``, the stored PlantUML diagram gets imported.
+
+Please read :ref:`need_diagram` for details.
+
 
 |ex|
 
@@ -184,8 +177,6 @@ Additional keyword arguments
 
 :ref:`uml() <jinja_uml>` supports additional keyword parameters which are then available in the loaded PlantUML code.
 
-Example of a Need object with PlantUML code as content.
-
 |ex|
 
 .. code-block:: rst
@@ -193,32 +184,40 @@ Example of a Need object with PlantUML code as content.
    .. comp:: Variant A or B
       :id: COMP_A_B
 
-      {% if variant == "A" %}
-        class "A" as cl
-      {% elif variant == "B" %}
-        class "B" as cl {
-            attribute_x
-            function_x()
-        }
-      {% else %}
-        class "Unknown" as cl
-      {% endif %}
+      .. needuml::
+
+         {% if variant == "A" %}
+           class "A" as cl
+         {% elif variant == "B" %}
+           class "B" as cl {
+               attribute_x
+               function_x()
+           }
+         {% else %}
+           class "Unknown" as cl
+         {% endif %}
+
+      By default **Unknown** is shown, as no variant was set.
 
 |out|
 
 .. comp:: Variant A or B
    :id: COMP_A_B
 
-   {% if variant == "A" %}
-    class "A" as cl
-   {% elif variant == "B" %}
-    class "B" as cl {
-        attribute_x
-        function_x()
-    }
-   {% else %}
-    class "Unknown" as cl
-   {% endif %}
+   .. needuml::
+
+      {% if variant == "A" %}
+       class "A" as cl
+      {% elif variant == "B" %}
+       class "B" as cl {
+           attribute_x
+           function_x()
+       }
+      {% else %}
+       class "Unknown" as cl
+      {% endif %}
+
+   By default **Unknown** is shown, as no variant was set.
 
 
 Passing ``variant="A"`` parameter to the :ref:`uml() <jinja_uml>` function, we get the following:
@@ -267,28 +266,34 @@ All features are available and ``uml()`` can be used multiple time on different 
         .. int:: Interface A
            :id: INT_A
 
-           circle "Int A" as int
+           .. needuml::
+
+              circle "Int A" as int
 
         .. comp:: Component X
            :id: COMP_X
 
-           {{uml("INT_A")}}
+           .. needuml::
 
-           class "Class A" as cl_a
-           class "Class B" as cl_b
+               {{uml("INT_A")}}
 
-           cl_a o-- cl_b
-           cl_a --> int
+               class "Class A" as cl_a
+               class "Class B" as cl_b
+
+               cl_a o-- cl_b
+               cl_a --> int
 
         .. sys:: System RocketScience
            :id: SYS_ROCKET
 
-           node "RocketScience" as rocket {
-               {{uml("COMP_X")}}
-               card "Service Y" as service
+           .. needuml::
 
-               int --> service
-           }
+               node "RocketScience" as rocket {
+                   {{uml("COMP_X")}}
+                   card "Service Y" as service
+
+                   int --> service
+               }
 
         And finally a ``needuml`` to make use of the Sphinx-Need system object:
 
@@ -308,38 +313,44 @@ All features are available and ``uml()`` can be used multiple time on different 
             .. int:: Interface A
                :id: INT_A
 
-               circle "Int A" as int
+               .. needuml::
+
+                  circle "Int A" as int
 
             .. comp:: Component X
                :id: COMP_X
 
-               {{uml("INT_A")}}
+               .. needuml::
 
-               class "Class A" as cl_a
-               class "Class B" as cl_b
+                  {{uml("INT_A")}}
 
-               cl_a o-- cl_b
-               cl_a --> int
+                  class "Class A" as cl_a
+                  class "Class B" as cl_b
+
+                  cl_a o-- cl_b
+                  cl_a --> int
 
             .. sys:: System RocketScience
                :id: SYS_ROCKET
 
-               node "RocketScience" {
-                   {{uml("COMP_X")}}
-                   card "Service Y" as service
+               .. needuml::
 
-                   int --> service
-               }
+                  node "RocketScience" {
+                      {{uml("COMP_X")}}
+                      card "Service Y" as service
+
+                      int --> service
+                  }
 
             And finally a ``needuml`` to make use of the Sphinx-Need system object:
 
             .. needuml::
 
-                  {{uml("SYS_ROCKET")}}
+               {{uml("SYS_ROCKET")}}
 
-                  actor "A friend" as me #ff5555
+               actor "A friend" as me #ff5555
 
-                  me --> rocket: doing
+               me --> rocket: doing
 
 
 NeedUml Examples
@@ -410,37 +421,41 @@ NeedUml Examples
     .. comp:: Component X
        :id: COMP_001
 
-       class "Class X" as class_x {
-         attribute_1
-         attribute_2
-         function_1()
-         function_2()
-         function_3()
-       }
+       .. needuml::
 
-        class "Class Y" as class_y {
-             attribute_1
-             function_1()
-        }
+          class "Class X" as class_x {
+            attribute_1
+            attribute_2
+            function_1()
+            function_2()
+            function_3()
+          }
 
-        class_x o-- class_y
+           class "Class Y" as class_y {
+                attribute_1
+                function_1()
+           }
+
+           class_x o-- class_y
 
 |out|
 
 .. comp:: Component X
    :id: COMP_001
 
-   class "Class X" as class_x {
-     attribute_1
-     attribute_2
-     function_1()
-     function_2()
-     function_3()
-   }
+   .. needuml::
 
-   class "Class Y" as class_y {
-     attribute_1
-     function_1()
-   }
+      class "Class X" as class_x {
+        attribute_1
+        attribute_2
+        function_1()
+        function_2()
+        function_3()
+      }
 
-   class_x o-- class_y
+      class "Class Y" as class_y {
+        attribute_1
+        function_1()
+      }
+
+      class_x o-- class_y
