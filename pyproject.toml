@@ -121,6 +121,6 @@ docs = ["sphinx>=4.0"]
 immaterial = ["sphinx-immaterial"]
 
 [build-system]
-requires = ["poetry-core>=1.0.8"]
+requires = ["setuptools", "poetry-core>=1.0.8"]  # setuptools for deps like plantuml
 build-backend = "poetry.core.masonry.api"
 
