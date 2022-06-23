@@ -1706,6 +1706,8 @@ Default value: ``needs.json``
 needs_constraints
 ~~~~~~~~~~~~~~~~~
 
+.. versionadded:: 1.0.1
+
 .. code-block:: python
 
     needs_constraints = {
