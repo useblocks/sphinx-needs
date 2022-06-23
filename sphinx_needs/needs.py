@@ -100,16 +100,6 @@ VERSION = "1.0.1"
 NEEDS_FUNCTIONS.clear()
 
 
-class TagsDummy:
-    """
-    Dummy class for faking tags.has() feature during own import of conf.py
-    """
-
-    @staticmethod
-    def has(*_args: Any) -> bool:
-        return True
-
-
 def setup(app: Sphinx) -> Dict[str, Any]:
     log = get_logger(__name__)
     log.debug("Starting setup of Sphinx-Needs")
@@ -611,7 +601,7 @@ def check_configuration(_app: Sphinx, config: Config) -> None:
             )
 
 
-def merge_data(app: Sphinx, env: BuildEnvironment, docnames: List[str], other: BuildEnvironment):
+def merge_data(_app: Sphinx, env: BuildEnvironment, _docnames: List[str], other: BuildEnvironment):
     """
     Performs data merge of parallel executed workers.
     Used only for parallel builds.
