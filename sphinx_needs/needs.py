@@ -100,16 +100,6 @@ VERSION = "1.0.1"
 NEEDS_FUNCTIONS.clear()
 
 
-class TagsDummy:
-    """
-    Dummy class for faking tags.has() feature during own import of conf.py
-    """
-
-    @staticmethod
-    def has(*_args: Any) -> bool:
-        return True
-
-
 def setup(app: Sphinx) -> Dict[str, Any]:
     log = get_logger(__name__)
     log.debug("Starting setup of Sphinx-Needs")
@@ -337,9 +327,6 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.connect("env-updated", install_lib_static_files)
     app.connect("env-updated", install_permalink_file)
 
-    # Called during consistency check, which if after everything got read in.
-    # app.connect('env-check-consistency', process_warnings)
-
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect("env-updated", install_styles_static_files)
 
@@ -502,8 +489,6 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
     # Own extra options
     for option in ["hidden", "duration", "completion", "has_dead_links", "has_forbidden_dead_links", "constraints"]:
         # Check if not already set by user
-        # if option not in app.config.needs_extra_options:
-        #     app.config.needs_extra_options[option] = directives.unchanged
         if option not in NEEDS_CONFIG.get("extra_options"):
             add_extra_option(app, option)
 
@@ -611,7 +596,7 @@ def check_configuration(_app: Sphinx, config: Config) -> None:
             )
 
 
-def merge_data(app: Sphinx, env: BuildEnvironment, docnames: List[str], other: BuildEnvironment):
+def merge_data(_app: Sphinx, env: BuildEnvironment, _docnames: List[str], other: BuildEnvironment):
     """
     Performs data merge of parallel executed workers.
     Used only for parallel builds.

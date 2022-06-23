@@ -11,7 +11,6 @@ from sphinxcontrib.plantuml import (
 from sphinx_needs.diagrams_common import (
     DiagramBase,
     add_config,
-    calculate_link,
     create_legend,
     get_debug_container,
     get_filter_para,
@@ -183,7 +182,6 @@ def process_needgantt(app, doctree, fromdocname):
 
         # Element handling
         puml_node["uml"] += "\n' Elements definition \n\n"
-        el_link_string = ""
         el_completion_string = ""
         el_color_string = ""
         for need in found_needs:
@@ -209,8 +207,6 @@ def process_needgantt(app, doctree, fromdocname):
                     duration = 1
                 gantt_element = "[{}] as [{}] lasts {} days\n".format(need["title"], need["id"], duration)
 
-            el_link_string += "[{}] links to [[{}]]\n".format(need["title"], calculate_link(app, need, fromdocname))
-
             if complete:
                 complete = complete.replace("%", "")
                 el_completion_string += "[{}] is {}% completed\n".format(need["title"], complete)
@@ -221,8 +217,6 @@ def process_needgantt(app, doctree, fromdocname):
 
         puml_node["uml"] += "\n' Element links definition \n\n"
         puml_node["uml"] += "\n' Deactivated, as currently supported by plantuml beta only"
-        # ToDo: Activate if linking is working with default plantuml
-        # puml_node["uml"] += el_link_string + '\n'
 
         puml_node["uml"] += "\n' Element completion definition \n\n"
         puml_node["uml"] += el_completion_string + "\n"

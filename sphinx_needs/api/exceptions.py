@@ -1,15 +1,6 @@
 from sphinx.errors import SphinxError, SphinxWarning
 
 
-class NeedsNotLoadedException(SphinxError):
-    """
-    Sphinx-Needs is not loaded. Therefore configuration parameters and functions are missing.
-
-    Make sure ``sphinx_needs`` is added to the``extension`` parameter of
-    ``conf.py``-
-    """
-
-
 class NeedsApiConfigException(SphinxError):
     """
     A configuration changes collides with the already provided configuration by the user.

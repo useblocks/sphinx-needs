@@ -429,7 +429,6 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str) -> N
         rel_file_path = os.path.join("_images", f"need_bar_{hash_value}.png")
         if rel_file_path not in env.images:
             figure.savefig(os.path.join(env.app.srcdir, rel_file_path))
-            # env.images[rel_file_path] = ["_images", os.path.split(rel_file_path)[-1]]
             env.images.add_file(fromdocname, rel_file_path)
 
         image_node = nodes.image()

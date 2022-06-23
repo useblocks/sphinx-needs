@@ -23,7 +23,6 @@ class NeedsStore:
         self.declared_types: Dict[str, str] = {}  # types declared in conf.py: {'need directive': 'need title'}
         self.needs: Dict[Optional[str], Dict[Optional[str], Any]] = {}
         self.needs_initialized: bool = False
-        self.docs_root: Optional[str] = None
         self.conf_py_path: str = ""
 
     def is_setup(self) -> bool:
@@ -33,11 +32,6 @@ class NeedsStore:
             return False
 
         return True
-
-    def set_docs_root(self, docs_root: str) -> None:
-        if not os.path.exists(docs_root):
-            raise FileNotFoundError(f"Docs root directory not found: {docs_root}")
-        self.docs_root = docs_root
 
     def set_conf_py(self, conf_py_path: str) -> None:
         if not os.path.exists(conf_py_path):

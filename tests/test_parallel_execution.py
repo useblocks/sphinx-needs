@@ -7,7 +7,6 @@ import pytest
     "test_app", [{"buildername": "html", "srcdir": "doc_test/parallel_doc", "parallel": 4}], indirect=True
 )
 def test_doc_build_html(test_app):
-    # app.builder.build_all()
     app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()

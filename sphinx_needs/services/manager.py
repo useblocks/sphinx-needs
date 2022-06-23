@@ -30,7 +30,6 @@ class ServiceManager:
             extra_option_names = NEEDS_CONFIG.get("extra_options").keys()
             if option not in extra_option_names:
                 self.log.debug(f'Register option "{option}" for service "{name}"')
-                # self.app.config.needs_extra_options[option] = directives.unchanged
                 NEEDS_CONFIG.add("extra_options", {option: directives.unchanged}, dict, append=True)
                 # Register new option directly in Service directive, as its class options got already
                 # calculated

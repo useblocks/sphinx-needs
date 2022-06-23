@@ -127,7 +127,6 @@ class NeedDirective(SphinxDirective):
         links_string = self.options.get(name)
         links = []
         if links_string:
-            # links = [link.strip() for link in re.split(";|,", links) if not link.isspace()]
             for link in re.split(";|,", links_string):
                 if link.isspace():
                     logger.warning(

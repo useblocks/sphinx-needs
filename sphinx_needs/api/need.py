@@ -319,7 +319,6 @@ def add_need(
         "is_modified": False,  # needed by needextend
         "modifications": 0,  # needed by needextend
     }
-    # needs_extra_options = env.config.needs_extra_options.keys()
     needs_extra_option_names = NEEDS_CONFIG.get("extra_options").keys()
     _merge_extra_options(needs_info, kwargs, needs_extra_option_names)
 
@@ -401,7 +400,6 @@ def add_need(
     ############################
     # Title and meta data information gets added alter during event handling via process_need_nodes()
     # We just add a basic need node and render the rst-based content, because this can not be done later.
-    # style_classes = ['need', type_name, 'need-{}'.format(type_name.lower())]  # Used < 0.4.4
     style_classes = ["need", f"need-{need_type.lower()}"]
     if style:
         style_classes.append(style)
@@ -434,14 +432,10 @@ def add_need(
     return_nodes = [target_node] + [node_need]
     if pre_content:
         node_need_pre_content = _render_template(pre_content, docname, lineno, state)
-        pre_container = nodes.container()
-        pre_container += node_need_pre_content.children
         return_nodes = node_need_pre_content.children + return_nodes
 
     if post_content:
         node_need_post_content = _render_template(post_content, docname, lineno, state)
-        post_container = nodes.container()
-        post_container += node_need_post_content.children
         return_nodes = return_nodes + node_need_post_content.children
 
     return return_nodes
