@@ -434,14 +434,10 @@ def add_need(
     return_nodes = [target_node] + [node_need]
     if pre_content:
         node_need_pre_content = _render_template(pre_content, docname, lineno, state)
-        pre_container = nodes.container()
-        pre_container += node_need_pre_content.children
         return_nodes = node_need_pre_content.children + return_nodes
 
     if post_content:
         node_need_post_content = _render_template(post_content, docname, lineno, state)
-        post_container = nodes.container()
-        post_container += node_need_post_content.children
         return_nodes = return_nodes + node_need_post_content.children
 
     return return_nodes
