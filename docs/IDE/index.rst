@@ -3,18 +3,14 @@
 IDE Support
 ===========
 
-Language features
------------------
+The following supported sphinx needs language features are intergrated into `Esbonio language server <https://github.com/swyddfa/esbonio>`_.
 
-* Completion
+.. note::
 
-    * Provide need ID selection
-    * Auto generate need ID
+   Currently as long as needs.json exists under {confdir}/_build/needs in your sphinx needs project, all the features are available
+   if your IDE extension or plugin supports `Esbonio language server <https://github.com/swyddfa/esbonio>`_.
 
-* Hover
+.. toctree::
+   :maxdepth: 2
 
-    * Provide preview for need object when hovered on need ID
-
-* Goto definition
-
-See details in `Open-Needs-IDE <https://open-needs.org/open-needs-ide/>`_.
+   features
