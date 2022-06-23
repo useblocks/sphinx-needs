@@ -79,7 +79,6 @@ def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str)
     env = unwrap(builder.env)
 
     link_types = env.config.needs_extra_links
-    # allowed_link_types_options = [link.upper() for link in env.config.needs_flow_link_types]
 
     # NEEDSEQUENCE
     for node in doctree.traverse(Needsequence):
@@ -124,8 +123,6 @@ def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str)
         # Adding config
         config = current_needsequence["config"]
         puml_node["uml"] += add_config(config)
-
-        # all_needs = list(all_needs_dict.values())
 
         start_needs_id = [x.strip() for x in re.split(";|,", current_needsequence["start"])]
         if len(start_needs_id) == 0:

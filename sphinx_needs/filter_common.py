@@ -222,13 +222,6 @@ def prepare_need_list(need_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 
 def intersection_of_need_results(list_a, list_b) -> List[Dict[str, Any]]:
-    # def get_id(element: Dict[str, Any]) -> str:
-    #     id = element["id"]
-    #     if element["is_part"]:
-    #         id = "{}.{}".format(element["id_parent"], id)
-    #     return id
-    #
-    # return [a for a, b in product(list_a, list_b) if get_id(a) == get_id(b)]
     return [a for a in list_a if a in list_b]
 
 

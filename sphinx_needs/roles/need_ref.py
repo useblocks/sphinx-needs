@@ -27,13 +27,6 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
             node_need_ref["reftarget"] + "?",
         )
 
-        # findings = re.match(r'([\w ]+)(\<(.*)\>)?', node_need_ref.children[0].rawsource)
-        # if findings.group(2):
-        #     ref_id = findings.group(3)
-        #     ref_name = findings.group(1)
-        # else:
-        #     ref_id = findings.group(1)
-        #     ref_name = None
         ref_id_complete = node_need_ref["reftarget"]
         ref_name = node_need_ref.children[0].children[0]
         # Only use ref_name, if it differs from ref_id

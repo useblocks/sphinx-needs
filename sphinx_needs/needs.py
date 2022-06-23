@@ -327,9 +327,6 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.connect("env-updated", install_lib_static_files)
     app.connect("env-updated", install_permalink_file)
 
-    # Called during consistency check, which if after everything got read in.
-    # app.connect('env-check-consistency', process_warnings)
-
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect("env-updated", install_styles_static_files)
 
@@ -492,8 +489,6 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
     # Own extra options
     for option in ["hidden", "duration", "completion", "has_dead_links", "has_forbidden_dead_links", "constraints"]:
         # Check if not already set by user
-        # if option not in app.config.needs_extra_options:
-        #     app.config.needs_extra_options[option] = directives.unchanged
         if option not in NEEDS_CONFIG.get("extra_options"):
             add_extra_option(app, option)
 

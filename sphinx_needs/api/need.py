@@ -319,7 +319,6 @@ def add_need(
         "is_modified": False,  # needed by needextend
         "modifications": 0,  # needed by needextend
     }
-    # needs_extra_options = env.config.needs_extra_options.keys()
     needs_extra_option_names = NEEDS_CONFIG.get("extra_options").keys()
     _merge_extra_options(needs_info, kwargs, needs_extra_option_names)
 
@@ -401,7 +400,6 @@ def add_need(
     ############################
     # Title and meta data information gets added alter during event handling via process_need_nodes()
     # We just add a basic need node and render the rst-based content, because this can not be done later.
-    # style_classes = ['need', type_name, 'need-{}'.format(type_name.lower())]  # Used < 0.4.4
     style_classes = ["need", f"need-{need_type.lower()}"]
     if style:
         style_classes.append(style)
