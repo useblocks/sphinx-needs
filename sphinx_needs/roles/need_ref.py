@@ -86,11 +86,13 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
 
             if part_id:
                 # If part_id, we have to fetch the title from the content.
-                title = target_need["parts"][part_id]["content"]
-                # Shorten title, if necessary
-                max_length = app.config.needs_role_need_max_title_length
-                if max_length > 3:
-                    title = title if len(title) < max_length else f"{title[: max_length - 3]}..."
+                dict_need["title"] = target_need["parts"][part_id]["content"]
+
+            # Shorten title, if necessary
+            max_length = app.config.needs_role_need_max_title_length
+            if max_length > 3 and len(dict_need["title"]) > max_length:
+                title = dict_need["title"]
+                title = f"{title[: max_length - 3]}..."
                 dict_need["title"] = title
 
             ref_name = node_need_ref.children[0].children[0]
