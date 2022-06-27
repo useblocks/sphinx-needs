@@ -16,11 +16,11 @@ log = get_logger(__name__)
 class NeedRef(nodes.Inline, nodes.Element):
     pass
 
-def transform_need_to_dict(need: Need) -> Dict[str, str]:
-    """"
-    The function will transform a need in a dictionary of strings. Used to 
-    be given e.g. to a python format string.
 
+def transform_need_to_dict(need: Need) -> Dict[str, str]:
+    """ "
+    The function will transform a need in a dictionary of strings. Used to
+    be given e.g. to a python format string.
     Parameters
     ----------
     need : need
