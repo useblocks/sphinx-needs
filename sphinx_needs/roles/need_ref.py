@@ -10,6 +10,8 @@ from sphinx_needs.logging import get_logger
 from sphinx_needs.nodes import Need
 from sphinx_needs.utils import check_and_calc_base_url_rel_path, unwrap
 
+import contextlib
+
 log = get_logger(__name__)
 
 
@@ -21,6 +23,7 @@ def transform_need_to_dict(need: Need) -> Dict[str, str]:
     """ "
     The function will transform a need in a dictionary of strings. Used to
     be given e.g. to a python format string.
+
     Parameters
     ----------
     need : need
@@ -127,7 +130,7 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
 
             node_need_ref[0].children[0] = nodes.Text(link_text, link_text)
 
-            try:
+            with contextlib.suppress(NoUri):
                 if not target_need.get("is_external", False):
                     new_node_ref = make_refnode(
                         builder,
@@ -141,9 +144,6 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
                     new_node_ref = nodes.reference(target_need["id"], target_need["id"])
                     new_node_ref["refuri"] = check_and_calc_base_url_rel_path(target_need["external_url"], fromdocname)
                     new_node_ref["classes"].append(target_need["external_css"])
-            except NoUri:
-                # If the given need id can not be found, we must pass here....
-                pass
 
         else:
             log.warning(
