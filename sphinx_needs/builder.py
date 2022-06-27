@@ -65,20 +65,20 @@ class NeedsBuilder(Builder):
     def get_outdated_docs(self) -> Iterable[str]:
         return []
 
-    def prepare_writing(self, docnames: Set[str]) -> None:
+    def prepare_writing(self, _docnames: Set[str]) -> None:
         pass
 
-    def write_doc_serialized(self, docname: str, doctree: nodes.document) -> None:
+    def write_doc_serialized(self, _docname: str, _doctree: nodes.document) -> None:
         pass
 
     def cleanup(self) -> None:
         pass
 
-    def get_target_uri(self, docname: str, typ: Optional[str] = None) -> str:
+    def get_target_uri(self, _docname: str, _typ: Optional[str] = None) -> str:
         return ""
 
 
-def build_needs_json(app: Sphinx, exception: Exception) -> None:
+def build_needs_json(app: Sphinx, _exception: Exception) -> None:
 
     env = unwrap(app.env)
 

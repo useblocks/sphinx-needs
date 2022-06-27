@@ -91,7 +91,6 @@ def add_extra_option(app: Sphinx, name: str) -> None:
         raise NeedsApiConfigWarning(f"Option {name} already registered.")
 
     NEEDS_CONFIG.add("extra_options", {name: directives.unchanged}, dict, append=True)
-    # extra_options[name] = directives.unchanged
 
 
 def add_dynamic_function(app: Sphinx, function: DynamicFunction, name: Optional[str] = None) -> None:
@@ -154,5 +153,4 @@ def add_warning(
     if name in warnings_option:
         raise NeedsApiConfigException(f"Warning {name} already registered.")
 
-    # warnings_option[name] = warning_check
     NEEDS_CONFIG.add("warnings", {name: warning_check}, dict, append=True)

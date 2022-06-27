@@ -19,6 +19,7 @@ from sphinx_needs.functions import find_and_replace_node_content, resolve_dynami
 from sphinx_needs.functions.functions import check_and_get_content
 from sphinx_needs.layout import build_need
 from sphinx_needs.logging import get_logger
+from sphinx_needs.need_constraints import process_constraints
 from sphinx_needs.nodes import Need
 from sphinx_needs.utils import profile, unwrap
 
@@ -126,7 +127,6 @@ class NeedDirective(SphinxDirective):
         links_string = self.options.get(name)
         links = []
         if links_string:
-            # links = [link.strip() for link in re.split(";|,", links) if not link.isspace()]
             for link in re.split(";|,", links_string):
                 if link.isspace():
                     logger.warning(
@@ -293,7 +293,8 @@ def add_sections(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None
 @profile("NEED_PROCESS")
 def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     """
-    Event handler to add title meta data (status, tags, links, ...) information to the Need node.
+    Event handler to add title meta data (status, tags, links, ...) information to the Need node. Also processes
+    constraints.
 
     :param app:
     :param doctree:
@@ -321,6 +322,20 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     # Create back links of common links and extra links
     for links in env.config.needs_extra_links:
         create_back_links(env, links["option"])
+
+    """
+    The output of this phase is a doctree for each source file; that is a tree of docutils nodes.
+
+    https://www.sphinx-doc.org/en/master/extdev/index.html
+
+    """
+    needs = env.needs_all_needs
+
+    for node_need in doctree.traverse(Need):
+        need_id = node_need.attributes["ids"][0]
+        need_data = needs[need_id]
+
+        process_constraints(app, need_data)
 
 
 @profile("NEED_PRINT")

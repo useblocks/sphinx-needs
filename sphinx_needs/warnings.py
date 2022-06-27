@@ -52,7 +52,6 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
         if not need["is_external"]:
             checked_needs[need_id] = need
 
-    # warnings = app.config.needs_warnings
     warnings = NEEDS_CONFIG.get("warnings")
 
     warnings_always_warn = app.config.needs_warnings_always_warn
