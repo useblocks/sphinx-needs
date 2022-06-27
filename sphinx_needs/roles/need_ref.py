@@ -63,7 +63,7 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
             node_need_ref["reftarget"] + "?",
         )
 
-        #It is possible to change the prefix / postfix easily here.
+        # It is possible to change the prefix / postfix easily here.
         prefix = "[["
         postfix = "]]"
 
@@ -109,7 +109,7 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
                         e,
                         node_need_ref["reftarget"],
                         node_need_ref.line,
-                        node_need_ref.source
+                        node_need_ref.source,
                     )
                     log.warning(link_text)
             else:
