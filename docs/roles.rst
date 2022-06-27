@@ -60,7 +60,7 @@ Example
 
 .. warning::
 
-   If your refer to an :ref:`external need <needs_external_needs>`, the algorithm is different
+   If you refer to an :ref:`external need <needs_external_needs>`, the algorithm is different
    and you will only get the need id as link text.
 
 
