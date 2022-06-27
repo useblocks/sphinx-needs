@@ -1,3 +1,4 @@
+import contextlib
 from collections.abc import Iterable
 from typing import Dict
 
@@ -9,8 +10,6 @@ from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
 from sphinx_needs.nodes import Need
 from sphinx_needs.utils import check_and_calc_base_url_rel_path, unwrap
-
-import contextlib
 
 log = get_logger(__name__)
 
