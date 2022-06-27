@@ -1,15 +1,14 @@
+from collections.abc import Iterable
+from typing import Dict
+
 from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.util.nodes import make_refnode
 
-from sphinx_needs.nodes import Need
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
+from sphinx_needs.nodes import Need
 from sphinx_needs.utils import check_and_calc_base_url_rel_path, unwrap
-
-from collections.abc import Iterable
-
-from typing import Dict
 
 log = get_logger(__name__)
 
@@ -18,10 +17,10 @@ class NeedRef(nodes.Inline, nodes.Element):
     pass
 
 def transform_need_to_dict(need: Need) -> Dict[str, str]:
-    '''
+    """"
     The function will transform a need in a dictionary of strings. Used to 
     be given e.g. to a python format string.
-    
+
     Parameters
     ----------
     need : need
@@ -31,8 +30,7 @@ def transform_need_to_dict(need: Need) -> Dict[str, str]:
     -------
     dict : dictionary of strings
         Can be easily used for python format strings, or other use cases
-
-    '''
+    """
     dict_need = {}
 
     for element in need:
@@ -42,13 +40,14 @@ def transform_need_to_dict(need: Need) -> Dict[str, str]:
         elif isinstance(need[element], list):
             dict_need[element] = ";".join(need[element])
         elif isinstance(need[element], dict):
-            dict_need[element] = ";".join( [str(i) for i in need[element].items()] ) 
+            dict_need[element] = ";".join([str(i) for i in need[element].items()])
         elif isinstance(need[element], Iterable):
-            dict_need[element] = ";".join( [str(i) for i in need[element] ] )
+            dict_need[element] = ";".join([str(i) for i in need[element]])
         else:
             dict_need[element] = need[element]
 
     return dict_need
+
 
 def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     builder = unwrap(app.builder)
@@ -79,7 +78,7 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
         if ref_id in env.needs_all_needs:
             target_need = env.needs_all_needs[ref_id]
 
-            dict_need = transform_need_to_dict(target_need) # Transform a dict in a dict of {str, str}
+            dict_need = transform_need_to_dict(target_need)  # Transform a dict in a dict of {str, str}
 
             # We set the id to the complete id maintained in node_need_ref["reftarget"]
             dict_need["id"] = ref_id_complete
@@ -107,10 +106,12 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
                     link_text = ref_name.format(**dict_need)
                 except KeyError as e:
                     link_text = '"Needs: option placeholder %s for need %s not found (Line %i of file %s)"' % (
-                        e, node_need_ref["reftarget"], node_need_ref.line, node_need_ref.source)
-                    log.warning(
-                        link_text
+                        e,
+                        node_need_ref["reftarget"],
+                        node_need_ref.line,
+                        node_need_ref.source
                     )
+                    log.warning(link_text)
             else:
                 if ref_name:
                     # If ref_name differs from the need id, we treat the "ref_name content" as title.
@@ -118,10 +119,11 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
                 try:
                     link_text = app.config.needs_role_need_template.format(**dict_need)
                 except KeyError as e:
-                    link_text = '"Needs: the config parameter needs_role_need_template uses not supported placeholders: %s "' % e
-                    log.warning(
-                        link_text
+                    link_text = (
+                        '"Needs: the config parameter needs_role_need_template uses not supported placeholders: %s "'
+                        % e
                     )
+                    log.warning(link_text)
 
             node_need_ref[0].children[0] = nodes.Text(link_text, link_text)
 
