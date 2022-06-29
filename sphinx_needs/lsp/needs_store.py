@@ -8,10 +8,21 @@ import json
 import logging
 import os
 import sys
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Generator, List, Optional
 
 from sphinx_needs.lsp.exceptions import NeedlsConfigException
+
+
+@contextmanager
+def set_directory(path: Path) -> Generator[None, None, None]:
+    origin = Path().cwd()
+    try:
+        os.chdir(path)
+        yield
+    finally:
+        os.chdir(origin)
 
 
 class NeedsStore:
@@ -38,36 +49,32 @@ class NeedsStore:
 
     def set_declared_types(self) -> None:
         module_name = "conf"
-        work_dir = Path.cwd()
         conf_py = self.conf_py_path
-        conf_py_dir = conf_py.parent
-        os.chdir(conf_py_dir)
+        with set_directory(conf_py.parent):
+            logging.info(f"Loading need_types from {conf_py.name}...")
 
-        logging.info(f"Loading need_types from {conf_py.name}...")
+            spec = importlib.util.spec_from_file_location(module_name, conf_py)
+            if spec is None:
+                raise ImportError(f"Created module spec {spec} from {conf_py.name} not exists.")
 
-        spec = importlib.util.spec_from_file_location(module_name, conf_py)
-        if spec is None:
-            raise ImportError(f"Created module spec {spec} from {conf_py.name} not exists.")
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = module
 
-        module = importlib.util.module_from_spec(spec)
-        sys.modules[module_name] = module
+            if spec.loader:
+                try:
+                    spec.loader.exec_module(module)
+                except Exception as e:
+                    logging.error(f"Failed to exccute module {module} -> {e}")
+            else:
+                raise ImportError(f"Python ModuleSpec Loader{spec.loader} not found.")
 
-        if spec.loader:
-            try:
-                spec.loader.exec_module(module)
-            except Exception as e:
-                logging.error(f"Failed to exccute module {module} -> {e}")
-        else:
-            raise ImportError(f"Python ModuleSpec Loader{spec.loader} not found.")
+            need_types = getattr(module, "needs_types", [])
+            if not need_types:
+                raise NeedlsConfigException(f"No 'need_types' defined on {conf_py.name}")
 
-        need_types = getattr(module, "needs_types", [])
-        if not need_types:
-            raise NeedlsConfigException(f"No 'need_types' defined on {conf_py.name}")
-
-        self.declared_types = {}
-        for item in need_types:
-            self.declared_types[item["directive"]] = item["title"]
-        os.chdir(work_dir)
+            self.declared_types = {}
+            for item in need_types:
+                self.declared_types[item["directive"]] = item["title"]
 
     def load_needs(self, json_file: Path) -> None:
 
