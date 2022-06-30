@@ -6,6 +6,7 @@ SPHINX_VERSIONS = ["4.0.3", "4.3.2", "4.5"]
 TEST_DEPENDENCIES = [
     "pytest",
     "pytest-xdist",
+    "pytest_lsp",
     "responses",
     "lxml",
     "pyparsing!=3.0.4",

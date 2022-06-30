@@ -49,6 +49,7 @@ pre-commit = "^2"
 lxml = "^4.6.5"
 pytest = "^6.2.5"
 pytest-xdist="*"  # parallelisation
+pytest_lsp="*"
 responses = "^0.12.1"
 requests-mock = ">=1.9.3"
 
