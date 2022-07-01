@@ -273,6 +273,8 @@ needs_extra_options = [
     "image",
     "config",
     "github",
+    "value",
+    "unit",
 ]
 
 needs_warnings = {

@@ -1,9 +1,14 @@
+import contextlib
+from collections.abc import Iterable
+from typing import Dict
+
 from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.util.nodes import make_refnode
 
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
+from sphinx_needs.nodes import Need
 from sphinx_needs.utils import check_and_calc_base_url_rel_path, unwrap
 
 log = get_logger(__name__)
@@ -11,6 +16,39 @@ log = get_logger(__name__)
 
 class NeedRef(nodes.Inline, nodes.Element):
     pass
+
+
+def transform_need_to_dict(need: Need) -> Dict[str, str]:
+    """ "
+    The function will transform a need in a dictionary of strings. Used to
+    be given e.g. to a python format string.
+
+    Parameters
+    ----------
+    need : need
+        A need object.
+
+    Returns
+    -------
+    dict : dictionary of strings
+        Can be easily used for python format strings, or other use cases
+    """
+    dict_need = {}
+
+    for element in need:
+        if isinstance(need[element], str):
+            # As string are iterable, we have to handle strings first.
+            dict_need[element] = need[element]
+        elif isinstance(need[element], list):
+            dict_need[element] = ";".join(need[element])
+        elif isinstance(need[element], dict):
+            dict_need[element] = ";".join([str(i) for i in need[element].items()])
+        elif isinstance(need[element], Iterable):
+            dict_need[element] = ";".join([str(i) for i in need[element]])
+        else:
+            dict_need[element] = need[element]
+
+    return dict_need
 
 
 def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
@@ -27,11 +65,11 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
             node_need_ref["reftarget"] + "?",
         )
 
+        # It is possible to change the prefix / postfix easily here.
+        prefix = "[["
+        postfix = "]]"
+
         ref_id_complete = node_need_ref["reftarget"]
-        ref_name = node_need_ref.children[0].children[0]
-        # Only use ref_name, if it differs from ref_id
-        if str(ref_id_complete) == str(ref_name):
-            ref_name = None
 
         if "." in ref_id_complete:
             ref_id, part_id = ref_id_complete.split(".")
@@ -41,33 +79,57 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
 
         if ref_id in env.needs_all_needs:
             target_need = env.needs_all_needs[ref_id]
-            try:
+
+            dict_need = transform_need_to_dict(target_need)  # Transform a dict in a dict of {str, str}
+
+            # We set the id to the complete id maintained in node_need_ref["reftarget"]
+            dict_need["id"] = ref_id_complete
+
+            if part_id:
+                # If part_id, we have to fetch the title from the content.
+                dict_need["title"] = target_need["parts"][part_id]["content"]
+
+            # Shorten title, if necessary
+            max_length = app.config.needs_role_need_max_title_length
+            if max_length > 3 and len(dict_need["title"]) > max_length:
+                title = dict_need["title"]
+                title = f"{title[: max_length - 3]}..."
+                dict_need["title"] = title
+
+            ref_name = node_need_ref.children[0].children[0]
+            # Only use ref_name, if it differs from ref_id
+            if str(ref_id_complete) == str(ref_name):
+                ref_name = None
+
+            if ref_name and prefix in ref_name and postfix in ref_name:
+                # if ref_name is set and has prefix to process, we will do so.
+                ref_name = ref_name.replace(prefix, "{").replace(postfix, "}")
+                try:
+                    link_text = ref_name.format(**dict_need)
+                except KeyError as e:
+                    link_text = '"Needs: option placeholder %s for need %s not found (Line %i of file %s)"' % (
+                        e,
+                        node_need_ref["reftarget"],
+                        node_need_ref.line,
+                        node_need_ref.source,
+                    )
+                    log.warning(link_text)
+            else:
                 if ref_name:
-                    title = ref_name
-                elif part_id:
-                    title = target_need["parts"][part_id]["content"]
-                else:
-                    title = target_need["title"]
+                    # If ref_name differs from the need id, we treat the "ref_name content" as title.
+                    dict_need["title"] = ref_name
+                try:
+                    link_text = app.config.needs_role_need_template.format(**dict_need)
+                except KeyError as e:
+                    link_text = (
+                        '"Needs: the config parameter needs_role_need_template uses not supported placeholders: %s "'
+                        % e
+                    )
+                    log.warning(link_text)
 
-                # Shorten title, if necessary
-                max_length = app.config.needs_role_need_max_title_length
-                if max_length > 3:
-                    title = title if len(title) < max_length else f"{title[: max_length - 3]}..."
+            node_need_ref[0].children[0] = nodes.Text(link_text, link_text)
 
-                link_text = app.config.needs_role_need_template.format(
-                    title=title,
-                    id=ref_id_complete,
-                    type=target_need["type"],
-                    type_name=target_need["type_name"],
-                    status=target_need["status"],
-                    content=target_need["content"],
-                    tags=";".join(target_need["tags"]),
-                    links=";".join(target_need["links"]),
-                    links_back=";".join(target_need["links_back"]),
-                )
-
-                node_need_ref[0].children[0] = nodes.Text(link_text)
-
+            with contextlib.suppress(NoUri):
                 if not target_need.get("is_external", False):
                     new_node_ref = make_refnode(
                         builder,
@@ -81,13 +143,6 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
                     new_node_ref = nodes.reference(target_need["id"], target_need["id"])
                     new_node_ref["refuri"] = check_and_calc_base_url_rel_path(target_need["external_url"], fromdocname)
                     new_node_ref["classes"].append(target_need["external_css"])
-            except NoUri:
-                # If the given need id can not be found, we must pass here....
-                pass
-            except KeyError as e:
-                log.warning(
-                    "Needs: the config parameter needs_role_need_template uses not supported placeholders: %s " % e
-                )
 
         else:
             log.warning(
