@@ -6,14 +6,13 @@ import sys
 import pytest
 import pytest_lsp
 from pygls.lsp.types import MarkupContent, MarkupKind, Position, Range
-from pytest_lsp import ClientServerConfig
 
 TEST_DOC_ROOT_URI = os.path.join("file://", os.path.abspath(os.path.dirname(__file__)), "doc_example_lsp")
 TEST_FILE_URI = os.path.join(TEST_DOC_ROOT_URI, "index.rst")
 
 
 @pytest_lsp.fixture(
-    config=ClientServerConfig(server_command=[sys.executable, "-m", "esbonio"], root_uri=TEST_DOC_ROOT_URI),
+    config=pytest_lsp.ClientServerConfig(server_command=[sys.executable, "-m", "esbonio"], root_uri=TEST_DOC_ROOT_URI),
 )
 async def client():
     pass
