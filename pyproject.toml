@@ -39,8 +39,11 @@ requests-file = "^1.5.1"  # external links
 requests = "^2.25.1"  # external_links
 jsonschema = "3.2.0"  # needsimport schema validation
 sphinx-data-viewer = "^0.1.1"  # needservice debug output
+esbonio = ">=0.11.3"  # IDE language features
+pygls = "*"  # esbonio dependency
 
 [tool.poetry.dev-dependencies]
+sphinxcontrib-plantuml = "^0"
 pre-commit = "^2"
 # test dependencies
 lxml = "^4.6.5"
@@ -48,6 +51,12 @@ pytest = "^6.2.5"
 pytest-xdist="*"  # parallelisation
 responses = "^0.12.1"
 requests-mock = ">=1.9.3"
+
+# type checking
+mypy = "^0.960"
+types-requests = "^2.27.25"
+types-setuptools = "^57.4.14"
+docutils-stubs = "^0.0.22"
 
 sphinx-immaterial = { version = ">0.6.7", optional = true }
 
@@ -69,10 +78,10 @@ strict = true
 show_error_codes = true
 implicit_reexport = true
 files = "sphinx_needs"
+ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = [
-  'sphinx_needs.api.exceptions',
   'sphinx_needs.api.need',
   'sphinx_needs.builder',
   'sphinx_needs.diagrams_common',
@@ -83,9 +92,9 @@ module = [
   'sphinx_needs.directives.needfilter',
   'sphinx_needs.directives.needflow',
   'sphinx_needs.directives.needgantt',
+  'sphinx_needs.directives.needlist',
   'sphinx_needs.directives.needpie',
   'sphinx_needs.directives.needsequence',
-  'sphinx_needs.directives.needservice',
   'sphinx_needs.directives.needtable',
   'sphinx_needs.directives.needuml',
   'sphinx_needs.directives.utils',
@@ -97,12 +106,13 @@ module = [
   'sphinx_needs.layout',
   'sphinx_needs.needs',
   'sphinx_needs.needsfile',
+  'sphinx_needs.roles.need_incoming',
   'sphinx_needs.roles.need_part',
   'sphinx_needs.roles.need_ref',
-  'sphinx_needs.services.base',
   'sphinx_needs.services.github',
   'sphinx_needs.services.manager',
   'sphinx_needs.utils',
+  'sphinx_needs.warnings',
 ]
 ignore_errors = true
 
@@ -111,6 +121,6 @@ docs = ["sphinx>=4.0"]
 immaterial = ["sphinx-immaterial"]
 
 [build-system]
-requires = ["poetry-core>=1.0.8"]
+requires = ["setuptools", "poetry_core>=1.0.8"]  # setuptools for deps like plantuml
 build-backend = "poetry.core.masonry.api"
 

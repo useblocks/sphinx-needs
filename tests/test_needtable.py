@@ -29,7 +29,6 @@ def test_doc_build_html(test_app):
     assert cnt == 2
 
     # check only one needtable with caption
-    # assert len(tree.xpath("//section/table/caption")) == 1
     assert len(tree.xpath("//table/caption")) == 1
 
     # check needtable has correct caption

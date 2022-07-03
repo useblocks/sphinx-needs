@@ -1,9 +1,10 @@
 import hashlib
 import os
 import re
-from typing import List, Optional, Union
+from typing import Any, List, Optional, Union
 
 from docutils import nodes
+from docutils.parsers.rst.states import RSTState
 from docutils.statemachine import StringList
 from jinja2 import Template
 from sphinx.application import Sphinx
@@ -11,6 +12,7 @@ from sphinx.util.nodes import nested_parse_with_titles
 
 from sphinx_needs.api.configuration import NEEDS_CONFIG
 from sphinx_needs.api.exceptions import (
+    NeedsConstraintNotAllowed,
     NeedsDuplicatedId,
     NeedsInvalidException,
     NeedsInvalidOption,
@@ -19,10 +21,12 @@ from sphinx_needs.api.exceptions import (
     NeedsTagNotAllowed,
     NeedsTemplateException,
 )
+from sphinx_needs.directives.needuml import Needuml
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import get_logger
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
+from sphinx_needs.utils import unwrap
 
 logger = get_logger(__name__)
 
@@ -38,6 +42,8 @@ def add_need(
     content: str = "",
     status: Optional[str] = None,
     tags=None,
+    constraints=None,
+    constraints_passed=None,
     links_string: Optional[str] = None,
     hide: bool = False,
     hide_tags: bool = False,
@@ -103,9 +109,10 @@ def add_need(
     :param title: String as title.
     :param id: ID as string. If not given, a id will get generated.
     :param content: Content as single string.
-    :param content_type: Type of the content. Can be "sphinx" or "plantuml".
     :param status: Status as string.
     :param tags: Tags as single string.
+    :param constraints: Constraints as single, comma separated, string.
+    :param constraints_passed: Contains bool describing if all constraints have passed
     :param links_string: Links as single string.
     :param hide: boolean value.
     :param hide_tags: boolean value. (Not used with Sphinx-Needs >0.5.0)
@@ -126,7 +133,7 @@ def add_need(
     # Get environment
     #############################################################################################
     env = app.env
-    types = env.app.config.needs_types
+    types = app.config.needs_types
     type_name = ""
     type_prefix = ""
     type_color = ""
@@ -135,7 +142,6 @@ def add_need(
     for ntype in types:
         if ntype["directive"] == need_type:
             type_name = ntype["title"]
-            type_content = ntype.get("content", "sphinx")
             type_prefix = ntype["prefix"]
             type_color = ntype["color"] or "#000000"  # if no color set up user in config
             type_style = ntype["style"] or "node"  # if no style set up user in config
@@ -153,7 +159,7 @@ def add_need(
     # TODO: Check, if id was already given. If True, recalculate id
     # id = self.options.get("id", ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for
     # _ in range(5)))
-    if id is None and env.app.config.needs_id_required:
+    if id is None and app.config.needs_id_required:
         raise NeedsNoIdException(
             "An id is missing for this need and must be set, because 'needs_id_required' "
             "is set to True in conf.py. Need '{}' in {} ({})".format(title, docname, lineno)
@@ -164,10 +170,10 @@ def add_need(
     else:
         need_id = id
 
-    if env.app.config.needs_id_regex and not re.match(env.app.config.needs_id_regex, need_id):
+    if app.config.needs_id_regex and not re.match(app.config.needs_id_regex, need_id):
         raise NeedsInvalidException(
             "Given ID '{id}' does not match configured regex '{regex}'".format(
-                id=need_id, regex=env.app.config.needs_id_regex
+                id=need_id, regex=app.config.needs_id_regex
             )
         )
 
@@ -180,7 +186,7 @@ def add_need(
 
     # Handle status
     # Check if status is in needs_statuses. If not raise an error.
-    if env.app.config.needs_statuses and status not in [stat["name"] for stat in env.app.config.needs_statuses]:
+    if app.config.needs_statuses and status not in [stat["name"] for stat in app.config.needs_statuses]:
         raise NeedsStatusNotAllowed(
             f"Status {status} of need id {need_id} is not allowed " "by config value 'needs_statuses'."
         )
@@ -201,9 +207,9 @@ def add_need(
 
         tags = new_tags
         # Check if tag is in needs_tags. If not raise an error.
-        if env.app.config.needs_tags:
+        if app.config.needs_tags:
             for tag in tags:
-                if tag not in [tag["name"] for tag in env.app.config.needs_tags]:
+                if tag not in [tag["name"] for tag in app.config.needs_tags]:
                     raise NeedsTagNotAllowed(
                         f"Tag {tag} of need id {need_id} is not allowed " "by config value 'needs_tags'."
                     )
@@ -211,6 +217,37 @@ def add_need(
         # So let put them together again
         # ToDo: There may be a smart regex for the splitting. This would avoid this mess of code...
     tags = _fix_list_dyn_func(tags)
+
+    if constraints is None:
+        constraints = []
+    if len(constraints) > 0:
+
+        # tags should be a string, but it can also be already a list,which can be used.
+        if isinstance(constraints, str):
+            constraints = [constraint.strip() for constraint in re.split(";|,", constraints)]
+
+        new_constraints = []  # Shall contain only valid constraints
+        for i in range(len(constraints)):
+            if len(constraints[i]) == 0 or constraints[i].isspace():
+                logger.warning(
+                    f"Scruffy tag definition found in need {need_id}. " "Defined constraint contains spaces only."
+                )
+            else:
+                new_constraints.append(constraints[i])
+
+        constraints = new_constraints
+        # Check if constraint is in needs_constraints. If not raise an error.
+        if env.app.config.needs_constraints:
+            for constraint in constraints:
+                if constraint not in env.app.config.needs_constraints.keys():
+                    raise NeedsConstraintNotAllowed(
+                        f"Constraint {constraint} of need id {need_id} is not allowed "
+                        "by config value 'needs_constraints'."
+                    )
+        # This may have cut also dynamic function strings, as they can contain , as well.
+        # So let put them together again
+        # ToDo: There may be a smart regex for the splitting. This would avoid this mess of code...
+    constraints = _fix_list_dyn_func(constraints)
 
     #############################################################################################
     # Add need to global need list
@@ -236,7 +273,7 @@ def add_need(
             )
 
     # Trim title if it is too long
-    max_length = env.app.config.needs_max_title_length
+    max_length = app.config.needs_max_title_length
     if max_length == -1 or len(title) <= max_length:
         trimmed_title = title
     elif max_length <= 3:
@@ -256,14 +293,17 @@ def add_need(
         "type_prefix": type_prefix,
         "type_color": type_color,
         "type_style": type_style,
-        "type_content": type_content,
         "status": status,
         "tags": tags,
+        "constraints": constraints,
+        "constraints_passed": None,
+        "constraints_results": {},
         "id": need_id,
         "title": trimmed_title,
         "full_title": title,
         "content": content,
         "collapse": collapse,
+        "diagram": None,  # extracted later
         "style": style,
         "layout": layout,
         "template": template,
@@ -279,14 +319,13 @@ def add_need(
         "is_modified": False,  # needed by needextend
         "modifications": 0,  # needed by needextend
     }
-    # needs_extra_options = env.config.needs_extra_options.keys()
     needs_extra_option_names = NEEDS_CONFIG.get("extra_options").keys()
     _merge_extra_options(needs_info, kwargs, needs_extra_option_names)
 
-    needs_global_options = env.config.needs_global_options
+    needs_global_options = app.config.needs_global_options
     _merge_global_options(app, needs_info, needs_global_options)
 
-    link_names = [x["option"] for x in env.config.needs_extra_links]
+    link_names = [x["option"] for x in app.config.needs_extra_links]
     for keyword in kwargs:
         if keyword not in needs_extra_option_names and keyword not in link_names:
             raise NeedsInvalidOption(
@@ -298,7 +337,7 @@ def add_need(
     # Merge links
     copy_links = []
 
-    for link_type in env.config.needs_extra_links:
+    for link_type in app.config.needs_extra_links:
         # Check, if specific link-type got some arguments during method call
         if link_type["option"] not in kwargs and link_type["option"] not in needs_global_options:
             # if not we set no links, but entry in needS_info must be there
@@ -361,7 +400,6 @@ def add_need(
     ############################
     # Title and meta data information gets added alter during event handling via process_need_nodes()
     # We just add a basic need node and render the rst-based content, because this can not be done later.
-    # style_classes = ['need', type_name, 'need-{}'.format(type_name.lower())]  # Used < 0.4.4
     style_classes = ["need", f"need-{need_type.lower()}"]
     if style:
         style_classes.append(style)
@@ -371,12 +409,18 @@ def add_need(
     # Add lineno to node
     node_need.line = needs_info["lineno"]
 
-    # Render rst-based content and add it to the need-node
+    node_need_content = _render_template(content, docname, lineno, state)
 
-    if type_content == "plantuml":
-        node_need_content = _render_plantuml_template(content, docname, lineno, state)
-    else:
-        node_need_content = _render_template(content, docname, lineno, state)
+    # Extract first plantuml diagram
+    for child in node_need_content.children:
+        if isinstance(child, Needuml):
+            needuml_id = child.rawsource
+            try:
+                needuml = env.needs_all_needumls.get(needuml_id)
+                needs_info["diagram"] = needuml["content"]
+            except KeyError:
+                pass
+            break  # We only handle the first needuml-node as the main one.
 
     need_parts = find_parts(node_need_content)
     update_need_with_parts(env, needs_info, need_parts)
@@ -388,28 +432,25 @@ def add_need(
     return_nodes = [target_node] + [node_need]
     if pre_content:
         node_need_pre_content = _render_template(pre_content, docname, lineno, state)
-        pre_container = nodes.container()
-        pre_container += node_need_pre_content.children
         return_nodes = node_need_pre_content.children + return_nodes
 
     if post_content:
         node_need_post_content = _render_template(post_content, docname, lineno, state)
-        post_container = nodes.container()
-        post_container += node_need_post_content.children
         return_nodes = return_nodes + node_need_post_content.children
 
     return return_nodes
 
 
-def del_need(app: Sphinx, id) -> None:
+def del_need(app: Sphinx, id: str) -> None:
     """
     Deletes an existing need.
 
     :param app: Sphinx application object.
     :param id: Sphinx need id.
     """
-    if id in app.env.needs_all_needs:
-        del app.env.needs_all_needs[id]
+    env = unwrap(app.env)
+    if id in env.needs_all_needs:
+        del env.needs_all_needs[id]
     else:
         logger.warning(f"Given need id {id} not exists!")
 
@@ -417,15 +458,16 @@ def del_need(app: Sphinx, id) -> None:
 def add_external_need(
     app: Sphinx,
     need_type,
-    title,
-    id=None,
+    title: Optional[str] = None,
+    id: Optional[str] = None,
     external_url: Optional[str] = None,
     external_css: str = "external_link",
     content: str = "",
-    status=None,
-    tags=None,
-    links_string=None,
-    **kwargs,
+    status: Optional[str] = None,
+    tags: Optional[str] = None,
+    constraints: Optional[str] = None,
+    links_string: Optional[str] = None,
+    **kwargs: Any,
 ):
     """
     Adds an external need from an external source.
@@ -443,6 +485,7 @@ def add_external_need(
     :param content: Content as single string.
     :param status: Status as string.
     :param tags: Tags as single string.
+    :param constraints: constraints as single, comma separated string.
     :param links_string: Links as single string.
     :param external_css: CSS class name as string, which is set for the <a> tag.
     :param kwargs:
@@ -459,6 +502,7 @@ def add_external_need(
     kwargs["title"] = title
     kwargs["status"] = status
     kwargs["tags"] = tags
+    kwargs["constraints"] = constraints
     kwargs["links_string"] = links_string
     kwargs["is_external"] = True
     kwargs["external_url"] = external_url
@@ -467,7 +511,7 @@ def add_external_need(
     return add_need(app=app, **kwargs)
 
 
-def _prepare_template(app: Sphinx, needs_info, template_key) -> str:
+def _prepare_template(app: Sphinx, needs_info, template_key: str) -> str:
     template_folder = app.config.needs_template_folder
     if not os.path.isabs(template_folder):
         template_folder = os.path.join(app.confdir, template_folder)
@@ -488,7 +532,7 @@ def _prepare_template(app: Sphinx, needs_info, template_key) -> str:
     return new_content
 
 
-def _render_template(content: str, docname: str, lineno: int, state) -> nodes.Element:
+def _render_template(content: str, docname: str, lineno: int, state: RSTState) -> nodes.Element:
     rst = StringList()
     for line in content.split("\n"):
         rst.append(line, docname, lineno)
@@ -498,7 +542,7 @@ def _render_template(content: str, docname: str, lineno: int, state) -> nodes.El
     return node_need_content
 
 
-def _render_plantuml_template(content: str, docname: str, lineno: int, state) -> nodes.Element:
+def _render_plantuml_template(content: str, docname: str, lineno: int, state: RSTState) -> nodes.Element:
     rst = StringList()
     rst.append(".. needuml::", docname, lineno)
     rst.append("", docname, lineno)  # Empty option line for needuml

@@ -1,11 +1,11 @@
-.. _needsreport:
+.. _needreport:
 
-needsreport
+needreport
 ===========
 
 .. versionadded:: 1.0.1
 
-**needsreport** documents the following configurations from **conf.py**:
+**needreport** documents the following configurations from **conf.py**:
 
 * :ref:`Types <needs_types>`
 * :ref:`Links <needs_extra_links>`

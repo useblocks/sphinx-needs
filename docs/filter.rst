@@ -20,6 +20,7 @@ The following filter options are supported by directives:
  * :ref:`needflow`
  * :ref:`needpie`
  * :ref:`needfilter` (deprecated!)
+ * :ref:`needextend`
 
 
 Related to the used directive and its representation, the filter options create a list of needs, which match the
@@ -195,6 +196,7 @@ Inside a filter string the following variables/functions can be used:
 * **needs** as Python dict. Contains all needs. Helpful to perform complex filters on links (added 0.3.15).
 * **sections** as list of sections names, th which the need belongs to.
 * **section_name** as string, which defines the last/lowest section a need belongs to.
+* **docname** as string, which defines the name of the document in which a need is defined, without the extension (similar to Sphinx' ``:doc:`` role)
 * **signature** as string, which contains a function-name, possible set by
   `sphinx-autodoc <https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html>`_ above the need.
 * **parent_need** as string, which is an id of the need, which has the current need defined in its content

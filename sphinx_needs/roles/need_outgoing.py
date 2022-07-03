@@ -2,13 +2,9 @@ from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.util.nodes import make_refnode
 
-try:
-    from sphinx.errors import NoUri  # Sphinx 3.0
-except ImportError:
-    from sphinx.environment import NoUri  # Sphinx < 3.0
-
+from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import check_and_calc_base_url_rel_path
+from sphinx_needs.utils import check_and_calc_base_url_rel_path, unwrap
 
 log = get_logger(__name__)
 
@@ -19,10 +15,12 @@ class NeedOutgoing(nodes.Inline, nodes.Element):
 
 def process_need_outgoing(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     for node_need_ref in doctree.traverse(NeedOutgoing):
-        env = app.builder.env
+        builder = unwrap(app.builder)
+        env = unwrap(builder.env)
 
         node_link_container = nodes.inline()
-        ref_need = env.needs_all_needs[node_need_ref["reftarget"]]
+        needs_all_needs = getattr(env, "needs_all_needs", {})
+        ref_need = needs_all_needs[node_need_ref["reftarget"]]
 
         # Lets check if NeedIncoming shall follow a specific link type
         if "link_type" in node_need_ref.attributes:
@@ -42,11 +40,11 @@ def process_need_outgoing(app: Sphinx, doctree: nodes.document, fromdocname: str
                 link_part = None
 
             # If need target exists, let's create the reference
-            if (link in env.needs_all_needs and not link_part) or (
-                link_part and link in env.needs_all_needs and link_part in env.needs_all_needs[link]["parts"]
+            if (link in needs_all_needs and not link_part) or (
+                link_part and link in needs_all_needs and link_part in needs_all_needs[link]["parts"]
             ):
                 try:
-                    target_need = env.needs_all_needs[link]
+                    target_need = needs_all_needs[link]
                     if link_part and link_part in target_need["parts"]:
                         part_content = target_need["parts"][link_part]["content"]
                         target_title = part_content if len(part_content) < 30 else part_content[:27] + "..."
@@ -66,7 +64,7 @@ def process_need_outgoing(app: Sphinx, doctree: nodes.document, fromdocname: str
 
                     if not target_need["is_external"]:
                         new_node_ref = make_refnode(
-                            app.builder,
+                            builder,
                             fromdocname,
                             target_need["docname"],
                             target_id,

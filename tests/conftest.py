@@ -35,7 +35,6 @@ def test_app(make_app, request):
     app = make_app(
         buildername=builder_params.get("buildername", "html"),
         srcdir=src_dir,
-        # builddir=builder_params.get("builddir", None),  # sphinx 3.5.4 not compatible
         freshenv=builder_params.get("freshenv", None),
         confoverrides=builder_params.get("confoverrides", None),
         status=builder_params.get("status", None),

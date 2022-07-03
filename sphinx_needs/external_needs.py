@@ -86,6 +86,7 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, _docname: str) -> No
             need_params["links"] = need.get("links", [])
             need_params["tags"] = ",".join(need.get("tags", []))
             need_params["status"] = need.get("status", None)
+            need_params["constraints"] = ",".join(need.get("constraints", []))
 
             del need_params["description"]
 

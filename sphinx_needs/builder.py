@@ -7,6 +7,7 @@ from sphinx.builders import Builder
 
 from sphinx_needs.logging import get_logger
 from sphinx_needs.needsfile import NeedsList
+from sphinx_needs.utils import unwrap
 
 log = get_logger(__name__)
 
@@ -21,9 +22,10 @@ class NeedsBuilder(Builder):
         pass
 
     def finish(self) -> None:
-        needs = self.env.needs_all_needs.values()  # We need a list of needs for later filter checks
-        filters = self.env.needs_all_filters
-        config = self.env.config
+        env = unwrap(self.env)
+        needs = env.needs_all_needs.values()  # We need a list of needs for later filter checks
+        filters = env.needs_all_filters
+        config = env.config
         version = getattr(config, "version", "unset")
         needs_list = NeedsList(config, self.outdir, self.confdir)
 
@@ -63,22 +65,24 @@ class NeedsBuilder(Builder):
     def get_outdated_docs(self) -> Iterable[str]:
         return []
 
-    def prepare_writing(self, docnames: Set[str]) -> None:
+    def prepare_writing(self, _docnames: Set[str]) -> None:
         pass
 
-    def write_doc_serialized(self, docname: str, doctree: nodes.document) -> None:
+    def write_doc_serialized(self, _docname: str, _doctree: nodes.document) -> None:
         pass
 
     def cleanup(self) -> None:
         pass
 
-    def get_target_uri(self, docname: str, typ: Optional[str] = None) -> str:
+    def get_target_uri(self, _docname: str, _typ: Optional[str] = None) -> str:
         return ""
 
 
-def build_needs_json(app: Sphinx, exception) -> None:
+def build_needs_json(app: Sphinx, _exception: Exception) -> None:
 
-    if not app.env.config.needs_build_json:
+    env = unwrap(app.env)
+
+    if not env.config.needs_build_json:
         return
 
     # Do not create an additional needs.json, if builder is already "needs".
@@ -86,5 +90,5 @@ def build_needs_json(app: Sphinx, exception) -> None:
         return
 
     needs_builder = NeedsBuilder(app)
-    needs_builder.set_environment(app.env)
+    needs_builder.set_environment(env)
     needs_builder.finish()

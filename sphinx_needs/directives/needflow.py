@@ -14,6 +14,7 @@ from sphinxcontrib.plantuml import (
 from sphinx_needs.diagrams_common import calculate_link, create_legend
 from sphinx_needs.filter_common import FilterBase, filter_single_need, process_filters
 from sphinx_needs.logging import get_logger
+from sphinx_needs.utils import unwrap
 
 logger = get_logger(__name__)
 
@@ -127,10 +128,10 @@ def make_entity_name(name: str) -> str:
 def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     # Replace all needflow nodes with a list of the collected needs.
     # Augment each need with a backlink to the original location.
-    env = app.builder.env
+    env = unwrap(app.env)
 
-    link_types = env.config.needs_extra_links
-    allowed_link_types_options = [link.upper() for link in env.config.needs_flow_link_types]
+    link_types = app.config.needs_extra_links
+    allowed_link_types_options = [link.upper() for link in app.config.needs_flow_link_types]
 
     # NEEDFLOW
     for node in doctree.traverse(Needflow):
@@ -202,7 +203,7 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
                 valid_need_parts = [x for x in found_needs if x["is_part"] and x["id_parent"] == need_info["id"]]
                 for need_part in valid_need_parts:
                     part_link = calculate_link(app, need_part, fromdocname)
-                    diagram_template = Template(env.config.needs_diagram_template)
+                    diagram_template = Template(app.config.needs_diagram_template)
                     part_text = diagram_template.render(**need_part)
                     part_colors = []
                     if need_part["type_color"]:
@@ -226,7 +227,7 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
 
                 link = calculate_link(app, need_info, fromdocname)
 
-                diagram_template = Template(env.config.needs_diagram_template)
+                diagram_template = Template(app.config.needs_diagram_template)
                 node_text = diagram_template.render(**need_info)
                 if need_info["is_part"]:
                     need_id = need_info["id_complete"]
@@ -272,7 +273,7 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
                     # If source or target of link is a need_part, a specific style is needed
                     if "." in link or "." in need_info["id_complete"]:
                         final_link = link
-                        if current_needflow["show_link_names"] or env.config.needs_flow_show_links:
+                        if current_needflow["show_link_names"] or app.config.needs_flow_show_links:
                             desc = link_type["outgoing"] + "\\n"
                             comment = f": {desc}"
                         else:
@@ -284,7 +285,7 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
                             link_style = "[dotted]"
                     else:
                         final_link = link
-                        if current_needflow["show_link_names"] or env.config.needs_flow_show_links:
+                        if current_needflow["show_link_names"] or app.config.needs_flow_show_links:
                             comment = ": {desc}".format(desc=link_type["outgoing"])
                         else:
                             comment = ""

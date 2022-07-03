@@ -15,14 +15,11 @@ from docutils.parsers.rst import Directive, directives
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
+from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
+from sphinx_needs.utils import unwrap
 
 logger = get_logger(__name__)
-
-try:
-    from sphinx.errors import NoUri  # Sphinx 3.0
-except ImportError:
-    from sphinx.environment import NoUri  # Sphinx < 3.0
 
 
 class DiagramBase(Directive):
@@ -183,6 +180,7 @@ def calculate_link(app: Sphinx, need_info: Dict[str, Any], _fromdocname: str) ->
     :param fromdocname:
     :return:
     """
+    builder = unwrap(app.builder)
     try:
         if need_info["is_external"]:
             link: str = need_info["external_url"]
@@ -192,7 +190,7 @@ def calculate_link(app: Sphinx, need_info: Dict[str, Any], _fromdocname: str) ->
                 # only need to add ../ or ..\ to get out of the image folder
                 link = ".." + os.path.sep + need_info["external_url"]
         else:
-            link = "../" + app.builder.get_target_uri(need_info["docname"]) + "#" + need_info["target_node"]["refid"]
+            link = "../" + builder.get_target_uri(need_info["docname"]) + "#" + need_info["target_node"]["refid"]
             if need_info["is_part"]:
                 link = f"{link}.{need_info['id']}"
 

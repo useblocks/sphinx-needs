@@ -10,6 +10,7 @@ from sphinx.util import logging
 from sphinx_needs.config import NEEDS_CONFIG
 from sphinx_needs.filter_common import filter_needs
 from sphinx_needs.logging import get_logger
+from sphinx_needs.utils import unwrap
 
 logger = get_logger(__name__)
 
@@ -30,7 +31,7 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
     if exception:
         return
 
-    env = app.env
+    env = unwrap(app.env)
     # If no needs were defined, we do not need to do anything
     if not hasattr(env, "needs_all_needs"):
         return
@@ -51,7 +52,6 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
         if not need["is_external"]:
             checked_needs[need_id] = need
 
-    # warnings = app.config.needs_warnings
     warnings = NEEDS_CONFIG.get("warnings")
 
     warnings_always_warn = app.config.needs_warnings_always_warn

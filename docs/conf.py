@@ -1,6 +1,3 @@
-# flake8: noqa
-
-# -*- coding: utf-8 -*-
 #
 # needs test docs documentation build configuration file, created by
 # sphinx-quickstart on Tue Mar 28 11:37:14 2017.
@@ -22,6 +19,9 @@ import datetime
 #
 import os
 import sys
+from typing import Any, Dict, List
+
+from sphinx.application import Sphinx
 
 sys.path.append(os.path.abspath("../sphinxcontrib"))
 
@@ -133,18 +133,32 @@ DEFAULT_DIAGRAM_TEMPLATE = (
 
 needs_types = [
     # Architecture types
-    dict(directive="int", title="Interface", content="plantuml", prefix="I_", color="#BFD8D2", style="card"),
-    dict(directive="comp", title="Component", content="plantuml", prefix="C_", color="#BFD8D2", style="card"),
-    dict(directive="sys", title="System", content="plantuml", prefix="S_", color="#BFD8D2", style="card"),
+    {
+        "directive": "int",
+        "title": "Interface",
+        "content": "plantuml",
+        "prefix": "I_",
+        "color": "#BFD8D2",
+        "style": "card",
+    },
+    {
+        "directive": "comp",
+        "title": "Component",
+        "content": "plantuml",
+        "prefix": "C_",
+        "color": "#BFD8D2",
+        "style": "card",
+    },
+    {"directive": "sys", "title": "System", "content": "plantuml", "prefix": "S_", "color": "#BFD8D2", "style": "card"},
     # Normal types
-    dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),
-    dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="node"),
-    dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="node"),
-    dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="node"),
-    dict(directive="feature", title="Feature", prefix="F_", color="#FFCC00", style="node"),
-    dict(directive="user", title="User", prefix="U_", color="#777777", style="node"),
-    dict(directive="action", title="Action", prefix="A_", color="#FFCC00", style="node"),
-    dict(directive="milestone", title="Milestone", prefix="M_", color="#FF3333", style="node"),
+    {"directive": "req", "title": "Requirement", "prefix": "R_", "color": "#BFD8D2", "style": "node"},
+    {"directive": "spec", "title": "Specification", "prefix": "S_", "color": "#FEDCD2", "style": "node"},
+    {"directive": "impl", "title": "Implementation", "prefix": "I_", "color": "#DF744A", "style": "node"},
+    {"directive": "test", "title": "Test Case", "prefix": "T_", "color": "#DCB239", "style": "node"},
+    {"directive": "feature", "title": "Feature", "prefix": "F_", "color": "#FFCC00", "style": "node"},
+    {"directive": "user", "title": "User", "prefix": "U_", "color": "#777777", "style": "node"},
+    {"directive": "action", "title": "Action", "prefix": "A_", "color": "#FFCC00", "style": "node"},
+    {"directive": "milestone", "title": "Milestone", "prefix": "M_", "color": "#FF3333", "style": "node"},
 ]
 
 needs_extra_links = [
@@ -259,6 +273,8 @@ needs_extra_options = [
     "image",
     "config",
     "github",
+    "value",
+    "unit",
 ]
 
 needs_warnings = {
@@ -496,7 +512,7 @@ htmlhelp_basename = "needstestdocsdoc"
 
 # -- Options for LaTeX output ---------------------------------------------
 
-latex_elements = {
+latex_elements: Dict[str, Any] = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
@@ -541,19 +557,35 @@ texinfo_documents = [
     ),
 ]
 
+# contains different constraints
+needs_constraints = {
+    "critical": {"check_0": "'critical' in tags", "check_1": "'SECURITY_REQ' in links", "severity": "CRITICAL"},
+    "security": {"check_0": "'security' in tags", "severity": "HIGH"},
+    "team": {"check_0": 'author == "Bob"', "severity": "LOW"},
+}
+
+# defines what to do if a constraint is not met
+needs_constraint_failed_options = {
+    "CRITICAL": {"on_fail": ["warn"], "style": ["red_bar"], "force_style": True},
+    "HIGH": {"on_fail": ["warn"], "style": ["orange_bar"], "force_style": True},
+    "MEDIUM": {"on_fail": ["warn"], "style": ["yellow_bar"], "force_style": False},
+    "LOW": {"on_fail": [], "style": ["yellow_bar"], "force_style": False},
+}
+
+
 rst_epilog = """
-.. |ex| replace:: **Code** 
+.. |ex| replace:: **Example**
 
-.. |out| replace:: **Output** 
+.. |out| replace:: **Result**
 
-.. |br| raw:: html 
+.. |br| raw:: html
 
    <br>
 
 """
 
 
-def rstjinja(app, docname, source):
+def rstjinja(app: Sphinx, _docname: str, source: List[str]) -> None:
     """
     Render our pages as a jinja template for fancy templating goodness.
     """
@@ -565,5 +597,5 @@ def rstjinja(app, docname, source):
     source[0] = rendered
 
 
-def setup(app):
+def setup(app: Sphinx) -> None:
     app.connect("source-read", rstjinja)

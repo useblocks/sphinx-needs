@@ -8,6 +8,7 @@ from docutils import nodes
 from sphinx.application import Sphinx
 
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
+from sphinx_needs.utils import unwrap
 
 if not os.environ.get("DISPLAY"):
     matplotlib.use("Agg")
@@ -51,6 +52,8 @@ class NeedbarDirective(FilterBase):
         "legend": directives.flag,
         "stacked": directives.flag,
         "show_sum": directives.flag,
+        "show_top_sum": directives.flag,
+        "sum_rotation": directives.unchanged_required,
         "transpose": directives.flag,
         "horizontal": directives.flag,
     }
@@ -118,6 +121,10 @@ class NeedbarDirective(FilterBase):
 
         stacked = "stacked" in self.options
         show_sum = "show_sum" in self.options
+        show_top_sum = "show_top_sum" in self.options
+        sum_rotation = self.options.get("sum_rotation")
+        if sum_rotation:
+            sum_rotation = sum_rotation.strip()
         transpose = "transpose" in self.options
         horizontal = "horizontal" in self.options
 
@@ -140,6 +147,8 @@ class NeedbarDirective(FilterBase):
             "separator": separator,
             "stacked": stacked,
             "show_sum": show_sum,
+            "show_top_sum": show_top_sum,
+            "sum_rotation": sum_rotation,
             "transpose": transpose,
             "horizontal": horizontal,
             "style": style,
@@ -161,8 +170,9 @@ class NeedbarDirective(FilterBase):
 # 8. create figure
 # 9. final storage
 # 10. cleanup matplotlib
-def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str):
-    env = app.builder.env
+def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
+    builder = unwrap(app.builder)
+    env = unwrap(builder.env)
 
     # NEEDFLOW
     for node in doctree.traverse(Needbar):
@@ -252,7 +262,7 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str):
 
         # 5. process content
         local_data_number = []
-        need_list = list(prepare_need_list(app.env.needs_all_needs.values()))  # adds parts to need_list
+        need_list = list(prepare_need_list(env.needs_all_needs.values()))  # adds parts to need_list
 
         for line in local_data:
             line_number = []
@@ -322,6 +332,7 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str):
         y_offset = numpy.zeros(len(local_data_number[0]))
 
         # 8. create figure
+        bar_labels = []
         figure, axes = matplotlib.pyplot.subplots()
         for x in range(len(local_data_number)):
             if not current_needbar["horizontal"]:
@@ -341,21 +352,35 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str):
                     color=colors[x],
                 )
 
-            if current_needbar["show_sum"]:
-                try:
-                    axes.bar_label(bar, label_type="center")  # show label in the middel of each bar
-                except AttributeError:  # bar_label is not support in older matplotlib versions
-                    current_needbar["show_sum"] = None
-
             if current_needbar["stacked"]:
+                # handle stacked bar
                 y_offset = y_offset + numpy.array(local_data_number[x])
 
-                # show for a stacked bar the overall value
-                if current_needbar["show_sum"] and x == len(local_data_number) - 1:
-                    try:
-                        axes.bar_label(bar)
-                    except AttributeError:  # bar_label is not support in older matplotlib versions
-                        current_needbar["show_sum"] = None
+            if current_needbar["show_sum"]:
+                try:
+                    bar_label = axes.bar_label(bar, label_type="center")  # show label in the middel of each bar
+                    bar_labels.append(bar_label)
+                except AttributeError:  # bar_label is not support in older matplotlib versions
+                    current_needbar["show_sum"] = None
+                    current_needbar["show_top_sum"] = None
+
+            if current_needbar["show_top_sum"] and (
+                not current_needbar["stacked"] or (x == len(local_data_number) - 1)
+            ):
+                # "show_top_sum" and ( not stacked or end of stack )
+                try:
+                    bar_label = axes.bar_label(bar)
+                    bar_labels.append(bar_label)
+                except AttributeError:  # bar_label is not support in older matplotlib versions
+                    current_needbar["show_sum"] = None
+                    current_needbar["show_top_sum"] = None
+
+        sum_rotation = current_needbar["sum_rotation"]
+        if sum_rotation and (current_needbar["show_top_sum"] or current_needbar["show_sum"]):
+            sum_rotation = sum_rotation.strip()
+            # Rotate the bar labels
+            if sum_rotation.isdigit():
+                matplotlib.pyplot.setp(bar_labels, rotation=int(sum_rotation))
 
         if not current_needbar["horizontal"]:
             # We want to support even older version of matplotlib, which do not support axes.set_xticks(labels)
@@ -404,7 +429,6 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str):
         rel_file_path = os.path.join("_images", f"need_bar_{hash_value}.png")
         if rel_file_path not in env.images:
             figure.savefig(os.path.join(env.app.srcdir, rel_file_path))
-            # env.images[rel_file_path] = ["_images", os.path.split(rel_file_path)[-1]]
             env.images.add_file(fromdocname, rel_file_path)
 
         image_node = nodes.image()
@@ -413,7 +437,7 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str):
         # Add lineno to node
         image_node.line = current_needbar["lineno"]
 
-        # normaly the title is more understandable for a person who needs alt
+        # normally the title is more understandable for a person who needs alt
         if current_needbar["title"]:
             image_node["alt"] = current_needbar["title"].strip()
 

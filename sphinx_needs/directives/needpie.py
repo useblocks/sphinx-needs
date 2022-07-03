@@ -17,7 +17,7 @@ import matplotlib.pyplot
 from docutils.parsers.rst import directives
 
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import check_and_get_external_filter_func
+from sphinx_needs.utils import check_and_get_external_filter_func, unwrap
 
 logger = get_logger(__name__)
 
@@ -109,7 +109,8 @@ class NeedpieDirective(FilterBase):
 
 
 def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
-    env = app.builder.env
+    builder = unwrap(app.builder)
+    env = unwrap(builder.env)
 
     # NEEDFLOW
     for node in doctree.traverse(Needpie):
@@ -137,11 +138,11 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str) -> N
         content = current_needpie["content"]
 
         sizes = []
-        need_list = list(prepare_need_list(app.env.needs_all_needs.values()))  # adds parts to need_list
+        need_list = list(prepare_need_list(env.needs_all_needs.values()))  # adds parts to need_list
         if content and not current_needpie["filter_func"]:
             for line in content:
                 if line.isdigit():
-                    sizes.append(float(line))
+                    sizes.append(abs(float(line)))
                 else:
                     result = len(filter_needs(app, need_list, line))
                     sizes.append(result)
@@ -219,6 +220,30 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str) -> N
 
         wedges, _texts, autotexts = axes.pie(sizes, normalize=np.asarray(sizes, np.float32).sum() >= 1, **pie_kwargs)
 
+        ratio = 20  # we will remove all labels with size smaller 5%
+        legend_enforced = False
+        for i in range(len(sizes)):
+            # remove leading and following spaces from the labels
+            labels[i] = labels[i].strip()
+            if sizes[i] < (sum(sizes) / ratio) or sizes[i] == 0:
+                _texts[i].set_visible(False)
+                autotexts[i].set_visible(False)
+                current_needpie["legend"] = True
+                legend_enforced = True
+
+        # We have to add the percent and absolut number to the legend,
+        # as not all elements are now visible.
+        if legend_enforced:
+            for i in range(len(sizes)):
+                if sum(sizes) > 0:
+                    labels[i] = "{label} {percent:.1f}% ({size:.0f})".format(
+                        label=labels[i], percent=100 * sizes[i] / sum(sizes), size=sizes[i]
+                    )
+                else:
+                    labels[i] = "{label} {percent:.1f}% ({size:.0f})".format(
+                        label=labels[i], percent=0.0, size=sizes[i]
+                    )
+
         if text_color:
             for autotext in autotexts:
                 autotext.set_color(text_color)
@@ -226,9 +251,7 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str) -> N
 
         # Legend preparation
         if current_needpie["legend"]:
-            axes.legend(
-                wedges, labels, title=str(current_needpie["legend"]), loc="center left", bbox_to_anchor=(0.8, 0, 0.5, 1)
-            )
+            axes.legend(wedges, labels, title="legend", loc="center left", bbox_to_anchor=(0.8, 0, 0.5, 1))
 
         matplotlib.pyplot.setp(autotexts, size=8, weight="bold")
 
@@ -244,7 +267,6 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str) -> N
         rel_file_path = os.path.join("_images", f"need_pie_{hash_value}.png")
         if rel_file_path not in env.images:
             fig.savefig(os.path.join(env.app.srcdir, rel_file_path), format="png")
-            # env.images[rel_file_path] = ["_images", os.path.split(rel_file_path)[-1]]
             env.images.add_file(fromdocname, rel_file_path)
 
         image_node = nodes.image()
