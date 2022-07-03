@@ -8,10 +8,10 @@ Bugs, Features and  PRs
 -----------------------
 
 For **bug reports** and well-described **technical feature requests**, please use our issue tracker:
-| https://github.com/useblocks/sphinxcontrib-needs/issues
+|br| https://github.com/useblocks/sphinxcontrib-needs/issues
 
 For **feature ideas** and **questions**, please use our discussion board:
-| https://github.com/useblocks/sphinxcontrib-needs/discussions
+|br| https://github.com/useblocks/sphinxcontrib-needs/discussions
 
 If you have already created a **PR**, you can send it in. Our CI workflow will check (test and code styles) and
 a maintainer will perform a review, before we can merge it.
@@ -21,7 +21,7 @@ Your PR should conform with the following rules:
 * The changed code (for sure :) )
 * Test cases for the change (important!)
 * Updated documentation, if you change a behavior or introduce a new option(s)/directive(s).
-* Update of :ref:`changelog <Changelog & License>`.
+* Update of `changelog <Changelog & License>`_.
 * If this is your first PR, feel free to add your name in the ``AUTHORS`` file.
 
 Installing Dependencies
@@ -36,23 +36,23 @@ installed in an isolated environment by Poetry.
 
 2. Install project dependencies
 
-.. code-block:: bash
+   .. code-block:: bash
 
-    poetry install
+      poetry install
 
 3. `Install Pre-Commit <https://pre-commit.com/>`__
 
 4. Install the Pre-Commit hooks
 
-.. code-block:: bash
+   .. code-block:: bash
 
-    pre-commit install
+      pre-commit install
 
 5. For running tests, install the dependencies of our official documentation:
 
-.. code-block:: bash
+   .. code-block:: bash
 
-   pip install -r docs/requirements.txt
+      pip install -r docs/requirements.txt
 
 
 List make targets
@@ -193,34 +193,36 @@ Most information is coming from https://docs.restructuredtext.net/articles/devel
 2. Follow https://docs.restructuredtext.net/articles/development.html to install all dependencies, compile it and get
    the Development host running in VsCode.
 
-3. Create a test folder inside the project with a Sphinx projects using Sphinx-Needs, for example under `/docs` by using
+3. Create a test folder inside the project with a Sphinx projects using Sphinx-Needs, for example under **/docs** by using
    ``sphinx-quickstart``.
 
 4. Add the following to **docs/.vscode/settings.json**:
-   ..code-block:: json
+
+   .. code-block::
 
       {
-          "esbonio.server.sourceFolder": "/Path/to/checked_out/esbonio/lib/esbonio",  # absolute path
-          "esbonio.server.debugLaunch": true,
-          "esbonio.server.logLevel": "debug",
+        "esbonio.server.sourceFolder": "/Path/to/checked_out/esbonio/lib/esbonio",  # absolute path
+        "esbonio.server.debugLaunch": true,
+        "esbonio.server.logLevel": "debug",
       }
 
 5. Add the args ``${workspaceFolder}/docs`` to configuration *Launch Extension* in **.vscode/launch.json** like this:
-   ..code-block:: json
+
+   .. code-block::
 
       {
-			"name": "Launch Extension",
-			"type": "extensionHost",
-			"request": "launch",
-			"runtimeExecutable": "${execPath}",
-			"args": [
-				"--extensionDevelopmentPath=${workspaceRoot}",
-				"${workspaceFolder}/docs",
-			],
-			"sourceMaps": true,
-			"outFiles": ["${workspaceRoot}/out/extension.js"],
-			"preLaunchTask": "watch"
-		},
+        "name": "Launch Extension",
+        "type": "extensionHost",
+        "request": "launch",
+        "runtimeExecutable": "${execPath}",
+        "args": [
+            "--extensionDevelopmentPath=${workspaceRoot}",
+            "${workspaceFolder}/docs",
+        ],
+        "sourceMaps": true,
+        "outFiles": ["${workspaceRoot}/out/extension.js"],
+        "preLaunchTask": "watch"
+      },
 
 6. Test it by pressing F5 (running the preconfigured tasks *Launch Extension*)
 
@@ -228,23 +230,24 @@ Most information is coming from https://docs.restructuredtext.net/articles/devel
 
 7. Open another instance of VsCode for the checked out esbonio folder.
 8. Add this to **.vscode/launch.json** under ``configurations``:
-   ..code-block:: json
 
-        {
-            "name": "Python: Remote Attach",
-            "type": "python",
-            "request": "attach",
-            "connect": {
-                "host": "localhost",
-                "port": 5678
-            },
-            "pathMappings": [
-                {
-                    "localRoot": "${workspaceFolder}/lib/esbonio",
-                    "remoteRoot": "."
-                }
-            ]
+   .. code-block::
+
+      {
+        "name": "Python: Remote Attach",
+        "type": "python",
+        "request": "attach",
+        "connect": {
+            "host": "localhost",
+            "port": 5678
         },
+        "pathMappings": [
+            {
+                "localRoot": "${workspaceFolder}/lib/esbonio",
+                "remoteRoot": "."
+            }
+        ]
+      },
 
 9. Test it by running the new task *Python: Remote Attach*. For this the task *Launch Extension* from
    VsCode-restructuredText Extension must be already running, as this one starts a python debug server.

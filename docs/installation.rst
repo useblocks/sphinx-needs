@@ -56,6 +56,7 @@ Sphinx-extension `sphinxcontrib-plantuml <https://pypi.org/project/sphinxcontrib
 
 Both must be available and correctly configured to work.
 
+
 Install PlantUML
 ~~~~~~~~~~~~~~~~
 

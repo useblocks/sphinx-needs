@@ -1,12 +1,14 @@
 import cProfile
 import importlib
+import operator
 import os
 import re
-from functools import wraps
+from functools import reduce, wraps
 from typing import Any, Dict, List, Optional, TypeVar
 from urllib.parse import urlparse
 
 from docutils import nodes
+from jinja2 import Template
 from sphinx.application import Sphinx
 
 from sphinx_needs.defaults import NEEDS_PROFILING
@@ -284,6 +286,44 @@ def check_and_get_external_filter_func(current_needlist):
             return []
 
     return filter_func, filter_args
+
+
+def jinja_parse(context: Dict, jinja_string: str) -> str:
+    """
+    Function to parse mapping options set to a string containing jinja template format.
+
+    :param context: Data to be used as context in rendering jinja template
+    :type context: dict
+    :param jinja_string: A jinja template string
+    :type jinja_string: str
+    :return: A rendered jinja template as string
+    :rtype: str
+
+    """
+    try:
+        content_template = Template(jinja_string, autoescape=True)
+    except Exception as e:
+        raise ReferenceError(f'There was an error in the jinja statement: "{jinja_string}". ' f"Error Msg: {e}")
+
+    content = content_template.render(**context)
+    return content
+
+
+def dict_get(root, items, default=None):
+    """
+    Access a nested object in root by item sequence.
+
+    Usage::
+       data = {"nested": {"a_list": [{"finally": "target_data"}]}}
+       value = dict_get(["nested", "a_list", 0, "finally"], "Not_found")
+
+    """
+    try:
+        value = reduce(operator.getitem, items, root)
+    except (KeyError, IndexError, TypeError) as e:
+        logger.debug(e)
+        return default
+    return value
 
 
 T = TypeVar("T")

@@ -93,6 +93,7 @@ from sphinx_needs.roles.need_part import NeedPart, process_need_part
 from sphinx_needs.roles.need_ref import NeedRef, process_need_ref
 from sphinx_needs.services.github import GithubService
 from sphinx_needs.services.manager import ServiceManager
+from sphinx_needs.services.open_needs import OpenNeedsService
 from sphinx_needs.utils import INTERNALS, NEEDS_FUNCTIONS
 from sphinx_needs.warnings import process_warnings
 
@@ -226,6 +227,11 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_config_value("needs_constraints", {}, "html", types=[dict])
     app.add_config_value("needs_constraint_failed_options", {}, "html", types=[dict])
     app.add_config_value("needs_constraints_failed_color", "", "html")
+
+    # add config options for open-needs service
+    app.add_config_value("open_needs_test_env", False, "html", types=[bool])
+    # path to needs_report_template file which is based on the conf.py directory.
+    app.add_config_value("open_needs_json_file", "", "html", types=[str])
 
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
@@ -467,13 +473,14 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
     app.needs_services.register("github-issues", GithubService, gh_type="issue")
     app.needs_services.register("github-prs", GithubService, gh_type="pr")
     app.needs_services.register("github-commits", GithubService, gh_type="commit")
+    app.needs_services.register("open-needs", OpenNeedsService)
 
     # Register user defined services
     for name, service in app.config.needs_services.items():
         if name not in app.needs_services.services and "class" in service and "class_init" in service:
             # We found a not yet registered service
             # But only register, if service-config contains class and class_init.
-            # Otherwise the service may get registered later by an external sphinx-needs extension
+            # Otherwise, the service may get registered later by an external sphinx-needs extension
             app.needs_services.register(name, service["class"], **service["class_init"])
 
     needs_functions = app.config.needs_functions

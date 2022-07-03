@@ -326,6 +326,24 @@ needs_services = {
         "max_content_lines": 20,
         "id_prefix": "GH_COM_",
     },
+    "open-needs": {
+        "url": "http://127.0.0.1:9595",
+        "user": os.environ.get("ONS_USERNAME", ""),
+        "password": os.environ.get("ONS_PASSWORD", ""),
+        "id_prefix": "ONS_",
+        "mappings": {
+            "id": "{{key}}",
+            "type": ["type"],
+            "title": "{{title}}",
+            "status": ["options", "status"],
+            "links": ["references", "links"],
+        },
+        "extra_data": {
+            "Priority": ["options", "priority"],
+            "Approval": ["options", "approved"],
+            "Cost": ["options", "costs"],
+        },
+    },
 }
 
 needs_string_links = {
@@ -354,6 +372,10 @@ needs_string_links = {
 
 # build needs.json to make permalinks work
 needs_build_json = True
+
+# Config Variables for Open Needs service
+open_needs_test_env = False  # Set to True to use patched data instead of using Open-Needs server when testing
+open_needs_json_file = "_static/data/ons_data.json"  # Location of patched JSON data
 
 # Get and maybe set Github credentials for services.
 # This is needed as the rate limit for not authenticated users is too low for the amount of requests we

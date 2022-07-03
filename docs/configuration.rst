@@ -1817,13 +1817,15 @@ needs_constraint_failed_options
         }
     }
 
-needs_constraint_failed_options must be a dictionary which stores what to do if a certain constraint fails. Dictionary keys correspond to the severity set when creating a constraint. Each entry describes in an "on_fail" action what to do:
+needs_constraint_failed_options must be a dictionary which stores what to do if a certain constraint fails.
+Dictionary keys correspond to the severity set when creating a constraint.
+Each entry describes in an "on_fail" action what to do:
 
-- "break" breaks the buildprocess and raises a NeedsConstraintFailed Exception when a constraint is not met.
-- "warn" creates a warning in the sphinx.logger if a constraint is not met. Use -W in your Sphinx build command to stop the whole build, if a warning is raised. This will handle all warnings as exceptions.
+- "break" breaks the build process and raises a NeedsConstraintFailed Exception when a constraint is not met.
+- "warn" creates a warning in the sphinx.logger if a constraint is not met. Use -W in your Sphinx build command
+  to stop the whole build, if a warning is raised. This will handle all warnings as exceptions.
 
-
-"style" sets the style of the failed object see :ref:`_styles` for available styles. **Please be aware of conflicting styles!**
+"style" sets the style of the failed object see :ref:`styles` for available styles. **Please be aware of conflicting styles!**
 
 If "force style" is set, all other styles are removed and just the constraint_failed style remains.
 

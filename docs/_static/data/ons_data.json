@@ -1,0 +1,69 @@
+[
+  {
+    "key": "NEP_001",
+    "type": "Requirement",
+    "title": "Build rocket",
+    "description": "We finally need to build our Neptune3000 rocket.",
+    "format": "txt",
+    "project_id": 1,
+    "options": {
+      "status": "done",
+      "priority": "high",
+      "costs": 3500000,
+      "approved": 1
+    },
+    "references": {}
+  },
+  {
+    "key": "NEP_002",
+    "type": "Requirement",
+    "title": "Test rocket power",
+    "description": "Lets test the rocket on a test bench",
+    "format": "txt",
+    "project_id": 1,
+    "options": {
+      "status": "open",
+      "priority": "high",
+      "costs": 500000,
+      "approved": 0
+    },
+    "references": {}
+  },
+  {
+    "key": "NEP_003",
+    "type": "Requirement",
+    "title": "Rocket painting",
+    "description": "Red and blue. No other colors please.",
+    "format": "txt",
+    "project_id": 1,
+    "options": {
+      "status": "open",
+      "priority": "low",
+      "costs": 20000,
+      "approved": 1
+    },
+    "references": {
+      "links": [
+        "NEP_001",
+        "NEP_002"
+      ]
+    }
+  },
+  {
+    "key": "NEP_004",
+    "type": "Requirement",
+    "title": "Pumps from company AwesomePumps",
+    "description": "We simply reuse the pump system ABC-Pumps from AwesomePumps Inc.",
+    "format": "txt",
+    "project_id": 1,
+    "options": {
+      "status": "open",
+      "links": "req_1"
+    },
+    "references": {
+      "links": [
+        "NEP_003"
+      ]
+    }
+  }
+]

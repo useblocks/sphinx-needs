@@ -6,9 +6,10 @@ GitHub services
 As GitHub provides different kinds of information (e.g. issues, prs or commits), there is a specialised service
 for each information type:
 
-* ``github-issues``
-* ``github-prs``
-* ``github-commits``
++ ``github-issues``
++ ``github-prs``
++ ``github-commits``
+
 
 They all have common configuration options and are using the same way of querying their data.
 Therefore the below configuration is valid for all three services.
@@ -265,8 +266,8 @@ Search for all commits of Sphinx-Needs, which have ``Python`` in their message.
       :max_amount: 2
 
 .. needservice:: github-commits
-    :query: repo:useblocks/sphinxcontrib-needs python
-    :max_amount: 2
+   :query: repo:useblocks/sphinxcontrib-needs python
+   :max_amount: 2
 
 **Specific commit**
 

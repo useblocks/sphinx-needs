@@ -25,7 +25,7 @@ Under development
   (`#516 <https://github.com/useblocks/sphinxcontrib-needs/issues/516>`_)
 * Improvement: Added `needs_constraints` option. Constraints can be set for individual needs and describe properties
   a need has to meet.
-* Improvement: Added customizable link text of :ref:`:Need: <needref>`.
+* Improvement: Added customizable link text of :ref:`Need <needref>`.
   (`#439 <https://github.com/useblocks/sphinxcontrib-needs/discussions/439>`_)
 
 0.7.9

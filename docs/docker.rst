@@ -218,4 +218,5 @@ Windows (Powershell)
 
    docker run --rm -it -v ${PWD}:/sphinxneeds danwos/sphinxneeds:latest bash
 
-Once inside the docker container shell, execute a :ref:`build-command`
+Once inside the docker container shell, you can execute :ref:`docs build command <build-command>`
+

@@ -679,7 +679,6 @@ class LayoutHandler:
         self, url, height=None, width=None, align=None, no_link=False, prefix: str = "", is_external: bool = False
     ) -> nodes.inline:
         """
-
         See https://docutils.sourceforge.io/docs/ref/rst/directives.html#images
 
         If url starts with ``icon:`` the following string is taken is icon-name and the related icon is shown.
@@ -695,16 +694,16 @@ class LayoutHandler:
             '<<image("icon:bell", height="20px", align="center")>>'
             '<<image("field:url", height="60px", align="center")>>'  # Get url from need['url']
 
-        :param no_link:
         :param url:
         :param height:
         :param width:
         :param align:
-        :param prefix: Prefix string infront of the image
+        :param no_link:
+        :param prefix: Prefix string in front of the image
         :param is_external: If ``True`` url references an external image, which needs to be downloaded
-        :return:
+        :return: An inline docutils node element
+        :rtype: :class: docutils.nodes.inline
         """
-
         builder = unwrap(self.app.builder)
         env = unwrap(builder.env)
 
