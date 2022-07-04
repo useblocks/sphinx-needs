@@ -309,7 +309,7 @@ def jinja_parse(context: Dict, jinja_string: str) -> str:
     return content
 
 
-def dict_get(root, items, default=None):
+def dict_get(root, items, default=None) -> Any:
     """
     Access a nested object in root by item sequence.
 

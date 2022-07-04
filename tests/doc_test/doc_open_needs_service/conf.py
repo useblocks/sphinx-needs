@@ -46,7 +46,7 @@ needs_services = {
         "url": "http://127.0.0.1:9595",
         "user": os.environ.get("ONS_USERNAME", ""),
         "password": os.environ.get("ONS_PASSWORD", ""),
-        "id_prefix": "ONS_",
+        "id_prefix": "ONS_TEST_",
         "mappings": {
             "id": "{{key}}",
             "type": ["type"],
@@ -179,7 +179,3 @@ texinfo_documents = [
         "Miscellaneous",
     ),
 ]
-
-# Config Variables for Open Needs service
-open_needs_test_env = False  # Set to True to use patched data instead of using Open-Needs server when testing
-open_needs_json_file = "data/ons_data.json"  # Location of patched JSON data

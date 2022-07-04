@@ -1,7 +1,6 @@
-import json
-import os
 import re
 from random import choices
+from typing import Any, Dict, List
 
 import requests
 from jinja2 import Template
@@ -22,34 +21,39 @@ from .config.open_needs import (
 class OpenNeedsService(BaseService):
     options = CONFIG_OPTIONS + EXTRA_DATA_OPTIONS + EXTRA_LINK_OPTIONS
 
-    def __init__(self, app: Sphinx, name: str, config, **kwargs) -> None:
+    def __init__(self, app: Sphinx, name: str, config: Dict[str, Any], **kwargs: Any) -> None:
 
         self.app = app
         self.name = name
         self.config = config
 
-        self.url = self.config.get("url", "http://127.0.0.1:9595")
-        # if not self.url.endswith("/"):
-        #     self.url = f"{self.url}/"
+        self.url: str = self.config.get("url", "http://127.0.0.1:9595")
+        if self.url.endswith("/"):
+            self.url = self.url.rstrip("/")
         self.url_postfix = self.config.get("url_postfix", "/api/needs/")
+        if not self.url_postfix.startswith("/"):
+            self.url_postfix = "/" + self.url_postfix
         self.max_content_lines = self.config.get("max_content_lines", -1)
 
         self.id_prefix = self.config.get("id_prefix", "OPEN_NEEDS_")
         self.query = self.config.get("query", "")
         self.content = self.config.get("content", DEFAULT_CONTENT)
-        self.mappings = self.config.get("mappings", {})
+        self.mappings: Dict[str, Any] = self.config.get("mappings", {})
         self.mapping_replaces = self.config.get("mappings_replaces", MAPPINGS_REPLACES_DEFAULT)
 
-        self.extra_data = self.config.get("extra_data", {})
+        self.extra_data: Dict[str, Any] = self.config.get("extra_data", {})
         self.params = self.config.get("params", "skip=0,limit=100")
 
-        self.username = self.config.get("user", None)
-        self.password = self.config.get("password", None)
+        super().__init__(**kwargs)
 
-        if len(self.config) != 0 and not self.app.config.open_needs_test_env:
-            auth = dict(username=self.username, password=self.password)
+    def _oauthorization(self) -> None:
+        username = self.config.get("user", None)
+        password = self.config.get("password", None)
+        if len(self.config) != 0:
+            auth = {"username": username, "password": password}
             login_postfix = "/auth/jwt/login"
-            login_resp = requests.post(self.url + login_postfix, data=auth)
+            url: str = self.url + login_postfix
+            login_resp = requests.post(url, data=auth)
             if login_resp.status_code != 200:
                 raise OpenNeedsServiceException(
                     "ONS service error during request.\n"
@@ -60,26 +64,23 @@ class OpenNeedsService(BaseService):
             self.token_type = oauth_credentials.get("token_type")
             self.access_token = oauth_credentials.get("access_token")
 
-        self.open_needs_json_file = self.app.config.open_needs_json_file
-
-        super().__init__(**kwargs)
-
-    def _prepare_request(self, options):
+    def _prepare_request(self, options: Any) -> Any:
         if options is None:
             options = {}
-        url = options.get("url", self.url)
-        url = url + self.url_postfix
+        url: str = options.get("url", self.url)
+        url = url + str(self.url_postfix)
 
-        headers = {"Authorization": "{} {}".format(self.token_type, self.access_token)}
-        params = [param.strip() for param in re.split(r";|,", options.get("params", self.params))]
-        params = "&".join(params)
+        headers: Dict[str, str] = {"Authorization": f"{self.token_type} {self.access_token}"}
+        params: List[str] = [param.strip() for param in re.split(r";|,", options.get("params", self.params))]
+        new_params: str = "&".join(params)
 
-        url = "{}?{}".format(url, params)
+        url = f"{url}?{new_params}"
 
-        request = {"url": url, "headers": headers}
+        request: Any = {"url": url, "headers": headers}
         return request
 
-    def _send_request(self, request):
+    @staticmethod
+    def _send_request(request: Any) -> Any:
         """
         Sends the final request.
 
@@ -90,17 +91,12 @@ class OpenNeedsService(BaseService):
         :return: request answer
         """
 
-        # params = {
-        #     'queryString': query
-        # }
-
-        result = requests.request(**request)
+        result: Any = requests.get(**request)
         if result.status_code >= 300:
             raise OpenNeedsServiceException(f"Problem accessing {result.url}.\nReason: {result.text}")
-
         return result
 
-    def _extract_data(self, data, options):
+    def _extract_data(self, data: List[Dict[str, Any]], options: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
         Extract data of a list/dictionary, which was retrieved via send_request.
 
@@ -125,14 +121,14 @@ class OpenNeedsService(BaseService):
             need_id = (
                 value
                 if re.search(needs_id_validator, value) is not None
-                else self.id_prefix + "".join(map(choices(range(0, 1000), k=3)))
+                else self.id_prefix + "".join(map(str, choices(range(0, 1000), k=3)))
             )
             ids_of_needs_data.append(need_id)
 
         for item in data:
             extra_data = {}
             for name, selector in self.extra_data.items():
-                if not (isinstance(selector, tuple) or isinstance(selector, list) or isinstance(selector, str)):
+                if not isinstance(selector, (tuple, list, str)):
                     raise InvalidConfigException(
                         f"Given selector for {name} of extra_data must be a list or tuple. "
                         f'Got {type(selector)} with value "{selector}"'
@@ -161,7 +157,7 @@ class OpenNeedsService(BaseService):
 
             need_values = {}
             for name, selector in self.mappings.items():
-                if not (isinstance(selector, tuple) or isinstance(selector, list) or isinstance(selector, str)):
+                if not isinstance(selector, (tuple, list, str)):
                     raise InvalidConfigException(
                         f"Given selector for {name} of mapping must be a list or tuple. "
                         f'Got {type(selector)} with value "{selector}"'
@@ -174,7 +170,7 @@ class OpenNeedsService(BaseService):
                     need_values[name] = selector
                 else:
                     value = dict_get(item, selector)
-                    if isinstance(value, tuple) or isinstance(value, list):
+                    if isinstance(value, (tuple, list)):
                         if name == "links":
                             # Add a prefix to the referenced link if it is an ID of a need object in
                             # the data retrieved from the Open Needs Server or don't add prefix
@@ -189,7 +185,7 @@ class OpenNeedsService(BaseService):
                     need_values[name] = re.sub(regex, new_str, need_values.get(name, ""))
 
                 if name == "id":
-                    need_values[name] = prefix + need_values.get(name, "")
+                    need_values[name] = str(prefix) + str(need_values.get(name, ""))
 
             finale_data = {"content": content}
             finale_data.update(need_values)
@@ -197,38 +193,17 @@ class OpenNeedsService(BaseService):
             need_data.append(finale_data)
         return need_data
 
-    def request(self, options=None):
-        if options is None:
-            options = {}
+    def request(self, options: Any = None, *args: Any, **kwargs: Any) -> Any:
         self.log.info(f"Requesting data for service {self.name}")
+        self._oauthorization()  # Get authorization token
+        params = self._prepare_request(options)
 
-        if len(self.config) != 0 and not self.app.config.open_needs_test_env:
-            params = self._prepare_request(options)
-
-            request_params = {
-                "method": "GET",
-                "url": params["url"],
-                "headers": params["headers"],
-            }
-            answer = self._send_request(request_params)
-            data = answer.json()
-        else:
-            # Absolute path starts with /, based on the conf.py directory. The / need to be striped
-            correct_open_needs_json_path = os.path.join(self.app.confdir, self.open_needs_json_file.lstrip("/"))
-
-            if not os.path.exists(correct_open_needs_json_path):
-                raise OpenNeedsServiceException(f"Could not load Open Needs json file: {correct_open_needs_json_path}")
-
-            with open(correct_open_needs_json_path) as needs_file:
-                needs_file_content = needs_file.read()
-            try:
-                data = json.loads(needs_file_content)
-            except json.JSONDecodeError as e:
-                raise ReferenceError(
-                    f'There was an error decoding the JSON data in file: "{correct_open_needs_json_path}". '
-                    f"Error "
-                    f"Message: {e}"
-                )
+        request_params = {
+            "url": params["url"],
+            "headers": params["headers"],
+        }
+        answer = self._send_request(request_params)
+        data = answer.json()
 
         for datum in data:
             # Be sure "description" is set and valid
@@ -239,38 +214,17 @@ class OpenNeedsService(BaseService):
 
         return need_data
 
-    def debug(self, options):
-        if options is None:
-            options = {}
+    def debug(self, *args: Any, **kwargs: Any) -> Any:
         self.log.debug(f"Requesting data for service {self.name}")
 
-        if not self.app.config.open_needs_test_env:
-            params = self._prepare_request(options)
+        params = self._prepare_request(*args)
 
-            request_params = {
-                "method": "GET",
-                "url": params["url"],
-                "headers": params["headers"],
-            }
-            answer = self._send_request(request_params)
-            debug_data = answer.json()
-        else:
-            # Absolute path starts with /, based on the conf.py directory. The / need to be striped
-            correct_open_needs_json_path = os.path.join(self.app.confdir, self.open_needs_json_file.lstrip("/"))
-
-            if not os.path.exists(correct_open_needs_json_path):
-                raise OpenNeedsServiceException(f"Could not load Open Needs json file: {correct_open_needs_json_path}")
-
-            with open(correct_open_needs_json_path) as needs_file:
-                needs_file_content = needs_file.read()
-            try:
-                debug_data = json.loads(needs_file_content)
-            except json.JSONDecodeError as e:
-                raise ReferenceError(
-                    f'There was an error decoding the JSON data in file: "{correct_open_needs_json_path}". '
-                    f"Error "
-                    f"Message: {e}"
-                )
+        request_params = {
+            "url": params["url"],
+            "headers": params["headers"],
+        }
+        answer = self._send_request(request_params)
+        debug_data = answer.json()
 
         return debug_data
 

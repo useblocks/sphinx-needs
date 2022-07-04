@@ -279,7 +279,7 @@ needs_extra_options = [
 
 needs_warnings = {
     "type_check": 'type not in ["int", "sys", "comp", "req", "spec", "impl", "test", "feature", "action", "user", "milestone", '
-    '"issue", "pr", "commit"'  # github service types
+    '"issue", "pr", "commit"'  # GitHub service types
     "]",
     # 'valid_status': 'status not in ["open", "in progress", "closed", "done", "implemented"] and status is not None'
 }
@@ -373,23 +373,19 @@ needs_string_links = {
 # build needs.json to make permalinks work
 needs_build_json = True
 
-# Config Variables for Open Needs service
-open_needs_test_env = False  # Set to True to use patched data instead of using Open-Needs server when testing
-open_needs_json_file = "_static/data/ons_data.json"  # Location of patched JSON data
-
-# Get and maybe set Github credentials for services.
+# Get and maybe set GitHub credentials for services.
 # This is needed as the rate limit for not authenticated users is too low for the amount of requests we
 # need to perform for this documentation
 github_username = os.environ.get("GITHUB_USERNAME", "")
 github_token = os.environ.get("GITHUB_TOKEN", "")
 
 if github_username != "" and github_token != "":
-    print(f"GITHUB: Using as username: {github_username}. lenth token: {len(github_token)}")
+    print(f"---> GITHUB: Using as username: {github_username}. length token: {len(github_token)}")
     for service in ["github-issues", "github-prs", "github-commits"]:
         needs_services[service]["username"] = github_username
         needs_services[service]["token"] = github_token
 else:
-    print("GITHUB: No auth provided")
+    print("---> GITHUB: No auth provided")
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -436,39 +432,16 @@ todo_include_todos = False
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#
+
 html_theme = os.getenv("NEEDS_THEME", "sphinx_immaterial")
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#
-# html_theme_options = {}
 
-# html_logo = "_static/needs_logo.png"
-# html_sidebars = {'**': ['about.html', 'navigation.html', 'sourcelink.html', 'searchbox.html'], }
 html_sidebars = {
     "**": ["about.html", "navigation.html", "searchbox.html"],
 }
-
-# html_theme_options = {
-#     "logo": "needs_logo.png",
-#     "logo_name": True,
-#     # 'description': "an extension for sphinx",
-#     "logo_text_align": "center",
-#     "github_user": "useblocks",
-#     "github_repo": "sphinxcontrib-needs",
-#     "github_banner": True,
-#     "github_button": True,
-#     "github_type": "star",
-#     "fixed_sidebar": False,
-#     "extra_nav_links": {
-#         "needs@PyPi": "https://pypi.python.org/pypi/sphinxcontrib-needs/",
-#         "needs@github": "https://github.com/useblocks/sphinxcontrib-needs",
-#         "needs@travis": "https://travis-ci.org/useblocks/sphinxcontrib-needs",
-#     },
-# }
-
 
 html_logo = "./_static/sphinx-needs-logo-white.png"
 html_favicon = "./_static/sphinx-needs-logo-favicon.png"
@@ -484,15 +457,7 @@ html_theme_options = {
     "edit_uri": "blob/master/docs",
     "globaltoc_collapse": True,
     "features": [
-        # "navigation.expand",
-        # "navigation.tabs",
-        # "toc.integrate",
-        # "navigation.sections",
-        # "navigation.instant",
-        # "header.autohide",
         "navigation.top",
-        # "navigation.tracking",
-        # "search.highlight",
         "search.share",
     ],
     "palette": [
@@ -606,6 +571,13 @@ rst_epilog = """
 
 """
 
+# Check, if docs get built on ci.
+# If this is the case, external services like Code-beamer are not available and
+# docs will show images instead of getting real data.
+on_ci = os.environ.get("ON_CI", "True").upper() == "TRUE"
+
+html_context = {"on_ci": on_ci}
+
 
 def rstjinja(app: Sphinx, _docname: str, source: List[str]) -> None:
     """
@@ -620,4 +592,5 @@ def rstjinja(app: Sphinx, _docname: str, source: List[str]) -> None:
 
 
 def setup(app: Sphinx) -> None:
+    print(f"---> ON_CI is: {on_ci}")
     app.connect("source-read", rstjinja)

@@ -228,11 +228,6 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_config_value("needs_constraint_failed_options", {}, "html", types=[dict])
     app.add_config_value("needs_constraints_failed_color", "", "html")
 
-    # add config options for open-needs service
-    app.add_config_value("open_needs_test_env", False, "html", types=[bool])
-    # path to needs_report_template file which is based on the conf.py directory.
-    app.add_config_value("open_needs_json_file", "", "html", types=[str])
-
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(
