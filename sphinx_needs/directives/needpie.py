@@ -113,7 +113,7 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str) -> N
     env = unwrap(builder.env)
 
     # NEEDFLOW
-    for node in doctree.traverse(Needpie):
+    for node in doctree.findall(Needpie):
         if not app.config.needs_include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.

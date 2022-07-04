@@ -122,7 +122,7 @@ def process_needgantt(app, doctree, fromdocname):
     # allowed_link_types_options = [link.upper() for link in env.config.needs_flow_link_types]
 
     # NEEDGANTT
-    for node in doctree.traverse(Needgantt):
+    for node in doctree.findall(Needgantt):
         if not app.config.needs_include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
@@ -299,7 +299,7 @@ def process_needgantt(app, doctree, fromdocname):
         if len(content) == 0:
             nothing_found = "No needs passed the filters"
             para = nodes.paragraph()
-            nothing_found_node = nodes.Text(nothing_found, nothing_found)
+            nothing_found_node = nodes.Text(nothing_found)
             para += nothing_found_node
             content.append(para)
         if current_needgantt["show_filters"]:

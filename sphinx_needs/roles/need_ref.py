@@ -54,7 +54,7 @@ def transform_need_to_dict(need: Need) -> Dict[str, str]:
 def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
-    for node_need_ref in doctree.traverse(NeedRef):
+    for node_need_ref in doctree.findall(NeedRef):
         # Let's create a dummy node, for the case we will not be able to create a real reference
         new_node_ref = make_refnode(
             builder,
@@ -127,7 +127,7 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
                     )
                     log.warning(link_text)
 
-            node_need_ref[0].children[0] = nodes.Text(link_text, link_text)
+            node_need_ref[0].children[0] = nodes.Text(link_text)
 
             with contextlib.suppress(NoUri):
                 if not target_need.get("is_external", False):

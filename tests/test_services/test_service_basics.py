@@ -7,7 +7,7 @@ from sphinx_needs.services.base import BaseService
 from sphinx_needs.services.manager import ServiceManager
 
 
-class TestService(BaseService):
+class ServiceTest(BaseService):
 
     options = ["custom_option", "exists"]
 

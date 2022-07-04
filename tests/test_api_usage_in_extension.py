@@ -1,5 +1,5 @@
-import imp
 import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -17,7 +17,7 @@ def setup(app):
 """
 
 
-dummy_extension = imp.new_module("dummy_extension.dummy")
+dummy_extension = types.ModuleType("dummy_extension.dummy")
 exec(dummy_code, dummy_extension.__dict__)
 sys.modules["dummy_extension.dummy"] = dummy_extension
 

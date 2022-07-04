@@ -167,7 +167,7 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
                         else:
                             need[option] = value
 
-    for node in doctree.traverse(Needextend):
+    for node in doctree.findall(Needextend):
         # No printouts for needextend
         removed_needextend_node(node)
 

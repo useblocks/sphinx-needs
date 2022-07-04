@@ -144,7 +144,7 @@ def find_and_replace_node_content(node, env: BuildEnvironment, need):
                 new_children.append(new_child)
                 node.children = new_children
         else:
-            node = nodes.Text(new_text, new_text)
+            node = nodes.Text(new_text)
         return node
     else:
         for child in node.children:

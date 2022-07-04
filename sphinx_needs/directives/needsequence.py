@@ -81,7 +81,7 @@ def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str)
     link_types = env.config.needs_extra_links
 
     # NEEDSEQUENCE
-    for node in doctree.traverse(Needsequence):
+    for node in doctree.findall(Needsequence):
         if not app.config.needs_include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
@@ -203,7 +203,7 @@ def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str)
         if len(content) == 0:
             nothing_found = "No needs passed the filters"
             para = nodes.paragraph()
-            nothing_found_node = nodes.Text(nothing_found, nothing_found)
+            nothing_found_node = nodes.Text(nothing_found)
             para += nothing_found_node
             content.append(para)
         if current_needsequence["show_filters"]:
