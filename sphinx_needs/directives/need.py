@@ -302,7 +302,7 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     :return:
     """
     if not app.config.needs_include_needs:
-        for node in doctree.traverse(Need):
+        for node in doctree.findall(Need):
             node.parent.remove(node)
         return
 
@@ -331,7 +331,7 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     """
     needs = env.needs_all_needs
 
-    for node_need in doctree.traverse(Need):
+    for node_need in doctree.findall(Need):
         need_id = node_need.attributes["ids"][0]
         need_data = needs[need_id]
 
@@ -352,7 +352,7 @@ def print_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
     env = unwrap(builder.env)
     needs = env.needs_all_needs
 
-    for node_need in doctree.traverse(Need):
+    for node_need in doctree.findall(Need):
         need_id = node_need.attributes["ids"][0]
         need_data = needs[need_id]
 

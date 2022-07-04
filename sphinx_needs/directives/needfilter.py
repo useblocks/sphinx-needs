@@ -83,7 +83,7 @@ def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str) 
     env = unwrap(builder.env)
 
     # NEEDFILTER
-    for node in doctree.traverse(Needfilter):
+    for node in doctree.findall(Needfilter):
         if not app.config.needs_include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
@@ -111,7 +111,7 @@ def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str) 
             except ImportError:
                 content = nodes.error()
                 para = nodes.paragraph()
-                text = nodes.Text("PlantUML is not available!", "PlantUML is not available!")
+                text = nodes.Text("PlantUML is not available!")
                 para += text
                 content.append(para)
                 node.replace_self(content)
@@ -163,7 +163,7 @@ def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str) 
                 if current_needfilter["show_tags"] and need_info["tags"]:
                     description += " [%s]" % "; ".join(need_info["tags"])
 
-                title = nodes.Text(description, description)
+                title = nodes.Text(description)
 
                 # Create a reference
                 if need_info["hide"]:
@@ -234,7 +234,7 @@ def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str) 
         if len(content) == 0:
             nothing_found = "No needs passed the filters"
             para = nodes.line()
-            nothing_found_node = nodes.Text(nothing_found, nothing_found)
+            nothing_found_node = nodes.Text(nothing_found)
             para += nothing_found_node
             content.append(para)
         if current_needfilter["show_filters"]:

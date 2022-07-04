@@ -123,7 +123,7 @@ def row_col_maker(
                 link_part = datum.split(".")[1]
 
             datum_text = prefix + str(datum)
-            text_col = nodes.Text(datum_text, datum_text)
+            text_col = nodes.Text(datum_text)
             if make_ref or ref_lookup:
                 try:
                     if need_info["is_external"]:

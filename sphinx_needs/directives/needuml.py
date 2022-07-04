@@ -128,7 +128,7 @@ def process_needuml(app, doctree, fromdocname):
     env = app.builder.env
     all_needs = env.needs_all_needs
 
-    for node in doctree.traverse(Needuml):
+    for node in doctree.findall(Needuml):
         id = node.attributes["ids"][0]
         current_needuml = env.needs_all_needumls[id]
 
@@ -139,10 +139,10 @@ def process_needuml(app, doctree, fromdocname):
         except ImportError:
             content = nodes.error()
             para = nodes.paragraph()
-            text = nodes.Text("PlantUML is not available!", "PlantUML is not available!")
+            text = nodes.Text("PlantUML is not available!")
             para += text
             content.append(para)
-            node.replace_self(content)
+            # node.replace_self(content)
             continue
 
         content = []

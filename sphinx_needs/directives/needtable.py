@@ -137,7 +137,7 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str) -
             link_type_list["OUTGOING"] = link_type
             link_type_list["INCOMING"] = link_type
 
-    for node in doctree.traverse(Needtable):
+    for node in doctree.findall(Needtable):
         if not app.config.needs_include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
@@ -163,6 +163,9 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str) -
             style = current_needtable["style"].upper()
 
         # Prepare table
+
+        # class "colwidths-given" must be set since docutils-0.18.1, otherwise the table will not have
+        # any colgroup definitions.
         classes = [f"NEEDS_{style}", "colwidths-given"] + current_needtable["classes"]
 
         # Only add the theme specific "do not touch this table" class, if we use a style which

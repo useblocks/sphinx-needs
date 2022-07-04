@@ -354,8 +354,8 @@ class LayoutHandler:
                     func_def = line_element[0]
                     # Check if normal string was detected
                     if len(text) > 0 and len(func_def) == 0:
-                        node_line += nodes.Text(text, text)
-                        result = nodes.Text(text, text)
+                        node_line += nodes.Text(text)
+                        result = nodes.Text(text)
                     # Check if function_definition was detected
                     elif len(text) == 0 and len(func_def) > 1:
                         from sphinx_needs.functions.functions import (
@@ -460,7 +460,7 @@ class LayoutHandler:
             if len(data) == 0 and not show_empty:
                 return []
             # data_node = nodes.inline(classes=["needs_data"])
-            # data_node.append(nodes.Text(data, data))
+            # data_node.append(nodes.Text(data)
             # data_container.append(data_node)
 
             matching_link_confs = []

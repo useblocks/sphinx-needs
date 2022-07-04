@@ -22,7 +22,7 @@ class NeedCount(nodes.Inline, nodes.Element):
 def process_need_count(app: Sphinx, doctree: nodes.document, _fromdocname: str) -> None:
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
-    for node_need_count in doctree.traverse(NeedCount):
+    for node_need_count in doctree.findall(NeedCount):
         all_needs = list(getattr(env, "needs_all_needs", {}).values())
         filter = node_need_count["reftarget"]
 

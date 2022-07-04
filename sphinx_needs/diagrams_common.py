@@ -118,7 +118,7 @@ def no_plantuml(node: nodes.Element) -> None:
     """Adds a hint that plantuml is not available"""
     content = nodes.error()
     para = nodes.paragraph()
-    text = nodes.Text("PlantUML is not available!", "PlantUML is not available!")
+    text = nodes.Text("PlantUML is not available!")
     para += text
     content.append(para)
     node.replace_self(content)

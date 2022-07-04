@@ -153,7 +153,7 @@ def add_need(
         # In this case the configuration from a prior sphinx run may be active, which has registered a directive,
         # which is reused inside a current document, but no type was defined for the current run...
         # Yeah, this really has happened...
-        return [nodes.Text("", "")]
+        return [nodes.Text("")]
 
     # Get the id or generate a random string/hash string, which is hopefully unique
     # TODO: Check, if id was already given. If True, recalculate id

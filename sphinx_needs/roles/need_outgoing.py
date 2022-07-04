@@ -14,7 +14,7 @@ class NeedOutgoing(nodes.Inline, nodes.Element):
 
 
 def process_need_outgoing(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
-    for node_need_ref in doctree.traverse(NeedOutgoing):
+    for node_need_ref in doctree.findall(NeedOutgoing):
         builder = unwrap(app.builder)
         env = unwrap(builder.env)
 
