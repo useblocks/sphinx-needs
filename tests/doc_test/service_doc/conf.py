@@ -18,7 +18,7 @@
 import os
 import sys
 
-from tests.test_services.test_service_basics import NoDebugService, TestService
+from tests.test_services.test_service_basics import NoDebugService, ServiceTest
 
 sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
 
@@ -45,7 +45,7 @@ needs_types = [
 
 needs_services = {
     "testservice": {
-        "class": TestService,
+        "class": ServiceTest,
         "class_init": {
             "custom_init": True,
         },
@@ -94,7 +94,7 @@ release = "1.0"
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

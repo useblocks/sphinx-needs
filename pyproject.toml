@@ -32,7 +32,8 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.7.0,<4.0"
-sphinx = ">=4.0"
+sphinx = ">=5.0"
+docutils = ">=0.18.1"
 
 matplotlib = ">3.1.0"  # needpie
 requests-file = "^1.5.1"  # external links
@@ -47,8 +48,9 @@ sphinxcontrib-plantuml = "^0"
 pre-commit = "^2"
 # test dependencies
 lxml = "^4.6.5"
-pytest = "^6.2.5"
+pytest = "^7"
 pytest-xdist="*"  # parallelisation
+pytest_lsp="*"
 responses = "^0.12.1"
 requests-mock = ">=1.9.3"
 
@@ -66,6 +68,10 @@ isort = "^5.7.0"
 
 # pyparsing 3.0.5 does not work with current "packaging" lib
 pyparsing = "==3.0.8"  # 3.0.5 error: https://github.com/pyparsing/pyparsing/issues/329
+
+
+[tool.pytest.ini_options]
+asyncio_mode= "auto"
 
 [tool.black]
 line-length = 120

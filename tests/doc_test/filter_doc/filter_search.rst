@@ -45,4 +45,4 @@ filter_search
    :filter: search("A", id) and "filter_search" in tags
 
 .. needfilter::
-    :filter: search("(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", content) and type=="test"
+    :filter: search(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", content) and type=="test"

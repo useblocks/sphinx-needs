@@ -70,7 +70,7 @@ def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
 
-    for node in doctree.traverse(Needlist):
+    for node in doctree.findall(Needlist):
         if not app.config.needs_include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
@@ -103,7 +103,7 @@ def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
             if current_needfilter["show_tags"] and need_info["tags"]:
                 description += " [%s]" % "; ".join(need_info["tags"])
 
-            title = nodes.Text(description, description)
+            title = nodes.Text(description)
 
             # Create a reference
             if need_info["hide"]:
