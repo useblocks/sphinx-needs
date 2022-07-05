@@ -134,7 +134,7 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
     allowed_link_types_options = [link.upper() for link in app.config.needs_flow_link_types]
 
     # NEEDFLOW
-    for node in doctree.traverse(Needflow):
+    for node in doctree.findall(Needflow):
         if not app.config.needs_include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
@@ -167,7 +167,7 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
         except ImportError:
             content = nodes.error()
             para = nodes.paragraph()
-            text = nodes.Text("PlantUML is not available!", "PlantUML is not available!")
+            text = nodes.Text("PlantUML is not available!")
             para += text
             content.append(para)
             node.replace_self(content)
@@ -367,7 +367,7 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
         if len(content) == 0:
             nothing_found = "No needs passed the filters"
             para = nodes.paragraph()
-            nothing_found_node = nodes.Text(nothing_found, nothing_found)
+            nothing_found_node = nodes.Text(nothing_found)
             para += nothing_found_node
             content.append(para)
         if current_needflow["show_filters"]:

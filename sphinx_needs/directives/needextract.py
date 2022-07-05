@@ -69,7 +69,7 @@ def process_needextract(app: Sphinx, doctree: nodes.document, fromdocname: str) 
     """
     env = unwrap(app.env)
 
-    for node in doctree.traverse(Needextract):
+    for node in doctree.findall(Needextract):
         if not app.config.needs_include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.

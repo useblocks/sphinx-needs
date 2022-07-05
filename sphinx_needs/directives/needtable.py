@@ -137,7 +137,7 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str) -
             link_type_list["OUTGOING"] = link_type
             link_type_list["INCOMING"] = link_type
 
-    for node in doctree.traverse(Needtable):
+    for node in doctree.findall(Needtable):
         if not app.config.needs_include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
@@ -163,7 +163,10 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str) -
             style = current_needtable["style"].upper()
 
         # Prepare table
-        classes = [f"NEEDS_{style}"] + current_needtable["classes"]
+
+        # class "colwidths-given" must be set since docutils-0.18.1, otherwise the table will not have
+        # any colgroup definitions.
+        classes = [f"NEEDS_{style}", "colwidths-given"] + current_needtable["classes"]
 
         # Only add the theme specific "do not touch this table" class, if we use a style which
         # care about table layout and styling. The normal "TABLE" style is using the Sphinx default table
@@ -171,8 +174,8 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str) -
         if style != "TABLE":
             classes.extend(app.config.needs_table_classes)
 
-        content = nodes.table(classes=classes)
-        tgroup = nodes.tgroup()
+        table_node = nodes.table(classes=classes)
+        tgroup = nodes.tgroup(cols=len(current_needtable["columns"]))
 
         # Define Table column width
         colwidths = current_needtable["colwidths"]
@@ -194,10 +197,10 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str) -
         tgroup += nodes.thead("", nodes.row("", *node_columns))
         tbody = nodes.tbody()
         tgroup += tbody
-        content += tgroup
+        table_node += tgroup
 
         # Add lineno to node
-        content.line = current_needtable["lineno"]
+        table_node.line = current_needtable["lineno"]
 
         all_needs = list(all_needs.values())
 
@@ -325,22 +328,22 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str) -
                     tbody += row
 
         if len(found_needs) == 0:
-            content.append(no_needs_found_paragraph())
+            table_node.append(no_needs_found_paragraph())
 
         # add filter information to output
         if current_needtable["show_filters"]:
-            content.append(used_filter_paragraph(current_needtable))
+            table_node.append(used_filter_paragraph(current_needtable))
 
         if current_needtable["caption"]:
             title_text = current_needtable["caption"]
             title = nodes.title(title_text, "", nodes.Text(title_text))
-            content.insert(0, title)
+            table_node.insert(0, title)
 
         # Put the table in a div-wrapper, so that we can control overflow / scroll layout
         if style == "TABLE":
             table_wrapper = nodes.container(classes=["needstable_wrapper"])
-            table_wrapper.insert(0, content)
+            table_wrapper.insert(0, table_node)
             node.replace_self(table_wrapper)
 
         else:
-            node.replace_self(content)
+            node.replace_self(table_node)
