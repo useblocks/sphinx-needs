@@ -1,4 +1,4 @@
-name: CI
+name: Docs CI
 on:
   pull_request:
     paths: [docs/**]
@@ -6,6 +6,8 @@ jobs:
   linkcheck:
     name: Docs-Linkcheck
     runs-on: ubuntu-20.04
+    env:
+      ON_CI: true
     steps:
       - uses: actions/checkout@v2
       - name: Set Up Python

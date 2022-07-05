@@ -574,7 +574,7 @@ rst_epilog = """
 # Check, if docs get built on ci.
 # If this is the case, external services like Code-beamer are not available and
 # docs will show images instead of getting real data.
-on_ci = os.environ.get("ON_CI", "True").upper() == "TRUE"
+on_ci = os.environ.get("ON_CI", "False").upper() == "TRUE"
 
 html_context = {"on_ci": on_ci}
 
@@ -584,10 +584,13 @@ def rstjinja(app: Sphinx, _docname: str, source: List[str]) -> None:
     Render our pages as a jinja template for fancy templating goodness.
     """
     # Make sure we're outputting HTML
-    if app.builder.format != "html":
+    if app.builder.format != "html" and app.builder.name != "linkcheck":
         return
     src = source[0]
-    rendered = app.builder.templates.render_string(src, app.config.html_context)
+    from jinja2 import Template
+
+    template = Template(src, autoescape=True)
+    rendered = template.render(**app.config.html_context)
     source[0] = rendered
 
 

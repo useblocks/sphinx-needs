@@ -21,7 +21,7 @@ Your PR should conform with the following rules:
 * The changed code (for sure :) )
 * Test cases for the change (important!)
 * Updated documentation, if you change a behavior or introduce a new option(s)/directive(s).
-* Update of `changelog <Changelog & License>`_.
+* Update of :ref:`changelog <changelog>`.
 * If this is your first PR, feel free to add your name in the ``AUTHORS`` file.
 
 Installing Dependencies
