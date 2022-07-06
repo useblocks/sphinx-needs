@@ -210,7 +210,7 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str) -> N
             "labels": labels,
             "startangle": 90,
             "explode": explode,
-            "autopct": lambda pct: label_calc(pct, sizes),
+            "autopct": lambda pct: label_calc(pct, sizes),  # noqa: B023
             "shadow": shadow,
             "colors": colors,
         }
