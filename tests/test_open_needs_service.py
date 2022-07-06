@@ -103,29 +103,3 @@ def test_ons_service(test_app, monkeypatch):
     assert "Debug data" in html
     assert "Red and blue. No other colors please" in html
     assert "ONS_TEST_MARS_REQ_001" not in html
-
-
-# @pytest.mark.parametrize(
-#     "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_open_needs_service"}], indirect=True
-# )
-# def test_onserver_service(test_app):
-#     test_app.build()
-#     assert isinstance(test_app.needs_services, ServiceManager)
-#
-#     manager = test_app.needs_services
-#     service = manager.get("open-needs")
-#     assert hasattr(service, "content")
-#
-#     assert service.content
-#
-#     html = Path(test_app.outdir, "index.html").read_text()
-#
-#     assert "Test rocket power" in html
-#     assert "ONS_TEST_NEP_004" in html
-#     assert "NEP_003" in html
-#
-#     assert "open" in html
-#     assert "Debug data" in html
-#     assert "Red and blue. No other colors please" in html
-#     assert "ONS_TEST_MARS_REQ_001" not in html
-#
