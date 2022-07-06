@@ -7,4 +7,4 @@ Utils
    :maxdepth: 2
 
    performance/index
-   IDE/index
+   ide/index

@@ -21,7 +21,6 @@ from pygls.lsp.types import (
 )
 
 from sphinx_needs.lsp.needs_store import NeedsStore
-from sphinx_needs.utils import unwrap
 
 
 class NeedlsFeatures(LanguageFeature):
@@ -30,50 +29,51 @@ class NeedlsFeatures(LanguageFeature):
     def __init__(self, rst: SphinxLanguageServer) -> None:
         super().__init__(rst)
         self.needs_store = NeedsStore()
-        self._confdir = Path(unwrap(rst.app).confdir)
 
     # Open-Needs-IDE language features completion triggers: '>', '/', ':', '.'
     completion_triggers = [re.compile(r"(>)|(\.\.)|(:)|(\/)")]
 
-    def _load_needs(self) -> None:
-        # load needs.json
-        needs_json = self._confdir / "_build/needs/needs.json"
-        self.needs_store.load_needs(needs_json)
-
     def complete(self, context: CompletionContext) -> List[CompletionItem]:
-        self._load_needs()
 
-        # check and set conf.py path
-        conf_py_path = self._confdir / "conf.py"
-        self.needs_store.set_conf_py(conf_py_path)
-        # set declared need types
-        self.needs_store.set_declared_types()
+        if isinstance(self.rst, SphinxLanguageServer) and self.rst.app:
+            # load needs.json
+            confdir = Path(self.rst.app.confdir)
+            needs_json = confdir / "_build/needs/needs.json"
+            self.needs_store.load_needs(needs_json)
 
-        self.logger.debug(f"NeedsStore needs: {self.needs_store.needs}")
-        # check if needs initialzed
-        if not self.needs_store.needs_initialized:
+            # check and set conf.py path
+            conf_py_path = confdir / "conf.py"
+            self.needs_store.set_conf_py(conf_py_path)
+            # set declared need types
+            self.needs_store.set_declared_types()
+
+            self.logger.debug(f"NeedsStore needs: {self.needs_store.needs}")
+            # check if needs initialzed
+            if not self.needs_store.needs_initialized:
+                return []
+
+            lines, word = get_lines_and_word(self, context)
+            line_number = context.position.line
+            if line_number >= len(lines):
+                self.logger.info(f"line {line_number} is empty, no completion trigger characters detected")
+                return []
+            line = lines[line_number]
+
+            # if word starts with '->' or ':need:->', complete_need_link
+            if word.startswith("->") or word.startswith(":need:`->"):
+                new_word = word.replace(":need:`->", "->")
+                new_word = new_word.replace("`", "")  # in case need:`->...>...`
+                return complete_need_link(self, context, lines, line, new_word)
+
+            # if word starts with ':', complete_role_or_option
+            if word.startswith(":"):
+                return complete_role_or_option(self, context, lines, word)
+
+            # if word starts with '..', complete_directive
+            if word.startswith(".."):
+                return complete_directive(self, context, lines, word)
+
             return []
-
-        lines, word = get_lines_and_word(self, context)
-        line_number = context.position.line
-        if line_number >= len(lines):
-            self.logger.info(f"line {line_number} is empty, no completion trigger characters detected")
-            return []
-        line = lines[line_number]
-
-        # if word starts with '->' or ':need:->', complete_need_link
-        if word.startswith("->") or word.startswith(":need:`->"):
-            new_word = word.replace(":need:`->", "->")
-            new_word = new_word.replace("`", "")  # in case need:`->...>...`
-            return complete_need_link(self, context, lines, line, new_word)
-
-        # if word starts with ':', complete_role_or_option
-        if word.startswith(":"):
-            return complete_role_or_option(self, context, lines, word)
-
-        # if word starts with '..', complete_directive
-        if word.startswith(".."):
-            return complete_directive(self, context, lines, word)
 
         return []
 
@@ -83,75 +83,86 @@ class NeedlsFeatures(LanguageFeature):
         """Return textDocument/hover response value."""
         self.logger.debug(f"hover params: {context}")
 
-        self._load_needs()
-        try:
-            need_id = get_need_type_and_id(self, context)[1]
-        except IndexError:
-            return ""
-        if not need_id:
-            return ""
+        if isinstance(self.rst, SphinxLanguageServer) and self.rst.app:
+            # load needs.json
+            confdir = Path(self.rst.app.confdir)
+            needs_json = confdir / "_build/needs/needs.json"
+            self.needs_store.load_needs(needs_json)
 
-        try:
-            title = self.needs_store.needs[need_id]["title"]
-            description = self.needs_store.needs[need_id]["description"]
-            hover_value = f"**{title}**\n\n```\n{description}\n```"
-            return hover_value
-        except KeyError:
-            # need is not in the database
-            return ""
+            try:
+                need_id = get_need_type_and_id(self, context)[1]
+            except IndexError:
+                return ""
+            if not need_id:
+                return ""
+
+            try:
+                title = self.needs_store.needs[need_id]["title"]
+                description = self.needs_store.needs[need_id]["description"]
+                hover_value = f"**{title}**\n\n```\n{description}\n```"
+                return hover_value
+            except KeyError:
+                # need is not in the database
+                return ""
+        return ""
 
     definition_triggers = [re.compile(r".*")]
 
     def definition(self, context: DefinitionContext) -> List[Location]:
         """Return location of definition of a need."""
-        self._load_needs()
+        if isinstance(self.rst, SphinxLanguageServer) and self.rst.app:
+            # load needs.json
+            confdir = Path(self.rst.app.confdir)
+            needs_json = confdir / "_build/needs/needs.json"
+            self.needs_store.load_needs(needs_json)
 
-        if not self.needs_store.is_setup():
-            return []
+            if not self.needs_store.is_setup():
+                return []
 
-        need_type, need_id = get_need_type_and_id(self, context)
+            need_type, need_id = get_need_type_and_id(self, context)
 
-        # get need defining doc
-        try:
-            need = self.needs_store.needs[need_id]
-        except KeyError:
-            return []
+            # get need defining doc
+            try:
+                need = self.needs_store.needs[need_id]
+            except KeyError:
+                return []
 
-        doc_path = self._confdir / typing.cast(str, need["docname"])
-        if doc_path.with_suffix(".rst").exists():
-            doc_path = doc_path.with_suffix(".rst")
-        elif doc_path.with_suffix(".rest").exists():
-            doc_path = doc_path.with_suffix(".rest")
-        else:
-            return []
+            doc_path = confdir / typing.cast(str, need["docname"])
+            if doc_path.with_suffix(".rst").exists():
+                doc_path = doc_path.with_suffix(".rst")
+            elif doc_path.with_suffix(".rest").exists():
+                doc_path = doc_path.with_suffix(".rest")
+            else:
+                return []
 
-        # get the need definition position (line, col) from file
-        with open(doc_path) as file:
-            source_lines = file.readlines()
-        # get the line number
-        line_count = 0
-        line_no = None
-        pattern = f":id: {need_id}"
-        for line in source_lines:
-            if pattern in line:
-                line_no = line_count
-                break
-            line_count = line_count + 1
-        if not line_no:
-            return []
+            # get the need definition position (line, col) from file
+            with open(doc_path) as file:
+                source_lines = file.readlines()
+            # get the line number
+            line_count = 0
+            line_no = None
+            pattern = f":id: {need_id}"
+            for line in source_lines:
+                if pattern in line:
+                    line_no = line_count
+                    break
+                line_count = line_count + 1
+            if not line_no:
+                return []
 
-        # get line of directive (e.g., .. req::)
-        line_directive = None
-        pattern = f".. {need_type}::"
-        for line_count in range(line_no - 1, -1, -1):
-            if pattern in source_lines[line_count]:
-                line_directive = line_count
-                break
-        if not line_directive:
-            return []
+            # get line of directive (e.g., .. req::)
+            line_directive = None
+            pattern = f".. {need_type}::"
+            for line_count in range(line_no - 1, -1, -1):
+                if pattern in source_lines[line_count]:
+                    line_directive = line_count
+                    break
+            if not line_directive:
+                return []
 
-        pos = Position(line=line_directive, character=0)
-        return [Location(uri=doc_path.as_uri(), range=Range(start=pos, end=pos))]
+            pos = Position(line=line_directive, character=0)
+            return [Location(uri=doc_path.as_uri(), range=Range(start=pos, end=pos))]
+        return []
 
 
 def col_to_word_index(col: int, words: List[str]) -> int:
