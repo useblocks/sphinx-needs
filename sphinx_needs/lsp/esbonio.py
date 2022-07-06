@@ -1,18 +1,15 @@
 """Suport Sphinx-Needs language features."""
 import getpass
 import os
-import pathlib
 import re
+import typing
 from hashlib import blake2b
+from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
-from esbonio.lsp import LanguageFeature  # type: ignore[attr-defined]
-from esbonio.lsp.rst import (  # type: ignore[attr-defined]
-    CompletionContext,
-    DefinitionContext,
-    HoverContext,
-)
-from esbonio.lsp.sphinx import SphinxLanguageServer  # type: ignore[attr-defined]
+from esbonio.lsp import LanguageFeature
+from esbonio.lsp.rst import CompletionContext, DefinitionContext, HoverContext
+from esbonio.lsp.sphinx import SphinxLanguageServer
 from pygls.lsp.types import (
     CompletionItem,
     CompletionItemKind,
@@ -24,25 +21,30 @@ from pygls.lsp.types import (
 )
 
 from sphinx_needs.lsp.needs_store import NeedsStore
+from sphinx_needs.utils import unwrap
 
 
-class NeedlsFeatures(LanguageFeature):  # type: ignore[misc]
+class NeedlsFeatures(LanguageFeature):
     """Sphinx-Needs features support for the language server."""
 
     def __init__(self, rst: SphinxLanguageServer) -> None:
         super().__init__(rst)
         self.needs_store = NeedsStore()
+        self._confdir = Path(unwrap(rst.app).confdir)
 
     # Open-Needs-IDE language features completion triggers: '>', '/', ':', '.'
     completion_triggers = [re.compile(r"(>)|(\.\.)|(:)|(\/)")]
 
-    def complete(self, context: CompletionContext) -> List[CompletionItem]:
+    def _load_needs(self) -> None:
         # load needs.json
-        needs_json = os.path.join(self.rst.app.confdir, "_build/needs/needs.json")
+        needs_json = self._confdir / "_build/needs/needs.json"
         self.needs_store.load_needs(needs_json)
 
+    def complete(self, context: CompletionContext) -> List[CompletionItem]:
+        self._load_needs()
+
         # check and set conf.py path
-        conf_py_path = os.path.join(self.rst.app.confdir, "conf.py")
+        conf_py_path = self._confdir / "conf.py"
         self.needs_store.set_conf_py(conf_py_path)
         # set declared need types
         self.needs_store.set_declared_types()
@@ -81,9 +83,7 @@ class NeedlsFeatures(LanguageFeature):  # type: ignore[misc]
         """Return textDocument/hover response value."""
         self.logger.debug(f"hover params: {context}")
 
-        # load needs.json
-        needs_json = os.path.join(self.rst.app.confdir, "_build/needs/needs.json")
-        self.needs_store.load_needs(needs_json)
+        self._load_needs()
         try:
             need_id = get_need_type_and_id(self, context)[1]
         except IndexError:
@@ -104,9 +104,7 @@ class NeedlsFeatures(LanguageFeature):  # type: ignore[misc]
 
     def definition(self, context: DefinitionContext) -> List[Location]:
         """Return location of definition of a need."""
-        # load needs.json
-        needs_json = os.path.join(self.rst.app.confdir, "_build/needs/needs.json")
-        self.needs_store.load_needs(needs_json)
+        self._load_needs()
 
         if not self.needs_store.is_setup():
             return []
@@ -119,14 +117,13 @@ class NeedlsFeatures(LanguageFeature):  # type: ignore[misc]
         except KeyError:
             return []
 
-        doc_path = os.path.join(self.rst.app.confdir, need["docname"])
-        if os.path.exists(doc_path + ".rst"):
-            doc_path = doc_path + ".rst"
-        elif os.path.exists(doc_path + ".rest"):
-            doc_path = doc_path + ".rest"
+        doc_path = self._confdir / typing.cast(str, need["docname"])
+        if doc_path.with_suffix(".rst").exists():
+            doc_path = doc_path.with_suffix(".rst")
+        elif doc_path.with_suffix(".rest").exists():
+            doc_path = doc_path.with_suffix(".rest")
         else:
             return []
-        doc_uri = pathlib.Path(doc_path).as_uri()
 
         # get the need definition position (line, col) from file
         with open(doc_path) as file:
@@ -154,7 +151,7 @@ class NeedlsFeatures(LanguageFeature):  # type: ignore[misc]
             return []
 
         pos = Position(line=line_directive, character=0)
-        return [Location(uri=doc_uri, range=Range(start=pos, end=pos))]
+        return [Location(uri=doc_path.as_uri(), range=Range(start=pos, end=pos))]
 
 
 def col_to_word_index(col: int, words: List[str]) -> int:
@@ -174,8 +171,7 @@ def get_lines(ls: NeedlsFeatures, params: Union[CompletionContext, DefinitionCon
     text_doc = params.doc
     ls.logger.debug(f"text_doc: {text_doc}")
     source = text_doc.source
-    lines: List[str] = source.splitlines()
-    return lines
+    return source.splitlines()
 
 
 def get_word(ls: NeedlsFeatures, params: Union[CompletionContext, DefinitionContext, HoverContext]) -> str:
