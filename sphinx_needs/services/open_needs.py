@@ -216,7 +216,7 @@ class OpenNeedsService(BaseService):
 
     def debug(self, *args: Any, **kwargs: Any) -> Any:
         self.log.debug(f"Requesting data for service {self.name}")
-
+        self._oauthorization()  # Get authorization token
         params = self._prepare_request(*args)
 
         request_params = {

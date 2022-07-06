@@ -846,7 +846,7 @@ docs = ["sphinx (>=4,<5)"]
 
 [[package]]
 name = "sphinx-immaterial"
-version = "0.7.3"
+version = "0.8.0"
 description = "Adaptation of mkdocs-material theme for the Sphinx documentation system"
 category = "dev"
 optional = true
@@ -913,7 +913,7 @@ test = ["pytest", "flake8", "mypy"]
 
 [[package]]
 name = "sphinxcontrib-plantuml"
-version = "0.23"
+version = "0.24"
 description = "Sphinx \"plantuml\" extension"
 category = "dev"
 optional = false
@@ -1718,8 +1718,8 @@ sphinx-data-viewer = [
     {file = "sphinx-data-viewer-0.1.2.tar.gz", hash = "sha256:f99a4bf2c09b59e2e302ff51198c62acd5df83317f0226c170e47980b4445094"},
 ]
 sphinx-immaterial = [
-    {file = "sphinx_immaterial-0.7.3-py3-none-any.whl", hash = "sha256:674440fc4eb39aaa4ec9c098fd09b7cd696754438e93ddd539d19828bab0f509"},
-    {file = "sphinx_immaterial-0.7.3.tar.gz", hash = "sha256:098e1069494fea1482601c33d6a124eff023d19b1616fdb6c46b482177f3e7b7"},
+    {file = "sphinx_immaterial-0.8.0-py3-none-any.whl", hash = "sha256:a6f729d12c116c76a0e524fc37f8b1b0a6201745fe373949738f27e4f8b6ec31"},
+    {file = "sphinx_immaterial-0.8.0.tar.gz", hash = "sha256:ce78018fed083cb02491a05a258d80fa28b58eee690be396e2dcd1110ebc2233"},
 ]
 sphinxcontrib-applehelp = [
     {file = "sphinxcontrib-applehelp-1.0.2.tar.gz", hash = "sha256:a072735ec80e7675e3f432fcae8610ecf509c5f1869d17e2eecff44389cdbc58"},
@@ -1738,7 +1738,7 @@ sphinxcontrib-jsmath = [
     {file = "sphinxcontrib_jsmath-1.0.1-py2.py3-none-any.whl", hash = "sha256:2ec2eaebfb78f3f2078e73666b1415417a116cc848b72e5172e596c871103178"},
 ]
 sphinxcontrib-plantuml = [
-    {file = "sphinxcontrib-plantuml-0.23.tar.gz", hash = "sha256:1d55518f0a86ecd6c96ba8ff8c884adca05bac3e58e76a692a3cd19aa7f42acf"},
+    {file = "sphinxcontrib-plantuml-0.24.tar.gz", hash = "sha256:cf65db7358f785a6498ee03e7198b6680c625d28e55b33475fc3f6c94351451d"},
 ]
 sphinxcontrib-qthelp = [
     {file = "sphinxcontrib-qthelp-1.0.3.tar.gz", hash = "sha256:4c33767ee058b70dba89a6fc5c1892c0d57a54be67ddd3e7875a18d14cba5a72"},
