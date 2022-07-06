@@ -10,7 +10,7 @@ Features
 
 The following features are supported when using an `Esbonio <https://github.com/swyddfa/esbonio>`_ based IDE
 extension, like VsCode extension `reStructuredText <https://github.com/vscode-restructuredtext/vscode-restructuredtext>`_,
-in your Sphinx-Needs project.
+in your **Sphinx-Needs** project.
 
 .. grid::
 
