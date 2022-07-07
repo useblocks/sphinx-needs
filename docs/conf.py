@@ -279,7 +279,7 @@ needs_extra_options = [
 
 needs_warnings = {
     "type_check": 'type not in ["int", "sys", "comp", "req", "spec", "impl", "test", "feature", "action", "user", "milestone", '
-    '"issue", "pr", "commit"'  # github service types
+    '"issue", "pr", "commit"'  # GitHub service types
     "]",
     # 'valid_status': 'status not in ["open", "in progress", "closed", "done", "implemented"] and status is not None'
 }
@@ -326,6 +326,24 @@ needs_services = {
         "max_content_lines": 20,
         "id_prefix": "GH_COM_",
     },
+    "open-needs": {
+        "url": "http://127.0.0.1:9595",
+        "user": os.environ.get("ONS_USERNAME", ""),
+        "password": os.environ.get("ONS_PASSWORD", ""),
+        "id_prefix": "ONS_",
+        "mappings": {
+            "id": "{{key}}",
+            "type": ["type"],
+            "title": "{{title}}",
+            "status": ["options", "status"],
+            "links": ["references", "links"],
+        },
+        "extra_data": {
+            "Priority": ["options", "priority"],
+            "Approval": ["options", "approved"],
+            "Cost": ["options", "costs"],
+        },
+    },
 }
 
 needs_string_links = {
@@ -355,19 +373,19 @@ needs_string_links = {
 # build needs.json to make permalinks work
 needs_build_json = True
 
-# Get and maybe set Github credentials for services.
+# Get and maybe set GitHub credentials for services.
 # This is needed as the rate limit for not authenticated users is too low for the amount of requests we
 # need to perform for this documentation
 github_username = os.environ.get("GITHUB_USERNAME", "")
 github_token = os.environ.get("GITHUB_TOKEN", "")
 
 if github_username != "" and github_token != "":
-    print(f"GITHUB: Using as username: {github_username}. lenth token: {len(github_token)}")
+    print(f"---> GITHUB: Using as username: {github_username}. length token: {len(github_token)}")
     for service in ["github-issues", "github-prs", "github-commits"]:
         needs_services[service]["username"] = github_username
         needs_services[service]["token"] = github_token
 else:
-    print("GITHUB: No auth provided")
+    print("---> GITHUB: No auth provided")
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -392,7 +410,7 @@ author = "team useblocks"
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -414,42 +432,17 @@ todo_include_todos = False
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#
+
 html_theme = os.getenv("NEEDS_THEME", "sphinx_immaterial")
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#
-# html_theme_options = {}
 
-# html_logo = "_static/needs_logo.png"
-# html_sidebars = {'**': ['about.html', 'navigation.html', 'sourcelink.html', 'searchbox.html'], }
 html_sidebars = {
     "**": ["about.html", "navigation.html", "searchbox.html"],
 }
 
-# html_theme_options = {
-#     "logo": "needs_logo.png",
-#     "logo_name": True,
-#     # 'description': "an extension for sphinx",
-#     "logo_text_align": "center",
-#     "github_user": "useblocks",
-#     "github_repo": "sphinxcontrib-needs",
-#     "github_banner": True,
-#     "github_button": True,
-#     "github_type": "star",
-#     "fixed_sidebar": False,
-#     "extra_nav_links": {
-#         "needs@PyPi": "https://pypi.python.org/pypi/sphinxcontrib-needs/",
-#         "needs@github": "https://github.com/useblocks/sphinxcontrib-needs",
-#         "needs@travis": "https://travis-ci.org/useblocks/sphinxcontrib-needs",
-#     },
-# }
-
-
-# extensions.append("sphinx_immaterial")
-# html_theme = "sphinx_immaterial"
 html_logo = "./_static/sphinx-needs-logo-white.png"
 html_favicon = "./_static/sphinx-needs-logo-favicon.png"
 # material theme options (see theme.conf for more information)
@@ -465,15 +458,8 @@ html_theme_options = {
     # "google_analytics": ["UA-XXXXX", "auto"],
     "globaltoc_collapse": True,
     "features": [
-        # "navigation.expand",
-        # "navigation.tabs",
-        # "toc.integrate",
         "navigation.sections",
-        # "navigation.instant",
-        # "header.autohide",
         "navigation.top",
-        # "navigation.tracking",
-        # "search.highlight",
         "search.share",
     ],
     "palette": [
@@ -587,18 +573,29 @@ rst_epilog = """
 
 """
 
+# Check, if docs get built on ci.
+# If this is the case, external services like Code-beamer are not available and
+# docs will show images instead of getting real data.
+on_ci = os.environ.get("ON_CI", "False").upper() == "TRUE"
+
+html_context = {"on_ci": on_ci}
+
 
 def rstjinja(app: Sphinx, _docname: str, source: List[str]) -> None:
     """
     Render our pages as a jinja template for fancy templating goodness.
     """
     # Make sure we're outputting HTML
-    if app.builder.format != "html":
+    if app.builder.format != "html" and app.builder.name != "linkcheck":
         return
     src = source[0]
-    rendered = app.builder.templates.render_string(src, app.config.html_context)
+    from jinja2 import Template
+
+    template = Template(src, autoescape=True)
+    rendered = template.render(**app.config.html_context)
     source[0] = rendered
 
 
 def setup(app: Sphinx) -> None:
+    print(f"---> ON_CI is: {on_ci}")
     app.connect("source-read", rstjinja)

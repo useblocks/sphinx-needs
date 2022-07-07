@@ -31,6 +31,8 @@ Example
    :value: 20
    :unit: slices
 
+.. _needref:
+
 |ex|
 
 .. code-block:: rst

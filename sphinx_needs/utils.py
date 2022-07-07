@@ -1,12 +1,14 @@
 import cProfile
 import importlib
+import operator
 import os
 import re
-from functools import wraps
+from functools import reduce, wraps
 from typing import Any, Dict, List, Optional, TypeVar
 from urllib.parse import urlparse
 
 from docutils import nodes
+from jinja2 import Template
 from sphinx.application import Sphinx
 
 from sphinx_needs.defaults import NEEDS_PROFILING
@@ -129,7 +131,7 @@ def row_col_maker(
                     if need_info["is_external"]:
                         ref_col = nodes.reference("", "")
                     else:
-                        # Mark reference as "internal" so that if the rinohtype builder is being used it produces an
+                        # Mark references as "internal" so that if the rinohtype builder is being used it produces an
                         # internal reference within the generated PDF instead of an external link. This replicates the
                         # behaviour of references created with the sphinx utility `make_refnode`.
                         ref_col = nodes.reference("", "", internal=True)
@@ -269,10 +271,10 @@ def check_and_get_external_filter_func(current_needlist):
         try:
             filter_module, filter_function = filter_func_ref.rsplit(".")
         except ValueError:
-            logger.warn(f'Filter function not valid "{filter_func_ref}". Example: my_module:my_func')
-            return []  # No needs found because of invalid filter function
+            logger.warning(f'Filter function not valid "{filter_func_ref}". Example: my_module:my_func')
+            return []  # No needs were found because of invalid filter function
 
-        result = re.search(r"^([\w]+)(?:\((.*)\))*$", filter_function)
+        result = re.search(r"^(\w+)(?:\((.*)\))*$", filter_function)
         filter_function = result.group(1)
         filter_args = result.group(2) or []
 
@@ -280,10 +282,48 @@ def check_and_get_external_filter_func(current_needlist):
             final_module = importlib.import_module(filter_module)
             filter_func = getattr(final_module, filter_function)
         except Exception:
-            logger.warn(f"Could not import filter function: {filter_func_ref}")
+            logger.warning(f"Could not import filter function: {filter_func_ref}")
             return []
 
     return filter_func, filter_args
+
+
+def jinja_parse(context: Dict, jinja_string: str) -> str:
+    """
+    Function to parse mapping options set to a string containing jinja template format.
+
+    :param context: Data to be used as context in rendering jinja template
+    :type context: dict
+    :param jinja_string: A jinja template string
+    :type jinja_string: str
+    :return: A rendered jinja template as string
+    :rtype: str
+
+    """
+    try:
+        content_template = Template(jinja_string, autoescape=True)
+    except Exception as e:
+        raise ReferenceError(f'There was an error in the jinja statement: "{jinja_string}". ' f"Error Msg: {e}")
+
+    content = content_template.render(**context)
+    return content
+
+
+def dict_get(root, items, default=None) -> Any:
+    """
+    Access a nested object in root by item sequence.
+
+    Usage::
+       data = {"nested": {"a_list": [{"finally": "target_data"}]}}
+       value = dict_get(["nested", "a_list", 0, "finally"], "Not_found")
+
+    """
+    try:
+        value = reduce(operator.getitem, items, root)
+    except (KeyError, IndexError, TypeError) as e:
+        logger.debug(e)
+        return default
+    return value
 
 
 T = TypeVar("T")

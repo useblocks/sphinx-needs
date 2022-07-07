@@ -3,27 +3,25 @@
 Dynamic functions
 =================
 
-Sphinx-Needs provides a mechanism to set dynamic data for need-options during generation.
-This is realised by giving an author the possibility to set a function call to a predefined function, which calculates
+**Sphinx-Needs** provides a mechanism to set dynamic data for need-options during generation.
+We do this by giving an author the possibility to set a function call to a predefined function, which calculates
 the final result/value for the option.
 
-This can be useful, if for instance the status of a requirement depends on linked test cases and their status.
-Or if specific data shall be requested from an external server like JIRA.
+For instance, you can use the feature if the status of a requirement depends on linked test cases and their status.
+Or if you will request specific data from an external server like JIRA.
 
 **needtable**
 
-The options :ref:`needtable_style_row` of :ref:`needtable` are also supporting
-dynamic function execution. In this case the function will get executed with the found need for each row.
+The options :ref:`needtable_style_row` of :ref:`needtable` also support
+dynamic function execution. In this case, the function gets executed with the found need for each row.
 
-This allows to set row and column specific styles and e.g. set a row background to red, if a need-status is *failed*.
+This allows you to set row and column specific styles such as, set a row background to red, if a need-status is *failed*.
 
-.. contents::
-   :local:
 
 Example
 -------
 
-.. code-block:: jinja
+.. code-block:: rst
 
    .. req:: my test requirement
       :id: df_1
@@ -37,13 +35,9 @@ Example
 
    This need has id **[[copy("id")]]** and status **[[copy("status")]]**.
 
-Built-in  functions
+Built-in functions
 -------------------
-The following functions are available in all sphinx-needs installations.
-
-.. contents::
-   :local:
-
+The following functions are available in all **Sphinx-Needs** installations.
 
 .. note::
 
@@ -93,8 +87,10 @@ Develop own functions
 Registration
 ~~~~~~~~~~~~
 
-Every dynamic function must be registered by using configuration parameter :ref:`needs_functions`
-inside your **conf.py** file::
+You must register every dynamic function by using the :ref:`needs_functions` configuration parameter
+inside your **conf.py** file:
+
+.. code-block:: python
 
    def my_own_function(app, need, needs):
        return "Awesome"
@@ -106,7 +102,9 @@ inside your **conf.py** file::
    Assigning a function to a Sphinx option will deactivate the incremental build feature of Sphinx.
    Please use the :ref:`Sphinx-Needs API <api_configuration>` and read :ref:`inc_build` for details.
 
-   Better use the following way in our **conf.py** file::
+   **Recommended:** You can use the following approach we used in our **conf.py** file to register dynamic functions:
+
+   .. code-block:: python
 
          from sphinx_needs.api import add_dynamic_function
 
@@ -132,15 +130,15 @@ Reference function
        # where the magic happens
        return "awesome"
 
-Such a defined function can be called via:
+You can call the defined function via:
 
-.. code-block:: jinja
+.. code-block:: rst
 
    .. req:: test requirement
       :status: [[test()]]
 
 The parameters ``app``, ``need`` and ``needs`` are set automatically. You are free to add other parameters, which
-are allowed to be of type str, int, float and list.
+must be of type str, int, float and list.
 
 
 need structure
@@ -179,11 +177,8 @@ Restrictions
 
 incoming_links
 ++++++++++++++
-Incoming links are not available when dynamic functions get calculated.
+Incoming links are not available when dynamic functions gets calculated.
 
-That's because a dynamic function can change outgoing links, so that the incoming links of the target need needs
-to be recalculated. This is automatically done, but not until all dynamic functions were resolved.
-
-
-
+That's because a dynamic function can change outgoing links, so that the incoming links of the target need will
+be recalculated. This is automatically done but not until all dynamic functions are resolved.
 

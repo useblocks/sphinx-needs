@@ -35,7 +35,7 @@ Sphinx-extension `sphinxcontrib-plantuml <https://pypi.org/project/sphinxcontrib
 
 Both must be available and correctly configured to work.
 
-Please read :ref:`install_plantuml` for a step-by-step installation explanation.
+Please read :ref:`install plantuml <install_plantuml>` for a step-by-step installation explanation.
 
 Options
 -------
