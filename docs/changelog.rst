@@ -26,6 +26,9 @@ Under development
   a need has to meet.
 * Improvement: Added customizable link text of :ref:`:Need: <needref>`.
   (`#439 <https://github.com/useblocks/sphinxcontrib-needs/discussions/439>`_)
+* Bugfix: Fixed lsp needs.json path check.
+  (`#603 <https://github.com/useblocks/sphinxcontrib-needs/issues/603>`_,
+  `#633 <https://github.com/useblocks/sphinxcontrib-needs/issues/633>`_)
 
 0.7.9
 -----
