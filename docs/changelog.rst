@@ -14,15 +14,9 @@ Under development
 
 * Improvement: Provides :ref:`needuml` for powerful, reusable Need objects.
 * Improvement: Provides :ref:`needreport` for documenting configuration used in a **Sphinx-Needs** project's **conf.py**.
-* Bugfix: Support embedded needs in embedded needs.
-  (`#486 <https://github.com/useblocks/sphinxcontrib-needs/issues/486>`_)
-* Bugfix: Correct references in :ref:`needtables <needtable>` to be external or internal instead of always external.
-* Bugfix: Correct documentation and configuration in :ref:`need_tags` to *list* type.
 * Improvement: Provides initial support for Sphinx-Needs IDE language features.
   (`#584 <https://github.com/useblocks/sphinxcontrib-needs/pull/584>`_)
 * Improvement: Support snippet for auto directive completion for Sphinx-Needs IDE language features.
-* Bugfix: Handle overlapping labels in :ref:`needpie`.
-  (`#498 <https://github.com/useblocks/sphinxcontrib-needs/issues/498>`_)
 * Improvement: Added `show_top_sum` to :ref:`Needbar <needbar>` and make it possible to rotate the bar labels.
   (`#516 <https://github.com/useblocks/sphinxcontrib-needs/issues/516>`_)
 * Improvement: Added `needs_constraints` option. Constraints can be set for individual needs and describe properties
@@ -32,6 +26,13 @@ Under development
 * Bugfix: Fixed lsp needs.json path check.
   (`#603 <https://github.com/useblocks/sphinxcontrib-needs/issues/603>`_,
   `#633 <https://github.com/useblocks/sphinxcontrib-needs/issues/633>`_)
+* Bugfix: Support embedded needs in embedded needs.
+  (`#486 <https://github.com/useblocks/sphinxcontrib-needs/issues/486>`_)
+* Bugfix: Correct references in :ref:`needtables <needtable>` to be external or internal instead of always external.
+* Bugfix: Correct documentation and configuration in :ref:`need_tags` to *list* type.
+* Bugfix: Handle overlapping labels in :ref:`needpie`.
+  (`#498 <https://github.com/useblocks/sphinxcontrib-needs/issues/498>`_)
+* Bugfix: :ref:`needimport` uses source-folder for relative path calculation (instead of confdir).
 
 0.7.9
 -----

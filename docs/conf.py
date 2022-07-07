@@ -577,8 +577,9 @@ rst_epilog = """
 # If this is the case, external services like Code-beamer are not available and
 # docs will show images instead of getting real data.
 on_ci = os.environ.get("ON_CI", "False").upper() == "TRUE"
+fast_build = os.environ.get("FAST_BUILD", "False").upper() == "TRUE"
 
-html_context = {"on_ci": on_ci}
+html_context = {"on_ci": on_ci, "fast_build": fast_build}
 
 
 def rstjinja(app: Sphinx, _docname: str, source: List[str]) -> None:
@@ -598,4 +599,5 @@ def rstjinja(app: Sphinx, _docname: str, source: List[str]) -> None:
 
 def setup(app: Sphinx) -> None:
     print(f"---> ON_CI is: {on_ci}")
+    print(f"---> FAST_BUILD is: {fast_build}")
     app.connect("source-read", rstjinja)

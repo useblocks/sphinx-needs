@@ -55,12 +55,12 @@ class NeedimportDirective(Directive):
         if not os.path.isabs(need_import_path):
             # Relative path should starts from current rst file directory
             curr_dir = os.path.dirname(self.docname)
-            new_need_import_path = os.path.join(self.env.app.confdir, curr_dir, need_import_path)
+            new_need_import_path = os.path.join(self.env.app.srcdir, curr_dir, need_import_path)
 
             correct_need_import_path = new_need_import_path
             if not os.path.exists(new_need_import_path):
                 # Check the old way that calculates relative path starting from conf.py directory
-                old_need_import_path = os.path.join(self.env.app.confdir, need_import_path)
+                old_need_import_path = os.path.join(self.env.app.srcdir, need_import_path)
                 if os.path.exists(old_need_import_path):
                     correct_need_import_path = old_need_import_path
                     logger.warning(
@@ -69,8 +69,8 @@ class NeedimportDirective(Directive):
                         "relative to conf.py."
                     )
         else:
-            # Absolute path starts with /, based on the conf.py directory. The / need to be striped
-            correct_need_import_path = os.path.join(self.env.app.confdir, need_import_path[1:])
+            # Absolute path starts with /, based on the source directory. The / need to be striped
+            correct_need_import_path = os.path.join(self.env.app.srcdir, need_import_path[1:])
 
         if not os.path.exists(correct_need_import_path):
             raise ReferenceError(f"Could not load needs import file {correct_need_import_path}")
