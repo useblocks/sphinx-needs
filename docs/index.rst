@@ -3,22 +3,22 @@
 
 .. only:: html
 
-   .. image:: https://img.shields.io/pypi/dm/sphinxcontrib-needs.svg
-       :target: https://pypi.python.org/pypi/sphinxcontrib-needs
+   .. image:: https://img.shields.io/pypi/dm/sphinx-needs.svg
+       :target: https://pypi.python.org/pypi/sphinx-needs
        :alt: Downloads
-   .. image:: https://img.shields.io/pypi/l/sphinxcontrib-needs.svg
-       :target: https://pypi.python.org/pypi/sphinxcontrib-needs
+   .. image:: https://img.shields.io/pypi/l/sphinx-needs.svg
+       :target: https://pypi.python.org/pypi/sphinx-needs
        :alt: License
-   .. image:: https://img.shields.io/pypi/pyversions/sphinxcontrib-needs.svg
-       :target: https://pypi.python.org/pypi/sphinxcontrib-needs
+   .. image:: https://img.shields.io/pypi/pyversions/sphinx-needs.svg
+       :target: https://pypi.python.org/pypi/sphinx-needs
        :alt: Supported versions
-   .. image:: https://readthedocs.org/projects/sphinxcontrib-needs/badge/?version=latest
-       :target: https://readthedocs.org/projects/sphinxcontrib-needs/
-   .. image:: https://github.com/useblocks/sphinxcontrib-needs/actions/workflows/ci.yaml/badge.svg
-       :target: https://github.com/useblocks/sphinxcontrib-needs/actions
+   .. image:: https://readthedocs.org/projects/sphinx-needs/badge/?version=latest
+       :target: https://readthedocs.org/projects/sphinx-needs/
+   .. image:: https://github.com/useblocks/sphinx-needs/actions/workflows/ci.yaml/badge.svg
+       :target: https://github.com/useblocks/sphinx-needs/actions
        :alt: GitHub CI Action status
-   .. image:: https://img.shields.io/pypi/v/sphinxcontrib-needs.svg
-       :target: https://pypi.python.org/pypi/sphinxcontrib-needs
+   .. image:: https://img.shields.io/pypi/v/sphinx-needs.svg
+       :target: https://pypi.python.org/pypi/sphinx-needs
        :alt: PyPI Package latest release
    .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
        :target: https://github.com/psf/black
@@ -313,7 +313,7 @@ In the last years, we have created additional information and extensions, which 
 
     .. grid-item-card::
         :columns: 12 6 6 6
-        :link: https://sphinxcontrib-needs.readthedocs.io/en/latest/
+        :link: https://sphinx-needs.readthedocs.io/en/latest/
         :img-top: /_static/sphinx-needs-card.png
         :class-card: border
 
@@ -324,7 +324,7 @@ In the last years, we have created additional information and extensions, which 
         The base extension provides all of its functionality under the MIT license for free.
         +++
 
-        .. button-link:: https://sphinxcontrib-needs.readthedocs.io/en/latest/
+        .. button-link:: https://sphinx-needs.readthedocs.io/en/latest/
             :color: primary
             :outline:
             :align: center

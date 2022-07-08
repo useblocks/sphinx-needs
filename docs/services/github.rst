@@ -21,12 +21,12 @@ Each services creates normally multiple need objects for each element found by q
 .. code-block:: rst
 
     .. needservice:: github-issues
-       :query: repo:useblocks/sphinxcontrib-needs node latexpdf
+       :query: repo:useblocks/sphinx-needs node latexpdf
        :max_content_lines: 4
 
 {% if fast_build != true %}
 .. needservice:: github-issues
-   :query: repo:useblocks/sphinxcontrib-needs node latexpdf
+   :query: repo:useblocks/sphinx-needs node latexpdf
    :max_amount: 1
    :max_content_lines: 4
 {% endif %}
@@ -39,7 +39,7 @@ Also the content part of ``needservice`` is added as extra data to the end of th
 .. code-block:: rst
 
     .. needservice:: github-issues
-       :query: repo:useblocks/sphinxcontrib-needs node latexpdf
+       :query: repo:useblocks/sphinx-needs node latexpdf
        :id_prefix: GH_
        :max_amount: 1
        :max_content_lines: 4
@@ -56,7 +56,7 @@ Also the content part of ``needservice`` is added as extra data to the end of th
    :type: spec
    :author: Me
    :tags: awesome, issue
-   :query: repo:useblocks/sphinxcontrib-needs node latexpdf
+   :query: repo:useblocks/sphinx-needs node latexpdf
    :id_prefix: GH_
    :max_amount: 1
    :max_content_lines: 4
@@ -99,11 +99,11 @@ This loads all open issues, which have the strings *needtable* and *viewports* i
 .. code-block:: rst
 
     .. needservice:: github-issues
-       :query: repo:useblocks/sphinxcontrib-needs state:open needtable viewports
+       :query: repo:useblocks/sphinx-needs state:open needtable viewports
 
 {% if fast_build != true %}
 .. needservice:: github-issues
-   :query: repo:useblocks/sphinxcontrib-needs state:open needtable viewports
+   :query: repo:useblocks/sphinx-needs state:open needtable viewports
 {%endif%}
 
 specific
@@ -111,7 +111,7 @@ specific
 If only a single, specific object shall be documented, using ``query`` will not work, as the GitHub Search API
 does not support query-options for getting a specific element.
 Instead use ``specific`` and provide the unique reference in the syntax ``owner/repo/number``, for example
-``useblocks/sphinxcontrib-needs/155``
+``useblocks/sphinx-needs/155``
 
 
 **Example**:
@@ -121,11 +121,11 @@ This query fetches a specific pull request with the id 161.
 .. code-block:: rst
 
     .. needservice:: github-prs
-       :specific: useblocks/sphinxcontrib-needs/161
+       :specific: useblocks/sphinx-needs/161
 
 {% if fast_build != true %}
 .. needservice:: github-prs
-   :specific: useblocks/sphinxcontrib-needs/161
+   :specific: useblocks/sphinx-needs/161
 {%endif%}
 
 .. _service_github_config:
@@ -156,7 +156,7 @@ All options can be overwritten by setting them directly in the need service dire
 .. code-block:: rst
 
     .. needservice:: github-issues
-       :query: repo:useblocks/sphinxcontrib-needs
+       :query: repo:useblocks/sphinx-needs
        :type: test
        :max_amount: 10
        :max_content_lines: 2
@@ -188,14 +188,14 @@ directive :ref:`needservice`.
 .. code-block:: rst
 
     .. needservice:: github-issues
-       :query: repo:useblocks/sphinxcontrib-needs node latexpdf
+       :query: repo:useblocks/sphinx-needs node latexpdf
        :max_content_lines: 4
        :layout: focus_l
        :style: blue_border
 
 {% if fast_build != true %}
 .. needservice:: github-issues
-   :query: repo:useblocks/sphinxcontrib-needs node latexpdf
+   :query: repo:useblocks/sphinx-needs node latexpdf
    :max_amount: 1
    :max_content_lines: 4
    :id_prefix: GH2_
@@ -270,11 +270,11 @@ Search for all commits of Sphinx-Needs, which have ``Python`` in their message.
 .. code-block:: rst
 
    .. needservice:: github-commits
-      :query: repo:useblocks/sphinxcontrib-needs python
+      :query: repo:useblocks/sphinx-needs python
       :max_amount: 2
 
 .. needservice:: github-commits
-   :query: repo:useblocks/sphinxcontrib-needs python
+   :query: repo:useblocks/sphinx-needs python
    :max_amount: 2
 
 **Specific commit**
@@ -284,10 +284,10 @@ Document commit ``a4a596`` of **Sphinx-Needs**.
 .. code-block:: rst
 
     .. needservice:: github-commits
-       :specific: useblocks/sphinxcontrib-needs/a4a596
+       :specific: useblocks/sphinx-needs/a4a596
 
 .. needservice:: github-commits
-   :specific: useblocks/sphinxcontrib-needs/a4a596113
+   :specific: useblocks/sphinx-needs/a4a596113
 
 Filtering
 +++++++++

@@ -7,10 +7,10 @@ Bugs, Features and  PRs
 -----------------------
 
 For **bug reports** and well-described **technical feature requests**, please use our issue tracker:
-|br| https://github.com/useblocks/sphinxcontrib-needs/issues
+|br| https://github.com/useblocks/sphinx-needs/issues
 
 For **feature ideas** and **questions**, please use our discussion board:
-|br| https://github.com/useblocks/sphinxcontrib-needs/discussions
+|br| https://github.com/useblocks/sphinx-needs/discussions
 
 If you have already created a **PR**, you can send it in. Our CI workflow will check (test and code styles) and
 a maintainer will perform a review, before we can merge it.
