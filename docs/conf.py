@@ -611,3 +611,5 @@ linkcheck_request_headers = {
         "User-Agent": "Mozilla/5.0",
     }
 }
+
+linkcheck_workers = 5
