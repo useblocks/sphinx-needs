@@ -33,7 +33,7 @@ def get_needs_json(app: Sphinx) -> Optional[Path]:
     # check if needs.json is built automatically during each sphinx-build,
     # which requres needs_build_json = True in conf.py
     outdir = Path(app.outdir)
-    if hasattr(app.config, "needs_build_json") and app.config.needs_build_json:
+    if getattr(app.config, "needs_build_json", False):
         needs_json = outdir / "needs.json"
     else:
         # needs.json is manually built, need to check directory buildDir
@@ -61,7 +61,7 @@ class NeedlsFeatures(LanguageFeature):
         if isinstance(self.rst, SphinxLanguageServer) and self.rst.app:
             # get and check needs.json path
             needs_json = get_needs_json(self.rst.app)
-            if not needs_json or not needs_json.exists():
+            if not (needs_json and needs_json.exists()):
                 self.logger.warning(f"needs.json {needs_json} not exists. No Sphinx-Needs language features activated.")
                 return []
 
@@ -113,7 +113,7 @@ class NeedlsFeatures(LanguageFeature):
         if isinstance(self.rst, SphinxLanguageServer) and self.rst.app:
             # get and check needs.json path
             needs_json = get_needs_json(self.rst.app)
-            if not needs_json or not needs_json.exists():
+            if not (needs_json and needs_json.exists()):
                 self.logger.warning(f"needs.json {needs_json} not exists. No Sphinx-Needs language features activated.")
                 return ""
 
@@ -144,7 +144,7 @@ class NeedlsFeatures(LanguageFeature):
         if isinstance(self.rst, SphinxLanguageServer) and self.rst.app:
             # get and check needs.json path
             needs_json = get_needs_json(self.rst.app)
-            if not needs_json or not needs_json.exists():
+            if not (needs_json and needs_json.exists()):
                 self.logger.warning(f"needs.json {needs_json} not exists. No Sphinx-Needs language features activated.")
                 return []
 
