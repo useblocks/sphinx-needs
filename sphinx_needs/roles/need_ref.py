@@ -19,7 +19,7 @@ class NeedRef(nodes.Inline, nodes.Element):
 
 
 def transform_need_to_dict(need: Need) -> Dict[str, str]:
-    """ "
+    """
     The function will transform a need in a dictionary of strings. Used to
     be given e.g. to a python format string.
 
@@ -91,7 +91,7 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
 
             # Shorten title, if necessary
             max_length = app.config.needs_role_need_max_title_length
-            if max_length > 3 and len(dict_need["title"]) > max_length:
+            if 3 < max_length < len(dict_need["title"]):
                 title = dict_need["title"]
                 title = f"{title[: max_length - 3]}..."
                 dict_need["title"] = title

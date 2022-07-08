@@ -1,3 +1,5 @@
+.. _changelog:
+
 Changelog & License
 ===================
 
@@ -11,6 +13,7 @@ License
 Under development
 
 * Improvement: Provides :ref:`needuml` for powerful, reusable Need objects.
+* Improvement: Provides :ref:`needreport` for documenting configuration used in a **Sphinx-Needs** project's **conf.py**.
 * Bugfix: Support embedded needs in embedded needs.
   (`#486 <https://github.com/useblocks/sphinxcontrib-needs/issues/486>`_)
 * Bugfix: Correct references in :ref:`needtables <needtable>` to be external or internal instead of always external.
@@ -24,7 +27,7 @@ Under development
   (`#516 <https://github.com/useblocks/sphinxcontrib-needs/issues/516>`_)
 * Improvement: Added `needs_constraints` option. Constraints can be set for individual needs and describe properties
   a need has to meet.
-* Improvement: Added customizable link text of :ref:`:Need: <needref>`.
+* Improvement: Added customizable link text of :ref:`Need <needref>`.
   (`#439 <https://github.com/useblocks/sphinxcontrib-needs/discussions/439>`_)
 * Bugfix: Fixed lsp needs.json path check.
   (`#603 <https://github.com/useblocks/sphinxcontrib-needs/issues/603>`_,
@@ -36,7 +39,7 @@ Released: 10.05.2022
 
 * Improvement: Add permanent link layout function.
   (`#390 <https://github.com/useblocks/sphinxcontrib-needs/issues/390>`_)
-* Improvement: Support for Sphinx-Needs Docker Image.
+* Improvement: Support for **Sphinx-Needs** Docker Image.
   (`#531 <https://github.com/useblocks/sphinxcontrib-needs/issues/531>`_)  
 * Bugfix: :ref:`needextract` not correctly rendering nested :ref:`needs <need>`.
   (`#329 <https://github.com/useblocks/sphinxcontrib-needs/issues/329>`_)

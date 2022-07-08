@@ -209,7 +209,8 @@ def add_need(
         # Check if tag is in needs_tags. If not raise an error.
         if app.config.needs_tags:
             for tag in tags:
-                if tag not in [tag["name"] for tag in app.config.needs_tags]:
+                needs_tags = [tag["name"] for tag in app.config.needs_tags]
+                if tag not in needs_tags:
                     raise NeedsTagNotAllowed(
                         f"Tag {tag} of need id {need_id} is not allowed " "by config value 'needs_tags'."
                     )

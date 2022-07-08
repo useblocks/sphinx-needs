@@ -28,21 +28,22 @@ use case.
 
 ``sphinxneeds:<tag>``
 ~~~~~~~~~~~~~~~~~~~~~
+.. _latest_version:
 
-This is the defacto image (size ~ 350MB). If you are unsure about what
-your requirements are, you probably want to use this one. It is designed to be
-used both as a throw away container (mount your documentation and start
-the container), as well as the base to build your own images.
+This is the defacto docker image (size ~ 350MB). If you are not sure about what
+your requirements are, you probably want to use this one.
+You can use it as a throw away container (mount your documentation and start
+the container), as well as the base to build your own docker images.
 
 .. note::
-   The image does not include latex packages and therefore does 
-   not support PDF generation. Please use the latex-pdf version below for 
+   The docker image does not include latex packages and therefore does
+   not support PDF generation. Please use the latex-pdf version below for
    such use cases.
 
 Included Tools
 ^^^^^^^^^^^^^^
 
-The image is based on the `sphinx
+The image is based on `sphinx
 image <https://hub.docker.com/r/sphinxdoc/sphinx>`__ and includes the
 following tools.
 
@@ -65,14 +66,14 @@ following tools.
 ``sphinxneeds-latexpdf:<tag>``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This image includes all the tools in the ``sphinxneeds:latest`` image
-and additionally pdf generation tools. The image is ~ 1.5GB large.
+This docker image includes all the tools in the :ref:`sphinxneeds:latest <latest_version>` image
+and additionally PDF generation tools. The image is ~ 1.5GB large.
 
 
 Included Tools
 ^^^^^^^^^^^^^^
 
-The image is based on the `sphinx latexpdf
+The docker image is based on the `sphinx latexpdf
 image <https://hub.docker.com/r/sphinxdoc/sphinx-latexpdf>`__ and
 includes the following tools.
 
@@ -108,7 +109,7 @@ To use the images, install and configure `Docker <https://www.docker.com/>`__.
 Pulling the Image from Docker Hub
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The image can be pulled by
+The docker image can be pulled by
 
 .. code:: bash
 
@@ -132,12 +133,12 @@ For example,
 Build The Image Locally
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-| To build the image locally, execute the following.
+To build the image locally, execute the following commands.
 
 .. code:: bash
 
    cd docker && ./build_docker.sh
-   
+
 .. note::
    The script allows to choose between html and pdf version and
    the Sphinx-Needs version to be installed.
@@ -165,6 +166,8 @@ Windows (Powershell)
 .. code:: bash
 
    docker run --rm -it -v ${PWD}:/sphinxneeds danwos/sphinxneeds:latest <build-command>
+
+.. _build-command:
 
 ``<build-command>``\ s to be used are:
 
@@ -215,4 +218,5 @@ Windows (Powershell)
 
    docker run --rm -it -v ${PWD}:/sphinxneeds danwos/sphinxneeds:latest bash
 
-Once inside the docker container shell, execute a ``<build-command>``
+Once inside the docker container shell, you can execute :ref:`docs build command <build-command>`
+

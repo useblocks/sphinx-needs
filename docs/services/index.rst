@@ -14,6 +14,7 @@ Up to now **Sphinx-Needs** provides the following services:
    :maxdepth: 1
 
    github
+   open_needs
 
 Use the directive :ref:`needservice` to execute a service and get need objects back.
 
