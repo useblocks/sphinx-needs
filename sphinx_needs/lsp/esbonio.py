@@ -19,8 +19,31 @@ from pygls.lsp.types import (
     Range,
     TextEdit,
 )
+from sphinx.application import Sphinx
 
 from sphinx_needs.lsp.needs_store import NeedsStore
+
+
+def get_needs_json(app: Sphinx) -> Optional[Path]:
+    """
+    Get the location of needs.json.
+    """
+
+    needs_json = None
+    # check if needs.json is built automatically during each sphinx-build,
+    # which requres needs_build_json = True in conf.py
+    outdir = Path(app.outdir)
+    if getattr(app.config, "needs_build_json", False):
+        needs_json = outdir / "needs.json"
+    else:
+        # needs.json is manually built, need to check directory buildDir
+        # check buildDir/needs.json, e,g, _build/needs.json, when user using: sphinx-build -b needs srcdir buiddir
+        if app.builder and hasattr(app.builder, "name"):
+            curr_builder = app.builder.name
+            builddir = Path(app.outdir[: -len(curr_builder)])
+            needs_json = builddir / "needs.json"
+
+    return needs_json
 
 
 class NeedlsFeatures(LanguageFeature):
@@ -36,13 +59,17 @@ class NeedlsFeatures(LanguageFeature):
     def complete(self, context: CompletionContext) -> List[CompletionItem]:
 
         if isinstance(self.rst, SphinxLanguageServer) and self.rst.app:
+            # get and check needs.json path
+            needs_json = get_needs_json(self.rst.app)
+            if not (needs_json and needs_json.exists()):
+                self.logger.warning(f"needs.json {needs_json} not exists. No Sphinx-Needs language features activated.")
+                return []
+
             # load needs.json
-            confdir = Path(self.rst.app.confdir)
-            needs_json = confdir / "_build/needs/needs.json"
             self.needs_store.load_needs(needs_json)
 
             # check and set conf.py path
-            conf_py_path = confdir / "conf.py"
+            conf_py_path = Path(self.rst.app.confdir) / "conf.py"
             self.needs_store.set_conf_py(conf_py_path)
             # set declared need types
             self.needs_store.set_declared_types()
@@ -84,9 +111,13 @@ class NeedlsFeatures(LanguageFeature):
         self.logger.debug(f"hover params: {context}")
 
         if isinstance(self.rst, SphinxLanguageServer) and self.rst.app:
+            # get and check needs.json path
+            needs_json = get_needs_json(self.rst.app)
+            if not (needs_json and needs_json.exists()):
+                self.logger.warning(f"needs.json {needs_json} not exists. No Sphinx-Needs language features activated.")
+                return ""
+
             # load needs.json
-            confdir = Path(self.rst.app.confdir)
-            needs_json = confdir / "_build/needs/needs.json"
             self.needs_store.load_needs(needs_json)
 
             try:
@@ -111,9 +142,13 @@ class NeedlsFeatures(LanguageFeature):
     def definition(self, context: DefinitionContext) -> List[Location]:
         """Return location of definition of a need."""
         if isinstance(self.rst, SphinxLanguageServer) and self.rst.app:
+            # get and check needs.json path
+            needs_json = get_needs_json(self.rst.app)
+            if not (needs_json and needs_json.exists()):
+                self.logger.warning(f"needs.json {needs_json} not exists. No Sphinx-Needs language features activated.")
+                return []
+
             # load needs.json
-            confdir = Path(self.rst.app.confdir)
-            needs_json = confdir / "_build/needs/needs.json"
             self.needs_store.load_needs(needs_json)
 
             if not self.needs_store.is_setup():
@@ -127,7 +162,7 @@ class NeedlsFeatures(LanguageFeature):
             except KeyError:
                 return []
 
-            doc_path = confdir / typing.cast(str, need["docname"])
+            doc_path = Path(self.rst.app.confdir) / typing.cast(str, need["docname"])
             if doc_path.with_suffix(".rst").exists():
                 doc_path = doc_path.with_suffix(".rst")
             elif doc_path.with_suffix(".rest").exists():

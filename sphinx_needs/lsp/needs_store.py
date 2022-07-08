@@ -83,9 +83,6 @@ class NeedsStore:
         self.types = []
         self.needs = {}
 
-        if not json_file.exists():
-            raise FileNotFoundError(f"JSON file not found: {json_file}")
-
         with open(json_file, encoding="utf-8") as file:
             needs_json = json.load(file)
 

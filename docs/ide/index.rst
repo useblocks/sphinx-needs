@@ -60,12 +60,10 @@ To use all the Sphinx-Needs language featues,
 
 * Install IDE extension or plugin, see current supported IDE extension in :ref:`ide_installation`.
 
-* Build needs.json file under path `{confdir}/_build/needs` in your Sphinx-Needs project, see how to build needs.json in :ref:`builders`.
+* Build `needs.json` file in your Sphinx-Needs project:
 
-.. note::
-
-   Currently as long as needs.json exists under `{confdir}/_build/needs` in your sphinx needs project, all the features are available
-   if your IDE extension or plugin supports `Esbonio language server <https://github.com/swyddfa/esbonio>`_.
+   * automatically build `needs.json` if configure `needs_json_build = True` in conf.py. See details in :ref:`needs_build_json`.
+   * manually build `needs.json` using `sphinx-build -b needs source_dir build_dir`. See details in :ref:`builders`.
 
 Auto-generated need IDs
 ~~~~~~~~~~~~~~~~~~~~~~~
