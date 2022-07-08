@@ -48,7 +48,8 @@ The VsCode extension `reStructuredText <https://github.com/vscode-restructuredte
 language features and is available at `Visual Studio Marketplace <https://marketplace.visualstudio.com/items?itemName=lextudio.restructuredtext>`_.
 
 To install and configure this extension, see details in
-`How to install reStructuredText from Marketplace <https://github.com/vscode-restructuredtext/vscode-restructuredtext#how-to-install-from-marketplace>`_ and
+`How to install reStructuredText from Marketplace <https://github.com/vscode-restructuredtext/vscode-restructuredtext>`_ and
+
 `How to use it <https://docs.restructuredtext.net/>`_.
 
 .. _ide_usage:

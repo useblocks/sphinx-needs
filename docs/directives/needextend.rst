@@ -71,6 +71,9 @@ Also, you can add links or delete tags.
    :+tags: new_tag
    :+links: FEATURE_2, FEATURE_3
 
+.. This is a useless comment, but needed to supress a bug in docutils 0.18.1 , which can not handle
+.. the above needextend if followed by a new sections. 
+
 
 Single need modification
 ------------------------

@@ -449,6 +449,7 @@ One more thing ...
    services/index
    layout_styles
    examples/index
+   ide/index
    utils
 
 .. toctree::

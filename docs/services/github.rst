@@ -24,10 +24,12 @@ Each services creates normally multiple need objects for each element found by q
        :query: repo:useblocks/sphinxcontrib-needs node latexpdf
        :max_content_lines: 4
 
+{% if fast_build != true %}
 .. needservice:: github-issues
    :query: repo:useblocks/sphinxcontrib-needs node latexpdf
    :max_amount: 1
    :max_content_lines: 4
+{% endif %}
 
 Directive options, which can also used for normal needs, can also be set for ``needservice`` directive.
 Also the content part of ``needservice`` is added as extra data to the end of the finally created needs.
@@ -49,6 +51,7 @@ Also the content part of ``needservice`` is added as extra data to the end of th
 
        Extra content for each new need
 
+{% if fast_build != true %}
 .. needservice:: github-issues
    :type: spec
    :author: Me
@@ -61,6 +64,7 @@ Also the content part of ``needservice`` is added as extra data to the end of th
    :style: discreet
 
    Extra content for each new need
+{%endif%}
 
 Querying objects
 ----------------
@@ -97,8 +101,10 @@ This loads all open issues, which have the strings *needtable* and *viewports* i
     .. needservice:: github-issues
        :query: repo:useblocks/sphinxcontrib-needs state:open needtable viewports
 
+{% if fast_build != true %}
 .. needservice:: github-issues
    :query: repo:useblocks/sphinxcontrib-needs state:open needtable viewports
+{%endif%}
 
 specific
 ++++++++
@@ -117,9 +123,10 @@ This query fetches a specific pull request with the id 161.
     .. needservice:: github-prs
        :specific: useblocks/sphinxcontrib-needs/161
 
+{% if fast_build != true %}
 .. needservice:: github-prs
    :specific: useblocks/sphinxcontrib-needs/161
-
+{%endif%}
 
 .. _service_github_config:
 
@@ -186,6 +193,7 @@ directive :ref:`needservice`.
        :layout: focus_l
        :style: blue_border
 
+{% if fast_build != true %}
 .. needservice:: github-issues
    :query: repo:useblocks/sphinxcontrib-needs node latexpdf
    :max_amount: 1
@@ -193,7 +201,7 @@ directive :ref:`needservice`.
    :id_prefix: GH2_
    :layout: focus_l
    :style: blue_border
-
+{%endif%}
 
 Need type
 +++++++++

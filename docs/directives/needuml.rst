@@ -1,6 +1,7 @@
+{% raw %}
+
 .. _needuml:
 
-{% raw %}
 needuml
 =======
 
