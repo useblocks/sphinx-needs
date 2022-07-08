@@ -17,15 +17,15 @@ Using pip
 
 .. note::
 
-   Prior version **1.0.1** the package was named ``sphinxcontrib-needs``.
+   Prior version **1.0.1** the package was named ``sphinx-needs``.
 
 Using sources
 -------------
 
 .. code-block:: bash
 
-    git clone https://github.com/useblocks/sphinxcontrib-needs
-    cd sphinxcontrib-needs
+    git clone https://github.com/useblocks/sphinx-needs
+    cd sphinx-needs
     pip install .
     # or
     poetry install

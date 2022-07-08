@@ -79,7 +79,7 @@ their content.
 .. code-block:: rst
 
     .. needservice:: github-issues
-       :query: repo:useblocks/sphinxcontrib-needs node latexpdf
+       :query: repo:useblocks/sphinx-needs node latexpdf
        :max_content_lines: 4
        :id_prefix: EXAMPLE_
 
@@ -89,7 +89,7 @@ Click the small arrow under the need id to see all meta data.
 |out|
 
 .. needservice:: github-issues
-   :query: repo:useblocks/sphinxcontrib-needs node latexpdf
+   :query: repo:useblocks/sphinx-needs node latexpdf
    :max_amount: 1
    :id_prefix: EXAMPLE_
    :max_content_lines: 4

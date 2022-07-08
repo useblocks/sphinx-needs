@@ -15,8 +15,8 @@ Image                                    Build Status
 ``danwos/sphinxneeds-latexpdf:latest``   |sphinxneeds-status|
 =======================================  ==================== 
 
-.. |sphinxneeds-status| image:: https://github.com/useblocks/sphinxcontrib-needs/actions/workflows/docker.yaml/badge.svg
-   :target: https://github.com/useblocks/sphinxcontrib-needs/actions/workflows/docker.yaml
+.. |sphinxneeds-status| image:: https://github.com/useblocks/sphinx-needs/actions/workflows/docker.yaml/badge.svg
+   :target: https://github.com/useblocks/sphinx-needs/actions/workflows/docker.yaml
 
 
 
@@ -54,7 +54,7 @@ following tools.
 +------------------------+
 | sphinx                 |
 +------------------------+
-| sphinxcontrib-needs    |
+| sphinx-needs           |
 +------------------------+
 | sphinxcontrib-plantuml |
 +------------------------+
@@ -84,7 +84,7 @@ includes the following tools.
 +------------------------+
 | sphinx                 |
 +------------------------+
-| sphinxcontrib-needs    |
+| sphinx-needs           |
 +------------------------+
 | sphinxcontrib-plantuml |
 +------------------------+
