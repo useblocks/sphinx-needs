@@ -604,6 +604,7 @@ def setup(app: Sphinx) -> None:
 
 
 # LINKCHECK config
+# https://www.sphinx-doc.org/en/master/usage/configuration.html?highlight=linkcheck#options-for-the-linkcheck-builder
 linkcheck_ignore = [r"http://localhost:\d+/", r"http://127.0.0.1:\d+/"]
 
 linkcheck_request_headers = {
