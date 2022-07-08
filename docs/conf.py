@@ -601,3 +601,13 @@ def setup(app: Sphinx) -> None:
     print(f"---> ON_CI is: {on_ci}")
     print(f"---> FAST_BUILD is: {fast_build}")
     app.connect("source-read", rstjinja)
+
+
+# LINKCHECK config
+linkcheck_ignore = [r"http://localhost:\d+/", r"http://127.0.0.1:\d+/"]
+
+linkcheck_request_headers = {
+    "*": {
+        "User-Agent": "Mozilla/5.0",
+    }
+}
