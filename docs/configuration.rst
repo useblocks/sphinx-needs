@@ -1599,14 +1599,14 @@ link name and url.
         # Adds link to the Sphinx-Needs configuration page
         'config_link': {
             'regex': r'^(?P<value>\w+)$',
-            'link_url': 'https://sphinxcontrib-needs.readthedocs.io/en/latest/configuration.html#{{value | replace("_", "-")}}',
+            'link_url': 'https://sphinx-needs.readthedocs.io/en/latest/configuration.html#{{value | replace("_", "-")}}',
             'link_name': 'Sphinx-Needs docs for {{value | replace("_", "-") }}',
             'options': ['config']
         },
         # Links to the related github issue
         'github_link': {
             'regex': r'^(?P<value>\w+)$',
-            'link_url': 'https://github.com/useblocks/sphinxcontrib-needs/issues/{{value}}',
+            'link_url': 'https://github.com/useblocks/sphinx-needs/issues/{{value}}',
             'link_name': 'GitHub #{{value}}',
             'options': ['github']
         }
