@@ -30,6 +30,11 @@
    :width: 100%
    :class: needs-logo-big
 
+.. warning::
+
+   The project was renamed from **sphinxcontrib-needs** to **sphinx-needs**.
+   This affects all URLs and package names.
+
 Requirements, Bugs, Test cases, ... inside Sphinx
 =================================================
 
