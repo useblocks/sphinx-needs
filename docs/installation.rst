@@ -17,7 +17,7 @@ Using pip
 
 .. note::
 
-   Prior version **1.0.1** the package was named ``sphinx-needs``.
+   Prior version **1.0.1** the package was named ``sphinxcontrib-needs``.
 
 Using sources
 -------------

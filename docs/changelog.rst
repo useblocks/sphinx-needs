@@ -8,10 +8,16 @@ License
 
 .. include:: ../LICENSE
 
-1.0.1
+1.0.2
 -----
 Under development
 
+1.0.1
+-----
+Released: 11.07.2022
+
+* Notice: **Sphinx <5.0 is no longer supported.**
+* Notice: **Docutils <0.18.1 is no longer supported.**
 * Improvement: Provides :ref:`needuml` for powerful, reusable Need objects.
 * Improvement: Provides :ref:`needreport` for documenting configuration used in a **Sphinx-Needs** project's **conf.py**.
 * Improvement: Provides initial support for Sphinx-Needs IDE language features.
