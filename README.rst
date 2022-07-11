@@ -1,12 +1,10 @@
 **Complete documentation**: http://sphinx-needs.readthedocs.io/en/latest/
 
------ 
-
 **Attention**: ``sphinxcontrib-needs`` got renamed to ``sphinx-needs``. This affects also the URLs for documentation and repository:
 
 * Docs: https://sphinx-needs.readthedocs.io/en/latest/
 * Repo: https://github.com/useblocks/sphinx-needs
------
+
 
 Introduction
 ============
