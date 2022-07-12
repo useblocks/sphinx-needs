@@ -38,7 +38,13 @@ class NeedumlDirective(Directive):
         if not hasattr(env, "needs_all_needumls"):
             env.needs_all_needumls = {}
 
-        targetid = "needuml-{docname}-{id}".format(docname=env.docname, id=env.new_serialno("needuml"))
+        if self.name == "needarch":
+            targetid = "needarch-{docname}-{id}".format(docname=env.docname, id=env.new_serialno("needarch"))
+            is_arch = True
+        else:
+            targetid = "needuml-{docname}-{id}".format(docname=env.docname, id=env.new_serialno("needuml"))
+            is_arch = False
+
         targetnode = nodes.target("", "", ids=[targetid])
 
         scale = self.options.get("scale", "").replace("%", "")
@@ -92,6 +98,7 @@ class NeedumlDirective(Directive):
             "extra": extra_dict,
             "key": key_name,
             "save": plantuml_code_out_path,
+            "is_arch": is_arch,
         }
 
         return [targetnode] + [Needuml(targetid)]
