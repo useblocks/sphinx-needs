@@ -69,7 +69,7 @@ class NeedlsFeatures(LanguageFeature):
             self.needs_store.load_needs(needs_json)
 
             # check and set conf.py path
-            conf_py_path = Path(self.rst.app.confdir) / "conf.py"
+            conf_py_path = Path(self.rst.app.srcdir) / "conf.py"
             self.needs_store.set_conf_py(conf_py_path)
             # set declared need types
             self.needs_store.set_declared_types()
@@ -162,7 +162,7 @@ class NeedlsFeatures(LanguageFeature):
             except KeyError:
                 return []
 
-            doc_path = Path(self.rst.app.confdir) / typing.cast(str, need["docname"])
+            doc_path = Path(self.rst.app.srcdir) / typing.cast(str, need["docname"])
             if doc_path.with_suffix(".rst").exists():
                 doc_path = doc_path.with_suffix(".rst")
             elif doc_path.with_suffix(".rest").exists():

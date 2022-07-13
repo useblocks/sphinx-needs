@@ -27,14 +27,14 @@ class NeedsBuilder(Builder):
         filters = env.needs_all_filters
         config = env.config
         version = getattr(config, "version", "unset")
-        needs_list = NeedsList(config, self.outdir, self.confdir)
+        needs_list = NeedsList(config, self.outdir, self.srcdir)
 
         if config.needs_file:
             needs_file = config.needs_file
             needs_list.load_json(needs_file)
         else:
             # check if needs.json file exists in conf.py directory
-            needs_json = os.path.join(self.confdir, "needs.json")
+            needs_json = os.path.join(self.srcdir, "needs.json")
             if os.path.exists(needs_json):
                 log.info("needs.json found, but will not be used because needs_file not configured.")
 

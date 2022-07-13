@@ -49,7 +49,7 @@ class NeedReportDirective(Directive):
 
         need_report_template_path: str = env.app.config.needs_report_template
         # Absolute path starts with /, based on the conf.py directory. The / need to be striped
-        correct_need_report_template_path = os.path.join(env.app.confdir, need_report_template_path.lstrip("/"))
+        correct_need_report_template_path = os.path.join(env.app.srcdir, need_report_template_path.lstrip("/"))
 
         if len(need_report_template_path) == 0:
             default_template_path = "needreport_template.rst"
