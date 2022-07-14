@@ -1,5 +1,5 @@
 TEST DOCUMENT NEEDUML
-======================
+=====================
 
 .. story:: Test story
    :id: ST_001
@@ -53,7 +53,6 @@ TEST DOCUMENT NEEDUML
    sys_2 --> int
 
 
-
 .. needuml::
    :scale: 50%
    :align: center
@@ -67,3 +66,78 @@ TEST DOCUMENT NEEDUML
 
    {{uml("SYS_001")}}
 
+
+.. int:: Test interface2
+   :id: INT_002
+
+   .. needuml::
+      :scale: 50%
+      :align: center
+      :config: mixing
+
+      class "{{needs['ST_001'].title}}" as test {
+         implement
+         {{needs['ST_001'].status}}
+      }
+
+      {{uml("SYS_001")}}
+
+   .. needuml::
+      :scale: 50%
+      :align: center
+      :config: mixing
+      :key: sequence
+
+      Alice -> Bob: Hi Bob
+      Bob --> Alice: Hi Alice
+
+
+.. int:: Test interface3
+   :id: INT_003
+
+   .. needuml::
+      :key: class
+
+      class "{{needs['ST_001'].title}}" as test {
+         implement
+         {{needs['ST_001'].status}}
+      }
+
+      {{uml("INT_002", "sequence")}}
+
+   .. needuml::
+      :key: sequence
+
+      Alice -> Bob: Hi Bob
+      Bob --> Alice: Hi Alice
+
+
+.. int:: Test interface4
+   :id: INT_004
+
+   .. needuml::
+      :scale: 50%
+      :key: class
+
+      class "{{needs['ST_001'].title}}" as test {
+         implement
+         {{needs['ST_001'].status}}
+      }
+
+      {{uml("SYS_001")}}
+
+   .. needuml::
+
+      Superman -> Batman: Hi Bruce
+      Batman --> Superman: Hi Clark
+
+   .. needuml::
+      :key: sequence
+
+      DC -> Marvel: Hi Kevin
+      Marvel --> DC: Anyone there?
+
+   .. needuml::
+
+      Alice -> Bob: Hi Bob
+      Bob --> Alice: Hi Alice

@@ -5,7 +5,7 @@
 needuml
 =======
 
-``neduml`` behaves exactly like the ``uml`` directive from the Sphinx extension
+``needuml`` behaves exactly like the ``uml`` directive from the Sphinx extension
 `Sphinxcontrib-PlantUML <https://github.com/sphinx-contrib/plantuml/>`_.
 So it allows to define PlantUML diagrams.
 
@@ -98,6 +98,60 @@ Helpful to identify reasons why a PlantUML build may have thrown errors.
       card "Peter"
    }
 
+key
+~~~
+
+Allows to store multiple ``needuml`` inside a need under the given key. If no option key given, then
+the first ``needuml`` will be stored in the need under ``diagram``. Option ``:key:`` value can't be empty,
+and can't be ``diagram``. 
+
+|ex|
+
+.. code-block:: rst
+
+   .. comp:: Component Y
+      :id: COMP_002
+
+      .. needuml::
+         :key: sequence
+
+         Alice -> Bob: Hi Bob
+         Bob --> Alice: Hi Alice
+
+      .. needuml::
+         :key: class
+
+         class System_A as A {
+            todo
+            open
+         }
+
+      .. needuml::
+
+         B -> C: Hi
+         C -> B: Hi there
+
+|out|
+
+.. comp:: Component Y
+   :id: COMP_002
+
+   .. needuml::
+      :key: sequence
+
+      Alice -> Bob: Hi Bob
+      Bob --> Alice: Hi Alice
+
+   .. needuml::
+      :key: class
+
+      class Foo
+
+   .. needuml::
+
+      B -> C: Hi
+      C -> B: Hi there
+
 Jinja context
 -------------
 When using Jinja statements, the following objects and functions are available.
@@ -172,6 +226,32 @@ Please read :ref:`need_diagram` for details.
 
    {{uml("COMP_001")}}
    {{uml("FEATURE_1")}}
+
+Key argument
+++++++++++++
+
+:ref:`uml() <jinja_uml>` supports ``key`` argument to define which PlantUML code to load from the Sphinx-Need object.
+``key`` value by default is ``diagram``. If no key argument given, then load the PlantUML code from ``diagram``.
+
+|ex|
+
+.. code-block:: rst
+
+   .. comp:: Z
+      :id: COMP_Z
+
+      .. needuml::
+
+         {{uml('COMP_002', 'sequence')}}
+
+|out|
+
+.. comp:: Z
+   :id: COMP_Z
+
+   .. needuml::
+
+      {{uml('COMP_002', 'sequence')}}
 
 Additional keyword arguments
 ++++++++++++++++++++++++++++

@@ -21,7 +21,7 @@ from sphinx_needs.api.exceptions import (
     NeedsTagNotAllowed,
     NeedsTemplateException,
 )
-from sphinx_needs.directives.needuml import Needuml
+from sphinx_needs.directives.needuml import Needuml, NeedumlException
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import get_logger
 from sphinx_needs.nodes import Need
@@ -412,16 +412,31 @@ def add_need(
 
     node_need_content = _render_template(content, docname, lineno, state)
 
-    # Extract first plantuml diagram
+    # Extract plantuml diagrams
+    node_need_needumls_without_key = []
+    node_need_needumls_key_names = []
     for child in node_need_content.children:
         if isinstance(child, Needuml):
             needuml_id = child.rawsource
             try:
                 needuml = env.needs_all_needumls.get(needuml_id)
-                needs_info["diagram"] = needuml["content"]
+                if needuml["key"]:
+                    key_name = needuml["key"]
+                    if key_name not in node_need_needumls_key_names:
+                        needs_info[key_name] = needuml["content"]
+                        node_need_needumls_key_names.append(key_name)
+                    else:
+                        raise NeedumlException(
+                            f"Inside need: {need_id}, found duplicate Needuml option key name: {key_name}"
+                        )
+                else:
+                    node_need_needumls_without_key.append(needuml)
             except KeyError:
                 pass
-            break  # We only handle the first needuml-node as the main one.
+
+    # only store the first needuml-node which has no key option under diagram
+    if node_need_needumls_without_key:
+        needs_info["diagram"] = node_need_needumls_without_key[0]["content"]
 
     need_parts = find_parts(node_need_content)
     update_need_with_parts(env, needs_info, need_parts)
