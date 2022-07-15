@@ -231,7 +231,7 @@ Key argument
 ++++++++++++
 
 :ref:`uml() <jinja_uml>` supports ``key`` argument to define which PlantUML code to load from the Sphinx-Need object.
-``key`` value by default is ``diagram``. If no key argument given, then load the PlantUML code from ``diagram``.
+``key`` value by default is ``diagram``. If no key argument given, then the PlantUML code is loaded from ``diagram``.
 
 |ex|
 

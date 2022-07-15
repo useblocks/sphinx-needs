@@ -125,3 +125,65 @@ def test_needuml_jinja_uml_key(test_app):
 
     assert curr_needuml["key"] == "class"
     assert '{{uml("INT_002", "sequence")}}' in curr_needuml["content"]
+
+
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needuml_key_exists_in_extra_links"}], indirect=True
+)
+def test_needuml_key_exists_in_extra_links(test_app):
+    import subprocess
+
+    app = test_app
+
+    srcdir = Path(app.srcdir)
+    out_dir = srcdir / "_build"
+
+    out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
+    assert out.returncode == 1
+
+    assert (
+        "sphinx_needs.directives.needuml.NeedumlException: Needuml key: checks, already exists in "
+        "needs_extra_links options: ['links', 'parent_needs', 'checks']" in out.stderr.decode("utf-8")
+    )
+
+
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needuml_key_exists_in_extra_options"}], indirect=True
+)
+def test_needuml_key_exists_in_extra_options(test_app):
+    import subprocess
+
+    app = test_app
+
+    srcdir = Path(app.srcdir)
+    out_dir = srcdir / "_build"
+
+    out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
+    assert out.returncode == 1
+
+    assert (
+        "sphinx_needs.directives.needuml.NeedumlException: Needuml key: my_extra_option, already exists in "
+        "needs_extra_options: ['my_extra_option', 'another_option'," in out.stderr.decode("utf-8")
+    )
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needuml_key_exists_in_need_default_options"}],
+    indirect=True,
+)
+def test_needuml_key_exists_in_need_default_options(test_app):
+    import subprocess
+
+    app = test_app
+
+    srcdir = Path(app.srcdir)
+    out_dir = srcdir / "_build"
+
+    out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
+    assert out.returncode == 1
+
+    assert (
+        "sphinx_needs.directives.needuml.NeedumlException: Needuml key: lineno, already exists in "
+        "need default options: ['docname', 'lineno'," in out.stderr.decode("utf-8")
+    )

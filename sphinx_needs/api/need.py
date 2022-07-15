@@ -420,15 +420,40 @@ def add_need(
             needuml_id = child.rawsource
             try:
                 needuml = env.needs_all_needumls.get(needuml_id)
-                if needuml["key"]:
-                    key_name = needuml["key"]
+                key_name = needuml["key"]
+                # check if key_name already exists in the need, or defined in needs_extra_options, or need_extra_links
+                if key_name in needs_info:
+                    if key_name in link_names:
+                        raise NeedumlException(
+                            f"Needuml key: {key_name}, already exists in needs_extra_links options: {link_names}"
+                        )
+                    elif key_name in needs_extra_option_names:
+                        raise NeedumlException(
+                            f"Needuml key: {key_name}, already exists in needs_extra_options: {list(needs_extra_option_names)}"
+                        )
+                    else:
+                        if key_name in node_need_needumls_key_names:
+                            raise NeedumlException(
+                                f"Inside need: {need_id}, found duplicate Needuml option key name: {key_name}"
+                            )
+                        else:
+                            diff_options = (
+                                set(needs_extra_option_names)
+                                .difference(set(needs_info.keys()))
+                                .difference(set(link_names))
+                            )
+                            if not diff_options:
+                                default_options = list(needs_info.keys())
+                            else:
+                                default_options = diff_options
+                            raise NeedumlException(
+                                f"Needuml key: {key_name}, already exists in need default options: {default_options}"
+                            )
+
+                if key_name:
                     if key_name not in node_need_needumls_key_names:
                         needs_info[key_name] = needuml["content"]
                         node_need_needumls_key_names.append(key_name)
-                    else:
-                        raise NeedumlException(
-                            f"Inside need: {need_id}, found duplicate Needuml option key name: {key_name}"
-                        )
                 else:
                     node_need_needumls_without_key.append(needuml)
             except KeyError:
