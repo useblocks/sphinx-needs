@@ -880,11 +880,15 @@ class LayoutHandler:
 
         if collapsed.startswith("image:") or collapsed.startswith("icon:"):
             coll_node_collapsed.append(self.image(collapsed.replace("image:", ""), width="17px", no_link=True))
+        elif collapsed.startswith("Debug view"):
+            coll_node_collapsed.append(nodes.container(classes=["debug_on_layout_btn"]))  # For debug layout
         else:
             coll_node_collapsed.append(nodes.Text(collapsed))
 
         if visible.startswith("image:") or visible.startswith("icon:"):
             coll_node_visible.append(self.image(visible.replace("image:", ""), width="17px", no_link=True))
+        elif visible.startswith("Debug view"):
+            coll_node_visible.append(nodes.container(classes=["debug_off_layout_btn"]))
         else:
             coll_node_visible.append(nodes.Text(visible))
 
