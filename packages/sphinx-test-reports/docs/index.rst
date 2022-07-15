@@ -53,7 +53,7 @@ Take a look into our :ref:`pytest example <example_pytest>` to see the complete 
 (:need_count:`'pytest_sphinx' in tags` test cases!).
 
 The objects created by ``Sphinx-Test-Reports`` are based on
-`Sphinx-Needs <https://sphinxcontrib-needs.readthedocs.io/en/latest/>`_.
+`Sphinx-Needs <https://sphinx-needs.readthedocs.io/en/latest/>`_.
 So all features for filtering, sorting and showing data is supported.
 
 As example, here is a shorten list of tests results from the Sphinx-pytest example:
@@ -85,116 +85,143 @@ Content
 
 Sphinx-Needs Ecosystem
 ----------------------
-In the last years additional information and extensions have been created, which are based or related to Sphinx-Needs:
+In the last years, we have created additional information and extensions, which are based on or related to Sphinx-Needs:
+
+.. grid:: 2
+    :gutter: 2
+
+    .. grid-item-card::
+        :columns: 12 6 6 6
+        :link: https://sphinx-needs.com
+        :img-top: /_static/sphinx-needs-card.png
+        :class-card: border
+
+        Sphinx-Needs.com
+        ^^^^^^^^^^^^^^^^
+        The website presents the essential Sphinx-Needs functions and related extensions.
+
+        Also, it is a good entry point to understand the benefits and get an idea about the complete ecosystem of Sphinx-Needs.
+        +++
+
+        .. button-link:: https://sphinx-needs.com
+            :color: primary
+            :outline:
+            :align: center
+            :expand:
+
+            :octicon:`globe;1em;sd-text-primary` Sphinx-Needs.com
+
+    .. grid-item-card::
+        :columns: 12 6 6 6
+        :link: https://sphinx-needs.readthedocs.io/en/latest/
+        :img-top: /_static/sphinx-needs-card.png
+        :class-card: border
+
+        Sphinx-Needs
+        ^^^^^^^^^^^^
+        Create, update, link, filter and present need objects like Requirements, Specifications, Bugs and many more.
+
+        The base extension provides all of its functionality under the MIT license for free.
+        +++
+
+        .. button-link:: https://sphinx-needs.readthedocs.io/en/latest/
+            :color: primary
+            :outline:
+            :align: center
+            :expand:
+
+            :octicon:`book;1em;sd-text-primary` Technical Docs
+
+    .. grid-item-card::
+        :columns: 12 6 6 6
+        :link: https://useblocks.com/sphinx-needs-enterprise/
+        :img-top: /_static/sphinx-needs-enterprise-card.png
+        :class-card: border
+
+        Sphinx-Needs Enterprise
+        ^^^^^^^^^^^^^^^^^^^^^^^
+        Synchronize Sphinx-Needs data with external, company internal systems like CodeBeamer, Jira or Azure Boards.
+
+        Provides scripts to baseline data and makes CI usage easier.
+        +++
+
+        .. button-link:: http://useblocks.com/sphinx-needs-enterprise/
+            :color: primary
+            :outline:
+            :align: center
+            :expand:
+
+            :octicon:`book;1em;sd-text-primary` Technical Docs
+
+    .. grid-item-card::
+        :columns: 12 6 6 6
+        :link: https://sphinx-test-reports.readthedocs.io/en/latest/
+        :img-top: /_static/sphinx-test-reports-logo.png
+        :class-card: border
+
+        Sphinx-Test-Reports
+        ^^^^^^^^^^^^^^^^^^^
+        Extension to import test results from XML files as **need** objects.
+
+        Created **need** objects can be filtered and linked to specification objects.
+        +++
+
+        .. button-link:: https://sphinx-test-reports.readthedocs.io/en/latest/
+            :color: primary
+            :outline:
+            :align: center
+            :expand:
+
+            :octicon:`book;1em;sd-text-primary` Technical Docs
 
 
-.. panels::
-   :container: container-lg pb-3
-   :column: col-lg-6 col-md-6 col-sm-4 col-xs-4 p-2
-   :img-top-cls: pl-5 pr-5 pt-2 pb-2
+Other Sphinx extensions
+~~~~~~~~~~~~~~~~~~~~~~~
+During the use of Sphinx-Needs in popular companies’ internal projects,
+we have created other Sphinx extensions to support the work of teams in the automotive industry:
 
-   ---
-   :img-top: /_static/sphinx-needs-card.png
-   :img-top-cls: + bg-light
+.. grid:: 2
+    :gutter: 2
 
-   Sphinx-Needs.com
-   ^^^^^^^^^^^^^^^^
-   Webpage to present most important Sphinx-Needs functions and related extensions.
+    .. grid-item-card::
+        :columns: 12 6 6 6
+        :link: https://sphinx-collections.readthedocs.io/en/latest/
+        :img-top: /_static/sphinx_collections_logo.png
+        :class-card: border
 
-   Good entrypoint to understand the benefits and to get an idea about the complete ecosystem of Sphinx-Needs.
+        Sphinx Collections
+        ^^^^^^^^^^^^^^^^^^
+        Extension to collect or generate files from different sources and include them in the Sphinx source folder.
 
-   +++
+        It supports sources like Git repositories, Jinja based files or symlinks.
+        +++
 
-   .. link-button:: https://sphinx-needs.com
-       :type: url
-       :text: Sphinx-Needs.com
-       :classes: btn-secondary btn-block
+        .. button-link:: https://sphinx-collections.readthedocs.io/en/latest/
+            :color: primary
+            :outline:
+            :align: center
+            :expand:
 
-   ---
-   :img-top: /_static/sphinx-needs-card.png
+            :octicon:`book;1em;sd-text-primary` Technical Docs
 
-   Sphinx-Needs
-   ^^^^^^^^^^^^
-   Base extension, which provides all of its functionality under the MIT license for free.
+    .. grid-item-card::
+        :columns: 12 6 6 6
+        :link: https://sphinx-bazel.readthedocs.io/en/latest/
+        :img-top: /_static/sphinx_bazel_logo.png
+        :class-card: border
 
-   Create, update, link, filter and present need objects like Requirements, Specifications, Bugs and much more.
+        Sphinx Bazel
+        ^^^^^^^^^^^^
+        Provides a Bazel domain in Sphinx documentation and allows the automated import of Bazel files and their documentation.
+        +++
 
-   +++
+        .. button-link:: https://sphinx-bazel.readthedocs.io/en/latest/
+            :color: primary
+            :outline:
+            :align: center
+            :expand:
 
-   .. link-button:: https://sphinxcontrib-needs.readthedocs.io/en/latest/
-       :type: url
-       :text: Technical docs
-       :classes: btn-secondary btn-block
-
-   ---
-   :img-top: /_static/sphinx-needs-enterprise-card.png
-
-   Sphinx-Needs Enterprise
-   ^^^^^^^^^^^^^^^^^^^^^^^
-   Synchronizes Sphinx-Needs data with external, company internal systems like CodeBeamer, Jira or Azure Boards.
-
-   Provides scripts to baseline data and make CI usage easier.
-   +++
-
-   .. link-button:: http://useblocks.com/sphinx-needs-enterprise/
-       :type: url
-       :text: Technical docs
-       :classes: btn-secondary btn-block
-
-   ---
-   :img-top: /_static/sphinx-test-reports-card.png
-
-   Sphinx-Test-Reports
-   ^^^^^^^^^^^^^^^^^^^
-   Extension to import test results from xml files as need objects.
-
-   Created need objects can be filtered and e.g. linked to specification objects.
-   +++
-
-   .. link-button:: https://sphinx-test-reports.readthedocs.io/en/latest/
-       :type: url
-       :text: Technical docs
-       :classes: btn-secondary btn-block
-
-
-Further Sphinx extensions
-^^^^^^^^^^^^^^^^^^^^^^^^^
-During the work with Sphinx-Needs in bigger, company internal projects, other Sphinx extensions have been created
-to support the work in teams of the automotive industry:
-
-.. panels::
-   :container: container-lg pb-3
-   :column: col-lg-6 col-md-6 col-sm-4 col-xs-4 p-2
-   :img-top-cls: pl-5 pr-5 pt-2 pb-2
-
-   ---
-   :img-top: /_static/sphinx_collections_logo.png
-
-
-   Extension to collect or generate files from different sources and include them into the Sphinx source folder.
-
-   Sources like git repositories, jinja based files or symlinks are supported.
-
-   +++
-
-   .. link-button:: https://sphinx-collections.readthedocs.io/en/latest/
-       :type: url
-       :text: Technical docs
-       :classes: btn-secondary btn-block
-
-   ---
-   :img-top: /_static/sphinx_bazel_logo.png
-
-
-   Provides a Bazel domain in Sphinx documentations and allows the automated import of Bazel files and their
-   documentation.
-
-   +++
-
-   .. link-button:: https://sphinx-bazel.readthedocs.io/en/latest/
-       :type: url
-       :text: Technical docs
-       :classes: btn-secondary btn-block
+            :octicon:`book;1em;sd-text-primary` Technical Docs
 
 
 Motivation
@@ -208,7 +235,7 @@ the parameters of the `ISO 26262 <https://en.wikipedia.org/wiki/ISO_26262>`_ sta
 for safety critical software in automotive companies.
 
 Other tools are:
-`sphinx-needs <http://sphinxcontrib-needs.readthedocs.io/en/latest/>`__,
+`sphinx-needs <http://sphinx-needs.readthedocs.io/en/latest/>`__,
 `sphinx-collections <https://sphinx-collections.readthedocs.io/en/latest/>`__ and
 `tox-envreport <http://tox-envreport.readthedocs.io/en/latest/>`__.
 

@@ -36,7 +36,7 @@ All of the following arguments must be set:
 
 The parameters **2-6** are used to configure the underlying Sphinx-needs.
 See it's
-`documentation about needs_types <https://sphinxcontrib-needs.readthedocs.io/en/latest/configuration.html#needs-types>`_
+`documentation about needs_types <https://sphinx-needs.readthedocs.io/en/latest/configuration.html#needs-types>`_
 for more details.
 
 .. _tr_suite:

@@ -3,7 +3,7 @@ Dynamic functions
 
 Sphinx-Test-Reports provides dynamic functions for Sphinx-Needs.
 
-Read chapter `Dynamic function <https://sphinxcontrib-needs.readthedocs.io/en/latest/dynamic_functions.html>`_
+Read chapter `Dynamic function <https://sphinx-needs.readthedocs.io/en/latest/dynamic_functions.html>`_
 from Sphinx-Needs documentation to know how to use them.
 
 

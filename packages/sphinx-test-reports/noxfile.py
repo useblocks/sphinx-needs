@@ -1,8 +1,8 @@
 import nox
 from nox import session
 
-PYTHON_VERSIONS = ["3.6", "3.8", "3.9", "3.10"]
-SPHINX_VERSIONS = ["3.5", "4.1", "4.3"]
+PYTHON_VERSIONS = ["3.6", "3.8", "3.9"]
+SPHINX_VERSIONS = ["3.5", "4.2", "4.3", "5.0"]
 TEST_DEPENDENCIES = [
     "nose",
     "sphinx_testing",
@@ -16,10 +16,7 @@ LINT_DEPENDENCIES = [
 
 
 def is_supported(python: str, sphinx: str) -> bool:
-
-    return not (
-        (python == "3.6" and float(sphinx) > 3.0) or (python == "3.10" and float(sphinx) < 4.3)  # fmt: skip
-    )
+    return not (python == "3.6" and float(sphinx) > 3.0)  # fmt: skip
 
 
 def run_tests(session, sphinx):
@@ -49,7 +46,7 @@ def lint(session):
 def linkcheck(session):
     session.install(".")
     # LinkCheck cn handle rate limits since Sphinx 3.4, which is needed as
-    # our doc has to many links to github.
+    # our doc has to many links to GitHub.
     session.run("pip", "install", "sphinx==3.5.4", silent=True)
 
     session.run("pip", "install", "-r", "doc-requirements.txt", silent=True)

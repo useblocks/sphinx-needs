@@ -43,10 +43,10 @@ release = "0.3.6"
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "sphinxcontrib.needs",
+    "sphinx_needs",
     "sphinxcontrib.test_reports",
     "sphinxcontrib.plantuml",
-    "sphinx_panels",
+    "sphinx_design",
 ]
 
 cwd = os.getcwd()
