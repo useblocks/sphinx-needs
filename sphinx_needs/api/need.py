@@ -515,7 +515,7 @@ def add_external_need(
 def _prepare_template(app: Sphinx, needs_info, template_key: str) -> str:
     template_folder = app.config.needs_template_folder
     if not os.path.isabs(template_folder):
-        template_folder = os.path.join(app.confdir, template_folder)
+        template_folder = os.path.join(app.srcdir, template_folder)
 
     if not os.path.isdir(template_folder):
         raise NeedsTemplateException(f"Template folder does not exist: {template_folder}")

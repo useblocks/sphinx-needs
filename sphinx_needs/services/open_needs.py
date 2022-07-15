@@ -108,7 +108,7 @@ class OpenNeedsService(BaseService):
         # How to know if a referenced link is a need object in the data we are retrieving from the Open Needs Server
         id_selector = self.mappings.get("id")
         ids_of_needs_data = []  # list of all IDs of need objects being retrieved from the Open Needs Server
-        needs_id_validator = self.app.config.needs_id_regex
+        needs_id_validator = self.app.config.needs_id_regex or "^[A-Z0-9_]{5,}"
         for item in data:
             if isinstance(id_selector, str):
                 value = jinja_parse(item, id_selector)
@@ -118,7 +118,7 @@ class OpenNeedsService(BaseService):
             need_id = (
                 value
                 if re.search(needs_id_validator, value) is not None
-                else self.id_prefix + "".join(map(str, choices(range(0, 1000), k=3)))
+                else self.id_prefix + "".join(map(str, choices(range(0, 1000), k=6)))
             )
             ids_of_needs_data.append(need_id)
 

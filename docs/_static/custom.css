@@ -20,7 +20,7 @@ h1, h2, h3 {
     line-height: 1.4 !important;
 }
 
-h1 {
+h1:not([class="md-search-result__title"]) {
     font-size: 34px !important;
     margin-bottom: 20px !important;
 }

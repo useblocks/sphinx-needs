@@ -1,6 +1,6 @@
-sphinx>=3.4
+sphinx>=4.0
 sphinxcontrib-plantuml
-sphinxcontrib-needs
+sphinx-needs
 matplotlib
 sphinx-copybutton
 sphinxcontrib-programoutput
