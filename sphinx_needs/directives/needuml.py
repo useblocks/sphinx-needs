@@ -28,6 +28,7 @@ class NeedumlDirective(Directive):
         "debug": directives.flag,
         "config": directives.unchanged_required,
         "extra": directives.unchanged_required,
+        "key": directives.unchanged_required,
     }
 
     def run(self) -> Sequence[nodes.Node]:
@@ -63,6 +64,10 @@ class NeedumlDirective(Directive):
                 key, value = extra.split(":")
                 extra_dict[key] = value
 
+        key_name = self.options.get("key", None)
+        if key_name == "diagram":
+            raise NeedumlException(f"Needuml option key name can't be: {key_name}")
+
         env.needs_all_needumls[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
@@ -75,6 +80,7 @@ class NeedumlDirective(Directive):
             "config": "\n".join(configs),
             "debug": "debug" in self.options,
             "extra": extra_dict,
+            "key": key_name,
         }
 
         return [targetnode] + [Needuml(targetid)]
@@ -92,18 +98,26 @@ class JinjaFunctions:
         self.app = app
         self.fromdocname = fromdocname
 
-    def uml(self, need_id, **kwargs):
+    def uml(self, need_id, key="diagram", **kwargs):
         need_info = self.needs[need_id]
-        if need_info["diagram"]:
-            uml_content = need_info["diagram"]
 
-            # We need to rerender the fetched content, as it may contain also Jinja statements.
-            mem_template = Environment(loader=BaseLoader).from_string(uml_content)
-            data = {"needs": self.needs, "uml": self.uml, "need": self.need}
-            data.update(kwargs)
-            uml = mem_template.render(**data)
+        if key != "diagram":
+            if need_info[key]:
+                uml_content = need_info[key]
+            else:
+                raise NeedumlException(f"Option key name: {key} does not exist in need {need_id}.")
         else:
-            uml = self.need(need_id)
+            if need_info["diagram"]:
+                uml_content = need_info["diagram"]
+            else:
+                return self.need(need_id)
+
+        # We need to rerender the fetched content, as it may contain also Jinja statements.
+        mem_template = Environment(loader=BaseLoader).from_string(uml_content)
+        data = {"needs": self.needs, "uml": self.uml, "need": self.need}
+        data.update(kwargs)
+        uml = mem_template.render(**data)
+
         return uml
 
     def need(self, need_id):
@@ -214,3 +228,7 @@ def process_needuml(app, doctree, fromdocname):
             content += debug_container
 
         node.replace_self(content)
+
+
+class NeedumlException(BaseException):
+    """Errors during Needuml handling."""

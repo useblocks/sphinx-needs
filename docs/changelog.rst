@@ -12,6 +12,8 @@ License
 -----
 Under development
 
+* Improvement: Added `key` option for :ref:`needuml`.
+
 1.0.1
 -----
 Released: 11.07.2022
