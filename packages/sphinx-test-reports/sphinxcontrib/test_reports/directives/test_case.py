@@ -1,6 +1,6 @@
 from docutils import nodes
 from docutils.parsers.rst import directives
-from sphinxcontrib.needs.api import add_need
+from sphinx_needs.api import add_need
 
 from sphinxcontrib.test_reports.directives.test_common import TestCommonDirective
 from sphinxcontrib.test_reports.exceptions import TestReportInvalidOption

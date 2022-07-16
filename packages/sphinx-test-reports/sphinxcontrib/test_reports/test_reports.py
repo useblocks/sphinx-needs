@@ -4,7 +4,7 @@ import os
 import sphinx
 # from docutils import nodes
 from pkg_resources import parse_version
-from sphinxcontrib.needs.api import add_dynamic_function, add_extra_option, add_need_type
+from sphinx_needs.api import add_dynamic_function, add_extra_option, add_need_type
 
 from sphinxcontrib.test_reports.directives.test_case import TestCase, TestCaseDirective
 from sphinxcontrib.test_reports.directives.test_env import EnvReport, EnvReportDirective
@@ -109,7 +109,7 @@ def sphinx_needs_update(app, *args):
 
     # Extra options
     # For details read
-    # https://sphinxcontrib-needs.readthedocs.io/en/latest/api.html#sphinxcontrib.needs.api.configuration.add_extra_option
+    # https://sphinx-needs.readthedocs.io/en/latest/api.html#sphinx_needs.api.configuration.add_extra_option
     add_extra_option(app, "file")
     add_extra_option(app, "suite")
     add_extra_option(app, "case")
@@ -129,12 +129,12 @@ def sphinx_needs_update(app, *args):
 
     # Extra dynamic functions
     # For details about usage read
-    # https://sphinxcontrib-needs.readthedocs.io/en/latest/api.html#sphinxcontrib.needs.api.configuration.add_dynamic_function
+    # https://sphinx-needs.readthedocs.io/en/latest/api.html#sphinx_needs.api.configuration.add_dynamic_function
     add_dynamic_function(app, tr_link)
 
     # Extra need types
     # For details about usage read
-    # https://sphinxcontrib-needs.readthedocs.io/en/latest/api.html#sphinxcontrib.needs.api.configuration.add_need_type
+    # https://sphinx-needs.readthedocs.io/en/latest/api.html#sphinx_needs.api.configuration.add_need_type
     add_need_type(app, *app.config.tr_file[1:])
     add_need_type(app, *app.config.tr_suite[1:])
     add_need_type(app, *app.config.tr_case[1:])

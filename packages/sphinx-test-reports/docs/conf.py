@@ -43,10 +43,10 @@ release = "0.3.7"
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "sphinxcontrib.needs",
+    "sphinx_needs",
     "sphinxcontrib.test_reports",
     "sphinxcontrib.plantuml",
-    "sphinx_panels",
+    "sphinx_design",
 ]
 
 cwd = os.getcwd()
@@ -81,7 +81,7 @@ master_doc = "index"
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -206,3 +206,18 @@ texinfo_documents = [
         "Miscellaneous",
     ),
 ]
+
+# LINKCHECK config
+# https://www.sphinx-doc.org/en/master/usage/configuration.html?highlight=linkcheck#options-for-the-linkcheck-builder
+linkcheck_ignore = [
+    r"http://localhost:\d+",
+    r"http://127.0.0.1:\d+",
+]
+
+linkcheck_request_headers = {
+    "*": {
+        "User-Agent": "Mozilla/5.0",
+    }
+}
+
+linkcheck_workers = 5

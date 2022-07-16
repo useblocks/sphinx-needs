@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 
-extensions = ["sphinxcontrib.needs", "sphinxcontrib.test_reports"]
+extensions = ["sphinx_needs", "sphinxcontrib.test_reports"]
 
 tr_file = ["test-path", "testpath", "Test-Path", "TC_", "#999999", "rectangle"]
 tr_suite = [

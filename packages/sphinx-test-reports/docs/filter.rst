@@ -4,12 +4,12 @@ Filtering Test Data
 ===================
 
 You can filter the documented test-data by using the directives
-`needlist <https://sphinxcontrib-needs.readthedocs.io/en/latest/directives/needlist.html>`_,
-`needtable <https://sphinxcontrib-needs.readthedocs.io/en/latest/directives/needtable.html>`_ and
-`needflow <https://sphinxcontrib-needs.readthedocs.io/en/latest/directives/needflow.html>`_.
+`needlist <https://sphinx-needs.readthedocs.io/en/latest/directives/needlist.html>`_,
+`needtable <https://sphinx-needs.readthedocs.io/en/latest/directives/needtable.html>`_ and
+`needflow <https://sphinx-needs.readthedocs.io/en/latest/directives/needflow.html>`_.
 
 These filter functions and others are provided by the Sphinx extension
-`Sphinx-Needs <https://sphinxcontrib-needs.readthedocs.io/en/latest/index.html>`_.
+`Sphinx-Needs <https://sphinx-needs.readthedocs.io/en/latest/index.html>`_.
 Take a look to figure out what else is possible to customize your way of working with test cases.
 
 .. contents:: Contents
@@ -41,7 +41,7 @@ Not all options are set for all created needs.
 E.g. ``test_file`` doesn't include ``case``, as it is not related to a single test case.
 
 The filtering possibilities are really powerful, so take a look into
-`Filtering needs <https://sphinxcontrib-needs.readthedocs.io/en/latest/filter.html>`_ to figure out how to get
+`Filtering needs <https://sphinx-needs.readthedocs.io/en/latest/filter.html>`_ to figure out how to get
 most out of your test data.
 
 .. _needtable_filter:
@@ -89,7 +89,7 @@ Usage::
 In this case, we check that the ``cases`` value contains a number and this number must ne bigger as 4.
 
 Take a look into the
-`Filter string section <https://sphinxcontrib-needs.readthedocs.io/en/latest/filter.html#filter-string>`_
+`Filter string section <https://sphinx-needs.readthedocs.io/en/latest/filter.html#filter-string>`_
 of the Sphinx-Needs documentations for more details and ideas how to use it.
 
 
