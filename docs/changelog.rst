@@ -21,6 +21,7 @@ Under development
   (`#659 <https://github.com/useblocks/sphinx-needs/issues/659>`_)
 * Bugfix: Fixed :ref:`needextract` filter options issue involved with :ref:`need_part`.
   (`#651 <https://github.com/useblocks/sphinx-needs/issues/651>`_)
+* Improvement: Added `save` option for :ref:`needuml`.
 
 1.0.1
 -----

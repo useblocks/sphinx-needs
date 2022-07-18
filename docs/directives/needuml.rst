@@ -152,6 +152,39 @@ and can't be ``diagram``.
       B -> C: Hi
       C -> B: Hi there
 
+save
+~~~~
+
+Allows to store generated Plantuml-code of ``needuml`` to given file path. The given file path must be
+relative path to ``conf.py`` directory. For example, ``_build/_out/my_needuml.puml``.
+
+If given file path folder not exists, it will be created. If given file path already exists, it will be
+overwritten.
+
+|ex|
+
+.. code-block:: rst
+
+   .. int:: Test needuml save
+      :id: INT_001
+
+      .. needuml::
+         :save: _build/_out/my_needuml.puml
+
+         Alice -> Bob: Hi Bob
+         Bob --> Alice: Hi Alice
+
+|out|
+
+.. int:: Test needuml save
+   :id: INT_001
+
+   .. needuml::
+      :save: _build/_out/my_needuml.puml
+
+      Alice -> Bob: Hi Bob
+      Bob --> Alice: Hi Alice
+
 Jinja context
 -------------
 When using Jinja statements, the following objects and functions are available.

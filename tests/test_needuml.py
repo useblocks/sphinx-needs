@@ -202,3 +202,68 @@ def test_needuml_diagram_allowmixing(test_app):
 
     out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
     assert out.returncode == 0
+
+
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needuml_save"}], indirect=True)
+def test_needuml_save(test_app):
+    app = test_app
+    app.build()
+
+    # check generated plantuml code saved in given path
+    import os
+
+    saved_uml_path_01 = os.path.join(app.confdir, "_build/my_needuml.puml")
+    assert os.path.exists(saved_uml_path_01)
+
+    with open(saved_uml_path_01) as f1:
+        f1_contents = f1.readlines()
+        assert len(f1_contents) == 5
+        assert f1_contents[0] == "@startuml\n"
+        assert f1_contents[1] == "\n"
+        assert f1_contents[2] == "DC -> Marvel: Hi Kevin\n"
+        assert f1_contents[3] == "Marvel --> DC: Anyone there?\n"
+        assert f1_contents[4] == "@enduml\n"
+
+    saved_uml_path_02 = os.path.join(app.confdir, "_out/sub_folder/my_needs.puml")
+    assert os.path.exists(saved_uml_path_02)
+
+    with open(saved_uml_path_02) as f2:
+        f2_contents = f2.readlines()
+
+        assert len(f2_contents) == 7
+
+        assert f2_contents[0] == "@startuml\n"
+        assert f2_contents[1] == "\n"
+
+        assert "User Story" in f2_contents[2]
+        assert "Test story" in f2_contents[2]
+        assert "ST_001" in f2_contents[2]
+
+        assert f2_contents[3] == "\n"
+
+        assert "User Story" in f2_contents[4]
+        assert "Test story 2" in f2_contents[4]
+        assert "ST_002" in f2_contents[4]
+
+        assert f2_contents[5] == "\n"
+        assert f2_contents[6] == "@enduml\n"
+
+
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needuml_save_with_abs_path"}], indirect=True
+)
+def test_needuml_save_with_abs_path(test_app):
+    import subprocess
+
+    app = test_app
+
+    srcdir = Path(app.srcdir)
+    out_dir = srcdir / "_build"
+
+    out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
+    assert out.returncode == 1
+
+    assert (
+        "sphinx_needs.directives.needuml.NeedumlException: "
+        "Given save path: /_out/my_needuml.puml, is not relative path." in out.stderr.decode("utf-8")
+    )

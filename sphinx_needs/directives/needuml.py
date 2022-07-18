@@ -29,6 +29,7 @@ class NeedumlDirective(Directive):
         "config": directives.unchanged_required,
         "extra": directives.unchanged_required,
         "key": directives.unchanged_required,
+        "save": directives.unchanged_required,
     }
 
     def run(self) -> Sequence[nodes.Node]:
@@ -68,6 +69,17 @@ class NeedumlDirective(Directive):
         if key_name == "diagram":
             raise NeedumlException(f"Needuml option key name can't be: {key_name}")
 
+        save_path = self.options.get("save", None)
+        plantuml_code_out_path = None
+        if save_path:
+            if os.path.isabs(save_path):
+                raise NeedumlException(f"Given save path: {save_path}, is not relative path.")
+            else:
+                plantuml_code_out_path = os.path.join(env.app.confdir, save_path)
+                save_dir = os.path.dirname(plantuml_code_out_path)
+                if not os.path.exists(save_dir):
+                    os.makedirs(save_dir, exist_ok=True)
+
         env.needs_all_needumls[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
@@ -81,6 +93,7 @@ class NeedumlDirective(Directive):
             "debug": "debug" in self.options,
             "extra": extra_dict,
             "key": key_name,
+            "save": plantuml_code_out_path,
         }
 
         return [targetnode] + [Needuml(targetid)]
@@ -210,6 +223,11 @@ def process_needuml(app, doctree, fromdocname):
         puml_node["filename"] = os.path.split(current_needuml["docname"])[1]  # Needed for plantuml >= 0.9
 
         content.append(puml_node)
+
+        # save the generated plantuml-code into given file path, e.g. my_needuml.puml
+        if current_needuml["save"]:
+            with open(current_needuml["save"], "w") as f:
+                f.write(puml_node["uml"])
 
         if current_needuml["caption"]:
             title_text = current_needuml["caption"]
