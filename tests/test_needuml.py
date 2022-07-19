@@ -348,3 +348,45 @@ def test_needuml_filter(test_app):
 
     out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
     assert out.returncode == 0
+
+
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needuml_jinja_func_flow"}], indirect=True
+)
+def test_needuml_jinja_func_flow(test_app):
+    app = test_app
+    app.build()
+
+    all_needumls = app.env.needs_all_needumls
+    assert len(all_needumls) == 1
+
+    assert '{{flow("ST_001")}}' in all_needumls["needuml-index-0"]["content"]
+
+    html = Path(app.outdir, "index.html").read_text(encoding="utf8")
+    assert "as ST_001 [[../index.html#ST_001]]" in html
+
+    import subprocess
+
+    srcdir = Path(app.srcdir)
+    out_dir = srcdir / "_build"
+
+    out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
+    assert out.returncode == 0
+
+
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needuml_jinja_func_need_removed"}], indirect=True
+)
+def test_needuml_jinja_func_need_removed(test_app):
+    import subprocess
+
+    app = test_app
+
+    srcdir = Path(app.srcdir)
+    out_dir = srcdir / "_build"
+
+    out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
+    assert out.returncode == 2
+
+    assert "Extension error (sphinx_needs.directives.needuml):" in out.stderr.decode("utf-8")
+    assert "exception: 'need' is undefined" in out.stderr.decode("utf-8")
