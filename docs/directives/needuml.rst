@@ -242,6 +242,32 @@ This functions represents each Need the same way.
    {{need("COMP_001")}}
    {{need("FEATURE_1")}}
 
+
+.. _jinja_filter:
+
+filter(filter_string)
+~~~~~~~~~~~~~~~~~~~~~
+Finds a list of Sphinx-Need objects that pass the given filter string.
+
+|ex|
+
+.. code-block:: rst
+
+   .. needuml::
+
+      {% for need in filter("type == 'int' and status != 'open'") %}
+      node "{{need.title}}"
+      {% endfor %}
+
+|out|
+
+.. needuml::
+
+      {% for need in filter("type == 'int' and status != 'open'") %}
+      node "{{need.title}}"
+      {% endfor %}
+
+
 .. _jinja_uml:
 
 uml(id)

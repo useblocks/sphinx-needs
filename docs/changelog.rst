@@ -23,6 +23,7 @@ Under development
   (`#651 <https://github.com/useblocks/sphinx-needs/issues/651>`_)
 * Improvement: Added `save` option for :ref:`needuml`.
 * Improvement: Added builder :ref:`needumls_builder` and config option :ref:`needs_build_needumls` in `conf.py`.
+* Improvement: Added `filter` function for :ref:`needuml`.
 
 1.0.1
 -----

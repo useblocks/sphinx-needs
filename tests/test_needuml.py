@@ -323,3 +323,28 @@ def test_needumls_builder(test_app):
 
         assert f2_contents[5] == "\n"
         assert f2_contents[6] == "@enduml\n"
+
+
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needuml_filter"}], indirect=True)
+def test_needuml_filter(test_app):
+    app = test_app
+    app.build()
+
+    all_needumls = app.env.needs_all_needumls
+    assert len(all_needumls) == 1
+
+    needuml_01_content = all_needumls["needuml-index-0"]["content"]
+    assert "DC -> Marvel: Hi Kevin\n" in needuml_01_content
+    assert "Marvel --> DC: Anyone there?\n\n" in needuml_01_content
+    assert "{% for need in filter(\"type == 'story' and status != 'open'\") %}" in needuml_01_content
+
+    html = Path(app.outdir, "index.html").read_text(encoding="utf8")
+    assert "as ST_002 [[../index.html#ST_002]]" in html
+
+    import subprocess
+
+    srcdir = Path(app.srcdir)
+    out_dir = srcdir / "_build"
+
+    out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
+    assert out.returncode == 0
