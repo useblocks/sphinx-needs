@@ -187,3 +187,18 @@ def test_needuml_key_exists_in_need_default_options(test_app):
         "sphinx_needs.directives.needuml.NeedumlException: Needuml key: lineno, already exists in "
         "need default options: ['docname', 'lineno'," in out.stderr.decode("utf-8")
     )
+
+
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needuml_diagram_allowmixing"}], indirect=True
+)
+def test_needuml_diagram_allowmixing(test_app):
+    import subprocess
+
+    app = test_app
+
+    srcdir = Path(app.srcdir)
+    out_dir = srcdir / "_build"
+
+    out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
+    assert out.returncode == 0
