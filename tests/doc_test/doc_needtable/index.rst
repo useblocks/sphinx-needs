@@ -8,6 +8,7 @@ TEST DOCUMENT NEEDTABLE
 
     The Tool awesome shall have a command line interface.
 
+
 .. story:: A story
    :tags: 1
 

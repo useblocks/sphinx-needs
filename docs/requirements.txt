@@ -8,5 +8,5 @@ sphinx-design
 # For generating the performance test results.
 click
 tabulate
-sphinx-immaterial
+sphinx-immaterial==0.7.3
 esbonio>=0.13.0

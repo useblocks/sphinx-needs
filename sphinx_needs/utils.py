@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, TypeVar
 from urllib.parse import urlparse
 
 from docutils import nodes
-from jinja2 import Template
+from jinja2 import BaseLoader, Environment, Template
 from sphinx.application import Sphinx
 
 from sphinx_needs.defaults import NEEDS_PROFILING
@@ -120,6 +120,24 @@ def row_col_maker(
                 link_list.append(link_type["option"])
                 link_list.append(link_type["option"] + "_back")
 
+            # For needs_string_links
+            link_string_list = {}
+            for link_name, link_conf in app.config.needs_string_links.items():
+                link_string_list[link_name] = {
+                    "url_template": Environment(loader=BaseLoader, autoescape=True).from_string(link_conf["link_url"]),
+                    "name_template": Environment(loader=BaseLoader, autoescape=True).from_string(
+                        link_conf["link_name"]
+                    ),
+                    "regex_compiled": re.compile(link_conf["regex"]),
+                    "options": link_conf["options"],
+                    "name": link_name,
+                }
+
+            matching_link_confs = []
+            for link_conf in link_string_list.values():
+                if need_key in link_conf["options"] and len(datum) != 0:
+                    matching_link_confs.append(link_conf)
+
             if need_key in link_list and "." in datum:
                 link_id = datum.split(".")[0]
                 link_part = datum.split(".")[1]
@@ -160,6 +178,29 @@ def row_col_maker(
                     para_col += text_col
                 else:
                     ref_col.append(text_col)
+                    para_col += ref_col
+            elif matching_link_confs:
+                try:
+                    link_name = None
+                    link_url = None
+                    link_conf = matching_link_confs[0]
+                    match = link_conf["regex_compiled"].search(datum)  # We only handle the first matching string_link
+                    if match:
+                        render_content = match.groupdict()
+                        link_url = link_conf["url_template"].render(**render_content)
+                        link_name = link_conf["name_template"].render(**render_content)
+                    if link_name:
+                        ref_col = nodes.reference(link_name, link_name, refuri=link_url)
+                    else:
+                        # if no string_link match was made, we handle it as normal string value
+                        ref_col = text_col
+
+                except Exception as e:
+                    logger.warning(
+                        f'Problems dealing with string to link transformation for value "{datum}" of '
+                        f'option "{need_key}". Error: {e}'
+                    )
+                else:
                     para_col += ref_col
             else:
                 para_col += text_col
