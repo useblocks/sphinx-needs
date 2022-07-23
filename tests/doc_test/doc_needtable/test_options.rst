@@ -15,7 +15,7 @@ TEST OPTIONS
 .. spec:: Use needs_string_links
    :id: EXAMPLE_STRING_LINKS
    :config: needs_string_links
-   :github: 404
+   :github: 404;303
 
    Replaces the string from ``:config:`` and ``:github:`` with a link to the related website.
 

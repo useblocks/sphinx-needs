@@ -40,8 +40,8 @@ def test_title_from_content_scenarios(test_app):
     assert needs[5].id is not None
     assert needs[5].title == "Title should be first sentence"
 
-    # The handling of the ellipses character varies between Sphinx versions
-    # so we're ignoring it in our comparisons.
+    # The handling of the ellipses' character varies between Sphinx versions
+    # So we're ignoring it in our comparisons.
     assert needs[6].id is not None
     assert needs[6].title == "First sentence will be title, but elided since ..."
 

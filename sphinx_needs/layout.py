@@ -462,41 +462,54 @@ class LayoutHandler:
             # data_node = nodes.inline(classes=["needs_data"])
             # data_node.append(nodes.Text(data)
             # data_container.append(data_node)
+            needs_string_links_option: List[str] = []
+            for v in self.app.config.needs_string_links.values():
+                needs_string_links_option.extend(v["options"])
+
+            if name in needs_string_links_option:
+                data = re.split(r",|;", data)
+                data = [i.strip() for i in data if len(i) != 0]
 
             matching_link_confs = []
             for link_conf in self.string_links.values():
                 if name in link_conf["options"]:
                     matching_link_confs.append(link_conf)
 
-            string_link_error = False
-            if matching_link_confs:
-                try:
-                    link_name = None
-                    link_url = None
-                    for link_conf in matching_link_confs:
-                        match = link_conf["regex_compiled"].search(data)
-                        if match:
-                            render_content = match.groupdict()
-                            link_url = link_conf["url_template"].render(**render_content)
-                            link_name = link_conf["name_template"].render(**render_content)
-                            break  # We only handle the first matching string_link
-                    data_node = nodes.inline(classes=["needs_data"])
-                    if link_name:
-                        data_node.append(nodes.reference(link_name, link_name, refuri=link_url))
-                    else:
-                        # if no string_link match was made, we handle it as normal string value
-                        data_node.append(nodes.Text(data))
+            data_node = nodes.inline(classes=["needs_data"])
+            for index, datum in enumerate(data):
+                string_link_error = False
+                if matching_link_confs:
+                    try:
+                        link_name = None
+                        link_url = None
+                        for link_conf in matching_link_confs:
+                            match = link_conf["regex_compiled"].search(datum)
+                            if match:
+                                render_content = match.groupdict()
+                                link_url = link_conf["url_template"].render(**render_content)
+                                link_name = link_conf["name_template"].render(**render_content)
+                                break  # We only handle the first matching string_link
+                        if link_name:
+                            ref_item = nodes.reference(link_name, link_name, refuri=link_url)
+                        else:
+                            # if no string_link match was made, we handle it as normal string value
+                            ref_item = nodes.Text(datum)
 
-                except Exception as e:
-                    logger.warning(
-                        f'Problems dealing with string 2 link transformation for value "{data}" of '
-                        f'option "{name}". Error: {e}'
-                    )
-                    string_link_error = True  # Create normal text output
-            elif not matching_link_confs or string_link_error:
-                # Normal text handling
-                data_node = nodes.inline(classes=["needs_data"])
-                data_node.append(nodes.Text(data))
+                    except Exception as e:
+                        logger.warning(
+                            f'Problems dealing with string to link transformation for value "{data}" of '
+                            f'option "{name}". Error: {e}'
+                        )
+                        string_link_error = True  # Create normal text output
+                    else:
+                        data_node += ref_item
+                elif not matching_link_confs or string_link_error:
+                    # Normal text handling
+                    ref_item = nodes.Text(datum)
+                    data_node += ref_item
+
+                if (isinstance(data, list) and index + 1 < len(data)) or index + 1 < len([data]):
+                    data_node += nodes.emphasis("; ", "; ")
 
             data_container.append(data_node)
 

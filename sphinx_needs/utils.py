@@ -105,9 +105,16 @@ def row_col_maker(
     row_col = nodes.entry(classes=["needs_" + need_key])
     para_col = nodes.paragraph()
 
+    needs_string_links_option: List[str] = []
+    for v in app.config.needs_string_links.values():
+        needs_string_links_option.extend(v["options"])
+
     if need_key in need_info and need_info[need_key] is not None:
         if isinstance(need_info[need_key], (list, set)):
             data = need_info[need_key]
+        elif isinstance(need_info[need_key], str) and need_key in needs_string_links_option:
+            data = re.split(r",|;", need_info[need_key])
+            data = [i.strip() for i in data if len(i) != 0]
         else:
             data = [need_info[need_key]]
 
@@ -183,8 +190,8 @@ def row_col_maker(
                 try:
                     link_name = None
                     link_url = None
-                    link_conf = matching_link_confs[0]
-                    match = link_conf["regex_compiled"].search(datum)  # We only handle the first matching string_link
+                    link_conf = matching_link_confs[0]  # We only handle the first matching string_link
+                    match = link_conf["regex_compiled"].search(datum)
                     if match:
                         render_content = match.groupdict()
                         link_url = link_conf["url_template"].render(**render_content)
