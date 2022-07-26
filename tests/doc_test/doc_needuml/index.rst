@@ -98,6 +98,8 @@ TEST DOCUMENT NEEDUML
    .. needuml::
       :key: class
 
+      allowmixing
+
       class "{{needs['ST_001'].title}}" as test {
          implement
          {{needs['ST_001'].status}}
@@ -118,6 +120,8 @@ TEST DOCUMENT NEEDUML
    .. needuml::
       :scale: 50%
       :key: class
+
+      allowmixing
 
       class "{{needs['ST_001'].title}}" as test {
          implement
