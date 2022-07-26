@@ -235,6 +235,7 @@ Examples
 .. hint::
 
    The below examples are just images, as no Open-Needs Server instance was available during documentation build.
+   In order for this to work, you must set the ``ON_CI`` environment variable to ``True``
 
 .. image:: /_images/ons_example.png
    :align: center
