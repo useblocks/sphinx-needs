@@ -82,6 +82,10 @@ def test_doc_needtable_options(test_app):
         '<a class="reference external" href="https://github.com/useblocks/sphinxcontrib-needs/issues/404">'
         "GitHub #404</a>" in html
     )
+    assert (
+        '<a class="reference external" href="https://github.com/useblocks/sphinxcontrib-needs/issues/303">'
+        "GitHub #303</a>" in html
+    )
     assert "Sphinx-Needs docs for needs-string-links" in html
 
     if sphinx.version_info[0] < 2:

@@ -12,6 +12,8 @@ License
 -----
 Under development
 
+* Improvement: Support for :ref:`needs_string_links` in :ref:`needtable`.
+  (`#535 <https://github.com/useblocks/sphinx-needs/issues/535>`_)
 * Improvement: Added `key` option for :ref:`needuml`.
 * Bugfix: Removed default setting `allowmixing` for :ref:`needuml`.
   (`#649 <https://github.com/useblocks/sphinx-needs/issues/649>`_)
