@@ -190,6 +190,8 @@ This functions represents each Need the same way.
 
    .. needuml::
 
+      allowmixing
+
       {{need("COMP_001")}}
       {{need("FEATURE_1")}}
 
@@ -197,8 +199,10 @@ This functions represents each Need the same way.
 
 .. needuml::
 
-      {{need("COMP_001")}}
-      {{need("FEATURE_1")}}
+   allowmixing
+
+   {{need("COMP_001")}}
+   {{need("FEATURE_1")}}
 
 .. _jinja_uml:
 
@@ -217,12 +221,16 @@ Please read :ref:`need_diagram` for details.
 
    .. needuml::
 
+      allowmixing
+
       {{uml("COMP_001")}}
       {{uml("FEATURE_1")}}
 
 |out|
 
 .. needuml::
+
+   allowmixing
 
    {{uml("COMP_001")}}
    {{uml("FEATURE_1")}}
@@ -356,6 +364,8 @@ All features are available and ``uml()`` can be used multiple time on different 
 
            .. needuml::
 
+               allowmixing
+
                {{uml("INT_A")}}
 
                class "Class A" as cl_a
@@ -369,6 +379,8 @@ All features are available and ``uml()`` can be used multiple time on different 
 
            .. needuml::
 
+               allowmixing
+
                node "RocketScience" as rocket {
                    {{uml("COMP_X")}}
                    card "Service Y" as service
@@ -380,11 +392,13 @@ All features are available and ``uml()`` can be used multiple time on different 
 
         .. needuml::
 
-              {{uml("SYS_ROCKET")}}
+            allowmixing
 
-              actor "A friend" as me #ff5555
+            {{uml("SYS_ROCKET")}}
 
-              me --> rocket: doing
+            actor "A friend" as me #ff5555
+
+            me --> rocket: doing
 
 
     .. tab-item:: Code
@@ -403,6 +417,8 @@ All features are available and ``uml()`` can be used multiple time on different 
 
                .. needuml::
 
+                  allowmixing
+
                   {{uml("INT_A")}}
 
                   class "Class A" as cl_a
@@ -416,6 +432,8 @@ All features are available and ``uml()`` can be used multiple time on different 
 
                .. needuml::
 
+                  allowmixing
+
                   node "RocketScience" {
                       {{uml("COMP_X")}}
                       card "Service Y" as service
@@ -426,6 +444,8 @@ All features are available and ``uml()`` can be used multiple time on different 
             And finally a ``needuml`` to make use of the Sphinx-Need system object:
 
             .. needuml::
+
+               allowmixing
 
                {{uml("SYS_ROCKET")}}
 

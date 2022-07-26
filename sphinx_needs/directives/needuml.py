@@ -191,7 +191,7 @@ def process_needuml(app, doctree, fromdocname):
 
         uml_content = mem_template.render(**data)
         # Add needuml specific content
-        puml_node["uml"] = "@startuml\nallowmixing\n"
+        puml_node["uml"] = "@startuml\n"
 
         # Adding config
         config = current_needuml["config"]

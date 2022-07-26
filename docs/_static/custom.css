@@ -55,6 +55,10 @@ tbody tr td {
     font-size: medium !important;
 }
 
+.debug_on_layout_btn, .debug_off_layout_btn {
+    border: 2px solid var(--md-typeset-color) !important;
+}
+
 .dataTables_filter input {
     border: 1px solid var(--md-typeset-color);
     margin-bottom: 10px;

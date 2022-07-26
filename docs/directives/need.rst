@@ -70,6 +70,8 @@ This diagram data can then be used in other :ref:`needuml` calls to combine and 
 
    .. needuml::
 
+      allowmixing
+
       {{uml("SP_INT")}}
       node "My System" as system
 
@@ -92,6 +94,8 @@ This diagram data can then be used in other :ref:`needuml` calls to combine and 
 Reuse of :need:`SP_INT` inside a :ref:`needuml`:
 
 .. needuml::
+
+   allowmixing
 
    {{uml("SP_INT")}}
    node "My System" as system
