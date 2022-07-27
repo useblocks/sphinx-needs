@@ -133,6 +133,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_config_value("needs_id_prefix_needs", "", "html", types=[str])
     app.add_config_value("needs_id_prefix_specs", "", "html", types=[str])
     app.add_config_value("needs_id_length", 5, "html", types=[int])
+    app.add_config_value("needs_ide_snippets_id", "", "html", types=[str])
     app.add_config_value("needs_specs_show_needlist", False, "html", types=[bool])
     app.add_config_value("needs_id_required", False, "html", types=[bool])
     app.add_config_value(
