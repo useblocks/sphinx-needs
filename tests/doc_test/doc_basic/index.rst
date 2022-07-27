@@ -1,32 +1,27 @@
-.. basic test documentation master file, created by
-   sphinx-quickstart on Thu May 19 21:05:52 2022.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-Welcome to basic test's documentation!
-======================================
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
+Nested needs test
+=================
 
 .. story:: Test story
-   :id: ST_001
+   :id: ST_lvl1
    :status: open
+   :layout: common
 
-.. story:: No ID
-   :status: open
+   .. story:: Test story
+      :id: ST_lvl2
+      :status: open
+      :layout: common
 
+      .. story:: Test story
+         :id: ST_lvl3
+         :status: open
+         :layout: common
 
-.. needtable::
-   :filter: status == "open"
+         .. story:: Test story
+            :id: ST_lvl4
+            :status: open
+            :layout: common
 
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+            .. story:: Test story
+               :id: ST_lvl5
+               :status: open
+               :layout: common
