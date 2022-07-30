@@ -44,25 +44,6 @@ plantuml_output_format = "svg"
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
-needs_layouts = {
-    "common": {
-        "grid": "simple",
-        "layout": {
-            "head": [
-                '<<meta("type_name")>> **<<meta("title")>>**'
-                ' <<collapse_button("meta",collapsed="icon:arrow-down-circle",'
-                ' visible="icon:arrow-right-circle", initial=True)>> '
-            ],
-            "meta": [
-                'id: <<meta_id()>>',
-                '<<meta_all(no_links=True, exclude=["layout","style","template"])>>',
-                "<<meta_links_all()>>",
-            ],
-        },
-    },
-}
-
-
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.

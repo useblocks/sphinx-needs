@@ -51,7 +51,7 @@ def create_need(need_id: str, app: Sphinx, layout=None, style=None, docname: Opt
         docname = needs[need_id]["docname"]  # needed to calculate relative references
 
     # resolve_references() ignores the given docname and takes the docname from the pending_xref node.
-    # Therefore we need to manipulate this first, before we can ask Sphinx to perform the normal
+    # Therefore, we need to manipulate this first, before we can ask Sphinx to perform the normal
     # reference handling for us.
     replace_pending_xref_refdoc(node_container, docname)
     env.resolve_references(node_container, docname, env.app.builder)
@@ -429,7 +429,7 @@ class LayoutHandler:
 
     def meta(self, name: str, prefix: Optional[str] = None, show_empty: bool = False):
         """
-        Returns the specific meta data of a need inside docutils nodes.
+        Returns the specific metadata of a need inside docutils nodes.
         Usage::
 
             <<meta('status', prefix='**status**', show_empty=True)>>
@@ -568,7 +568,7 @@ class LayoutHandler:
 
         Usage::
 
-            <<meta_all(prefix='\\*\\*', postix='\\*\\*', no_links=True)>>
+            <<meta_all(prefix='\\*\\*', postfix='\\*\\*', no_links=True)>>
 
         .. note::
 
@@ -893,7 +893,7 @@ class LayoutHandler:
             coll_node_visible.append(nodes.Text(visible))
 
         coll_container = nodes.inline(classes=["needs", "collapse"])
-        # docutils does'nt allow has to add any html-attributes beside class and id to nodes.
+        # docutils doesn't allow has to add any html-attributes beside class and id to nodes.
         # So we misused "id" for this and use "__" (2x _) as separator for row-target names
 
         if (not self.need["collapse"]) or (self.need["collapse"] is None and not initial):
