@@ -187,28 +187,7 @@ def row_col_maker(
                     ref_col.append(text_col)
                     para_col += ref_col
             elif matching_link_confs:
-                try:
-                    link_name = None
-                    link_url = None
-                    link_conf = matching_link_confs[0]  # We only handle the first matching string_link
-                    match = link_conf["regex_compiled"].search(datum)
-                    if match:
-                        render_content = match.groupdict()
-                        link_url = link_conf["url_template"].render(**render_content)
-                        link_name = link_conf["name_template"].render(**render_content)
-                    if link_name:
-                        ref_col = nodes.reference(link_name, link_name, refuri=link_url)
-                    else:
-                        # if no string_link match was made, we handle it as normal string value
-                        ref_col = text_col
-
-                except Exception as e:
-                    logger.warning(
-                        f'Problems dealing with string to link transformation for value "{datum}" of '
-                        f'option "{need_key}". Error: {e}'
-                    )
-                else:
-                    para_col += ref_col
+                para_col += match_string_link(datum_text, datum, need_key, matching_link_confs)
             else:
                 para_col += text_col
 
@@ -372,6 +351,31 @@ def dict_get(root, items, default=None) -> Any:
         logger.debug(e)
         return default
     return value
+
+
+def match_string_link(text_item: str, data: str, need_key: str, matching_link_confs: List[Dict]) -> Any:
+    try:
+        link_name = None
+        link_url = None
+        link_conf = matching_link_confs[0]  # We only handle the first matching string_link
+        match = link_conf["regex_compiled"].search(data)
+        if match:
+            render_content = match.groupdict()
+            link_url = link_conf["url_template"].render(**render_content)
+            link_name = link_conf["name_template"].render(**render_content)
+        if link_name:
+            ref_item = nodes.reference(link_name, link_name, refuri=link_url)
+        else:
+            # if no string_link match was made, we handle it as normal string value
+            ref_item = nodes.Text(text_item)
+
+    except Exception as e:
+        logger.warning(
+            f'Problems dealing with string to link transformation for value "{data}" of '
+            f'option "{need_key}". Error: {e}'
+        )
+    else:
+        return ref_item
 
 
 T = TypeVar("T")
