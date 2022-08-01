@@ -28,14 +28,14 @@ $(document).ready(function() {
         if (parts[1] == "show") {
             var table = $(this).closest('table');
             var visible_icon = document.querySelector(`#${table.attr("id")} span.needs.visible`);
-            visible_icon.classList.toggle("is_visible");
+            visible_icon.classList.toggle("collapse_is_hidden");
         } else {
             var table = $(this).closest('table');
             var collapse_icon = document.querySelector(`#${table.attr("id")} span.needs.collapsed`);
-            collapse_icon.classList.toggle("is_visible");
+            collapse_icon.classList.toggle("collapse_is_hidden");
             for (var row in rows) {
                 var collapse_row = document.querySelector(`#${table.attr("id")} tr.${rows[row]}`);
-                collapse_row.classList.toggle("is_visible");
+                collapse_row.classList.toggle("collapse_is_hidden");
             }
         }
         // Func to execute when collapse buttons get clicked ()
@@ -43,13 +43,13 @@ $(document).ready(function() {
             var table = $(this).closest('table');
             for (var row in rows) {
                 var collapse_row = document.querySelector(`#${table.attr("id")} tr.${rows[row]}`);
-                collapse_row.classList.toggle("is_visible");
+                collapse_row.classList.toggle("collapse_is_hidden");
             }
             var collapse_icon = document.querySelector(`#${table.attr("id")} span.needs.collapsed`);
             var visible_icon = document.querySelector(`#${table.attr("id")} span.needs.visible`);
 
-            collapse_icon.classList.toggle("is_visible");
-            visible_icon.classList.toggle("is_visible");
+            collapse_icon.classList.toggle("collapse_is_hidden");
+            visible_icon.classList.toggle("collapse_is_hidden");
         })
     });
 

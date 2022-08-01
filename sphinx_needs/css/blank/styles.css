@@ -90,6 +90,6 @@ table.needs_style_blue_bar {
     background: linear-gradient(to right, transparent 90%, #0fbcf9 10%);
 }
 
-.is_visible{
+.collapse_is_hidden {
     display: none;
 }
