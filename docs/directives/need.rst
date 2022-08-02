@@ -245,6 +245,72 @@ By using :ref:`needs_extra_links <needs_extra_links>`, you can use the configure
 
    Perform some tests
 
+.. _need_delete:
+
+delete
+~~~~~~
+There is a **:delete:** option. If the value of the option is set to ``true``, the need will be deleted completely
+from any NeedLists or NeedDicts including the ``needs.json`` file.
+
+This option allows a user to have multiple need-objects with the same id, but only one is shown in the documentation.
+
+If set to **False**, the need is not removed.
+
+Allowed values:
+
+* ``true`` or ``yes`` or ``1``
+* ``false`` or ``no`` or ``0``
+
+Default: False
+
+.. note::
+
+   You can't use a need-object with **need filters**, if the **:delete:** option is set to ``true``.
+
+|ex|
+
+.. code-block:: rst
+
+   .. req:: First Requirement Need
+      :id: DELID123
+      :status: open
+      :delete: true
+
+      Need with ``:delete:`` equal to ``true``.
+
+   .. req:: Second Requirement Need
+      :id: DELID123
+      :delete: false
+
+      Need with ``:delete:`` equal to ``false``.
+
+      .. spec:: Nested Need without delete option
+         :id: DELID124
+         :tags: nested-del-need
+
+         Need with ``:delete:`` option not set.
+
+|out|
+
+.. req:: First Requirement Need
+   :id: DELID123
+   :status: open
+   :delete: true
+
+   Need with ``:delete:`` equal to ``true``.
+
+.. req:: Second Requirement Need
+   :id: DELID123
+   :delete: false
+
+   Need with ``:delete:`` equal to ``false``.
+
+   .. spec:: Nested Need without delete option
+      :id: DELID124
+      :tags: nested-del-need
+
+      Need with ``:delete:`` option not set.
+
 
 .. _need_hide:
 
