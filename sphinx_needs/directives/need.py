@@ -67,6 +67,15 @@ class NeedDirective(SphinxDirective):
         env = self.env
 
         # ToDo: Keep this in directive!!!
+        delete_opt = self.options.get("delete")
+        if isinstance(delete_opt, str):
+            if delete_opt.upper() in ["TRUE", 1, "YES"]:
+                delete_opt = True
+            elif delete_opt.upper() in ["FALSE", 0, "NO"]:
+                delete_opt = False
+            else:
+                raise Exception("delete attribute must be true or false")
+
         collapse = self.options.get("collapse")
         if isinstance(collapse, str):
             if collapse.upper() in ["TRUE", 1, "YES"]:
@@ -118,6 +127,7 @@ class NeedDirective(SphinxDirective):
             collapse=collapse,
             style=style,
             layout=layout,
+            delete=delete_opt,
             **need_extra_options,
         )
         return need_nodes
@@ -127,7 +137,7 @@ class NeedDirective(SphinxDirective):
         links_string = self.options.get(name)
         links = []
         if links_string:
-            for link in re.split(";|,", links_string):
+            for link in re.split(r";|,", links_string):
                 if link.isspace():
                     logger.warning(
                         f"Grubby link definition found in need '{self.trimmed_title}'. "
@@ -176,7 +186,7 @@ class NeedDirective(SphinxDirective):
         """
         Determines the title for the need in order of precedence:
         directive argument, first sentence of requirement (if
-        `:title_from_content:` was set, and '' if no title is to be derived."""
+        `:title_from_content:` was set, and '' if no title is to be derived)."""
         if len(self.arguments) > 0:  # a title was passed
             if "title_from_content" in self.options:
                 self.log.warning(
@@ -231,7 +241,7 @@ def get_sections_and_signature_and_needs(need_info) -> Tuple[List[str], Optional
                     break
 
         # Check if the need is nested inside another need (so part of its content)
-        # and we only want to find our parent and not add grands, too.
+        # and we only want to find our parent and not add the grands, too.
         if isinstance(current_node, Need) and len(parent_needs) == 0:
             parent_needs.append(current_node["refid"])  # Store the need id, not more
 
@@ -430,7 +440,7 @@ def _fix_list_dyn_func(list: List[str]) -> List[str]:
     This searches a list for dynamic function fragments, which may have been cut by generic searches for ",|;".
 
     Example:
-    `link_a, [[copy('links', need_id)]]` this will be splitted in list of 3 parts:
+    `link_a, [[copy('links', need_id)]]` this will be split in list of 3 parts:
 
     #. link_a
     #. [[copy('links'
@@ -441,7 +451,7 @@ def _fix_list_dyn_func(list: List[str]) -> List[str]:
     #. link_a
     #. [[copy('links', need_id)]]
 
-    :param list: list which may contain splitted function calls
+    :param list: list which may contain split function calls
     :return: list of fixed elements
     """
     open_func_string = False
