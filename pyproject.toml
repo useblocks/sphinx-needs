@@ -27,8 +27,8 @@ classifiers=[
 
 packages = [
     {include = "sphinx_needs"}
-#    {include = "sphinxcontrib", from = "."}
 ]
+
 
 [tool.poetry.dependencies]
 python = ">=3.7.0,<4.0"
