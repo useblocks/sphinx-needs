@@ -1633,6 +1633,9 @@ link name and url.
 
    Replaces the string from ``:config:`` and ``:github:`` with a link to the related website.
 
+.. note::
+
+   You must define the options specified under :ref:`needs_string_links` inside :ref:`needs_extra_options` as well.
 
 .. _needs_build_json:
 
