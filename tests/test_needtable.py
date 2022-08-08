@@ -76,6 +76,36 @@ def test_doc_needtable_options(test_app):
 
     assert column_order in html
 
+    # Checks for needs_string_links in needtable
+    assert "EXAMPLE_STRING_LINKS" in html
+    assert (
+        '<a class="reference external" href="https://github.com/useblocks/sphinxcontrib-needs/issues/404">'
+        "GitHub #404</a>" in html
+    )
+    assert (
+        '<a class="reference external" href="https://github.com/useblocks/sphinxcontrib-needs/issues/303">'
+        "GitHub #303</a>" in html
+    )
+    assert "Sphinx-Needs docs for needs-string-links" in html
+
+    if sphinx.version_info[0] < 2:
+        string_column_order = """
+<tr class="row-odd"><th class="head">ID</th>
+<th class="head">Title</th>
+<th class="head">Config</th>
+<th class="head">Github</th>
+"""
+    else:
+        string_column_order = """
+<tr class="row-odd"><th class="head"><p>ID</p></th>
+<th class="head"><p>Title</p></th>
+<th class="head"><p>Config</p></th>
+<th class="head"><p>Github</p></th>
+</tr>
+"""
+
+    assert string_column_order in html
+
 
 @pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needtable"}], indirect=True)
 def test_doc_needtable_styles(test_app):
