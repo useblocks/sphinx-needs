@@ -265,7 +265,7 @@ Default: False
 
 .. note::
 
-   You can't use a need-object with **need filters**, if the **:delete:** option is set to ``true``.
+   If you delete a need using the :delete: option, the need will not be part of any filter result.
 
 |ex|
 
