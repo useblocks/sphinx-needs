@@ -45,6 +45,7 @@ def add_need(
     constraints=None,
     constraints_passed=None,
     links_string: Optional[str] = None,
+    delete: bool = False,
     hide: bool = False,
     hide_tags: bool = False,
     hide_status: bool = False,
@@ -107,13 +108,14 @@ def add_need(
     :param lineno: line number.
     :param need_type: Name of the need type to create.
     :param title: String as title.
-    :param id: ID as string. If not given, a id will get generated.
+    :param id: ID as string. If not given, an id will get generated.
     :param content: Content as single string.
     :param status: Status as string.
     :param tags: Tags as single string.
     :param constraints: Constraints as single, comma separated, string.
     :param constraints_passed: Contains bool describing if all constraints have passed
     :param links_string: Links as single string.
+    :param delete: boolean value (Remove the complete need).
     :param hide: boolean value.
     :param hide_tags: boolean value. (Not used with Sphinx-Needs >0.5.0)
     :param hide_status: boolean value. (Not used with Sphinx-Needs >0.5.0)
@@ -147,6 +149,10 @@ def add_need(
             type_style = ntype["style"] or "node"  # if no style set up user in config
             found = True
             break
+
+    if delete:
+        # Don't generate a need object if the :delete: option is enabled.
+        return [nodes.Text("")]
     if not found:
         # This should never happen. But it may happen, if Sphinx is called multiples times
         # inside one ongoing python process.
