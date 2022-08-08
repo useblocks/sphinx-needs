@@ -43,6 +43,35 @@ needs_types = [
     {"directive": "test", "title": "Test Case", "prefix": "TC_", "color": "#DCB239", "style": "node"},
 ]
 
+needs_extra_options = [
+    "my_extra_option",
+    "another_option",
+    "author",
+    "comment",
+    "amount",
+    "hours",
+    "image",
+    "config",
+    "github",
+    "value",
+    "unit",
+]
+
+needs_string_links = {
+    "config_link": {
+        "regex": r"^(?P<value>\w+)$",
+        "link_url": 'https://sphinxcontrib-needs.readthedocs.io/en/latest/configuration.html#{{value | replace("_", "-")}}',
+        "link_name": 'Sphinx-Needs docs for {{value | replace("_", "-") }}',
+        "options": ["config"],
+    },
+    "github_link": {
+        "regex": r"^(?P<value>\w+)$",
+        "link_url": "https://github.com/useblocks/sphinxcontrib-needs/issues/{{value}}",
+        "link_name": "GitHub #{{value}}",
+        "options": ["github"],
+    },
+}
+
 plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "utils", "plantuml.jar")
 plantuml_output_format = "svg"
 

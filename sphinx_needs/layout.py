@@ -18,7 +18,7 @@ from docutils.utils import new_document
 from jinja2 import BaseLoader, Environment
 from sphinx.application import Sphinx
 
-from sphinx_needs.utils import INTERNALS, logger, unwrap
+from sphinx_needs.utils import INTERNALS, match_string_link, unwrap
 
 
 def create_need(need_id: str, app: Sphinx, layout=None, style=None, docname: Optional[str] = None) -> nodes.container:
@@ -51,7 +51,7 @@ def create_need(need_id: str, app: Sphinx, layout=None, style=None, docname: Opt
         docname = needs[need_id]["docname"]  # needed to calculate relative references
 
     # resolve_references() ignores the given docname and takes the docname from the pending_xref node.
-    # Therefore we need to manipulate this first, before we can ask Sphinx to perform the normal
+    # Therefore, we need to manipulate this first, before we can ask Sphinx to perform the normal
     # reference handling for us.
     replace_pending_xref_refdoc(node_container, docname)
     env.resolve_references(node_container, docname, env.app.builder)
@@ -156,7 +156,7 @@ class LayoutHandler:
 
         self.node = node
 
-        # Used, if need is referenced from another page
+        # Used, if you need is referenced from another page
         if fromdocname is None:
             self.fromdocname = need["docname"]
         else:
@@ -329,7 +329,7 @@ class LayoutHandler:
         """
         Replaces a function definition like ``<<meta(a, ,b)>>`` with the related docutils nodes.
 
-        It take an already existing docutils-node-tree and searches for Text-nodes containing ``<<..>>``.
+        It takes an already existing docutils-node-tree and searches for Text-nodes containing ``<<..>>``.
         These nodes get then replaced by the return value (also a node) from the related function.
 
         :param section_nodes: docutils node (tree)
@@ -429,7 +429,7 @@ class LayoutHandler:
 
     def meta(self, name: str, prefix: Optional[str] = None, show_empty: bool = False):
         """
-        Returns the specific meta data of a need inside docutils nodes.
+        Returns the specific metadata of a need inside docutils nodes.
         Usage::
 
             <<meta('status', prefix='**status**', show_empty=True)>>
@@ -462,41 +462,32 @@ class LayoutHandler:
             # data_node = nodes.inline(classes=["needs_data"])
             # data_node.append(nodes.Text(data)
             # data_container.append(data_node)
+            needs_string_links_option: List[str] = []
+            for v in self.app.config.needs_string_links.values():
+                needs_string_links_option.extend(v["options"])
+
+            if name in needs_string_links_option:
+                data = re.split(r",|;", data)
+                data = [i.strip() for i in data if len(i) != 0]
 
             matching_link_confs = []
             for link_conf in self.string_links.values():
                 if name in link_conf["options"]:
                     matching_link_confs.append(link_conf)
 
-            string_link_error = False
-            if matching_link_confs:
-                try:
-                    link_name = None
-                    link_url = None
-                    for link_conf in matching_link_confs:
-                        match = link_conf["regex_compiled"].search(data)
-                        if match:
-                            render_content = match.groupdict()
-                            link_url = link_conf["url_template"].render(**render_content)
-                            link_name = link_conf["name_template"].render(**render_content)
-                            break  # We only handle the first matching string_link
-                    data_node = nodes.inline(classes=["needs_data"])
-                    if link_name:
-                        data_node.append(nodes.reference(link_name, link_name, refuri=link_url))
-                    else:
-                        # if no string_link match was made, we handle it as normal string value
-                        data_node.append(nodes.Text(data))
-
-                except Exception as e:
-                    logger.warning(
-                        f'Problems dealing with string 2 link transformation for value "{data}" of '
-                        f'option "{name}". Error: {e}'
+            data_node = nodes.inline(classes=["needs_data"])
+            for index, datum in enumerate(data):
+                if matching_link_confs:
+                    data_node += match_string_link(
+                        text_item=datum, data=datum, need_key=name, matching_link_confs=matching_link_confs
                     )
-                    string_link_error = True  # Create normal text output
-            elif not matching_link_confs or string_link_error:
-                # Normal text handling
-                data_node = nodes.inline(classes=["needs_data"])
-                data_node.append(nodes.Text(data))
+                else:
+                    # Normal text handling
+                    ref_item = nodes.Text(datum)
+                    data_node += ref_item
+
+                if (isinstance(data, list) and index + 1 < len(data)) or index + 1 < len([data]):
+                    data_node += nodes.emphasis("; ", "; ")
 
             data_container.append(data_node)
 
@@ -893,7 +884,7 @@ class LayoutHandler:
             coll_node_visible.append(nodes.Text(visible))
 
         coll_container = nodes.inline(classes=["needs", "collapse"])
-        # docutils does'nt allow has to add any html-attributes beside class and id to nodes.
+        # docutils doesn't allow has to add any html-attributes beside class and id to nodes.
         # So we misused "id" for this and use "__" (2x _) as separator for row-target names
 
         if (not self.need["collapse"]) or (self.need["collapse"] is None and not initial):

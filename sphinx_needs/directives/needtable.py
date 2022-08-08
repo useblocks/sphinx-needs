@@ -131,7 +131,7 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str) -
         link_type_list[link_type["incoming"].upper()] = link_type
         link_type_list[link_type["outgoing"].upper()] = link_type
 
-        # Extra handling tb backward compatible, as INCOMING and OUTGOING are
+        # Extra handling for backward compatibility, as INCOMING and OUTGOING are
         # known und used column names for incoming/outgoing links
         if link_type["option"] == "links":
             link_type_list["OUTGOING"] = link_type
@@ -225,7 +225,7 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str) -
                 """
                 if isinstance(need[key], str):
                     # if we filter for string (e.g. id) everything should be lowercase.
-                    # Otherwise "Z" will be above "a"
+                    # Otherwise, "Z" will be above "a"
                     return need[key].lower()
                 return need[key]
 
