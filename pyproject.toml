@@ -27,8 +27,8 @@ classifiers=[
 
 packages = [
     {include = "sphinx_needs"}
-#    {include = "sphinxcontrib", from = "."}
 ]
+
 
 [tool.poetry.dependencies]
 python = ">=3.7.0,<4.0"
@@ -60,7 +60,7 @@ types-requests = "^2.27.25"
 types-setuptools = "^57.4.14"
 docutils-stubs = "^0.0.22"
 
-sphinx-immaterial = { version = ">0.6.7", optional = true }
+sphinx-immaterial = { version = "==0.7.3", optional = true }
 
 # formatting dependencies
 black = "^22.3"

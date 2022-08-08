@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, TypeVar
 from urllib.parse import urlparse
 
 from docutils import nodes
-from jinja2 import Template
+from jinja2 import BaseLoader, Environment, Template
 from sphinx.application import Sphinx
 
 from sphinx_needs.defaults import NEEDS_PROFILING
@@ -105,9 +105,16 @@ def row_col_maker(
     row_col = nodes.entry(classes=["needs_" + need_key])
     para_col = nodes.paragraph()
 
+    needs_string_links_option: List[str] = []
+    for v in app.config.needs_string_links.values():
+        needs_string_links_option.extend(v["options"])
+
     if need_key in need_info and need_info[need_key] is not None:
         if isinstance(need_info[need_key], (list, set)):
             data = need_info[need_key]
+        elif isinstance(need_info[need_key], str) and need_key in needs_string_links_option:
+            data = re.split(r",|;", need_info[need_key])
+            data = [i.strip() for i in data if len(i) != 0]
         else:
             data = [need_info[need_key]]
 
@@ -119,6 +126,24 @@ def row_col_maker(
             for link_type in env.config.needs_extra_links:
                 link_list.append(link_type["option"])
                 link_list.append(link_type["option"] + "_back")
+
+            # For needs_string_links
+            link_string_list = {}
+            for link_name, link_conf in app.config.needs_string_links.items():
+                link_string_list[link_name] = {
+                    "url_template": Environment(loader=BaseLoader, autoescape=True).from_string(link_conf["link_url"]),
+                    "name_template": Environment(loader=BaseLoader, autoescape=True).from_string(
+                        link_conf["link_name"]
+                    ),
+                    "regex_compiled": re.compile(link_conf["regex"]),
+                    "options": link_conf["options"],
+                    "name": link_name,
+                }
+
+            matching_link_confs = []
+            for link_conf in link_string_list.values():
+                if need_key in link_conf["options"] and len(datum) != 0:
+                    matching_link_confs.append(link_conf)
 
             if need_key in link_list and "." in datum:
                 link_id = datum.split(".")[0]
@@ -161,6 +186,8 @@ def row_col_maker(
                 else:
                     ref_col.append(text_col)
                     para_col += ref_col
+            elif matching_link_confs:
+                para_col += match_string_link(datum_text, datum, need_key, matching_link_confs)
             else:
                 para_col += text_col
 
@@ -324,6 +351,31 @@ def dict_get(root, items, default=None) -> Any:
         logger.debug(e)
         return default
     return value
+
+
+def match_string_link(text_item: str, data: str, need_key: str, matching_link_confs: List[Dict]) -> Any:
+    try:
+        link_name = None
+        link_url = None
+        link_conf = matching_link_confs[0]  # We only handle the first matching string_link
+        match = link_conf["regex_compiled"].search(data)
+        if match:
+            render_content = match.groupdict()
+            link_url = link_conf["url_template"].render(**render_content)
+            link_name = link_conf["name_template"].render(**render_content)
+        if link_name:
+            ref_item = nodes.reference(link_name, link_name, refuri=link_url)
+        else:
+            # if no string_link match was made, we handle it as normal string value
+            ref_item = nodes.Text(text_item)
+
+    except Exception as e:
+        logger.warning(
+            f'Problems dealing with string to link transformation for value "{data}" of '
+            f'option "{need_key}". Error: {e}'
+        )
+    else:
+        return ref_item
 
 
 T = TypeVar("T")

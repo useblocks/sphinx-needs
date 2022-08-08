@@ -89,18 +89,21 @@ def process_needextract(app: Sphinx, doctree: nodes.document, fromdocname: str) 
         found_needs = process_filters(app, all_needs, current_needextract)
 
         for need_info in found_needs:
-            need_extract = create_need(
-                need_info["id"],
-                app,
-                layout=current_needextract["layout"],
-                style=current_needextract["style"],
-                docname=current_needextract["docname"],
-            )
+            # filter out need_part from found_needs, in order to generate
+            # copies of filtered needs with custom layout and style
+            if need_info["is_need"] and not need_info["is_part"]:
+                need_extract = create_need(
+                    need_info["id"],
+                    app,
+                    layout=current_needextract["layout"],
+                    style=current_needextract["style"],
+                    docname=current_needextract["docname"],
+                )
 
-            # Add lineno to node
-            need_extract.line = current_needextract["lineno"]
+                # Add lineno to node
+                need_extract.line = current_needextract["lineno"]
 
-            content.append(need_extract)
+                content.append(need_extract)
 
         if len(content) == 0:
             content.append(no_needs_found_paragraph())

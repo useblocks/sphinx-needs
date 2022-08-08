@@ -1620,7 +1620,7 @@ link name and url.
    .. spec:: Use needs_string_links
       :id: EXAMPLE_STRING_LINKS
       :config: needs_string_links
-      :github: 404
+      :github: 404,652
 
       Replaces the string from ``:config:`` and ``:github:`` with a link to the related website.
 
@@ -1629,10 +1629,13 @@ link name and url.
 .. spec:: Use needs_string_links
    :id: EXAMPLE_STRING_LINKS
    :config: needs_string_links
-   :github: 404
+   :github: 404,652
 
    Replaces the string from ``:config:`` and ``:github:`` with a link to the related website.
 
+.. note::
+
+   You must define the options specified under :ref:`needs_string_links` inside :ref:`needs_extra_options` as well.
 
 .. _needs_build_json:
 

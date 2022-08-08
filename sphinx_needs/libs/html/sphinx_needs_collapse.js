@@ -26,29 +26,40 @@ $(document).ready(function() {
         var parts = id.split("__");
         var rows = parts.slice(2);
         if (parts[1] == "show") {
-            $(this).find("span.needs.visible").toggle(0);
-        } else {
-            $(this).find("span.needs.collapsed").toggle(0);
             var table = $(this).closest('table');
+            var visible_icon = document.querySelector(`#${table.attr("id")} span.needs.visible`);
+            visible_icon.classList.toggle("collapse_is_hidden");
+        } else {
+            var table = $(this).closest('table');
+            var collapse_icon = document.querySelector(`#${table.attr("id")} span.needs.collapsed`);
+            collapse_icon.classList.toggle("collapse_is_hidden");
             for (var row in rows) {
-                table.find("tr."+rows[row]).slideToggle(0);
+                var collapse_row = document.querySelector(`#${table.attr("id")} tr.${rows[row]}`);
+                collapse_row.classList.toggle("collapse_is_hidden");
             }
         }
         // Func to execute when collapse buttons get clicked ()
         $(this).find("span.needs.collapsed, span.needs.visible").click(function() {
             var table = $(this).closest('table');
             for (var row in rows) {
-                table.find("tr."+rows[row]).slideToggle(0);
+                var collapse_row = document.querySelector(`#${table.attr("id")} tr.${rows[row]}`);
+                collapse_row.classList.toggle("collapse_is_hidden");
             }
-            table.find("span.collapse span.needs.collapsed").toggle(0);
-            table.find("span.collapse span.needs.visible").toggle(0);
+            var collapse_icon = document.querySelector(`#${table.attr("id")} span.needs.collapsed`);
+            var visible_icon = document.querySelector(`#${table.attr("id")} span.needs.visible`);
+
+            collapse_icon.classList.toggle("collapse_is_hidden");
+            visible_icon.classList.toggle("collapse_is_hidden");
         })
     });
 
 });
+
 
 $(document).ready(function() {
     $('a.no_link').click(function (e) {
         e.preventDefault();
     });
 });
+
+// https://api.jquery.com/closest/
