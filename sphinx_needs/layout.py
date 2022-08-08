@@ -559,7 +559,7 @@ class LayoutHandler:
 
         Usage::
 
-            <<meta_all(prefix='\\*\\*', postix='\\*\\*', no_links=True)>>
+            <<meta_all(prefix='\\*\\*', postfix='\\*\\*', no_links=True)>>
 
         .. note::
 

@@ -17,6 +17,8 @@ Under development
 * Improvement: Added `key` option for :ref:`needuml`.
 * Bugfix: Removed default setting `allowmixing` for :ref:`needuml`.
   (`#649 <https://github.com/useblocks/sphinx-needs/issues/649>`_)
+* Bugfix: Fixed the collapse button issue for needs including nested needs.
+  (`#659 <https://github.com/useblocks/sphinx-needs/issues/659>`_)
 * Bugfix: Fixed :ref:`needextract` filter options issue involved with :ref:`need_part`.
   (`#651 <https://github.com/useblocks/sphinx-needs/issues/651>`_)
 
