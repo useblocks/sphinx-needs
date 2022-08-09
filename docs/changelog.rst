@@ -22,6 +22,7 @@ Under development
 * Bugfix: Fixed :ref:`needextract` filter options issue involved with :ref:`need_part`.
   (`#651 <https://github.com/useblocks/sphinx-needs/issues/651>`_)
 * Improvement: Added `save` option for :ref:`needuml`.
+* Improvement: Added builder :ref:`needumls_builder` and config option `needs_build_needumls` in `conf.py`.
 
 1.0.1
 -----
