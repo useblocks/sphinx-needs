@@ -210,7 +210,12 @@ def test_needuml_save(test_app):
     app.build()
 
     # check generated plantuml code saved in given path
-    assert "doc_needuml_save/_build/html" in str(app.outdir)
+    from sys import platform
+
+    if platform == "win32":
+        assert "doc_needuml_save\\_build\\html" in str(app.outdir)
+    else:
+        assert "doc_needuml_save/_build/html" in str(app.outdir)
     assert app.config.needs_build_needumls == "my_needumls"
     saved_uml_path_01 = Path(app.outdir) / app.config.needs_build_needumls / "_build/my_needuml.puml"
     assert saved_uml_path_01.exists()
@@ -277,7 +282,12 @@ def test_needumls_builder(test_app):
     app.build()
 
     # check generated plantuml code saved in given path
-    assert "doc_needuml_save/_build/needumls" in str(app.outdir)
+    from sys import platform
+
+    if platform == "win32":
+        assert "doc_needuml_save\\_build\\needumls" in str(app.outdir)
+    else:
+        assert "doc_needuml_save/_build/needumls" in str(app.outdir)
     saved_uml_path_01 = Path(app.outdir) / "_build/my_needuml.puml"
     assert saved_uml_path_01.exists()
 
