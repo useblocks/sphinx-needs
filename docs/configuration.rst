@@ -1668,20 +1668,21 @@ Example:
 needs_build_needumls
 ~~~~~~~~~~~~~~~~~~~~
 
-Creates a folder during other builds, like ``html``.
+Exports :ref:`needuml` data during each build.
 
-This option like :ref:`needs_build_json` allows to have one single Sphinx-Build for two output formats. 
+This option works like :ref:`needs_build_json`. But the value of :ref:`needs_build_needumls` should be a string,
+not a boolean. Default value of is: ``""``.
 
-All the files that stores the generated plantuml code from :ref:`needuml` will be saved in this created folder
-in the ``outdir`` of the current builder, e.g. ``_build/html/my_needumls/`` 
-
-This option takes relative folder path as input. Default value is: ``""``. 
+This value of this option shall be a **relative folder path**, which specifies and creates the relative folder in the
+``outdir`` of the current builder.
 
 Example:
 
 .. code-block:: python
 
     needs_build_needumls = "my_needumls"
+
+As a result, all the :ref:`needuml` data will be exported into folder in the ``outdir`` of the current builder, e.g. ``_build/html/my_needumls/``.
 
 .. _needs_permalink_file:
 

@@ -73,7 +73,7 @@ class NeedumlDirective(Directive):
         plantuml_code_out_path = None
         if save_path:
             if os.path.isabs(save_path):
-                raise NeedumlException(f"Given save path: {save_path}, is not relative path.")
+                raise NeedumlException(f"Given save path: {save_path}, is not a relative path.")
             else:
                 plantuml_code_out_path = save_path
 

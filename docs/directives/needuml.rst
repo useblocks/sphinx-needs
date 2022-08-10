@@ -155,11 +155,13 @@ and can't be ``diagram``.
 save
 ~~~~
 
-Allows to store generated Plantuml-code of ``needuml`` to given file path. The given file path must be
-relative path to ``conf.py`` directory. For example, ``_build/_out/my_needuml.puml``.
+Specifies the file path to store generated Plantuml-code of current ``needuml``. This given file path can be relative path
+or file name, e.g. ``needuml_group_A/my_needuml.puml`` or ``my_needuml.puml``.
 
-If given file path folder not exists, it will be created. If given file path already exists, it will be
-overwritten.
+The file will be created and written to relative to current builder output directory during each build by 
+using builder :ref:`needumls_builder` or other builder like `html` with configuration option :ref:`needs_build_needumls` configured.
+
+If given file path already exists, it will be overwritten.
 
 |ex|
 
@@ -173,6 +175,9 @@ overwritten.
 
          Alice -> Bob: Hi Bob
          Bob --> Alice: Hi Alice
+
+In this example, if builder :ref:`needumls_builder` is used, the plantuml-code will be exported to file at `outdir` of current builder,
+e.g. `_build/needumls/_build/_out/my_needuml.puml`.
 
 |out|
 

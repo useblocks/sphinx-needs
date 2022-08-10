@@ -113,6 +113,7 @@ class NeedumlsBuilder(Builder):
                 if not os.path.exists(save_dir):
                     os.makedirs(save_dir, exist_ok=True)
 
+                log.info(f"Storing needuml data: {needuml} to file {save_path}.")
                 with open(save_path, "w") as f:
                     f.write(puml_content)
 
