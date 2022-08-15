@@ -7,8 +7,9 @@ in need configurations.
 """
 
 import ast
+import copy
 import re
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -16,7 +17,7 @@ from sphinx.environment import BuildEnvironment
 from sphinx.errors import SphinxError
 
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import NEEDS_FUNCTIONS  # noqa: F401
+from sphinx_needs.utils import NEEDS_FUNCTIONS, match_variants  # noqa: F401
 
 logger = get_logger(__name__)
 unicode = str
@@ -99,7 +100,7 @@ func_pattern = re.compile(r"\[\[(.*?)\]\]")  # RegEx to detect function strings
 def find_and_replace_node_content(node, env: BuildEnvironment, need):
     """
     Search inside a given node and its children for nodes of type Text,
-    if found check if it contains a function string and run/replace it.
+    if found, check if it contains a function string and run/replace it.
 
     :param node: Node to analyse
     :return: None
@@ -110,7 +111,7 @@ def find_and_replace_node_content(node, env: BuildEnvironment, need):
             try:
                 new_text = node.attributes["refuri"]
             except KeyError:
-                # If no refuri is set, we don't not need to modify anything.
+                # If no refuri is set, we don't need to modify anything.
                 # So stop here and return the untouched node.
                 return node
         else:
@@ -232,6 +233,54 @@ def resolve_dynamic_values(env: BuildEnvironment):
 
     # Finally set a flag so that this function gets not executed several times
     env.needs_workflow["dynamic_values_resolved"] = True
+
+
+def resolve_variants_options(env: BuildEnvironment):
+    """
+    Resolve dynamic values inside need data.
+
+    Rough workflow:
+
+    #. Parse all needs and their data for a string like [[ my_func(a,b,c) ]]
+    #. Extract function name and call parameters
+    #. Execute registered function name with extracted call parameters
+    #. Replace original string with return value
+
+    :param env: Sphinx environment
+    :return: return value of given function
+    """
+    # Only perform calculation if not already done yet
+    if env.needs_workflow["variant_option_resolved"]:
+        return
+
+    needs = env.needs_all_needs
+    for need in needs.values():
+        for need_option in need:
+            variants_options = env.app.config.needs_variant_options
+            if len(variants_options) == 0:
+                # If variant_options is not provided
+                default_variant_options = ["status", "tags", "links"]
+                default_variant_options.extend(env.app.config.needs_extra_options)
+                extra_links = [extra_link["option"] for extra_link in env.app.config.needs_extra_links]
+                default_variant_options.extend(extra_links)
+                variants_options.extend(set(default_variant_options))
+            if need_option not in variants_options:
+                # Don't apply variant handling to options not in variant_options.
+                continue
+            # Data to use as filter context.
+            need_context: Dict = copy.deepcopy(need)
+            need_context.update(**env.app.config.needs_variant_data)
+            if need[need_option] is None:
+                continue
+            elif not isinstance(need[need_option], (list, set, tuple)):
+                option_value: str = need[need_option]
+                need[need_option] = match_variants(option_value, need_context, env.app.config.needs_variants)
+            else:
+                option_value: List = list(need[need_option])
+                need[need_option] = match_variants(option_value, need_context, env.app.config.needs_variants)
+
+    # Finally set a flag so that this function gets not executed several times
+    env.needs_workflow["variant_option_resolved"] = True
 
 
 def check_and_get_content(content: str, need, env: BuildEnvironment) -> str:

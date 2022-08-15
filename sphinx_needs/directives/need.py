@@ -15,7 +15,11 @@ from sphinx_needs.api import add_need
 from sphinx_needs.api.exceptions import NeedsInvalidException
 from sphinx_needs.config import NEEDS_CONFIG
 from sphinx_needs.defaults import NEED_DEFAULT_OPTIONS
-from sphinx_needs.functions import find_and_replace_node_content, resolve_dynamic_values
+from sphinx_needs.functions import (
+    find_and_replace_node_content,
+    resolve_dynamic_values,
+    resolve_variants_options,
+)
 from sphinx_needs.functions.functions import check_and_get_content
 from sphinx_needs.layout import build_need
 from sphinx_needs.logging import get_logger
@@ -66,7 +70,6 @@ class NeedDirective(SphinxDirective):
         #############################################################################################
         env = self.env
 
-        # ToDo: Keep this in directive!!!
         delete_opt = self.options.get("delete")
         if isinstance(delete_opt, str):
             if delete_opt.upper() in ["TRUE", 1, "YES"]:
@@ -105,7 +108,6 @@ class NeedDirective(SphinxDirective):
         for extra_link in env.config.needs_extra_links:
             need_extra_options[extra_link["option"]] = self.options.get(extra_link["option"], "")
 
-        NEEDS_CONFIG.get("extra_options")
         for extra_option in NEEDS_CONFIG.get("extra_options").keys():
             need_extra_options[extra_option] = self.options.get(extra_option, "")
 
@@ -323,8 +325,11 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     if not hasattr(env, "needs_all_needs"):
         return
 
-    # Call dynamic functions and replace related note data with their return values
+    # Call dynamic functions and replace related node data with their return values
     resolve_dynamic_values(env)
+
+    # Apply variant handling on options and replace its values with their return values
+    resolve_variants_options(env)
 
     # check if we have dead links
     check_links(env)
