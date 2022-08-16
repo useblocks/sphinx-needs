@@ -158,7 +158,7 @@ save
 Specifies the file path to store generated Plantuml-code of current ``needuml``. This given file path can be relative path
 or file name, e.g. ``needuml_group_A/my_needuml.puml`` or ``my_needuml.puml``.
 
-The file will be created and written to relative to current builder output directory during each build by 
+The file will be created and written during each build by 
 using builder :ref:`needumls_builder` or other builder like `html` with configuration option :ref:`needs_build_needumls` configured.
 
 If given file path already exists, it will be overwritten.
@@ -171,13 +171,13 @@ If given file path already exists, it will be overwritten.
       :id: INT_001
 
       .. needuml::
-         :save: _build/_out/my_needuml.puml
+         :save: needuml_group_A/my_needuml.puml
 
          Alice -> Bob: Hi Bob
          Bob --> Alice: Hi Alice
 
 In this example, if builder :ref:`needumls_builder` is used, the plantuml-code will be exported to file at `outdir` of current builder,
-e.g. `_build/needumls/_build/_out/my_needuml.puml`.
+e.g. `_build/needumls/needuml_group_A/my_needuml.puml`.
 
 |out|
 
@@ -185,7 +185,7 @@ e.g. `_build/needumls/_build/_out/my_needuml.puml`.
    :id: INT_001
 
    .. needuml::
-      :save: _build/_out/my_needuml.puml
+      :save: needuml_group_A/my_needuml.puml
 
       Alice -> Bob: Hi Bob
       Bob --> Alice: Hi Alice
