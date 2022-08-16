@@ -29,6 +29,7 @@ class NeedumlDirective(Directive):
         "config": directives.unchanged_required,
         "extra": directives.unchanged_required,
         "key": directives.unchanged_required,
+        "save": directives.unchanged_required,
     }
 
     def run(self) -> Sequence[nodes.Node]:
@@ -68,6 +69,14 @@ class NeedumlDirective(Directive):
         if key_name == "diagram":
             raise NeedumlException(f"Needuml option key name can't be: {key_name}")
 
+        save_path = self.options.get("save", None)
+        plantuml_code_out_path = None
+        if save_path:
+            if os.path.isabs(save_path):
+                raise NeedumlException(f"Given save path: {save_path}, is not a relative path.")
+            else:
+                plantuml_code_out_path = save_path
+
         env.needs_all_needumls[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
@@ -81,6 +90,7 @@ class NeedumlDirective(Directive):
             "debug": "debug" in self.options,
             "extra": extra_dict,
             "key": key_name,
+            "save": plantuml_code_out_path,
         }
 
         return [targetnode] + [Needuml(targetid)]
@@ -205,6 +215,9 @@ def process_needuml(app, doctree, fromdocname):
         puml_node["uml"] += f"\n{uml_content}"
 
         puml_node["uml"] += "\n@enduml\n"
+
+        # Add calculated needuml content
+        current_needuml["content_calculated"] = puml_node["uml"]
 
         puml_node["incdir"] = os.path.dirname(current_needuml["docname"])
         puml_node["filename"] = os.path.split(current_needuml["docname"])[1]  # Needed for plantuml >= 0.9

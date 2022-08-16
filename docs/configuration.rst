@@ -1663,6 +1663,27 @@ Example:
    The created ``needs.json`` file gets stored in the ``outdir`` of the current builder.
    So if ``html`` is used as builder, the final location is e.g. ``_build/html/needs.json``.
 
+.. _needs_build_needumls:
+
+needs_build_needumls
+~~~~~~~~~~~~~~~~~~~~
+
+Exports :ref:`needuml` data during each build.
+
+This option works like :ref:`needs_build_json`. But the value of :ref:`needs_build_needumls` should be a string,
+not a boolean. Default value of is: ``""``.
+
+This value of this option shall be a **relative folder path**, which specifies and creates the relative folder in the
+``outdir`` of the current builder.
+
+Example:
+
+.. code-block:: python
+
+    needs_build_needumls = "my_needumls"
+
+As a result, all the :ref:`needuml` data will be exported into folder in the ``outdir`` of the current builder, e.g. ``_build/html/my_needumls/``.
+
 .. _needs_permalink_file:
 
 needs_permalink_file

@@ -137,3 +137,29 @@ Format
         }
     }
 
+.. _needumls_builder:
+
+needumls
+--------
+
+The **needumls** builder saves each :ref:`needuml` generated plantuml code to a file, and stores all the files into a single folder during the build.
+The file is created only if the option ``:save:`` from :ref:`needuml` is configured.
+
+The build creates a folder called **needumls** inside the given build-folder, e.g. `_build/needumls`.
+
+Usage
++++++
+
+.. code-block:: bash
+
+    make needumls
+
+or
+
+.. code-block:: bash
+
+    sphinx-build -M needumls source_dir build_dir
+
+.. hint::
+
+    As an alternative, you can set the config option :ref:`needs_build_needumls` to export the needumls files during each build.

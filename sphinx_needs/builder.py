@@ -92,3 +92,59 @@ def build_needs_json(app: Sphinx, _exception: Exception) -> None:
     needs_builder = NeedsBuilder(app)
     needs_builder.set_environment(env)
     needs_builder.finish()
+
+
+class NeedumlsBuilder(Builder):
+    name = "needumls"
+
+    def write_doc(self, docname: str, doctree: nodes.document) -> None:
+        pass
+
+    def finish(self) -> None:
+        env = unwrap(self.env)
+        needumls = env.needs_all_needumls.values()
+
+        for needuml in needumls:
+            if needuml["save"]:
+                puml_content = needuml["content_calculated"]
+                # check if given save path dir exists
+                save_path = os.path.join(self.outdir, needuml["save"])
+                save_dir = os.path.dirname(save_path)
+                if not os.path.exists(save_dir):
+                    os.makedirs(save_dir, exist_ok=True)
+
+                log.info(f"Storing needuml data to file {save_path}.")
+                with open(save_path, "w") as f:
+                    f.write(puml_content)
+
+    def get_outdated_docs(self) -> Iterable[str]:
+        return []
+
+    def prepare_writing(self, _docnames: Set[str]) -> None:
+        pass
+
+    def write_doc_serialized(self, _docname: str, _doctree: nodes.document) -> None:
+        pass
+
+    def cleanup(self) -> None:
+        pass
+
+    def get_target_uri(self, _docname: str, _typ: Optional[str] = None) -> str:
+        return ""
+
+
+def build_needumls_pumls(app: Sphinx, _exception: Exception) -> None:
+    env = unwrap(app.env)
+
+    if not env.config.needs_build_needumls:
+        return
+
+    # Do not create additional files for saved plantuml content, if builder is already "needumls".
+    if isinstance(app.builder, NeedumlsBuilder):
+        return
+
+    # if other builder like html used together with config: needs_build_needumls
+    needs_builder = NeedumlsBuilder(app)
+    needs_builder.outdir = os.path.join(needs_builder.outdir, env.config.needs_build_needumls)
+    needs_builder.set_environment(env)
+    needs_builder.finish()
