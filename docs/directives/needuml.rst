@@ -213,9 +213,9 @@ A Python dictionary containing all Needs. The ``need_id`` is used as key.
       node "{{needs["FEATURE_1"].title}}"
 
 
-.. _jinja_need:
+.. _jinja_flow:
 
-need(id)
+flow(id)
 ~~~~~~~~
 Loads a Sphinx-Need object as PlantUML object.
 We use the same layout used for :ref:`needflow`.
@@ -230,8 +230,8 @@ This functions represents each Need the same way.
 
       allowmixing
 
-      {{need("COMP_001")}}
-      {{need("FEATURE_1")}}
+      {{flow("COMP_001")}}
+      {{flow("FEATURE_1")}}
 
 |out|
 
@@ -239,8 +239,8 @@ This functions represents each Need the same way.
 
    allowmixing
 
-   {{need("COMP_001")}}
-   {{need("FEATURE_1")}}
+   {{flow("COMP_001")}}
+   {{flow("FEATURE_1")}}
 
 
 .. _jinja_filter:

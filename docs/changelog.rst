@@ -24,6 +24,7 @@ Under development
 * Improvement: Added `save` option for :ref:`needuml`.
 * Improvement: Added builder :ref:`needumls_builder` and config option :ref:`needs_build_needumls` in `conf.py`.
 * Improvement: Added `filter` function for :ref:`needuml`.
+* Improvement: Renamed jinja function `need` to `flow` for :ref:`needuml`.
 
 1.0.1
 -----

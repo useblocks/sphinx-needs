@@ -121,17 +121,17 @@ class JinjaFunctions:
             if need_info["diagram"]:
                 uml_content = need_info["diagram"]
             else:
-                return self.need(need_id)
+                return self.flow(need_id)
 
         # We need to rerender the fetched content, as it may contain also Jinja statements.
         mem_template = Environment(loader=BaseLoader).from_string(uml_content)
-        data = {"needs": self.needs, "uml": self.uml, "need": self.need}
+        data = {"needs": self.needs, "uml": self.uml, "flow": self.flow}
         data.update(kwargs)
         uml = mem_template.render(**data)
 
         return uml
 
-    def need(self, need_id):
+    def flow(self, need_id):
         need_info = self.needs[need_id]
         link = calculate_link(self.app, need_info, self.fromdocname)
 
@@ -203,7 +203,7 @@ def process_needuml(app, doctree, fromdocname):
         # Get all needed Jinja Helper Functions
         jinja_utils = JinjaFunctions(app, fromdocname)
         # Make the helpers available during rendering
-        data = {"needs": all_needs, "uml": jinja_utils.uml, "need": jinja_utils.need, "filter": jinja_utils.filter}
+        data = {"needs": all_needs, "uml": jinja_utils.uml, "flow": jinja_utils.flow, "filter": jinja_utils.filter}
 
         data.update(current_needuml["extra"])
 
