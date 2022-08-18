@@ -8,6 +8,7 @@ from jinja2 import BaseLoader, Environment, Template
 
 from sphinx_needs.diagrams_common import calculate_link
 from sphinx_needs.directives.needflow import make_entity_name
+from sphinx_needs.filter_common import filter_needs
 
 
 class Needuml(nodes.General, nodes.Element):
@@ -147,6 +148,13 @@ class JinjaFunctions:
 
         return need_uml
 
+    def filter(self, filter_string):
+        """
+        Return a list of found needs that pass the given filter string.
+        """
+
+        return filter_needs(self.app, list(self.needs.values()), filter_string=filter_string)
+
 
 def process_needuml(app, doctree, fromdocname):
     env = app.builder.env
@@ -195,7 +203,7 @@ def process_needuml(app, doctree, fromdocname):
         # Get all needed Jinja Helper Functions
         jinja_utils = JinjaFunctions(app, fromdocname)
         # Make the helpers available during rendering
-        data = {"needs": all_needs, "uml": jinja_utils.uml, "need": jinja_utils.need}
+        data = {"needs": all_needs, "uml": jinja_utils.uml, "need": jinja_utils.need, "filter": jinja_utils.filter}
 
         data.update(current_needuml["extra"])
 
