@@ -25,7 +25,7 @@ async def test_need_directive_role_completion(client):
     assert len(need_directive_result.items) > 0
 
     # check user in conf.py defined need directive req exists
-    need_req = need_directive_result.items[80]
+    need_req = need_directive_result.items[81]
     assert need_req.label == "req"
     assert need_req.filter_text == ".. req::"
     assert need_req.detail == "sphinx_needs.directives.need.NeedDirective"
@@ -35,7 +35,7 @@ async def test_need_directive_role_completion(client):
     assert need_req.data["completion_type"] == "directive"
 
     # check user in conf.py need directive spec exists
-    need_spec = need_directive_result.items[81]
+    need_spec = need_directive_result.items[82]
     assert need_spec.label == "spec"
     assert need_spec.filter_text == ".. spec::"
     assert need_spec.detail == "sphinx_needs.directives.need.NeedDirective"
@@ -45,22 +45,31 @@ async def test_need_directive_role_completion(client):
     assert need_spec.data["completion_type"] == "directive"
 
     # check other in conf.py defined need directives also exist
-    need_impl = need_directive_result.items[82]
+    need_impl = need_directive_result.items[83]
     assert need_impl.label == "impl"
     assert need_impl.filter_text == ".. impl::"
     assert need_impl.detail == "sphinx_needs.directives.need.NeedDirective"
 
-    need_test = need_directive_result.items[83]
+    need_test = need_directive_result.items[84]
     assert need_test.label == "test"
     assert need_test.filter_text == ".. test::"
     assert need_test.detail == "sphinx_needs.directives.need.NeedDirective"
 
-    need_need = need_directive_result.items[84]
+    need_need = need_directive_result.items[85]
     assert need_need.label == "need"
     assert need_need.filter_text == ".. need::"
     assert need_need.detail == "sphinx_needs.directives.need.NeedDirective"
 
     # check Sphinx-Needs default supported derectives exist
+    need_needarch = need_directive_result.items[80]
+    assert need_needarch.label == "needarch"
+    assert need_needarch.filter_text == ".. needarch::"
+    assert need_needarch.detail == "sphinx_needs.directives.needarch.NeedarchDirective"
+    assert need_needarch.kind == 7  # CompletionItemKind.Class
+    assert need_needarch.insert_text_format == 1  # InsertTextFormat.PlainText
+    assert need_needarch.data["source_feature"] == "esbonio.lsp.directives.Directives"
+    assert need_needarch.data["completion_type"] == "directive"
+
     need_needlist = need_directive_result.items[68]
     assert need_needlist.label == "needlist"
     assert need_needlist.filter_text == ".. needlist::"
@@ -152,7 +161,7 @@ async def test_need_directive_snippets_completion(client):
     need_directive_snippets = await client.completion_request(uri=TEST_FILE_URI, line=10, character=2)
     assert len(need_directive_snippets.items) > 0
 
-    need_directive_snippets_req = need_directive_snippets.items[144]
+    need_directive_snippets_req = need_directive_snippets.items[145]
     assert need_directive_snippets_req.label == ".. req::"
     assert need_directive_snippets_req.detail == "Requirement"
     assert need_directive_snippets_req.insert_text.startswith(" req:: ${1:title}\n\t:id: ${2:REQ_")
