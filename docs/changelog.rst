@@ -26,6 +26,7 @@ Under development
 * Improvement: Added `filter` function for :ref:`needuml`.
 * Improvement: Renamed jinja function `need` to `flow` for :ref:`needuml`.
 * Improvement: Added directive :ref:`needarch`.
+* Improvement: Added configuration option :ref:`needs_ide_snippets_id` to support custom need ID for :ref:`ide` snippets.
 
 1.0.1
 -----
