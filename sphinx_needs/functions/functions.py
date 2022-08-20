@@ -237,17 +237,15 @@ def resolve_dynamic_values(env: BuildEnvironment):
 
 def resolve_variants_options(env: BuildEnvironment):
     """
-    Resolve dynamic values inside need data.
+    Resolve variants options inside need data.
 
     Rough workflow:
 
-    #. Parse all needs and their data for a string like [[ my_func(a,b,c) ]]
-    #. Extract function name and call parameters
-    #. Execute registered function name with extracted call parameters
+    #. Parse all needs and their data for variant handling
     #. Replace original string with return value
 
     :param env: Sphinx environment
-    :return: return value of given function
+    :return: None
     """
     # Only perform calculation if not already done yet
     if env.needs_workflow["variant_option_resolved"]:
@@ -270,13 +268,13 @@ def resolve_variants_options(env: BuildEnvironment):
             # Data to use as filter context.
             need_context: Dict = copy.deepcopy(need)
             need_context.update(**env.app.config.needs_variant_data)
-            if need[need_option] is None:
+            if need[need_option] is None or need[need_option] == "" or need[need_option] == []:
                 continue
             elif not isinstance(need[need_option], (list, set, tuple)):
                 option_value: str = need[need_option]
                 need[need_option] = match_variants(option_value, need_context, env.app.config.needs_variants)
             else:
-                option_value: List = list(need[need_option])
+                option_value = need[need_option]
                 need[need_option] = match_variants(option_value, need_context, env.app.config.needs_variants)
 
     # Finally set a flag so that this function gets not executed several times

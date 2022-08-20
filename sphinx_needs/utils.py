@@ -4,6 +4,7 @@ import operator
 import os
 import re
 from functools import reduce, wraps
+from re import Pattern
 from typing import Any, Dict, List, Optional, TypeVar, Union
 from urllib.parse import urlparse
 
@@ -392,7 +393,45 @@ def match_variants(option_value: Union[str, List], keywords: Dict, needs_variant
     :rtype: Union[str, List, None]
     """
 
-    filter_context = keywords
+    def variant_handling(variant_definitions: List, variant_data: Dict, variant_pattern: Pattern) -> Optional[str]:
+        filter_context = variant_data
+        filter_result = []
+        for variant_definition in variant_definitions:
+            # Test if definition is a variant definition
+            check_definition = variant_pattern.search(variant_definition)
+            if check_definition is None:
+                continue
+            # Separate variant definition from value to use for the option
+            filter_string, output, _ = re.split(r"(:[\w\- ]+)$", variant_definition)
+            filter_string = re.sub(r"^\[|]$", "", filter_string)
+            filter_string = needs_variants[filter_string] if filter_string in needs_variants else filter_string
+            # https://docs.python.org/3/library/functions.html?highlight=compile#compile
+            filter_compiled = compile(filter_string, "<string>", "eval")
+            try:
+                # Set filter_context as globals and not only locals in eval()!
+                # Otherwise, the vars not be accessed in list comprehensions.
+                if filter_compiled:
+                    eval_result = bool(eval(filter_compiled, filter_context))
+                else:
+                    eval_result = bool(eval(filter_string, filter_context))
+                # First matching variant definition defines the output
+                if eval_result:
+                    filter_result.insert(0, output.lstrip(":"))
+                    break
+                continue
+            except Exception as e:
+                logger.warning(f'There was an error in the filter statement: "{filter_string}". ' f"Error Msg: {e}")
+                continue
+
+        if len(filter_result) == 1:
+            return filter_result[0]
+
+        # If no variant-rule is True, set to last, variant-free option. If this does not exist, set to None.
+        defaults_to = variant_definitions[-1]
+        if variant_pattern.search(defaults_to):
+            return None
+        return re.sub(r"[;,] ", "", defaults_to)
+
     split_pattern = (
         r"([\[\]]{1}[\w=:' \-\"]+[\[\(\{]{1}[\w=,': \-\"]*[\]\)\}]{1}[\[\]]{1}:[\w\- ]+)|"
         r"([\[\]]{1}[\w=:'\-\[\] \"]+[\[\]]{1}:[\w\- ]+)|"
@@ -402,55 +441,28 @@ def match_variants(option_value: Union[str, List], keywords: Dict, needs_variant
     variant_splitting = re.compile(split_pattern)
     variant_rule_matching = re.compile(variant_rule_pattern)
 
+    # if len(multiple_variants) == 1 and not variant_rule_matching.search(multiple_variants[0]):
+    #     return option_value
+
     # Handling multiple variant definitions
-    if isinstance(option_value, str):
+    if isinstance(option_value, str) and variant_rule_matching.search(option_value):
         multiple_variants: List = variant_splitting.split(option_value)
         multiple_variants: List = [
             re.sub(r"^([;, ]+)|([;, ]+$)", "", i) for i in multiple_variants if i not in (None, ";", "", " ")
         ]
-    elif isinstance(option_value, List):
-        multiple_variants: List = option_value
+        new_option_value = variant_handling(multiple_variants, keywords, variant_rule_matching)
+        return new_option_value
+    elif isinstance(option_value, (list, set, tuple)):
+        multiple_variants: List = list(option_value)
+        # In case an option value is a list (:tags: open; close), and does not contain any variant definition,
+        # then return the unmodified value
+        options = all([bool(not variant_rule_matching.search(i)) for i in multiple_variants])
+        if options:
+            return option_value
+        new_option_value = variant_handling(multiple_variants, keywords, variant_rule_matching)
+        return new_option_value
     else:
-        multiple_variants = option_value
-
-    # Handling a variant definition
-    if len(multiple_variants) == 1 and not variant_rule_matching.search(multiple_variants[0]):
         return option_value
-    for variant_definition in multiple_variants:
-        # Test if definition is a variant definition
-        check_definition = variant_rule_matching.search(variant_definition)
-        if check_definition is None:
-            continue
-        # Separate variant definition from value to use for the option
-        filter_string, output, _ = re.split(r"(:[\w\- ]+)$", variant_definition)
-        filter_string = re.sub(r"^\[|]$", "", filter_string)
-        filter_string = needs_variants[filter_string] if filter_string in needs_variants else filter_string
-        # https://docs.python.org/3/library/functions.html?highlight=compile#compile
-        filter_compiled = compile(filter_string, "<string>", "eval")
-        try:
-            # Set filter_context as globals and not only locals in eval()!
-            # Otherwise, the vars not be accessed in list comprehensions.
-            if filter_compiled:
-                eval_result = bool(eval(filter_compiled, filter_context))
-            else:
-                eval_result = bool(eval(filter_string, filter_context))
-            # First matching variant definition defines the output
-            if eval_result:
-                filter_result = output.lstrip(":")
-                return filter_result
-        except Exception as e:
-            logger.warning(f'There was an error in the filter statement: "{filter_string}". ' f"Error Msg: {e}")
-    # In case an option value is a list (:tags: open; close), and does not contain any variant definition,
-    # then return the unmodified value
-    options = all([bool(not variant_rule_matching.search(i)) for i in multiple_variants])
-    if options:
-        return option_value
-
-    # If no variant-rule is True, set to last, variant-free option. If this does not exist, set to None.
-    defaults_to = multiple_variants[-1]
-    if variant_rule_matching.search(defaults_to):
-        return option_value
-    return re.sub(r"[;,] ", "", defaults_to)
 
 
 T = TypeVar("T")
