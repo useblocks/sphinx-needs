@@ -10,6 +10,7 @@ from typing import List, Optional, Tuple, Union
 from esbonio.lsp import LanguageFeature
 from esbonio.lsp.rst import CompletionContext, DefinitionContext, HoverContext
 from esbonio.lsp.sphinx import SphinxLanguageServer
+from jinja2 import BaseLoader, Environment
 from pygls.lsp.types import (
     CompletionItem,
     CompletionItemKind,
@@ -94,11 +95,11 @@ class NeedlsFeatures(LanguageFeature):
 
             # if word starts with ':', complete_role_or_option
             if word.startswith(":"):
-                return complete_role_or_option(self, context, lines, word)
+                return complete_role_or_option(self, context, lines)
 
             # if word starts with '..', complete_directive
             if word.startswith(".."):
-                return complete_directive(self, context, lines, word)
+                return complete_directive(self, context, lines)
 
             return []
 
@@ -361,44 +362,91 @@ def generate_hash(user_name: str, doc_uri: str, need_prefix: str, line_number: i
     ).hexdigest()
 
 
-def generate_need_id(
-    ls: NeedlsFeatures, params: CompletionContext, lines: List[str], word: str, need_type: Optional[str] = None
-) -> str:
-    """Generate a need ID including hash suffix."""
+class JinjaHelperFunction:
+    """
+    Jinja helper functions.
+    """
 
-    user_name = getpass.getuser()
-    doc_uri = params.doc.uri
-    line_number = params.position.line
+    def __init__(
+        self, ls: NeedlsFeatures, params: CompletionContext, lines: List[str], need_type: Optional[str] = None
+    ) -> None:
+        self.ls = ls
+        self.params = params
+        self.lines = lines
+        self.need_type = need_type
 
-    if not need_type:
-        match = re.search(".. ([a-z]+)::", lines[line_number - 1])
-        if match:
-            need_type = match.group(1)
-            if not need_type:
+    def random(self) -> str:
+        """Generate a random need ID including hash suffix.."""
+
+        user_name = getpass.getuser()
+        doc_uri = self.params.doc.uri
+        line_number = self.params.position.line
+
+        need_type = self.need_type
+        if not need_type:
+            match = re.search(".. ([a-z]+)::", self.lines[line_number - 1])
+            if match:
+                need_type = match.group(1)
+                if not need_type:
+                    return "ID"
+            else:
                 return "ID"
-        else:
-            return "ID"
 
-    need_prefix = need_type.upper()
+        need_prefix = need_type.upper()
 
-    hash_part = generate_hash(user_name, doc_uri, need_prefix, line_number)
-    need_id = need_prefix + "_" + hash_part
-    # re-generate hash if ID is already in use
-    while need_id in ls.needs_store.needs:
         hash_part = generate_hash(user_name, doc_uri, need_prefix, line_number)
         need_id = need_prefix + "_" + hash_part
+        # re-generate hash if ID is already in use
+        while need_id in self.ls.needs_store.needs:
+            hash_part = generate_hash(user_name, doc_uri, need_prefix, line_number)
+            need_id = need_prefix + "_" + hash_part
+        return need_id
+
+    def from_title(self) -> str:
+        """Generate a need ID from title."""
+
+        # default id from title if not exists
+        id_from_title = "title"
+        line_number = self.params.position.line
+        match = re.search(r".. ([a-z]+):: ([\w\s]+)", self.lines[line_number - 1])
+        if match:
+            matched_title = match.group(2)
+            if matched_title:
+                id_from_title = matched_title.rstrip().replace(" ", "_").lower()
+
+        return id_from_title
+
+
+def generate_need_id(
+    ls: NeedlsFeatures, params: CompletionContext, lines: List[str], need_type: Optional[str] = None
+) -> str:
+    """Generate a need ID."""
+
+    # check custom id from conf.py
+    if isinstance(ls.rst, SphinxLanguageServer) and ls.rst.app:
+        custom_snippets_id = ls.rst.app.config.needs_ide_snippets_id
+
+    if not custom_snippets_id:
+        # default to generate random need ID
+        custom_snippets_id = "{{random()}}"
+
+    # handled by jinja
+    templ = Environment(loader=BaseLoader()).from_string(custom_snippets_id)
+
+    jinja_util = JinjaHelperFunction(ls, params, lines, need_type)
+    data = {"random": jinja_util.random, "from_title": jinja_util.from_title}
+    need_id = templ.render(**data)
+
     return need_id
 
 
-def complete_directive(
-    ls: NeedlsFeatures, params: CompletionContext, lines: List[str], word: str
-) -> List[CompletionItem]:
+def complete_directive(ls: NeedlsFeatures, params: CompletionContext, lines: List[str]) -> List[CompletionItem]:
     # need_type ~ req, work, act, ...
     items = []
     for need_type, title in ls.needs_store.declared_types.items():
         text = (
             " " + need_type + ":: ${1:title}\n"
-            "\t:id: ${2:" + generate_need_id(ls, params, lines, word, need_type=need_type) + "}\n"
+            "\t:id: ${2:" + generate_need_id(ls, params, lines, need_type=need_type) + "}\n"
             "\t:status: open\n\n"
             "\t${3:content}.\n$0"
         )
@@ -415,14 +463,12 @@ def complete_directive(
     return items
 
 
-def complete_role_or_option(
-    ls: NeedlsFeatures, params: CompletionContext, lines: List[str], word: str
-) -> List[CompletionItem]:
+def complete_role_or_option(ls: NeedlsFeatures, params: CompletionContext, lines: List[str]) -> List[CompletionItem]:
     return [
         CompletionItem(
             label=":id:",
             detail="needs option",
-            insert_text="id: ${1:" + generate_need_id(ls, params, lines, word) + "}\n$0",
+            insert_text="id: ${1:" + generate_need_id(ls, params, lines) + "}\n$0",
             insert_text_format=InsertTextFormat.Snippet,
             kind=CompletionItemKind.Snippet,
         ),

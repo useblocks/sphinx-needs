@@ -9,7 +9,12 @@ from sphinx.errors import SphinxError
 from sphinx.roles import XRefRole
 
 from sphinx_needs.api.configuration import add_extra_option
-from sphinx_needs.builder import NeedsBuilder, build_needs_json
+from sphinx_needs.builder import (
+    NeedsBuilder,
+    NeedumlsBuilder,
+    build_needs_json,
+    build_needumls_pumls,
+)
 from sphinx_needs.config import NEEDS_CONFIG
 from sphinx_needs.defaults import (
     DEFAULT_DIAGRAM_TEMPLATE,
@@ -31,6 +36,7 @@ from sphinx_needs.directives.need import (
     process_need_nodes,
     purge_needs,
 )
+from sphinx_needs.directives.needarch import NeedarchDirective, process_needarch
 from sphinx_needs.directives.needbar import Needbar, NeedbarDirective, process_needbar
 from sphinx_needs.directives.needextend import (
     Needextend,
@@ -108,6 +114,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.setup_extension("sphinx_data_viewer")
 
     app.add_builder(NeedsBuilder)
+    app.add_builder(NeedumlsBuilder)
     app.add_config_value(
         "needs_types",
         [
@@ -126,6 +133,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_config_value("needs_id_prefix_needs", "", "html", types=[str])
     app.add_config_value("needs_id_prefix_specs", "", "html", types=[str])
     app.add_config_value("needs_id_length", 5, "html", types=[int])
+    app.add_config_value("needs_ide_snippets_id", "", "html", types=[str])
     app.add_config_value("needs_specs_show_needlist", False, "html", types=[bool])
     app.add_config_value("needs_id_required", False, "html", types=[bool])
     app.add_config_value(
@@ -215,6 +223,8 @@ def setup(app: Sphinx) -> Dict[str, Any]:
 
     app.add_config_value("needs_build_json", False, "html", types=[bool])
 
+    app.add_config_value("needs_build_needumls", "", "html", types=[str])
+
     # Permalink related config values.
     # path to permalink.html; absolute path from web-root
     app.add_config_value("needs_permalink_file", "permalink.html", "html")
@@ -271,6 +281,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_directive("needextend", NeedextendDirective)
     app.add_directive("needreport", NeedReportDirective)
     app.add_directive("needuml", NeedumlDirective)
+    app.add_directive("needarch", NeedarchDirective)
 
     ########################################################################
     # ROLES
@@ -322,6 +333,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.connect("doctree-resolved", process_needsequence)
     app.connect("doctree-resolved", process_needgantt)
     app.connect("doctree-resolved", process_needuml)
+    app.connect("doctree-resolved", process_needarch)
     app.connect("doctree-resolved", process_need_part)
     app.connect("doctree-resolved", process_need_ref)
     app.connect("doctree-resolved", process_need_incoming)
@@ -330,6 +342,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.connect("doctree-resolved", process_need_func)
     app.connect("build-finished", process_warnings)
     app.connect("build-finished", build_needs_json)
+    app.connect("build-finished", build_needumls_pumls)
     app.connect("env-updated", install_lib_static_files)
     app.connect("env-updated", install_permalink_file)
 

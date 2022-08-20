@@ -8,6 +8,7 @@ from jinja2 import BaseLoader, Environment, Template
 
 from sphinx_needs.diagrams_common import calculate_link
 from sphinx_needs.directives.needflow import make_entity_name
+from sphinx_needs.filter_common import filter_needs
 
 
 class Needuml(nodes.General, nodes.Element):
@@ -29,6 +30,7 @@ class NeedumlDirective(Directive):
         "config": directives.unchanged_required,
         "extra": directives.unchanged_required,
         "key": directives.unchanged_required,
+        "save": directives.unchanged_required,
     }
 
     def run(self) -> Sequence[nodes.Node]:
@@ -36,7 +38,13 @@ class NeedumlDirective(Directive):
         if not hasattr(env, "needs_all_needumls"):
             env.needs_all_needumls = {}
 
-        targetid = "needuml-{docname}-{id}".format(docname=env.docname, id=env.new_serialno("needuml"))
+        if self.name == "needarch":
+            targetid = "needarch-{docname}-{id}".format(docname=env.docname, id=env.new_serialno("needarch"))
+            is_arch = True
+        else:
+            targetid = "needuml-{docname}-{id}".format(docname=env.docname, id=env.new_serialno("needuml"))
+            is_arch = False
+
         targetnode = nodes.target("", "", ids=[targetid])
 
         scale = self.options.get("scale", "").replace("%", "")
@@ -68,6 +76,14 @@ class NeedumlDirective(Directive):
         if key_name == "diagram":
             raise NeedumlException(f"Needuml option key name can't be: {key_name}")
 
+        save_path = self.options.get("save", None)
+        plantuml_code_out_path = None
+        if save_path:
+            if os.path.isabs(save_path):
+                raise NeedumlException(f"Given save path: {save_path}, is not a relative path.")
+            else:
+                plantuml_code_out_path = save_path
+
         env.needs_all_needumls[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
@@ -81,6 +97,8 @@ class NeedumlDirective(Directive):
             "debug": "debug" in self.options,
             "extra": extra_dict,
             "key": key_name,
+            "save": plantuml_code_out_path,
+            "is_arch": is_arch,
         }
 
         return [targetnode] + [Needuml(targetid)]
@@ -110,17 +128,17 @@ class JinjaFunctions:
             if need_info["diagram"]:
                 uml_content = need_info["diagram"]
             else:
-                return self.need(need_id)
+                return self.flow(need_id)
 
         # We need to rerender the fetched content, as it may contain also Jinja statements.
         mem_template = Environment(loader=BaseLoader).from_string(uml_content)
-        data = {"needs": self.needs, "uml": self.uml, "need": self.need}
+        data = {"needs": self.needs, "uml": self.uml, "flow": self.flow}
         data.update(kwargs)
         uml = mem_template.render(**data)
 
         return uml
 
-    def need(self, need_id):
+    def flow(self, need_id):
         need_info = self.needs[need_id]
         link = calculate_link(self.app, need_info, self.fromdocname)
 
@@ -136,6 +154,13 @@ class JinjaFunctions:
         )
 
         return need_uml
+
+    def filter(self, filter_string):
+        """
+        Return a list of found needs that pass the given filter string.
+        """
+
+        return filter_needs(self.app, list(self.needs.values()), filter_string=filter_string)
 
 
 def process_needuml(app, doctree, fromdocname):
@@ -185,7 +210,7 @@ def process_needuml(app, doctree, fromdocname):
         # Get all needed Jinja Helper Functions
         jinja_utils = JinjaFunctions(app, fromdocname)
         # Make the helpers available during rendering
-        data = {"needs": all_needs, "uml": jinja_utils.uml, "need": jinja_utils.need}
+        data = {"needs": all_needs, "uml": jinja_utils.uml, "flow": jinja_utils.flow, "filter": jinja_utils.filter}
 
         data.update(current_needuml["extra"])
 
@@ -205,6 +230,9 @@ def process_needuml(app, doctree, fromdocname):
         puml_node["uml"] += f"\n{uml_content}"
 
         puml_node["uml"] += "\n@enduml\n"
+
+        # Add calculated needuml content
+        current_needuml["content_calculated"] = puml_node["uml"]
 
         puml_node["incdir"] = os.path.dirname(current_needuml["docname"])
         puml_node["filename"] = os.path.split(current_needuml["docname"])[1]  # Needed for plantuml >= 0.9

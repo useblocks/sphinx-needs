@@ -21,6 +21,12 @@ Under development
   (`#659 <https://github.com/useblocks/sphinx-needs/issues/659>`_)
 * Bugfix: Fixed :ref:`needextract` filter options issue involved with :ref:`need_part`.
   (`#651 <https://github.com/useblocks/sphinx-needs/issues/651>`_)
+* Improvement: Added `save` option for :ref:`needuml`.
+* Improvement: Added builder :ref:`needumls_builder` and config option :ref:`needs_build_needumls` in `conf.py`.
+* Improvement: Added `filter` function for :ref:`needuml`.
+* Improvement: Renamed jinja function `need` to `flow` for :ref:`needuml`.
+* Improvement: Added directive :ref:`needarch`.
+* Improvement: Added configuration option :ref:`needs_ide_snippets_id` to support custom need ID for :ref:`ide` snippets.
 
 1.0.1
 -----

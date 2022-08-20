@@ -1138,6 +1138,50 @@ The ID length must be at least 3 characters.
    If you change the regular expression, you should also set :ref:`needs_id_required`
    so that authors are forced to set an valid ID.
 
+.. _needs_ide_snippets_id:
+
+needs_ide_snippets_id
+~~~~~~~~~~~~~~~~~~~~~
+
+A jinja-string defines a custom need ID for :ref:`ide` snippets.
+
+Default value: ``""``
+
+``needs_ide_snippets_id`` provides two jinja functions to generate need ID:
+
+    * ``from_title()``: replaces all whitespaces with `_` and converts all to lowevercase from need title
+    * ``random()``: generates a random string
+
+It also supports Pre/Postfix.
+
+If ``needs_ide_snippets_id`` is not configured or empty, then a random string will be generated for :ref:`ide` snippets id.
+
+**Example**:
+{% raw %}
+
+.. code-block:: python
+
+   needs_ide_snippets_id = "{{random()}}"
+
+or 
+
+.. code-block:: python
+
+   needs_ide_snippets_id = "Test_{{random()}}_Test"
+
+or
+
+.. code-block:: python
+
+   needs_ide_snippets_id = "{{from_title()}}"
+
+or
+
+.. code-block:: python
+
+   needs_ide_snippets_id = "TEST_{{from_title()}}_TEST"
+
+{% endraw %}
 
 .. _needs_functions:
 
@@ -1662,6 +1706,27 @@ Example:
 
    The created ``needs.json`` file gets stored in the ``outdir`` of the current builder.
    So if ``html`` is used as builder, the final location is e.g. ``_build/html/needs.json``.
+
+.. _needs_build_needumls:
+
+needs_build_needumls
+~~~~~~~~~~~~~~~~~~~~
+
+Exports :ref:`needuml` data during each build.
+
+This option works like :ref:`needs_build_json`. But the value of :ref:`needs_build_needumls` should be a string,
+not a boolean. Default value of is: ``""``.
+
+This value of this option shall be a **relative folder path**, which specifies and creates the relative folder in the
+``outdir`` of the current builder.
+
+Example:
+
+.. code-block:: python
+
+    needs_build_needumls = "my_needumls"
+
+As a result, all the :ref:`needuml` data will be exported into folder in the ``outdir`` of the current builder, e.g. ``_build/html/my_needumls/``.
 
 .. _needs_permalink_file:
 
