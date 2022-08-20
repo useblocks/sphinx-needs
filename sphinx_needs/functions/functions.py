@@ -240,7 +240,6 @@ def resolve_variants_options(env: BuildEnvironment):
     Resolve variants options inside need data.
 
     Rough workflow:
-
     #. Parse all needs and their data for variant handling
     #. Replace original string with return value
 
@@ -251,31 +250,32 @@ def resolve_variants_options(env: BuildEnvironment):
     if env.needs_workflow["variant_option_resolved"]:
         return
 
+    variants_options = env.app.config.needs_variant_options
+    if len(variants_options) == 0:
+        # If variant_options is not provided
+        default_variant_options = ["status", "tags", "links"]
+        default_variant_options.extend(env.app.config.needs_extra_options)
+        extra_links = [extra_link["option"] for extra_link in env.app.config.needs_extra_links]
+        default_variant_options.extend(extra_links)
+        variants_options.extend(set(default_variant_options))
+
     needs = env.needs_all_needs
     for need in needs.values():
+        # Data to use as filter context.
+        need_context: Dict = copy.deepcopy(need)
+        need_context.update(**env.app.config.needs_variant_data)
+
         for need_option in need:
-            variants_options = env.app.config.needs_variant_options
-            if len(variants_options) == 0:
-                # If variant_options is not provided
-                default_variant_options = ["status", "tags", "links"]
-                default_variant_options.extend(env.app.config.needs_extra_options)
-                extra_links = [extra_link["option"] for extra_link in env.app.config.needs_extra_links]
-                default_variant_options.extend(extra_links)
-                variants_options.extend(set(default_variant_options))
             if need_option not in variants_options:
-                # Don't apply variant handling to options not in variant_options.
+                # Don't apply variant handling to options which are not in variant_options.
                 continue
-            # Data to use as filter context.
-            need_context: Dict = copy.deepcopy(need)
-            need_context.update(**env.app.config.needs_variant_data)
-            if need[need_option] is None or need[need_option] == "" or need[need_option] == []:
-                continue
-            elif not isinstance(need[need_option], (list, set, tuple)):
-                option_value: str = need[need_option]
-                need[need_option] = match_variants(option_value, need_context, env.app.config.needs_variants)
-            else:
-                option_value = need[need_option]
-                need[need_option] = match_variants(option_value, need_context, env.app.config.needs_variants)
+            if need[need_option] not in (None, "", []):
+                if not isinstance(need[need_option], (list, set, tuple)):
+                    option_value: str = need[need_option]
+                    need[need_option] = match_variants(option_value, need_context, env.app.config.needs_variants)
+                else:
+                    option_value = need[need_option]
+                    need[need_option] = match_variants(option_value, need_context, env.app.config.needs_variants)
 
     # Finally set a flag so that this function gets not executed several times
     env.needs_workflow["variant_option_resolved"] = True

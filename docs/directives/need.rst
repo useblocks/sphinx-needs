@@ -12,7 +12,7 @@ You can define the type using the correct directive, like ``.. req::`` or ``.. t
 
     .. req:: User needs to login
        :id: ID123
-       :status: open
+       :status: ['user' in tags and not collapse]:open, close
        :tags: user;login
        :collapse: false
 
@@ -22,7 +22,7 @@ You can define the type using the correct directive, like ``.. req::`` or ``.. t
 
 .. req:: User needs to login
    :id: ID123
-   :status: open
+   :status: ['user' in tags and not collapse]:open, close
    :tags: user;login
    :collapse: false
 

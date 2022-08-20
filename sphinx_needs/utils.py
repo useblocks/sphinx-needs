@@ -393,38 +393,43 @@ def match_variants(option_value: Union[str, List], keywords: Dict, needs_variant
     :rtype: Union[str, List, None]
     """
 
-    def variant_handling(variant_definitions: List, variant_data: Dict, variant_pattern: Pattern) -> Optional[str]:
+    def variant_handling(
+        variant_definitions: List, variant_data: Dict, variant_pattern: Pattern
+    ) -> Union[str, List, None]:
         filter_context = variant_data
-        filter_result = []
+        # filter_result = []
+        no_variants_in_option = False
         for variant_definition in variant_definitions:
             # Test if definition is a variant definition
             check_definition = variant_pattern.search(variant_definition)
-            if check_definition is None:
-                continue
-            # Separate variant definition from value to use for the option
-            filter_string, output, _ = re.split(r"(:[\w\- ]+)$", variant_definition)
-            filter_string = re.sub(r"^\[|]$", "", filter_string)
-            filter_string = needs_variants[filter_string] if filter_string in needs_variants else filter_string
-            # https://docs.python.org/3/library/functions.html?highlight=compile#compile
-            filter_compiled = compile(filter_string, "<string>", "eval")
-            try:
-                # Set filter_context as globals and not only locals in eval()!
-                # Otherwise, the vars not be accessed in list comprehensions.
-                if filter_compiled:
-                    eval_result = bool(eval(filter_compiled, filter_context))
-                else:
-                    eval_result = bool(eval(filter_string, filter_context))
-                # First matching variant definition defines the output
-                if eval_result:
-                    filter_result.insert(0, output.lstrip(":"))
-                    break
-                continue
-            except Exception as e:
-                logger.warning(f'There was an error in the filter statement: "{filter_string}". ' f"Error Msg: {e}")
-                continue
+            if check_definition:
+                # Separate variant definition from value to use for the option
+                filter_string, output, _ = re.split(r"(:[\w\- ]+)$", variant_definition)
+                filter_string = re.sub(r"^\[|[:\]]$", "", filter_string)
+                filter_string = needs_variants[filter_string] if filter_string in needs_variants else filter_string
+                try:
+                    # https://docs.python.org/3/library/functions.html?highlight=compile#compile
+                    filter_compiled = compile(filter_string, "<string>", "eval")
+                    # Set filter_context as globals and not only locals in eval()!
+                    # Otherwise, the vars not be accessed in list comprehensions.
+                    if filter_compiled:
+                        eval_result = bool(eval(filter_compiled, filter_context))
+                    else:
+                        eval_result = bool(eval(filter_string, filter_context))
+                    # First matching variant definition defines the output
+                    if eval_result:
+                        no_variants_in_option = False
+                        return output.lstrip(":")
+                except Exception as e:
+                    logger.warning(f'There was an error in the filter statement: "{filter_string}". ' f"Error Msg: {e}")
+            else:
+                no_variants_in_option = True
 
-        if len(filter_result) == 1:
-            return filter_result[0]
+        # if len(filter_result) == 1:
+        #     return filter_result[0]
+
+        if no_variants_in_option:
+            return None
 
         # If no variant-rule is True, set to last, variant-free option. If this does not exist, set to None.
         defaults_to = variant_definitions[-1]
@@ -432,12 +437,8 @@ def match_variants(option_value: Union[str, List], keywords: Dict, needs_variant
             return None
         return re.sub(r"[;,] ", "", defaults_to)
 
-    split_pattern = (
-        r"([\[\]]{1}[\w=:' \-\"]+[\[\(\{]{1}[\w=,': \-\"]*[\]\)\}]{1}[\[\]]{1}:[\w\- ]+)|"
-        r"([\[\]]{1}[\w=:'\-\[\] \"]+[\[\]]{1}:[\w\- ]+)|"
-        r"([\w: ]+[,;]{,1})"
-    )
-    variant_rule_pattern = r"^[\w'=:\-\"\[\] ]+:[\w'=:\-\"\[\] ]+$"
+    split_pattern = r"([\[\]]{1}[\w=:' \-\"]+[\[\(\{]{1}[\w=,': \-\"]*[\]\)\}]{1}[\[\]]{1}:[\w\- ]+)|([\[\]]{1}[\w=:'\-\[\] \"]+[\[\]]{1}:[\w\- ]+)|([\w: ]+[,;]{1})"
+    variant_rule_pattern = r"^[\w'=,:\-\"\[\] ]+:[\w'=:\-\"\[\] ]+$"
     variant_splitting = re.compile(split_pattern)
     variant_rule_matching = re.compile(variant_rule_pattern)
 
@@ -445,12 +446,16 @@ def match_variants(option_value: Union[str, List], keywords: Dict, needs_variant
     #     return option_value
 
     # Handling multiple variant definitions
-    if isinstance(option_value, str) and variant_rule_matching.search(option_value):
-        multiple_variants: List = variant_splitting.split(option_value)
+    if isinstance(option_value, str):
+        multiple_variants: List = variant_splitting.split(rf"""{option_value}""")
         multiple_variants: List = [
             re.sub(r"^([;, ]+)|([;, ]+$)", "", i) for i in multiple_variants if i not in (None, ";", "", " ")
         ]
+        if len(multiple_variants) == 1 and not variant_rule_matching.search(multiple_variants[0]):
+            return option_value
         new_option_value = variant_handling(multiple_variants, keywords, variant_rule_matching)
+        if new_option_value is None:
+            return option_value
         return new_option_value
     elif isinstance(option_value, (list, set, tuple)):
         multiple_variants: List = list(option_value)
