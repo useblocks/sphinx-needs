@@ -1901,7 +1901,7 @@ If "force style" is set, all other styles are removed and just the constraint_fa
 
 needs_variants
 ~~~~~~~~~~~~~~
-.. versionadded:: 1.0.1
+.. versionadded:: 1.0.2
 
 ``needs_variants`` configuration option must be a dictionary which has pre-defined variants assigned to
 "filter strings". The filter string defines which variant a need belongs in the current situations.
@@ -1926,7 +1926,7 @@ Default: ``{}``
 
 needs_variant_options
 ~~~~~~~~~~~~~~~~~~~~~
-.. versionadded:: 1.0.1
+.. versionadded:: 1.0.2
 
 ``needs_variant_options`` must be a list which consists of the options to apply variants handling.
 You can specify the names of the options you want to check for variants.
@@ -1953,25 +1953,6 @@ Default: ``[]``
       * options specified in :ref:`extra options <needs_extra_options>`
       * options specified in :ref:`extra links <needs_extra_links>`
 
-.. _needs_variant_data:
-
-needs_variant_data
-~~~~~~~~~~~~~~~~~~
-.. versionadded:: 1.0.1
-
-``needs_variant_data`` configuration option is a dictionary that consists of data to use as a variant filter context.
-
-|ex|
-
-In ``conf.py``:
-
-.. code-block:: python
-
-   needs_variant_data = {"assignee": "Randy Duodu"}
-
-From the example above, we can then have a filter string that checks if assignee is the value above or not.
-
-Default: ``{}``
 
 Removed options
 ---------------

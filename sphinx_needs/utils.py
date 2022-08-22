@@ -441,9 +441,6 @@ def match_variants(option_value: Union[str, List], keywords: Dict, needs_variant
     variant_splitting = re.compile(split_pattern)
     variant_rule_matching = re.compile(variant_rule_pattern)
 
-    # if len(multiple_variants) == 1 and not variant_rule_matching.search(multiple_variants[0]):
-    #     return option_value
-
     # Handling multiple variant definitions
     if isinstance(option_value, str):
         multiple_variants: List = variant_splitting.split(rf"""{option_value}""")

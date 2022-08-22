@@ -263,7 +263,9 @@ def resolve_variants_options(env: BuildEnvironment):
     for need in needs.values():
         # Data to use as filter context.
         need_context: Dict = copy.deepcopy(need)
-        need_context.update(**env.app.config.needs_variant_data)
+        need_context.update(**env.app.config.needs_filter_data)  # Add needs_filter_data to filter context
+        _sphinx_tags = env.app.builder.tags.tags  # Get sphinx tags
+        need_context.update(**_sphinx_tags)  # Add sphinx tags to filter context
 
         for need_option in need:
             if need_option not in variants_options:

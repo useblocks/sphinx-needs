@@ -42,7 +42,7 @@ but you must set a title as an argument (i.e. if you do not specify :ref:`needs_
 
 Variants for options support
 ----------------------------
-.. versionadded:: 1.0.1
+.. versionadded:: 1.0.2
 
 Needs variants add support for variants handling on need options. |br|
 The support for variants options introduce new ideologies on how to set values for *need options*.
@@ -59,8 +59,9 @@ Rules for specifying variant definitions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * Variants gets checked from left to right.
-* When evaluating a variant definition, we use both the current need object and :ref:`needs_variant_data` as
-  the context for filtering.
+* When evaluating a variant definition, we use data from the current need object,
+  `Sphinx-Tags <https://www.sphinx-doc.org/en/master/man/sphinx-build.html#cmdoption-sphinx-build-t>`_,
+  and :ref:`needs_filter_data` as the context for filtering.
 * You can set a *need option* to multiple variant definitions by separating each definition with either
   the ``,`` or ``;`` symbol, like ``var_a:open; ['name' in tags]:assigned``.|br|
   With multiple variant definitions, we set the first matching variant as the *need option's* value.
@@ -77,7 +78,6 @@ To implement variants options, you must configure the following in your ``conf.p
 
 * :ref:`needs_variants`
 * :ref:`needs_variant_options`
-* :ref:`needs_variant_data`
 
 There are various use cases for variants options support.
 
@@ -129,6 +129,40 @@ In your ``.rst`` file:
 From the above example, we evaluate the filter string in our variant definition without referring to :ref:`needs_variants`.
 If a variant definition is true, then we set the *need option* to the value of the variant definition.
 
+Use Case 3
+~~~~~~~~~~
+
+In this example, you can use defined tags (via the `-t <https://www.sphinx-doc.org/en/master/man/sphinx-build.html#cmdoption-sphinx-build-t>`_
+command-line option or within conf.py, see `here <https://www.sphinx-doc.org/en/master/usage/configuration.html#conf-tags>`_)
+in the *need option's* variant definition.
+
+|ex|
+
+First of all, define your Sphinx-Tags using either the ``-t`` command-line ``sphinx-build`` option:
+
+.. code-block:: bash
+
+   sphinx-build -b html -t tag_a . _build
+
+or using the special object named ``tags`` which is available in your Sphinx config file (``conf.py`` file):
+
+.. code-block:: python
+
+   tags.add("tag_b")   # Add "tag_b" which is set to True
+
+In your ``.rst`` file:
+
+.. code-block:: rst
+
+   .. req:: Example
+      :id: VA_003
+      :status: [tag_a and tag_b]:open, closed
+
+From the above example, if a tag is defined, the plugin can access it in the filter context when handling variants.
+If a variant definition is true, then we set the *need option* to the value of the variant definition.
+
+.. note:: Undefined tags are false and defined tags are true.
+
 Below is an implementation of variants for need options:
 
 |ex|
@@ -136,7 +170,7 @@ Below is an implementation of variants for need options:
 .. code-block:: rst
 
    .. req:: Variant options
-      :id: VA_003
+      :id: VA_004
       :status: ['variants' in tags and not collapse]:enabled, disabled
       :tags: variants;support
       :collapse: true
@@ -146,7 +180,7 @@ Below is an implementation of variants for need options:
 |out|
 
 .. req:: Variant options
-   :id: VA_003
+   :id: VA_004
    :status: ['variants' in tags and not collapse]:enabled, disabled
    :tags: variants;support
    :collapse: true

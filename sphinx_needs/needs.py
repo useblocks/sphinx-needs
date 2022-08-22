@@ -241,7 +241,6 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     # add variants option
     app.add_config_value("needs_variants", {}, "html", types=[dict])
     app.add_config_value("needs_variant_options", [], "html", types=[list])
-    app.add_config_value("needs_variant_data", {}, "html", types=[dict])
 
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
