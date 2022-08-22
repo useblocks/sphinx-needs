@@ -399,10 +399,12 @@ def match_variants(option_value: Union[str, List], keywords: Dict, needs_variant
         filter_context = variant_data
         # filter_result = []
         no_variants_in_option = False
+        variants_in_option = False
         for variant_definition in variant_definitions:
             # Test if definition is a variant definition
             check_definition = variant_pattern.search(variant_definition)
             if check_definition:
+                variants_in_option = True
                 # Separate variant definition from value to use for the option
                 filter_string, output, _ = re.split(r"(:[\w\- ]+)$", variant_definition)
                 filter_string = re.sub(r"^\[|[:\]]$", "", filter_string)
@@ -425,15 +427,12 @@ def match_variants(option_value: Union[str, List], keywords: Dict, needs_variant
             else:
                 no_variants_in_option = True
 
-        # if len(filter_result) == 1:
-        #     return filter_result[0]
-
-        if no_variants_in_option:
+        if no_variants_in_option and not variants_in_option:
             return None
 
         # If no variant-rule is True, set to last, variant-free option. If this does not exist, set to None.
         defaults_to = variant_definitions[-1]
-        if variant_pattern.search(defaults_to):
+        if variants_in_option and variant_pattern.search(defaults_to):
             return None
         return re.sub(r"[;,] ", "", defaults_to)
 

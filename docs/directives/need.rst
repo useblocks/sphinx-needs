@@ -6,13 +6,13 @@ need / req (or any other defined need type)
 Creates a **need** object with a specified type.
 You can define the type using the correct directive, like ``.. req::`` or ``.. test::``.
 
-.. rubric:: **Example**
+|ex|
 
 .. code-block:: rst
 
     .. req:: User needs to login
        :id: ID123
-       :status: ['user' in tags and not collapse]:open, close
+       :status: open
        :tags: user;login
        :collapse: false
 
@@ -22,7 +22,7 @@ You can define the type using the correct directive, like ``.. req::`` or ``.. t
 
 .. req:: User needs to login
    :id: ID123
-   :status: ['user' in tags and not collapse]:open, close
+   :status: open
    :tags: user;login
    :collapse: false
 
@@ -38,12 +38,127 @@ but you must set a title as an argument (i.e. if you do not specify :ref:`needs_
     By default, the above example works also with ``.. spec::``, ``.. impl::``, ``.. test::`` and all other need types,
     which are configured via :ref:`needs_types`.
 
+.. _needs_variant_support:
+
+Variants for options support
+----------------------------
+.. versionadded:: 1.0.1
+
+Needs variants add support for variants handling on need options. |br|
+The support for variants options introduce new ideologies on how to set values for *need options*.
+
+To implement variants options, you can set a *need option* to a variant definition or multiple variant definitions.
+A variant definition can look like ``var_a:open`` or ``['name' in tags]:assigned``.
+
+A variant definition has two parts: the **rule or key** and the **value**. |br|
+For example, if we specify a variant definition as ``var_a:open``, then ``var_a`` is the key and ``open`` is the value.
+On the other hand, if we specify a variant definition as ``['name' in tags]:assigned``, then ``['name' in tags]`` is the rule
+and ``assigned`` is the value.
+
+Rules for specifying variant definitions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Variants gets checked from left to right.
+* When evaluating a variant definition, we use both the current need object and :ref:`needs_variant_data` as
+  the context for filtering.
+* You can set a *need option* to multiple variant definitions by separating each definition with either
+  the ``,`` or ``;`` symbol, like ``var_a:open; ['name' in tags]:assigned``.|br|
+  With multiple variant definitions, we set the first matching variant as the *need option's* value.
+* When you set a *need option* to multiple variant definitions, you can specify the last definition as
+  a default "variant-free" option which we can use if no variant definition matches. |br|
+  Example; In this multi-variant definitions, ``[status in tags]:added; var_a:changed; unknown``, *unknown* will be used
+  if none of the other variant definitions are True.
+* If you prefer your variant definitions to use rules instead of keys, then you should put your filter string
+  inside square brackets like this: ``['name' in tags]:assigned``.
+* For multi-variant definitions, you can mix both rule and variant-named options like this:
+  ``[author["test"][0:4] == 'me']:Me, var_a:Variant A, Unknown``
+
+To implement variants options, you must configure the following in your ``conf.py`` file:
+
+* :ref:`needs_variants`
+* :ref:`needs_variant_options`
+* :ref:`needs_variant_data`
+
+There are various use cases for variants options support.
+
+Use Case 1
+~~~~~~~~~~
+
+In this example, you set the :ref:`needs_variants` configuration that comprises pre-defined variants assigned to
+"filter strings".
+You can then use the keys in your ``needs_variants`` as references when defining variants for a *need option*.
+
+|ex|
+
+In ``conf.py``:
+
+.. code-block:: python
+
+   needs_variants = {
+     "var_a": "'var_a' in sphinx_tags"  # filter_string
+     "var_b": "assignee == 'me'"
+   }
+
+In your ``.rst`` file:
+
+.. code-block:: rst
+
+   .. req:: Example
+      :id: VA_001
+      :status: var_a:open, var_b:closed, unknown
+
+From the above example, if a *need option* has variants defined, then we get the filter string
+from our ``needs_variants`` configuration and evaluate it.
+If a variant definition is true, then we set the *need option* to the value of the variant definition.
+
+Use Case 2
+~~~~~~~~~~
+
+In this example, you can use the filter string directly in the *need option's* variant definition.
+
+|ex|
+
+In your ``.rst`` file:
+
+.. code-block:: rst
+
+   .. req:: Example
+      :id: VA_002
+      :status: ['var_a' in tags]:open, [assignee == 'me']:closed, unknown
+
+From the above example, we evaluate the filter string in our variant definition without referring to :ref:`needs_variants`.
+If a variant definition is true, then we set the *need option* to the value of the variant definition.
+
+Below is an implementation of variants for need options:
+
+|ex|
+
+.. code-block:: rst
+
+   .. req:: Variant options
+      :id: VA_003
+      :status: ['variants' in tags and not collapse]:enabled, disabled
+      :tags: variants;support
+      :collapse: true
+
+      Variants for need options in action
+
+|out|
+
+.. req:: Variant options
+   :id: VA_003
+   :status: ['variants' in tags and not collapse]:enabled, disabled
+   :tags: variants;support
+   :collapse: true
+
+   Variants for need options in action
+
 .. _need_diagram:
 
 Diagram support
 ---------------
 A need objects can also define it's own PlantUML representation.
-Therefor Sphinx-Needs looks for the first occurrence of a :ref:`needuml` directive inside the content
+Therefore Sphinx-Needs looks for the first occurrence of a :ref:`needuml` directive inside the content
 and stores its PlantUML code under the option name ``diagram``.
 
 This diagram data can then be used in other :ref:`needuml` calls to combine and reuse PlantUML elements.
