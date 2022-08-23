@@ -185,7 +185,7 @@ def test_needuml_key_exists_in_need_default_options(test_app):
 
     assert (
         "sphinx_needs.directives.needuml.NeedumlException: Needuml key: lineno, already exists in "
-        "need default options: ['docname', 'lineno'," in out.stderr.decode("utf-8")
+        "need default options: ['docname', 'doctype', 'lineno'," in out.stderr.decode("utf-8")
     )
 
 

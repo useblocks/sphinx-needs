@@ -299,9 +299,16 @@ def add_need(
     else:
         trimmed_title = title[: max_length - 3] + "..."
 
+    # Calculate doc type, e.g. .rst or .md
+    if state and state.document and state.document.current_source:
+        doctype = os.path.splitext(state.document.current_source)[1]
+    else:
+        doctype = ".rst"
+
     # Add the need and all needed information
     needs_info = {
         "docname": docname,
+        "doctype": doctype,
         "lineno": lineno,
         "target_node": target_node,
         "external_url": external_url,

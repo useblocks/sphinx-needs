@@ -8,6 +8,7 @@ TEST_DEPENDENCIES = [
     "pytest-xdist",
     "pytest_lsp",
     "pytest-benchmark",
+    "myst-parser",
     "responses",
     "lxml",
     "pyparsing!=3.0.4",
