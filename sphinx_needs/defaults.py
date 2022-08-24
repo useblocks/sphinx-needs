@@ -3,6 +3,7 @@ from typing import Any, Dict
 
 from docutils.parsers.rst import directives
 
+
 DEFAULT_DIAGRAM_TEMPLATE = """
 {%- if is_need -%}
 <size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>
@@ -228,3 +229,16 @@ NEEDEXTEND_NOT_ALLOWED_OPTIONS = ["id"]
 NEEDS_PROFILING = [x.upper() for x in os.environ.get("NEEDS_PROFILING", "").split(",")]
 
 NEEDS_TABLES_CLASSES = ["rtd-exclude-wy-table", "no-sphinx-material-strip"]
+
+NEEDS_PYDANTIC_REMOVE_FIELDS = [
+    "docname",
+    "external_css",
+    "hide",
+    "is_modified",
+    "layout",
+    "style",
+    "type_color",
+    "type_name",
+    "type_prefix",
+    "type_style",
+]

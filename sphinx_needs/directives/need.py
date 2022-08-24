@@ -10,7 +10,6 @@ from sphinx.addnodes import desc_name, desc_signature
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util.docutils import SphinxDirective
-
 from sphinx_needs.api import add_need
 from sphinx_needs.api.exceptions import NeedsInvalidException
 from sphinx_needs.config import NEEDS_CONFIG
@@ -23,9 +22,11 @@ from sphinx_needs.functions import (
 from sphinx_needs.functions.functions import check_and_get_content
 from sphinx_needs.layout import build_need
 from sphinx_needs.logging import get_logger
+from sphinx_needs.modeling import check_model
 from sphinx_needs.need_constraints import process_constraints
 from sphinx_needs.nodes import Need
 from sphinx_needs.utils import profile, unwrap
+
 
 logger = get_logger(__name__)
 
@@ -192,17 +193,18 @@ class NeedDirective(SphinxDirective):
         if len(self.arguments) > 0:  # a title was passed
             if "title_from_content" in self.options:
                 self.log.warning(
-                    'Needs: need "{}" has :title_from_content: set, '
-                    "but a title was provided. (see file {})".format(self.arguments[0], self.docname)
+                    'Needs: need "{}" has :title_from_content: set, but a title was provided. (see file {})'.format(
+                        self.arguments[0], self.docname
+                    )
                 )
             return self.arguments[0]
         elif self.title_from_content:
             first_sentence = re.split(r"[.\n]", "\n".join(self.content))[0]
             if not first_sentence:
                 raise NeedsInvalidException(
-                    ":title_from_content: set, but "
-                    "no content provided. "
-                    "(Line {} of file {}".format(self.lineno, self.docname)
+                    ":title_from_content: set, but no content provided. (Line {} of file {}".format(
+                        self.lineno, self.docname
+                    )
                 )
             return first_sentence
         else:
@@ -330,6 +332,9 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
 
     # Apply variant handling on options and replace its values with their return values
     resolve_variants_options(env)
+
+    # check needsa against user provided pydantic models
+    check_model(env)
 
     # check if we have dead links
     check_links(env)

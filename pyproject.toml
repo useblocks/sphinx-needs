@@ -42,6 +42,7 @@ jsonschema = "3.2.0"  # needsimport schema validation
 sphinx-data-viewer = "^0.1.1"  # needservice debug output
 esbonio = ">=0.11.3"  # IDE language features
 pygls = "*"  # esbonio dependency
+pydantic = "*"  # modeling
 
 [tool.poetry.dev-dependencies]
 sphinxcontrib-plantuml = "^0"

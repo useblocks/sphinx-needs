@@ -7,14 +7,8 @@ from sphinx.config import Config
 from sphinx.environment import BuildEnvironment
 from sphinx.errors import SphinxError
 from sphinx.roles import XRefRole
-
 from sphinx_needs.api.configuration import add_extra_option
-from sphinx_needs.builder import (
-    NeedsBuilder,
-    NeedumlsBuilder,
-    build_needs_json,
-    build_needumls_pumls,
-)
+from sphinx_needs.builder import NeedsBuilder, NeedumlsBuilder, build_needs_json, build_needumls_pumls
 from sphinx_needs.config import NEEDS_CONFIG
 from sphinx_needs.defaults import (
     DEFAULT_DIAGRAM_TEMPLATE,
@@ -22,6 +16,7 @@ from sphinx_needs.defaults import (
     NEED_DEFAULT_OPTIONS,
     NEEDEXTEND_NOT_ALLOWED_OPTIONS,
     NEEDFLOW_CONFIG_DEFAULTS,
+    NEEDS_PYDANTIC_REMOVE_FIELDS,
     NEEDS_TABLES_CLASSES,
 )
 from sphinx_needs.directives.need import (
@@ -38,59 +33,24 @@ from sphinx_needs.directives.need import (
 )
 from sphinx_needs.directives.needarch import NeedarchDirective, process_needarch
 from sphinx_needs.directives.needbar import Needbar, NeedbarDirective, process_needbar
-from sphinx_needs.directives.needextend import (
-    Needextend,
-    NeedextendDirective,
-    process_needextend,
-)
-from sphinx_needs.directives.needextract import (
-    Needextract,
-    NeedextractDirective,
-    process_needextract,
-)
-from sphinx_needs.directives.needfilter import (
-    Needfilter,
-    NeedfilterDirective,
-    process_needfilters,
-)
-from sphinx_needs.directives.needflow import (
-    Needflow,
-    NeedflowDirective,
-    process_needflow,
-)
-from sphinx_needs.directives.needgantt import (
-    Needgantt,
-    NeedganttDirective,
-    process_needgantt,
-)
+from sphinx_needs.directives.needextend import Needextend, NeedextendDirective, process_needextend
+from sphinx_needs.directives.needextract import Needextract, NeedextractDirective, process_needextract
+from sphinx_needs.directives.needfilter import Needfilter, NeedfilterDirective, process_needfilters
+from sphinx_needs.directives.needflow import Needflow, NeedflowDirective, process_needflow
+from sphinx_needs.directives.needgantt import Needgantt, NeedganttDirective, process_needgantt
 from sphinx_needs.directives.needimport import Needimport, NeedimportDirective
-from sphinx_needs.directives.needlist import (
-    Needlist,
-    NeedlistDirective,
-    process_needlist,
-)
+from sphinx_needs.directives.needlist import Needlist, NeedlistDirective, process_needlist
 from sphinx_needs.directives.needpie import Needpie, NeedpieDirective, process_needpie
 from sphinx_needs.directives.needreport import NeedReportDirective
-from sphinx_needs.directives.needsequence import (
-    Needsequence,
-    NeedsequenceDirective,
-    process_needsequence,
-)
+from sphinx_needs.directives.needsequence import Needsequence, NeedsequenceDirective, process_needsequence
 from sphinx_needs.directives.needservice import Needservice, NeedserviceDirective
-from sphinx_needs.directives.needtable import (
-    Needtable,
-    NeedtableDirective,
-    process_needtables,
-)
+from sphinx_needs.directives.needtable import Needtable, NeedtableDirective, process_needtables
 from sphinx_needs.directives.needuml import Needuml, NeedumlDirective, process_needuml
-from sphinx_needs.environment import (
-    install_lib_static_files,
-    install_permalink_file,
-    install_styles_static_files,
-)
+from sphinx_needs.environment import install_lib_static_files, install_permalink_file, install_styles_static_files
 from sphinx_needs.external_needs import load_external_needs
 from sphinx_needs.functions import needs_common_functions, register_func
 from sphinx_needs.logging import get_logger
+from sphinx_needs.modeling import check_model, update_config
 from sphinx_needs.roles.need_count import NeedCount, process_need_count
 from sphinx_needs.roles.need_func import NeedFunc, process_need_func
 from sphinx_needs.roles.need_incoming import NeedIncoming, process_need_incoming
@@ -102,6 +62,7 @@ from sphinx_needs.services.manager import ServiceManager
 from sphinx_needs.services.open_needs import OpenNeedsService
 from sphinx_needs.utils import INTERNALS, NEEDS_FUNCTIONS
 from sphinx_needs.warnings import process_warnings
+
 
 VERSION = "1.0.1"
 NEEDS_FUNCTIONS.clear()
@@ -242,6 +203,10 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_config_value("needs_variants", {}, "html", types=[dict])
     app.add_config_value("needs_variant_options", [], "html", types=[list])
 
+    # add pydantic modeling option
+    app.add_config_value("needs_pydantic_models", [], "html", types=[str])
+    app.add_config_value("needs_pydantic_remove_fields", NEEDS_PYDANTIC_REMOVE_FIELDS, "html", types=[list])
+
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(
@@ -305,6 +270,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     ########################################################################
     # Make connections to events
     app.connect("env-purge-doc", purge_needs)
+    app.connect("config-inited", update_config)
     app.connect("config-inited", load_config)
     app.connect("env-before-read-docs", prepare_env)
     app.connect("env-before-read-docs", load_external_needs)
@@ -560,6 +526,7 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
             "backlink_creation_links": False,
             "dynamic_values_resolved": False,
             "variant_option_resolved": False,
+            "model_checked": False,
             "needs_extended": False,
         }
         for link_type in app.config.needs_extra_links:
@@ -589,30 +556,31 @@ def check_configuration(_app: Sphinx, config: Config) -> None:
         # Check if needs external filter and extra option are using the same name
         if extern_filter in extra_options:
             raise NeedsConfigException(
-                "Same name for external filter and extra option: {}." " This is not allowed.".format(extern_filter)
+                "Same name for external filter and extra option: {}. This is not allowed.".format(extern_filter)
             )
 
     # Check for usage of internal names
     for internal in INTERNALS:
         if internal in extra_options:
             raise NeedsConfigException(
-                'Extra option "{}" already used internally. ' " Please use another name.".format(internal)
+                'Extra option "{}" already used internally.  Please use another name.'.format(internal)
             )
         if internal in link_types:
             raise NeedsConfigException(
-                'Link type name "{}" already used internally. ' " Please use another name.".format(internal)
+                'Link type name "{}" already used internally.  Please use another name.'.format(internal)
             )
 
     # Check if option and link are using the same name
     for link in link_types:
         if link in extra_options:
             raise NeedsConfigException(
-                "Same name for link type and extra option: {}." " This is not allowed.".format(link)
+                "Same name for link type and extra option: {}. This is not allowed.".format(link)
             )
         if link + "_back" in extra_options:
             raise NeedsConfigException(
-                "Same name for automatically created link type and extra option: {}."
-                " This is not allowed.".format(link + "_back")
+                "Same name for automatically created link type and extra option: {}. This is not allowed.".format(
+                    link + "_back"
+                )
             )
 
     external_variants = getattr(config, "needs_variants", {})
