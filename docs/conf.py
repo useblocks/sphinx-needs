@@ -561,6 +561,8 @@ needs_constraint_failed_options = {
     "LOW": {"on_fail": [], "style": ["yellow_bar"], "force_style": False},
 }
 
+# variants options
+needs_variant_options = ["status"]
 
 rst_epilog = """
 .. |ex| replace:: **Example**

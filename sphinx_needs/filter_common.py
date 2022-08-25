@@ -269,7 +269,7 @@ def filter_single_need(
     :param need: need or need_part
     :param filter_string: string, which is used as input for eval()
     :param needs: list of all needs
-    :return: True, if need as passed the filter_string, else False
+    :return: True, if need passes the filter_string, else False
     """
     filter_context = need.copy()
     if needs:
@@ -286,7 +286,7 @@ def filter_single_need(
     result = False
     try:
         # Set filter_context as globals and not only locals in eval()!
-        # Otherwise the vars not not be accessed in list comprehensions.
+        # Otherwise, the vars not be accessed in list comprehensions.
         if filter_compiled:
             result = bool(eval(filter_compiled, filter_context))
         else:

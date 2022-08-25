@@ -238,6 +238,10 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_config_value("needs_constraint_failed_options", {}, "html", types=[dict])
     app.add_config_value("needs_constraints_failed_color", "", "html")
 
+    # add variants option
+    app.add_config_value("needs_variants", {}, "html", types=[dict])
+    app.add_config_value("needs_variant_options", [], "html", types=[list])
+
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(
@@ -549,12 +553,13 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
 
     if not hasattr(env, "needs_workflow"):
         # Used to store workflow status information for already executed tasks.
-        # Some tasks like backlink_creation need be be performed only once.
+        # Some tasks like backlink_creation need be performed only once.
         # But most sphinx-events get called several times (for each single document
         # file), which would also execute our code several times...
         env.needs_workflow = {
             "backlink_creation_links": False,
             "dynamic_values_resolved": False,
+            "variant_option_resolved": False,
             "needs_extended": False,
         }
         for link_type in app.config.needs_extra_links:
@@ -608,6 +613,23 @@ def check_configuration(_app: Sphinx, config: Config) -> None:
             raise NeedsConfigException(
                 "Same name for automatically created link type and extra option: {}."
                 " This is not allowed.".format(link + "_back")
+            )
+
+    external_variants = getattr(config, "needs_variants", {})
+    external_variant_options = getattr(config, "needs_variant_options", [])
+    for value in external_variants.values():
+        # Check if external filter values is really a string
+        if not isinstance(value, str):
+            raise NeedsConfigException(
+                f"Variant filter value: {value} from needs_variants {external_variants} is not a string."
+            )
+
+    for option in external_variant_options:
+        # Check variant option is added in either extra options or extra links or NEED_DEFAULT_OPTIONS
+        if option not in extra_options and option not in link_types and option not in NEED_DEFAULT_OPTIONS.keys():
+            raise NeedsConfigException(
+                "Variant option `{}` is not added in either extra options or extra links. "
+                "This is not allowed.".format(option)
             )
 
 

@@ -1897,7 +1897,61 @@ Each entry describes in an "on_fail" action what to do:
 
 If "force style" is set, all other styles are removed and just the constraint_failed style remains.
 
+.. _needs_variants:
 
+needs_variants
+~~~~~~~~~~~~~~
+.. versionadded:: 1.0.2
+
+``needs_variants`` configuration option must be a dictionary which has pre-defined variants assigned to
+"filter strings". The filter string defines which variant a need belongs in the current situations.
+
+|ex|
+
+In ``conf.py``:
+
+.. code-block:: python
+
+   needs_variants = {
+     "var_a": "'var_a' in sphinx_tags"  # filter_string
+     "var_b": "assignee == 'me'"
+   }
+
+The dictionary consists of key-value pairs where the key is a string used as a reference to the value.
+The value is a string which consists of a Python-supported "filter string".
+
+Default: ``{}``
+
+.. _needs_variant_options:
+
+needs_variant_options
+~~~~~~~~~~~~~~~~~~~~~
+.. versionadded:: 1.0.2
+
+``needs_variant_options`` must be a list which consists of the options to apply variants handling.
+You can specify the names of the options you want to check for variants.
+
+|ex|
+
+In ``conf.py``:
+
+.. code-block:: python
+
+   needs_variant_options = ["author", "status", "tags"]
+
+From the example above, we apply variants handling to only the options specified.
+
+Default: ``[]``
+
+.. note::
+
+   1. You must ensure the options in ``needs_variant_options`` are either default need options or specified in
+      :ref:`extra options <needs_extra_options>` or :ref:`extra links <needs_extra_links>`.
+   2. By default, if ``needs_variant_options`` is empty, we apply variants handling to the following options:
+
+      * ``status``, ``tags`` and ``links`` options
+      * options specified in :ref:`extra options <needs_extra_options>`
+      * options specified in :ref:`extra links <needs_extra_links>`
 
 
 Removed options
