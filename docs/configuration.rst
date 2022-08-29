@@ -1542,9 +1542,9 @@ keys:
 :base_url: Base url which is used to calculate the final, specific need url. Normally the path under which the ``index.html`` is provided.
            Base url supports also relative path, which starts from project build html folder (normally where ``index.html`` is located).
 :json_url: An url, which can be used to download the ``needs.json`` (or similar) file.
-:json_path: A path to a locally stored ``needs.json`` file. Can not be used together with ``json_url``.
-            A relative path must be relative to the project configuration folder (where the **conf.py** is stored).
-            (Since version `0.7.1`)
+:json_path: The path to a ``needs.json`` file located inside your documentation project. Can not be used together with
+            ``json_url``. |br| The value must be a relative path, which is relative to the project configuration folder
+            (where the **conf.py** is stored). (Since version `0.7.1`)
 :version: Defines the version to use inside the ``needs.json`` file (*optional*).
 :id_prefix: Prefix as string, which will be added to all id of external needs. Needed, if there is the risk that
             needs from different projects may have the same id (*optional*).

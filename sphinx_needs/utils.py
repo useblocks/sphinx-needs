@@ -217,7 +217,7 @@ def import_prefix_link_edit(needs: Dict[str, Any], id_prefix: str, needs_extra_l
     """
     Changes existing links to support given prefix.
     Only link-ids get touched, which are part of ``needs`` (so are linking them).
-    Other links do not get the prefix, as there are treated as "external" links.
+    Other links do not get the prefix, as they are treated as "external" links.
 
     :param needs: Dict of all needs
     :param id_prefix: Prefix as string

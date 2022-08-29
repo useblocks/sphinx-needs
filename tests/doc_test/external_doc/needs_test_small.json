@@ -146,14 +146,14 @@
                     "tags": [],
                     "template": null,
                     "title": "AAA",
-                    "type": "req",
+                    "type": "ask",
                     "type_name": "Requirement",
                     "updated_at": "",
                     "url": "",
                     "user": ""
                 }
             },
-            "needs_amount": 6
+            "needs_amount": 3
         }
     }
 }

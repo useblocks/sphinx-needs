@@ -41,19 +41,19 @@ class NeedimportDirective(Directive):
     final_argument_whitespace = True
 
     def run(self) -> Sequence[nodes.Node]:
-        needs_list = {}
+        # needs_list = {}
         version = self.options.get("version", None)
         filter_string = self.options.get("filter", None)
         id_prefix = self.options.get("id_prefix", "")
 
         tags = self.options.get("tags", [])
         if len(tags) > 0:
-            tags = [tag.strip() for tag in re.split(";|,", tags)]
+            tags = [tag.strip() for tag in re.split("[;,]", tags)]
 
         need_import_path = self.arguments[0]
 
         if not os.path.isabs(need_import_path):
-            # Relative path should starts from current rst file directory
+            # Relative path should start from current rst file directory
             curr_dir = os.path.dirname(self.docname)
             new_need_import_path = os.path.join(self.env.app.srcdir, curr_dir, need_import_path)
 

@@ -37,7 +37,7 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, _docname: str) -> No
                 response = s.get(source["json_url"])
                 needs_json = response.json()  # The downloaded file MUST be json. Everything else we do not handle!
             except Exception as e:
-                raise NeedsExternalException(f'Getting {source["json_url"]} didn\'t work. Reason: {e}')
+                raise NeedsExternalException("Getting {} didn't work. Reason: {}".format(source["json_url"], e))
 
         if source.get("json_path", False):
             if os.path.isabs(source["json_path"]):
