@@ -99,7 +99,7 @@ class NeedlsFeatures(LanguageFeature):
 
             # if word starts with '..', complete_directive
             if word.startswith(".."):
-                return complete_directive(self, context, lines)
+                return complete_directive(self, context, lines, word)
 
             return []
 
@@ -440,26 +440,65 @@ def generate_need_id(
     return need_id
 
 
-def complete_directive(ls: NeedlsFeatures, params: CompletionContext, lines: List[str]) -> List[CompletionItem]:
+def complete_directive(
+    ls: NeedlsFeatures, params: CompletionContext, lines: List[str], word: str
+) -> List[CompletionItem]:
     # need_type ~ req, work, act, ...
     items = []
+
+    # check custom directive snippets from conf.py
+    if isinstance(ls.rst, SphinxLanguageServer) and ls.rst.app:
+        custom_directive_snippets = ls.rst.app.config.needs_ide_directive_snippets
+
     for need_type, title in ls.needs_store.declared_types.items():
-        text = (
-            " " + need_type + ":: ${1:title}\n"
-            "\t:id: ${2:" + generate_need_id(ls, params, lines, need_type=need_type) + "}\n"
-            "\t:status: open\n\n"
-            "\t${3:content}.\n$0"
-        )
-        label = f".. {need_type}::"
-        items.append(
-            CompletionItem(
-                label=label,
-                detail=title,
-                insert_text=text,
-                insert_text_format=InsertTextFormat.Snippet,
-                kind=CompletionItemKind.Snippet,
+        if custom_directive_snippets and need_type in custom_directive_snippets:
+            # use custom snippets
+            text = custom_directive_snippets[need_type]
+
+            line_number = params.position.line
+            substitution = word[word.find("..") :]
+            start_char = lines[line_number].find(substitution)
+
+            label = f".. {need_type}::"
+            items.append(
+                CompletionItem(
+                    label=label,
+                    detail=title,
+                    insert_text=text,
+                    insert_text_format=InsertTextFormat.Snippet,
+                    kind=CompletionItemKind.Snippet,
+                    additional_text_edits=[
+                        TextEdit(
+                            range=Range(
+                                start=Position(line=line_number, character=start_char),
+                                end=Position(
+                                    line=line_number,
+                                    character=start_char + len(substitution),
+                                ),
+                            ),
+                            new_text="",
+                        )
+                    ],
+                )
             )
-        )
+        else:
+            text = (
+                " " + need_type + ":: ${1:title}\n"
+                "\t:id: ${2:" + generate_need_id(ls, params, lines, need_type=need_type) + "}\n"
+                "\t:status: open\n\n"
+                "\t${3:content}.\n$0"
+            )
+            label = f".. {need_type}::"
+            items.append(
+                CompletionItem(
+                    label=label,
+                    detail=title,
+                    insert_text=text,
+                    insert_text_format=InsertTextFormat.Snippet,
+                    kind=CompletionItemKind.Snippet,
+                )
+            )
+
     return items
 
 

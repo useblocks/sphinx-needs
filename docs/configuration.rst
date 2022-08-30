@@ -1210,6 +1210,41 @@ or
 
 {% endraw %}
 
+.. _needs_ide_directive_snippets:
+
+needs_ide_directive_snippets
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Allows to define customized directive snippets for :ref:`ide`.
+
+Default value: ``{}``
+
+In your **conf.py** file, use it like this:
+
+.. code-block:: python
+
+    needs_ide_directive_snippets = {
+    "req": """\
+    .. req:: REQ Example
+       :id: ID
+       :status:
+       :custom_option_1:
+
+       random content.
+    """,
+    "test": """\
+    .. test:: Test Title
+       :id: TEST_
+       :status: open
+       :custom_option: something
+
+       test directive content.
+    """,
+    }
+
+If ``needs_ide_directive_snippets`` is not configured or empty, the default directive snippets
+will be used.
+
 .. _needs_functions:
 
 needs_functions
