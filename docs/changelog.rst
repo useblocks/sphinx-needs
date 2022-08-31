@@ -27,6 +27,8 @@ Under development
 * Improvement: Renamed jinja function `need` to `flow` for :ref:`needuml`.
 * Improvement: Added directive :ref:`needarch`.
 * Improvement: Added configuration option :ref:`needs_ide_snippets_id` to support custom need ID for :ref:`ide` snippets.
+* Improvement: Provides jinja function :ref:`needarch_jinja_import` for :ref:`needarch` to execute :ref:`jinja_uml` 
+  automatically for all the links defined in the need :ref:`need_links` options.
 
 1.0.1
 -----
