@@ -6,6 +6,8 @@ from docutils.parsers.rst import Directive, directives
 from jinja2 import Template
 from sphinx.errors import SphinxError
 
+from sphinx_needs.directives.utils import analyse_needs_metrics
+
 
 class NeedsReportException(SphinxError):
     pass
@@ -16,8 +18,8 @@ class NeedReportDirective(Directive):
     option_spec = {
         "types": directives.unchanged,
         "links": directives.unchanged,
-        "options": directives.unchanged
-        # 'services': directives.unchanged
+        "options": directives.unchanged,
+        "usage": directives.unchanged,
     }
 
     def run(self) -> Sequence[nodes.raw]:
@@ -33,10 +35,12 @@ class NeedReportDirective(Directive):
         types = self.options.get("types")
         extra_links = self.options.get("links")
         extra_options = self.options.get("options")
+        usage = self.options.get("usage")
 
         needs_types = []
         needs_extra_links = []
         needs_extra_options = []
+        needs_metrics = {}
 
         if types is not None and isinstance(types, str):
             needs_types = env.app.config.needs_types
@@ -44,8 +48,15 @@ class NeedReportDirective(Directive):
             needs_extra_links = env.app.config.needs_extra_links
         if extra_options is not None and isinstance(extra_options, str):
             needs_extra_options = env.app.config.needs_extra_options
+        if usage is not None and isinstance(usage, str):
+            needs_metrics = analyse_needs_metrics(env)
 
-        report_info = {"types": needs_types, "options": needs_extra_options, "links": needs_extra_links}
+        report_info = {
+            "types": needs_types,
+            "options": needs_extra_options,
+            "links": needs_extra_links,
+            "usage": needs_metrics,
+        }
 
         need_report_template_path: str = env.app.config.needs_report_template
         # Absolute path starts with /, based on the conf.py directory. The / need to be striped

@@ -1,5 +1,5 @@
 import re
-from typing import List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from docutils import nodes
 from sphinx.environment import BuildEnvironment
@@ -82,9 +82,28 @@ def get_option_list(options, name: str) -> List[str]:
     values = str(options.get(name, ""))
     values_list = []
     if isinstance(values, str):
-        values_list = [value.strip() for value in re.split(";|,", values)]
+        values_list = [value.strip() for value in re.split("[;,]", values)]
 
     return values_list
+
+
+def analyse_needs_metrics(env: BuildEnvironment) -> Dict[str, Any]:
+    """
+    Function to generate metrics about need objects.
+
+    :param env: Sphinx build environment
+    :return: Dictionary consisting of needs metrics.
+    """
+    needs: Dict = env.needs_all_needs
+    metric_data = {"needs_amount": len(needs)}
+    needs_types = {i["directive"]: 0 for i in env.app.config.needs_types}
+
+    for i in needs.values():
+        if i["type"] in needs_types:
+            needs_types[i["type"]] += 1
+
+    metric_data["needs_types"] = {i[0]: i[1] for i in sorted(needs_types.items(), key=lambda x: x[0])}
+    return metric_data
 
 
 class SphinxNeedsLinkTypeException(BaseException):
