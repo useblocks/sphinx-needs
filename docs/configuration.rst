@@ -597,6 +597,8 @@ This configurations can then be used like this:
 
 See :ref:`needflow config option <needflow_config>` for more details and already available configurations.
 
+.. _needs_report_template:
+
 needs_report_template
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -685,14 +687,39 @@ If you do not set ``needs_report_template``, the default template used is:
    {% endif %}
    {# Output for needs_options #}
 
+   {# Output for needs metrics #}
+   {% if usage|length != 0 %}
+   .. container:: toggle
+
+      .. container::  header
+
+         **Need Metrics**
+
+      .. list-table::
+         :widths: 40 40
+         :header-rows: 1
+
+         * - NEEDS TYPES
+           - NEEDS PER TYPE
+         {% for k, v in usage["needs_types"].items() %}
+         * - {{ k | capitalize }}
+           - {{ v }}
+         {% endfor %}
+         * - **Total Needs Amount**
+           - {{ usage.get("needs_amount") }}
+   {% endif %}
+   {# Output for needs metrics #}
+
    {% endraw %}
 
-
-Available Jinja variables are:
+The plugin provides the following variables which you can use in your custom Jinja template:
 
 * types - list of :ref:`need types <needs_types>`
 * links - list of :ref:`extra need links <needs_extra_links>`
 * options - list of :ref:`extra need options <needs_extra_options>`
+* usage - a dictionary object containing information about the following:
+    + needs_amount -> total amount of need objects in the project
+    + needs_types -> number of need objects per needs type
 
 needs_diagram_template
 ~~~~~~~~~~~~~~~~~~~~~~
