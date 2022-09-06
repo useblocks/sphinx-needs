@@ -1245,6 +1245,11 @@ In your **conf.py** file, use it like this:
 If ``needs_ide_directive_snippets`` is not configured or empty, the default directive snippets
 will be used.
 
+.. hint::
+
+   The snippets are not automatically synced with the need definitions in **conf.py** and it is
+   up to the user to keep them in sync.
+
 .. _needs_functions:
 
 needs_functions
