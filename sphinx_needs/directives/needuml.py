@@ -200,7 +200,7 @@ def process_needuml(app, doctree, fromdocname):
         # Check if current needuml is needarch
         if current_needuml["is_arch"]:
             # Check if needarch is only used inside a need
-            from sphinx_needs.directives.need import Need
+            from sphinx_needs.directives.need import Need  # avoid circular import
 
             if not (current_needuml["target_node"].parent and isinstance(current_needuml["target_node"].parent, Need)):
                 raise NeedArchException("Directive needarch can only be used inside a need.")
@@ -247,20 +247,15 @@ def process_needuml(app, doctree, fromdocname):
         # Get all needed Jinja Helper Functions
         jinja_utils = JinjaFunctions(app, fromdocname, parent_need_id)
         # Make the helpers available during rendering
+        data = {"needs": all_needs, "uml": jinja_utils.uml, "flow": jinja_utils.flow, "filter": jinja_utils.filter}
+
         if current_needuml["is_arch"]:
             # Add jinja function import() only for needarch
-            data = {
-                "needs": all_needs,
-                "uml": jinja_utils.uml,
-                "flow": jinja_utils.flow,
-                "filter": jinja_utils.filter,
-                "import": jinja_utils.imports,
-            }
+            data.update({"import": jinja_utils.imports})
         else:
             # Check if func import() used in needuml
             if "{{import(" in current_needuml["content"]:
                 raise NeedumlException("Jinja function import is not supported for needuml.")
-            data = {"needs": all_needs, "uml": jinja_utils.uml, "flow": jinja_utils.flow, "filter": jinja_utils.filter}
 
         data.update(current_needuml["extra"])
 
