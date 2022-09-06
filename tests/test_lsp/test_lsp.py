@@ -64,7 +64,7 @@ async def test_need_directive_role_completion(client):
     need_needarch = need_directive_result.items[80]
     assert need_needarch.label == "needarch"
     assert need_needarch.filter_text == ".. needarch::"
-    assert need_needarch.detail == "sphinx_needs.directives.needarch.NeedarchDirective"
+    assert need_needarch.detail == "sphinx_needs.directives.needuml.NeedarchDirective"
     assert need_needarch.kind == 7  # CompletionItemKind.Class
     assert need_needarch.insert_text_format == 1  # InsertTextFormat.PlainText
     assert need_needarch.data["source_feature"] == "esbonio.lsp.directives.Directives"

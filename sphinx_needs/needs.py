@@ -36,7 +36,6 @@ from sphinx_needs.directives.need import (
     process_need_nodes,
     purge_needs,
 )
-from sphinx_needs.directives.needarch import NeedarchDirective, process_needarch
 from sphinx_needs.directives.needbar import Needbar, NeedbarDirective, process_needbar
 from sphinx_needs.directives.needextend import (
     Needextend,
@@ -82,7 +81,12 @@ from sphinx_needs.directives.needtable import (
     NeedtableDirective,
     process_needtables,
 )
-from sphinx_needs.directives.needuml import Needuml, NeedumlDirective, process_needuml
+from sphinx_needs.directives.needuml import (
+    NeedarchDirective,
+    Needuml,
+    NeedumlDirective,
+    process_needuml,
+)
 from sphinx_needs.environment import (
     install_lib_static_files,
     install_permalink_file,
@@ -332,7 +336,6 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.connect("doctree-resolved", process_needsequence)
     app.connect("doctree-resolved", process_needgantt)
     app.connect("doctree-resolved", process_needuml)
-    app.connect("doctree-resolved", process_needarch)
     app.connect("doctree-resolved", process_need_part)
     app.connect("doctree-resolved", process_need_ref)
     app.connect("doctree-resolved", process_need_incoming)
