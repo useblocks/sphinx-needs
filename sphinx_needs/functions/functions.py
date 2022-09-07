@@ -259,7 +259,7 @@ def resolve_variants_options(env: BuildEnvironment):
         default_variant_options.extend(extra_links)
         variants_options.extend(set(default_variant_options))
 
-    needs = env.needs_all_needs
+    needs: Dict = env.needs_all_needs
     for need in needs.values():
         # Data to use as filter context.
         need_context: Dict = copy.deepcopy(need)

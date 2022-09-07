@@ -597,6 +597,8 @@ This configurations can then be used like this:
 
 See :ref:`needflow config option <needflow_config>` for more details and already available configurations.
 
+.. _needs_report_template:
+
 needs_report_template
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -685,14 +687,39 @@ If you do not set ``needs_report_template``, the default template used is:
    {% endif %}
    {# Output for needs_options #}
 
+   {# Output for needs metrics #}
+   {% if usage|length != 0 %}
+   .. container:: toggle
+
+      .. container::  header
+
+         **Need Metrics**
+
+      .. list-table::
+         :widths: 40 40
+         :header-rows: 1
+
+         * - NEEDS TYPES
+           - NEEDS PER TYPE
+         {% for k, v in usage["needs_types"].items() %}
+         * - {{ k | capitalize }}
+           - {{ v }}
+         {% endfor %}
+         * - **Total Needs Amount**
+           - {{ usage.get("needs_amount") }}
+   {% endif %}
+   {# Output for needs metrics #}
+
    {% endraw %}
 
-
-Available Jinja variables are:
+The plugin provides the following variables which you can use in your custom Jinja template:
 
 * types - list of :ref:`need types <needs_types>`
 * links - list of :ref:`extra need links <needs_extra_links>`
 * options - list of :ref:`extra need options <needs_extra_options>`
+* usage - a dictionary object containing information about the following:
+    + needs_amount -> total amount of need objects in the project
+    + needs_types -> number of need objects per needs type
 
 needs_diagram_template
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -1182,6 +1209,46 @@ or
    needs_ide_snippets_id = "TEST_{{from_title()}}_TEST"
 
 {% endraw %}
+
+.. _needs_ide_directive_snippets:
+
+needs_ide_directive_snippets
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Allows to define customized directive snippets for :ref:`ide`.
+
+Default value: ``{}``
+
+In your **conf.py** file, use it like this:
+
+.. code-block:: python
+
+    needs_ide_directive_snippets = {
+    "req": """\
+    .. req:: REQ Example
+       :id: ID
+       :status:
+       :custom_option_1:
+
+       random content.
+    """,
+    "test": """\
+    .. test:: Test Title
+       :id: TEST_
+       :status: open
+       :custom_option: something
+
+       test directive content.
+    """,
+    }
+
+If ``needs_ide_directive_snippets`` is not configured or empty, the default directive snippets
+will be used.
+
+.. hint::
+
+   The snippets are not automatically synced with the need definitions in **conf.py** and it is
+   up to the user to keep them in sync.
 
 .. _needs_functions:
 

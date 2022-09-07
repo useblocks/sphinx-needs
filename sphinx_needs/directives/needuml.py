@@ -104,6 +104,15 @@ class NeedumlDirective(Directive):
         return [targetnode] + [Needuml(targetid)]
 
 
+class NeedarchDirective(NeedumlDirective):
+    """
+    Directive inherits from Needuml, but works only inside a need object.
+    """
+
+    def run(self) -> Sequence[nodes.Node]:
+        return NeedumlDirective.run(self)
+
+
 class JinjaFunctions:
     """
     Contains Jinja helper functions
@@ -111,10 +120,11 @@ class JinjaFunctions:
     Provides access to sphinx-app and all Needs objects.
     """
 
-    def __init__(self, app, fromdocname):
+    def __init__(self, app, fromdocname, parent_need_id):
         self.needs = app.builder.env.needs_all_needs
         self.app = app
         self.fromdocname = fromdocname
+        self.parent_need_id = parent_need_id
 
     def uml(self, need_id, key="diagram", **kwargs):
         need_info = self.needs[need_id]
@@ -162,6 +172,21 @@ class JinjaFunctions:
 
         return filter_needs(self.app, list(self.needs.values()), filter_string=filter_string)
 
+    def imports(self, *args):
+        # gets all need ids from need links/extra_links options and wrap into jinja function uml()
+        need_info = self.needs[self.parent_need_id]
+        uml_ids = []
+        for option_name in args:
+            # check if link option_name exists in current need object
+            if option_name in need_info and need_info[option_name]:
+                for id in need_info[option_name]:
+                    uml_ids.append(id)
+        umls = ""
+        if uml_ids:
+            for uml_id in uml_ids:
+                umls += self.uml(uml_id)
+        return umls
+
 
 def process_needuml(app, doctree, fromdocname):
     env = app.builder.env
@@ -170,6 +195,18 @@ def process_needuml(app, doctree, fromdocname):
     for node in doctree.findall(Needuml):
         id = node.attributes["ids"][0]
         current_needuml = env.needs_all_needumls[id]
+
+        parent_need_id = None
+        # Check if current needuml is needarch
+        if current_needuml["is_arch"]:
+            # Check if needarch is only used inside a need
+            from sphinx_needs.directives.need import Need  # avoid circular import
+
+            if not (current_needuml["target_node"].parent and isinstance(current_needuml["target_node"].parent, Need)):
+                raise NeedArchException("Directive needarch can only be used inside a need.")
+            else:
+                # Calculate parent need id for needarch
+                parent_need_id = current_needuml["target_node"].parent.attributes["refid"]
 
         try:
             if "sphinxcontrib.plantuml" not in app.config.extensions:
@@ -208,9 +245,17 @@ def process_needuml(app, doctree, fromdocname):
         mem_template = Environment(loader=BaseLoader).from_string(uml_content)
 
         # Get all needed Jinja Helper Functions
-        jinja_utils = JinjaFunctions(app, fromdocname)
+        jinja_utils = JinjaFunctions(app, fromdocname, parent_need_id)
         # Make the helpers available during rendering
         data = {"needs": all_needs, "uml": jinja_utils.uml, "flow": jinja_utils.flow, "filter": jinja_utils.filter}
+
+        if current_needuml["is_arch"]:
+            # Add jinja function import() only for needarch
+            data.update({"import": jinja_utils.imports})
+        else:
+            # Check if func import() used in needuml
+            if "{{import(" in current_needuml["content"]:
+                raise NeedumlException("Jinja function import is not supported for needuml.")
 
         data.update(current_needuml["extra"])
 
@@ -260,3 +305,7 @@ def process_needuml(app, doctree, fromdocname):
 
 class NeedumlException(BaseException):
     """Errors during Needuml handling."""
+
+
+class NeedArchException(BaseException):
+    """Errors during Needarch handling."""

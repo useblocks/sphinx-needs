@@ -63,3 +63,26 @@
    {% endfor %}
 {% endif %}
 {# Output for needs_options #}
+
+{# Output for needs metrics #}
+{% if usage|length != 0 %}
+.. container:: toggle
+
+   .. container::  header
+
+      **Need Metrics**
+
+   .. list-table::
+      :widths: 40 40
+      :header-rows: 1
+
+      * - NEEDS TYPES
+        - NEEDS PER TYPE
+      {% for k, v in usage["needs_types"].items() %}
+      * - {{ k | capitalize }}
+        - {{ v }}
+      {% endfor %}
+      * - **Total Needs Amount**
+        - {{ usage.get("needs_amount") }}
+{% endif %}
+{# Output for needs metrics #}
