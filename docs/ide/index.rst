@@ -59,9 +59,9 @@ Usage
 
 To use all the Sphinx-Needs language featues,
 
-* Install IDE extension or plugin, see current supported IDE extension in :ref:`ide_installation`.
+#. Install IDE extension or plugin, see current supported IDE extension in :ref:`ide_installation`.
 
-* Build `needs.json` file in your Sphinx-Needs project:
+#. Build `needs.json` file in your Sphinx-Needs project:
 
  * automatically build `needs.json` if configure `needs_build_json = True` in conf.py. See details in :ref:`needs_build_json`.
  * manually build `needs.json` using `sphinx-build -b needs source_dir build_dir`. See details in :ref:`builders`.
