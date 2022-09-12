@@ -49,7 +49,7 @@ Example
 
    .. test-case:: Flake8 test case
       :id: TESTCASE_1
-      :file: ../tests/data/pytest_data.xml
+      :file: ../tests/doc_test/utils/pytest_data.xml
       :suite: pytest
       :classname: sphinxcontrib.test_reports.test_reports
       :case: FLAKE8
@@ -58,7 +58,7 @@ Example
       A pytest test case.
 
    .. test-case:: nose test case
-      :file: ../tests/data/nose_data.xml
+      :file: ../tests/doc_test/utils/nose_data.xml
       :suite: nosetests
       :classname: test_empty_doc
       :id: TESTCASE_2
@@ -68,7 +68,7 @@ Example
 
 .. test-case:: Flake8 test case
    :id: TESTCASE_1
-   :file: ../tests/data/pytest_data.xml
+   :file: ../tests/doc_test/utils/pytest_data.xml
    :suite: pytest
    :classname: sphinxcontrib.test_reports.test_reports
    :case: FLAKE8
@@ -77,7 +77,7 @@ Example
    A pytest test case.
 
 .. test-case:: nose test case
-   :file: ../tests/data/nose_data.xml
+   :file: ../tests/doc_test/utils/nose_data.xml
    :suite: nosetests
    :classname: test_empty_doc
    :id: TESTCASE_2

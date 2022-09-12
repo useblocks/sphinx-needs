@@ -1,18 +1,28 @@
-from sphinx_testing import with_app
+from pathlib import Path
+
+import pytest
 
 
-@with_app(buildername="html", srcdir="doc_test/basic_doc")
-def test_doc_build_html(app, status, warning):
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/basic_doc"}], indirect=True
+)
+def test_doc_build_html(test_app):
+    app = test_app
     app.build()
-    html = (app.outdir / "index.html").read_text()
+    html = Path(app.outdir, "index.html").read_text()
     assert "<h1>Basic Document" in html
     assert "ASuccessfulTest" in html
 
 
-@with_app(buildername="html", srcdir="doc_test/pytest_6_2")
-def test_doc_build_html_for_pytest_6_2(app, status, warning):
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/pytest_6_2"}],
+    indirect=True,
+)
+def test_doc_build_html_for_pytest_6_2(test_app):
+    app = test_app
     app.build()
-    html = (app.outdir / "index.html").read_text(encoding="utf-8")
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
 
     assert "Tests: 6" in html
     assert "Failures: 2" in html

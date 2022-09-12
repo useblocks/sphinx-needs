@@ -7,6 +7,6 @@ Shorten the data and removed double-entries (same classname and test-name for mu
 
 .. test-file:: CasperJs tests - Multi test suites
    :id: CASPERJS_001
-   :file: ../tests/data/casperjs.xml
+   :file: ../tests/doc_test/utils/casperjs.xml
    :auto_suites:
    :auto_cases:

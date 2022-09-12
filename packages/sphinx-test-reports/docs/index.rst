@@ -40,7 +40,7 @@ Introduction
 A single documented test-case looks like this:
 
 .. test-case:: test_add_source_parser
-   :file: ../tests/data/pytest_sphinx_data.xml
+   :file: ../tests/doc_test/utils/pytest_sphinx_data.xml
    :suite: pytest
    :case: test_add_source_parser
    :collapse: FALSE

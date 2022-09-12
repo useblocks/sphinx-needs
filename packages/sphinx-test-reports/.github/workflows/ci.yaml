@@ -7,8 +7,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-20.04]
-        python-version: ["3.6", "3.8", "3.9"]  # No "3.10", as nose seem to have problems with it
-        sphinx-version: ['3.5', '4.2', '4.3', '5.0']
+        python-version: [ "3.8", "3.9"]  # No "3.10", as nose seem to have problems with it
+        sphinx-version: ['5.0']
     steps:
       - uses: actions/checkout@v2
       - name: Set Up Python ${{ matrix.python-version }}

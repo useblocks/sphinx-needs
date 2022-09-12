@@ -42,7 +42,7 @@ If this is the case, their IDs get stored and finally returned.
 
    .. test-case:: Flake8 test case
       :id: TESTLINK_1
-      :file: ../tests/data/pytest_data.xml
+      :file: ../tests/doc_test/utils/pytest_data.xml
       :suite: pytest
       :classname: sphinxcontrib.test_reports.test_reports
       :case: FLAKE8
@@ -64,7 +64,7 @@ If this is the case, their IDs get stored and finally returned.
 
 .. test-case:: Flake8 test case
    :id: TESTLINK_1
-   :file: ../tests/data/pytest_data.xml
+   :file: ../tests/doc_test/utils/pytest_data.xml
    :suite: pytest
    :classname: sphinxcontrib.test_reports.test_reports
    :case: FLAKE8

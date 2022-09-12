@@ -1,15 +1,19 @@
 import os
 
-xml_path = os.path.join(os.path.dirname(__file__), "data", "xml_data.xml")
-xml_pytest_path = os.path.join(os.path.dirname(__file__), "data", "pytest_data.xml")
+xml_path = os.path.join(os.path.dirname(__file__), "doc_test/utils", "xml_data.xml")
+xml_pytest_path = os.path.join(
+    os.path.dirname(__file__), "doc_test/utils", "pytest_data.xml"
+)
 xml_pytest51_path = os.path.join(
-    os.path.dirname(__file__), "data", "pytest_data_5_1.xml"
+    os.path.dirname(__file__), "doc_test/utils", "pytest_data_5_1.xml"
 )
 xml_pytest62_path = os.path.join(
-    os.path.dirname(__file__), "data", "pytest_data_6_2.xml"
+    os.path.dirname(__file__), "doc_test/utils", "pytest_data_6_2.xml"
 )
 
-xml_nose_path = os.path.join(os.path.dirname(__file__), "data", "nose_data.xml")
+xml_nose_path = os.path.join(
+    os.path.dirname(__file__), "doc_test/utils", "nose_data.xml"
+)
 
 
 def test_init_parser():

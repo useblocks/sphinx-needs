@@ -2,5 +2,5 @@ Basic Document
 ==============
 
 
-.. test-results:: ../../data/xml_data.xml
+.. test-results:: ../utils/xml_data.xml
 
