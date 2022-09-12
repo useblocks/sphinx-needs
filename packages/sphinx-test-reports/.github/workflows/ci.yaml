@@ -33,8 +33,6 @@ jobs:
       - name: Install Nox Dependencies
         run: |
           python -m pip install poetry nox nox-poetry
-      - name: Run Lint
-        run: nox --non-interactive --session lint -- --full-trace
       - uses: pre-commit/action@v3.0.0
 
   linkcheck:
