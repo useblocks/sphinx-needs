@@ -36,11 +36,12 @@ jobs:
           # Where the output from the benchmark tool is stored
           output-file-path: output.json
           # Where the previous data file is stored
-          external-data-json-path: ./cache/benchmark-data.json
+          # external-data-json-path: ./cache/benchmark-data.json
           # Workflow will fail when an alert happens
           fail-on-alert: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          # Enable alert commit comment
+          alert-threshold: '200%'
           comment-on-alert: true
-          # Mention @rhysd in the commit comment
-
+          auto-push: true
+          gh-pages-branch: "benchmarks"
+          benchmark-data-dir-path: "docs/bench"
