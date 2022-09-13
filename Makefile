@@ -16,6 +16,10 @@ test:
 test-short:
 	poetry run pytest -n auto --tb=long --ignore-glob="*official*" tests/
 
+.PHONY: benchmark
+benchmark:
+	poetry run pytest tests/test_benchmark --benchmark-json output.json
+
 .PHONY: test-matrix
 test-matrix:
 	nox
