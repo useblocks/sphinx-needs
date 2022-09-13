@@ -1,4 +1,3 @@
-import copy
 import json
 import os
 
@@ -67,7 +66,7 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, _docname: str) -> No
         prefix = source.get("id_prefix", "").upper()
         import_prefix_link_edit(needs, prefix, env.config.needs_extra_links)
         for need in needs.values():
-            need_params = copy.deepcopy(need)
+            need_params = {**need}
 
             extra_links = [x["option"] for x in app.config.needs_extra_links]
             for key in list(need_params.keys()):

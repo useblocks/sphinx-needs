@@ -12,6 +12,8 @@ License
 -----
 Under development
 
+* Improvement: Added support for variants handling for need options.
+  (`#671 <https://github.com/useblocks/sphinx-needs/issues/671>`_)
 * Improvement: Support for :ref:`needs_string_links` in :ref:`needtable`.
   (`#535 <https://github.com/useblocks/sphinx-needs/issues/535>`_)
 * Improvement: Added `key` option for :ref:`needuml`.
