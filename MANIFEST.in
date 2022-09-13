@@ -1,6 +1,0 @@
-include sphinxcontrib/needs/directives/needimport_template.rst
-include LICENSE
-
-graft sphinxcontrib/needs/css
-graft sphinxcontrib/needs/libs
-graft sphinxcontrib/needs/images
