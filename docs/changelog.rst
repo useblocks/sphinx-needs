@@ -12,6 +12,8 @@ License
 -----
 Under development
 
+* Improvement: Added checks and warnings for :ref:`needimport` and :ref:`needs_external_needs`.
+  (`#624 <https://github.com/useblocks/sphinx-needs/issues/624>`_)
 * Improvement: Support for :ref:`needs_string_links` in :ref:`needtable`.
   (`#535 <https://github.com/useblocks/sphinx-needs/issues/535>`_)
 * Improvement: Added `key` option for :ref:`needuml`.
