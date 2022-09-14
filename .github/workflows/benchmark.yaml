@@ -1,5 +1,8 @@
 name: CI
-on: [pull_request]
+on:
+  push:
+    branches:
+      - master
 jobs:
   benchmarks:
     name: "Benchmarks"
@@ -51,3 +54,4 @@ jobs:
           auto-push: true
           gh-pages-branch: "benchmarks"
           benchmark-data-dir-path: "docs/bench"
+          alert-comment-cc-users: '@danwos'
