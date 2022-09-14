@@ -88,6 +88,15 @@ class NeedDirective(SphinxDirective):
             else:
                 raise Exception("collapse attribute must be true or false")
 
+        jinja_content = self.options.get("jinja_content")
+        if isinstance(jinja_content, str):
+            if jinja_content.upper() in ["TRUE", 1, "YES"]:
+                jinja_content = True
+            elif jinja_content.upper() in ["FALSE", 0, "NO"]:
+                jinja_content = False
+            else:
+                raise Exception("jinja_content attribute must be true or false")
+
         hide = "hide" in self.options
 
         id = self.options.get("id")
@@ -130,6 +139,7 @@ class NeedDirective(SphinxDirective):
             style=style,
             layout=layout,
             delete=delete_opt,
+            jinja_content=jinja_content,
             **need_extra_options,
         )
         return need_nodes

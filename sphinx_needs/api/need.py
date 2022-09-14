@@ -1,3 +1,4 @@
+import copy
 import hashlib
 import os
 import re
@@ -26,7 +27,7 @@ from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import get_logger
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
-from sphinx_needs.utils import unwrap
+from sphinx_needs.utils import jinja_parse, unwrap
 
 logger = get_logger(__name__)
 
@@ -46,6 +47,7 @@ def add_need(
     constraints_passed=None,
     links_string: Optional[str] = None,
     delete: bool = False,
+    jinja_content: bool = False,
     hide: bool = False,
     hide_tags: bool = False,
     hide_status: bool = False,
@@ -326,6 +328,8 @@ def add_need(
         "pre_template": pre_template,
         "post_template": post_template,
         "hide": hide,
+        "delete": delete,
+        "jinja_content": jinja_content,
         "parts": {},
         "is_part": False,
         "is_need": True,
@@ -379,6 +383,15 @@ def add_need(
             copy_links += links  # Save extra links for main-links
 
     needs_info["links"] += copy_links  # Set copied links to main-links
+
+    # Jinja support for need content
+    if jinja_content:
+        need_content_context = copy.deepcopy(needs_info)
+        need_content_context.update(**env.app.config.needs_filter_data)
+        new_content = jinja_parse(need_content_context, needs_info["content"])
+        # Overwrite current content
+        content = new_content
+        needs_info["content"] = new_content
 
     env.needs_all_needs[need_id] = needs_info
 

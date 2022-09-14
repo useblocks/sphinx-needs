@@ -33,7 +33,7 @@ async def test_directive_snippets_with_custom_need_id_generate_from_title(client
 @pytest.mark.asyncio
 async def test_id_auto_generation_with_custom_id_generate_from_title(client):
     need_req_options_result = await client.completion_request(uri=TEST_FILE_URI, line=11, character=3)
-    needs_option_id = need_req_options_result.items[18]
+    needs_option_id = need_req_options_result.items[19]
     assert needs_option_id.label == ":id:"
     assert needs_option_id.detail == "needs option"
     assert needs_option_id.insert_text.startswith("id: ${1:TEST_first_requirement_TEST")
