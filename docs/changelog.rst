@@ -12,6 +12,8 @@ License
 -----
 Under development
 
+* Improvement: Added support for variants handling for need options.
+  (`#671 <https://github.com/useblocks/sphinx-needs/issues/671>`_)
 * Improvement: Added Jinja support for need content via the :ref:`jinja_content` option.
   (`#678 <https://github.com/useblocks/sphinx-needs/issues/678>`_)
 * Improvement: Added checks and warnings for :ref:`needimport` and :ref:`needs_external_needs`.

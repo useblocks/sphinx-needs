@@ -406,7 +406,7 @@ def match_variants(option_value: Union[str, List], keywords: Dict, needs_variant
             if check_definition:
                 variants_in_option = True
                 # Separate variant definition from value to use for the option
-                filter_string, output, _ = re.split(r"(:[\w\- ]+)$", variant_definition)
+                filter_string, output, _ = re.split(r"(:[\w':.\-\" ]+)$", variant_definition)
                 filter_string = re.sub(r"^\[|[:\]]$", "", filter_string)
                 filter_string = needs_variants[filter_string] if filter_string in needs_variants else filter_string
                 try:
@@ -436,8 +436,8 @@ def match_variants(option_value: Union[str, List], keywords: Dict, needs_variant
             return None
         return re.sub(r"[;,] ", "", defaults_to)
 
-    split_pattern = r"([\[\]]{1}[\w=:' \-\"]+[\[\(\{]{1}[\w=,': \-\"]*[\]\)\}]{1}[\[\]]{1}:[\w\- ]+)|([\[\]]{1}[\w=:'\-\[\] \"]+[\[\]]{1}:[\w\- ]+)|([\w: ]+[,;]{1})"
-    variant_rule_pattern = r"^[\w'=,:\-\"\[\] ]+:[\w'=:\-\"\[\] ]+$"
+    split_pattern = r"([\[\]]{1}[\w=:'. \-\"]+[\[\(\{]{1}[\w=,.': \-\"]*[\]\)\}]{1}[\[\]]{1}:[\w.\- ]+)|([\[\]]{1}[\w=:.'\-\[\] \"]+[\[\]]{1}:[\w.\- ]+)|([\w.: ]+[,;]{1})"
+    variant_rule_pattern = r"^[\w'=,:.\-\"\[\] ]+:[\w'=:.\-\"\[\] ]+$"
     variant_splitting = re.compile(split_pattern)
     variant_rule_matching = re.compile(variant_rule_pattern)
 
