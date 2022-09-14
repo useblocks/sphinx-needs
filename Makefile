@@ -18,7 +18,7 @@ test-short:
 
 .PHONY: benchmark
 benchmark:
-	poetry run pytest tests/test_benchmark --benchmark-json output.json
+	nox --non-interactive --session benchmarks -- --full-trace
 
 .PHONY: test-matrix
 test-matrix:

@@ -56,7 +56,7 @@ def benchmarks(session):
     session.run("pip", "install", "-r", "docs/requirements.txt", silent=True)
     session.run(
         "pytest",
-        "tests/test_benchmark",
+        "tests/benchmarks",
         "--benchmark-json",
         "output.json",
         external=True,
