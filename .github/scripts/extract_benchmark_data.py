@@ -9,8 +9,14 @@ def extract(input_file, output_file):
     data = []
 
     for bench in input_data["benchmarks"]:
+        name = bench["name"].split("[")[0]
+        if name == "test_basic":
+            name = "Small, basic Sphinx-Needs project"
+        elif name == "test_official":
+            name = "Official Sphinx-Needs documentation (without services)"
+
         output = {
-            "name": bench["name"].split("[")[0],
+            "name": name,
             "unit": "s",
             "value": bench["stats"]["mean"],
             "extra": f"Commit: {input_data['commit_info']['id']}\nBranch: {input_data['commit_info']['branch']}\
