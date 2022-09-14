@@ -12,6 +12,8 @@ License
 -----
 Under development
 
+* Improvement: Added Jinja support for need content via the :ref:`jinja_content` option.
+  (`#678 <https://github.com/useblocks/sphinx-needs/issues/678>`_)
 * Improvement: Added checks and warnings for :ref:`needimport` and :ref:`needs_external_needs`.
   (`#624 <https://github.com/useblocks/sphinx-needs/issues/624>`_)
 * Improvement: Support for :ref:`needs_string_links` in :ref:`needtable`.

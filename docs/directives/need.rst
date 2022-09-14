@@ -514,6 +514,105 @@ Default: False
 
    Title, tags, links and everything else is shown directly.
 
+.. _jinja_content:
+
+jinja_content
+~~~~~~~~~~~~~
+
+The option activates jinja-parsing for the content of a need.
+If the value is set to ``true``, you can specify `Jinja <https://jinja.palletsprojects.com/>`_ syntax in the content.
+
+The **:jinja_content:** option give access to all need data, including the original content
+and the data in :ref:`needs_filter_data`.
+
+If you set the option to **False**, you deactivate jinja-parsing for the need's content.
+
+Allowed values:
+
+* ``true`` or ``yes`` or ``1``
+* ``false`` or ``no`` or ``0``
+
+Default: False
+
+.. note::
+
+   You can set the **:jinja_content:** option using the :ref:`needs_global_options` configuration variable.
+   This will enable jinja-parsing for all the need objects in your documentation project.
+
+   .. code-block:: python
+
+      needs_global_options = {
+        'jinja_content': 'true'
+      }
+
+
+|ex|
+
+.. code-block:: rst
+
+    .. req:: First Req Need
+       :id: JINJAID123
+       :jinja_content: false
+
+       Need with ``:jinja_content:`` equal to ``false``.
+
+       .. spec:: Nested Spec Need
+          :id: JINJAID125
+          :status: open
+          :tags: user;login
+          :links: JINJAID126
+          :jinja_content: true
+
+          Nested need with ``:jinja_content:`` option set to ``true``.
+          This requirement has tags: **{{ tags | join(', ') }}**.
+
+          It links to:
+          {% for link in links %}
+          - {{ link }}
+          {% endfor %}
+
+
+    .. spec:: First Spec Need
+       :id: JINJAID126
+       :status: open
+       :jinja_content: true
+
+       Need with ``:jinja_content:`` equal to ``true``.
+       This requirement has status: **{{ status }}**.
+
+
+|out|
+
+.. req:: First Req Need
+   :id: JINJAID123
+   :jinja_content: false
+
+   Need with ``:jinja_content:`` equal to ``false``.
+
+   .. spec:: Nested Spec Need
+      :id: JINJAID124
+      :status: open
+      :tags: user;login
+      :links: JINJAID126
+      :jinja_content: true
+
+      Nested need with ``:jinja_content:`` option set to ``true``.
+      This requirement has tags: **{{ tags | join(', ') }}**.
+
+      It links to:
+      {% for link in links %}
+      - {{ link }}
+      {% endfor %}
+
+
+.. spec:: First Spec Need
+   :id: JINJAID126
+   :status: open
+   :jinja_content: true
+
+   Need with ``:jinja_content:`` equal to ``true``.
+   This requirement has status: **{{ status }}**.
+
 
 .. _title_from_content:
 

@@ -146,7 +146,7 @@ async def test_need_directive_role_completion(client):
 async def test_need_auto_generated_id_completion(client):
     # check needs option id snippet, auto-generated need IDs, e.g. :id: REQ_e0bafd9b
     need_req_options_result = await client.completion_request(uri=TEST_FILE_URI, line=11, character=3)
-    needs_option_id = need_req_options_result.items[18]
+    needs_option_id = need_req_options_result.items[19]
     assert needs_option_id.label == ":id:"
     assert needs_option_id.detail == "needs option"
     assert needs_option_id.insert_text.startswith("id: ${1:REQ_")

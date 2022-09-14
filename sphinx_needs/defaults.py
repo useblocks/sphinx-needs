@@ -209,6 +209,7 @@ NEED_DEFAULT_OPTIONS: Dict[str, Any] = {
     "links": directives.unchanged_required,
     "collapse": directives.unchanged_required,
     "delete": directives.unchanged,
+    "jinja_content": directives.unchanged,
     "hide": directives.flag,
     "title_from_content": directives.flag,
     "style": directives.unchanged_required,
