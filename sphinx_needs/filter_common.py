@@ -133,9 +133,9 @@ def process_filters(app: Sphinx, all_needs, current_needlist, include_external: 
 
                 if status_filter_passed and tags_filter_passed and type_filter_passed:
                     found_needs_by_options.append(need_info)
-            # Get needy by filter string
+            # Get need by filter string
             found_needs_by_string = filter_needs(app, all_needs_incl_parts, current_needlist["filter"])
-            # Make a intersection of both lists
+            # Make an intersection of both lists
             found_needs = intersection_of_need_results(found_needs_by_options, found_needs_by_string)
         else:
             # There is no other config as the one for filter string.
@@ -158,7 +158,7 @@ def process_filters(app: Sphinx, all_needs, current_needlist, include_external: 
             if filter_args:
                 args = filter_args.split(",")
             for index, arg in enumerate(args):
-                # All rgs are strings, but we must transform them to requested type, e.g. 1 -> int, "1" -> str
+                # All args are strings, but we must transform them to requested type, e.g. 1 -> int, "1" -> str
                 context[f"arg{index+1}"] = arg
             filter_func(**context)
         else:
