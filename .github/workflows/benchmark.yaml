@@ -21,8 +21,10 @@ jobs:
         run: poetry run pip install -U pip setuptools
       - name: Install Dependencies
         run: poetry install
+      - name: Install official docs deps
+        run: pip install -r docs/requirements.txt
       - name: Run Benchmarks
-        run: poetry run pytest tests/test_benchmark --benchmark-json output.json
+        run: poetry run make benchmark
       - name: Download previous benchmark data
         uses: actions/cache@v1
         with:
