@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1663153912149,
+  "lastUpdate": 1663157711076,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -140,6 +140,42 @@ window.BENCHMARK_DATA = {
             "value": 65.34089621099997,
             "unit": "s",
             "extra": "Commit: 809724d1ed87e026c9a1881134afd7e000ff809a\nBranch: master\nTime: 2022-09-14T13:07:35+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b543e228840f3b70ed3f46414b0e245ad651c044",
+          "message": "no baumpfleger. Comment only on benchmark probs (#699)",
+          "timestamp": "2022-09-14T14:10:05+02:00",
+          "tree_id": "105d3f1b339c7d038b41ae4d54d3dd6ac7019655",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/b543e228840f3b70ed3f46414b0e245ad651c044"
+        },
+        "date": 1663157703566,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.3502783640000189,
+            "unit": "s",
+            "extra": "Commit: b543e228840f3b70ed3f46414b0e245ad651c044\nBranch: master\nTime: 2022-09-14T14:10:05+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 77.589762312,
+            "unit": "s",
+            "extra": "Commit: b543e228840f3b70ed3f46414b0e245ad651c044\nBranch: master\nTime: 2022-09-14T14:10:05+02:00"
           }
         ]
       }
