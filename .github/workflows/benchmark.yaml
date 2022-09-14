@@ -48,7 +48,7 @@ jobs:
           # Workflow will fail when an alert happens
           fail-on-alert: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          alert-threshold: '110%'
+          alert-threshold: '150%'
           comment-on-alert: true
           comment-always: true
           auto-push: true
