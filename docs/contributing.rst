@@ -111,6 +111,18 @@ Linting & Formatting
 
     make lint
 
+Benchmarks
+----------
+**Sphinx-Needs** own documentation is used for creating a benchmark for each PR.
+If the runtime takes 10% longer as the previous ones, the benchmark test will fail.
+
+Benchmark test cases are available under ``tests/benchmakrs``.
+And they can be locally executed via ``make benchmark`.
+
+The results for each PR/commit get added to a chart, which is available under
+http://useblocks.com/sphinx-needs/bench/index.html.
+
+
 Running Test Matrix
 -------------------
 
@@ -155,9 +167,6 @@ See the Poetry documentation for a list of commands.
 In order to run custom commands inside the isolated environment, they
 should be prefixed with ``poetry run`` (ie. ``poetry run <command>``).
 
-
-.. Include our contributors and maintainers.
-.. include:: ../AUTHORS
 
 Publishing a new release
 ------------------------
@@ -264,3 +273,7 @@ Note:
 
 * If it doesn't stop at breakpoints, set a breakpoint at **sphinx_needs/__init__.py**, where you import `esbonio_setup`.
   When debugger stops there, choose **step into** to continue debug.
+
+
+.. Include our contributors and maintainers.
+.. include:: ../AUTHORS

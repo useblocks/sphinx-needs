@@ -1,5 +1,4 @@
 import re
-import time
 from pathlib import Path
 
 import pytest
@@ -28,5 +27,3 @@ def test_build(test_app, benchmark):
     assert build_dir / "sphinx_needs_collapse.js" in files
     assert build_dir / "datatables_loader.js" in files
     assert build_dir / "DataTables-1.10.16" / "js" / "jquery.dataTables.min.js" in files
-
-    time.sleep(5)  # Just a test, remove it!
