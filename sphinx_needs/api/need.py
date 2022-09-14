@@ -73,13 +73,13 @@ def add_need(
     ``add_extra_option``, an exception is raised.
 
     If ``is_external`` is set to ``True``, no node will be created.
-    Instead the need is referencing an external url.
+    Instead, the need is referencing an external url.
     Used mostly for :ref:`needs_external_needs` to integrate and reference needs from external documentation.
 
     **Usage**:
 
     Normally needs get created during handling of a specialised directive.
-    So this pseudo-code shows how to use ``add_need`` inside such a directive.
+    So this pseudocode shows how to use ``add_need`` inside such a directive.
 
     .. code-block:: python
 
@@ -143,6 +143,15 @@ def add_need(
     type_color = ""
     type_style = ""
     found = False
+
+    # Log messages for need elements that could not be imported.
+    configured_need_types = [ntype["directive"] for ntype in types]
+    if need_type not in configured_need_types:
+        logger.warning(
+            "Couldn't create need {}. Reason: The need-type (i.e. `{}`) is not set "
+            "in the project's 'need_types' configuration in conf.py.".format(id, need_type)
+        )
+
     for ntype in types:
         if ntype["directive"] == need_type:
             type_name = ntype["title"]
@@ -203,9 +212,9 @@ def add_need(
         tags = []
     if len(tags) > 0:
 
-        # tags should be a string, but it can also be already a list,which can be used.
+        # tags should be a string, but it can also be already a list, which can be used.
         if isinstance(tags, str):
-            tags = [tag.strip() for tag in re.split(";|,", tags)]
+            tags = [tag.strip() for tag in re.split("[;,]", tags)]
         new_tags = []  # Shall contain only valid tags
         for i in range(len(tags)):
             if len(tags[i]) == 0 or tags[i].isspace():
@@ -233,7 +242,7 @@ def add_need(
 
         # tags should be a string, but it can also be already a list,which can be used.
         if isinstance(constraints, str):
-            constraints = [constraint.strip() for constraint in re.split(";|,", constraints)]
+            constraints = [constraint.strip() for constraint in re.split("[;,]", constraints)]
 
         new_constraints = []  # Shall contain only valid constraints
         for i in range(len(constraints)):
@@ -535,7 +544,7 @@ def add_external_need(
     However, it can be linked and filtered.
     It's reference will open a link to another, external  sphinx documentation project.
 
-    It return an empty list (without any nodes), so no nodes will be added to the document.
+    It returns an empty list (without any nodes), so no nodes will be added to the document.
 
     :param app: Sphinx application object.
     :param need_type: Name of the need type to create.
