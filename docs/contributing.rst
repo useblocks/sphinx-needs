@@ -122,6 +122,9 @@ And they can be locally executed via ``make benchmark`.
 The results for each PR/commit get added to a chart, which is available under
 http://useblocks.com/sphinx-needs/bench/index.html.
 
+The benchmark data is stored on the `benchmarks` branch, which is also used by github-pages as
+source.
+
 
 Running Test Matrix
 -------------------

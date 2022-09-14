@@ -50,7 +50,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           alert-threshold: '150%'
           comment-on-alert: true
-          comment-always: true
+          comment-always: false
           auto-push: true
           gh-pages-branch: "benchmarks"
           benchmark-data-dir-path: "docs/bench"
