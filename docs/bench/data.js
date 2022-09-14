@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1663135922069,
+  "lastUpdate": 1663142939802,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -54,6 +54,40 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0",
             "extra": "mean: 302.5132260000021 msec\nrounds: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "useblocks",
+            "username": "useblocks"
+          },
+          "committer": {
+            "name": "useblocks",
+            "username": "useblocks"
+          },
+          "id": "bc7b9e79607ffbc65d22d754595eb3fc2d91c2a4",
+          "message": "Adds test benchmarks",
+          "timestamp": "2022-08-11T16:41:53Z",
+          "url": "https://github.com/useblocks/sphinx-needs/pull/695/commits/bc7b9e79607ffbc65d22d754595eb3fc2d91c2a4"
+        },
+        "date": 1663142937381,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/test_benchmark/test_basic.py::test_benchmark_build_html[test_app0]",
+            "value": 3.3486418504711697,
+            "unit": "iter/sec",
+            "range": "stddev: 0",
+            "extra": "mean: 298.6285320000093 msec\nrounds: 1"
+          },
+          {
+            "name": "tests/test_benchmark/test_basic.py::test_benchmark_official_docs[test_app0]",
+            "value": 0.014133582448959257,
+            "unit": "iter/sec",
+            "range": "stddev: 0",
+            "extra": "mean: 70.75346987299997 sec\nrounds: 1"
           }
         ]
       }
