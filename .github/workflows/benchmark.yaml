@@ -22,7 +22,7 @@ jobs:
       - name: Install Dependencies
         run: poetry install
       - name: Install official docs deps
-        run: pip install -r docs/requirements.txt
+        run: poetry add $( cat docs/requirements.txt )
       - name: Run Benchmarks
         run: poetry run make benchmark
       - name: Download previous benchmark data
