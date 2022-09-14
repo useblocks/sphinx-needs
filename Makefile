@@ -10,11 +10,15 @@ lint:
 
 .PHONY: test
 test:
-	poetry run pytest -n auto --tb=long tests/
+	poetry run pytest -n auto --tb=long --ignore=tests/benchmarks tests/
 
 .PHONY: test
 test-short:
-	poetry run pytest -n auto --tb=long --ignore-glob="*official*" tests/
+	poetry run pytest -n auto --tb=long --ignore-glob="*official*" --ignore=tests/benchmarks tests/
+
+.PHONY: benchmark
+benchmark:
+	nox --non-interactive --session benchmarks -- --full-trace
 
 .PHONY: test-matrix
 test-matrix:

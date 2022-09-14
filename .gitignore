@@ -24,6 +24,9 @@ docs/_images/need_pie_*.png
 .vscode/
 .dockerignore
 
+.benchmarks/
+
 
 need_bar_*.png
 need_pie_*.png
+output.json

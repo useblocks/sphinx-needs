@@ -1,0 +1,53 @@
+name: CI
+on: [pull_request]
+jobs:
+  benchmarks:
+    name: "Benchmarks"
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set Up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+      - name: Install/Update  build dependencies
+        run: |
+          python -m pip install --upgrade setuptools
+          python -m pip install --upgrade pip
+      - name: Install Poetry
+        run: |
+          curl -sL https://install.python-poetry.org | python -
+      - name: Update Pip
+        run: poetry run pip install -U pip setuptools
+      - name: Install Dependencies
+        run: poetry install
+      - name: Install Nox Dependencies
+        run: |
+          python -m pip install poetry nox nox-poetry pyparsing==3.0.4
+      - name: Run Benchmarks
+        run: nox --non-interactive --session benchmarks -- --full-trace
+      - name: Download previous benchmark data
+        uses: actions/cache@v1
+        with:
+          path: ./cache
+          key: ${{ runner.os }}-benchmark
+      - name: Extract benchmark data
+        run:  python .github/scripts/extract_benchmark_data.py output.json output_action.json
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          # What benchmark tool the output.txt came from
+          tool: 'customSmallerIsBetter'
+          # Where the output from the benchmark tool is stored
+          output-file-path: output_action.json
+          # Where the previous data file is stored
+          # external-data-json-path: ./cache/benchmark-data.json
+          # Workflow will fail when an alert happens
+          fail-on-alert: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          alert-threshold: '110%'
+          comment-on-alert: true
+          comment-always: true
+          auto-push: true
+          gh-pages-branch: "benchmarks"
+          benchmark-data-dir-path: "docs/bench"
