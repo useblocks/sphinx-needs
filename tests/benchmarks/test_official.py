@@ -10,7 +10,7 @@ from tests.test_basic_doc import random_data_callback
 
 @responses.activate
 @pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "../docs"}], indirect=True)
-def test_build(test_app, benchmark):
+def test_official(test_app, benchmark):
     responses.add_callback(
         responses.GET,
         re.compile(r"https://api.github.com/.*"),

@@ -116,7 +116,7 @@ Benchmarks
 **Sphinx-Needs** own documentation is used for creating a benchmark for each PR.
 If the runtime takes 10% longer as the previous ones, the benchmark test will fail.
 
-Benchmark test cases are available under ``tests/benchmakrs``.
+Benchmark test cases are available under ``tests/benchmarks``.
 And they can be locally executed via ``make benchmark`.
 
 The results for each PR/commit get added to a chart, which is available under
