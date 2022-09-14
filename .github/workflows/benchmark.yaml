@@ -21,10 +21,11 @@ jobs:
         run: poetry run pip install -U pip setuptools
       - name: Install Dependencies
         run: poetry install
-      - name: Install official docs deps
-        run: poetry add $( cat docs/requirements.txt )
+      - name: Install Nox Dependencies
+        run: |
+          python -m pip install poetry nox nox-poetry pyparsing==3.0.4
       - name: Run Benchmarks
-        run: poetry run make benchmark
+        run: nox --non-interactive --session benchmarks -- --full-trace
       - name: Download previous benchmark data
         uses: actions/cache@v1
         with:

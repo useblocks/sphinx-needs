@@ -7,6 +7,7 @@ TEST_DEPENDENCIES = [
     "pytest",
     "pytest-xdist",
     "pytest_lsp",
+    "pytest-benchmark",
     "responses",
     "lxml",
     "pyparsing!=3.0.4",
@@ -46,3 +47,18 @@ def linkcheck(session):
 
     session.run("pip", "install", "-r", "docs/requirements.txt", silent=True)
     session.run("make", "docs-linkcheck", external=True)
+
+
+@session(python="3.9")
+def benchmarks(session):
+    session.install(".")
+    session.install(*TEST_DEPENDENCIES)
+    session.run("pip", "install", "-r", "docs/requirements.txt", silent=True)
+    session.run(
+        "pytest",
+        "tests/test_benchmark",
+        "--benchmark-json",
+        "output.json",
+        external=True,
+        env={"ON_CI": "true", "FAST_BUILD": "true"},
+    )
