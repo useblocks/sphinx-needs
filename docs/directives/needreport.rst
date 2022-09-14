@@ -14,7 +14,10 @@ needreport
 and it also adds some needs metrics using the `usage`_ option.
 
 To use the ``needreport`` directive, you need to set the :ref:`needs_report_template`
-configuration variable. The :ref:`needs_report_template` value is a path to the
+configuration variable. If you do not set the :ref:`needs_report_template`
+configuration variable, the plugin uses the default needs report template.
+
+The :ref:`needs_report_template` value is a path to the
 `jinja2 <https://jinja.palletsprojects.com/en/2.11.x/templates/>`_ template file.
 You can use the template file to customise the content generated  by ``needreport``.
 

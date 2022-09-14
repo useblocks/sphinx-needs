@@ -30,3 +30,20 @@ def test_external_json(test_app):
     assert external_need["external_url"] == "http://my_company.com/docs/v1/index.html#TEST_01"
     assert external_need["external_css"] == "external_link"
     assert external_need["is_external"] is True
+
+
+@pytest.mark.parametrize("test_app", [{"buildername": "needs", "srcdir": "doc_test/external_doc"}], indirect=True)
+def test_external_needs_warnings(test_app):
+    import os
+    import subprocess
+
+    app = test_app
+
+    srcdir = Path(app.srcdir)
+    out_dir = os.path.join(srcdir, "_build")
+
+    out = subprocess.run(["sphinx-build", "-b", "html", srcdir, out_dir], capture_output=True)
+    assert (
+        "WARNING: Couldn't create need EXT_TEST_03. Reason: The need-type (i.e. `ask`) is not"
+        " set in the project's 'need_types' configuration in conf.py." in out.stderr.decode("utf-8")
+    )
