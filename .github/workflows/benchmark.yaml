@@ -30,7 +30,7 @@ jobs:
       - name: Run Benchmarks
         run: nox --non-interactive --session benchmarks -- --full-trace
       - name: Download previous benchmark data
-        uses: actions/cache@v1
+        uses: actions/cache@v3
         with:
           path: ./cache
           key: ${{ runner.os }}-benchmark
