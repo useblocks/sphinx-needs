@@ -37,6 +37,8 @@ Under development
   automatically for all the links defined in the need :ref:`need_links` options.
 * Improvement: Added configuration :ref:`needs_ide_directive_snippets` to support custom directive snippets for IDE features.
   (`#640 <https://github.com/useblocks/sphinx-needs/issues/640>`_)
+* Bugfix: Updated pip install URLs in Dockerfile.
+  (`#673 <https://github.com/useblocks/sphinx-needs/issues/673>`_)
 
 1.0.1
 -----
