@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1663157711076,
+  "lastUpdate": 1663675111461,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -176,6 +176,42 @@ window.BENCHMARK_DATA = {
             "value": 77.589762312,
             "unit": "s",
             "extra": "Commit: b543e228840f3b70ed3f46414b0e245ad651c044\nBranch: master\nTime: 2022-09-14T14:10:05+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "haiyang.zhang@tutanota.com",
+            "name": "Haiyang",
+            "username": "haiyangToAI"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7b8e522e80930ab2f6d13a6c0c2c8883c256d485",
+          "message": "updated dockerfile install URLs (#702)\n\n* updated dockerfile install URLs\r\n\r\n* update poetry version in pre-commit",
+          "timestamp": "2022-09-20T13:54:26+02:00",
+          "tree_id": "ec6a710e660b8eb0c5c5108d62398af1827bea86",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/7b8e522e80930ab2f6d13a6c0c2c8883c256d485"
+        },
+        "date": 1663675108582,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.27479672600000526,
+            "unit": "s",
+            "extra": "Commit: 7b8e522e80930ab2f6d13a6c0c2c8883c256d485\nBranch: master\nTime: 2022-09-20T13:54:26+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 80.91293547499998,
+            "unit": "s",
+            "extra": "Commit: 7b8e522e80930ab2f6d13a6c0c2c8883c256d485\nBranch: master\nTime: 2022-09-20T13:54:26+02:00"
           }
         ]
       }
