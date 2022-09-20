@@ -21,7 +21,7 @@ $(document).ready(function() {
 // });
 
 $(document).ready(function() {
-    $("table.need span.collapse").each(function() {
+    $("table.need span.needs_collapse").each(function() {
         var id = $(this).attr("id");
         var parts = id.split("__");
         var rows = parts.slice(2);

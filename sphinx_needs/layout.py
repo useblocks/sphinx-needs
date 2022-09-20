@@ -883,7 +883,7 @@ class LayoutHandler:
         else:
             coll_node_visible.append(nodes.Text(visible))
 
-        coll_container = nodes.inline(classes=["needs", "collapse"])
+        coll_container = nodes.inline(classes=["needs", "needs_collapse"])
         # docutils doesn't allow has to add any html-attributes beside class and id to nodes.
         # So we misused "id" for this and use "__" (2x _) as separator for row-target names
 
