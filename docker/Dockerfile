@@ -48,11 +48,11 @@ RUN pip3 install --no-cache-dir \
 # Install Sphinx-Needs
 RUN \
     if [ -n "$NEEDS_VERSION" ] && [ "$NEEDS_VERSION" = "pre-release" ]; then \
-      pip3 install --no-cache-dir git+https://github.com/useblocks/sphinxcontrib-needs; \
+      pip3 install --no-cache-dir git+https://github.com/useblocks/sphinx-needs; \
     elif [ -n "$NEEDS_VERSION" ]; then \
-      pip3 install --no-cache-dir git+https://github.com/useblocks/sphinxcontrib-needs@$NEEDS_VERSION; \
+      pip3 install --no-cache-dir git+https://github.com/useblocks/sphinx-needs@$NEEDS_VERSION; \
     else \
-      pip3 install --no-cache-dir sphinxcontrib-needs; \
+      pip3 install --no-cache-dir sphinx-needs; \
     fi
 
 ## Clean up
