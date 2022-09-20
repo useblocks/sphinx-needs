@@ -432,7 +432,9 @@ we have created other Sphinx extensions to support the work of teams in the auto
 One more thing ...
 ------------------
 
-`j4p4n <https://openclipart.org/detail/281179/engineers>`_ designed the Sphinx-Needs logo.
+.. `j4p4n <https://openclipart.org/detail/281179/engineers>`_ designed the Sphinx-Needs logo.
+
+`j4p4n` designed the Sphinx-Needs logo.
 
 .. toctree::
    :maxdepth: 2
