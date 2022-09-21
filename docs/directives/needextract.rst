@@ -65,11 +65,11 @@ See :ref:`styles` for a list of available styles.
 .. code-block:: rst
 
    .. needextract::
-      :filter: id in ['FEATURE_3', 'FEATURE_4']
+      :filter: id in ['VA_004', 'DELID123']
       :style: blue_border
 
 |out|
 
 .. needextract::
-   :filter: id in ['FEATURE_3', 'FEATURE_4']
+   :filter: id in ['VA_004', 'DELID123']
    :style: blue_border
