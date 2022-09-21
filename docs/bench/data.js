@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1663748904234,
+  "lastUpdate": 1663749112178,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -284,6 +284,42 @@ window.BENCHMARK_DATA = {
             "value": 68.87370470000002,
             "unit": "s",
             "extra": "Commit: d2a0c00a2baad1aec3dacbd3deea9e60e9943096\nBranch: master\nTime: 2022-09-21T10:24:55+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "duodurandy19@gmail.com",
+            "name": "Randy Duodu (He/Him)",
+            "username": "iSOLveIT"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a028fbcabc3338fa502c65245323f85880cc6b4a",
+          "message": "Fixed bug to improve support for many Sphinx themes. (#703)\n\n* Fixed bug to improve plugin support for many Sphinx themes.\r\n\r\n* Updated index.rst",
+          "timestamp": "2022-09-21T10:28:18+02:00",
+          "tree_id": "eb3d53744282640ad54010629e79924ffa0174c5",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a028fbcabc3338fa502c65245323f85880cc6b4a"
+        },
+        "date": 1663749109921,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.26704031600002054,
+            "unit": "s",
+            "extra": "Commit: a028fbcabc3338fa502c65245323f85880cc6b4a\nBranch: master\nTime: 2022-09-21T10:28:18+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 71.47536776500004,
+            "unit": "s",
+            "extra": "Commit: a028fbcabc3338fa502c65245323f85880cc6b4a\nBranch: master\nTime: 2022-09-21T10:28:18+02:00"
           }
         ]
       }
