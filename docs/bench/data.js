@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1663675586031,
+  "lastUpdate": 1663748904234,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -248,6 +248,42 @@ window.BENCHMARK_DATA = {
             "value": 64.79457838000002,
             "unit": "s",
             "extra": "Commit: c9f25acf8766c3ec00535a3dd3bb47550e2a46f9\nBranch: master\nTime: 2022-09-20T14:03:05+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "haiyang.zhang@tutanota.com",
+            "name": "Haiyang",
+            "username": "haiyangToAI"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d2a0c00a2baad1aec3dacbd3deea9e60e9943096",
+          "message": "Added IDE features support for MyST/Markdown (#686)",
+          "timestamp": "2022-09-21T10:24:55+02:00",
+          "tree_id": "7e955cba3b47b06543efe7f5185efd625a72d39f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/d2a0c00a2baad1aec3dacbd3deea9e60e9943096"
+        },
+        "date": 1663748902001,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.26313836000002766,
+            "unit": "s",
+            "extra": "Commit: d2a0c00a2baad1aec3dacbd3deea9e60e9943096\nBranch: master\nTime: 2022-09-21T10:24:55+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 68.87370470000002,
+            "unit": "s",
+            "extra": "Commit: d2a0c00a2baad1aec3dacbd3deea9e60e9943096\nBranch: master\nTime: 2022-09-21T10:24:55+02:00"
           }
         ]
       }
