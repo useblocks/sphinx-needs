@@ -39,6 +39,7 @@ Under development
   (`#640 <https://github.com/useblocks/sphinx-needs/issues/640>`_)
 * Bugfix: Updated pip install URLs in Dockerfile.
   (`#673 <https://github.com/useblocks/sphinx-needs/issues/673>`_)
+* Improvement: Providing IDE features support for :ref:`ide_myst`.
 
 1.0.1
 -----

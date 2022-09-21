@@ -118,3 +118,55 @@ Need information on mouse hover
    :align: center
 
 Move the mouse cursor over any need ID
+
+.. _ide_myst:
+
+MyST/Markdown
+-------------
+
+Directives and roles can be used in `MyST <https://myst-parser.readthedocs.io/en/latest/index.html>`_ in
+this `Syntax <https://myst-parser.readthedocs.io/en/latest/syntax/roles-and-directives.html>`_.
+
+All the above IDE :ref:`lsp_features` can also be supported for MyST/Markdown.
+
+Usage
+~~~~~
+
+* Install MyST Parser using pip.
+
+   .. code-block:: python
+
+      pip install myst-parser
+
+* Enable and active the MyST Parser extension in your Sphinx-Needs project by simply adding the following in your `conf.py` file:
+
+   .. code-block:: python
+
+      extensions = ["sphinx_needs", "myst_parser"]
+
+      source_suffix = [".rst", ".md"]
+
+* All the above IDE :ref:`lsp_features` are supported and used the same way like editing in rst files from above :ref:`ide_usage`, 
+  when you editing your markdown files. e.g. `myfile.md`:
+
+   * Directive snippets and role completion will be automatically translated into MyST/Markdown supported syntax style, see the following :ref:`ide_myst_example`
+
+.. _ide_myst_example:
+
+Example
+~~~~~~~
+
+Directive snippets 
+
+.. image:: /_images/lsp_directive_snippets_markdown.gif
+   :align: center
+
+Directive snippets used inside `{eval-rst}` block
+
+.. image:: /_images/lsp_directive_snippets_inside_eval_rst_block_markdown.gif
+   :align: center
+
+Role need completion
+
+.. image:: /_images/lsp_need_role_need_suggestion_markdown.gif
+   :align: center

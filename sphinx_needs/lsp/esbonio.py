@@ -88,14 +88,16 @@ class NeedlsFeatures(LanguageFeature):
             line = lines[line_number]
 
             # if word starts with '->' or ':need:->', complete_need_link
-            if word.startswith("->") or word.startswith(":need:`->"):
+            if word.startswith("->") or word.startswith(":need:`->") or word.startswith("{need}`->"):
                 new_word = word.replace(":need:`->", "->")
+                if new_word != "->":
+                    new_word = word.replace("{need}`->", "->")
                 new_word = new_word.replace("`", "")  # in case need:`->...>...`
                 return complete_need_link(self, context, lines, line, new_word)
 
             # if word starts with ':', complete_role_or_option
             if word.startswith(":"):
-                return complete_role_or_option(self, context, lines)
+                return complete_role_or_option(self, context, lines, word)
 
             # if word starts with '..', complete_directive
             if word.startswith(".."):
@@ -168,6 +170,8 @@ class NeedlsFeatures(LanguageFeature):
                 doc_path = doc_path.with_suffix(".rst")
             elif doc_path.with_suffix(".rest").exists():
                 doc_path = doc_path.with_suffix(".rest")
+            elif doc_path.with_suffix(".md").exists():
+                doc_path = doc_path.with_suffix(".md")
             else:
                 return []
 
@@ -188,9 +192,9 @@ class NeedlsFeatures(LanguageFeature):
 
             # get line of directive (e.g., .. req::)
             line_directive = None
-            pattern = f".. {need_type}::"
+            directive_patterns = [f".. {need_type}::", f"```{{{need_type}}}"]
             for line_count in range(line_no - 1, -1, -1):
-                if pattern in source_lines[line_count]:
+                if any(dp in source_lines[line_count] for dp in directive_patterns):
                     line_directive = line_count
                     break
             if not line_directive:
@@ -293,7 +297,7 @@ def doc_completion_items(ls: NeedlsFeatures, docs: List[str], doc_pattern: str) 
 
     items = []
     for sub_path in sub_paths:
-        if sub_path.find(".rst") > -1:
+        if sub_path.find(".rst") > -1 or sub_path.find(".md") > -1:
             kind = CompletionItemKind.File
         else:
             kind = CompletionItemKind.Folder
@@ -385,6 +389,10 @@ class JinjaHelperFunction:
         need_type = self.need_type
         if not need_type:
             match = re.search(".. ([a-z]+)::", self.lines[line_number - 1])
+            # Check for MyST/Markdown style
+            if not match and self.params.doc.filename.endswith(".md"):
+                match = re.search("```{([a-z]+)}", self.lines[line_number - 1])
+
             if match:
                 need_type = match.group(1)
                 if not need_type:
@@ -409,10 +417,18 @@ class JinjaHelperFunction:
         id_from_title = "title"
         line_number = self.params.position.line
         match = re.search(r".. ([a-z]+):: ([\w\s]+)", self.lines[line_number - 1])
+        # check for MyST/Markdown style
+        if not match and self.params.doc.filename.endswith(".md"):
+            match = re.search(r"```{([a-z]+)} ([\w\s]+)", self.lines[line_number - 1])
+
         if match:
             matched_title = match.group(2)
             if matched_title:
                 id_from_title = matched_title.rstrip().replace(" ", "_").lower()
+        else:
+            # check if previous line is empty, which means it's not used in directives
+            if not self.lines[line_number - 1]:
+                id_from_title = "ID"
 
         return id_from_title
 
@@ -440,45 +456,103 @@ def generate_need_id(
     return need_id
 
 
+def found_eval_rst_block(lines: List[str], params: CompletionContext) -> bool:
+    # check if current line inside {eval-rst} block
+    # ```{eval-rst}
+    #
+    # ```
+    found_eval_rst = False
+    # check if used in MyST/Markdown file
+    if not params.doc.filename.endswith(".md"):
+        return found_eval_rst
+
+    curr_line_no = params.position.line
+    if curr_line_no > 0:
+        # check if open block {eval-rst} exits
+        cnt_block_eval_rst = 0
+        cnt = 0
+        for line in lines[:curr_line_no]:
+            if line.startswith("```"):
+                cnt += 1
+            if line.startswith("```{eval-rst}"):
+                cnt_block_eval_rst += 1
+
+        # check if opened block {eval-rst} exists
+        if cnt % 2 != 0 and cnt_block_eval_rst % 2 != 0:
+            found_eval_rst = True
+
+    return found_eval_rst
+
+
+def calc_snippets_completion_item_text_edit(params: CompletionContext, lines: List[str], word: str) -> TextEdit:
+    line_number = params.position.line
+    substitution = word[word.find("..") :]
+    start_char = lines[line_number].find(substitution)
+
+    text_edit = TextEdit(
+        range=Range(
+            start=Position(line=line_number, character=start_char),
+            end=Position(
+                line=line_number,
+                character=start_char + len(substitution),
+            ),
+        ),
+        new_text="",
+    )
+    return text_edit
+
+
 def complete_directive(
     ls: NeedlsFeatures, params: CompletionContext, lines: List[str], word: str
 ) -> List[CompletionItem]:
     # need_type ~ req, work, act, ...
     items = []
 
+    # calculate completion item text edits
+    text_edit = calc_snippets_completion_item_text_edit(params, lines, word)
+
     # check custom directive snippets from conf.py
     if isinstance(ls.rst, SphinxLanguageServer) and ls.rst.app:
         custom_directive_snippets = ls.rst.app.config.needs_ide_directive_snippets
 
     for need_type, title in ls.needs_store.declared_types.items():
+        # calculate directive snippets completion label
+        label = f".. {need_type}::"
+        if params.doc.filename.endswith(".md") and not found_eval_rst_block(lines, params):
+            # adapte label for MyST/Markdwon
+            label = f"md:.. {need_type}::"
+
         if custom_directive_snippets and need_type in custom_directive_snippets:
             # use custom snippets
-            text = custom_directive_snippets[need_type]
-
-            line_number = params.position.line
-            substitution = word[word.find("..") :]
-            start_char = lines[line_number].find(substitution)
-
-            label = f".. {need_type}::"
+            custom_text = custom_directive_snippets[need_type]
             items.append(
                 CompletionItem(
                     label=label,
                     detail=title,
-                    insert_text=text,
+                    insert_text=custom_text,
                     insert_text_format=InsertTextFormat.Snippet,
                     kind=CompletionItemKind.Snippet,
-                    additional_text_edits=[
-                        TextEdit(
-                            range=Range(
-                                start=Position(line=line_number, character=start_char),
-                                end=Position(
-                                    line=line_number,
-                                    character=start_char + len(substitution),
-                                ),
-                            ),
-                            new_text="",
-                        )
-                    ],
+                    additional_text_edits=[text_edit],
+                )
+            )
+        elif params.doc.filename.endswith(".md") and not found_eval_rst_block(lines, params):
+            # support for MySt/Markdown file
+            md_text = (
+                "```{" + need_type + "} " + "${1:title}\n"
+                ":id: ${2:" + generate_need_id(ls, params, lines, need_type=need_type) + "}\n"
+                ":status: open\n\n"
+                "${3:content}.\n"
+                "```$0"
+            )
+            md_detail = "Markdown directive snippet"
+            items.append(
+                CompletionItem(
+                    label=label,
+                    detail=md_detail,
+                    insert_text=md_text,
+                    insert_text_format=InsertTextFormat.Snippet,
+                    kind=CompletionItemKind.Snippet,
+                    additional_text_edits=[text_edit],
                 )
             )
         else:
@@ -488,7 +562,6 @@ def complete_directive(
                 "\t:status: open\n\n"
                 "\t${3:content}.\n$0"
             )
-            label = f".. {need_type}::"
             items.append(
                 CompletionItem(
                     label=label,
@@ -502,7 +575,45 @@ def complete_directive(
     return items
 
 
-def complete_role_or_option(ls: NeedlsFeatures, params: CompletionContext, lines: List[str]) -> List[CompletionItem]:
+def complete_role_or_option(
+    ls: NeedlsFeatures, params: CompletionContext, lines: List[str], word: str
+) -> List[CompletionItem]:
+    # Calculate need role snippet for MySt/Markdown and rst
+    if params.doc.filename.endswith(".md"):
+        # support MyST/Markdown
+        # in MySz/Markdowm file, role looks like, e.g. {need}`content`
+        # triggered like noraml rst by :, replaced with markdown style
+        line_number = params.position.line
+        substitution = word[word.find(":") :]
+        start_char = lines[line_number].find(substitution)
+        need_role_item = CompletionItem(
+            label="md::need:",
+            detail="Markdown need role",
+            insert_text="{need}`${1:ID}`$0",
+            insert_text_format=InsertTextFormat.Snippet,
+            kind=CompletionItemKind.Snippet,
+            additional_text_edits=[
+                TextEdit(
+                    range=Range(
+                        start=Position(line=line_number, character=start_char),
+                        end=Position(
+                            line=line_number,
+                            character=start_char + len(substitution),
+                        ),
+                    ),
+                    new_text="",
+                )
+            ],
+        )
+    else:
+        need_role_item = CompletionItem(
+            label=":need:",
+            detail="need role",
+            insert_text="need:`${1:ID}` $0",
+            insert_text_format=InsertTextFormat.Snippet,
+            kind=CompletionItemKind.Snippet,
+        )
+
     return [
         CompletionItem(
             label=":id:",
@@ -511,13 +622,7 @@ def complete_role_or_option(ls: NeedlsFeatures, params: CompletionContext, lines
             insert_text_format=InsertTextFormat.Snippet,
             kind=CompletionItemKind.Snippet,
         ),
-        CompletionItem(
-            label=":need:",
-            detail="need role",
-            insert_text="need:`${1:ID}` $0",
-            insert_text_format=InsertTextFormat.Snippet,
-            kind=CompletionItemKind.Snippet,
-        ),
+        need_role_item,
     ]
 
 

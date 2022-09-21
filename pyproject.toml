@@ -51,6 +51,7 @@ lxml = "^4.6.5"
 pytest = "^7"
 pytest-xdist="*"  # parallelisation
 pytest_lsp="*"
+myst-parser="^0.18.0"
 responses = "^0.12.1"
 requests-mock = ">=1.9.3"
 

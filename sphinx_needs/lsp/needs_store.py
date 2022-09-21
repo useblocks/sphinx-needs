@@ -94,7 +94,7 @@ class NeedsStore:
 
         for need in self.needs.values():
             need_type = need["type"]
-            docname = need["docname"] + ".rst"
+            docname = need["docname"] + need["doctype"]
 
             if need_type not in self.docs_per_type:
                 self.types.append(need_type)

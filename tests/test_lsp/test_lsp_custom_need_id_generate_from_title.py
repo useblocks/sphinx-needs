@@ -27,7 +27,7 @@ async def test_directive_snippets_with_custom_need_id_generate_from_title(client
     need_directive_snippets_req = need_directive_snippets.items[145]
     assert need_directive_snippets_req.label == ".. req::"
     assert need_directive_snippets_req.detail == "Requirement"
-    assert need_directive_snippets_req.insert_text.startswith(" req:: ${1:title}\n\t:id: ${2:TEST_title_TEST")
+    assert need_directive_snippets_req.insert_text.startswith(" req:: ${1:title}\n\t:id: ${2:TEST_ID_TEST")
 
 
 @pytest.mark.asyncio
