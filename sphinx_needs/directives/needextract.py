@@ -2,13 +2,14 @@
 
 
 """
-
+import re
 from typing import List, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
+from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.directives.utils import (
     no_needs_found_paragraph,
     used_filter_paragraph,
@@ -26,6 +27,9 @@ class NeedextractDirective(FilterBase):
     """
     Directive to filter needs and present them as normal needs with given layout and style.
     """
+
+    optional_arguments = 1
+    final_argument_whitespace = True
 
     option_spec = {
         "layout": directives.unchanged_required,
@@ -47,6 +51,8 @@ class NeedextractDirective(FilterBase):
         targetid = "needextract-{docname}-{id}".format(docname=env.docname, id=env.new_serialno("needextract"))
         targetnode = nodes.target("", "", ids=[targetid])
 
+        filter_arg = self.arguments[0] if self.arguments else None
+
         # Add the need and all needed information
         env.need_all_needextracts[targetid] = {
             "docname": env.docname,
@@ -57,6 +63,7 @@ class NeedextractDirective(FilterBase):
             "layout": self.options.get("layout"),
             "style": self.options.get("style"),
             "show_filters": "show_filters" in self.options,
+            "filter_arg": filter_arg,
         }
         env.need_all_needextracts[targetid].update(self.collect_filter_attributes())
 
@@ -86,6 +93,20 @@ def process_needextract(app: Sphinx, doctree: nodes.document, fromdocname: str) 
         all_needs = env.needs_all_needs
         content: List[nodes.Element] = []
         all_needs = list(all_needs.values())
+
+        # check if filter argument and option filter both exist
+        need_filter_arg = current_needextract["filter_arg"]
+        if need_filter_arg and current_needextract["filter"]:
+            raise NeedsInvalidFilter("Needextract can't have filter arguments and option filter at the same time.")
+        elif need_filter_arg:
+            # check if given filter argument is need-id
+            if need_filter_arg in env.needs_all_needs:
+                need_filter_arg = f'id == "{need_filter_arg}"'
+            elif re.fullmatch(app.config.needs_id_regex, need_filter_arg):
+                # check if given filter argument is need-id, but not exists
+                raise NeedsInvalidFilter(f"Provided id {need_filter_arg} for needextract does not exist.")
+            current_needextract["filter"] = need_filter_arg
+
         found_needs = process_filters(app, all_needs, current_needextract)
 
         for need_info in found_needs:
