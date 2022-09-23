@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1663749112178,
+  "lastUpdate": 1663914206140,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -320,6 +320,42 @@ window.BENCHMARK_DATA = {
             "value": 71.47536776500004,
             "unit": "s",
             "extra": "Commit: a028fbcabc3338fa502c65245323f85880cc6b4a\nBranch: master\nTime: 2022-09-21T10:28:18+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "550d1f7b3f5560ab25671e3894e9af134a869a20",
+          "message": "Release preparation for 1.0.2 (#705)",
+          "timestamp": "2022-09-22T11:10:02+02:00",
+          "tree_id": "0c3eeec5a7c4388ef61c007928b895949c53260f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/550d1f7b3f5560ab25671e3894e9af134a869a20"
+        },
+        "date": 1663914200742,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.3127487059999794,
+            "unit": "s",
+            "extra": "Commit: 550d1f7b3f5560ab25671e3894e9af134a869a20\nBranch: master\nTime: 2022-09-22T11:10:02+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 85.01637748300004,
+            "unit": "s",
+            "extra": "Commit: 550d1f7b3f5560ab25671e3894e9af134a869a20\nBranch: master\nTime: 2022-09-22T11:10:02+02:00"
           }
         ]
       }
