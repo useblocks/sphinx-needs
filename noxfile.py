@@ -15,6 +15,8 @@ TEST_DEPENDENCIES = [
     "requests-mock",
 ]
 
+BENCHMARK_DEPENDENCIES = ["memray"]
+
 
 def is_supported(python: str, sphinx: str) -> bool:
     return not (python == "3.6" and sphinx not in ["3.2"])
@@ -51,15 +53,37 @@ def linkcheck(session):
 
 
 @session(python="3.9")
-def benchmarks(session):
+def benchmark_time(session):
     session.install(".")
     session.install(*TEST_DEPENDENCIES)
+    session.install(*BENCHMARK_DEPENDENCIES)
     session.run("pip", "install", "-r", "docs/requirements.txt", silent=True)
     session.run(
         "pytest",
         "tests/benchmarks",
+        "-k",
+        "_time",
         "--benchmark-json",
         "output.json",
         external=True,
         env={"ON_CI": "true", "FAST_BUILD": "true"},
     )
+
+
+@session(python="3.9")
+def benchmark_memory(session):
+    session.install(".")
+    session.install(*TEST_DEPENDENCIES)
+    session.install(*BENCHMARK_DEPENDENCIES)
+    session.run("pip", "install", "-r", "docs/requirements.txt", silent=True)
+    session.run(
+        "pytest",
+        "tests/benchmarks",
+        "-k",
+        "_memory",
+        "--benchmark-json",
+        "output.json",
+        external=True,
+        env={"ON_CI": "true", "FAST_BUILD": "true"},
+    )
+    session.run("memray", "flamegraph", "-o", "mem_out.html", "mem_out.bin")

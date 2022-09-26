@@ -10,9 +10,9 @@ def extract(input_file, output_file):
 
     for bench in input_data["benchmarks"]:
         name = bench["name"].split("[")[0]
-        if name == "test_basic":
+        if name == "test_basic_time":
             name = "Small, basic Sphinx-Needs project"
-        elif name == "test_official":
+        elif name == "test_official_time":
             name = "Official Sphinx-Needs documentation (without services)"
 
         output = {

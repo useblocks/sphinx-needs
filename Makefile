@@ -16,9 +16,13 @@ test:
 test-short:
 	poetry run pytest -n auto --tb=long --ignore-glob="*official*" --ignore=tests/benchmarks tests/
 
-.PHONY: benchmark
-benchmark:
-	nox --non-interactive --session benchmarks -- --full-trace
+.PHONY: benchmark-time
+benchmark-time:
+	nox --non-interactive --session benchmark_time -- --full-trace
+
+.PHONY: benchmark-memory
+benchmark-memory:
+	nox --non-interactive --session benchmark_memory -- --full-trace
 
 .PHONY: test-matrix
 test-matrix:

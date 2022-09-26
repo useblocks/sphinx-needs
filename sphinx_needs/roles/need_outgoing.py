@@ -9,7 +9,7 @@ from sphinx_needs.utils import check_and_calc_base_url_rel_path, unwrap
 log = get_logger(__name__)
 
 
-class NeedOutgoing(nodes.Inline, nodes.Element):
+class NeedOutgoing(nodes.Inline, nodes.Element):  # type: ignore
     pass
 
 
