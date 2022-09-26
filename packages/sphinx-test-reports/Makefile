@@ -6,11 +6,11 @@ list:
 
 .PHONY: lint
 lint:
-	flake8 --config .flake8 ${SRC_FILES}
+	pre-commit run --all-files
 
 .PHONY: test
 test:
-	nosetests -v -w tests
+	pytest -n auto --tb=long tests/
 
 .PHONY: test-matrix
 test-matrix:
@@ -27,3 +27,4 @@ docs-linkcheck:
 .PHONY: format
 format:
 	black ${SRC_FILES}
+	isort ${SRC_FILES}

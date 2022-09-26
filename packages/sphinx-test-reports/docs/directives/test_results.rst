@@ -10,11 +10,11 @@ This directive adds a results table of a given junit xml file to the current pag
 	.. test-results:: my/path/to/test.xml
 
 
-.. test-results:: ../tests/data/xml_data.xml
+.. test-results:: ../tests/doc_test/utils/xml_data.xml
 
-.. test-results:: ../tests/data/pytest_data.xml
+.. test-results:: ../tests/doc_test/utils/pytest_data.xml
 
-.. test-results:: ../tests/data/nose_data.xml
+.. test-results:: ../tests/doc_test/utils/nose_data.xml
 
 
 .. note::

@@ -8,7 +8,7 @@ test-report
 
    .. test-report:: My Report
       :id: REPORT
-      :file: ../tests/data/pytest_sphinx_data_short.xml
+      :file: ../tests/doc_test/utils/pytest_sphinx_data_short.xml
 
 The following options must be set:
 
@@ -28,7 +28,7 @@ Used code:
 
    .. test-report:: My Report
       :id: REPORT
-      :file: ../tests/data/pytest_sphinx_data_short.xml
+      :file: ../tests/doc_test/utils/pytest_sphinx_data_short.xml
       :tags: my_report, awesome
       :links: SPEC_001
 
@@ -42,7 +42,7 @@ Result:
 
 .. test-report:: My Report
    :id: REPORT
-   :file: ../tests/data/pytest_sphinx_data_short.xml
+   :file: ../tests/doc_test/utils/pytest_sphinx_data_short.xml
    :tags: my_report, awesome
    :links: SPEC_001
 

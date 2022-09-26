@@ -5,6 +5,8 @@ Changelog
 -----
 :Released: under development
 
+* Improvement: Migrated nosetests to pytest.
+
 0.3.7
 -----
 :Released: 09.06.2022

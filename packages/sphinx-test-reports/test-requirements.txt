@@ -1,13 +1,3 @@
-pytest >=3.5
-pytest-flake8
-coverage
-python-coveralls
-tox
-nose
-sphinx_testing
-black
+pytest>=7.0
+pytest-xdist
 nox
-flake8
-pep8-naming
-flake8-isort
-flake8-black

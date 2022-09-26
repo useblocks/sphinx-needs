@@ -43,7 +43,7 @@ Example
 .. code-block:: rst
 
    .. test-suite:: Flake8 results during pytest-run
-      :file: ../tests/data/pytest_data.xml
+      :file: ../tests/doc_test/utils/pytest_data.xml
       :suite: pytest
       :id: TESTSUITE_1
 
@@ -51,7 +51,7 @@ Example
 
 
 .. test-suite:: Flake8 results during pytest-run
-   :file: ../tests/data/pytest_data.xml
+   :file: ../tests/doc_test/utils/pytest_data.xml
    :suite: pytest
    :id: TESTSUITE_1
    :links: TESTFILE_2

@@ -32,6 +32,6 @@ Imported data
 .. test-file:: pytest Sphinx data
    :id: SPHINX
    :tags: pytest_sphinx
-   :file: ../tests/data/pytest_sphinx_data.xml
+   :file: ../tests/doc_test/utils/pytest_sphinx_data.xml
    :auto_suites:
    :auto_cases:

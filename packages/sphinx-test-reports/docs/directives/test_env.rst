@@ -93,7 +93,7 @@ Default output
       :env: py27
       :data: name, host, installed_packages
 
-.. test-env:: ../tests/data/tox-report-short.json
+.. test-env:: ../tests/doc_test/utils/tox-report-short.json
    :data: name, host, installed_packages
    :env: py27
 
@@ -107,7 +107,7 @@ Raw output
       :env: py27
       :data: name, host, installed_packages
 
-.. test-env:: ../tests/data/tox-report-short.json
+.. test-env:: ../tests/doc_test/utils/tox-report-short.json
    :raw:
    :data: name, host, installed_packages
    :env: py27

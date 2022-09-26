@@ -1,11 +1,11 @@
 import nox
 from nox import session
 
-PYTHON_VERSIONS = ["3.6", "3.8", "3.9"]
-SPHINX_VERSIONS = ["3.5", "4.2", "4.3", "5.0"]
+PYTHON_VERSIONS = ["3.8", "3.9"]
+SPHINX_VERSIONS = ["5.0"]
 TEST_DEPENDENCIES = [
-    "nose",
-    "sphinx_testing",
+    "pytest",
+    "pytest-xdist",
 ]
 LINT_DEPENDENCIES = [
     "flake8",

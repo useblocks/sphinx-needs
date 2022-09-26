@@ -1,18 +1,24 @@
 import re
+from pathlib import Path
 from subprocess import STDOUT, check_output
 
+import pytest
 import sphinx
-from sphinx_testing import with_app
 
 sphinx_version = int(
     sphinx.__version__.split(".")[0] + sphinx.__version__.split(".")[1]
 )
 
 
-@with_app(buildername="html", srcdir="doc_test/env_report_doc")
-def test_doc_env_report_build_html(app, status, warning):
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/env_report_doc"}],
+    indirect=True,
+)
+def test_doc_env_report_build_html(test_app):
+    app = test_app
     app.build()
-    html = (app.outdir / "index.html").read_text()
+    html = Path(app.outdir / "index.html").read_text()
 
     assert "<h1>Test-Env report" in html
     assert '<th class="head"><p>Variable</p></th>' in html
@@ -39,10 +45,15 @@ def test_doc_env_report_build_html(app, status, warning):
     assert "py35" not in tables[1]
 
 
-@with_app(buildername="html", srcdir="doc_test/env_report_doc_raw")
-def test_doc_env_report_raw_build_html(app, status, warning):
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/env_report_doc_raw"}],
+    indirect=True,
+)
+def test_doc_env_report_raw_build_html(test_app):
+    app = test_app
     app.build()
-    html = (app.outdir / "index.html").read_text()
+    html = Path(app.outdir / "index.html").read_text()
 
     tables = re.findall("(<table .*?</table>)", html, re.DOTALL)
     assert len(tables) == 0
@@ -59,10 +70,15 @@ def test_doc_env_report_raw_build_html(app, status, warning):
     assert "pylint" not in html
 
 
-@with_app(buildername="html", srcdir="doc_test/env_report_doc_default")
-def test_doc_env_report_default_build_html(app, status, warning):
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/env_report_doc_default"}],
+    indirect=True,
+)
+def test_doc_env_report_default_build_html(test_app):
+    app = test_app
     app.build()
-    html = (app.outdir / "index.html").read_text()
+    html = Path(app.outdir / "index.html").read_text()
 
     tables = re.findall("(<table .*?</table>)", html, re.DOTALL)
     assert len(tables) == 3
@@ -90,13 +106,16 @@ def test_doc_env_report_default_build_html(app, status, warning):
         assert "installpkg" in table
 
 
-@with_app(
-    buildername="html", srcdir="doc_test/env_report_warnings"
-)  # , warningiserror=False, verbosity=2)
-def test_doc_env_report_warning_build_html(app, status, warning):
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/env_report_warnings"}],
+    indirect=True,
+)
+def test_doc_env_report_warning_build_html(test_app):
 
     # it should pass all test cases from: test_doc_env_report_build_html
     # generated output data will be stored here
+    app = test_app
     output = str(
         check_output(
             ["sphinx-build", "-a", "-E", "-b", "html", app.srcdir, app.outdir],
@@ -105,7 +124,7 @@ def test_doc_env_report_warning_build_html(app, status, warning):
         )
     )
     # app.build()
-    html = (app.outdir / "index.html").read_text()
+    html = Path(app.outdir / "index.html").read_text()
 
     assert "<h1>Test-Env report" in html
     assert '<th class="head"><p>Variable</p></th>' in html
