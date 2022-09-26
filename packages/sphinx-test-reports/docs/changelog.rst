@@ -1,10 +1,16 @@
 Changelog
 =========
 
-0.3.8
+1.0.1
 -----
 :Released: under development
 
+
+1.0.0
+-----
+:Released: 26.09.2022
+
+* Improvement: Supporting `Sphinx-Needs <https://www.sphinx-needs.com/>`__ ``>= 1.01`` only.
 * Improvement: Migrated nosetests to pytest.
 
 0.3.7

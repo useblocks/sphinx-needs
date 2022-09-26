@@ -23,7 +23,7 @@ else:
 
 # fmt: on
 
-VERSION = "0.3.7"
+VERSION = "1.0.0"
 
 
 def setup(app):
@@ -110,6 +110,7 @@ def sphinx_needs_update(app, *args):
     # Extra options
     # For details read
     # https://sphinx-needs.readthedocs.io/en/latest/api.html#sphinx_needs.api.configuration.add_extra_option
+
     add_extra_option(app, "file")
     add_extra_option(app, "suite")
     add_extra_option(app, "case")
