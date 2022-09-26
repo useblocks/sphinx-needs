@@ -22,7 +22,7 @@ def process_need_outgoing(app: Sphinx, doctree: nodes.document, fromdocname: str
         needs_all_needs = getattr(env, "needs_all_needs", {})
         ref_need = needs_all_needs[node_need_ref["reftarget"]]
 
-        # Lets check if NeedIncoming shall follow a specific link type
+        # Let's check if NeedIncoming shall follow a specific link type
         if "link_type" in node_need_ref.attributes:
             links = ref_need[node_need_ref.attributes["link_type"]]
             link_type = node_need_ref.attributes["link_type"]
@@ -31,7 +31,9 @@ def process_need_outgoing(app: Sphinx, doctree: nodes.document, fromdocname: str
             links = ref_need["links"]
             link_type = "links"
 
-        for index, link in enumerate(links):
+        link_list = [links] if isinstance(links, str) else links
+
+        for index, link in enumerate(link_list):
             link_split = link.split(".")
             link = link_split[0]
             try:
@@ -39,7 +41,7 @@ def process_need_outgoing(app: Sphinx, doctree: nodes.document, fromdocname: str
             except IndexError:
                 link_part = None
 
-            # If need target exists, let's create the reference
+            # If the need target exists, let's create the reference
             if (link in needs_all_needs and not link_part) or (
                 link_part and link in needs_all_needs and link_part in needs_all_needs[link]["parts"]
             ):
@@ -85,7 +87,7 @@ def process_need_outgoing(app: Sphinx, doctree: nodes.document, fromdocname: str
                     pass
 
             else:
-                # Lets add a normal text here instead of a link.
+                # Let's add a normal text here instead of a link.
                 # So really each link set by the user gets shown.
                 link_text = f"{link}"
                 if link_part:
@@ -125,7 +127,7 @@ def process_need_outgoing(app: Sphinx, doctree: nodes.document, fromdocname: str
                     )
 
             # If we have several links, we add an empty text between them
-            if (index + 1) < len(links):
+            if (index + 1) < len(link_list):
                 node_link_container += nodes.Text(", ")
 
         if len(node_link_container.children) == 0:

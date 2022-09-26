@@ -401,7 +401,10 @@ def check_links(env: BuildEnvironment) -> None:
     for need in needs.values():
         for link_type in extra_links:
             dead_links_allowed = link_type.get("allow_dead_links", False)
-            for link in need[link_type["option"]]:
+            need_link_value = (
+                [need[link_type["option"]]] if isinstance(need[link_type["option"]], str) else need[link_type["option"]]
+            )
+            for link in need_link_value:
                 if "." in link:
                     need_id, need_part_id = link.split(".")
                 else:
@@ -430,7 +433,8 @@ def create_back_links(env: BuildEnvironment, option) -> None:
 
     needs = env.needs_all_needs
     for key, need in needs.items():
-        for link in need[option]:
+        need_link_value = [need[option]] if isinstance(need[option], str) else need[option]
+        for link in need_link_value:
             link_main = link.split(".")[0]
             try:
                 link_part = link.split(".")[1]
