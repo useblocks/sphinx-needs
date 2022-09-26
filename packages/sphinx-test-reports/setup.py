@@ -11,7 +11,7 @@ with open(os.path.join(os.path.dirname(__file__), "README.rst")) as file:
     setup(
         name="sphinx-test-reports",
         # Update also test_reports.py, conf.py and changelog!
-        version="0.3.7",
+        version="1.0.0",
         url="http://github.com/useblocks/sphinx-test-reports",
         download_url="http://pypi.python.org/pypi/sphinx-test-reports",
         license="MIT",
@@ -28,7 +28,6 @@ with open(os.path.join(os.path.dirname(__file__), "README.rst")) as file:
             "Operating System :: OS Independent",
             "Programming Language :: Python",
             "Programming Language :: Python :: 3",
-            "Programming Language :: Python :: 3.5",
             "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",

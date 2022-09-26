@@ -64,9 +64,6 @@ As example, here is a shorten list of tests results from the Sphinx-pytest examp
    :style_row: tr_[[copy('result')]]
 
 
-
-
-
 Content
 -------
 
@@ -222,6 +219,7 @@ we have created other Sphinx extensions to support the work of teams in the auto
             :expand:
 
             :octicon:`book;1em;sd-text-primary` Technical Docs
+
 
 
 Motivation
