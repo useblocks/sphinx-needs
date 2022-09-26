@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1664197907569,
+  "lastUpdate": 1664202171911,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -388,6 +388,38 @@ window.BENCHMARK_DATA = {
             "value": 69.738815107,
             "unit": "s",
             "extra": "Commit: 383f1cbdc3a81c26299b7d69a1efd3d68067ee23\nBranch: (detached head)\nTime: 2022-09-26T13:08:08+00:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "useblocks",
+            "username": "useblocks"
+          },
+          "committer": {
+            "name": "useblocks",
+            "username": "useblocks"
+          },
+          "id": "7f5dd9fdcb179720e66f4d509085665a1d1724cf",
+          "message": "Adds memory benchmark",
+          "timestamp": "2022-09-22T12:24:28Z",
+          "url": "https://github.com/useblocks/sphinx-needs/pull/711/commits/7f5dd9fdcb179720e66f4d509085665a1d1724cf"
+        },
+        "date": 1664202169045,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "test_basic_time",
+            "value": 0.26094288600000937,
+            "unit": "s",
+            "extra": "Commit: eb2e88df0896ea1b221b3a70a9f0b8b1bee476ac\nBranch: (detached head)\nTime: 2022-09-26T16:19:13+02:00"
+          },
+          {
+            "name": "test_official_time",
+            "value": 68.321407015,
+            "unit": "s",
+            "extra": "Commit: eb2e88df0896ea1b221b3a70a9f0b8b1bee476ac\nBranch: (detached head)\nTime: 2022-09-26T16:19:13+02:00"
           }
         ]
       }
