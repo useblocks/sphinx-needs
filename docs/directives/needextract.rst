@@ -23,13 +23,14 @@ For instance, a supplier could get a copy of requirements but would not see all 
 .. note:: **needextract** supports the full filtering possibilities of **Sphinx-Needs**.
           Please read :ref:`filter` for more information.
 
-``needextract`` supports also arguments as filter string. It works like the option `filter`.
+``needextract`` supports also arguments as filter string. It works like the option `filter`, but also
+supports need ID as filter argument.
 
 |ex|
 
 .. code-block:: rst
 
-   .. needextract:: type == 'feature'
+   .. needextract:: FEATURE_3
       :layout: clean
       :style: green_border
 
