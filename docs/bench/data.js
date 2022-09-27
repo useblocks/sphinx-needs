@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1664278425303,
+  "lastUpdate": 1664279438157,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -72,6 +72,42 @@ window.BENCHMARK_DATA = {
             "value": 68.88004314800003,
             "unit": "s",
             "extra": "Commit: fda729974f1af088b97855865ae4d1dccca7c8c3\nBranch: master\nTime: 2022-09-27T13:27:14+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "duodurandy19@gmail.com",
+            "name": "Randy Duodu (He/Him)",
+            "username": "iSOLveIT"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7d23effa2bd40475ec2b42a449a2bd824137e3cb",
+          "message": "Minor fixes for variant option handling (#710)",
+          "timestamp": "2022-09-27T13:44:25+02:00",
+          "tree_id": "30e03958c17681bde688cb74db77e9f226c4c7ea",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/7d23effa2bd40475ec2b42a449a2bd824137e3cb"
+        },
+        "date": 1664279435393,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.23374360299999353,
+            "unit": "s",
+            "extra": "Commit: 7d23effa2bd40475ec2b42a449a2bd824137e3cb\nBranch: master\nTime: 2022-09-27T13:44:25+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 64.19615849600001,
+            "unit": "s",
+            "extra": "Commit: 7d23effa2bd40475ec2b42a449a2bd824137e3cb\nBranch: master\nTime: 2022-09-27T13:44:25+02:00"
           }
         ]
       }
