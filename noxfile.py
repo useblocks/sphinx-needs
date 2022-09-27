@@ -25,8 +25,8 @@ def is_supported(python: str, sphinx: str) -> bool:
 def run_tests(session, sphinx):
     session.install(".")
     session.install(*TEST_DEPENDENCIES)
-    session.run("pip", "install", f"sphinx=={sphinx}", silent=True)
     session.run("pip", "install", "-r", "docs/requirements.txt", silent=True)
+    session.run("pip", "install", f"sphinx=={sphinx}", silent=True)
     session.run("echo", "TEST FINAL PACKAGE LIST")
     session.run("pip", "freeze")
     session.run("make", "test", external=True)
