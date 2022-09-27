@@ -22,8 +22,6 @@ jobs:
           curl -sL https://install.python-poetry.org | python -
       - name: Update Pip
         run: poetry run pip install -U pip setuptools
-      - name: Install Dependencies
-        run: poetry install
       - name: Install Nox Dependencies
         run: |
           python -m pip install poetry nox nox-poetry pyparsing==3.0.4
