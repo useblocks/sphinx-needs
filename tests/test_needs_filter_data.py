@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from docutils import __version__ as doc_ver
 
 
 @pytest.mark.parametrize(
@@ -31,7 +32,10 @@ def test_doc_needs_filter_data_html(test_app):
     assert '<td class="needs_tags"><p>my_tag<em>; </em>current_variant</p></td>' in index_html
 
     # check needflow works
-    assert '<figure class="align-center" id="needflow-index-0">' in index_html
+    if int(doc_ver.split(".")[1]) >= 18:
+        assert '<figure class="align-center" id="needflow-index-0">' in index_html
+    else:
+        assert '<div class="figure align-center" id="needflow-index-0">' in index_html
 
     # check needextract works
     assert '<div class="docutils container" id="needextract-index-0">' in index_html

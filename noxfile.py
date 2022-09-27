@@ -3,7 +3,7 @@ from nox_poetry import session
 
 PYTHON_VERSIONS = ["3.8", "3.10"]
 SPHINX_VERSIONS = ["5.2.1", "4.5.0"]
-DOCUTILS_VERSIONS = ["0.19", "0.15"]
+DOCUTILS_VERSIONS = ["0.19", "0.16", "0.1.7", "0.15"]
 TEST_DEPENDENCIES = [
     "pytest",
     "pytest-xdist",
