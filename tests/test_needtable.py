@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from sphinx import version_info as s_version
+from docutils import __version__ as doc_ver
 
 
 @pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needtable"}], indirect=True)
@@ -42,11 +42,11 @@ def test_doc_build_html(test_app):
     # Test colwidths
     colwidths_html_path = Path(app.outdir, "test_colwidths.html").read_text()
 
-    if s_version[0] >= 5:
-        assert '<col style="width: 50%" />' in colwidths_html_path
-        assert '<col style="width: 40%" />' in colwidths_html_path
-        assert '<col style="width: 10%" />' in colwidths_html_path
-    if s_version[0] == 4:
+    if int(doc_ver.split(".")[1]) >= 18:
+        assert '<col style="width: 50.0%" />' in colwidths_html_path
+        assert '<col style="width: 40.0%" />' in colwidths_html_path
+        assert '<col style="width: 10.0%" />' in colwidths_html_path
+    else:
         assert '<col style="width: 50%" />' in colwidths_html_path
         assert '<col style="width: 40%" />' in colwidths_html_path
         assert '<col style="width: 10%" />' in colwidths_html_path

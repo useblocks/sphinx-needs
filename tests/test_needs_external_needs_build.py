@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 import requests_mock
 import sphinx
+from docutils import __version__ as doc_ver
 
 
 @pytest.mark.parametrize(
@@ -84,8 +85,16 @@ def test_external_needs_base_url_relative_path(test_app):
 
     # check needflow usage for base_url in root level
     if not sphinx.__version__.startswith("3.5"):
-        root_flow_hrefs = root_tree.xpath("//figure/p/object/a/img")
-        assert root_tree.xpath("//figure/figcaption/p/span/a")[0].text == "My needflow"
+
+        if int(doc_ver.split(".")[1]) >= 18:
+            root_flow_hrefs = root_tree.xpath("//figure/p/object/a/img")
+            assert root_tree.xpath("//figure/figcaption/p/span/a")[0].text == "My needflow"
+        else:
+            root_flow_hrefs = root_tree.xpath("//div[@class='figure align-center']/p/object/a/img")
+            assert (
+                root_tree.xpath("//div[@class='figure align-center']/p[@class='caption']/span/a")[0].text
+                == "My needflow"
+            )
         # check base_url url in root level
         assert "as EXT_TEST_01 [[http://my_company.com/docs/v1/index.html#TEST_01]]" in root_flow_hrefs[0].attrib["alt"]
         # check base_url relative path in root level
@@ -130,8 +139,15 @@ def test_external_needs_base_url_relative_path(test_app):
 
     # check needflow usage for base_url in subfolder level
     if not sphinx.__version__.startswith("3.5"):
-        sub_flow_hrefs = sub_tree.xpath("//figure/p/object/a/img")
-        assert sub_tree.xpath("//figure/figcaption/p/span/a")[0].text == "My needflow"
+        if int(doc_ver.split(".")[1]) >= 18:
+            sub_flow_hrefs = sub_tree.xpath("//figure/p/object/a/img")
+            assert sub_tree.xpath("//figure/figcaption/p/span/a")[0].text == "My needflow"
+        else:
+            sub_flow_hrefs = sub_tree.xpath("//div[@class='figure align-center']/p/object/a/img")
+            assert (
+                sub_tree.xpath("//div[@class='figure align-center']/p[@class='caption']/span/a")[0].text
+                == "My needflow"
+            )
         # check base_url url in root level
         assert "as EXT_TEST_01 [[http://my_company.com/docs/v1/index.html#TEST_01]]" in sub_flow_hrefs[0].attrib["alt"]
         # check base_url relative path in subfolder level, one level deeper than base_url
@@ -176,8 +192,17 @@ def test_external_needs_base_url_relative_path(test_app):
 
     # check needflow usage for base_url in subsubfolder level
     if not sphinx.__version__.startswith("3.5"):
-        sub_sub_flow_hrefs = sub_sub_tree.xpath("//figure/p/object/a/img")
-        assert sub_sub_tree.xpath("//figure/figcaption/p/span/a")[0].text == "My needflow"
+
+        if int(doc_ver.split(".")[1]) >= 18:
+            sub_sub_flow_hrefs = sub_sub_tree.xpath("//figure/p/object/a/img")
+            assert sub_sub_tree.xpath("//figure/figcaption/p/span/a")[0].text == "My needflow"
+        else:
+            sub_sub_flow_hrefs = sub_tree.xpath("//div[@class='figure align-center']/p/object/a/img")
+            assert (
+                sub_sub_tree.xpath("//div[@class='figure align-center']/p[@class='caption']/span/a")[0].text
+                == "My needflow"
+            )
+
         # check base_url url in subsubfolder level
         assert (
             "as EXT_TEST_01 [[http://my_company.com/docs/v1/index.html#TEST_01]]" in sub_sub_flow_hrefs[0].attrib["alt"]
