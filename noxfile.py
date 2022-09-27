@@ -1,9 +1,16 @@
 import nox
 from nox_poetry import session
 
+# The versions here must be in sync with the github-workflows.
+# Or at least support all version from there.
+# This list can contain more versions as used by the github workflows to support
+# custom local tests
+
 PYTHON_VERSIONS = ["3.8", "3.10"]
 SPHINX_VERSIONS = ["5.2.1", "4.5.0"]
-DOCUTILS_VERSIONS = ["0.19", "0.16", "0.1.7", "0.15"]
+DOCUTILS_VERSIONS = ["0.19", "0.17", "0.16", "0.15"]
+
+
 TEST_DEPENDENCIES = [
     "pytest",
     "pytest-xdist",
@@ -20,7 +27,7 @@ BENCHMARK_DEPENDENCIES = ["memray"]
 
 
 def is_supported(python: str, sphinx: str, docutils: str) -> bool:
-    return not (sphinx in ["5.2.1"] and docutils in ["0.13"])
+    return not (sphinx in ["4.5.0"] and docutils in ["0.19", "0.18"])
 
 
 def run_tests(session, sphinx, docutils):
