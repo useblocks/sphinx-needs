@@ -38,7 +38,7 @@ needs_types = [
     {"directive": "test", "title": "Test Case", "prefix": "TC_", "color": "#DCB239", "style": "node"},
 ]
 needs_variants = {"change_author": "assignee == 'Randy Duodu'"}
-needs_variant_options = ["status", "author"]
+needs_variant_options = ["status", "author", "links"]
 needs_filter_data = {"assignee": "Randy Duodu"}
 needs_extra_options = [
     "my_extra_option",

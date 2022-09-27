@@ -28,3 +28,9 @@ def test_variant_options_html(test_app):
     assert "open" in html
     assert "start" in html
     assert "commence" in html
+
+    # Check if referenced link exists in html
+    assert (
+        '<div class="line">links outgoing: <span class="links"><span><a class="reference '
+        'internal" href="#VA_003" title="SPEC_003">VA_003</a></span></span></div>' in html
+    )
