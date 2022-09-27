@@ -1,7 +1,7 @@
 from docutils import nodes
 
 
-class Need(nodes.General, nodes.Element):
+class Need(nodes.General, nodes.Element):  # type: ignore
     """
     Node for containing a complete need.
     Node structure:

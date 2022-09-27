@@ -2,6 +2,7 @@ import os
 from typing import Iterable, Optional, Set
 
 from docutils import nodes
+from sphinx import version_info
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
 
@@ -89,8 +90,12 @@ def build_needs_json(app: Sphinx, _exception: Exception) -> None:
     if isinstance(app.builder, NeedsBuilder):
         return
 
-    needs_builder = NeedsBuilder(app)
-    needs_builder.set_environment(env)
+    try:
+        needs_builder = NeedsBuilder(app, env)
+    except TypeError:
+        needs_builder = NeedsBuilder(app)
+        needs_builder.set_environment(env)
+
     needs_builder.finish()
 
 
@@ -144,7 +149,12 @@ def build_needumls_pumls(app: Sphinx, _exception: Exception) -> None:
         return
 
     # if other builder like html used together with config: needs_build_needumls
-    needs_builder = NeedumlsBuilder(app)
-    needs_builder.outdir = os.path.join(needs_builder.outdir, env.config.needs_build_needumls)
-    needs_builder.set_environment(env)
+    if version_info[0] >= 5:
+        needs_builder = NeedumlsBuilder(app, env)
+        needs_builder.outdir = os.path.join(needs_builder.outdir, env.config.needs_build_needumls)
+    else:
+        needs_builder = NeedumlsBuilder(app)
+        needs_builder.outdir = os.path.join(needs_builder.outdir, env.config.needs_build_needumls)
+        needs_builder.set_environment(env)
+
     needs_builder.finish()

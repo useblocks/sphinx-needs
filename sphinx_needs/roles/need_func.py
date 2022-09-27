@@ -12,7 +12,7 @@ from sphinx_needs.utils import unwrap
 log = get_logger(__name__)
 
 
-class NeedFunc(nodes.Inline, nodes.Element):
+class NeedFunc(nodes.Inline, nodes.Element):  # type: ignore
     pass
 
 
