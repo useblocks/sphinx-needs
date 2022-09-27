@@ -14,6 +14,8 @@ Under development
 
 * Improvement: Supported arguments as filter string for :ref:`needextract`.
   (`#688 <https://github.com/useblocks/sphinx-needs/issues/688>`_)
+* Improvement: Supported ``target_url`` for :ref:`needs_external_needs`.
+  (`#701 <https://github.com/useblocks/sphinx-needs/issues/701>`_)
 
 
 1.0.2

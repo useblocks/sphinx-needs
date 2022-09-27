@@ -289,3 +289,33 @@ def test_external_needs_json_url(test_app):
     # check for remote url
     assert root_table_hrefs[0].attrib["href"] == "http://my_company.com/docs/v1/index.html#TEST_101"
     assert root_table_hrefs[0].text == "EXT_REMOTE_TEST_101"
+
+
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_external_needs_with_target_url"}], indirect=True
+)
+def test_external_needs_target_url(test_app):
+    app = test_app
+    app.build()
+
+    external_needs = app.config.needs_external_needs
+    assert external_needs
+    assert len(external_needs) == 4
+
+    html = Path(app.outdir, "index.html").read_text()
+
+    assert external_needs[0]["target_url"] == "issue/{{need['id']}}"
+    assert "EXT_NEED_ID_TEST_01" in html
+    assert "http://my_company.com/docs/v1/issue/TEST_01" in html
+
+    assert external_needs[1]["target_url"] == "issue/fixed_string"
+    assert "EXT_STRING_TEST_01" in html
+    assert "http://my_company.com/docs/v1/issue/fixed_string" in html
+
+    assert external_needs[2]["target_url"] == "issue/{{need['type']|upper()}}"
+    assert "EXT_NEED_TYPE_TEST_01" in html
+    assert "http://my_company.com/docs/v1/issue/IMPL" in html
+
+    assert "target_url" not in external_needs[3]
+    assert "EXT_DEFAULT_TEST_01" in html
+    assert "http://my_company.com/docs/v1/index.html#TEST_01" in html
