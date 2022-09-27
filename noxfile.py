@@ -1,8 +1,8 @@
 import nox
 from nox_poetry import session
 
-PYTHON_VERSIONS = ["3.8", "3.9.7", "3.10"]
-SPHINX_VERSIONS = ["5.0.2"]
+PYTHON_VERSIONS = ["3.8", "3.10"]
+SPHINX_VERSIONS = ["5.2.1", "4.5.0"]
 TEST_DEPENDENCIES = [
     "pytest",
     "pytest-xdist",
@@ -41,7 +41,7 @@ def tests(session, sphinx):
         session.skip("unsupported combination")
 
 
-@session(python="3.9")
+@session(python="3.10")
 def linkcheck(session):
     session.install(".")
     # LinkCheck can handle rate limits since Sphinx 3.4, which is needed as
@@ -52,7 +52,7 @@ def linkcheck(session):
     session.run("make", "docs-linkcheck", external=True)
 
 
-@session(python="3.9")
+@session(python="3.10")
 def benchmark_time(session):
     session.install(".")
     session.install(*TEST_DEPENDENCIES)
@@ -70,7 +70,7 @@ def benchmark_time(session):
     )
 
 
-@session(python="3.9")
+@session(python="3.10")
 def benchmark_memory(session):
     session.install(".")
     session.install(*TEST_DEPENDENCIES)
