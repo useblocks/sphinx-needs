@@ -5,14 +5,14 @@ on:
       - master
 jobs:
   benchmarks:
-    name: "Benchmarks"
+    name: "Benchmark time & memory"
     runs-on: "ubuntu-latest"
     steps:
       - uses: actions/checkout@v2
       - name: Set Up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.10"
       - name: Install/Update  build dependencies
         run: |
           python -m pip install --upgrade setuptools
@@ -22,13 +22,11 @@ jobs:
           curl -sL https://install.python-poetry.org | python -
       - name: Update Pip
         run: poetry run pip install -U pip setuptools
-      - name: Install Dependencies
-        run: poetry install
       - name: Install Nox Dependencies
         run: |
           python -m pip install poetry nox nox-poetry pyparsing==3.0.4
-      - name: Run Benchmarks
-        run: nox --non-interactive --session benchmarks -- --full-trace
+      - name: Run Benchmark for time
+        run: nox --non-interactive --session benchmark_time -- --full-trace
       - name: Download previous benchmark data
         uses: actions/cache@v3
         with:
@@ -55,3 +53,13 @@ jobs:
           gh-pages-branch: "benchmarks"
           benchmark-data-dir-path: "docs/bench"
           alert-comment-cc-users: '@danwos'
+      - name: Run memory benchmark
+        run: nox --non-interactive --session benchmark_memory
+      - name: Publish memory flamegraph
+        run: |
+          git checkout benchmarks
+          cp mem_out.html docs/memory.html
+          git add docs/memory.html
+          git -c "user.name=Sphinx-Needs CI" -c "user.email=ci@sphinx-needs.com" commit -m "memory.html update"
+      - name: Push changes   
+        run: git push origin benchmarks

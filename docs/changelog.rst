@@ -8,9 +8,18 @@ License
 
 .. include:: ../LICENSE
 
-1.0.2
+1.0.3
 -----
 Under development
+
+* Improvement: Supported arguments as filter string for :ref:`needextract`.
+  (`#688 <https://github.com/useblocks/sphinx-needs/issues/688>`_)
+
+
+1.0.2
+-----
+Released: 22.09.2022
+
 
 * Improvement: Added support for variants handling for need options.
   (`#671 <https://github.com/useblocks/sphinx-needs/issues/671>`_)

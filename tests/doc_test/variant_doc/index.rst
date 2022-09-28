@@ -22,6 +22,12 @@ Variant Handling Test
    :tags: commence, start, begin
 
 
+.. spec:: Variant Specification
+   :id: SPEC_003
+   :links: [tag_c]:CV_0002, [tag_b]:VA_003, unknown
+   :status: [tag_a]:open, unknown
+
+
 .. needtable::
    :filter: status in ("open", "close", "progress")
 

@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from docutils import __version__ as doc_ver
 
 
 @pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needflow"}], indirect=True)
@@ -17,4 +18,8 @@ def test_doc_build_html(test_app):
     assert "SPEC_2" in html
     assert "STORY_1" in html
     assert "STORY_2" in html
-    assert '<figure class="align-center" id="needflow-index-0">' in html
+
+    if int(doc_ver.split(".")[1]) >= 18:
+        assert '<figure class="align-center" id="needflow-index-0">' in html
+    else:
+        assert '<div class="figure align-center" id="needflow-index-0">' in html
