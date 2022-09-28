@@ -36,3 +36,15 @@ TEST DOCUMENT NEEDEXTRACT
    :filter: id == "US_001"
    :layout: clean
    :style: green_border
+
+.. needextract:: id == "US_001"
+   :layout: clean
+   :style: blue_border
+
+.. needextract:: id == "SP_002"
+   :layout: clean
+   :style: green_border
+
+.. needextract:: US_001
+   :layout: clean
+   :style: blue_border

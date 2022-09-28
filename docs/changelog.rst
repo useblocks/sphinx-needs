@@ -12,6 +12,9 @@ License
 -----
 Under development
 
+* Improvement: Supported arguments as filter string for :ref:`needextract`.
+  (`#688 <https://github.com/useblocks/sphinx-needs/issues/688>`_)
+
 
 1.0.2
 -----
