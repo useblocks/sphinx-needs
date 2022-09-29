@@ -66,6 +66,7 @@ def create_need(need_id: str, app: Sphinx, layout=None, style=None, docname: Opt
 
     # set the layout and style for the new need
     node_container[0].attributes = node_container.parent.children[0].attributes
+    node_container[0].children[0].attributes = node_container.parent.children[0].children[0].attributes
 
     node_container.attributes["ids"] = []
 
