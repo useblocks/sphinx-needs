@@ -1,4 +1,3 @@
-import copy
 import hashlib
 import os
 import re
@@ -393,8 +392,9 @@ def add_need(
 
     # Jinja support for need content
     if jinja_content:
-        need_content_context = copy.deepcopy(needs_info)
+        need_content_context = {**needs_info}
         need_content_context.update(**env.app.config.needs_filter_data)
+        need_content_context.update(**env.app.config.needs_render_context)
         new_content = jinja_parse(need_content_context, needs_info["content"])
         # Overwrite current content
         content = new_content
@@ -603,7 +603,7 @@ def _prepare_template(app: Sphinx, needs_info, template_key: str) -> str:
     with open(template_path) as template_file:
         template_content = "".join(template_file.readlines())
     template_obj = Template(template_content)
-    new_content = template_obj.render(**needs_info)
+    new_content = template_obj.render(**needs_info, **app.config.needs_render_context)
 
     return new_content
 

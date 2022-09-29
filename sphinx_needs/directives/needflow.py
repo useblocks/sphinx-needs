@@ -204,7 +204,7 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
                 for need_part in valid_need_parts:
                     part_link = calculate_link(app, need_part, fromdocname)
                     diagram_template = Template(app.config.needs_diagram_template)
-                    part_text = diagram_template.render(**need_part)
+                    part_text = diagram_template.render(**need_part, **app.config.needs_render_context)
                     part_colors = []
                     if need_part["type_color"]:
                         # We set # later, as the user may not have given a color and the node must get highlighted
@@ -228,7 +228,7 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
                 link = calculate_link(app, need_info, fromdocname)
 
                 diagram_template = Template(app.config.needs_diagram_template)
-                node_text = diagram_template.render(**need_info)
+                node_text = diagram_template.render(**need_info, **app.config.needs_render_context)
                 if need_info["is_part"]:
                     need_id = need_info["id_complete"]
                 else:

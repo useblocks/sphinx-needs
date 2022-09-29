@@ -204,7 +204,7 @@ def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str) 
                     link = ""
 
                 diagram_template = Template(env.config.needs_diagram_template)
-                node_text = diagram_template.render(**need_info)
+                node_text = diagram_template.render(**need_info, **app.config.needs_render_context)
 
                 puml_node["uml"] += '{style} "{node_text}" as {id} [[{link}]] {color}\n'.format(
                     id=need_info["id"],
