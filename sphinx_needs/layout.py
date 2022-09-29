@@ -135,7 +135,7 @@ def build_need(layout, node, app: Sphinx, style=None, fromdocname: Optional[str]
     new_need_node = lh.get_need_table()
     node_container.append(new_need_node)
 
-    container_id = "SNCB-" + str(uuid.uuid4())[:32]
+    container_id = "SNCB-" + str(uuid.uuid4())[:4]
     node_container.attributes["ids"] = [container_id]
     node_container.attributes["classes"] = ["need_container"]
 
