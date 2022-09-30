@@ -101,9 +101,9 @@ Helpful to identify reasons why a PlantUML build may have thrown errors.
 key
 ~~~
 
-Allows to store multiple ``needuml`` inside a need under the given key. If no option key given, then
-the first ``needuml`` will be stored in the need under ``diagram``. Option ``:key:`` value can't be empty,
-and can't be ``diagram``. 
+Allows to store multiple ``needuml`` inside a need under ``arch`` under the given key, e.g. ``need["arch"]["key_name"]``.
+If no option key given, then the first ``needuml`` will be stored in the need under ``arch`` under ``diagram``, ``need["arch"]["diagram"]``.
+Option ``:key:`` value can't be empty, and can't be ``diagram``.
 
 |ex|
 
@@ -274,7 +274,7 @@ uml(id)
 ~~~~~~~
 Loads a Sphinx-Need object as PlantUML object or reuses the stored PlantUML code inside the Sphinx-Need object.
 
-If diagram code is available in the need data under ``diagram``, the stored PlantUML diagram gets imported.
+If diagram code is available in the need data under ``arch``, the stored PlantUML diagram gets imported.
 
 Please read :ref:`need_diagram` for details.
 
@@ -303,7 +303,8 @@ Key argument
 ++++++++++++
 
 :ref:`uml() <jinja_uml>` supports ``key`` argument to define which PlantUML code to load from the Sphinx-Need object.
-``key`` value by default is ``diagram``. If no key argument given, then the PlantUML code is loaded from ``diagram``.
+``key`` value by default is ``diagram``. If no key argument given, then the PlantUML code is loaded from ``diagram`` under ``arch``
+inside the need object.
 
 |ex|
 

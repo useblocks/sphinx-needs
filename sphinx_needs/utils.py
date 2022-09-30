@@ -22,6 +22,7 @@ NEEDS_FUNCTIONS = {}
 # List of internal need option names. They should not be used by or presented to user.
 INTERNALS = [
     "docname",
+    "doctype",
     "lineno",
     "target_node",
     "refid",
@@ -58,7 +59,7 @@ INTERNALS = [
     "constraints",
     "constraints_passed",
     "constraints_results",
-    "diagram",
+    "arch",
 ]
 
 MONTH_NAMES = [

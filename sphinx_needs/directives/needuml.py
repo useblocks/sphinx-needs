@@ -130,13 +130,13 @@ class JinjaFunctions:
         need_info = self.needs[need_id]
 
         if key != "diagram":
-            if need_info[key]:
-                uml_content = need_info[key]
+            if need_info["arch"][key]:
+                uml_content = need_info["arch"][key]
             else:
                 raise NeedumlException(f"Option key name: {key} does not exist in need {need_id}.")
         else:
-            if need_info["diagram"]:
-                uml_content = need_info["diagram"]
+            if "diagram" in need_info["arch"] and need_info["arch"]["diagram"]:
+                uml_content = need_info["arch"]["diagram"]
             else:
                 return self.flow(need_id)
 
