@@ -20,9 +20,7 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, _docname: str) -> No
         if source["base_url"].endswith("/"):
             source["base_url"] = source["base_url"][:-1]
 
-        target_url = ""
-        if source.get("target_url", False):
-            target_url = source["target_url"]
+        target_url = source.get("target_url", "")
 
         if source.get("json_url", False) and source.get("json_path", False):
             raise NeedsExternalException(
