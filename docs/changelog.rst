@@ -17,7 +17,8 @@ Under development
 * Improvement: Added :ref:`needs_render_context` configuration option which enables you to use custom data as the
 context when rendering Jinja templates or strings.
   (`#704 <https://github.com/useblocks/sphinx-needs/issues/704>`_)
-
+* Bugfix: Fixed needuml key shown in need meta data by providing internal need option `arch`.
+  (`#687 <https://github.com/useblocks/sphinx-needs/issues/687>`_)
 
 1.0.2
 -----

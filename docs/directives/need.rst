@@ -192,8 +192,8 @@ Below is an implementation of variants for need options:
 Diagram support
 ---------------
 A need objects can also define it's own PlantUML representation.
-Therefore Sphinx-Needs looks for the first occurrence of a :ref:`needuml` directive inside the content
-and stores its PlantUML code under the option name ``diagram``.
+Therefore Sphinx-Needs looks for the :ref:`needuml` directive inside the content
+and stores its PlantUML code under given key from :ref:`needuml` directive under the option name ``arch``.
 
 This diagram data can then be used in other :ref:`needuml` calls to combine and reuse PlantUML elements.
 
@@ -258,7 +258,7 @@ For more examples and details, please read :ref:`needuml`.
 
 Filter for diagrams
 ~~~~~~~~~~~~~~~~~~~
-The option ``diagram`` can be easily used for filtering. For instance to show all need objects, which
+The option ``arch`` can be easily used for filtering. For instance to show all need objects, which
 are representing some kind of a diagram.
 
 
@@ -267,14 +267,14 @@ are representing some kind of a diagram.
 .. code-block:: rst
 
    .. needtable::
-      :filter: diagram
+      :filter: arch
       :style: table
       :columns: id, type, title
 
 |out|
 
 .. needtable::
-   :filter: diagram
+   :filter: arch
    :style: table
    :columns: id, type, title
 

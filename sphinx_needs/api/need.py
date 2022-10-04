@@ -327,7 +327,7 @@ def add_need(
         "full_title": title,
         "content": content,
         "collapse": collapse,
-        "diagram": None,  # extracted later
+        "arch": {},  # extracted later
         "style": style,
         "layout": layout,
         "template": template,
@@ -447,7 +447,7 @@ def add_need(
 
     node_need_content = _render_template(content, docname, lineno, state)
 
-    # Extract plantuml diagrams
+    # Extract plantuml diagrams and store needumls with keys in arch, e.g. need_info['arch']['diagram']
     node_need_needumls_without_key = []
     node_need_needumls_key_names = []
     for child in node_need_content.children:
@@ -456,38 +456,14 @@ def add_need(
             try:
                 needuml = env.needs_all_needumls.get(needuml_id)
                 key_name = needuml["key"]
-                # check if key_name already exists in the need, or defined in needs_extra_options, or need_extra_links
-                if key_name in needs_info:
-                    if key_name in link_names:
+                if key_name:
+                    # check if key_name already exists in needs_info["arch"]
+                    if key_name in node_need_needumls_key_names:
                         raise NeedumlException(
-                            f"Needuml key: {key_name}, already exists in needs_extra_links options: {link_names}"
-                        )
-                    elif key_name in needs_extra_option_names:
-                        raise NeedumlException(
-                            f"Needuml key: {key_name}, already exists in needs_extra_options: {list(needs_extra_option_names)}"
+                            f"Inside need: {need_id}, found duplicate Needuml option key name: {key_name}"
                         )
                     else:
-                        if key_name in node_need_needumls_key_names:
-                            raise NeedumlException(
-                                f"Inside need: {need_id}, found duplicate Needuml option key name: {key_name}"
-                            )
-                        else:
-                            diff_options = (
-                                set(needs_extra_option_names)
-                                .difference(set(needs_info.keys()))
-                                .difference(set(link_names))
-                            )
-                            if not diff_options:
-                                default_options = list(needs_info.keys())
-                            else:
-                                default_options = diff_options
-                            raise NeedumlException(
-                                f"Needuml key: {key_name}, already exists in need default options: {default_options}"
-                            )
-
-                if key_name:
-                    if key_name not in node_need_needumls_key_names:
-                        needs_info[key_name] = needuml["content"]
+                        needs_info["arch"][key_name] = needuml["content"]
                         node_need_needumls_key_names.append(key_name)
                 else:
                     node_need_needumls_without_key.append(needuml)
@@ -496,7 +472,7 @@ def add_need(
 
     # only store the first needuml-node which has no key option under diagram
     if node_need_needumls_without_key:
-        needs_info["diagram"] = node_need_needumls_without_key[0]["content"]
+        needs_info["arch"]["diagram"] = node_need_needumls_without_key[0]["content"]
 
     need_parts = find_parts(node_need_content)
     update_need_with_parts(env, needs_info, need_parts)
