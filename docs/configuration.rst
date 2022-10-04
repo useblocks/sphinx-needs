@@ -1567,6 +1567,8 @@ Default: ``False``.
     needs_service_all_data = True
 
 
+{% raw %}
+
 .. _needs_external_needs:
 
 needs_external_needs
@@ -1600,7 +1602,25 @@ Allows to reference and use external needs without having their representation i
         'version': '2.5',
         'id_prefix': 'ext_',
         'css_class': 'project_x',
-      }
+      },
+      {
+        "base_url": "http://my_company.com/docs/v1/",
+        "target_url": "issue/{{need['id']}}",
+        "json_path": "needs_test.json",
+        "id_prefix": "ext_need_id_",
+      },
+      {
+        "base_url": "http://my_company.com/docs/v1/",
+        "target_url": "issue/{{need['type']|upper()}}",
+        "json_path": "needs_test.json",
+        "id_prefix": "ext_need_type_",
+      },
+      {
+        "base_url": "http://my_company.com/docs/v1/",
+        "target_url": "issue/fixed_string",
+        "json_path": "needs_test.json",
+        "id_prefix": "ext_string_",
+      },
     ]
 
 ``needs_external_needs`` must be a list of dictionary elements and each dictionary must/can have the following
@@ -1608,6 +1628,10 @@ keys:
 
 :base_url: Base url which is used to calculate the final, specific need url. Normally the path under which the ``index.html`` is provided.
            Base url supports also relative path, which starts from project build html folder (normally where ``index.html`` is located).
+:target_url: Allows to config the final caculated need url. (*optional*)
+             |br| If provided, ``target_url`` will be appended to ``base_url`` as the final calculate need url, e.g. ``base_url/target_url``.
+             If not, the external need url uses the default calculated ``base_url``.
+             |br| The ``target_url`` supports Jinja context ``{{need[]}}``, ``need option`` used as key, e.g ``{{need['id']}}`` or ``{{need['type']}}``.
 :json_url: An url, which can be used to download the ``needs.json`` (or similar) file.
 :json_path: The path to a ``needs.json`` file located inside your documentation project. Can not be used together with
             ``json_url``. |br| The value must be a relative path, which is relative to the project configuration folder
@@ -1618,6 +1642,8 @@ keys:
 :css_class: A class name as string, which gets set in link representations like :ref:`needtable`.
             The related CSS class definition must be done by the user, e.g. by :ref:`own_css`.
             (*optional*) (*default*: ``external_link``)
+
+{% endraw %}
 
 .. _needs_table_classes:
 

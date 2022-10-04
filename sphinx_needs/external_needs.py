@@ -2,6 +2,7 @@ import json
 import os
 
 import requests
+from jinja2 import BaseLoader, Environment
 from requests_file import FileAdapter
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
@@ -18,6 +19,8 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, _docname: str) -> No
     for source in app.config.needs_external_needs:
         if source["base_url"].endswith("/"):
             source["base_url"] = source["base_url"][:-1]
+
+        target_url = source.get("target_url", "")
 
         if source.get("json_url", False) and source.get("json_path", False):
             raise NeedsExternalException(
@@ -80,7 +83,17 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, _docname: str) -> No
             need_params["need_type"] = need["type"]
             need_params["id"] = f'{prefix}{need["id"]}'
             need_params["external_css"] = source.get("css_class", None)
-            need_params["external_url"] = f'{source["base_url"]}/{need.get("docname", "__error__")}.html#{need["id"]}'
+
+            if target_url:
+                # render jinja content
+                mem_template = Environment(loader=BaseLoader).from_string(target_url)
+                cal_target_url = mem_template.render(**{"need": need})
+                need_params["external_url"] = f'{source["base_url"]}/{cal_target_url}'
+            else:
+                need_params[
+                    "external_url"
+                ] = f'{source["base_url"]}/{need.get("docname", "__error__")}.html#{need["id"]}'
+
             need_params["content"] = need["description"]
             need_params["links"] = need.get("links", [])
             need_params["tags"] = ",".join(need.get("tags", []))
