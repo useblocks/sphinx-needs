@@ -14,7 +14,7 @@ Under development
 
 * Improvement: Supported arguments as filter string for :ref:`needextract`.
   (`#688 <https://github.com/useblocks/sphinx-needs/issues/688>`_)
-* Improvement: Added :ref:`needs_render_context` configuration option which enables you to use custom data as
+* Improvement: Added :ref:`needs_render_context` configuration option which enables you to use custom data as the
 context when rendering Jinja templates or strings.
   (`#704 <https://github.com/useblocks/sphinx-needs/issues/704>`_)
 
