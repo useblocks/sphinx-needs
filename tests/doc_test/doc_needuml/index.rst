@@ -145,3 +145,8 @@ TEST DOCUMENT NEEDUML
 
       Alice -> Bob: Hi Bob
       Bob --> Alice: Hi Alice
+
+.. needtable:: 
+   :filter: arch
+   :style: table
+   :columns: id, type, title
