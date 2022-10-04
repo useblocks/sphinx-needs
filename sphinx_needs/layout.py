@@ -5,6 +5,7 @@ Based on https://github.com/useblocks/sphinxcontrib-needs/issues/102
 """
 import os
 import re
+import uuid
 from contextlib import suppress
 from typing import List, Optional
 from urllib.parse import urlparse
@@ -44,7 +45,7 @@ def create_need(need_id: str, app: Sphinx, layout=None, style=None, docname: Opt
     node_container = nodes.container()
     node_inner = needs[need_id]["content_node"]
     node_container.append(node_inner)
-    # Resolve internal refernces.
+    # Resolve internal references.
     # This is done for original need content automatically.
     # But as we are working on  a copy, we have to trigger this on our own.
     if docname is None:
@@ -65,6 +66,7 @@ def create_need(need_id: str, app: Sphinx, layout=None, style=None, docname: Opt
 
     # set the layout and style for the new need
     node_container[0].attributes = node_container.parent.children[0].attributes
+    node_container[0].children[0].attributes = node_container.parent.children[0].children[0].attributes
 
     node_container.attributes["ids"] = []
 
@@ -116,6 +118,7 @@ def build_need(layout, node, app: Sphinx, style=None, fromdocname: Optional[str]
 
     env = app.builder.env
     needs = env.needs_all_needs
+    node_container = nodes.container()
 
     need_layout = layout
     need_id = node.attributes["ids"][0]
@@ -130,9 +133,14 @@ def build_need(layout, node, app: Sphinx, style=None, fromdocname: Optional[str]
 
     lh = LayoutHandler(app, need_data, need_layout, node, style, fromdocname)
     new_need_node = lh.get_need_table()
+    node_container.append(new_need_node)
+
+    container_id = "SNCB-" + str(uuid.uuid4())[:4]
+    node_container.attributes["ids"] = [container_id]
+    node_container.attributes["classes"] = ["need_container"]
 
     # We need to replace the current need-node (containing content only) with our new table need node.
-    node.parent.replace(node, new_need_node)
+    node.parent.replace(node, node_container)
 
 
 class LayoutHandler:

@@ -20,6 +20,8 @@ $(document).ready(function() {
 //     $(".wy-table-responsive > table").show();
 // });
 
+
+
 $(document).ready(function() {
     $("table.need span.needs_collapse").each(function() {
         var id = $(this).attr("id");
@@ -27,14 +29,14 @@ $(document).ready(function() {
         var rows = parts.slice(2);
         if (parts[1] == "show") {
             var table = $(this).closest('table');
-            var visible_icon = document.querySelector(`#${table.attr("id")} span.needs.visible`);
+            var visible_icon = document.querySelector(`#${table.parent(".need_container").attr('id')} table span.needs.visible`);
             visible_icon.classList.toggle("collapse_is_hidden");
         } else {
             var table = $(this).closest('table');
-            var collapse_icon = document.querySelector(`#${table.attr("id")} span.needs.collapsed`);
+            var collapse_icon = document.querySelector(`#${table.parent(".need_container").attr('id')} table span.needs.collapsed`);
             collapse_icon.classList.toggle("collapse_is_hidden");
             for (var row in rows) {
-                var collapse_row = document.querySelector(`#${table.attr("id")} tr.${rows[row]}`);
+                var collapse_row = document.querySelector(`#${table.parent(".need_container").attr('id')} table tr.${rows[row]}`);
                 collapse_row.classList.toggle("collapse_is_hidden");
             }
         }
@@ -42,11 +44,11 @@ $(document).ready(function() {
         $(this).find("span.needs.collapsed, span.needs.visible").click(function() {
             var table = $(this).closest('table');
             for (var row in rows) {
-                var collapse_row = document.querySelector(`#${table.attr("id")} tr.${rows[row]}`);
+                var collapse_row = document.querySelector(`#${table.parent(".need_container").attr('id')} table tr.${rows[row]}`);
                 collapse_row.classList.toggle("collapse_is_hidden");
             }
-            var collapse_icon = document.querySelector(`#${table.attr("id")} span.needs.collapsed`);
-            var visible_icon = document.querySelector(`#${table.attr("id")} span.needs.visible`);
+            var collapse_icon = document.querySelector(`#${table.parent(".need_container").attr('id')} table span.needs.collapsed`);
+            var visible_icon = document.querySelector(`#${table.parent(".need_container").attr('id')} table span.needs.visible`);
 
             collapse_icon.classList.toggle("collapse_is_hidden");
             visible_icon.classList.toggle("collapse_is_hidden");
@@ -62,4 +64,5 @@ $(document).ready(function() {
     });
 });
 
-// https://api.jquery.com/closest/
+
+
