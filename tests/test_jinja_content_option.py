@@ -29,3 +29,10 @@ This requirement has tags: <strong>user, login</strong>.</p>
 This requirement has status: <strong>open</strong>.</p>"""
         in html
     )
+
+    # Test for needs_render_context
+    assert "JINJA1D8913" in html
+    assert "Project_X" in html
+    assert "Content from custom_defined_func." in html
+    assert "Daniel - ID: 811982" in html
+    assert "Marco - ID: 234232" in html

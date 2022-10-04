@@ -37,3 +37,19 @@ Need Jinja Content Option
 
    Need with ``:jinja_content:`` equal to ``true``.
    This requirement has status: **{{ status }}**.
+
+
+{% raw -%}
+
+.. req:: Need with jinja_content enabled
+   :id: JINJA1D8913
+   :jinja_content: true
+
+   Need with alias {{ custom_data_1 }} and ``jinja_content`` option set to {{ custom_data_3 }}.
+
+   {{ custom_data_2 }}
+   {% for person in custom_data_4 %}
+   * {{ person }}
+   {% endfor %}
+
+{% endraw %}
