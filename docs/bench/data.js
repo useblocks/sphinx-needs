@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1664354095110,
+  "lastUpdate": 1664867757626,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -144,6 +144,42 @@ window.BENCHMARK_DATA = {
             "value": 67.33376593199995,
             "unit": "s",
             "extra": "Commit: f58931addc8ea8ee9ee91e74a6b14a42ecb73ab9\nBranch: master\nTime: 2022-09-28T10:28:36+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "duodurandy19@gmail.com",
+            "name": "Randy Duodu (He/Him)",
+            "username": "iSOLveIT"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e51fc1fcf398de5c06a519b2281189051baf0e85",
+          "message": "Fixed rendering issues for collapse/expand button. (#716)\n\n* Fixed rendering issues for collapse/expand button.\r\n\r\n* Fixed rendering issues for collapse/expand button.\r\n\r\n* Update layout.py",
+          "timestamp": "2022-10-04T09:09:07+02:00",
+          "tree_id": "4f39b3acc6e90d8750e4e305094d1f0231d6c30d",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e51fc1fcf398de5c06a519b2281189051baf0e85"
+        },
+        "date": 1664867754295,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.23141063200000644,
+            "unit": "s",
+            "extra": "Commit: e51fc1fcf398de5c06a519b2281189051baf0e85\nBranch: master\nTime: 2022-10-04T09:09:07+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 69.03507991600003,
+            "unit": "s",
+            "extra": "Commit: e51fc1fcf398de5c06a519b2281189051baf0e85\nBranch: master\nTime: 2022-10-04T09:09:07+02:00"
           }
         ]
       }
