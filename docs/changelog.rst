@@ -13,7 +13,9 @@ License
 Under development
 
 * Improvement: Supported arguments as filter string for :ref:`needextract`.
-  (`#688 <https://github.com/useblocks/sphinx-needs/issues/688>`_)
+  (`#688 <https://github.com/useblocks/sphinx-needs/issues/688>`_)s
+* Improvement: Supported ``target_url`` for :ref:`needs_external_needs`.
+  (`#701 <https://github.com/useblocks/sphinx-needs/issues/701>`_)
 * Bugfix: Fixed needuml key shown in need meta data by providing internal need option `arch`.
   (`#687 <https://github.com/useblocks/sphinx-needs/issues/687>`_)
 
