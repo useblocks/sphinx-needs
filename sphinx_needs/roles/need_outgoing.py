@@ -56,9 +56,13 @@ def process_need_outgoing(app: Sphinx, doctree: nodes.document, fromdocname: str
                         target_id = target_need["id"]
 
                     if env.config.needs_show_link_title:
-                        link_text = f"{target_title} ({target_id})"
+                        link_text = f"{target_title}"
+
+                        if env.config.needs_show_link_id:
+                            link_text += f" ({target_id})"
                     else:
                         link_text = target_id
+
                     if env.config.needs_show_link_type:
                         link_text += " [{type}]".format(type=target_need["type_name"])
 

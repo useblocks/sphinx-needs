@@ -12,6 +12,7 @@ License
 -----
 Under development
 
+* Improvement: Added :ref:`needs_show_link_id`.
 * Improvement: Supported arguments as filter string for :ref:`needextract`.
   (`#688 <https://github.com/useblocks/sphinx-needs/issues/688>`_)
 * Improvement: Added :ref:`needs_render_context` configuration option which enables you to use custom data as the

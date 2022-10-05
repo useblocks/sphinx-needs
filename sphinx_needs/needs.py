@@ -148,6 +148,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     )
     app.add_config_value("needs_show_link_type", False, "html", types=[bool])
     app.add_config_value("needs_show_link_title", False, "html", types=[bool])
+    app.add_config_value("needs_show_link_id", True, "html", types=[bool])
     app.add_config_value("needs_file", None, "html")
     app.add_config_value("needs_table_columns", "ID;TITLE;STATUS;TYPE;OUTGOING;TAGS", "html")
     app.add_config_value("needs_table_style", "DATATABLES", "html")
