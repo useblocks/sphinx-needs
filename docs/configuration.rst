@@ -934,6 +934,22 @@ Activate it by setting it on True in your **conf.py**:
 
     needs_show_link_title = True
 
+.. _needs_show_link_id:
+
+needs_show_link_id
+~~~~~~~~~~~~~~~~~~
+.. versionadded:: 1.0.3
+
+This option mostly affects the roles :ref:`role_need_outgoing` and :ref:`role_need_incoming` by showing
+the *ID*  of the linked need.
+
+Can be combined with :ref:`needs_show_link_type` and :ref:`needs_show_link_title.
+
+
+.. code-block:: python
+
+    needs_show_link_id = True
+
 .. _needs_file:
 
 needs_file
