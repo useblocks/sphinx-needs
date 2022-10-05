@@ -189,7 +189,9 @@ def row_col_maker(
                     ref_col.append(text_col)
                     para_col += ref_col
             elif matching_link_confs:
-                para_col += match_string_link(datum_text, datum, need_key, matching_link_confs)
+                para_col += match_string_link(
+                    datum_text, datum, need_key, matching_link_confs, render_context=app.config.needs_render_context
+                )
             else:
                 para_col += text_col
 
@@ -210,7 +212,7 @@ def rstjinja(app: Sphinx, docname: str, source: List[str]) -> None:
     if builder.format != "html":
         return
     src = source[0]
-    rendered = builder.templates.render_string(src, app.config.html_context)
+    rendered = builder.templates.render_string(src, app.config.html_context, **app.config.needs_render_context)
     source[0] = rendered
 
 
@@ -355,7 +357,9 @@ def dict_get(root, items, default=None) -> Any:
     return value
 
 
-def match_string_link(text_item: str, data: str, need_key: str, matching_link_confs: List[Dict]) -> Any:
+def match_string_link(
+    text_item: str, data: str, need_key: str, matching_link_confs: List[Dict], render_context: Dict[str, Any]
+) -> Any:
     try:
         link_name = None
         link_url = None
@@ -363,8 +367,8 @@ def match_string_link(text_item: str, data: str, need_key: str, matching_link_co
         match = link_conf["regex_compiled"].search(data)
         if match:
             render_content = match.groupdict()
-            link_url = link_conf["url_template"].render(**render_content)
-            link_name = link_conf["name_template"].render(**render_content)
+            link_url = link_conf["url_template"].render(**render_content, **render_context)
+            link_name = link_conf["name_template"].render(**render_content, **render_context)
         if link_name:
             ref_item = nodes.reference(link_name, link_name, refuri=link_url)
         else:

@@ -58,10 +58,8 @@ extensions = [
     "sphinx_immaterial",
 ]
 
-
 add_module_names = False  # Used to shorten function name output
 autodoc_docstring_signature = True  # Used to read spec. func-defs from docstring (e.g. get rid of self)
-
 
 NOTE_TEMPLATE = """
 .. _{{id}}:
@@ -361,6 +359,18 @@ needs_string_links = {
     },
 }
 
+
+def custom_defined_func():
+    return "List of contributors:"
+
+
+needs_render_context = {
+    "custom_data_1": "Project_X",
+    "custom_data_2": custom_defined_func(),
+    "custom_data_3": True,
+    "custom_data_4": [("Daniel", 811982), ("Marco", 234232)],
+}
+
 # needs_external_needs = [
 #     {
 #         "base_url": "https://sphinxcontrib-needs.readthedocs.io/en/latest",
@@ -486,7 +496,6 @@ html_theme_options = {
     ],
     "toc_title_is_page_title": True,
 }
-
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

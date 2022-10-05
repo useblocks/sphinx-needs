@@ -41,6 +41,18 @@ needs_types = [
 plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "utils", "plantuml.jar")
 plantuml_output_format = "svg"
 
+
+def custom_defined_func():
+    return "Content from custom_defined_func."
+
+
+needs_render_context = {
+    "custom_data_1": "Project_X",
+    "custom_data_2": custom_defined_func(),
+    "custom_data_3": True,
+    "custom_data_4": ["Daniel - ID: 811982", "Marco - ID: 234232"],
+}
+
 # Add any paths that contain templates here, relative to this directory.
 # templates_path = ["_templates"]
 

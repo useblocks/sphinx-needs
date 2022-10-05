@@ -548,8 +548,9 @@ Default: False
 
 |ex|
 
-.. code-block:: rst
+.. code-block:: jinja
 
+    {% raw -%}
     .. req:: First Req Need
        :id: JINJAID123
        :jinja_content: false
@@ -580,8 +581,11 @@ Default: False
        Need with ``:jinja_content:`` equal to ``true``.
        This requirement has status: **{{ status }}**.
 
+    {% endraw %}
 
 |out|
+
+{% raw -%}
 
 .. req:: First Req Need
    :id: JINJAID123
@@ -613,6 +617,7 @@ Default: False
    Need with ``:jinja_content:`` equal to ``true``.
    This requirement has status: **{{ status }}**.
 
+{% endraw %}
 
 .. _title_from_content:
 

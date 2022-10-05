@@ -487,7 +487,11 @@ class LayoutHandler:
             for index, datum in enumerate(data):
                 if matching_link_confs:
                     data_node += match_string_link(
-                        text_item=datum, data=datum, need_key=name, matching_link_confs=matching_link_confs
+                        text_item=datum,
+                        data=datum,
+                        need_key=name,
+                        matching_link_confs=matching_link_confs,
+                        render_context=self.app.config.needs_render_context,
                     )
                 else:
                     # Normal text handling

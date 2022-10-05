@@ -57,6 +57,7 @@ class NeedReportDirective(Directive):
             "links": needs_extra_links,
             "usage": needs_metrics,
         }
+        report_info.update(**env.app.config.needs_render_context)
 
         need_report_template_path: str = env.app.config.needs_report_template
         # Absolute path starts with /, based on the conf.py directory. The / need to be striped

@@ -140,9 +140,10 @@ class JinjaFunctions:
             else:
                 return self.flow(need_id)
 
-        # We need to rerender the fetched content, as it may contain also Jinja statements.
+        # We need to re-render the fetched content, as it may contain also Jinja statements.
         mem_template = Environment(loader=BaseLoader).from_string(uml_content)
         data = {"needs": self.needs, "uml": self.uml, "flow": self.flow}
+        data.update(**self.app.config.needs_render_context)
         data.update(kwargs)
         uml = mem_template.render(**data)
 
@@ -153,7 +154,7 @@ class JinjaFunctions:
         link = calculate_link(self.app, need_info, self.fromdocname)
 
         diagram_template = Template(self.app.builder.env.config.needs_diagram_template)
-        node_text = diagram_template.render(**need_info)
+        node_text = diagram_template.render(**need_info, **self.app.config.needs_render_context)
 
         need_uml = '{style} "{node_text}" as {id} [[{link}]] #{color}\n'.format(
             id=make_entity_name(need_id),
@@ -259,7 +260,7 @@ def process_needuml(app, doctree, fromdocname):
 
         data.update(current_needuml["extra"])
 
-        uml_content = mem_template.render(**data)
+        uml_content = mem_template.render(**data, **app.config.needs_render_context)
         # Add needuml specific content
         puml_node["uml"] = "@startuml\n"
 

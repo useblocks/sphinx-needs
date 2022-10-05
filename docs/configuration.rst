@@ -2046,6 +2046,68 @@ Default: ``[]``
       * options specified in :ref:`extra options <needs_extra_options>`
       * options specified in :ref:`extra links <needs_extra_links>`
 
+needs_render_context
+~~~~~~~~~~~~~~~~~~~~~
+.. versionadded:: 1.0.3
+
+This option allows you to use custom data as context when rendering `Jinja <https://jinja.palletsprojects.com/>`_ templates or strings.
+
+Configuration example:
+
+.. code-block:: python
+
+    def custom_defined_func():
+        return "my_tag"
+
+    needs_render_context = {
+        "custom_data_1": "Project_X",
+        "custom_data_2": custom_defined_func(),
+        "custom_data_3": True,
+        "custom_data_4": [("Daniel", 811982), ("Marco", 234232)]
+    }
+
+The``needs_render_context`` configuration option must be a dictionary.
+The dictionary consists of key-value pairs where the key is a string used as reference to the value.
+The value can be any data type (string, integer, list, dict, etc.) or a custom defined function which returns a string.
+
+The data passed via needs_render_context will be available as variable(s) when rendering Jinja templates or strings.
+You can use the data passed via needs_render_context as shown below:
+
+|ex|
+
+.. code-block:: jinja
+
+    {% raw -%}
+
+    .. req:: Need with jinja_content enabled
+       :id: JINJA1D8913
+       :jinja_content: true
+
+       Need with alias {{ custom_data_1 }} and ``jinja_content`` option set to {{ custom_data_3 }}.
+
+       {{ custom_data_2 }}
+       {% for author in custom_data_4 %}
+          * author[0]
+            + author[1]
+       {% endfor %}
+
+    {% endraw %}
+
+{% raw -%}
+
+.. req:: Need with jinja_content enabled
+   :id: JINJA1D8913
+   :jinja_content: true
+
+   Need with alias {{ custom_data_1 }} and ``jinja_content`` option set to {{ custom_data_3 }}.
+
+   {{ custom_data_2 }}
+   {% for author in custom_data_4 %}
+   * {{ author[0] }} --> ID-{{ author[1] }}
+   {% endfor %}
+
+{% endraw %}
+
 
 Removed options
 ---------------
