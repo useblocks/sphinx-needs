@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1664869455743,
+  "lastUpdate": 1664954653107,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -252,6 +252,42 @@ window.BENCHMARK_DATA = {
             "value": 66.150743449,
             "unit": "s",
             "extra": "Commit: d15e4654702717d0779732cd5858b775095f0fa9\nBranch: master\nTime: 2022-10-04T09:37:59+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "duodurandy19@gmail.com",
+            "name": "Randy Duodu (He/Him)",
+            "username": "iSOLveIT"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "148d2df4162a7da73927e381fee83d6e62b7804a",
+          "message": "Added support for custom data as jinja context. (#717)\n\n* Added support for custom data as jinja context.\r\n\r\n* Fixes issue #704.\r\n\r\n* Added testcase for `needs_render_context` feature.",
+          "timestamp": "2022-10-05T09:17:22+02:00",
+          "tree_id": "55d4390f4d6460c823881612c44556dda08d570e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/148d2df4162a7da73927e381fee83d6e62b7804a"
+        },
+        "date": 1664954650098,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2401544519999561,
+            "unit": "s",
+            "extra": "Commit: 148d2df4162a7da73927e381fee83d6e62b7804a\nBranch: master\nTime: 2022-10-05T09:17:22+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 74.32248578400004,
+            "unit": "s",
+            "extra": "Commit: 148d2df4162a7da73927e381fee83d6e62b7804a\nBranch: master\nTime: 2022-10-05T09:17:22+02:00"
           }
         ]
       }
