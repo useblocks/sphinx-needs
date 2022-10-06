@@ -8,7 +8,7 @@ jobs:
     name: Build packages
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v3.1.0
       - name: Set up Python 3.9
         uses: actions/setup-python@v4
         with:
@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v3.1.0
       - name: Set up Python 3.9
         uses: actions/setup-python@v4
         with:
@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: publish_test
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v3.1.0
       - name: Set up Python 3.9
         uses: actions/setup-python@v4
         with:
