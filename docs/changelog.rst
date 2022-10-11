@@ -12,6 +12,8 @@ License
 -----
 Under development
 
+* Improvement: Fixed rendering issue with the debug layout.
+  (`#721 <https://github.com/useblocks/sphinx-needs/issues/721>`_)
 * Improvement: Added :ref:`needs_show_link_id`.
 * Improvement: Supported arguments as filter string for :ref:`needextract`.
   (`#688 <https://github.com/useblocks/sphinx-needs/issues/688>`_)
