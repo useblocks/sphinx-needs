@@ -162,6 +162,11 @@ See also :ref:`needs_extra_links` for more details about specific link types.
 
       :need_part:`(subspec_2)Another testable part of the specification`
 
+      .. spec:: A child specification
+         :id: spec_flow_003
+         :blocks: req_flow_001
+         :tags: flow_example
+
    .. spec:: Another specification
       :id: spec_flow_002
       :links: req_flow_001
@@ -192,6 +197,11 @@ See also :ref:`needs_extra_links` for more details about specific link types.
    :need_part:`(subspec_1)A testable part of the specification`
 
    :need_part:`(subspec_2)Another testable part of the specification`
+
+   .. spec:: A child specification
+      :id: spec_flow_003
+      :blocks: req_flow_001
+      :tags: flow_example
 
 .. spec:: Another specification
    :id: spec_flow_002

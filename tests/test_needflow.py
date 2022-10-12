@@ -23,3 +23,15 @@ def test_doc_build_html(test_app):
         assert '<figure class="align-center" id="needflow-index-0">' in html
     else:
         assert '<div class="figure align-center" id="needflow-index-0">' in html
+
+
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needflow_incl_child_needs"}], indirect=True
+)
+def test_doc_build_needflow_incl_child_needs(test_app):
+    app = test_app
+    app.build()
+    html = Path(app.outdir, "index.html").read_text()
+    assert html
+    assert "STORY_2" in html
+    assert "SPEC_1" in html
