@@ -4,33 +4,36 @@ from typing import Sequence
 
 try:
     import matplotlib
-except ImportError:
-    # Dependency "matplotlib" missing, install package with extra to fix
-    # Swallow original exception, to give a specific, helpful message instead
-    raise ImportError(
-        "Missing matplotlib dependency required for needbar directive. "
-        "Please install sphinxcontrib-needs with optional [matplotlib] flag"
-    )
+    import numpy
 
-# Since numpy is NOT direct dep, but dep of matplotlib instead, we can assume
-# that if we are here = didn't raise ImportError on matplotlib above, we have
-# numpy available = no need for check + help message
-import numpy
+    if not os.environ.get("DISPLAY"):
+        matplotlib.use("Agg")
+
+    # We want to hard fail only when actively USING matplotlib, not just importing it at
+    # toplevel (not actively using) ==> Set a flag for availability of matplotlib, to
+    # check at runtime and raise only then
+    MATPLOTLIB_AVAILABLE = True
+except ImportError:
+    MATPLOTLIB_AVAILABLE = False
+
+import hashlib
+
 from docutils import nodes
+from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
 from sphinx_needs.utils import add_doc, save_matplotlib_figure, unwrap
 
-if not os.environ.get("DISPLAY"):
-    matplotlib.use("Agg")
-import hashlib
-
-from docutils.parsers.rst import directives
-
-from sphinx_needs.logging import get_logger
-
 logger = get_logger(__name__)
+
+
+def error_on_missing_matplotlib():
+    if not MATPLOTLIB_AVAILABLE:
+        raise ImportError(
+            "Missing matplotlib dependency required for needbar directive. "
+            "Please install sphinx-needs with optional [matplotlib] flag"
+        )
 
 
 class Needbar(nodes.General, nodes.Element):
@@ -74,6 +77,7 @@ class NeedbarDirective(FilterBase):
     # 1. define constants
     # 2. Stores infos for needbar
     def run(self) -> Sequence[nodes.Node]:
+        error_on_missing_matplotlib()
         # 1. define constants
         env = self.state.document.settings.env
         if not hasattr(env, "need_all_needbar"):
@@ -302,6 +306,7 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
             index.append(line)
 
         # 7. styling and coloring
+        error_on_missing_matplotlib()
         style_previous_to_script_execution = matplotlib.rcParams
         # Set matplotlib style
         if current_needbar["style"]:

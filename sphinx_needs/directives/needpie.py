@@ -4,27 +4,28 @@ from typing import Iterable, Sequence
 
 try:
     import matplotlib
+    import matplotlib.pyplot
     import numpy as np
+
+    if not os.environ.get("DISPLAY"):
+        matplotlib.use("Agg")
+
+    # We want to hard fail only when actively USING matplotlib, not just importing it at
+    # toplevel (not actively using) ==> Set a flag for availability of matplotlib, to
+    # check at runtime and raise only then
+    MATPLOTLIB_AVAILABLE = True
 except ImportError:
-    # Dependency "matplotlib" missing, install package with extra to fix
-    # Swallow original exception, to give a specific, helpful message instead
-    raise ImportError(
-        "Missing matplotlib/numpy dependency required for needpie directive. "
-        "Please install sphinxcontrib-needs with optional [matplotlib] flag"
-    )
+    MATPLOTLIB_AVAILABLE = False
+
+
+import hashlib
+
 from docutils import nodes
+from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
 from sphinx_needs.debug import measure_time
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
-
-if not os.environ.get("DISPLAY"):
-    matplotlib.use("Agg")
-import hashlib
-
-import matplotlib.pyplot
-from docutils.parsers.rst import directives
-
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import (
     add_doc,
@@ -34,6 +35,14 @@ from sphinx_needs.utils import (
 )
 
 logger = get_logger(__name__)
+
+
+def error_on_missing_matplotlib():
+    if not MATPLOTLIB_AVAILABLE:
+        raise ImportError(
+            "Missing matplotlib/numpy dependency required for needpie directive. "
+            "Please install sphinx-needs with optional [matplotlib] flag"
+        )
 
 
 class Needpie(nodes.General, nodes.Element):
@@ -67,6 +76,7 @@ class NeedpieDirective(FilterBase):
     # Update the options_spec only with value filter-func defined in the FilterBase class
 
     def run(self) -> Sequence[nodes.Node]:
+        error_on_missing_matplotlib()
         env = self.state.document.settings.env
         if not hasattr(env, "need_all_needpie"):
             env.need_all_needpie = {}
@@ -146,6 +156,8 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
         current_needpie = env.need_all_needpie[id]
 
         # Set matplotlib style
+
+        error_on_missing_matplotlib()
         style_previous_to_script_execution = matplotlib.rcParams
         if current_needpie["style"]:
             matplotlib.style.use(current_needpie["style"])
