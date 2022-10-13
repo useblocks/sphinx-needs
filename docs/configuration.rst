@@ -71,6 +71,7 @@ Default: **True**
 
     needs_include_needs = False
 
+.. _needs_id_length:
 
 needs_id_length
 ~~~~~~~~~~~~~~~
@@ -785,6 +786,29 @@ If an ID is missing Sphinx throws the exception "NeedsNoIdException" and stops t
 
     .. req:: This works now!
 
+.. _needs_id_from_title:
+
+needs_id_from_title
+~~~~~~~~~~~~~~~~~~~
+
+Generates needs ID from title. By default, this setting is set to **False**.
+
+When no need ID is given by the user, and `needs_id_from_title` is set to **True**, then a need ID
+will be calculated based on the current need directive prefix, title, and a hased value from title.
+
+|ex|
+
+.. code-block:: rst
+
+    .. req:: Group big short
+    
+The calculated need ID will be: `R_GROUP_BIG_SHORT_{hashed value}`, if the need ID length doesn't
+exceed the setting from :ref:`needs_id_length`.
+
+.. note::
+
+   The user needs to ensure the uniqueness of the given title, and also match the settings of 
+   :ref:`needs_id_length` and :ref:`needs_id_regex`.
 
 .. _needs_title_optional:
 

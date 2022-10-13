@@ -24,6 +24,8 @@ Under development
   (`#687 <https://github.com/useblocks/sphinx-needs/issues/687>`_)
 * Improvement: Included child needs inside their parent need for :ref:`needflow`.
   (`#714 <https://github.com/useblocks/sphinx-needs/issues/714>`_)
+* Improvement: Supported generate need ID from title with :ref:`needs_id_from_title`.
+  (`#692 <https://github.com/useblocks/sphinx-needs/issues/692>`_)
 
 1.0.2
 -----

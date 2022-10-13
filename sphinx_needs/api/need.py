@@ -654,7 +654,15 @@ def make_hashed_id(app: Sphinx, need_type: str, full_title: str, content: str, i
         raise NeedsInvalidException(f"Given need_type {need_type} is unknown. File {app.env.docname}")
 
     hashable_content = full_title or "\n".join(content)
-    return "{}{}".format(type_prefix, hashlib.sha1(hashable_content.encode("UTF-8")).hexdigest().upper()[:id_length])
+    hashed_id = hashlib.sha1(hashable_content.encode("UTF-8")).hexdigest().upper()
+
+    # check if needs_id_from_title is configured
+    cal_hashed_id = hashed_id
+    if app.config.needs_id_from_title:
+        id_from_title = full_title.upper().replace(" ", "_") + "_"
+        cal_hashed_id = id_from_title + hashed_id
+
+    return f"{type_prefix}{cal_hashed_id[:id_length]}"
 
 
 def _fix_list_dyn_func(list: List[str]) -> List[str]:
