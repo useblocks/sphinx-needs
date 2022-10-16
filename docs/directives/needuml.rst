@@ -18,22 +18,53 @@ which allows you to use loops, if-clauses, and it injects data from need-objects
 
    .. needuml::
 
-      class "{{needs['FEATURE_1'].title}}" {
-        implement
-        {{needs['FEATURE_1'].status}}
-      }
+      {{uml('FEATURE_NEEDUML1')}}
+
+
+   .. feature:: NeedUml example need
+      :id: FEATURE_NEEDUML1
+      :tags: needuml
+      :status: draft
+
+      Example Need for NeedUml.
+
+      .. needuml::
+
+         class "{{need().title}}" {
+         implement
+         {{need().status}}
+         }
+
 
 |out|
 
 .. needuml::
 
-   class "{{needs['FEATURE_1'].title}}" {
-     implement
-     {{needs['FEATURE_1'].status}}
-   }
+   {{uml('FEATURE_NEEDUML1')}}
+
+
+.. feature:: NeedUml example need
+   :id: FEATURE_NEEDUML1
+   :tags: needuml
+   :status: draft
+
+   Example Need for NeedUml.
+
+   .. needuml::
+
+      class "{{need().title}}" {
+      implement
+      {{need().status}}
+      }
+
+
+.. _needuml_options:
 
 Options
 -------
+
+
+.. _needuml_extra:
 
 extra
 ~~~~~
@@ -63,13 +94,23 @@ Allows to inject additional key-value pairs into the ``needuml`` rendering.
 .. note::
 
    ``:extra:`` values are only available in the current PlantUML code.
-   It is not available in code loaded via :ref:`jinja_uml`.
+   It is not available in code loaded via :ref:`needuml_jinja_uml`.
+   So we suggest to use them only in non-embedded needuml directives.
+   In an embedded needuml, you can store the information in the options
+   of the need and access them with :ref:`needflow_need` like in 
+   :ref:`needuml` introduction.
+
+
+.. _needuml_config:
 
 config
 ~~~~~~
 Allows to preconfigure PlantUML and set certain layout options.
 
 For details please take a look into needflow :ref:`needflow_config`.
+
+
+.. _needuml_debug:
 
 debug
 ~~~~~
@@ -97,6 +138,9 @@ Helpful to identify reasons why a PlantUML build may have thrown errors.
    node "RocketLab" {
       card "Peter"
    }
+
+
+.. _needuml_key:
 
 key
 ~~~
@@ -152,6 +196,9 @@ Option ``:key:`` value can't be empty, and can't be ``diagram``.
       B -> C: Hi
       C -> B: Hi there
 
+
+.. _needuml_save:
+
 save
 ~~~~
 
@@ -190,9 +237,15 @@ e.g. `_build/needumls/needuml_group_A/my_needuml.puml`.
       Alice -> Bob: Hi Bob
       Bob --> Alice: Hi Alice
 
+
+.. _needuml_jinja:
+
 Jinja context
 -------------
 When using Jinja statements, the following objects and functions are available.
+
+
+.. _needuml_jinja_needs:
 
 needs
 ~~~~~
@@ -204,16 +257,36 @@ A Python dictionary containing all Needs. The ``need_id`` is used as key.
 
    .. needuml::
 
-      node "{{needs["FEATURE_1"].title}}"
+      node "{{needs["FEATURE_NEEDUML1"].title}}"
 
 |out|
 
 .. needuml::
 
-      node "{{needs["FEATURE_1"].title}}"
+      node "{{needs["FEATURE_NEEDUML1"].title}}"
 
 
-.. _jinja_flow:
+.. _needuml_jinja_need:
+
+need()
+~~~~~~
+
+.. versionadded:: 1.0.3
+
+NeedUml can use :ref:`needarch_jinja_need` from :ref:`needarch` if the NeedUml is embedded in a need.
+
+
+.. _needuml_jinja_import:
+
+import()
+~~~~~~~~
+
+.. versionadded:: 1.0.3
+
+NeedUml can use :ref:`needarch_jinja_import` from :ref:`needarch` if the NeedUml is embedded in a need.
+
+
+.. _needuml_jinja_flow:
 
 flow(id)
 ~~~~~~~~
@@ -231,7 +304,7 @@ This functions represents each Need the same way.
       allowmixing
 
       {{flow("COMP_001")}}
-      {{flow("FEATURE_1")}}
+      {{flow("FEATURE_NEEDUML1")}}
 
 |out|
 
@@ -240,10 +313,10 @@ This functions represents each Need the same way.
    allowmixing
 
    {{flow("COMP_001")}}
-   {{flow("FEATURE_1")}}
+   {{flow("FEATURE_NEEDUML1")}}
 
 
-.. _jinja_filter:
+.. _needuml_jinja_filter:
 
 filter(filter_string)
 ~~~~~~~~~~~~~~~~~~~~~
@@ -268,7 +341,7 @@ Finds a list of Sphinx-Need objects that pass the given filter string.
       {% endfor %}
 
 
-.. _jinja_uml:
+.. _needuml_jinja_uml:
 
 uml(id)
 ~~~~~~~
@@ -288,7 +361,7 @@ Please read :ref:`need_diagram` for details.
       allowmixing
 
       {{uml("COMP_001")}}
-      {{uml("FEATURE_1")}}
+      {{uml("FEATURE_NEEDUML1")}}
 
 |out|
 
@@ -297,12 +370,15 @@ Please read :ref:`need_diagram` for details.
    allowmixing
 
    {{uml("COMP_001")}}
-   {{uml("FEATURE_1")}}
+   {{uml("FEATURE_NEEDUML1")}}
+
+
+.. _needuml_jinja_uml_key:
 
 Key argument
 ++++++++++++
 
-:ref:`uml() <jinja_uml>` supports ``key`` argument to define which PlantUML code to load from the Sphinx-Need object.
+:ref:`uml() <needuml_jinja_uml>` supports ``key`` argument to define which PlantUML code to load from the Sphinx-Need object.
 ``key`` value by default is ``diagram``. If no key argument given, then the PlantUML code is loaded from ``diagram`` under ``arch``
 inside the need object.
 
@@ -326,10 +402,13 @@ inside the need object.
 
       {{uml('COMP_002', 'sequence')}}
 
+
+.. _needuml_jinja_uml_args:
+
 Additional keyword arguments
 ++++++++++++++++++++++++++++
 
-:ref:`uml() <jinja_uml>` supports additional keyword parameters which are then available in the loaded PlantUML code.
+:ref:`uml() <needuml_jinja_uml>` supports additional keyword parameters which are then available in the loaded PlantUML code.
 
 |ex|
 
@@ -374,7 +453,7 @@ Additional keyword arguments
    By default **Unknown** is shown, as no variant was set.
 
 
-Passing ``variant="A"`` parameter to the :ref:`uml() <jinja_uml>` function, we get the following:
+Passing ``variant="A"`` parameter to the :ref:`uml() <needuml_jinja_uml>` function, we get the following:
 
 |ex|
 
@@ -387,10 +466,11 @@ Passing ``variant="A"`` parameter to the :ref:`uml() <jinja_uml>` function, we g
 |out|
 
 .. needuml::
+   :debug:
 
    {{uml("COMP_A_B", variant="A")}}
 
-Passing ``variant="B"`` parameter to the :ref:`uml() <jinja_uml>` function, we get the following:
+Passing ``variant="B"`` parameter to the :ref:`uml() <needuml_jinja_uml>` function, we get the following:
 
 |ex|
 
@@ -403,9 +483,12 @@ Passing ``variant="B"`` parameter to the :ref:`uml() <jinja_uml>` function, we g
 |out|
 
 .. needuml::
+   :debug:
 
    {{uml("COMP_A_B", variant="B")}}
 
+
+.. _needuml_jinja_uml_chain:
 
 Chaining diagrams
 +++++++++++++++++
@@ -519,6 +602,8 @@ All features are available and ``uml()`` can be used multiple time on different 
                me --> rocket: doing
 
 
+.. _needuml_example:
+
 NeedUml Examples
 ----------------
 
@@ -578,8 +663,6 @@ NeedUml Examples
    card "and much more..." as much #ffcc00
    much -> sn
 
-{% endraw %}
-
 |ex|
 
 .. code-block:: rst
@@ -625,3 +708,173 @@ NeedUml Examples
       }
 
       class_x o-- class_y
+
+
+.. _needuml_ex_loop:
+
+NeedUml Loop Example
+--------------------
+
+.. versionadded:: 1.0.3
+
+NeedUml can detect include loops `(uml('1') -> uml('2') -> uml('3') -> uml('1')`
+and can avoid to include an element twice. Maybe this is not always the use case
+you have, if so please create an issue and mention this chapter. The algorithm
+does detect different parameter sets and does import `uml()` calls with different
+:ref:`parameter <needuml_jinja_uml_args>` to the same need.
+
+|ex|
+
+.. code-block:: rst
+
+   .. comp:: COMP_T_001
+      :id: COMP_T_001
+
+      .. needuml::
+
+         {{flow(need().id)}}
+         {% if variant == "A" %}
+         {{uml('COMP_T_003', variant="A")}}
+         usecase {{need().id}}_usecase
+         {% else %}
+         {{uml('COMP_T_003')}}
+         {{uml('COMP_T_003', variant="A")}}
+         {% endif %}
+
+   .. comp:: COMP_T_002
+      :id: COMP_T_002
+
+      .. needuml::
+
+         {{flow(need().id)}}
+         {% if variant == "A" %}
+         {{uml('COMP_T_001', variant="A")}}
+         usecase {{need().id}}_usecase
+         {% else %}
+         {{uml('COMP_T_001')}}
+         {% endif %}
+
+   .. comp:: COMP_T_003
+      :id: COMP_T_003
+
+      .. needuml::
+
+         {{flow(need().id)}}
+         {% if variant == "A" %}
+         {{uml('COMP_T_002', variant="A")}}
+         usecase {{need().id}}_usecase
+         {% else %}
+         {{uml('COMP_T_002')}}
+         {% endif %}
+
+|out|
+
+.. comp:: COMP_T_001
+   :id: COMP_T_001
+
+   .. needuml::
+
+      {{flow(need().id)}}
+      {% if variant == "A" %}
+      {{uml('COMP_T_003', variant="A")}}
+      usecase {{need().id}}_usecase
+      {% else %}
+      {{uml('COMP_T_003')}}
+      {{uml('COMP_T_003', variant="A")}}
+      {% endif %}
+
+.. comp:: COMP_T_002
+   :id: COMP_T_002
+
+   .. needuml::
+
+      {{flow(need().id)}}
+      {% if variant == "A" %}
+      {{uml('COMP_T_001', variant="A")}}
+      usecase {{need().id}}_usecase
+      {% else %}
+      {{uml('COMP_T_001')}}
+      {% endif %}
+
+.. comp:: COMP_T_003
+   :id: COMP_T_003
+
+   .. needuml::
+
+      {{flow(need().id)}}
+      {% if variant == "A" %}
+      {{uml('COMP_T_002', variant="A")}}
+      usecase {{need().id}}_usecase
+      {% else %}
+      {{uml('COMP_T_002')}}
+      {% endif %}
+
+
+.. _needuml_ex_import:
+
+NeedUml support import() and need() for uml()
+---------------------------------------------
+
+.. versionadded:: 1.0.3
+
+You can find an example of `need()` togther with `uml()` in
+:ref:`needuml introduction <needuml>`.
+Following an example of :ref:`needarch_jinja_import` with a
+needuml which calls the import.
+
+|ex|
+
+.. code-block:: rst
+
+   .. comp:: Import Example - Importee
+      :id: COMP_T_004
+
+   .. comp:: Import Example - Importer
+      :id: COMP_T_005
+      :tests: COMP_T_004
+
+      .. needuml::
+
+         {{flow(need().id)}}
+         {{import('tests')}}
+         {% for test in need().tests%}
+         {{need().id}} --> {{test}} : tests
+         {% endfor %}
+
+   .. needuml::
+
+      {{uml(needs['COMP_T_005'].id)}}
+
+
+|out|
+
+.. comp:: Import Example - Importee
+   :id: COMP_T_004
+
+.. comp:: Import Example - Importer
+   :id: COMP_T_005
+   :tests: COMP_T_004
+
+   .. needuml::
+
+      {{flow(need().id)}}
+      {{import('tests')}}
+      {% for test in need().tests%}
+      {{need().id}} --> {{test}} : tests
+      {% endfor %}
+
+.. needuml::
+
+   {{uml(needs['COMP_T_005'].id)}}
+
+.. hint::
+
+   If you got `Jinja function 'need()' is not supported in non-embedded needuml directive.`
+   or `Jinja function 'import()' is not supported in non-embedded needuml directive.`
+   this chapter will help you.
+   `need()` and `import()` are only useful in the context of need. So you have to
+   intend a needuml or needarch in a need to get accessof the need data.
+   See description in this chapter.
+
+
+{% endraw %}

@@ -18,7 +18,6 @@ jinja function :ref:`needarch_jinja_import`.
       .. needarch::
          :scale: 50
          :align: center
-         :debug:
 
          Alice -> Bob: Hi Bob
          Bob --> Alice: hi Alice
@@ -31,7 +30,6 @@ jinja function :ref:`needarch_jinja_import`.
    .. needarch::
       :scale: 50
       :align: center
-      :debug:
 
       Alice -> Bob: Hi Bob
       Bob --> Alice: hi Alice
@@ -41,6 +39,57 @@ Jinja context
 
 The following Jinja functions are **only available** for :ref:`needarch`. 
 
+
+.. _needarch_jinja_need:
+
+need()
+~~~~~~
+
+.. versionadded:: 1.0.3
+
+The `need()` function provides you the need information the :ref:`needarch` / :ref:`needuml` is embedded in.
+
+|ex|
+
+.. code-block:: rst
+
+   .. req:: Req Arch four
+      :id: req_arch_004
+      :status: draft
+      :blocks: req_arch_001
+
+      content.
+
+      .. needarch::
+         :scale: 50
+         :align: center
+
+         class "{{need().title}}" {
+         {{need().status}}
+         {% for e in need().blocks %}{{e}}
+         {% endfor %}
+         }
+
+|out|
+
+.. req:: Req Arch four
+   :id: req_arch_004
+   :status: draft
+   :blocks: req_arch_001
+
+   content.
+
+   .. needarch::
+      :scale: 50
+      :align: center
+
+      class "{{need().title}}" {
+      {{need().status}}
+      {% for e in need().blocks %}{{e}}
+      {% endfor %}
+      }
+
+
 .. _needarch_jinja_import:
 
 import(need_links_option_name)
@@ -48,7 +97,7 @@ import(need_links_option_name)
 
 This function takes undefined amounts of current need links option names as arguments.
 
-Then it executes :ref:`jinja_uml` automatically for all links/need_ids defined from the given arguments.
+Then it executes :ref:`needuml_jinja_uml` automatically for all links/need_ids defined from the given arguments.
 
 |ex|
 
