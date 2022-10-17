@@ -129,7 +129,7 @@ class JinjaFunctions:
             raise NeedumlException(f"JinjaFunctions initialized with undefined parent_need_id: '{parent_need_id}'")
         self.processed_need_ids = processed_need_ids
 
-    def need_to_processed_data(self, art: str, key: str = "", kwargs: dict = {}) -> {}:
+    def need_to_processed_data(self, art: str, key: str = "", kwargs: dict) -> {}:
         d = {
             "art": art,
             "key": key,
@@ -145,12 +145,12 @@ class JinjaFunctions:
             self.processed_need_ids[need_id].append(data)
 
     def append_needs_to_processed_needs(self, processed_needs_data: dict) -> None:
-        for key, value in processed_needs_data.items():
-            if key not in self.processed_need_ids:
-                self.processed_need_ids[key] = []
-            for data in value:
-                if data not in self.processed_need_ids[key]:
-                    self.processed_need_ids[need_id].append(data)
+        for k, v in processed_needs_data.items():
+            if k not in self.processed_need_ids:
+                self.processed_need_ids[k] = []
+            for d in v:
+                if d not in self.processed_need_ids[k]:
+                    self.processed_need_ids[k].append(d)
 
     def data_in_processed_data(self, need_id: str, art: str, key: str, kwargs: dict) -> bool:
         data = self.need_to_processed_data(art=art, key=key, kwargs=kwargs)
