@@ -86,5 +86,5 @@ def test_doc_needarch_jinja_import_negative(test_app):
     assert out.returncode == 1
     assert (
         "sphinx_needs.directives.needuml.NeedumlException: "
-        "Jinja function import is not supported for needuml." in out.stderr.decode("utf-8")
+        "Jinja function 'import()' is not supported in non-embedded needuml directive." in out.stderr.decode("utf-8")
     )

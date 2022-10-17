@@ -19,7 +19,7 @@ which allows you to use loops, if-clauses, and it injects data from need-objects
    .. needuml::
 
       {{uml('FEATURE_NEEDUML1')}}
-
+      {{uml('COMP_NEEDUML2')}}
 
    .. feature:: NeedUml example need
       :id: FEATURE_NEEDUML1
@@ -27,6 +27,13 @@ which allows you to use loops, if-clauses, and it injects data from need-objects
       :status: draft
 
       Example Need for NeedUml.
+
+   .. comp:: NeedUml example need 2
+      :id: COMP_NEEDUML2
+      :tags: needuml
+      :status: draft
+
+      Secound example Need for NeedUml.
 
       .. needuml::
 
@@ -41,7 +48,7 @@ which allows you to use loops, if-clauses, and it injects data from need-objects
 .. needuml::
 
    {{uml('FEATURE_NEEDUML1')}}
-
+   {{uml('COMP_NEEDUML2')}}
 
 .. feature:: NeedUml example need
    :id: FEATURE_NEEDUML1
@@ -50,11 +57,18 @@ which allows you to use loops, if-clauses, and it injects data from need-objects
 
    Example Need for NeedUml.
 
+.. comp:: NeedUml example need 2
+   :id: COMP_NEEDUML2
+   :tags: needuml
+   :status: draft
+
+   Secound example Need for NeedUml.
+
    .. needuml::
 
-      class "{{need().title}}" {
-      implement
-      {{need().status}}
+      {{flow(need().id)}} {
+      card implement
+      card {{need().status}}
       }
 
 
@@ -273,7 +287,8 @@ need()
 
 .. versionadded:: 1.0.3
 
-NeedUml can use :ref:`needarch_jinja_need` from :ref:`needarch` if the NeedUml is embedded in a need.
+NeedUml can use :ref:`needarch_jinja_need` from :ref:`needarch`
+if the currently processed NeedUml is embedded in a need.
 
 
 .. _needuml_jinja_import:
@@ -283,7 +298,8 @@ import()
 
 .. versionadded:: 1.0.3
 
-NeedUml can use :ref:`needarch_jinja_import` from :ref:`needarch` if the NeedUml is embedded in a need.
+NeedUml can use :ref:`needarch_jinja_import` from :ref:`needarch`
+if the currently processed NeedUml is embedded in a need.
 
 
 .. _needuml_jinja_flow:
@@ -295,25 +311,35 @@ We use the same layout used for :ref:`needflow`.
 
 This functions represents each Need the same way.
 
+.. versionchanged:: 1.0.3
+   In the past the returned plantuml representation string ends with a
+   newline. Now it is up to the author of the Jinja template to write
+   the newline, which is normally anyway the case. E.g. see the following
+   example, where the two `flow()` are separated by a newlone. With this
+   approach it is possible to write plantuml code following `flow()`.
+   E.g. see even the following example, with text following 
+   `{{flow("COMP_001")}}`.
+
 |ex|
 
 .. code-block:: rst
 
    .. needuml::
 
-      allowmixing
-
-      {{flow("COMP_001")}}
       {{flow("FEATURE_NEEDUML1")}}
+      {{flow("COMP_001")}} {
+      card manuall_written
+      }
+
 
 |out|
 
 .. needuml::
 
-   allowmixing
-
-   {{flow("COMP_001")}}
    {{flow("FEATURE_NEEDUML1")}}
+   {{flow("COMP_001")}} {
+   card manuall_written
+   }
 
 
 .. _needuml_jinja_filter:
@@ -870,11 +896,11 @@ needuml which calls the import.
 .. hint::
 
    If you got `Jinja function 'need()' is not supported in non-embedded needuml directive.`
-   or `Jinja function 'import()' is not supported in non-embedded needuml directive.`
-   this chapter will help you.
-   `need()` and `import()` are only useful in the context of need. So you have to
-   intend a needuml or needarch in a need to get accessof the need data.
-   See description in this chapter.
+   or `Jinja function 'import()' is not supported in non-embedded needuml directive.` this
+   chapter will help you.
+   `need()` and `import()` are only useful in the context of a need. So you have to
+   intend a needuml or needarch in a need to get access of the need data. See description
+   in this chapter.
 
 
 {% endraw %}

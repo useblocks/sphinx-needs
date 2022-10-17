@@ -129,16 +129,16 @@ class JinjaFunctions:
             raise NeedumlException(f"JinjaFunctions initialized with undefined parent_need_id: '{parent_need_id}'")
         self.processed_need_ids = processed_need_ids
 
-    def need_to_processed_data(self, art: str, key: str = '', arguments: dict = {}) -> {}:
+    def need_to_processed_data(self, art: str, key: str = "", kwargs: dict = {}) -> {}:
         d = {
-            'art': art,
-            'key': key,
-            'arguments': arguments,
+            "art": art,
+            "key": key,
+            "arguments": kwargs,
         }
         return d
 
-    def append_need_to_processed_needs(self, need_id: str, art: str, key:str, arguments: dict) -> None:
-        data = self.need_to_processed_data(art=art, key=key, arguments=arguments)
+    def append_need_to_processed_needs(self, need_id: str, art: str, key: str, kwargs: dict) -> None:
+        data = self.need_to_processed_data(art=art, key=key, kwargs=kwargs)
         if need_id not in self.processed_need_ids:
             self.processed_need_ids[need_id] = []
         if data not in self.processed_need_ids[need_id]:
@@ -152,18 +152,18 @@ class JinjaFunctions:
                 if data not in self.processed_need_ids[key]:
                     self.processed_need_ids[need_id].append(data)
 
-    def data_in_processed_data(self, need_id: str, art: str, key:str, arguments: dict) -> bool:
-        data = self.need_to_processed_data(art=art, key=key, arguments=arguments)
+    def data_in_processed_data(self, need_id: str, art: str, key: str, kwargs: dict) -> bool:
+        data = self.need_to_processed_data(art=art, key=key, kwargs=kwargs)
         return (need_id in self.processed_need_ids) and (data in self.processed_need_ids[need_id])
 
     def get_processed_need_ids(self) -> {}:
         return self.processed_need_ids
 
-    def uml(self, need_id, key="diagram", **kwargs) -> str:
+    def uml_from_need(self, need_id: str, key: str="diagram", **kwargs) -> str:
         if need_id not in self.needs:
-            raise NeedumlException(f"Jinja function uml is called with undefined need_id: '{need_id}'.")
+            raise NeedumlException(f"Jinja function uml() is called with undefined need_id: '{need_id}'.")
 
-        if self.data_in_processed_data(need_id=need_id, art='uml', key=key, arguments=kwargs):
+        if self.data_in_processed_data(need_id=need_id, art="uml", key=key, kwargs=kwargs):
             return ""
 
         need_info = self.needs[need_id]
@@ -179,41 +179,41 @@ class JinjaFunctions:
             else:
                 return self.flow(need_id)
 
-        # append need_id to processed_need_ids, so it will not been processed again
-        self.append_need_to_processed_needs(need_id=need_id, art='uml', key=key, arguments=kwargs)
-
         # We need to re-render the fetched content, as it may contain also Jinja statements.
-        # 1. Remove @startuml and @enduml, as they are been handled in earlier diagram.
+        # 1. Append need_id to processed_need_ids, so it will not been processed again
+        self.append_need_to_processed_needs(need_id=need_id, art="uml", key=key, kwargs=kwargs)
+
+        # 2. Remove @startuml and @enduml, as they are been handled in earlier diagram.
         uml_content = uml_content.replace("@startuml", "").replace("@enduml", "")
 
-        # 2. Prepare jinja template
+        # 3. Prepare jinja template
         mem_template = Environment(loader=BaseLoader).from_string(uml_content)
 
-        # 3. Get a new instance of Jinja Helper Functions
+        # 4. Get a new instance of Jinja Helper Functions
         jinja_utils = JinjaFunctions(self.app, self.fromdocname, need_id, self.processed_need_ids)
 
-        # 4. get data for the jinja processing
+        # 5. Get data for the jinja processing
         data = {}
-        # 4.1 Set default config to data
+        # 5.1 Set default config to data
         data.update(**self.app.config.needs_render_context)
-        # 4.2 Set uml() parameter to data and maybe overwrite default settings
+        # 5.2 Set uml() kwargs to data and maybe overwrite default settings
         data.update(kwargs)
-        # 4.3 Make the helpers available during rendering and overwrite maybe wrongly default and uml() parameter  settings
+        # 5.3 Make the helpers available during rendering and overwrite maybe wrongly default and uml() kwargs settings
         data.update(
             {
                 "needs": jinja_utils.needs,
                 "need": jinja_utils.need,
-                "uml": jinja_utils.uml,
+                "uml": jinja_utils.uml_from_need,
                 "flow": jinja_utils.flow,
                 "filter": jinja_utils.filter,
                 "import": jinja_utils.imports,
             }
         )
 
-        # 5. Render the uml content with the fetched data
+        # 6. Render the uml content with the fetched data
         uml = mem_template.render(**data)
 
-        # append processed needs to current proccessing
+        # 7. Append processed needs to current proccessing
         self.append_needs_to_processed_needs(jinja_utils.get_processed_need_ids())
 
         return uml
@@ -222,11 +222,11 @@ class JinjaFunctions:
         if need_id not in self.needs:
             raise NeedumlException(f"Jinja function flow is called with undefined need_id: '{need_id}'.")
 
-        if self.data_in_processed_data(need_id=need_id, art='flow', key='', arguments={}):
+        if self.data_in_processed_data(need_id=need_id, art="flow", key="", kwargs={}):
             return ""
 
         # append need_id to processed_need_ids, so it will not been processed again
-        self.append_need_to_processed_needs(need_id=need_id, art='flow', key='', arguments={})
+        self.append_need_to_processed_needs(need_id=need_id, art="flow", key="", kwargs={})
 
         need_info = self.needs[need_id]
         link = calculate_link(self.app, need_info, self.fromdocname)
@@ -234,7 +234,7 @@ class JinjaFunctions:
         diagram_template = Template(self.app.builder.env.config.needs_diagram_template)
         node_text = diagram_template.render(**need_info, **self.app.config.needs_render_context)
 
-        need_uml = '{style} "{node_text}" as {id} [[{link}]] #{color}\n'.format(
+        need_uml = '{style} "{node_text}" as {id} [[{link}]] #{color}'.format(
             id=make_entity_name(need_id),
             node_text=node_text,
             link=link,
@@ -253,6 +253,7 @@ class JinjaFunctions:
 
     def imports(self, *args):
         if not self.parent_need_id:
+            # if you change the Exception, please update the description in :ref:`needuml_ex_import`
             raise NeedumlException("Jinja function 'import()' is not supported in non-embedded needuml directive.")
         # gets all need ids from need links/extra_links options and wrap into jinja function uml()
         need_info = self.needs[self.parent_need_id]
@@ -265,11 +266,12 @@ class JinjaFunctions:
         umls = ""
         if uml_ids:
             for uml_id in uml_ids:
-                umls += self.uml(uml_id)
+                umls += self.uml_from_need(uml_id)
         return umls
 
     def need(self):
         if not self.parent_need_id:
+            # if you change the Exception, please update the description in :ref:`needuml_ex_import`
             raise NeedumlException("Jinja function 'need()' is not supported in non-embedded needuml directive.")
         return self.needs[self.parent_need_id]
 
@@ -337,14 +339,16 @@ def process_needuml(app, doctree, fromdocname):
         # Get all needed Jinja Helper Functions
         jinja_utils = JinjaFunctions(app, fromdocname, parent_need_id, {})
 
-        if (parent_need_id):
-            jinja_utils.append_need_to_processed_needs(need_id=parent_need_id, art='uml', key=current_needuml['key'], arguments=current_needuml['extra'])
+        if parent_need_id:
+            jinja_utils.append_need_to_processed_needs(
+                need_id=parent_need_id, art="uml", key=current_needuml["key"], kwargs=current_needuml["extra"]
+            )
 
         # Make the helpers available during rendering
         data = {
             "needs": all_needs,
             "need": jinja_utils.need,
-            "uml": jinja_utils.uml,
+            "uml": jinja_utils.uml_from_need,
             "flow": jinja_utils.flow,
             "filter": jinja_utils.filter,
             "import": jinja_utils.imports,
@@ -394,8 +398,6 @@ def process_needuml(app, doctree, fromdocname):
             content += debug_container
 
         node.replace_self(content)
-
-        pro_ids = jinja_utils.get_processed_need_ids()
 
 
 class NeedumlException(BaseException):
