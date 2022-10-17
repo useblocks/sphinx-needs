@@ -159,7 +159,7 @@ class JinjaFunctions:
     def get_processed_need_ids(self) -> {}:
         return self.processed_need_ids
 
-    def uml_from_need(self, need_id: str, key: str="diagram", **kwargs) -> str:
+    def uml_from_need(self, need_id: str, key: str = "diagram", **kwargs) -> str:
         if need_id not in self.needs:
             raise NeedumlException(f"Jinja function uml() is called with undefined need_id: '{need_id}'.")
 

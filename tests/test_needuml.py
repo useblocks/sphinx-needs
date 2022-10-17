@@ -173,7 +173,7 @@ def test_needuml_save(test_app):
     with open(saved_uml_path_02) as f2:
         f2_contents = f2.readlines()
 
-        assert len(f2_contents) == 7
+        assert len(f2_contents) == 5
 
         assert f2_contents[0] == "@startuml\n"
         assert f2_contents[1] == "\n"
@@ -182,14 +182,11 @@ def test_needuml_save(test_app):
         assert "Test story" in f2_contents[2]
         assert "ST_001" in f2_contents[2]
 
-        assert f2_contents[3] == "\n"
+        assert "User Story" in f2_contents[3]
+        assert "Test story 2" in f2_contents[3]
+        assert "ST_002" in f2_contents[3]
 
-        assert "User Story" in f2_contents[4]
-        assert "Test story 2" in f2_contents[4]
-        assert "ST_002" in f2_contents[4]
-
-        assert f2_contents[5] == "\n"
-        assert f2_contents[6] == "@enduml\n"
+        assert f2_contents[4] == "@enduml\n"
 
 
 @pytest.mark.parametrize(
@@ -244,7 +241,7 @@ def test_needumls_builder(test_app):
     with open(saved_uml_path_02) as f2:
         f2_contents = f2.readlines()
 
-        assert len(f2_contents) == 7
+        assert len(f2_contents) == 5
 
         assert f2_contents[0] == "@startuml\n"
         assert f2_contents[1] == "\n"
@@ -253,14 +250,11 @@ def test_needumls_builder(test_app):
         assert "Test story" in f2_contents[2]
         assert "ST_001" in f2_contents[2]
 
-        assert f2_contents[3] == "\n"
+        assert "User Story" in f2_contents[3]
+        assert "Test story 2" in f2_contents[3]
+        assert "ST_002" in f2_contents[3]
 
-        assert "User Story" in f2_contents[4]
-        assert "Test story 2" in f2_contents[4]
-        assert "ST_002" in f2_contents[4]
-
-        assert f2_contents[5] == "\n"
-        assert f2_contents[6] == "@enduml\n"
+        assert f2_contents[4] == "@enduml\n"
 
 
 @pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needuml_filter"}], indirect=True)
