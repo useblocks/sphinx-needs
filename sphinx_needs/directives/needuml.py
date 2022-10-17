@@ -129,7 +129,7 @@ class JinjaFunctions:
             raise NeedumlException(f"JinjaFunctions initialized with undefined parent_need_id: '{parent_need_id}'")
         self.processed_need_ids = processed_need_ids
 
-    def need_to_processed_data(self, art: str, key: str = "", kwargs: dict) -> {}:
+    def need_to_processed_data(self, art: str, key: str, kwargs: dict) -> {}:
         d = {
             "art": art,
             "key": key,
