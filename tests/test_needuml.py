@@ -319,7 +319,7 @@ def test_needuml_jinja_func_need(test_app):
     assert "{{flow(need().id)}}" in all_needumls["needuml-index-0"]["content"]
 
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
-    assert "as ST_001 [[../index.html#ST_001]]" in html
+    assert "as INT_001 [[../index.html#INT_001]]" in html
 
     import subprocess
 
