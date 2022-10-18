@@ -112,26 +112,64 @@ class NeedarchDirective(NeedumlDirective):
     def run(self) -> Sequence[nodes.Node]:
         return NeedumlDirective.run(self)
 
-#uml_code_extend_to_plantuml(uml_content = uml_content, config = current_needuml["config"])
-def uml_code_extend_to_plantuml(uml_content: str, config) -> str:
-    # Let's extend uml content with the plantuml stuff
-    uml = "@startuml\n"
+
+def uml_transformed_to_plantuml_node(app, uml_content: str, parent_need_id: str, key: str, kwargs: dict, config: str):
+    try:
+        if "sphinxcontrib.plantuml" not in app.config.extensions:
+            raise ImportError
+        from sphinxcontrib.plantuml import plantuml
+    except ImportError:
+        error_node = nodes.error()
+        para = nodes.paragraph()
+        text = nodes.Text("PlantUML is not available!")
+        para += text
+        error_node.append(para)
+        return error_node
+
+    # Create basic uml node
+    plantuml_block_text = ".. plantuml::\n\n   @startuml\n   @enduml"
+    puml_node = plantuml(plantuml_block_text)
+
+    # Add needuml specific content
+    puml_node["uml"] = "@startuml\n"
 
     # Adding config
-    if config and len(config) >= 3:
-        # Remove all empty lines
-        local_config = "\n".join([line.strip() for line in config.split("\n") if line.strip()])
-        uml += "\n' Config\n\n"
-        uml += local_config
-        uml += "\n\n"
+    if config:
+        puml_node["uml"] += "\n' Config\n\n"
+        puml_node["uml"] += config
+        puml_node["uml"] += "\n\n"
 
-    uml += f"\n{uml_content}"
+    # jinja2uml to translate jinja statements to uml text
+    (uml_content_return, processed_need_ids_return) = jinja2uml(
+            app=app,
+            fromdocname=None,
+            uml_content = uml_content,
+            parent_need_id = parent_need_id,
+            key = key,
+            processed_need_ids = {},
+            kwargs = kwargs,
+        )
+    # silently discard processed_need_ids_return
 
-    uml += "\n@enduml\n"
+    puml_node["uml"] += f"\n{uml_content_return}"
 
-    return uml
+    puml_node["uml"] += "\n@enduml\n"
 
-# jinja2uml(app=app, fromdocname=fromdocname, uml_content = current_needuml["content"], parent_need_id=parent_need_id, key=current_needuml["key"], kwargs=current_needuml["extra"])
+    return puml_node
+
+def get_debug_node_from_puml_node(puml_node):
+    if isinstance(puml_node, nodes.figure):
+        data = puml_node.children[0]["uml"]
+    elif "uml" in puml_node:
+        data = puml_node["uml"]
+    else:
+        data = ""
+    data = "\n".join([html.escape(line) for line in data.split("\n")])
+    debug_para = nodes.raw("", f"<pre>{data}</pre>", format="html")
+    debug_container = nodes.container()
+    debug_container += debug_para
+    return debug_container
+
 def jinja2uml(app, fromdocname, uml_content: str, parent_need_id: str, key: str, processed_need_ids: {}, kwargs: dict) -> (str, {}):
     # Let's render jinja templates with uml content template to 'plantuml syntax' uml
     # 1. Remove @startuml and @enduml
@@ -350,14 +388,28 @@ def process_needuml(app, doctree, fromdocname):
             text = nodes.Text("PlantUML is not available!")
             para += text
             content.append(para)
-            # node.replace_self(content)
+            node.replace_self(content)
             continue
 
         content = []
 
-        # Create basic uml node
-        plantuml_block_text = ".. plantuml::\n\n   @startuml\n   @enduml"
-        puml_node = plantuml(plantuml_block_text)
+        # Adding config
+        config = current_needuml["config"]
+        if config and len(config) >= 3:
+            # Remove all empty lines
+            config = "\n".join([line.strip() for line in config.split("\n") if line.strip()])
+        
+        puml_node = uml_transformed_to_plantuml_node(
+                app=app,
+                uml_content = current_needuml["content"],
+                parent_need_id=parent_need_id,
+                key=current_needuml["key"],
+                kwargs=current_needuml["extra"],
+                config = config,
+            )
+
+        # Add calculated needuml content
+        current_needuml["content_calculated"] = puml_node["uml"]
 
         try:
             scale = int(current_needuml["scale"])
@@ -371,51 +423,6 @@ def process_needuml(app, doctree, fromdocname):
         else:
             puml_node["align"] = "center"
 
-        # Replace PlantUML entry-code, so that the uml-code is "clean"
-        uml_content = current_needuml["content"].replace("@startuml", "").replace("@enduml", "")
-        # Render uml content with jinja
-        mem_template = Environment(loader=BaseLoader).from_string(uml_content)
-
-        # Get all needed Jinja Helper Functions
-        jinja_utils = JinjaFunctions(app, fromdocname, parent_need_id, {})
-
-        if parent_need_id:
-            jinja_utils.append_need_to_processed_needs(
-                need_id=parent_need_id, art="uml", key=current_needuml["key"], kwargs=current_needuml["extra"]
-            )
-
-        # Make the helpers available during rendering
-        data = {
-            "needs": all_needs,
-            "need": jinja_utils.need,
-            "uml": jinja_utils.uml_from_need,
-            "flow": jinja_utils.flow,
-            "filter": jinja_utils.filter,
-            "import": jinja_utils.imports,
-        }
-
-        data.update(current_needuml["extra"])
-
-        uml_content = mem_template.render(**data, **app.config.needs_render_context)
-        # Add needuml specific content
-        puml_node["uml"] = "@startuml\n"
-
-        # Adding config
-        config = current_needuml["config"]
-        if config and len(config) >= 3:
-            # Remove all empty lines
-            config = "\n".join([line.strip() for line in config.split("\n") if line.strip()])
-            puml_node["uml"] += "\n' Config\n\n"
-            puml_node["uml"] += config
-            puml_node["uml"] += "\n\n"
-
-        puml_node["uml"] += f"\n{uml_content}"
-
-        puml_node["uml"] += "\n@enduml\n"
-
-        # Add calculated needuml content
-        current_needuml["content_calculated"] = puml_node["uml"]
-
         puml_node["incdir"] = os.path.dirname(current_needuml["docname"])
         puml_node["filename"] = os.path.split(current_needuml["docname"])[1]  # Needed for plantuml >= 0.9
 
@@ -427,15 +434,7 @@ def process_needuml(app, doctree, fromdocname):
             content.insert(0, title)
 
         if current_needuml["debug"]:
-            debug_container = nodes.container()
-            if isinstance(puml_node, nodes.figure):
-                data = puml_node.children[0]["uml"]
-            else:
-                data = puml_node["uml"]
-            data = "\n".join([html.escape(line) for line in data.split("\n")])
-            debug_para = nodes.raw("", f"<pre>{data}</pre>", format="html")
-            debug_container += debug_para
-            content += debug_container
+            content += get_debug_node_from_puml_node(puml_node)
 
         node.replace_self(content)
 
