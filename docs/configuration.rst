@@ -2062,6 +2062,8 @@ Default: ``[]``
       * options specified in :ref:`extra options <needs_extra_options>`
       * options specified in :ref:`extra links <needs_extra_links>`
 
+.. _needs_render_context:
+
 needs_render_context
 ~~~~~~~~~~~~~~~~~~~~~
 .. versionadded:: 1.0.3

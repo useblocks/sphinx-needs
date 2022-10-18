@@ -16,12 +16,14 @@ Under development
 * Improvement: Supported arguments as filter string for :ref:`needextract`.
   (`#688 <https://github.com/useblocks/sphinx-needs/issues/688>`_)
 * Improvement: Added :ref:`needs_render_context` configuration option which enables you to use custom data as the
-context when rendering Jinja templates or strings.
+  context when rendering Jinja templates or strings.
   (`#704 <https://github.com/useblocks/sphinx-needs/issues/704>`_)
 * Improvement: Supported ``target_url`` for :ref:`needs_external_needs`.
   (`#701 <https://github.com/useblocks/sphinx-needs/issues/701>`_)
 * Bugfix: Fixed needuml key shown in need meta data by providing internal need option `arch`.
   (`#687 <https://github.com/useblocks/sphinx-needs/issues/687>`_)
+* Improvement: Included child needs inside their parent need for :ref:`needflow`.
+  (`#714 <https://github.com/useblocks/sphinx-needs/issues/714>`_)
 
 1.0.2
 -----
