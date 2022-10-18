@@ -112,6 +112,68 @@ class NeedarchDirective(NeedumlDirective):
     def run(self) -> Sequence[nodes.Node]:
         return NeedumlDirective.run(self)
 
+#uml_code_extend_to_plantuml(uml_content = uml_content, config = current_needuml["config"])
+def uml_code_extend_to_plantuml(uml_content: str, config) -> str:
+    # Let's extend uml content with the plantuml stuff
+    uml = "@startuml\n"
+
+    # Adding config
+    if config and len(config) >= 3:
+        # Remove all empty lines
+        local_config = "\n".join([line.strip() for line in config.split("\n") if line.strip()])
+        uml += "\n' Config\n\n"
+        uml += local_config
+        uml += "\n\n"
+
+    uml += f"\n{uml_content}"
+
+    uml += "\n@enduml\n"
+
+    return uml
+
+# jinja2uml(app=app, fromdocname=fromdocname, uml_content = current_needuml["content"], parent_need_id=parent_need_id, key=current_needuml["key"], kwargs=current_needuml["extra"])
+def jinja2uml(app, fromdocname, uml_content: str, parent_need_id: str, key: str, processed_need_ids: {}, kwargs: dict) -> (str, {}):
+    # Let's render jinja templates with uml content template to 'plantuml syntax' uml
+    # 1. Remove @startuml and @enduml
+    uml_content = uml_content.replace("@startuml", "").replace("@enduml", "")
+
+    # 2. Prepare jinja template
+    mem_template = Environment(loader=BaseLoader).from_string(uml_content)
+
+    # 3. Get a new instance of Jinja Helper Functions
+    jinja_utils = JinjaFunctions(app, fromdocname, parent_need_id, processed_need_ids)
+
+    # 4. Append need_id to processed_need_ids, so it will not been processed again
+    if parent_need_id:
+        jinja_utils.append_need_to_processed_needs(
+            need_id=parent_need_id, art="uml", key=key, kwargs=kwargs
+        )
+
+    # 5. Get data for the jinja processing
+    data = {}
+    # 5.1 Set default config to data
+    data.update(**app.config.needs_render_context)
+    # 5.2 Set uml() kwargs to data and maybe overwrite default settings
+    data.update(kwargs)
+    # 5.3 Make the helpers available during rendering and overwrite maybe wrongly default and uml() kwargs settings
+    data.update(
+        {
+            "needs": jinja_utils.needs,
+            "need": jinja_utils.need,
+            "uml": jinja_utils.uml_from_need,
+            "flow": jinja_utils.flow,
+            "filter": jinja_utils.filter,
+            "import": jinja_utils.imports,
+        }
+    )
+
+    # 6. Render the uml content with the fetched data
+    uml = mem_template.render(**data)
+
+    # 7. Get processed need ids
+    processed_need_ids_return = jinja_utils.get_processed_need_ids()
+
+    return (uml, processed_need_ids_return)
 
 class JinjaFunctions:
     """
@@ -180,41 +242,19 @@ class JinjaFunctions:
                 return self.flow(need_id)
 
         # We need to re-render the fetched content, as it may contain also Jinja statements.
-        # 1. Append need_id to processed_need_ids, so it will not been processed again
-        self.append_need_to_processed_needs(need_id=need_id, art="uml", key=key, kwargs=kwargs)
+        # use jinja2uml to render the current uml content
+        (uml, processed_need_ids_return) = jinja2uml(
+                app=self.app,
+                fromdocname=self.fromdocname,
+                uml_content=uml_content,
+                parent_need_id=need_id,
+                key=key,
+                processed_need_ids=self.processed_need_ids,
+                kwargs=kwargs
+            )
 
-        # 2. Remove @startuml and @enduml, as they are been handled in earlier diagram.
-        uml_content = uml_content.replace("@startuml", "").replace("@enduml", "")
-
-        # 3. Prepare jinja template
-        mem_template = Environment(loader=BaseLoader).from_string(uml_content)
-
-        # 4. Get a new instance of Jinja Helper Functions
-        jinja_utils = JinjaFunctions(self.app, self.fromdocname, need_id, self.processed_need_ids)
-
-        # 5. Get data for the jinja processing
-        data = {}
-        # 5.1 Set default config to data
-        data.update(**self.app.config.needs_render_context)
-        # 5.2 Set uml() kwargs to data and maybe overwrite default settings
-        data.update(kwargs)
-        # 5.3 Make the helpers available during rendering and overwrite maybe wrongly default and uml() kwargs settings
-        data.update(
-            {
-                "needs": jinja_utils.needs,
-                "need": jinja_utils.need,
-                "uml": jinja_utils.uml_from_need,
-                "flow": jinja_utils.flow,
-                "filter": jinja_utils.filter,
-                "import": jinja_utils.imports,
-            }
-        )
-
-        # 6. Render the uml content with the fetched data
-        uml = mem_template.render(**data)
-
-        # 7. Append processed needs to current proccessing
-        self.append_needs_to_processed_needs(jinja_utils.get_processed_need_ids())
+        # Append processed needs to current proccessing
+        self.append_needs_to_processed_needs(processed_need_ids_return)
 
         return uml
 
