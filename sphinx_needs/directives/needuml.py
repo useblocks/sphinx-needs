@@ -169,6 +169,7 @@ def get_debug_node_from_puml_node(puml_node):
     debug_container += debug_para
     return debug_container
 
+
 def jinja2uml(
     app, fromdocname, uml_content: str, parent_need_id: str, key: str, processed_need_ids: {}, kwargs: dict
 ) -> (str, {}):
@@ -288,7 +289,7 @@ class JinjaFunctions:
             parent_need_id=need_id,
             key=key,
             processed_need_ids=self.processed_need_ids,
-            kwargs=kwargs
+            kwargs=kwargs,
         )
 
         # Append processed needs to current proccessing
@@ -401,11 +402,11 @@ def process_needuml(app, doctree, fromdocname):
 
         puml_node = transform_uml_to_plantuml_node(
             app=app,
-            uml_content = current_needuml["content"],
+            uml_content=current_needuml["content"],
             parent_need_id=parent_need_id,
             key=current_needuml["key"],
             kwargs=current_needuml["extra"],
-            config = config,
+            config=config,
         )
 
         # Add calculated needuml content
