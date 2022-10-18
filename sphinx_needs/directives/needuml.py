@@ -159,10 +159,7 @@ def transform_uml_to_plantuml_node(app, uml_content: str, parent_need_id: str, k
 def get_debug_node_from_puml_node(puml_node):
     if isinstance(puml_node, nodes.figure):
         data = puml_node.children[0]["uml"]
-    elif "uml" in puml_node:
-        data = puml_node["uml"]
-    else:
-        data = ""
+    data = puml_node.get("uml", "")
     data = "\n".join([html.escape(line) for line in data.split("\n")])
     debug_para = nodes.raw("", f"<pre>{data}</pre>", format="html")
     debug_container = nodes.container()
@@ -357,7 +354,6 @@ class JinjaFunctions:
 
 def process_needuml(app, doctree, fromdocname):
     env = app.builder.env
-    all_needs = env.needs_all_needs
 
     for node in doctree.findall(Needuml):
         id = node.attributes["ids"][0]
@@ -378,19 +374,6 @@ def process_needuml(app, doctree, fromdocname):
             if current_needuml["target_node"].parent and isinstance(current_needuml["target_node"].parent, Need):
                 # Calculate parent need id for needuml
                 parent_need_id = current_needuml["target_node"].parent.attributes["refid"]
-
-        try:
-            if "sphinxcontrib.plantuml" not in app.config.extensions:
-                raise ImportError
-            from sphinxcontrib.plantuml import plantuml
-        except ImportError:
-            content = nodes.error()
-            para = nodes.paragraph()
-            text = nodes.Text("PlantUML is not available!")
-            para += text
-            content.append(para)
-            node.replace_self(content)
-            continue
 
         content = []
 
