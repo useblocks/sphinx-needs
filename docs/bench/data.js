@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1666077198443,
+  "lastUpdate": 1666087784452,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -360,6 +360,42 @@ window.BENCHMARK_DATA = {
             "value": 68.18159134199993,
             "unit": "s",
             "extra": "Commit: 22c1b9e0c3171a02dcfd41065823e3e051646b56\nBranch: master\nTime: 2022-10-18T09:06:46+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "haiyang.zhang@tutanota.com",
+            "name": "Haiyang",
+            "username": "haiyangToAI"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "029387ef8448c8ef6c551edd6759d024ccbe8bab",
+          "message": "Supported generate need ID from title (#739)",
+          "timestamp": "2022-10-18T12:03:07+02:00",
+          "tree_id": "8d22846b9a82b6bb92b3ec6d23f63704dd8b02ce",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/029387ef8448c8ef6c551edd6759d024ccbe8bab"
+        },
+        "date": 1666087781142,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.23243373500002917,
+            "unit": "s",
+            "extra": "Commit: 029387ef8448c8ef6c551edd6759d024ccbe8bab\nBranch: master\nTime: 2022-10-18T12:03:07+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 69.71874208399993,
+            "unit": "s",
+            "extra": "Commit: 029387ef8448c8ef6c551edd6759d024ccbe8bab\nBranch: master\nTime: 2022-10-18T12:03:07+02:00"
           }
         ]
       }
