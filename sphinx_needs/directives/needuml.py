@@ -141,21 +141,20 @@ def transform_uml_to_plantuml_node(app, uml_content: str, parent_need_id: str, k
 
     # jinja2uml to translate jinja statements to uml text
     (uml_content_return, processed_need_ids_return) = jinja2uml(
-            app=app,
-            fromdocname=None,
-            uml_content = uml_content,
-            parent_need_id = parent_need_id,
-            key = key,
-            processed_need_ids = {},
-            kwargs = kwargs,
-        )
+        app=app,
+        fromdocname=None,
+        uml_content=uml_content,
+        parent_need_id=parent_need_id,
+        key=key,
+        processed_need_ids={},
+        kwargs=kwargs,
+    )
     # silently discard processed_need_ids_return
 
     puml_node["uml"] += f"\n{uml_content_return}"
-
     puml_node["uml"] += "\n@enduml\n"
-
     return puml_node
+
 
 def get_debug_node_from_puml_node(puml_node):
     if isinstance(puml_node, nodes.figure):
@@ -170,7 +169,9 @@ def get_debug_node_from_puml_node(puml_node):
     debug_container += debug_para
     return debug_container
 
-def jinja2uml(app, fromdocname, uml_content: str, parent_need_id: str, key: str, processed_need_ids: {}, kwargs: dict) -> (str, {}):
+def jinja2uml(
+    app, fromdocname, uml_content: str, parent_need_id: str, key: str, processed_need_ids: {}, kwargs: dict
+) -> (str, {}):
     # Let's render jinja templates with uml content template to 'plantuml syntax' uml
     # 1. Remove @startuml and @enduml
     uml_content = uml_content.replace("@startuml", "").replace("@enduml", "")
@@ -183,9 +184,7 @@ def jinja2uml(app, fromdocname, uml_content: str, parent_need_id: str, key: str,
 
     # 4. Append need_id to processed_need_ids, so it will not been processed again
     if parent_need_id:
-        jinja_utils.append_need_to_processed_needs(
-            need_id=parent_need_id, art="uml", key=key, kwargs=kwargs
-        )
+        jinja_utils.append_need_to_processed_needs(need_id=parent_need_id, art="uml", key=key, kwargs=kwargs)
 
     # 5. Get data for the jinja processing
     data = {}
@@ -212,6 +211,7 @@ def jinja2uml(app, fromdocname, uml_content: str, parent_need_id: str, key: str,
     processed_need_ids_return = jinja_utils.get_processed_need_ids()
 
     return (uml, processed_need_ids_return)
+
 
 class JinjaFunctions:
     """
@@ -282,14 +282,14 @@ class JinjaFunctions:
         # We need to re-render the fetched content, as it may contain also Jinja statements.
         # use jinja2uml to render the current uml content
         (uml, processed_need_ids_return) = jinja2uml(
-                app=self.app,
-                fromdocname=self.fromdocname,
-                uml_content=uml_content,
-                parent_need_id=need_id,
-                key=key,
-                processed_need_ids=self.processed_need_ids,
-                kwargs=kwargs
-            )
+            app=self.app,
+            fromdocname=self.fromdocname,
+            uml_content=uml_content,
+            parent_need_id=need_id,
+            key=key,
+            processed_need_ids=self.processed_need_ids,
+            kwargs=kwargs
+        )
 
         # Append processed needs to current proccessing
         self.append_needs_to_processed_needs(processed_need_ids_return)
@@ -398,15 +398,15 @@ def process_needuml(app, doctree, fromdocname):
         if config and len(config) >= 3:
             # Remove all empty lines
             config = "\n".join([line.strip() for line in config.split("\n") if line.strip()])
-        
+
         puml_node = transform_uml_to_plantuml_node(
-                app=app,
-                uml_content = current_needuml["content"],
-                parent_need_id=parent_need_id,
-                key=current_needuml["key"],
-                kwargs=current_needuml["extra"],
-                config = config,
-            )
+            app=app,
+            uml_content = current_needuml["content"],
+            parent_need_id=parent_need_id,
+            key=current_needuml["key"],
+            kwargs=current_needuml["extra"],
+            config = config,
+        )
 
         # Add calculated needuml content
         current_needuml["content_calculated"] = puml_node["uml"]
