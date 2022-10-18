@@ -113,7 +113,7 @@ class NeedarchDirective(NeedumlDirective):
         return NeedumlDirective.run(self)
 
 
-def uml_transformed_to_plantuml_node(app, uml_content: str, parent_need_id: str, key: str, kwargs: dict, config: str):
+def transform_uml_to_plantuml_node(app, uml_content: str, parent_need_id: str, key: str, kwargs: dict, config: str):
     try:
         if "sphinxcontrib.plantuml" not in app.config.extensions:
             raise ImportError
@@ -399,7 +399,7 @@ def process_needuml(app, doctree, fromdocname):
             # Remove all empty lines
             config = "\n".join([line.strip() for line in config.split("\n") if line.strip()])
         
-        puml_node = uml_transformed_to_plantuml_node(
+        puml_node = transform_uml_to_plantuml_node(
                 app=app,
                 uml_content = current_needuml["content"],
                 parent_need_id=parent_need_id,
