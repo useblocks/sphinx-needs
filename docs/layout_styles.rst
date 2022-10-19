@@ -572,8 +572,7 @@ Own CSS file on sphinx level
 If you want to use most of the sphinx-needs internal styles but only need some specific changes for single elements, you
 can provide your own CSS file by register it inside your conf.py::
 
-    def setup(app):
-        app.add_stylesheet('css/my_custom.css')  # may also be an URL
+    html_css_files = ['css/my_custom.css'])  # may also be an tuple, see `html_css_files <https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-html_css_files>`_
 
 .. hint::
 
