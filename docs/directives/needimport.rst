@@ -26,6 +26,14 @@ You can generate a valid file using the builder :ref:`needs_builder`.
 The directive needs an absolute or relative path as argument.
 If the path is relative, we derive an absolute path based on the location of the document being compiled.
 
+The directive also supports URL as argument to download ``needs.json`` from remote.
+
+|ex|
+
+.. code-block:: rst
+
+   .. needimport:: https://my_company.com/docs/remote-needs.json
+
 Options
 -------
 
