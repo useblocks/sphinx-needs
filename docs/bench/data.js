@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1666683595299,
+  "lastUpdate": 1666683687394,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -540,6 +540,42 @@ window.BENCHMARK_DATA = {
             "value": 74.45832247600003,
             "unit": "s",
             "extra": "Commit: 0e8aabb478af1a33c796b328e6881d1eb6c543db\nBranch: master\nTime: 2022-10-25T09:32:55+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1b7ca5c7ac6a88ebadc5416678beedafc3d33809",
+          "message": "Merge pull request #725 from useblocks/dependabot/github_actions/actions/checkout-3.1.0\n\nBump actions/checkout from 2 to 3.1.0",
+          "timestamp": "2022-10-25T09:33:34+02:00",
+          "tree_id": "e894aeed594276b1e859158ad45f5a00195bbfdb",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/1b7ca5c7ac6a88ebadc5416678beedafc3d33809"
+        },
+        "date": 1666683682404,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2528488179999613,
+            "unit": "s",
+            "extra": "Commit: 1b7ca5c7ac6a88ebadc5416678beedafc3d33809\nBranch: master\nTime: 2022-10-25T09:33:34+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 90.132568504,
+            "unit": "s",
+            "extra": "Commit: 1b7ca5c7ac6a88ebadc5416678beedafc3d33809\nBranch: master\nTime: 2022-10-25T09:33:34+02:00"
           }
         ]
       }
