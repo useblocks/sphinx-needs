@@ -4,7 +4,7 @@ TEST DOCUMENT NEEDARCH JINJA FUNCTION NEED
 .. int:: Test needuml jinja func need
    :id: INT_001
 
-   .. needuml::
+   .. needarch::
 
       DC -> Marvel: Hi Kevin
       Marvel --> DC: Anyone there?
