@@ -170,6 +170,8 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_config_value("needs_duration_option", "duration", "html")
     app.add_config_value("needs_completion_option", "completion", "html")
 
+    app.add_config_value("needs_needextend_strict", True, "html", types=[bool])
+
     # If given, only the defined status are allowed.
     # Values needed for each status:
     # * name
