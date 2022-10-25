@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1666683365172,
+  "lastUpdate": 1666683423936,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -432,6 +432,42 @@ window.BENCHMARK_DATA = {
             "value": 67.86011555300001,
             "unit": "s",
             "extra": "Commit: b65b704d26eaeb677bcb9be57db3dc27ff111440\nBranch: master\nTime: 2022-10-25T09:29:33+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e53dcf1cb51b64f0d5e0481d9c3baafdf9db8a92",
+          "message": "Merge pull request #744 from procitec/kreuzberger-patch-1\n\n[#743] update documentation for custom css files",
+          "timestamp": "2022-10-25T09:30:26+02:00",
+          "tree_id": "6184bb2937388b0d039740a599644cf183dad28a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e53dcf1cb51b64f0d5e0481d9c3baafdf9db8a92"
+        },
+        "date": 1666683420831,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.23569097000000738,
+            "unit": "s",
+            "extra": "Commit: e53dcf1cb51b64f0d5e0481d9c3baafdf9db8a92\nBranch: master\nTime: 2022-10-25T09:30:26+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 68.51753040199998,
+            "unit": "s",
+            "extra": "Commit: e53dcf1cb51b64f0d5e0481d9c3baafdf9db8a92\nBranch: master\nTime: 2022-10-25T09:30:26+02:00"
           }
         ]
       }
