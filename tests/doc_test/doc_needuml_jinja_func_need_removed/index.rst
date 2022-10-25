@@ -1,5 +1,5 @@
-TEST DOCUMENT NEEDUML JINJA FUNCTION NEED
-=========================================
+TEST DOCUMENT NEEDUML JINJA FUNCTION NEED REMOVED
+=================================================
 
 .. int:: Test needuml jinja func need
    :id: INT_001
