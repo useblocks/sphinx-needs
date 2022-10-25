@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1666087784452,
+  "lastUpdate": 1666683365172,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -396,6 +396,42 @@ window.BENCHMARK_DATA = {
             "value": 69.71874208399993,
             "unit": "s",
             "extra": "Commit: 029387ef8448c8ef6c551edd6759d024ccbe8bab\nBranch: master\nTime: 2022-10-18T12:03:07+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b65b704d26eaeb677bcb9be57db3dc27ff111440",
+          "message": "Merge pull request #727 from useblocks/dac-149-debug-layout-fix\n\nFixed rendering issue with the debug layout",
+          "timestamp": "2022-10-25T09:29:33+02:00",
+          "tree_id": "63cf0f048c707db4e3aa4a0cc346b06ccb16e514",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/b65b704d26eaeb677bcb9be57db3dc27ff111440"
+        },
+        "date": 1666683360895,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2209593009999935,
+            "unit": "s",
+            "extra": "Commit: b65b704d26eaeb677bcb9be57db3dc27ff111440\nBranch: master\nTime: 2022-10-25T09:29:33+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.86011555300001,
+            "unit": "s",
+            "extra": "Commit: b65b704d26eaeb677bcb9be57db3dc27ff111440\nBranch: master\nTime: 2022-10-25T09:29:33+02:00"
           }
         ]
       }
