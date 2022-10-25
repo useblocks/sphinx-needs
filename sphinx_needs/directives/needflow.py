@@ -125,6 +125,128 @@ def make_entity_name(name: str) -> str:
     return name
 
 
+def get_need_node_rep_for_plantuml(
+    app: Sphinx, fromdocname: str, current_needflow: dict, all_needs: list, need_info: dict
+) -> str:
+    """Calculate need node representation for plantuml."""
+
+    diagram_template = Template(app.config.needs_diagram_template)
+    node_text = diagram_template.render(**need_info, **app.config.needs_render_context)
+
+    node_link = calculate_link(app, need_info, fromdocname)
+
+    node_colors = []
+    if need_info["type_color"]:
+        # We set # later, as the user may not have given a color and the node must get highlighted
+        node_colors.append(need_info["type_color"].replace("#", ""))
+
+    if current_needflow["highlight"] and filter_single_need(app, need_info, current_needflow["highlight"], all_needs):
+        node_colors.append("line:FF0000")
+
+    # need parts style use default "rectangle"
+    if need_info["is_need"]:
+        node_style = need_info["type_style"]
+    else:
+        node_style = "rectangle"
+
+    # node representation for plantuml
+    need_node_code = '{style} "{node_text}" as {id} [[{link}]] #{color}'.format(
+        id=make_entity_name(need_info["id_complete"]),
+        node_text=node_text,
+        link=node_link,
+        color=";".join(node_colors),
+        style=node_style,
+    )
+    return need_node_code
+
+
+def walk_curr_need_tree(
+    app: Sphinx,
+    fromdocname: str,
+    current_needflow: dict,
+    all_needs: list,
+    found_needs: list,
+    need: dict,
+    need_tree: str,
+):
+    """
+    Walk through each need to find all its child needs and need parts recursively and wrap them together in nested structure.
+    """
+    curr_need_tree = need_tree
+
+    if not need["parts"] and not need["parent_needs_back"]:
+        return curr_need_tree
+
+    if need["is_need"] and need["parts"]:
+        curr_need_tree += "{\n"
+        for need_part_id in need["parts"].keys():
+            # cal need part node
+            need_part_id = need["id"] + "." + need_part_id
+            # get need part from need part id
+            for found_need in found_needs:
+                if need_part_id == found_need["id_complete"]:
+                    need_part = found_need
+                    # get need part node
+                    need_part_node = get_need_node_rep_for_plantuml(
+                        app, fromdocname, current_needflow, all_needs, need_part
+                    )
+                    curr_need_tree += need_part_node + "\n"
+
+    # check if curr need has children
+    if need["parent_needs_back"]:
+        # update curr need tree
+        if need["parts"]:
+            curr_need_tree += "\n"
+        else:
+            curr_need_tree += "{\n"
+
+        # walk throgh all child needs one by one
+        child_needs_ids = need["parent_needs_back"]
+
+        idx = 0
+        while idx < len(child_needs_ids):
+            # start from one child
+            curr_child_need_id = child_needs_ids[idx]
+            # get need from id
+            for need in found_needs:
+                if need["id_complete"] == curr_child_need_id:
+                    curr_child_need = need
+            # get child need node
+            child_need_node = get_need_node_rep_for_plantuml(
+                app, fromdocname, current_needflow, all_needs, curr_child_need
+            )
+            curr_need_tree += child_need_node
+            # check curr need child has children or has parts
+            if curr_child_need["parent_needs_back"] or curr_child_need["parts"]:
+                curr_need_tree = walk_curr_need_tree(
+                    app, fromdocname, current_needflow, all_needs, found_needs, curr_child_need, curr_need_tree
+                )
+            else:
+                # curr child need has no children, then update tree
+                curr_need_tree += "\n}\n"
+            idx += 1
+    else:
+        # curr need has no children, update curr need tree
+        curr_need_tree += "\n}"
+
+    return curr_need_tree
+
+
+def cal_needs_node(app: Sphinx, fromdocname: str, current_needflow: dict, all_needs: list, found_needs: list) -> str:
+    """Calculate and get needs node representaion for plantuml including all child needs and need parts."""
+
+    top_needs = [x for x in found_needs if x["is_need"] and not x["parent_needs"]]
+    curr_need_tree = ""
+    for top_need in top_needs:
+        top_need_node = get_need_node_rep_for_plantuml(app, fromdocname, current_needflow, all_needs, top_need)
+        curr_need_tree += (
+            walk_curr_need_tree(app, fromdocname, current_needflow, all_needs, found_needs, top_need, top_need_node)
+            + "\n"
+        )
+
+    return curr_need_tree
+
+
 def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     # Replace all needflow nodes with a list of the collected needs.
     # Augment each need with a backlink to the original location.
@@ -190,83 +312,19 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
         all_needs = list(all_needs.values())
         found_needs = process_filters(app, all_needs, current_needflow)
 
-        processed_need_part_ids = []
-
         puml_node["uml"] += "\n' Nodes definition \n\n"
 
         for need_info in found_needs:
-            # Check if need_part was already handled during handling of parent need.
-            # If this is the case, it is already part of puml-code and we do not need to create a node.
-            if not (need_info["is_part"] and need_info["id_complete"] in processed_need_part_ids):
-                # Check if we need to embed need_parts into parent need, because they are also part of search result.
-                node_part_code = ""
-                valid_need_parts = [x for x in found_needs if x["is_part"] and x["id_parent"] == need_info["id"]]
-                for need_part in valid_need_parts:
-                    part_link = calculate_link(app, need_part, fromdocname)
-                    diagram_template = Template(app.config.needs_diagram_template)
-                    part_text = diagram_template.render(**need_part, **app.config.needs_render_context)
-                    part_colors = []
-                    if need_part["type_color"]:
-                        # We set # later, as the user may not have given a color and the node must get highlighted
-                        part_colors.append(need_part["type_color"].replace("#", ""))
-
-                    if current_needflow["highlight"] and filter_single_need(
-                        app, need_part, current_needflow["highlight"], all_needs
-                    ):
-                        part_colors.append("line:FF0000")
-
-                    node_part_code += '{style} "{node_text}" as {id} [[{link}]] #{color}\n'.format(
-                        id=make_entity_name(need_part["id_complete"]),
-                        node_text=part_text,
-                        link=part_link,
-                        color=";".join(part_colors),
-                        style="rectangle",
-                    )
-
-                    processed_need_part_ids.append(need_part["id_complete"])
-
-                link = calculate_link(app, need_info, fromdocname)
-
-                diagram_template = Template(app.config.needs_diagram_template)
-                node_text = diagram_template.render(**need_info, **app.config.needs_render_context)
-                if need_info["is_part"]:
-                    need_id = need_info["id_complete"]
-                else:
-                    need_id = need_info["id"]
-
-                colors = []
-                if need_info["type_color"]:
-                    # We set # later, as the user may not have given a color and the node must get highlighted
-                    colors.append(need_info["type_color"].replace("#", ""))
-
-                if current_needflow["highlight"] and filter_single_need(
-                    app, need_info, current_needflow["highlight"], all_needs
-                ):
-                    colors.append("line:FF0000")
-
-                # Only add subelements and their {...} container, if we really need them.
-                # Otherwise plantuml may not set style correctly, if {..} is empty
-                if node_part_code:
-                    node_part_code = f"{{\n {node_part_code} }}"
-
-                style = need_info["type_style"]
-
-                node_code = '{style} "{node_text}" as {id} [[{link}]] #{color} {need_parts}\n'.format(
-                    id=make_entity_name(need_id),
-                    node_text=node_text,
-                    link=link,
-                    color=";".join(colors),
-                    style=style,
-                    need_parts=node_part_code,
-                )
-                puml_node["uml"] += node_code
-
             for link_type in link_types:
                 # Skip link-type handling, if it is not part of a specified list of allowed link_types or
                 # if not part of the overall configuration of needs_flow_link_types
                 if (current_needflow["link_types"] and link_type["option"].upper() not in option_link_types) or (
                     not current_needflow["link_types"] and link_type["option"].upper() not in allowed_link_types_options
                 ):
+                    continue
+
+                # skip creating links from child needs to their own parent need
+                if link_type["option"] == "parent_needs":
                     continue
 
                 for link in need_info[link_type["option"]]:
@@ -319,6 +377,9 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
                         style_start=style_start,
                         style_end=style_end,
                     )
+
+        # calculate needs node representation for plantuml
+        puml_node["uml"] += cal_needs_node(app, fromdocname, current_needflow, all_needs, found_needs)
 
         puml_node["uml"] += "\n' Connection definition \n\n"
         puml_node["uml"] += puml_connections

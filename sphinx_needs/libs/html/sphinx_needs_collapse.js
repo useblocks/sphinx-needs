@@ -20,43 +20,44 @@ $(document).ready(function() {
 //     $(".wy-table-responsive > table").show();
 // });
 
+function collapse_expand_func(){
+   var all_needs_collapse = document.querySelectorAll("table.need span.needs.needs_collapse");
 
+   all_needs_collapse.forEach((needs_collapse, index)=>{
+       var id = needs_collapse.getAttribute("id");
+       var parts = id.split("__");
+       var rows = parts.slice(2);
+       var table = $(needs_collapse).closest('table');
+       var need_table = table[0];
 
-$(document).ready(function() {
-    $("table.need span.needs_collapse").each(function() {
-        var id = $(this).attr("id");
-        var parts = id.split("__");
-        var rows = parts.slice(2);
-        if (parts[1] == "show") {
-            var table = $(this).closest('table');
-            var visible_icon = document.querySelector(`#${table.parent(".need_container").attr('id')} table span.needs.visible`);
+       if (parts[1] == "show") {
+            var visible_icon = document.querySelector(`#${need_table.parentNode.id} table span.needs.visible`);
             visible_icon.classList.toggle("collapse_is_hidden");
         } else {
-            var table = $(this).closest('table');
-            var collapse_icon = document.querySelector(`#${table.parent(".need_container").attr('id')} table span.needs.collapsed`);
+            var collapse_icon = document.querySelector(`#${need_table.parentNode.id} table span.needs.collapsed`);
             collapse_icon.classList.toggle("collapse_is_hidden");
             for (var row in rows) {
-                var collapse_row = document.querySelector(`#${table.parent(".need_container").attr('id')} table tr.${rows[row]}`);
+                var collapse_row = document.querySelector(`#${need_table.parentNode.id} table tr.${rows[row]}`);
                 collapse_row.classList.toggle("collapse_is_hidden");
             }
         }
         // Func to execute when collapse buttons get clicked ()
-        $(this).find("span.needs.collapsed, span.needs.visible").click(function() {
-            var table = $(this).closest('table');
+        $(needs_collapse).find("span.needs.collapsed, span.needs.visible").click(function() {
+            var table = $(needs_collapse).closest('table');
+            var need_table = table[0];
             for (var row in rows) {
-                var collapse_row = document.querySelector(`#${table.parent(".need_container").attr('id')} table tr.${rows[row]}`);
+                var collapse_row = document.querySelector(`#${need_table.parentNode.id} table tr.${rows[row]}`);
                 collapse_row.classList.toggle("collapse_is_hidden");
             }
-            var collapse_icon = document.querySelector(`#${table.parent(".need_container").attr('id')} table span.needs.collapsed`);
-            var visible_icon = document.querySelector(`#${table.parent(".need_container").attr('id')} table span.needs.visible`);
+            var collapse_icon = document.querySelector(`#${need_table.parentNode.id} table span.needs.collapsed`);
+            var visible_icon = document.querySelector(`#${need_table.parentNode.id} table span.needs.visible`);
 
             collapse_icon.classList.toggle("collapse_is_hidden");
             visible_icon.classList.toggle("collapse_is_hidden");
         })
     });
-
-});
-
+};
+window.onload = collapse_expand_func();
 
 $(document).ready(function() {
     $('a.no_link').click(function (e) {

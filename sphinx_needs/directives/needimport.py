@@ -2,9 +2,12 @@ import json
 import os
 import re
 from typing import Sequence, cast
+from urllib.parse import urlparse
 
+import requests
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
+from requests_file import FileAdapter
 from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.api import add_need
@@ -52,42 +55,59 @@ class NeedimportDirective(Directive):
 
         need_import_path = self.arguments[0]
 
-        if not os.path.isabs(need_import_path):
-            # Relative path should start from current rst file directory
-            curr_dir = os.path.dirname(self.docname)
-            new_need_import_path = os.path.join(self.env.app.srcdir, curr_dir, need_import_path)
-
-            correct_need_import_path = new_need_import_path
-            if not os.path.exists(new_need_import_path):
-                # Check the old way that calculates relative path starting from conf.py directory
-                old_need_import_path = os.path.join(self.env.app.srcdir, need_import_path)
-                if os.path.exists(old_need_import_path):
-                    correct_need_import_path = old_need_import_path
-                    logger.warning(
-                        "Deprecation warning: Relative path must be relative to the current document in future, "
-                        "not to the conf.py location. Use a starting '/', like '/needs.json', to make the path "
-                        "relative to conf.py."
-                    )
+        # check if given arguemnt is downloadable needs.json path
+        url = urlparse(need_import_path)
+        if url.scheme and url.netloc:
+            # download needs.json
+            logger.info(f"Downloading needs.json from url {need_import_path}")
+            s = requests.Session()
+            s.mount("file://", FileAdapter())
+            try:
+                response = s.get(need_import_path)
+                needs_import_list = (
+                    response.json()
+                )  # The downloaded file MUST be json. Everything else we do not handle!
+            except Exception as e:
+                raise NeedimportException(f"Getting {need_import_path} didn't work. Reason: {e}.")
         else:
-            # Absolute path starts with /, based on the source directory. The / need to be striped
-            correct_need_import_path = os.path.join(self.env.app.srcdir, need_import_path[1:])
+            logger.info(f"Given needimport argument is not URL: {need_import_path}")
 
-        if not os.path.exists(correct_need_import_path):
-            raise ReferenceError(f"Could not load needs import file {correct_need_import_path}")
+            if not os.path.isabs(need_import_path):
+                # Relative path should start from current rst file directory
+                curr_dir = os.path.dirname(self.docname)
+                new_need_import_path = os.path.join(self.env.app.srcdir, curr_dir, need_import_path)
 
-        errors = check_needs_file(correct_need_import_path)
-        if errors.schema:
-            logger.info(f"Schema validation errors detected in file {correct_need_import_path}:")
-            for error in errors.schema:
-                logger.info(f'  {error.message} -> {".".join(error.path)}')
+                correct_need_import_path = new_need_import_path
+                if not os.path.exists(new_need_import_path):
+                    # Check the old way that calculates relative path starting from conf.py directory
+                    old_need_import_path = os.path.join(self.env.app.srcdir, need_import_path)
+                    if os.path.exists(old_need_import_path):
+                        correct_need_import_path = old_need_import_path
+                        logger.warning(
+                            "Deprecation warning: Relative path must be relative to the current document in future, "
+                            "not to the conf.py location. Use a starting '/', like '/needs.json', to make the path "
+                            "relative to conf.py."
+                        )
+            else:
+                # Absolute path starts with /, based on the source directory. The / need to be striped
+                correct_need_import_path = os.path.join(self.env.app.srcdir, need_import_path[1:])
 
-        with open(correct_need_import_path) as needs_file:
-            needs_file_content = needs_file.read()
-        try:
-            needs_import_list = json.loads(needs_file_content)
-        except json.JSONDecodeError as e:
-            # ToDo: Add exception handling
-            raise e
+            if not os.path.exists(correct_need_import_path):
+                raise ReferenceError(f"Could not load needs import file {correct_need_import_path}")
+
+            errors = check_needs_file(correct_need_import_path)
+            if errors.schema:
+                logger.info(f"Schema validation errors detected in file {correct_need_import_path}:")
+                for error in errors.schema:
+                    logger.info(f'  {error.message} -> {".".join(error.path)}')
+
+            with open(correct_need_import_path) as needs_file:
+                needs_file_content = needs_file.read()
+            try:
+                needs_import_list = json.loads(needs_file_content)
+            except json.JSONDecodeError as e:
+                # ToDo: Add exception handling
+                raise e
 
         if version is None:
             try:
@@ -214,4 +234,8 @@ class VersionNotFound(BaseException):
 
 
 class CorruptedNeedsFile(BaseException):
+    pass
+
+
+class NeedimportException(BaseException):
     pass

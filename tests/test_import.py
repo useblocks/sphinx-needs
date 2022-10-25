@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 import pytest
+import requests_mock
 
 
 @pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/import_doc"}], indirect=True)
@@ -122,3 +123,125 @@ def test_import_builder(test_app):
     for key in check_keys:
         if key not in need.keys():
             raise AssertionError("%s not in exported need" % key)
+
+
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "needs", "srcdir": "doc_test/doc_needimport_download_needs_json"}], indirect=True
+)
+def test_needimport_needs_json_download(test_app):
+    app = test_app
+
+    # Mock requests
+    remote_json = {
+        "created": "2022-05-11T13:54:22.331741",
+        "current_version": "1.0",
+        "project": "needs test docs",
+        "versions": {
+            "1.0": {
+                "created": "2021-05-11T13:54:22.331724",
+                "filters": {},
+                "filters_amount": 0,
+                "needs": {
+                    "TEST_101": {
+                        "id": "TEST_101",
+                        "description": "TEST_101 DESCRIPTION",
+                        "docname": "index",
+                        "external_css": "external_link",
+                        "external_url": "http://my_company.com/docs/v1/index.html#TEST_01",
+                        "title": "TEST_101 TITLE",
+                        "type": "impl",
+                        "tags": ["ext_test"],
+                    },
+                    "TEST_102": {
+                        "id": "TEST_102",
+                        "description": "TEST_102 DESCRIPTION",
+                        "docname": "index",
+                        "external_css": "external_link",
+                        "external_url": "http://my_company.com/docs/v1/index.html#TEST_01",
+                        "title": "TEST_102 TITLE",
+                        "type": "req",
+                        "tags": ["ext_test_req"],
+                    },
+                },
+            },
+            "2.0": {
+                "created": "2022-05-11T13:54:22.331724",
+                "filters": {},
+                "filters_amount": 0,
+                "needs": {
+                    "TEST_200": {
+                        "id": "TEST_200",
+                        "description": "TEST_200 DESCRIPTION",
+                        "docname": "index",
+                        "external_css": "external_link",
+                        "external_url": "http://my_company.com/docs/v1/index.html#TEST_01",
+                        "title": "TEST_200 TITLE",
+                        "type": "impl",
+                        "tags": ["ext_test"],
+                    }
+                },
+            },
+        },
+    }
+
+    with requests_mock.Mocker() as m:
+        m.get("http://my_company.com/docs/v1/remote-needs.json", json=remote_json)
+        app.build()
+
+    needs_all_needs = app.env.needs_all_needs
+    assert len(needs_all_needs) == 3
+
+    # check import needs from needs.json
+    assert "IMP_TEST_101" in needs_all_needs
+
+    imported_need = remote_json["versions"]["1.0"]["needs"]["TEST_101"]
+    assert needs_all_needs["IMP_TEST_101"]["tags"] == imported_need["tags"]
+    assert needs_all_needs["IMP_TEST_101"]["title"] == imported_need["title"]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "needs", "srcdir": "doc_test/doc_needimport_download_needs_json_negative"}],
+    indirect=True,
+)
+def test_needimport_needs_json_download_negative(test_app):
+    import subprocess
+
+    app = test_app
+
+    remote_json = {
+        "created": "2022-05-11T13:54:22.331741",
+        "current_version": "1.0",
+        "project": "needs test docs",
+        "versions": {
+            "1.0": {
+                "created": "2021-05-11T13:54:22.331724",
+                "filters": {},
+                "filters_amount": 0,
+                "needs": {
+                    "TEST_101": {
+                        "id": "TEST_101",
+                        "description": "TEST_101 DESCRIPTION",
+                        "docname": "index",
+                        "external_css": "external_link",
+                        "external_url": "http://my_company.com/docs/v1/index.html#TEST_01",
+                        "title": "TEST_101 TITLE",
+                        "type": "impl",
+                        "tags": ["ext_test"],
+                    },
+                },
+            },
+        },
+    }
+
+    with requests_mock.Mocker() as m:
+        # test with invalid url
+        m.get("http://my_wrong_name_company.com/docs/v1/remote-needs.json", json=remote_json)
+
+        src_dir = Path(app.srcdir)
+        out_dir = Path(app.outdir)
+        output = subprocess.run(["sphinx-build", "-M", "html", src_dir, out_dir], capture_output=True)
+        assert (
+            "NeedimportException: Getting http://my_wrong_name_company.com/docs/v1/remote-needs.json didn't work."
+            in output.stderr.decode("utf-8")
+        )
