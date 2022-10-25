@@ -329,8 +329,7 @@ class JinjaFunctions:
 
     def imports(self, *args):
         if not self.parent_need_id:
-            # if you change the Exception, please update the description in :ref:`needuml_ex_import`
-            raise NeedumlException("Jinja function 'import()' is not supported in non-embedded needuml directive.")
+            raise NeedumlException("Jinja function 'import()' is not supported in needuml directive.")
         # gets all need ids from need links/extra_links options and wrap into jinja function uml()
         need_info = self.needs[self.parent_need_id]
         uml_ids = []
@@ -347,8 +346,7 @@ class JinjaFunctions:
 
     def need(self):
         if not self.parent_need_id:
-            # if you change the Exception, please update the description in :ref:`needuml_ex_import`
-            raise NeedumlException("Jinja function 'need()' is not supported in non-embedded needuml directive.")
+            raise NeedumlException("Jinja function 'need()' is not supported in needuml directive.")
         return self.needs[self.parent_need_id]
 
 
@@ -369,10 +367,6 @@ def process_needuml(app, doctree, fromdocname):
                 raise NeedArchException("Directive needarch can only be used inside a need.")
             else:
                 # Calculate parent need id for needarch
-                parent_need_id = current_needuml["target_node"].parent.attributes["refid"]
-        else:
-            if current_needuml["target_node"].parent and isinstance(current_needuml["target_node"].parent, Need):
-                # Calculate parent need id for needuml
                 parent_need_id = current_needuml["target_node"].parent.attributes["refid"]
 
         content = []

@@ -37,9 +37,9 @@ which allows you to use loops, if-clauses, and it injects data from need-objects
 
       .. needuml::
 
-         class "{{need().title}}" {
-         implement
-         {{need().status}}
+         {{flow('COMP_NEEDUML2')}} {
+         card implement
+         card {{needs['COMP_NEEDUML2'].status}}
          }
 
 
@@ -66,9 +66,9 @@ which allows you to use loops, if-clauses, and it injects data from need-objects
 
    .. needuml::
 
-      {{flow(need().id)}} {
+      {{flow('COMP_NEEDUML2')}} {
       card implement
-      card {{need().status}}
+      card {{needs['COMP_NEEDUML2'].status}}
       }
 
 
@@ -280,28 +280,6 @@ A Python dictionary containing all Needs. The ``need_id`` is used as key.
       node "{{needs["FEATURE_NEEDUML1"].title}}"
 
 
-.. _needuml_jinja_need:
-
-need()
-~~~~~~
-
-.. versionadded:: 1.0.3
-
-NeedUml can use :ref:`needarch_jinja_need` from :ref:`needarch`
-if the currently processed NeedUml is embedded in a need.
-
-
-.. _needuml_jinja_import:
-
-import()
-~~~~~~~~
-
-.. versionadded:: 1.0.3
-
-NeedUml can use :ref:`needarch_jinja_import` from :ref:`needarch`
-if the currently processed NeedUml is embedded in a need.
-
-
 .. _needuml_jinja_flow:
 
 flow(id)
@@ -486,6 +464,7 @@ Passing ``variant="A"`` parameter to the :ref:`uml() <needuml_jinja_uml>` functi
 .. code-block:: rst
 
    .. needuml::
+      :debug:
 
       {{uml("COMP_A_B", variant="A")}}
 
@@ -503,6 +482,7 @@ Passing ``variant="B"`` parameter to the :ref:`uml() <needuml_jinja_uml>` functi
 .. code-block:: rst
 
    .. needuml::
+      :debug:
 
       {{uml("COMP_A_B", variant="B")}}
 
@@ -734,173 +714,5 @@ NeedUml Examples
       }
 
       class_x o-- class_y
-
-
-.. _needuml_ex_loop:
-
-NeedUml Loop Example
---------------------
-
-.. versionadded:: 1.0.3
-
-NeedUml can detect include loops `(uml('1') -> uml('2') -> uml('3') -> uml('1')`
-and can avoid to include an element twice. Maybe this is not always the use case
-you have, if so please create an issue and mention this chapter. The algorithm
-does detect different parameter sets and does import `uml()` calls with different
-:ref:`parameter <needuml_jinja_uml_args>` to the same need.
-
-|ex|
-
-.. code-block:: rst
-
-   .. comp:: COMP_T_001
-      :id: COMP_T_001
-
-      .. needuml::
-
-         {{flow(need().id)}}
-         {% if variant == "A" %}
-         {{uml('COMP_T_003', variant="A")}}
-         usecase {{need().id}}_usecase
-         {% else %}
-         {{uml('COMP_T_003')}}
-         {{uml('COMP_T_003', variant="A")}}
-         {% endif %}
-
-   .. comp:: COMP_T_002
-      :id: COMP_T_002
-
-      .. needuml::
-
-         {{flow(need().id)}}
-         {% if variant == "A" %}
-         {{uml('COMP_T_001', variant="A")}}
-         usecase {{need().id}}_usecase
-         {% else %}
-         {{uml('COMP_T_001')}}
-         {% endif %}
-
-   .. comp:: COMP_T_003
-      :id: COMP_T_003
-
-      .. needuml::
-
-         {{flow(need().id)}}
-         {% if variant == "A" %}
-         {{uml('COMP_T_002', variant="A")}}
-         usecase {{need().id}}_usecase
-         {% else %}
-         {{uml('COMP_T_002')}}
-         {% endif %}
-
-|out|
-
-.. comp:: COMP_T_001
-   :id: COMP_T_001
-
-   .. needuml::
-
-      {{flow(need().id)}}
-      {% if variant == "A" %}
-      {{uml('COMP_T_003', variant="A")}}
-      usecase {{need().id}}_usecase
-      {% else %}
-      {{uml('COMP_T_003')}}
-      {{uml('COMP_T_003', variant="A")}}
-      {% endif %}
-
-.. comp:: COMP_T_002
-   :id: COMP_T_002
-
-   .. needuml::
-
-      {{flow(need().id)}}
-      {% if variant == "A" %}
-      {{uml('COMP_T_001', variant="A")}}
-      usecase {{need().id}}_usecase
-      {% else %}
-      {{uml('COMP_T_001')}}
-      {% endif %}
-
-.. comp:: COMP_T_003
-   :id: COMP_T_003
-
-   .. needuml::
-
-      {{flow(need().id)}}
-      {% if variant == "A" %}
-      {{uml('COMP_T_002', variant="A")}}
-      usecase {{need().id}}_usecase
-      {% else %}
-      {{uml('COMP_T_002')}}
-      {% endif %}
-
-
-.. _needuml_ex_import:
-
-NeedUml support import() and need() for uml()
----------------------------------------------
-
-.. versionadded:: 1.0.3
-
-You can find an example of `need()` togther with `uml()` in
-:ref:`needuml introduction <needuml>`.
-Following an example of :ref:`needarch_jinja_import` with a
-needuml which calls the import.
-
-|ex|
-
-.. code-block:: rst
-
-   .. comp:: Import Example - Importee
-      :id: COMP_T_004
-
-   .. comp:: Import Example - Importer
-      :id: COMP_T_005
-      :tests: COMP_T_004
-
-      .. needuml::
-
-         {{flow(need().id)}}
-         {{import('tests')}}
-         {% for test in need().tests%}
-         {{need().id}} --> {{test}} : tests
-         {% endfor %}
-
-   .. needuml::
-
-      {{uml(needs['COMP_T_005'].id)}}
-
-
-|out|
-
-.. comp:: Import Example - Importee
-   :id: COMP_T_004
-
-.. comp:: Import Example - Importer
-   :id: COMP_T_005
-   :tests: COMP_T_004
-
-   .. needuml::
-
-      {{flow(need().id)}}
-      {{import('tests')}}
-      {% for test in need().tests%}
-      {{need().id}} --> {{test}} : tests
-      {% endfor %}
-
-.. needuml::
-
-   {{uml(needs['COMP_T_005'].id)}}
-
-.. hint::
-
-   If you got `Jinja function 'need()' is not supported in non-embedded needuml directive.`
-   or `Jinja function 'import()' is not supported in non-embedded needuml directive.` this
-   chapter will help you.
-   `need()` and `import()` are only useful in the context of a need. So you have to
-   intend a needuml or needarch in a need to get access of the need data. See description
-   in this chapter.
-
 
 {% endraw %}

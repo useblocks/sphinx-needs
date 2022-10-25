@@ -5,8 +5,8 @@
 needarch
 ========
 
-``needarch`` behaves exactly like :ref:`needuml`, but only works inside a need. It provides also addtional exclusive
-jinja function :ref:`needarch_jinja_import`.
+``needarch`` behaves exactly like :ref:`needuml`, but only works inside a need. It provides also additional exclusive
+jinja functions :ref:`needarch_jinja_need` and :ref:`needarch_jinja_import`.
 
 |ex|
 
@@ -156,5 +156,104 @@ Then it executes :ref:`needuml_jinja_uml` automatically for all links/need_ids d
 
       {{import("checks", "triggers")}}
 
+
+.. _needarch_ex_loop:
+
+NeedArch Loop Example
+---------------------
+
+.. versionadded:: 1.0.3
+
+NeedArch can detect include loops `(uml('1') -> uml('2') -> uml('3') -> uml('1')`
+and can avoid to include an element twice. Maybe this is not always the use case
+you have, if so please create an issue and mention this chapter. The algorithm
+does detect different parameter sets and does import `uml()` calls with different
+:ref:`parameter <needuml_jinja_uml_args>` to the same need.
+
+|ex|
+
+.. code-block:: rst
+
+   .. comp:: COMP_T_001
+      :id: COMP_T_001
+
+      .. needarch::
+
+         {{flow(need().id)}}
+         {% if variant == "A" %}
+         {{uml('COMP_T_003', variant="A")}}
+         usecase {{need().id}}_usecase
+         {% else %}
+         {{uml('COMP_T_003')}}
+         {{uml('COMP_T_003', variant="A")}}
+         {% endif %}
+
+   .. comp:: COMP_T_002
+      :id: COMP_T_002
+
+      .. needarch::
+
+         {{flow(need().id)}}
+         {% if variant == "A" %}
+         {{uml('COMP_T_001', variant="A")}}
+         usecase {{need().id}}_usecase
+         {% else %}
+         {{uml('COMP_T_001')}}
+         {% endif %}
+
+   .. comp:: COMP_T_003
+      :id: COMP_T_003
+
+      .. needarch::
+
+         {{flow(need().id)}}
+         {% if variant == "A" %}
+         {{uml('COMP_T_002', variant="A")}}
+         usecase {{need().id}}_usecase
+         {% else %}
+         {{uml('COMP_T_002')}}
+         {% endif %}
+
+|out|
+
+.. comp:: COMP_T_001
+   :id: COMP_T_001
+
+   .. needarch::
+
+      {{flow(need().id)}}
+      {% if variant == "A" %}
+      {{uml('COMP_T_003', variant="A")}}
+      usecase {{need().id}}_usecase
+      {% else %}
+      {{uml('COMP_T_003')}}
+      {{uml('COMP_T_003', variant="A")}}
+      {% endif %}
+
+.. comp:: COMP_T_002
+   :id: COMP_T_002
+
+   .. needarch::
+
+      {{flow(need().id)}}
+      {% if variant == "A" %}
+      {{uml('COMP_T_001', variant="A")}}
+      usecase {{need().id}}_usecase
+      {% else %}
+      {{uml('COMP_T_001')}}
+      {% endif %}
+
+.. comp:: COMP_T_003
+   :id: COMP_T_003
+
+   .. needarch::
+
+      {{flow(need().id)}}
+      {% if variant == "A" %}
+      {{uml('COMP_T_002', variant="A")}}
+      usecase {{need().id}}_usecase
+      {% else %}
+      {{uml('COMP_T_002')}}
+      {% endif %}
 
 {% endraw %}
