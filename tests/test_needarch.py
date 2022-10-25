@@ -78,7 +78,7 @@ def test_needarch_jinja_func_need(test_app):
     all_needumls = app.env.needs_all_needumls
     assert len(all_needumls) == 1
 
-    assert "{{flow(need().id)}}" in all_needumls["needuml-index-0"]["content"]
+    assert "{{flow(need().id)}}" in all_needumls["needarch-index-0"]["content"]
 
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     assert "as INT_001 [[../index.html#INT_001]]" in html
