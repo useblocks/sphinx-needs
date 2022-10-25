@@ -47,7 +47,7 @@ need()
 
 .. versionadded:: 1.0.3
 
-The `need()` function provides you the need information the :ref:`needarch` / :ref:`needuml` is embedded in.
+The `need()` function provides you the need information the :ref:`needarch` is embedded in.
 
 |ex|
 
