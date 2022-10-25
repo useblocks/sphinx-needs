@@ -12,16 +12,35 @@ License
 -----
 Under development
 
+* Improvement: Fixed rendering issue with the debug layout.
+  (`#721 <https://github.com/useblocks/sphinx-needs/issues/721>`_)
 * Improvement: Added :ref:`needs_show_link_id`.
 * Improvement: Supported arguments as filter string for :ref:`needextract`.
   (`#688 <https://github.com/useblocks/sphinx-needs/issues/688>`_)
 * Improvement: Added :ref:`needs_render_context` configuration option which enables you to use custom data as the
-context when rendering Jinja templates or strings.
+  context when rendering Jinja templates or strings.
   (`#704 <https://github.com/useblocks/sphinx-needs/issues/704>`_)
 * Improvement: Supported ``target_url`` for :ref:`needs_external_needs`.
   (`#701 <https://github.com/useblocks/sphinx-needs/issues/701>`_)
 * Bugfix: Fixed needuml key shown in need meta data by providing internal need option `arch`.
   (`#687 <https://github.com/useblocks/sphinx-needs/issues/687>`_)
+* Improvement: Included child needs inside their parent need for :ref:`needflow`.
+  (`#714 <https://github.com/useblocks/sphinx-needs/issues/714>`_)
+* Improvement: Supported generate need ID from title with :ref:`needs_id_from_title`.
+  (`#692 <https://github.com/useblocks/sphinx-needs/issues/692>`_)
+* Improvement: Supported download ``needs.json`` for :ref:`needimport`.
+  (`#715 <https://github.com/useblocks/sphinx-needs/issues/715>`_)
+* Bugfix: Fixed import() be included in needarch.
+  (`#730 <https://github.com/useblocks/sphinx-needs/issues/730>`_)
+* Bugfix: Needuml: uml() call circle leads to an exception :ref:`needarch_ex_loop`.
+  (`#731 <https://github.com/useblocks/sphinx-needs/issues/731>`_)
+* Improvement: needarch provide need() function to get "need data".
+  (`#732 <https://github.com/useblocks/sphinx-needs/issues/732>`_)
+* Improvement: needuml - flow() shall return plantuml text without newline.
+  (`#737 <https://github.com/useblocks/sphinx-needs/issues/737>`_)
+* Bugfix: Needuml used but "sphinxcontrib.plantuml" not installed leads to exception
+  (`#742 <https://github.com/useblocks/sphinx-needs/issues/742>`_)
+
 
 1.0.2
 -----
@@ -49,7 +68,7 @@ Released: 22.09.2022
 * Improvement: Renamed jinja function `need` to `flow` for :ref:`needuml`.
 * Improvement: Added directive :ref:`needarch`.
 * Improvement: Added configuration option :ref:`needs_ide_snippets_id` to support custom need ID for :ref:`ide` snippets.
-* Improvement: Provides jinja function :ref:`needarch_jinja_import` for :ref:`needarch` to execute :ref:`jinja_uml` 
+* Improvement: Provides jinja function :ref:`needarch_jinja_import` for :ref:`needarch` to execute :ref:`needuml_jinja_uml` 
   automatically for all the links defined in the need :ref:`need_links` options.
 * Improvement: Added configuration :ref:`needs_ide_directive_snippets` to support custom directive snippets for IDE features.
   (`#640 <https://github.com/useblocks/sphinx-needs/issues/640>`_)
