@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1666683687394,
+  "lastUpdate": 1666766873263,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -576,6 +576,42 @@ window.BENCHMARK_DATA = {
             "value": 90.132568504,
             "unit": "s",
             "extra": "Commit: 1b7ca5c7ac6a88ebadc5416678beedafc3d33809\nBranch: master\nTime: 2022-10-25T09:33:34+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "95444300+PhilipPartsch@users.noreply.github.com",
+            "name": "PhilipPartsch",
+            "username": "PhilipPartsch"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a7b725e2fce34e2adf6bd7238e48897fa8e23b25",
+          "message": "Needuml fix import issue and loop detection (#734)\n\n* Initial version to fix the import issue and to detect loops. Different uml parameter not handled\r\n\r\n* Secound version to fix the import issue and to detect loops. Different uml parameter are proper handled.\r\n\r\n* Prepare refactoring. Improve docu, fix test.\r\n\r\n* Fix test 2\r\n\r\n* Fix tests 3\r\n\r\n* Fix tests 4\r\n\r\n* Fix tests 5\r\n\r\n* Defined jinja2uml and used it in uml().\r\n\r\n* Use jinja2uml() and transform_uml_to_plantuml_node() in process_needuml().\r\n\r\n* Use jinja2uml() and transform_uml_to_plantuml_node() in process_needuml(). 2\r\n\r\n* Fix linter issues.\r\n\r\n* Fix linter issues.2\r\n\r\n* Fix linter issues.3\r\n\r\n* removed need() and import() support for needuml directive\r\n\r\n* fix tests for needarch and needuml, as need() and import() is restricted to needarch\r\n\r\n* organized tests between needarch and needuml more consistant.\r\n\r\n* fixed test from needuml to needarch\r\n\r\n* fixed test as test is moved from needuml to needarch, even id has to be changed\r\n\r\n* fixed docu\r\n\r\n* updated changelog\r\n\r\nFixes #730, #731, #732, #737, #742.",
+          "timestamp": "2022-10-26T08:41:05+02:00",
+          "tree_id": "2812d6ae03d7aa9cfff63631ef02eaca1157576d",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a7b725e2fce34e2adf6bd7238e48897fa8e23b25"
+        },
+        "date": 1666766869733,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22729508300000134,
+            "unit": "s",
+            "extra": "Commit: a7b725e2fce34e2adf6bd7238e48897fa8e23b25\nBranch: master\nTime: 2022-10-26T08:41:05+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 75.45710427099999,
+            "unit": "s",
+            "extra": "Commit: a7b725e2fce34e2adf6bd7238e48897fa8e23b25\nBranch: master\nTime: 2022-10-26T08:41:05+02:00"
           }
         ]
       }
