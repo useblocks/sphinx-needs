@@ -18,22 +18,67 @@ which allows you to use loops, if-clauses, and it injects data from need-objects
 
    .. needuml::
 
-      class "{{needs['FEATURE_1'].title}}" {
-        implement
-        {{needs['FEATURE_1'].status}}
-      }
+      {{uml('FEATURE_NEEDUML1')}}
+      {{uml('COMP_NEEDUML2')}}
+
+   .. feature:: NeedUml example need
+      :id: FEATURE_NEEDUML1
+      :tags: needuml
+      :status: draft
+
+      Example Need for NeedUml.
+
+   .. comp:: NeedUml example need 2
+      :id: COMP_NEEDUML2
+      :tags: needuml
+      :status: draft
+
+      Secound example Need for NeedUml.
+
+      .. needuml::
+
+         {{flow('COMP_NEEDUML2')}} {
+         card implement
+         card {{needs['COMP_NEEDUML2'].status}}
+         }
+
 
 |out|
 
 .. needuml::
 
-   class "{{needs['FEATURE_1'].title}}" {
-     implement
-     {{needs['FEATURE_1'].status}}
-   }
+   {{uml('FEATURE_NEEDUML1')}}
+   {{uml('COMP_NEEDUML2')}}
+
+.. feature:: NeedUml example need
+   :id: FEATURE_NEEDUML1
+   :tags: needuml
+   :status: draft
+
+   Example Need for NeedUml.
+
+.. comp:: NeedUml example need 2
+   :id: COMP_NEEDUML2
+   :tags: needuml
+   :status: draft
+
+   Secound example Need for NeedUml.
+
+   .. needuml::
+
+      {{flow('COMP_NEEDUML2')}} {
+      card implement
+      card {{needs['COMP_NEEDUML2'].status}}
+      }
+
+
+.. _needuml_options:
 
 Options
 -------
+
+
+.. _needuml_extra:
 
 extra
 ~~~~~
@@ -63,13 +108,23 @@ Allows to inject additional key-value pairs into the ``needuml`` rendering.
 .. note::
 
    ``:extra:`` values are only available in the current PlantUML code.
-   It is not available in code loaded via :ref:`jinja_uml`.
+   It is not available in code loaded via :ref:`needuml_jinja_uml`.
+   So we suggest to use them only in non-embedded needuml directives.
+   In an embedded needuml, you can store the information in the options
+   of the need and access them with :ref:`needflow_need` like in 
+   :ref:`needuml` introduction.
+
+
+.. _needuml_config:
 
 config
 ~~~~~~
 Allows to preconfigure PlantUML and set certain layout options.
 
 For details please take a look into needflow :ref:`needflow_config`.
+
+
+.. _needuml_debug:
 
 debug
 ~~~~~
@@ -97,6 +152,9 @@ Helpful to identify reasons why a PlantUML build may have thrown errors.
    node "RocketLab" {
       card "Peter"
    }
+
+
+.. _needuml_key:
 
 key
 ~~~
@@ -152,6 +210,9 @@ Option ``:key:`` value can't be empty, and can't be ``diagram``.
       B -> C: Hi
       C -> B: Hi there
 
+
+.. _needuml_save:
+
 save
 ~~~~
 
@@ -190,9 +251,15 @@ e.g. `_build/needumls/needuml_group_A/my_needuml.puml`.
       Alice -> Bob: Hi Bob
       Bob --> Alice: Hi Alice
 
+
+.. _needuml_jinja:
+
 Jinja context
 -------------
 When using Jinja statements, the following objects and functions are available.
+
+
+.. _needuml_jinja_needs:
 
 needs
 ~~~~~
@@ -204,16 +271,16 @@ A Python dictionary containing all Needs. The ``need_id`` is used as key.
 
    .. needuml::
 
-      node "{{needs["FEATURE_1"].title}}"
+      node "{{needs["FEATURE_NEEDUML1"].title}}"
 
 |out|
 
 .. needuml::
 
-      node "{{needs["FEATURE_1"].title}}"
+      node "{{needs["FEATURE_NEEDUML1"].title}}"
 
 
-.. _jinja_flow:
+.. _needuml_jinja_flow:
 
 flow(id)
 ~~~~~~~~
@@ -222,28 +289,38 @@ We use the same layout used for :ref:`needflow`.
 
 This functions represents each Need the same way.
 
+.. versionchanged:: 1.0.3
+   In the past the returned plantuml representation string ends with a
+   newline. Now it is up to the author of the Jinja template to write
+   the newline, which is normally anyway the case. E.g. see the following
+   example, where the two `flow()` are separated by a newlone. With this
+   approach it is possible to write plantuml code following `flow()`.
+   E.g. see even the following example, with text following 
+   `{{flow("COMP_001")}}`.
+
 |ex|
 
 .. code-block:: rst
 
    .. needuml::
 
-      allowmixing
+      {{flow("FEATURE_NEEDUML1")}}
+      {{flow("COMP_001")}} {
+      card manuall_written
+      }
 
-      {{flow("COMP_001")}}
-      {{flow("FEATURE_1")}}
 
 |out|
 
 .. needuml::
 
-   allowmixing
+   {{flow("FEATURE_NEEDUML1")}}
+   {{flow("COMP_001")}} {
+   card manuall_written
+   }
 
-   {{flow("COMP_001")}}
-   {{flow("FEATURE_1")}}
 
-
-.. _jinja_filter:
+.. _needuml_jinja_filter:
 
 filter(filter_string)
 ~~~~~~~~~~~~~~~~~~~~~
@@ -268,7 +345,7 @@ Finds a list of Sphinx-Need objects that pass the given filter string.
       {% endfor %}
 
 
-.. _jinja_uml:
+.. _needuml_jinja_uml:
 
 uml(id)
 ~~~~~~~
@@ -288,7 +365,7 @@ Please read :ref:`need_diagram` for details.
       allowmixing
 
       {{uml("COMP_001")}}
-      {{uml("FEATURE_1")}}
+      {{uml("FEATURE_NEEDUML1")}}
 
 |out|
 
@@ -297,12 +374,15 @@ Please read :ref:`need_diagram` for details.
    allowmixing
 
    {{uml("COMP_001")}}
-   {{uml("FEATURE_1")}}
+   {{uml("FEATURE_NEEDUML1")}}
+
+
+.. _needuml_jinja_uml_key:
 
 Key argument
 ++++++++++++
 
-:ref:`uml() <jinja_uml>` supports ``key`` argument to define which PlantUML code to load from the Sphinx-Need object.
+:ref:`uml() <needuml_jinja_uml>` supports ``key`` argument to define which PlantUML code to load from the Sphinx-Need object.
 ``key`` value by default is ``diagram``. If no key argument given, then the PlantUML code is loaded from ``diagram`` under ``arch``
 inside the need object.
 
@@ -326,10 +406,13 @@ inside the need object.
 
       {{uml('COMP_002', 'sequence')}}
 
+
+.. _needuml_jinja_uml_args:
+
 Additional keyword arguments
 ++++++++++++++++++++++++++++
 
-:ref:`uml() <jinja_uml>` supports additional keyword parameters which are then available in the loaded PlantUML code.
+:ref:`uml() <needuml_jinja_uml>` supports additional keyword parameters which are then available in the loaded PlantUML code.
 
 |ex|
 
@@ -374,38 +457,44 @@ Additional keyword arguments
    By default **Unknown** is shown, as no variant was set.
 
 
-Passing ``variant="A"`` parameter to the :ref:`uml() <jinja_uml>` function, we get the following:
+Passing ``variant="A"`` parameter to the :ref:`uml() <needuml_jinja_uml>` function, we get the following:
 
 |ex|
 
 .. code-block:: rst
 
    .. needuml::
+      :debug:
 
       {{uml("COMP_A_B", variant="A")}}
 
 |out|
 
 .. needuml::
+   :debug:
 
    {{uml("COMP_A_B", variant="A")}}
 
-Passing ``variant="B"`` parameter to the :ref:`uml() <jinja_uml>` function, we get the following:
+Passing ``variant="B"`` parameter to the :ref:`uml() <needuml_jinja_uml>` function, we get the following:
 
 |ex|
 
 .. code-block:: rst
 
    .. needuml::
+      :debug:
 
       {{uml("COMP_A_B", variant="B")}}
 
 |out|
 
 .. needuml::
+   :debug:
 
    {{uml("COMP_A_B", variant="B")}}
 
+
+.. _needuml_jinja_uml_chain:
 
 Chaining diagrams
 +++++++++++++++++
@@ -519,6 +608,8 @@ All features are available and ``uml()`` can be used multiple time on different 
                me --> rocket: doing
 
 
+.. _needuml_example:
+
 NeedUml Examples
 ----------------
 
@@ -578,8 +669,6 @@ NeedUml Examples
    card "and much more..." as much #ffcc00
    much -> sn
 
-{% endraw %}
-
 |ex|
 
 .. code-block:: rst
@@ -625,3 +714,5 @@ NeedUml Examples
       }
 
       class_x o-- class_y
+
+{% endraw %}

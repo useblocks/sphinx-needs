@@ -113,6 +113,104 @@ class NeedarchDirective(NeedumlDirective):
         return NeedumlDirective.run(self)
 
 
+def transform_uml_to_plantuml_node(app, uml_content: str, parent_need_id: str, key: str, kwargs: dict, config: str):
+    try:
+        if "sphinxcontrib.plantuml" not in app.config.extensions:
+            raise ImportError
+        from sphinxcontrib.plantuml import plantuml
+    except ImportError:
+        error_node = nodes.error()
+        para = nodes.paragraph()
+        text = nodes.Text("PlantUML is not available!")
+        para += text
+        error_node.append(para)
+        return error_node
+
+    # Create basic uml node
+    plantuml_block_text = ".. plantuml::\n\n   @startuml\n   @enduml"
+    puml_node = plantuml(plantuml_block_text)
+
+    # Add needuml specific content
+    puml_node["uml"] = "@startuml\n"
+
+    # Adding config
+    if config:
+        puml_node["uml"] += "\n' Config\n\n"
+        puml_node["uml"] += config
+        puml_node["uml"] += "\n\n"
+
+    # jinja2uml to translate jinja statements to uml text
+    (uml_content_return, processed_need_ids_return) = jinja2uml(
+        app=app,
+        fromdocname=None,
+        uml_content=uml_content,
+        parent_need_id=parent_need_id,
+        key=key,
+        processed_need_ids={},
+        kwargs=kwargs,
+    )
+    # silently discard processed_need_ids_return
+
+    puml_node["uml"] += f"\n{uml_content_return}"
+    puml_node["uml"] += "\n@enduml\n"
+    return puml_node
+
+
+def get_debug_node_from_puml_node(puml_node):
+    if isinstance(puml_node, nodes.figure):
+        data = puml_node.children[0]["uml"]
+    data = puml_node.get("uml", "")
+    data = "\n".join([html.escape(line) for line in data.split("\n")])
+    debug_para = nodes.raw("", f"<pre>{data}</pre>", format="html")
+    debug_container = nodes.container()
+    debug_container += debug_para
+    return debug_container
+
+
+def jinja2uml(
+    app, fromdocname, uml_content: str, parent_need_id: str, key: str, processed_need_ids: {}, kwargs: dict
+) -> (str, {}):
+    # Let's render jinja templates with uml content template to 'plantuml syntax' uml
+    # 1. Remove @startuml and @enduml
+    uml_content = uml_content.replace("@startuml", "").replace("@enduml", "")
+
+    # 2. Prepare jinja template
+    mem_template = Environment(loader=BaseLoader).from_string(uml_content)
+
+    # 3. Get a new instance of Jinja Helper Functions
+    jinja_utils = JinjaFunctions(app, fromdocname, parent_need_id, processed_need_ids)
+
+    # 4. Append need_id to processed_need_ids, so it will not been processed again
+    if parent_need_id:
+        jinja_utils.append_need_to_processed_needs(need_id=parent_need_id, art="uml", key=key, kwargs=kwargs)
+
+    # 5. Get data for the jinja processing
+    data = {}
+    # 5.1 Set default config to data
+    data.update(**app.config.needs_render_context)
+    # 5.2 Set uml() kwargs to data and maybe overwrite default settings
+    data.update(kwargs)
+    # 5.3 Make the helpers available during rendering and overwrite maybe wrongly default and uml() kwargs settings
+    data.update(
+        {
+            "needs": jinja_utils.needs,
+            "need": jinja_utils.need,
+            "uml": jinja_utils.uml_from_need,
+            "flow": jinja_utils.flow,
+            "filter": jinja_utils.filter,
+            "import": jinja_utils.imports,
+        }
+    )
+
+    # 6. Render the uml content with the fetched data
+    uml = mem_template.render(**data)
+
+    # 7. Get processed need ids
+    processed_need_ids_return = jinja_utils.get_processed_need_ids()
+
+    return (uml, processed_need_ids_return)
+
+
 class JinjaFunctions:
     """
     Contains Jinja helper functions
@@ -120,13 +218,52 @@ class JinjaFunctions:
     Provides access to sphinx-app and all Needs objects.
     """
 
-    def __init__(self, app, fromdocname, parent_need_id):
+    def __init__(self, app, fromdocname, parent_need_id: str, processed_need_ids: {}):
         self.needs = app.builder.env.needs_all_needs
         self.app = app
         self.fromdocname = fromdocname
         self.parent_need_id = parent_need_id
+        if parent_need_id and parent_need_id not in self.needs:
+            raise NeedumlException(f"JinjaFunctions initialized with undefined parent_need_id: '{parent_need_id}'")
+        self.processed_need_ids = processed_need_ids
 
-    def uml(self, need_id, key="diagram", **kwargs):
+    def need_to_processed_data(self, art: str, key: str, kwargs: dict) -> {}:
+        d = {
+            "art": art,
+            "key": key,
+            "arguments": kwargs,
+        }
+        return d
+
+    def append_need_to_processed_needs(self, need_id: str, art: str, key: str, kwargs: dict) -> None:
+        data = self.need_to_processed_data(art=art, key=key, kwargs=kwargs)
+        if need_id not in self.processed_need_ids:
+            self.processed_need_ids[need_id] = []
+        if data not in self.processed_need_ids[need_id]:
+            self.processed_need_ids[need_id].append(data)
+
+    def append_needs_to_processed_needs(self, processed_needs_data: dict) -> None:
+        for k, v in processed_needs_data.items():
+            if k not in self.processed_need_ids:
+                self.processed_need_ids[k] = []
+            for d in v:
+                if d not in self.processed_need_ids[k]:
+                    self.processed_need_ids[k].append(d)
+
+    def data_in_processed_data(self, need_id: str, art: str, key: str, kwargs: dict) -> bool:
+        data = self.need_to_processed_data(art=art, key=key, kwargs=kwargs)
+        return (need_id in self.processed_need_ids) and (data in self.processed_need_ids[need_id])
+
+    def get_processed_need_ids(self) -> {}:
+        return self.processed_need_ids
+
+    def uml_from_need(self, need_id: str, key: str = "diagram", **kwargs) -> str:
+        if need_id not in self.needs:
+            raise NeedumlException(f"Jinja function uml() is called with undefined need_id: '{need_id}'.")
+
+        if self.data_in_processed_data(need_id=need_id, art="uml", key=key, kwargs=kwargs):
+            return ""
+
         need_info = self.needs[need_id]
 
         if key != "diagram":
@@ -141,22 +278,39 @@ class JinjaFunctions:
                 return self.flow(need_id)
 
         # We need to re-render the fetched content, as it may contain also Jinja statements.
-        mem_template = Environment(loader=BaseLoader).from_string(uml_content)
-        data = {"needs": self.needs, "uml": self.uml, "flow": self.flow}
-        data.update(**self.app.config.needs_render_context)
-        data.update(kwargs)
-        uml = mem_template.render(**data)
+        # use jinja2uml to render the current uml content
+        (uml, processed_need_ids_return) = jinja2uml(
+            app=self.app,
+            fromdocname=self.fromdocname,
+            uml_content=uml_content,
+            parent_need_id=need_id,
+            key=key,
+            processed_need_ids=self.processed_need_ids,
+            kwargs=kwargs,
+        )
+
+        # Append processed needs to current proccessing
+        self.append_needs_to_processed_needs(processed_need_ids_return)
 
         return uml
 
-    def flow(self, need_id):
+    def flow(self, need_id) -> str:
+        if need_id not in self.needs:
+            raise NeedumlException(f"Jinja function flow is called with undefined need_id: '{need_id}'.")
+
+        if self.data_in_processed_data(need_id=need_id, art="flow", key="", kwargs={}):
+            return ""
+
+        # append need_id to processed_need_ids, so it will not been processed again
+        self.append_need_to_processed_needs(need_id=need_id, art="flow", key="", kwargs={})
+
         need_info = self.needs[need_id]
         link = calculate_link(self.app, need_info, self.fromdocname)
 
         diagram_template = Template(self.app.builder.env.config.needs_diagram_template)
         node_text = diagram_template.render(**need_info, **self.app.config.needs_render_context)
 
-        need_uml = '{style} "{node_text}" as {id} [[{link}]] #{color}\n'.format(
+        need_uml = '{style} "{node_text}" as {id} [[{link}]] #{color}'.format(
             id=make_entity_name(need_id),
             node_text=node_text,
             link=link,
@@ -174,6 +328,8 @@ class JinjaFunctions:
         return filter_needs(self.app, list(self.needs.values()), filter_string=filter_string)
 
     def imports(self, *args):
+        if not self.parent_need_id:
+            raise NeedumlException("Jinja function 'import()' is not supported in needuml directive.")
         # gets all need ids from need links/extra_links options and wrap into jinja function uml()
         need_info = self.needs[self.parent_need_id]
         uml_ids = []
@@ -185,13 +341,17 @@ class JinjaFunctions:
         umls = ""
         if uml_ids:
             for uml_id in uml_ids:
-                umls += self.uml(uml_id)
+                umls += self.uml_from_need(uml_id)
         return umls
+
+    def need(self):
+        if not self.parent_need_id:
+            raise NeedumlException("Jinja function 'need()' is not supported in needuml directive.")
+        return self.needs[self.parent_need_id]
 
 
 def process_needuml(app, doctree, fromdocname):
     env = app.builder.env
-    all_needs = env.needs_all_needs
 
     for node in doctree.findall(Needuml):
         id = node.attributes["ids"][0]
@@ -199,34 +359,35 @@ def process_needuml(app, doctree, fromdocname):
 
         parent_need_id = None
         # Check if current needuml is needarch
+        from sphinx_needs.directives.need import Need  # avoid circular import
+
         if current_needuml["is_arch"]:
             # Check if needarch is only used inside a need
-            from sphinx_needs.directives.need import Need  # avoid circular import
-
             if not (current_needuml["target_node"].parent and isinstance(current_needuml["target_node"].parent, Need)):
                 raise NeedArchException("Directive needarch can only be used inside a need.")
             else:
                 # Calculate parent need id for needarch
                 parent_need_id = current_needuml["target_node"].parent.attributes["refid"]
 
-        try:
-            if "sphinxcontrib.plantuml" not in app.config.extensions:
-                raise ImportError
-            from sphinxcontrib.plantuml import plantuml
-        except ImportError:
-            content = nodes.error()
-            para = nodes.paragraph()
-            text = nodes.Text("PlantUML is not available!")
-            para += text
-            content.append(para)
-            # node.replace_self(content)
-            continue
-
         content = []
 
-        # Create basic uml node
-        plantuml_block_text = ".. plantuml::\n\n   @startuml\n   @enduml"
-        puml_node = plantuml(plantuml_block_text)
+        # Adding config
+        config = current_needuml["config"]
+        if config and len(config) >= 3:
+            # Remove all empty lines
+            config = "\n".join([line.strip() for line in config.split("\n") if line.strip()])
+
+        puml_node = transform_uml_to_plantuml_node(
+            app=app,
+            uml_content=current_needuml["content"],
+            parent_need_id=parent_need_id,
+            key=current_needuml["key"],
+            kwargs=current_needuml["extra"],
+            config=config,
+        )
+
+        # Add calculated needuml content
+        current_needuml["content_calculated"] = puml_node["uml"]
 
         try:
             scale = int(current_needuml["scale"])
@@ -240,46 +401,6 @@ def process_needuml(app, doctree, fromdocname):
         else:
             puml_node["align"] = "center"
 
-        # Replace PlantUML entry-code, so that the uml-code is "clean"
-        uml_content = current_needuml["content"].replace("@startuml", "").replace("@enduml", "")
-        # Render uml content with jinja
-        mem_template = Environment(loader=BaseLoader).from_string(uml_content)
-
-        # Get all needed Jinja Helper Functions
-        jinja_utils = JinjaFunctions(app, fromdocname, parent_need_id)
-        # Make the helpers available during rendering
-        data = {"needs": all_needs, "uml": jinja_utils.uml, "flow": jinja_utils.flow, "filter": jinja_utils.filter}
-
-        if current_needuml["is_arch"]:
-            # Add jinja function import() only for needarch
-            data.update({"import": jinja_utils.imports})
-        else:
-            # Check if func import() used in needuml
-            if "{{import(" in current_needuml["content"]:
-                raise NeedumlException("Jinja function import is not supported for needuml.")
-
-        data.update(current_needuml["extra"])
-
-        uml_content = mem_template.render(**data, **app.config.needs_render_context)
-        # Add needuml specific content
-        puml_node["uml"] = "@startuml\n"
-
-        # Adding config
-        config = current_needuml["config"]
-        if config and len(config) >= 3:
-            # Remove all empty lines
-            config = "\n".join([line.strip() for line in config.split("\n") if line.strip()])
-            puml_node["uml"] += "\n' Config\n\n"
-            puml_node["uml"] += config
-            puml_node["uml"] += "\n\n"
-
-        puml_node["uml"] += f"\n{uml_content}"
-
-        puml_node["uml"] += "\n@enduml\n"
-
-        # Add calculated needuml content
-        current_needuml["content_calculated"] = puml_node["uml"]
-
         puml_node["incdir"] = os.path.dirname(current_needuml["docname"])
         puml_node["filename"] = os.path.split(current_needuml["docname"])[1]  # Needed for plantuml >= 0.9
 
@@ -291,15 +412,7 @@ def process_needuml(app, doctree, fromdocname):
             content.insert(0, title)
 
         if current_needuml["debug"]:
-            debug_container = nodes.container()
-            if isinstance(puml_node, nodes.figure):
-                data = puml_node.children[0]["uml"]
-            else:
-                data = puml_node["uml"]
-            data = "\n".join([html.escape(line) for line in data.split("\n")])
-            debug_para = nodes.raw("", f"<pre>{data}</pre>", format="html")
-            debug_container += debug_para
-            content += debug_container
+            content += get_debug_node_from_puml_node(puml_node)
 
         node.replace_self(content)
 

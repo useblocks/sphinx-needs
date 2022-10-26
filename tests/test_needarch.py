@@ -69,22 +69,24 @@ def test_doc_needarch_jinja_import(test_app):
 
 
 @pytest.mark.parametrize(
-    "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_needarch_jinja_func_import_negative_tests"}],
-    indirect=True,
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needarch_jinja_func_need"}], indirect=True
 )
-def test_doc_needarch_jinja_import_negative(test_app):
-    import subprocess
-
+def test_needarch_jinja_func_need(test_app):
     app = test_app
+    app.build()
+
+    all_needumls = app.env.needs_all_needumls
+    assert len(all_needumls) == 1
+
+    assert "{{flow(need().id)}}" in all_needumls["needarch-index-0"]["content"]
+
+    html = Path(app.outdir, "index.html").read_text(encoding="utf8")
+    assert "as INT_001 [[../index.html#INT_001]]" in html
+
+    import subprocess
 
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"
 
     out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
-
-    assert out.returncode == 1
-    assert (
-        "sphinx_needs.directives.needuml.NeedumlException: "
-        "Jinja function import is not supported for needuml." in out.stderr.decode("utf-8")
-    )
+    assert out.returncode == 0

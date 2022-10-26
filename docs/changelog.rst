@@ -30,6 +30,17 @@ Under development
   (`#692 <https://github.com/useblocks/sphinx-needs/issues/692>`_)
 * Improvement: Supported download ``needs.json`` for :ref:`needimport`.
   (`#715 <https://github.com/useblocks/sphinx-needs/issues/715>`_)
+* Bugfix: Fixed import() be included in needarch.
+  (`#730 <https://github.com/useblocks/sphinx-needs/issues/730>`_)
+* Bugfix: Needuml: uml() call circle leads to an exception :ref:`needarch_ex_loop`.
+  (`#731 <https://github.com/useblocks/sphinx-needs/issues/731>`_)
+* Improvement: needarch provide need() function to get "need data".
+  (`#732 <https://github.com/useblocks/sphinx-needs/issues/732>`_)
+* Improvement: needuml - flow() shall return plantuml text without newline.
+  (`#737 <https://github.com/useblocks/sphinx-needs/issues/737>`_)
+* Bugfix: Needuml used but "sphinxcontrib.plantuml" not installed leads to exception
+  (`#742 <https://github.com/useblocks/sphinx-needs/issues/742>`_)
+
 
 1.0.2
 -----
@@ -57,7 +68,7 @@ Released: 22.09.2022
 * Improvement: Renamed jinja function `need` to `flow` for :ref:`needuml`.
 * Improvement: Added directive :ref:`needarch`.
 * Improvement: Added configuration option :ref:`needs_ide_snippets_id` to support custom need ID for :ref:`ide` snippets.
-* Improvement: Provides jinja function :ref:`needarch_jinja_import` for :ref:`needarch` to execute :ref:`jinja_uml` 
+* Improvement: Provides jinja function :ref:`needarch_jinja_import` for :ref:`needarch` to execute :ref:`needuml_jinja_uml` 
   automatically for all the links defined in the need :ref:`need_links` options.
 * Improvement: Added configuration :ref:`needs_ide_directive_snippets` to support custom directive snippets for IDE features.
   (`#640 <https://github.com/useblocks/sphinx-needs/issues/640>`_)
