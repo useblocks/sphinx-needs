@@ -42,7 +42,7 @@ class TestSuiteDirective(TestCommonDirective):
 
         if nested:
             # access n-th nested suite here
-            self.results = self.results[0]["testsuites"]
+            self.results = self.results[0]["testsuite_nested"]
 
         suite_name = self.options.get("suite", None)
 
@@ -100,7 +100,7 @@ class TestSuiteDirective(TestCommonDirective):
         access_count = 0
         if len(suite_obj["testcases"]) == 0:
 
-            for suite in suite_obj["testsuites"]:
+            for suite in suite_obj["testsuite_nested"]:
 
                 suite_id = self.test_id
                 suite_id += (
@@ -157,7 +157,10 @@ class TestSuiteDirective(TestCommonDirective):
                     .upper()[:5]
                 )
 
-                options = self.options
+                # We need to copy self.options, otherwise it gets updated and sets same values
+                # for all testsuites.
+                options = self.options.copy()
+
                 options["case"] = case["name"]
                 options["classname"] = case["classname"]
                 options["id"] = case_id
@@ -182,7 +185,7 @@ class TestSuiteDirective(TestCommonDirective):
                     )
                 )
 
-                is_nested = len(suite_obj["testsuites"]) > 0 or nested
+                is_nested = len(suite_obj["testsuite_nested"]) > 0 or nested
 
                 # depending if nested or not, runs case directive to add content to testcases
                 # count is for correct suite access, if multiple present, case_count is for correct case access

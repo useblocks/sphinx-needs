@@ -6,6 +6,9 @@ Changelog
 :Released: under development
 
 
+* Bugfix: Multiple testsuites get documented correctly.
+  `#40 <https://github.com/useblocks/sphinx-test-reports/issues/40>`_
+
 1.0.0
 -----
 :Released: 26.09.2022

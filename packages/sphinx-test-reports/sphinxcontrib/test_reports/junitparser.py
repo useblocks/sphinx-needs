@@ -23,8 +23,6 @@ class JUnitParser:
 
         self.junit_xml_string = etree.tostring(self.junit_xml_doc)
         self.junit_xml_object = objectify.fromstring(self.junit_xml_string)
-        if self.junit_xml_object.tag == "testsuites":
-            self.junit_xml_object = self.junit_xml_object.testsuite
         self.junit_xml_string = str(self.junit_xml_string)
 
     def validate(self):
@@ -109,7 +107,7 @@ class JUnitParser:
                 "passed": passed,
                 "time": float(testsuite.attrib.get("time", -1)),
                 "testcases": [],
-                "testsuites": [],
+                "testsuite_nested": [],
             }
 
             # add nested testsuite objects to
@@ -118,7 +116,7 @@ class JUnitParser:
                 for ts in testsuite.testsuite:
                     # dict from inner parse
                     inner_testsuite = parse_testsuite(ts)
-                    ts_dict["testsuites"].append(inner_testsuite)
+                    ts_dict["testsuite_nested"].append(inner_testsuite)
 
             elif hasattr(testsuite, "testcase"):
 
@@ -131,8 +129,14 @@ class JUnitParser:
         # main flow starts here
 
         junit_dict = []
-        complete_testsuite = parse_testsuite(self.junit_xml_object)
-        junit_dict.append(complete_testsuite)
+
+        if self.junit_xml_object.tag == "testsuites":
+            for testsuite_xml_object in self.junit_xml_object.testsuite:
+                complete_testsuite = parse_testsuite(testsuite_xml_object)
+                junit_dict.append(complete_testsuite)
+        else:
+            complete_testsuite = parse_testsuite(self.junit_xml_object)
+            junit_dict.append(complete_testsuite)
 
         return junit_dict
 
