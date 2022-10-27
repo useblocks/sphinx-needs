@@ -60,6 +60,9 @@ def setup(app):
     )
     app.add_config_value("tr_report_template", template_dir, "html")
 
+    app.add_config_value("tr_suite_id_length", 3, "html")
+    app.add_config_value("tr_case_id_length", 5, "html")
+
     # nodes
     app.add_node(TestResults)
     app.add_node(TestFile)

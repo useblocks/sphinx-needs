@@ -22,8 +22,9 @@ with open(os.path.join(os.path.dirname(__file__), "README.rst")) as file:
         long_description=file.read(),
         zip_safe=False,
         classifiers=[
+            "Framework :: Sphinx",
+            "Framework :: Sphinx :: Extension",
             "Development Status :: 4 - Beta",
-            "Intended Audience :: Developers",
             "License :: OSI Approved :: MIT License",
             "Operating System :: OS Independent",
             "Programming Language :: Python",
@@ -34,7 +35,6 @@ with open(os.path.join(os.path.dirname(__file__), "README.rst")) as file:
             "Programming Language :: Python :: 3.9",
             "Programming Language :: Python :: 3.10",
             "Topic :: Documentation",
-            "Topic :: Utilities",
         ],
         platforms="any",
         packages=find_packages(),

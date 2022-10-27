@@ -5,7 +5,8 @@ Changelog
 -----
 :Released: under development
 
-
+* Enhancement: ID length can be configured to avoid conflicts. See :ref:`tr_suite_id_length` and :ref:`tr_case_id_length`.
+  `#45 <https://github.com/useblocks/sphinx-test-reports/issues/45>`_
 * Bugfix: Multiple testsuites get documented correctly.
   `#40 <https://github.com/useblocks/sphinx-test-reports/issues/40>`_
 

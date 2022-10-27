@@ -36,6 +36,7 @@ class TestFileDirective(TestCommonDirective):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.suite_ids = {}
 
     def run(self):
         self.prepare_basic_options()
@@ -102,8 +103,15 @@ class TestFileDirective(TestCommonDirective):
                     "_"
                     + hashlib.sha1(suite["name"].encode("UTF-8"))  # noqa: W503
                     .hexdigest()
-                    .upper()[:3]
+                    .upper()[: self.app.config.tr_suite_id_length]
                 )
+
+                if suite_id not in self.suite_ids:
+                    self.suite_ids[suite_id] = suite["name"]
+                else:
+                    raise Exception(
+                        f'Suite ID {suite_id} already exists by {self.suite_ids[suite_id]} ({suite["name"]})'
+                    )
 
                 options = self.options
                 options["suite"] = suite["name"]

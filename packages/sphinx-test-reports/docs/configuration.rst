@@ -79,3 +79,27 @@ tr_report_template
 
 .. literalinclude:: ./custom_test_report_template.txt
    :language: rst
+
+.. _tr_suite_id_length:
+
+tr_suite_id_length
+------------------
+.. versionadded:: 1.0.1
+
+Defines the length of the calculated ID for test suites.
+
+This may be needed, if a junit-xml files contains many test suites.
+
+Default: **3**
+
+.. _tr_case_id_length:
+
+tr_case_id_length
+------------------
+.. versionadded:: 1.0.1
+
+Defines the length of the calculated ID for test cases.
+
+This may be needed, if a junit-xml files contains many test cases.
+
+Default: **5**

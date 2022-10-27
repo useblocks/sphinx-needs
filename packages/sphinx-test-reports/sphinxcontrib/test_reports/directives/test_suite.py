@@ -35,6 +35,7 @@ class TestSuiteDirective(TestCommonDirective):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.case_ids = []
 
     def run(self, nested=False, count=-1):
         self.prepare_basic_options()
@@ -107,7 +108,7 @@ class TestSuiteDirective(TestCommonDirective):
                     "_"
                     + hashlib.sha1(suite["name"].encode("UTF-8"))  # noqa: W503
                     .hexdigest()
-                    .upper()[:3]
+                    .upper()[: self.app.config.tr_suite_id_length]
                 )
 
                 options = self.options
@@ -154,8 +155,13 @@ class TestSuiteDirective(TestCommonDirective):
                         case["classname"].encode("UTF-8") + case["name"].encode("UTF-8")
                     )
                     .hexdigest()
-                    .upper()[:5]
+                    .upper()[: self.app.config.tr_case_id_length]
                 )
+
+                if case_id not in self.case_ids:
+                    self.case_ids.append(case_id)
+                else:
+                    raise Exception(f"Case ID exists: {case_id}")
 
                 # We need to copy self.options, otherwise it gets updated and sets same values
                 # for all testsuites.

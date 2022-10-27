@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="63" failures="0" disabled="0" errors="0" timestamp="2022-10-21T14:47:39" time="0.002" name="AllTests">
+  <testsuite name="vfc_hash" tests="7" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testHashBoolAndEnum" status="run" time="0" classname="vfc_hash" />
+    <testcase name="TEST_UNIT_VFC_hash_testSerialHash" status="run" time="0" classname="vfc_hash" />
+    <testcase name="TEST_UNIT_VFC_hash_testSerialHashComplex" status="run" time="0" classname="vfc_hash" />
+    <testcase name="TEST_UNIT_VFC_hash_testSerialHashNested" status="run" time="0" classname="vfc_hash" />
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTCArray" status="run" time="0" classname="vfc_hash" />
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTSIUnit" status="run" time="0" classname="vfc_hash" />
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesRect" status="run" time="0" classname="vfc_hash" />
+  </testsuite>
+  <testsuite name="vfc_THash/0" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testHash" type_param="vfc_cppunit::THash&lt;int, 100l, 2l, 1000l, 3l, 0l, 0l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_THash/0" />
+  </testsuite>
+  <testsuite name="vfc_THash/1" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testHash" type_param="vfc_cppunit::THash&lt;short, 100l, 2l, 1000l, 3l, 0l, 0l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_THash/1" />
+  </testsuite>
+  <testsuite name="vfc_THash/2" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testHash" type_param="vfc_cppunit::THash&lt;unsigned short, 100l, 2l, 1000l, 3l, 0l, 0l, 100l, 2l, 1l, 31l&gt;" status="run" time="0" classname="vfc_THash/2" />
+  </testsuite>
+  <testsuite name="vfc_THash/3" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testHash" type_param="vfc_cppunit::THash&lt;unsigned int, 100l, 2l, 1000l, 3l, 0l, 0l, 100l, 2l, 1l, 31l&gt;" status="run" time="0" classname="vfc_THash/3" />
+  </testsuite>
+  <testsuite name="vfc_THash/4" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testHash" type_param="vfc_cppunit::THash&lt;long, 100l, 2l, 1000l, 3l, 0l, 0l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_THash/4" />
+  </testsuite>
+  <testsuite name="vfc_hash_Primitives/0" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testHashPrimitives" type_param="vfc_cppunit::hash_Primitives&lt;int, 85l, 2l, 1000l, 3l, 0l, 0l, 100l, 2l, 1l, 31l&gt;" status="run" time="0" classname="vfc_hash_Primitives/0" />
+  </testsuite>
+  <testsuite name="vfc_hash_Primitives/1" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testHashPrimitives" type_param="vfc_cppunit::hash_Primitives&lt;short, 85l, 2l, 1000l, 3l, 0l, 0l, 100l, 2l, 1l, 31l&gt;" status="run" time="0" classname="vfc_hash_Primitives/1" />
+  </testsuite>
+  <testsuite name="vfc_hash_Primitives/2" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testHashPrimitives" type_param="vfc_cppunit::hash_Primitives&lt;unsigned short, 85l, 2l, 1000l, 3l, 0l, 0l, 100l, 2l, 1l, 31l&gt;" status="run" time="0" classname="vfc_hash_Primitives/2" />
+  </testsuite>
+  <testsuite name="vfc_hash_Primitives/3" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testHashPrimitives" type_param="vfc_cppunit::hash_Primitives&lt;unsigned int, 85l, 2l, 1000l, 3l, 0l, 0l, 100l, 2l, 1l, 31l&gt;" status="run" time="0" classname="vfc_hash_Primitives/3" />
+  </testsuite>
+  <testsuite name="vfc_hash_Primitives/4" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testHashPrimitives" type_param="vfc_cppunit::hash_Primitives&lt;long, 85l, 2l, 1000l, 3l, 0l, 0l, 100l, 2l, 1l, 31l&gt;" status="run" time="0" classname="vfc_hash_Primitives/4" />
+  </testsuite>
+  <testsuite name="vfc_hash_Primitives/5" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testHashPrimitives" type_param="vfc_cppunit::hash_Primitives&lt;float, 85l, 2l, 1000l, 3l, 0l, 0l, 100l, 2l, 1l, 31l&gt;" status="run" time="0" classname="vfc_hash_Primitives/5" />
+  </testsuite>
+  <testsuite name="vfc_hash_Tuple/0" tests="1" failures="0" disabled="0" errors="0" time="0.001">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTuple" type_param="vfc_cppunit::hash_Tuple&lt;int, 5921370, 10855845, 5921370, 10855845&gt;" status="run" time="0.001" classname="vfc_hash_Tuple/0" />
+  </testsuite>
+  <testsuite name="vfc_hash_Tuple/1" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTuple" type_param="vfc_cppunit::hash_Tuple&lt;unsigned int, 5921370u, 10855845u, 5921370u, 10855845u&gt;" status="run" time="0" classname="vfc_hash_Tuple/1" />
+  </testsuite>
+  <testsuite name="vfc_hash_Tuple/2" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTuple" type_param="vfc_cppunit::hash_Tuple&lt;long, 5921370l, 10855845l, 5921370l, 10855845l&gt;" status="run" time="0" classname="vfc_hash_Tuple/2" />
+  </testsuite>
+  <testsuite name="vfc_hash_TFixed/0" tests="2" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTFixedVector" type_param="vfc_cppunit::hash_TFixed&lt;int, 5ul, -10l&gt;" status="run" time="0" classname="vfc_hash_TFixed/0" />
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTFixedList" type_param="vfc_cppunit::hash_TFixed&lt;int, 5ul, -10l&gt;" status="run" time="0" classname="vfc_hash_TFixed/0" />
+  </testsuite>
+  <testsuite name="vfc_hash_TFixed/1" tests="2" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTFixedVector" type_param="vfc_cppunit::hash_TFixed&lt;unsigned int, 15ul, 200l&gt;" status="run" time="0" classname="vfc_hash_TFixed/1" />
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTFixedList" type_param="vfc_cppunit::hash_TFixed&lt;unsigned int, 15ul, 200l&gt;" status="run" time="0" classname="vfc_hash_TFixed/1" />
+  </testsuite>
+  <testsuite name="vfc_hash_TFixed/2" tests="2" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTFixedVector" type_param="vfc_cppunit::hash_TFixed&lt;long, 5ul, -300l&gt;" status="run" time="0" classname="vfc_hash_TFixed/2" />
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTFixedList" type_param="vfc_cppunit::hash_TFixed&lt;long, 5ul, -300l&gt;" status="run" time="0" classname="vfc_hash_TFixed/2" />
+  </testsuite>
+  <testsuite name="vfc_hash_TFixed/3" tests="2" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTFixedVector" type_param="vfc_cppunit::hash_TFixed&lt;float, 25ul, 50l&gt;" status="run" time="0" classname="vfc_hash_TFixed/3" />
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTFixedList" type_param="vfc_cppunit::hash_TFixed&lt;float, 25ul, 50l&gt;" status="run" time="0" classname="vfc_hash_TFixed/3" />
+  </testsuite>
+  <testsuite name="vfc_hash_TFixedCircularBuffer/0" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTFixedCircularBuffer" type_param="vfc_cppunit::hash_TFixedCircularBuffer&lt;int, 100l, 2l, 1000l, 3l, 0l, 0l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TFixedCircularBuffer/0" />
+  </testsuite>
+  <testsuite name="vfc_hash_TFixedCircularBuffer/1" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTFixedCircularBuffer" type_param="vfc_cppunit::hash_TFixedCircularBuffer&lt;short, 100l, 2l, 1000l, 3l, 0l, 0l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TFixedCircularBuffer/1" />
+  </testsuite>
+  <testsuite name="vfc_hash_TFixedCircularBuffer/2" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTFixedCircularBuffer" type_param="vfc_cppunit::hash_TFixedCircularBuffer&lt;unsigned short, 100l, 2l, 1000l, 3l, 0l, 0l, 100l, 2l, 1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TFixedCircularBuffer/2" />
+  </testsuite>
+  <testsuite name="vfc_hash_TFixedCircularBuffer/3" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTFixedCircularBuffer" type_param="vfc_cppunit::hash_TFixedCircularBuffer&lt;unsigned int, 100l, 2l, 1000l, 3l, 0l, 0l, 100l, 2l, 1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TFixedCircularBuffer/3" />
+  </testsuite>
+  <testsuite name="vfc_hash_TFixedCircularBuffer/4" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTFixedCircularBuffer" type_param="vfc_cppunit::hash_TFixedCircularBuffer&lt;long, 100l, 2l, 1000l, 3l, 0l, 0l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TFixedCircularBuffer/4" />
+  </testsuite>
+  <testsuite name="vfc_hash_TFixedCircularBuffer/5" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTFixedCircularBuffer" type_param="vfc_cppunit::hash_TFixedCircularBuffer&lt;float, 100l, 2l, 1000l, 3l, 0l, 0l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TFixedCircularBuffer/5" />
+  </testsuite>
+  <testsuite name="vfc_hash_TFixedMap/0" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="testVfcComplexTypesTFixedMap" type_param="vfc_cppunit::hash_TFixedMap&lt;int, int, 101l, 21l, 1000l, 3l, 0l, 50l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TFixedMap/0" />
+  </testsuite>
+  <testsuite name="vfc_hash_TFixedMap/1" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="testVfcComplexTypesTFixedMap" type_param="vfc_cppunit::hash_TFixedMap&lt;short, int, 101l, 21l, 1000l, 3l, 0l, 50l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TFixedMap/1" />
+  </testsuite>
+  <testsuite name="vfc_hash_TFixedMap/2" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="testVfcComplexTypesTFixedMap" type_param="vfc_cppunit::hash_TFixedMap&lt;unsigned int, int, 101l, 21l, 1000l, 3l, 0l, 50l, 100l, 2l, 1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TFixedMap/2" />
+  </testsuite>
+  <testsuite name="vfc_hash_TFixedMap/3" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="testVfcComplexTypesTFixedMap" type_param="vfc_cppunit::hash_TFixedMap&lt;unsigned int, short, 101l, 21l, 1000l, 3l, 0l, 50l, 100l, 2l, 1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TFixedMap/3" />
+  </testsuite>
+  <testsuite name="vfc_hash_TFixedMap/4" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="testVfcComplexTypesTFixedMap" type_param="vfc_cppunit::hash_TFixedMap&lt;long, int, 101l, 21l, 1000l, 3l, 0l, 50l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TFixedMap/4" />
+  </testsuite>
+  <testsuite name="vfc_hash_TFixedMap/5" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="testVfcComplexTypesTFixedMap" type_param="vfc_cppunit::hash_TFixedMap&lt;int, short, 101l, 21l, 1000l, 3l, 0l, 50l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TFixedMap/5" />
+  </testsuite>
+  <testsuite name="vfc_hash_TFixedMap/6" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="testVfcComplexTypesTFixedMap" type_param="vfc_cppunit::hash_TFixedMap&lt;short, int, 101l, 21l, 1000l, 3l, 0l, 50l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TFixedMap/6" />
+  </testsuite>
+  <testsuite name="vfc_hash_TFixedMap/7" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="testVfcComplexTypesTFixedMap" type_param="vfc_cppunit::hash_TFixedMap&lt;unsigned int, unsigned short, 101l, 21l, 1000l, 3l, 0l, 50l, 100l, 2l, 1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TFixedMap/7" />
+  </testsuite>
+  <testsuite name="vfc_hash_TFixedMap/8" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="testVfcComplexTypesTFixedMap" type_param="vfc_cppunit::hash_TFixedMap&lt;long, long, 101l, 21l, 1000l, 3l, 0l, 50l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TFixedMap/8" />
+  </testsuite>
+  <testsuite name="vfc_hash_TFixedMap/9" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="testVfcComplexTypesTFixedMap" type_param="vfc_cppunit::hash_TFixedMap&lt;int, float, 101l, 21l, 1000l, 3l, 0l, 50l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TFixedMap/9" />
+  </testsuite>
+  <testsuite name="vfc_hash_TVectorN/0" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTVectorN" type_param="vfc_cppunit::hash_TVectorN&lt;int, 1l, 7l, 100l, 2l, 1000l, 3l, 0l, 0l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TVectorN/0" />
+  </testsuite>
+  <testsuite name="vfc_hash_TVectorN/1" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTVectorN" type_param="vfc_cppunit::hash_TVectorN&lt;unsigned int, 1l, 6l, 100l, 2l, 1000l, 3l, 0l, 0l, 100l, 2l, 1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TVectorN/1" />
+  </testsuite>
+  <testsuite name="vfc_hash_TVectorN/2" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTVectorN" type_param="vfc_cppunit::hash_TVectorN&lt;long, 1l, 7l, 100l, 2l, 1000l, 3l, 0l, 0l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TVectorN/2" />
+  </testsuite>
+  <testsuite name="vfc_hash_TVectorN/3" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTVectorN" type_param="vfc_cppunit::hash_TVectorN&lt;float, 10l, 3l, 100l, 2l, 1000l, 3l, 0l, 0l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TVectorN/3" />
+  </testsuite>
+  <testsuite name="vfc_hash_TVector234/0" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTVector234" type_param="vfc_cppunit::hash_TVector234&lt;int, 1l, 100l, 2l, 1000l, 3l, 0l, 0l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TVector234/0" />
+  </testsuite>
+  <testsuite name="vfc_hash_TVector234/1" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTVector234" type_param="vfc_cppunit::hash_TVector234&lt;unsigned int, 1l, 100l, 2l, 1000l, 3l, 0l, 0l, 100l, 2l, 1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TVector234/1" />
+  </testsuite>
+  <testsuite name="vfc_hash_TVector234/2" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTVector234" type_param="vfc_cppunit::hash_TVector234&lt;long, 1l, 100l, 2l, 1000l, 3l, 0l, 0l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TVector234/2" />
+  </testsuite>
+  <testsuite name="vfc_hash_TVector234/3" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTVector234" type_param="vfc_cppunit::hash_TVector234&lt;float, 10l, 100l, 2l, 1000l, 3l, 0l, 0l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TVector234/3" />
+  </testsuite>
+  <testsuite name="vfc_hash_TMatrixMN/0" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTMatrixMN" type_param="vfc_cppunit::hash_TMatrixMN&lt;int, 1l, 7l, 5l, 100l, 2l, 1000l, 3l, 0l, 0l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TMatrixMN/0" />
+  </testsuite>
+  <testsuite name="vfc_hash_TMatrixMN/1" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTMatrixMN" type_param="vfc_cppunit::hash_TMatrixMN&lt;short, 1l, 7l, 5l, 100l, 2l, 1000l, 3l, 0l, 0l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TMatrixMN/1" />
+  </testsuite>
+  <testsuite name="vfc_hash_TMatrixMN/2" tests="1" failures="0" disabled="0" errors="0" time="0.001">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTMatrixMN" type_param="vfc_cppunit::hash_TMatrixMN&lt;unsigned short, 1l, 7l, 5l, 100l, 2l, 1000l, 3l, 0l, 0l, 100l, 2l, 1l, 31l&gt;" status="run" time="0.001" classname="vfc_hash_TMatrixMN/2" />
+  </testsuite>
+  <testsuite name="vfc_hash_TMatrixMN/3" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTMatrixMN" type_param="vfc_cppunit::hash_TMatrixMN&lt;unsigned int, 1l, 7l, 5l, 100l, 2l, 1000l, 3l, 0l, 0l, 100l, 2l, 1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TMatrixMN/3" />
+  </testsuite>
+  <testsuite name="vfc_hash_TMatrixMN/4" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTMatrixMN" type_param="vfc_cppunit::hash_TMatrixMN&lt;long, 1l, 7l, 5l, 100l, 2l, 1000l, 3l, 0l, 0l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TMatrixMN/4" />
+  </testsuite>
+  <testsuite name="vfc_hash_TMatrixMN/5" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTMatrixMN" type_param="vfc_cppunit::hash_TMatrixMN&lt;float, 10l, 7l, 5l, 100l, 2l, 1000l, 3l, 0l, 0l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TMatrixMN/5" />
+  </testsuite>
+  <testsuite name="vfc_hash_TMatrix234/0" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTMatrix234" type_param="vfc_cppunit::hash_TMatrix234&lt;int, 1l, 100l, 2l, 1000l, 3l, 0l, 0l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TMatrix234/0" />
+  </testsuite>
+  <testsuite name="vfc_hash_TMatrix234/1" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTMatrix234" type_param="vfc_cppunit::hash_TMatrix234&lt;unsigned int, 1l, 100l, 2l, 1000l, 3l, 0l, 0l, 100l, 2l, 1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TMatrix234/1" />
+  </testsuite>
+  <testsuite name="vfc_hash_TMatrix234/2" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTMatrix234" type_param="vfc_cppunit::hash_TMatrix234&lt;long, 1l, 100l, 2l, 1000l, 3l, 0l, 0l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TMatrix234/2" />
+  </testsuite>
+  <testsuite name="vfc_hash_TMatrix234/3" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="TEST_UNIT_VFC_hash_testVfcComplexTypesTMatrix234" type_param="vfc_cppunit::hash_TMatrix234&lt;float, 10l, 100l, 2l, 1000l, 3l, 0l, 0l, -100l, 2l, -1l, 31l&gt;" status="run" time="0" classname="vfc_hash_TMatrix234/3" />
+  </testsuite>
+</testsuites>
