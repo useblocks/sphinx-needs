@@ -2101,16 +2101,21 @@ Configuration example:
     def custom_defined_func():
         return "my_tag"
 
+    def sum_example(number_1, number_2):
+        return number_1 + number_2
+
     needs_render_context = {
         "custom_data_1": "Project_X",
         "custom_data_2": custom_defined_func(),
         "custom_data_3": True,
-        "custom_data_4": [("Daniel", 811982), ("Marco", 234232)]
+        "custom_data_4": [("Daniel", 811982), ("Marco", 234232)],
+        "sum_example": sum_example
     }
 
 The``needs_render_context`` configuration option must be a dictionary.
 The dictionary consists of key-value pairs where the key is a string used as reference to the value.
-The value can be any data type (string, integer, list, dict, etc.) or a custom defined function which returns a string.
+The value can be any data type (string, integer, list, dict, etc.) or a custom defined function, which return
+value is used or the function itself can be used (see ``sum_example``).
 
 The data passed via needs_render_context will be available as variable(s) when rendering Jinja templates or strings.
 You can use the data passed via needs_render_context as shown below:
@@ -2126,6 +2131,8 @@ You can use the data passed via needs_render_context as shown below:
        :jinja_content: true
 
        Need with alias {{ custom_data_1 }} and ``jinja_content`` option set to {{ custom_data_3 }}.
+
+       4 + 5 = {{ sum_example(4,5) }}
 
        {{ custom_data_2 }}
        {% for author in custom_data_4 %}
