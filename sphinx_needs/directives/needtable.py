@@ -174,7 +174,7 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str) -
         if style != "TABLE":
             classes.extend(app.config.needs_table_classes)
 
-        table_node = nodes.table(classes=classes)
+        table_node = nodes.table(classes=classes, ids=[id + "-table_node"])
         tgroup = nodes.tgroup(cols=len(current_needtable["columns"]))
 
         # Define Table column width
