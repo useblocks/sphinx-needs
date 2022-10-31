@@ -19,6 +19,9 @@ from sphinx_needs.utils import unwrap
 logger = get_logger(__name__)
 
 
+NEEDFLOW_TEMPLATES = {}
+
+
 class Needflow(nodes.General, nodes.Element):
     pass
 
@@ -130,7 +133,8 @@ def get_need_node_rep_for_plantuml(
 ) -> str:
     """Calculate need node representation for plantuml."""
 
-    diagram_template = Template(app.config.needs_diagram_template)
+    diagram_template = get_template(app.config.needs_diagram_template)
+
     node_text = diagram_template.render(**need_info, **app.config.needs_render_context)
 
     node_link = calculate_link(app, need_info, fromdocname)
@@ -466,3 +470,12 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
             content += debug_container
 
         node.replace_self(content)
+
+
+def get_template(template_name):
+    """Checks if a template got already rendered, if it's the case, return it"""
+
+    if template_name not in NEEDFLOW_TEMPLATES.keys():
+        NEEDFLOW_TEMPLATES[template_name] = Template(template_name)
+
+    return NEEDFLOW_TEMPLATES[template_name]
