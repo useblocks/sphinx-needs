@@ -40,7 +40,8 @@ Under development
   (`#737 <https://github.com/useblocks/sphinx-needs/issues/737>`_)
 * Bugfix: Needuml used but "sphinxcontrib.plantuml" not installed leads to exception
   (`#742 <https://github.com/useblocks/sphinx-needs/issues/742>`_)
-
+* Improvement: better documentation of mixing orientation and coloring in needs_extra_links
+  (`#764 <https://github.com/useblocks/sphinx-needs/issues/764>`_)
 
 1.0.2
 -----

@@ -458,9 +458,18 @@ Use ``style_start`` and ``style_end`` like this:
          "outgoing": "tests",
          "copy": False,
          "style_start": "<-",
-         "style_end": "-->",
+         "style_end": "down-->",
+         "style": "#00AA00",
+         "style_part": "dotted,#00AA00",
       }
    ]
+
+.. note::
+
+   Some plantuml diagrams have restrictions in the order of color (`style`)
+   and orientation (`left`, `rigth`, `up` and `down`). We suggest to set the orientation
+   in `style_end` like in the example above, as this is mor eoften supported.
+
 
 .. _needs_filter_data:
 
