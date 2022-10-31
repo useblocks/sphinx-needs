@@ -13,7 +13,7 @@ def test_doc_build_html(test_app):
     warning = app._warning
     warnings = warning.getvalue()
     # We want to get a warning free build
-    assert 'WARNING:' not in warnings
+    assert "WARNING:" not in warnings
 
     html = Path(app.outdir, "index.html").read_text()
     assert "SP_TOO_001" in html
