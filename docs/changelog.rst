@@ -40,6 +40,8 @@ Under development
   (`#737 <https://github.com/useblocks/sphinx-needs/issues/737>`_)
 * Bugfix: Needuml used but "sphinxcontrib.plantuml" not installed leads to exception
   (`#742 <https://github.com/useblocks/sphinx-needs/issues/742>`_)
+* Bugfix: Needarch: Fixed import() function to work with new implemented flow() (#737).
+  (`#752 <https://github.com/useblocks/sphinx-needs/issues/752>`_)
 
 
 1.0.2
