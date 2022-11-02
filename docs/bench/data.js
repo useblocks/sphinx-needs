@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1666944975222,
+  "lastUpdate": 1667376196820,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -648,6 +648,42 @@ window.BENCHMARK_DATA = {
             "value": 88.13596783399998,
             "unit": "s",
             "extra": "Commit: 5d8b1dfab8eb6c0a80c027cd53327318ba9dfc68\nBranch: master\nTime: 2022-10-28T10:08:25+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "philip.partsch@googlemail.com",
+            "name": "PhilipPartsch",
+            "username": "PhilipPartsch"
+          },
+          "committer": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "distinct": true,
+          "id": "d75ca9f3a252f15819590282609cbcd833249d41",
+          "message": "fix import function to work with new flow function",
+          "timestamp": "2022-11-02T08:55:13+01:00",
+          "tree_id": "ad3acacce5bff71e71a4eeb533c274738128c106",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/d75ca9f3a252f15819590282609cbcd833249d41"
+        },
+        "date": 1667376192943,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.3233771490000663,
+            "unit": "s",
+            "extra": "Commit: d75ca9f3a252f15819590282609cbcd833249d41\nBranch: master\nTime: 2022-11-02T08:55:13+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 91.19375203899995,
+            "unit": "s",
+            "extra": "Commit: d75ca9f3a252f15819590282609cbcd833249d41\nBranch: master\nTime: 2022-11-02T08:55:13+01:00"
           }
         ]
       }
