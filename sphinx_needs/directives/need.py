@@ -396,6 +396,9 @@ def check_links(env: BuildEnvironment) -> None:
     :param env: Sphinx environment
     :return:
     """
+    if env.needs_workflow["links_checked"]:
+        return
+
     needs = env.needs_all_needs
     extra_links = getattr(env.config, "needs_extra_links", [])
     for need in needs.values():
@@ -417,6 +420,9 @@ def check_links(env: BuildEnvironment) -> None:
                     if not dead_links_allowed:
                         need["has_forbidden_dead_links"] = True
                     break  # One found dead link is enough
+
+    # Finally set a flag so that this function gets not executed several times
+    env.needs_workflow["links_checked"] = True
 
 
 def create_back_links(env: BuildEnvironment, option) -> None:

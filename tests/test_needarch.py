@@ -51,7 +51,7 @@ def test_doc_needarch_jinja_import(test_app):
     assert need_arch["content_calculated"]
     assert "@startuml\n\nAlice -> Bob: Hi Bob\n" in need_arch["content_calculated"]
     assert (
-        'node "<size:12>User Story</size>\\n**Story**\\n<size:10>US_001</size>" as US_001'
+        'node "<size:12>User Story</size>\\n**Story**\\n<size:10>US_001</size>" as US_001 [[../index.html#US_001]] #BFD8D2\n'
         in need_arch["content_calculated"]
     )
     assert (

@@ -12,6 +12,10 @@ License
 -----
 Under development
 
+* Improvement: Performance fix needs processing.
+(`#756 <https://github.com/useblocks/sphinx-needs/issues/756>`_)
+* Improvement: Performance fix for needflow.
+(`#760 <https://github.com/useblocks/sphinx-needs/issues/760>`_)
 * Improvement: Fixed rendering issue with the debug layout.
   (`#721 <https://github.com/useblocks/sphinx-needs/issues/721>`_)
 * Improvement: Added :ref:`needs_show_link_id`.
@@ -42,6 +46,8 @@ Under development
   (`#742 <https://github.com/useblocks/sphinx-needs/issues/742>`_)
 * Improvement: better documentation of mixing orientation and coloring in needs_extra_links
   (`#764 <https://github.com/useblocks/sphinx-needs/issues/764>`_)
+* Bugfix: Needarch: Fixed import() function to work with new implemented flow() (#737).
+  (`#752 <https://github.com/useblocks/sphinx-needs/issues/752>`_)
 
 1.0.2
 -----

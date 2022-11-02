@@ -341,7 +341,10 @@ class JinjaFunctions:
         umls = ""
         if uml_ids:
             for uml_id in uml_ids:
-                umls += self.uml_from_need(uml_id)
+                local_uml_from_need = self.uml_from_need(uml_id)
+                if not local_uml_from_need.endswith("\n"):
+                    local_uml_from_need += "\n"
+                umls += local_uml_from_need
         return umls
 
     def need(self):
