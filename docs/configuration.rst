@@ -468,7 +468,7 @@ Use ``style_start`` and ``style_end`` like this:
 
    Some plantuml diagrams have restrictions in the order of color (`style`)
    and orientation (`left`, `rigth`, `up` and `down`). We suggest to set the orientation
-   in `style_end` like in the example above, as this is mor eoften supported.
+   in `style_end` like in the example above, as this is more often supported.
 
 
 .. _needs_filter_data:
