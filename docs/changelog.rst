@@ -45,7 +45,6 @@ Under development
 * Bugfix: Needtable: generate id for nodes.table
   (`#434 <https://github.com/useblocks/sphinx-needs/issues/434>`_)
 
-
 1.0.2
 -----
 Released: 22.09.2022
