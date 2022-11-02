@@ -15,7 +15,6 @@ TEST_DEPENDENCIES = [
     "pytest",
     "pytest-xdist",
     "pytest_lsp",
-    "pytest-benchmark",
     "myst-parser",
     "responses",
     "lxml",
@@ -23,7 +22,11 @@ TEST_DEPENDENCIES = [
     "requests-mock",
 ]
 
-BENCHMARK_DEPENDENCIES = ["memray"]
+# Some pytest-extension do not work well with pytest-benchmark, so we create our
+# own list for benchmarking
+BENCHMARK_DEPENDENCIES = [e for e in TEST_DEPENDENCIES if e not in ['"pytest-xdist"']]
+BENCHMARK_DEPENDENCIES.append("memray")
+BENCHMARK_DEPENDENCIES.append("pytest-benchmark")
 
 
 def is_supported(python: str, sphinx: str, docutils: str) -> bool:
@@ -65,7 +68,6 @@ def linkcheck(session):
 @session(python="3.10")
 def benchmark_time(session):
     session.install(".")
-    session.install(*TEST_DEPENDENCIES)
     session.install(*BENCHMARK_DEPENDENCIES)
     session.run("pip", "install", "-r", "docs/requirements.txt", silent=True)
     session.run(
@@ -83,7 +85,6 @@ def benchmark_time(session):
 @session(python="3.10")
 def benchmark_memory(session):
     session.install(".")
-    session.install(*TEST_DEPENDENCIES)
     session.install(*BENCHMARK_DEPENDENCIES)
     session.run("pip", "install", "-r", "docs/requirements.txt", silent=True)
     session.run(
