@@ -4,6 +4,8 @@ Provide the role ``need_count``, which output is the amount of needs found by a 
 Based on https://github.com/useblocks/sphinxcontrib-needs/issues/37
 """
 
+from typing import List
+
 from docutils import nodes
 from sphinx.application import Sphinx
 
@@ -20,7 +22,7 @@ class NeedCount(nodes.Inline, nodes.Element):  # type: ignore
 
 
 def process_need_count(
-    app: Sphinx, doctree: nodes.document, _fromdocname: str, found_nodes: list[nodes.Element]
+    app: Sphinx, doctree: nodes.document, _fromdocname: str, found_nodes: List[nodes.Element]
 ) -> None:
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
