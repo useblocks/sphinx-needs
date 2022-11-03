@@ -623,6 +623,7 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
             "backlink_creation_links": False,
             "dynamic_values_resolved": False,
             "links_checked": False,
+            "add_sections": False,
             "variant_option_resolved": False,
             "needs_extended": False,
         }

@@ -280,6 +280,9 @@ def add_sections(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
 
+    if env.needs_workflow["add_sections"]:
+        return
+
     needs = getattr(env, "needs_all_needs", {})
     for need_info in needs.values():
         # first we initialize to default values
@@ -312,6 +315,9 @@ def add_sections(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None
         if parent_needs:
             need_info["parent_needs"] = parent_needs
             need_info["parent_need"] = parent_needs[0]
+
+    # Finally set a flag so that this function gets not executed several times
+    env.needs_workflow["add_sections"] = True
 
 
 @profile("NEED_PROCESS")
