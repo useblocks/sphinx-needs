@@ -209,7 +209,7 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str, f
 
         # Perform filtering of needs
         try:
-            found_needs = process_filters(app, all_needs, current_needtable)
+            filtered_needs = process_filters(app, all_needs, current_needtable)
         except Exception as e:
             raise e
 
@@ -234,9 +234,9 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str, f
 
             return sort
 
-        found_needs.sort(key=get_sorter(current_needtable["sort"]))
+        filtered_needs.sort(key=get_sorter(current_needtable["sort"]))
 
-        for need_info in found_needs:
+        for need_info in filtered_needs:
             style_row = check_and_get_content(current_needtable["style_row"], need_info, env)
             style_row = style_row.replace(" ", "_")  # Replace whitespaces with _ to get valid css name
 
@@ -330,7 +330,7 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str, f
 
                     tbody += row
 
-        if len(found_needs) == 0:
+        if len(filtered_needs) == 0:
             table_node.append(no_needs_found_paragraph())
 
         # add filter information to output
