@@ -24,7 +24,7 @@ class NeedPart(nodes.Inline, nodes.Element):
     pass
 
 
-def process_need_part(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
+def process_need_part(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list) -> None:
     pass
 
 

@@ -15,7 +15,7 @@ from sphinx.application import Sphinx
 
 from sphinx_needs.diagrams_common import create_legend
 from sphinx_needs.filter_common import FilterBase, process_filters
-from sphinx_needs.utils import row_col_maker, unwrap
+from sphinx_needs.utils import add_doc, row_col_maker, unwrap
 
 
 class Needfilter(nodes.General, nodes.Element):
@@ -73,17 +73,20 @@ class NeedfilterDirective(FilterBase):
         }
         env.need_all_needfilters[targetid].update(self.collect_filter_attributes())
 
+        add_doc(env, env.docname)
+
         return [targetnode, Needfilter("")]
 
 
-def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
+def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list) -> None:
     # Replace all needlist nodes with a list of the collected needs.
     # Augment each need with a backlink to the original location.
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
 
     # NEEDFILTER
-    for node in doctree.findall(Needfilter):
+    # for node in doctree.findall(Needfilter):
+    for node in found_nodes:
         if not app.config.needs_include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.

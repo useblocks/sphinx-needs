@@ -11,7 +11,7 @@ from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.filter_common import filter_needs
-from sphinx_needs.utils import unwrap
+from sphinx_needs.utils import add_doc, unwrap
 
 
 class Needextend(nodes.General, nodes.Element):
@@ -55,6 +55,8 @@ class NeedextendDirective(Directive):
             "filter": self.arguments[0] if self.arguments else None,
             "modifications": self.options,
         }
+
+        add_doc(env, env.docname)
 
         return [targetnode, Needextend("")]
 

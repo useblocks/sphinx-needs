@@ -16,7 +16,7 @@ from sphinx_needs.directives.utils import (
 )
 from sphinx_needs.filter_common import FilterBase, process_filters
 from sphinx_needs.layout import create_need
-from sphinx_needs.utils import unwrap
+from sphinx_needs.utils import add_doc, unwrap
 
 
 class Needextract(nodes.General, nodes.Element):
@@ -67,16 +67,19 @@ class NeedextractDirective(FilterBase):
         }
         env.need_all_needextracts[targetid].update(self.collect_filter_attributes())
 
+        add_doc(env, env.docname)
+
         return [targetnode, Needextract("")]
 
 
-def process_needextract(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
+def process_needextract(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list) -> None:
     """
     Replace all needextract nodes with a list of the collected needs.
     """
     env = unwrap(app.env)
 
-    for node in doctree.findall(Needextract):
+    # for node in doctree.findall(Needextract):
+    for node in found_nodes:
         if not app.config.needs_include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.

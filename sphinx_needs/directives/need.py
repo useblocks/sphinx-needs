@@ -15,6 +15,7 @@ from sphinx_needs.api import add_need
 from sphinx_needs.api.exceptions import NeedsInvalidException
 from sphinx_needs.config import NEEDS_CONFIG
 from sphinx_needs.defaults import NEED_DEFAULT_OPTIONS
+from sphinx_needs.directives.needextend import process_needextend
 from sphinx_needs.functions import (
     find_and_replace_node_content,
     resolve_dynamic_values,
@@ -25,7 +26,7 @@ from sphinx_needs.layout import build_need
 from sphinx_needs.logging import get_logger
 from sphinx_needs.need_constraints import process_constraints
 from sphinx_needs.nodes import Need
-from sphinx_needs.utils import profile, unwrap
+from sphinx_needs.utils import add_doc, profile, unwrap
 
 logger = get_logger(__name__)
 
@@ -142,6 +143,7 @@ class NeedDirective(SphinxDirective):
             jinja_content=jinja_content,
             **need_extra_options,
         )
+        add_doc(env, self.docname)
         return need_nodes
 
     def read_in_links(self, name: str) -> List[str]:
@@ -356,15 +358,23 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     """
     needs = env.needs_all_needs
 
+    # Used to store needs in the docs, which are needed again later
+    found_needs_nodes = []
     for node_need in doctree.findall(Need):
         need_id = node_need.attributes["ids"][0]
+        found_needs_nodes.append(node_need)
         need_data = needs[need_id]
 
         process_constraints(app, need_data)
 
+    # We call process_needextend here by our own, so that we are able
+    # to give print_need_nodes the already found need_nodes.
+    process_needextend(app, doctree, fromdocname)
+    print_need_nodes(app, doctree, fromdocname, found_needs_nodes)
+
 
 @profile("NEED_PRINT")
-def print_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
+def print_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str, found_needs_nodes: list) -> None:
     """
     Finally creates the need-node in the docutils node-tree.
 
@@ -377,7 +387,9 @@ def print_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
     env = unwrap(builder.env)
     needs = env.needs_all_needs
 
-    for node_need in doctree.findall(Need):
+    # We try to avoid findall as much as possibles. so we reuse the already found need nodes in the current document.
+    # for node_need in doctree.findall(Need):
+    for node_need in found_needs_nodes:
         need_id = node_need.attributes["ids"][0]
         need_data = needs[need_id]
 

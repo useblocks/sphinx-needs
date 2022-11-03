@@ -19,7 +19,7 @@ from sphinx_needs.diagrams_common import (
 from sphinx_needs.directives.utils import get_link_type_option
 from sphinx_needs.filter_common import FilterBase, filter_single_need, process_filters
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import MONTH_NAMES
+from sphinx_needs.utils import MONTH_NAMES, add_doc
 
 logger = get_logger(__name__)
 
@@ -111,10 +111,12 @@ class NeedganttDirective(FilterBase, DiagramBase):
         # Data for diagrams
         env.need_all_needgantts[targetid].update(self.collect_diagram_attributes())
 
+        add_doc(env, env.docname)
+
         return [targetnode] + [Needgantt("")]
 
 
-def process_needgantt(app, doctree, fromdocname):
+def process_needgantt(app, doctree, fromdocname, found_nodes):
     # Replace all needgantt nodes with a list of the collected needs.
     env = app.builder.env
 
@@ -122,7 +124,8 @@ def process_needgantt(app, doctree, fromdocname):
     # allowed_link_types_options = [link.upper() for link in env.config.needs_flow_link_types]
 
     # NEEDGANTT
-    for node in doctree.findall(Needgantt):
+    # for node in doctree.findall(Needgantt):
+    for node in found_nodes:
         if not app.config.needs_include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.

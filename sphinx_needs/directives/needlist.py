@@ -13,7 +13,7 @@ from sphinx_needs.directives.utils import (
     used_filter_paragraph,
 )
 from sphinx_needs.filter_common import FilterBase, process_filters
-from sphinx_needs.utils import check_and_calc_base_url_rel_path, unwrap
+from sphinx_needs.utils import add_doc, check_and_calc_base_url_rel_path, unwrap
 
 
 class Needlist(nodes.General, nodes.Element):
@@ -59,10 +59,12 @@ class NeedlistDirective(FilterBase):
         }
         env.need_all_needlists[targetid].update(self.collect_filter_attributes())
 
+        add_doc(env, env.docname)
+
         return [targetnode, Needlist("")]
 
 
-def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
+def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list) -> None:
     """
     Replace all needlist nodes with a list of the collected needs.
     Augment each need with a backlink to the original location.
@@ -70,7 +72,8 @@ def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
 
-    for node in doctree.findall(Needlist):
+    # for node in doctree.findall(Needlist):
+    for node in found_nodes:
         if not app.config.needs_include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
