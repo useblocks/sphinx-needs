@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1667387932307,
+  "lastUpdate": 1667491364847,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -756,6 +756,42 @@ window.BENCHMARK_DATA = {
             "value": 92.56462313899999,
             "unit": "s",
             "extra": "Commit: cf78b52013dd542e2dcd2385fa5b1efd2c236d75\nBranch: master\nTime: 2022-11-02T12:11:05+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "311b9dce76404dbc23f085787adafaca8fe2ab97",
+          "message": "Better findall / doctree-resolved handling (#772)\n\n* Better findall / doctree-resolved handling\r\n\r\nPerformance fix, provides ~5-15% less build time.\r\n\r\nFixes #751\r\n\r\n* Using typings for python3.8",
+          "timestamp": "2022-11-03T16:55:44+01:00",
+          "tree_id": "901b63a47b29c14a90f3245ae052da33eb7ab3db",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/311b9dce76404dbc23f085787adafaca8fe2ab97"
+        },
+        "date": 1667491360920,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2878876429999764,
+            "unit": "s",
+            "extra": "Commit: 311b9dce76404dbc23f085787adafaca8fe2ab97\nBranch: master\nTime: 2022-11-03T16:55:44+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 79.644659671,
+            "unit": "s",
+            "extra": "Commit: 311b9dce76404dbc23f085787adafaca8fe2ab97\nBranch: master\nTime: 2022-11-03T16:55:44+01:00"
           }
         ]
       }
