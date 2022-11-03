@@ -12,6 +12,10 @@ License
 -----
 Under development
 
+* Improvement: Performance fix needs processing.
+(`#756 <https://github.com/useblocks/sphinx-needs/issues/756>`_)
+* Improvement: Performance fix for needflow.
+(`#760 <https://github.com/useblocks/sphinx-needs/issues/760>`_)
 * Improvement: Fixed rendering issue with the debug layout.
   (`#721 <https://github.com/useblocks/sphinx-needs/issues/721>`_)
 * Improvement: Added :ref:`needs_show_link_id`.

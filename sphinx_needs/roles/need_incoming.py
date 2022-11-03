@@ -10,11 +10,12 @@ class NeedIncoming(nodes.Inline, nodes.Element):
     pass
 
 
-def process_need_incoming(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
+def process_need_incoming(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list) -> None:
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
 
-    for node_need_backref in doctree.findall(NeedIncoming):
+    # for node_need_backref in doctree.findall(NeedIncoming):
+    for node_need_backref in found_nodes:
         node_link_container = nodes.inline()
         ref_need = env.needs_all_needs[node_need_backref["reftarget"]]
 

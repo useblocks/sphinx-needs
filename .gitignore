@@ -31,3 +31,5 @@ need_bar_*.png
 need_pie_*.png
 output.json
 mem_out.*
+
+pyinstrument*

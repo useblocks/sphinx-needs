@@ -14,7 +14,7 @@ from sphinxcontrib.plantuml import (
 from sphinx_needs.diagrams_common import calculate_link, create_legend
 from sphinx_needs.filter_common import FilterBase, filter_single_need, process_filters
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import unwrap
+from sphinx_needs.utils import add_doc, unwrap
 
 logger = get_logger(__name__)
 
@@ -103,6 +103,8 @@ class NeedflowDirective(FilterBase):
             "env": env,
         }
         env.need_all_needflows[targetid].update(self.collect_filter_attributes())
+
+        add_doc(env, env.docname)
 
         return [targetnode, Needflow("")]
 
@@ -251,7 +253,7 @@ def cal_needs_node(app: Sphinx, fromdocname: str, current_needflow: dict, all_ne
     return curr_need_tree
 
 
-def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
+def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, found_needs: list) -> None:
     # Replace all needflow nodes with a list of the collected needs.
     # Augment each need with a backlink to the original location.
     env = unwrap(app.env)
@@ -260,7 +262,8 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str) -> 
     allowed_link_types_options = [link.upper() for link in app.config.needs_flow_link_types]
 
     # NEEDFLOW
-    for node in doctree.findall(Needflow):
+    # for node in doctree.findall(Needflow):
+    for node in found_needs:
         if not app.config.needs_include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.

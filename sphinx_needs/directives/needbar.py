@@ -8,7 +8,7 @@ from docutils import nodes
 from sphinx.application import Sphinx
 
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
-from sphinx_needs.utils import unwrap
+from sphinx_needs.utils import add_doc, unwrap
 
 if not os.environ.get("DISPLAY"):
     matplotlib.use("Agg")
@@ -156,6 +156,8 @@ class NeedbarDirective(FilterBase):
             "text_color": text_color,
         }
 
+        add_doc(env, env.docname)
+
         return [targetnode, Needbar("")]
 
 
@@ -170,12 +172,13 @@ class NeedbarDirective(FilterBase):
 # 8. create figure
 # 9. final storage
 # 10. cleanup matplotlib
-def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
+def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list) -> None:
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
 
     # NEEDFLOW
-    for node in doctree.findall(Needbar):
+    # for node in doctree.findall(Needbar):
+    for node in found_nodes:
         if not app.config.needs_include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
