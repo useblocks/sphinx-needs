@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 
 from docutils import nodes
 from jinja2 import BaseLoader, Environment, Template
-from sphinx.application import Sphinx
+from sphinx.application import BuildEnvironment, Sphinx
 
 from sphinx_needs.defaults import NEEDS_PROFILING
 from sphinx_needs.logging import get_logger
@@ -477,3 +477,38 @@ T = TypeVar("T")
 def unwrap(obj: Optional[T]) -> T:
     assert obj is not None
     return obj
+
+
+def node_match(node_types):
+    """
+    Returns a condition function for doctuils.nodes.findall()
+
+    It takes a single or a list of node-types, if a findall() finds that node-type, the node
+    get returned by findall() inside a generator-object.
+
+    Use it like::
+
+    for node_need in doctree.findall(node_mathc([Need, NeedTable])):
+        if isinstance(node_nee, Need):
+            pass  # some need voodoo
+        elif isinstance(node_nee, NeedTable):
+            pass  # some needtable voodoo
+        else:
+            raise Exception('Not requested node type')
+
+    :param node_types: List of docutils node types
+    :return: function, which can be used as constraint-function for docutils findall()
+    """
+    if not isinstance(node_types, list):
+        node_types = [node_types]
+
+    def condition(node, node_types=node_types):
+        return any(isinstance(node, x) for x in node_types)
+
+    return condition
+
+
+def add_doc(env: BuildEnvironment, docname: str):
+    """Stores a docname, to know later all need-relevant docs"""
+    if docname not in env.needs_all_docs:
+        env.needs_all_docs.append(docname)

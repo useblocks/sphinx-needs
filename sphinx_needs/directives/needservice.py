@@ -12,7 +12,7 @@ from sphinx_needs.api import add_need
 from sphinx_needs.directives.need import NeedDirective
 from sphinx_needs.logging import get_logger
 from sphinx_needs.services.base import BaseService
-from sphinx_needs.utils import unwrap
+from sphinx_needs.utils import add_doc, unwrap
 
 
 class Needservice(nodes.General, nodes.Element):  # type: ignore
@@ -118,4 +118,7 @@ class NeedserviceDirective(Directive):
                 service_debug_data = {"error": f'Service {service_name} does not support "debug" output.'}
             viewer_node = get_data_viewer_node(title="Debug data", data=service_debug_data)
             section.append(viewer_node)
+
+        add_doc(self.env, self.env.docname)
+
         return section
