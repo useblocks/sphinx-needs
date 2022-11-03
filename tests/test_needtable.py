@@ -12,8 +12,8 @@ def test_doc_build_html(test_app):
     # stdout warnings
     warning = app._warning
     warnings = warning.getvalue()
-    # We want to get a warning free build
-    assert "WARNING:" not in warnings
+    # We set unique ID's for node.table, so the following exception shall not occur anymore.
+    assert "WARNING: Any IDs not assigned for table node" not in warnings
 
     html = Path(app.outdir, "index.html").read_text()
     assert "SP_TOO_001" in html
