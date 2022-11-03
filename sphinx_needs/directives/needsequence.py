@@ -19,7 +19,7 @@ from sphinx_needs.diagrams_common import (
 )
 from sphinx_needs.filter_common import FilterBase
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import unwrap
+from sphinx_needs.utils import add_doc, unwrap
 
 logger = get_logger(__name__)
 
@@ -70,10 +70,12 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
         # Data for diagrams
         env.need_all_needsequences[targetid].update(self.collect_diagram_attributes())
 
+        add_doc(env, env.docname)
+
         return [targetnode] + [Needsequence("")]
 
 
-def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str):
+def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list):
     # Replace all needsequence nodes with a list of the collected needs.
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
@@ -81,7 +83,8 @@ def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str)
     link_types = env.config.needs_extra_links
 
     # NEEDSEQUENCE
-    for node in doctree.findall(Needsequence):
+    # for node in doctree.findall(Needsequence):
+    for node in found_nodes:
         if not app.config.needs_include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.

@@ -14,7 +14,7 @@ from sphinx_needs.directives.utils import (
 )
 from sphinx_needs.filter_common import FilterBase, process_filters
 from sphinx_needs.functions.functions import check_and_get_content
-from sphinx_needs.utils import profile, row_col_maker, unwrap
+from sphinx_needs.utils import add_doc, profile, row_col_maker, unwrap
 
 
 class Needtable(nodes.General, nodes.Element):
@@ -107,11 +107,13 @@ class NeedtableDirective(FilterBase):
         }
         env.need_all_needtables[targetid].update(self.collect_filter_attributes())
 
+        add_doc(env, env.docname)
+
         return [targetnode] + [Needtable("")]
 
 
 @profile("NEEDTABLE")
-def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
+def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list) -> None:
     """
     Replace all needtables nodes with a table of filtered nodes.
 
@@ -137,7 +139,8 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str) -
             link_type_list["OUTGOING"] = link_type
             link_type_list["INCOMING"] = link_type
 
-    for node in doctree.findall(Needtable):
+    # for node in doctree.findall(Needtable):
+    for node in found_nodes:
         if not app.config.needs_include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
@@ -206,7 +209,7 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str) -
 
         # Perform filtering of needs
         try:
-            found_needs = process_filters(app, all_needs, current_needtable)
+            filtered_needs = process_filters(app, all_needs, current_needtable)
         except Exception as e:
             raise e
 
@@ -231,9 +234,9 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str) -
 
             return sort
 
-        found_needs.sort(key=get_sorter(current_needtable["sort"]))
+        filtered_needs.sort(key=get_sorter(current_needtable["sort"]))
 
-        for need_info in found_needs:
+        for need_info in filtered_needs:
             style_row = check_and_get_content(current_needtable["style_row"], need_info, env)
             style_row = style_row.replace(" ", "_")  # Replace whitespaces with _ to get valid css name
 
@@ -327,7 +330,7 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str) -
 
                     tbody += row
 
-        if len(found_needs) == 0:
+        if len(filtered_needs) == 0:
             table_node.append(no_needs_found_paragraph())
 
         # add filter information to output

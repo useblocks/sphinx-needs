@@ -7,6 +7,7 @@ from jinja2 import Template
 from sphinx.errors import SphinxError
 
 from sphinx_needs.directives.utils import analyse_needs_metrics
+from sphinx_needs.utils import add_doc
 
 
 class NeedsReportException(SphinxError):
@@ -79,4 +80,7 @@ class NeedReportDirective(Directive):
         self.state_machine.insert_input(text.split("\n"), self.state_machine.document.attributes["source"])
 
         report_node = nodes.raw()
+
+        add_doc(env, env.docname)
+
         return [report_node]

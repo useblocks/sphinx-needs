@@ -12,6 +12,10 @@ License
 -----
 Under development
 
+* Improvement: Performance fix needs processing.
+(`#756 <https://github.com/useblocks/sphinx-needs/issues/756>`_)
+* Improvement: Performance fix for needflow.
+(`#760 <https://github.com/useblocks/sphinx-needs/issues/760>`_)
 * Improvement: Fixed rendering issue with the debug layout.
   (`#721 <https://github.com/useblocks/sphinx-needs/issues/721>`_)
 * Improvement: Added :ref:`needs_show_link_id`.
@@ -40,6 +44,8 @@ Under development
   (`#737 <https://github.com/useblocks/sphinx-needs/issues/737>`_)
 * Bugfix: Needuml used but "sphinxcontrib.plantuml" not installed leads to exception
   (`#742 <https://github.com/useblocks/sphinx-needs/issues/742>`_)
+* Bugfix: Needarch: Fixed import() function to work with new implemented flow() (#737).
+  (`#752 <https://github.com/useblocks/sphinx-needs/issues/752>`_)
 * Improvement: Updated pantuml in test folder to same version as in doc folder
   (`#765 <https://github.com/useblocks/sphinx-needs/issues/765>`_)
 

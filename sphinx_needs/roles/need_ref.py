@@ -51,10 +51,11 @@ def transform_need_to_dict(need: Need) -> Dict[str, str]:
     return dict_need
 
 
-def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
+def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes) -> None:
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
-    for node_need_ref in doctree.findall(NeedRef):
+    # for node_need_ref in doctree.findall(NeedRef):
+    for node_need_ref in found_nodes:
         # Let's create a dummy node, for the case we will not be able to create a real reference
         new_node_ref = make_refnode(
             builder,

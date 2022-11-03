@@ -14,7 +14,7 @@ from sphinx_needs.api import add_need
 from sphinx_needs.config import NEEDS_CONFIG
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.needsfile import check_needs_file
-from sphinx_needs.utils import logger
+from sphinx_needs.utils import add_doc, logger
 
 
 class Needimport(nodes.General, nodes.Element):  # type: ignore
@@ -217,6 +217,8 @@ class NeedimportDirective(Directive):
 
             nodes = add_need(self.env.app, self.state, **need)
             need_nodes.extend(nodes)
+
+        add_doc(self.env, self.env.docname)
 
         return need_nodes
 

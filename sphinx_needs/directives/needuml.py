@@ -9,6 +9,7 @@ from jinja2 import BaseLoader, Environment, Template
 from sphinx_needs.diagrams_common import calculate_link
 from sphinx_needs.directives.needflow import make_entity_name
 from sphinx_needs.filter_common import filter_needs
+from sphinx_needs.utils import add_doc
 
 
 class Needuml(nodes.General, nodes.Element):
@@ -100,6 +101,8 @@ class NeedumlDirective(Directive):
             "save": plantuml_code_out_path,
             "is_arch": is_arch,
         }
+
+        add_doc(env, env.docname)
 
         return [targetnode] + [Needuml(targetid)]
 
@@ -341,7 +344,10 @@ class JinjaFunctions:
         umls = ""
         if uml_ids:
             for uml_id in uml_ids:
-                umls += self.uml_from_need(uml_id)
+                local_uml_from_need = self.uml_from_need(uml_id)
+                if not local_uml_from_need.endswith("\n"):
+                    local_uml_from_need += "\n"
+                umls += local_uml_from_need
         return umls
 
     def need(self):
@@ -350,10 +356,11 @@ class JinjaFunctions:
         return self.needs[self.parent_need_id]
 
 
-def process_needuml(app, doctree, fromdocname):
+def process_needuml(app, doctree, fromdocname, found_nodes):
     env = app.builder.env
 
-    for node in doctree.findall(Needuml):
+    # for node in doctree.findall(Needuml):
+    for node in found_nodes:
         id = node.attributes["ids"][0]
         current_needuml = env.needs_all_needumls[id]
 
