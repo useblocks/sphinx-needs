@@ -4,7 +4,7 @@ TEST Titles
 .. spec:: need 1
    :id: titles_001
    :status: my_status
-   :tags: test;me;
+   :tags: test;me
 
 .. spec:: need 2
    :id: titles_002
