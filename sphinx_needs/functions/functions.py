@@ -250,12 +250,8 @@ def resolve_variants_options(env: BuildEnvironment):
         return
 
     variants_options = env.app.config.needs_variant_options
-    enable_variant_handling = False
-    if len(variants_options) != 0:
-        # If variant_options is provided or not empty then activate variant handling
-        enable_variant_handling = True
 
-    if enable_variant_handling:
+    if variants_options:
         needs: Dict = env.needs_all_needs
         for need in needs.values():
             # Data to use as filter context.
@@ -264,17 +260,14 @@ def resolve_variants_options(env: BuildEnvironment):
             _sphinx_tags = env.app.builder.tags.tags  # Get sphinx tags
             need_context.update(**_sphinx_tags)  # Add sphinx tags to filter context
 
-            for need_option in need:
-                if need_option not in variants_options:
-                    # Don't apply variant handling to options which are not in variant_options.
-                    continue
-                if need[need_option] not in (None, "", []):
-                    if not isinstance(need[need_option], (list, set, tuple)):
-                        option_value: str = need[need_option]
-                        need[need_option] = match_variants(option_value, need_context, env.app.config.needs_variants)
+            for var_option in variants_options:
+                if var_option in need and need[var_option] not in (None, "", []):
+                    if not isinstance(need[var_option], (list, set, tuple)):
+                        option_value: str = need[var_option]
+                        need[var_option] = match_variants(option_value, need_context, env.app.config.needs_variants)
                     else:
-                        option_value = need[need_option]
-                        need[need_option] = match_variants(option_value, need_context, env.app.config.needs_variants)
+                        option_value = need[var_option]
+                        need[var_option] = match_variants(option_value, need_context, env.app.config.needs_variants)
 
     # Finally set a flag so that this function gets not executed several times
     env.needs_workflow["variant_option_resolved"] = True
