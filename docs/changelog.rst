@@ -12,6 +12,8 @@ License
 -----
 Under development
 
+* Improvement: Fixed issue with handling needs-variants by default.
+(`#776 <https://github.com/useblocks/sphinx-needs/issues/776>`_)
 * Improvement: Performance fix needs processing.
 (`#756 <https://github.com/useblocks/sphinx-needs/issues/756>`_)
 * Improvement: Performance fix for needflow.
