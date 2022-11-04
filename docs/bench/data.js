@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1667546216685,
+  "lastUpdate": 1667553555657,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -900,6 +900,42 @@ window.BENCHMARK_DATA = {
             "value": 73.560802222,
             "unit": "s",
             "extra": "Commit: eec3e22789382fd095a2742ae895b51d76f19cfe\nBranch: master\nTime: 2022-11-04T08:10:19+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "95444300+PhilipPartsch@users.noreply.github.com",
+            "name": "PhilipPartsch",
+            "username": "PhilipPartsch"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d9a0d32ffe9cfdafb306be62a842f96cc8990d68",
+          "message": "Needtable set output table (#766)\n\n* fix import function to work with new flow function\r\n\r\n* fix existing warnings in test files, added test case to ensure warning free build\r\n\r\n* set id for table node\r\n\r\n* updated changelog\r\n\r\n* fix lint error\r\n\r\n* test for specific WARNING: Any IDs not assigned for table node instead of all warnings.\r\n\r\nCo-authored-by: Daniel Woste <daniel.woste@useblocks.com>",
+          "timestamp": "2022-11-04T10:11:03+01:00",
+          "tree_id": "3b86dd7e441bd9e2e2ba77e943e1399c1dd23066",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/d9a0d32ffe9cfdafb306be62a842f96cc8990d68"
+        },
+        "date": 1667553551301,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.29733270999997785,
+            "unit": "s",
+            "extra": "Commit: d9a0d32ffe9cfdafb306be62a842f96cc8990d68\nBranch: master\nTime: 2022-11-04T10:11:03+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 94.719995627,
+            "unit": "s",
+            "extra": "Commit: d9a0d32ffe9cfdafb306be62a842f96cc8990d68\nBranch: master\nTime: 2022-11-04T10:11:03+01:00"
           }
         ]
       }
