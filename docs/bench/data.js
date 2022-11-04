@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1667546184468,
+  "lastUpdate": 1667546216685,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -864,6 +864,42 @@ window.BENCHMARK_DATA = {
             "value": 73.11570820899993,
             "unit": "s",
             "extra": "Commit: d9f444e8f2c0484a6bf5fc2a4afa4c5ac0c285a2\nBranch: master\nTime: 2022-11-04T08:09:47+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "95444300+PhilipPartsch@users.noreply.github.com",
+            "name": "PhilipPartsch",
+            "username": "PhilipPartsch"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "eec3e22789382fd095a2742ae895b51d76f19cfe",
+          "message": "Improve docu for needs_extra_links to configure color and orientation (#767)\n\n* updated docu\r\n\r\n* Small typo fix\r\n\r\nCo-authored-by: Daniel Woste <daniel.woste@useblocks.com>",
+          "timestamp": "2022-11-04T08:10:19+01:00",
+          "tree_id": "5b46e2337d9448455a0f899e61e947214818527f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/eec3e22789382fd095a2742ae895b51d76f19cfe"
+        },
+        "date": 1667546211731,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.25760974299998907,
+            "unit": "s",
+            "extra": "Commit: eec3e22789382fd095a2742ae895b51d76f19cfe\nBranch: master\nTime: 2022-11-04T08:10:19+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 73.560802222,
+            "unit": "s",
+            "extra": "Commit: eec3e22789382fd095a2742ae895b51d76f19cfe\nBranch: master\nTime: 2022-11-04T08:10:19+01:00"
           }
         ]
       }
