@@ -1,9 +1,13 @@
 Changelog
 =========
 
-1.0.1
+1.0.2
 -----
 :Released: under development
+
+1.0.1
+-----
+:Released: 04.11.2022
 
 * Enhancement: ID length can be configured to avoid conflicts. See :ref:`tr_suite_id_length` and :ref:`tr_case_id_length`.
   `#45 <https://github.com/useblocks/sphinx-test-reports/issues/45>`_
