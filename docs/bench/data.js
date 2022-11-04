@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1667500534514,
+  "lastUpdate": 1667546184468,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -828,6 +828,42 @@ window.BENCHMARK_DATA = {
             "value": 91.20290548599996,
             "unit": "s",
             "extra": "Commit: 7bbec747281ab9244ced521368b7cd35d3c82e86\nBranch: master\nTime: 2022-11-03T19:27:26+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "95444300+PhilipPartsch@users.noreply.github.com",
+            "name": "PhilipPartsch",
+            "username": "PhilipPartsch"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d9f444e8f2c0484a6bf5fc2a4afa4c5ac0c285a2",
+          "message": "updated palntuml in test folder to same version as in docs folder (#774)",
+          "timestamp": "2022-11-04T08:09:47+01:00",
+          "tree_id": "8a9b0b9692e61c29b90a6eaa660e1d23ad168149",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/d9f444e8f2c0484a6bf5fc2a4afa4c5ac0c285a2"
+        },
+        "date": 1667546179553,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.26662075899997717,
+            "unit": "s",
+            "extra": "Commit: d9f444e8f2c0484a6bf5fc2a4afa4c5ac0c285a2\nBranch: master\nTime: 2022-11-04T08:09:47+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 73.11570820899993,
+            "unit": "s",
+            "extra": "Commit: d9f444e8f2c0484a6bf5fc2a4afa4c5ac0c285a2\nBranch: master\nTime: 2022-11-04T08:09:47+01:00"
           }
         ]
       }
