@@ -46,6 +46,8 @@ Under development
   (`#742 <https://github.com/useblocks/sphinx-needs/issues/742>`_)
 * Bugfix: Needarch: Fixed import() function to work with new implemented flow() (#737).
   (`#752 <https://github.com/useblocks/sphinx-needs/issues/752>`_)
+* Improvement: Updated pantuml in test folder to same version as in doc folder
+  (`#765 <https://github.com/useblocks/sphinx-needs/issues/765>`_)
 
 
 1.0.2
