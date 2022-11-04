@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1667553555657,
+  "lastUpdate": 1667572344262,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -936,6 +936,42 @@ window.BENCHMARK_DATA = {
             "value": 94.719995627,
             "unit": "s",
             "extra": "Commit: d9a0d32ffe9cfdafb306be62a842f96cc8990d68\nBranch: master\nTime: 2022-11-04T10:11:03+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "duodurandy19@gmail.com",
+            "name": "Randy Duodu (He/Him)",
+            "username": "iSOLveIT"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a0e4bc530648d47187eb3d2b5392ee4e2d6572d4",
+          "message": "Fixed issue with needs_variant_options #776. (#777)\n\n* Fixed issue with needs_variant_options #776.\r\n\r\n* Updated changelog.rst\r\n\r\n* Added testcase for empty variant options and updated code for variant handling",
+          "timestamp": "2022-11-04T15:23:09+01:00",
+          "tree_id": "2f8f8eae42f571a7d856938d2d0b09d47f087b97",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a0e4bc530648d47187eb3d2b5392ee4e2d6572d4"
+        },
+        "date": 1667572339103,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.3486419019999971,
+            "unit": "s",
+            "extra": "Commit: a0e4bc530648d47187eb3d2b5392ee4e2d6572d4\nBranch: master\nTime: 2022-11-04T15:23:09+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 105.55351824800005,
+            "unit": "s",
+            "extra": "Commit: a0e4bc530648d47187eb3d2b5392ee4e2d6572d4\nBranch: master\nTime: 2022-11-04T15:23:09+01:00"
           }
         ]
       }
