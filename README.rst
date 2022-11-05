@@ -49,28 +49,46 @@ Installation
 
 Using poetry
 ------------
-::
 
-    poetry add sphinxcontrib-needs
+.. code-block:: bash
 
+    poetry add sphinx-needs
 
 Using pip
 ---------
-::
 
-    pip install sphinxcontrib-needs
+.. code-block:: bash
+
+    pip install sphinx-needs
+
+.. note::
+
+   Prior version **1.0.1** the package was named ``sphinxcontrib-needs``.
 
 Using sources
 -------------
-::
 
-    git clone https://github.com/useblocks/sphinxcontrib-needs
-    cd sphinxcontrib-needs
+.. code-block:: bash
+
+    git clone https://github.com/useblocks/sphinx-needs
+    cd sphinx-needs
     pip install .
+    # or
+    poetry install
+
 
 Activation
 ----------
 
-Add **sphinxcontrib.needs** to your extensions::
+For final activation, please add `sphinx_needs` to the project's extension list of your **conf.py** file.
 
-    extensions = ["sphinxcontrib.needs",]
+.. code-block:: python
+
+   extensions = ["sphinx_needs",]
+
+For the full configuration, please read :ref:`config`.
+
+.. note::
+
+   Prior version **1.0.1** the extensions was called ``sphinxcontrib.needs``.
+

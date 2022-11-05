@@ -156,3 +156,7 @@ a.external_link:after {
     /* Same, but with none breaking space (&nbsp not supported in content!)*/
     /*content: "\00a0\00a0🡽"*/
 }
+
+span.needs_collapse > :is(.collapsed, .visible) {
+	cursor: pointer;
+}

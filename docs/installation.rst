@@ -42,11 +42,11 @@ For final activation, please add `sphinx_needs` to the project's extension list 
 
 For the full configuration, please read :ref:`config`.
 
-.. _install_plantuml:
-
 .. note::
 
    Prior version **1.0.1** the extensions was called ``sphinxcontrib.needs``.
+
+.. _install_plantuml:
 
 PlantUML support
 ----------------
