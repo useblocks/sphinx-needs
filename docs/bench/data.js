@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1667838250663,
+  "lastUpdate": 1667839586194,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -1116,6 +1116,42 @@ window.BENCHMARK_DATA = {
             "value": 77.712099696,
             "unit": "s",
             "extra": "Commit: dd85257a288668b3d42a271c97a7d63e0a81f479\nBranch: master\nTime: 2022-11-07T17:17:00+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "764f322b4f571fb1506e848dd4cd2b3e2d060db4",
+          "message": "Writes warnings for a filter once per directive/role (#784)",
+          "timestamp": "2022-11-07T17:38:42+01:00",
+          "tree_id": "0d89ff851a0cb40faa2d50ec95680b889755db7f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/764f322b4f571fb1506e848dd4cd2b3e2d060db4"
+        },
+        "date": 1667839578769,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2648015250000526,
+            "unit": "s",
+            "extra": "Commit: 764f322b4f571fb1506e848dd4cd2b3e2d060db4\nBranch: master\nTime: 2022-11-07T17:38:42+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 85.03452619199993,
+            "unit": "s",
+            "extra": "Commit: 764f322b4f571fb1506e848dd4cd2b3e2d060db4\nBranch: master\nTime: 2022-11-07T17:38:42+01:00"
           }
         ]
       }
