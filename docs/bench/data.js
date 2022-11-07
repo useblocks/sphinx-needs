@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1667572344262,
+  "lastUpdate": 1667816997439,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -972,6 +972,42 @@ window.BENCHMARK_DATA = {
             "value": 105.55351824800005,
             "unit": "s",
             "extra": "Commit: a0e4bc530648d47187eb3d2b5392ee4e2d6572d4\nBranch: master\nTime: 2022-11-04T15:23:09+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "duodurandy19@gmail.com",
+            "name": "Randy Duodu (He/Him)",
+            "username": "iSOLveIT"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "970cdaade756a957c725297b8e4471cd629d9ae2",
+          "message": "- Updated package information in README.rst and PyPI site. (#780)\n\n- Updated some text in docs\r\n- Updated some CSS and JS for collapse button",
+          "timestamp": "2022-11-07T11:23:23+01:00",
+          "tree_id": "7056828f0f8493b1c1c31cdc96a25fc2e63ba4a8",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/970cdaade756a957c725297b8e4471cd629d9ae2"
+        },
+        "date": 1667816994015,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22721119300001646,
+            "unit": "s",
+            "extra": "Commit: 970cdaade756a957c725297b8e4471cd629d9ae2\nBranch: master\nTime: 2022-11-07T11:23:23+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 72.518665511,
+            "unit": "s",
+            "extra": "Commit: 970cdaade756a957c725297b8e4471cd629d9ae2\nBranch: master\nTime: 2022-11-07T11:23:23+01:00"
           }
         ]
       }
