@@ -8,8 +8,8 @@ description = "Sphinx needs extension for managing needs/requirements and specif
 authors = ["team useblocks <info@useblocks.com>"]
 license = "MIT"
 readme = "README.rst"
-repository = "http://github.com/useblocks/sphinxcontrib-needs"
-documentation = "https://sphinxcontrib-needs.readthedocs.io/en/latest/"
+repository = "http://github.com/useblocks/sphinx-needs"
+documentation = "https://sphinx-needs.readthedocs.io/en/latest/"
 classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
@@ -17,9 +17,10 @@ classifiers=[
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Topic :: Documentation',
         'Topic :: Utilities',
         'Framework :: Sphinx :: Extension',

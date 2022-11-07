@@ -13,11 +13,11 @@ License
 Under development
 
 * Improvement: Fixed issue with handling needs-variants by default.
-(`#776 <https://github.com/useblocks/sphinx-needs/issues/776>`_)
+  (`#776 <https://github.com/useblocks/sphinx-needs/issues/776>`_)
 * Improvement: Performance fix needs processing.
-(`#756 <https://github.com/useblocks/sphinx-needs/issues/756>`_)
+  (`#756 <https://github.com/useblocks/sphinx-needs/issues/756>`_)
 * Improvement: Performance fix for needflow.
-(`#760 <https://github.com/useblocks/sphinx-needs/issues/760>`_)
+  (`#760 <https://github.com/useblocks/sphinx-needs/issues/760>`_)
 * Improvement: Fixed rendering issue with the debug layout.
   (`#721 <https://github.com/useblocks/sphinx-needs/issues/721>`_)
 * Improvement: Added :ref:`needs_show_link_id`.

@@ -976,7 +976,7 @@ needs_show_link_id
 This option mostly affects the roles :ref:`role_need_outgoing` and :ref:`role_need_incoming` by showing
 the *ID*  of the linked need.
 
-Can be combined with :ref:`needs_show_link_type` and :ref:`needs_show_link_title.
+Can be combined with :ref:`needs_show_link_type` and :ref:`needs_show_link_title`.
 
 
 .. code-block:: python
@@ -2089,11 +2089,7 @@ Default: ``[]``
 
    1. You must ensure the options in ``needs_variant_options`` are either default need options or specified in
       :ref:`extra options <needs_extra_options>` or :ref:`extra links <needs_extra_links>`.
-   2. By default, if ``needs_variant_options`` is empty, we apply variants handling to the following options:
-
-      * ``status``, ``tags`` and ``links`` options
-      * options specified in :ref:`extra options <needs_extra_options>`
-      * options specified in :ref:`extra links <needs_extra_links>`
+   2. By default, if ``needs_variant_options`` is empty, we deactivate variants handling for need options.
 
 .. _needs_render_context:
 

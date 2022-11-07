@@ -117,7 +117,7 @@ Benchmarks
 If the runtime takes 10% longer as the previous ones, the benchmark test will fail.
 
 Benchmark test cases are available under ``tests/benchmarks``.
-And they can be locally executed via ``make benchmark`.
+And they can be locally executed via ``make benchmark``.
 
 The results for each PR/commit get added to a chart, which is available under
 http://useblocks.com/sphinx-needs/bench/index.html.

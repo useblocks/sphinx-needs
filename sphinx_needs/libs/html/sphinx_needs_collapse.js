@@ -20,7 +20,7 @@ $(document).ready(function() {
 //     $(".wy-table-responsive > table").show();
 // });
 
-function collapse_expand_func(){
+$(document).ready(function() {
    var all_needs_collapse = document.querySelectorAll("table.need span.needs.needs_collapse");
 
    all_needs_collapse.forEach((needs_collapse, index)=>{
@@ -56,8 +56,7 @@ function collapse_expand_func(){
             visible_icon.classList.toggle("collapse_is_hidden");
         })
     });
-};
-window.onload = collapse_expand_func();
+});
 
 $(document).ready(function() {
     $('a.no_link').click(function (e) {
