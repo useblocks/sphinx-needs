@@ -718,7 +718,14 @@ def merge_data(_app: Sphinx, env: BuildEnvironment, _docnames: List[str], other:
         objects = getattr(env, name)
         if hasattr(other, name):
             other_objects = getattr(other, name)
-            objects.update(other_objects)
+            if isinstance(other_objects, dict) and isinstance(objects, dict):
+                objects.update(other_objects)
+            elif isinstance(other_objects, list) and isinstance(objects, list):
+                objects += other_objects
+            else:
+                raise TypeError(
+                    f'Objects to "merge" must be dict or list, ' f"not {type(other_objects)} and {type(objects)}"
+                )
 
     merge("need_all_needbar")
     merge("need_all_needtables")
@@ -731,6 +738,7 @@ def merge_data(_app: Sphinx, env: BuildEnvironment, _docnames: List[str], other:
     merge("need_all_needpie")
     merge("need_all_needsequences")
     merge("needs_all_needumls")
+    merge("needs_all_docs")  # list type
 
 
 class NeedsConfigException(SphinxError):
