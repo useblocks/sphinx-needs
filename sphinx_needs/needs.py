@@ -6,7 +6,6 @@ from sphinx.application import Sphinx
 from sphinx.config import Config
 from sphinx.environment import BuildEnvironment
 from sphinx.errors import SphinxError
-from sphinx.roles import XRefRole
 
 from sphinx_needs.api.configuration import add_extra_option
 from sphinx_needs.builder import (
@@ -90,6 +89,7 @@ from sphinx_needs.environment import (
 from sphinx_needs.external_needs import load_external_needs
 from sphinx_needs.functions import needs_common_functions, register_func
 from sphinx_needs.logging import get_logger
+from sphinx_needs.roles import NeedsXRefRole
 from sphinx_needs.roles.need_count import NeedCount, process_need_count
 from sphinx_needs.roles.need_func import NeedFunc, process_need_func
 from sphinx_needs.roles.need_incoming import NeedIncoming, process_need_incoming
@@ -310,19 +310,23 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     # ROLES
     ########################################################################
     # Provides :need:`ABC_123` for inline links.
-    app.add_role("need", XRefRole(nodeclass=NeedRef, innernodeclass=nodes.emphasis, warn_dangling=True))
+    app.add_role("need", NeedsXRefRole(nodeclass=NeedRef, innernodeclass=nodes.emphasis, warn_dangling=True))
 
-    app.add_role("need_incoming", XRefRole(nodeclass=NeedIncoming, innernodeclass=nodes.emphasis, warn_dangling=True))
+    app.add_role(
+        "need_incoming", NeedsXRefRole(nodeclass=NeedIncoming, innernodeclass=nodes.emphasis, warn_dangling=True)
+    )
 
-    app.add_role("need_outgoing", XRefRole(nodeclass=NeedOutgoing, innernodeclass=nodes.emphasis, warn_dangling=True))
+    app.add_role(
+        "need_outgoing", NeedsXRefRole(nodeclass=NeedOutgoing, innernodeclass=nodes.emphasis, warn_dangling=True)
+    )
 
-    app.add_role("need_part", XRefRole(nodeclass=NeedPart, innernodeclass=nodes.inline, warn_dangling=True))
+    app.add_role("need_part", NeedsXRefRole(nodeclass=NeedPart, innernodeclass=nodes.inline, warn_dangling=True))
     # Shortcut for need_part
-    app.add_role("np", XRefRole(nodeclass=NeedPart, innernodeclass=nodes.inline, warn_dangling=True))
+    app.add_role("np", NeedsXRefRole(nodeclass=NeedPart, innernodeclass=nodes.inline, warn_dangling=True))
 
-    app.add_role("need_count", XRefRole(nodeclass=NeedCount, innernodeclass=nodes.inline, warn_dangling=True))
+    app.add_role("need_count", NeedsXRefRole(nodeclass=NeedCount, innernodeclass=nodes.inline, warn_dangling=True))
 
-    app.add_role("need_func", XRefRole(nodeclass=NeedFunc, innernodeclass=nodes.inline, warn_dangling=True))
+    app.add_role("need_func", NeedsXRefRole(nodeclass=NeedFunc, innernodeclass=nodes.inline, warn_dangling=True))
 
     ########################################################################
     # EVENTS
