@@ -70,7 +70,7 @@ class NeedimportDirective(Directive):
             except Exception as e:
                 raise NeedimportException(f"Getting {need_import_path} didn't work. Reason: {e}.")
         else:
-            logger.info(f"Given needimport argument is not URL: {need_import_path}")
+            logger.info(f"Importing needs from {need_import_path}")
 
             if not os.path.isabs(need_import_path):
                 # Relative path should start from current rst file directory
