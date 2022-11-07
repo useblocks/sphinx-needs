@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1667837697081,
+  "lastUpdate": 1667838250663,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -1080,6 +1080,42 @@ window.BENCHMARK_DATA = {
             "value": 73.37428918699999,
             "unit": "s",
             "extra": "Commit: 50524ce4455b57916c93010a8317266ad19b069e\nBranch: master\nTime: 2022-11-07T17:08:15+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "dd85257a288668b3d42a271c97a7d63e0a81f479",
+          "message": "Better log message for needimport (#783)",
+          "timestamp": "2022-11-07T17:17:00+01:00",
+          "tree_id": "db01634e54ccd2a1905af9fb074718c94c9d935f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/dd85257a288668b3d42a271c97a7d63e0a81f479"
+        },
+        "date": 1667838245560,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.27354096800002026,
+            "unit": "s",
+            "extra": "Commit: dd85257a288668b3d42a271c97a7d63e0a81f479\nBranch: master\nTime: 2022-11-07T17:17:00+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 77.712099696,
+            "unit": "s",
+            "extra": "Commit: dd85257a288668b3d42a271c97a7d63e0a81f479\nBranch: master\nTime: 2022-11-07T17:17:00+01:00"
           }
         ]
       }
