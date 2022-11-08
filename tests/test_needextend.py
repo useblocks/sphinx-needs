@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import pytest
@@ -46,6 +47,13 @@ def test_doc_needextend_strict(test_app):
     # Strict option is set to false on needextend. Log info-level message
     assert "Provided id strict_disable_extend_test for needextend does not exist." in out.stdout.decode("utf-8")
     # Strict option is set to true on needextend. Raise Exception
-    assert "Sphinx error:\nProvided id strict_enable_extend_test for needextend does not exist." in out.stderr.decode(
-        "utf-8"
-    )
+    if sys.platform == "win32":
+        assert (
+            "Sphinx error:\r\nProvided id strict_enable_extend_test for needextend does not exist."
+            in out.stderr.decode("utf-8")
+        )
+    else:
+        assert (
+            "Sphinx error:\nProvided id strict_enable_extend_test for needextend does not exist."
+            in out.stderr.decode("utf-8")
+        )
