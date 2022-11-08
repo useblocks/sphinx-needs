@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1667839586194,
+  "lastUpdate": 1667905133345,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -1152,6 +1152,42 @@ window.BENCHMARK_DATA = {
             "value": 85.03452619199993,
             "unit": "s",
             "extra": "Commit: 764f322b4f571fb1506e848dd4cd2b3e2d060db4\nBranch: master\nTime: 2022-11-07T17:38:42+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "791ffa543edfbfbc62933c8f8938dadd0eb61ae6",
+          "message": "Adds strict-mode for needextend (#748)\n\n* Adds strict-mode for needextend\r\n\r\n* Added documentation for needextend strict option\r\n\r\n* Added testcase for needextend strict option\r\n\r\n* Updated testcase for needextend strict option\r\n\r\n* Resolved some mistakes in documentation.\r\n\r\nCo-authored-by: Duodu Randy <duodurandy19@gmail.com>",
+          "timestamp": "2022-11-08T11:51:14+01:00",
+          "tree_id": "ad29d9bab06ef1fb642083a14828ac93dc280d7b",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/791ffa543edfbfbc62933c8f8938dadd0eb61ae6"
+        },
+        "date": 1667905127780,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.25257319700006065,
+            "unit": "s",
+            "extra": "Commit: 791ffa543edfbfbc62933c8f8938dadd0eb61ae6\nBranch: master\nTime: 2022-11-08T11:51:14+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 81.84947021799996,
+            "unit": "s",
+            "extra": "Commit: 791ffa543edfbfbc62933c8f8938dadd0eb61ae6\nBranch: master\nTime: 2022-11-08T11:51:14+01:00"
           }
         ]
       }
