@@ -24,7 +24,7 @@ async def test_directive_snippets_with_custom_need_id_generate_from_title(client
     need_directive_snippets = await client.completion_request(uri=TEST_FILE_URI, line=10, character=2)
     assert len(need_directive_snippets.items) > 0
 
-    need_directive_snippets_req = need_directive_snippets.items[145]
+    need_directive_snippets_req = need_directive_snippets.items[165]
     assert need_directive_snippets_req.label == ".. req::"
     assert need_directive_snippets_req.detail == "Requirement"
     assert need_directive_snippets_req.insert_text.startswith(" req:: ${1:title}\n\t:id: ${2:TEST_ID_TEST")

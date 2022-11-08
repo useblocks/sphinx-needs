@@ -175,7 +175,7 @@ async def test_lsp_need_directive_snippets_completion_for_myst(client):
     needs_directive_snippets_suggestion = await client.completion_request(uri=TEST_MD_FILE_URI, line=47, character=2)
     assert needs_directive_snippets_suggestion.items
 
-    needs_directive_req_md = needs_directive_snippets_suggestion.items[146]
+    needs_directive_req_md = needs_directive_snippets_suggestion.items[166]
     assert needs_directive_req_md.label == "md:.. req::"
     assert needs_directive_req_md.detail == "Markdown directive snippet"
     assert needs_directive_req_md.insert_text.startswith("```{req} ${1:title}\n:id: ${2:REQ_")
@@ -184,7 +184,7 @@ async def test_lsp_need_directive_snippets_completion_for_myst(client):
     assert needs_directive_req_md.kind == 15  # CompletionItemKind.Snippet
     assert needs_directive_req_md.data["source_feature"] == "sphinx_needs.lsp.esbonio.NeedlsFeatures"
 
-    needs_directive_spec_md = needs_directive_snippets_suggestion.items[147]
+    needs_directive_spec_md = needs_directive_snippets_suggestion.items[167]
     assert needs_directive_spec_md.label == "md:.. spec::"
     assert needs_directive_spec_md.detail == "Markdown directive snippet"
     assert needs_directive_spec_md.insert_text.startswith("```{spec} ${1:title}\n:id: ${2:SPEC_")
@@ -199,7 +199,7 @@ async def test_lsp_need_directive_snippets_completion_for_myst(client):
     )
     assert needs_directive_snippets_inside_eval_rst_suggestion.items
 
-    needs_directive_req_md_inside_eval_rst = needs_directive_snippets_inside_eval_rst_suggestion.items[146]
+    needs_directive_req_md_inside_eval_rst = needs_directive_snippets_inside_eval_rst_suggestion.items[166]
     assert needs_directive_req_md_inside_eval_rst.label == ".. req::"
     assert needs_directive_req_md_inside_eval_rst.detail == "Requirement"
     assert needs_directive_req_md_inside_eval_rst.insert_text.startswith(" req:: ${1:title}\n\t:id: ${2:REQ_")
@@ -208,7 +208,7 @@ async def test_lsp_need_directive_snippets_completion_for_myst(client):
     assert needs_directive_req_md_inside_eval_rst.kind == 15  # CompletionItemKind.Snippet
     assert needs_directive_req_md_inside_eval_rst.data["source_feature"] == "sphinx_needs.lsp.esbonio.NeedlsFeatures"
 
-    needs_directive_spec_md_inside_eval_rst = needs_directive_snippets_inside_eval_rst_suggestion.items[147]
+    needs_directive_spec_md_inside_eval_rst = needs_directive_snippets_inside_eval_rst_suggestion.items[167]
     assert needs_directive_spec_md_inside_eval_rst.label == ".. spec::"
     assert needs_directive_spec_md_inside_eval_rst.detail == "Specification"
     assert needs_directive_spec_md_inside_eval_rst.insert_text.startswith(" spec:: ${1:title}\n\t:id: ${2:SPEC_")
