@@ -33,3 +33,8 @@ TEST DOCUMENT NEEDFLOW
 
 .. needflow::
    :debug:
+
+Empty needflow, with no results.
+
+.. needflow::
+   :filter: status == "NOTHING"

@@ -24,6 +24,8 @@ def test_doc_build_html(test_app):
     else:
         assert '<div class="figure align-center" id="needflow-index-0">' in html
 
+    assert "No needs passed the filters" in html
+
 
 @pytest.mark.parametrize(
     "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needflow_incl_child_needs"}], indirect=True
