@@ -81,8 +81,6 @@ Options
 
 strict
 ~~~~~~
-
-There is a ``:strict:`` option.
 The purpose of the ``:strict:`` option is to handle whether an exception gets thrown
 or a log-info message gets written if there is no need object to match the ``needextend's``
 required argument (e.g. an ID).

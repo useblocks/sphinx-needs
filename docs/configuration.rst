@@ -1700,7 +1700,7 @@ needs_needextend_strict
 ~~~~~~~~~~~~~~~~~~~~~~~
 .. versionadded:: 1.0.3
 
-``needs_needextend_strict`` allows you to deactivates or activates
+``needs_needextend_strict`` allows you to deactivate or activate
 the :ref:`strict <needextend_strict>` option behaviour for all :ref:`needextend` directives.
 
 .. _needs_table_classes:

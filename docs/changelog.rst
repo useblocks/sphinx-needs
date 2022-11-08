@@ -38,6 +38,24 @@ Under development
   (`#692 <https://github.com/useblocks/sphinx-needs/issues/692>`_)
 * Improvement: Supported download ``needs.json`` for :ref:`needimport`.
   (`#715 <https://github.com/useblocks/sphinx-needs/issues/715>`_)
+* Bugfix: Fixed import() be included in needarch.
+  (`#730 <https://github.com/useblocks/sphinx-needs/issues/730>`_)
+* Bugfix: Needuml: uml() call circle leads to an exception :ref:`needarch_ex_loop`.
+  (`#731 <https://github.com/useblocks/sphinx-needs/issues/731>`_)
+* Improvement: needarch provide need() function to get "need data".
+  (`#732 <https://github.com/useblocks/sphinx-needs/issues/732>`_)
+* Improvement: needuml - flow() shall return plantuml text without newline.
+  (`#737 <https://github.com/useblocks/sphinx-needs/issues/737>`_)
+* Bugfix: Needuml used but "sphinxcontrib.plantuml" not installed leads to exception
+  (`#742 <https://github.com/useblocks/sphinx-needs/issues/742>`_)
+* Improvement: better documentation of mixing orientation and coloring in needs_extra_links
+  (`#764 <https://github.com/useblocks/sphinx-needs/issues/764>`_)
+* Bugfix: Needarch: Fixed import() function to work with new implemented flow() (#737).
+  (`#752 <https://github.com/useblocks/sphinx-needs/issues/752>`_)
+* Bugfix: Needtable: generate id for nodes.table
+  (`#434 <https://github.com/useblocks/sphinx-needs/issues/434>`_)
+* Improvement: Updated pantuml in test folder to same version as in doc folder
+  (`#765 <https://github.com/useblocks/sphinx-needs/issues/765>`_)
 
 1.0.2
 -----
