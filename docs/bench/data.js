@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1667905133345,
+  "lastUpdate": 1667912452596,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -1188,6 +1188,42 @@ window.BENCHMARK_DATA = {
             "value": 81.84947021799996,
             "unit": "s",
             "extra": "Commit: 791ffa543edfbfbc62933c8f8938dadd0eb61ae6\nBranch: master\nTime: 2022-11-08T11:51:14+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e5a38edf207a912aba53080c67ccecf32f41feb0",
+          "message": "Less logs (#786)\n\n* Writes warnings for a filter once per directive/role\r\n\r\n* Better messages for empy results in needflow",
+          "timestamp": "2022-11-08T13:54:15+01:00",
+          "tree_id": "8a8a9d8d760383c238fc321e6b06b336a3377cac",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e5a38edf207a912aba53080c67ccecf32f41feb0"
+        },
+        "date": 1667912446796,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.32113184100001035,
+            "unit": "s",
+            "extra": "Commit: e5a38edf207a912aba53080c67ccecf32f41feb0\nBranch: master\nTime: 2022-11-08T13:54:15+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 72.78825557799996,
+            "unit": "s",
+            "extra": "Commit: e5a38edf207a912aba53080c67ccecf32f41feb0\nBranch: master\nTime: 2022-11-08T13:54:15+01:00"
           }
         ]
       }
