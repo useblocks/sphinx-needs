@@ -17,7 +17,7 @@ import matplotlib.pyplot
 from docutils.parsers.rst import directives
 
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import check_and_get_external_filter_func, unwrap
+from sphinx_needs.utils import add_doc, check_and_get_external_filter_func, unwrap
 
 logger = get_logger(__name__)
 
@@ -105,15 +105,18 @@ class NeedpieDirective(FilterBase):
         # update filter-func with needed information defined in FilterBase class
         env.need_all_needpie[targetid]["filter_func"] = self.collect_filter_attributes()["filter_func"]
 
+        add_doc(env, env.docname)
+
         return [targetnode, Needpie("")]
 
 
-def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
+def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list) -> None:
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
 
     # NEEDFLOW
-    for node in doctree.findall(Needpie):
+    # for node in doctree.findall(Needpie):
+    for node in found_nodes:
         if not app.config.needs_include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.

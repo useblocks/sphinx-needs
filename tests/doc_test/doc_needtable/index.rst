@@ -20,3 +20,13 @@ TEST DOCUMENT NEEDTABLE
    :tags: test2
    :sort: id
    :class: awesome_test_class, another_test_class
+
+
+.. toctree::
+   :maxdepth: 1
+
+   test_colwidths
+   test_options
+   test_parts
+   test_styles
+   test_titles

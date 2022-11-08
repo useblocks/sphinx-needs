@@ -245,6 +245,7 @@ def filter_needs(app: Sphinx, needs, filter_string: str = "", current_need=None)
 
     # https://docs.python.org/3/library/functions.html?highlight=compile#compile
     filter_compiled = compile(filter_string, "<string>", "eval")
+    error_reported = False
     for filter_need in needs:
         try:
             if filter_single_need(
@@ -252,7 +253,9 @@ def filter_needs(app: Sphinx, needs, filter_string: str = "", current_need=None)
             ):
                 found_needs.append(filter_need)
         except Exception as e:
-            log.warning(f"Filter {filter_string} not valid: Error: {e}")
+            if not error_reported:  # Let's report a filter-problem only onces
+                log.warning(f"Filter {filter_string} not valid: Error: {e}")
+                error_reported = True
 
     return found_needs
 

@@ -4,7 +4,7 @@ Test coldwidths
 .. spec:: need 1
    :id: colwidths_001
    :status: my_status
-   :tags: test;me;
+   :tags: test;me
 
 .. spec:: need 2
    :id: colwidths_002

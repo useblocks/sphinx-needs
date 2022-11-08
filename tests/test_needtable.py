@@ -8,6 +8,13 @@ from docutils import __version__ as doc_ver
 def test_doc_build_html(test_app):
     app = test_app
     app.build()
+
+    # stdout warnings
+    warning = app._warning
+    warnings = warning.getvalue()
+    # We set unique ID's for node.table, so the following exception shall not occur anymore.
+    assert "WARNING: Any IDs not assigned for table node" not in warnings
+
     html = Path(app.outdir, "index.html").read_text()
     assert "SP_TOO_001" in html
     assert 'id="needtable-index-0"' in html

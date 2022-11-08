@@ -32,6 +32,7 @@ TEST DOCUMENT NEEDARCH JINJA FUNC IMPORT
    .. needarch::
       :scale: 50
       :align: center
+      :debug:
 
       Alice -> Bob: Hi Bob
       Bob --> Alice: hi Alice

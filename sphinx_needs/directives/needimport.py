@@ -14,7 +14,7 @@ from sphinx_needs.api import add_need
 from sphinx_needs.config import NEEDS_CONFIG
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.needsfile import check_needs_file
-from sphinx_needs.utils import logger
+from sphinx_needs.utils import add_doc, logger
 
 
 class Needimport(nodes.General, nodes.Element):  # type: ignore
@@ -70,7 +70,7 @@ class NeedimportDirective(Directive):
             except Exception as e:
                 raise NeedimportException(f"Getting {need_import_path} didn't work. Reason: {e}.")
         else:
-            logger.info(f"Given needimport argument is not URL: {need_import_path}")
+            logger.info(f"Importing needs from {need_import_path}")
 
             if not os.path.isabs(need_import_path):
                 # Relative path should start from current rst file directory
@@ -217,6 +217,8 @@ class NeedimportDirective(Directive):
 
             nodes = add_need(self.env.app, self.state, **need)
             need_nodes.extend(nodes)
+
+        add_doc(self.env, self.env.docname)
 
         return need_nodes
 

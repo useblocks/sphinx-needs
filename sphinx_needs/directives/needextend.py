@@ -13,7 +13,7 @@ from sphinx.util.docutils import SphinxDirective
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.filter_common import filter_needs
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import unwrap
+from sphinx_needs.utils import add_doc, unwrap
 
 logger = get_logger(__name__)
 
@@ -68,6 +68,8 @@ class NeedextendDirective(SphinxDirective):
             "modifications": self.options,
             "strict": strict,
         }
+
+        add_doc(env, env.docname)
 
         return [targetnode, Needextend("")]
 

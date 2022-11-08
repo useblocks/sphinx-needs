@@ -458,9 +458,18 @@ Use ``style_start`` and ``style_end`` like this:
          "outgoing": "tests",
          "copy": False,
          "style_start": "<-",
-         "style_end": "-->",
+         "style_end": "down-->",
+         "style": "#00AA00",
+         "style_part": "dotted,#00AA00",
       }
    ]
+
+.. note::
+
+   Some plantuml diagrams have restrictions in the order of color (`style`)
+   and orientation (`left`, `rigth`, `up` and `down`). We suggest to set the orientation
+   in `style_end` like in the example above, as this is more often supported.
+
 
 .. _needs_filter_data:
 
@@ -967,7 +976,7 @@ needs_show_link_id
 This option mostly affects the roles :ref:`role_need_outgoing` and :ref:`role_need_incoming` by showing
 the *ID*  of the linked need.
 
-Can be combined with :ref:`needs_show_link_type` and :ref:`needs_show_link_title.
+Can be combined with :ref:`needs_show_link_type` and :ref:`needs_show_link_title`.
 
 
 .. code-block:: python
@@ -2089,11 +2098,7 @@ Default: ``[]``
 
    1. You must ensure the options in ``needs_variant_options`` are either default need options or specified in
       :ref:`extra options <needs_extra_options>` or :ref:`extra links <needs_extra_links>`.
-   2. By default, if ``needs_variant_options`` is empty, we apply variants handling to the following options:
-
-      * ``status``, ``tags`` and ``links`` options
-      * options specified in :ref:`extra options <needs_extra_options>`
-      * options specified in :ref:`extra links <needs_extra_links>`
+   2. By default, if ``needs_variant_options`` is empty, we deactivate variants handling for need options.
 
 .. _needs_render_context:
 
@@ -2110,16 +2115,21 @@ Configuration example:
     def custom_defined_func():
         return "my_tag"
 
+    def sum_example(number_1, number_2):
+        return number_1 + number_2
+
     needs_render_context = {
         "custom_data_1": "Project_X",
         "custom_data_2": custom_defined_func(),
         "custom_data_3": True,
-        "custom_data_4": [("Daniel", 811982), ("Marco", 234232)]
+        "custom_data_4": [("Daniel", 811982), ("Marco", 234232)],
+        "sum_example": sum_example
     }
 
 The``needs_render_context`` configuration option must be a dictionary.
 The dictionary consists of key-value pairs where the key is a string used as reference to the value.
-The value can be any data type (string, integer, list, dict, etc.) or a custom defined function which returns a string.
+The value can be any data type (string, integer, list, dict, etc.) or a custom defined function, which return
+value is used or the function itself can be used (see ``sum_example``).
 
 The data passed via needs_render_context will be available as variable(s) when rendering Jinja templates or strings.
 You can use the data passed via needs_render_context as shown below:
@@ -2135,6 +2145,8 @@ You can use the data passed via needs_render_context as shown below:
        :jinja_content: true
 
        Need with alias {{ custom_data_1 }} and ``jinja_content`` option set to {{ custom_data_3 }}.
+
+       4 + 5 = {{ sum_example(4,5) }}
 
        {{ custom_data_2 }}
        {% for author in custom_data_4 %}

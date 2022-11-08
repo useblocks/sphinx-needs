@@ -6,7 +6,6 @@ from sphinx.application import Sphinx
 from sphinx.config import Config
 from sphinx.environment import BuildEnvironment
 from sphinx.errors import SphinxError
-from sphinx.roles import XRefRole
 
 from sphinx_needs.api.configuration import add_extra_option
 from sphinx_needs.builder import (
@@ -32,16 +31,11 @@ from sphinx_needs.directives.need import (
     html_visit,
     latex_depart,
     latex_visit,
-    print_need_nodes,
     process_need_nodes,
     purge_needs,
 )
 from sphinx_needs.directives.needbar import Needbar, NeedbarDirective, process_needbar
-from sphinx_needs.directives.needextend import (
-    Needextend,
-    NeedextendDirective,
-    process_needextend,
-)
+from sphinx_needs.directives.needextend import Needextend, NeedextendDirective
 from sphinx_needs.directives.needextract import (
     Needextract,
     NeedextractDirective,
@@ -95,6 +89,7 @@ from sphinx_needs.environment import (
 from sphinx_needs.external_needs import load_external_needs
 from sphinx_needs.functions import needs_common_functions, register_func
 from sphinx_needs.logging import get_logger
+from sphinx_needs.roles import NeedsXRefRole
 from sphinx_needs.roles.need_count import NeedCount, process_need_count
 from sphinx_needs.roles.need_func import NeedFunc, process_need_func
 from sphinx_needs.roles.need_incoming import NeedIncoming, process_need_incoming
@@ -104,11 +99,30 @@ from sphinx_needs.roles.need_ref import NeedRef, process_need_ref
 from sphinx_needs.services.github import GithubService
 from sphinx_needs.services.manager import ServiceManager
 from sphinx_needs.services.open_needs import OpenNeedsService
-from sphinx_needs.utils import INTERNALS, NEEDS_FUNCTIONS
+from sphinx_needs.utils import INTERNALS, NEEDS_FUNCTIONS, node_match
 from sphinx_needs.warnings import process_warnings
 
 VERSION = "1.0.2"
 NEEDS_FUNCTIONS.clear()
+
+NODE_TYPES = {
+    Needbar: process_needbar,
+    Needextract: process_needextract,
+    Needfilter: process_needfilters,
+    Needlist: process_needlist,
+    Needtable: process_needtables,
+    Needflow: process_needflow,
+    Needpie: process_needpie,
+    Needsequence: process_needsequence,
+    Needgantt: process_needgantt,
+    Needuml: process_needuml,
+    NeedPart: process_need_part,
+    NeedRef: process_need_ref,
+    NeedIncoming: process_need_incoming,
+    NeedOutgoing: process_need_outgoing,
+    NeedCount: process_need_count,
+    NeedFunc: process_need_func,
+}
 
 
 def setup(app: Sphinx) -> Dict[str, Any]:
@@ -298,19 +312,23 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     # ROLES
     ########################################################################
     # Provides :need:`ABC_123` for inline links.
-    app.add_role("need", XRefRole(nodeclass=NeedRef, innernodeclass=nodes.emphasis, warn_dangling=True))
+    app.add_role("need", NeedsXRefRole(nodeclass=NeedRef, innernodeclass=nodes.emphasis, warn_dangling=True))
 
-    app.add_role("need_incoming", XRefRole(nodeclass=NeedIncoming, innernodeclass=nodes.emphasis, warn_dangling=True))
+    app.add_role(
+        "need_incoming", NeedsXRefRole(nodeclass=NeedIncoming, innernodeclass=nodes.emphasis, warn_dangling=True)
+    )
 
-    app.add_role("need_outgoing", XRefRole(nodeclass=NeedOutgoing, innernodeclass=nodes.emphasis, warn_dangling=True))
+    app.add_role(
+        "need_outgoing", NeedsXRefRole(nodeclass=NeedOutgoing, innernodeclass=nodes.emphasis, warn_dangling=True)
+    )
 
-    app.add_role("need_part", XRefRole(nodeclass=NeedPart, innernodeclass=nodes.inline, warn_dangling=True))
+    app.add_role("need_part", NeedsXRefRole(nodeclass=NeedPart, innernodeclass=nodes.inline, warn_dangling=True))
     # Shortcut for need_part
-    app.add_role("np", XRefRole(nodeclass=NeedPart, innernodeclass=nodes.inline, warn_dangling=True))
+    app.add_role("np", NeedsXRefRole(nodeclass=NeedPart, innernodeclass=nodes.inline, warn_dangling=True))
 
-    app.add_role("need_count", XRefRole(nodeclass=NeedCount, innernodeclass=nodes.inline, warn_dangling=True))
+    app.add_role("need_count", NeedsXRefRole(nodeclass=NeedCount, innernodeclass=nodes.inline, warn_dangling=True))
 
-    app.add_role("need_func", XRefRole(nodeclass=NeedFunc, innernodeclass=nodes.inline, warn_dangling=True))
+    app.add_role("need_func", NeedsXRefRole(nodeclass=NeedFunc, innernodeclass=nodes.inline, warn_dangling=True))
 
     ########################################################################
     # EVENTS
@@ -332,24 +350,28 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     # See also https://github.com/sphinx-doc/sphinx/issues/7054#issuecomment-578019701 for an example
     app.connect("doctree-resolved", add_sections)
     app.connect("doctree-resolved", process_need_nodes)
-    app.connect("doctree-resolved", process_needextend)  # Must be done very early, as it modifies need data
-    app.connect("doctree-resolved", print_need_nodes)
-    app.connect("doctree-resolved", process_needbar)
-    app.connect("doctree-resolved", process_needextract)
-    app.connect("doctree-resolved", process_needfilters)
-    app.connect("doctree-resolved", process_needlist)
-    app.connect("doctree-resolved", process_needtables)
-    app.connect("doctree-resolved", process_needflow)
-    app.connect("doctree-resolved", process_needpie)
-    app.connect("doctree-resolved", process_needsequence)
-    app.connect("doctree-resolved", process_needgantt)
-    app.connect("doctree-resolved", process_needuml)
-    app.connect("doctree-resolved", process_need_part)
-    app.connect("doctree-resolved", process_need_ref)
-    app.connect("doctree-resolved", process_need_incoming)
-    app.connect("doctree-resolved", process_need_outgoing)
-    app.connect("doctree-resolved", process_need_count)
-    app.connect("doctree-resolved", process_need_func)
+    app.connect("doctree-resolved", process_caller)
+
+    # Moved to process_need_nodes
+    # app.connect("doctree-resolved", process_needextend)  # Must be done very early, as it modifies need data
+    # app.connect("doctree-resolved", print_need_nodes)
+    # app.connect("doctree-resolved", process_needbar)
+    # app.connect("doctree-resolved", process_needextract)
+    # app.connect("doctree-resolved", process_needfilters)
+    # app.connect("doctree-resolved", process_needlist)
+    # app.connect("doctree-resolved", process_needtables)
+    # app.connect("doctree-resolved", process_needflow)
+    # app.connect("doctree-resolved", process_needpie)
+    # app.connect("doctree-resolved", process_needsequence)
+    # app.connect("doctree-resolved", process_needgantt)
+    # app.connect("doctree-resolved", process_needuml)
+    # app.connect("doctree-resolved", process_need_part)
+    # app.connect("doctree-resolved", process_need_ref)
+    # app.connect("doctree-resolved", process_need_incoming)
+    # app.connect("doctree-resolved", process_need_outgoing)
+    # app.connect("doctree-resolved", process_need_count)
+    # app.connect("doctree-resolved", process_need_func)
+
     app.connect("build-finished", process_warnings)
     app.connect("build-finished", build_needs_json)
     app.connect("build-finished", build_needumls_pumls)
@@ -369,6 +391,37 @@ def setup(app: Sphinx) -> Dict[str, Any]:
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }
+
+
+def process_caller(app: Sphinx, doctree: nodes.document, fromdocname: str):
+    """
+    A single event_handler for doc-tree-resolved, which cares about the doctree-parsing
+    only once and calls the needed sub-handlers (like process_needtables and so).
+
+    Reason: In the past all process-xy handles have parsed the doctree by their own, so the same doctree
+    got parsed several times. This is now done at a single place and the related process-xy get a
+    list of found docutil node-object for their case.
+    """
+    # We only need to analyse docs, which have Sphinx-Needs directives in it.
+    if fromdocname not in app.builder.env.needs_all_docs:
+        return
+
+    current_nodes = {}
+
+    check_nodes = list(NODE_TYPES.keys())
+    for node_need in doctree.findall(node_match(check_nodes)):
+        for check_node in NODE_TYPES:
+            if isinstance(node_need, check_node):
+                if check_node not in current_nodes:
+                    current_nodes[check_node] = []
+                current_nodes[check_node].append(node_need)
+                break  # We found the related type for the need
+
+    # Let's call the handlers
+    for check_node, check_func in NODE_TYPES.items():
+        # Call the handler only, if it defined, and we found some nodes for it
+        if check_node in current_nodes and check_func is not None and current_nodes[check_node]:
+            check_func(app, doctree, fromdocname, current_nodes[check_node])
 
 
 def load_config(app: Sphinx, *_args) -> None:
@@ -492,6 +545,11 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
         # Used to store all needed information about all services
         app.needs_services = ServiceManager(app)
 
+    if not hasattr(env, "needs_all_docs"):
+        # Used to store all docnames, which have need-function in it and therefor
+        # need to be handled later
+        env.needs_all_docs = []
+
     # Register embedded services
     app.needs_services.register("github-issues", GithubService, gh_type="issue")
     app.needs_services.register("github-prs", GithubService, gh_type="pr")
@@ -570,6 +628,8 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
         env.needs_workflow = {
             "backlink_creation_links": False,
             "dynamic_values_resolved": False,
+            "links_checked": False,
+            "add_sections": False,
             "variant_option_resolved": False,
             "needs_extended": False,
         }
@@ -664,7 +724,14 @@ def merge_data(_app: Sphinx, env: BuildEnvironment, _docnames: List[str], other:
         objects = getattr(env, name)
         if hasattr(other, name):
             other_objects = getattr(other, name)
-            objects.update(other_objects)
+            if isinstance(other_objects, dict) and isinstance(objects, dict):
+                objects.update(other_objects)
+            elif isinstance(other_objects, list) and isinstance(objects, list):
+                objects += other_objects
+            else:
+                raise TypeError(
+                    f'Objects to "merge" must be dict or list, ' f"not {type(other_objects)} and {type(objects)}"
+                )
 
     merge("need_all_needbar")
     merge("need_all_needtables")
@@ -677,6 +744,7 @@ def merge_data(_app: Sphinx, env: BuildEnvironment, _docnames: List[str], other:
     merge("need_all_needpie")
     merge("need_all_needsequences")
     merge("needs_all_needumls")
+    merge("needs_all_docs")  # list type
 
 
 class NeedsConfigException(SphinxError):
