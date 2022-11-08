@@ -12,6 +12,8 @@ License
 -----
 Under development
 
+* Improvement: Fixed :ref:`needextend` error handling by adding a strict-mode option to it.
+  (`#747 <https://github.com/useblocks/sphinx-needs/issues/747>`_)
 * Improvement: Fixed rendering issue with the debug layout.
   (`#721 <https://github.com/useblocks/sphinx-needs/issues/721>`_)
 * Improvement: Added :ref:`needs_show_link_id`.
