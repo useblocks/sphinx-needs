@@ -8,9 +8,14 @@ License
 
 .. include:: ../LICENSE
 
-1.0.3
+1.0.4
 -----
 Under development
+
+1.0.3
+-----
+Released: 08.11.2022
+
 
 * Improvement: Fixed :ref:`needextend` error handling by adding a strict-mode option to it.
   (`#747 <https://github.com/useblocks/sphinx-needs/issues/747>`_)
