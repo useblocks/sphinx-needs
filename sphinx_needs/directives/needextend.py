@@ -6,19 +6,23 @@ import re
 from typing import Any, Callable, Dict, Sequence
 
 from docutils import nodes
-from docutils.parsers.rst import Directive
+from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
+from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.filter_common import filter_needs
+from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import add_doc, unwrap
+
+logger = get_logger(__name__)
 
 
 class Needextend(nodes.General, nodes.Element):
     pass
 
 
-class NeedextendDirective(Directive):
+class NeedextendDirective(SphinxDirective):
     """
     Directive to modify existing needs
     """
@@ -28,7 +32,9 @@ class NeedextendDirective(Directive):
     optional_arguments = 0
     final_argument_whitespace = True
 
-    option_spec: Dict[str, Callable[[str], Any]] = {}
+    option_spec: Dict[str, Callable[[str], Any]] = {
+        "strict": directives.unchanged_required,
+    }
 
     def run(self) -> Sequence[nodes.Node]:
         env = self.state.document.settings.env
@@ -47,6 +53,12 @@ class NeedextendDirective(Directive):
         if not extend_filter:
             raise NeedsInvalidFilter(f"Filter of needextend must be set. See {env.docname}:{self.lineno}")
 
+        strict_option = self.options.get("strict", str(self.env.app.config.needs_needextend_strict))
+        if strict_option.upper() == "TRUE":
+            strict = True
+        elif strict_option.upper() == "FALSE":
+            strict = False
+
         env.need_all_needextend[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
@@ -54,6 +66,7 @@ class NeedextendDirective(Directive):
             "env": env,
             "filter": self.arguments[0] if self.arguments else None,
             "modifications": self.options,
+            "strict": strict,
         }
 
         add_doc(env, env.docname)
@@ -89,8 +102,12 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
                 need_filter = f'id == "{need_filter}"'
             # If it looks like a need id, but we haven't found one, raise an exception
             elif re.fullmatch(app.config.needs_id_regex, need_filter):
-                raise NeedsInvalidFilter(f"Provided id {need_filter} for needextend does not exist.")
-
+                error = f"Provided id {need_filter} for needextend does not exist."
+                if current_needextend["strict"]:
+                    raise NeedsInvalidFilter(error)
+                else:
+                    logger.info(error)
+                    continue
             try:
                 found_needs = filter_needs(app, env.needs_all_needs.values(), need_filter)
             except NeedsInvalidFilter as e:

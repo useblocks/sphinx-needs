@@ -404,7 +404,7 @@ from any NeedLists or NeedDicts including the ``needs.json`` file.
 
 This option allows a user to have multiple need-objects with the same id, but only one is shown in the documentation.
 
-If set to **False**, the need is not removed.
+If set to ``false``, the need is not removed.
 
 Allowed values:
 

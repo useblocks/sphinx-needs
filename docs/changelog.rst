@@ -12,6 +12,8 @@ License
 -----
 Under development
 
+* Improvement: Fixed :ref:`needextend` error handling by adding a strict-mode option to it.
+  (`#747 <https://github.com/useblocks/sphinx-needs/issues/747>`_)
 * Improvement: Fixed issue with handling needs-variants by default.
   (`#776 <https://github.com/useblocks/sphinx-needs/issues/776>`_)
 * Improvement: Performance fix needs processing.
@@ -81,7 +83,7 @@ Released: 22.09.2022
 * Improvement: Renamed jinja function `need` to `flow` for :ref:`needuml`.
 * Improvement: Added directive :ref:`needarch`.
 * Improvement: Added configuration option :ref:`needs_ide_snippets_id` to support custom need ID for :ref:`ide` snippets.
-* Improvement: Provides jinja function :ref:`needarch_jinja_import` for :ref:`needarch` to execute :ref:`needuml_jinja_uml` 
+* Improvement: Provides jinja function :ref:`needarch_jinja_import` for :ref:`needarch` to execute :ref:`jinja_uml` 
   automatically for all the links defined in the need :ref:`need_links` options.
 * Improvement: Added configuration :ref:`needs_ide_directive_snippets` to support custom directive snippets for IDE features.
   (`#640 <https://github.com/useblocks/sphinx-needs/issues/640>`_)
