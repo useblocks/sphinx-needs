@@ -86,8 +86,6 @@ For final activation, please add `sphinx_needs` to the project's extension list 
 
    extensions = ["sphinx_needs",]
 
-For the full configuration, please read :ref:`config`.
-
 .. note::
 
    Prior version **1.0.1** the extensions was called ``sphinxcontrib.needs``.
