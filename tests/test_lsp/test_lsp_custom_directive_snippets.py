@@ -47,9 +47,9 @@ async def test_lsp_custom_directive_snippets(client):
     for index, item in enumerate(need_custom_directive_snippets.items):
         if item.label == ".. req::":
             req_snippet_idx = index
-        if item.label == ".. test::":
+        elif item.label == ".. test::":
             test_snippet_idx = index
-        if item.label == ".. spec::":
+        elif item.label == ".. spec::":
             spec_snippet_idx = index
 
     # check custom directive snippets

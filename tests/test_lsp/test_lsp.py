@@ -35,19 +35,19 @@ async def test_need_directive_role_completion(client):
     for index, item in enumerate(need_directive_result.items):
         if item.label == "req":
             req_idx = index
-        if item.label == "spec":
+        elif item.label == "spec":
             spec_idx = index
-        if item.label == "impl":
+        elif item.label == "impl":
             impl_idx = index
-        if item.label == "test":
+        elif item.label == "test":
             test_idx = index
-        if item.label == "need":
+        elif item.label == "need":
             need_idx = index
-        if item.label == "needarch":
+        elif item.label == "needarch":
             needarch_idx = index
-        if item.label == "needlist":
+        elif item.label == "needlist":
             needlist_idx = index
-        if item.label == "needimport":
+        elif item.label == "needimport":
             needimport_idx = index
 
     # check user in conf.py defined need directive req exists
@@ -127,7 +127,7 @@ async def test_need_directive_role_completion(client):
     for index, item in enumerate(need_req_options_result.items):
         if item.label == "id":
             req_id_idx = index
-        if item.label == "status":
+        elif item.label == "status":
             req_status_idx = index
 
     # check need directive option id exists
@@ -160,7 +160,7 @@ async def test_need_directive_role_completion(client):
     for index, item in enumerate(need_spec_options_result.items):
         if item.label == "id":
             spec_id_idx = index
-        if item.label == "status":
+        elif item.label == "status":
             spec_status_idx = index
 
     assert spec_id_idx is not None

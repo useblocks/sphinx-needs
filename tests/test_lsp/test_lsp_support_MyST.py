@@ -180,7 +180,7 @@ async def test_lsp_need_directive_snippets_completion_for_myst(client):
     for index, item in enumerate(needs_directive_snippets_suggestion.items):
         if item.label == "md:.. req::":
             req_md_idx = index
-        if item.label == "md:.. spec::":
+        elif item.label == "md:.. spec::":
             spec_md_idx = index
 
     assert req_md_idx is not None
@@ -214,7 +214,7 @@ async def test_lsp_need_directive_snippets_completion_for_myst(client):
     for index, item in enumerate(needs_directive_snippets_inside_eval_rst_suggestion.items):
         if item.label == ".. req::":
             req_md_in_eval_rst_idx = index
-        if item.label == ".. spec::":
+        elif item.label == ".. spec::":
             spec_md_in_eval_rst_idx = index
 
     assert req_md_in_eval_rst_idx is not None
