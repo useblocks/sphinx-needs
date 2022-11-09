@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1667912452596,
+  "lastUpdate": 1667997906790,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -1224,6 +1224,42 @@ window.BENCHMARK_DATA = {
             "value": 72.78825557799996,
             "unit": "s",
             "extra": "Commit: e5a38edf207a912aba53080c67ccecf32f41feb0\nBranch: master\nTime: 2022-11-08T13:54:15+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "19b2516245a2b10e0f0bd7c5a9ecf7dbe82713ae",
+          "message": "Ver 1.0.3 prep (#787)\n\n* Preparation for release 1.0.3\r\n\r\n* Updates poetry.lock\r\n\r\n* Adds \"py\" dep for pytest-benchmarking\r\n\r\n* Fixed lsp tests due to latest esbonio version\r\n\r\n* Imporved lsp tests logic\r\n\r\n* Improved lsp tests with elif\r\n\r\nCo-authored-by: haiyangToAI <haiyang.zhang@tutanota.com>",
+          "timestamp": "2022-11-09T13:38:22+01:00",
+          "tree_id": "b32c9feb6758dbd751bc8f1524e180b48d0e2796",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/19b2516245a2b10e0f0bd7c5a9ecf7dbe82713ae"
+        },
+        "date": 1667997902152,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2922609909999778,
+            "unit": "s",
+            "extra": "Commit: 19b2516245a2b10e0f0bd7c5a9ecf7dbe82713ae\nBranch: master\nTime: 2022-11-09T13:38:22+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 75.934814797,
+            "unit": "s",
+            "extra": "Commit: 19b2516245a2b10e0f0bd7c5a9ecf7dbe82713ae\nBranch: master\nTime: 2022-11-09T13:38:22+01:00"
           }
         ]
       }
