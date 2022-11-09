@@ -25,6 +25,7 @@ TEST_DEPENDENCIES = [
 # Some pytest-extension do not work well with pytest-benchmark, so we create our
 # own list for benchmarking
 BENCHMARK_DEPENDENCIES = [e for e in TEST_DEPENDENCIES if e not in ['"pytest-xdist"']]
+BENCHMARK_DEPENDENCIES.append("py")
 BENCHMARK_DEPENDENCIES.append("memray")
 BENCHMARK_DEPENDENCIES.append("pytest-benchmark")
 

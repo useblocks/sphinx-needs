@@ -41,8 +41,20 @@ async def test_lsp_custom_directive_snippets(client):
     need_custom_directive_snippets = await client.completion_request(uri=TEST_FILE_URI, line=10, character=2)
     assert need_custom_directive_snippets
 
+    req_snippet_idx = None
+    test_snippet_idx = None
+    spec_snippet_idx = None
+    for index, item in enumerate(need_custom_directive_snippets.items):
+        if item.label == ".. req::":
+            req_snippet_idx = index
+        elif item.label == ".. test::":
+            test_snippet_idx = index
+        elif item.label == ".. spec::":
+            spec_snippet_idx = index
+
     # check custom directive snippets
-    need_custom_directive_snippets_req = need_custom_directive_snippets.items[145]
+    assert req_snippet_idx is not None
+    need_custom_directive_snippets_req = need_custom_directive_snippets.items[req_snippet_idx]
     assert need_custom_directive_snippets_req.label == ".. req::"
     assert need_custom_directive_snippets_req.detail == "Requirement"
     assert need_custom_directive_snippets_req.insert_text == CONF_PY_CUSTOM_DIRECTIVE_SNIPPETS_REQ
@@ -50,7 +62,8 @@ async def test_lsp_custom_directive_snippets(client):
     assert need_custom_directive_snippets_req.kind == 15  # CompletionItemKind.Snippet
     assert need_custom_directive_snippets_req.data["source_feature"] == "sphinx_needs.lsp.esbonio.NeedlsFeatures"
 
-    need_custom_directive_snippets_test = need_custom_directive_snippets.items[148]
+    assert test_snippet_idx is not None
+    need_custom_directive_snippets_test = need_custom_directive_snippets.items[test_snippet_idx]
     assert need_custom_directive_snippets_test.label == ".. test::"
     assert need_custom_directive_snippets_test.detail == "Test Case"
     assert need_custom_directive_snippets_test.insert_text == CONF_PY_CUSTOM_DIRECTIVE_SNIPPETS_TEST
@@ -59,7 +72,8 @@ async def test_lsp_custom_directive_snippets(client):
     assert need_custom_directive_snippets_test.data["source_feature"] == "sphinx_needs.lsp.esbonio.NeedlsFeatures"
 
     # check default directive snippets
-    need_custom_directive_snippets_spec = need_custom_directive_snippets.items[146]
+    assert spec_snippet_idx is not None
+    need_custom_directive_snippets_spec = need_custom_directive_snippets.items[spec_snippet_idx]
     assert need_custom_directive_snippets_spec.label == ".. spec::"
     assert need_custom_directive_snippets_spec.detail == "Specification"
     assert need_custom_directive_snippets_spec.insert_text.startswith(" spec:: ${1:title}\n\t:id: ${2:SPEC_")

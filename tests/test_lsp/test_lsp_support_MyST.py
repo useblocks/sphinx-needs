@@ -175,7 +175,16 @@ async def test_lsp_need_directive_snippets_completion_for_myst(client):
     needs_directive_snippets_suggestion = await client.completion_request(uri=TEST_MD_FILE_URI, line=47, character=2)
     assert needs_directive_snippets_suggestion.items
 
-    needs_directive_req_md = needs_directive_snippets_suggestion.items[146]
+    req_md_idx = None
+    spec_md_idx = None
+    for index, item in enumerate(needs_directive_snippets_suggestion.items):
+        if item.label == "md:.. req::":
+            req_md_idx = index
+        elif item.label == "md:.. spec::":
+            spec_md_idx = index
+
+    assert req_md_idx is not None
+    needs_directive_req_md = needs_directive_snippets_suggestion.items[req_md_idx]
     assert needs_directive_req_md.label == "md:.. req::"
     assert needs_directive_req_md.detail == "Markdown directive snippet"
     assert needs_directive_req_md.insert_text.startswith("```{req} ${1:title}\n:id: ${2:REQ_")
@@ -184,7 +193,8 @@ async def test_lsp_need_directive_snippets_completion_for_myst(client):
     assert needs_directive_req_md.kind == 15  # CompletionItemKind.Snippet
     assert needs_directive_req_md.data["source_feature"] == "sphinx_needs.lsp.esbonio.NeedlsFeatures"
 
-    needs_directive_spec_md = needs_directive_snippets_suggestion.items[147]
+    assert spec_md_idx is not None
+    needs_directive_spec_md = needs_directive_snippets_suggestion.items[spec_md_idx]
     assert needs_directive_spec_md.label == "md:.. spec::"
     assert needs_directive_spec_md.detail == "Markdown directive snippet"
     assert needs_directive_spec_md.insert_text.startswith("```{spec} ${1:title}\n:id: ${2:SPEC_")
@@ -199,7 +209,18 @@ async def test_lsp_need_directive_snippets_completion_for_myst(client):
     )
     assert needs_directive_snippets_inside_eval_rst_suggestion.items
 
-    needs_directive_req_md_inside_eval_rst = needs_directive_snippets_inside_eval_rst_suggestion.items[146]
+    req_md_in_eval_rst_idx = None
+    spec_md_in_eval_rst_idx = None
+    for index, item in enumerate(needs_directive_snippets_inside_eval_rst_suggestion.items):
+        if item.label == ".. req::":
+            req_md_in_eval_rst_idx = index
+        elif item.label == ".. spec::":
+            spec_md_in_eval_rst_idx = index
+
+    assert req_md_in_eval_rst_idx is not None
+    needs_directive_req_md_inside_eval_rst = needs_directive_snippets_inside_eval_rst_suggestion.items[
+        req_md_in_eval_rst_idx
+    ]
     assert needs_directive_req_md_inside_eval_rst.label == ".. req::"
     assert needs_directive_req_md_inside_eval_rst.detail == "Requirement"
     assert needs_directive_req_md_inside_eval_rst.insert_text.startswith(" req:: ${1:title}\n\t:id: ${2:REQ_")
@@ -208,7 +229,10 @@ async def test_lsp_need_directive_snippets_completion_for_myst(client):
     assert needs_directive_req_md_inside_eval_rst.kind == 15  # CompletionItemKind.Snippet
     assert needs_directive_req_md_inside_eval_rst.data["source_feature"] == "sphinx_needs.lsp.esbonio.NeedlsFeatures"
 
-    needs_directive_spec_md_inside_eval_rst = needs_directive_snippets_inside_eval_rst_suggestion.items[147]
+    assert spec_md_in_eval_rst_idx is not None
+    needs_directive_spec_md_inside_eval_rst = needs_directive_snippets_inside_eval_rst_suggestion.items[
+        spec_md_in_eval_rst_idx
+    ]
     assert needs_directive_spec_md_inside_eval_rst.label == ".. spec::"
     assert needs_directive_spec_md_inside_eval_rst.detail == "Specification"
     assert needs_directive_spec_md_inside_eval_rst.insert_text.startswith(" spec:: ${1:title}\n\t:id: ${2:SPEC_")
@@ -223,7 +247,14 @@ async def test_lsp_needs_option_id_completion_for_myst(client):
     # Needs option id suggestion is the same for MyST/Markdown as for rst/Sphinx file, e.g. :id:
     needs_option_suggestion = await client.completion_request(uri=TEST_MD_FILE_URI, line=13, character=1)
     assert needs_option_suggestion.items
-    needs_option_id = needs_option_suggestion.items[92]
+
+    option_id_idx = None
+    for index, item in enumerate(needs_option_suggestion.items):
+        if item.label == ":id:":
+            option_id_idx = index
+
+    assert option_id_idx is not None
+    needs_option_id = needs_option_suggestion.items[option_id_idx]
     assert needs_option_id.label == ":id:"
     assert needs_option_id.detail == "needs option"
     assert needs_option_id.insert_text.startswith("id: ${1:SPEC_")
@@ -238,7 +269,14 @@ async def test_lsp_need_role_need_completion_for_myst(client):
     # Same usage like rst file, but will be adapted to MyST/Markdown style, which isinsert {need}`` instead of :need:
     need_role_need_suggestion = await client.completion_request(uri=TEST_MD_FILE_URI, line=45, character=1)
     assert need_role_need_suggestion.items
-    need_role_need = need_role_need_suggestion.items[93]
+
+    need_role_idx = None
+    for index, item in enumerate(need_role_need_suggestion.items):
+        if item.label == "md::need:":
+            need_role_idx = index
+
+    assert need_role_idx is not None
+    need_role_need = need_role_need_suggestion.items[need_role_idx]
     assert need_role_need.label == "md::need:"
     assert need_role_need.detail == "Markdown need role"
     assert need_role_need.insert_text == "{need}`${1:ID}`$0"
