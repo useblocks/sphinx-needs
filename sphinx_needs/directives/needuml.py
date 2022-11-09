@@ -202,6 +202,7 @@ def jinja2uml(
             "flow": jinja_utils.flow,
             "filter": jinja_utils.filter,
             "import": jinja_utils.imports,
+            "link": jinja_utils.link,
         }
     )
 
@@ -319,6 +320,21 @@ class JinjaFunctions:
             link=link,
             color=need_info["type_color"].replace("#", ""),
             style=need_info["type_style"],
+        )
+
+        return need_uml
+
+    def link(self, need_id: str, content: str) -> str:
+        if need_id not in self.needs:
+            raise NeedumlException(f"Jinja function link is called with undefined need_id: '{need_id}'.")
+
+        need_info = self.needs[need_id]
+        link = calculate_link(self.app, need_info, self.fromdocname)
+
+
+        need_uml = ' [[{link} {content}]]'.format(
+            link=link,
+            content=need_info.get(content, ''),
         )
 
         return need_uml
