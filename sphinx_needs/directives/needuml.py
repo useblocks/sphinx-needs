@@ -332,9 +332,9 @@ class JinjaFunctions:
         link = calculate_link(self.app, need_info, self.fromdocname)
 
 
-        need_uml = ' [[{link} {content}]]'.format(
+        need_uml = " [[{link} {content}]]".format(
             link=link,
-            content=need_info.get(content, ''),
+            content=need_info.get(content, ""),
         )
 
         return need_uml
