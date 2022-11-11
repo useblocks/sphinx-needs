@@ -88,7 +88,7 @@ class NeedflowDirective(FilterBase):
         env.need_all_needflows[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
-            "target_node": targetnode,
+            "target_id": targetid,
             "caption": caption,
             "show_filters": "show_filters" in self.options,
             "show_legend": "show_legend" in self.options,
@@ -100,7 +100,6 @@ class NeedflowDirective(FilterBase):
             "highlight": highlight,
             "align": self.options.get("align"),
             "link_types": link_types,
-            "env": env,
         }
         env.need_all_needflows[targetid].update(self.collect_filter_attributes())
 
@@ -284,7 +283,7 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
             if lt not in [link["option"].upper() for link in link_types]:
                 logger.warning(
                     "Unknown link type {link_type} in needflow {flow}. Allowed values: {link_types}".format(
-                        link_type=lt, flow=current_needflow["target_node"], link_types=",".join(link_types)
+                        link_type=lt, flow=current_needflow["target_id"], link_types=",".join(link_types)
                     )
                 )
 
