@@ -177,12 +177,17 @@ def process_filters(app: Sphinx, all_needs, current_needlist, include_external: 
 
     # Store basic filter configuration and result global list.
     # Needed mainly for exporting the result to needs.json (if builder "needs" is used).
-    env = current_needlist["env"]
+    env = app.env
     filter_list = env.needs_all_filters
     found_needs_ids = [need["id_complete"] for need in found_needs]
 
-    filter_list[current_needlist["target_node"]] = {
-        "target_node": current_needlist["target_node"],
+    if "target_node" in current_needlist:
+        target_id = current_needlist["target_node"]["refid"]
+    else:
+        target_id = current_needlist["target_id"]
+
+    filter_list[target_id] = {
+        # "target_node": current_needlist["target_node"],
         "filter": current_needlist["filter"] or "",
         "status": current_needlist["status"],
         "tags": current_needlist["tags"],
