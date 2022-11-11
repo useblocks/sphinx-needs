@@ -90,8 +90,7 @@ class NeedpieDirective(FilterBase):
         env.need_all_needpie[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
-            "target_node": targetnode,
-            "env": env,
+            "target_id": targetid,
             "title": title,
             "content": content,
             "legend": legend,
