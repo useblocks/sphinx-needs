@@ -57,8 +57,7 @@ class NeedextractDirective(FilterBase):
         env.need_all_needextracts[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
-            "target_node": targetnode,
-            "env": env,
+            "target_id": targetid,
             "export_id": self.options.get("export_id", ""),
             "layout": self.options.get("layout"),
             "style": self.options.get("style"),
