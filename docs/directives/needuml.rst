@@ -345,6 +345,32 @@ Finds a list of Sphinx-Need objects that pass the given filter string.
       {% endfor %}
 
 
+.. _needuml_jinja_ref
+
+ref(id, content, text)
+~~~~~~~~~~~~~~~~~~~~~~
+
+Allows to create an hyperlink to a Sphinx-Need object in a PlantUML schema. The
+text associated to the hyperlink is either defined by `content` (in this case,
+Sphinx-Need picks the text of the field specified by `content`), or by the free text `text`.
+
+
+|ex|
+
+.. code-block:: rst
+
+   .. needuml::
+
+      Alice -> Bob: {{ref(COMP_001, content='title')}}
+      Bob -> Alice: {{ref(COMP_002, text='A completely free text')}}
+
+|out|
+
+.. needuml::
+
+      Alice -> Bob: {{ref(COMP_001, content='title')}}
+      Bob -> Alice: {{ref(COMP_002, text='A completely free text')}}
+
 .. _needuml_jinja_uml:
 
 uml(id)
