@@ -312,6 +312,7 @@ def add_need(
         "target_node": target_node,
         "external_url": external_url,
         "content_node": None,  # gets set after rst parsing
+        "content_id": None,  # gets set after rst parsing
         "type": need_type,
         "type_name": type_name,
         "type_prefix": type_prefix,
@@ -339,7 +340,6 @@ def add_need(
         "parts": {},
         "is_part": False,
         "is_need": True,
-        "parent_need": None,
         "is_external": is_external or False,
         "external_css": external_css or "external_link",
         "is_modified": False,  # needed by needextend
@@ -479,7 +479,8 @@ def add_need(
 
     node_need += node_need_content.children
 
-    needs_info["content_node"] = node_need
+    needs_info["content_id"] = node_need["ids"][0]
+    needs_info["content_node"] = node_need.deepcopy()  # Create a copy of the content
 
     return_nodes = [target_node] + [node_need]
     if pre_content:
@@ -493,18 +494,18 @@ def add_need(
     return return_nodes
 
 
-def del_need(app: Sphinx, id: str) -> None:
+def del_need(app: Sphinx, need_id: str) -> None:
     """
     Deletes an existing need.
 
     :param app: Sphinx application object.
-    :param id: Sphinx need id.
+    :param need_id: Sphinx need id.
     """
     env = unwrap(app.env)
-    if id in env.needs_all_needs:
-        del env.needs_all_needs[id]
+    if need_id in env.needs_all_needs:
+        del env.needs_all_needs[need_id]
     else:
-        logger.warning(f"Given need id {id} not exists!")
+        logger.warning(f"Given need id {need_id} not exists!")
 
 
 def add_external_need(

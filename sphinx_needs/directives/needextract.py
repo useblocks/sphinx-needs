@@ -77,7 +77,6 @@ def process_needextract(app: Sphinx, doctree: nodes.document, fromdocname: str, 
     """
     env = unwrap(app.env)
 
-    # for node in doctree.findall(Needextract):
     for node in found_nodes:
         if not app.config.needs_include_needs:
             # Ok, this is really dirty.

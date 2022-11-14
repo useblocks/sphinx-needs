@@ -49,6 +49,7 @@ INTERNALS = [
     "sections",
     "section_name",
     "content_node",
+    "content_id",
     # "parent_needs",
     "parent_need",
     # "child_needs",

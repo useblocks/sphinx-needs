@@ -44,6 +44,7 @@ def create_need(need_id: str, app: Sphinx, layout=None, style=None, docname: Opt
 
     node_container = nodes.container()
     node_inner = needs[need_id]["content_node"]
+
     node_container.append(node_inner)
     # Resolve internal references.
     # This is done for original need content automatically.
