@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1668001233740,
+  "lastUpdate": 1668422115207,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -1296,6 +1296,42 @@ window.BENCHMARK_DATA = {
             "value": 90.21656180000002,
             "unit": "s",
             "extra": "Commit: bc9641f44c184325d546ddd0396336726622f20f\nBranch: master\nTime: 2022-11-09T14:32:26+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "duodurandy19@gmail.com",
+            "name": "Randy Duodu (He/Him)",
+            "username": "iSOLveIT"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1be9b6f1521f6c2b0ab27f6e711022385952b4b0",
+          "message": "Obfuscate credentials when using HTTP auth (#793)\n\n* Obfuscate credentials when using HTTP auth\r\n\r\n* Updated clean_log() module",
+          "timestamp": "2022-11-14T11:27:27+01:00",
+          "tree_id": "aa4224ee67b5bbcf794fe313cf8ba6d86d35ee55",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/1be9b6f1521f6c2b0ab27f6e711022385952b4b0"
+        },
+        "date": 1668422110935,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.29943140300002824,
+            "unit": "s",
+            "extra": "Commit: 1be9b6f1521f6c2b0ab27f6e711022385952b4b0\nBranch: master\nTime: 2022-11-14T11:27:27+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 88.904316344,
+            "unit": "s",
+            "extra": "Commit: 1be9b6f1521f6c2b0ab27f6e711022385952b4b0\nBranch: master\nTime: 2022-11-14T11:27:27+01:00"
           }
         ]
       }
