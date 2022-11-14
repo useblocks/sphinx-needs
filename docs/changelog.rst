@@ -12,6 +12,9 @@ License
 -----
 Under development
 
+* Improvement: Obfuscate HTTP authentication credentials from log output.
+  (`#759 <https://github.com/useblocks/sphinx-needs/issues/759>`_)
+
 1.0.3
 -----
 Released: 08.11.2022
