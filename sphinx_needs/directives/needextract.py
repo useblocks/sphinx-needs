@@ -78,6 +78,7 @@ def process_needextract(app: Sphinx, doctree: nodes.document, fromdocname: str, 
     env = unwrap(app.env)
 
     for node in found_nodes:
+
         if not app.config.needs_include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
@@ -111,6 +112,13 @@ def process_needextract(app: Sphinx, doctree: nodes.document, fromdocname: str, 
         found_needs = process_filters(app, all_needs, current_needextract)
 
         for need_info in found_needs:
+            # if "is_target" is True:
+            #   extract_target_node = current_needextract['target_node']
+            #   extract_target_node[ids=[need_info["id"]]]
+            #
+            #   # Original need id replacement (needextract-{docname}-{id})
+            #   need_info['target_node']['ids'] = [f"replaced_{need['id']}"]
+
             # filter out need_part from found_needs, in order to generate
             # copies of filtered needs with custom layout and style
             if need_info["is_need"] and not need_info["is_part"]:

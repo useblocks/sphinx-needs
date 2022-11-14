@@ -221,13 +221,13 @@ class NeedDirective(SphinxDirective):
             return ""
 
 
-def get_sections_and_signature_and_needs(need_info) -> Tuple[List[str], Optional[nodes.Text], List[str]]:
+def get_sections_and_signature_and_needs(need_node) -> Tuple[List[str], Optional[nodes.Text], List[str]]:
     """Gets the hierarchy of the section nodes as a list starting at the
     section of the current need and then its parent sections"""
     sections = []
     parent_needs: List[str] = []
     signature = None
-    current_node = need_info["target_node"]
+    current_node = need_node
     while current_node:
         if isinstance(current_node, nodes.section):
             title = typing.cast(str, current_node.children[0].astext())  # type: ignore[no-untyped-call]
@@ -274,17 +274,22 @@ def purge_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> None:
     env.needs_all_needs = {key: need for key, need in env.needs_all_needs.items() if need["docname"] != docname}
 
 
-def add_sections(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
+# def add_sections(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
+def add_sections(app: Sphinx, doctree: nodes.document) -> None:
     """Add section titles to the needs as additional attributes that can
     be used in tables and filters"""
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
 
-    if env.needs_workflow["add_sections"]:
-        return
+    # if env.needs_workflow["add_sections"]:
+    #     return
 
     needs = getattr(env, "needs_all_needs", {})
-    for need_info in needs.values():
+
+    for need_node in doctree.findall(Need):
+        need_id = need_node["refid"]
+        need_info = needs[need_id]
+
         # first we initialize to default values
         if "sections" not in need_info:
             need_info["sections"] = []
@@ -301,8 +306,9 @@ def add_sections(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None
         if "parent_need" not in need_info:
             need_info["parent_need"] = ""
 
-        # fetch values from need
-        sections, signature, parent_needs = get_sections_and_signature_and_needs(need_info)
+        # Fetch values from need
+        # Start from the target node, which is a sibling of the current need node
+        sections, signature, parent_needs = get_sections_and_signature_and_needs(need_node.previous_sibling())
 
         # append / set values from need
         if sections:
@@ -317,7 +323,7 @@ def add_sections(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None
             need_info["parent_need"] = parent_needs[0]
 
     # Finally set a flag so that this function gets not executed several times
-    env.needs_workflow["add_sections"] = True
+    # env.needs_workflow["add_sections"] = True
 
 
 @profile("NEED_PROCESS")

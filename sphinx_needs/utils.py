@@ -61,6 +61,7 @@ INTERNALS = [
     "constraints_passed",
     "constraints_results",
     "arch",
+    "target_id",
 ]
 
 MONTH_NAMES = [
