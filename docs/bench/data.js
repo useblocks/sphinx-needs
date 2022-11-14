@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1668422115207,
+  "lastUpdate": 1668458017348,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -1332,6 +1332,42 @@ window.BENCHMARK_DATA = {
             "value": 88.904316344,
             "unit": "s",
             "extra": "Commit: 1be9b6f1521f6c2b0ab27f6e711022385952b4b0\nBranch: master\nTime: 2022-11-14T11:27:27+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "626b2f478c42c2c44b7f382c87050ca1eaf85674",
+          "message": "Doctree perf (#792)\n\n* Ignoring performance files\r\n\r\n* needtable not storing nodes and env\r\n\r\n* needsequence not storing nodes and env\r\n\r\n* needpie not storing nodes and env\r\n\r\n* needlist not storing nodes and env\r\n\r\n* needgantt not storing nodes and env\r\n\r\n* needflow not storing nodes and env\r\n\r\n* needfilter not storing nodes and env\r\n\r\n* needextract not storing nodes and env\r\n\r\n* needextend not storing nodes and env\r\n\r\n* needbar not storing nodes and env\r\n\r\n* needuml not storing nodes and env\r\n\r\n* need directive is using content-node copy\r\n\r\n* Removes target and content node from all_needs dict\r\n\r\nFixes #790\r\n\r\n* Own previous_sibling implementation for nodes\r\n\r\n* cleanup and changelog",
+          "timestamp": "2022-11-14T21:25:28+01:00",
+          "tree_id": "63a00da3f9c7fb66b4694aa4c007de067e982776",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/626b2f478c42c2c44b7f382c87050ca1eaf85674"
+        },
+        "date": 1668458012856,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2806330559999992,
+            "unit": "s",
+            "extra": "Commit: 626b2f478c42c2c44b7f382c87050ca1eaf85674\nBranch: master\nTime: 2022-11-14T21:25:28+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 89.52339489999997,
+            "unit": "s",
+            "extra": "Commit: 626b2f478c42c2c44b7f382c87050ca1eaf85674\nBranch: master\nTime: 2022-11-14T21:25:28+01:00"
           }
         ]
       }
