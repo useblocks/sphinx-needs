@@ -12,6 +12,9 @@ License
 -----
 Under development
 
+* Improvement: Memory consumption and runtime improvements
+  (`#790 <https://github.com/useblocks/sphinx-needs/issues/790>`_).
+
 1.0.3
 -----
 Released: 08.11.2022

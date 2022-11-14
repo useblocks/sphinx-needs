@@ -360,7 +360,7 @@ def is_element_of_need(node: nodes.Element) -> str:
     """
     Checks if a node is part of a need in the doctree.
 
-    It does not search for Need-nodes, as they got transfomred already to toable nodes.
+    It does not search for Need-nodes, as they got transfomred already to docutils nodes.
     So tries to find a Table-Node, which has "need" in classes.
 
     :param node: docutils node object
