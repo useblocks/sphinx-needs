@@ -308,7 +308,7 @@ def add_sections(app: Sphinx, doctree: nodes.document) -> None:
 
         # Fetch values from need
         # Start from the target node, which is a sibling of the current need node
-        sections, signature, parent_needs = get_sections_and_signature_and_needs(need_node.previous_sibling())
+        sections, signature, parent_needs = get_sections_and_signature_and_needs(previous_sibling(need_node))
 
         # append / set values from need
         if sections:
@@ -324,6 +324,15 @@ def add_sections(app: Sphinx, doctree: nodes.document) -> None:
 
     # Finally set a flag so that this function gets not executed several times
     # env.needs_workflow["add_sections"] = True
+
+
+def previous_sibling(node):
+    """Return preceding sibling node or ``None``."""
+    try:
+        i = node.parent.index(node)
+    except (AttributeError):
+        return None
+    return node.parent[i - 1] if i > 0 else None
 
 
 @profile("NEED_PROCESS")
