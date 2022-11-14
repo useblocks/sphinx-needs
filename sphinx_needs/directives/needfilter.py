@@ -62,14 +62,14 @@ class NeedfilterDirective(FilterBase):
         env.need_all_needfilters[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
-            "target_node": targetnode,
+            "target_id": targetid,
             "show_tags": "show_tags" in self.options,
             "show_status": "show_status" in self.options,
             "show_filters": "show_filters" in self.options,
             "show_legend": "show_legend" in self.options,
             "layout": self.options.get("layout", "list"),
             "export_id": self.options.get("export_id", ""),
-            "env": env,
+            # "env": env,
         }
         env.need_all_needfilters[targetid].update(self.collect_filter_attributes())
 
@@ -156,6 +156,11 @@ def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str, 
 
         line_block = nodes.line_block()
         for need_info in found_needs:
+            if "target_node" in need_info:
+                target_id = need_info["target_node"]["refid"]
+            else:
+                target_id = need_info["target_id"]
+
             if current_needfilter["layout"] == "list":
                 para = nodes.line()
                 description = "{}: {}".format(need_info["id"], need_info["title"])
@@ -175,7 +180,7 @@ def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str, 
                     ref = nodes.reference("", "")
                     ref["refdocname"] = need_info["docname"]
                     ref["refuri"] = builder.get_relative_uri(fromdocname, need_info["docname"])
-                    ref["refuri"] += "#" + need_info["target_node"]["refid"]
+                    ref["refuri"] += "#" + target_id
                     ref.append(title)
                     para += ref
 
@@ -201,7 +206,7 @@ def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str, 
                         + builder.get_target_uri(need_info["docname"])
                         + "?highlight={}".format(urlparse(need_info["title"]))
                         + "#"
-                        + need_info["target_node"]["refid"]
+                        + target_id
                     )  # Gets mostly called during latex generation
                 except NoUri:
                     link = ""

@@ -132,8 +132,7 @@ class NeedbarDirective(FilterBase):
         env.need_all_needbar[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
-            "target_node": targetnode,
-            "env": env,
+            "target_id": targetid,
             "error_id": error_id,
             "title": title,
             "content": content,

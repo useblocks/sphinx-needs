@@ -88,7 +88,7 @@ class NeedumlDirective(Directive):
         env.needs_all_needumls[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
-            "target_node": targetnode,
+            "target_id": targetid,
             "caption": title,
             "content": content,
             "scale": scale,
@@ -356,6 +356,30 @@ class JinjaFunctions:
         return self.needs[self.parent_need_id]
 
 
+def is_element_of_need(node: nodes.Element) -> str:
+    """
+    Checks if a node is part of a need in the doctree.
+
+    It does not search for Need-nodes, as they got transfomred already to docutils nodes.
+    So tries to find a Table-Node, which has "need" in classes.
+
+    :param node: docutils node object
+    :returns: Need ID is string or an empty string
+
+    """
+    is_element_of = ""
+    while not is_element_of:
+        if isinstance(node, nodes.table) and "need" in node["classes"]:
+            is_element_of = node["ids"][0]
+            break
+        else:
+            if not node.parent:
+                break
+            node = node.parent
+
+    return is_element_of
+
+
 def process_needuml(app, doctree, fromdocname, found_nodes):
     env = app.builder.env
 
@@ -366,16 +390,11 @@ def process_needuml(app, doctree, fromdocname, found_nodes):
 
         parent_need_id = None
         # Check if current needuml is needarch
-        from sphinx_needs.directives.need import Need  # avoid circular import
-
         if current_needuml["is_arch"]:
             # Check if needarch is only used inside a need
-            if not (current_needuml["target_node"].parent and isinstance(current_needuml["target_node"].parent, Need)):
+            parent_need_id = is_element_of_need(node)
+            if not parent_need_id:
                 raise NeedArchException("Directive needarch can only be used inside a need.")
-            else:
-                # Calculate parent need id for needarch
-                parent_need_id = current_needuml["target_node"].parent.attributes["refid"]
-
         content = []
 
         # Adding config

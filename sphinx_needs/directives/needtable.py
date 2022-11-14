@@ -90,7 +90,7 @@ class NeedtableDirective(FilterBase):
         env.need_all_needtables[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
-            "target_node": targetnode,
+            "target_id": targetid,
             "caption": title,
             "classes": classes,
             "columns": columns,
@@ -103,7 +103,6 @@ class NeedtableDirective(FilterBase):
             # If not set, the options.get() method returns False
             "show_filters": "show_filters" in self.options,
             "show_parts": self.options.get("show_parts", False) is None,
-            "env": env,
         }
         env.need_all_needtables[targetid].update(self.collect_filter_attributes())
 

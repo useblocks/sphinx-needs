@@ -62,8 +62,7 @@ class NeedextendDirective(SphinxDirective):
         env.need_all_needextend[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
-            "target_node": targetnode,
-            "env": env,
+            "target_id": targetid,
             "filter": self.arguments[0] if self.arguments else None,
             "modifications": self.options,
             "strict": strict,

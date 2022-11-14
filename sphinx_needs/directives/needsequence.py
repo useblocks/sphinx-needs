@@ -61,8 +61,7 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
         env.need_all_needsequences[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
-            "target_node": targetnode,
-            "env": env,
+            "target_id": targetid,
             "start": self.options.get("start", ""),
         }
         # Data for filtering
@@ -106,7 +105,7 @@ def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str,
                 logger.warning(
                     "Unknown link type {link_type} in needsequence {flow}. Allowed values:"
                     " {link_types}".format(
-                        link_type=lt, flow=current_needsequence["target_node"], link_types=",".join(link_types)
+                        link_type=lt, flow=current_needsequence["target_id"], link_types=",".join(link_types)
                     )
                 )
 

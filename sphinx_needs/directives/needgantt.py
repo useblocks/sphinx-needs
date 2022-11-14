@@ -94,8 +94,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
         env.need_all_needgantts[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
-            "target_node": targetnode,
-            "env": env,
+            "target_id": targetid,
             "starts_with_links": starts_with_links,
             "starts_after_links": starts_after_links,
             "ends_with_links": ends_with_links,

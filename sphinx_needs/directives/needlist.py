@@ -50,12 +50,13 @@ class NeedlistDirective(FilterBase):
         env.need_all_needlists[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
-            "target_node": targetnode,
+            # "target_node": targetnode,
+            "target_id": targetid,
             "show_tags": "show_tags" in self.options,
             "show_status": "show_status" in self.options,
             "show_filters": "show_filters" in self.options,
             "export_id": self.options.get("export_id", ""),
-            "env": env,
+            # "env": env,
         }
         env.need_all_needlists[targetid].update(self.collect_filter_attributes())
 
@@ -120,10 +121,16 @@ def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                 ref.append(title)
                 para += ref
             else:
+                # target_node should not be stored, but it may be still the case
+                if "target_node" in need_info:
+                    target_id = need_info["target_node"]["refid"]
+                else:
+                    target_id = need_info["target_id"]
+
                 ref = nodes.reference("", "")
                 ref["refdocname"] = need_info["docname"]
                 ref["refuri"] = builder.get_relative_uri(fromdocname, need_info["docname"])
-                ref["refuri"] += "#" + need_info["target_node"]["refid"]
+                ref["refuri"] += "#" + target_id
                 ref.append(title)
                 para += ref
             line_block.append(para)

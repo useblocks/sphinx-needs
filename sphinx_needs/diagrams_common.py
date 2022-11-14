@@ -190,7 +190,8 @@ def calculate_link(app: Sphinx, need_info: Dict[str, Any], _fromdocname: str) ->
                 # only need to add ../ or ..\ to get out of the image folder
                 link = ".." + os.path.sep + need_info["external_url"]
         else:
-            link = "../" + builder.get_target_uri(need_info["docname"]) + "#" + need_info["target_node"]["refid"]
+            # link = "../" + builder.get_target_uri(need_info["docname"]) + "#" + need_info["target_node"]["refid"]
+            link = "../" + builder.get_target_uri(need_info["docname"]) + "#" + need_info["target_id"]
             if need_info["is_part"]:
                 link = f"{link}.{need_info['id']}"
 

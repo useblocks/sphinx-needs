@@ -33,3 +33,4 @@ output.json
 mem_out.*
 
 pyinstrument*
+*.prof

@@ -14,3 +14,9 @@ def test_needextract_filter_options(test_app):
 
     out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
     assert out.returncode == 0
+
+
+@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needextract"}], indirect=True)
+def test_needextract_basic_run(test_app):
+    app = test_app
+    app.build()
