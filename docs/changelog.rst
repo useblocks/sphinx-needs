@@ -14,6 +14,8 @@ Under development
 
 * Improvement: Memory consumption and runtime improvements
   (`#790 <https://github.com/useblocks/sphinx-needs/issues/790>`_).
+* Improvement: Obfuscate HTTP authentication credentials from log output.
+  (`#759 <https://github.com/useblocks/sphinx-needs/issues/759>`_)
 
 1.0.3
 -----

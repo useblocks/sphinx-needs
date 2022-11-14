@@ -473,6 +473,23 @@ def match_variants(option_value: Union[str, List], keywords: Dict, needs_variant
         return option_value
 
 
+pattern = r"(https://|http://|www\.|[\w]*?)([\w\-/.]+):([\w\-/.]+)@([\w\-/.]+)"
+data_compile = re.compile(pattern)
+
+
+def clean_log(data: str) -> str:
+    """
+     Function for cleaning login credentials like username & password from log output.
+
+    :param data: The login url entered by the user.
+    :type data: str
+    :return: Cleaned login string or None
+    """
+
+    clean_credentials = data_compile.sub(r"\1****:****@\4", data)
+    return clean_credentials
+
+
 T = TypeVar("T")
 
 
