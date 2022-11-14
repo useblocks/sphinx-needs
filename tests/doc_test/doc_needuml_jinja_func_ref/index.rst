@@ -16,5 +16,5 @@ TEST DOCUMENT NEEDUML JINJA FUNCTION REF
 
    .. needuml::
 
-      DC -> Marvel: {{ref("ST_001", content="title")}}
+      DC -> Marvel: {{ref("ST_001", option="title")}}
       Marvel --> DC: {{ref("ST_002", text="Different text to explain the story")}}

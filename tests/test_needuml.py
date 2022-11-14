@@ -346,6 +346,7 @@ def test_doc_needarch_jinja_import_negative(test_app):
         "Jinja function 'import()' is not supported in needuml directive." in out.stderr.decode("utf-8")
     )
 
+
 @pytest.mark.parametrize(
     "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needuml_jinja_func_ref"}], indirect=True
 )
@@ -356,7 +357,7 @@ def test_needuml_jinja_func_ref(test_app):
     all_needumls = app.env.needs_all_needumls
     assert len(all_needumls) == 1
 
-    assert '{{ref("ST_001", content="title")}}' in all_needumls["needuml-index-0"]["content"]
+    assert '{{ref("ST_001", option="title")}}' in all_needumls["needuml-index-0"]["content"]
     assert '{{ref("ST_002", text="Different text to explain the story")}}' in all_needumls["needuml-index-0"]["content"]
 
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
