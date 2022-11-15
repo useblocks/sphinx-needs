@@ -481,7 +481,9 @@ def add_need(
     node_need += node_need_content.children
 
     needs_info["content_id"] = node_need["ids"][0]
-    needs_info["content_node"] = node_need.deepcopy()  # Create a copy of the content
+
+    # Create a copy of the content
+    needs_info["content_node"] = node_need.deepcopy()
 
     return_nodes = [target_node] + [node_need]
     if pre_content:

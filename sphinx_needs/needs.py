@@ -105,9 +105,14 @@ from sphinx_needs.warnings import process_warnings
 VERSION = "1.0.3"
 NEEDS_FUNCTIONS.clear()
 
+
+NODE_TYPES_PRIO = {  # Node types to be checked before most others
+    Needextract: process_needextract,
+}
+
 NODE_TYPES = {
     Needbar: process_needbar,
-    Needextract: process_needextract,
+    # Needextract: process_needextract,
     Needfilter: process_needfilters,
     Needlist: process_needlist,
     Needtable: process_needtables,
@@ -351,27 +356,20 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     # registered for sphinx. So some sphinx-internal tasks/functions may be called by hand again...
     # See also https://github.com/sphinx-doc/sphinx/issues/7054#issuecomment-578019701 for an example
     app.connect("doctree-resolved", process_need_nodes)
-    app.connect("doctree-resolved", process_caller)
+    app.connect("doctree-resolved", process_creator(NODE_TYPES_PRIO), priority=100)
+    app.connect("doctree-resolved", process_creator(NODE_TYPES))
 
-    # Moved to process_need_nodes
-    # app.connect("doctree-resolved", process_needextend)  # Must be done very early, as it modifies need data
-    # app.connect("doctree-resolved", print_need_nodes)
-    # app.connect("doctree-resolved", process_needbar)
-    # app.connect("doctree-resolved", process_needextract)
-    # app.connect("doctree-resolved", process_needfilters)
-    # app.connect("doctree-resolved", process_needlist)
-    # app.connect("doctree-resolved", process_needtables)
-    # app.connect("doctree-resolved", process_needflow)
-    # app.connect("doctree-resolved", process_needpie)
-    # app.connect("doctree-resolved", process_needsequence)
-    # app.connect("doctree-resolved", process_needgantt)
-    # app.connect("doctree-resolved", process_needuml)
-    # app.connect("doctree-resolved", process_need_part)
-    # app.connect("doctree-resolved", process_need_ref)
-    # app.connect("doctree-resolved", process_need_incoming)
-    # app.connect("doctree-resolved", process_need_outgoing)
-    # app.connect("doctree-resolved", process_need_count)
-    # app.connect("doctree-resolved", process_need_func)
+    def image_collector(app: Sphinx, doctree: nodes.document, fromdocname: str):
+        """
+        Used to set "candidates" for images added directly to doctree after Sphinx already handled images
+        """
+        for node in doctree.findall(nodes.image):
+            if "candidates" in node:
+                continue
+
+            node["candidates"] = {"*": node["uri"]}
+
+    app.connect("doctree-resolved", image_collector)
 
     app.connect("build-finished", process_warnings)
     app.connect("build-finished", build_needs_json)
@@ -394,35 +392,42 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     }
 
 
-def process_caller(app: Sphinx, doctree: nodes.document, fromdocname: str):
+def process_creator(node_list):
     """
-    A single event_handler for doc-tree-resolved, which cares about the doctree-parsing
-    only once and calls the needed sub-handlers (like process_needtables and so).
-
-    Reason: In the past all process-xy handles have parsed the doctree by their own, so the same doctree
-    got parsed several times. This is now done at a single place and the related process-xy get a
-    list of found docutil node-object for their case.
+    Create a pre-configured process_caller for given Node types
     """
-    # We only need to analyse docs, which have Sphinx-Needs directives in it.
-    if fromdocname not in app.builder.env.needs_all_docs:
-        return
 
-    current_nodes = {}
+    def process_caller(app: Sphinx, doctree: nodes.document, fromdocname: str):
+        """
+        A single event_handler for doc-tree-resolved, which cares about the doctree-parsing
+        only once and calls the needed sub-handlers (like process_needtables and so).
 
-    check_nodes = list(NODE_TYPES.keys())
-    for node_need in doctree.findall(node_match(check_nodes)):
-        for check_node in NODE_TYPES:
-            if isinstance(node_need, check_node):
-                if check_node not in current_nodes:
-                    current_nodes[check_node] = []
-                current_nodes[check_node].append(node_need)
-                break  # We found the related type for the need
+        Reason: In the past all process-xy handles have parsed the doctree by their own, so the same doctree
+        got parsed several times. This is now done at a single place and the related process-xy get a
+        list of found docutil node-object for their case.
+        """
+        # We only need to analyse docs, which have Sphinx-Needs directives in it.
+        if fromdocname not in app.builder.env.needs_all_docs:
+            return
 
-    # Let's call the handlers
-    for check_node, check_func in NODE_TYPES.items():
-        # Call the handler only, if it defined, and we found some nodes for it
-        if check_node in current_nodes and check_func is not None and current_nodes[check_node]:
-            check_func(app, doctree, fromdocname, current_nodes[check_node])
+        current_nodes = {}
+
+        check_nodes = list(node_list.keys())
+        for node_need in doctree.findall(node_match(check_nodes)):
+            for check_node in node_list:
+                if isinstance(node_need, check_node):
+                    if check_node not in current_nodes:
+                        current_nodes[check_node] = []
+                    current_nodes[check_node].append(node_need)
+                    break  # We found the related type for the need
+
+        # Let's call the handlers
+        for check_node, check_func in node_list.items():
+            # Call the handler only, if it defined, and we found some nodes for it
+            if check_node in current_nodes and check_func is not None and current_nodes[check_node]:
+                check_func(app, doctree, fromdocname, current_nodes[check_node])
+
+    return process_caller
 
 
 def load_config(app: Sphinx, *_args) -> None:
