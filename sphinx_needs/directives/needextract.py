@@ -66,7 +66,7 @@ class NeedextractDirective(FilterBase):
         }
         env.need_all_needextracts[targetid].update(self.collect_filter_attributes())
 
-        add_doc(env, env.docname)
+        add_doc(env, env.docname, "needextract")
 
         return [targetnode, Needextract("")]
 

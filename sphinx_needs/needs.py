@@ -356,19 +356,8 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     # registered for sphinx. So some sphinx-internal tasks/functions may be called by hand again...
     # See also https://github.com/sphinx-doc/sphinx/issues/7054#issuecomment-578019701 for an example
     app.connect("doctree-resolved", process_need_nodes)
-    app.connect("doctree-resolved", process_creator(NODE_TYPES_PRIO), priority=100)
+    app.connect("doctree-resolved", process_creator(NODE_TYPES_PRIO, "needextract"), priority=100)
     app.connect("doctree-resolved", process_creator(NODE_TYPES))
-
-    def image_collector(app: Sphinx, doctree: nodes.document, fromdocname: str):
-        """
-        Used to set "candidates" for images added directly to doctree after Sphinx already handled images
-        """
-        for node in doctree.findall(nodes.image):
-            if "candidates" in node:
-                continue
-
-            node["candidates"] = {"*": node["uri"]}
-
     app.connect("doctree-resolved", image_collector)
 
     app.connect("build-finished", process_warnings)
@@ -392,7 +381,22 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     }
 
 
-def process_creator(node_list):
+def image_collector(app: Sphinx, doctree: nodes.document, fromdocname: str):
+    """
+    Used to set "candidates" for images added directly to doctree after Sphinx already handled images
+    """
+    # Only checks docs in which needextract was used
+    if fromdocname not in app.builder.env.needs_all_docs.get("needextract", []):
+        return
+
+    for node in doctree.findall(nodes.image):
+        if "candidates" in node:
+            continue
+
+        node["candidates"] = {"*": node["uri"]}
+
+
+def process_creator(node_list, doc_category="all"):
     """
     Create a pre-configured process_caller for given Node types
     """
@@ -407,7 +411,7 @@ def process_creator(node_list):
         list of found docutil node-object for their case.
         """
         # We only need to analyse docs, which have Sphinx-Needs directives in it.
-        if fromdocname not in app.builder.env.needs_all_docs:
+        if fromdocname not in app.builder.env.needs_all_docs.get(doc_category, []):
             return
 
         current_nodes = {}
@@ -554,7 +558,7 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
     if not hasattr(env, "needs_all_docs"):
         # Used to store all docnames, which have need-function in it and therefor
         # need to be handled later
-        env.needs_all_docs = []
+        env.needs_all_docs = {"all": []}
 
     # Register embedded services
     app.needs_services.register("github-issues", GithubService, gh_type="issue")
