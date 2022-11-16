@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1668458017348,
+  "lastUpdate": 1668588961282,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -1368,6 +1368,42 @@ window.BENCHMARK_DATA = {
             "value": 89.52339489999997,
             "unit": "s",
             "extra": "Commit: 626b2f478c42c2c44b7f382c87050ca1eaf85674\nBranch: master\nTime: 2022-11-14T21:25:28+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "308900390140861f6b7b06a49015d35b85286585",
+          "message": "Fix needextract to support images (#794)\n\n* Fix needextract to support images\r\n\r\n* Better needextract image fix and flake8 precommit update",
+          "timestamp": "2022-11-16T09:49:23+01:00",
+          "tree_id": "e6bce25b20335bcce8f36927a1112dd4e7766578",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/308900390140861f6b7b06a49015d35b85286585"
+        },
+        "date": 1668588957266,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.24497957500000211,
+            "unit": "s",
+            "extra": "Commit: 308900390140861f6b7b06a49015d35b85286585\nBranch: master\nTime: 2022-11-16T09:49:23+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 71.21877495800004,
+            "unit": "s",
+            "extra": "Commit: 308900390140861f6b7b06a49015d35b85286585\nBranch: master\nTime: 2022-11-16T09:49:23+01:00"
           }
         ]
       }
