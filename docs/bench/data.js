@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1668588961282,
+  "lastUpdate": 1668698157940,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -1404,6 +1404,42 @@ window.BENCHMARK_DATA = {
             "value": 71.21877495800004,
             "unit": "s",
             "extra": "Commit: 308900390140861f6b7b06a49015d35b85286585\nBranch: master\nTime: 2022-11-16T09:49:23+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ff850fca0ca334384a7d28d993a9e10dea939831",
+          "message": "ENV merge fix for nested dicts (#797)",
+          "timestamp": "2022-11-17T16:09:33+01:00",
+          "tree_id": "41d4539a2366aac2594447b475f35d2a883c7cd3",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/ff850fca0ca334384a7d28d993a9e10dea939831"
+        },
+        "date": 1668698153140,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.23887352200000578,
+            "unit": "s",
+            "extra": "Commit: ff850fca0ca334384a7d28d993a9e10dea939831\nBranch: master\nTime: 2022-11-17T16:09:33+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 70.23448296599997,
+            "unit": "s",
+            "extra": "Commit: ff850fca0ca334384a7d28d993a9e10dea939831\nBranch: master\nTime: 2022-11-17T16:09:33+01:00"
           }
         ]
       }
