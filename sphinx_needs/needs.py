@@ -413,9 +413,7 @@ def process_creator(node_list, doc_category="all"):
         # We only need to analyse docs, which have Sphinx-Needs directives in it.
         if fromdocname not in app.builder.env.needs_all_docs.get(doc_category, []):
             return
-
         current_nodes = {}
-
         check_nodes = list(node_list.keys())
         for node_need in doctree.findall(node_match(check_nodes)):
             for check_node in node_list:
@@ -727,7 +725,7 @@ def merge_data(_app: Sphinx, env: BuildEnvironment, _docnames: List[str], other:
     other_needs = other.needs_all_needs
     needs.update(other_needs)
 
-    def merge(name: str) -> None:
+    def merge(name: str, is_complex_dict: bool = False) -> None:
         # Update global needs dict
         if not hasattr(env, name):
             setattr(env, name, {})
@@ -735,7 +733,15 @@ def merge_data(_app: Sphinx, env: BuildEnvironment, _docnames: List[str], other:
         if hasattr(other, name):
             other_objects = getattr(other, name)
             if isinstance(other_objects, dict) and isinstance(objects, dict):
-                objects.update(other_objects)
+                if not is_complex_dict:
+                    objects.update(other_objects)
+                else:
+                    for other_key, other_value in other_objects.items():
+                        # other_value is a list from here on!
+                        if other_key in objects:
+                            objects[other_key] += other_value
+                        else:
+                            objects[other_key] = other_value
             elif isinstance(other_objects, list) and isinstance(objects, list):
                 objects += other_objects
             else:
@@ -754,7 +760,7 @@ def merge_data(_app: Sphinx, env: BuildEnvironment, _docnames: List[str], other:
     merge("need_all_needpie")
     merge("need_all_needsequences")
     merge("needs_all_needumls")
-    merge("needs_all_docs")  # list type
+    merge("needs_all_docs", is_complex_dict=True)  # list type
 
 
 class NeedsConfigException(SphinxError):
