@@ -14,6 +14,12 @@ def test_doc_build_html(test_app):
     app = test_app
     app.build()
 
+    # stdout warnings
+    warning = app._warning
+    warnings = warning.getvalue()
+    # plantuml shall not return any warnings:
+    assert "WARNING: error while running plantuml" not in warnings
+
     index_html = Path(app.outdir, "index.html").read_text()
     assert "SPEC_1 [[../index.html#SPEC_1]]" in index_html
     assert "SPEC_2 [[../index.html#SPEC_2]]" in index_html
@@ -48,6 +54,12 @@ def test_doc_build_html(test_app):
 def test_doc_build_needflow_incl_child_needs(test_app):
     app = test_app
     app.build()
+
+    # stdout warnings
+    warning = app._warning
+    warnings = warning.getvalue()
+    # plantuml shall not return any warnings:
+    assert "WARNING: error while running plantuml" not in warnings
 
     html = Path(app.outdir, "index.html").read_text()
     assert html
