@@ -35,5 +35,15 @@ def test_doc_build_needflow_incl_child_needs(test_app):
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert html
-    assert "STORY_2" in html
-    assert "SPEC_1" in html
+    assert "@startuml" in html
+    assert "[[../index.html#STORY_1]]" in html
+    assert "[[../index.html#STORY_1.1]]" in html
+    assert "[[../index.html#STORY_1.2]]" in html
+    assert "[[../index.html#STORY_2.3]]" in html
+    assert "[[../index.html#SPEC_1]]" in html
+    assert "[[../index.html#SPEC_2]]" in html
+    assert "[[../index.html#SPEC_3]]" in html
+    assert "[[../index.html#SPEC_4]]" in html
+    assert "[[../index.html#STORY_3]]" in html
+    assert "[[../index.html#SPEC_5]]" in html
+    assert "@enduml" in html
