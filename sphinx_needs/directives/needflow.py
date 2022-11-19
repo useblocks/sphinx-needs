@@ -186,7 +186,7 @@ def walk_curr_need_tree(
     curr_need_tree += "{\n"
 
     if need["is_need"] and need["parts"]:
-        #add comment for easy debugging
+        # add comment for easy debugging
         curr_need_tree += "'parts:\n"
         for need_part_id in need["parts"].keys():
             # cal need part node
@@ -203,7 +203,7 @@ def walk_curr_need_tree(
 
     # check if curr need has children
     if need["parent_needs_back"]:
-        #add comment for easy debugging
+        # add comment for easy debugging
         curr_need_tree += "'child needs:\n"
 
         # walk throgh all child needs one by one
@@ -227,13 +227,13 @@ def walk_curr_need_tree(
                 curr_need_tree = walk_curr_need_tree(
                     app, fromdocname, current_needflow, all_needs, found_needs, curr_child_need, curr_need_tree
                 )
-            elif idx < len(child_needs_ids)-1:
-                # curr child need has no children, then add newline for next element
-                curr_need_tree += "\n"
+
+            # add newline for next element
+            curr_need_tree += "\n"
             idx += 1
 
     # We processed embedded needs or need parts, so we will close with "}"
-    curr_need_tree += "\n}\n"
+    curr_need_tree += "}"
 
     return curr_need_tree
 
