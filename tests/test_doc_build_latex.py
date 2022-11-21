@@ -19,3 +19,7 @@ def test_doc_build_latex(test_app):
         "\\sphinxcaption{Table from sphinxneeds\\sphinxhyphen{}contrib \\textquotesingle"
         "{}needtable\\textquotesingle{} directive}" in latex_content
     )
+
+    # Check that the USER_STORY_001 label is only created once in the LaTeX output.  Split
+    # on the string, which should split latex_content into two.
+    assert len(latex_content.split(r"\label{\detokenize{index:USER_STORY_001}}")) == 2
