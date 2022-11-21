@@ -47,6 +47,9 @@ def test_doc_build_html(test_app):
     assert "STORY_2 [[../index.html#STORY_2]]" in page_html
     assert "STORY_2.another_one [[../index.html#STORY_2.another_one]]" in page_html
 
+    empty_needflow_with_debug = Path(app.outdir, "empty_needflow_with_debug.html").read_text()
+    assert "No needs passed the filters" in empty_needflow_with_debug
+
 
 @pytest.mark.parametrize(
     "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needflow_incl_child_needs"}], indirect=True
@@ -61,18 +64,64 @@ def test_doc_build_needflow_incl_child_needs(test_app):
     # plantuml shall not return any warnings:
     assert "WARNING: error while running plantuml" not in warnings
 
-    html = Path(app.outdir, "index.html").read_text()
-    assert html
-    assert "@startuml" in html
-    assert "[[../index.html#STORY_1]]" in html
-    assert "[[../index.html#STORY_1.1]]" in html
-    assert "[[../index.html#STORY_1.2]]" in html
-    assert "[[../index.html#STORY_2]]" in html
-    assert "[[../index.html#STORY_2.3]]" in html
-    assert "[[../index.html#SPEC_1]]" in html
-    assert "[[../index.html#SPEC_2]]" in html
-    assert "[[../index.html#SPEC_3]]" in html
-    assert "[[../index.html#SPEC_4]]" in html
-    assert "[[../index.html#STORY_3]]" in html
-    assert "[[../index.html#SPEC_5]]" in html
-    assert "@enduml" in html
+    index_html = Path(app.outdir, "index.html").read_text()
+    assert index_html
+    assert "@startuml" in index_html
+    assert "[[../index.html#STORY_1]]" in index_html
+    assert "[[../index.html#STORY_1.1]]" in index_html
+    assert "[[../index.html#STORY_1.2]]" in index_html
+    assert "[[../index.html#STORY_2]]" in index_html
+    assert "[[../index.html#STORY_2.3]]" in index_html
+    assert "[[../index.html#SPEC_1]]" in index_html
+    assert "[[../index.html#SPEC_2]]" in index_html
+    assert "[[../index.html#SPEC_3]]" in index_html
+    assert "[[../index.html#SPEC_4]]" in index_html
+    assert "[[../index.html#STORY_3]]" in index_html
+    assert "[[../index.html#SPEC_5]]" in index_html
+    assert "@enduml" in index_html
+
+    single_parent_need_filer_html = Path(app.outdir, "single_parent_need_filer.html").read_text()
+    assert "@startuml" in single_parent_need_filer_html
+    assert "[[../index.html#STORY_3]]"  in single_parent_need_filer_html
+    assert "@enduml" in single_parent_need_filer_html
+    assert "[[../index.html#STORY_1]]" not in single_parent_need_filer_html
+    assert "[[../index.html#STORY_1.1]]" not in single_parent_need_filer_html
+    assert "[[../index.html#STORY_1.2]]" not in single_parent_need_filer_html
+    assert "[[../index.html#STORY_2]]" not in single_parent_need_filer_html
+    assert "[[../index.html#STORY_2.3]]" not in single_parent_need_filer_html
+    assert "[[../index.html#SPEC_1]]" not in single_parent_need_filer_html
+    assert "[[../index.html#SPEC_2]]" not in single_parent_need_filer_html
+    assert "[[../index.html#SPEC_3]]" not in single_parent_need_filer_html
+    assert "[[../index.html#SPEC_4]]" not in single_parent_need_filer_html
+    assert "[[../index.html#SPEC_5]]" not in single_parent_need_filer_html
+    
+
+    single_child_with_child_need_filter_html = Path(app.outdir, "single_child_with_child_need_filter.html").read_text()
+    assert "@startuml" in single_child_with_child_need_filter_html
+    assert "[[../index.html#STORY_2]]" in single_child_with_child_need_filter_html
+    assert "[[../index.html#STORY_2.3]]" in single_child_with_child_need_filter_html
+    assert "@enduml" in single_child_with_child_need_filter_html
+    assert "[[../index.html#STORY_1]]" not in single_child_with_child_need_filter_html
+    assert "[[../index.html#STORY_1.1]]" not in single_child_with_child_need_filter_html
+    assert "[[../index.html#STORY_1.2]]" not in single_child_with_child_need_filter_html
+    assert "[[../index.html#SPEC_1]]" not in single_child_with_child_need_filter_html
+    assert "[[../index.html#SPEC_2]]" not in single_child_with_child_need_filter_html
+    assert "[[../index.html#SPEC_3]]" not in single_child_with_child_need_filter_html
+    assert "[[../index.html#SPEC_4]]" not in single_child_with_child_need_filter_html
+    assert "[[../index.html#STORY_3]]" not in single_child_with_child_need_filter_html
+    assert "[[../index.html#SPEC_5]]" not in single_child_with_child_need_filter_html
+
+    single_child_need_filter_html = Path(app.outdir, "single_child_need_filter.html").read_text()
+    assert "@startuml" in single_child_need_filter_html
+    assert "[[../index.html#SPEC_1]]" in single_child_need_filter_html
+    assert "@enduml" in single_child_need_filter_html
+    assert "[[../index.html#STORY_1]]" not in single_child_need_filter_html
+    assert "[[../index.html#STORY_1.1]]" not in single_child_need_filter_html
+    assert "[[../index.html#STORY_1.2]]" not in single_child_need_filter_html
+    assert "[[../index.html#STORY_2]]" not in single_child_need_filter_html
+    assert "[[../index.html#STORY_2.3]]" not in single_child_need_filter_html
+    assert "[[../index.html#SPEC_2]]" not in single_child_need_filter_html
+    assert "[[../index.html#SPEC_3]]" not in single_child_need_filter_html
+    assert "[[../index.html#SPEC_4]]" not in single_child_need_filter_html
+    assert "[[../index.html#STORY_3]]" not in single_child_need_filter_html
+    assert "[[../index.html#SPEC_5]]" not in single_child_need_filter_html
