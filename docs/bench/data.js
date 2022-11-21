@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1669035387144,
+  "lastUpdate": 1669061879827,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -1512,6 +1512,42 @@ window.BENCHMARK_DATA = {
             "value": 72.27689746300007,
             "unit": "s",
             "extra": "Commit: 6d4dffb55ce5e59c0198ad9b043e8d5a39ce22d2\nBranch: master\nTime: 2022-11-21T13:49:52+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2d82b0d92960d9353668e724500c4c3f09b768e4",
+          "message": "Add complexer test case for latex build (#806)\n\nCorrect support of builders, which have only one doctree.\r\n\r\nprocess_callers get always called for 'index' file, as\r\n'index' may be a merged doctree of all other doctree\r\n(related to the used builder)\r\n\r\nFixes #796",
+          "timestamp": "2022-11-21T21:10:16+01:00",
+          "tree_id": "25978be49cb53aa625c2b2df8dd5b05eb8d549dc",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/2d82b0d92960d9353668e724500c4c3f09b768e4"
+        },
+        "date": 1669061875133,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.3391746490000287,
+            "unit": "s",
+            "extra": "Commit: 2d82b0d92960d9353668e724500c4c3f09b768e4\nBranch: master\nTime: 2022-11-21T21:10:16+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 85.62051713899996,
+            "unit": "s",
+            "extra": "Commit: 2d82b0d92960d9353668e724500c4c3f09b768e4\nBranch: master\nTime: 2022-11-21T21:10:16+01:00"
           }
         ]
       }
