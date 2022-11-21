@@ -197,7 +197,7 @@ def add_need(
     if is_external:
         target_node = None
     else:
-        target_node = nodes.target("", "", ids=[need_id], refid=need_id)
+        target_node = nodes.target("", "", ids=[need_id], refid=need_id, anonymous="")
         external_url = None
 
     # Handle status
