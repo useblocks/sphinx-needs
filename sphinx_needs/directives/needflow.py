@@ -241,7 +241,7 @@ def walk_curr_need_tree(
 def cal_needs_node(app: Sphinx, fromdocname: str, current_needflow: dict, all_needs: list, found_needs: list) -> str:
     """Calculate and get needs node representaion for plantuml including all child needs and need parts."""
 
-    top_needs = [x for x in found_needs if x["is_need"] and not x["parent_needs"]]
+    top_needs = [x for x in found_needs if x["is_need"]]
     curr_need_tree = ""
     for top_need in top_needs:
         top_need_node = get_need_node_rep_for_plantuml(app, fromdocname, current_needflow, all_needs, top_need)
