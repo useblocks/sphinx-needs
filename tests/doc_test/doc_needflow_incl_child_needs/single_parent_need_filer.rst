@@ -2,6 +2,6 @@ TEST NEEDFLOW: FILTER ONLY ONE PARENT NEED
 ==========================================
 
 .. needflow::
-   :filter: 'FOO_0004' == id
+   :filter: 'STORY_3' == id
    :show_link_names:
    :debug:

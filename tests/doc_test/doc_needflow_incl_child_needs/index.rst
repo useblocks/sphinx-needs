@@ -4,6 +4,7 @@ TEST DOCUMENT NEEDFLOW INCL CHILD NEEDS
 .. toctree::
 
    single_parent_need_filer
+   single_child_with_child_need_filter
    single_child_need_filter
 
 .. story:: A story
