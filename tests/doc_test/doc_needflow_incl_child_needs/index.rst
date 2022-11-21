@@ -1,6 +1,11 @@
 TEST DOCUMENT NEEDFLOW INCL CHILD NEEDS
 =======================================
 
+.. toctree::
+
+   single_parent_need_filer
+   single_child_need_filter
+
 .. story:: A story
    :id: STORY_1
 
@@ -40,3 +45,5 @@ TEST DOCUMENT NEEDFLOW INCL CHILD NEEDS
 .. needflow::
    :show_link_names:
    :debug:
+
+
