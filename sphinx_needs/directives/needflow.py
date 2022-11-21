@@ -227,9 +227,8 @@ def walk_curr_need_tree(
                         curr_need_tree += walk_curr_need_tree(
                             app, fromdocname, current_needflow, all_needs, found_needs, curr_child_need
                         )
-
-            # add newline for next element
-            curr_need_tree += "\n"
+                    # add newline for next element
+                    curr_need_tree += "\n"
             idx += 1
 
     # We processed embedded needs or need parts, so we will close with "}"
