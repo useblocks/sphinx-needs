@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1668698157940,
+  "lastUpdate": 1669028962776,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -1440,6 +1440,42 @@ window.BENCHMARK_DATA = {
             "value": 70.23448296599997,
             "unit": "s",
             "extra": "Commit: ff850fca0ca334384a7d28d993a9e10dea939831\nBranch: master\nTime: 2022-11-17T16:09:33+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bbf5bc93d20b3bf9407564435ed1844e4cf5cc53",
+          "message": "raising beeded matplotlib version to >= 3.3.0 (#804)\n\nFixes #800",
+          "timestamp": "2022-11-21T12:01:45+01:00",
+          "tree_id": "2529749cdbd2a8f234722f35734b14469d832a1c",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/bbf5bc93d20b3bf9407564435ed1844e4cf5cc53"
+        },
+        "date": 1669028958331,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2630366299999878,
+            "unit": "s",
+            "extra": "Commit: bbf5bc93d20b3bf9407564435ed1844e4cf5cc53\nBranch: master\nTime: 2022-11-21T12:01:45+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 86.9556152030001,
+            "unit": "s",
+            "extra": "Commit: bbf5bc93d20b3bf9407564435ed1844e4cf5cc53\nBranch: master\nTime: 2022-11-21T12:01:45+01:00"
           }
         ]
       }
