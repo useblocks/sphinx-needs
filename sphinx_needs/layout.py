@@ -43,9 +43,10 @@ def create_need(need_id: str, app: Sphinx, layout=None, style=None, docname: Opt
     need_data = needs[need_id]
 
     node_container = nodes.container()
+    # node_container += needs[need_id]["need_node"].children
     node_inner = needs[need_id]["content_node"]
-
     node_container.append(node_inner)
+
     # Resolve internal references.
     # This is done for original need content automatically.
     # But as we are working on  a copy, we have to trigger this on our own.
@@ -141,6 +142,7 @@ def build_need(layout, node, app: Sphinx, style=None, fromdocname: Optional[str]
     node_container.attributes["classes"] = ["need_container"]
 
     # We need to replace the current need-node (containing content only) with our new table need node.
+    # node.parent.replace(node, node_container)
     node.parent.replace(node, node_container)
 
 

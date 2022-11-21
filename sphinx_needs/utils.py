@@ -527,7 +527,13 @@ def node_match(node_types):
     return condition
 
 
-def add_doc(env: BuildEnvironment, docname: str):
+def add_doc(env: BuildEnvironment, docname: str, category=None):
     """Stores a docname, to know later all need-relevant docs"""
-    if docname not in env.needs_all_docs:
-        env.needs_all_docs.append(docname)
+    if docname not in env.needs_all_docs["all"]:
+        env.needs_all_docs["all"].append(docname)
+
+    if category:
+        if category not in env.needs_all_docs:
+            env.needs_all_docs[category] = []
+        if docname not in env.needs_all_docs[category]:
+            env.needs_all_docs[category].append(docname)

@@ -24,6 +24,12 @@ TEST DOCUMENT NEEDEXTRACT
    :status: open
    :tags: 1
 
+.. story:: A complex content example
+   :id: US_002
+
+   Check if image gets copied as well.
+
+   .. image:: _images/smile.png
 
 .. needextract::
    :tags: test
@@ -48,3 +54,8 @@ TEST DOCUMENT NEEDEXTRACT
 .. needextract:: US_001
    :layout: clean
    :style: blue_border
+
+.. needextract:: US_002
+   :layout: clean
+   :style: blue_border
+
