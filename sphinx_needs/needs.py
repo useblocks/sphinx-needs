@@ -270,22 +270,8 @@ def setup(app: Sphinx) -> Dict[str, Any]:
 
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
-    app.add_node(
-        Needfilter,
-    )
-    app.add_node(Needbar)
-    app.add_node(Needimport)
-    app.add_node(Needlist)
-    app.add_node(Needtable)
-    app.add_node(Needflow)
-    app.add_node(Needpie)
-    app.add_node(Needsequence)
-    app.add_node(Needgantt)
-    app.add_node(Needextract)
-    app.add_node(Needservice)
-    app.add_node(Needextend)
-    app.add_node(Needuml)
-    app.add_node(NeedPart, html=(visitor_dummy, visitor_dummy), latex=(visitor_dummy, visitor_dummy))
+    for i in [Needextend, Needimport, Needservice, *NODE_TYPES]:
+        app.add_node(i, html=(visitor_dummy, visitor_dummy), latex=(visitor_dummy, visitor_dummy))
 
     ########################################################################
     # DIRECTIVES
