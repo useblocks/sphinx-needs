@@ -386,7 +386,7 @@ def image_collector(app: Sphinx, doctree: nodes.document, fromdocname: str):
     Used to set "candidates" for images added directly to doctree after Sphinx already handled images
     """
     # Only checks docs in which needextract was used
-    if fromdocname not in app.builder.env.needs_all_docs.get("needextract", []):
+    if fromdocname not in app.builder.env.needs_all_docs.get("needextract", []) and fromdocname != "index":
         return
 
     for node in doctree.findall(nodes.image):
@@ -428,8 +428,6 @@ def process_creator(node_list, doc_category="all"):
             # Call the handler only, if it defined, and we found some nodes for it
             if check_node in current_nodes and check_func is not None and current_nodes[check_node]:
                 check_func(app, doctree, fromdocname, current_nodes[check_node])
-
-        pass
 
     return process_caller
 
