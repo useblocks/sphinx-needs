@@ -12,6 +12,8 @@ License
 -----
 Under development
 
+* Bugfix: Expand/Collapse button does not work.
+  (`#795 <https://github.com/useblocks/sphinx-needs/issues/795>`_).
 * Improvement: Memory consumption and runtime improvements
   (`#790 <https://github.com/useblocks/sphinx-needs/issues/790>`_).
 * Improvement: Obfuscate HTTP authentication credentials from log output.
