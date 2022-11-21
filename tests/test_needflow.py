@@ -99,11 +99,11 @@ def test_doc_build_needflow_incl_child_needs(test_app):
     single_child_with_child_need_filter_html = Path(app.outdir, "single_child_with_child_need_filter.html").read_text()
     assert "@startuml" in single_child_with_child_need_filter_html
     assert "[[../index.html#STORY_2]]" in single_child_with_child_need_filter_html
-    assert "[[../index.html#STORY_2.3]]" in single_child_with_child_need_filter_html
     assert "@enduml" in single_child_with_child_need_filter_html
     assert "[[../index.html#STORY_1]]" not in single_child_with_child_need_filter_html
     assert "[[../index.html#STORY_1.1]]" not in single_child_with_child_need_filter_html
     assert "[[../index.html#STORY_1.2]]" not in single_child_with_child_need_filter_html
+    assert "[[../index.html#STORY_2.3]]" not in single_child_with_child_need_filter_html
     assert "[[../index.html#SPEC_1]]" not in single_child_with_child_need_filter_html
     assert "[[../index.html#SPEC_2]]" not in single_child_with_child_need_filter_html
     assert "[[../index.html#SPEC_3]]" not in single_child_with_child_need_filter_html
@@ -125,3 +125,18 @@ def test_doc_build_needflow_incl_child_needs(test_app):
     assert "[[../index.html#SPEC_4]]" not in single_child_need_filter_html
     assert "[[../index.html#STORY_3]]" not in single_child_need_filter_html
     assert "[[../index.html#SPEC_5]]" not in single_child_need_filter_html
+
+    grandy_and_child_html = Path(app.outdir, "grandy_and_child.html").read_text()
+    assert "@startuml" in grandy_and_child_html
+    assert "[[../index.html#STORY_1]]"  in grandy_and_child_html
+    assert "[[../index.html#SPEC_1]]" in grandy_and_child_html
+    assert "[[../index.html#SPEC_2]]" in grandy_and_child_html
+    assert "@enduml" in grandy_and_child_html
+    assert "[[../index.html#STORY_1.1]]" not in grandy_and_child_html
+    assert "[[../index.html#STORY_1.2]]" not in grandy_and_child_html
+    assert "[[../index.html#STORY_2]]" not in grandy_and_child_html
+    assert "[[../index.html#STORY_2.3]]" not in grandy_and_child_html
+    assert "[[../index.html#SPEC_3]]" not in grandy_and_child_html
+    assert "[[../index.html#SPEC_4]]" not in grandy_and_child_html
+    assert "[[../index.html#STORY_3]]" not in grandy_and_child_html
+    assert "[[../index.html#SPEC_5]]" not in grandy_and_child_html
