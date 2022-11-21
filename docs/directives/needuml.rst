@@ -361,15 +361,15 @@ Sphinx-Need picks the text of the field specified by `option`), or by the free t
 
    .. needuml::
 
-      Alice -> Bob: {{ref(FEATURE_1, option="title")}}
-      Bob -> Alice: {{ref(FEATURE_2, text="A completely free text")}}
+      Alice -> Bob: {{ref("FEATURE_1", option="title")}}
+      Bob -> Alice: {{ref("FEATURE_2", text="A completely free text")}}
 
 |out|
 
 .. needuml::
 
-      Alice -> Bob: {{ref(FEATURE_1, option="title")}}
-      Bob -> Alice: {{ref(FEATURE_2, text="A completely free text")}}
+      Alice -> Bob: {{ref("FEATURE_1", option="title")}}
+      Bob -> Alice: {{ref("FEATURE_2", text="A completely free text")}}
 
 .. _needuml_jinja_uml:
 
