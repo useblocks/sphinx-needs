@@ -411,7 +411,7 @@ def process_creator(node_list, doc_category="all"):
         list of found docutil node-object for their case.
         """
         # We only need to analyse docs, which have Sphinx-Needs directives in it.
-        if fromdocname not in app.builder.env.needs_all_docs.get(doc_category, []):
+        if fromdocname not in app.builder.env.needs_all_docs.get(doc_category, []) and fromdocname != "index":
             return
         current_nodes = {}
         check_nodes = list(node_list.keys())
@@ -428,6 +428,8 @@ def process_creator(node_list, doc_category="all"):
             # Call the handler only, if it defined, and we found some nodes for it
             if check_node in current_nodes and check_func is not None and current_nodes[check_node]:
                 check_func(app, doctree, fromdocname, current_nodes[check_node])
+
+        pass
 
     return process_caller
 

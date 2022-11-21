@@ -9,5 +9,5 @@ Page 2
 .. needtable::
    :filter: status == "open"
 
-.. needtable::
+.. needextract::
    :filter: status == "open"
