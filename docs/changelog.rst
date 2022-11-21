@@ -12,6 +12,8 @@ License
 -----
 Under development
 
+* Bugfix: `singlehtml` and `latex` related builders are working again.
+  (`#796 <https://github.com/useblocks/sphinx-needs/issues/796>`_).
 * Bugfix: Needextend throws the same information 3 times as part of a single warning.
   (`#747 <https://github.com/useblocks/sphinx-needs/issues/747>`_).
 * Improvement: Memory consumption and runtime improvements
