@@ -464,7 +464,11 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
             para += filter_node
             content.append(para)
 
-        if current_needflow["debug"]:
+        # We have to restrustructer the needflow
+        # If this block should be organized differently
+        if current_needflow["debug"] and found_needs:
+            # We can only access puml_node if found_needs is set.
+            # Otherwise it was not been set, or we get outdated data
             debug_container = nodes.container()
             if isinstance(puml_node, nodes.figure):
                 data = puml_node.children[0]["uml"]
