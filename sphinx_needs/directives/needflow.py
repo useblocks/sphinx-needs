@@ -172,18 +172,22 @@ def walk_curr_need_tree(
     all_needs: list,
     found_needs: list,
     need: dict,
-    need_tree: str,
 ):
     """
     Walk through each need to find all its child needs and need parts recursively and wrap them together in nested structure.
     """
-    curr_need_tree = need_tree
+
+    curr_need_tree = ""
 
     if not need["parts"] and not need["parent_needs_back"]:
         return curr_need_tree
 
+    # We do have embedded needs or need parts, so we will add a open "{"
+    curr_need_tree += "{\n"
+
     if need["is_need"] and need["parts"]:
-        curr_need_tree += "{\n"
+        # add comment for easy debugging
+        curr_need_tree += "'parts:\n"
         for need_part_id in need["parts"].keys():
             # cal need part node
             need_part_id = need["id"] + "." + need_part_id
@@ -199,11 +203,8 @@ def walk_curr_need_tree(
 
     # check if curr need has children
     if need["parent_needs_back"]:
-        # update curr need tree
-        if need["parts"]:
-            curr_need_tree += "\n"
-        else:
-            curr_need_tree += "{\n"
+        # add comment for easy debugging
+        curr_need_tree += "'child needs:\n"
 
         # walk throgh all child needs one by one
         child_needs_ids = need["parent_needs_back"]
@@ -216,23 +217,23 @@ def walk_curr_need_tree(
             for need in found_needs:
                 if need["id_complete"] == curr_child_need_id:
                     curr_child_need = need
-            # get child need node
-            child_need_node = get_need_node_rep_for_plantuml(
-                app, fromdocname, current_needflow, all_needs, curr_child_need
-            )
-            curr_need_tree += child_need_node
-            # check curr need child has children or has parts
-            if curr_child_need["parent_needs_back"] or curr_child_need["parts"]:
-                curr_need_tree = walk_curr_need_tree(
-                    app, fromdocname, current_needflow, all_needs, found_needs, curr_child_need, curr_need_tree
-                )
-            else:
-                # curr child need has no children, then update tree
-                curr_need_tree += "\n}\n"
+                    # get child need node
+                    child_need_node = get_need_node_rep_for_plantuml(
+                        app, fromdocname, current_needflow, all_needs, curr_child_need
+                    )
+                    curr_need_tree += child_need_node
+                    # check curr need child has children or has parts
+                    if curr_child_need["parent_needs_back"] or curr_child_need["parts"]:
+                        curr_need_tree += walk_curr_need_tree(
+                            app, fromdocname, current_needflow, all_needs, found_needs, curr_child_need
+                        )
+
+            # add newline for next element
+            curr_need_tree += "\n"
             idx += 1
-    else:
-        # curr need has no children, update curr need tree
-        curr_need_tree += "\n}"
+
+    # We processed embedded needs or need parts, so we will close with "}"
+    curr_need_tree += "}"
 
     return curr_need_tree
 
@@ -245,7 +246,8 @@ def cal_needs_node(app: Sphinx, fromdocname: str, current_needflow: dict, all_ne
     for top_need in top_needs:
         top_need_node = get_need_node_rep_for_plantuml(app, fromdocname, current_needflow, all_needs, top_need)
         curr_need_tree += (
-            walk_curr_need_tree(app, fromdocname, current_needflow, all_needs, found_needs, top_need, top_need_node)
+            top_need_node
+            + walk_curr_need_tree(app, fromdocname, current_needflow, all_needs, found_needs, top_need,)
             + "\n"
         )
 
