@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1669028962776,
+  "lastUpdate": 1669035387144,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -1476,6 +1476,42 @@ window.BENCHMARK_DATA = {
             "value": 86.9556152030001,
             "unit": "s",
             "extra": "Commit: bbf5bc93d20b3bf9407564435ed1844e4cf5cc53\nBranch: master\nTime: 2022-11-21T12:01:45+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "duodurandy19@gmail.com",
+            "name": "Randy Duodu",
+            "username": "iSOLveIT"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6d4dffb55ce5e59c0198ad9b043e8d5a39ce22d2",
+          "message": "Bugfix for needextend throwing the same error 3 times in a single warning. (#747) (#803)",
+          "timestamp": "2022-11-21T13:49:52+01:00",
+          "tree_id": "873cffade0a5db7bf7f0979b3d149433cef4e61b",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6d4dffb55ce5e59c0198ad9b043e8d5a39ce22d2"
+        },
+        "date": 1669035382793,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2600412489999826,
+            "unit": "s",
+            "extra": "Commit: 6d4dffb55ce5e59c0198ad9b043e8d5a39ce22d2\nBranch: master\nTime: 2022-11-21T13:49:52+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 72.27689746300007,
+            "unit": "s",
+            "extra": "Commit: 6d4dffb55ce5e59c0198ad9b043e8d5a39ce22d2\nBranch: master\nTime: 2022-11-21T13:49:52+01:00"
           }
         ]
       }
