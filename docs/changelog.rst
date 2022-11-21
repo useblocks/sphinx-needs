@@ -12,6 +12,8 @@ License
 -----
 Under development
 
+* Bugfix: Needextend throws the same information 3 times as part of a single warning.
+  (`#747 <https://github.com/useblocks/sphinx-needs/issues/747>`_).
 * Improvement: Memory consumption and runtime improvements
   (`#790 <https://github.com/useblocks/sphinx-needs/issues/790>`_).
 * Improvement: Obfuscate HTTP authentication credentials from log output.
