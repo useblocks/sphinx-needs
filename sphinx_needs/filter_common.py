@@ -259,7 +259,7 @@ def filter_needs(app: Sphinx, needs, filter_string: str = "", current_need=None)
                 found_needs.append(filter_need)
         except Exception as e:
             if not error_reported:  # Let's report a filter-problem only onces
-                log.warning(f"Filter {filter_string} not valid: Error: {e}")
+                log.warning(e)
                 error_reported = True
 
     return found_needs
@@ -300,5 +300,5 @@ def filter_single_need(
         else:
             result = bool(eval(filter_string, filter_context))
     except Exception as e:
-        raise NeedsInvalidFilter(f"Filter {filter_string} not valid: Error: {e}")
+        raise NeedsInvalidFilter(f"Filter {filter_string} not valid. Error: {e}.")
     return result

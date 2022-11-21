@@ -54,6 +54,7 @@ class NeedextendDirective(SphinxDirective):
             raise NeedsInvalidFilter(f"Filter of needextend must be set. See {env.docname}:{self.lineno}")
 
         strict_option = self.options.get("strict", str(self.env.app.config.needs_needextend_strict))
+        strict = True
         if strict_option.upper() == "TRUE":
             strict = True
         elif strict_option.upper() == "FALSE":
