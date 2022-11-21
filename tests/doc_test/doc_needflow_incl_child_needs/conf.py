@@ -43,7 +43,6 @@ needs_types = [
     {"directive": "test", "title": "Test Case", "prefix": "TC_", "color": "#DCB239", "style": "node"},
 ]
 
-needs_build_json = True
 
 # needs_extra_links = [
 #     {
