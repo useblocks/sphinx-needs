@@ -27,29 +27,29 @@ $(document).ready(function() {
         var rows = parts.slice(2);
 
         var table = $(this).closest('table');
-        var need_table = table[0];
+        var need_table_id = table.closest("div[id^=SNCB-]").attr("id");
 
         if (parts[1] == "show") {
-            var visible_icon = document.querySelector(`#${need_table.parentNode.id} table span.needs.visible`);
+            var visible_icon = document.querySelector(`#${need_table_id} table span.needs.visible`);
             visible_icon.classList.toggle("collapse_is_hidden");
         } else {
-            var collapse_icon = document.querySelector(`#${need_table.parentNode.id} table span.needs.collapsed`);
+            var collapse_icon = document.querySelector(`#${need_table_id} table span.needs.collapsed`);
             collapse_icon.classList.toggle("collapse_is_hidden");
             for (var row in rows) {
-                var collapse_row = document.querySelector(`#${need_table.parentNode.id} table tr.${rows[row]}`);
+                var collapse_row = document.querySelector(`#${need_table_id} table tr.${rows[row]}`);
                 collapse_row.classList.toggle("collapse_is_hidden");
             }
         }
         // Func to execute when collapse buttons get clicked ()
         $(this).find("span.needs.collapsed, span.needs.visible").click(function() {
             var table = $(this).closest('table');
-            var need_table = table[0];
+            var need_table_id = table.closest("div[id^=SNCB-]").attr("id");
             for (var row in rows) {
-                var collapse_row = document.querySelector(`#${need_table.parentNode.id} table tr.${rows[row]}`);
+                var collapse_row = document.querySelector(`#${need_table_id} table tr.${rows[row]}`);
                 collapse_row.classList.toggle("collapse_is_hidden");
             }
-            var collapse_icon = document.querySelector(`#${need_table.parentNode.id} table span.needs.collapsed`);
-            var visible_icon = document.querySelector(`#${need_table.parentNode.id} table span.needs.visible`);
+            var collapse_icon = document.querySelector(`#${need_table_id} table span.needs.collapsed`);
+            var visible_icon = document.querySelector(`#${need_table_id} table span.needs.visible`);
 
             collapse_icon.classList.toggle("collapse_is_hidden");
             visible_icon.classList.toggle("collapse_is_hidden");
