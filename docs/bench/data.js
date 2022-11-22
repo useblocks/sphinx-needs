@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1669112697342,
+  "lastUpdate": 1669118091557,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -1584,6 +1584,42 @@ window.BENCHMARK_DATA = {
             "value": 74.61759967300003,
             "unit": "s",
             "extra": "Commit: f1231999c463d135e912d943487dcc31b8a8b93b\nBranch: master\nTime: 2022-11-22T11:18:23+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "duodurandy19@gmail.com",
+            "name": "Randy Duodu",
+            "username": "iSOLveIT"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e78e645bb40547c2ec06582026cd1363ae2cea7d",
+          "message": "Bugfix for collapse button (#811)\n\n* Added fix for collapse not working.\r\n\r\n* - Bugfix for Expand/Collapse button does not work\r\n- Added cypress testcase to handle Web UI Testing\r\n\r\n* Added JS test under tests directory\r\n\r\n* Remove unwanted files from Cypress config directory\r\n\r\n* Bugfix for collapse button\r\n\r\n* Bugfix for collapse button",
+          "timestamp": "2022-11-22T12:47:59+01:00",
+          "tree_id": "01ffd95ea700742747686dadca916c4909f3bf55",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e78e645bb40547c2ec06582026cd1363ae2cea7d"
+        },
+        "date": 1669118086934,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2658649070000365,
+            "unit": "s",
+            "extra": "Commit: e78e645bb40547c2ec06582026cd1363ae2cea7d\nBranch: master\nTime: 2022-11-22T12:47:59+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 76.78424901999995,
+            "unit": "s",
+            "extra": "Commit: e78e645bb40547c2ec06582026cd1363ae2cea7d\nBranch: master\nTime: 2022-11-22T12:47:59+01:00"
           }
         ]
       }
