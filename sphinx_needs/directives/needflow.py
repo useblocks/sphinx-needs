@@ -253,9 +253,9 @@ def get_root_needs(found_needs: list) -> list:
                     return_list.append(current_need)
     return return_list
 
+
 def cal_needs_node(app: Sphinx, fromdocname: str, current_needflow: dict, all_needs: list, found_needs: list) -> str:
     """Calculate and get needs node representaion for plantuml including all child needs and need parts."""
-
     top_needs = get_root_needs(found_needs)
     curr_need_tree = ""
     for top_need in top_needs:
@@ -272,7 +272,6 @@ def cal_needs_node(app: Sphinx, fromdocname: str, current_needflow: dict, all_ne
             )
             + "\n"
         )
-
     return curr_need_tree
 
 
