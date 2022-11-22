@@ -236,6 +236,7 @@ def walk_curr_need_tree(
 
     return curr_need_tree
 
+
 def get_root_needs(found_needs: list) -> list:
     return_list = []
     for current_need in found_needs:
