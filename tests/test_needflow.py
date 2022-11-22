@@ -66,23 +66,23 @@ def test_doc_build_needflow_incl_child_needs(test_app):
 
     index_html = Path(app.outdir, "index.html").read_text()
     assert index_html
-    assert "@startuml" in index_html
-    assert "[[../index.html#STORY_1]]" in index_html
-    assert "[[../index.html#STORY_1.1]]" in index_html
-    assert "[[../index.html#STORY_1.2]]" in index_html
-    assert "[[../index.html#STORY_2]]" in index_html
-    assert "[[../index.html#STORY_2.3]]" in index_html
-    assert "[[../index.html#SPEC_1]]" in index_html
-    assert "[[../index.html#SPEC_2]]" in index_html
-    assert "[[../index.html#SPEC_3]]" in index_html
-    assert "[[../index.html#SPEC_4]]" in index_html
-    assert "[[../index.html#STORY_3]]" in index_html
-    assert "[[../index.html#SPEC_5]]" in index_html
-    assert "@enduml" in index_html
+    assert index_html.count("@startuml") = 1
+    assert index_html.count("[[../index.html#STORY_1]]") = 1
+    assert index_html.count("[[../index.html#STORY_1.1]]") = 1
+    assert index_html.count("[[../index.html#STORY_1.2]]") = 1
+    assert index_html.count("[[../index.html#STORY_2]]") = 1
+    assert index_html.count("[[../index.html#STORY_2.3]]") = 1
+    assert index_html.count("[[../index.html#SPEC_1]]") = 1
+    assert index_html.count("[[../index.html#SPEC_2]]") = 1
+    assert index_html.count("[[../index.html#SPEC_3]]") = 1
+    assert index_html.count("[[../index.html#SPEC_4]]") = 1
+    assert index_html.count("[[../index.html#STORY_3]]") = 1
+    assert index_html.count("[[../index.html#SPEC_5]]") = 1
+    assert index_html.count("@enduml") = 1
 
     single_parent_need_filer_html = Path(app.outdir, "single_parent_need_filer.html").read_text()
     assert "@startuml" in single_parent_need_filer_html
-    assert "[[../index.html#STORY_3]]"  in single_parent_need_filer_html
+    assert "[[../index.html#STORY_3]]" in single_parent_need_filer_html
     assert "@enduml" in single_parent_need_filer_html
     assert "[[../index.html#STORY_1]]" not in single_parent_need_filer_html
     assert "[[../index.html#STORY_1.1]]" not in single_parent_need_filer_html
@@ -94,7 +94,6 @@ def test_doc_build_needflow_incl_child_needs(test_app):
     assert "[[../index.html#SPEC_3]]" not in single_parent_need_filer_html
     assert "[[../index.html#SPEC_4]]" not in single_parent_need_filer_html
     assert "[[../index.html#SPEC_5]]" not in single_parent_need_filer_html
-    
 
     single_child_with_child_need_filter_html = Path(app.outdir, "single_child_with_child_need_filter.html").read_text()
     assert "@startuml" in single_child_with_child_need_filter_html
@@ -128,7 +127,7 @@ def test_doc_build_needflow_incl_child_needs(test_app):
 
     grandy_and_child_html = Path(app.outdir, "grandy_and_child.html").read_text()
     assert "@startuml" in grandy_and_child_html
-    assert "[[../index.html#STORY_1]]"  in grandy_and_child_html
+    assert "[[../index.html#STORY_1]]" in grandy_and_child_html
     assert "[[../index.html#SPEC_1]]" in grandy_and_child_html
     assert "[[../index.html#SPEC_2]]" in grandy_and_child_html
     assert "@enduml" in grandy_and_child_html
