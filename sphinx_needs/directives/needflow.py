@@ -236,11 +236,27 @@ def walk_curr_need_tree(
 
     return curr_need_tree
 
+def get_root_needs(found_needs: list) -> list:
+    return_list = []
+    for current_need in found_needs:
+        if current_need["is_need"]:
+            if current_need["parent_need"] == "":
+                # need has no parent, we have to add the need to the root needs
+                return_list.append(current_need)
+            else:
+                parent_found: bool = False
+                for elements in found_needs:
+                    if elements["id"] == current_need["parent_need"]:
+                        parent_found = True
+                        break
+                if not parent_found:
+                    return_list.append(current_need)
+    return return_list
 
 def cal_needs_node(app: Sphinx, fromdocname: str, current_needflow: dict, all_needs: list, found_needs: list) -> str:
     """Calculate and get needs node representaion for plantuml including all child needs and need parts."""
 
-    top_needs = [x for x in found_needs if x["is_need"]]
+    top_needs = get_root_needs(found_needs)
     curr_need_tree = ""
     for top_need in top_needs:
         top_need_node = get_need_node_rep_for_plantuml(app, fromdocname, current_needflow, all_needs, top_need)
