@@ -102,7 +102,7 @@ from sphinx_needs.services.open_needs import OpenNeedsService
 from sphinx_needs.utils import INTERNALS, NEEDS_FUNCTIONS, node_match
 from sphinx_needs.warnings import process_warnings
 
-VERSION = "1.0.3"
+VERSION = "1.1.0"
 NEEDS_FUNCTIONS.clear()
 
 
@@ -386,7 +386,7 @@ def image_collector(app: Sphinx, doctree: nodes.document, fromdocname: str):
     Used to set "candidates" for images added directly to doctree after Sphinx already handled images
     """
     # Only checks docs in which needextract was used
-    if fromdocname not in app.builder.env.needs_all_docs.get("needextract", []):
+    if fromdocname not in app.builder.env.needs_all_docs.get("needextract", []) and fromdocname != "index":
         return
 
     for node in doctree.findall(nodes.image):
@@ -411,7 +411,7 @@ def process_creator(node_list, doc_category="all"):
         list of found docutil node-object for their case.
         """
         # We only need to analyse docs, which have Sphinx-Needs directives in it.
-        if fromdocname not in app.builder.env.needs_all_docs.get(doc_category, []):
+        if fromdocname not in app.builder.env.needs_all_docs.get(doc_category, []) and fromdocname != "index":
             return
         current_nodes = {}
         check_nodes = list(node_list.keys())
