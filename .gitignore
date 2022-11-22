@@ -2,6 +2,8 @@
 .venv*
 .pvenv
 
+node_modules
+
 .envrc
 *.pyc
 *.egg-info
@@ -34,3 +36,6 @@ mem_out.*
 
 pyinstrument*
 *.prof
+
+package-lock.json
+package.json

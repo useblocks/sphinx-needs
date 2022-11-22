@@ -1,10 +1,6 @@
 needextend strict-mode disabled
 ===============================
 
-.. toctree::
-
-   page_1
-
 .. story:: needextend Example 3
    :id: extend_test_003
 
