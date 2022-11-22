@@ -241,7 +241,7 @@ def get_root_needs(found_needs: list) -> list:
     return_list = []
     for current_need in found_needs:
         if current_need["is_need"]:
-            if current_need["parent_need"] == "":
+            if "parent_need" not in current_need or current_need["parent_need"] == "":
                 # need has no parent, we have to add the need to the root needs
                 return_list.append(current_need)
             else:
