@@ -8,14 +8,29 @@ License
 
 .. include:: ../LICENSE
 
-1.0.4
+1.1.1
 -----
-Under development
+Released: under development
 
+* Bugfix: Needflow fix bug in child need handling.
+  (`#785 <https://github.com/useblocks/sphinx-needs/issues/785>`_).
+
+1.1.0
+-----
+Released: 22.11.2022
+
+* Bugfix: Expand/Collapse button does not work.
+  (`#795 <https://github.com/useblocks/sphinx-needs/issues/795>`_).
+* Bugfix: `singlehtml` and `latex` related builders are working again.
+  (`#796 <https://github.com/useblocks/sphinx-needs/issues/796>`_).
+* Bugfix: Needextend throws the same information 3 times as part of a single warning.
+  (`#747 <https://github.com/useblocks/sphinx-needs/issues/747>`_).
 * Improvement: Memory consumption and runtime improvements
   (`#790 <https://github.com/useblocks/sphinx-needs/issues/790>`_).
 * Improvement: Obfuscate HTTP authentication credentials from log output.
   (`#759 <https://github.com/useblocks/sphinx-needs/issues/759>`_)
+* Bugfix: needflow: nested needs on same level throws PlantUML error.
+  (`#799 <https://github.com/useblocks/sphinx-needs/issues/799>`_)
 
 1.0.3
 -----
