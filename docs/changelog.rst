@@ -14,6 +14,10 @@ Under development
 
 * Bugfix: Expand/Collapse button does not work.
   (`#795 <https://github.com/useblocks/sphinx-needs/issues/795>`_).
+* Bugfix: `singlehtml` and `latex` related builders are working again.
+  (`#796 <https://github.com/useblocks/sphinx-needs/issues/796>`_).
+* Bugfix: Needextend throws the same information 3 times as part of a single warning.
+  (`#747 <https://github.com/useblocks/sphinx-needs/issues/747>`_).
 * Improvement: Memory consumption and runtime improvements
   (`#790 <https://github.com/useblocks/sphinx-needs/issues/790>`_).
 * Improvement: Obfuscate HTTP authentication credentials from log output.

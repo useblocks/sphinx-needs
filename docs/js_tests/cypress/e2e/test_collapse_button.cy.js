@@ -1,7 +1,7 @@
-describe('Sphinx Needs Collapse', () => {
+describe('Test Sphinx Needs Collapse', () => {
   it('Visit Sphinx Needs Homepage', () => {
-    // 1. Given a user visits https://sphinx-needs.readthedocs.io/
-    cy.visit('http://localhost:8000')
+    // 1. Given a user visits http://localhost:8000/
+    cy.visit('/')
 
     cy.get('table.need span.needs.needs_collapse').each(($el, index, $list) => {
     // 2. When page loads, select all elements that matches the selector `table.need span.needs.needs_collapse`
@@ -34,10 +34,10 @@ describe('Sphinx Needs Collapse', () => {
   })
 })
 
-describe('Sphinx Needs Collapse Click', () => {
-  it('Visit Sphinx Needs Homepage', () => {
-    // 1. Given a user visits https://sphinx-needs.readthedocs.io/
-    cy.visit('http://localhost:8000/directives/need.html')
+describe('Test Sphinx Needs Collapse Click', () => {
+  it('Visit Sphinx Needs Directive page', () => {
+    // 1. Given a user visits http://localhost:8000/directives/need.html
+    cy.visit('/directives/need.html')
 
     cy.get('table.need span.needs.needs_collapse').each(($el, index, $list) => {
     // 2. When page loads, select all elements that matches the selector `table.need span.needs.needs_collapse`
