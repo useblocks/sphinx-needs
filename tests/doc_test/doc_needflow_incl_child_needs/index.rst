@@ -18,8 +18,14 @@ TEST DOCUMENT NEEDFLOW INCL CHILD NEEDS
       .. spec:: A spec
          :id: SPEC_1
 
+      .. spec:: A secound spec
+         :id: SPEC_2
+
    .. spec:: Sibling child spec
       :id: SPEC_3
+
+   .. spec:: Secound sibling child spec
+      :id: SPEC_4
 
 .. story:: Story3
    :id: STORY_3
@@ -27,8 +33,8 @@ TEST DOCUMENT NEEDFLOW INCL CHILD NEEDS
 
    The user story3 defined.
 
-   .. spec:: Spec 2
-      :id: SPEC_2
+   .. spec:: Spec 5
+      :id: SPEC_5
 
 
 .. needflow::

@@ -182,8 +182,12 @@ def walk_curr_need_tree(
     if not need["parts"] and not need["parent_needs_back"]:
         return curr_need_tree
 
+    # We do have embedded needs or need parts, so we will add a open "{"
+    curr_need_tree += "{\n"
+
     if need["is_need"] and need["parts"]:
-        curr_need_tree += "{\n"
+        # add comment for easy debugging
+        curr_need_tree += "'parts:\n"
         for need_part_id in need["parts"].keys():
             # cal need part node
             need_part_id = need["id"] + "." + need_part_id
@@ -199,11 +203,8 @@ def walk_curr_need_tree(
 
     # check if curr need has children
     if need["parent_needs_back"]:
-        # update curr need tree
-        if need["parts"]:
-            curr_need_tree += "\n"
-        else:
-            curr_need_tree += "{\n"
+        # add comment for easy debugging
+        curr_need_tree += "'child needs:\n"
 
         # walk throgh all child needs one by one
         child_needs_ids = need["parent_needs_back"]
@@ -226,13 +227,13 @@ def walk_curr_need_tree(
                 curr_need_tree = walk_curr_need_tree(
                     app, fromdocname, current_needflow, all_needs, found_needs, curr_child_need, curr_need_tree
                 )
-            else:
-                # curr child need has no children, then update tree
-                curr_need_tree += "\n}\n"
+
+            # add newline for next element
+            curr_need_tree += "\n"
             idx += 1
-    else:
-        # curr need has no children, update curr need tree
-        curr_need_tree += "\n}"
+
+    # We processed embedded needs or need parts, so we will close with "}"
+    curr_need_tree += "}"
 
     return curr_need_tree
 

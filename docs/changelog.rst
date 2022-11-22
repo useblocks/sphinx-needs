@@ -22,6 +22,8 @@ Under development
   (`#790 <https://github.com/useblocks/sphinx-needs/issues/790>`_).
 * Improvement: Obfuscate HTTP authentication credentials from log output.
   (`#759 <https://github.com/useblocks/sphinx-needs/issues/759>`_)
+* Bugfix: needflow: nested needs on same level throws PlantUML error.
+  (`#799 <https://github.com/useblocks/sphinx-needs/issues/799>`_)
 
 1.0.3
 -----

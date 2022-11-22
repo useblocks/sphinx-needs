@@ -27,7 +27,7 @@ TEST DOCUMENT NEEDFLOW
 
 .. story:: Another story
    :id: STORY_2
-   :links: SPEC_1, SPEC_2, ,
+   :links: SPEC_1, SPEC_2
 
    :np:`(another_one) subspec`
 
