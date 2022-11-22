@@ -66,19 +66,19 @@ def test_doc_build_needflow_incl_child_needs(test_app):
 
     index_html = Path(app.outdir, "index.html").read_text()
     assert index_html
-    assert index_html.count("@startuml") = 1
-    assert index_html.count("[[../index.html#STORY_1]]") = 1
-    assert index_html.count("[[../index.html#STORY_1.1]]") = 1
-    assert index_html.count("[[../index.html#STORY_1.2]]") = 1
-    assert index_html.count("[[../index.html#STORY_2]]") = 1
-    assert index_html.count("[[../index.html#STORY_2.3]]") = 1
-    assert index_html.count("[[../index.html#SPEC_1]]") = 1
-    assert index_html.count("[[../index.html#SPEC_2]]") = 1
-    assert index_html.count("[[../index.html#SPEC_3]]") = 1
-    assert index_html.count("[[../index.html#SPEC_4]]") = 1
-    assert index_html.count("[[../index.html#STORY_3]]") = 1
-    assert index_html.count("[[../index.html#SPEC_5]]") = 1
-    assert index_html.count("@enduml") = 1
+    assert index_html.count("@startuml") == 1
+    assert index_html.count("[[../index.html#STORY_1]]") == 1
+    assert index_html.count("[[../index.html#STORY_1.1]]") == 1
+    assert index_html.count("[[../index.html#STORY_1.2]]") == 1
+    assert index_html.count("[[../index.html#STORY_2]]") == 1
+    assert index_html.count("[[../index.html#STORY_2.3]]") == 1
+    assert index_html.count("[[../index.html#SPEC_1]]") == 1
+    assert index_html.count("[[../index.html#SPEC_2]]") == 1
+    assert index_html.count("[[../index.html#SPEC_3]]") == 1
+    assert index_html.count("[[../index.html#SPEC_4]]") == 1
+    assert index_html.count("[[../index.html#STORY_3]]") == 1
+    assert index_html.count("[[../index.html#SPEC_5]]") == 1
+    assert index_html.count("@enduml") == 1
 
     single_parent_need_filer_html = Path(app.outdir, "single_parent_need_filer.html").read_text()
     assert "@startuml" in single_parent_need_filer_html
