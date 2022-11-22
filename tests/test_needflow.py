@@ -66,7 +66,7 @@ def test_doc_build_needflow_incl_child_needs(test_app):
 
     index_html = Path(app.outdir, "index.html").read_text()
     assert index_html
-    assert index_html.count("@startuml") == 2
+    assert index_html.count("@startuml") == 1
     assert index_html.count("[[../index.html#STORY_1]]") == 2
     assert index_html.count("[[../index.html#STORY_1.1]]") == 2
     assert index_html.count("[[../index.html#STORY_1.2]]") == 2
@@ -78,13 +78,13 @@ def test_doc_build_needflow_incl_child_needs(test_app):
     assert index_html.count("[[../index.html#SPEC_4]]") == 2
     assert index_html.count("[[../index.html#STORY_3]]") == 2
     assert index_html.count("[[../index.html#SPEC_5]]") == 2
-    assert index_html.count("@enduml") == 2
+    assert index_html.count("@enduml") == 1
 
     single_parent_need_filer_html = Path(app.outdir, "single_parent_need_filer.html").read_text()
     assert single_parent_need_filer_html
-    assert single_parent_need_filer_html.count("@startuml") == 2
+    assert single_parent_need_filer_html.count("@startuml") == 1
     assert single_parent_need_filer_html.count("[[../index.html#STORY_3]]") == 2
-    assert single_parent_need_filer_html.count("@enduml") == 2
+    assert single_parent_need_filer_html.count("@enduml") == 1
     assert "[[../index.html#STORY_1]]" not in single_parent_need_filer_html
     assert "[[../index.html#STORY_1.1]]" not in single_parent_need_filer_html
     assert "[[../index.html#STORY_1.2]]" not in single_parent_need_filer_html
@@ -98,9 +98,9 @@ def test_doc_build_needflow_incl_child_needs(test_app):
 
     single_child_with_child_need_filter_html = Path(app.outdir, "single_child_with_child_need_filter.html").read_text()
     assert single_child_with_child_need_filter_html
-    assert single_child_with_child_need_filter_html.count("@startuml") == 2
+    assert single_child_with_child_need_filter_html.count("@startuml") == 1
     assert single_child_with_child_need_filter_html.count("[[../index.html#STORY_2]]") == 2
-    assert single_child_with_child_need_filter_html.count("@enduml") == 2
+    assert single_child_with_child_need_filter_html.count("@enduml") == 1
     assert "[[../index.html#STORY_1]]" not in single_child_with_child_need_filter_html
     assert "[[../index.html#STORY_1.1]]" not in single_child_with_child_need_filter_html
     assert "[[../index.html#STORY_1.2]]" not in single_child_with_child_need_filter_html
@@ -114,9 +114,9 @@ def test_doc_build_needflow_incl_child_needs(test_app):
 
     single_child_need_filter_html = Path(app.outdir, "single_child_need_filter.html").read_text()
     assert single_child_need_filter_html
-    assert single_child_need_filter_html.count("@startuml") == 2
+    assert single_child_need_filter_html.count("@startuml") == 1
     assert single_child_need_filter_html.count("[[../index.html#SPEC_1]]") == 2
-    assert single_child_need_filter_html.count("@enduml") == 2
+    assert single_child_need_filter_html.count("@enduml") == 1
     assert "[[../index.html#STORY_1]]" not in single_child_need_filter_html
     assert "[[../index.html#STORY_1.1]]" not in single_child_need_filter_html
     assert "[[../index.html#STORY_1.2]]" not in single_child_need_filter_html
@@ -130,11 +130,11 @@ def test_doc_build_needflow_incl_child_needs(test_app):
 
     grandy_and_child_html = Path(app.outdir, "grandy_and_child.html").read_text()
     assert grandy_and_child_html
-    assert grandy_and_child_html.count("@startuml") == 2
+    assert grandy_and_child_html.count("@startuml") == 1
     assert grandy_and_child_html.count("[[../index.html#STORY_1]]") == 2
     assert grandy_and_child_html.count("[[../index.html#SPEC_1]]") == 2
     assert grandy_and_child_html.count("[[../index.html#SPEC_2]]") == 2
-    assert grandy_and_child_html.count("@enduml") == 2
+    assert grandy_and_child_html.count("@enduml") == 1
     assert "[[../index.html#STORY_1.1]]" not in grandy_and_child_html
     assert "[[../index.html#STORY_1.2]]" not in grandy_and_child_html
     assert "[[../index.html#STORY_2]]" not in grandy_and_child_html
