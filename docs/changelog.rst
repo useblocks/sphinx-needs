@@ -8,9 +8,13 @@ License
 
 .. include:: ../LICENSE
 
-1.0.4
+1.1.1
 -----
-Under development
+Released: under development
+
+1.1.0
+-----
+Released: 22.11.2022
 
 * Bugfix: Expand/Collapse button does not work.
   (`#795 <https://github.com/useblocks/sphinx-needs/issues/795>`_).
