@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1669118091557,
+  "lastUpdate": 1669123425815,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -1620,6 +1620,42 @@ window.BENCHMARK_DATA = {
             "value": 76.78424901999995,
             "unit": "s",
             "extra": "Commit: e78e645bb40547c2ec06582026cd1363ae2cea7d\nBranch: master\nTime: 2022-11-22T12:47:59+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "95444300+PhilipPartsch@users.noreply.github.com",
+            "name": "PhilipPartsch",
+            "username": "PhilipPartsch"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1bf781ad5415ef01c15e9940895c87dc66913168",
+          "message": "Fix: 799 needflow: nested needs on same level throws PlantUML error (#801)\n\n* change test data to cover use case: elements of the same depth are in a need embedded\r\n\r\n* emhanced test_needflow.py\r\n\r\n* cleaned doc_test/doc_needflow to be warning free\r\n\r\n* added test case for multi embedded needs, change test script to detect plantuml errors. We expect the pipelines will fail.\r\n\r\n* fixed creation of { and  } and how  newlines are added.\r\n\r\n* fixed linter and clean newline handling\r\n\r\n* update changelog\r\n\r\n* removed needs.json generation from conf.py",
+          "timestamp": "2022-11-22T14:16:47+01:00",
+          "tree_id": "dc817ba3737c31c99f2ea827d62e80c8fbe8cd6f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/1bf781ad5415ef01c15e9940895c87dc66913168"
+        },
+        "date": 1669123421958,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.27551961100004974,
+            "unit": "s",
+            "extra": "Commit: 1bf781ad5415ef01c15e9940895c87dc66913168\nBranch: master\nTime: 2022-11-22T14:16:47+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 75.34119333499996,
+            "unit": "s",
+            "extra": "Commit: 1bf781ad5415ef01c15e9940895c87dc66913168\nBranch: master\nTime: 2022-11-22T14:16:47+01:00"
           }
         ]
       }
