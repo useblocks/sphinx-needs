@@ -11,7 +11,7 @@ describe('Test Sphinx Needs Collapse', () => {
         var rows = parts.slice(2);
 
         var table = $el.closest('table');
-        var need_table = table[0];
+        var need_table_id = table.closest("div[id^=SNCB-]").attr("id");
 
         // 3. Check if the id of the element contains show or hide
         if (parts[1] == "show") {
@@ -26,8 +26,8 @@ describe('Test Sphinx Needs Collapse', () => {
             })
 
             for (var row in rows) {
-                // 5. And check if `#${need_table.parentNode.id} table tr.${rows[row]}` has the class `collapse_is_hidden`
-                cy.get(`#${need_table.parentNode.id} table tr.${rows[row]}`).should('have.class', 'collapse_is_hidden')
+                // 5. And check if `#${need_table_id} table tr.${rows[row]}` has the class `collapse_is_hidden`
+                cy.get(`#${need_table_id} table tr.${rows[row]}`).should('have.class', 'collapse_is_hidden')
             }
         }
     })
@@ -47,15 +47,15 @@ describe('Test Sphinx Needs Collapse Click', () => {
         var rows = parts.slice(2);
 
         var table = $el.closest('table');
-        var need_table = table[0];
+        var need_table_id = table.closest("div[id^=SNCB-]").attr("id");
 
         if (parts[1] == "show") {
             // 3. Click collapse/expand button
             cy.get($el).click()
 
             for (var row in rows) {
-                // 4. And check if `#${need_table.parentNode.id} table tr.${rows[row]}` has the class `collapse_is_hidden`
-                cy.get(`#${need_table.parentNode.id} table tr.${rows[row]}`).should('have.class', 'collapse_is_hidden')
+                // 4. And check if `#${need_table_id} table tr.${rows[row]}` has the class `collapse_is_hidden`
+                cy.get(`#${need_table_id} table tr.${rows[row]}`).should('have.class', 'collapse_is_hidden')
             }
 
             cy.get($el).within(() => {
@@ -69,8 +69,8 @@ describe('Test Sphinx Needs Collapse Click', () => {
             cy.get($el).click()
 
             for (var row in rows) {
-                // 4. And check if `#${need_table.parentNode.id} table tr.${rows[row]}` has the class `collapse_is_hidden`
-                cy.get(`#${need_table.parentNode.id} table tr.${rows[row]}`).should('not.have.class', 'collapse_is_hidden')
+                // 4. And check if `#${need_table_id} table tr.${rows[row]}` has the class `collapse_is_hidden`
+                cy.get(`#${need_table_id} table tr.${rows[row]}`).should('not.have.class', 'collapse_is_hidden')
             }
 
             cy.get($el).within(() => {
