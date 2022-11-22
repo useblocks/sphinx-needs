@@ -55,42 +55,6 @@ $(document).ready(function() {
             visible_icon.classList.toggle("collapse_is_hidden");
         })
     });
-
-//    var all_needs_collapse = document.querySelectorAll("table.need span.needs.needs_collapse");
-
-//    all_needs_collapse.forEach((needs_collapse, index)=>{
-//        var id = needs_collapse.getAttribute("id");
-//        var parts = id.split("__");
-//        var rows = parts.slice(2);
-//        var table = $(needs_collapse).closest('table');
-//        var need_table = table[0];
-
-//        if (parts[1] == "show") {
-//             var visible_icon = document.querySelector(`#${need_table.parentNode.id} table span.needs.visible`);
-//             visible_icon.classList.toggle("collapse_is_hidden");
-//         } else {
-//             var collapse_icon = document.querySelector(`#${need_table.parentNode.id} table span.needs.collapsed`);
-//             collapse_icon.classList.toggle("collapse_is_hidden");
-//             for (var row in rows) {
-//                 var collapse_row = document.querySelector(`#${need_table.parentNode.id} table tr.${rows[row]}`);
-//                 collapse_row.classList.toggle("collapse_is_hidden");
-//             }
-//         }
-//         // Func to execute when collapse buttons get clicked ()
-//         $(needs_collapse).find("span.needs.collapsed, span.needs.visible").click(function() {
-//             var table = $(needs_collapse).closest('table');
-//             var need_table = table[0];
-//             for (var row in rows) {
-//                 var collapse_row = document.querySelector(`#${need_table.parentNode.id} table tr.${rows[row]}`);
-//                 collapse_row.classList.toggle("collapse_is_hidden");
-//             }
-//             var collapse_icon = document.querySelector(`#${need_table.parentNode.id} table span.needs.collapsed`);
-//             var visible_icon = document.querySelector(`#${need_table.parentNode.id} table span.needs.visible`);
-
-//             collapse_icon.classList.toggle("collapse_is_hidden");
-//             visible_icon.classList.toggle("collapse_is_hidden");
-//         })
-//     });
 });
 
 $(document).ready(function() {
