@@ -246,7 +246,14 @@ def cal_needs_node(app: Sphinx, fromdocname: str, current_needflow: dict, all_ne
         top_need_node = get_need_node_rep_for_plantuml(app, fromdocname, current_needflow, all_needs, top_need)
         curr_need_tree += (
             top_need_node
-            + walk_curr_need_tree(app, fromdocname, current_needflow, all_needs, found_needs, top_need,)
+            + walk_curr_need_tree(
+                app,
+                fromdocname,
+                current_needflow,
+                all_needs,
+                found_needs,
+                top_need,
+            )
             + "\n"
         )
 

@@ -6,6 +6,7 @@ TEST DOCUMENT NEEDFLOW INCL CHILD NEEDS
    single_parent_need_filer
    single_child_with_child_need_filter
    single_child_need_filter
+   grandy_and_child
 
 .. story:: A story
    :id: STORY_1
