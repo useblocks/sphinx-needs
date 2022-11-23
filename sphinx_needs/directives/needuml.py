@@ -202,6 +202,7 @@ def jinja2uml(
             "flow": jinja_utils.flow,
             "filter": jinja_utils.filter,
             "import": jinja_utils.imports,
+            "ref": jinja_utils.ref,
         }
     )
 
@@ -319,6 +320,22 @@ class JinjaFunctions:
             link=link,
             color=need_info["type_color"].replace("#", ""),
             style=need_info["type_style"],
+        )
+
+        return need_uml
+
+    def ref(self, need_id: str, option: str = None, text: str = None) -> str:
+        if need_id not in self.needs:
+            raise NeedumlException(f"Jinja function ref is called with undefined need_id: '{need_id}'.")
+        if (option and text) and (not option and not text):
+            raise NeedumlException("Jinja function ref requires exactly one entry 'option' or 'text'")
+
+        need_info = self.needs[need_id]
+        link = calculate_link(self.app, need_info, self.fromdocname)
+
+        need_uml = " [[{link} {content}]]".format(
+            link=link,
+            content=need_info.get(option, "") if option else text,
         )
 
         return need_uml
