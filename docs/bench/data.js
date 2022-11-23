@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1669123449766,
+  "lastUpdate": 1669194487034,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -1692,6 +1692,42 @@ window.BENCHMARK_DATA = {
             "value": 75.25805907400002,
             "unit": "s",
             "extra": "Commit: 896b9eb7d80b0d42d1d1386540bfc74a344ddf64\nBranch: master\nTime: 2022-11-22T14:17:13+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "arnaud.degroote@easymile.com",
+            "name": "Arnaud Degroote",
+            "username": "adegroote"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f0c0f5e6a5177c7dded6b108ed506d7b8a170ed9",
+          "message": "Add support for link in needuml directive (#789)\n\n* Add support for link in needuml directive\r\n\r\nIt is useful for sequence or activity diagramm\r\n\r\n* Use double quote to appease the project linter\r\n\r\n* Use the term ref which is less confusing than link (in the sphinx-needs semantic)\r\n\r\nWhile here, accept a free text in the expression.\r\n\r\n* Add some tests for the jinja function ref\r\n\r\n* Provide documentation for jinja function ref\r\n\r\n* Add a changelog entry for the jinja function ref\r\n\r\n* Rename the second parameter of ref from content to option\r\n\r\n* Add missing \" in the documentation",
+          "timestamp": "2022-11-23T10:01:42+01:00",
+          "tree_id": "9c109cb5d963fe6af2a3dc05b5db407fa845e1d7",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f0c0f5e6a5177c7dded6b108ed506d7b8a170ed9"
+        },
+        "date": 1669194482572,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2194313470000111,
+            "unit": "s",
+            "extra": "Commit: f0c0f5e6a5177c7dded6b108ed506d7b8a170ed9\nBranch: master\nTime: 2022-11-23T10:01:42+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 70.80760964799998,
+            "unit": "s",
+            "extra": "Commit: f0c0f5e6a5177c7dded6b108ed506d7b8a170ed9\nBranch: master\nTime: 2022-11-23T10:01:42+01:00"
           }
         ]
       }
