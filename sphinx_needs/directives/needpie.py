@@ -17,7 +17,7 @@ import matplotlib.pyplot
 from docutils.parsers.rst import directives
 
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import add_doc, check_and_get_external_filter_func, unwrap
+from sphinx_needs.utils import add_doc, check_and_get_external_filter_func, save_matplotlib_figure, unwrap
 
 logger = get_logger(__name__)
 
@@ -261,21 +261,10 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
             axes.set_title(current_needpie["title"])
 
         # Final storage
-        image_folder = os.path.join(env.app.srcdir, "_images")
-        if not os.path.exists(image_folder):
-            os.mkdir(image_folder)
+
         # We need to calculate an unique pie-image file name
         hash_value = hashlib.sha256(id.encode()).hexdigest()[:5]
-        rel_file_path = os.path.join("_images", f"need_pie_{hash_value}.png")
-        if rel_file_path not in env.images:
-            fig.savefig(os.path.join(env.app.srcdir, rel_file_path), format="png")
-            env.images.add_file(fromdocname, rel_file_path)
-
-        image_node = nodes.image()
-        image_node["uri"] = rel_file_path
-
-        # look at uri value for source path, relative to the srcdir folder
-        image_node["candidates"] = {"*": rel_file_path}
+        image_node = save_matplotlib_figure(app, fig, f"need_pie_{hash_value}", fromdocname)
 
         # Add lineno to node
         image_node.line = current_needpie["lineno"]

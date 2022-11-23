@@ -8,6 +8,8 @@ from re import Pattern
 from typing import Any, Dict, List, Optional, TypeVar, Union
 from urllib.parse import urlparse
 
+from matplotlib.figure import FigureBase
+
 from docutils import nodes
 from jinja2 import BaseLoader, Environment, Template
 from sphinx.application import BuildEnvironment, Sphinx
@@ -343,6 +345,28 @@ def jinja_parse(context: Dict, jinja_string: str) -> str:
 
     content = content_template.render(**context)
     return content
+
+
+def save_matplotlib_figure(app: Sphinx, figure: FigureBase, basename: str, fromdocname: str) -> nodes.image:
+    builder = unwrap(app.builder)
+    env = unwrap(builder.env)
+
+    image_folder = os.path.join(env.app.srcdir, "_images")
+    if not os.path.exists(image_folder):
+        os.mkdir(image_folder)
+
+    rel_file_path = os.path.join("_images", basename + ".png")
+    if rel_file_path not in env.images:
+        figure.savefig(os.path.join(env.app.srcdir, rel_file_path))
+        env.images.add_file(fromdocname, rel_file_path)
+
+    image_node = nodes.image()
+    image_node["uri"] = rel_file_path
+
+    # look at uri value for source path, relative to the srcdir folder
+    image_node["candidates"] = {"*": rel_file_path}
+
+    return image_node
 
 
 def dict_get(root, items, default=None) -> Any:

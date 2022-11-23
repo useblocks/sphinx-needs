@@ -8,7 +8,7 @@ from docutils import nodes
 from sphinx.application import Sphinx
 
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
-from sphinx_needs.utils import add_doc, unwrap
+from sphinx_needs.utils import add_doc, save_matplotlib_figure, unwrap
 
 if not os.environ.get("DISPLAY"):
     matplotlib.use("Agg")
@@ -423,18 +423,10 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
             axes.legend()
 
         # 9. final storage
-        image_folder = os.path.join(env.app.srcdir, "_images")
-        if not os.path.exists(image_folder):
-            os.mkdir(image_folder)
+
         # We need to calculate an unique bar-image file name
         hash_value = hashlib.sha256(id.encode()).hexdigest()[:5]
-        rel_file_path = os.path.join("_images", f"need_bar_{hash_value}.png")
-        if rel_file_path not in env.images:
-            figure.savefig(os.path.join(env.app.srcdir, rel_file_path))
-            env.images.add_file(fromdocname, rel_file_path)
-
-        image_node = nodes.image()
-        image_node["uri"] = rel_file_path
+        image_node = save_matplotlib_figure(app, figure, f"need_bar_{hash_value}", fromdocname)
 
         # Add lineno to node
         image_node.line = current_needbar["lineno"]
@@ -442,9 +434,6 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
         # normally the title is more understandable for a person who needs alt
         if current_needbar["title"]:
             image_node["alt"] = current_needbar["title"].strip()
-
-        # look at uri value for source path, relative to the srcdir folder
-        image_node["candidates"] = {"*": rel_file_path}
 
         node.replace_self(image_node)
 
