@@ -1,8 +1,10 @@
 TEST DOCUMENT NEEDFLOW
 =======================
+
 .. toctree::
 
    page
+   empty_needflow_with_debug.rst
 
 
 .. spec:: Command line interface

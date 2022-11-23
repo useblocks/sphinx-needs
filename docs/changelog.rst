@@ -12,6 +12,9 @@ License
 -----
 Released: under development
 
+* Bugfix: Needflow fix bug in child need handling.
+  (`#785 <https://github.com/useblocks/sphinx-needs/issues/785>`_).
+
 1.1.0
 -----
 Released: 22.11.2022

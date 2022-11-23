@@ -172,12 +172,12 @@ def walk_curr_need_tree(
     all_needs: list,
     found_needs: list,
     need: dict,
-    need_tree: str,
 ):
     """
     Walk through each need to find all its child needs and need parts recursively and wrap them together in nested structure.
     """
-    curr_need_tree = need_tree
+
+    curr_need_tree = ""
 
     if not need["parts"] and not need["parent_needs_back"]:
         return curr_need_tree
@@ -217,19 +217,18 @@ def walk_curr_need_tree(
             for need in found_needs:
                 if need["id_complete"] == curr_child_need_id:
                     curr_child_need = need
-            # get child need node
-            child_need_node = get_need_node_rep_for_plantuml(
-                app, fromdocname, current_needflow, all_needs, curr_child_need
-            )
-            curr_need_tree += child_need_node
-            # check curr need child has children or has parts
-            if curr_child_need["parent_needs_back"] or curr_child_need["parts"]:
-                curr_need_tree = walk_curr_need_tree(
-                    app, fromdocname, current_needflow, all_needs, found_needs, curr_child_need, curr_need_tree
-                )
-
-            # add newline for next element
-            curr_need_tree += "\n"
+                    # get child need node
+                    child_need_node = get_need_node_rep_for_plantuml(
+                        app, fromdocname, current_needflow, all_needs, curr_child_need
+                    )
+                    curr_need_tree += child_need_node
+                    # check curr need child has children or has parts
+                    if curr_child_need["parent_needs_back"] or curr_child_need["parts"]:
+                        curr_need_tree += walk_curr_need_tree(
+                            app, fromdocname, current_needflow, all_needs, found_needs, curr_child_need
+                        )
+                    # add newline for next element
+                    curr_need_tree += "\n"
             idx += 1
 
     # We processed embedded needs or need parts, so we will close with "}"
@@ -238,18 +237,42 @@ def walk_curr_need_tree(
     return curr_need_tree
 
 
+def get_root_needs(found_needs: list) -> list:
+    return_list = []
+    for current_need in found_needs:
+        if current_need["is_need"]:
+            if "parent_need" not in current_need or current_need["parent_need"] == "":
+                # need has no parent, we have to add the need to the root needs
+                return_list.append(current_need)
+            else:
+                parent_found: bool = False
+                for elements in found_needs:
+                    if elements["id"] == current_need["parent_need"]:
+                        parent_found = True
+                        break
+                if not parent_found:
+                    return_list.append(current_need)
+    return return_list
+
+
 def cal_needs_node(app: Sphinx, fromdocname: str, current_needflow: dict, all_needs: list, found_needs: list) -> str:
     """Calculate and get needs node representaion for plantuml including all child needs and need parts."""
-
-    top_needs = [x for x in found_needs if x["is_need"] and not x["parent_needs"]]
+    top_needs = get_root_needs(found_needs)
     curr_need_tree = ""
     for top_need in top_needs:
         top_need_node = get_need_node_rep_for_plantuml(app, fromdocname, current_needflow, all_needs, top_need)
         curr_need_tree += (
-            walk_curr_need_tree(app, fromdocname, current_needflow, all_needs, found_needs, top_need, top_need_node)
+            top_need_node
+            + walk_curr_need_tree(
+                app,
+                fromdocname,
+                current_needflow,
+                all_needs,
+                found_needs,
+                top_need,
+            )
             + "\n"
         )
-
     return curr_need_tree
 
 
@@ -463,7 +486,11 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
             para += filter_node
             content.append(para)
 
-        if current_needflow["debug"]:
+        # We have to restrustructer the needflow
+        # If this block should be organized differently
+        if current_needflow["debug"] and found_needs:
+            # We can only access puml_node if found_needs is set.
+            # Otherwise it was not been set, or we get outdated data
             debug_container = nodes.container()
             if isinstance(puml_node, nodes.figure):
                 data = puml_node.children[0]["uml"]
