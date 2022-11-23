@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1669194487034,
+  "lastUpdate": 1669198692759,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -1728,6 +1728,42 @@ window.BENCHMARK_DATA = {
             "value": 70.80760964799998,
             "unit": "s",
             "extra": "Commit: f0c0f5e6a5177c7dded6b108ed506d7b8a170ed9\nBranch: master\nTime: 2022-11-23T10:01:42+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "95444300+PhilipPartsch@users.noreply.github.com",
+            "name": "PhilipPartsch",
+            "username": "PhilipPartsch"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "51cf31ccc988ce09a50effade119eecfb32bbab6",
+          "message": "785 needflow: filtering on child_needs fix (#807)\n\n* reporduce working stand\r\n\r\n* added test which should raise an exception, as the code is bad\r\n\r\n* added even more failing tests\r\n\r\n* added test cases for the new failing test data\r\n\r\n* changed debug handling, so if nothing has to be added, even we will not add the debug text\r\n\r\n* process all needs\r\n\r\n* fixed wrong test case\r\n\r\n* added additional test\r\n\r\n* added missing file include\r\n\r\n* current diagram is brocken, as elements are added multiple times. Added a more specific test case for this\r\n\r\n* fixed test case\r\n\r\n* made tests more detailed\r\n\r\n* try to solve multi occuring elements\r\n\r\n* fix typos\r\n\r\n* count is always 2. One for debug and one for the alt text\r\n\r\n* change test\r\n\r\n* minor update\r\n\r\n* added special handling of external needs, which do not have a parent option in the need dict.\r\n\r\n* updated changelog",
+          "timestamp": "2022-11-23T11:10:21+01:00",
+          "tree_id": "c1c298db610cc6c8d95c57d24307a92aec052ef5",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/51cf31ccc988ce09a50effade119eecfb32bbab6"
+        },
+        "date": 1669198688093,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.28472701799989864,
+            "unit": "s",
+            "extra": "Commit: 51cf31ccc988ce09a50effade119eecfb32bbab6\nBranch: master\nTime: 2022-11-23T11:10:21+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 85.52347788999998,
+            "unit": "s",
+            "extra": "Commit: 51cf31ccc988ce09a50effade119eecfb32bbab6\nBranch: master\nTime: 2022-11-23T11:10:21+01:00"
           }
         ]
       }
