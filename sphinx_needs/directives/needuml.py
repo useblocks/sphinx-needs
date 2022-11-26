@@ -299,10 +299,10 @@ class JinjaFunctions:
 
         return uml
 
-    def flow_(self, need_info, recursive: bool) -> str:
-        return self.flow(need_info["id_complete"], recursive=recursive)
+    def flow_(self, need_info, recursive: bool, color: str, style: str) -> str:
+        return self.flow(need_info["id_complete"], recursive=recursive, color=color, style=style)
 
-    def flow(self, need_id, recursive: bool = False) -> str:
+    def flow(self, need_id, recursive: bool = False, color: str = None, style: str = None) -> str:
         if need_id not in self.needs:
             raise NeedumlException(f"Jinja function flow is called with undefined need_id: '{need_id}'.")
 
@@ -319,7 +319,9 @@ class JinjaFunctions:
         node_text = diagram_template.render(**need_info, **self.app.config.needs_render_context)
 
         subtree = (
-            walk_curr_need_tree(partial(self.flow_, recursive=recursive), list(self.needs.values()), need_info)
+            walk_curr_need_tree(
+                partial(self.flow_, recursive=recursive, color=color, style=style), list(self.needs.values()), need_info
+            )
             if recursive
             else ""
         )
@@ -328,8 +330,8 @@ class JinjaFunctions:
             id=make_entity_name(need_id),
             node_text=node_text,
             link=link,
-            color=need_info["type_color"].replace("#", ""),
-            style=need_info["type_style"],
+            color=color if color else need_info["type_color"].replace("#", ""),
+            style=style if style else need_info["type_style"],
             subtree=subtree,
         )
 
