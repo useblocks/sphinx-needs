@@ -1,5 +1,6 @@
 import html
 import os
+from functools import partial
 from typing import Sequence
 
 from docutils import nodes
@@ -7,7 +8,7 @@ from docutils.parsers.rst import Directive, directives
 from jinja2 import BaseLoader, Environment, Template
 
 from sphinx_needs.diagrams_common import calculate_link
-from sphinx_needs.directives.needflow import make_entity_name
+from sphinx_needs.directives.needflow import make_entity_name, walk_curr_need_tree
 from sphinx_needs.filter_common import filter_needs
 from sphinx_needs.utils import add_doc
 
@@ -298,7 +299,10 @@ class JinjaFunctions:
 
         return uml
 
-    def flow(self, need_id) -> str:
+    def flow_(self, need_info, recursive: bool) -> str:
+        return self.flow(need_info["id_complete"], recursive=recursive)
+
+    def flow(self, need_id, recursive: bool = False) -> str:
         if need_id not in self.needs:
             raise NeedumlException(f"Jinja function flow is called with undefined need_id: '{need_id}'.")
 
@@ -314,12 +318,19 @@ class JinjaFunctions:
         diagram_template = Template(self.app.builder.env.config.needs_diagram_template)
         node_text = diagram_template.render(**need_info, **self.app.config.needs_render_context)
 
-        need_uml = '{style} "{node_text}" as {id} [[{link}]] #{color}'.format(
+        subtree = (
+            walk_curr_need_tree(partial(self.flow_, recursive=recursive), list(self.needs.values()), need_info)
+            if recursive
+            else ""
+        )
+
+        need_uml = '{style} "{node_text}" as {id} [[{link}]] #{color}{subtree}'.format(
             id=make_entity_name(need_id),
             node_text=node_text,
             link=link,
             color=need_info["type_color"].replace("#", ""),
             style=need_info["type_style"],
+            subtree=subtree,
         )
 
         return need_uml

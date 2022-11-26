@@ -1,6 +1,7 @@
 import html
 import os
 import re
+from functools import partial
 from typing import Iterable, Sequence
 
 from docutils import nodes
@@ -166,10 +167,7 @@ def get_need_node_rep_for_plantuml(
 
 
 def walk_curr_need_tree(
-    app: Sphinx,
-    fromdocname: str,
-    current_needflow: dict,
-    all_needs: list,
+    render_func,
     found_needs: list,
     need: dict,
 ):
@@ -196,9 +194,7 @@ def walk_curr_need_tree(
                 if need_part_id == found_need["id_complete"]:
                     need_part = found_need
                     # get need part node
-                    need_part_node = get_need_node_rep_for_plantuml(
-                        app, fromdocname, current_needflow, all_needs, need_part
-                    )
+                    need_part_node = render_func(need_part)
                     curr_need_tree += need_part_node + "\n"
 
     # check if curr need has children
@@ -218,15 +214,11 @@ def walk_curr_need_tree(
                 if need["id_complete"] == curr_child_need_id:
                     curr_child_need = need
                     # get child need node
-                    child_need_node = get_need_node_rep_for_plantuml(
-                        app, fromdocname, current_needflow, all_needs, curr_child_need
-                    )
+                    child_need_node = render_func(curr_child_need)
                     curr_need_tree += child_need_node
                     # check curr need child has children or has parts
                     if curr_child_need["parent_needs_back"] or curr_child_need["parts"]:
-                        curr_need_tree += walk_curr_need_tree(
-                            app, fromdocname, current_needflow, all_needs, found_needs, curr_child_need
-                        )
+                        curr_need_tree += walk_curr_need_tree(render_func, found_needs, curr_child_need)
                     # add newline for next element
                     curr_need_tree += "\n"
             idx += 1
@@ -264,10 +256,7 @@ def cal_needs_node(app: Sphinx, fromdocname: str, current_needflow: dict, all_ne
         curr_need_tree += (
             top_need_node
             + walk_curr_need_tree(
-                app,
-                fromdocname,
-                current_needflow,
-                all_needs,
+                partial(get_need_node_rep_for_plantuml, app, fromdocname, current_needflow, all_needs),
                 found_needs,
                 top_need,
             )
