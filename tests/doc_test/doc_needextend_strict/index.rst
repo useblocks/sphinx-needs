@@ -16,6 +16,10 @@ needextend strict-mode disabled
 .. needextend:: extend_test_003
    :links: extend_test_004
 
+.. needextend:: extned_WRONG_ID_781
+   :+status: MYELEMENT_ATTRIB_EXT
+   :strict: false
+
 .. needextend:: strict_disable_extend_test
    :status: open
    :strict: false

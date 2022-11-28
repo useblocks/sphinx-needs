@@ -387,7 +387,7 @@ def is_element_of_need(node: nodes.Element) -> str:
     is_element_of = ""
     while not is_element_of:
         if isinstance(node, nodes.table) and "need" in node["classes"]:
-            is_element_of = node["ids"][0]
+            is_element_of = node.parent.attributes["ids"][1]
             break
         else:
             if not node.parent:
