@@ -33,7 +33,7 @@ jobs:
           ${{ runner.os }}-pip-
     - name: Install Python dependencies
       run: |
-        pip install -r requirements.txt
+        pip install -r docs/requirements.txt
     - name: Install Node dependencies
       run: npm install cypress
     - name: Build Docs
