@@ -41,7 +41,7 @@ jobs:
       id: sphinx-build-docs
       run: |
         echo "SPHINX_DIR=$(pwd)" >> $GITHUB_OUTPUT
-        sphinx-build -b html ./docs /tmp/sphinx_build/html
+        sphinx-build -T -E -b html -d /tmp/sphinx_build/doctrees ./docs /tmp/sphinx_build/html
     - name: E2E Cypress Test on Chrome
       uses: cypress-io/github-action@v4
       with:

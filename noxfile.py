@@ -59,7 +59,7 @@ def tests(session, sphinx, docutils):
 def linkcheck(session):
     session.install(".")
     # LinkCheck can handle rate limits since Sphinx 3.4, which is needed as
-    # our doc has to many links to GitHub.
+    # our doc has too many links to GitHub.
     session.run("pip", "install", "sphinx==3.5.4", silent=True)
 
     session.run("pip", "install", "-r", "docs/requirements.txt", silent=True)
