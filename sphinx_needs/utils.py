@@ -231,7 +231,7 @@ def import_prefix_link_edit(needs: Dict[str, Any], id_prefix: str, needs_extra_l
     """
     if not id_prefix:
         return
-    
+
     needs_ids = needs.keys()
 
     for need in needs.values():
