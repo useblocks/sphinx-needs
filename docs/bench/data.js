@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1669198692759,
+  "lastUpdate": 1669658100536,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -1764,6 +1764,42 @@ window.BENCHMARK_DATA = {
             "value": 85.52347788999998,
             "unit": "s",
             "extra": "Commit: 51cf31ccc988ce09a50effade119eecfb32bbab6\nBranch: master\nTime: 2022-11-23T11:10:21+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "github@rubyfi.de",
+            "name": "Stefan Schulz",
+            "username": "Rubyfi"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "dd3a7e8562f9d8a5a360883b969fc2545bf649b1",
+          "message": "needs_external_needs: Skip setting prefixes if no prefix was given (#820)\n\n* Skip setting prefixes if no prefix was given\r\n\r\n* Fix formatting issue",
+          "timestamp": "2022-11-28T18:47:13+01:00",
+          "tree_id": "e34db07b33b0c2cc8ced56b7edac532c3f72c9e2",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/dd3a7e8562f9d8a5a360883b969fc2545bf649b1"
+        },
+        "date": 1669658096279,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.26023568200002956,
+            "unit": "s",
+            "extra": "Commit: dd3a7e8562f9d8a5a360883b969fc2545bf649b1\nBranch: master\nTime: 2022-11-28T18:47:13+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 88.71386653800005,
+            "unit": "s",
+            "extra": "Commit: dd3a7e8562f9d8a5a360883b969fc2545bf649b1\nBranch: master\nTime: 2022-11-28T18:47:13+01:00"
           }
         ]
       }
