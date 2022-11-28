@@ -229,6 +229,9 @@ def import_prefix_link_edit(needs: Dict[str, Any], id_prefix: str, needs_extra_l
     :param needs_extra_links: config var of all supported extra links. Normally coming from env.config.needs_extra_links
     :return:
     """
+    if not id_prefix:
+        return
+    
     needs_ids = needs.keys()
 
     for need in needs.values():
