@@ -187,6 +187,7 @@ class LayoutHandler:
             classes.append("needs_style_none")
 
         classes.append("needs_type_" + "".join(self.need["type"].split()))
+        classes.append("colwidths-given")
 
         self.node_table = nodes.table(classes=classes, ids=[self.need["id"]])
         self.node_tbody = nodes.tbody()
@@ -309,11 +310,10 @@ class LayoutHandler:
         if len(lines) == 0:
             return None
 
-        lines_container = nodes.line_block(classes=[f"needs_{section}"])
+        lines_container = nodes.inline()
 
         for line in lines:
-            # line_block_node = nodes.line_block()
-            line_node = nodes.line()
+            line_node = nodes.inline()
 
             line_parsed = self._parse(line)
             line_ready = self._func_replace(line_parsed)
@@ -608,7 +608,7 @@ class LayoutHandler:
             if data in exclude:
                 continue
 
-            data_line = nodes.line()
+            data_line = nodes.paragraph(classes=["needs_table_row"])
             label = prefix + f"{data}:" + postfix + " "
             result = self.meta(data, label, show_empty)
             if not (show_empty or result):
@@ -665,7 +665,7 @@ class LayoutHandler:
         for link_type in self.app.config.needs_extra_links:
             type_key = link_type["option"]
             if self.need[type_key] and type_key not in exclude:
-                outgoing_line = nodes.line()
+                outgoing_line = nodes.paragraph(classes=["needs_table_row"])
                 outgoing_label = prefix + "{}:".format(link_type["outgoing"]) + postfix + " "
                 outgoing_line += self._parse(outgoing_label)
                 outgoing_line += self.meta_links(link_type["option"], incoming=False)
@@ -673,7 +673,7 @@ class LayoutHandler:
 
             type_key = link_type["option"] + "_back"
             if self.need[type_key] and type_key not in exclude:
-                incoming_line = nodes.line()
+                incoming_line = nodes.paragraph(classes=["needs_table_row"])
                 incoming_label = prefix + "{}:".format(link_type["incoming"]) + postfix + " "
                 incoming_line += self._parse(incoming_label)
                 incoming_line += self.meta_links(link_type["option"], incoming=True)

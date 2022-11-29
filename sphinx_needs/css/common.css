@@ -21,6 +21,10 @@ div.needstable_wrapper {
     padding: 0;
 }
 
+p.needs_table_row {
+    margin: 0 auto;
+}
+
 /* We need not line-block margin:24 px here, which is coming from sphinx theme */
 table.need td div.needs_side.line-block{
     margin-bottom: 0;
