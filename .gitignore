@@ -36,6 +36,3 @@ mem_out.*
 
 pyinstrument*
 *.prof
-
-package-lock.json
-package.json

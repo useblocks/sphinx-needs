@@ -1,0 +1,7 @@
+{
+  "name": "test-sphinx-needs",
+  "description": "E2E tests for Sphinx Needs",
+  "scripts": {
+    "start": "python3 -m http.server --directory='/tmp/sphinx_build/html' 8080"
+  }
+}
