@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1669658100536,
+  "lastUpdate": 1669723851403,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -1800,6 +1800,42 @@ window.BENCHMARK_DATA = {
             "value": 88.71386653800005,
             "unit": "s",
             "extra": "Commit: dd3a7e8562f9d8a5a360883b969fc2545bf649b1\nBranch: master\nTime: 2022-11-28T18:47:13+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "duodurandy19@gmail.com",
+            "name": "Randy Duodu",
+            "username": "iSOLveIT"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "56b4835ef6b3044e9bbde59681998bfa247fb549",
+          "message": "Added CI for testing the Sphinx Needs JS libs (#819)\n\n* Added CI for testing the Sphinx Needs JS libs\r\n\r\n* Updated CI for JS Test\r\n\r\n* Minor bug fixes\r\n\r\n* CI fixes\r\n\r\n* Updated js_test CI workflow and .gitignore",
+          "timestamp": "2022-11-29T13:04:21+01:00",
+          "tree_id": "a186fab2967fdaa46403b230ccd6dbb55e1bed70",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/56b4835ef6b3044e9bbde59681998bfa247fb549"
+        },
+        "date": 1669723845992,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2662360479999961,
+            "unit": "s",
+            "extra": "Commit: 56b4835ef6b3044e9bbde59681998bfa247fb549\nBranch: master\nTime: 2022-11-29T13:04:21+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 72.21505915800003,
+            "unit": "s",
+            "extra": "Commit: 56b4835ef6b3044e9bbde59681998bfa247fb549\nBranch: master\nTime: 2022-11-29T13:04:21+01:00"
           }
         ]
       }
