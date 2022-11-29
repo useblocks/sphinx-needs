@@ -32,6 +32,9 @@ jobs:
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
         restore-keys: |
           ${{ runner.os }}-pip-
+    - name: Install Sphinx-Needs from master
+      run: |
+        pip install -e .
     - name: Install Python dependencies
       run: |
         pip install -r docs/requirements.txt
@@ -40,8 +43,7 @@ jobs:
     - name: Build Docs
       id: sphinx-build-docs
       run: |
-        echo "SPHINX_DIR=$(pwd)" >> $GITHUB_OUTPUT
-        sphinx-build -T -E -b html -d /tmp/sphinx_build/doctrees ./docs /tmp/sphinx_build/html
+        sphinx-build -a -T -E -j 4 -b html -d /tmp/sphinx_build/doctrees ./docs /tmp/sphinx_build/html
     - name: E2E Cypress Test on Chrome
       uses: cypress-io/github-action@v4
       with:
