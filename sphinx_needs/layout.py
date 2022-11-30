@@ -310,15 +310,11 @@ class LayoutHandler:
         if len(lines) == 0:
             return None
 
-        lines_container = nodes.inline()
-
+        lines_container = []
         for line in lines:
-            line_node = nodes.inline()
-
             line_parsed = self._parse(line)
             line_ready = self._func_replace(line_parsed)
-            line_node += line_ready
-            lines_container.append(line_node)
+            lines_container += line_ready
 
         return lines_container
 
@@ -603,7 +599,7 @@ class LayoutHandler:
             link_names = [x["option"] for x in self.app.config.needs_extra_links]
             link_names += [x["option"] + "_back" for x in self.app.config.needs_extra_links]
             exclude += link_names
-        data_container = nodes.inline()
+        data_container = []
         for data in self.need.keys():
             if data in exclude:
                 continue
