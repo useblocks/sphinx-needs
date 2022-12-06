@@ -40,6 +40,9 @@ subfolder file
 
 **Needextracts**
 
+
+**from subfolder / this file**
+
 .. needextract:: US_SUB_001
    :style: red_border
 
@@ -51,3 +54,12 @@ subfolder file
 
 .. needextract:: US_SUB_004
    :style: red_border
+
+**from /index.rst**
+
+
+.. needextract:: US_002
+   :layout: clean
+   :style: blue_border
+
+.. needextract:: US_003
