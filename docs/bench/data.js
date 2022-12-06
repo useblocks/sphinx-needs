@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1669723851403,
+  "lastUpdate": 1670335172712,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -1836,6 +1836,42 @@ window.BENCHMARK_DATA = {
             "value": 72.21505915800003,
             "unit": "s",
             "extra": "Commit: 56b4835ef6b3044e9bbde59681998bfa247fb549\nBranch: master\nTime: 2022-11-29T13:04:21+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "arnaud.degroote@easymile.com",
+            "name": "Arnaud Degroote",
+            "username": "adegroote"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "38c4e410d1d4d39c5da8a5179b8e986bdaf08aa9",
+          "message": "fix changelog entry for ref in needuml (#821)",
+          "timestamp": "2022-12-06T14:51:40+01:00",
+          "tree_id": "121e69473455924600ed4cc4e3c2c903e1c9674e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/38c4e410d1d4d39c5da8a5179b8e986bdaf08aa9"
+        },
+        "date": 1670335167711,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.30102441400003954,
+            "unit": "s",
+            "extra": "Commit: 38c4e410d1d4d39c5da8a5179b8e986bdaf08aa9\nBranch: master\nTime: 2022-12-06T14:51:40+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 96.84715338000001,
+            "unit": "s",
+            "extra": "Commit: 38c4e410d1d4d39c5da8a5179b8e986bdaf08aa9\nBranch: master\nTime: 2022-12-06T14:51:40+01:00"
           }
         ]
       }
