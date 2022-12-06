@@ -12,6 +12,8 @@ License
 -----
 Released: under development
 
+* Improvement: Introduce the jinja function `ref` for :ref:`needuml`.
+  (`#789 <https://github.com/useblocks/sphinx-needs/issues/789>`_)
 * Bugfix: Needflow fix bug in child need handling.
   (`#785 <https://github.com/useblocks/sphinx-needs/issues/785>`_).
 
@@ -81,8 +83,6 @@ Released: 08.11.2022
   (`#434 <https://github.com/useblocks/sphinx-needs/issues/434>`_)
 * Improvement: Updated pantuml in test folder to same version as in doc folder
   (`#765 <https://github.com/useblocks/sphinx-needs/issues/765>`_)
-* Improvement: Introduce the jinja function `ref` for :ref:`needuml`.
-  (`#789 <https://github.com/useblocks/sphinx-needs/issues/789>`_)
 
 1.0.2
 -----
