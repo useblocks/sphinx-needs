@@ -86,3 +86,6 @@ TEST DOCUMENT NEEDEXTRACT
 
 .. needextract:: US_SUB_004
    :style: red_border
+
+.. needextract:: US_SUB_005
+   :style: red_border

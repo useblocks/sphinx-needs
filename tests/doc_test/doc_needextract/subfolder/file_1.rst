@@ -37,6 +37,14 @@ subfolder file
 
    Path: ``smile.png``
 
+.. story:: Subfolder example with image in same folder (absolute path)
+   :id: US_SUB_005
+
+   Use a absolute path for the image
+
+   .. image:: /subfolder/smile.png
+
+   Path: ``/subfolder/smile.png``
 
 **Needextracts**
 
@@ -53,6 +61,9 @@ subfolder file
    :style: red_border
 
 .. needextract:: US_SUB_004
+   :style: red_border
+
+.. needextract:: US_SUB_005
    :style: red_border
 
 **from /index.rst**
