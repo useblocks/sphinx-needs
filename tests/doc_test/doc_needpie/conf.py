@@ -43,6 +43,8 @@ needs_types = [
     {"directive": "test", "title": "Test Case", "prefix": "TC_", "color": "#DCB239", "style": "node"},
 ]
 
+needs_extra_options = ["author"]
+
 plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "utils", "plantuml.jar")
 plantuml_output_format = "svg"
 

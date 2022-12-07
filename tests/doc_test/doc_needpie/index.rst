@@ -25,6 +25,17 @@ TEST DOCUMENT Needpie
     :id: SPEC_6
     :tags: c
 
+.. spec:: story 1
+    :id: STORY_1
+    :author: foo
+
+.. spec:: story 2
+    :id: STORY_2
+    :author: foo
+
+.. spec:: story 3
+    :id: STORY_3
+    :author: bar
 
 .. needpie:: Test pie
    :labels: All, A, B, C
@@ -34,6 +45,13 @@ TEST DOCUMENT Needpie
    "b" in tags
    "c" in tags
 
+.. needpie:: Test pie 2
+   :labels: foo, bar, not_set
+   :legend:
+
+   author == 'foo'
+   author == 'bar'
+   author == 'not_set'
 
 
 .. toctree::
