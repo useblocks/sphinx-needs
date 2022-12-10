@@ -10,24 +10,22 @@ license = "MIT"
 readme = "README.rst"
 repository = "http://github.com/useblocks/sphinx-needs"
 documentation = "https://sphinx-needs.readthedocs.io/en/latest/"
-classifiers=[
-        'Development Status :: 5 - Production/Stable',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License',
-        'Operating System :: OS Independent',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
-        'Topic :: Documentation',
-        'Topic :: Utilities',
-        'Framework :: Sphinx :: Extension',
-    ]
-
-packages = [
-    {include = "sphinx_needs"}
+classifiers = [
+  'Development Status :: 5 - Production/Stable',
+  'Intended Audience :: Developers',
+  'License :: OSI Approved :: MIT License',
+  'Operating System :: OS Independent',
+  'Programming Language :: Python',
+  'Programming Language :: Python :: 3',
+  'Programming Language :: Python :: 3.8',
+  'Programming Language :: Python :: 3.9',
+  'Programming Language :: Python :: 3.10',
+  'Topic :: Documentation',
+  'Topic :: Utilities',
+  'Framework :: Sphinx :: Extension',
 ]
+
+packages = [{ include = "sphinx_needs" }]
 
 
 [tool.poetry.dependencies]
@@ -35,13 +33,13 @@ python = "^3.8.1"
 sphinx = ">=5.0"
 docutils = ">=0.15"
 
-matplotlib = ">=3.3.0"  # needpie
-requests-file = "^1.5.1"  # external links
-requests = "^2.25.1"  # external_links
-jsonschema = "3.2.0"  # needsimport schema validation
-sphinx-data-viewer = "^0.1.1"  # needservice debug output
-esbonio = ">=0.11.3"  # IDE language features
-pygls = "*"  # esbonio dependency
+matplotlib = ">=3.3.0"        # needpie
+requests-file = "^1.5.1"      # external links
+requests = "^2.25.1"          # external_links
+jsonschema = "3.2.0"          # needsimport schema validation
+sphinx-data-viewer = "^0.1.1" # needservice debug output
+esbonio = ">=0.11.3"          # IDE language features
+pygls = "*"                   # esbonio dependency
 
 [tool.poetry.dev-dependencies]
 sphinxcontrib-plantuml = "^0"
@@ -49,9 +47,9 @@ pre-commit = "^2"
 # test dependencies
 lxml = "^4.6.5"
 pytest = "^7"
-pytest-xdist="*"  # parallelisation
-pytest_lsp="*"
-myst-parser="^0.18.0"
+pytest-xdist = "*"        # parallelisation
+pytest_lsp = "*"
+myst-parser = "^0.18.0"
 responses = "^0.22.0"
 requests-mock = ">=1.9.3"
 tabulate = "^0.9.0"
@@ -77,12 +75,12 @@ pep8-naming = "^0.13.2"
 flake8-future-annotations = "^1.0.0"
 
 # pyparsing 3.0.5 does not work with current "packaging" lib
-pyparsing = "^3.0.9"  # 3.0.5 error: https://github.com/pyparsing/pyparsing/issues/329
+pyparsing = "^3.0.9"        # 3.0.5 error: https://github.com/pyparsing/pyparsing/issues/329
 pytest-benchmark = "^4.0.0"
 memray = "^1.3.1"
 
 [tool.pytest.ini_options]
-asyncio_mode= "auto"
+asyncio_mode = "auto"
 
 [tool.black]
 line-length = 120
@@ -140,6 +138,8 @@ docs = ["sphinx>=4.0"]
 immaterial = ["sphinx-immaterial"]
 
 [build-system]
-requires = ["setuptools", "poetry_core>=1.0.8"]  # setuptools for deps like plantuml
+requires = [
+  "setuptools",
+  "poetry_core>=1.0.8",
+] # setuptools for deps like plantuml
 build-backend = "poetry.core.masonry.api"
-
