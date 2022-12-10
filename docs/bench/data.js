@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1670699140588,
+  "lastUpdate": 1670699175989,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -1908,6 +1908,42 @@ window.BENCHMARK_DATA = {
             "value": 80.666320627,
             "unit": "s",
             "extra": "Commit: d3000ab3679ef759fdf22a0b1c7fae70178b5c4a\nBranch: master\nTime: 2022-12-10T19:58:31+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4345912ec8bd90539c18e95f8b7ce3d9052ebcfd",
+          "message": "Adds needpie check with extra options (#827)",
+          "timestamp": "2022-12-10T19:59:33+01:00",
+          "tree_id": "5e329195c9d855246a23847ed6cb88fee60fbf0a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/4345912ec8bd90539c18e95f8b7ce3d9052ebcfd"
+        },
+        "date": 1670699172011,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.23048490000002175,
+            "unit": "s",
+            "extra": "Commit: 4345912ec8bd90539c18e95f8b7ce3d9052ebcfd\nBranch: master\nTime: 2022-12-10T19:59:33+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 72.79746442700002,
+            "unit": "s",
+            "extra": "Commit: 4345912ec8bd90539c18e95f8b7ce3d9052ebcfd\nBranch: master\nTime: 2022-12-10T19:59:33+01:00"
           }
         ]
       }
