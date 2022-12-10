@@ -127,7 +127,7 @@ def build_need(layout, node, app: Sphinx, style=None, fromdocname: Optional[str]
     need_data = needs[need_id]
 
     if need_data["hide"]:
-        node.parent.replace(node, [])
+        node.replace_self([])
         return
 
     if fromdocname is None:
@@ -142,8 +142,7 @@ def build_need(layout, node, app: Sphinx, style=None, fromdocname: Optional[str]
     node_container.attributes["classes"] = ["need_container"]
 
     # We need to replace the current need-node (containing content only) with our new table need node.
-    # node.parent.replace(node, node_container)
-    node.parent.replace(node, node_container)
+    node.replace_self(node_container)
 
 
 class LayoutHandler:
