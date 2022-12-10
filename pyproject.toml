@@ -71,7 +71,7 @@ isort = "^5.7.0"
 
 # pyparsing 3.0.5 does not work with current "packaging" lib
 pyparsing = "^3.0.9"  # 3.0.5 error: https://github.com/pyparsing/pyparsing/issues/329
-pytest-benchmark = "^3.4.1"
+pytest-benchmark = "^4.0.0"
 memray = "^1.3.1"
 
 [tool.pytest.ini_options]
