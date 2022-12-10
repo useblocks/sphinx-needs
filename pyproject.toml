@@ -31,7 +31,7 @@ packages = [
 
 
 [tool.poetry.dependencies]
-python = "^3.8.0"
+python = "^3.8.1"
 sphinx = ">=5.0"
 docutils = ">=0.15"
 
@@ -67,6 +67,14 @@ sphinx-immaterial = { version = "==0.7.3", optional = true }
 # formatting dependencies
 black = "^22.3"
 isort = "^5.7.0"
+
+# linting dependencies
+flake8 = "^6.0.0"
+flake8-bugbear = "^22.4.25"
+flake8-comprehensions = "^3.10.0"
+flake8-simplify = "^0.19.2"
+pep8-naming = "^0.13.2"
+flake8-future-annotations = "^1.0.0"
 
 # pyparsing 3.0.5 does not work with current "packaging" lib
 pyparsing = "^3.0.9"  # 3.0.5 error: https://github.com/pyparsing/pyparsing/issues/329
