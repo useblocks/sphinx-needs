@@ -2,8 +2,10 @@
 
 
 """
+from __future__ import annotations
+
 import re
-from typing import Any, Callable, Dict, Sequence
+from typing import Any, Callable, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -32,7 +34,7 @@ class NeedextendDirective(SphinxDirective):
     optional_arguments = 0
     final_argument_whitespace = True
 
-    option_spec: Dict[str, Callable[[str], Any]] = {
+    option_spec: dict[str, Callable[[str], Any]] = {
         "strict": directives.unchanged_required,
     }
 

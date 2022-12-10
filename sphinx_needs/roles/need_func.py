@@ -1,8 +1,7 @@
 """
 Provide the role ``need_func``, which executes a dynamic function.
 """
-
-from typing import List
+from __future__ import annotations
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -19,7 +18,7 @@ class NeedFunc(nodes.Inline, nodes.Element):  # type: ignore
 
 
 def process_need_func(
-    app: Sphinx, doctree: nodes.document, _fromdocname: str, found_nodes: List[nodes.Element]
+    app: Sphinx, doctree: nodes.document, _fromdocname: str, found_nodes: list[nodes.Element]
 ) -> None:
     builder = unwrap(app.builder)
     env = unwrap(builder.env)

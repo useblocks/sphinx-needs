@@ -5,10 +5,11 @@ Sphinx-needs functions module
 Cares about the correct registration and execution of sphinx-needs functions to support dynamic values
 in need configurations.
 """
+from __future__ import annotations
 
 import ast
 import re
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, List
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -23,10 +24,10 @@ unicode = str
 ast_boolean = ast.NameConstant
 
 # this input args should actually be of type `Need` and `List[Need]`, however `Need` is *currently* untyped.
-DynamicFunction = Callable[[Sphinx, Any, Any], Union[str, int, float, List[Union[str, int, float]]]]
+DynamicFunction = Callable[[Sphinx, Any, Any], str | int | float | List[str | int | float]]
 
 
-def register_func(need_function: DynamicFunction, name: Optional[str] = None):
+def register_func(need_function: DynamicFunction, name: str | None = None):
     """
     Registers a new sphinx-needs function for the given sphinx environment.
     :param env: Sphinx environment
@@ -252,10 +253,10 @@ def resolve_variants_options(env: BuildEnvironment):
     variants_options = env.app.config.needs_variant_options
 
     if variants_options:
-        needs: Dict = env.needs_all_needs
+        needs: dict = env.needs_all_needs
         for need in needs.values():
             # Data to use as filter context.
-            need_context: Dict = {**need}
+            need_context: dict = {**need}
             need_context.update(**env.app.config.needs_filter_data)  # Add needs_filter_data to filter context
             _sphinx_tags = env.app.builder.tags.tags  # Get sphinx tags
             need_context.update(**_sphinx_tags)  # Add sphinx tags to filter context

@@ -1,11 +1,12 @@
 """Suport Sphinx-Needs language features."""
+from __future__ import annotations
+
 import getpass
 import os
 import re
 import typing
 from hashlib import blake2b
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
 
 from esbonio.lsp import LanguageFeature
 from esbonio.lsp.rst import CompletionContext, DefinitionContext, HoverContext
@@ -25,7 +26,7 @@ from sphinx.application import Sphinx
 from sphinx_needs.lsp.needs_store import NeedsStore
 
 
-def get_needs_json(app: Sphinx) -> Optional[Path]:
+def get_needs_json(app: Sphinx) -> Path | None:
     """
     Get the location of needs.json.
     """
@@ -57,7 +58,7 @@ class NeedlsFeatures(LanguageFeature):
     # Open-Needs-IDE language features completion triggers: '>', '/', ':', '.'
     completion_triggers = [re.compile(r"(>)|(\.\.)|(:)|(\/)")]
 
-    def complete(self, context: CompletionContext) -> List[CompletionItem]:
+    def complete(self, context: CompletionContext) -> list[CompletionItem]:
 
         if isinstance(self.rst, SphinxLanguageServer) and self.rst.app:
             # get and check needs.json path
@@ -142,7 +143,7 @@ class NeedlsFeatures(LanguageFeature):
 
     definition_triggers = [re.compile(r".*")]
 
-    def definition(self, context: DefinitionContext) -> List[Location]:
+    def definition(self, context: DefinitionContext) -> list[Location]:
         """Return location of definition of a need."""
         if isinstance(self.rst, SphinxLanguageServer) and self.rst.app:
             # get and check needs.json path
@@ -205,7 +206,7 @@ class NeedlsFeatures(LanguageFeature):
         return []
 
 
-def col_to_word_index(col: int, words: List[str]) -> int:
+def col_to_word_index(col: int, words: list[str]) -> int:
     """Return the index of a word in a list of words for a given line character column."""
     length = 0
     index = 0
@@ -217,7 +218,7 @@ def col_to_word_index(col: int, words: List[str]) -> int:
     return index - 1
 
 
-def get_lines(ls: NeedlsFeatures, params: Union[CompletionContext, DefinitionContext, HoverContext]) -> List[str]:
+def get_lines(ls: NeedlsFeatures, params: CompletionContext | DefinitionContext | HoverContext) -> list[str]:
     """Get all text lines in the current document."""
     text_doc = params.doc
     ls.logger.debug(f"text_doc: {text_doc}")
@@ -225,7 +226,7 @@ def get_lines(ls: NeedlsFeatures, params: Union[CompletionContext, DefinitionCon
     return source.splitlines()
 
 
-def get_word(ls: NeedlsFeatures, params: Union[CompletionContext, DefinitionContext, HoverContext]) -> str:
+def get_word(ls: NeedlsFeatures, params: CompletionContext | DefinitionContext | HoverContext) -> str:
     """Return the word in a line of text at a character position."""
     line_no, col = params.position
     lines = get_lines(ls, params)
@@ -238,13 +239,11 @@ def get_word(ls: NeedlsFeatures, params: Union[CompletionContext, DefinitionCont
     return word
 
 
-def get_lines_and_word(ls: NeedlsFeatures, params: CompletionContext) -> Tuple[List[str], str]:
+def get_lines_and_word(ls: NeedlsFeatures, params: CompletionContext) -> tuple[list[str], str]:
     return (get_lines(ls, params), get_word(ls, params))
 
 
-def get_need_type_and_id(
-    ls: NeedlsFeatures, params: Union[DefinitionContext, HoverContext]
-) -> Tuple[Optional[str], Optional[str]]:
+def get_need_type_and_id(ls: NeedlsFeatures, params: DefinitionContext | HoverContext) -> tuple[str | None, str | None]:
     """Return tuple (need_type, need_id) for a given document position."""
     word = get_word(ls, params)
     for need in ls.needs_store.needs.values():
@@ -253,7 +252,7 @@ def get_need_type_and_id(
     return (None, None)
 
 
-def doc_completion_items(ls: NeedlsFeatures, docs: List[str], doc_pattern: str) -> List[CompletionItem]:
+def doc_completion_items(ls: NeedlsFeatures, docs: list[str], doc_pattern: str) -> list[CompletionItem]:
     """Return completion items for a given doc pattern."""
 
     # calc all doc paths that start with the given pattern
@@ -306,8 +305,8 @@ def doc_completion_items(ls: NeedlsFeatures, docs: List[str], doc_pattern: str) 
 
 
 def complete_need_link(
-    ls: NeedlsFeatures, params: CompletionContext, lines: List[str], line: str, word: str
-) -> List[CompletionItem]:
+    ls: NeedlsFeatures, params: CompletionContext, lines: list[str], line: str, word: str
+) -> list[CompletionItem]:
     # specify the need type, e.g.,
     # ->req
     if word.count(">") == 1:
@@ -372,7 +371,7 @@ class JinjaHelperFunction:
     """
 
     def __init__(
-        self, ls: NeedlsFeatures, params: CompletionContext, lines: List[str], need_type: Optional[str] = None
+        self, ls: NeedlsFeatures, params: CompletionContext, lines: list[str], need_type: str | None = None
     ) -> None:
         self.ls = ls
         self.params = params
@@ -434,7 +433,7 @@ class JinjaHelperFunction:
 
 
 def generate_need_id(
-    ls: NeedlsFeatures, params: CompletionContext, lines: List[str], need_type: Optional[str] = None
+    ls: NeedlsFeatures, params: CompletionContext, lines: list[str], need_type: str | None = None
 ) -> str:
     """Generate a need ID."""
 
@@ -456,7 +455,7 @@ def generate_need_id(
     return need_id
 
 
-def found_eval_rst_block(lines: List[str], params: CompletionContext) -> bool:
+def found_eval_rst_block(lines: list[str], params: CompletionContext) -> bool:
     # check if current line inside {eval-rst} block
     # ```{eval-rst}
     #
@@ -484,7 +483,7 @@ def found_eval_rst_block(lines: List[str], params: CompletionContext) -> bool:
     return found_eval_rst
 
 
-def calc_snippets_completion_item_text_edit(params: CompletionContext, lines: List[str], word: str) -> TextEdit:
+def calc_snippets_completion_item_text_edit(params: CompletionContext, lines: list[str], word: str) -> TextEdit:
     line_number = params.position.line
     substitution = word[word.find("..") :]
     start_char = lines[line_number].find(substitution)
@@ -503,8 +502,8 @@ def calc_snippets_completion_item_text_edit(params: CompletionContext, lines: Li
 
 
 def complete_directive(
-    ls: NeedlsFeatures, params: CompletionContext, lines: List[str], word: str
-) -> List[CompletionItem]:
+    ls: NeedlsFeatures, params: CompletionContext, lines: list[str], word: str
+) -> list[CompletionItem]:
     # need_type ~ req, work, act, ...
     items = []
 
@@ -576,8 +575,8 @@ def complete_directive(
 
 
 def complete_role_or_option(
-    ls: NeedlsFeatures, params: CompletionContext, lines: List[str], word: str
-) -> List[CompletionItem]:
+    ls: NeedlsFeatures, params: CompletionContext, lines: list[str], word: str
+) -> list[CompletionItem]:
     # Calculate need role snippet for MySt/Markdown and rst
     if params.doc.filename.endswith(".md"):
         # support MyST/Markdown

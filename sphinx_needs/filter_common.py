@@ -2,10 +2,11 @@
 filter_base is used to provide common filter functionality for directives
 like needtable, needlist and needflow.
 """
+from __future__ import annotations
 
 import copy
 import re
-from typing import Any, Dict, List
+from typing import Any
 
 from docutils.parsers.rst import Directive, directives
 from sphinx.application import Sphinx
@@ -28,7 +29,7 @@ class FilterBase(Directive):
         "export_id": directives.unchanged,
     }
 
-    def collect_filter_attributes(self) -> Dict[str, Any]:
+    def collect_filter_attributes(self) -> dict[str, Any]:
         tags = str(self.options.get("tags", ""))
         if tags:
             tags = [tag.strip() for tag in re.split(";|,", tags) if len(tag) > 0]
@@ -200,7 +201,7 @@ def process_filters(app: Sphinx, all_needs, current_needlist, include_external: 
     return found_needs
 
 
-def prepare_need_list(need_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def prepare_need_list(need_list: list[dict[str, Any]]) -> list[dict[str, Any]]:
     # all_needs_incl_parts = need_list.copy()
     try:
         all_needs_incl_parts = need_list[:]
@@ -226,7 +227,7 @@ def prepare_need_list(need_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return all_needs_incl_parts
 
 
-def intersection_of_need_results(list_a, list_b) -> List[Dict[str, Any]]:
+def intersection_of_need_results(list_a, list_b) -> list[dict[str, Any]]:
     return [a for a in list_a if a in list_b]
 
 

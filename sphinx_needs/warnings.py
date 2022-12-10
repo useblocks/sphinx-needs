@@ -2,7 +2,7 @@
 Cares about handling and execution warnings.
 
 """
-from typing import Optional
+from __future__ import annotations
 
 from sphinx.application import Sphinx
 from sphinx.util import logging
@@ -15,7 +15,7 @@ from sphinx_needs.utils import unwrap
 logger = get_logger(__name__)
 
 
-def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
+def process_warnings(app: Sphinx, exception: Exception | None) -> None:
     """
     Checks the configured warnings.
 

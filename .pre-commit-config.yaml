@@ -13,6 +13,7 @@ repos:
           - flake8-comprehensions
           - flake8-simplify
           - pep8-naming
+          - flake8-future-annotations
 
   - repo: https://github.com/pycqa/isort
     rev: 5.10.1

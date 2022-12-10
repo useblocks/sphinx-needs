@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import contextlib
 from collections.abc import Iterable
-from typing import Dict
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -18,7 +19,7 @@ class NeedRef(nodes.Inline, nodes.Element):
     pass
 
 
-def transform_need_to_dict(need: Need) -> Dict[str, str]:
+def transform_need_to_dict(need: Need) -> dict[str, str]:
     """
     The function will transform a need in a dictionary of strings. Used to
     be given e.g. to a python format string.

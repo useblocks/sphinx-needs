@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import re
 from random import choices
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 from jinja2 import Template
@@ -21,7 +23,7 @@ from .config.open_needs import (
 class OpenNeedsService(BaseService):
     options = CONFIG_OPTIONS + EXTRA_DATA_OPTIONS + EXTRA_LINK_OPTIONS
 
-    def __init__(self, app: Sphinx, name: str, config: Dict[str, Any], **kwargs: Any) -> None:
+    def __init__(self, app: Sphinx, name: str, config: dict[str, Any], **kwargs: Any) -> None:
 
         self.app = app
         self.name = name
@@ -38,10 +40,10 @@ class OpenNeedsService(BaseService):
         self.id_prefix = self.config.get("id_prefix", "OPEN_NEEDS_")
         self.query = self.config.get("query", "")
         self.content = self.config.get("content", DEFAULT_CONTENT)
-        self.mappings: Dict[str, Any] = self.config.get("mappings", {})
+        self.mappings: dict[str, Any] = self.config.get("mappings", {})
         self.mapping_replaces = self.config.get("mappings_replaces", MAPPINGS_REPLACES_DEFAULT)
 
-        self.extra_data: Dict[str, Any] = self.config.get("extra_data", {})
+        self.extra_data: dict[str, Any] = self.config.get("extra_data", {})
         self.params = self.config.get("params", "skip=0,limit=100")
 
         super().__init__(**kwargs)
@@ -70,8 +72,8 @@ class OpenNeedsService(BaseService):
         url: str = options.get("url", self.url)
         url = url + str(self.url_postfix)
 
-        headers: Dict[str, str] = {"Authorization": f"{self.token_type} {self.access_token}"}
-        params: List[str] = [param.strip() for param in re.split(r";|,", options.get("params", self.params))]
+        headers: dict[str, str] = {"Authorization": f"{self.token_type} {self.access_token}"}
+        params: list[str] = [param.strip() for param in re.split(r";|,", options.get("params", self.params))]
         new_params: str = "&".join(params)
 
         url = f"{url}?{new_params}"
@@ -94,7 +96,7 @@ class OpenNeedsService(BaseService):
             raise OpenNeedsServiceException(f"Problem accessing {result.url}.\nReason: {result.text}")
         return result
 
-    def _extract_data(self, data: List[Dict[str, Any]], options: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _extract_data(self, data: list[dict[str, Any]], options: dict[str, Any]) -> list[dict[str, Any]]:
         """
         Extract data of a list/dictionary, which was retrieved via send_request.
         :param data: list or dict

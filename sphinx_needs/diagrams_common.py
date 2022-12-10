@@ -2,12 +2,13 @@
 Diagrams common module, which stores all class definitions and functions, which get reused in
 diagram related directive. E.g. needflow and needsequence.
 """
+from __future__ import annotations
 
 import html
 import os
 import re
 import textwrap
-from typing import Any, Dict, List, Tuple
+from typing import Any
 from urllib.parse import urlparse
 
 from docutils import nodes
@@ -49,7 +50,7 @@ class DiagramBase(Directive):
 
         return env_var
 
-    def create_target(self, target_name: str) -> Tuple[int, str, nodes.target]:
+    def create_target(self, target_name: str) -> tuple[int, str, nodes.target]:
         env: BuildEnvironment = self.state.document.settings.env
         id = env.new_serialno(target_name)
         targetid = f"{target_name}-{env.docname}-{id}"
@@ -57,7 +58,7 @@ class DiagramBase(Directive):
 
         return id, targetid, targetnode
 
-    def collect_diagram_attributes(self) -> Dict[str, Any]:
+    def collect_diagram_attributes(self) -> dict[str, Any]:
         env = self.state.document.settings.env
 
         link_types = self.options.get("link_types", "links")
@@ -167,7 +168,7 @@ def get_debug_container(puml_node: nodes.Node) -> nodes.container:
     return debug_container
 
 
-def calculate_link(app: Sphinx, need_info: Dict[str, Any], _fromdocname: str) -> str:
+def calculate_link(app: Sphinx, need_info: dict[str, Any], _fromdocname: str) -> str:
     """
     Link calculation
     All links we can get from docutils functions will be relative.
@@ -201,8 +202,8 @@ def calculate_link(app: Sphinx, need_info: Dict[str, Any], _fromdocname: str) ->
     return link
 
 
-def create_legend(need_types: List[Dict[str, Any]]) -> str:
-    def create_row(need_type: Dict[str, Any]) -> str:
+def create_legend(need_types: list[dict[str, Any]]) -> str:
+    def create_row(need_type: dict[str, Any]) -> str:
         return "\n|<back:{color}> {color} </back>| {name} |".format(color=need_type["color"], name=need_type["title"])
 
     rows = map(create_row, need_types)

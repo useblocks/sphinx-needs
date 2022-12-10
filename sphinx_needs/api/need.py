@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import hashlib
 import os
 import re
-from typing import Any, List, Optional, Union
+from typing import Any
 
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState
@@ -38,13 +40,13 @@ def add_need(
     lineno: int,
     need_type,
     title: str,
-    id: Optional[str] = None,
+    id: str | None = None,
     content: str = "",
-    status: Optional[str] = None,
+    status: str | None = None,
     tags=None,
     constraints=None,
     constraints_passed=None,
-    links_string: Optional[str] = None,
+    links_string: str | None = None,
     delete: bool = False,
     jinja_content: bool = False,
     hide: bool = False,
@@ -54,10 +56,10 @@ def add_need(
     style=None,
     layout=None,
     template=None,
-    pre_template: Optional[str] = None,
-    post_template: Optional[str] = None,
+    pre_template: str | None = None,
+    post_template: str | None = None,
     is_external: bool = False,
-    external_url: Optional[str] = None,
+    external_url: str | None = None,
     external_css: str = "external_link",
     **kwargs,
 ):
@@ -514,15 +516,15 @@ def del_need(app: Sphinx, need_id: str) -> None:
 def add_external_need(
     app: Sphinx,
     need_type,
-    title: Optional[str] = None,
-    id: Optional[str] = None,
-    external_url: Optional[str] = None,
+    title: str | None = None,
+    id: str | None = None,
+    external_url: str | None = None,
     external_css: str = "external_link",
     content: str = "",
-    status: Optional[str] = None,
-    tags: Optional[str] = None,
-    constraints: Optional[str] = None,
-    links_string: Optional[str] = None,
+    status: str | None = None,
+    tags: str | None = None,
+    constraints: str | None = None,
+    links_string: str | None = None,
     **kwargs: Any,
 ):
     """
@@ -611,7 +613,7 @@ def _render_plantuml_template(content: str, docname: str, lineno: int, state: RS
     return node_need_content
 
 
-def _read_in_links(links_string: Union[str, List[str]]) -> List[str]:
+def _read_in_links(links_string: str | list[str]) -> list[str]:
     # Get links
     links = []
     if links_string:
@@ -633,7 +635,7 @@ def _read_in_links(links_string: Union[str, List[str]]) -> List[str]:
     return _fix_list_dyn_func(links)
 
 
-def make_hashed_id(app: Sphinx, need_type: str, full_title: str, content: str, id_length: Optional[int] = None) -> str:
+def make_hashed_id(app: Sphinx, need_type: str, full_title: str, content: str, id_length: int | None = None) -> str:
     """
     Creates an ID based on title or need.
 
@@ -669,7 +671,7 @@ def make_hashed_id(app: Sphinx, need_type: str, full_title: str, content: str, i
     return f"{type_prefix}{cal_hashed_id[:id_length]}"
 
 
-def _fix_list_dyn_func(list: List[str]) -> List[str]:
+def _fix_list_dyn_func(list: list[str]) -> list[str]:
     """
     This searches a list for dynamic function fragments, which may have been cut by generic searches for ",|;".
 

@@ -3,11 +3,13 @@ Cares about the correct handling with ``needs.json`` files.
 
 Creates, checks and imports ``needs.json`` files.
 """
+from __future__ import annotations
+
 import json
 import os
 import sys
 from datetime import datetime
-from typing import Any, List
+from typing import Any
 
 from jsonschema import Draft7Validator
 
@@ -133,7 +135,7 @@ class NeedsList:
 
 
 class Errors:
-    def __init__(self, schema_errors: List[Any]):
+    def __init__(self, schema_errors: list[Any]):
         self.schema = schema_errors
 
 

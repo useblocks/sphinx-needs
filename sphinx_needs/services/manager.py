@@ -1,4 +1,4 @@
-from typing import Dict
+from __future__ import annotations
 
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
@@ -14,7 +14,7 @@ class ServiceManager:
         self.app = app
 
         self.log = get_logger(__name__)
-        self.services: Dict[str, BaseService] = {}
+        self.services: dict[str, BaseService] = {}
 
     def register(self, name: str, clazz, **kwargs) -> None:
         try:

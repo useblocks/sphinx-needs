@@ -3,6 +3,8 @@
 # See License.txt in the project root for further license information.
 # --------------------------------------------------------------------------
 
+from __future__ import annotations
+
 import importlib.util
 import json
 import logging
@@ -10,7 +12,7 @@ import os
 import sys
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Dict, Generator, List, Optional
+from typing import Any, Generator
 
 from sphinx_needs.lsp.exceptions import NeedlsConfigException
 
@@ -29,11 +31,11 @@ class NeedsStore:
     """Abstraction of needs database."""
 
     def __init__(self) -> None:
-        self.docs_per_type: Dict[str, List[str]] = {}  # key: need type, val: list of doc names (str)
-        self.needs_per_doc: Dict[Optional[str], List[Dict[Optional[str], Any]]] = {}  # key: docname; val: list of needs
-        self.types: List[str] = []  # list of need types actually defined in needs.json
-        self.declared_types: Dict[str, str] = {}  # types declared in conf.py: {'need directive': 'need title'}
-        self.needs: Dict[Optional[str], Dict[Optional[str], Any]] = {}
+        self.docs_per_type: dict[str, list[str]] = {}  # key: need type, val: list of doc names (str)
+        self.needs_per_doc: dict[str | None, list[dict[str | None, Any]]] = {}  # key: docname; val: list of needs
+        self.types: list[str] = []  # list of need types actually defined in needs.json
+        self.declared_types: dict[str, str] = {}  # types declared in conf.py: {'need directive': 'need title'}
+        self.needs: dict[str | None, dict[str | None, Any]] = {}
         self.needs_initialized: bool = False
         self.conf_py_path: Path = Path()
 

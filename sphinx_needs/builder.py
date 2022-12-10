@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import os
-from typing import Iterable, Optional, Set
+from typing import Iterable
 
 from docutils import nodes
 from sphinx import version_info
@@ -66,7 +68,7 @@ class NeedsBuilder(Builder):
     def get_outdated_docs(self) -> Iterable[str]:
         return []
 
-    def prepare_writing(self, _docnames: Set[str]) -> None:
+    def prepare_writing(self, _docnames: set[str]) -> None:
         pass
 
     def write_doc_serialized(self, _docname: str, _doctree: nodes.document) -> None:
@@ -75,7 +77,7 @@ class NeedsBuilder(Builder):
     def cleanup(self) -> None:
         pass
 
-    def get_target_uri(self, _docname: str, _typ: Optional[str] = None) -> str:
+    def get_target_uri(self, _docname: str, _typ: str | None = None) -> str:
         return ""
 
 
@@ -125,7 +127,7 @@ class NeedumlsBuilder(Builder):
     def get_outdated_docs(self) -> Iterable[str]:
         return []
 
-    def prepare_writing(self, _docnames: Set[str]) -> None:
+    def prepare_writing(self, _docnames: set[str]) -> None:
         pass
 
     def write_doc_serialized(self, _docname: str, _doctree: nodes.document) -> None:
@@ -134,7 +136,7 @@ class NeedumlsBuilder(Builder):
     def cleanup(self) -> None:
         pass
 
-    def get_target_uri(self, _docname: str, _typ: Optional[str] = None) -> str:
+    def get_target_uri(self, _docname: str, _typ: str | None = None) -> str:
         return ""
 
 

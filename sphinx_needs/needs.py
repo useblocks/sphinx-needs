@@ -1,4 +1,6 @@
-from typing import Any, Dict, List
+from __future__ import annotations
+
+from typing import Any
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -130,7 +132,7 @@ NODE_TYPES = {
 }
 
 
-def setup(app: Sphinx) -> Dict[str, Any]:
+def setup(app: Sphinx) -> dict[str, Any]:
     log = get_logger(__name__)
     log.debug("Starting setup of Sphinx-Needs")
     log.debug("Load Sphinx-Data-Viewer for Sphinx-Needs")
@@ -712,7 +714,7 @@ def check_configuration(_app: Sphinx, config: Config) -> None:
             )
 
 
-def merge_data(_app: Sphinx, env: BuildEnvironment, _docnames: List[str], other: BuildEnvironment):
+def merge_data(_app: Sphinx, env: BuildEnvironment, _docnames: list[str], other: BuildEnvironment):
     """
     Performs data merge of parallel executed workers.
     Used only for parallel builds.

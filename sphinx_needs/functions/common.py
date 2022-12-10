@@ -3,10 +3,10 @@ Collection of common sphinx-needs functions for dynamic values
 
 .. note:: The function parameters ``app``, ``need``, ``needs`` are set automatically and can not be overridden by user.
 """
+from __future__ import annotations
 
 import contextlib
 import re
-from typing import List, Optional
 
 from sphinx.application import Sphinx
 
@@ -158,7 +158,7 @@ def check_linked_values(
     result,
     search_option,
     search_value,
-    filter_string: Optional[str] = None,
+    filter_string: str | None = None,
     one_hit: bool = False,
 ):
     """
@@ -417,7 +417,7 @@ def calc_sum(app: Sphinx, need, needs, option, filter=None, links_only: bool = F
     return calculated_sum
 
 
-def links_from_content(app: Sphinx, need, needs, need_id=None, filter=None) -> List[str]:
+def links_from_content(app: Sphinx, need, needs, need_id=None, filter=None) -> list[str]:
     """
     Extracts links from content of a need.
 

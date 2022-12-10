@@ -1,4 +1,6 @@
-from typing import Any, Dict
+from __future__ import annotations
+
+from typing import Any
 
 from sphinx.application import Sphinx
 
@@ -9,7 +11,7 @@ from sphinx_needs.logging import get_logger
 logger = get_logger(__name__)
 
 
-def process_constraints(app: Sphinx, need: Dict[str, Any]) -> None:
+def process_constraints(app: Sphinx, need: dict[str, Any]) -> None:
     """
     Finally creates the need-node in the docurils node-tree.
 

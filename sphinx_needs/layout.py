@@ -3,11 +3,12 @@ Cares about the correct creation and handling of need layout.
 
 Based on https://github.com/useblocks/sphinxcontrib-needs/issues/102
 """
+from __future__ import annotations
+
 import os
 import re
 import uuid
 from contextlib import suppress
-from typing import List, Optional
 from urllib.parse import urlparse
 
 import requests
@@ -22,7 +23,7 @@ from sphinx.application import Sphinx
 from sphinx_needs.utils import INTERNALS, match_string_link, unwrap
 
 
-def create_need(need_id: str, app: Sphinx, layout=None, style=None, docname: Optional[str] = None) -> nodes.container:
+def create_need(need_id: str, app: Sphinx, layout=None, style=None, docname: str | None = None) -> nodes.container:
     """
     Creates a new need-node for a given layout.
 
@@ -93,7 +94,7 @@ def replace_pending_xref_refdoc(node, new_refdoc: str) -> None:
             replace_pending_xref_refdoc(child, new_refdoc)
 
 
-def build_need(layout, node, app: Sphinx, style=None, fromdocname: Optional[str] = None) -> None:
+def build_need(layout, node, app: Sphinx, style=None, fromdocname: str | None = None) -> None:
     """
     Builds a need based on a given layout for a given need-node.
 
@@ -151,7 +152,7 @@ class LayoutHandler:
     Cares about the correct layout handling
     """
 
-    def __init__(self, app: Sphinx, need, layout, node, style=None, fromdocname: Optional[str] = None) -> None:
+    def __init__(self, app: Sphinx, need, layout, node, style=None, fromdocname: str | None = None) -> None:
         self.app = app
         self.need = need
 
@@ -298,7 +299,7 @@ class LayoutHandler:
 
         return self.node_table
 
-    def get_section(self, section: str) -> Optional[nodes.line_block]:
+    def get_section(self, section: str) -> nodes.line_block | None:
         try:
             lines = self.layout["layout"][section]
         except KeyError:
@@ -322,7 +323,7 @@ class LayoutHandler:
 
         return lines_container
 
-    def _parse(self, line: str) -> List[nodes.Node]:
+    def _parse(self, line: str) -> list[nodes.Node]:
         """
         Parses a single line/string for inline rst statements, like strong, emphasis, literal, ...
 
@@ -438,7 +439,7 @@ class LayoutHandler:
             data = data.replace(replace_string, self.need[item])
         return data
 
-    def meta(self, name: str, prefix: Optional[str] = None, show_empty: bool = False):
+    def meta(self, name: str, prefix: str | None = None, show_empty: bool = False):
         """
         Returns the specific metadata of a need inside docutils nodes.
         Usage::
@@ -473,7 +474,7 @@ class LayoutHandler:
             # data_node = nodes.inline(classes=["needs_data"])
             # data_node.append(nodes.Text(data)
             # data_container.append(data_node)
-            needs_string_links_option: List[str] = []
+            needs_string_links_option: list[str] = []
             for v in self.app.config.needs_string_links.values():
                 needs_string_links_option.extend(v["options"])
 
@@ -809,8 +810,8 @@ class LayoutHandler:
     def link(
         self,
         url: str,
-        text: Optional[str] = None,
-        image_url: Optional[str] = None,
+        text: str | None = None,
+        image_url: str | None = None,
         image_height=None,
         image_width=None,
         prefix: str = "",
@@ -861,7 +862,7 @@ class LayoutHandler:
 
     def collapse_button(
         self, target: str = "meta", collapsed: str = "Show", visible: str = "Close", initial: bool = False
-    ) -> Optional[nodes.inline]:
+    ) -> nodes.inline | None:
         """
         To show icons instead of text on the button, use collapse_button() like this::
 
@@ -919,10 +920,10 @@ class LayoutHandler:
 
     def permalink(
         self,
-        image_url: Optional[str] = None,
+        image_url: str | None = None,
         image_height=None,
         image_width=None,
-        text: Optional[str] = None,
+        text: str | None = None,
         prefix: str = "",
     ):
         """

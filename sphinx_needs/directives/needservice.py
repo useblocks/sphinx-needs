@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import typing
-from typing import Any, Dict, List, Sequence
+from typing import Any, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
@@ -37,8 +39,8 @@ class NeedserviceDirective(Directive):
     def __init__(
         self,
         name: str,
-        arguments: List[str],
-        options: Dict[str, Any],
+        arguments: list[str],
+        options: dict[str, Any],
         content: StringList,
         lineno: int,
         content_offset: int,
@@ -56,7 +58,7 @@ class NeedserviceDirective(Directive):
     def run(self) -> Sequence[nodes.Node]:
         docname = self.env.docname
         app = self.env.app
-        needs_services: Dict[str, BaseService] = getattr(app, "needs_services", {})
+        needs_services: dict[str, BaseService] = getattr(app, "needs_services", {})
 
         service_name = self.arguments[0]
         service = unwrap(needs_services.get(service_name))

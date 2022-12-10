@@ -6,9 +6,10 @@ Provides the ability to mark specific parts of a need with an own id.
 Most voodoo is done in need.py
 
 """
+from __future__ import annotations
+
 import hashlib
 import re
-from typing import List
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -31,7 +32,7 @@ def process_need_part(app: Sphinx, doctree: nodes.document, fromdocname: str, fo
 part_pattern = re.compile(r"\(([\w-]+)\)(.*)")
 
 
-def update_need_with_parts(env: BuildEnvironment, need, part_nodes: List[NeedPart]) -> None:
+def update_need_with_parts(env: BuildEnvironment, need, part_nodes: list[NeedPart]) -> None:
     app = unwrap(env.app)
     builder = unwrap(app.builder)
     for part_node in part_nodes:
@@ -84,7 +85,7 @@ def update_need_with_parts(env: BuildEnvironment, need, part_nodes: List[NeedPar
         part_node.append(node_need_part_line)
 
 
-def find_parts(node: nodes.Element) -> List[NeedPart]:
+def find_parts(node: nodes.Element) -> list[NeedPart]:
     found_nodes = []
     for child in node.children:
         if isinstance(child, NeedPart):

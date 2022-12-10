@@ -3,7 +3,9 @@ API to get or add specific sphinx needs configuration parameters.
 
 All functions here are available under ``sphinxcontrib.api``. So do not import this module directly.
 """
-from typing import Any, Callable, List, Optional
+from __future__ import annotations
+
+from typing import Any, Callable
 
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
@@ -15,7 +17,7 @@ from sphinx_needs.functions import register_func
 from sphinx_needs.functions.functions import DynamicFunction
 
 
-def get_need_types(app: Sphinx) -> List[str]:
+def get_need_types(app: Sphinx) -> list[str]:
     """
     Returns a list of directive-names from all configured need_types.
 
@@ -93,7 +95,7 @@ def add_extra_option(app: Sphinx, name: str) -> None:
     NEEDS_CONFIG.add("extra_options", {name: directives.unchanged}, dict, append=True)
 
 
-def add_dynamic_function(app: Sphinx, function: DynamicFunction, name: Optional[str] = None) -> None:
+def add_dynamic_function(app: Sphinx, function: DynamicFunction, name: str | None = None) -> None:
     """
     Registers a new dynamic function for sphinx-needs.
 
@@ -124,9 +126,7 @@ def add_dynamic_function(app: Sphinx, function: DynamicFunction, name: Optional[
 WarningCheck = Callable[[Any, SphinxLoggerAdapter], bool]
 
 
-def add_warning(
-    app: Sphinx, name: str, function: Optional[WarningCheck] = None, filter_string: Optional[str] = None
-) -> None:
+def add_warning(app: Sphinx, name: str, function: WarningCheck | None = None, filter_string: str | None = None) -> None:
     """
     Registers a warning.
 

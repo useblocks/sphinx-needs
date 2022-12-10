@@ -1,4 +1,6 @@
-from typing import Any, Callable, Dict
+from __future__ import annotations
+
+from typing import Any, Callable
 
 
 class Config:
@@ -12,7 +14,7 @@ class Config:
     """
 
     def __init__(self) -> None:
-        self.configs: Dict[str, Any] = {}
+        self.configs: dict[str, Any] = {}
 
     def add(
         self, name: str, value: Any, option_type: type = str, append: bool = False, overwrite: bool = False

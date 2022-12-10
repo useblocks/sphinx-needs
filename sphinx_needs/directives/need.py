@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import hashlib
 import re
 import typing
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState, RSTStateMachine
@@ -52,8 +54,8 @@ class NeedDirective(SphinxDirective):
     def __init__(
         self,
         name: str,
-        arguments: List[str],
-        options: Dict[str, Any],
+        arguments: list[str],
+        options: dict[str, Any],
         content: StringList,
         lineno: int,
         content_offset: int,
@@ -146,7 +148,7 @@ class NeedDirective(SphinxDirective):
         add_doc(env, self.docname)
         return need_nodes
 
-    def read_in_links(self, name: str) -> List[str]:
+    def read_in_links(self, name: str) -> list[str]:
         # Get links
         links_string = self.options.get(name)
         links = []
@@ -221,11 +223,11 @@ class NeedDirective(SphinxDirective):
             return ""
 
 
-def get_sections_and_signature_and_needs(need_node) -> Tuple[List[str], Optional[nodes.Text], List[str]]:
+def get_sections_and_signature_and_needs(need_node) -> tuple[list[str], nodes.Text | None, list[str]]:
     """Gets the hierarchy of the section nodes as a list starting at the
     section of the current need and then its parent sections"""
     sections = []
-    parent_needs: List[str] = []
+    parent_needs: list[str] = []
     signature = None
     current_node = need_node
     while current_node:
@@ -493,7 +495,7 @@ def create_back_links(env: BuildEnvironment, option) -> None:
     env.needs_workflow[f"backlink_creation_{option}"] = True
 
 
-def _fix_list_dyn_func(list: List[str]) -> List[str]:
+def _fix_list_dyn_func(list: list[str]) -> list[str]:
     """
     This searches a list for dynamic function fragments, which may have been cut by generic searches for ",|;".
 

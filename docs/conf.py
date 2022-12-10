@@ -1,4 +1,17 @@
+from __future__ import annotations
+
+import datetime
+
+# If extensions (or modules to document with autodoc) are in another directory,
+# add these directories to sys.path here. If the directory is relative to the
+# documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+import os
+import sys
+from typing import Any
+
+from sphinx.application import Sphinx
+
 # needs test docs documentation build configuration file, created by
 # sphinx-quickstart on Tue Mar 28 11:37:14 2017.
 #
@@ -11,17 +24,6 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import datetime
-
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
-import os
-import sys
-from typing import Any, Dict, List
-
-from sphinx.application import Sphinx
 
 sys.path.append(os.path.abspath("../sphinxcontrib"))
 
@@ -510,7 +512,7 @@ htmlhelp_basename = "needstestdocsdoc"
 
 # -- Options for LaTeX output ---------------------------------------------
 
-latex_elements: Dict[str, Any] = {
+latex_elements: dict[str, Any] = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
@@ -593,7 +595,7 @@ fast_build = os.environ.get("FAST_BUILD", "False").upper() == "TRUE"
 html_context = {"on_ci": on_ci, "fast_build": fast_build}
 
 
-def rstjinja(app: Sphinx, _docname: str, source: List[str]) -> None:
+def rstjinja(app: Sphinx, _docname: str, source: list[str]) -> None:
     """
     Render our pages as a jinja template for fancy templating goodness.
     """

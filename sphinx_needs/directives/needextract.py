@@ -2,8 +2,10 @@
 
 
 """
+from __future__ import annotations
+
 import re
-from typing import List, Sequence
+from typing import Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -93,7 +95,7 @@ def process_needextract(app: Sphinx, doctree: nodes.document, fromdocname: str, 
         id = node.attributes["ids"][0]
         current_needextract = env.need_all_needextracts[id]
         all_needs = env.needs_all_needs
-        content: List[nodes.Element] = []
+        content: list[nodes.Element] = []
         all_needs = list(all_needs.values())
 
         # check if filter argument and option filter both exist

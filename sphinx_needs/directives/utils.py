@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import re
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from docutils import nodes
 from sphinx.environment import BuildEnvironment
@@ -37,7 +39,7 @@ def used_filter_paragraph(current_needfilter) -> nodes.paragraph:
     return para
 
 
-def get_link_type_option(name: str, env: BuildEnvironment, node, default: str = "") -> List[str]:
+def get_link_type_option(name: str, env: BuildEnvironment, node, default: str = "") -> list[str]:
     link_types = [x.strip() for x in re.split(";|,", node.options.get(name, default))]
     conf_link_types = env.config.needs_extra_links
     conf_link_types_name = [x["option"] for x in conf_link_types]
@@ -53,7 +55,7 @@ def get_link_type_option(name: str, env: BuildEnvironment, node, default: str = 
     return final_link_types
 
 
-def get_title(option_string: str) -> Tuple[str, str]:
+def get_title(option_string: str) -> tuple[str, str]:
     """
     Returns a tuple of uppercase option and calculated title of given option string.
 
@@ -72,7 +74,7 @@ def get_title(option_string: str) -> Tuple[str, str]:
     return option_name.upper(), title
 
 
-def get_option_list(options, name: str) -> List[str]:
+def get_option_list(options, name: str) -> list[str]:
     """
     Gets and creates a list of a given directive option value in a safe way
     :param options: List of options
@@ -87,14 +89,14 @@ def get_option_list(options, name: str) -> List[str]:
     return values_list
 
 
-def analyse_needs_metrics(env: BuildEnvironment) -> Dict[str, Any]:
+def analyse_needs_metrics(env: BuildEnvironment) -> dict[str, Any]:
     """
     Function to generate metrics about need objects.
 
     :param env: Sphinx build environment
     :return: Dictionary consisting of needs metrics.
     """
-    needs: Dict = env.needs_all_needs
+    needs: dict = env.needs_all_needs
     metric_data = {"needs_amount": len(needs)}
     needs_types = {i["directive"]: 0 for i in env.app.config.needs_types}
 

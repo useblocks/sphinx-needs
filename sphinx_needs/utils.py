@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import cProfile
 import importlib
 import operator
@@ -5,7 +7,7 @@ import os
 import re
 from functools import reduce, wraps
 from re import Pattern
-from typing import Any, Dict, List, Optional, TypeVar, Union
+from typing import Any, TypeVar
 from urllib.parse import urlparse
 
 from docutils import nodes
@@ -109,7 +111,7 @@ def row_col_maker(
     row_col = nodes.entry(classes=["needs_" + need_key])
     para_col = nodes.paragraph()
 
-    needs_string_links_option: List[str] = []
+    needs_string_links_option: list[str] = []
     for v in app.config.needs_string_links.values():
         needs_string_links_option.extend(v["options"])
 
@@ -205,7 +207,7 @@ def row_col_maker(
     return row_col
 
 
-def rstjinja(app: Sphinx, docname: str, source: List[str]) -> None:
+def rstjinja(app: Sphinx, docname: str, source: list[str]) -> None:
     """
     Render our pages as a jinja template for fancy templating goodness.
     """
@@ -218,7 +220,7 @@ def rstjinja(app: Sphinx, docname: str, source: List[str]) -> None:
     source[0] = rendered
 
 
-def import_prefix_link_edit(needs: Dict[str, Any], id_prefix: str, needs_extra_links: List[Dict[str, Any]]) -> None:
+def import_prefix_link_edit(needs: dict[str, Any], id_prefix: str, needs_extra_links: list[dict[str, Any]]) -> None:
     """
     Changes existing links to support given prefix.
     Only link-ids get touched, which are part of ``needs`` (so are linking them).
@@ -324,7 +326,7 @@ def check_and_get_external_filter_func(current_needlist):
     return filter_func, filter_args
 
 
-def jinja_parse(context: Dict, jinja_string: str) -> str:
+def jinja_parse(context: dict, jinja_string: str) -> str:
     """
     Function to parse mapping options set to a string containing jinja template format.
 
@@ -363,7 +365,7 @@ def dict_get(root, items, default=None) -> Any:
 
 
 def match_string_link(
-    text_item: str, data: str, need_key: str, matching_link_confs: List[Dict], render_context: Dict[str, Any]
+    text_item: str, data: str, need_key: str, matching_link_confs: list[dict], render_context: dict[str, Any]
 ) -> Any:
     try:
         link_name = None
@@ -389,23 +391,17 @@ def match_string_link(
         return ref_item
 
 
-def match_variants(option_value: Union[str, List], keywords: Dict, needs_variants: Dict) -> Union[str, List, None]:
+def match_variants(option_value: str | list, keywords: dict, needs_variants: dict) -> str | list | None:
     """
     Function to handle variant option management.
 
     :param option_value: Value assigned to an option
-    :type option_value: Union[str, List]
     :param keywords: Data to use as filtering context
-    :type keywords: Dict
     :param needs_variants: Needs variants data set in users conf.py
-    :type needs_variants: Dict
     :return: A string, list, or None to be used as value for option.
-    :rtype: Union[str, List, None]
     """
 
-    def variant_handling(
-        variant_definitions: List, variant_data: Dict, variant_pattern: Pattern
-    ) -> Union[str, List, None]:
+    def variant_handling(variant_definitions: list, variant_data: dict, variant_pattern: Pattern) -> str | list | None:
         filter_context = variant_data
         # filter_result = []
         no_variants_in_option = False
@@ -453,8 +449,8 @@ def match_variants(option_value: Union[str, List], keywords: Dict, needs_variant
 
     # Handling multiple variant definitions
     if isinstance(option_value, str):
-        multiple_variants: List = variant_splitting.split(rf"""{option_value}""")
-        multiple_variants: List = [
+        multiple_variants: list = variant_splitting.split(rf"""{option_value}""")
+        multiple_variants: list = [
             re.sub(r"^([;, ]+)|([;, ]+$)", "", i) for i in multiple_variants if i not in (None, ";", "", " ")
         ]
         if len(multiple_variants) == 1 and not variant_rule_matching.search(multiple_variants[0]):
@@ -464,7 +460,7 @@ def match_variants(option_value: Union[str, List], keywords: Dict, needs_variant
             return option_value
         return new_option_value
     elif isinstance(option_value, (list, set, tuple)):
-        multiple_variants: List = list(option_value)
+        multiple_variants: list = list(option_value)
         # In case an option value is a list (:tags: open; close), and does not contain any variant definition,
         # then return the unmodified value
         options = all([bool(not variant_rule_matching.search(i)) for i in multiple_variants])
@@ -496,7 +492,7 @@ def clean_log(data: str) -> str:
 T = TypeVar("T")
 
 
-def unwrap(obj: Optional[T]) -> T:
+def unwrap(obj: T | None) -> T:
     assert obj is not None
     return obj
 

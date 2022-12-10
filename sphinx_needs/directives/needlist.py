@@ -2,7 +2,9 @@
 
 
 """
-from typing import List, Sequence
+from __future__ import annotations
+
+from typing import Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -89,7 +91,7 @@ def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
         id = node.attributes["ids"][0]
         current_needfilter = env.need_all_needlists[id]
         all_needs = env.needs_all_needs
-        content: List[nodes.Node] = []
+        content: list[nodes.Node] = []
         all_needs = list(all_needs.values())
         found_needs = process_filters(app, all_needs, current_needfilter)
 
