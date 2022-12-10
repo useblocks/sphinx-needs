@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1670335172712,
+  "lastUpdate": 1670699140588,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -1872,6 +1872,42 @@ window.BENCHMARK_DATA = {
             "value": 96.84715338000001,
             "unit": "s",
             "extra": "Commit: 38c4e410d1d4d39c5da8a5179b8e986bdaf08aa9\nBranch: master\nTime: 2022-12-06T14:51:40+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "33452915+danieleades@users.noreply.github.com",
+            "name": "danieleades",
+            "username": "danieleades"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d3000ab3679ef759fdf22a0b1c7fae70178b5c4a",
+          "message": "bump dev deps, add missing 'tabulate' dependency (#832)\n\n* bump dev deps, add missing 'tabulate' dependency\r\n\r\n* bump 'responses' dep\r\n\r\n* bump 'pytest-benchmark' dep",
+          "timestamp": "2022-12-10T19:58:31+01:00",
+          "tree_id": "2683954f45f7ce2d53c9ad14ac73f7b71f19a596",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/d3000ab3679ef759fdf22a0b1c7fae70178b5c4a"
+        },
+        "date": 1670699136544,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2864860580000368,
+            "unit": "s",
+            "extra": "Commit: d3000ab3679ef759fdf22a0b1c7fae70178b5c4a\nBranch: master\nTime: 2022-12-10T19:58:31+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 80.666320627,
+            "unit": "s",
+            "extra": "Commit: d3000ab3679ef759fdf22a0b1c7fae70178b5c4a\nBranch: master\nTime: 2022-12-10T19:58:31+01:00"
           }
         ]
       }
