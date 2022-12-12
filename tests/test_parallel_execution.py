@@ -24,7 +24,7 @@ def test_doc_parallel_build_html(test_app):
     assert app.statuscode == 0
 
     page3_html = Path(app.outdir, "page_3.html").read_text()
-    assert '<h1>Page 3<a class="headerlink" href="#page-3" title="Permalink to this heading">¶</a></h1>' in page3_html
+    assert "Page 3" in page3_html
     assert "Test for Variants" in page3_html
     assert "SP_0013" in page3_html
     assert (
@@ -52,7 +52,7 @@ def test_doc_parallel_build_html(test_app):
     assert "SP_001" in page3_html
 
     page1_html = Path(app.outdir, "page_1.html").read_text()
-    assert '<h1>Page 1<a class="headerlink" href="#page-1" title="Permalink to this heading">¶</a></h1>' in page1_html
+    assert "Page 1" in page1_html
     assert "page_1 Story" in page1_html
     assert "SPEC_PAGE_1" in page1_html
     assert (
@@ -61,7 +61,7 @@ def test_doc_parallel_build_html(test_app):
         'title="SPEC_PAGE_1">STORY_PAGE_1</a></span></span></div>' in page1_html
     )
     page2_html = Path(app.outdir, "page_2.html").read_text()
-    assert '<h1>Page 2<a class="headerlink" href="#page-2" title="Permalink to this heading">¶</a></h1>' in page2_html
+    assert "Page 2" in page2_html
     assert "page_2 Spec" in page2_html
     assert "STORY_PAGE_2" in page2_html
     assert (
@@ -70,7 +70,8 @@ def test_doc_parallel_build_html(test_app):
         'title="STORY_PAGE_2">SPEC_PAGE_2</a></span></span></div>' in page2_html
     )
     page4_html = Path(app.outdir, "page_4.html").read_text()
-    assert '<h1>Page 4<a class="headerlink" href="#page-4" title="Permalink to this heading">¶</a></h1>' in page4_html
+    assert "Page 4" in page4_html
     assert "Test needextract" in page4_html
     assert "SP_001" in page4_html
     assert 'href="#SP_001.107"' in page4_html
+    assert "needs_style_blue_border" in page4_html
