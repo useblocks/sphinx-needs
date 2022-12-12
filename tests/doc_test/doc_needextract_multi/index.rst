@@ -3,8 +3,9 @@ TEST DOCUMENT NEEDEXTRACT
 
 .. toctree::
 
-   first_ref/file.rst
-   second_ref/subfolder/file.rst
+   first_level_1_ref/file.rst
+   second_level_1_ref/file.rst
+   level_2_ref/subfolder/file.rst
 
 .. story:: US is extracted multiple times
    :id: US_MULTI_001
