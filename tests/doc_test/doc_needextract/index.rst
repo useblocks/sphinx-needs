@@ -3,6 +3,7 @@ TEST DOCUMENT NEEDEXTRACT
 
 .. toctree::
 
+   check_need_refs
    subfolder/file_1.rst
 
 .. spec:: Test needextract

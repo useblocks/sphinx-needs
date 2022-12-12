@@ -1,3 +1,5 @@
+.. _ref_internal:
+
 subfolder file
 ==============
 
@@ -45,6 +47,35 @@ subfolder file
    .. image:: /subfolder/smile.png
 
    Path: ``/subfolder/smile.png``
+
+.. story:: Need references
+   :id: US_SUB_REF_001
+
+   Test ``:need:``.
+
+   - :need:`US_001`
+   - :need:`US_002`
+   - :need:`US_SUB_004`
+
+.. story:: Need download
+   :id: US_SUB_REF_002
+
+   :download:`smile.png`
+
+
+.. story:: Need references internal
+   :id: US_SUB_REF_003
+
+   :ref:`ref_internal`
+
+.. story:: Need references external
+   :id: US_SUB_REF_004
+
+   `test/me <test/me>`__
+
+   `/test/me </test/me>`__
+
+   `../test/me <../test/me>`__
 
 **Needextracts**
 

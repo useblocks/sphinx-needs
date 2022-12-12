@@ -18,6 +18,7 @@ from docutils.parsers.rst.states import Inliner, Struct
 from docutils.utils import new_document
 from jinja2 import BaseLoader, Environment
 from sphinx.application import Sphinx
+from sphinx.environment.collectors.asset import DownloadFileCollector, ImageCollector
 
 from sphinx_needs.utils import INTERNALS, match_string_link, unwrap
 
@@ -40,18 +41,36 @@ def create_need(need_id: str, app: Sphinx, layout=None, style=None, docname: Opt
 
     if need_id not in needs.keys():
         raise SphinxNeedLayoutException(f"Given need id {need_id} does not exist.")
-    need_data = needs[need_id]
 
-    node_container = nodes.container()
-    # node_container += needs[need_id]["need_node"].children
-    node_inner = needs[need_id]["content_node"]
-    node_container.append(node_inner)
+    need_data = needs[need_id]
 
     # Resolve internal references.
     # This is done for original need content automatically.
     # But as we are working on  a copy, we have to trigger this on our own.
     if docname is None:
         docname = needs[need_id]["docname"]  # needed to calculate relative references
+
+    node_container = nodes.container()
+    # node_container += needs[need_id]["need_node"].children
+
+    # We must create a standalone copy of the content_node, as it may be reused several time
+    # (multiple needextract for the same need) and the Sphinx ImageTransformator add location specific
+    # uri to some nodes, which are not valid for all locations.
+    node_inner = needs[need_id]["content_node"].deepcopy()
+
+    # Rerun some important Sphinx collectors for need-content coming from "needsexternal".
+    # This is needed, as Sphinx needs to know images and download paths.
+    # Normally this gets done much earlier in the process, so that for the copied need-content this
+    # handling was and will not be done by Sphinx itself anymore.
+
+    # Overwrite the docname, which must be the original one from the reused need, as all used paths are relative
+    # to the original location, not to the current document.
+    env.temp_data["docname"] = need_data["docname"]  # Dirty, as in this phase normally no docname is set anymore in env
+    ImageCollector().process_doc(app, node_inner)
+    DownloadFileCollector().process_doc(app, node_inner)
+    del env.temp_data["docname"]  # Be sure our env is as it was before
+
+    node_container.append(node_inner)
 
     # resolve_references() ignores the given docname and takes the docname from the pending_xref node.
     # Therefore, we need to manipulate this first, before we can ask Sphinx to perform the normal
