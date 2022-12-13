@@ -1,6 +1,12 @@
 TEST DOCUMENT NEEDEXTRACT
 =========================
 
+.. toctree::
+
+   check_need_refs
+   check_images
+   subfolder/file_1.rst
+
 .. spec:: Test needextract
    :id: SP_001
    :status: implemented
@@ -31,6 +37,14 @@ TEST DOCUMENT NEEDEXTRACT
 
    .. image:: _images/smile.png
 
+.. story:: Absolute path example
+   :id: US_003
+
+   Use an absolut path for the image
+
+   .. image:: /_images/smile.png
+
+
 .. needextract::
    :tags: test
 
@@ -54,8 +68,3 @@ TEST DOCUMENT NEEDEXTRACT
 .. needextract:: US_001
    :layout: clean
    :style: blue_border
-
-.. needextract:: US_002
-   :layout: clean
-   :style: blue_border
-

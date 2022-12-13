@@ -358,7 +358,6 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.connect("doctree-resolved", process_need_nodes)
     app.connect("doctree-resolved", process_creator(NODE_TYPES_PRIO, "needextract"), priority=100)
     app.connect("doctree-resolved", process_creator(NODE_TYPES))
-    app.connect("doctree-resolved", image_collector)
 
     app.connect("build-finished", process_warnings)
     app.connect("build-finished", build_needs_json)
@@ -379,21 +378,6 @@ def setup(app: Sphinx) -> Dict[str, Any]:
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }
-
-
-def image_collector(app: Sphinx, doctree: nodes.document, fromdocname: str):
-    """
-    Used to set "candidates" for images added directly to doctree after Sphinx already handled images
-    """
-    # Only checks docs in which needextract was used
-    if fromdocname not in app.builder.env.needs_all_docs.get("needextract", []) and fromdocname != "index":
-        return
-
-    for node in doctree.findall(nodes.image):
-        if "candidates" in node:
-            continue
-
-        node["candidates"] = {"*": node["uri"]}
 
 
 def process_creator(node_list, doc_category="all"):

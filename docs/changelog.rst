@@ -16,6 +16,8 @@ Released: under development
   (`#789 <https://github.com/useblocks/sphinx-needs/issues/789>`_)
 * Bugfix: Needflow fix bug in child need handling.
   (`#785 <https://github.com/useblocks/sphinx-needs/issues/785>`_).
+* Bugfix: Needextract handles image and download directives correctly.
+  (`#818 <https://github.com/useblocks/sphinx-needs/issues/818>`_).
 
 1.1.0
 -----
