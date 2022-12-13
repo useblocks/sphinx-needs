@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1670699175989,
+  "lastUpdate": 1670936511959,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -1944,6 +1944,42 @@ window.BENCHMARK_DATA = {
             "value": 72.79746442700002,
             "unit": "s",
             "extra": "Commit: 4345912ec8bd90539c18e95f8b7ce3d9052ebcfd\nBranch: master\nTime: 2022-12-10T19:59:33+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a476a652d7425f9170ca44e0857804b9ef7fa498",
+          "message": "Bugfix needextract image/download handling (#825)\n\nneedextract fix to support images in copied need content\r\n\r\nFixes #818",
+          "timestamp": "2022-12-13T13:55:16+01:00",
+          "tree_id": "7a78ada163f3c4174e7262a4d3ad8a9a03ec7ebe",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a476a652d7425f9170ca44e0857804b9ef7fa498"
+        },
+        "date": 1670936507366,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.25099778700001707,
+            "unit": "s",
+            "extra": "Commit: a476a652d7425f9170ca44e0857804b9ef7fa498\nBranch: master\nTime: 2022-12-13T13:55:16+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 71.76792317000002,
+            "unit": "s",
+            "extra": "Commit: a476a652d7425f9170ca44e0857804b9ef7fa498\nBranch: master\nTime: 2022-12-13T13:55:16+01:00"
           }
         ]
       }
