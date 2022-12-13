@@ -3,6 +3,10 @@
 subfolder file
 ==============
 
+.. toctree::
+
+    check_images_2
+
 .. story:: Subfolder example with an absolute image
    :id: US_SUB_001
 
@@ -11,6 +15,7 @@ subfolder file
    .. image:: /_images/smile.png
 
    Path: ``/_images/smile.png``
+
 
 .. story:: Subfolder example with a relative image
    :id: US_SUB_002
@@ -77,31 +82,5 @@ subfolder file
 
    `../test/me <../test/me>`__
 
-**Needextracts**
 
 
-**from subfolder / this file**
-
-.. needextract:: US_SUB_001
-   :style: red_border
-
-.. needextract:: US_SUB_002
-   :style: red_border
-
-.. needextract:: US_SUB_003
-   :style: red_border
-
-.. needextract:: US_SUB_004
-   :style: red_border
-
-.. needextract:: US_SUB_005
-   :style: red_border
-
-**from /index.rst**
-
-
-.. needextract:: US_002
-   :layout: clean
-   :style: blue_border
-
-.. needextract:: US_003

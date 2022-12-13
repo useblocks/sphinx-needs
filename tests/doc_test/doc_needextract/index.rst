@@ -4,6 +4,7 @@ TEST DOCUMENT NEEDEXTRACT
 .. toctree::
 
    check_need_refs
+   check_images
    subfolder/file_1.rst
 
 .. spec:: Test needextract
@@ -67,26 +68,3 @@ TEST DOCUMENT NEEDEXTRACT
 .. needextract:: US_001
    :layout: clean
    :style: blue_border
-
-.. needextract:: US_002
-   :layout: clean
-   :style: blue_border
-
-.. needextract:: US_003
-
-**Needs from subfolder with image**
-
-.. needextract:: US_SUB_001
-   :style: red_border
-
-.. needextract:: US_SUB_002
-   :style: red_border
-
-.. needextract:: US_SUB_003
-   :style: red_border
-
-.. needextract:: US_SUB_004
-   :style: red_border
-
-.. needextract:: US_SUB_005
-   :style: red_border
