@@ -68,6 +68,7 @@ def create_need(need_id: str, app: Sphinx, layout=None, style=None, docname: Opt
     env.temp_data["docname"] = need_data["docname"]  # Dirty, as in this phase normally no docname is set anymore in env
     ImageCollector().process_doc(app, node_inner)
     DownloadFileCollector().process_doc(app, node_inner)
+
     del env.temp_data["docname"]  # Be sure our env is as it was before
 
     node_container.append(node_inner)

@@ -49,3 +49,6 @@ def test_needextract_basic_run(test_app):
         ("US_003", "../_images/smile.png"),
     ]
     run_checks(checks, "subfolder/check_images_2.html")
+
+    index_html = Path(app.outdir, "check_need_refs.html").read_text()
+    assert "Awesome Sphinx-Needs" in index_html

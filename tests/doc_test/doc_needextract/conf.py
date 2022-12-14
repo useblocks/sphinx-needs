@@ -32,6 +32,10 @@ sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
 
 extensions = ["sphinx_needs"]
 
+rst_prolog = """
+.. |SN| replace:: Sphinx-Needs
+"""
+
 needs_table_style = "TABLE"
 
 

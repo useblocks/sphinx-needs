@@ -18,6 +18,8 @@ Released: under development
   (`#785 <https://github.com/useblocks/sphinx-needs/issues/785>`_).
 * Bugfix: Needextract handles image and download directives correctly.
   (`#818 <https://github.com/useblocks/sphinx-needs/issues/818>`_).
+* Bugfix: Needextract handles substitutions correctly.
+  (`#835 <https://github.com/useblocks/sphinx-needs/issues/835>`_).
 
 1.1.0
 -----
