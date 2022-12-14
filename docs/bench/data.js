@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1670936511959,
+  "lastUpdate": 1671029088540,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -1980,6 +1980,42 @@ window.BENCHMARK_DATA = {
             "value": 71.76792317000002,
             "unit": "s",
             "extra": "Commit: a476a652d7425f9170ca44e0857804b9ef7fa498\nBranch: master\nTime: 2022-12-13T13:55:16+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6289ddd8f1900931b2249e2fdb960b6038f23898",
+          "message": "Bugfix for Sustitutions in needextracts (#841)\n\nFixes #835",
+          "timestamp": "2022-12-14T15:37:17+01:00",
+          "tree_id": "ef9292f7174948b33ca0a3c08bfcc29dfdba437c",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6289ddd8f1900931b2249e2fdb960b6038f23898"
+        },
+        "date": 1671029083287,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2898127670000008,
+            "unit": "s",
+            "extra": "Commit: 6289ddd8f1900931b2249e2fdb960b6038f23898\nBranch: master\nTime: 2022-12-14T15:37:17+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 82.43811674099999,
+            "unit": "s",
+            "extra": "Commit: 6289ddd8f1900931b2249e2fdb960b6038f23898\nBranch: master\nTime: 2022-12-14T15:37:17+01:00"
           }
         ]
       }
