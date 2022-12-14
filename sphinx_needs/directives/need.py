@@ -121,6 +121,8 @@ class NeedDirective(SphinxDirective):
 
     def _get_option_bool(self, attribute: str) -> bool:
         value: Optional[str] = self.options.get(attribute)
+        if value is None:
+            return True
         if value.upper() in ["TRUE", "1", "YES"]:
             return True
         elif value.upper() in ["FALSE", "0", "NO"]:
