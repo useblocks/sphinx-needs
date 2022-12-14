@@ -7,6 +7,7 @@ from typing import List, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
+from docutils.transforms.references import Substitutions
 from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
@@ -142,3 +143,9 @@ def process_needextract(app: Sphinx, doctree: nodes.document, fromdocname: str, 
             content.append(used_filter_paragraph(current_needextract))
 
         node.replace_self(content)
+
+    if found_needs:
+        # Run docutils/sphinx transformers for the by needextract added nodes.
+        # Transformers use the complete document (doctree), so we perform this action once per
+        # needextract. No matter if one or multiple needs got copied
+        Substitutions(doctree).apply()

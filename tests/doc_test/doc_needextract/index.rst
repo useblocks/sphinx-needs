@@ -45,6 +45,13 @@ TEST DOCUMENT NEEDEXTRACT
    .. image:: /_images/smile.png
 
 
+.. story:: Substitution Test
+   :id: US_004
+
+   Awesome |SN|
+
+   .. image:: /_images/smile.png
+
 .. needextract::
    :tags: test
 
