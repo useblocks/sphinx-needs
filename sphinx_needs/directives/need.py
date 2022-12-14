@@ -1,7 +1,7 @@
 import hashlib
 import re
 import typing
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState, RSTStateMachine
@@ -120,12 +120,15 @@ class NeedDirective(SphinxDirective):
         return need_nodes
 
     def _get_option_bool(self, attribute: str) -> bool:
-        value: Optional[str] = self.options.get(attribute)
-        if value is not None:
-            if value.upper() in ["TRUE", "1", "YES"]:
-                return True
-            elif value.upper() in ["FALSE", "0", "NO"]:
-                return False
+        value: Union[bool, str, None] = self.options.get(attribute)
+        if isinstance(value, bool):
+            return value
+        if value is None:
+            return True
+        if value.upper() in ["TRUE", "1", "YES"]:
+            return True
+        elif value.upper() in ["FALSE", "0", "NO"]:
+            return False
         raise Exception(f"{attribute} attribute must be true or false")
 
     def read_in_links(self, name: str) -> List[str]:
