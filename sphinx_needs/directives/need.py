@@ -1,7 +1,7 @@
 import hashlib
 import re
 import typing
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState, RSTStateMachine
@@ -71,6 +71,33 @@ class NeedDirective(SphinxDirective):
         #############################################################################################
         env = self.env
 
+        delete_opt = self.options.get("delete")
+        if isinstance(delete_opt, str):
+            if delete_opt.upper() in ["TRUE", 1, "YES"]:
+                delete_opt = True
+            elif delete_opt.upper() in ["FALSE", 0, "NO"]:
+                delete_opt = False
+            else:
+                raise Exception("delete attribute must be true or false")
+
+        collapse = self.options.get("collapse")
+        if isinstance(collapse, str):
+            if collapse.upper() in ["TRUE", 1, "YES"]:
+                collapse = True
+            elif collapse.upper() in ["FALSE", 0, "NO"]:
+                collapse = False
+            else:
+                raise Exception("collapse attribute must be true or false")
+
+        jinja_content = self.options.get("jinja_content")
+        if isinstance(jinja_content, str):
+            if jinja_content.upper() in ["TRUE", 1, "YES"]:
+                jinja_content = True
+            elif jinja_content.upper() in ["FALSE", 0, "NO"]:
+                jinja_content = False
+            else:
+                raise Exception("jinja_content attribute must be true or false")
+
         hide = "hide" in self.options
 
         id = self.options.get("id")
@@ -109,27 +136,15 @@ class NeedDirective(SphinxDirective):
             template=template,
             pre_template=pre_template,
             post_template=post_template,
-            collapse=self._get_option_bool("collapse"),
+            collapse=collapse,
             style=style,
             layout=layout,
-            delete=self._get_option_bool("delete"),
-            jinja_content=self._get_option_bool("jinja_content"),
+            delete=delete_opt,
+            jinja_content=jinja_content,
             **need_extra_options,
         )
         add_doc(env, self.docname)
         return need_nodes
-
-    def _get_option_bool(self, attribute: str) -> bool:
-        value: Union[bool, str, None] = self.options.get(attribute)
-        if isinstance(value, bool):
-            return value
-        if value is None:
-            return True
-        if value.upper() in ["TRUE", "1", "YES"]:
-            return True
-        elif value.upper() in ["FALSE", "0", "NO"]:
-            return False
-        raise Exception(f"{attribute} attribute must be true or false")
 
     def read_in_links(self, name: str) -> List[str]:
         # Get links
