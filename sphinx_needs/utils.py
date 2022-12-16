@@ -355,7 +355,25 @@ def save_matplotlib_figure(app: Sphinx, figure: FigureBase, basename: str, fromd
     if not os.path.exists(image_folder):
         os.mkdir(image_folder)
 
-    rel_file_path = os.path.join("_images", basename + ".png")
+    # Determine a common mimetype between matplotlib and the builder.
+    matplotlib_types = {
+            "image/svg+xml": "svg",
+            "application/pdf": "pdf",
+            "image/png": "png",
+    }
+
+    for builder_mimetype in builder.supported_image_types:
+        if builder_mimetype in matplotlib_types:
+            mimetype = builder_mimetype
+            break
+    else:
+        # No matching type?  Surprising, but just save as .png to mimic the old behavior.
+        # (More than likely the build will not work...)
+        mimetype = "image/png"
+
+    ext = matplotlib_types[mimetype]
+
+    rel_file_path = os.path.join(image_folder, f"{basename}.{ext}")
     if rel_file_path not in env.images:
         figure.savefig(os.path.join(env.app.srcdir, rel_file_path))
         env.images.add_file(fromdocname, rel_file_path)
@@ -364,7 +382,7 @@ def save_matplotlib_figure(app: Sphinx, figure: FigureBase, basename: str, fromd
     image_node["uri"] = rel_file_path
 
     # look at uri value for source path, relative to the srcdir folder
-    image_node["candidates"] = {"*": rel_file_path}
+    image_node["candidates"] = {mimetype: rel_file_path}
 
     return image_node
 

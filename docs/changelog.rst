@@ -12,6 +12,8 @@ License
 -----
 Released: under development
 
+* Improvement: Added vector output support to need figures.
+  (`#815 <https://github.com/useblocks/sphinx-needs/issues/815>`_).
 * Improvement: Introduce the jinja function `ref` for :ref:`needuml`.
   (`#789 <https://github.com/useblocks/sphinx-needs/issues/789>`_)
 * Bugfix: Needflow fix bug in child need handling.
