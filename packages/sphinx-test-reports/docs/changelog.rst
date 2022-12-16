@@ -5,6 +5,10 @@ Changelog
 -----
 :Released: under development
 
+* Bugfix: Links in `test-suite` and co. do not raise error.
+  `#51 <https://github.com/useblocks/sphinx-test-reports/issues/51>`_
+
+
 1.0.1
 -----
 :Released: 04.11.2022

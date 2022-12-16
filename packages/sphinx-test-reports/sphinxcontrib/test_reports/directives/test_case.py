@@ -1,6 +1,7 @@
 from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx_needs.api import add_need
+from sphinx_needs.utils import add_doc
 
 from sphinxcontrib.test_reports.directives.test_common import TestCommonDirective
 from sphinxcontrib.test_reports.exceptions import TestReportInvalidOption
@@ -187,4 +188,6 @@ class TestCaseDirective(TestCommonDirective):
             time=time,
             style=style,
         )
+
+        add_doc(self.env, docname)
         return main_section

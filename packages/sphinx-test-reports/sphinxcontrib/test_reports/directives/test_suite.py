@@ -3,6 +3,7 @@ import hashlib
 from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx_needs.api import add_need
+from sphinx_needs.utils import add_doc
 
 import sphinxcontrib.test_reports.directives.test_case
 from sphinxcontrib.test_reports.directives.test_common import TestCommonDirective
@@ -199,5 +200,7 @@ class TestSuiteDirective(TestCommonDirective):
 
                 if is_nested:
                     case_count += 1
+
+        add_doc(self.env, docname)
 
         return main_section

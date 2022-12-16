@@ -3,6 +3,7 @@ import hashlib
 from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx_needs.api import add_need
+from sphinx_needs.utils import add_doc
 
 import sphinxcontrib.test_reports.directives.test_suite
 from sphinxcontrib.test_reports.directives.test_common import TestCommonDirective
@@ -138,5 +139,7 @@ class TestFileDirective(TestCommonDirective):
                 )
 
                 main_section += suite_directive.run()
+
+        add_doc(self.env, docname)
 
         return main_section
