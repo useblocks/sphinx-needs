@@ -5,6 +5,8 @@ PARALLEL TEST DOCUMENT
 
    page_1
    page_2
+   page_3
+   page_4
 
 .. spec:: Command line interface
     :id: SP_TOO_001
@@ -15,6 +17,3 @@ PARALLEL TEST DOCUMENT
 
 .. story:: A story
    :tags: 1
-
-.. needfilter::
-   :tags: test;my_test
