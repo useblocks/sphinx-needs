@@ -44,7 +44,7 @@ jobs:
       id: sphinx-build-docs
       run: sphinx-build -a -T -E -j 4 -b html -d /tmp/sphinx_build/doctrees ./docs /tmp/sphinx_build/html
     - name: E2E Cypress Test on Chrome
-      uses: cypress-io/github-action@v4
+      uses: cypress-io/github-action@v5
       with:
         browser: chrome
         config-file: tests/js_test/cypress.config.js
