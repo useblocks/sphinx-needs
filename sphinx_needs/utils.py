@@ -351,9 +351,8 @@ def save_matplotlib_figure(app: Sphinx, figure: FigureBase, basename: str, fromd
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
 
-    image_folder = os.path.join(env.app.srcdir, "_images")
-    if not os.path.exists(image_folder):
-        os.mkdir(image_folder)
+    image_folder = os.path.join(builder.outdir, builder.imagedir)
+    os.makedirs(image_folder, exist_ok=True)
 
     # Determine a common mimetype between matplotlib and the builder.
     matplotlib_types = {
@@ -373,16 +372,16 @@ def save_matplotlib_figure(app: Sphinx, figure: FigureBase, basename: str, fromd
 
     ext = matplotlib_types[mimetype]
 
-    rel_file_path = os.path.join(image_folder, f"{basename}.{ext}")
-    if rel_file_path not in env.images:
-        figure.savefig(os.path.join(env.app.srcdir, rel_file_path))
-        env.images.add_file(fromdocname, rel_file_path)
+    abs_file_path = os.path.join(image_folder, f"{basename}.{ext}")
+    if abs_file_path not in env.images:
+        figure.savefig(os.path.join(env.app.srcdir, abs_file_path))
+        env.images.add_file(fromdocname, abs_file_path)
 
     image_node = nodes.image()
-    image_node["uri"] = rel_file_path
+    image_node["uri"] = abs_file_path
 
     # look at uri value for source path, relative to the srcdir folder
-    image_node["candidates"] = {mimetype: rel_file_path}
+    image_node["candidates"] = {mimetype: abs_file_path}
 
     return image_node
 
