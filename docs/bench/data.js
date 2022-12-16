@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1671185112237,
+  "lastUpdate": 1671185130466,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -2052,6 +2052,42 @@ window.BENCHMARK_DATA = {
             "value": 73.43658138699999,
             "unit": "s",
             "extra": "Commit: 293c174a171e8ede5396163a9dcaaec540a21aa6\nBranch: master\nTime: 2022-12-16T10:58:40+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8417e639fd1f390f01b9509a13de697cc07079c9",
+          "message": "Bump cypress-io/github-action from 4 to 5 (#824)\n\nBumps [cypress-io/github-action](https://github.com/cypress-io/github-action) from 4 to 5.\r\n- [Release notes](https://github.com/cypress-io/github-action/releases)\r\n- [Commits](https://github.com/cypress-io/github-action/compare/v4...v5)\r\n\r\n---\r\nupdated-dependencies:\r\n- dependency-name: cypress-io/github-action\r\n  dependency-type: direct:production\r\n  update-type: version-update:semver-major\r\n...\r\n\r\nSigned-off-by: dependabot[bot] <support@github.com>\r\n\r\nSigned-off-by: dependabot[bot] <support@github.com>\r\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2022-12-16T10:58:58+01:00",
+          "tree_id": "d2d4efb55ca1aea56c74539dc6aa942368595659",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8417e639fd1f390f01b9509a13de697cc07079c9"
+        },
+        "date": 1671185126542,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.23352179300002263,
+            "unit": "s",
+            "extra": "Commit: 8417e639fd1f390f01b9509a13de697cc07079c9\nBranch: master\nTime: 2022-12-16T10:58:58+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 73.43499534900002,
+            "unit": "s",
+            "extra": "Commit: 8417e639fd1f390f01b9509a13de697cc07079c9\nBranch: master\nTime: 2022-12-16T10:58:58+01:00"
           }
         ]
       }
