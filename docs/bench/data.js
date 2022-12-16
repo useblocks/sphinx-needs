@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1671185130466,
+  "lastUpdate": 1671185251781,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -2088,6 +2088,42 @@ window.BENCHMARK_DATA = {
             "value": 73.43499534900002,
             "unit": "s",
             "extra": "Commit: 8417e639fd1f390f01b9509a13de697cc07079c9\nBranch: master\nTime: 2022-12-16T10:58:58+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "duodurandy19@gmail.com",
+            "name": "Randy Duodu",
+            "username": "iSOLveIT"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "53712fdbf0f6d939a3f82f1c1de503716d63a13a",
+          "message": "Updated test cases for parallel build. (#798) (#836)\n\n* Updated test cases for parallel build. (#798)\r\n\r\n* Updated test case for parallel build.",
+          "timestamp": "2022-12-16T11:00:29+01:00",
+          "tree_id": "952fbbf4b8d307182bdc0c4ada94a8092ec6713d",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/53712fdbf0f6d939a3f82f1c1de503716d63a13a"
+        },
+        "date": 1671185247159,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.25674732600003836,
+            "unit": "s",
+            "extra": "Commit: 53712fdbf0f6d939a3f82f1c1de503716d63a13a\nBranch: master\nTime: 2022-12-16T11:00:29+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 78.65825667499996,
+            "unit": "s",
+            "extra": "Commit: 53712fdbf0f6d939a3f82f1c1de503716d63a13a\nBranch: master\nTime: 2022-12-16T11:00:29+01:00"
           }
         ]
       }
