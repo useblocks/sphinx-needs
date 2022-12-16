@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1671029088540,
+  "lastUpdate": 1671185112237,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -2016,6 +2016,42 @@ window.BENCHMARK_DATA = {
             "value": 82.43811674099999,
             "unit": "s",
             "extra": "Commit: 6289ddd8f1900931b2249e2fdb960b6038f23898\nBranch: master\nTime: 2022-12-14T15:37:17+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "293c174a171e8ede5396163a9dcaaec540a21aa6",
+          "message": "Bump actions/checkout from 3.1.0 to 3.2.0 (#838)\n\nBumps [actions/checkout](https://github.com/actions/checkout) from 3.1.0 to 3.2.0.\r\n- [Release notes](https://github.com/actions/checkout/releases)\r\n- [Changelog](https://github.com/actions/checkout/blob/main/CHANGELOG.md)\r\n- [Commits](https://github.com/actions/checkout/compare/v3.1.0...v3.2.0)\r\n\r\n---\r\nupdated-dependencies:\r\n- dependency-name: actions/checkout\r\n  dependency-type: direct:production\r\n  update-type: version-update:semver-minor\r\n...\r\n\r\nSigned-off-by: dependabot[bot] <support@github.com>\r\n\r\nSigned-off-by: dependabot[bot] <support@github.com>\r\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2022-12-16T10:58:40+01:00",
+          "tree_id": "a0e4b92682367a6c4d2ea59a5413bad9e8543dac",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/293c174a171e8ede5396163a9dcaaec540a21aa6"
+        },
+        "date": 1671185108528,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.23116044500000044,
+            "unit": "s",
+            "extra": "Commit: 293c174a171e8ede5396163a9dcaaec540a21aa6\nBranch: master\nTime: 2022-12-16T10:58:40+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 73.43658138699999,
+            "unit": "s",
+            "extra": "Commit: 293c174a171e8ede5396163a9dcaaec540a21aa6\nBranch: master\nTime: 2022-12-16T10:58:40+01:00"
           }
         ]
       }
