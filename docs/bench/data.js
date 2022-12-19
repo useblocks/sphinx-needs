@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1671185251781,
+  "lastUpdate": 1671440535603,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -2124,6 +2124,42 @@ window.BENCHMARK_DATA = {
             "value": 78.65825667499996,
             "unit": "s",
             "extra": "Commit: 53712fdbf0f6d939a3f82f1c1de503716d63a13a\nBranch: master\nTime: 2022-12-16T11:00:29+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "aa86ea92e42ca608571d4b08cc8b7cf81b4923ca",
+          "message": "Merge pull request #815 from tim-nordell-nimbelink/feature/vector_need_figures\n\nFeature/vector need figures",
+          "timestamp": "2022-12-19T09:53:26+01:00",
+          "tree_id": "4594248cd8b5241f23498d2311106529507861d4",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/aa86ea92e42ca608571d4b08cc8b7cf81b4923ca"
+        },
+        "date": 1671440529564,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.3340238179999915,
+            "unit": "s",
+            "extra": "Commit: aa86ea92e42ca608571d4b08cc8b7cf81b4923ca\nBranch: master\nTime: 2022-12-19T09:53:26+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 101.082952218,
+            "unit": "s",
+            "extra": "Commit: aa86ea92e42ca608571d4b08cc8b7cf81b4923ca\nBranch: master\nTime: 2022-12-19T09:53:26+01:00"
           }
         ]
       }
