@@ -30,6 +30,11 @@ needbar
 Each content value gets interpreted either as static float/int value or as a :ref:`filter_string`.
 The amount of found needs by the filter string is then used as value.
 
+.. note::
+
+    This generates multiple image files per ``needbar`` and allows
+    the document engine to pick the appropriate image type (vector or raster).
+
 Options
 -------
 
