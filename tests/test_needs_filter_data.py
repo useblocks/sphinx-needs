@@ -42,7 +42,7 @@ def test_doc_needs_filter_data_html(test_app):
     assert "needs_style_green_border" in index_html
 
     # check needpie works
-    assert '<img alt="_images/need_pie_dba00.png" id="needpie-index-0"' in index_html
+    assert '<img alt="_images/need_pie_dba00.svg" id="needpie-index-0"' in index_html
 
     # check needextend works
     assert (

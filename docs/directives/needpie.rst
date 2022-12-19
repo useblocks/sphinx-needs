@@ -32,6 +32,11 @@ The amount of found needs by the filter string is then used as value.
 
 You can use :ref:`filter_func` with Python codes to define custom filters for ``needpie``.
 
+.. note::
+
+    This generates multiple image files per ``needpie`` and allows
+    the document engine to pick the appropriate image type (vector or raster).
+
 Options
 -------
 

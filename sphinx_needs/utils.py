@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 
 from docutils import nodes
 from jinja2 import BaseLoader, Environment, Template
+from matplotlib.figure import FigureBase
 from sphinx.application import BuildEnvironment, Sphinx
 
 from sphinx_needs.defaults import NEEDS_PROFILING
@@ -343,6 +344,45 @@ def jinja_parse(context: Dict, jinja_string: str) -> str:
 
     content = content_template.render(**context)
     return content
+
+
+def save_matplotlib_figure(app: Sphinx, figure: FigureBase, basename: str, fromdocname: str) -> nodes.image:
+    builder = unwrap(app.builder)
+    env = unwrap(builder.env)
+
+    image_folder = os.path.join(builder.outdir, builder.imagedir)
+    os.makedirs(image_folder, exist_ok=True)
+
+    # Determine a common mimetype between matplotlib and the builder.
+    matplotlib_types = {
+        "image/svg+xml": "svg",
+        "application/pdf": "pdf",
+        "image/png": "png",
+    }
+
+    for builder_mimetype in builder.supported_image_types:
+        if builder_mimetype in matplotlib_types:
+            mimetype = builder_mimetype
+            break
+    else:
+        # No matching type?  Surprising, but just save as .png to mimic the old behavior.
+        # (More than likely the build will not work...)
+        mimetype = "image/png"
+
+    ext = matplotlib_types[mimetype]
+
+    abs_file_path = os.path.join(image_folder, f"{basename}.{ext}")
+    if abs_file_path not in env.images:
+        figure.savefig(os.path.join(env.app.srcdir, abs_file_path))
+        env.images.add_file(fromdocname, abs_file_path)
+
+    image_node = nodes.image()
+    image_node["uri"] = abs_file_path
+
+    # look at uri value for source path, relative to the srcdir folder
+    image_node["candidates"] = {mimetype: abs_file_path}
+
+    return image_node
 
 
 def dict_get(root, items, default=None) -> Any:
