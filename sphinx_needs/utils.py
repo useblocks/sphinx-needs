@@ -8,10 +8,9 @@ from re import Pattern
 from typing import Any, Dict, List, Optional, TypeVar, Union
 from urllib.parse import urlparse
 
-from matplotlib.figure import FigureBase
-
 from docutils import nodes
 from jinja2 import BaseLoader, Environment, Template
+from matplotlib.figure import FigureBase
 from sphinx.application import BuildEnvironment, Sphinx
 
 from sphinx_needs.defaults import NEEDS_PROFILING
@@ -356,9 +355,9 @@ def save_matplotlib_figure(app: Sphinx, figure: FigureBase, basename: str, fromd
 
     # Determine a common mimetype between matplotlib and the builder.
     matplotlib_types = {
-            "image/svg+xml": "svg",
-            "application/pdf": "pdf",
-            "image/png": "png",
+        "image/svg+xml": "svg",
+        "application/pdf": "pdf",
+        "image/png": "png",
     }
 
     for builder_mimetype in builder.supported_image_types:

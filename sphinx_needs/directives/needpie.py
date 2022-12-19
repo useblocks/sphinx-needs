@@ -17,7 +17,12 @@ import matplotlib.pyplot
 from docutils.parsers.rst import directives
 
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import add_doc, check_and_get_external_filter_func, save_matplotlib_figure, unwrap
+from sphinx_needs.utils import (
+    add_doc,
+    check_and_get_external_filter_func,
+    save_matplotlib_figure,
+    unwrap,
+)
 
 logger = get_logger(__name__)
 
