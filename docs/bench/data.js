@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1671440535603,
+  "lastUpdate": 1671533040060,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -2160,6 +2160,42 @@ window.BENCHMARK_DATA = {
             "value": 101.082952218,
             "unit": "s",
             "extra": "Commit: aa86ea92e42ca608571d4b08cc8b7cf81b4923ca\nBranch: master\nTime: 2022-12-19T09:53:26+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a9f0d5609c11ff61f7143893b9ae5bdf4c3744df",
+          "message": "Merge pull request #844 from useblocks/specific-CSS-classes\n\nSpecific css classes",
+          "timestamp": "2022-12-20T11:37:24+01:00",
+          "tree_id": "5f484c7a8970449a956b834e349eab9d73098961",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a9f0d5609c11ff61f7143893b9ae5bdf4c3744df"
+        },
+        "date": 1671533035346,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2174641699999711,
+            "unit": "s",
+            "extra": "Commit: a9f0d5609c11ff61f7143893b9ae5bdf4c3744df\nBranch: master\nTime: 2022-12-20T11:37:24+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 72.180792591,
+            "unit": "s",
+            "extra": "Commit: a9f0d5609c11ff61f7143893b9ae5bdf4c3744df\nBranch: master\nTime: 2022-12-20T11:37:24+01:00"
           }
         ]
       }
