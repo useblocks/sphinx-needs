@@ -114,7 +114,7 @@ class TestCaseDirective(TestCommonDirective):
 
         result = case["result"]
         content = self.test_content
-        if len(case["text"]) > 0:
+        if case["text"] is not None and len(case["text"]) > 0:
             content += """
 
 **Text**::
@@ -125,7 +125,7 @@ class TestCaseDirective(TestCommonDirective):
                 "\n   ".join([x.lstrip() for x in case["text"].split("\n")])
             )
 
-        if len(case["message"]) > 0:
+        if case["message"] is not None and len(case["message"]) > 0:
             content += """
 
 **Message**::
@@ -136,7 +136,7 @@ class TestCaseDirective(TestCommonDirective):
                 "\n   ".join([x.lstrip() for x in case["message"].split("\n")])
             )
 
-        if len(case["system-out"]) > 0:
+        if case["system-out"] is not None and len(case["system-out"]) > 0:
             content += """
 
 **System-out**::

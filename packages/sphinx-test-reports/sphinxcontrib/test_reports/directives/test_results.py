@@ -85,7 +85,7 @@ class TestResultsDirective(Directive):
             "\n\n".join(
                 [
                     testcase["message"] if testcase["message"] != "unknown" else "",
-                    testcase["text"],
+                    testcase["text"] if testcase["text"] is not None else "",
                 ]
             ),
         )

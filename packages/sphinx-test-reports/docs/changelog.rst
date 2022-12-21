@@ -7,13 +7,14 @@ Changelog
 
 * Bugfix: Links in `test-suite` and co. do not raise error.
   `#51 <https://github.com/useblocks/sphinx-test-reports/issues/51>`_
-
+* Improvement: Allows empty text and message fields, which allows integration of ctest junit files
+  `#49 <https://github.com/useblocks/sphinx-test-reports/issues/49>`_
 
 1.0.1
 -----
 :Released: 04.11.2022
 
-* Enhancement: ID length can be configured to avoid conflicts. See :ref:`tr_suite_id_length` and :ref:`tr_case_id_length`.
+* Improvement: ID length can be configured to avoid conflicts. See :ref:`tr_suite_id_length` and :ref:`tr_case_id_length`.
   `#45 <https://github.com/useblocks/sphinx-test-reports/issues/45>`_
 * Bugfix: Multiple testsuites get documented correctly.
   `#40 <https://github.com/useblocks/sphinx-test-reports/issues/40>`_

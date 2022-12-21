@@ -1,7 +1,7 @@
 import nox
 from nox import session
 
-PYTHON_VERSIONS = ["3.8", "3.9"]
+PYTHON_VERSIONS = ["3.8", "3.9", "3.10"]
 SPHINX_VERSIONS = ["5.0"]
 TEST_DEPENDENCIES = [
     "pytest",

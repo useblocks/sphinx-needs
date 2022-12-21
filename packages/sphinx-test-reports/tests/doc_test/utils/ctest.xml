@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="Linux-c++"
+	tests="4"
+	failures="1"
+	disabled="0"
+	skipped="0"
+	hostname=""
+	time="0"
+	timestamp="2022-12-08T15:15:07"
+	>
+	<testcase name="usage_test" classname="usage_test" time="0.000609293" status="run">
+		<system-out>usage: test &lt;argument&gt;
+    If &lt;argument&gt; is 0, print SUCCESS. Otherwise print FAIL.
+</system-out>
+	</testcase>
+	<testcase name="success_test" classname="success_test" time="0.000605907" status="run">
+		<system-out>SUCCESS
+</system-out>
+	</testcase>
+	<testcase name="fail_test" classname="fail_test" time="0.000599379" status="run">
+		<system-out>FAIL
+</system-out>
+	</testcase>
+	<testcase name="fail_test_output" classname="fail_test_output" time="0.000576548" status="fail">
+		<failure message=""/>
+		<system-out>FAIL
+</system-out>
+	</testcase>
+</testsuite>
