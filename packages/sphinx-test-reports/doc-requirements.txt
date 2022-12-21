@@ -1,5 +1,5 @@
 sphinx>=4.0
-sphinx-needs>=1.0.1
+sphinx-needs>=1.1.1
 sphinx-test-reports>=0.3.3
 sphinxcontrib-plantuml
 sphinx-design
