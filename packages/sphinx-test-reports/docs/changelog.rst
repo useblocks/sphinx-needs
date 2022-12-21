@@ -1,9 +1,14 @@
 Changelog
 =========
 
-1.0.2
+1.0.3
 -----
 :Released: under development
+
+
+1.0.2
+-----
+:Released: 21.12.2022 🎄
 
 * Bugfix: Links in `test-suite` and co. do not raise error.
   `#51 <https://github.com/useblocks/sphinx-test-reports/issues/51>`_
