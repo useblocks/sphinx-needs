@@ -8,9 +8,14 @@ License
 
 .. include:: ../LICENSE
 
-1.1.1
+1.1.2
 -----
 Released: under development
+
+
+1.1.1
+-----
+Released: 21.12.2022
 
 * Bugfix: Removed outdated JS codes that handles the collapse button.
   (`#840 <https://github.com/useblocks/sphinx-needs/issues/840>`_)
