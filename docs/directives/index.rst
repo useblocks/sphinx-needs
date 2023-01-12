@@ -19,6 +19,7 @@ Directives
    needextend
    needreport
    needuml
+   list2need
 
 **Deprecated**:
 
