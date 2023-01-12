@@ -45,6 +45,7 @@ This mechanism is the same as the one used by :ref:`need_part`.
    * (NEED-002) Another Need example on level 1 with a given ID
      * Sub-Need on level 2
        * Sub-Need on level 3
+         * Sub-Need on level 4
      * Another Sub-Need on level 2. Where this sentence will be used as content, the first one as title.
 
 

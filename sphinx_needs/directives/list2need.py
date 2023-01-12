@@ -1,10 +1,18 @@
+import re
+from contextlib import suppress
 from typing import Any, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
+from jinja2 import Template
+from sphinx.errors import SphinxWarning
 
-from sphinx_needs.api import add_need
-from sphinx_needs.utils import add_doc
+NEED_TEMPLATE = """.. {{type}}:: {{title}}
+   {% if need_id is not none %}:id: {{need_id}}{%endif%}
+
+   {{content}}
+
+"""
 
 
 class List2Need(nodes.General, nodes.Element):  # type: ignore
@@ -41,38 +49,61 @@ class List2NeedDirective(Directive):
     }
 
     def run(self) -> Sequence[nodes.Node]:
-        env = self.state.document.settings.env
+        presentation = self.options.get("presentation")
+        if not presentation:
+            presentation = "nested"
+        if presentation not in ["nested", "standalone"]:
+            raise SphinxWarning("'presentation' must be 'nested' or 'standalone'")
 
-        nodes = []
+        line = re.compile(r"(?P<indent>[^\S\n]*)\*\s*(?P<text>.*)")
+        id_regex = re.compile(r"(\((?P<need_id>.*)?\))")
+        content_raw = "\n".join(self.content)
+        types_raw = self.options.get("types")
+        if not types_raw:
+            raise SphinxWarning("types must be set.")
 
-        for x in range(0, 10):
+        # Create a dict, which delivers the need-type for the later level
+        types = {}
+        for x in range(0, len(types_raw)):
+            types[x] = types_raw[x]
 
-            need_options = {
-                "need_type": "feature",
-                "title": "Test title",
-                "id": f"TEST-00{x}",
-                "content": "test",
-                "status": "",
-                "tags": "",
-                "hide": "",
-                "template": "",
-                "pre_template": "",
-                "post_template": "",
-                "collapse": "",
-                "style": "",
-                "layout": "",
-                "delete": "",
-                "jinja_content": "",
-            }
+        list_needs = []
 
-            need_node = add_need(
-                env.app,
-                self.state,
-                env.docname,
-                self.lineno,
-                **need_options,  # type: ignore
-            )
-            nodes.extend(need_node)
-        add_doc(env, env.docname)
+        # Storing the data in a sorted list
+        for indent, text in line.findall(content_raw):
+            need_id_result = id_regex.search(text)
+            if need_id_result:
+                need_id = need_id_result.group(2)
+                text = id_regex.sub("", text)
+            else:
+                need_id = None
 
-        return nodes
+            splitted_text = text.split(".")
+            title = splitted_text[0]
+            content = ""
+            with suppress(IndexError):
+                content = ".".join(splitted_text[1:])
+
+            indent = len(indent)
+            if not indent % 2 == 0:
+                raise IndentationError("Indentation for list must be always a multiply of 2.")
+
+            level = int(indent / 2)
+
+            need = {"title": title, "need_id": need_id, "type": "feature", "content": content.lstrip(), "level": level}
+            list_needs.append(need)
+
+        # Finally creating the rst code
+        overall_text = []
+        for list_need in list_needs:
+            template = Template(NEED_TEMPLATE, autoescape=True)
+            text = template.render(**list_need)
+            text_list = text.split("\n")
+            if presentation == "nested":
+                indented_text_list = ["   " * list_need["level"] + x for x in text_list]
+                text_list = indented_text_list
+            overall_text += text_list
+
+        self.state_machine.insert_input(overall_text, self.state_machine.document.attributes["source"])
+
+        return []
