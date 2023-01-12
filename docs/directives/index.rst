@@ -20,10 +20,3 @@ Directives
    needreport
    needuml
    list2need
-
-**Deprecated**:
-
-.. toctree::
-   :maxdepth: 1
-
-   needfilter
