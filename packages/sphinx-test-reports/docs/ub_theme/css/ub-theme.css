@@ -104,6 +104,32 @@ div.dataTables_info {
     margin-top: 0 !important;
 }
 
+div.dt-button-info{
+	bottom:0.8rem;
+    left:1rem;
+	top:initial;
+    left:initial;
+    width:initial;
+    background-color:#e9ebfc;
+    border: 1px solid var(--md-typeset-color);
+    box-shadow:0 0.2rem 0.5rem rgba(0,0,0,.4),0 0 0.05rem rgba(0,0,0,.35);
+    border-radius:0.1rem;
+    text-align:left;
+    color: #2e303e;
+    min-width:11.1rem;
+    padding: 0.4rem 0.6rem;
+    pointer-events: none;
+    margin:0;
+}
+div.dt-button-info h2{
+    display:none;
+}
+div.dt-button-info>div{
+    padding:2px;
+    font-size: 18px!important;
+    color: #2e303e;
+}
+
 table tbody tr:hover {
     background-color: rgb(147 147 147 / 10%) !important;
     box-shadow: 0 .05rem 0 var(--md-default-bg-color) inset !important;

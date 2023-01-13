@@ -119,8 +119,9 @@ html_theme_options["features"].extend(["navigation.tabs", "navigation.tabs.stick
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static", "ub_theme/css"]
-html_css_files = ['ub-theme.css']
+html_static_path = ["_static", "ub_theme/css", "ub_theme/js"]
+html_css_files = ["ub-theme.css"]
+html_js_files = ["jquery.js"]
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
