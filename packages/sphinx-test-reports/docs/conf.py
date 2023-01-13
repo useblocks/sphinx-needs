@@ -12,17 +12,19 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 # import os
-# import sys
+import sys
 import datetime
 import os
 
-# sys.path.insert(0, os.path.abspath('.'))
+sys.path.append(os.path.abspath('.'))
+
+from ub_theme.conf import html_theme_options
 
 # -- Project information -----------------------------------------------------
 
 project = "sphinx-test-reports"
 now = datetime.datetime.now()
-copyright = '2017-{year}, <a href="http://useblocks.com">team useblocks</a>'.format(
+copyright = 'team useblocks, 2017-{year}'.format(
     year=now.year
 )
 author = "team useblocks"
@@ -47,6 +49,7 @@ extensions = [
     "sphinxcontrib.test_reports",
     "sphinxcontrib.plantuml",
     "sphinx_design",
+    "sphinx_immaterial"
 ]
 
 cwd = os.getcwd()
@@ -62,8 +65,7 @@ plantuml_output_format = "png"
 
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates"]
-
+templates_path = ['_templates', 'ub_theme/templates']
 # Add a custom test report template. Please add a relative path from this conf.py
 # tr_report_template = "./custom_test_report_template.txt"
 
@@ -97,46 +99,26 @@ pygments_style = "sphinx"
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "alabaster"
+html_theme = "sphinx_immaterial"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-html_theme_options = {
-    "logo": "sphinx-test-reports-logo.png",
-    "logo_name": False,
-    # 'description': "an extension for sphinx",
-    "logo_text_align": "center",
-    "github_user": "useblocks",
-    "github_repo": "sphinx-test-reports",
-    "github_banner": True,
-    "github_button": False,
-    "fixed_sidebar": True,
-    "extra_nav_links": {
-        "needs@PyPi": "https://pypi.python.org/pypi/sphinx-test-reports",
-        "needs@github": "https://github.com/useblocks/sphinx-test-reports",
-        "needs@travis": "https://travis-ci.org/useblocks/sphinx-test-reports",
-    },
-}
+html_logo = "_static/sphinx-test-reports-logo.png"
+html_theme_options = html_theme_options
 
+other_options = {
+    "repo_url": "https://github.com/useblocks/sphinx-test-reports",
+    "repo_name": "sphinx-test-reports",
+    "repo_type": "github",
+}
+html_theme_options.update(other_options)
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
-
-# Custom sidebar templates, must be a dictionary that maps document names
-# to template names.
-#
-# The default sidebars (for documents that don't match any pattern) are
-# defined by theme itself.  Builtin themes are using these templates by
-# default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
-# 'searchbox.html']``.
-#
-html_sidebars = {
-    "**": ["about.html", "navigation.html"],
-}
-
+html_static_path = ["_static", "ub_theme/css"]
+html_css_files = ['ub-theme.css']
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
