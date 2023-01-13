@@ -105,7 +105,8 @@ html_theme = "sphinx_immaterial"
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-html_logo = "_static/sphinx-test-reports-logo.png"
+html_logo = "_static/sphinx-test-reports-logo.svg"
+html_favicon = "_static/sphinx-test-reports-logo.svg"
 html_title = "Sphinx-Test-Reports"
 html_theme_options = html_theme_options
 
