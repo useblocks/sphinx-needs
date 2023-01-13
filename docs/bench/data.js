@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1672649271564,
+  "lastUpdate": 1673627836882,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -2268,6 +2268,42 @@ window.BENCHMARK_DATA = {
             "value": 86.07771400699994,
             "unit": "s",
             "extra": "Commit: c9972d0ac6fa91e11725643118ce083d361b46b6\nBranch: master\nTime: 2023-01-02T09:40:17+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2ba22a92b921de186d63bb2063b6ea07041cf47f",
+          "message": "list2needs feature\n\n* Initial infra-code for needs2list\r\n* nested needs\r\n* Finalized first version. Tests are missing\r\n* Adds initial test case for liks2need\r\n\r\nFixes #854",
+          "timestamp": "2023-01-13T17:30:24+01:00",
+          "tree_id": "520cf0ab3bdf0c0577503c36ca0f4da04b22fdaa",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/2ba22a92b921de186d63bb2063b6ea07041cf47f"
+        },
+        "date": 1673627832218,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2410561860000371,
+            "unit": "s",
+            "extra": "Commit: 2ba22a92b921de186d63bb2063b6ea07041cf47f\nBranch: master\nTime: 2023-01-13T17:30:24+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 72.92460322399995,
+            "unit": "s",
+            "extra": "Commit: 2ba22a92b921de186d63bb2063b6ea07041cf47f\nBranch: master\nTime: 2023-01-13T17:30:24+01:00"
           }
         ]
       }
