@@ -1,3 +1,5 @@
+:hide-navigation:
+
 Support
 =======
 

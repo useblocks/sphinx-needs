@@ -149,3 +149,9 @@ table.NEEDS_DATATABLES, table.NEEDS_TABLE{
 .md-header__button.md-logo :is(img, png) {
     height: 2.2rem !important;
 }
+
+@media screen and (min-width: 76.1875em){
+    .md-nav__current-toc {
+       display: none!important;
+    }
+}

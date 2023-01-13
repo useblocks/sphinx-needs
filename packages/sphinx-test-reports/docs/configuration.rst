@@ -1,3 +1,5 @@
+:hide-navigation:
+
 Configuration
 =============
 The following options can be set inside the ``conf.py`` file of your Sphinx project.

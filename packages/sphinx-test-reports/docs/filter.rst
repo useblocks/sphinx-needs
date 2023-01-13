@@ -17,16 +17,14 @@ Take a look to figure out what else is possible to customize your way of working
 
 Filterable data
 ---------------
-``Sphinx-Test-Reports`` adds to following data to a sphinx-need-configuration:
+``Sphinx-Test-Reports`` adds the following data to a sphinx-need-configuration:
 
 * **Types**
-
    * test-file
    * test_suite
    * test_case
 
 * **Options**
-
    * **file**: Test file path.
    * **suite**: Test suite name.
    * **case**: Test case name.

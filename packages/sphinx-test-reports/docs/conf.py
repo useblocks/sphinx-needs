@@ -106,6 +106,7 @@ html_theme = "sphinx_immaterial"
 # documentation.
 #
 html_logo = "_static/sphinx-test-reports-logo.png"
+html_title = "Sphinx-Test-Reports"
 html_theme_options = html_theme_options
 
 other_options = {
@@ -114,6 +115,7 @@ other_options = {
     "repo_type": "github",
 }
 html_theme_options.update(other_options)
+html_theme_options["features"].extend(["navigation.tabs", "navigation.tabs.sticky"])
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".

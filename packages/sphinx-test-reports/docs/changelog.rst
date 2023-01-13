@@ -1,3 +1,5 @@
+:hide-navigation:
+
 Changelog
 =========
 
@@ -5,6 +7,7 @@ Changelog
 -----
 :Released: under development
 
+* Updated project documentation to use the Useblocks theme customization.
 
 1.0.2
 -----
