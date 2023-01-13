@@ -55,6 +55,7 @@ For instance, you can customize the need objects to support bugs, user stories o
    :id: REQ_1
    :tags: introduction
 
+
    A **need** is a generic object which can become anything you want for your Sphinx documentation:
    a requirement, a test case, a user story, a bug, an employee, a product, or anything else.
 

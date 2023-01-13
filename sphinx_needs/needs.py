@@ -23,6 +23,7 @@ from sphinx_needs.defaults import (
     NEEDFLOW_CONFIG_DEFAULTS,
     NEEDS_TABLES_CLASSES,
 )
+from sphinx_needs.directives.list2need import List2Need, List2NeedDirective
 from sphinx_needs.directives.need import (
     Need,
     NeedDirective,
@@ -290,6 +291,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_node(Needservice)
     app.add_node(Needextend)
     app.add_node(Needuml)
+    app.add_node(List2Need)
     app.add_node(NeedPart, html=(visitor_dummy, visitor_dummy), latex=(visitor_dummy, visitor_dummy))
 
     ########################################################################
@@ -312,6 +314,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_directive("needreport", NeedReportDirective)
     app.add_directive("needuml", NeedumlDirective)
     app.add_directive("needarch", NeedarchDirective)
+    app.add_directive("list2need", List2NeedDirective)
 
     ########################################################################
     # ROLES

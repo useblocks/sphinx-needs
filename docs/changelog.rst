@@ -8,9 +8,12 @@ License
 
 .. include:: ../LICENSE
 
-1.1.2
+1.2.0
 -----
 Released: under development
+
+* Improvement: Adds :ref:`list2need` directive, which allows to create simple needs from list.
+  (`#854 <https://github.com/useblocks/sphinx-needs/issues/854>`_)
 
 
 1.1.1
