@@ -12,7 +12,7 @@ It allows to speed up the need-creation process for simple needs, which in most 
 and limited meta-data.
 
 The content area of the ``list2need`` directive must contain the list only.
-The list-structure syntax Sphinx-Needs specific, and not related to rst or markdown.
+The list-structure syntax is Sphinx-Needs specific, but borrowed from markdown.
 
 No meta-data can be set, except a specific need-ID.
 But you can use :ref:`needextend` to customize the created needs in a later step.
@@ -24,15 +24,17 @@ This mechanism is the same as the one used by :ref:`need_part`.
 .. code-block:: rst
 
    .. list2need::
-      :types: requirement, specification, test
+      :types: req, spec, test
       :presentation: nested
       :delimiter: .
 
       * Need example on level 1
       * (NEED-002) Another Need example on level 1 with a given ID
         * Sub-Need on level 2
-        * Another Sub-Need on level 2. Where this sentence will be used as content, the first one as title.
-          * Sub-Need on level 3. With some rst-syntax supported for the **content** by :ref:`list2need`
+        * Another Sub-Need on level 2. Where this sentence will be used
+          as content, the first one as title.
+          * Sub-Need on level 3. With some rst-syntax support for
+            the **content** by :ref:`list2need`
 
 .. list2need::
    :types: req, spec, test
@@ -42,12 +44,14 @@ This mechanism is the same as the one used by :ref:`need_part`.
    * Need example on level 1
    * (NEED-002) Another Need example on level 1 with a given ID
      * Sub-Need on level 2
-     * Another Sub-Need on level 2. Where this sentence will be used as content, the first one as title.
-       * Sub-Need on level 3. With some rst-syntax supported for the **content** by :ref:`list2need`
+     * Another Sub-Need on level 2. Where this sentence will be used
+       as content, the first one as title.
+       * Sub-Need on level 3. With some rst-syntax support for
+         the **content** by :ref:`list2need`
 
 .. warning::
 
-   There are known limitations in the list parser.
+   There are currently known limitations in the list parser.
    For instance new content lines starting with `*` or `:` may get handled incorrectly.
 
 List structure
@@ -60,7 +64,7 @@ To define a child-need, add **2 additional whitespaces** infront of ``*``.
 This is called the indentation level and each level must have a need-type defined in the ``types`` option.
 
 A line starting **without** a ``*`` will be added to the prior one.
-So it can be used to structure longer titles or content, it has no impact on the later representation.
+So it can be used to structure longer titles or content, and has no impact on the later representation.
 
 Options
 -------
