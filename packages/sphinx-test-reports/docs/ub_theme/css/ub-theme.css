@@ -1,0 +1,151 @@
+/* @import url('https://fonts.googleapis.com/css2?family=Recursive:wght@300;400&display=swap'); */
+
+:root > * {
+  --md-primary-fg-color: #FFCC00;
+  --md-primary-fg-color--light: #ffeb9b;
+  --md-primary-fg-color--dark: #957700;
+}
+
+td.needs_title {
+    font-weight: bold;
+}
+
+.md-typeset pre, pre {
+    overflow-x: auto;
+}
+
+div.wy-table-responsive{
+    width: 100% !important;
+}
+
+.underline{
+    text-decoration: underline;
+}
+
+/*Remove READTHEDOCS version badge*/
+.injected {
+    display: none !important;
+}
+
+div.need_container {
+    overflow-x: auto;
+}
+
+table.need{
+    display: table !important;
+    width: 100% !important;
+}
+tbody tr td {
+    font-size: medium !important;
+}
+
+/* Sphinx-Immaterial */
+
+body,
+input {
+    font-size: 18px !important;
+    font-weight: 400;
+    line-height: 1.5 !important;
+}
+
+.md-typeset, .md-nav, .md-typeset table:not([class]) {
+    font-size: 18px !important;
+    line-height: 1.5 !important;
+}
+
+
+h1, h2, h3 {
+    font-weight: 500 !important;
+    line-height: 1.4 !important;
+}
+
+h1:not([class="md-search-result__title"]) {
+    font-size: 34px !important;
+    margin-bottom: 20px !important;
+}
+
+h2 {
+    font-size: 28px !important;
+    margin-bottom: 10px !important;
+}
+
+h3 {
+    font-size: 24px !important;
+    margin-bottom: 10px !important;
+}
+
+.dataTables_filter input {
+    border: 1px solid var(--md-typeset-color);
+    margin-bottom: 10px;
+    background-color: transparent;
+}
+
+.border {
+    border: 1px solid var(--md-typeset-color);
+}
+
+table.dataTable tbody tr {
+    background-color: transparent;
+}
+/*
+table.dataTable tbody tr {
+    background-color: transparent !important;
+}
+*/
+.dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_processing, .dataTables_wrapper .dataTables_paginate {
+    color: var(--md-typeset-color) !important;
+}
+
+.dataTables_wrapper .dataTables_paginate a.paginate_button, .dataTables_wrapper .dataTables_paginate a.paginate_button.current {
+    color: var(--md-typeset-color) !important;
+}
+
+div.dataTables_info {
+    margin-top: 0 !important;
+}
+
+table tbody tr:hover {
+    background-color: rgb(147 147 147 / 10%) !important;
+    box-shadow: 0 .05rem 0 var(--md-default-bg-color) inset !important;
+}
+
+button.dt-button:hover:not(.disabled), div.dt-button:hover:not(.disabled), a.dt-button:hover:not(.disabled) {
+    color: #000;
+}
+
+.dataTables_wrapper .dataTables_filter {
+    float: left !important;
+    margin-left: 1% !important;
+}
+
+div.dt-buttons {
+    margin-left: 1% !important;
+}
+
+.dataTables_wrapper .dataTables_filter input {
+    max-width: 100px !important;
+}
+@media screen and (max-width: 640px){
+    .dataTables_wrapper .dataTables_filter {
+        float: none !important;
+        text-align: center !important;
+    }
+
+    .dataTables_wrapper .dataTables_filter input {
+        max-width: inherit !important;
+    }
+}
+
+div.dt-button-collection button.dt-button.active:not(.disabled) {
+    color: #000 !important;
+    border: 1px solid #000 !important;
+}
+
+table.NEEDS_DATATABLES, table.NEEDS_TABLE{
+    max-width: inherit;
+    width: inherit;
+}
+
+.md-header__button.md-logo :is(img, png) {
+    height: 2.2rem !important;
+}

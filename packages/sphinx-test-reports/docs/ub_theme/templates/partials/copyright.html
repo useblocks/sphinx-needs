@@ -1,0 +1,24 @@
+{#-
+  This file was automatically generated - do not edit
+-#}
+<div class="md-copyright">
+  {% if show_copyright %}
+    <div class="md-footer-copyright__highlight">
+      {%- if hasdoc('copyright') %}
+        {% trans path=pathto('copyright'), copyright=copyright|e %}&#169;
+          <a href="{{ path }}">Copyright</a> {{ copyright }}.
+        {% endtrans %}
+      {%- else %}
+		<p>Sponsored and maintained with 💛 by
+        {% trans copyright=copyright|e %}
+			<a href="https://useblocks.com" target="_blank">&#169; {{ copyright }}</a>
+        {% endtrans %}
+		</p>
+      {%- endif %}
+    </div>
+  {% endif %}
+  {%- if show_sphinx %}
+  {%- endif %}
+  {{ rendered_extracopyright }}
+</div>
+

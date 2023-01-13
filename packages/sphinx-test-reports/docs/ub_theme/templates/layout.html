@@ -1,0 +1,7 @@
+{# Import the theme's layout. #}
+{% extends '!layout.html' %}
+
+{%- block extrahead %}
+    <script src="https://code.jquery.com/jquery-3.6.3.slim.min.js"></script>
+    {{ super() }}
+{%- endblock %}
