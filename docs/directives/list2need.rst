@@ -69,6 +69,26 @@ So it can be used to structure longer titles or content, and has no impact on th
 Options
 -------
 
+types
+~~~~~
+
+List of need-types, which are used for the different list-levels.
+As input name the ``directive`` entry from the configuration variable  :ref:`needs_types` is used.
+
+There is no default value and ``types`` must be set.
+
+.. code-block:: rst
+
+      .. list2need::
+         :types: feature, function, test
+
+         * Login user
+           * Provide login screen
+           * Create password hash
+             * Recalculate hash and compare
+
+
+
 presentation
 ~~~~~~~~~~~~
 Defines how the single Sphinx-Needs objects shall be presented.
@@ -88,6 +108,22 @@ content.
 The first split part is used as title, the rest as content.
 
 Default: **.**
+
+links-down
+~~~~~~~~~~
+
+
+
+.. list2need::
+   :types: req, spec, test
+   :presentation: standalone
+   :links-down: triggers,tests
+
+
+   * Login user
+     * Provide login screen
+     * Create password hash
+       * Recalculate hash and compare
 
 
 List examples
