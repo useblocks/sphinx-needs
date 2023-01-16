@@ -457,9 +457,9 @@ html_logo = "./_static/sphinx-needs-logo-white.png"
 html_favicon = "./_static/sphinx-needs-logo-favicon.png"
 # material theme options (see theme.conf for more information)
 html_theme_options = {
-    "icon": {
-        "repo": "fontawesome/brands/github-square",
-    },
+    # "icon": {
+    #     "repo": "fontawesome/brands/github-square",
+    # },
     "site_url": "https://sphinxcontrib-needs.readthedocs.io/",
     "repo_url": "https://github.com/useblocks/sphinxcontrib-needs",
     "repo_name": "Sphinx-Needs",
