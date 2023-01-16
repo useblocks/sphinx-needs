@@ -8,6 +8,17 @@ input {
     line-height: 1.5 !important;
 }
 
+div.need_container {
+    overflow-x: auto;
+}
+div.wy-table-responsive {
+    width: 100% !important;
+}
+table.need {
+    display: table !important;
+    width: 100% !important;
+}
+
 .md-typeset, .md-nav, .md-typeset table:not([class]) {
     font-size: 16px !important;
     line-height: 1.5 !important;
