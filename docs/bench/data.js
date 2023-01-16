@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1673630836771,
+  "lastUpdate": 1673862537186,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -2412,6 +2412,42 @@ window.BENCHMARK_DATA = {
             "value": 71.95599322000004,
             "unit": "s",
             "extra": "Commit: 6913a3aa0235907efd2b1d5c48c8a5e3a165fa01\nBranch: master\nTime: 2023-01-13T18:20:35+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "distinct": true,
+          "id": "9e70a7b25bd515af2fbfd2f0a8a4c054592dfa75",
+          "message": "Removing theme option to define repo logo",
+          "timestamp": "2023-01-16T10:41:50+01:00",
+          "tree_id": "533d4eecb484db082cf388dab9ded87288c1b91a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/9e70a7b25bd515af2fbfd2f0a8a4c054592dfa75"
+        },
+        "date": 1673862532070,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.24435069399999065,
+            "unit": "s",
+            "extra": "Commit: 9e70a7b25bd515af2fbfd2f0a8a4c054592dfa75\nBranch: master\nTime: 2023-01-16T10:41:50+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 76.73352661899997,
+            "unit": "s",
+            "extra": "Commit: 9e70a7b25bd515af2fbfd2f0a8a4c054592dfa75\nBranch: master\nTime: 2023-01-16T10:41:50+01:00"
           }
         ]
       }
