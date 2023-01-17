@@ -11,10 +11,17 @@ from sphinx.errors import SphinxError, SphinxWarning
 NEED_TEMPLATE = """.. {{type}}:: {{title}}
    {% if need_id is not none %}:id: {{need_id}}{%endif%}
    {% if set_links_down %}:{{links_down_type}}: {{ links_down|join(', ') }}{%endif%}
+   {%- for name, value in options.items() %}:{{name}}: {{value}}
+   {% endfor %}
 
    {{content}}
 
 """
+
+LINE_REGEX = re.compile(r"(?P<indent>[^\S\n]*)\*\s*(?P<text>.*)|[\S\*]*(?P<more_text>.*)")
+ID_REGEX = re.compile(r"(\((?P<need_id>[^\"'=\n]+)?\))")  # Exclude some chars, which are used by option list
+OPTION_AREA_REGEX = re.compile(r"\(\((.*)\)\)")
+OPTIONS_REGEX = re.compile(r"([^=,\s]*)=[\"']([^\"]*)[\"']")
 
 
 class List2Need(nodes.General, nodes.Element):  # type: ignore
@@ -59,10 +66,6 @@ class List2NeedDirective(Directive):
         if not delimiter:
             delimiter = "."
 
-        # line = re.compile(r"(?P<indent>[^\S\n]*)\*\s*(?P<text>.*)")
-        # line = re.compile(r"(?P<indent>[^\S\n]*)\*\s*(?P<text>.*)|(?P<more_text>.*)")
-        line = re.compile(r"(?P<indent>[^\S\n]*)\*\s*(?P<text>.*)|[\S\*]*(?P<more_text>.*)")
-        id_regex = re.compile(r"(\((?P<need_id>.*)?\))")
         content_raw = "\n".join(self.content)
         types_raw = self.options.get("types")
         if not types_raw:
@@ -95,7 +98,7 @@ class List2NeedDirective(Directive):
         # Storing the data in a sorted list
         for content_line in content_raw.split("\n"):
             # for groups in line.findall(content_raw):
-            match = line.search(content_line)
+            match = LINE_REGEX.search(content_line)
             if not match:
                 continue
             indent, text, more_text = match.groups()
@@ -121,10 +124,10 @@ class List2NeedDirective(Directive):
                 with suppress(IndexError):
                     content = delimiter.join(splitted_text[1:])  # Put the content together again
 
-                need_id_result = id_regex.search(text)
+                need_id_result = ID_REGEX.search(title)
                 if need_id_result:
                     need_id = need_id_result.group(2)
-                    text = id_regex.sub("", text)
+                    title = ID_REGEX.sub("", title)
                 else:
                     # Calculate the hash value, so that we can later reuse it
                     prefix = ""
@@ -142,6 +145,7 @@ class List2NeedDirective(Directive):
                     "type": types[level],
                     "content": content.lstrip(),
                     "level": level,
+                    "options": {},
                 }
                 list_needs.append(need)
             else:
@@ -153,6 +157,18 @@ class List2NeedDirective(Directive):
         # Finally creating the rst code
         overall_text = []
         for index, list_need in enumerate(list_needs):
+            # Search for meta data in the complete title/content
+            search_string = list_need["title"] + list_need["content"]
+            result = OPTION_AREA_REGEX.search(search_string)
+            if result is not None:  # An option was found
+                option_str = result.group(1)  # We only deal with the first finding
+                option_result = OPTIONS_REGEX.findall(option_str)
+                list_need["options"] = {x[0]: x[1] for x in option_result}
+
+                # Remove possible option-strings from title and content
+                list_need["title"] = OPTION_AREA_REGEX.sub("", list_need["title"])
+                list_need["content"] = OPTION_AREA_REGEX.sub("", list_need["content"])
+
             template = Template(NEED_TEMPLATE, autoescape=True)
 
             data = list_need

@@ -21,6 +21,10 @@ Need-IDs get generated automatically (hash value), if not given.
 IDs can be set by the prefix ``(ID)`` in the line. Example: ``(REQ-1)My first requirement``.
 This mechanism is the same as the one used by :ref:`need_part`.
 
+Options for the need-objects can be set by adding them like ``((status="open"))``.
+For details please see :ref:`list2need_meta_data`.
+
+
 .. code-block:: rst
 
    .. list2need::
@@ -30,11 +34,12 @@ This mechanism is the same as the one used by :ref:`need_part`.
 
       * Need example on level 1
       * (NEED-002) Another Need example on level 1 with a given ID
-        * Sub-Need on level 2
+        * Sub-Need on level 2 with status option set
         * Another Sub-Need on level 2. Where this sentence will be used
           as content, the first one as title.
           * Sub-Need on level 3. With some rst-syntax support for
             the **content** by :ref:`list2need`
+
 
 .. list2need::
    :types: req, spec, test
@@ -43,7 +48,7 @@ This mechanism is the same as the one used by :ref:`need_part`.
 
    * Need example on level 1
    * (NEED-002) Another Need example on level 1 with a given ID
-     * Sub-Need on level 2
+     * Sub-Need on level 2 with status option set ((status='open'))
      * Another Sub-Need on level 2. Where this sentence will be used
        as content, the first one as title.
        * Sub-Need on level 3. With some rst-syntax support for
@@ -111,19 +116,38 @@ Default: **.**
 
 links-down
 ~~~~~~~~~~
+``links-down`` set automatically links between the different levels of the list.
 
+.. code-block:: rst
 
+   .. list2need::
+      :types: req, spec, test
+      :presentation: standalone
+      :links-down: triggers, tests
+
+      * (NEED-A)Login user
+        * (NEED-B)Provide login screen
+        * (NEED-C)Create password hash
+          * (NEED-D)Recalculate hash and compare
+
+``:links-down: triggers, tests`` will set a link from type ``triggers`` from ``NEED-A`` to ``NEED-B`` and ``NEED-C``.
+``NEED-C`` will get a link from type ``tests`` to ``NEED-D``.
+
+So links get set from the upper level down to all need-objects on the direct lower level (top-down approach).
+
+The amount of given link-types must be the amount of used levels minus 1.
+
+**Result from the above example**:
 
 .. list2need::
    :types: req, spec, test
    :presentation: standalone
-   :links-down: triggers,tests
+   :links-down: triggers, tests
 
-
-   * Login user
-     * Provide login screen
-     * Create password hash
-       * Recalculate hash and compare
+   * (NEED-A)Login user
+     * (NEED-B)Provide login screen
+     * (NEED-C)Create password hash
+       * (NEED-D)Recalculate hash and compare
 
 
 List examples
@@ -260,55 +284,44 @@ Lists with need-part support
      * And a spec need.
        Lets reference a need-part frm above: :need:`LIST2NEED-REQ-1.1`
 
+.. _list2need_meta_data:
+
 Set meta-data
 ~~~~~~~~~~~~~
-To set also meta-data for selected needs created by :ref:`list2need`, you can use
-:ref:`needextend` in a second step.
+Meta-data can be set directly in the related line via: ``((status="open"))``.
+Or if the amount of option/values is getting too complex, in a second step
+by using :ref:`needextend`.
+
+The position of the option-string inside the line is not important.
+Multiple options need to be separated by ``,``.
+And instead of ``"`` also ``'`` can be used.
 
 .. code-block:: rst
 
    .. list2need::
       :types: feature, req
 
-      * (EXT-FEATURE-A)Feature A
-        * (EXT-REQ-1)Requirement 1. It shall be fast.
-        * (EXT-REQ-2)Requirement 2. It shall be big.
-      * (EXT-FEATURE-B)Feature B
-
-
-   .. needextend:: EXT-REQ-1
-      :status: closed
-      :style: green_border
-
-   .. needextend:: EXT-REQ-2
-      :status: open
-      :style: red_border
-
-   .. needextend:: id in ["EXT-FEATURE-A", "EXT-FEATURE-B"]
-      :tags: fast, big
+   * (EXT-FEATURE-A)Feature A
+     * (EXT-REQ-1)Requirement 1. It shall be fast. ((tags="A, fast", style="green_border"))
+     * (EXT-REQ-2)Requirement 2. It shall be big. ((tags="A, big", style="red_border"))
+   * (EXT-FEATURE-B)Feature B.
+     Options are given in next line for readability
+     ((status="done", tags="B", links="EXT-FEATURE-A"))
 
    .. needextend:: EXT-FEATURE-B
-      :links: EXT-FEATURE-A
+      :style: yellow
+
+
 
 .. list2need::
    :types: feature, req
 
    * (EXT-FEATURE-A)Feature A
-     * (EXT-REQ-1)Requirement 1. It shall be fast.
-     * (EXT-REQ-2)Requirement 2. It shall be big.
-   * (EXT-FEATURE-B)Feature B
-
-
-.. needextend:: EXT-REQ-1
-   :status: closed
-   :style: green_border
-
-.. needextend:: EXT-REQ-2
-   :status: open
-   :style: red_border
-
-.. needextend:: id in ["EXT-FEATURE-A", "EXT-FEATURE-B"]
-   :tags: fast, big
+     * (EXT-REQ-1)Requirement 1. It shall be fast. ((tags="A, fast", style="green_border"))
+     * (EXT-REQ-2)Requirement 2. It shall be big. ((tags="A, big", style="red_border"))
+   * (EXT-FEATURE-B)Feature B.
+     Options are given in next line for readability
+     ((status="done", tags="B", links="EXT-FEATURE-A"))
 
 .. needextend:: EXT-FEATURE-B
-   :links: EXT-FEATURE-A
+   :style: yellow
