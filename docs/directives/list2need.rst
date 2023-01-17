@@ -301,16 +301,15 @@ And instead of ``"`` also ``'`` can be used.
    .. list2need::
       :types: feature, req
 
-   * (EXT-FEATURE-A)Feature A
-     * (EXT-REQ-1)Requirement 1. It shall be fast. ((tags="A, fast", style="green_border"))
-     * (EXT-REQ-2)Requirement 2. It shall be big. ((tags="A, big", style="red_border"))
-   * (EXT-FEATURE-B)Feature B.
-     Options are given in next line for readability
-     ((status="done", tags="B", links="EXT-FEATURE-A"))
+      * (EXT-FEATURE-A)Feature A
+        * (EXT-REQ-1)Requirement 1. It shall be fast. ((tags="A, fast", style="green_border"))
+        * (EXT-REQ-2)Requirement 2. It shall be big. ((tags="A, big", style="red_border"))
+      * (EXT-FEATURE-B)Feature B.
+        Options are given in next line for readability
+        ((status="done", tags="B", links="EXT-FEATURE-A"))
 
    .. needextend:: EXT-FEATURE-B
       :style: yellow
-
 
 
 .. list2need::
