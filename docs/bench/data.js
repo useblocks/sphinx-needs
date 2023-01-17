@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1673873848647,
+  "lastUpdate": 1673984624364,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -2484,6 +2484,42 @@ window.BENCHMARK_DATA = {
             "value": 106.28799204500001,
             "unit": "s",
             "extra": "Commit: 8334b84727d01ed9a66f4ee8a862a672370bc7ad\nBranch: master\nTime: 2023-01-16T13:47:55+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "63d9b2be6b4844f7746c1ad9d1a85d2eefa9b0f4",
+          "message": "Adds links_down and meta-data handling to list2need (#856)\n\n* Adds links_down to list2need. Tests missing\r\n\r\n* Docs for links-down and meta-data support. Tests missing\r\n\r\n* list2need tests for links-down and options\r\n\r\n* Typing fixes\r\n\r\n* flake8: ignoring B028, using ! r\r\n\r\n* Bugfix for type annotation",
+          "timestamp": "2023-01-17T20:36:57+01:00",
+          "tree_id": "c44687cba581443d2b2ebc252cb288cb96fc3150",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/63d9b2be6b4844f7746c1ad9d1a85d2eefa9b0f4"
+        },
+        "date": 1673984619065,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.24392275200000313,
+            "unit": "s",
+            "extra": "Commit: 63d9b2be6b4844f7746c1ad9d1a85d2eefa9b0f4\nBranch: master\nTime: 2023-01-17T20:36:57+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 73.15330536300002,
+            "unit": "s",
+            "extra": "Commit: 63d9b2be6b4844f7746c1ad9d1a85d2eefa9b0f4\nBranch: master\nTime: 2023-01-17T20:36:57+01:00"
           }
         ]
       }
