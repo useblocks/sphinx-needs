@@ -22,3 +22,9 @@ Test chapter
 ------------
 
 Foo Bar.
+
+
+.. toctree::
+
+   options
+   links_down
