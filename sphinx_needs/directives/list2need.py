@@ -197,7 +197,7 @@ class List2NeedDirective(Directive):
             type_prefix, hashlib.sha1(hashable_content.encode("UTF-8")).hexdigest().upper()[:id_length]
         )
 
-    def get_down_needs(self, list_needs: List[Any], index: int) -> list[str]:
+    def get_down_needs(self, list_needs: List[Any], index: int) -> List[str]:
         """
         Return all needs which are directly under the one given by the index
         """
