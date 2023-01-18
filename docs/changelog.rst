@@ -654,7 +654,7 @@ custom css definitions you need to update them.
 
 0.2.0
 -----
-* Deprecated: :ref:`needfilter` is replaced by :ref:`needlist`, :ref:`needtable` or :ref:`needflow`. Which support additional options for related layout.
+* Deprecated: ``needfilter`` is replaced by :ref:`needlist`, :ref:`needtable` or :ref:`needflow`. Which support additional options for related layout.
 * Improvement: Added :ref:`needtable` directive.
 * Improvement: Added `DataTables <https://datatables.net/>`_ support for :ref:`needtable` (including table search, excel/pdf export and dynamic column selection).
 * Improvement: Added :ref:`needs_id_regex`, which takes a regular expression and which is used to validate given IDs of needs.
@@ -727,7 +727,7 @@ custom css definitions you need to update them.
 
 0.1.37
 ------
-* Bugfix: Implemented 0.1.36 bugfix also for :ref:`needfilter` and :ref:`needimport`.
+* Bugfix: Implemented 0.1.36 bugfix also for ``needfilter`` and :ref:`needimport`.
 
 0.1.36
 ------
@@ -831,7 +831,7 @@ custom css definitions you need to update them.
 * Added configuration parameter :ref:`needs_id_required`.
 * Backwards compatibility changes:
 
-* Reimplemented **needlist** as alias for :ref:`needfilter`
+* Reimplemented **needlist** as alias for ``needfilter``
 * Added *need* directive/need as part of the default :ref:`needs_types` configuration.
 
 0.1.18

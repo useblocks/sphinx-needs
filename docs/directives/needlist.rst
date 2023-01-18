@@ -36,11 +36,7 @@ Flag for adding status information to the needs list results filtered.
 
 If a filtered need has no status information, we write no status output for the need.
 
-.. container:: toggle
-
-   .. container::  header
-
-      **Show example**
+.. dropdown:: Show example
 
    |ex|
 
@@ -64,11 +60,7 @@ Flag for adding tag information to the needs list results filtered.
 
 If a filtered need has no tag information, we write no tag output for the need.
 
-.. container:: toggle
-
-   .. container::  header
-
-      **Show example**
+.. dropdown:: Show example
 
    |ex|
 
@@ -92,11 +84,7 @@ show_filters
 
 If set, we add the used filter below the needlist results:
 
-.. container:: toggle
-
-   .. container::  header
-
-      **Show example**
+.. dropdown:: Show example
 
    |ex|
 

@@ -45,11 +45,7 @@ For instance::
 
 This will show the columns *id*, *title* and *tags* in the order given.
 
-.. container:: toggle
-
-   .. container::  header
-
-      **Show example**
+.. dropdown:: Show example
 
    |ex|
 
@@ -123,11 +119,7 @@ Custom column titles
 You can customize each column title by following this syntax for its definition: ``OPTION as "My custom title"``.
 The characters ``,`` or ``;`` are not allowed.
 
-.. container:: toggle
-
-   .. container::  header
-
-      **Show example**
+.. dropdown:: Show example
 
    |ex|
 
@@ -153,11 +145,7 @@ show_filters
 
 If set, we add the used filter above the table:
 
-.. container:: toggle
-
-   .. container::  header
-
-      **Show example**
+.. dropdown:: Show example
 
    |ex|
 
@@ -191,11 +179,7 @@ Supported values are:
 
 Overrides config parameter :ref:`needs_table_style` if set.
 
-.. container:: toggle
-
-   .. container::  header
-
-      **Show example**
+.. dropdown:: Show example
 
    |ex|
 
@@ -245,11 +229,7 @@ To change the prefix please read :ref:`needs_part_prefix`.
 
 
 
-.. container:: toggle
-
-   .. container::  header
-
-      **Show above example's configuration**
+.. dropdown:: Show above example's configuration
 
    .. code-block:: rst
 
@@ -347,11 +327,7 @@ part of the row style.
 
    So a copied status value like ``in progress`` will become ``in_progress``.
 
-.. container:: toggle
-
-   .. container::  header
-
-      **Show used configuration**
+.. dropdown:: Show used configuration
 
    **needtable**
 
@@ -432,11 +408,7 @@ In this case, we set the sort option to ``status``. So *EX_ROW_3* is above of *E
    :style: table
    :sort: status
 
-.. container:: toggle
-
-   .. container::  header
-
-      **Show used configuration**
+.. dropdown:: Show used configuration
 
    .. code-block:: rst
 

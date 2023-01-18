@@ -97,11 +97,8 @@ EXTRA_CONTENT_TEMPLATE_COLLAPSE = """
 .. rst-class:: need
 .. rst-class:: need_{{type_name}}
 
-.. container:: need
-
-    .. container:: toggle
-
-        .. container:: header
+.. dropdown::
+   :class: need
 
             :needs_type:`{{type_name}}`: {% if title %}:needs_title:`{{title}}`{% endif %} :needs_id:`{{id}}`
 
@@ -457,9 +454,9 @@ html_logo = "./_static/sphinx-needs-logo-white.png"
 html_favicon = "./_static/sphinx-needs-logo-favicon.png"
 # material theme options (see theme.conf for more information)
 html_theme_options = {
-    # "icon": {
-    #     "repo": "fontawesome/brands/github-square",
-    # },
+    "icon": {
+        "repo": "fontawesome/brands/github",
+    },
     "site_url": "https://sphinxcontrib-needs.readthedocs.io/",
     "repo_url": "https://github.com/useblocks/sphinxcontrib-needs",
     "repo_name": "Sphinx-Needs",

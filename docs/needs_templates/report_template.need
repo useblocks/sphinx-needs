@@ -1,10 +1,7 @@
 {# Output for needs_types #}
 {% if types|length != 0 %}
-.. container:: toggle
 
-   .. container::  header
-
-      **Need Types**
+.. dropdown:: Need Types
 
    {% for type in types %}
    * {{ type.title | upper }}
@@ -17,11 +14,8 @@
 
 {# Output for needs_options #}
 {% if options|length != 0 %}
-.. container:: toggle
 
-   .. container::  header
-
-      **Need Extra Options**
+.. dropdown:: Need Extra Options
 
    {% for option in options %}
    * {{ option }}
@@ -31,11 +25,8 @@
 
 {# Output for needs_extra_links #}
 {% if links|length != 0 %}
-.. container:: toggle
 
-   .. container::  header
-
-      **Need Extra Links**
+.. dropdown:: Need Extra Links
 
    {% for link in links %}
    * {{ link.option | upper }}

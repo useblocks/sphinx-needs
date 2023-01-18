@@ -147,7 +147,9 @@ As :need:`IMPL_01` shows, the linked :need:`OWN_ID_123` is realisable.
 .. needflow::
    :filter: "Referencing and filtering needs" == section_name
 
-Used rst code::
+Used rst code:
+
+.. code-block:: rst
 
    .. req:: My first requirement
       :status: open

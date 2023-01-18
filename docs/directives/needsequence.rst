@@ -21,61 +21,57 @@ needsequence
    :start: USER_A, USER_D
    :link_types: links, triggers
 
-.. container:: toggle
+.. dropdown:: Show the needs used in the above example
 
-    .. container::  header
+   .. user:: Mr. A
+      :id: USER_A
+      :links: ACT_ISSUE
+      :style: blue_border
 
-        Show used needs for above example...
+   .. action:: Creates issue
+      :id: ACT_ISSUE
+      :links: USER_B
+      :style: yellow_border
 
-    .. user:: Mr. A
-       :id: USER_A
-       :links: ACT_ISSUE
-       :style: blue_border
+   .. user:: Ms. B
+      :id: USER_B
+      :links: ACT_ANALYSIS, ACT_SOLUTION
+      :style: blue_border
 
-    .. action:: Creates issue
-       :id: ACT_ISSUE
-       :links: USER_B
-       :style: yellow_border
+   .. action:: Analysis issue
+      :id: ACT_ANALYSIS
+      :links: USER_B
+      :style: yellow_border
 
-    .. user:: Ms. B
-       :id: USER_B
-       :links: ACT_ANALYSIS, ACT_SOLUTION
-       :style: blue_border
+   .. action:: Provides solution
+      :id: ACT_SOLUTION
+      :links: USER_C
+      :style: yellow_border
 
-    .. action:: Analysis issue
-       :id: ACT_ANALYSIS
-       :links: USER_B
-       :style: yellow_border
+   .. user:: Expert C
+      :id: USER_C
+      :links: ACT_REVIEW, ACT_INFORM
+      :style: blue_border
 
-    .. action:: Provides solution
-       :id: ACT_SOLUTION
-       :links: USER_C
-       :style: yellow_border
+   .. action:: Reviews solution
+      :id: ACT_REVIEW
+      :links: USER_C
+      :style: yellow_border
 
-    .. user:: Expert C
-       :id: USER_C
-       :links: ACT_REVIEW, ACT_INFORM
-       :style: blue_border
+   .. action:: Informs reporter
+      :id: ACT_INFORM
+      :links: USER_A
+      :style: yellow_border
 
-    .. action:: Reviews solution
-       :id: ACT_REVIEW
-       :links: USER_C
-       :style: yellow_border
+   .. user:: Office Dog
+      :id: USER_D
+      :triggers: ACT_BARKS
+      :style: blue_border
 
-    .. action:: Informs reporter
-       :id: ACT_INFORM
-       :links: USER_A
-       :style: yellow_border
-
-    .. user:: Office Dog
-       :id: USER_D
-       :triggers: ACT_BARKS
-       :style: blue_border
-
-    .. action:: Barks for support
-       :id: ACT_BARKS
-       :triggers: USER_D
-       :style: yellow_border
+   .. action:: Barks for support
+      :id: ACT_BARKS
+      :triggers: USER_D
+      :style: yellow_border
 
 Sequence diagrams supports special needs-combinations, in which one type represents some kind of a ``participant``
 and another, linked need is representing the ``message``. |br|
@@ -123,8 +119,6 @@ The above, linked example gets interpreted for ``needsequence`` as follows:
 
    p1 -> p2: Message 1
    p2 -> p3: Message 2
-
-
 
    @enduml
 

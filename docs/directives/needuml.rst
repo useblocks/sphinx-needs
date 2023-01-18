@@ -33,7 +33,7 @@ which allows you to use loops, if-clauses, and it injects data from need-objects
       :tags: needuml
       :status: draft
 
-      Secound example Need for NeedUml.
+      Second example Need for NeedUml.
 
       .. needuml::
 
@@ -62,7 +62,7 @@ which allows you to use loops, if-clauses, and it injects data from need-objects
    :tags: needuml
    :status: draft
 
-   Secound example Need for NeedUml.
+   Second example Need for NeedUml.
 
    .. needuml::
 
