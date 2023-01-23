@@ -5,15 +5,15 @@ on:
   workflow_dispatch:
     inputs:
       # Ask if docker deployment needed when manually triggered
-      deploy:      
+      deploy:
         description: 'Deploy Docker Image (y/n)?'
         required: true
         default: 'n'
   push:
     tags:
-      - '*.*.*'    
+      - '*.*.*'
 env:
-  NEEDS_VERSION: 1.1.1
+  NEEDS_VERSION: 1.2.0
 
 jobs:
   build:
@@ -25,8 +25,8 @@ jobs:
         - base-image: "sphinxdoc/sphinx:latest"
           image: "sphinxneeds-latexpdf"
         - base-image: "sphinxdoc/sphinx-latexpdf:latest"
-          image: "sphinxneeds"       
-    name: "Image: ${{ matrix.image }} | Baseimage: ${{ matrix.base-image }}"    
+          image: "sphinxneeds"
+    name: "Image: ${{ matrix.image }} | Baseimage: ${{ matrix.base-image }}"
     runs-on: ubuntu-latest
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE
@@ -46,7 +46,7 @@ jobs:
             latest=true
           tags: |
             type=pep440,pattern={{version}}
-      - 
+      -
         # Check if deployment is needed (if no manual trigger was done, defaults to 'y')
         name: Check if deployment is needed
         id: deploycheck
@@ -59,7 +59,7 @@ jobs:
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}          
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       -
         name: Build and push html image to Doker Hub Docker Registry 🐳
         id: docker_build
@@ -67,8 +67,8 @@ jobs:
         with:
           push: ${{ github.event_name != 'pull_request' && steps.deploycheck.outputs.value == 'y' }}
           file: docker/Dockerfile
-          build-args: |            
+          build-args: |
             NEEDS_VERSION=${{ env.NEEDS_VERSION }}
-            BASE_IMAGE=${{ matrix.base-image }}                 
+            BASE_IMAGE=${{ matrix.base-image }}
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}}          
+          labels: ${{ steps.meta.outputs.labels }}}

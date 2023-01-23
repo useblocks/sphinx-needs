@@ -8,10 +8,16 @@ License
 
 .. include:: ../LICENSE
 
-1.2.0
+1.3.0
 -----
 Released: under development
 
+1.2.0
+-----
+Released: 24.01.2023
+
+* Bugfix: Allowing newer versions of jsonschema.
+  (`#848 <https://github.com/useblocks/sphinx-needs/pull/848>`_)
 * Improvement: Adds :ref:`list2need` directive, which allows to create simple needs from list.
   (`#854 <https://github.com/useblocks/sphinx-needs/issues/854>`_)
 
