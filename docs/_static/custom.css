@@ -14,16 +14,20 @@ div.need_container {
 div.wy-table-responsive {
     width: 100% !important;
 }
-table.need {
+table.need, .md-typeset table.data:not(.plain) {
     display: table !important;
     width: 100% !important;
 }
 
-.md-typeset, .md-nav, .md-typeset table:not([class]) {
+.md-typeset, .md-nav, .md-typeset table:not([class]),
+.md-typeset table.data:not(.plain){
     font-size: 16px !important;
     line-height: 1.5 !important;
 }
 
+table {
+    border: 1px solid #e1e4e5 !important;
+}
 
 h1, h2, h3 {
     font-family: 'Recursive', sans-serif !important;
@@ -46,6 +50,10 @@ h3 {
     margin-bottom: 10px !important;
 }
 
+.md-typeset :is(.admonition,details) {
+    font-size: 14px;
+}
+
 .underline {
     text-decoration: underline;
 }
@@ -58,7 +66,7 @@ h3 {
     --img-filter: brightness(0) invert(1);
 }
 
-img.needs-logo-big {
+img.needs-logo-big, img.sn_collapse_img {
     filter: var(--img-filter);
 }
 
@@ -170,4 +178,7 @@ div.dt-button-collection button.dt-button.active:not(.disabled) {
 
 .md-header__button.md-logo :is(img, png) {
     height: 2.2rem !important;
+}
+details.sd-dropdown .sd-summary-up, details.sd-dropdown .sd-summary-down {
+    display: none;
 }

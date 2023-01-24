@@ -170,11 +170,7 @@ By using :ref:`needs_hide_options` the output of such options can be hidden.
           must use the :ref:`filter` option.
 
 
-.. container:: toggle
-
-   .. container:: header
-
-      **Show example**
+.. dropdown:: Show example
 
    **conf.py**
 
@@ -633,11 +629,8 @@ If you do not set ``needs_report_template``, the default template used is:
 
    {# Output for needs_types #}
    {% if types|length != 0 %}
-   .. container:: toggle needs_report_table
-
-      .. container::  header
-
-        **Need Types**
+   .. dropdown:: Need Types
+      :class: needs_report_table
 
       .. list-table::
         :widths: 40 20 20 20
@@ -658,11 +651,8 @@ If you do not set ``needs_report_template``, the default template used is:
 
    {# Output for needs_extra_links #}
    {% if links|length != 0 %}
-   .. container:: toggle needs_report_table
-
-      .. container::  header
-
-        **Need Extra Links**
+   .. dropdown:: Need Extra Links
+      :class: needs_report_table
 
       .. list-table::
         :widths: 10 30 30 5 20
@@ -685,11 +675,8 @@ If you do not set ``needs_report_template``, the default template used is:
 
    {# Output for needs_options #}
    {% if options|length != 0 %}
-   .. container:: toggle needs_report_table
-
-      .. container::  header
-
-        **Need Extra Options**
+   .. dropdown:: Need Extra Options
+      :class: needs_report_table
 
       {% for option in options %}
       * {{ option }}
@@ -699,11 +686,7 @@ If you do not set ``needs_report_template``, the default template used is:
 
    {# Output for needs metrics #}
    {% if usage|length != 0 %}
-   .. container:: toggle
-
-      .. container::  header
-
-         **Need Metrics**
+   .. dropdown:: Need Metrics
 
       .. list-table::
          :widths: 40 40
@@ -2204,7 +2187,8 @@ If nothing is set, the following default template is used:
    .. rst-class:: need
    .. rst-class:: need_{{type_name}}
 
-   .. container:: need
+   .. dropdown::
+      :class: need
 
        :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
            {%- if status and  status|upper != "NONE" and not hide_status %}
@@ -2265,11 +2249,8 @@ Default value:
    .. rst-class:: need
    .. rst-class:: need_{{type_name}}
 
-   .. container:: need
-
-       .. container:: toggle
-
-           .. container:: header
+   .. dropdown::
+      :class: need
 
                :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
                :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`

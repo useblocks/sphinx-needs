@@ -96,11 +96,7 @@ or a list/tuple, which defines the location of the value in the retrieved servic
 
 .. _open_need_data:
 
-.. container:: toggle
-
-   .. container:: header
-
-      **Example of an Open-Needs service data object**
+.. dropdown:: Example of an Open-Needs service data object
 
    .. code-block::
 

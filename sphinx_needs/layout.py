@@ -702,7 +702,15 @@ class LayoutHandler:
         return data_container
 
     def image(
-        self, url, height=None, width=None, align=None, no_link=False, prefix: str = "", is_external: bool = False
+        self,
+        url,
+        height=None,
+        width=None,
+        align=None,
+        no_link=False,
+        prefix: str = "",
+        is_external: bool = False,
+        img_class: str = "",
     ) -> nodes.inline:
         """
         See https://docutils.sourceforge.io/docs/ref/rst/directives.html#images
@@ -727,6 +735,7 @@ class LayoutHandler:
         :param no_link:
         :param prefix: Prefix string in front of the image
         :param is_external: If ``True`` url references an external image, which needs to be downloaded
+        :param img_class: Custom class name for image element
         :return: An inline docutils node element
         :rtype: :class: docutils.nodes.inline
         """
@@ -808,10 +817,15 @@ class LayoutHandler:
 
             url = file_path
 
-        if no_link:
-            classes = ["needs_image", "no-scaled-link"]
-        else:
-            classes = ["needs_image"]
+        classes = []
+        if len(img_class) != 0 and no_link:
+            classes.extend([img_class, "no-scaled-link"])
+
+        if len(img_class) == 0 and no_link:
+            classes.extend(["needs_image", "no-scaled-link"])
+
+        if len(img_class) == 0 and not no_link:
+            classes.append("needs_image")
 
         image_node = nodes.image(url, classes=classes, **options)
         image_node["candidates"] = {"*": url}
@@ -905,14 +919,18 @@ class LayoutHandler:
         coll_node_visible = nodes.inline(classes=["needs", "visible"])
 
         if collapsed.startswith("image:") or collapsed.startswith("icon:"):
-            coll_node_collapsed.append(self.image(collapsed.replace("image:", ""), width="17px", no_link=True))
+            coll_node_collapsed.append(
+                self.image(collapsed.replace("image:", ""), width="17px", no_link=True, img_class="sn_collapse_img")
+            )
         elif collapsed.startswith("Debug view"):
             coll_node_collapsed.append(nodes.container(classes=["debug_on_layout_btn"]))  # For debug layout
         else:
             coll_node_collapsed.append(nodes.Text(collapsed))
 
         if visible.startswith("image:") or visible.startswith("icon:"):
-            coll_node_visible.append(self.image(visible.replace("image:", ""), width="17px", no_link=True))
+            coll_node_visible.append(
+                self.image(visible.replace("image:", ""), width="17px", no_link=True, img_class="sn_collapse_img")
+            )
         elif visible.startswith("Debug view"):
             coll_node_visible.append(nodes.container(classes=["debug_off_layout_btn"]))
         else:

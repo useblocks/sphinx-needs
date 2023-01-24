@@ -21,11 +21,7 @@ needgantt
    :tags: gantt_example
    :milestone_filter: type == 'milestone'
 
-.. container:: toggle
-
-    .. container::  header
-
-        **Show used needs for above example**
+.. dropdown:: Show used needs for above example
 
     .. action:: Find & Report bug
        :id: ACT_BUG
@@ -139,11 +135,7 @@ Default: None
    :tags: gantt_ex_starts_with
    :starts_with_links: starts_with
 
-.. container:: toggle
-
-    .. container:: header
-
-        **Show the needs used in the above example**
+.. dropdown:: Show used needs for above example
 
     .. action:: Create example
        :id: ACT_CREATE_EX_SW
@@ -185,11 +177,7 @@ Default: links
    :tags: gantt_ex_starts_after
    :starts_after_links: starts_after
 
-.. container:: toggle
-
-    .. container:: header
-
-        **Show the needs used in the above example**
+.. dropdown:: Show the needs used in the above example
 
     .. action:: Create example
        :id: ACT_CREATE_EX_SA
@@ -225,11 +213,7 @@ Default: None
    :tags: gantt_ex_ends_with
    :ends_with_links: ends_with
 
-.. container:: toggle
-
-    .. container:: header
-
-        **Show the needs used in the above example**
+.. dropdown:: Show the needs used in the above example
 
     .. action:: Create example
        :id: ACT_CREATE_EX_EW
@@ -339,11 +323,7 @@ Default: :ref:`need_duration`
    :tags: gantt_ex_duration
    :duration_option: hours
 
-.. container:: toggle
-
-    .. container:: header
-
-        **Show the needs used in the above example**
+.. dropdown:: Show the needs used in the above example
 
     .. action:: Create example
        :id: ACT_CREATE_EX
@@ -387,11 +367,7 @@ Default: :ref:`need_completion`
    :tags: gantt_ex_completion
    :completion_option: amount
 
-.. container:: toggle
-
-    .. container:: header
-
-        **Show the needs used in the above example**
+.. dropdown:: Show the needs used in the above example
 
     .. action:: Create example
        :id: ACT_CREATE_EX_C

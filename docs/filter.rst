@@ -19,7 +19,7 @@ The following filter options are supported by directives:
  * :ref:`needtable`
  * :ref:`needflow`
  * :ref:`needpie`
- * :ref:`needfilter` (deprecated!)
+ * ``needfilter`` (deprecated!)
  * :ref:`needextend`
 
 
@@ -42,11 +42,7 @@ Use the **status** option to filter needs by their status.
 
 You can easily filter for multiple statuses by separating them by ";". Example: *open; in progress; reopen*.
 
-.. container:: toggle
-
-   .. container::  header
-
-      **Show example**
+.. dropdown:: Show example
 
    .. code-block:: rst
 
@@ -67,11 +63,7 @@ tags
 
 To search for multiple tags, simply separate them by using ";".
 
-.. container:: toggle
-
-   .. container::  header
-
-      **Show example**
+.. dropdown:: Show example
 
    .. code-block:: rst
 
@@ -90,11 +82,7 @@ types
 ~~~~~
 For **:types:** the type itself or the human-readable type-title can be used as filter value.
 
-.. container:: toggle
-
-   .. container::  header
-
-      **Show example**
+.. dropdown:: Show example
 
    .. code-block:: rst
 
@@ -112,11 +100,7 @@ sort_by
 ~~~~~~~
 Sorts the result list. Allowed values are ``status`` or any alphanumerical property.
 
-.. container:: toggle
-
-   .. container::  header
-
-      **Show example**
+.. dropdown:: Show example
 
    .. code-block:: rst
 
@@ -216,11 +200,7 @@ Additional variables for :ref:`need_part`:
 If your expression is valid and it's True, the related need is added to the filter result list.
 If it is invalid or returns False, the related need is not taken into account for the current filter.
 
-.. container:: toggle
-
-   .. container::  header
-
-      **Show example**
+.. dropdown:: Show example
 
    .. code-block:: rst
 
@@ -286,11 +266,7 @@ search(pattern, variable) is based on
 The first parameter must be a regular expression pattern.
 The second parameter should be one of the above variables(status, id, content, ..)
 
-.. container:: toggle
-
-   .. container::  header
-
-      **Show example**
+.. dropdown:: Show example
 
    This example uses a regular expressions to find all needs with an e-mail address in title.
 
