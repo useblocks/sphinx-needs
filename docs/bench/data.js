@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1673985324248,
+  "lastUpdate": 1674553871900,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -2556,6 +2556,42 @@ window.BENCHMARK_DATA = {
             "value": 100.05783822500001,
             "unit": "s",
             "extra": "Commit: 1f554aee2300ec4819fa3090e51eb2b047d8e33c\nBranch: master\nTime: 2023-01-17T20:46:13+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "duodurandy19@gmail.com",
+            "name": "Randy Duodu",
+            "username": "iSOLveIT"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "36c0bb8ea7d5cbc1b454256a12acb62c449851bf",
+          "message": "Updated the collapsible containers and minor changes (#857)",
+          "timestamp": "2023-01-24T10:44:29+01:00",
+          "tree_id": "ead20b39e0e123d9c0be3c310f2bbfa6e620c687",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/36c0bb8ea7d5cbc1b454256a12acb62c449851bf"
+        },
+        "date": 1674553866899,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21747916300000725,
+            "unit": "s",
+            "extra": "Commit: 36c0bb8ea7d5cbc1b454256a12acb62c449851bf\nBranch: master\nTime: 2023-01-24T10:44:29+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 70.16646050500003,
+            "unit": "s",
+            "extra": "Commit: 36c0bb8ea7d5cbc1b454256a12acb62c449851bf\nBranch: master\nTime: 2023-01-24T10:44:29+01:00"
           }
         ]
       }
