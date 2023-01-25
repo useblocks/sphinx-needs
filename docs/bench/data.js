@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1674553871900,
+  "lastUpdate": 1674643369456,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -2592,6 +2592,42 @@ window.BENCHMARK_DATA = {
             "value": 70.16646050500003,
             "unit": "s",
             "extra": "Commit: 36c0bb8ea7d5cbc1b454256a12acb62c449851bf\nBranch: master\nTime: 2023-01-24T10:44:29+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "github.100.fkeller@spamgourmet.com",
+            "name": "Fabian Keller",
+            "username": "bluenote10"
+          },
+          "committer": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "distinct": true,
+          "id": "74bcd4516ced0c04a326f2002e0cb3b75c1183da",
+          "message": "attempt to prepare a 1.1.2 release",
+          "timestamp": "2023-01-25T11:34:53+01:00",
+          "tree_id": "b61bbb57dc1b5f60fc81554b8ddded03355993a9",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/74bcd4516ced0c04a326f2002e0cb3b75c1183da"
+        },
+        "date": 1674643364665,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.25912423099998705,
+            "unit": "s",
+            "extra": "Commit: 74bcd4516ced0c04a326f2002e0cb3b75c1183da\nBranch: master\nTime: 2023-01-25T11:34:53+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 91.13800052700003,
+            "unit": "s",
+            "extra": "Commit: 74bcd4516ced0c04a326f2002e0cb3b75c1183da\nBranch: master\nTime: 2023-01-25T11:34:53+01:00"
           }
         ]
       }
