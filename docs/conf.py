@@ -242,11 +242,12 @@ needs_id_regex = "^[A-Za-z0-9_]*"
 needs_id_required = False
 # needs_css = "dark.css"
 
-local_plantuml_path = os.path.join(os.path.dirname(__file__), "utils", "plantuml.jar")
+local_plantuml_path = os.path.join(os.path.dirname(__file__), "utils", "plantuml-1.2022.14.jar")
 
 if on_rtd:
     # Deactivated using rtd plantuml version as it looks quite old.
-    # plantuml = 'java -Djava.awt.headless=true -jar /usr/share/plantuml/plantuml.jar'
+    # plantuml = "java -Djava.awt.headless=true -jar /usr/share/plantuml/plantuml.jar"
+    # plantuml = f"GRAPHVIZ_DOT=/usr/bin/dot java -Djava.awt.headless=true -jar {local_plantuml_path}"
     plantuml = f"java -Djava.awt.headless=true -jar {local_plantuml_path}"
 else:
     plantuml = f"java -jar {local_plantuml_path}"
