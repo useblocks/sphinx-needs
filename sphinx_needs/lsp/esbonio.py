@@ -11,15 +11,29 @@ from esbonio.lsp import LanguageFeature
 from esbonio.lsp.rst import CompletionContext, DefinitionContext, HoverContext
 from esbonio.lsp.sphinx import SphinxLanguageServer
 from jinja2 import BaseLoader, Environment
-from pygls.lsp.types import (
-    CompletionItem,
-    CompletionItemKind,
-    InsertTextFormat,
-    Location,
-    Position,
-    Range,
-    TextEdit,
-)
+from pygls import __version__
+
+if __version__ < "1.0":
+    from pygls.lsp.types import (
+        CompletionItem,
+        CompletionItemKind,
+        InsertTextFormat,
+        Location,
+        Position,
+        Range,
+        TextEdit,
+    )
+else:
+    from lsprotocol.types import (
+        CompletionItem,
+        CompletionItemKind,
+        InsertTextFormat,
+        Location,
+        Position,
+        Range,
+        TextEdit,
+    )
+
 from sphinx.application import Sphinx
 
 from sphinx_needs.lsp.needs_store import NeedsStore
@@ -628,5 +642,6 @@ def complete_role_or_option(
 
 def esbonio_setup(rst: SphinxLanguageServer) -> None:
     rst.logger.debug("Starting register Sphinx-Needs language features...")
+    print("\nEsbonio setup called...\n")
     needls_features = NeedlsFeatures(rst)
     rst.add_feature(needls_features)

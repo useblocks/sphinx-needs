@@ -5,7 +5,12 @@ import sys
 
 import pytest
 import pytest_lsp
-from pygls.lsp.types import MarkupContent, MarkupKind, Position, Range
+from pygls import __version__
+
+if __version__ < "1.0":
+    from pygls.lsp.types import MarkupContent, MarkupKind, Position, Range
+else:
+    from lsprotocol.types import MarkupContent, MarkupKind, Position, Range
 
 TEST_DOC_ROOT_URI = os.path.join("file://", os.path.abspath(os.path.dirname(__file__)), "doc_lsp_support_MyST")
 TEST_MD_FILE_URI = os.path.join(TEST_DOC_ROOT_URI, "myfile.md")
@@ -18,6 +23,7 @@ async def client():
     pass
 
 
+@pytest.mark.skipif(__version__ >= "1.0", reason="Esbonio version >=0.16.0 using pygls >= 1.0 not tested.")
 @pytest.mark.asyncio
 async def test_lsp_goto_definition_support_for_myst(client):
     # Check Goto Defintion support for MySt/Markdown file, e.g. myfile.md
@@ -62,6 +68,7 @@ async def test_lsp_goto_definition_support_for_myst(client):
     assert goto_rst_location.range.end.character == 0
 
 
+@pytest.mark.skipif(__version__ >= "1.0", reason="Esbonio version >=0.16.0 using pygls >= 1.0 not tested.")
 @pytest.mark.asyncio
 async def test_lsp_hover_support_for_myst(client):
     # Check Hover support for MyST/Markdown file
@@ -84,6 +91,7 @@ async def test_lsp_hover_support_for_myst(client):
     )
 
 
+@pytest.mark.skipif(__version__ >= "1.0", reason="Esbonio version >=0.16.0 using pygls >= 1.0 not tested.")
 @pytest.mark.asyncio
 async def test_lsp_id_selection_completion_support_for_myst(client):
     # Check ID selection completion support for MyST/Markdown file
@@ -169,6 +177,7 @@ async def test_lsp_id_selection_completion_support_for_myst(client):
     assert need_id_md_result.data["source_feature"] == "sphinx_needs.lsp.esbonio.NeedlsFeatures"
 
 
+@pytest.mark.skipif(__version__ >= "1.0", reason="Esbonio version >=0.16.0 using pygls >= 1.0 not tested.")
 @pytest.mark.asyncio
 async def test_lsp_need_directive_snippets_completion_for_myst(client):
     # Check need directive snippets support for MyST/Markdown
@@ -242,6 +251,7 @@ async def test_lsp_need_directive_snippets_completion_for_myst(client):
     assert needs_directive_spec_md_inside_eval_rst.data["source_feature"] == "sphinx_needs.lsp.esbonio.NeedlsFeatures"
 
 
+@pytest.mark.skipif(__version__ >= "1.0", reason="Esbonio version >=0.16.0 using pygls >= 1.0 not tested.")
 @pytest.mark.asyncio
 async def test_lsp_needs_option_id_completion_for_myst(client):
     # Needs option id suggestion is the same for MyST/Markdown as for rst/Sphinx file, e.g. :id:
@@ -263,6 +273,7 @@ async def test_lsp_needs_option_id_completion_for_myst(client):
     assert needs_option_id.kind == 15  # CompletionItemKind.Snippet
 
 
+@pytest.mark.skipif(__version__ >= "1.0", reason="Esbonio version >=0.16.0 using pygls >= 1.0 not tested.")
 @pytest.mark.asyncio
 async def test_lsp_need_role_need_completion_for_myst(client):
     # Need role need support for MyST/Markdown file
