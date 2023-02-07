@@ -642,6 +642,5 @@ def complete_role_or_option(
 
 def esbonio_setup(rst: SphinxLanguageServer) -> None:
     rst.logger.debug("Starting register Sphinx-Needs language features...")
-    print("\nEsbonio setup called...\n")
     needls_features = NeedlsFeatures(rst)
     rst.add_feature(needls_features)
