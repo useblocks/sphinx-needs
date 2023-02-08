@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1675841175581,
+  "lastUpdate": 1675847847709,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -2664,6 +2664,42 @@ window.BENCHMARK_DATA = {
             "value": 75.18144233500004,
             "unit": "s",
             "extra": "Commit: 55daed1ac813f28affb8e7772b5d1b3fff5cc4d7\nBranch: master\nTime: 2023-02-08T08:19:18+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3dc732a5c8efe330142b5cd908a35b91d761a60c",
+          "message": "Installing Java on RTD job (#859)\n\n* Installing Java on RTD job\r\n* Cleaning the code\r\n* Updating poetry configs",
+          "timestamp": "2023-02-08T10:09:25+01:00",
+          "tree_id": "e2cc18056bcaae5680590a6661845a2a3ed92e47",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/3dc732a5c8efe330142b5cd908a35b91d761a60c"
+        },
+        "date": 1675847842042,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2897368249999772,
+            "unit": "s",
+            "extra": "Commit: 3dc732a5c8efe330142b5cd908a35b91d761a60c\nBranch: master\nTime: 2023-02-08T10:09:25+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 83.44522156799997,
+            "unit": "s",
+            "extra": "Commit: 3dc732a5c8efe330142b5cd908a35b91d761a60c\nBranch: master\nTime: 2023-02-08T10:09:25+01:00"
           }
         ]
       }
