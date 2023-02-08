@@ -13,5 +13,12 @@ python:
 
 build:
   os: ubuntu-22.04
+  apt_packages:
+    - default-jdk
+    - graphviz
   tools:
     python: "3.11"
+  jobs:
+    pre_create_environment:
+      - echo "DOT details"
+      - which dot

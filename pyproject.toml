@@ -129,7 +129,7 @@ module = [
 ignore_errors = true
 
 [tool.poetry.extras]
-docs = ["sphinx>=4.0"]
+docs = ["sphinx"]
 immaterial = ["sphinx-immaterial"]
 
 [build-system]
