@@ -2174,4 +2174,4 @@ immaterial = []
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.7.0,<4.0"
-content-hash = "eb7cfd3f2626049dfccbbe22887db9fc7b0b06ee4bc262edacc43f65a3153526"
+content-hash = "dbc8aff4a94d21cac3bf7813266c9d851d2c4cd1bd709fe7db689c60782746bc"
