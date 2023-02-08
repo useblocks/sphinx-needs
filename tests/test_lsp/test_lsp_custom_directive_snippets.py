@@ -5,6 +5,7 @@ import sys
 
 import pytest
 import pytest_lsp
+from packaging import version
 from pygls import __version__
 
 TEST_DOC_ROOT_URI = os.path.join(
@@ -36,7 +37,9 @@ async def client():
     pass
 
 
-@pytest.mark.skipif(__version__ >= "1.0", reason="Esbonio version >=0.16.0 using pygls >= 1.0 not tested.")
+@pytest.mark.skipif(
+    version.parse(__version__) >= version.parse("1.0"), reason="Esbonio version >=0.16.0 using pygls >= 1.0 not tested."
+)
 @pytest.mark.asyncio
 async def test_lsp_custom_directive_snippets(client):
     # check need custom directive snippets completion

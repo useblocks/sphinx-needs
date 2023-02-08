@@ -11,9 +11,10 @@ from esbonio.lsp import LanguageFeature
 from esbonio.lsp.rst import CompletionContext, DefinitionContext, HoverContext
 from esbonio.lsp.sphinx import SphinxLanguageServer
 from jinja2 import BaseLoader, Environment
+from packaging import version
 from pygls import __version__
 
-if __version__ < "1.0":
+if version.parse(__version__) < version.parse("1.0"):
     from pygls.lsp.types import (
         CompletionItem,
         CompletionItemKind,
