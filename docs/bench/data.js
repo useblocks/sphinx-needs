@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1675847847709,
+  "lastUpdate": 1675852843952,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -2700,6 +2700,42 @@ window.BENCHMARK_DATA = {
             "value": 83.44522156799997,
             "unit": "s",
             "extra": "Commit: 3dc732a5c8efe330142b5cd908a35b91d761a60c\nBranch: master\nTime: 2023-02-08T10:09:25+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "haiyang.zhang@tutanota.com",
+            "name": "Haiyang",
+            "username": "haiyangToAI"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f50f1fe7e3ed9d99491c18f247c8fc8175408a56",
+          "message": "Fixed pygls v1.0 module import error (#868)\n\n* Fixed pygls v1.0 module import error\r\n\r\n* Clean up msg and add entry to changelog\r\n\r\n* Improved version compare\r\n\r\n* Updated pyproject.toml\r\n\r\n* Updated isort version to 5.12.0\r\n\r\n* Fixed mypy issue\r\n\r\n* Removed poetry_core version constraint",
+          "timestamp": "2023-02-08T11:33:58+01:00",
+          "tree_id": "355f0f28dafb0d51574fc85a9a4b4ea1f75e9e7b",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f50f1fe7e3ed9d99491c18f247c8fc8175408a56"
+        },
+        "date": 1675852839813,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2733931440000106,
+            "unit": "s",
+            "extra": "Commit: f50f1fe7e3ed9d99491c18f247c8fc8175408a56\nBranch: master\nTime: 2023-02-08T11:33:58+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 69.63069506,
+            "unit": "s",
+            "extra": "Commit: f50f1fe7e3ed9d99491c18f247c8fc8175408a56\nBranch: master\nTime: 2023-02-08T11:33:58+01:00"
           }
         ]
       }
