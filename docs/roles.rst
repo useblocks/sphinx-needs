@@ -301,7 +301,7 @@ To calculate the ratio of one filter to another filter, you can define two filte
 
 .. code-block:: rst
 
-   :need_count:`status = open and type == "spec" ? type == "spec"`% of our specifications are open.
+   :need_count:`status = open and type == "spec" ? type == "spec"` % of our specifications are open.
 
 |out|
 
