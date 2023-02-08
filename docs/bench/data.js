@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1675875201235,
+  "lastUpdate": 1675876121511,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -2808,6 +2808,42 @@ window.BENCHMARK_DATA = {
             "value": 73.86929255200005,
             "unit": "s",
             "extra": "Commit: 070c619a171bb277c2962eadbbbedc8280bca89c\nBranch: master\nTime: 2023-02-08T17:46:07+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "distinct": true,
+          "id": "f797bb827ce1a59233edf8ed3b784fe59bc28fa5",
+          "message": "Release preparation 1.2.2",
+          "timestamp": "2023-02-08T18:01:33+01:00",
+          "tree_id": "c7370243b0d2c17e6e3d101a76d8f4b31c9af698",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f797bb827ce1a59233edf8ed3b784fe59bc28fa5"
+        },
+        "date": 1675876116849,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2632590919999984,
+            "unit": "s",
+            "extra": "Commit: f797bb827ce1a59233edf8ed3b784fe59bc28fa5\nBranch: master\nTime: 2023-02-08T18:01:33+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 75.760436287,
+            "unit": "s",
+            "extra": "Commit: f797bb827ce1a59233edf8ed3b784fe59bc28fa5\nBranch: master\nTime: 2023-02-08T18:01:33+01:00"
           }
         ]
       }
