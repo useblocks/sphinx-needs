@@ -12,11 +12,20 @@ License
 -----
 Released: under development
 
+1.2.2
+-----
+Released: 08.02.2023
+
+* Bugfix: Changed needed version of jsonschema-lib to be not so strict.
+  (`#871 <https://github.com/useblocks/sphinx-needs/pull/871>`_)
+
 1.2.1
 -----
 Released: 08.02.2023
 
 * Bugfix: Fixed pygls version compatibility.
+  (`#867 <https://github.com/useblocks/sphinx-needs/pull/867>`_,
+  `#865 <https://github.com/useblocks/sphinx-needs/pull/865>`_)
 
 1.2.0
 -----
