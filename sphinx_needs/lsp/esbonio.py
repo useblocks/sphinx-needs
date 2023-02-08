@@ -25,7 +25,7 @@ if version.parse(__version__) < version.parse("1.0"):
         TextEdit,
     )
 else:
-    from lsprotocol.types import (
+    from lsprotocol.types import (  # type: ignore[no-redef]
         CompletionItem,
         CompletionItemKind,
         InsertTextFormat,
