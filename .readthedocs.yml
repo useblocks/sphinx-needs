@@ -22,6 +22,3 @@ build:
     pre_create_environment:
       - echo "DOT details"
       - which dot
-      - export GRAPHVIZ_DOT=/usr/bin/dot
-      - java -jar /home/docs/checkouts/readthedocs.org/user_builds/sphinx-needs/checkouts/rtd_jaav/docs/utils/plantuml-1.2022.14.jar -testdot
-#      - ln -s /usr/bin/dot /opt/local/bin/dot
