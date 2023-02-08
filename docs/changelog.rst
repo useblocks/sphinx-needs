@@ -12,6 +12,8 @@ License
 -----
 Released: under development
 
+* Bugfix: Fixed pygls version compatibility.
+
 1.2.0
 -----
 Released: 24.01.2023

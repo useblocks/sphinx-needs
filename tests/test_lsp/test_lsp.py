@@ -5,7 +5,13 @@ import sys
 
 import pytest
 import pytest_lsp
-from pygls.lsp.types import MarkupContent, MarkupKind, Position, Range
+from packaging import version
+from pygls import __version__
+
+if version.parse(__version__) < version.parse("1.0"):
+    from pygls.lsp.types import MarkupContent, MarkupKind, Position, Range
+else:
+    from lsprotocol.types import MarkupContent, MarkupKind, Position, Range
 
 TEST_DOC_ROOT_URI = os.path.join("file://", os.path.abspath(os.path.dirname(__file__)), "doc_example_lsp")
 TEST_FILE_URI = os.path.join(TEST_DOC_ROOT_URI, "index.rst")
@@ -18,6 +24,9 @@ async def client():
     pass
 
 
+@pytest.mark.skipif(
+    version.parse(__version__) >= version.parse("1.0"), reason="Esbonio version >=0.16.0 using pygls >= 1.0 not tested."
+)
 @pytest.mark.asyncio
 async def test_need_directive_role_completion(client):
     # check needs directive completion
@@ -202,6 +211,9 @@ async def test_need_directive_role_completion(client):
     assert need_role_need.data["source_feature"] == "sphinx_needs.lsp.esbonio.NeedlsFeatures"
 
 
+@pytest.mark.skipif(
+    version.parse(__version__) >= version.parse("1.0"), reason="Esbonio version >=0.16.0 using pygls >= 1.0 not tested."
+)
 @pytest.mark.asyncio
 async def test_need_auto_generated_id_completion(client):
     # check needs option id snippet, auto-generated need IDs, e.g. :id: REQ_e0bafd9b
@@ -222,6 +234,9 @@ async def test_need_auto_generated_id_completion(client):
     assert needs_option_id.kind == 15  # CompletionItemKind.Snippet
 
 
+@pytest.mark.skipif(
+    version.parse(__version__) >= version.parse("1.0"), reason="Esbonio version >=0.16.0 using pygls >= 1.0 not tested."
+)
 @pytest.mark.asyncio
 async def test_need_directive_snippets_completion(client):
     # check need directive snippets completion
@@ -244,6 +259,9 @@ async def test_need_directive_snippets_completion(client):
     assert need_directive_snippets_req.data["source_feature"] == "sphinx_needs.lsp.esbonio.NeedlsFeatures"
 
 
+@pytest.mark.skipif(
+    version.parse(__version__) >= version.parse("1.0"), reason="Esbonio version >=0.16.0 using pygls >= 1.0 not tested."
+)
 @pytest.mark.asyncio
 async def test_need_id_selection_completion(client):
     # check need ID selection completion for need type, e.g. :need:`->`
@@ -275,6 +293,9 @@ async def test_need_id_selection_completion(client):
     assert id_selection_need_id.data["source_feature"] == "sphinx_needs.lsp.esbonio.NeedlsFeatures"
 
 
+@pytest.mark.skipif(
+    version.parse(__version__) >= version.parse("1.0"), reason="Esbonio version >=0.16.0 using pygls >= 1.0 not tested."
+)
 @pytest.mark.asyncio
 async def test_goto_definition(client):
     # check goto defintion results
@@ -292,6 +313,9 @@ async def test_goto_definition(client):
     assert defined_location.range.end.character == 0
 
 
+@pytest.mark.skipif(
+    version.parse(__version__) >= version.parse("1.0"), reason="Esbonio version >=0.16.0 using pygls >= 1.0 not tested."
+)
 @pytest.mark.asyncio
 async def test_hover(client):
     # check hover results

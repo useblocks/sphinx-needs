@@ -11,15 +11,30 @@ from esbonio.lsp import LanguageFeature
 from esbonio.lsp.rst import CompletionContext, DefinitionContext, HoverContext
 from esbonio.lsp.sphinx import SphinxLanguageServer
 from jinja2 import BaseLoader, Environment
-from pygls.lsp.types import (
-    CompletionItem,
-    CompletionItemKind,
-    InsertTextFormat,
-    Location,
-    Position,
-    Range,
-    TextEdit,
-)
+from packaging import version
+from pygls import __version__
+
+if version.parse(__version__) < version.parse("1.0"):
+    from pygls.lsp.types import (
+        CompletionItem,
+        CompletionItemKind,
+        InsertTextFormat,
+        Location,
+        Position,
+        Range,
+        TextEdit,
+    )
+else:
+    from lsprotocol.types import (  # type: ignore[no-redef]
+        CompletionItem,
+        CompletionItemKind,
+        InsertTextFormat,
+        Location,
+        Position,
+        Range,
+        TextEdit,
+    )
+
 from sphinx.application import Sphinx
 
 from sphinx_needs.lsp.needs_store import NeedsStore
