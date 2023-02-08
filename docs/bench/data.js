@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1674643369456,
+  "lastUpdate": 1675841175581,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -2628,6 +2628,42 @@ window.BENCHMARK_DATA = {
             "value": 91.13800052700003,
             "unit": "s",
             "extra": "Commit: 74bcd4516ced0c04a326f2002e0cb3b75c1183da\nBranch: master\nTime: 2023-01-25T11:34:53+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco@sirabella.org",
+            "name": "Marco Sirabella",
+            "username": "mjsir911"
+          },
+          "committer": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "distinct": true,
+          "id": "55daed1ac813f28affb8e7772b5d1b3fff5cc4d7",
+          "message": "Put a space after filter string in example usage",
+          "timestamp": "2023-02-08T08:19:18+01:00",
+          "tree_id": "d842a76909154654d77dbdf17cf574325e7a1dfe",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/55daed1ac813f28affb8e7772b5d1b3fff5cc4d7"
+        },
+        "date": 1675841171799,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2366786949999664,
+            "unit": "s",
+            "extra": "Commit: 55daed1ac813f28affb8e7772b5d1b3fff5cc4d7\nBranch: master\nTime: 2023-02-08T08:19:18+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 75.18144233500004,
+            "unit": "s",
+            "extra": "Commit: 55daed1ac813f28affb8e7772b5d1b3fff5cc4d7\nBranch: master\nTime: 2023-02-08T08:19:18+01:00"
           }
         ]
       }
