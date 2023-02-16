@@ -398,7 +398,7 @@ def process_creator(node_list, doc_category="all"):
         list of found docutil node-object for their case.
         """
         # We only need to analyse docs, which have Sphinx-Needs directives in it.
-        if fromdocname not in app.builder.env.needs_all_docs.get(doc_category, []) and fromdocname != "index":
+        if fromdocname not in app.builder.env.needs_all_docs.get(doc_category, []) and fromdocname != f"{app.config.root_doc}":
             return
         current_nodes = {}
         check_nodes = list(node_list.keys())
