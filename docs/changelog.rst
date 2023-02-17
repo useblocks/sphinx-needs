@@ -12,6 +12,9 @@ License
 -----
 Released: under development
 
+* Bugfix: Replace hardcoded `index` with config value `root_doc`.
+  (`#877 <https://github.com/useblocks/sphinx-needs/pull/877>`_)
+
 1.2.2
 -----
 Released: 08.02.2023
