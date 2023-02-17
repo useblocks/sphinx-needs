@@ -26,6 +26,11 @@ Released: under development
   (`#912 <https://github.com/useblocks/sphinx-needs/pull/912>`_)
 * Bugfix: Supports "None" body in Github services.
   (`#903 <https://github.com/useblocks/sphinx-needs/issues/903>`_)
+* Removed esbonio for :ref:`ide`.
+* Removed configuration option **needs_ide_snippets_id** to support custom need ID for :ref:`ide` snippets.
+* Removed configuration **needs_ide_directive_snippets** to support custom directive snippets for IDE features.
+* Provided new IDE support option: VsCode extension
+  `Sphinx-Needs-VsCode <https://marketplace.visualstudio.com/items?itemName=useblocks.sphinx-needs-vscode>`_.
 
 1.2.2
 -----
@@ -163,14 +168,14 @@ Released: 22.09.2022
 * Improvement: Added `filter` function for :ref:`needuml`.
 * Improvement: Renamed jinja function `need` to `flow` for :ref:`needuml`.
 * Improvement: Added directive :ref:`needarch`.
-* Improvement: Added configuration option :ref:`needs_ide_snippets_id` to support custom need ID for :ref:`ide` snippets.
+* Improvement: Added configuration option **needs_ide_snippets_id** to support custom need ID for :ref:`ide` snippets.
 * Improvement: Provides jinja function :ref:`needarch_jinja_import` for :ref:`needarch` to execute :ref:`needuml_jinja_uml`
   automatically for all the links defined in the need :ref:`need_links` options.
-* Improvement: Added configuration :ref:`needs_ide_directive_snippets` to support custom directive snippets for IDE features.
+* Improvement: Added configuration **needs_ide_directive_snippets** to support custom directive snippets for IDE features.
   (`#640 <https://github.com/useblocks/sphinx-needs/issues/640>`_)
 * Bugfix: Updated pip install URLs in Dockerfile.
   (`#673 <https://github.com/useblocks/sphinx-needs/issues/673>`_)
-* Improvement: Providing IDE features support for :ref:`ide_myst`.
+* Improvement: Providing IDE features support for **ide_myst**.
 
 1.0.1
 -----
