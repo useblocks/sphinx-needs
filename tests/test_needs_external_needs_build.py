@@ -85,7 +85,6 @@ def test_external_needs_base_url_relative_path(test_app):
 
     # check needflow usage for base_url in root level
     if not sphinx.__version__.startswith("3.5"):
-
         if int(doc_ver.split(".")[1]) >= 18:
             root_flow_hrefs = root_tree.xpath("//figure/p/object/a/img")
             assert root_tree.xpath("//figure/figcaption/p/span/a")[0].text == "My needflow"
@@ -192,7 +191,6 @@ def test_external_needs_base_url_relative_path(test_app):
 
     # check needflow usage for base_url in subsubfolder level
     if not sphinx.__version__.startswith("3.5"):
-
         if int(doc_ver.split(".")[1]) >= 18:
             sub_sub_flow_hrefs = sub_sub_tree.xpath("//figure/p/object/a/img")
             assert sub_sub_tree.xpath("//figure/figcaption/p/span/a")[0].text == "My needflow"

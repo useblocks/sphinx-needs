@@ -330,7 +330,7 @@ def previous_sibling(node):
     """Return preceding sibling node or ``None``."""
     try:
         i = node.parent.index(node)
-    except (AttributeError):
+    except AttributeError:
         return None
     return node.parent[i - 1] if i > 0 else None
 

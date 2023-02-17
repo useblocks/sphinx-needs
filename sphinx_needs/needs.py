@@ -398,7 +398,10 @@ def process_creator(node_list, doc_category="all"):
         list of found docutil node-object for their case.
         """
         # We only need to analyse docs, which have Sphinx-Needs directives in it.
-        if fromdocname not in app.builder.env.needs_all_docs.get(doc_category, []) and fromdocname != f"{app.config.root_doc}":
+        if (
+            fromdocname not in app.builder.env.needs_all_docs.get(doc_category, [])
+            and fromdocname != f"{app.config.root_doc}"
+        ):
             return
         current_nodes = {}
         check_nodes = list(node_list.keys())
@@ -458,7 +461,6 @@ def load_config(app: Sphinx, *_args) -> None:
 
     # Update NeedextendDirective with option modifiers.
     for key, value in NEED_DEFAULT_OPTIONS.items():
-
         # Ignore options like "id"
         if key in NEEDEXTEND_NOT_ALLOWED_OPTIONS:
             continue

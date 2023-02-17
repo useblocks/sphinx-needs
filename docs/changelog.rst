@@ -12,6 +12,9 @@ License
 -----
 Released: under development
 
+* Bugfix: Hard coded filename index.rst replaced with config variable `root_doc`.
+  (`#877 <https://github.com/useblocks/sphinx-needs/issues/877>`_)
+
 1.2.2
 -----
 Released: 08.02.2023
