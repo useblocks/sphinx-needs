@@ -46,7 +46,7 @@ templates_path = ["_templates"]
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-#source_suffix = ".rst"
+# source_suffix = ".rst"
 
 # The master toctree document.
 master_doc = "intro"
@@ -108,8 +108,7 @@ htmlhelp_basename = "needstestdocsdoc"
 
 # -- Options for LaTeX output ---------------------------------------------
 
-latex_elements = {
-}
+latex_elements = {}
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
