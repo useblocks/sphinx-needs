@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1675876121511,
+  "lastUpdate": 1676635632665,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -2844,6 +2844,42 @@ window.BENCHMARK_DATA = {
             "value": 75.760436287,
             "unit": "s",
             "extra": "Commit: f797bb827ce1a59233edf8ed3b784fe59bc28fa5\nBranch: master\nTime: 2023-02-08T18:01:33+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "j.kreuzberger@procitec.de",
+            "name": "Jörg Kreuzberger",
+            "username": "kreuzberger"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "47bd4c54cd45b751b035fb0871f98c2d2d34f232",
+          "message": "[877] fix master_doc is not index (#878)\n\n* [877] fix master_doc is not index\r\n\r\n* udpate lint and changelog\r\n\r\n\r\nFixes #877",
+          "timestamp": "2023-02-17T13:00:32+01:00",
+          "tree_id": "98563a705418fefce76e102b5da08abf239ab62f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/47bd4c54cd45b751b035fb0871f98c2d2d34f232"
+        },
+        "date": 1676635628244,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2329703980000204,
+            "unit": "s",
+            "extra": "Commit: 47bd4c54cd45b751b035fb0871f98c2d2d34f232\nBranch: master\nTime: 2023-02-17T13:00:32+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 70.05729172300005,
+            "unit": "s",
+            "extra": "Commit: 47bd4c54cd45b751b035fb0871f98c2d2d34f232\nBranch: master\nTime: 2023-02-17T13:00:32+01:00"
           }
         ]
       }
