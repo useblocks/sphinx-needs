@@ -41,8 +41,6 @@ requests-file = "^1.5.1"  # external links
 requests = "^2.25.1"  # external_links
 jsonschema = ">=3.2.0"  # needsimport schema validation
 sphinx-data-viewer = "^0.1.1"  # needservice debug output
-esbonio = ">=0.11.3"  # IDE language features
-pygls = "*"  # esbonio dependency
 
 [tool.poetry.dev-dependencies]
 sphinxcontrib-plantuml = "^0"
@@ -51,8 +49,6 @@ pre-commit = "^2"
 lxml = "^4.6.5"
 pytest = "^7"
 pytest-xdist="*"  # parallelisation
-pytest_lsp="*"
-myst-parser="^0.18.0"
 responses = "^0.22.0"
 requests-mock = ">=1.9.3"
 tabulate = "^0.9.0"
