@@ -22,6 +22,7 @@ class OpenNeedsService(BaseService):
     options = CONFIG_OPTIONS + EXTRA_DATA_OPTIONS + EXTRA_LINK_OPTIONS
 
     def __init__(self, app: Sphinx, name: str, config: Dict[str, Any], **kwargs: Any) -> None:
+
         self.app = app
         self.name = name
         self.config = config

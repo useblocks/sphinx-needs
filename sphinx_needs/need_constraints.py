@@ -24,12 +24,14 @@ def process_constraints(app: Sphinx, need: Dict[str, Any]) -> None:
     constraints = need["constraints"]
 
     for constraint in constraints:
+
         # check if constraint is defined in config
         if constraint not in config_constraints.keys():
             raise NeedsConstraintNotAllowed(
                 f"Constraint {constraint} of need id {need_id} is not allowed by config value 'needs_constraints'."
             )
         else:
+
             # access constraints defined in conf.py
             executable_constraints = config_constraints[constraint]
 
@@ -40,6 +42,7 @@ def process_constraints(app: Sphinx, need: Dict[str, Any]) -> None:
             for name, cmd in executable_constraints.items():
                 # compile constraint and check single need if it fulfills constraint
                 if name != "severity":
+
                     # check current need if it meets constraint given in check_0, check_1 in conf.py ...
                     constraint_passed = filter_single_need(app, need, cmd)
                     results_list.append(constraint_passed)
@@ -73,6 +76,7 @@ def process_constraints(app: Sphinx, need: Dict[str, Any]) -> None:
                             )
 
                         if "break" in actions_on_fail:
+
                             raise NeedsConstraintFailed(
                                 f"FAILED a breaking constraint: >> {cmd} << for need "
                                 f"{need_id} FAILED! breaking build process"

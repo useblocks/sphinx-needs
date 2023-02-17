@@ -210,6 +210,7 @@ def add_need(
     if tags is None:
         tags = []
     if len(tags) > 0:
+
         # tags should be a string, but it can also be already a list, which can be used.
         if isinstance(tags, str):
             tags = [tag.strip() for tag in re.split("[;,]", tags)]
@@ -237,6 +238,7 @@ def add_need(
     if constraints is None:
         constraints = []
     if len(constraints) > 0:
+
         # tags should be a string, but it can also be already a list,which can be used.
         if isinstance(constraints, str):
             constraints = [constraint.strip() for constraint in re.split("[;,]", constraints)]
@@ -731,6 +733,7 @@ def _merge_global_options(app: Sphinx, needs_info, global_options) -> None:
     if global_options is None:
         return
     for key, value in global_options.items():
+
         # If key already exists in needs_info, this global_option got overwritten manually in current need
         if key in needs_info and needs_info[key]:
             continue

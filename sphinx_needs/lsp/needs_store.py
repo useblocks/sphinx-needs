@@ -77,6 +77,7 @@ class NeedsStore:
                 self.declared_types[item["directive"]] = item["title"]
 
     def load_needs(self, json_file: Path) -> None:
+
         self.docs_per_type = {}
         self.needs_per_doc = {}
         self.types = []

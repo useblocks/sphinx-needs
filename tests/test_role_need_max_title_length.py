@@ -10,6 +10,7 @@ import pytest
     indirect=True,
 )
 def test_max_title_length_unlimited(test_app):
+
     os.environ["MAX_TITLE_LENGTH"] = "-1"
 
     app = test_app
@@ -26,6 +27,7 @@ def test_max_title_length_unlimited(test_app):
     "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_role_need_max_title_length"}], indirect=True
 )
 def test_max_title_length_10(test_app):
+
     os.environ["MAX_TITLE_LENGTH"] = "10"
 
     app = test_app

@@ -73,6 +73,7 @@ class NeedlsFeatures(LanguageFeature):
     completion_triggers = [re.compile(r"(>)|(\.\.)|(:)|(\/)")]
 
     def complete(self, context: CompletionContext) -> List[CompletionItem]:
+
         if isinstance(self.rst, SphinxLanguageServer) and self.rst.app:
             # get and check needs.json path
             needs_json = get_needs_json(self.rst.app)
