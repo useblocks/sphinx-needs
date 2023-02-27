@@ -8,7 +8,7 @@ jobs:
       FAST_BUILD: true
     steps:
     - name: Set Up Python 3.10.8
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: 3.10.8
     - name: Use Node.js
