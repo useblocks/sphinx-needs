@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1676635632665,
+  "lastUpdate": 1677596907521,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -2880,6 +2880,42 @@ window.BENCHMARK_DATA = {
             "value": 70.05729172300005,
             "unit": "s",
             "extra": "Commit: 47bd4c54cd45b751b035fb0871f98c2d2d34f232\nBranch: master\nTime: 2023-02-17T13:00:32+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "distinct": true,
+          "id": "c520c842bbfa346a4cc99f8a260ce2975e65ff23",
+          "message": "Bump markdown-it-py from 2.1.0 to 2.2.0\n\nBumps [markdown-it-py](https://github.com/executablebooks/markdown-it-py) from 2.1.0 to 2.2.0.\n- [Release notes](https://github.com/executablebooks/markdown-it-py/releases)\n- [Changelog](https://github.com/executablebooks/markdown-it-py/blob/master/CHANGELOG.md)\n- [Commits](https://github.com/executablebooks/markdown-it-py/compare/v2.1.0...v2.2.0)\n\n---\nupdated-dependencies:\n- dependency-name: markdown-it-py\n  dependency-type: indirect\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>",
+          "timestamp": "2023-02-28T16:01:35+01:00",
+          "tree_id": "b8ee7d76dd0ce52ae9cb197cd2d0070f617c4ac2",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c520c842bbfa346a4cc99f8a260ce2975e65ff23"
+        },
+        "date": 1677596902124,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2509050209999941,
+            "unit": "s",
+            "extra": "Commit: c520c842bbfa346a4cc99f8a260ce2975e65ff23\nBranch: master\nTime: 2023-02-28T16:01:35+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 70.15461453799998,
+            "unit": "s",
+            "extra": "Commit: c520c842bbfa346a4cc99f8a260ce2975e65ff23\nBranch: master\nTime: 2023-02-28T16:01:35+01:00"
           }
         ]
       }
