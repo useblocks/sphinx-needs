@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1677596936247,
+  "lastUpdate": 1677596978425,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -2952,6 +2952,42 @@ window.BENCHMARK_DATA = {
             "value": 73.33860539699998,
             "unit": "s",
             "extra": "Commit: f6601d293ff5f9f0cce63dd0b7ded6dcab8cdbd0\nBranch: master\nTime: 2023-02-28T16:02:02+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "distinct": true,
+          "id": "43e3e4959aa31a58b269048a6b995bf3426789bb",
+          "message": "Bump actions/setup-python from 3 to 4\n\nBumps [actions/setup-python](https://github.com/actions/setup-python) from 3 to 4.\n- [Release notes](https://github.com/actions/setup-python/releases)\n- [Commits](https://github.com/actions/setup-python/compare/v3...v4)\n\n---\nupdated-dependencies:\n- dependency-name: actions/setup-python\n  dependency-type: direct:production\n  update-type: version-update:semver-major\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>",
+          "timestamp": "2023-02-28T16:01:18+01:00",
+          "tree_id": "41ec94eea83a640db31dae55c5591072b2423277",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/43e3e4959aa31a58b269048a6b995bf3426789bb"
+        },
+        "date": 1677596973353,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.3669140589999529,
+            "unit": "s",
+            "extra": "Commit: 43e3e4959aa31a58b269048a6b995bf3426789bb\nBranch: master\nTime: 2023-02-28T16:01:18+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 86.98804375000003,
+            "unit": "s",
+            "extra": "Commit: 43e3e4959aa31a58b269048a6b995bf3426789bb\nBranch: master\nTime: 2023-02-28T16:01:18+01:00"
           }
         ]
       }
