@@ -320,7 +320,7 @@ Configuration example:
       {
          "option": "checks",
          "incoming": "is checked by",
-         "outgoing": "checks"
+         "outgoing": "checks",
       },
       {
          "option": "triggers",
@@ -328,8 +328,8 @@ Configuration example:
          "outgoing": "triggers",
          "copy": False,
          "allow_dead_links": True,
-         "style": "#00AA00"
-         "style_part": "#00AA00"
+         "style": "#00AA00",
+         "style_part": "#00AA00",
          "style_start": "-",
          "style_end": "--o",
       }
