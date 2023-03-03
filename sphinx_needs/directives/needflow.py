@@ -303,11 +303,12 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
         all_needs = env.needs_all_needs
 
         option_link_types = [link.upper() for link in current_needflow["link_types"]]
+        allowed_link_types = [link["option"].upper() for link in link_types]
         for lt in option_link_types:
-            if lt not in [link["option"].upper() for link in link_types]:
+            if lt not in allowed_link_types:
                 logger.warning(
                     "Unknown link type {link_type} in needflow {flow}. Allowed values: {link_types}".format(
-                        link_type=lt, flow=current_needflow["target_id"], link_types=",".join(link_types)
+                        link_type=lt, flow=current_needflow["target_id"], link_types=", ".join(allowed_link_types)
                     )
                 )
 
