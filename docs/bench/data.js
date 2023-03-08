@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1677597137944,
+  "lastUpdate": 1678284072140,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -3024,6 +3024,42 @@ window.BENCHMARK_DATA = {
             "value": 69.34085893600002,
             "unit": "s",
             "extra": "Commit: daf06a08ed1374ccc542453980aa9bc2f94b53ad\nBranch: master\nTime: 2023-02-28T16:05:39+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "henrik@holmboe.se",
+            "name": "Henrik Holmboe",
+            "username": "holmboe"
+          },
+          "committer": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "distinct": true,
+          "id": "6d7740f0c13aa4c089a4a2747c1ae91cd305131a",
+          "message": "Add missing commas in configuration example",
+          "timestamp": "2023-03-08T14:52:25+01:00",
+          "tree_id": "98a8f91995c1fbc8c810ac0bac2218a11192f82b",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6d7740f0c13aa4c089a4a2747c1ae91cd305131a"
+        },
+        "date": 1678284065707,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.3678507360000367,
+            "unit": "s",
+            "extra": "Commit: 6d7740f0c13aa4c089a4a2747c1ae91cd305131a\nBranch: master\nTime: 2023-03-08T14:52:25+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 93.74629772399999,
+            "unit": "s",
+            "extra": "Commit: 6d7740f0c13aa4c089a4a2747c1ae91cd305131a\nBranch: master\nTime: 2023-03-08T14:52:25+01:00"
           }
         ]
       }
