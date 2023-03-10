@@ -91,7 +91,6 @@ class TestFileDirective(TestCommonDirective):
             "auto_cases" in self.options.keys()
             and "auto_suites" not in self.options.keys()  # noqa W 503
         ):
-
             raise TestReportIncompleteConfiguration(
                 "option auto_cases must be used together with "
                 "auto_suites for test-file directives."

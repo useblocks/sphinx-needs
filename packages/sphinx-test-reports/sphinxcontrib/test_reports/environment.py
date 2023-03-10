@@ -66,7 +66,6 @@ def safe_remove_file(filename, app):
         hasattr(app.builder, "css_files")
         and static_data_file in app.builder.css_files  # noqa: W503
     ):
-
         app.builder.css_files.remove(static_data_file)
 
 
@@ -91,7 +90,6 @@ def install_styles_static_files(app, env):
         brown,
         len(files_to_copy),
     ):
-
         if not os.path.isabs(source_file_path):
             source_file_path = os.path.join(
                 os.path.dirname(__file__), "css", source_file_path

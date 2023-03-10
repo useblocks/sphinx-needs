@@ -20,7 +20,7 @@ def test_doc_build_html(test_app):
     [{"buildername": "html", "srcdir": "doc_test/doc_test_ctest_file"}],
     indirect=True,
 )
-def test_test_file_needs_extra_options_no_warning(test_app):
+def test_test_ctest_file(test_app):
     import subprocess
 
     app = test_app

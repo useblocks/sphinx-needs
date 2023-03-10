@@ -101,9 +101,7 @@ class TestSuiteDirective(TestCommonDirective):
         # nested testsuite present, if testcases are present -> reached most inner testsuite
         access_count = 0
         if len(suite_obj["testcases"]) == 0:
-
             for suite in suite_obj["testsuite_nested"]:
-
                 suite_id = self.test_id
                 suite_id += (
                     "_"
@@ -145,7 +143,6 @@ class TestSuiteDirective(TestCommonDirective):
 
         # suite has testcases
         if "auto_cases" in self.options.keys() and len(suite_obj["testcases"]) > 0:
-
             case_count = 0
 
             for case in suite["testcases"]:

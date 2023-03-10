@@ -56,7 +56,6 @@ class TestCaseDirective(TestCommonDirective):
 
         suite = None
         for suite_obj in self.results:
-
             if nested:  # nested testsuites
                 suite = self.results
                 break
@@ -73,7 +72,6 @@ class TestCaseDirective(TestCommonDirective):
         case = None
 
         for case_obj in suite["testcases"]:
-
             if (
                 case_obj["name"] == case_full_name  # noqa: SIM114
                 and class_name is None  # noqa: W503

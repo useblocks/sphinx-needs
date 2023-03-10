@@ -7,31 +7,30 @@
 
 # -- Path setup --------------------------------------------------------------
 
-import datetime
-import os
-
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 # import os
-import sys
+# import sys
+import datetime
+import os
 
-sys.path.append(os.path.abspath("."))
-
-from ub_theme.conf import html_theme_options  # noqa
+# sys.path.insert(0, os.path.abspath('.'))
 
 # -- Project information -----------------------------------------------------
 
 project = "sphinx-test-reports"
 now = datetime.datetime.now()
-copyright = f"team useblocks, 2017-{now.year}"
+copyright = '2017-{year}, <a href="http://useblocks.com">team useblocks</a>'.format(
+    year=now.year
+)
 author = "team useblocks"
 
 # The short X.Y version
-version = "1.0"
+version = "0.3"
 # The full version, including alpha/beta/rc tags
-release = "1.0.2"
+release = "0.3.6"
 
 
 # -- General configuration ---------------------------------------------------
@@ -48,8 +47,9 @@ extensions = [
     "sphinxcontrib.test_reports",
     "sphinxcontrib.plantuml",
     "sphinx_design",
-    "sphinx_immaterial",
 ]
+
+tr_import_encoding = "utf8"
 
 cwd = os.getcwd()
 plantuml = "java -jar %s" % os.path.join(cwd, "utils/plantuml.jar")
@@ -64,9 +64,10 @@ plantuml_output_format = "png"
 
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates", "ub_theme/templates"]
+templates_path = ["_templates"]
+
 # Add a custom test report template. Please add a relative path from this conf.py
-# tr_report_template = "./custom_test_report_template.txt"
+tr_report_template = "./custom_test_report_template.txt"
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -98,29 +99,46 @@ pygments_style = "sphinx"
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_immaterial"
+html_theme = "alabaster"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-html_logo = "_static/sphinx-test-reports-logo.svg"
-html_favicon = "_static/sphinx-test-reports-logo.svg"
-html_title = "Sphinx-Test-Reports"
-
-other_options = {
-    "repo_url": "https://github.com/useblocks/sphinx-test-reports",
-    "repo_name": "sphinx-test-reports",
-    "repo_type": "github",
+html_theme_options = {
+    "logo": "sphinx-test-reports-logo.png",
+    "logo_name": False,
+    # 'description': "an extension for sphinx",
+    "logo_text_align": "center",
+    "github_user": "useblocks",
+    "github_repo": "sphinx-test-reports",
+    "github_banner": True,
+    "github_button": False,
+    "fixed_sidebar": True,
+    "extra_nav_links": {
+        "needs@PyPi": "https://pypi.python.org/pypi/sphinx-test-reports",
+        "needs@github": "https://github.com/useblocks/sphinx-test-reports",
+        "needs@travis": "https://travis-ci.org/useblocks/sphinx-test-reports",
+    },
 }
-html_theme_options.update(other_options)
-html_theme_options["features"].extend(["navigation.tabs", "navigation.tabs.sticky"])
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static", "ub_theme/css", "ub_theme/js"]
-html_css_files = ["ub-theme.css"]
-html_js_files = ["jquery.js"]
+# html_static_path = ["_static"]
+
+# Custom sidebar templates, must be a dictionary that maps document names
+# to template names.
+#
+# The default sidebars (for documents that don't match any pattern) are
+# defined by theme itself.  Builtin themes are using these templates by
+# default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
+# 'searchbox.html']``.
+#
+html_sidebars = {
+    "**": ["about.html", "navigation.html"],
+}
+
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
@@ -190,18 +208,3 @@ texinfo_documents = [
         "Miscellaneous",
     ),
 ]
-
-# LINKCHECK config
-# https://www.sphinx-doc.org/en/master/usage/configuration.html?highlight=linkcheck#options-for-the-linkcheck-builder
-linkcheck_ignore = [
-    r"http://localhost:\d+",
-    r"http://127.0.0.1:\d+",
-]
-
-linkcheck_request_headers = {
-    "*": {
-        "User-Agent": "Mozilla/5.0",
-    }
-}
-
-linkcheck_workers = 5

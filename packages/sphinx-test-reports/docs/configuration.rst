@@ -105,3 +105,13 @@ Defines the length of the calculated ID for test cases.
 This may be needed, if a junit-xml files contains many test cases.
 
 Default: **5**
+
+.. _tr_import_encoding:
+
+tr_import_encoding
+__________________
+.. versionadded:: 1.0.3
+
+Defines the encoding for imported files, e.g. in custom templates.
+
+Default: **utf8**

@@ -58,7 +58,9 @@ class TestReportDirective(TestCommonDirective):
                 )
             )
 
-        with open(template_path) as template_file:
+        with open(
+            template_path, encoding=self.app.config.tr_import_encoding
+        ) as template_file:
             template = "".join(template_file.readlines())
 
         if self.test_links is not None and len(self.test_links) > 0:

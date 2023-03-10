@@ -2,17 +2,14 @@ html_theme_options = {
     "icon": {
         "repo": "fontawesome/brands/github",
     },
-    "font": {
-        "code": "JetBrains Mono",
-        "text": "Urbanist"
-    },
+    "font": {"code": "JetBrains Mono", "text": "Urbanist"},
     "globaltoc_collapse": True,
     "features": [
         "navigation.top",
         "search.share",
         "navigation.tracking",
         "toc.follow",
-        "content.tabs.link"
+        "content.tabs.link",
     ],
     "palette": {
         "scheme": "slate",

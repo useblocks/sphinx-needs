@@ -112,7 +112,6 @@ def test_doc_env_report_default_build_html(test_app):
     indirect=True,
 )
 def test_doc_env_report_warning_build_html(test_app):
-
     # it should pass all test cases from: test_doc_env_report_build_html
     # generated output data will be stored here
     app = test_app

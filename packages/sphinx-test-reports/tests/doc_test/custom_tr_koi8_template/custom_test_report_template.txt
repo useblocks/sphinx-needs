@@ -1,0 +1,55 @@
+**Test Datei**: {file}
+
+**Verwendetes Template**: {template_path}
+
+**ÂÃÄÅÆ**
+
+.. {file_type}:: {title}
+   :id: {id}{links_string}
+   :tags: {tags}
+   :file: {file}
+   :auto_suites:
+   :auto_cases:
+
+   {content}
+
+
+**TestfÂlle**:
+
+.. needtable::
+   :filter: '{id}' in tags and type == '{case_need}'
+   :columns: id, title, result
+   :style_row: tr_[[copy('result')]]
+
+**Fehlgeschlagene Tests**:
+
+.. needtable::
+   :filter: '{id}' in tags and 'failure' == result
+   :columns: id, title, result
+   :style_row: tr_[[copy('result')]]
+
+**Ausgelassene Tests**:
+
+.. needtable::
+   :filter: '{id}' in tags and 'skipped' == result
+   :columns: id, title, result
+   :style_row: tr_[[copy('result')]]
+
+
+**Statistik**
+
+| Test Gruppen: :need_count:`'{id}' in tags and type=='{suite_need}'`
+| Test F?lle: :need_count:`'{id}' in tags and type=='{case_need}'`
+| Fehlgeschlagene Tests: :need_count:`'{id}' in tags and 'failure' == result and type=='{case_need}'`
+| Ausgelassene Tests: :need_count:`'{id}' in tags and 'skipped' == result and type=='{case_need}'`
+
+
+Vorlage
+-------
+
+The following rst-code is used to generate the report.
+
+.. literalinclude:: ../custom_test_report_template.txt
+   :language: rst
+
+

@@ -8,6 +8,8 @@ Changelog
 :Released: under development
 
 * Updated project documentation to use the Useblocks theme customization.
+* Improvement: Template file encoding coud be configured. See :ref:`tr_import_encoding`.
+  `#60 <https://github.com/useblocks/sphinx-test-reports/issues/60>`_
 
 1.0.2
 -----
