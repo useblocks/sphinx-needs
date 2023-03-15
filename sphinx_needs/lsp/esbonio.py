@@ -242,7 +242,8 @@ def get_lines(ls: NeedlsFeatures, params: Union[CompletionContext, DefinitionCon
 
 def get_word(ls: NeedlsFeatures, params: Union[CompletionContext, DefinitionContext, HoverContext]) -> str:
     """Return the word in a line of text at a character position."""
-    line_no, col = params.position
+    line_no = params.position.line
+    col = params.position.character
     lines = get_lines(ls, params)
     if line_no >= len(lines):
         return ""
