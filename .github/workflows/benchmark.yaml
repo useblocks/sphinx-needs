@@ -8,7 +8,7 @@ jobs:
     name: "Benchmark time & memory"
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v3.3.0
+      - uses: actions/checkout@v3.4.0
       - name: Set Up Python
         uses: actions/setup-python@v4
         with:
