@@ -169,7 +169,11 @@ class NeedimportDirective(SphinxDirective):
 
         # tags update
         for need in needs_list.values():
-            need["tags"] = need["tags"] + tags
+            if need["tags"]:
+                need["tags"] = need["tags"] + ",".join(tags)
+
+            else:
+                need["tags"] = tags
 
         known_options = (
             "title",
