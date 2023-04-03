@@ -178,6 +178,10 @@ class GithubService(BaseService):
     def prepare_issue_data(self, items, options):
         data = []
         for item in items:
+            # ensure that "None" can not reach .splitlines()
+            if item["body"] is None:
+                item["body"] = ""
+
             # wraps content lines, if they are too long. Respects already existing newlines.
             content_lines = [
                 "\n   ".join(textwrap.wrap(line, 60, break_long_words=True, replace_whitespace=False))
