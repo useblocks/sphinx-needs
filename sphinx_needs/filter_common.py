@@ -11,6 +11,7 @@ from docutils.parsers.rst import Directive, directives
 from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
+from sphinx_needs.debug import measure_time
 from sphinx_needs.utils import check_and_get_external_filter_func
 from sphinx_needs.utils import logger as log
 
@@ -230,6 +231,7 @@ def intersection_of_need_results(list_a, list_b) -> List[Dict[str, Any]]:
     return [a for a in list_a if a in list_b]
 
 
+@measure_time()
 def filter_needs(app: Sphinx, needs, filter_string: str = "", current_need=None):
     """
     Filters given needs based on a given filter string.
@@ -265,6 +267,7 @@ def filter_needs(app: Sphinx, needs, filter_string: str = "", current_need=None)
     return found_needs
 
 
+@measure_time()
 def filter_single_need(
     app: Sphinx, need, filter_string: str = "", needs=None, current_need=None, filter_compiled=None
 ) -> bool:

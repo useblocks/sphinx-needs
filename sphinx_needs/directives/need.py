@@ -14,6 +14,7 @@ from sphinx.util.docutils import SphinxDirective
 from sphinx_needs.api import add_need
 from sphinx_needs.api.exceptions import NeedsInvalidException
 from sphinx_needs.config import NEEDS_CONFIG
+from sphinx_needs.debug import measure_time
 from sphinx_needs.defaults import NEED_DEFAULT_OPTIONS
 from sphinx_needs.directives.needextend import process_needextend
 from sphinx_needs.functions import (
@@ -336,6 +337,7 @@ def previous_sibling(node):
 
 
 @profile("NEED_PROCESS")
+@measure_time()
 def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     """
     Event handler to add title meta data (status, tags, links, ...) information to the Need node. Also processes
