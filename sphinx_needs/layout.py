@@ -24,7 +24,7 @@ from sphinx_needs.debug import measure_time
 from sphinx_needs.utils import INTERNALS, match_string_link, unwrap
 
 
-@measure_time()
+@measure_time('need')
 def create_need(need_id: str, app: Sphinx, layout=None, style=None, docname: Optional[str] = None) -> nodes.container:
     """
     Creates a new need-node for a given layout.
@@ -115,7 +115,7 @@ def replace_pending_xref_refdoc(node, new_refdoc: str) -> None:
             replace_pending_xref_refdoc(child, new_refdoc)
 
 
-@measure_time()
+@measure_time('need')
 def build_need(layout, node, app: Sphinx, style=None, fromdocname: Optional[str] = None) -> None:
     """
     Builds a need based on a given layout for a given need-node.

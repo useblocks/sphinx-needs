@@ -1,3 +1,4 @@
+from timeit import default_timer as timer  # Used for timing measurements
 from typing import Any, Dict, List
 
 from docutils import nodes
@@ -640,6 +641,7 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
 
     # Set time measurement flag
     if app.config.needs_debug_measurement:
+        debug.START_TIME = timer()  # Store the rough start time of Sphinx build
         debug.EXECUTE_TIME_MEASUREMENTS = True
 
 

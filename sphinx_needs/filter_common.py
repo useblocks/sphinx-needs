@@ -161,6 +161,9 @@ def process_filters(app: Sphinx, all_needs, current_needlist, include_external: 
             for index, arg in enumerate(args):
                 # All args are strings, but we must transform them to requested type, e.g. 1 -> int, "1" -> str
                 context[f"arg{index+1}"] = arg
+
+            # Decorate function to allow time measurments
+            filter_func = measure_time(category="filter_func", source="user", func=filter_func)
             filter_func(**context)
         else:
             log.warning("Something went wrong running filter")
@@ -231,7 +234,7 @@ def intersection_of_need_results(list_a, list_b) -> List[Dict[str, Any]]:
     return [a for a in list_a if a in list_b]
 
 
-@measure_time()
+@measure_time('filtering')
 def filter_needs(app: Sphinx, needs, filter_string: str = "", current_need=None):
     """
     Filters given needs based on a given filter string.
@@ -267,7 +270,7 @@ def filter_needs(app: Sphinx, needs, filter_string: str = "", current_need=None)
     return found_needs
 
 
-@measure_time()
+@measure_time('filtering')
 def filter_single_need(
     app: Sphinx, need, filter_string: str = "", needs=None, current_need=None, filter_compiled=None
 ) -> bool:

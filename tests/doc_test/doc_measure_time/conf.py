@@ -11,8 +11,12 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+import sys
+from sphinx_needs.api import add_dynamic_function
+import time
+import random
 
-# sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('.'))
 
 
 # -- Project information -----------------------------------------------------
@@ -23,6 +27,21 @@ author = "team useblocks"
 
 
 needs_debug_measurement = True
+
+def dyn_func(app, need, needs, *args, **kwargs):
+   time.sleep(random.randrange(1,5)*0.1)  # Let's wait some time for our test
+   return "some data"
+
+def another_func(app, need, needs, *args, **kwargs):
+   time.sleep(random.randrange(1,5)*0.01)  # Let's wait some time for our test
+   return "some other data"
+
+def setup(app):
+     add_dynamic_function(app, dyn_func)
+     add_dynamic_function(app, another_func)
+
+
+
 
 # -- General configuration ---------------------------------------------------
 

@@ -17,6 +17,7 @@ from sphinx.errors import SphinxError
 
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import NEEDS_FUNCTIONS, match_variants  # noqa: F401
+from sphinx_needs.debug import measure_time
 
 logger = get_logger(__name__)
 unicode = str
@@ -73,7 +74,7 @@ def execute_func(env: BuildEnvironment, need, func_string: str):
 
     # func = env.needs_functions[func_name]['function']
 
-    func = NEEDS_FUNCTIONS[func_name]["function"]
+    func = measure_time(category='dyn_func', source='user', func=NEEDS_FUNCTIONS[func_name]["function"])
     func_return = func(env, need, env.needs_all_needs, *func_args, **func_kwargs)
 
     if not isinstance(func_return, (str, int, float, list, unicode)) and func_return:
