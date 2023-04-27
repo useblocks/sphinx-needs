@@ -7,6 +7,7 @@ from sphinx.config import Config
 from sphinx.environment import BuildEnvironment
 from sphinx.errors import SphinxError
 
+import sphinx_needs.debug as debug  # Need to set global var in it for timeing measurements
 from sphinx_needs.api.configuration import add_extra_option
 from sphinx_needs.builder import (
     NeedsBuilder,
@@ -274,6 +275,9 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     # add jinja context option
     app.add_config_value("needs_render_context", {}, "html", types=[dict])
 
+    #
+    app.add_config_value("needs_debug_measurement", False, "html", types=[dict])
+
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(
@@ -365,6 +369,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.connect("build-finished", process_warnings)
     app.connect("build-finished", build_needs_json)
     app.connect("build-finished", build_needumls_pumls)
+    app.connect("build-finished", debug.process_timing)
     app.connect("env-updated", install_lib_static_files)
     app.connect("env-updated", install_permalink_file)
 
@@ -632,6 +637,10 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
         }
         for link_type in app.config.needs_extra_links:
             env.needs_workflow["backlink_creation_{}".format(link_type["option"])] = False
+
+    # Set time measurement flag
+    if app.config.needs_debug_measurement:
+        debug.EXECUTE_TIME_MEASUREMENTS = True
 
 
 def check_configuration(_app: Sphinx, config: Config) -> None:

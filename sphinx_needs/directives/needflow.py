@@ -11,6 +11,7 @@ from sphinxcontrib.plantuml import (
     generate_name,  # Need for plantuml filename calculation
 )
 
+from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link, create_legend
 from sphinx_needs.filter_common import FilterBase, filter_single_need, process_filters
 from sphinx_needs.logging import get_logger
@@ -276,6 +277,7 @@ def cal_needs_node(app: Sphinx, fromdocname: str, current_needflow: dict, all_ne
     return curr_need_tree
 
 
+@measure_time()
 def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list) -> None:
     # Replace all needflow nodes with a list of the collected needs.
     # Augment each need with a backlink to the original location.

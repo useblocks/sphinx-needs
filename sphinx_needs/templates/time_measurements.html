@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Sphinx-Needs Time Measurement Results</title>
+    <style type = text/css>
+        table.overview td {padding: 10px;}
+
+
+    </style>
+
+</head>
+
+<body style="font-family: 'Arial'">
+<h1>Sphinx-Needs Timing Measurement</h1>
+
+<h2>Overview</h2>
+
+<table class="overview">
+    <thead>
+        <tr>
+            <th>Function</th>
+            <th>Overall</th>
+            <th>Average</th>
+            <th>Min</th>
+            <th>Max</th>
+            <th>Amount</th>
+        </tr>
+    </thead>
+{% for key, value in data.items() %}
+    <tr>
+        <td style="font-weight: bold"><a href="#{{key}}">{{key}}</a></td>
+        <td>{{ "%.7f"|format(value['overall']) }}</td>
+        <td>{{ "%.7f"|format(value['avg']) }}</td>
+        <td>{{ "%.7f"|format(value['min']) }}</td>
+        <td>{{ "%.7f"|format(value['max']) }}</td>
+        <td>{{ "%.0f"|format(value['amount']) }}</td>
+
+    </tr>
+{% endfor %}
+</table>
+
+
+<h2>Details</h2>
+{% for key, value in data.items() %}
+<h3 id="{{key}}">{{key}}</h3>
+<div>
+    <table>
+        {% for result in [('Amount', 'amount'), ('Overall', 'overall'), ('Average', 'avg'), ('Min', 'min'),
+        ('Max', 'max')] %}
+        <tr>
+            <td style="font-weight: bold">{{result[0]}}</td>
+            <td>{{ "%.5f"|format(value[result[1]]) }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<details>
+    <summary>Meta Data</summary>
+    <div>
+        <p><b>File:</b> {{value['file']}}</p>
+        <p><b>Line:</b> {{value['line']}}</p>
+    </div>
+    <h3>Function docs</h3>
+    <div>{{value['doc']|replace('\n', '<br>')|safe}}</div>
+
+</details>
+
+{% endfor %}
+
+
+</body>
+
+</html>
