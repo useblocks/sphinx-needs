@@ -7,7 +7,13 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Sphinx-Needs Time Measurement Results</title>
     <style type = text/css>
-        table.overview td {padding: 10px;}
+        div.container {width: 100%}
+        div.element {width: 400px; float: left; background-color: #fff; border: 2px solid #333; border-radius: 5px; margin: 10px; padding: 5px; min-height: 300px}
+
+        table.overview td {padding: 10px; background-color: #ddd;}
+        table.overview th {padding: 10px; background-color: #ccc;}
+        table.details td {padding: 5px 10px; background-color: #ddd;}
+        table.details td.head {font-weight: bold; background-color: #ccc;}
 
 
     </style>
@@ -15,62 +21,78 @@
 </head>
 
 <body style="font-family: 'Arial'">
-<h1>Sphinx-Needs Timing Measurement</h1>
-
+<h1>Sphinx-Needs Timing Measurement: {{build_data['project']}}</h1>
+<b>Duration: </b> {{"%.2f"|format(build_data['duration'])}}s
 <h2>Overview</h2>
 
 <table class="overview">
     <thead>
         <tr>
             <th>Function</th>
-            <th>Overall</th>
-            <th>Average</th>
-            <th>Min</th>
-            <th>Max</th>
+            <th>Category</th>
+            <th>Source</th>
+            <th>Overall [s]</th>
+            <th>Average [s]</th>
+            <th>Min [s]</th>
+            <th>Max [s]</th>
             <th>Amount</th>
+            <th>Min/Max spread [%]</th>
+            <th>Ratio build time[%]</th>
         </tr>
     </thead>
 {% for key, value in data.items() %}
     <tr>
         <td style="font-weight: bold"><a href="#{{key}}">{{key}}</a></td>
+        <td>{{ value['category'] }}</td>
+        <td>{{ value['source'] }}</td>
         <td>{{ "%.7f"|format(value['overall']) }}</td>
         <td>{{ "%.7f"|format(value['avg']) }}</td>
         <td>{{ "%.7f"|format(value['min']) }}</td>
         <td>{{ "%.7f"|format(value['max']) }}</td>
         <td>{{ "%.0f"|format(value['amount']) }}</td>
-
+        <td>{{ "%.1f"|format(value['min_max_spread']) }}</td>
+        <td>{{ "%.2f"|format(value['overall'] / build_data['duration']*100) }}</td>
     </tr>
 {% endfor %}
 </table>
 
 
 <h2>Details</h2>
-{% for key, value in data.items() %}
-<h3 id="{{key}}">{{key}}</h3>
-<div>
-    <table>
-        {% for result in [('Amount', 'amount'), ('Overall', 'overall'), ('Average', 'avg'), ('Min', 'min'),
-        ('Max', 'max')] %}
-        <tr>
-            <td style="font-weight: bold">{{result[0]}}</td>
-            <td>{{ "%.5f"|format(value[result[1]]) }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-</div>
+<div class="container">
 
-<details>
-    <summary>Meta Data</summary>
-    <div>
-        <p><b>File:</b> {{value['file']}}</p>
-        <p><b>Line:</b> {{value['line']}}</p>
+    {% for key, value in data.items() %}
+    <div class="element">
+        <h3 style="text-align: center" id="{{key}}">{{key}} <br> <small>({{value['category']}}, {{value['source']}})</small></h3>
+        <div>
+            <table class="details">
+                {% for result in [('Amount', 'amount'), ('Overall [s]', 'overall'), ('Average [s]', 'avg'), ('Min [s]', 'min'),
+                ('Max [s]', 'max'), ('Min-Max spread [%]', 'min_max_spread')] %}
+                <tr>
+                    <td class="head">{{result[0]}}</td>
+                    <td>{{ "%.5f"|format(value[result[1]]) }}</td>
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td class="head">Ratio build time [%]</td>
+                    <td>{{ "%.2f"|format(value['overall'] / build_data['duration']*100) }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <details>
+            <summary>Show Meta Data</summary>
+            <div>
+                <p><b>File:</b> {{value['file']}}</p>
+                <p><b>Line:</b> {{value['line']}}</p>
+            </div>
+            <h3>Function docs</h3>
+            <div>{{value['doc']|replace('\n', '<br>')|safe}}</div>
+
+        </details>
     </div>
-    <h3>Function docs</h3>
-    <div>{{value['doc']|replace('\n', '<br>')|safe}}</div>
+    {% endfor %}
 
-</details>
-
-{% endfor %}
+</div>
 
 
 </body>

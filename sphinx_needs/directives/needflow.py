@@ -277,7 +277,7 @@ def cal_needs_node(app: Sphinx, fromdocname: str, current_needflow: dict, all_ne
     return curr_need_tree
 
 
-@measure_time()
+@measure_time('needflow')
 def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list) -> None:
     # Replace all needflow nodes with a list of the collected needs.
     # Augment each need with a backlink to the original location.

@@ -12,8 +12,9 @@ from sphinx.application import Sphinx
 TIME_MEASUREMENTS: Dict = {}  # Stores the timing results
 EXECUTE_TIME_MEASUREMENTS = False  # Will be used to de/activate measurements. Set during a Sphinx Event
 
+START_TIME = None
 
-def measure_time(func: object = None) -> object:
+def measure_time(category: str = None, source: str = 'internal', name: str = None, func: object = None) -> object:
     """
     Measures the needed execution time of a specific function.
 
@@ -62,11 +63,16 @@ def measure_time(func: object = None) -> object:
 
             runtime = end - start
 
-            mt_name = func.__name__
+            if name is None:
+                mt_name = func.__name__
+            else:
+                mt_name = name
 
             if mt_name not in TIME_MEASUREMENTS:
                 TIME_MEASUREMENTS[mt_name] = {
                     "name": mt_name,
+                    "category": category,
+                    "source": source,
                     "doc": func.__doc__,
                     "file": inspect.getfile(func),
                     "line": inspect.getsourcelines(func)[1],
@@ -75,6 +81,7 @@ def measure_time(func: object = None) -> object:
                     "avg": None,
                     "min": None,
                     "max": None,
+                    "min_max_spread": None,
                     "max_params": {"args": [], "kwargs": {}},
                 }
 
@@ -92,7 +99,7 @@ def measure_time(func: object = None) -> object:
                     "args": str(args),
                     "kwargs": str(kwargs),
                 }
-
+            runtime_dict["min_max_spread"] = runtime_dict["max"] / runtime_dict["min"] * 100
             runtime_dict["avg"] = runtime_dict["overall"] / runtime_dict["amount"]
             return result
 
@@ -115,24 +122,37 @@ def print_timing_results():
         print(f' min:     {value["min"]:2f} \n')
 
 
-def store_timing_results_json(outdir):
+def store_timing_results_json(outdir, build_data):
     json_result_path = os.path.join(outdir, "debug_measurement.json")
+
+    data = {
+        'build': build_data,
+        'measurements': TIME_MEASUREMENTS
+    }
+
     with open(json_result_path, "w", encoding="utf-8") as f:
-        json.dump(TIME_MEASUREMENTS, f, indent=4)
+        json.dump(data, f, indent=4)
     print(f"Timing measurement results (JSON) stored under {json_result_path}")
 
 
-def store_timing_results_html(outdir):
+def store_timing_results_html(outdir, build_data):
     jinja_env = Environment(loader=PackageLoader("sphinx_needs"), autoescape=select_autoescape())
     template = jinja_env.get_template("time_measurements.html")
     out_file = Path(outdir) / "debug_measurement.html"
     with open(out_file, "w", encoding="utf-8") as f:
-        f.write(template.render(data=TIME_MEASUREMENTS))
+        f.write(template.render(data=TIME_MEASUREMENTS, build_data=build_data))
     print(f"Timing measurement report (HTML) stored under {out_file}")
 
 
 def process_timing(app: Sphinx, _exception: Optional[Exception]) -> None:
     if EXECUTE_TIME_MEASUREMENTS:
+        build_data = {
+            'project': app.config['project'],
+            'start': START_TIME,
+            'end': timer(),
+            'duration': timer() - START_TIME
+        }
+
         print_timing_results()
-        store_timing_results_json(app.outdir)
-        store_timing_results_html(app.outdir)
+        store_timing_results_json(app.outdir, build_data )
+        store_timing_results_html(app.outdir, build_data)

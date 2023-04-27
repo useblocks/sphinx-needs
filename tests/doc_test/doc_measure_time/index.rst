@@ -26,21 +26,31 @@ MEASURE TIME TEST
 .. story:: Test story 4
    :id: ST_004
    :status: closed
+   :tags: [[another_func()]]
 
 .. story:: Test story 5
    :id: ST_005
    :status: closed
+   :tags: [[dyn_func()]]
 
 .. story:: Test story 6
    :id: ST_006
    :status: closed
+   :tags: [[dyn_func()]]
 
 .. story:: Test story 7
    :id: ST_007
    :status: closed
+   :tags: [[dyn_func()]]
+
+Filtering
+---------
 
 .. needtable::
    :filter: status == "open"
+
+.. needtable::
+   :filter-func: filters.own_filter_code
 
 .. needflow::
    :filter: status == "open"
