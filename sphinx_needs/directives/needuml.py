@@ -6,6 +6,7 @@ from docutils import nodes
 from docutils.parsers.rst import Directive, directives
 from jinja2 import BaseLoader, Environment, Template
 
+from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link
 from sphinx_needs.directives.needflow import make_entity_name
 from sphinx_needs.filter_common import filter_needs
@@ -397,6 +398,7 @@ def is_element_of_need(node: nodes.Element) -> str:
     return is_element_of
 
 
+@measure_time("needuml")
 def process_needuml(app, doctree, fromdocname, found_nodes):
     env = app.builder.env
 

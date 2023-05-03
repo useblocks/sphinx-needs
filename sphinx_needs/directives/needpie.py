@@ -7,6 +7,7 @@ import numpy as np
 from docutils import nodes
 from sphinx.application import Sphinx
 
+from sphinx_needs.debug import measure_time
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
 
 if not os.environ.get("DISPLAY"):
@@ -114,6 +115,7 @@ class NeedpieDirective(FilterBase):
         return [targetnode, Needpie("")]
 
 
+@measure_time("needpie")
 def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list) -> None:
     builder = unwrap(app.builder)
     env = unwrap(builder.env)

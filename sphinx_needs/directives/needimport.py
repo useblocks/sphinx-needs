@@ -12,6 +12,7 @@ from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.api import add_need
 from sphinx_needs.config import NEEDS_CONFIG
+from sphinx_needs.debug import measure_time
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.needsfile import check_needs_file
 from sphinx_needs.utils import add_doc, logger
@@ -43,6 +44,7 @@ class NeedimportDirective(Directive):
 
     final_argument_whitespace = True
 
+    @measure_time("needimport")
     def run(self) -> Sequence[nodes.Node]:
         # needs_list = {}
         version = self.options.get("version")

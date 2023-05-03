@@ -66,6 +66,7 @@ class NeedDirective(SphinxDirective):
         self.log = get_logger(__name__)
         self.full_title = self._get_full_title()
 
+    @measure_time("need")
     def run(self) -> Sequence[nodes.Node]:
         #############################################################################################
         # Get environment
