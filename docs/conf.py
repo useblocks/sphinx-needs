@@ -616,6 +616,7 @@ def setup(app: Sphinx) -> None:
 linkcheck_ignore = [
     r"http://localhost:\d+",
     r"http://127.0.0.1:\d+",
+    r"../.*",
 ]
 
 linkcheck_request_headers = {
