@@ -2155,6 +2155,22 @@ You can use the data passed via needs_render_context as shown below:
 {% endraw %}
 
 
+.. _needs_debug_measurement:
+
+needs_debug_measurement
+~~~~~~~~~~~~~~~~~~~~~~~
+.. versionadded:: 1.3.0
+
+Activates :ref:`runtime_debugging`, which measures the execution time of different functions and creates a helpful
+JSON and HTML report.
+
+See :ref:`runtime_debugging` for details.
+
+To activate it, set it to ``True``::
+
+   needs_debug_measurement = True
+
+
 Removed options
 ---------------
 

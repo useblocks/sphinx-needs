@@ -6,6 +6,7 @@ from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsInvalidException
+from sphinx_needs.debug import measure_time
 from sphinx_needs.directives.utils import (
     get_option_list,
     get_title,
@@ -111,6 +112,7 @@ class NeedtableDirective(FilterBase):
         return [targetnode] + [Needtable("")]
 
 
+@measure_time("needtable")
 @profile("NEEDTABLE")
 def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list) -> None:
     """

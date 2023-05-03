@@ -4,7 +4,7 @@ import os.path
 from functools import wraps
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 from sphinx.application import Sphinx
@@ -17,7 +17,7 @@ START_TIME = 0
 
 def measure_time(
     category: str | None = None, source: str = "internal", name: str | None = None, func: object | None = None
-) -> object:
+) -> Callable[..., Callable[..., Any]]:
     """
     Measures the needed execution time of a specific function.
 
@@ -36,7 +36,7 @@ def measure_time(
 
         from sphinx_needs.utils import measure_time
 
-        @measure_time(True)
+        @measure_time('my_category')
         def my_cool_function(a, b,c ):
             # does something
 
@@ -44,10 +44,17 @@ def measure_time(
 
         from sphinx_needs.utils import measure_time
 
-        measure_time(True, my_fcool_function(a,b,c))
+        # Old call: my_cool_function(a,b,c)
+        new_func = measure_time('my_category', func=my_cool_function)
+        new_func(a,b,c)
+
+    :param category: Name of a category, which helps to cluster the measured functions.
+    :param source: Should be "internal" or "user". Used to easily structure function written by user.
+    :param name: Name to use for the measured. If not given, the function name is used.
+    :param func: Can contain a func, which shall get decorated. Not used if ``measure_time`` is used as decorator.
     """
 
-    def inner(func: Any) -> Any:
+    def inner(func: Any) -> Callable[..., Any]:
         @wraps(func)
         def wrapper(*args: list[object], **kwargs: dict[object, object]) -> Any:
             """
@@ -71,8 +78,10 @@ def measure_time(
             else:
                 mt_name = name
 
-            if mt_name not in TIME_MEASUREMENTS:
-                TIME_MEASUREMENTS[mt_name] = {
+            mt_id = f"{category}_{func.__name__}"
+
+            if mt_id not in TIME_MEASUREMENTS:
+                TIME_MEASUREMENTS[mt_id] = {
                     "name": mt_name,
                     "category": category,
                     "source": source,
@@ -88,7 +97,7 @@ def measure_time(
                     "max_params": {"args": [], "kwargs": {}},
                 }
 
-            runtime_dict = TIME_MEASUREMENTS[mt_name]
+            runtime_dict = TIME_MEASUREMENTS[mt_id]
 
             runtime_dict["amount"] += 1
             runtime_dict["overall"] += runtime
@@ -116,8 +125,8 @@ def measure_time(
 
 
 def print_timing_results() -> None:
-    for key, value in TIME_MEASUREMENTS.items():
-        print(key)
+    for value in TIME_MEASUREMENTS.values():
+        print(value["name"])
         print(f' amount:  {value["amount"]}')
         print(f' overall: {value["overall"]:2f}')
         print(f' avg:     {value["avg"]:2f}')

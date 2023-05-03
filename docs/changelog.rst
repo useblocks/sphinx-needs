@@ -12,6 +12,10 @@ License
 -----
 Released: under development
 
+* Improvement: Configuration option :ref:`needs_debug_measurement` added, which creates a runtime report
+  for debugging purposes.
+  (`#917 <https://github.com/useblocks/sphinx-needs/pull/917>`_)
+
 * Bugfix: Replace hardcoded `index` with config value `root_doc`.
   (`#877 <https://github.com/useblocks/sphinx-needs/pull/877>`_)
 

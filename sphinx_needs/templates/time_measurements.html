@@ -15,6 +15,8 @@
         table.details td {padding: 5px 10px; background-color: #ddd;}
         table.details td.head {font-weight: bold; background-color: #ccc;}
 
+        pre {white-space: pre-wrap;}
+
 
     </style>
 
@@ -23,11 +25,15 @@
 <body style="font-family: 'Arial'">
 <h1>Sphinx-Needs Timing Measurement: {{build_data['project']}}</h1>
 <b>Duration: </b> {{"%.2f"|format(build_data['duration'])}}s
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<b>Elements: </b> {{data|length}}
+
 <h2>Overview</h2>
 
 <table class="overview">
     <thead>
         <tr>
+            <th>#</th>
             <th>Function</th>
             <th>Category</th>
             <th>Source</th>
@@ -40,9 +46,10 @@
             <th>Ratio build time[%]</th>
         </tr>
     </thead>
-{% for key, value in data.items() %}
+{% for key, value in data.items()|sort(attribute='0') %}
     <tr>
-        <td style="font-weight: bold"><a href="#{{key}}">{{key}}</a></td>
+        <td>{{ loop.index }}</td>
+        <td style="font-weight: bold"><a href="#{{key}}">{{value['name']}}</a></td>
         <td>{{ value['category'] }}</td>
         <td>{{ value['source'] }}</td>
         <td>{{ "%.7f"|format(value['overall']) }}</td>
@@ -60,9 +67,9 @@
 <h2>Details</h2>
 <div class="container">
 
-    {% for key, value in data.items() %}
+    {% for key, value in data.items()|sort(attribute='1.name') %}
     <div class="element">
-        <h3 style="text-align: center" id="{{key}}">{{key}} <br> <small>({{value['category']}}, {{value['source']}})</small></h3>
+        <h3 style="text-align: center" id="{{key}}">{{value['name']}} <br> <small>({{value['category']}}, {{value['source']}})</small></h3>
         <div>
             <table class="details">
                 {% for result in [('Amount', 'amount'), ('Overall [s]', 'overall'), ('Average [s]', 'avg'), ('Min [s]', 'min'),
@@ -78,6 +85,15 @@
                 </tr>
             </table>
         </div>
+
+        <details>
+            <summary>Max run analysis</summary>
+            <p><b>Max:</b> {{value['max']}}</p>
+            <h3>args</h3>
+            <pre>{{value['max_params']['args']}}</pre>
+            <h3>kwargs</h3>
+            {{value['max_params']['kwargs']}}
+        </details>
 
         <details>
             <summary>Show Meta Data</summary>

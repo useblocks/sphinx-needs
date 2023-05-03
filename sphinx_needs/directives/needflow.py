@@ -49,6 +49,7 @@ class NeedflowDirective(FilterBase):
     # Update the options_spec with values defined in the FilterBase class
     option_spec.update(FilterBase.base_option_spec)
 
+    @measure_time("needflow")
     def run(self) -> Sequence[nodes.Node]:
         env = self.state.document.settings.env
         if not hasattr(env, "need_all_needflows"):
