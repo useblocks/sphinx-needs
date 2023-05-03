@@ -4,7 +4,7 @@ import os.path
 from functools import wraps
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 from sphinx.application import Sphinx
@@ -16,7 +16,7 @@ START_TIME = 0
 
 
 def measure_time(
-    category: str | None = None, source: str = "internal", name: str | None = None, func: object | None = None
+    category: "str | None" = None, source: str = "internal", name: "str | None" = None, func: "object | None" = None
 ) -> Callable[..., Callable[..., Any]]:
     """
     Measures the needed execution time of a specific function.
@@ -56,7 +56,7 @@ def measure_time(
 
     def inner(func: Any) -> Callable[..., Any]:
         @wraps(func)
-        def wrapper(*args: list[object], **kwargs: dict[object, object]) -> Any:
+        def wrapper(*args: List[object], **kwargs: Dict[object, object]) -> Any:
             """
             Wrapper function around a given/decorated function, which cares about measurement and storing the result
 
@@ -134,7 +134,7 @@ def print_timing_results() -> None:
         print(f' min:     {value["min"]:2f} \n')
 
 
-def store_timing_results_json(outdir: str, build_data: dict[str, Any]) -> None:
+def store_timing_results_json(outdir: str, build_data: Dict[str, Any]) -> None:
     json_result_path = os.path.join(outdir, "debug_measurement.json")
 
     data = {"build": build_data, "measurements": TIME_MEASUREMENTS}
@@ -144,7 +144,7 @@ def store_timing_results_json(outdir: str, build_data: dict[str, Any]) -> None:
     print(f"Timing measurement results (JSON) stored under {json_result_path}")
 
 
-def store_timing_results_html(outdir: str, build_data: dict[str, Any]) -> None:
+def store_timing_results_html(outdir: str, build_data: Dict[str, Any]) -> None:
     jinja_env = Environment(loader=PackageLoader("sphinx_needs"), autoescape=select_autoescape())
     template = jinja_env.get_template("time_measurements.html")
     out_file = Path(outdir) / "debug_measurement.html"
