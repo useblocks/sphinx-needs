@@ -47,8 +47,8 @@ class OpenNeedsService(BaseService):
         super().__init__(**kwargs)
 
     def _oauthorization(self) -> None:
-        username = self.config.get("user", None)
-        password = self.config.get("password", None)
+        username = self.config.get("user")
+        password = self.config.get("password")
         if len(self.config) != 0:
             auth = {"username": username, "password": password}
             login_postfix = "/auth/jwt/login"

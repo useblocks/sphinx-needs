@@ -70,7 +70,7 @@ class DiagramBase(Directive):
                         "Scruffy link_type definition found in needsequence. " "Defined link_type contains spaces only."
                     )
 
-        config_names = self.options.get("config", None)
+        config_names = self.options.get("config")
         configs = []
         if config_names:
             for config_name in config_names.split(","):
@@ -99,7 +99,7 @@ class DiagramBase(Directive):
             "config_names": config_names,
             "scale": scale,
             "highlight": highlight,
-            "align": self.options.get("align", None),
+            "align": self.options.get("align"),
             "debug": "debug" in self.options,
             "caption": caption,
         }

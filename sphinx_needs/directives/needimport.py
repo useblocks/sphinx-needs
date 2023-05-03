@@ -45,8 +45,8 @@ class NeedimportDirective(Directive):
 
     def run(self) -> Sequence[nodes.Node]:
         # needs_list = {}
-        version = self.options.get("version", None)
-        filter_string = self.options.get("filter", None)
+        version = self.options.get("version")
+        filter_string = self.options.get("filter")
         id_prefix = self.options.get("id_prefix", "")
 
         tags = self.options.get("tags", [])
@@ -127,7 +127,8 @@ class NeedimportDirective(Directive):
             if filter_string is None:
                 needs_list_filtered[key] = need
             else:
-                filter_context = {key: value for key, value in need.items()}
+                # filter_context = {key: value for key, value in need.items()}
+                filter_context = dict(need)
 
                 # Support both ways of addressing the description, as "description" is used in json file, but
                 # "content" is the sphinx internal name for this kind of information

@@ -57,7 +57,7 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, _docname: str) -> No
             with open(json_path) as json_file:
                 needs_json = json.load(json_file)
 
-        version = source.get("version", needs_json.get("current_version", None))
+        version = source.get("version", needs_json.get("current_version"))
         if not version:
             raise NeedsExternalException(
                 'No version defined in "needs_external_needs" or by "current_version" from loaded json file'
@@ -88,7 +88,7 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, _docname: str) -> No
 
             need_params["need_type"] = need["type"]
             need_params["id"] = f'{prefix}{need["id"]}'
-            need_params["external_css"] = source.get("css_class", None)
+            need_params["external_css"] = source.get("css_class")
 
             if target_url:
                 # render jinja content
@@ -103,7 +103,7 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, _docname: str) -> No
             need_params["content"] = need["description"]
             need_params["links"] = need.get("links", [])
             need_params["tags"] = ",".join(need.get("tags", []))
-            need_params["status"] = need.get("status", None)
+            need_params["status"] = need.get("status")
             need_params["constraints"] = ",".join(need.get("constraints", []))
 
             del need_params["description"]

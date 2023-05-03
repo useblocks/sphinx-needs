@@ -51,7 +51,7 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
 
         id, targetid, targetnode = self.create_target("needsequence")
 
-        start = self.options.get("start", None)
+        start = self.options.get("start")
         if start is None or len(start.strip()) == 0:
             raise NeedSequenceException(
                 "No valid start option given for needsequence. " "See file {}:{}".format(env.docname, self.lineno)
