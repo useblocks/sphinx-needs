@@ -337,7 +337,7 @@ def previous_sibling(node):
 
 
 @profile("NEED_PROCESS")
-@measure_time('need')
+@measure_time("need")
 def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     """
     Event handler to add title meta data (status, tags, links, ...) information to the Need node. Also processes

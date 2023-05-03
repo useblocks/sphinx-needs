@@ -38,8 +38,8 @@ class GithubService(BaseService):
         self.download_avatars = self.config.get("download_avatars", True)
         self.download_folder = self.config.get("download_folder", "github_images")
 
-        self.username = self.config.get("username", None)
-        self.token = self.config.get("token", None)
+        self.username = self.config.get("username")
+        self.token = self.config.get("token")
 
         if "github" not in self.app.config.needs_layouts.keys():
             self.app.config.needs_layouts["github"] = GITHUB_LAYOUT

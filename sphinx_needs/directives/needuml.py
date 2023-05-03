@@ -57,7 +57,7 @@ class NeedumlDirective(Directive):
 
         content = "\n".join(self.content)
 
-        config_names = self.options.get("config", None)
+        config_names = self.options.get("config")
         configs = []
         if config_names:
             for config_name in config_names.split(","):
@@ -66,18 +66,18 @@ class NeedumlDirective(Directive):
                     configs.append(env.config.needs_flow_configs[config_name])
 
         extra_dict = {}
-        extras = self.options.get("extra", None)
+        extras = self.options.get("extra")
         if extras:
             extras = extras.split(",")
             for extra in extras:
                 key, value = extra.split(":")
                 extra_dict[key] = value
 
-        key_name = self.options.get("key", None)
+        key_name = self.options.get("key")
         if key_name == "diagram":
             raise NeedumlException(f"Needuml option key name can't be: {key_name}")
 
-        save_path = self.options.get("save", None)
+        save_path = self.options.get("save")
         plantuml_code_out_path = None
         if save_path:
             if os.path.isabs(save_path):

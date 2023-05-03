@@ -302,7 +302,7 @@ def check_and_get_external_filter_func(current_needlist):
     filter_func = None
     filter_args = []
 
-    filter_func_ref = current_needlist.get("filter_func", None)
+    filter_func_ref = current_needlist.get("filter_func")
 
     if filter_func_ref:
         try:
@@ -507,7 +507,8 @@ def match_variants(option_value: Union[str, List], keywords: Dict, needs_variant
         multiple_variants: List = list(option_value)
         # In case an option value is a list (:tags: open; close), and does not contain any variant definition,
         # then return the unmodified value
-        options = all([bool(not variant_rule_matching.search(i)) for i in multiple_variants])
+        # options = all([bool(not variant_rule_matching.search(i)) for i in multiple_variants])
+        options = all(bool(not variant_rule_matching.search(i)) for i in multiple_variants)
         if options:
             return option_value
         new_option_value = variant_handling(multiple_variants, keywords, variant_rule_matching)
