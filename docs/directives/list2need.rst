@@ -14,8 +14,7 @@ and limited meta-data.
 The content area of the ``list2need`` directive must contain the list only.
 The list-structure syntax is Sphinx-Needs specific, but borrowed from markdown.
 
-No meta-data can be set, except a specific need-ID.
-But you can use :ref:`needextend` to customize the created needs in a later step.
+Meta-data can be set via inline text. See :ref:`list2need_meta_data` for details.
 
 Need-IDs get generated automatically (hash value), if not given.
 IDs can be set by the prefix ``(ID)`` in the line. Example: ``(REQ-1)My first requirement``.
