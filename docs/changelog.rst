@@ -18,6 +18,10 @@ Released: under development
 
 * Bugfix: Replace hardcoded `index` with config value `root_doc`.
   (`#877 <https://github.com/useblocks/sphinx-needs/pull/877>`_)
+* Bugfix: Fix unbounded memory usage in pickle environment.
+  (`#912 <https://github.com/useblocks/sphinx-needs/pull/912>`_)
+* Bugfix: Supports "None" body in Github services.
+  (`#903 <https://github.com/useblocks/sphinx-needs/issues/903>`_)
 
 1.2.2
 -----
