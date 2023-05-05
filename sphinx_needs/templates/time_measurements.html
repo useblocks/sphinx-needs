@@ -24,9 +24,12 @@
 
 <body style="font-family: 'Arial'">
 <h1>Sphinx-Needs Timing Measurement: {{build_data['project']}}</h1>
-<b>Duration: </b> {{"%.2f"|format(build_data['duration'])}}s
+<b>Build Duration: </b> {{"%.2f"|format(build_data['duration'])}}s
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<b>Build timestamp: </b> {{ build_data['timestamp'] }}
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <b>Elements: </b> {{data|length}}
+
 
 <h2>Overview</h2>
 
