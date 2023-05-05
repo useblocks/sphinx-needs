@@ -1,6 +1,12 @@
+"""
+Contains debug features to track down
+runtime and other problems with Sphinx-Needs
+"""
+
 import inspect
 import json
 import os.path
+from datetime import datetime
 from functools import wraps
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
@@ -107,9 +113,9 @@ def measure_time(
 
             if runtime_dict["max"] is None or runtime > runtime_dict["max"]:
                 runtime_dict["max"] = runtime
-                runtime_dict["max_params"] = {
-                    "args": str(args),
-                    "kwargs": str(kwargs),
+                runtime_dict["max_params"] = {  # Store parameters as a shorten string
+                    "args": str([str(arg)[:80] for arg in args]),
+                    "kwargs": str({key: str(value)[:80] for key, value in kwargs.items()}),
                 }
             runtime_dict["min_max_spread"] = runtime_dict["max"] / runtime_dict["min"] * 100
             runtime_dict["avg"] = runtime_dict["overall"] / runtime_dict["amount"]
@@ -160,6 +166,7 @@ def process_timing(app: Sphinx, _exception: Optional[Exception]) -> None:
             "start": START_TIME,
             "end": timer(),
             "duration": timer() - START_TIME,
+            "timestamp": datetime.now().isoformat(),
         }
 
         print_timing_results()
