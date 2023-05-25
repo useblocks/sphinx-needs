@@ -141,7 +141,7 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                         node_need_ref["reftarget"],
                     )
                 else:
-                    new_node_ref = nodes.reference(target_need["id"], target_need["id"])
+                    new_node_ref = nodes.reference(link_text, link_text)
                     new_node_ref["refuri"] = check_and_calc_base_url_rel_path(target_need["external_url"], fromdocname)
                     new_node_ref["classes"].append(target_need["external_css"])
 
