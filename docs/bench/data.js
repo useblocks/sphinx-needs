@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1683280403458,
+  "lastUpdate": 1685518594122,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -3276,6 +3276,42 @@ window.BENCHMARK_DATA = {
             "value": 72.04403763900001,
             "unit": "s",
             "extra": "Commit: c333411943e40db3d27a6093aabe34ba7192ce4d\nBranch: master\nTime: 2023-05-05T11:46:29+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "haiyang.zhang@tutanota.com",
+            "name": "haiyangToAI",
+            "username": "haiyangToAI"
+          },
+          "committer": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "distinct": true,
+          "id": "89b5968c500766d6a599f3317a4a4951103926fa",
+          "message": "Removed esbonio for IDE support",
+          "timestamp": "2023-05-31T09:29:44+02:00",
+          "tree_id": "be5edde5d1950ab30562ea850a8d661e98b42c79",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/89b5968c500766d6a599f3317a4a4951103926fa"
+        },
+        "date": 1685518590038,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2638313460000745,
+            "unit": "s",
+            "extra": "Commit: 89b5968c500766d6a599f3317a4a4951103926fa\nBranch: master\nTime: 2023-05-31T09:29:44+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 72.40883125000005,
+            "unit": "s",
+            "extra": "Commit: 89b5968c500766d6a599f3317a4a4951103926fa\nBranch: master\nTime: 2023-05-31T09:29:44+02:00"
           }
         ]
       }
