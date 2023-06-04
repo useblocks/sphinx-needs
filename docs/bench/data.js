@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1685518594122,
+  "lastUpdate": 1685895133454,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -3312,6 +3312,42 @@ window.BENCHMARK_DATA = {
             "value": 72.40883125000005,
             "unit": "s",
             "extra": "Commit: 89b5968c500766d6a599f3317a4a4951103926fa\nBranch: master\nTime: 2023-05-31T09:29:44+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "christian.polzer@googlemail.com",
+            "name": "Christian Polzer",
+            "username": "cpolzer"
+          },
+          "committer": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "distinct": true,
+          "id": "8d01312518a7bcf9d797d5b474841a986dd1109a",
+          "message": "enable docker arm builds",
+          "timestamp": "2023-06-04T18:05:18+02:00",
+          "tree_id": "5a85a8cd54de28e940480383ca94d7c56614e20a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8d01312518a7bcf9d797d5b474841a986dd1109a"
+        },
+        "date": 1685895129497,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.26464281799997025,
+            "unit": "s",
+            "extra": "Commit: 8d01312518a7bcf9d797d5b474841a986dd1109a\nBranch: master\nTime: 2023-06-04T18:05:18+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 73.41329741099997,
+            "unit": "s",
+            "extra": "Commit: 8d01312518a7bcf9d797d5b474841a986dd1109a\nBranch: master\nTime: 2023-06-04T18:05:18+02:00"
           }
         ]
       }
