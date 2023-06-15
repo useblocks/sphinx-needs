@@ -375,6 +375,9 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect("env-updated", install_styles_static_files)
 
+    # If
+    app.connect("build-finished", do_clean_build)
+
     # Be sure Sphinx-Needs config gets erased before any events or external API calls get executed.
     # So never but this inside an event.
     NEEDS_CONFIG.create("extra_options", dict, overwrite=True)
@@ -759,6 +762,27 @@ def merge_data(_app: Sphinx, env: BuildEnvironment, _docnames: List[str], other:
     merge("need_all_needsequences")
     merge("needs_all_needumls")
     merge("needs_all_docs", is_complex_dict=True)  # list type
+
+
+def do_clean_build(app: Sphinx, exception: Exception) -> None:
+    """
+    Prompt user perform a clean build of the Sphinx documentation project.
+
+    This function is called when a Sphinx build encounters an exception.
+    It checks if the exception is true or if Sphinx used an incremental build.
+    If either condition is met, it suggests performing a clean build to potentially resolve the problem.
+
+    :param app: The Sphinx application object.
+    :param exception: The exception raised during the build process.
+
+    :returns: None
+    """
+    if exception:
+        print(
+            "\nSPHINX BUILD ERROR: Performing a clean build may resolve the problem. "
+            "Try deleting the existing Sphinx build directory and "
+            "re-run your Sphinx build command."
+        )
 
 
 class NeedsConfigException(SphinxError):
