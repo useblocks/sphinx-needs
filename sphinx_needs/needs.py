@@ -375,7 +375,6 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect("env-updated", install_styles_static_files)
 
-    # If
     app.connect("build-finished", do_clean_build)
 
     # Be sure Sphinx-Needs config gets erased before any events or external API calls get executed.
