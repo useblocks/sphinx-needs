@@ -27,6 +27,8 @@ def process_need_outgoing(
         needs_all_needs = getattr(env, "needs_all_needs", {})
         ref_need = needs_all_needs[node_need_ref["reftarget"]]
 
+        report_dead_links = getattr(env.config, "needs_report_dead_links", True)
+
         # Let's check if NeedIncoming shall follow a specific link type
         if "link_type" in node_need_ref.attributes:
             links = ref_need[node_need_ref.attributes["link_type"]]
@@ -120,20 +122,21 @@ def process_need_outgoing(
                     dead_link_para.attributes["classes"].append("forbidden")
                     log_level = "WARNING"
 
-                if node_need_ref and node_need_ref.line:
-                    log.log(
-                        log_level,
-                        f"Needs: linked need {link} not found "
-                        f"(Line {node_need_ref.line} of file {node_need_ref.source})",
-                    )
-                else:
-                    log.log(
-                        log_level,
-                        "Needs: outgoing linked need {} not found (document: {}, "
-                        "source need {} on line {} )".format(
-                            link, ref_need["docname"], ref_need["id"], ref_need["lineno"]
-                        ),
-                    )
+                if report_dead_links:
+                    if node_need_ref and node_need_ref.line:
+                        log.log(
+                            log_level,
+                            f"Needs: linked need {link} not found "
+                            f"(Line {node_need_ref.line} of file {node_need_ref.source})",
+                        )
+                    else:
+                        log.log(
+                            log_level,
+                            "Needs: outgoing linked need {} not found (document: {}, "
+                            "source need {} on line {} )".format(
+                                link, ref_need["docname"], ref_need["id"], ref_need["lineno"]
+                            ),
+                        )
 
             # If we have several links, we add an empty text between them
             if (index + 1) < len(link_list):
