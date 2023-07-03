@@ -2,7 +2,7 @@ html_theme_options = {
     "icon": {
         "repo": "fontawesome/brands/github",
     },
-    "font": {"code": "JetBrains Mono", "text": "Urbanist"},
+    "font": {"code": "JetBrains Mono", "text": "Recursive"},
     "globaltoc_collapse": True,
     "features": [
         "navigation.top",

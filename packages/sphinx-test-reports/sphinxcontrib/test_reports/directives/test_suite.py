@@ -46,7 +46,7 @@ class TestSuiteDirective(TestCommonDirective):
             # access n-th nested suite here
             self.results = self.results[0]["testsuite_nested"]
 
-        suite_name = self.options.get("suite", None)
+        suite_name = self.options.get("suite")
 
         if suite_name is None:
             raise TestReportInvalidOption("Suite not given!")

@@ -28,19 +28,19 @@ def test_app(make_app, request):
     shutil.copytree(util_files, sphinx_test_tempdir / "utils")
 
     # copy test srcdir to test temporary directory sphinx_test_tempdir
-    srcdir = builder_params.get("srcdir", None)
+    srcdir = builder_params.get("srcdir")
     src_dir = copy_srcdir_to_tmpdir(srcdir, sphinx_test_tempdir)
 
     # return sphinx.testing fixture make_app and new srcdir which in sphinx_test_tempdir
     app = make_app(
         buildername=builder_params.get("buildername", "html"),
         srcdir=src_dir,
-        freshenv=builder_params.get("freshenv", None),
-        confoverrides=builder_params.get("confoverrides", None),
-        status=builder_params.get("status", None),
-        warning=builder_params.get("warning", None),
-        tags=builder_params.get("tags", None),
-        docutilsconf=builder_params.get("docutilsconf", None),
+        freshenv=builder_params.get("freshenv"),
+        confoverrides=builder_params.get("confoverrides"),
+        status=builder_params.get("status"),
+        warning=builder_params.get("warning"),
+        tags=builder_params.get("tags"),
+        docutilsconf=builder_params.get("docutilsconf"),
         parallel=builder_params.get("parallel", 0),
     )
 

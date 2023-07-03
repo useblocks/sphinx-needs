@@ -75,6 +75,7 @@ Content
    install
    directives/index
    configuration
+   parsers
    filter
    functions
    examples/index

@@ -39,8 +39,8 @@ class EnvReportDirective(Directive):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.data_option = self.options.get("data", None)
-        self.environments = self.options.get("env", None)
+        self.data_option = self.options.get("data")
+        self.environments = self.options.get("env")
 
         if self.environments is not None:
             self.req_env_list_cpy = self.environments.split(",")

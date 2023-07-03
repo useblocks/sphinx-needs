@@ -111,7 +111,6 @@ html_title = "Sphinx-Test-Reports"
 other_options = {
     "repo_url": "https://github.com/useblocks/sphinx-test-reports",
     "repo_name": "sphinx-test-reports",
-    "repo_type": "github",
 }
 html_theme_options.update(other_options)
 html_theme_options["features"].extend(["navigation.tabs", "navigation.tabs.sticky"])

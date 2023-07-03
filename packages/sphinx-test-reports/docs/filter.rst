@@ -1,3 +1,5 @@
+:hide-navigation:
+
 .. _filter:
 
 Filtering Test Data

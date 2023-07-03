@@ -44,13 +44,13 @@ class TestCaseDirective(TestCommonDirective):
             # access n-th nested suite here
             self.results = self.results[0]["testsuites"][suite_count]
 
-        suite_name = self.options.get("suite", None)
+        suite_name = self.options.get("suite")
 
         if suite_name is None:
             raise TestReportInvalidOption("Suite not given!")
 
-        case_full_name = self.options.get("case", None)
-        class_name = self.options.get("classname", None)
+        case_full_name = self.options.get("case")
+        class_name = self.options.get("classname")
         if case_full_name is None and class_name is None:
             raise TestReportInvalidOption("Case or classname not given!")
 

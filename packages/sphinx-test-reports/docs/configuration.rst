@@ -109,9 +109,87 @@ Default: **5**
 .. _tr_import_encoding:
 
 tr_import_encoding
-__________________
+------------------
 .. versionadded:: 1.0.3
 
 Defines the encoding for imported files, e.g. in custom templates.
 
 Default: **utf8**
+
+.. _tr_json_mapping:
+
+tr_json_mapping
+---------------
+.. versionadded:: 1.0.3
+
+Takes a mapping configuration, which defines how to map the JSON structure to the internal structure used by
+``Sphinx-Test-Reports``.
+
+``tr_json_mapping`` is a dictionary, where the first key is a name for the configuration.
+The name is currently just a placeholder and the first config is used for all JSON imports.
+
+Two mappings must be configured as dictionary, one for ``testsuite`` and one for the nested ``testcase``.
+
+The key of this dictionary elements is the **internal** name and fix.
+
+The value is a tuple, containing a **selector list** and a **default value**, if the selector does not find any data.
+
+The **selector** is a list, where each entry is representing one level of the data structure.
+If the entry is a string, it is used as a key for a dict. If it is a integer number, it is taken as position
+of a list.
+
+**JSON example**
+
+.. code-block:: python
+
+   {
+       "level_1": {
+           "level_2": [
+               {"value": "Hello!"}
+               {"value": "Bye Bye!"}
+           ]
+       }
+   }
+
+Given the above JSON example, the following "selector" will address the value ``Bye Bye!``::
+
+   ["level_1", "level_2", 1, "value"]
+
+
+**Example config**
+
+This example contains **all** internal elements and a mapping as example.
+For ``testsuite`` the value ``testcases`` defines the location of nested testcases.
+
+An example of a JSON file, which supports the below configuration, can be seen in :ref:`json_example`.
+
+.. code-block:: python
+
+   tr_json_mapping = {
+      "json_config_1": {
+         "testsuite": {
+            "name":        (["name"], "unknown"),
+            "tests":       (["tests"], "unknown"),
+            "errors":      (["errors"], "unknown"),
+            "failures":    (["failures"], "unknown"),
+            "skips":       (["skips"], "unknown"),
+            "passed":      (["passed"], "unknown"),
+            "time":        (["time"], "unknown"),
+            "testcases":   (["testcase"], "unknown"),
+         },
+         "testcase": {
+            "name":        (["name"], "unknown"),
+            "classname":   (["classname"], "unknown"),
+            "file":        (["file"], "unknown"),
+            "line":        (["line"], "unknown"),
+            "time":        (["time"], "unknown"),
+            "result":      (["result"], "unknown"),
+            "type":        (["type"], "unknown"),
+            "text":        (["text"], "unknown"),
+            "message":     (["message"], "unknown"),
+            "system-out":  (["system-out"], "unknown"),
+         }
+      }
+   }
+
+

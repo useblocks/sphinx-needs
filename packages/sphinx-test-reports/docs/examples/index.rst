@@ -1,7 +1,32 @@
 Examples
 ========
-.. contents:: Contents
-   :local:
+
+.. _json_example:
+
+JSON data example
+-----------------
+Data:
+
+.. literalinclude:: ../../tests/doc_test/utils/json_data.json
+
+.. code-block:: rst
+
+   .. test-file:: My JSON Test file
+      :file: ../tests/doc_test/utils/json_data.json
+      :id: JSON_001
+      :auto_suites:
+      :auto_cases:
+
+
+.. test-file:: My JSON Test file
+   :file: ../tests/doc_test/utils/json_data.json
+   :id: JSON_001
+   :auto_suites:
+   :auto_cases:
+
+
+
+
 
 Importing
 ---------
@@ -132,5 +157,5 @@ Test framework related examples
 .. toctree::
    :maxdepth: 1
 
-   pytest.rst
-   casperjs.rst
+   pytest
+   casperjs

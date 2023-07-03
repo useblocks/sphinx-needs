@@ -4,14 +4,21 @@ import os
 import sphinx
 # from docutils import nodes
 from pkg_resources import parse_version
-from sphinx_needs.api import add_dynamic_function, add_extra_option, add_need_type
+from sphinx_needs.api import (add_dynamic_function, add_extra_option,
+                              add_need_type)
 
-from sphinxcontrib.test_reports.directives.test_case import TestCase, TestCaseDirective
-from sphinxcontrib.test_reports.directives.test_env import EnvReport, EnvReportDirective
-from sphinxcontrib.test_reports.directives.test_file import TestFile, TestFileDirective
-from sphinxcontrib.test_reports.directives.test_report import TestReport, TestReportDirective
-from sphinxcontrib.test_reports.directives.test_results import TestResults, TestResultsDirective
-from sphinxcontrib.test_reports.directives.test_suite import TestSuite, TestSuiteDirective
+from sphinxcontrib.test_reports.directives.test_case import (TestCase,
+                                                             TestCaseDirective)
+from sphinxcontrib.test_reports.directives.test_env import (EnvReport,
+                                                            EnvReportDirective)
+from sphinxcontrib.test_reports.directives.test_file import (TestFile,
+                                                             TestFileDirective)
+from sphinxcontrib.test_reports.directives.test_report import (
+    TestReport, TestReportDirective)
+from sphinxcontrib.test_reports.directives.test_results import (
+    TestResults, TestResultsDirective)
+from sphinxcontrib.test_reports.directives.test_suite import (
+    TestSuite, TestSuiteDirective)
 from sphinxcontrib.test_reports.environment import install_styles_static_files
 from sphinxcontrib.test_reports.functions import tr_link
 
@@ -63,6 +70,35 @@ def setup(app):
     app.add_config_value("tr_suite_id_length", 3, "html")
     app.add_config_value("tr_case_id_length", 5, "html")
     app.add_config_value("tr_import_encoding", "utf8", "html")
+
+    json_mapping = {
+        "json_config": {
+            "testsuite": {
+                "name": (["name"], "unknown"),
+                "tests": (["tests"], "unknown"),
+                "errors": (["errors"], "unknown"),
+                "failures": (["failures"], "unknown"),
+                "skips": (["skips"], "unknown"),
+                "passed": (["passed"], "unknown"),
+                "time": (["time"], "unknown"),
+                "testcases": (["testcase"], "unknown"),
+            },
+            "testcase": {
+                "name": (["name"], "unknown"),
+                "classname": (["classname"], "unknown"),
+                "file": (["file"], "unknown"),
+                "line": (["line"], "unknown"),
+                "time": (["time"], "unknown"),
+                "result": (["result"], "unknown"),
+                "type": (["type"], "unknown"),
+                "text": (["text"], "unknown"),
+                "message": (["message"], "unknown"),
+                "system-out": (["system-out"], "unknown"),
+            },
+        }
+    }
+
+    app.add_config_value("tr_json_mapping", json_mapping, "html", types=[dict])
 
     # nodes
     app.add_node(TestResults)

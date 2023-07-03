@@ -8,7 +8,9 @@ from docutils.parsers.rst import Directive
 from sphinx.util import logging
 from sphinx_needs.api import make_hashed_id
 
-from sphinxcontrib.test_reports.exceptions import SphinxError, TestReportFileNotSetException
+from sphinxcontrib.test_reports.exceptions import (
+    SphinxError, TestReportFileNotSetException)
+from sphinxcontrib.test_reports.jsonparser import JsonParser
 from sphinxcontrib.test_reports.junitparser import JUnitParser
 
 # fmt: on
@@ -65,7 +67,11 @@ class TestCommonDirective(Directive):
             return None
 
         if self.test_file not in self.app.testreport_data.keys():
-            parser = JUnitParser(self.test_file)
+            if os.path.splitext(self.test_file)[1] == ".json":
+                mapping = list(self.app.config.tr_json_mapping.values())[0]
+                parser = JsonParser(self.test_file, json_mapping=mapping)
+            else:
+                parser = JUnitParser(self.test_file)
             self.app.testreport_data[self.test_file] = parser.parse()
 
         self.results = self.app.testreport_data[self.test_file]
@@ -89,17 +95,17 @@ class TestCommonDirective(Directive):
                 ),
             )
         else:
-            self.test_id = self.options.get("id", None)
+            self.test_id = self.options.get("id")
 
         if self.test_id is None:
             raise SphinxError("ID must be set for test-report.")
 
-        self.test_file = self.options.get("file", None)
+        self.test_file = self.options.get("file")
         self.test_file_given = self.test_file[:]
 
         self.test_links = self.options.get("links", "")
         self.test_tags = self.options.get("tags", "")
-        self.test_status = self.options.get("status", None)
+        self.test_status = self.options.get("status")
 
         self.collapse = str(self.options.get("collapse", ""))
 

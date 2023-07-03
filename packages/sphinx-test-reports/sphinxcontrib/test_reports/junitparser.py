@@ -1,3 +1,7 @@
+"""
+JUnit XML parser
+"""
+
 import os
 
 from lxml import etree, objectify
