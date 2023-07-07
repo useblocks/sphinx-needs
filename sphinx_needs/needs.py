@@ -12,7 +12,9 @@ import sphinx_needs.debug as debug  # Need to set global var in it for timeing m
 from sphinx_needs.api.configuration import add_extra_option
 from sphinx_needs.builder import (
     NeedsBuilder,
+    NeedsIdBuilder,
     NeedumlsBuilder,
+    build_needs_id_json,
     build_needs_json,
     build_needumls_pumls,
 )
@@ -141,6 +143,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
 
     app.add_builder(NeedsBuilder)
     app.add_builder(NeedumlsBuilder)
+    app.add_builder(NeedsIdBuilder)
     app.add_config_value(
         "needs_types",
         [
@@ -160,8 +163,6 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_config_value("needs_id_prefix_specs", "", "html", types=[str])
     app.add_config_value("needs_id_length", 5, "html", types=[int])
     app.add_config_value("needs_id_from_title", False, "html", types=[bool])
-    app.add_config_value("needs_ide_snippets_id", "", "html", types=[str])
-    app.add_config_value("needs_ide_directive_snippets", {}, "html", types=[dict])
     app.add_config_value("needs_specs_show_needlist", False, "html", types=[bool])
     app.add_config_value("needs_id_required", False, "html", types=[bool])
     app.add_config_value(
@@ -279,6 +280,9 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     #
     app.add_config_value("needs_debug_measurement", False, "html", types=[dict])
 
+    # add json file per needs_id
+    app.add_config_value("needs_id_build_json", False, "html", types=[bool])
+    
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(
@@ -374,6 +378,8 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.connect("env-updated", install_lib_static_files)
     app.connect("env-updated", install_permalink_file)
 
+    #
+    app.connect("build-finished", build_needs_id_json)
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect("env-updated", install_styles_static_files)
 
@@ -554,9 +560,9 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
         env.needs_all_docs = {"all": []}
 
     # Register embedded services
-    app.needs_services.register("github-issues", GithubService, gh_type="issue")
-    app.needs_services.register("github-prs", GithubService, gh_type="pr")
-    app.needs_services.register("github-commits", GithubService, gh_type="commit")
+    # app.needs_services.register("github-issues", GithubService, gh_type="issue")
+    # app.needs_services.register("github-prs", GithubService, gh_type="pr")
+    # app.needs_services.register("github-commits", GithubService, gh_type="commit")
     app.needs_services.register("open-needs", OpenNeedsService)
 
     # Register user defined services

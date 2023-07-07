@@ -306,21 +306,21 @@ needs_layouts = {
 needs_service_all_data = True
 
 needs_services = {
-    "github-issues": {
-        "url": "https://api.github.com/",
-        "max_content_lines": 20,
-        "id_prefix": "GH_ISSUE_",
-    },
-    "github-prs": {
-        "url": "https://api.github.com/",
-        "max_content_lines": 20,
-        "id_prefix": "GH_PR_",
-    },
-    "github-commits": {
-        "url": "https://api.github.com/",
-        "max_content_lines": 20,
-        "id_prefix": "GH_COM_",
-    },
+    # "github-issues": {
+    #     "url": "https://api.github.com/",
+    #     "max_content_lines": 20,
+    #     "id_prefix": "GH_ISSUE_",
+    # },
+    # "github-prs": {
+    #     "url": "https://api.github.com/",
+    #     "max_content_lines": 20,
+    #     "id_prefix": "GH_PR_",
+    # },
+    # "github-commits": {
+    #     "url": "https://api.github.com/",
+    #     "max_content_lines": 20,
+    #     "id_prefix": "GH_COM_",
+    # },
     "open-needs": {
         "url": "http://127.0.0.1:9595",
         "user": os.environ.get("ONS_USERNAME", ""),
@@ -379,13 +379,14 @@ needs_render_context = {
 
 # build needs.json to make permalinks work
 needs_build_json = True
-
+needs_id_build_json = True
 # Get and maybe set GitHub credentials for services.
 # This is needed as the rate limit for not authenticated users is too low for the amount of requests we
 # need to perform for this documentation
+# github_username = os.environ.get("GITHUB_USERNAME", "agn8hc")
+# github_token = os.environ.get("GITHUB_TOKEN", "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")
 github_username = os.environ.get("GITHUB_USERNAME", "")
 github_token = os.environ.get("GITHUB_TOKEN", "")
-
 if github_username != "" and github_token != "":
     print(f"---> GITHUB: Using as username: {github_username}. length token: {len(github_token)}")
     for service in ["github-issues", "github-prs", "github-commits"]:
@@ -584,11 +585,14 @@ rst_epilog = """
 # Check, if docs get built on ci.
 # If this is the case, external services like Open-Needs are not available and
 # docs will show images instead of getting real data.
-on_ci = os.environ.get("ON_CI", "False").upper() == "TRUE"
-fast_build = os.environ.get("FAST_BUILD", "False").upper() == "TRUE"
+on_ci = os.environ.get("ON_CI", "True").upper() == "TRUE"
+fast_build = os.environ.get("FAST_BUILD", "True").upper() == "TRUE"
 
 html_context = {"on_ci": on_ci, "fast_build": fast_build}
 
+# neeeds_lut_file ) @somefilename.json@
+# needs ) @&
+needs_id_file = os.environ.get("need_ids_locale", "need_ids")
 
 def rstjinja(app: Sphinx, _docname: str, source: List[str]) -> None:
     """
