@@ -163,11 +163,11 @@ class NeedsIdBuilder(Builder):
     """Json builder for needs, which creates separate json-files per need"""
 
     name = "needs_id"
-    format = "json"
+    format = "needs"
     file_suffix = ".txt"
     links_suffix = None
     LIST_KEY_EXCLUSIONS_NEEDS = ["content_node"]
-
+    
     def write_doc(self, docname: str, doctree: nodes.document) -> None:
         pass
 
@@ -217,7 +217,6 @@ def build_needs_id_json(app: Sphinx, _exception: Exception) -> None:
     # Do not create an additional needs_json for every needs_id, if builder is already "needs_id".
     if isinstance(app.builder, NeedsIdBuilder):
         return
-
     try:
         needs_id_builder = NeedsIdBuilder(app, env)
     except TypeError:
