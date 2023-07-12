@@ -281,7 +281,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_config_value("needs_debug_measurement", False, "html", types=[dict])
 
     # add json file per needs_id
-    app.add_config_value("needs_id_build_json", False, "html", types=[bool])
+    app.add_config_value("needs_per_id", False, "html", types=[bool])
     
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
@@ -560,9 +560,9 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
         env.needs_all_docs = {"all": []}
 
     # Register embedded services
-    # app.needs_services.register("github-issues", GithubService, gh_type="issue")
-    # app.needs_services.register("github-prs", GithubService, gh_type="pr")
-    # app.needs_services.register("github-commits", GithubService, gh_type="commit")
+    app.needs_services.register("github-issues", GithubService, gh_type="issue")
+    app.needs_services.register("github-prs", GithubService, gh_type="pr")
+    app.needs_services.register("github-commits", GithubService, gh_type="commit")
     app.needs_services.register("open-needs", OpenNeedsService)
 
     # Register user defined services

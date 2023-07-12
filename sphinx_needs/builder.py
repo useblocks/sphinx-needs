@@ -181,7 +181,6 @@ class NeedsIdBuilder(Builder):
         filtered_needs = filter_needs(self.app, needs, filter_string)
         needs_id_json_dir = os.path.join(self.outdir, "needs_id")
         if not os.path.exists(needs_id_json_dir):
-            # log.info(f"needs_id_json_dir: {needs_id_json_dir}")
             os.mkdir(needs_id_json_dir)
         for need in filtered_needs:
             needs_id_dict = {}
@@ -214,7 +213,7 @@ class NeedsIdBuilder(Builder):
 def build_needs_id_json(app: Sphinx, _exception: Exception) -> None:
     env = unwrap(app.env)
 
-    if not env.config.needs_id_build_json:
+    if not env.config.needs_per_id:
         return
 
     # Do not create an additional needs_json for every needs_id, if builder is already "needs_id".
