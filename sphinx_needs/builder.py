@@ -237,5 +237,5 @@ def build_needs_per_page_json(app: Sphinx, _exception: Exception) -> None:
     except TypeError:
         needs_per_page_builder = NeedsPerPageBuilder(app)
         needs_per_page_builder.set_environment(env)
-        
+
     needs_per_page_builder.finish()

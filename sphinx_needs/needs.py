@@ -385,7 +385,6 @@ def setup(app: Sphinx) -> Dict[str, Any]:
 
     #
     app.connect("build-finished", build_needs_per_page_json)
-
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect("env-updated", install_styles_static_files)
 
