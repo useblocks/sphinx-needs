@@ -158,14 +158,14 @@ def build_needumls_pumls(app: Sphinx, _exception: Exception) -> None:
 
     needs_builder.finish()
 
-    
+
 class NeedsPerPageBuilder(Builder):
     name = "needs_per_page"
     format = "json"
     file_suffix = ".txt"
     links_suffix = None
     LIST_KEY_EXCLUSIONS_NEEDS = ["content_node"]
-    
+
     def write_doc(self, docname: str, doctree: nodes.document) -> None:
         pass
 
@@ -177,20 +177,20 @@ class NeedsPerPageBuilder(Builder):
         filtered_needs = filter_needs(self.app, needs, filter_string)
         needs_per_page_dir = os.path.join(self.outdir, needs_per_page_build_path)
         needs_per_page_data = {}
-        if not os.path.exists(needs_per_page_dir): 
+        if not os.path.exists(needs_per_page_dir):
             os.mkdir(needs_per_page_dir)
         for need in filtered_needs:
             needs_id_dict = {}
-            id = need['id']
+            id = need["id"]
             needs_id_dict[id] = {key: need[key] for key in need if key not in self.LIST_KEY_EXCLUSIONS_NEEDS}
             docs_name = need.get("docname")
-            
+
             if docs_name in needs_per_page_data.keys():
                 # add key docs_name
                 needs_per_page_data[docs_name].append(needs_id_dict)
             else:
                 needs_per_page_data[docs_name] = [needs_id_dict]
-                
+
         for docs_name_key in needs_per_page_data.keys():
             docs_name = f"{docs_name_key}.json"
             docs_name_file = os.path.join(needs_per_page_dir, docs_name)
@@ -198,15 +198,15 @@ class NeedsPerPageBuilder(Builder):
             if not os.path.exists(docs_name_file_dir):
                 os.mkdir(docs_name_file_dir)
             try:
-                with open(docs_name_file, 'w') as f:
+                with open(docs_name_file, "w") as f:
                     data = {"needs": needs_per_page_data[docs_name_key]}
                     json.dump(data, f, indent=4)
-             
+
             except Exception as e:
-                log.error(f"Error during writing json file: {e}_{id}")  
-                 
+                log.error(f"Needs-per-page: {docs_name_key} - error: {e}")
+
         log.info("needs per page successfully exported")
-        
+
     def get_outdated_docs(self) -> Iterable[str]:
         return []
 
@@ -231,10 +231,10 @@ def build_needs_per_page_json(app: Sphinx, _exception: Exception) -> None:
     # Do not create an additional needs_json for every needs_id, if builder is already "needs_id".
     if isinstance(app.builder, NeedsPerPageBuilder):
         return
-    
+
     try:
         needs_per_page_builder = NeedsPerPageBuilder(app, env)
     except TypeError:
         needs_per_page_builder = NeedsPerPageBuilder(app)
-        needs_per_page_builder.set_environment(env)                            
+        needs_per_page_builder.set_environment(env)
     needs_per_page_builder.finish()

@@ -16,7 +16,7 @@ from sphinx_needs.builder import (
     NeedsPerPageBuilder,
     build_needs_json,
     build_needumls_pumls,
-    build_needs_per_page_json
+    build_needs_per_page_json,
 )
 from sphinx_needs.config import NEEDS_CONFIG
 from sphinx_needs.defaults import (
@@ -287,6 +287,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     # add config for needs id with the sames docs_name
     app.add_config_value("needs_per_page", False, "html", types=[bool])
     app.add_config_value("needs_per_page_build_path", "need_per_page", "html")
+
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(
@@ -384,7 +385,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
 
     #
     app.connect("build-finished", build_needs_per_page_json)
-    
+
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect("env-updated", install_styles_static_files)
 
