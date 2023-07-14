@@ -9,6 +9,7 @@ from sphinx.builders import Builder
 from sphinx_needs.logging import get_logger
 from sphinx_needs.needsfile import NeedsList
 from sphinx_needs.utils import unwrap
+from sphinx_needs.filter_common import filter_needs
 import json
 
 log = get_logger(__name__)
@@ -44,9 +45,6 @@ class NeedsBuilder(Builder):
         # This is needed as needs could have been removed from documentation and if this is the case,
         # removed needs would stay in needs_list, if list gets not cleaned.
         needs_list.wipe_version(version)
-        #
-        from sphinx_needs.filter_common import filter_needs
-
         filter_string = self.app.config.needs_builder_filter
         filtered_needs = filter_needs(self.app, needs, filter_string)
 
@@ -168,22 +166,14 @@ class NeedsPerPageBuilder(Builder):
     links_suffix = None
     LIST_KEY_EXCLUSIONS_NEEDS = ["content_node"]
     
-    # LIST_KEY_DOCS_NAME = ["directives", "layout_styles", "dynamic_functions", "index", "services"]
-    
-    """
-        1. Check Docs_name: is_has_slash
-        2. If is_has_slash : split slash to (1) and (2) -> (1) create sub directorie -> (2) create file json and collect all needs the same docs name
-        3. If not is_has_slash: collect date all needs has same docs mame -> create json file has name is docs name
-    """
     def write_doc(self, docname: str, doctree: nodes.document) -> None:
         pass
 
     def finish(self) -> None:
         env = unwrap(self.env)
         needs = env.needs_all_needs.values()
-        config = env.config
         log.info("Nanmnn2")
-        from sphinx_needs.filter_common import filter_needs
+       
 
         filter_string = self.app.config.needs_builder_filter
         filtered_needs = filter_needs(self.app, needs, filter_string)
@@ -195,20 +185,6 @@ class NeedsPerPageBuilder(Builder):
             id = need['id']
             needs_id_dict[id] = {key: need[key] for key in need if key not in self.LIST_KEY_EXCLUSIONS_NEEDS}
             docs_name = need.get("docname")
-            # if "/" in docs_name:
-            #     docs_name = docs_name.split("/")
-            #     docs_sub = docs_name[0]
-            #     log.info(f"needs_per_page_dir:{docs_sub}")
-            #     docs_name_file_sub_dir = os.path.join(needs_per_page_dir, docs_sub)
-            #     if not os.path.exists(docs_name_file_sub_dir):
-            #         os.mkdir(docs_name_file_sub_dir)
-            #     docs_name_file = f"{docs_name[1]}.json"
-            #     log.info(f"docs_name_file:{docs_name_file}")
-            #     docs_name_file_dir = os.path.join(docs_name_file_sub_dir, docs_name_file)
-            # else:
-            #     docs_name_file = f"{docs_name}.json"
-            #     docs_name_file_dir = os.path.join(needs_per_page_dir, docs_name_file)
-            
             docs_name = f"{docs_name}.json"
             docs_name_file = os.path.join(needs_per_page_dir, docs_name)
             docs_name_file_dir = os.path.dirname(docs_name_file)
