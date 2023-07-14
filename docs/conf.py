@@ -364,22 +364,6 @@ needs_build_json = True
 needs_build_json_per_id = False
 
 needs_id_build_json = True
-
-# Get and maybe set GitHub credentials for services.
-# This is needed as the rate limit for not authenticated users is too low for the amount of requests we
-# need to perform for this documentation
-# github_username = os.environ.get("GITHUB_USERNAME", "agn8hc")
-# github_token = os.environ.get("GITHUB_TOKEN", "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")
-github_username = os.environ.get("GITHUB_USERNAME", "")
-github_token = os.environ.get("GITHUB_TOKEN", "")
-if github_username != "" and github_token != "":
-    print(f"---> GITHUB: Using as username: {github_username}. length token: {len(github_token)}")
-    for service in ["github-issues", "github-prs", "github-commits"]:
-        needs_services[service]["username"] = github_username
-        needs_services[service]["token"] = github_token
-else:
-    print("---> GITHUB: No auth provided")
-
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
@@ -568,13 +552,6 @@ rst_epilog = """
 """
 
 html_context = {}
-# Check, if docs get built on ci.
-# If this is the case, external services like Open-Needs are not available and
-# docs will show images instead of getting real data.
-on_ci = os.environ.get("ON_CI", "True").upper() == "TRUE"
-fast_build = os.environ.get("FAST_BUILD", "True").upper() == "TRUE"
-
-html_context = {"on_ci": on_ci, "fast_build": fast_build}
 
 
 def rstjinja(app: Sphinx, _docname: str, source: List[str]) -> None:

@@ -163,6 +163,8 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_config_value("needs_id_prefix_specs", "", "html", types=[str])
     app.add_config_value("needs_id_length", 5, "html", types=[int])
     app.add_config_value("needs_id_from_title", False, "html", types=[bool])
+    app.add_config_value("needs_ide_snippets_id", "", "html", types=[str])
+    app.add_config_value("needs_ide_directive_snippets", {}, "html", types=[dict])
     app.add_config_value("needs_specs_show_needlist", False, "html", types=[bool])
     app.add_config_value("needs_id_required", False, "html", types=[bool])
     app.add_config_value(
@@ -285,8 +287,13 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_config_value("needs_debug_measurement", False, "html", types=[dict])
 
     # add json file per needs_id
+<<<<<<< HEAD
     app.add_config_value("needs_build_json_per_id", False, "html", types=[bool])
     app.add_config_value("needs_build_json_per_id_path", "needs_id", "html")
+=======
+    app.add_config_value("needs_per_id", False, "html", types=[bool])
+    
+>>>>>>> update conf
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(
