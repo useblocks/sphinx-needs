@@ -14,9 +14,11 @@ from sphinx_needs.builder import (
     NeedsBuilder,
     NeedsIdBuilder,
     NeedumlsBuilder,
+    NeedsPerPageBuilder,
     build_needs_id_json,
     build_needs_json,
     build_needumls_pumls,
+    build_needs_per_page_json
 )
 from sphinx_needs.config import NEEDS_CONFIG
 from sphinx_needs.defaults import (
@@ -144,6 +146,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_builder(NeedsBuilder)
     app.add_builder(NeedumlsBuilder)
     app.add_builder(NeedsIdBuilder)
+    app.add_builder(NeedsPerPageBuilder)
     app.add_config_value(
         "needs_types",
         [
@@ -285,6 +288,9 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     # add json file per needs_id
     app.add_config_value("needs_per_id", False, "html", types=[bool])
     
+    # add json file needs_per_page
+    app.add_config_value("needs_per_page", False, "html", types=[bool])
+    
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(
@@ -382,6 +388,9 @@ def setup(app: Sphinx) -> Dict[str, Any]:
 
     #
     app.connect("build-finished", build_needs_id_json)
+    app.connect("build-finished", build_needs_per_page_json)
+    
+    
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect("env-updated", install_styles_static_files)
 
