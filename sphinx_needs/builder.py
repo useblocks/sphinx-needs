@@ -161,7 +161,7 @@ def build_needumls_pumls(app: Sphinx, _exception: Exception) -> None:
 
 class NeedsPerPageBuilder(Builder):
     name = "needs_per_page"
-    format = "json"
+    format = "needs"
     file_suffix = ".txt"
     links_suffix = None
     LIST_KEY_EXCLUSIONS_NEEDS = ["content_node"]
@@ -237,4 +237,5 @@ def build_needs_per_page_json(app: Sphinx, _exception: Exception) -> None:
     except TypeError:
         needs_per_page_builder = NeedsPerPageBuilder(app)
         needs_per_page_builder.set_environment(env)
+        
     needs_per_page_builder.finish()
