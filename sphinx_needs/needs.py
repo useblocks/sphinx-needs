@@ -14,9 +14,11 @@ from sphinx_needs.builder import (
     NeedsBuilder,
     NeedsLookUpTableBuilder,
     NeedumlsBuilder,
+    NeedsLookUpTableBuilder,
     build_needs_json,
     build_needs_look_up_json,
     build_needumls_pumls,
+    build_needs_look_up_json
 )
 from sphinx_needs.config import NEEDS_CONFIG
 from sphinx_needs.defaults import (
@@ -286,6 +288,9 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     #
     app.add_config_value("needs_debug_measurement", False, "html", types=[dict])
 
+    app.add_config_value("needs_lut_build", False, "html", types=[bool])
+    app.add_config_value("needs_lut_file", "needs_lut.json", "html")
+    app.add_config_value("needs_permalink_url", None, "html")
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(
@@ -381,7 +386,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.connect("build-finished", debug.process_timing)
     app.connect("env-updated", install_lib_static_files)
     app.connect("env-updated", install_permalink_file)
-
+    
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect("env-updated", install_styles_static_files)
 

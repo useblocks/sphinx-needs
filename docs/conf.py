@@ -364,9 +364,6 @@ needs_build_json = True
 # build needs_lut.json to make permalinks work
 needs_lut_build_json = False
 
-# build needs_lut.json to make permalinks work
-needs_lut_build_json = False
-
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
