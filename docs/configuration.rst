@@ -520,6 +520,19 @@ The defined extra filter data can also be used like:
       :style: green_border
 
 
+.. _needs_allow_unsafe_filters:
+
+needs_allow_unsafe_filters
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Allow unsafe filter for :ref:`filter_func` if set to True, which means the filtered results
+can contain manipulated needs.
+
+.. code-block:: python
+
+   needs_allow_unsafe_filters = True
+
+Default is ``False``.
 
 .. _needs_flow_show_links:
 
