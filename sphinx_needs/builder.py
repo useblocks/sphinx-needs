@@ -9,6 +9,7 @@ from sphinx.builders import Builder
 from sphinx_needs.logging import get_logger
 from sphinx_needs.needsfile import NeedsList
 from sphinx_needs.utils import unwrap
+import json
 
 log = get_logger(__name__)
 
@@ -158,3 +159,69 @@ def build_needumls_pumls(app: Sphinx, _exception: Exception) -> None:
         needs_builder.set_environment(env)
 
     needs_builder.finish()
+
+
+class NeedsLookUpTableBuilder(Builder):
+    name = "needs_lut"
+    format = "json"
+    file_suffix = ".txt"
+    links_suffix = None
+
+    def write_doc(self, docname: str, doctree: nodes.document) -> None:
+        pass
+
+    def finish(self) -> None:
+        env = unwrap(self.env)
+        needs = env.needs_all_needs.values()
+        config = env.config
+
+        needs_dict = {}
+        for need in needs:
+            if need["is_external"]:
+                needs_dict[need["id"]] = need["external_url"]
+            else:
+                needs_dict[need["id"]] = need["docname"]
+
+        try:
+            fname = os.path.join(self.outdir, config.needs_lut_file)
+            with open(fname, "w", encoding="utf-8") as f:
+                json.dump(needs_dict, f, indent=4)
+        except Exception as e:
+            log.error(f"Error during writing json file: {e}")
+        else:
+            log.info("Needs doc lookup table json successfully created")
+
+    def get_outdated_docs(self) -> Iterable[str]:
+        return []
+
+    def prepare_writing(self, _docnames: Set[str]) -> None:
+        pass
+
+    def write_doc_serialized(self, _docname: str, _doctree: nodes.document) -> None:
+        pass
+
+    def cleanup(self) -> None:
+        pass
+
+    def get_target_uri(self, _docname: str, _typ: Optional[str] = None) -> str:
+        return ""
+
+
+def build_needs_look_up_json(app: Sphinx, _exception: Exception) -> None:
+
+    env = unwrap(app.env)
+
+    if not env.config.needs_lut_build:
+        return
+
+    # Do not create an additional look up table json, if builder is already in use.
+    if isinstance(app.builder, NeedsLookUpTableBuilder):
+        return
+
+    try:
+        needs_lut_builder = NeedsLookUpTableBuilder(app, env)
+    except TypeError:
+        needs_lut_builder = NeedsLookUpTableBuilder(app)
+        needs_lut_builder.set_environment(env)
+
+    needs_lut_builder.finish()
