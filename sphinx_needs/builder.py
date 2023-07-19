@@ -175,11 +175,12 @@ class NeedsIdBuilder(Builder):
         env = unwrap(self.env)
         needs = env.needs_all_needs.values()
         config = env.config
+        needs_id_path = self.app.config.needs_id_path
         from sphinx_needs.filter_common import filter_needs
 
         filter_string = self.app.config.needs_builder_filter
         filtered_needs = filter_needs(self.app, needs, filter_string)
-        needs_id_json_dir = os.path.join(self.outdir, "needs_id")
+        needs_id_json_dir = os.path.join(self.outdir, needs_id_path)
         if not os.path.exists(needs_id_json_dir):
             os.mkdir(needs_id_json_dir)
         for need in filtered_needs:
