@@ -525,14 +525,22 @@ The defined extra filter data can also be used like:
 needs_allow_unsafe_filters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Allow unsafe filter for :ref:`filter_func` if set to True, which means the filtered results
-can contain manipulated needs.
+Allow unsafe filter for :ref:`filter_func`. Default is ``False``.
+
+If set to True, the filtered results will keep all fields as they are returned by the dynamic functions.
+Fields can be added or existing fields can even be manipulated.
+
+.. note::
+
+   Keep in mind this only affects the filter results, original needs as displayed somewhere else are not modified.
+
+If set to False, the filter results contains the original need fields and any manipulations of need fields are lost.
+
+|ex|
 
 .. code-block:: python
 
    needs_allow_unsafe_filters = True
-
-Default is ``False``.
 
 .. _needs_flow_show_links:
 

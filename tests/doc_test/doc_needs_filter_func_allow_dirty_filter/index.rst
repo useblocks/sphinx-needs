@@ -1,16 +1,15 @@
 Needs Data to be filtered
 =========================
 
-.. spec:: Spec 001
-   :id: SP_001
-   :tcl: 1
+.. feature:: Feature 001
+   :id: FE_001
 
-   Example spec 001 content.
+   Example feature 001 content.
 
 .. usecase:: Usecase 001
    :id: USE_001
    :ti: 1
-   :features: SP_001
+   :features: FE_001
 
    Example tesusecaset 001 content.
 
@@ -22,7 +21,7 @@ Needs Data to be filtered
 .. usecase:: Usecase 002
    :id: USE_002
    :ti: 3
-   :features: SP_001
+   :features: FE_001
 
    Example usecase 002 content.
 
