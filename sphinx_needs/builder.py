@@ -183,7 +183,7 @@ class NeedsLookUpTableBuilder(Builder):
                 needs_dict[need["id"]] = need["docname"]
 
         try:
-            fname = os.path.join(self.outdir, config.needs_lut_file)
+            fname = os.path.join(self.outdir, config.needs_permalink_data)
             with open(fname, "w", encoding="utf-8") as f:
                 json.dump(needs_dict, f, indent=4)
         except Exception as e:
