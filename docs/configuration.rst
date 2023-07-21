@@ -2344,7 +2344,7 @@ Can be overwritten for each single need by setting :ref:`need_collapse`.
 needs_per_id_build_path 
 ~~~~~~~~~~~~~~~~
 
-This options sets the location of the set of ``needs.json`` for every needs-id.
+This option sets the location of the set of ``needs.json`` for every needs-id.
 
 Default value: needs_id
 
