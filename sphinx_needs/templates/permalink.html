@@ -22,7 +22,6 @@
 
         function main() {
             var needs_lut_mode = '{{ needs_lut_mode }}';
-            t
             console.log(`needs_lut_mode:${needs_lut_mode}`);
             loadJSON('{{ needs_file }}', function (response) {
                 if (needs_lut_mode == True) {
