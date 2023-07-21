@@ -363,7 +363,6 @@ needs_build_json = True
 # build needs_json for every needs-id to make detail panel
 needs_build_json_per_id = False
 
-needs_id_build_json = True
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
