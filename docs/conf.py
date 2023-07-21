@@ -586,7 +586,7 @@ rst_epilog = """
 # Check, if docs get built on ci.
 # If this is the case, external services like Open-Needs are not available and
 # docs will show images instead of getting real data.
-on_ci = os.environ.get("ON_CI", "True").upper() == "TRUE"
+on_ci = os.environ.get("ON_CI", "False").upper() == "TRUE"
 fast_build = os.environ.get("FAST_BUILD", "False").upper() == "TRUE"
 
 html_context = {"on_ci": on_ci, "fast_build": fast_build}
