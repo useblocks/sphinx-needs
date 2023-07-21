@@ -21,28 +21,59 @@
         }
 
         function main() {
+            var needs_lut_mode = '{{ needs_lut_mode }}';
+            t
+            console.log(`needs_lut_mode:${needs_lut_mode}`);
             loadJSON('{{ needs_file }}', function (response) {
-                const needs = JSON.parse(response);
-                const id = getParameterByName('id');
-                var pathname = new URL(window.location.href).pathname;
-                pathname = pathname.substring(0, pathname.lastIndexOf('permalink.html'));
-                const keys = Object.keys(needs);
-                var docname = 'index';
-                keys.forEach((key, index) => {
-                    if (key === id) {
-                        docname = needs[key];
-                        return;
-                    }
-                });
+                if (needs_lut_mode == True) {
+                    const needs = JSON.parse(response);
+                    const id = getParameterByName('id');
+                    var pathname = new URL(window.location.href).pathname;
+                    pathname = pathname.substring(0, pathname.lastIndexOf('permalink.html'));
+                    const keys = Object.keys(needs);
+                    var docname = 'index';
+                    keys.forEach((key, index) => {
+                        if (key === id) {
+                            docname = needs[key];
+                            return;
+                        }
+                    });
 
-                if (docname.includes("#" + id)) {
-                    window.location.replace(pathname + docname);
-                } else {
+                    if (docname.includes("#" + id)) {
+                        window.location.replace(pathname + docname);
+                    } else {
+                        window.location.replace(pathname + docname + '.html#' + id);
+                    }
+                }
+                else {
+                    const needs = JSON.parse(response);
+                    const current_version = needs['current_version'];
+                    const versions = needs['versions'];
+                    const version = versions[current_version];
+                    const needs_obj = version['needs'];
+
+                    const id = getParameterByName('id');
+                    var pathname = new URL(window.location.href).pathname;
+                    pathname = pathname.substring(0, pathname.lastIndexOf('{{ permalink_file }}'));
+
+                    const keys = Object.keys(needs_obj);
+
+                    var docname = 'index';
+
+                    keys.forEach((key, index) => {
+                        if (key === id) {
+                            const need = needs_obj[key];
+                            docname = need['docname'];
+                            return;
+                        }
+                    });
+
                     window.location.replace(pathname + docname + '.html#' + id);
                 }
             });
-        }
 
+
+        }
         function getParameterByName(name, url = window.location.href) {
             name = name.replace(/[\[\]]/g, '\\$&');
             var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),

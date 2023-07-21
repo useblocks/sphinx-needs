@@ -209,6 +209,7 @@ def install_permalink_file(app: Sphinx, env: BuildEnvironment) -> None:
             template.render(
                 permalink_file=env.config.needs_permalink_file,
                 needs_file=env.config.needs_permalink_data,
+                needs_lut_mode=env.config.needs_lut_mode,
                 **app.config.needs_render_context,
             )
         )
