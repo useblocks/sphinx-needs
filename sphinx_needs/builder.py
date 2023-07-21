@@ -10,6 +10,7 @@ from sphinx.builders import Builder
 from sphinx_needs.logging import get_logger
 from sphinx_needs.needsfile import NeedsList
 from sphinx_needs.utils import unwrap
+from sphinx_needs.filter_common import filter_needs
 
 log = get_logger(__name__)
 
@@ -44,9 +45,6 @@ class NeedsBuilder(Builder):
         # This is needed as needs could have been removed from documentation and if this is the case,
         # removed needs would stay in needs_list, if list gets not cleaned.
         needs_list.wipe_version(version)
-        #
-        from sphinx_needs.filter_common import filter_needs
-
         filter_string = self.app.config.needs_builder_filter
         filtered_needs = filter_needs(self.app, needs, filter_string)
 
@@ -175,12 +173,10 @@ class NeedsIdBuilder(Builder):
         env = unwrap(self.env)
         needs = env.needs_all_needs.values()
         config = env.config
-        needs_id_path = self.app.config.needs_id_path
-        from sphinx_needs.filter_common import filter_needs
-
+        needs_per_id_build_path = self.app.config.needs_per_id_build_path
         filter_string = self.app.config.needs_builder_filter
         filtered_needs = filter_needs(self.app, needs, filter_string)
-        needs_id_json_dir = os.path.join(self.outdir, needs_id_path)
+        needs_id_json_dir = os.path.join(self.outdir, needs_per_id_build_path)
         if not os.path.exists(needs_id_json_dir):
             os.mkdir(needs_id_json_dir)
         for need in filtered_needs:
@@ -190,7 +186,7 @@ class NeedsIdBuilder(Builder):
             try:
                 fname = os.path.join(needs_id_json_dir, f"{id}.json")
                 with open(fname, 'w') as f:
-                    json.dump(needs_id_dict, f)
+                    json.dump(needs_id_dict, f, indent=4)
             except Exception as e:
                 log.error(f"Error during writing json file: {e}_{id}")
         log.info("Needs_id successfully exported")
