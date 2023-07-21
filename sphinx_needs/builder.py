@@ -174,8 +174,9 @@ class NeedsPerPageBuilder(Builder):
         env = unwrap(self.env)
         needs = env.needs_all_needs.values()
         filter_string = self.app.config.needs_builder_filter
+        needs_per_page_build_path = self.app.config.needs_per_page_build_path
         filtered_needs = filter_needs(self.app, needs, filter_string)
-        needs_per_page_dir = os.path.join(self.outdir, "need_per_page")
+        needs_per_page_dir = os.path.join(self.outdir, needs_per_page_build_path)
         needs_per_page_data = {}
         if not os.path.exists(needs_per_page_dir): 
             os.mkdir(needs_per_page_dir)

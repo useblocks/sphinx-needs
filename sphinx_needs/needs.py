@@ -282,9 +282,9 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     #
     app.add_config_value("needs_debug_measurement", False, "html", types=[dict])
 
-    # add json file per needs_id
+    # add config for needs id with the sames docs_name
     app.add_config_value("needs_per_page", False, "html", types=[bool])
-    
+    app.add_config_value("needs_per_page_build_path", "need_per_page", "html")
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(

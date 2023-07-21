@@ -2338,3 +2338,24 @@ If true, need options like status, tags or links are collapsed and shown only af
 Default value: True
 
 Can be overwritten for each single need by setting :ref:`need_collapse`.
+
+.. _needs_per_page_build_path:
+
+needs_per_page_build_path 
+~~~~~~~~~~~~~~~~
+
+This option sets the location of the set of ``needs.json`` for all needs-id with the same docs_name.
+
+Default value: need_per_page
+
+
+.. _needs_per_page:
+
+needs_per_page
+~~~~~~~~~~~~~~~~
+
+Exports forder ``needs_per_page_build_path`` include all file ``needs.json`` for all needs-id with the same docs_name.
+
+This option works like needs_build_json. 
+
+Default: False
