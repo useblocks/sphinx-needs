@@ -12,7 +12,6 @@ from sphinx_needs.needsfile import NeedsList
 from sphinx_needs.utils import unwrap
 from sphinx_needs.filter_common import filter_needs
 
-
 log = get_logger(__name__)
 
 
@@ -175,38 +174,35 @@ class NeedsPerPageBuilder(Builder):
         filter_string = self.app.config.needs_builder_filter
         needs_per_page_build_path = self.app.config.needs_per_page_build_path
         filtered_needs = filter_needs(self.app, needs, filter_string)
-        needs_per_page_dir = os.path.join(self.outdir, needs_per_page_build_path)
-        needs_per_page_data = {}
-        if not os.path.exists(needs_per_page_dir):
+        needs_per_page_dir = os.path.join(self.outdir, "need_per_page")
+        if not os.path.exists(needs_per_page_dir): 
             os.mkdir(needs_per_page_dir)
         for need in filtered_needs:
             needs_id_dict = {}
             id = need["id"]
             needs_id_dict[id] = {key: need[key] for key in need if key not in self.LIST_KEY_EXCLUSIONS_NEEDS}
             docs_name = need.get("docname")
-
-            if docs_name in needs_per_page_data.keys():
-                # add key docs_name
-                needs_per_page_data[docs_name].append(needs_id_dict)
-            else:
-                needs_per_page_data[docs_name] = [needs_id_dict]
-
-        for docs_name_key in needs_per_page_data.keys():
-            docs_name = f"{docs_name_key}.json"
+            docs_name = f"{docs_name}.json"
             docs_name_file = os.path.join(needs_per_page_dir, docs_name)
             docs_name_file_dir = os.path.dirname(docs_name_file)
             if not os.path.exists(docs_name_file_dir):
                 os.mkdir(docs_name_file_dir)
             try:
-                with open(docs_name_file, "w") as f:
-                    data = {"needs": needs_per_page_data[docs_name_key]}
-                    json.dump(data, f, indent=4)
-
+                if not os.path.exists(docs_name_file):
+                    with open(docs_name_file, 'w') as f:
+                        data = {"needs": [needs_id_dict]}
+                        json.dump(data, f)
+                else:
+                    with open(docs_name_file, 'r+') as f:
+                        data = json.load(f)
+                        data["needs"].append(needs_id_dict)
+                        f.seek(0)
+                        json.dump(data, f)
             except Exception as e:
-                log.error(f"Needs-per-page: {docs_name_key} - error: {e}")
-
-        log.info("needs per page successfully exported")
-
+                log.error(f"Error during writing json file: {e}_{id}")   
+        
+        log.info("Needs_Per_Page successfully exported")
+        
     def get_outdated_docs(self) -> Iterable[str]:
         return []
 
