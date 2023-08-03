@@ -59,8 +59,6 @@ types-requests = "^2.27.25"
 types-setuptools = "^65.6.0.2"
 docutils-stubs = "^0.0.22"
 
-sphinx-immaterial = { version = "==0.7.3", optional = true }
-
 # formatting dependencies
 black = "^22.3"
 isort = "^5.7.0"
