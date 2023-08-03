@@ -222,6 +222,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_config_value("needs_extra_links", [], "html")
 
     app.add_config_value("needs_filter_data", {}, "html")
+    app.add_config_value("needs_allow_unsafe_filters", False, "html")
 
     app.add_config_value("needs_flow_show_links", False, "html")
     app.add_config_value("needs_flow_link_types", ["links"], "html")
