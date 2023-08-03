@@ -1,6 +1,7 @@
 .idea
 .venv*
 .pvenv
+.nox
 
 node_modules
 
