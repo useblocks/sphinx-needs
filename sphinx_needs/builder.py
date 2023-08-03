@@ -80,7 +80,6 @@ class NeedsBuilder(Builder):
 
 
 def build_needs_json(app: Sphinx, _exception: Exception) -> None:
-
     env = unwrap(app.env)
 
     if not env.config.needs_build_json:
