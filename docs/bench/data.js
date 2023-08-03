@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1691076193127,
+  "lastUpdate": 1691077583339,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -3384,6 +3384,42 @@ window.BENCHMARK_DATA = {
             "value": 72.06236990899998,
             "unit": "s",
             "extra": "Commit: 01f0e5d4e8a877fa92d3074facb9051b555cc2cc\nBranch: master\nTime: 2023-08-03T17:16:13+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "haiyang.zhang@tutanota.com",
+            "name": "Haiyang",
+            "username": "haiyangToAI"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ea10e035630162c463ed4dda7a09d9dd0e3d7cbb",
+          "message": "Added config allow unsafe filter for filter_func (#949)\n\n* Added config allow unsafe filter for filter_func\r\n\r\n* Fixed review\r\n\r\n* Updated sphinx-immaterial to fix CI\r\n\r\n* Fix linkcheck anchor issue\r\n\r\n---------\r\n\r\nCo-authored-by: Daniel Woste <daniel.woste@useblocks.com>",
+          "timestamp": "2023-08-03T17:39:37+02:00",
+          "tree_id": "d0b1e35a7dafd74f89b88b10308012c7a139ad4c",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/ea10e035630162c463ed4dda7a09d9dd0e3d7cbb"
+        },
+        "date": 1691077578957,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22907365300000038,
+            "unit": "s",
+            "extra": "Commit: ea10e035630162c463ed4dda7a09d9dd0e3d7cbb\nBranch: master\nTime: 2023-08-03T17:39:37+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 68.10079563300002,
+            "unit": "s",
+            "extra": "Commit: ea10e035630162c463ed4dda7a09d9dd0e3d7cbb\nBranch: master\nTime: 2023-08-03T17:39:37+02:00"
           }
         ]
       }
