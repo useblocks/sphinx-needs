@@ -127,10 +127,6 @@ module = [
 ]
 ignore_errors = true
 
-[tool.poetry.extras]
-docs = ["sphinx"]
-immaterial = ["sphinx-immaterial"]
-
 [build-system]
 requires = ["setuptools", "poetry_core>=1.0.8"]  # setuptools for deps like plantuml
 build-backend = "poetry.core.masonry.api"
