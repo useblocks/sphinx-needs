@@ -17,10 +17,10 @@ classifiers=[
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
         'Topic :: Documentation',
         'Topic :: Utilities',
         'Framework :: Sphinx :: Extension',
@@ -32,7 +32,7 @@ packages = [
 
 
 [tool.poetry.dependencies]
-python = ">=3.7.0,<4.0"
+python = ">=3.8.0,<4.0"
 sphinx = ">=5.0"
 docutils = ">=0.15"
 
@@ -41,6 +41,8 @@ requests-file = "^1.5.1"  # external links
 requests = "^2.25.1"  # external_links
 jsonschema = ">=3.2.0"  # needsimport schema validation
 sphinx-data-viewer = "^0.1.1"  # needservice debug output
+
+sphinx-immaterial = { version = "==0.11.6", optional = true }
 
 [tool.poetry.dev-dependencies]
 sphinxcontrib-plantuml = "^0"
@@ -58,8 +60,6 @@ mypy = "^0.991"
 types-requests = "^2.27.25"
 types-setuptools = "^65.6.0.2"
 docutils-stubs = "^0.0.22"
-
-sphinx-immaterial = { version = "==0.7.3", optional = true }
 
 # formatting dependencies
 black = "^22.3"
