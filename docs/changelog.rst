@@ -31,6 +31,9 @@ Released: under development
 * Removed configuration **needs_ide_directive_snippets** to support custom directive snippets for IDE features.
 * Provided new IDE support option: VsCode extension
   `Sphinx-Needs-VsCode <https://marketplace.visualstudio.com/items?itemName=useblocks.sphinx-needs-vscode>`_.
+* Improvement: Configuration option :ref:`needs_allow_unsafe_filters` added, which allows unsafe filter for
+  :ref:`filter_func`.
+  (`#831 <https://github.com/useblocks/sphinx-needs/issues/831>`_)
 
 1.2.2
 -----

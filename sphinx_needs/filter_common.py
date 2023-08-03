@@ -173,11 +173,15 @@ def process_filters(app: Sphinx, all_needs, current_needlist, include_external: 
         found_dirty_needs = context["results"]
         found_needs = []
 
-        # Just take the ids from search result and use the related, but original need
-        found_need_ids = [x["id_complete"] for x in found_dirty_needs]
-        for need in all_needs_incl_parts:
-            if need["id_complete"] in found_need_ids:
-                found_needs.append(need)
+        # Check if config allow unsafe filters
+        if app.config.needs_allow_unsafe_filters:
+            found_needs = found_dirty_needs
+        else:
+            # Just take the ids from search result and use the related, but original need
+            found_need_ids = [x["id_complete"] for x in found_dirty_needs]
+            for need in all_needs_incl_parts:
+                if need["id_complete"] in found_need_ids:
+                    found_needs.append(need)
 
     # Store basic filter configuration and result global list.
     # Needed mainly for exporting the result to needs.json (if builder "needs" is used).
