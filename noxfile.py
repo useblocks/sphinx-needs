@@ -97,3 +97,10 @@ def benchmark_memory(session):
         env={"ON_CI": "true", "FAST_BUILD": "true"},
     )
     session.run("memray", "flamegraph", "-o", "mem_out.html", "mem_out.bin")
+
+
+@session(python="3.8")
+def pre_commit(session):
+    session.run_always("poetry", "install", external=True)
+    session.install("pre-commit")
+    session.run("pre-commit", "run", "--all-files", external=True)

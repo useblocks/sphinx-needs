@@ -8,7 +8,6 @@ from sphinx_needs.services.manager import ServiceManager
 
 
 class ServiceTest(BaseService):
-
     options = ["custom_option", "exists"]
 
     def __init__(self, _app: Sphinx, _name: str, config, **kwargs) -> None:
@@ -42,7 +41,6 @@ class ServiceTest(BaseService):
 
 
 class NoDebugService(BaseService):
-
     options = []
 
     def __init__(self, _app: Sphinx, _name: str, config, **kwargs):
