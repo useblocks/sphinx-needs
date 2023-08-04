@@ -221,6 +221,9 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     # Example: [{"name": "blocks, "incoming": "is blocked by", "copy_link": True, "color": "#ffcc00"}]
     app.add_config_value("needs_extra_links", [], "html")
 
+    # Deactivate log msgs of dead links if set to False, default is True
+    app.add_config_value("needs_report_dead_links", True, "html", types=[bool])
+
     app.add_config_value("needs_filter_data", {}, "html")
     app.add_config_value("needs_allow_unsafe_filters", False, "html")
 
