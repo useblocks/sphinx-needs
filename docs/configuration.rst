@@ -289,6 +289,21 @@ In this cases, you can provide a list of tuples.
    If you need access to other needs for complex filtering, you can maybe provide your own :ref:`dynamic_functions`
    and perform the filtering there.
 
+.. _needs_report_dead_links:
+
+needs_report_dead_links
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Deactivate/activate log messages of outgoing dead links. If set to ``False``, then deactivate.
+
+Default value is ``True``.
+
+Configuration example:
+
+.. code-block:: python
+
+    needs_report_dead_links = False
+
 .. _needs_extra_links:
 
 needs_extra_links
