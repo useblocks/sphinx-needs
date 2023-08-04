@@ -7,10 +7,11 @@ from sphinx import version_info
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
 
+from sphinx_needs.filter_common import filter_needs
 from sphinx_needs.logging import get_logger
 from sphinx_needs.needsfile import NeedsList
 from sphinx_needs.utils import unwrap
-from sphinx_needs.filter_common import filter_needs
+
 
 log = get_logger(__name__)
 
@@ -172,7 +173,6 @@ class NeedsIdBuilder(Builder):
     def finish(self) -> None:
         env = unwrap(self.env)
         needs = env.needs_all_needs.values()
-        config = env.config
         needs_per_id_build_path = self.app.config.needs_per_id_build_path
         filter_string = self.app.config.needs_builder_filter
         filtered_needs = filter_needs(self.app, needs, filter_string)
@@ -181,11 +181,11 @@ class NeedsIdBuilder(Builder):
             os.mkdir(needs_id_json_dir)
         for need in filtered_needs:
             needs_id_dict = {}
-            id = need['id']
+            id = need["id"]
             needs_id_dict[id] = {key: need[key] for key in need if key not in self.LIST_KEY_EXCLUSIONS_NEEDS}
             try:
                 fname = os.path.join(needs_id_json_dir, f"{id}.json")
-                with open(fname, 'w') as f:
+                with open(fname, "w") as f:
                     json.dump(needs_id_dict, f, indent=4)
             except Exception as e:
                 log.error(f"Error during writing json file: {e}_{id}")
@@ -222,5 +222,5 @@ def build_needs_id_json(app: Sphinx, _exception: Exception) -> None:
     except TypeError:
         needs_id_builder = NeedsIdBuilder(app)
         needs_id_builder.set_environment(env)
-                                      
+                                           
     needs_id_builder.finish()
