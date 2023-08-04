@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1691135215292,
+  "lastUpdate": 1691135399666,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -3528,6 +3528,42 @@ window.BENCHMARK_DATA = {
             "value": 71.90743136000003,
             "unit": "s",
             "extra": "Commit: 8d4d06ee5b2ba4274668e3462691d46c0149b4e6\nBranch: master\nTime: 2023-08-04T09:39:47+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "haiyang.zhang@tutanota.com",
+            "name": "Haiyang",
+            "username": "haiyangToAI"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c73c44f69aae0e9cfe604041f205f34e8416be90",
+          "message": "Added config option needs_report_dead_links (#937)\n\nCo-authored-by: Daniel Woste <daniel.woste@useblocks.com>",
+          "timestamp": "2023-08-04T09:43:00+02:00",
+          "tree_id": "39f591ef1555583512b3df2f72b43a172a1f3e56",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c73c44f69aae0e9cfe604041f205f34e8416be90"
+        },
+        "date": 1691135393323,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2502511149999691,
+            "unit": "s",
+            "extra": "Commit: c73c44f69aae0e9cfe604041f205f34e8416be90\nBranch: master\nTime: 2023-08-04T09:43:00+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 69.71911147299994,
+            "unit": "s",
+            "extra": "Commit: c73c44f69aae0e9cfe604041f205f34e8416be90\nBranch: master\nTime: 2023-08-04T09:43:00+02:00"
           }
         ]
       }
