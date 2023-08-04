@@ -223,3 +223,4 @@ def build_needs_id_json(app: Sphinx, _exception: Exception) -> None:
         needs_id_builder.set_environment(env)
 
     needs_id_builder.finish()
+    
