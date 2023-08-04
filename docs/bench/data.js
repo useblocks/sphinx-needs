@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1691134691049,
+  "lastUpdate": 1691135215292,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -3492,6 +3492,42 @@ window.BENCHMARK_DATA = {
             "value": 90.72900813899997,
             "unit": "s",
             "extra": "Commit: fc267d167e1b0b99a02c67d56357e787009af682\nBranch: master\nTime: 2023-08-04T09:29:10+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tnordell@airgain.com",
+            "name": "Tim Nordell",
+            "username": "tim-nordell-nimbelink"
+          },
+          "committer": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "distinct": true,
+          "id": "8d4d06ee5b2ba4274668e3462691d46c0149b4e6",
+          "message": "needs: Remove some of the extra IDs in the output\n\nInside the LaTeX generator, it looks for the attributes ids and refid\nfor creating link targets.  When a new layer with a <container> wrapper\nwas added in commit e51fc1f, for an unknown reason this triggered these\nadditional IDs to generate links within the LaTeX output.\n\nA test case has been added to ensure only one hyperref within LaTeX is\nencountered as well.\n\n(https://github.com/useblocks/sphinx-needs/issues/808)",
+          "timestamp": "2023-08-04T09:39:47+02:00",
+          "tree_id": "c559538057a376656993b5ceeeffaea134654961",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8d4d06ee5b2ba4274668e3462691d46c0149b4e6"
+        },
+        "date": 1691135210356,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.23196370800002342,
+            "unit": "s",
+            "extra": "Commit: 8d4d06ee5b2ba4274668e3462691d46c0149b4e6\nBranch: master\nTime: 2023-08-04T09:39:47+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 71.90743136000003,
+            "unit": "s",
+            "extra": "Commit: 8d4d06ee5b2ba4274668e3462691d46c0149b4e6\nBranch: master\nTime: 2023-08-04T09:39:47+02:00"
           }
         ]
       }
