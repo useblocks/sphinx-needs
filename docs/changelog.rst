@@ -30,6 +30,9 @@ Released: under development
 * Improvement: Added configuration option :ref:`needs_report_dead_links`, which can deactivate log messages of
   outgoing dead links.
   (`#920 <https://github.com/useblocks/sphinx-needs/issues/920>`_)
+* Improvement: Configuration option :ref:`needs_allow_unsafe_filters` added, which allows unsafe filter for
+  :ref:`filter_func`.
+  (`#831 <https://github.com/useblocks/sphinx-needs/issues/831>`_)
 
 1.2.2
 -----
