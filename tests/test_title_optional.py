@@ -28,7 +28,6 @@ class HtmlNeed:
 
 @pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/title_optional"}], indirect=True)
 def test_title_optional_scenarios(test_app):
-
     # Somehow the xml-tree in extract_needs_from_html() works not correctly with py37 and specific
     # extracts, which are needed for sphinx >3.0 only.
     # Everything with Py3.8 is fine again and also Py3.7 with sphinx<3 works here.
