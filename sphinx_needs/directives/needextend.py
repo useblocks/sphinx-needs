@@ -94,7 +94,6 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
         link_names = [x["option"] for x in app.config.needs_extra_links]
 
         for current_needextend in env.need_all_needextend.values():
-
             # Check if filter is just a need-id.
             # In this case create the needed filter string
             need_filter = current_needextend["filter"]
