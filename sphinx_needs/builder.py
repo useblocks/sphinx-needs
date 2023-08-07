@@ -11,10 +11,6 @@ from sphinx_needs.filter_common import filter_needs
 from sphinx_needs.logging import get_logger
 from sphinx_needs.needsfile import NeedsList
 from sphinx_needs.utils import unwrap
-<<<<<<< HEAD
-=======
-
->>>>>>> fix-ci-lint-err
 
 log = get_logger(__name__)
 
@@ -178,11 +174,7 @@ class NeedsIdBuilder(Builder):
     def finish(self) -> None:
         env = unwrap(self.env)
         needs = env.needs_all_needs.values()
-<<<<<<< HEAD
         needs_build_json_per_id_path = self.app.config.needs_build_json_per_id_path
-=======
-        needs_per_id_build_path = self.app.config.needs_per_id_build_path
->>>>>>> fix-ci-lint-err
         filter_string = self.app.config.needs_builder_filter
         filtered_needs = filter_needs(self.app, needs, filter_string)
         needs_id_json_dir = os.path.join(self.outdir, needs_build_json_per_id_path)
@@ -219,7 +211,7 @@ class NeedsIdBuilder(Builder):
 def build_needs_id_json(app: Sphinx, _exception: Exception) -> None:
     env = unwrap(app.env)
 
-    if not env.config.needs_id_build_json:
+    if not env.config.needs_build_json_per_id:
         return
 
     # Do not create an additional needs_json for every needs_id, if builder is already "needs_id".
