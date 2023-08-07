@@ -2342,20 +2342,37 @@ Can be overwritten for each single need by setting :ref:`need_collapse`.
 .. _needs_per_id_build_path:
 
 needs_per_id_build_path 
-~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 This option sets the location of the set of ``needs.json`` for every needs-id.
 
 Default value: needs_id
 
+Example:
 
-.. _needs_per_id:
+.. code-block:: python
 
-needs_per_id 
-~~~~~~~~~~~~~~~~
+    needs_per_id_build_path = "needs_id"
 
-Exports forder ``needs_per_id_build_path`` include all file ``needs.json`` for every needs-id.
+.. hint::
 
-This option works like needs_build_json. 
+   The created ``needs_id`` folder gets stored in the ``outdir`` of the current builder. The final location is e.g. _build/needs_id
+
+.. _needs_build_json_per_id:
+
+needs_build_json_per_id 
+~~~~~~~~~~~~~~~~~~~~~~~
+Builds a single ``needs.json`` file for every needs-id.
+This option works like :ref:`needs_build_json`. 
 
 Default: False
+
+Example:
+
+.. code-block:: python
+
+    needs_build_json_per_id = True
+
+.. hint::
+ The created ``needs.json`` files, which has name is ``ID`` of needs-id, located in :ref:`needs_per_id_build_path` folder. This is e.g ``_build/needs_ids/abc_432.json``
+

@@ -379,8 +379,8 @@ needs_render_context = {
 
 # build needs.json to make permalinks work
 needs_build_json = True
-# build needs per id
-needs_per_id = True
+# build needs_json for every needs-id to make detail panel
+needs_build_json_per_id = True
 # Get and maybe set GitHub credentials for services.
 # This is needed as the rate limit for not authenticated users is too low for the amount of requests we
 # need to perform for this documentation
@@ -585,7 +585,7 @@ rst_epilog = """
 # Check, if docs get built on ci.
 # If this is the case, external services like Open-Needs are not available and
 # docs will show images instead of getting real data.
-on_ci = os.environ.get("ON_CI", "False").upper() == "TRUE"
+on_ci = os.environ.get("ON_CI", "True").upper() == "TRUE"
 fast_build = os.environ.get("FAST_BUILD", "False").upper() == "TRUE"
 
 html_context = {"on_ci": on_ci, "fast_build": fast_build}

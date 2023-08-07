@@ -187,7 +187,7 @@ class NeedsIdBuilder(Builder):
                 with open(fname, "w") as f:
                     json.dump(needs_id_dict, f, indent=4)
             except Exception as e:
-                log.error(f"Error during writing json file: {e}_{id}")
+                log.error(f"Needs-ID Builder {id} error: {e}")
         log.info("Needs_id successfully exported")
 
     def get_outdated_docs(self) -> Iterable[str]:
@@ -209,7 +209,7 @@ class NeedsIdBuilder(Builder):
 def build_needs_id_json(app: Sphinx, _exception: Exception) -> None:
     env = unwrap(app.env)
 
-    if not env.config.needs_per_id:
+    if not env.config.needs_build_json_per_id:
         return
 
     # Do not create an additional needs_json for every needs_id, if builder is already "needs_id".
