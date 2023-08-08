@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 
 from docutils import nodes
 from jinja2 import BaseLoader, Environment, Template
+
 try:
     from matplotlib.figure import FigureBase
 
@@ -592,6 +593,7 @@ def add_doc(env: BuildEnvironment, docname: str, category=None):
             env.needs_all_docs[category] = []
         if docname not in env.needs_all_docs[category]:
             env.needs_all_docs[category].append(docname)
+
 
 def error_on_missing_matplotlib(matplotlib_available: bool):
     """Raise an import error if Matplotlib isn't available (optional dep)"""

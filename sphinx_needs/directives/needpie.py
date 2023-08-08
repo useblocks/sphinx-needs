@@ -30,13 +30,12 @@ from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import (
     add_doc,
     check_and_get_external_filter_func,
+    error_on_missing_matplotlib,
     save_matplotlib_figure,
     unwrap,
-    error_on_missing_matplotlib,
 )
 
 logger = get_logger(__name__)
-
 
 
 class Needpie(nodes.General, nodes.Element):
