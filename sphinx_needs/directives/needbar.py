@@ -304,7 +304,7 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
             index.append(line)
 
         # 7. styling and coloring
-        error_on_missing_matplotlib()
+        error_on_missing_matplotlib(MATPLOTLIB_AVAILABLE)
         style_previous_to_script_execution = matplotlib.rcParams
         # Set matplotlib style
         if current_needbar["style"]:
