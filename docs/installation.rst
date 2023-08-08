@@ -49,7 +49,7 @@ For the full configuration, please read :ref:`config`.
 .. _install_matplotlib_numpy:
 
 Matplotlib/NumPy support
-----------------
+------------------------
 
 :ref:`needpie` and :ref:`needbar` uses `Matplotlib <https://matplotlib.org>`_ and `Numpy <https://numpy.org>`_ for generating graphs.
 
