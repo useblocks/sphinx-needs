@@ -10,7 +10,17 @@ from urllib.parse import urlparse
 
 from docutils import nodes
 from jinja2 import BaseLoader, Environment, Template
-from matplotlib.figure import FigureBase
+try:
+    from matplotlib.figure import FigureBase
+
+    # We want to hard fail only when actively USING matplotlib, not just importing it at
+    # toplevel (not actively using) ==> Set a flag for availability of matplotlib, to
+    # check at runtime and raise only then
+    MATPLOTLIB_AVAILABLE = True
+except ImportError:
+    FigureBase = "FigureBase"  # Forward-import style to preserve typing on fail
+    MATPLOTLIB_AVAILABLE = False
+
 from sphinx.application import BuildEnvironment, Sphinx
 
 from sphinx_needs.defaults import NEEDS_PROFILING
