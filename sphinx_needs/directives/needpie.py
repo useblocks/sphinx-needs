@@ -32,17 +32,11 @@ from sphinx_needs.utils import (
     check_and_get_external_filter_func,
     save_matplotlib_figure,
     unwrap,
+    error_on_missing_matplotlib,
 )
 
 logger = get_logger(__name__)
 
-
-def error_on_missing_matplotlib():
-    if not MATPLOTLIB_AVAILABLE:
-        raise ImportError(
-            "Missing matplotlib/numpy dependency required for needpie directive. "
-            "Please install sphinx-needs with optional [matplotlib] flag"
-        )
 
 
 class Needpie(nodes.General, nodes.Element):
@@ -76,7 +70,7 @@ class NeedpieDirective(FilterBase):
     # Update the options_spec only with value filter-func defined in the FilterBase class
 
     def run(self) -> Sequence[nodes.Node]:
-        error_on_missing_matplotlib()
+        error_on_missing_matplotlib(MATPLOTLIB_AVAILABLE)
         env = self.state.document.settings.env
         if not hasattr(env, "need_all_needpie"):
             env.need_all_needpie = {}
@@ -157,7 +151,7 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
 
         # Set matplotlib style
 
-        error_on_missing_matplotlib()
+        error_on_missing_matplotlib(MATPLOTLIB_AVAILABLE)
         style_previous_to_script_execution = matplotlib.rcParams
         if current_needpie["style"]:
             matplotlib.style.use(current_needpie["style"])

@@ -357,6 +357,7 @@ def jinja_parse(context: Dict, jinja_string: str) -> str:
 
 
 def save_matplotlib_figure(app: Sphinx, figure: FigureBase, basename: str, fromdocname: str) -> nodes.image:
+    error_on_missing_matplotlib(MATPLOTLIB_AVAILABLE)
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
 
@@ -591,3 +592,11 @@ def add_doc(env: BuildEnvironment, docname: str, category=None):
             env.needs_all_docs[category] = []
         if docname not in env.needs_all_docs[category]:
             env.needs_all_docs[category].append(docname)
+
+def error_on_missing_matplotlib(matplotlib_available: bool):
+    """Raise an import error if Matplotlib isn't available (optional dep)"""
+    if not matplotlib_available:
+        raise ImportError(
+            "Missing matplotlib dependency required for needbar directive. "
+            "Please install sphinx-needs with optional [matplotlib] flag"
+        )

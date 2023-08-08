@@ -23,17 +23,11 @@ from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
-from sphinx_needs.utils import add_doc, save_matplotlib_figure, unwrap
+from sphinx_needs.utils import add_doc, save_matplotlib_figure, unwrap, error_on_missing_matplotlib
 
 logger = get_logger(__name__)
 
 
-def error_on_missing_matplotlib():
-    if not MATPLOTLIB_AVAILABLE:
-        raise ImportError(
-            "Missing matplotlib dependency required for needbar directive. "
-            "Please install sphinx-needs with optional [matplotlib] flag"
-        )
 
 
 class Needbar(nodes.General, nodes.Element):
@@ -77,7 +71,7 @@ class NeedbarDirective(FilterBase):
     # 1. define constants
     # 2. Stores infos for needbar
     def run(self) -> Sequence[nodes.Node]:
-        error_on_missing_matplotlib()
+        error_on_missing_matplotlib(MATPLOTLIB_AVAILABLE)
         # 1. define constants
         env = self.state.document.settings.env
         if not hasattr(env, "need_all_needbar"):
