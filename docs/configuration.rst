@@ -2371,7 +2371,7 @@ Example:
 
 .. code-block:: python
 
-    needs_build_json_per_id = True
+    needs_build_json_per_id = False
 
 .. hint::
  The created single json file per needs, located in :ref:`needs_build_json_per_id_path` folder. This is e.g ``_build/needs_id/abc_432.json``
