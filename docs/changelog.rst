@@ -15,7 +15,7 @@ Released: under development
 * Improvement: Configuration option :ref:`needs_debug_measurement` added, which creates a runtime report
   for debugging purposes.
   (`#917 <https://github.com/useblocks/sphinx-needs/pull/917>`_)
-* Improvement: Builder :ref:`NeedsIdBuilder` added, which exports all needs to set json file for each need.
+* Improvement: Builder :ref:`NeedsIdBuilder` added, which exports all needs to list json file for each need.
 * Bugfix: Replace hardcoded `index` with config value `root_doc`.
   (`#877 <https://github.com/useblocks/sphinx-needs/pull/877>`_)
 * Bugfix: Fix unbounded memory usage in pickle environment.

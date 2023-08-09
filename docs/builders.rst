@@ -168,7 +168,7 @@ or
 .. _needs_id_builder:
 
 needs_id
------
+--------
 .. versionadded:: 0.1.30
 
 The **needs_id** builder exports all found needs and selected filter results to a set json files of each need with the name is ``id`` of need.

@@ -2362,7 +2362,7 @@ Example:
 
 needs_build_json_per_id 
 ~~~~~~~~~~~~~~~~~~~~~~~
-Builds json files which have name is ``ID`` of needs.
+Builds list json file for each need, which have name is ``ID`` of need.
 This option works like :ref:`needs_build_json`. 
 
 Default: False
@@ -2374,5 +2374,5 @@ Example:
     needs_build_json_per_id = False
 
 .. hint::
- The created single json file per needs, located in :ref:`needs_build_json_per_id_path` folder. This is e.g ``_build/needs_id/abc_432.json``
+ The created single json file per need, located in :ref:`needs_build_json_per_id_path` folder. This is e.g ``_build/needs_id/abc_432.json``
 
