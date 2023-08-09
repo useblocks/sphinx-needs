@@ -15,7 +15,7 @@ Released: under development
 * Improvement: Configuration option :ref:`needs_debug_measurement` added, which creates a runtime report
   for debugging purposes.
   (`#917 <https://github.com/useblocks/sphinx-needs/pull/917>`_)
-
+* Improvement: Builder :ref:`NeedsIdBuilder` added, which exports all needs to set json file for each need.
 * Bugfix: Replace hardcoded `index` with config value `root_doc`.
   (`#877 <https://github.com/useblocks/sphinx-needs/pull/877>`_)
 * Bugfix: Fix unbounded memory usage in pickle environment.
@@ -889,3 +889,5 @@ custom css definitions you need to update them.
 * Integrated interaction with the activated plantuml sphinx extension
 
 * Added role **need** to create a reference to a need by giving the id
+
+
