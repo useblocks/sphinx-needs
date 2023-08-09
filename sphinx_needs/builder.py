@@ -79,7 +79,6 @@ class NeedsBuilder(Builder):
 
 
 def build_needs_json(app: Sphinx, _exception: Exception) -> None:
-
     env = unwrap(app.env)
 
     if not env.config.needs_build_json:
@@ -160,6 +159,9 @@ def build_needumls_pumls(app: Sphinx, _exception: Exception) -> None:
 
 
 class NeedsIdBuilder(Builder):
+
+    """Json builder for needs, which creates one single json-file per need"""
+
     name = "needs_id"
     format = "json"
     file_suffix = ".txt"
@@ -172,10 +174,10 @@ class NeedsIdBuilder(Builder):
     def finish(self) -> None:
         env = unwrap(self.env)
         needs = env.needs_all_needs.values()
-        needs_per_id_build_path = self.app.config.needs_per_id_build_path
+        needs_build_json_per_id_path = self.app.config.needs_build_json_per_id_path
         filter_string = self.app.config.needs_builder_filter
         filtered_needs = filter_needs(self.app, needs, filter_string)
-        needs_id_json_dir = os.path.join(self.outdir, needs_per_id_build_path)
+        needs_id_json_dir = os.path.join(self.outdir, needs_build_json_per_id_path)
         if not os.path.exists(needs_id_json_dir):
             os.mkdir(needs_id_json_dir)
         for need in filtered_needs:

@@ -17,8 +17,8 @@ def test_doc_needs_id_builder(test_app):
     out_dir = app.outdir
     env = unwrap(app.env)
     needs = env.needs_all_needs.values()
-    needs_per_id_build_path = app.config.needs_per_id_build_path
-    needs_id_path = os.path.join(out_dir, needs_per_id_build_path)
+    needs_build_json_per_id_path = app.config.needs_build_json_per_id_path
+    needs_id_path = os.path.join(out_dir, needs_build_json_per_id_path)
     assert os.path.exists(needs_id_path)
     for need in needs:
         need_id = need["id"]
