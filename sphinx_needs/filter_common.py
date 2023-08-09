@@ -274,6 +274,10 @@ def filter_needs(app: Sphinx, needs, filter_string: str = "", current_need=None)
     return found_needs
 
 
+def need_search(*args, **kwargs):
+    return bool(re.search(*args, **kwargs))
+
+
 @measure_time("filtering")
 def filter_single_need(
     app: Sphinx, need, filter_string: str = "", needs=None, current_need=None, filter_compiled=None
@@ -300,15 +304,20 @@ def filter_single_need(
     # Get needs external filter data and merge to filter_context
     filter_context.update(app.config.needs_filter_data)
 
-    filter_context["search"] = re.search
+    filter_context["search"] = need_search
     result = False
     try:
         # Set filter_context as globals and not only locals in eval()!
         # Otherwise, the vars not be accessed in list comprehensions.
         if filter_compiled:
-            result = bool(eval(filter_compiled, filter_context))
+            result = eval(filter_compiled, filter_context)
         else:
-            result = bool(eval(filter_string, filter_context))
+            result = eval(filter_string, filter_context)
+        if not isinstance(result, bool):
+            # Raises NeedsInvalidFilter if the result is a string type
+            raise NeedsInvalidFilter(
+                f"Error when evaluating filter: expected output to have True/False but got a string <{result}>"
+            )
     except Exception as e:
         raise NeedsInvalidFilter(f"Filter {filter_string} not valid. Error: {e}.")
     return result

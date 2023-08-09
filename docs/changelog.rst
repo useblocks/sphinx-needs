@@ -16,6 +16,8 @@ Released: under development
   for debugging purposes.
   (`#917 <https://github.com/useblocks/sphinx-needs/pull/917>`_)
 
+* Bugfix: Check filter strings for correctness.
+  (`#964 <https://github.com/useblocks/sphinx-needs/pull/964>`_)
 * Bugfix: Replace hardcoded `index` with config value `root_doc`.
   (`#877 <https://github.com/useblocks/sphinx-needs/pull/877>`_)
 * Bugfix: Fix unbounded memory usage in pickle environment.
