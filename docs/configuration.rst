@@ -2327,7 +2327,9 @@ Example:
     needs_build_json_per_id_path = "needs_id"
 
 .. hint::
-
-This option works like needs_build_json. 
-
+    
 Default: False
+   The created ``needs_id`` folder gets stored in the ``outdir`` of the current builder. The final location is e.g. ``_build/needs_id``
+
+
+
