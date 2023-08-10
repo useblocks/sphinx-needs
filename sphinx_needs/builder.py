@@ -159,6 +159,9 @@ def build_needumls_pumls(app: Sphinx, _exception: Exception) -> None:
 
 
 class NeedsIdBuilder(Builder):
+
+    """Json builder for needs, which creates separate json-files per need"""
+
     name = "needs_id"
     format = "needs"
     file_suffix = ".txt"
