@@ -12,11 +12,11 @@ import sphinx_needs.debug as debug  # Need to set global var in it for timeing m
 from sphinx_needs.api.configuration import add_extra_option
 from sphinx_needs.builder import (
     NeedsBuilder,
-    NeedumlsBuilder,
     NeedsLookUpTableBuilder,
+    NeedumlsBuilder,
     build_needs_json,
+    build_needs_look_up_json,
     build_needumls_pumls,
-    build_needs_look_up_json
 )
 from sphinx_needs.config import NEEDS_CONFIG
 from sphinx_needs.defaults import (
@@ -264,8 +264,8 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_config_value("needs_permalink_file", "permalink.html", "html")
     # path to needs.json relative to permalink.html
     app.add_config_value("needs_permalink_data", "needs_lut.json", "html")
-    # add config mode permalink 
-    app.add_config_value("needs_lut_mode", False, "html",  types=[bool])
+    # add config mode permalink
+    app.add_config_value("needs_lut_mode", False, "html", types=[bool])
     # path to needs_report_template file which is based on the conf.py directory.
     app.add_config_value("needs_report_template", "", "html", types=[str])
 
@@ -382,7 +382,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.connect("build-finished", debug.process_timing)
     app.connect("env-updated", install_lib_static_files)
     app.connect("env-updated", install_permalink_file)
-    
+
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect("env-updated", install_styles_static_files)
 

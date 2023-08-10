@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Iterable, Optional, Set
 
@@ -9,7 +10,6 @@ from sphinx.builders import Builder
 from sphinx_needs.logging import get_logger
 from sphinx_needs.needsfile import NeedsList
 from sphinx_needs.utils import unwrap
-import json
 
 log = get_logger(__name__)
 
@@ -81,7 +81,6 @@ class NeedsBuilder(Builder):
 
 
 def build_needs_json(app: Sphinx, _exception: Exception) -> None:
-
     env = unwrap(app.env)
 
     if not env.config.needs_build_json:
@@ -208,7 +207,6 @@ class NeedsLookUpTableBuilder(Builder):
 
 
 def build_needs_look_up_json(app: Sphinx, _exception: Exception) -> None:
-
     env = unwrap(app.env)
 
     if not env.config.needs_lut_build:
