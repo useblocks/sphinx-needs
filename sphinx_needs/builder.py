@@ -160,7 +160,7 @@ def build_needumls_pumls(app: Sphinx, _exception: Exception) -> None:
 
 class NeedsIdBuilder(Builder):
 
-    """Json builder for needs, which creates one single json-file per need"""
+    """Json builder for needs, which creates separate json-files per need"""
 
     name = "needs_id"
     format = "json"
