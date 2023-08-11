@@ -21,9 +21,9 @@
         }
 
         function main() {
-            var needs_lut_mode = '{{ needs_lut_mode }}';
-            loadJSON('{{ needs_file }}', function (response) {
-                if (needs_lut_mode == True) {
+            var needs_file = '{{ needs_file }}';
+            loadJSON(needs_file, function (response) {
+                if (needs_file == "needs_lut.json") {
                     const needs = JSON.parse(response);
                     const id = getParameterByName('id');
                     var pathname = new URL(window.location.href).pathname;

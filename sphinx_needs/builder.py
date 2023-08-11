@@ -172,8 +172,6 @@ class NeedsLookUpTableBuilder(Builder):
     def finish(self) -> None:
         env = unwrap(self.env)
         needs = env.needs_all_needs.values()
-        config = env.config
-
         needs_dict = {}
         for need in needs:
             if need["is_external"]:
@@ -182,7 +180,7 @@ class NeedsLookUpTableBuilder(Builder):
                 needs_dict[need["id"]] = need["docname"]
 
         try:
-            fname = os.path.join(self.outdir, config.needs_permalink_data)
+            fname = os.path.join(self.outdir, "needs_lut.json")
             with open(fname, "w", encoding="utf-8") as f:
                 json.dump(needs_dict, f, indent=4)
         except Exception as e:
@@ -209,7 +207,7 @@ class NeedsLookUpTableBuilder(Builder):
 def build_needs_look_up_json(app: Sphinx, _exception: Exception) -> None:
     env = unwrap(app.env)
 
-    if not env.config.needs_lut_build:
+    if not env.config.needs_lut_build_json:
         return
 
     # Do not create an additional look up table json, if builder is already in use.
