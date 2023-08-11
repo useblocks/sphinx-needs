@@ -268,6 +268,8 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_config_value("needs_permalink_file", "permalink.html", "html")
     # path to needs.json relative to permalink.html
     app.add_config_value("needs_permalink_data", "needs_lut.json", "html")
+    # add config mode permalink
+    app.add_config_value("needs_lut_mode", False, "html", types=[bool])
     # path to needs_report_template file which is based on the conf.py directory.
     app.add_config_value("needs_report_template", "", "html", types=[str])
 
@@ -287,7 +289,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_config_value("needs_debug_measurement", False, "html", types=[dict])
 
     app.add_config_value("needs_lut_build", False, "html", types=[bool])
-    app.add_config_value("needs_lut_file", "needs_lut.json", "html")
+
     app.add_config_value("needs_permalink_url", None, "html")
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
