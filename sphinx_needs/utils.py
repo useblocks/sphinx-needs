@@ -599,6 +599,6 @@ def error_on_missing_matplotlib(matplotlib_available: bool):
     """Raise an import error if Matplotlib isn't available (optional dep)"""
     if not matplotlib_available:
         raise ImportError(
-            "Missing matplotlib dependency required for needbar directive. "
+            "Missing matplotlib dependency required for needbar/needpie directive. "
             "Please install sphinx-needs with optional [matplotlib] flag"
         )

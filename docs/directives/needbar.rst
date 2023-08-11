@@ -4,13 +4,15 @@ needbar
 ========
 
 .. versionadded:: 0.7.5
-.. versionchanged:: nextversion
-
-   Matplotlib dependency (required for needbar) now moved to optional extra.
-   Install the extra via `pip install sphinxcontrib-needs[matplotlib]` to enable
-   support for this directive.
 
 ``needbar`` adds a bar-chart to your documentation:
+
+.. versionchanged:: 2.0
+
+   Matplotlib dependency (required for needbar) now moved to optional extra.
+   Install the extra via `pip install sphinx-needs[matplotlib]` to enable
+   support for this directive.
+
 
 |ex|
 

@@ -53,11 +53,9 @@ Matplotlib/NumPy support
 
 :ref:`needpie` and :ref:`needbar` uses `Matplotlib <https://matplotlib.org>`_ and `Numpy <https://numpy.org>`_ for generating graphs.
 
-The recommended install method (via `sphinxcontrib-needs[all]`) downloads
-matplotlib by default as well as all other optional extras.
-
-If you don't use the graphs feature, it's possible to install the lighter
-`sphinxcontrib-needs` without optional dependencies.
+The recommended install method (via `sphinx-needs[all]`) downloads matplotlib by
+default. If you don't use these graph-related features, it's possible to install
+the lighter `sphinx-needs` package without optional dependencies.
 
 .. _install_plantuml:
 
