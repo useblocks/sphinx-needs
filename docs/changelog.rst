@@ -8,9 +8,13 @@ License
 
 .. include:: ../LICENSE
 
-1.3.0
+2.0.0
 -----
 Released: under development
+
+* Notice: **Matplotlib (+NumPy) dependency moved to extra**
+* :ref:`needbar` and :ref:`needpie` require extra "matplotlib" to be usable.
+  The move to extra lightens the dependencies for non-plotting needs users.
 
 * Improvement: Configuration option :ref:`needs_debug_measurement` added, which creates a runtime report
   for debugging purposes.
