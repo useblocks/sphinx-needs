@@ -9,8 +9,8 @@ needbar
 
 .. versionchanged:: 2.0
 
-   Matplotlib dependency (required for needbar) now moved to optional extra.
-   Install the extra via `pip install sphinx-needs[matplotlib]` to enable
+   Matplotlib dependency (required for needbar/needpie) now moved to optional
+   extra. Install the extra via `pip install sphinx-needs[matplotlib]` to enable
    support for this directive.
 
 

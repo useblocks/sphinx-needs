@@ -596,7 +596,7 @@ def add_doc(env: BuildEnvironment, docname: str, category=None):
 
 
 def error_on_missing_matplotlib(matplotlib_available: bool):
-    """Raise an import error if Matplotlib isn't available (optional dep)"""
+    """Raise an import error if matplotlib isn't available (optional dep)"""
     if not matplotlib_available:
         raise ImportError(
             "Missing matplotlib dependency required for needbar/needpie directive. "

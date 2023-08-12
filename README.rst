@@ -54,7 +54,7 @@ Using poetry
 
     poetry add sphinx-needs[all]
     # Lighter install without matplotlib = no pie charts
-    poetry add sphinxcontrib-needs
+    poetry add sphinx-needs
 
 Using pip
 ---------
