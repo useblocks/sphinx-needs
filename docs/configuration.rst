@@ -1853,6 +1853,7 @@ an absolute path (on the web server) or an URL.
 
 Default value: ``needs.json``
 
+You can choose needs_lut_build_json  ``needs_lut.json`` after setting :ref:`needs_lut_build_json`
 
 .. _needs_constraints:
 

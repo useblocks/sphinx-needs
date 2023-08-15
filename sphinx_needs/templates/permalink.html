@@ -21,7 +21,7 @@
         }
 
         function main() {
-            loadJSON('needs_lut.json', function (response) {
+            loadJSON('{{ needs_file }}', function (response) {
                 const needs = JSON.parse(response);
                 if(needs.hasOwnProperty("current_version")) {
                     const needs = JSON.parse(response);
