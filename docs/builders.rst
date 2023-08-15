@@ -163,3 +163,53 @@ or
 .. hint::
 
     As an alternative, you can set the config option :ref:`needs_build_needumls` to export the needumls files during each build.
+
+.. _needs_lut_builder:
+
+needs_lut
+--------
+.. versionadded:: 1.3.0
+
+The **needs_lut** builder exports all found needs to a single json file, which only include list of key ``id`` and value of ``docname`` or ``external_url``.
+
+The build creates file called **needs_lut.json** inside the given build-folder.
+Usage
++++++
+
+.. code-block:: bash
+
+    sphinx-build -b needs_lut source_dir build_dir
+
+Format
+++++++
+
+.. code-block:: python
+
+    {
+        "extend_test_001": "directives/needextend",
+        "extend_test_002": "directives/needextend",
+
+        "req_arch_001": "directives/needarch",
+        "req_arch_004": "directives/needarch",
+    
+        "spec_arch_001": "directives/needarch",
+        "test_arch_001": "directives/needarch",
+        "COMP_T_001": "directives/needarch",
+        "COMP_T_002": "directives/needarch",
+    
+        "EX_REQ_1": "examples/index",
+        "EX_REQ_2": "examples/index",
+
+        "R_F4722": "examples/index",
+        "OWN_ID_123": "examples/index",
+        "IMPL_01": "examples/index",
+        "T_C3893": "examples/index",
+        "R_2A9D0": "filter",
+        "R_22EB2": "filter",
+        "S_D70B0": "filter",
+        "S_01A67": "filter",
+        "T_5CCAA": "filter",
+        "R_17EB4": "filter",
+        "req_flow_001": "directives/needflow",
+        "spec_flow_001": "directives/needflow",
+    }

@@ -1902,7 +1902,7 @@ an absolute path (on the web server) or an URL.
 
 Default value: ``needs.json``
 
-You can choice option ``needs_lut.json`` as detail :ref:`needs_lut_build_json`
+You can choose needs_lut_build_json  ``needs_lut.json`` after setting :ref:`needs_lut_build_json`
 
 .. _needs_constraints:
 
@@ -2343,9 +2343,9 @@ Can be overwritten for each single need by setting :ref:`need_collapse`.
 .. __needs_lut_build_json:
 
 needs_lut_build_json
-~~~~~~~~~~~~~~~~~~~~~~~
-Builds a ``needs_lut.json`` file during other builds, like ``html``. Different from ``needs.json``, ``needs_lut.json`` only include list of key ``id`` and value in list [``docname``, ``external_url``].
-A helpful load data fastly when you need improve performance.
+~~~~~~~~~~~~~~~~~~~~
+Builds a ``needs_lut.json`` file during other builds (like ``html``), which is different from ``needs.json``, only include list of key ``id`` and value of ``docname`` or ``external_url``.
+This is helpful for loading data fastly when you need improve performance.
 Default: False
 
 Example:

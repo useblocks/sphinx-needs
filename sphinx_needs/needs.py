@@ -284,7 +284,6 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     #
     app.add_config_value("needs_debug_measurement", False, "html", types=[dict])
 
-    app.add_config_value("needs_permalink_url", None, "html")
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(

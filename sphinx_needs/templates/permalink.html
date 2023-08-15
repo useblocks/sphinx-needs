@@ -21,29 +21,9 @@
         }
 
         function main() {
-            var needs_file = '{{ needs_file }}';
-            loadJSON(needs_file, function (response) {
-                if (needs_file == "needs_lut.json") {
-                    const needs = JSON.parse(response);
-                    const id = getParameterByName('id');
-                    var pathname = new URL(window.location.href).pathname;
-                    pathname = pathname.substring(0, pathname.lastIndexOf('permalink.html'));
-                    const keys = Object.keys(needs);
-                    var docname = 'index';
-                    keys.forEach((key, index) => {
-                        if (key === id) {
-                            docname = needs[key];
-                            return;
-                        }
-                    });
-
-                    if (docname.includes("#" + id)) {
-                        window.location.replace(pathname + docname);
-                    } else {
-                        window.location.replace(pathname + docname + '.html#' + id);
-                    }
-                }
-                else {
+            loadJSON('{{ needs_file }}', function (response) {
+                const needs = JSON.parse(response);
+                if(needs.hasOwnProperty("current_version")) {
                     const needs = JSON.parse(response);
                     const current_version = needs['current_version'];
                     const versions = needs['versions'];
@@ -67,6 +47,26 @@
                     });
 
                     window.location.replace(pathname + docname + '.html#' + id);
+                }
+                else {
+                    const needs = JSON.parse(response);
+                    const id = getParameterByName('id');
+                    var pathname = new URL(window.location.href).pathname;
+                    pathname = pathname.substring(0, pathname.lastIndexOf('permalink.html'));
+                    const keys = Object.keys(needs);
+                    var docname = 'index';
+                    keys.forEach((key, index) => {
+                        if (key === id) {
+                            docname = needs[key];
+                            return;
+                        }
+                    });
+
+                    if (docname.includes("#" + id)) {
+                        window.location.replace(pathname + docname);
+                    } else {
+                        window.location.replace(pathname + docname + '.html#' + id);
+                    }
                 }
             });
 

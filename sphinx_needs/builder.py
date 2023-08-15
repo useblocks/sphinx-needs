@@ -186,7 +186,7 @@ class NeedsLookUpTableBuilder(Builder):
         except Exception as e:
             log.error(f"Error during writing json file: {e}")
         else:
-            log.info("Needs doc lookup table json successfully created")
+            log.info("Needs lookup table json successfully created")
 
     def get_outdated_docs(self) -> Iterable[str]:
         return []

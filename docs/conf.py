@@ -381,7 +381,7 @@ needs_render_context = {
 needs_build_json = True
 
 # build needs_lut.json to make permalinks work
-needs_lut_build_json = True
+needs_lut_build_json = False
 
 # Get and maybe set GitHub credentials for services.
 # This is needed as the rate limit for not authenticated users is too low for the amount of requests we
