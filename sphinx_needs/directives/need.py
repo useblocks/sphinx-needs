@@ -394,6 +394,7 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     # We call process_needextend here by our own, so that we are able
     # to give print_need_nodes the already found need_nodes.
     process_needextend(app, doctree, fromdocname)
+
     print_need_nodes(app, doctree, fromdocname, found_needs_nodes)
 
 
