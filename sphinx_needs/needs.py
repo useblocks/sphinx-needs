@@ -107,7 +107,7 @@ from sphinx_needs.services.open_needs import OpenNeedsService
 from sphinx_needs.utils import INTERNALS, NEEDS_FUNCTIONS, node_match
 from sphinx_needs.warnings import process_warnings
 
-VERSION = "1.2.2"
+VERSION = "1.3.0"
 NEEDS_FUNCTIONS.clear()
 
 
