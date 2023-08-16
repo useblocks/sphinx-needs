@@ -40,9 +40,9 @@ sys.path.append(os.path.abspath("../sphinxcontrib"))
 # built documents.
 #
 # The short X.Y version.
-version = "1.2"
+version = "1.3"
 # The full version, including alpha/beta/rc tags.
-release = "1.2.2"
+release = "1.3.0"
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
 
@@ -297,6 +297,17 @@ needs_layouts = {
             "head": [
                 '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>> <<permalink()>> <<collapse_button("meta", '
                 'collapsed="icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=False)>> '
+            ],
+            "meta": ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"],
+        },
+    },
+    "detail_view": {
+        "grid": "simple",
+        "layout": {
+            "head": [
+                '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>> <<permalink()>> <<collapse_button("meta", '
+                'collapsed="icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=False)>> '
+                '<<sidebar("")>>'
             ],
             "meta": ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"],
         },
