@@ -3,12 +3,12 @@ Cares about the correct creation and handling of need layout.
 
 Based on https://github.com/useblocks/sphinxcontrib-needs/issues/102
 """
-from functools import lru_cache
-from optparse import Values
 import os
 import re
 import uuid
 from contextlib import suppress
+from functools import lru_cache
+from optparse import Values
 from typing import List, Optional, Tuple
 from urllib.parse import urlparse
 
