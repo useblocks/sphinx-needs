@@ -34,6 +34,7 @@ Released: under development
 -----
 Released: 16.08.2023
 
+* Improvement: Reduce document build time, by memoizing the inline parse in ``build_need`` (`#968 <https://github.com/useblocks/sphinx-needs/pull/968>`_)
 
 1.3.0
 -----
