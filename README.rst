@@ -53,7 +53,7 @@ Using poetry
 .. code-block:: bash
 
     poetry add sphinx-needs[all]
-    # Lighter install without matplotlib = no pie charts
+    # Lighter install without matplotlib = no bar/pie charts
     poetry add sphinx-needs
 
 Using pip
@@ -62,7 +62,7 @@ Using pip
 .. code-block:: bash
 
     pip install sphinx-needs[all]
-    # Lighter install without matplotlib = no pie charts
+    # Lighter install without matplotlib = no bar/pie charts
     pip install sphinx-needs
 
 .. note::
@@ -76,7 +76,7 @@ Using sources
 .. code-block:: bash
 
     pip install .[all]
-    # Lighter install without matplotlib = no pie charts
+    # Lighter install without matplotlib = no bar/pie charts
     pip install .
     # or
     poetry install
