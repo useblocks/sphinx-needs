@@ -8,9 +8,18 @@ License
 
 .. include:: ../LICENSE
 
-1.3.0
+2.0.0
 -----
 Released: under development
+
+1.4.0
+-----
+Released: under development
+
+
+1.3.0
+-----
+Released: 16.08.2023
 
 * Improvement: Configuration option :ref:`needs_debug_measurement` added, which creates a runtime report
   for debugging purposes.
