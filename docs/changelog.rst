@@ -12,9 +12,18 @@ License
 Released: under development
 * Improvement: Added Builder :ref:`needs_lut_builder` and config option :ref:`needs_lut_build_json` in `conf.py`.
 
-1.3.0
+2.0.0
 -----
 Released: under development
+
+1.4.0
+-----
+Released: under development
+
+
+1.3.0
+-----
+Released: 16.08.2023
 
 * Improvement: Configuration option :ref:`needs_debug_measurement` added, which creates a runtime report
   for debugging purposes.
