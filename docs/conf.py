@@ -132,6 +132,8 @@ DEFAULT_DIAGRAM_TEMPLATE = (
 
 needs_report_dead_links = False
 
+needs_report_dead_links = False
+
 needs_types = [
     # Architecture types
     {
@@ -320,6 +322,7 @@ needs_layouts = {
 
 needs_service_all_data = True
 
+needs_services = {}
 needs_services = {}
 
 needs_string_links = {
