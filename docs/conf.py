@@ -62,6 +62,11 @@ intersphinx_mapping = {
     "sphinx": ("https://www.sphinx-doc.org/en/master", None),
 }
 
+nitpick_ignore = [
+    ("py:class", "T"),
+    ("py:class", "sphinx_needs.data.NeedsInfoType"),
+]
+
 # smartquotes = False
 
 needs_debug_measurement = True
