@@ -19,7 +19,7 @@ from sphinx_needs.diagrams_common import (
 from sphinx_needs.directives.utils import get_link_type_option
 from sphinx_needs.filter_common import FilterBase, filter_single_need, process_filters
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import MONTH_NAMES, add_doc
+from sphinx_needs.utils import MONTH_NAMES, add_doc, plantuml_debug
 
 logger = get_logger(__name__)
 
@@ -306,6 +306,15 @@ def process_needgantt(app, doctree, fromdocname, found_nodes):
             content.append(para)
         if current_needgantt["show_filters"]:
             content.append(get_filter_para(current_needgantt))
+
+        if app.config.needs_plantuml_debug:
+            plantuml_debug(
+                "needgant",
+                app.config.plantuml,
+                puml_node.children[0]["uml"],
+                current_needgantt["docname"],
+                current_needgantt["lineno"],
+            )
 
         if current_needgantt["debug"]:
             content += get_debug_container(puml_node)

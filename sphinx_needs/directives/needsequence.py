@@ -19,7 +19,7 @@ from sphinx_needs.diagrams_common import (
 )
 from sphinx_needs.filter_common import FilterBase
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import add_doc, unwrap
+from sphinx_needs.utils import add_doc, plantuml_debug, unwrap
 
 logger = get_logger(__name__)
 
@@ -210,6 +210,15 @@ def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str,
             content.append(para)
         if current_needsequence["show_filters"]:
             content.append(get_filter_para(current_needsequence))
+
+        if app.config.needs_plantuml_debug:
+            plantuml_debug(
+                "needflow",
+                app.config.plantuml,
+                puml_node.children[0]["uml"],
+                current_needsequence["docname"],
+                current_needsequence["lineno"],
+            )
 
         if current_needsequence["debug"]:
             content += get_debug_container(puml_node)

@@ -488,13 +488,12 @@ needs_plantuml_debug
 
 .. versionadded:: 1.4.0
 
-Activates the debugging mode for all PlantUML related directives like :ref:`needflow`, :ref:`needuml` and :ref:`needarch`.
+Activates the debugging mode for all PlantUML related directives like :ref:`needflow`, :ref:`needuml`, :ref:`needarch`
+and others.
 This runs PlantUML directly in the scope of Sphinx-Needs and allows Sphinx-Needs to recognize
 and analyse syntax errors in advance.
 
-An error will lead to a detailed report on the command line.
-It also sets the :ref:`needflow_debug` option, so that the generated PlantUML code is printed
-below each ``needflow`` and Co.
+An error will lead to a report on the command line.
 
 Default value: ``False``
 

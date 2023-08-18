@@ -1,14 +1,12 @@
 import html
 import os
 import re
-import tempfile
 from typing import Iterable, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
 from jinja2 import Template
 from sphinx.application import Sphinx
-from sphinxcontrib.plantuml import _split_cmdargs  # Needed for plantuml execution path
 from sphinxcontrib.plantuml import (
     generate_name,  # Needed for plantuml filename calculation
 )
@@ -17,7 +15,7 @@ from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link, create_legend
 from sphinx_needs.filter_common import FilterBase, filter_single_need, process_filters
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import add_doc, unwrap
+from sphinx_needs.utils import add_doc, plantuml_debug, unwrap
 
 logger = get_logger(__name__)
 
@@ -494,11 +492,13 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
         # If the central PlantUML Debug option is set, we need to generate the code already once in advance and
         # report any errors directly.
         if app.config.needs_plantuml_debug:
-            plantuml_args = _split_cmdargs(app.config.plantuml)
-            plantuml_args.extend(["-stdrpt:1"])
-            with tempfile.NamedTemporaryFile() as tmp:
-                tmp.write(puml_node["uml"])
-                plantuml_args.extend([tmp.name])
+            plantuml_debug(
+                "needflow",
+                app.config.plantuml,
+                puml_node.children[0]["uml"],
+                current_needflow["docname"],
+                current_needflow["lineno"],
+            )
 
         # We have to restrustructer the needflow
         # If this block should be organized differently

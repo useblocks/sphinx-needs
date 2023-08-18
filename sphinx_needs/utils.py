@@ -3,6 +3,8 @@ import importlib
 import operator
 import os
 import re
+import subprocess
+import tempfile
 from functools import reduce, wraps
 from re import Pattern
 from typing import Any, Dict, List, Optional, TypeVar, Union
@@ -12,6 +14,7 @@ from docutils import nodes
 from jinja2 import BaseLoader, Environment, Template
 from matplotlib.figure import FigureBase
 from sphinx.application import BuildEnvironment, Sphinx
+from sphinxcontrib.plantuml import _split_cmdargs
 
 from sphinx_needs.defaults import NEEDS_PROFILING
 from sphinx_needs.logging import get_logger
@@ -581,3 +584,32 @@ def add_doc(env: BuildEnvironment, docname: str, category=None):
             env.needs_all_docs[category] = []
         if docname not in env.needs_all_docs[category]:
             env.needs_all_docs[category].append(docname)
+
+
+def plantuml_debug(uml_type, cmd, code, docname, lineno):
+    """Checks a given Plantuml Code and prints found errors"""
+    try:
+        plantuml_args = _split_cmdargs(cmd)
+        plantuml_args.extend(["-stdrpt:2"])
+        debug_file = tempfile.NamedTemporaryFile(prefix="plantuml_debug_", suffix=".puml", delete=False)
+        plantuml_args.extend([debug_file.name])
+        with open(debug_file.name, "w") as tmp_puml:
+            tmp_puml.write(code)
+        # output = subprocess.check_output(plantuml_args, shell=True, errors=True, text=True).decode("utf-8")
+        output = subprocess.run(plantuml_args, capture_output=True)
+    finally:
+        status = output.returncode
+        icon = "✓" if status == 0 else "✕"
+        output_text = output.stderr.decode("utf-8").replace("\n", "")
+        print(f"{icon} {uml_type} {docname}:{lineno}: {output_text}")
+        if status != 0:
+            print(f"  uml-file: {debug_file.name}")
+
+        try:
+            if status == 0:
+                # Let's keep the file, if an error has happened
+                os.remove(debug_file.name)
+            os.remove(debug_file.name.replace(".puml", ".png"))
+            os.remove(debug_file.name.replace(".puml", ".cmapx"))  # Some temp files from plantuml
+        except Exception:
+            pass

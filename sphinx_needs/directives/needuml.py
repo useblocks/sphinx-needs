@@ -10,7 +10,7 @@ from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link
 from sphinx_needs.directives.needflow import make_entity_name
 from sphinx_needs.filter_common import filter_needs
-from sphinx_needs.utils import add_doc
+from sphinx_needs.utils import add_doc, plantuml_debug
 
 
 class Needuml(nodes.General, nodes.Element):
@@ -455,6 +455,11 @@ def process_needuml(app, doctree, fromdocname, found_nodes):
             title_text = current_needuml["caption"]
             title = nodes.title(title_text, "", nodes.Text(title_text))
             content.insert(0, title)
+
+        if app.config.needs_plantuml_debug:
+            plantuml_debug(
+                "needuml", app.config.plantuml, puml_node["uml"], current_needuml["docname"], current_needuml["lineno"]
+            )
 
         if current_needuml["debug"]:
             content += get_debug_node_from_puml_node(puml_node)
