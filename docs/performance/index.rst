@@ -7,4 +7,5 @@ Performance & Profiling
    :maxdepth: 2
 
    script
+   debug
 
