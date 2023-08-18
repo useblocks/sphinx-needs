@@ -67,7 +67,6 @@ jobs:
         with:
           push: ${{ github.event_name != 'pull_request' && steps.deploycheck.outputs.value == 'y' }}
           file: docker/Dockerfile
-          context: ci
           platforms: linux/amd64,linux/arm64
           build-args: |
             NEEDS_VERSION=${{ env.NEEDS_VERSION }}
