@@ -111,7 +111,7 @@ Allows to inject additional key-value pairs into the ``needuml`` rendering.
    It is not available in code loaded via :ref:`needuml_jinja_uml`.
    So we suggest to use them only in non-embedded needuml directives.
    In an embedded needuml, you can store the information in the options
-   of the need and access them with :ref:`needflow_need` like in 
+   of the need and access them with :ref:`needflow` like in
    :ref:`needuml` introduction.
 
 

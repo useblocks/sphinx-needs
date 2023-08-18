@@ -22,14 +22,13 @@ Each services creates normally multiple need objects for each element found by q
 
     .. needservice:: github-issues
        :query: repo:useblocks/sphinx-needs node latexpdf
+       :max_amount: 1
        :max_content_lines: 4
 
-{% if fast_build != true %}
-.. needservice:: github-issues
-   :query: repo:useblocks/sphinx-needs node latexpdf
-   :max_amount: 1
-   :max_content_lines: 4
-{% endif %}
+.. figure:: /_images/github_issue_1.png
+   :scale: 80%
+
+   Example of a github Issue collected with Sphinx-Needs.
 
 Directive options, which can also used for normal needs, can also be set for ``needservice`` directive.
 Also the content part of ``needservice`` is added as extra data to the end of the finally created needs.
@@ -51,20 +50,10 @@ Also the content part of ``needservice`` is added as extra data to the end of th
 
        Extra content for each new need
 
-{% if fast_build != true %}
-.. needservice:: github-issues
-   :type: spec
-   :author: Me
-   :tags: awesome, issue
-   :query: repo:useblocks/sphinx-needs node latexpdf
-   :id_prefix: GH_
-   :max_amount: 1
-   :max_content_lines: 4
-   :layout: clean
-   :style: discreet
+.. figure:: /_images/github_issue_2.png
+   :scale: 80%
 
-   Extra content for each new need
-{%endif%}
+   Example of a github Issue collected with Sphinx-Needs.
 
 Querying objects
 ----------------
@@ -101,10 +90,6 @@ This loads all open issues, which have the strings *needtable* and *viewports* i
     .. needservice:: github-issues
        :query: repo:useblocks/sphinx-needs state:open needtable viewports
 
-{% if fast_build != true %}
-.. needservice:: github-issues
-   :query: repo:useblocks/sphinx-needs state:open needtable viewports
-{%endif%}
 
 specific
 ++++++++
@@ -123,10 +108,10 @@ This query fetches a specific pull request with the id 161.
     .. needservice:: github-prs
        :specific: useblocks/sphinx-needs/161
 
-{% if fast_build != true %}
-.. needservice:: github-prs
-   :specific: useblocks/sphinx-needs/161
-{%endif%}
+.. figure:: /_images/github_issue_3.png
+   :scale: 80%
+
+   Example of a github Issue collected with Sphinx-Needs.
 
 .. _service_github_config:
 
@@ -193,15 +178,10 @@ directive :ref:`needservice`.
        :layout: focus_l
        :style: blue_border
 
-{% if fast_build != true %}
-.. needservice:: github-issues
-   :query: repo:useblocks/sphinx-needs node latexpdf
-   :max_amount: 1
-   :max_content_lines: 4
-   :id_prefix: GH2_
-   :layout: focus_l
-   :style: blue_border
-{%endif%}
+.. figure:: /_images/github_issue_4.png
+   :scale: 80%
+
+   Example of a github Issue collected with Sphinx-Needs.
 
 Need type
 +++++++++
@@ -273,10 +253,6 @@ Search for all commits of Sphinx-Needs, which have ``Python`` in their message.
       :query: repo:useblocks/sphinx-needs python
       :max_amount: 2
 
-.. needservice:: github-commits
-   :query: repo:useblocks/sphinx-needs python
-   :max_amount: 2
-
 **Specific commit**
 
 Document commit ``a4a596`` of **Sphinx-Needs**.
@@ -286,8 +262,6 @@ Document commit ``a4a596`` of **Sphinx-Needs**.
     .. needservice:: github-commits
        :specific: useblocks/sphinx-needs/a4a596
 
-.. needservice:: github-commits
-   :specific: useblocks/sphinx-needs/a4a596113
 
 Filtering
 +++++++++
