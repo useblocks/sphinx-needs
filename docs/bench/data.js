@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1692247415112,
+  "lastUpdate": 1692352414182,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -3636,6 +3636,42 @@ window.BENCHMARK_DATA = {
             "value": 78.02769179100005,
             "unit": "s",
             "extra": "Commit: 11d6b1bef834946fcfb28eabc3611f48dc4c72cd\nBranch: master\nTime: 2023-08-17T06:35:40+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "distinct": true,
+          "id": "e66a08a0bb42548b599b960cc9e3d954bc96788c",
+          "message": "Easier Sphinx-Needs docs builds\n\n* Removes needservice dependency to external services like github\n* Shows images instead of real fetch external data\n* Removes on_ci and fast_build ENV vars and logic\n* Adds \"make needs\" command to get a needs.json file",
+          "timestamp": "2023-08-18T11:46:40+02:00",
+          "tree_id": "0ae3d228aa74e0742796d79d4adce81e2071de5d",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e66a08a0bb42548b599b960cc9e3d954bc96788c"
+        },
+        "date": 1692352410647,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22723381800000197,
+            "unit": "s",
+            "extra": "Commit: e66a08a0bb42548b599b960cc9e3d954bc96788c\nBranch: master\nTime: 2023-08-18T11:46:40+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 69.995611139,
+            "unit": "s",
+            "extra": "Commit: e66a08a0bb42548b599b960cc9e3d954bc96788c\nBranch: master\nTime: 2023-08-18T11:46:40+02:00"
           }
         ]
       }
