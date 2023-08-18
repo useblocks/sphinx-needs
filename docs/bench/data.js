@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1692358856731,
+  "lastUpdate": 1692359637577,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -3708,6 +3708,42 @@ window.BENCHMARK_DATA = {
             "value": 82.68729390200002,
             "unit": "s",
             "extra": "Commit: 4b9cb406dee640042b7ba54ee11930135c000414\nBranch: master\nTime: 2023-08-18T13:32:27+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "distinct": true,
+          "id": "377e6855cb582e57eafded26ca9b0937e596a73a",
+          "message": "Removing docker context: ci",
+          "timestamp": "2023-08-18T13:45:04+02:00",
+          "tree_id": "84879a33374faf750c52ecd7203d68df6e8def27",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/377e6855cb582e57eafded26ca9b0937e596a73a"
+        },
+        "date": 1692359631855,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2767473069999937,
+            "unit": "s",
+            "extra": "Commit: 377e6855cb582e57eafded26ca9b0937e596a73a\nBranch: master\nTime: 2023-08-18T13:45:04+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 89.83040106600004,
+            "unit": "s",
+            "extra": "Commit: 377e6855cb582e57eafded26ca9b0937e596a73a\nBranch: master\nTime: 2023-08-18T13:45:04+02:00"
           }
         ]
       }
