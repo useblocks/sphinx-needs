@@ -17,6 +17,7 @@ Released: under development
 Released: under development
 
 * Improvement: Reduce document build time, by memoizing the inline parse in ``build_need`` (`#968 <https://github.com/useblocks/sphinx-needs/pull/968>`_)
+* Improvement: Adding :ref:`needs_plantuml_debug` option to get meaningful error messages of PlantUML problems.
 
 1.3.0
 -----

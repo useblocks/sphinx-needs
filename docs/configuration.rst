@@ -481,6 +481,26 @@ Use ``style_start`` and ``style_end`` like this:
    and orientation (`left`, `rigth`, `up` and `down`). We suggest to set the orientation
    in `style_end` like in the example above, as this is more often supported.
 
+.. _needs_plantuml_debug:
+
+needs_plantuml_debug
+~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.4.0
+
+Activates the debugging mode for all PlantUML related directives like :ref:`needflow`, :ref:`needuml` and :ref:`needarch`.
+This runs PlantUML directly in the scope of Sphinx-Needs and allows Sphinx-Needs to recognize
+and analyse syntax errors in advance.
+
+An error will lead to a detailed report on the command line.
+It also sets the :ref:`needflow_debug` option, so that the generated PlantUML code is printed
+below each ``needflow`` and Co.
+
+Default value: ``False``
+
+This options doubles the build time needed to generate a needflow diagram, as the PlantUML code gets generated twice.
+Use it only, when it is hard to identify the source of PlantUML related problems.
+
 
 .. _needs_filter_data:
 

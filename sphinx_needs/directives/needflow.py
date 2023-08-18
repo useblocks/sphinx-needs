@@ -1,14 +1,16 @@
 import html
 import os
 import re
+import tempfile
 from typing import Iterable, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
 from jinja2 import Template
 from sphinx.application import Sphinx
+from sphinxcontrib.plantuml import _split_cmdargs  # Needed for plantuml execution path
 from sphinxcontrib.plantuml import (
-    generate_name,  # Need for plantuml filename calculation
+    generate_name,  # Needed for plantuml filename calculation
 )
 
 from sphinx_needs.debug import measure_time
@@ -489,11 +491,20 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
             para += filter_node
             content.append(para)
 
+        # If the central PlantUML Debug option is set, we need to generate the code already once in advance and
+        # report any errors directly.
+        if app.config.needs_plantuml_debug:
+            plantuml_args = _split_cmdargs(app.config.plantuml)
+            plantuml_args.extend(["-stdrpt:1"])
+            with tempfile.NamedTemporaryFile() as tmp:
+                tmp.write(puml_node["uml"])
+                plantuml_args.extend([tmp.name])
+
         # We have to restrustructer the needflow
         # If this block should be organized differently
-        if current_needflow["debug"] and found_needs:
+        if (current_needflow["debug"] or app.config.needs_plantuml_debug) and found_needs:
             # We can only access puml_node if found_needs is set.
-            # Otherwise it was not been set, or we get outdated data
+            # Otherwise, it wss not set, or we get outdated data
             debug_container = nodes.container()
             if isinstance(puml_node, nodes.figure):
                 data = puml_node.children[0]["uml"]

@@ -59,6 +59,7 @@ extensions = [
 ]
 
 # smartquotes = False
+needs_plantuml_debug = True
 
 needs_debug_measurement = True
 
