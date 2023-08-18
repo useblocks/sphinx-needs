@@ -112,7 +112,7 @@ def copy(app: Sphinx, need, needs, option, need_id=None, lower: bool = False, up
         .. test:: test of current_need value
            :id: copy_4
 
-           The following copy command copies the title of the first need found under the same highest
+           The es the title of the first need found under the same highest
            section (headline):
 
            [[copy('title', filter='current_need["sections"][-1]==sections[-1]')]]

@@ -216,22 +216,9 @@ Examples
 
 **Result**
 
-{% if on_ci != true %}
-
-.. needservice:: open-needs
-   :prefix: ONS_
-   :params: skip=0;limit=10
-
-.. needtable::
-   :filter: "ONS" in id
-   :columns: id, title, status, type
-   :style: table
-
-{% else %}
 .. hint::
 
    The below examples are just images, as no Open-Needs Server instance was available during documentation build.
-   In order for this to work, you must set the ``ON_CI`` environment variable to ``True``
 
 .. image:: /_images/ons_example.png
    :align: center
@@ -240,5 +227,3 @@ Examples
 .. image:: /_images/ons_table.png
    :align: center
    :width: 60%
-
-{% endif %}

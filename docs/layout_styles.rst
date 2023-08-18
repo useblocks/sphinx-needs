@@ -371,11 +371,11 @@ Available layout functions are:
 
 .. autofunction:: sphinx_needs.layout.LayoutHandler.meta_links_all(prefix='', postfix='', exclude=None)
 
-.. autofunction:: sphinx_needs.layout.LayoutHandler.image(url, height=None, width=None, align=None, no_link=False)
+.. autofunction:: sphinx_needs.layout.LayoutHandler.image(url, height=None, width=None, align=None, no_link=False, prefix="", is_external=False, img_class="")
 
-.. autofunction:: sphinx_needs.layout.LayoutHandler.link(url, text=None, image_url=None, image_height=None, image_width=None)
+.. autofunction:: sphinx_needs.layout.LayoutHandler.link(url, text=None, image_url=None, image_height=None, image_width=None, prefix="", is_dynamic=False)
 
-.. autofunction:: sphinx_needs.layout.LayoutHandler.permalink(image_url=None, image_height=None, image_width=None, text=None)
+.. autofunction:: sphinx_needs.layout.LayoutHandler.permalink(image_url=None, image_height=None, image_width=None, text=None, prefix="")
 
 .. autofunction:: sphinx_needs.layout.LayoutHandler.collapse_button(target='meta', collapsed='Show', visible='Close', initial=False)
 

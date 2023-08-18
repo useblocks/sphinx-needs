@@ -77,7 +77,6 @@ def benchmark_time(session):
         "--benchmark-json",
         "output.json",
         external=True,
-        env={"ON_CI": "true", "FAST_BUILD": "true"},
     )
 
 
@@ -94,7 +93,6 @@ def benchmark_memory(session):
         "--benchmark-json",
         "output.json",
         external=True,
-        env={"ON_CI": "true", "FAST_BUILD": "true"},
     )
     session.run("memray", "flamegraph", "-o", "mem_out.html", "mem_out.bin")
 
