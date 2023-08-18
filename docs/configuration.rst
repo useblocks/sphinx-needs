@@ -646,7 +646,7 @@ needs_report_template
 
 .. versionadded:: 1.0.1
 
-You can customize the layout of :ref:`needreport` using `Jinja <http://jinja.pocoo.org/>`_.
+You can customize the layout of :ref:`needreport` using `Jinja <http://jinja.pocoo.org/>`__.
 
 Set the value of ``needs_report_template`` to the path of the template you want to use.
 
@@ -2040,7 +2040,7 @@ needs_render_context
 ~~~~~~~~~~~~~~~~~~~~~
 .. versionadded:: 1.0.3
 
-This option allows you to use custom data as context when rendering `Jinja <https://jinja.palletsprojects.com/>`_ templates or strings.
+This option allows you to use custom data as context when rendering `Jinja <https://jinja.palletsprojects.com/>`__ templates or strings.
 
 Configuration example:
 
@@ -2134,7 +2134,7 @@ needs_template
 
 *removed: 0.3.0*
 
-The layout of needs can be fully customized by using `jinja <http://jinja.pocoo.org/>`_.
+The layout of needs can be fully customized by using `jinja <http://jinja.pocoo.org/>`__.
 
 If nothing is set, the following default template is used:
 
