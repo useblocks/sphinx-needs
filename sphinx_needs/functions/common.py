@@ -302,7 +302,7 @@ def check_linked_values(
                 if not filter_single_need(app, needs[link], filter_string):
                     continue
             except Exception as e:
-                logger.warning(f"CheckLinkedValues: Filter {filter_string} not valid: Error: {e}")
+                logger.warning(f"CheckLinkedValues: Filter {filter_string} not valid: Error: {e} [needs]", type="needs")
 
         if not one_hit and needs[link][search_option] not in search_value:
             return None
@@ -409,7 +409,7 @@ def calc_sum(app: Sphinx, need, needs, option, filter=None, links_only: bool = F
             except ValueError:
                 pass
             except NeedsInvalidFilter as ex:
-                logger.warning(f"Given filter is not valid. Error: {ex}")
+                logger.warning(f"Given filter is not valid. Error: {ex} [needs]", type="needs")
 
         with contextlib.suppress(ValueError):
             calculated_sum += float(check_need[option])

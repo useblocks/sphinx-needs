@@ -49,9 +49,10 @@ def update_need_with_parts(env: BuildEnvironment, need, part_nodes: List[NeedPar
 
         if inline_id in need["parts"]:
             log.warning(
-                "part_need id {} in need {} is already taken. need_part may get overridden.".format(
+                "part_need id {} in need {} is already taken. need_part may get overridden. [needs]".format(
                     inline_id, need["id"]
-                )
+                ),
+                type="needs",
             )
 
         need["parts"][inline_id] = {

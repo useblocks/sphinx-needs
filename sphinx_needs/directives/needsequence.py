@@ -104,9 +104,10 @@ def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str,
             if lt not in [link["option"].upper() for link in link_types]:
                 logger.warning(
                     "Unknown link type {link_type} in needsequence {flow}. Allowed values:"
-                    " {link_types}".format(
+                    " {link_types} [needs]".format(
                         link_type=lt, flow=current_needsequence["target_id"], link_types=",".join(link_types)
-                    )
+                    ),
+                    type="needs",
                 )
 
         content = []

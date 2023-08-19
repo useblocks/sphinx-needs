@@ -117,25 +117,29 @@ def process_need_outgoing(
                     and extra_links_dict[link_type]["allow_dead_links"]
                 ):
                     log_level = "INFO"
+                    kwargs = {}
                 else:
                     # Set an extra css class, if link type is not configured to allow dead links
                     dead_link_para.attributes["classes"].append("forbidden")
                     log_level = "WARNING"
+                    kwargs = {"type": "needs"}
 
                 if report_dead_links:
                     if node_need_ref and node_need_ref.line:
                         log.log(
                             log_level,
-                            f"Needs: linked need {link} not found "
-                            f"(Line {node_need_ref.line} of file {node_need_ref.source})",
+                            f"linked need {link} not found "
+                            f"(Line {node_need_ref.line} of file {node_need_ref.source}) [needs]",
+                            **kwargs,
                         )
                     else:
                         log.log(
                             log_level,
-                            "Needs: outgoing linked need {} not found (document: {}, "
-                            "source need {} on line {} )".format(
+                            "outgoing linked need {} not found (document: {}, "
+                            "source need {} on line {} ) [needs]".format(
                                 link, ref_need["docname"], ref_need["id"], ref_need["lineno"]
                             ),
+                            **kwargs,
                         )
 
             # If we have several links, we add an empty text between them

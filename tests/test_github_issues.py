@@ -28,8 +28,8 @@ def test_doc_github_44(test_app):
     assert "Test 2" in html
     assert "Test 3" in html
 
-    assert "Needs: linked need test_3 not found" not in output
-    assert "Needs: outgoing linked need test_123_broken not found" in output
+    assert "linked need test_3 not found" not in output
+    assert "outgoing linked need test_123_broken not found" in output
 
 
 @pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_github_issue_61"}], indirect=True)

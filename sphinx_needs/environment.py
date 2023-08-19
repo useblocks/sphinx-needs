@@ -111,7 +111,7 @@ def install_styles_static_files(app: Sphinx, env: BuildEnvironment) -> None:
 
         if not source_file_path.exists():
             source_file_path = css_root / "blank" / "blank.css"
-            logger.warning(f"{source_file_path} not found. Copying sphinx-internal blank.css")
+            logger.warning(f"{source_file_path} not found. Copying sphinx-internal blank.css [needs]", type="needs")
 
         dest_file = dest_dir / source_file_path.name
         dest_dir.mkdir(exist_ok=True)

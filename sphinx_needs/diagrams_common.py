@@ -67,7 +67,10 @@ class DiagramBase(Directive):
                 if len(link_types[i]) == 0 or link_types[i].isspace():
                     del link_types[i]
                     logger.warning(
-                        "Scruffy link_type definition found in needsequence. " "Defined link_type contains spaces only."
+                        "Scruffy link_type definition found in needsequence. "
+                        "Defined link_type contains spaces only. [needs]",
+                        type="needs",
+                        location=(env.docname, self.lineno),
                     )
 
         config_names = self.options.get("config")

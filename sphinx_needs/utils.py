@@ -308,7 +308,9 @@ def check_and_get_external_filter_func(current_needlist):
         try:
             filter_module, filter_function = filter_func_ref.rsplit(".")
         except ValueError:
-            logger.warning(f'Filter function not valid "{filter_func_ref}". Example: my_module:my_func')
+            logger.warning(
+                f'Filter function not valid "{filter_func_ref}". Example: my_module:my_func [needs]', type="needs"
+            )
             return []  # No needs were found because of invalid filter function
 
         result = re.search(r"^(\w+)(?:\((.*)\))*$", filter_function)
@@ -319,7 +321,7 @@ def check_and_get_external_filter_func(current_needlist):
             final_module = importlib.import_module(filter_module)
             filter_func = getattr(final_module, filter_function)
         except Exception:
-            logger.warning(f"Could not import filter function: {filter_func_ref}")
+            logger.warning(f"Could not import filter function: {filter_func_ref} [needs]", type="needs")
             return []
 
     return filter_func, filter_args
@@ -423,7 +425,8 @@ def match_string_link(
     except Exception as e:
         logger.warning(
             f'Problems dealing with string to link transformation for value "{data}" of '
-            f'option "{need_key}". Error: {e}'
+            f'option "{need_key}". Error: {e} [needs]',
+            type="needs",
         )
     else:
         return ref_item
@@ -473,7 +476,10 @@ def match_variants(option_value: Union[str, List], keywords: Dict, needs_variant
                         no_variants_in_option = False
                         return output.lstrip(":")
                 except Exception as e:
-                    logger.warning(f'There was an error in the filter statement: "{filter_string}". ' f"Error Msg: {e}")
+                    logger.warning(
+                        f'There was an error in the filter statement: "{filter_string}". ' f"Error Msg: {e} [needs]",
+                        type="needs",
+                    )
             else:
                 no_variants_in_option = True
 

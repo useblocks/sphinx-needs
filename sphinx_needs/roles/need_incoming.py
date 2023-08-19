@@ -74,7 +74,7 @@ def process_need_incoming(app: Sphinx, doctree: nodes.document, fromdocname: str
                     pass
 
             else:
-                env.warn_node("Needs: need %s not found" % node_need_backref["reftarget"], node_need_backref)
+                env.warn_node("need %s not found [needs]" % node_need_backref["reftarget"], node_need_backref)
 
         if len(node_link_container.children) == 0:
             node_link_container += nodes.Text("None")

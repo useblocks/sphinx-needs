@@ -64,7 +64,9 @@ class NeedflowDirective(FilterBase):
         targetnode = nodes.target("", "", ids=[targetid])
 
         all_link_types = ",".join(x["option"] for x in env.config.needs_extra_links)
-        link_types = list(split_link_types(self.options.get("link_types", all_link_types)))
+        link_types = list(
+            split_link_types(self.options.get("link_types", all_link_types), location=(env.docname, self.lineno))
+        )
 
         config_names = self.options.get("config")
         configs = []
@@ -110,10 +112,14 @@ class NeedflowDirective(FilterBase):
         return [targetnode, Needflow("")]
 
 
-def split_link_types(link_types: str) -> Iterable[str]:
+def split_link_types(link_types: str, location=None) -> Iterable[str]:
     def is_valid(link_type: str) -> bool:
         if len(link_type) == 0 or link_type.isspace():
-            logger.warning("Scruffy link_type definition found in needflow." "Defined link_type contains spaces only.")
+            logger.warning(
+                "Scruffy link_type definition found in needflow." "Defined link_type contains spaces only. [needs]",
+                type="needs",
+                location=location,
+            )
             return False
         return True
 
@@ -309,9 +315,10 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
         for lt in option_link_types:
             if lt not in [link["option"].upper() for link in link_types]:
                 logger.warning(
-                    "Unknown link type {link_type} in needflow {flow}. Allowed values: {link_types}".format(
+                    "Unknown link type {link_type} in needflow {flow}. Allowed values: {link_types} [needs]".format(
                         link_type=lt, flow=current_needflow["target_id"], link_types=",".join(link_types)
-                    )
+                    ),
+                    type="needs",
                 )
 
         content = []

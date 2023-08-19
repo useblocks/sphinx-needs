@@ -148,7 +148,8 @@ def add_need(
     if need_type not in configured_need_types:
         logger.warning(
             "Couldn't create need {}. Reason: The need-type (i.e. `{}`) is not set "
-            "in the project's 'need_types' configuration in conf.py.".format(id, need_type)
+            "in the project's 'need_types' configuration in conf.py. [needs]".format(id, need_type),
+            type="needs",
         )
 
     for ntype in types:
@@ -216,7 +217,10 @@ def add_need(
         new_tags = []  # Shall contain only valid tags
         for i in range(len(tags)):
             if len(tags[i]) == 0 or tags[i].isspace():
-                logger.warning(f"Scruffy tag definition found in need {need_id}. " "Defined tag contains spaces only.")
+                logger.warning(
+                    f"Scruffy tag definition found in need {need_id}. " "Defined tag contains spaces only. [needs]",
+                    type="needs",
+                )
             else:
                 new_tags.append(tags[i])
 
@@ -245,7 +249,9 @@ def add_need(
         for i in range(len(constraints)):
             if len(constraints[i]) == 0 or constraints[i].isspace():
                 logger.warning(
-                    f"Scruffy tag definition found in need {need_id}. " "Defined constraint contains spaces only."
+                    f"Scruffy tag definition found in need {need_id}. "
+                    "Defined constraint contains spaces only. [needs]",
+                    type="needs",
                 )
             else:
                 new_constraints.append(constraints[i])
@@ -506,7 +512,7 @@ def del_need(app: Sphinx, need_id: str) -> None:
     if need_id in env.needs_all_needs:
         del env.needs_all_needs[need_id]
     else:
-        logger.warning(f"Given need id {need_id} not exists!")
+        logger.warning(f"Given need id {need_id} not exists! [needs]", type="needs")
 
 
 def add_external_need(
@@ -621,7 +627,10 @@ def _read_in_links(links_string: Union[str, List[str]]) -> List[str]:
             link_list = links_string
         for link in link_list:
             if link.isspace():
-                logger.warning(f"Grubby link definition found in need {id}. " "Defined link contains spaces only.")
+                logger.warning(
+                    f"Grubby link definition found in need {id}. " "Defined link contains spaces only. [needs]",
+                    type="needs",
+                )
             else:
                 links.append(link.strip())
 

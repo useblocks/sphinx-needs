@@ -446,7 +446,7 @@ def load_config(app: Sphinx, *_args) -> None:
     existing_extra_options = NEEDS_CONFIG.get("extra_options")
     for option in app.config.needs_extra_options:
         if option in existing_extra_options:
-            log.warning(f'extra_option "{option}" already registered.')
+            log.warning(f'extra_option "{option}" already registered. [needs]', type="needs")
         NEEDS_CONFIG.add("extra_options", {option: directives.unchanged}, dict, True)
     extra_options = NEEDS_CONFIG.get("extra_options")
 
@@ -524,7 +524,7 @@ def load_config(app: Sphinx, *_args) -> None:
         if name not in existing_warnings:
             NEEDS_CONFIG.add("warnings", {name: check}, dict, append=True)
         else:
-            log.warning(f'{name} for "warnings" is already registered.')
+            log.warning(f'{name} for "warnings" is already registered. [needs]', type="needs")
 
 
 def visitor_dummy(*_args, **_kwargs) -> None:

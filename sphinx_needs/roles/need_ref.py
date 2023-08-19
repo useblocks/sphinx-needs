@@ -108,13 +108,13 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                 try:
                     link_text = ref_name.format(**dict_need)
                 except KeyError as e:
-                    link_text = '"Needs: option placeholder %s for need %s not found (Line %i of file %s)"' % (
+                    link_text = '"option placeholder %s for need %s not found (Line %i of file %s)"' % (
                         e,
                         node_need_ref["reftarget"],
                         node_need_ref.line,
                         node_need_ref.source,
                     )
-                    log.warning(link_text)
+                    log.warning(link_text + " [needs]", type="needs")
             else:
                 if ref_name:
                     # If ref_name differs from the need id, we treat the "ref_name content" as title.
@@ -123,10 +123,9 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                     link_text = app.config.needs_role_need_template.format(**dict_need)
                 except KeyError as e:
                     link_text = (
-                        '"Needs: the config parameter needs_role_need_template uses not supported placeholders: %s "'
-                        % e
+                        '"the config parameter needs_role_need_template uses not supported placeholders: %s "' % e
                     )
-                    log.warning(link_text)
+                    log.warning(link_text + " [needs]", type="needs")
 
             node_need_ref[0].children[0] = nodes.Text(link_text)
 
@@ -147,8 +146,9 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
 
         else:
             log.warning(
-                "Needs: linked need %s not found (Line %i of file %s)"
-                % (node_need_ref["reftarget"], node_need_ref.line, node_need_ref.source)
+                "linked need %s not found (Line %i of file %s) [needs]"
+                % (node_need_ref["reftarget"], node_need_ref.line, node_need_ref.source),
+                type="needs",
             )
 
         node_need_ref.replace_self(new_node_ref)

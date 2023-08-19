@@ -157,7 +157,9 @@ class NeedDirective(SphinxDirective):
                 if link.isspace():
                     logger.warning(
                         f"Grubby link definition found in need '{self.trimmed_title}'. "
-                        "Defined link contains spaces only."
+                        "Defined link contains spaces only. [needs]",
+                        type="needs",
+                        location=(self.env.docname, self.lineno),
                     )
                 else:
                     links.append(link.strip())
@@ -206,8 +208,10 @@ class NeedDirective(SphinxDirective):
         if len(self.arguments) > 0:  # a title was passed
             if "title_from_content" in self.options:
                 self.log.warning(
-                    'Needs: need "{}" has :title_from_content: set, '
-                    "but a title was provided. (see file {})".format(self.arguments[0], self.docname)
+                    'need "{}" has :title_from_content: set, '
+                    "but a title was provided. (see file {}) [needs]".format(self.arguments[0], self.docname),
+                    type="needs",
+                    location=(self.env.docname, self.lineno),
                 )
             return self.arguments[0]
         elif self.title_from_content:
