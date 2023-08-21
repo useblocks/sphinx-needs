@@ -7,6 +7,10 @@ License
 -------
 
 .. include:: ../LICENSE
+1.4.0
+-----
+Released: under development
+* Improvement: Added Builder :ref:`needs_lut_builder` and config option :ref:`needs_lut_build_json` in `conf.py`.
 
 1.3.0
 -----

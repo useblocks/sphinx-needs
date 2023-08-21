@@ -2344,6 +2344,9 @@ Can be overwritten for each single need by setting :ref:`need_collapse`.
 
 needs_lut_build_json
 ~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.4.0
+
 Builds a ``needs_lut.json`` file during other builds (like ``html``), which is different from ``needs.json``, only include list of key ``id`` and value of ``docname`` or ``external_url``.
 This is helpful for loading data fastly when you need improve performance.
 Default: False
