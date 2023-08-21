@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1692610701828,
+  "lastUpdate": 1692625058871,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -3780,6 +3780,42 @@ window.BENCHMARK_DATA = {
             "value": 83.41045449700005,
             "unit": "s",
             "extra": "Commit: 78413f6ca72c176abc5fc8250e0883faa5c92644\nBranch: master\nTime: 2023-08-21T11:28:46+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5b983a46209ce04e10f389a08b604bf39eb35b11",
+          "message": "👌 Improve sphinx warnings (#975)\n\nThis PR is intended to standardise and improve the sphinx warnings\r\nemitted by sphinx-needs:\r\n\r\n1. To make it clear when a warning originates from sphinx-needs\r\n2. Where possible, to add the location of the warning origin (in the\r\nsource documentation)\r\n\r\ni.e. all warning logs should now look like:\r\n\r\n```\r\n/path/to/file.rst:<line number>: WARNING: <message> [needs]\r\n```\r\n\r\n---\r\n\r\nThis is similar to my work in\r\nhttps://myst-parser.readthedocs.io/en/latest/configuration.html#build-warnings,\r\nit prefixes all warnings with `[needs]`, and adds the `needs` type to\r\nthe warning, meaning it can be specifically suppressed (see\r\nhttps://www.sphinx-doc.org/en/master/usage/configuration.html#confval-suppress_warnings).\r\n(warning subtypes could also be added in follow up PRs)\r\n\r\nI have also added the `location` argument to some warnings (where the\r\nlocation was obvious), although there are probably some more that could\r\nalso have a location (but this can be done in later PRs),\r\n\r\nNote, IMO it would be ideal if the type was automatically shown by\r\nsphinx, but this is not currently the case:\r\nhttps://github.com/sphinx-doc/sphinx/issues/8845\r\n\r\nNote also, I intend to make an upstream PR to\r\nhttps://github.com/sphinx-contrib/plantuml, to also improve their\r\nwarnings",
+          "timestamp": "2023-08-21T15:29:51+02:00",
+          "tree_id": "fe07034f7c4770d6bbb9ce2533189f3ada01b897",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/5b983a46209ce04e10f389a08b604bf39eb35b11"
+        },
+        "date": 1692625053658,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2869727570000009,
+            "unit": "s",
+            "extra": "Commit: 5b983a46209ce04e10f389a08b604bf39eb35b11\nBranch: master\nTime: 2023-08-21T15:29:51+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 78.82003235799999,
+            "unit": "s",
+            "extra": "Commit: 5b983a46209ce04e10f389a08b604bf39eb35b11\nBranch: master\nTime: 2023-08-21T15:29:51+02:00"
           }
         ]
       }
