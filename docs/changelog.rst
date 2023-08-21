@@ -11,7 +11,7 @@ License
 1.4.0
 -----
 Released: under development
-* Improvement: Builder :ref:`NeedsIdBuilder` added, which exports all needs to list json file for each need.
+* Improvement: Added  Builder :ref:`NeedsIdBuilder` added and config option :ref:`needs_build_json_per_id` in `conf.py`. 
 
 1.3.0
 -----
