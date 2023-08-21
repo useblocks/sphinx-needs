@@ -167,7 +167,7 @@ class NeedsIdBuilder(Builder):
     file_suffix = ".txt"
     links_suffix = None
     LIST_KEY_EXCLUSIONS_NEEDS = ["content_node"]
-    
+
     def write_doc(self, docname: str, doctree: nodes.document) -> None:
         pass
 
@@ -222,5 +222,5 @@ def build_needs_id_json(app: Sphinx, _exception: Exception) -> None:
     except TypeError:
         needs_id_builder = NeedsIdBuilder(app)
         needs_id_builder.set_environment(env)
-                                      
+
     needs_id_builder.finish()
