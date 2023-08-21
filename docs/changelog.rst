@@ -21,15 +21,6 @@ Released: under development
 
 * Change `NeedsBuilder` format to `needs` (`#978 <https://github.com/useblocks/sphinx-needs/pull/978>`_)
 
-1.4.0
------
-Released: 16.08.2023
-
-* Improvement: Reduce document build time, by memoizing the inline parse in ``build_need`` (`#968 <https://github.com/useblocks/sphinx-needs/pull/968>`_)
-
-* Change `NeedsBuilder` format to `needs` (`#978 <https://github.com/useblocks/sphinx-needs/pull/978>`_)
-
-* Improvement: Builder :ref:`NeedsIdBuilder` added, which exports all needs to list json file for each need.
 1.3.0
 -----
 Released: 16.08.2023
