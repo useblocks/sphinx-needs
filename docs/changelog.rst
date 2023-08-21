@@ -18,6 +18,8 @@ Released: under development
 
 * Improvement: Reduce document build time, by memoizing the inline parse in ``build_need`` (`#968 <https://github.com/useblocks/sphinx-needs/pull/968>`_)
 
+* Improvement: Prefix all warnings with ``[needs]``, and allow them to be suppressed (`#975 <https://github.com/useblocks/sphinx-needs/pull/975>`_)
+
 1.3.0
 -----
 Released: 16.08.2023
