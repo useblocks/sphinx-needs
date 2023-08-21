@@ -2343,6 +2343,9 @@ Can be overwritten for each single need by setting :ref:`need_collapse`.
 
 needs_build_json_per_id 
 ~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.4.0
+    
 Builds list json file for each need, which have name is ``ID`` of need.
 This option works like :ref:`needs_build_json`. 
 
