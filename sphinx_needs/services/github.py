@@ -292,14 +292,16 @@ class GithubService(BaseService):
                         "    Status code: {}\n"
                         "    Reason: Looks like the authentication provider tries to redirect you."
                         " This is not supported and is a common problem, "
-                        "if you use GitHub Enterprise.".format(self.name, avatar_url, response.status_code)
+                        "if you use GitHub Enterprise. [needs]".format(self.name, avatar_url, response.status_code),
+                        type="needs",
                     )
                     avatar_file_path = default_avatar_file_path
                 else:
                     self.log.warning(
                         "GitHub service {} could not download avatar image "
                         "from {}.\n"
-                        "    Status code: {}".format(self.name, avatar_url, response.status_code)
+                        "    Status code: {} [needs]".format(self.name, avatar_url, response.status_code),
+                        type="needs",
                     )
                     avatar_file_path = default_avatar_file_path
         else:

@@ -88,7 +88,9 @@ class NeedimportDirective(Directive):
                         logger.warning(
                             "Deprecation warning: Relative path must be relative to the current document in future, "
                             "not to the conf.py location. Use a starting '/', like '/needs.json', to make the path "
-                            "relative to conf.py."
+                            "relative to conf.py. [needs]",
+                            type="needs",
+                            location=(self.env.docname, self.lineno),
                         )
             else:
                 # Absolute path starts with /, based on the source directory. The / need to be striped
@@ -140,9 +142,11 @@ class NeedimportDirective(Directive):
                         needs_list_filtered[key] = need
                 except Exception as e:
                     logger.warning(
-                        "needimport: Filter {} not valid. Error: {}. {}{}".format(
+                        "needimport: Filter {} not valid. Error: {}. {}{} [needs]".format(
                             filter_string, e, self.docname, self.lineno
-                        )
+                        ),
+                        type="needs",
+                        location=(self.env.docname, self.lineno),
                     )
 
         needs_list = needs_list_filtered

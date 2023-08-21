@@ -69,7 +69,9 @@ def process_constraints(app: Sphinx, need: Dict[str, Any]) -> None:
 
                         if "warn" in actions_on_fail:
                             logger.warning(
-                                f"Constraint {cmd} for need {need_id} FAILED! severity: {severity}", color="red"
+                                f"Constraint {cmd} for need {need_id} FAILED! severity: {severity} [needs]",
+                                type="needs",
+                                color="red",
                             )
 
                         if "break" in actions_on_fail:

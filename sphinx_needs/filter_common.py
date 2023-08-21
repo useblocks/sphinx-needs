@@ -81,7 +81,7 @@ def process_filters(app: Sphinx, all_needs, current_needlist, include_external: 
         try:
             all_needs = sorted(all_needs, key=lambda node: node[sort_key] or "")
         except KeyError as e:
-            log.warning(f"Sorting parameter {sort_key} not valid: Error: {e}")
+            log.warning(f"Sorting parameter {sort_key} not valid: Error: {e} [needs]", type="needs")
 
     # check if include external needs
     checked_all_needs = []
@@ -166,7 +166,7 @@ def process_filters(app: Sphinx, all_needs, current_needlist, include_external: 
             filter_func = measure_time(category="filter_func", source="user", func=filter_func)
             filter_func(**context)
         else:
-            log.warning("Something went wrong running filter")
+            log.warning("Something went wrong running filter [needs]", type="needs")
             return []
 
         # The filter results may be dirty, as it may continue manipulated needs.
@@ -268,7 +268,8 @@ def filter_needs(app: Sphinx, needs, filter_string: str = "", current_need=None)
                 found_needs.append(filter_need)
         except Exception as e:
             if not error_reported:  # Let's report a filter-problem only onces
-                log.warning(e)
+                location = (current_need["docname"], current_need["lineno"]) if current_need else None
+                log.warning(str(e) + " [needs]", type="needs", location=location)
                 error_reported = True
 
     return found_needs
