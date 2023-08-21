@@ -40,9 +40,9 @@ sys.path.append(os.path.abspath("../sphinxcontrib"))
 # built documents.
 #
 # The short X.Y version.
-version = "1.2"
+version = "1.3"
 # The full version, including alpha/beta/rc tags.
-release = "1.2.2"
+release = "1.3.0"
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
 
@@ -57,6 +57,8 @@ extensions = [
     "sphinx.ext.duration",
     "sphinx_immaterial",
 ]
+
+# smartquotes = False
 
 needs_debug_measurement = True
 
@@ -127,6 +129,8 @@ DEFAULT_DIAGRAM_TEMPLATE = (
 
 # Absolute path to the needs_report_template_file based on the conf.py directory
 # needs_report_template = "/needs_templates/report_template.need"   # Use custom report template
+
+needs_report_dead_links = False
 
 needs_types = [
     # Architecture types
@@ -301,45 +305,22 @@ needs_layouts = {
             "meta": ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"],
         },
     },
+    "detail_view": {
+        "grid": "simple",
+        "layout": {
+            "head": [
+                '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>> <<permalink()>> <<collapse_button("meta", '
+                'collapsed="icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=False)>> '
+                '<<sidebar("")>>'
+            ],
+            "meta": ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"],
+        },
+    },
 }
 
 needs_service_all_data = True
 
-needs_services = {
-    "github-issues": {
-        "url": "https://api.github.com/",
-        "max_content_lines": 20,
-        "id_prefix": "GH_ISSUE_",
-    },
-    "github-prs": {
-        "url": "https://api.github.com/",
-        "max_content_lines": 20,
-        "id_prefix": "GH_PR_",
-    },
-    "github-commits": {
-        "url": "https://api.github.com/",
-        "max_content_lines": 20,
-        "id_prefix": "GH_COM_",
-    },
-    "open-needs": {
-        "url": "http://127.0.0.1:9595",
-        "user": os.environ.get("ONS_USERNAME", ""),
-        "password": os.environ.get("ONS_PASSWORD", ""),
-        "id_prefix": "ONS_",
-        "mappings": {
-            "id": "{{key}}",
-            "type": ["type"],
-            "title": "{{title}}",
-            "status": ["options", "status"],
-            "links": ["references", "links"],
-        },
-        "extra_data": {
-            "Priority": ["options", "priority"],
-            "Approval": ["options", "approved"],
-            "Cost": ["options", "costs"],
-        },
-    },
-}
+needs_services = {}
 
 needs_string_links = {
     "config_link": {
@@ -379,20 +360,6 @@ needs_render_context = {
 
 # build needs.json to make permalinks work
 needs_build_json = True
-
-# Get and maybe set GitHub credentials for services.
-# This is needed as the rate limit for not authenticated users is too low for the amount of requests we
-# need to perform for this documentation
-github_username = os.environ.get("GITHUB_USERNAME", "")
-github_token = os.environ.get("GITHUB_TOKEN", "")
-
-if github_username != "" and github_token != "":
-    print(f"---> GITHUB: Using as username: {github_username}. length token: {len(github_token)}")
-    for service in ["github-issues", "github-prs", "github-commits"]:
-        needs_services[service]["username"] = github_username
-        needs_services[service]["token"] = github_token
-else:
-    print("---> GITHUB: No auth provided")
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -581,13 +548,7 @@ rst_epilog = """
 
 """
 
-# Check, if docs get built on ci.
-# If this is the case, external services like Open-Needs are not available and
-# docs will show images instead of getting real data.
-on_ci = os.environ.get("ON_CI", "False").upper() == "TRUE"
-fast_build = os.environ.get("FAST_BUILD", "False").upper() == "TRUE"
-
-html_context = {"on_ci": on_ci, "fast_build": fast_build}
+html_context = {}
 
 
 def rstjinja(app: Sphinx, _docname: str, source: List[str]) -> None:
@@ -606,8 +567,6 @@ def rstjinja(app: Sphinx, _docname: str, source: List[str]) -> None:
 
 
 def setup(app: Sphinx) -> None:
-    print(f"---> ON_CI is: {on_ci}")
-    print(f"---> FAST_BUILD is: {fast_build}")
     app.connect("source-read", rstjinja)
 
 

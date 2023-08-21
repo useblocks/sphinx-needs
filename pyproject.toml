@@ -2,7 +2,7 @@
 name = "sphinx-needs"
 
 # !! Don't miss updates in needs.py, conf.py, changelog.rst, and .github/workflows/docker !!!
-version = "1.2.2"
+version = "1.3.0"
 
 description = "Sphinx needs extension for managing needs/requirements and specifications"
 authors = ["team useblocks <info@useblocks.com>"]

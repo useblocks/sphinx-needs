@@ -8,9 +8,19 @@ License
 
 .. include:: ../LICENSE
 
-1.3.0
+2.0.0
 -----
 Released: under development
+
+1.4.0
+-----
+Released: under development
+
+* Improvement: Reduce document build time, by memoizing the inline parse in ``build_need`` (`#968 <https://github.com/useblocks/sphinx-needs/pull/968>`_)
+
+1.3.0
+-----
+Released: 16.08.2023
 
 * Improvement: Configuration option :ref:`needs_debug_measurement` added, which creates a runtime report
   for debugging purposes.

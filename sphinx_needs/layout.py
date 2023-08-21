@@ -7,7 +7,9 @@ import os
 import re
 import uuid
 from contextlib import suppress
-from typing import List, Optional
+from functools import lru_cache
+from optparse import Values
+from typing import List, Optional, Tuple
 from urllib.parse import urlparse
 
 import requests
@@ -169,6 +171,14 @@ def build_need(layout, node, app: Sphinx, style=None, fromdocname: Optional[str]
     node.parent.replace(node, node_container)
 
 
+@lru_cache(1)
+def _generate_inline_parser() -> Tuple[Values, Inliner]:
+    doc_settings = OptionParser(components=(Parser,)).get_default_values()
+    inline_parser = Inliner()
+    inline_parser.init_customizations(doc_settings)
+    return doc_settings, inline_parser
+
+
 class LayoutHandler:
     """
     Cares about the correct layout handling
@@ -267,7 +277,7 @@ class LayoutHandler:
         }
 
         # Dummy Document setup
-        self.doc_settings = OptionParser(components=(Parser,)).get_default_values()
+        self.doc_settings, self.inline_parser = _generate_inline_parser()
         self.dummy_doc = new_document("dummy", self.doc_settings)
         self.doc_language = languages.get_language(self.dummy_doc.settings.language_code)
         self.doc_memo = Struct(
@@ -352,9 +362,7 @@ class LayoutHandler:
         :param line: string to parse
         :return: nodes
         """
-        inline_parser = Inliner()
-        inline_parser.init_customizations(self.doc_settings)
-        result, message = inline_parser.parse(line, 0, self.doc_memo, self.dummy_doc)
+        result, message = self.inline_parser.parse(line, 0, self.doc_memo, self.dummy_doc)
         if message:
             raise SphinxNeedLayoutException(message)
         return result
