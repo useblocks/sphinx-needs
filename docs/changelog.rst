@@ -29,6 +29,7 @@ Released: 16.08.2023
 
 * Change `NeedsBuilder` format to `needs` (`#978 <https://github.com/useblocks/sphinx-needs/pull/978>`_)
 
+* Improvement: Builder :ref:`NeedsIdBuilder` added, which exports all needs to list json file for each need.
 1.3.0
 -----
 Released: 16.08.2023
