@@ -13,21 +13,6 @@ License
 Released: under development
 * Improvement: Added  Builder :ref:`NeedsIdBuilder` added and config option :ref:`needs_build_json_per_id` in `conf.py`. 
 
-1.4.0
------
-Released: under development
-* Improvement: Added  Builder :ref:`NeedsIdBuilder` added and config option :ref:`needs_build_json_per_id` in `conf.py`. 
-
-2.0.0
------
-Released: under development
-
-1.4.0
------
-Released: under development
-
-* Improvement: Reduce document build time, by memoizing the inline parse in ``build_need`` (`#968 <https://github.com/useblocks/sphinx-needs/pull/968>`_)
-
 1.3.0
 -----
 Released: 16.08.2023
