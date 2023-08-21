@@ -285,8 +285,8 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_config_value("needs_debug_measurement", False, "html", types=[dict])
 
     # add json file per needs_id
-    app.add_config_value("needs_per_id", False, "html", types=[bool])
-    app.add_config_value("needs_per_id_build_path", "needs_id", "html")
+    app.add_config_value("needs_build_json_per_id", False, "html", types=[bool])
+    app.add_config_value("needs_build_json_per_id_path", "needs_id", "html")
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
     app.add_node(
