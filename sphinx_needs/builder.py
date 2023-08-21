@@ -17,7 +17,7 @@ log = get_logger(__name__)
 
 class NeedsBuilder(Builder):
     name = "needs"
-    format = "json"
+    format = "needs"
     file_suffix = ".txt"
     links_suffix = None
 
