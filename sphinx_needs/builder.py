@@ -211,7 +211,7 @@ class NeedsIdBuilder(Builder):
 def build_needs_id_json(app: Sphinx, _exception: Exception) -> None:
     env = unwrap(app.env)
 
-    if not env.config.needs_id_build_json:
+    if not env.config.needs_build_json_per_id:
         return
 
     # Do not create an additional needs_json for every needs_id, if builder is already "needs_id".
