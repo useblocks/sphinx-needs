@@ -3,9 +3,6 @@ on: [pull_request]
 jobs:
   js_tests:
     runs-on: ubuntu-latest
-    env:
-      ON_CI: true
-      FAST_BUILD: true
     steps:
     - name: Set Up Python 3.10.8
       uses: actions/setup-python@v4

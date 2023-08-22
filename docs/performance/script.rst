@@ -1,4 +1,4 @@
-.. _performance:
+.. _performance_script:
 
 Performance & Profiling script
 ==============================
