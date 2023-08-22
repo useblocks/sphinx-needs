@@ -167,7 +167,7 @@ or
 .. _needs_lut_builder:
 
 needs_lut
---------
+---------
 .. versionadded:: 1.4.0
 
 The **needs_lut** builder exports all found needs to a single json file, which only include list of key ``id`` and value of ``docname`` or ``external_url``.
