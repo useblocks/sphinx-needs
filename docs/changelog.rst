@@ -7,10 +7,6 @@ License
 -------
 
 .. include:: ../LICENSE
-1.4.0
------
-Released: under development
-* Improvement: Added Builder :ref:`needs_lut_builder` and config option :ref:`needs_lut_build_json` in `conf.py`.
 
 2.0.0
 -----
@@ -19,6 +15,7 @@ Released: under development
 1.4.0
 -----
 Released: under development
+* Improvement: Added Builder :ref:`needs_lut_builder` and config option :ref:`needs_lut_build_json` in `conf.py`.
 
 * Improvement: Reduce document build time, by memoizing the inline parse in ``build_need`` (`#968 <https://github.com/useblocks/sphinx-needs/pull/968>`_)
 
