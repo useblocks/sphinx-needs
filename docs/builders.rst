@@ -163,3 +163,233 @@ or
 .. hint::
 
     As an alternative, you can set the config option :ref:`needs_build_needumls` to export the needumls files during each build.
+
+.. _needs_per_page_builder:
+
+needs_per_page
+---------
+.. versionadded:: 1.4.0
+
+The **needs_per_page** builder exports all found needs with same ``docname`` into separate document.
+If docname has slash like  ``directives/list2need``, the file will be located in folder called :ref:`needs_per_page_build_path`
+e.g. `needs_per_page/directives/list2need.json`
+
+Usage
++++++
+
+.. code-block:: bash
+
+    sphinx-build -b needs_per_page source_dir build_dir
+
+Format
+++++++
+
+The file name ``configuration.json``
+.. code-block:: python
+
+    {
+    "needs": [
+        {
+            "xyz_123": {
+                "docname": "configuration",
+                "doctype": ".rst",
+                "lineno": 203,
+                "target_id": "xyz_123",
+                "external_url": null,
+                "content_id": "xyz_123",
+                "type": "req",
+                "type_name": "Requirement",
+                "type_prefix": "R_",
+                "type_color": "#BFD8D2",
+                "type_style": "node",
+                "status": "open",
+                "tags": [],
+                "constraints": [],
+                "constraints_passed": null,
+                "constraints_results": {},
+                "id": "xyz_123",
+                "title": "My requirement with custom options",
+                "full_title": "My requirement with custom options",
+                "content": "Some content",
+                "collapse": null,
+                "arch": {},
+                "style": null,
+                "layout": "",
+                "template": null,
+                "pre_template": null,
+                "post_template": null,
+                "hide": false,
+                "delete": null,
+                "jinja_content": null,
+                "parts": {},
+                "is_part": false,
+                "is_need": true,
+                "is_external": false,
+                "external_css": "external_link",
+                "is_modified": false,
+                "modifications": 0,
+                "my_extra_option": "A new option",
+                "another_option": "filter_me",
+                "author": "",
+                "comment": "",
+                "amount": "",
+                "hours": "",
+                "image": "",
+                "config": "",
+                "github": "",
+                "value": "",
+                "unit": "",
+                "query": "",
+                "specific": "",
+                "max_amount": "",
+                "max_content_lines": "",
+                "id_prefix": "",
+                "user": "",
+                "created_at": "",
+                "updated_at": "",
+                "closed_at": "",
+                "service": "",
+                "url": "",
+                "avatar": "",
+                "params": "",
+                "prefix": "",
+                "url_postfix": "",
+                "hidden": "",
+                "duration": "",
+                "completion": "",
+                "has_dead_links": "",
+                "has_forbidden_dead_links": "",
+                "links": [],
+                "links_back": [],
+                "parent_needs": [],
+                "parent_needs_back": [],
+                "blocks": [],
+                "blocks_back": [],
+                "tests": [],
+                "tests_back": [],
+                "checks": [],
+                "checks_back": [],
+                "triggers": [],
+                "triggers_back": [],
+                "starts_with": [],
+                "starts_with_back": [],
+                "starts_after": [],
+                "starts_after_back": [],
+                "ends_with": [],
+                "ends_with_back": [],
+                "sections": [
+                    "needs_extra_options",
+                    "Options",
+                    "Configuration"
+                ],
+                "section_name": "needs_extra_options",
+                "signature": "",
+                "parent_need": "",
+                "id_parent": "xyz_123",
+                "id_complete": "xyz_123"
+            }
+        },
+        {
+            "EXTRA_REQ_001": {
+                "docname": "configuration",
+                "doctype": ".rst",
+                "lineno": 371,
+                "target_id": "EXTRA_REQ_001",
+                "external_url": null,
+                "content_id": "EXTRA_REQ_001",
+                "type": "req",
+                "type_name": "Requirement",
+                "type_prefix": "R_",
+                "type_color": "#BFD8D2",
+                "type_style": "node",
+                "status": null,
+                "tags": [],
+                "constraints": [],
+                "constraints_passed": null,
+                "constraints_results": {},
+                "id": "EXTRA_REQ_001",
+                "title": "My requirement",
+                "full_title": "My requirement",
+                "content": "",
+                "collapse": null,
+                "arch": {},
+                "style": null,
+                "layout": "",
+                "template": null,
+                "pre_template": null,
+                "post_template": null,
+                "hide": false,
+                "delete": null,
+                "jinja_content": null,
+                "parts": {},
+                "is_part": false,
+                "is_need": true,
+                "is_external": false,
+                "external_css": "external_link",
+                "is_modified": false,
+                "modifications": 0,
+                "my_extra_option": "",
+                "another_option": "",
+                "author": "",
+                "comment": "",
+                "amount": "",
+                "hours": "",
+                "image": "",
+                "config": "",
+                "github": "",
+                "value": "",
+                "unit": "",
+                "query": "",
+                "specific": "",
+                "max_amount": "",
+                "max_content_lines": "",
+                "id_prefix": "",
+                "user": "",
+                "created_at": "",
+                "updated_at": "",
+                "closed_at": "",
+                "service": "",
+                "url": "",
+                "avatar": "",
+                "params": "",
+                "prefix": "",
+                "url_postfix": "",
+                "hidden": "",
+                "duration": "",
+                "completion": "",
+                "has_dead_links": "",
+                "has_forbidden_dead_links": "",
+                "links": [],
+                "links_back": [],
+                "parent_needs": [],
+                "parent_needs_back": [],
+                "blocks": [],
+                "blocks_back": [],
+                "tests": [],
+                "tests_back": [],
+                "checks": [],
+                "checks_back": [
+                    "EXTRA_TEST_001"
+                ],
+                "triggers": [],
+                "triggers_back": [],
+                "starts_with": [],
+                "starts_with_back": [],
+                "starts_after": [],
+                "starts_after_back": [],
+                "ends_with": [],
+                "ends_with_back": [],
+                "sections": [
+                    "needs_extra_links",
+                    "Options",
+                    "Configuration"
+                ],
+                "section_name": "needs_extra_links",
+                "signature": "",
+                "parent_need": "",
+                "id_parent": "EXTRA_REQ_001",
+                "id_complete": "EXTRA_REQ_001"
+            }
+        }
+    ]
+}
