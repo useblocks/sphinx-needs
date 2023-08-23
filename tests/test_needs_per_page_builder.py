@@ -1,6 +1,8 @@
 import json
-from sphinx_needs.filter_common import filter_needs
+
 import pytest
+
+from sphinx_needs.filter_common import filter_needs
 
 
 @pytest.mark.parametrize(

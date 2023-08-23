@@ -12,11 +12,11 @@ import sphinx_needs.debug as debug  # Need to set global var in it for timeing m
 from sphinx_needs.api.configuration import add_extra_option
 from sphinx_needs.builder import (
     NeedsBuilder,
-    NeedumlsBuilder,
     NeedsPerPageBuilder,
+    NeedumlsBuilder,
     build_needs_json,
-    build_needumls_pumls,
     build_needs_per_page_json,
+    build_needumls_pumls,
 )
 from sphinx_needs.config import NEEDS_CONFIG
 from sphinx_needs.defaults import (
