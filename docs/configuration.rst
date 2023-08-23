@@ -2312,7 +2312,7 @@ needs_per_page_build_path
 
 .. versionadded:: 1.4.0
 
-This option sets the location of list of ``json`` files that contain all found needs with the same ``docname`.
+This option sets the location of list of ``json`` files that contain all found needs with the same ``docname``.
 
 Default value: need_per_page
 

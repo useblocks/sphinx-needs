@@ -170,21 +170,21 @@ needs_per_page
 --------------
 .. versionadded:: 1.4.0
 
-The **needs_per_page** builder exports all found needs with same ``docname`` into separate document.
-If docname has slash like  ``directives/list2need``, the file will be located in folder called :ref:`needs_per_page_build_path`
-e.g. `needs_per_page/directives/list2need.json`
+The **needs_per_page** builder exports all found needs with same ``docname`` into separate ``json`` file.
+If docname has slash like  ``directives/list2need``, the file will be located in folder called :ref:`needs_per_page_build_path`.
+e.g. `needs_per_page/directives/list2need.json` .
 
 Usage
 +++++
+
 
 .. code-block:: bash
 
     sphinx-build -b needs_per_page source_dir build_dir
 
-Format
-++++++
 
-The file name ``configuration.json``
+Format with file name: configuration.json
+++++++
 .. code-block:: python
 
     {
