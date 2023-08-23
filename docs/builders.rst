@@ -167,7 +167,7 @@ or
 .. _needs_per_page_builder:
 
 needs_per_page
----------
+--------------
 .. versionadded:: 1.4.0
 
 The **needs_per_page** builder exports all found needs with same ``docname`` into separate document.
