@@ -178,7 +178,7 @@ class NeedsPerPageBuilder(Builder):
         needs_per_page_data = {}
         if not os.path.exists(needs_per_page_dir):
             os.mkdir(needs_per_page_dir)
-            
+
         needs_per_page_data_key = []
         for need in filtered_needs:
             needs_id_dict = {}
