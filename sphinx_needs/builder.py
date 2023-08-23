@@ -178,19 +178,22 @@ class NeedsPerPageBuilder(Builder):
         needs_per_page_data = {}
         if not os.path.exists(needs_per_page_dir):
             os.mkdir(needs_per_page_dir)
+            
+        needs_per_page_data_key = []
         for need in filtered_needs:
             needs_id_dict = {}
             id = need["id"]
             needs_id_dict[id] = {key: need[key] for key in need if key not in self.LIST_KEY_EXCLUSIONS_NEEDS}
             docs_name = need.get("docname")
-
-            if docs_name in needs_per_page_data.keys():
+            needs_per_page_data_key = needs_per_page_data.keys()
+            if docs_name in needs_per_page_data_key:
                 # add key docs_name
                 needs_per_page_data[docs_name].append(needs_id_dict)
             else:
                 needs_per_page_data[docs_name] = [needs_id_dict]
 
-        for docs_name_key in needs_per_page_data.keys():
+        needs_per_page_data_key = needs_per_page_data.keys()
+        for docs_name_key in needs_per_page_data_key:
             docs_name = f"{docs_name_key}.json"
             docs_name_file = os.path.join(needs_per_page_dir, docs_name)
             docs_name_file_dir = os.path.dirname(docs_name_file)
