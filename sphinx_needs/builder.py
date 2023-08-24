@@ -162,7 +162,7 @@ def build_needumls_pumls(app: Sphinx, _exception: Exception) -> None:
 
 class NeedsLookUpTableBuilder(Builder):
     name = "needs_lut"
-    format = "json"
+    format = "needs"
     file_suffix = ".txt"
     links_suffix = None
 
