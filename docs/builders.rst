@@ -183,7 +183,7 @@ Usage
     sphinx-build -b needs_per_page source_dir build_dir
 
 
-Format with file name: configuration.json
+Format
 ++++++
 .. code-block:: python
 

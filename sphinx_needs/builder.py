@@ -159,11 +159,13 @@ def build_needumls_pumls(app: Sphinx, _exception: Exception) -> None:
 
 
 class NeedsPerPageBuilder(Builder):
+
+    """Json builder for needs, which creates separate docname-based json-files include all needs with same docname"""
+
     name = "needs_per_page"
     format = "needs"
     file_suffix = ".txt"
     links_suffix = None
-    LIST_KEY_EXCLUSIONS_NEEDS = ["content_node"]
 
     def write_doc(self, docname: str, doctree: nodes.document) -> None:
         pass
@@ -171,27 +173,30 @@ class NeedsPerPageBuilder(Builder):
     def finish(self) -> None:
         env = unwrap(self.env)
         needs = env.needs_all_needs.values()
+        needs_list = NeedsList(env.config, self.outdir, self.srcdir)
         filter_string = self.app.config.needs_builder_filter
         needs_per_page_build_path = self.app.config.needs_per_page_build_path
         filtered_needs = filter_needs(self.app, needs, filter_string)
         needs_per_page_dir = os.path.join(self.outdir, needs_per_page_build_path)
+
         needs_per_page_data = {}
         if not os.path.exists(needs_per_page_dir):
-            os.mkdir(needs_per_page_dir)
+            os.makedirs(needs_per_page_dir, exist_ok=True)
 
+        # Create list docname-based dict has key is docname and value is list of need with same the docname .
         needs_per_page_data_key = []
         for need in filtered_needs:
             needs_id_dict = {}
             id = need["id"]
-            needs_id_dict[id] = {key: need[key] for key in need if key not in self.LIST_KEY_EXCLUSIONS_NEEDS}
+            needs_id_dict[id] = needs_list.make_simple_need(need)
             docs_name = need.get("docname")
-            needs_per_page_data_key = needs_per_page_data.keys()
-            if docs_name in needs_per_page_data_key:
+            if docs_name in needs_per_page_data:
                 # add key docs_name
                 needs_per_page_data[docs_name].append(needs_id_dict)
             else:
                 needs_per_page_data[docs_name] = [needs_id_dict]
 
+        # create seperate file for every docname-based dict
         needs_per_page_data_key = needs_per_page_data.keys()
         for docs_name_key in needs_per_page_data_key:
             docs_name = f"{docs_name_key}.json"

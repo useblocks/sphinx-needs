@@ -2300,7 +2300,7 @@ needs_per_page
 
 Build list of ``json`` files that contain all found needs with the same ``docname``. The name of each file should match the ``docname``.
 
-This option works like needs_build_json. 
+This option works like :ref:`needs_build_json`. 
 
 Default: False
 

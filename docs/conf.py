@@ -362,7 +362,7 @@ needs_render_context = {
 needs_build_json = True
 
 # build json file include needs with the same docs_name
-needs_per_page = False
+needs_per_page = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

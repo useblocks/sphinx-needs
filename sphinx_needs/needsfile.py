@@ -131,6 +131,10 @@ class NeedsList:
 
             self.log.debug(f"needs.json file loaded: {file}")
 
+    def make_simple_need(self, need_info):
+        writable_need = {key: need_info[key] for key in need_info if key not in self.JSON_KEY_EXCLUSIONS_FILTERS}
+        return writable_need
+
 
 class Errors:
     def __init__(self, schema_errors: List[Any]):

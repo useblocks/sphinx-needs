@@ -34,7 +34,6 @@ def test_doc_needs_per_page_builder(test_app):
             needs_file_content = needs_file.read()
             needs_list = json.loads(needs_file_content)
             assert isinstance(needs_list["needs"], list)
-            need_of_file = needs_list["needs"]
-            all_keys = set().union(*(d.keys() for d in need_of_file))
-
-            assert need_id in all_keys
+            needs_of_file = needs_list["needs"]
+            need_id_list = set().union(*(d for d in needs_of_file))
+            assert need_id in need_id_list
