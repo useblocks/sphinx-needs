@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1692625058871,
+  "lastUpdate": 1692884076202,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -3816,6 +3816,42 @@ window.BENCHMARK_DATA = {
             "value": 78.82003235799999,
             "unit": "s",
             "extra": "Commit: 5b983a46209ce04e10f389a08b604bf39eb35b11\nBranch: master\nTime: 2023-08-21T15:29:51+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "deef0f1f39170c06f104d1bc32c20a148e39448f",
+          "message": "📚 DOCS: Always use headless plantuml (#983)\n\nThere should be no reason why a non-headless JVM is ever required\r\nand, without it, sphinx builds are slower and constantly switch window\r\nfocus",
+          "timestamp": "2023-08-24T15:24:58+02:00",
+          "tree_id": "845ddd879070efd9c252e5818f204b9a95c1bd42",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/deef0f1f39170c06f104d1bc32c20a148e39448f"
+        },
+        "date": 1692884071303,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.32754709699997875,
+            "unit": "s",
+            "extra": "Commit: deef0f1f39170c06f104d1bc32c20a148e39448f\nBranch: master\nTime: 2023-08-24T15:24:58+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 98.73546714500003,
+            "unit": "s",
+            "extra": "Commit: deef0f1f39170c06f104d1bc32c20a148e39448f\nBranch: master\nTime: 2023-08-24T15:24:58+02:00"
           }
         ]
       }
