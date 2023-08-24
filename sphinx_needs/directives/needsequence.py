@@ -121,6 +121,11 @@ def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str,
 
         plantuml_block_text = ".. plantuml::\n" "\n" "   @startuml" "   @enduml"
         puml_node = plantuml(plantuml_block_text)
+
+        # Add source origin
+        puml_node.line = current_needsequence["lineno"]
+        puml_node.source = env.doc2path(current_needsequence["docname"])
+
         puml_node["uml"] = "@startuml\n"
 
         # Adding config

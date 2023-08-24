@@ -151,6 +151,11 @@ def process_needgantt(app, doctree, fromdocname, found_nodes):
 
         plantuml_block_text = ".. plantuml::\n" "\n" "   @startuml" "   @enduml"
         puml_node = plantuml(plantuml_block_text)
+
+        # Add source origin
+        puml_node.line = current_needgantt["lineno"]
+        puml_node.source = env.doc2path(current_needgantt["docname"])
+
         puml_node["uml"] = "@startuml\n"
 
         # Adding config
@@ -293,9 +298,6 @@ def process_needgantt(app, doctree, fromdocname, found_nodes):
             img_location = "../" * subfolder_amount + "_images/" + gen_flow_link[0].split("/")[-1]
             flow_ref = nodes.reference("t", current_needgantt["caption"], refuri=img_location)
             puml_node += nodes.caption("", "", flow_ref)
-
-        # Add lineno to node
-        puml_node.line = current_needgantt["lineno"]
 
         content.append(puml_node)
 

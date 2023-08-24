@@ -341,6 +341,11 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
         if found_needs:
             plantuml_block_text = ".. plantuml::\n" "\n" "   @startuml" "   @enduml"
             puml_node = plantuml(plantuml_block_text)
+
+            # Add source origin
+            puml_node.line = current_needflow["lineno"]
+            puml_node.source = env.doc2path(current_needflow["docname"])
+
             puml_node["uml"] = "@startuml\n"
             puml_connections = ""
 
