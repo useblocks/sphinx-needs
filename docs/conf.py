@@ -44,8 +44,6 @@ version = "1.3"
 # The full version, including alpha/beta/rc tags.
 release = "1.3.0"
 
-on_rtd = os.environ.get("READTHEDOCS") == "True"
-
 extensions = [
     "sphinxcontrib.plantuml",
     "sphinx_needs",
@@ -249,11 +247,7 @@ needs_id_required = False
 # needs_css = "dark.css"
 
 local_plantuml_path = os.path.join(os.path.dirname(__file__), "utils", "plantuml-1.2022.14.jar")
-
-if on_rtd:
-    plantuml = f"java -Djava.awt.headless=true -jar {local_plantuml_path}"
-else:
-    plantuml = f"java -jar {local_plantuml_path}"
+plantuml = f"java -Djava.awt.headless=true -jar {local_plantuml_path}"
 
 # plantuml_output_format = 'png'
 plantuml_output_format = "svg_img"
