@@ -51,7 +51,7 @@ class NeedflowDirective(FilterBase):
 
     @measure_time("needflow")
     def run(self) -> Sequence[nodes.Node]:
-        env = self.state.document.settings.env
+        env = self.env
         if not hasattr(env, "need_all_needflows"):
             env.need_all_needflows = {}
 

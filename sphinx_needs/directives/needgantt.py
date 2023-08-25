@@ -52,7 +52,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
     option_spec.update(DiagramBase.base_option_spec)
 
     def run(self) -> Sequence[nodes.Node]:
-        env = self.state.document.settings.env
+        env = self.env
         # Creates env.need_all_needgantts safely and other vars
         self.prepare_env("needgantts")
 

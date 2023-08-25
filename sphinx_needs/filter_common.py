@@ -7,8 +7,9 @@ import copy
 import re
 from typing import Any, Dict, List
 
-from docutils.parsers.rst import Directive, directives
+from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
+from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.debug import measure_time
@@ -16,7 +17,7 @@ from sphinx_needs.utils import check_and_get_external_filter_func
 from sphinx_needs.utils import logger as log
 
 
-class FilterBase(Directive):
+class FilterBase(SphinxDirective):
     has_content = True
 
     base_option_spec = {

@@ -47,7 +47,7 @@ class NeedfilterDirective(FilterBase):
     option_spec.update(FilterBase.base_option_spec)
 
     def run(self) -> Sequence[nodes.Node]:
-        env = self.state.document.settings.env
+        env = self.env
         if not hasattr(env, "need_all_needfilters"):
             env.need_all_needfilters = {}
 

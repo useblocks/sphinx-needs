@@ -3,8 +3,9 @@ import os
 from typing import Sequence
 
 from docutils import nodes
-from docutils.parsers.rst import Directive, directives
+from docutils.parsers.rst import directives
 from jinja2 import BaseLoader, Environment, Template
+from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link
@@ -17,7 +18,7 @@ class Needuml(nodes.General, nodes.Element):
     pass
 
 
-class NeedumlDirective(Directive):
+class NeedumlDirective(SphinxDirective):
     """
     Directive to get flow charts.
     """
@@ -36,7 +37,7 @@ class NeedumlDirective(Directive):
     }
 
     def run(self) -> Sequence[nodes.Node]:
-        env = self.state.document.settings.env
+        env = self.env
         if not hasattr(env, "needs_all_needumls"):
             env.needs_all_needumls = {}
 

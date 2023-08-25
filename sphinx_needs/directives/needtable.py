@@ -46,7 +46,7 @@ class NeedtableDirective(FilterBase):
 
     @profile("NEEDTABLE_RUN")
     def run(self) -> Sequence[nodes.Node]:
-        env = self.state.document.settings.env
+        env = self.env
         if not hasattr(env, "need_all_needtables"):
             env.need_all_needtables = {}
 
