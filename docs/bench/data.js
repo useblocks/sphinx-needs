@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1692951008253,
+  "lastUpdate": 1692971215748,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -3960,6 +3960,42 @@ window.BENCHMARK_DATA = {
             "value": 75.400561455,
             "unit": "s",
             "extra": "Commit: 4479bee5262bc5236251da69d9b6b9e301128ced\nBranch: master\nTime: 2023-08-25T10:02:41+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6caa3d1ccf4bd6df9f06122dc313e8308d1f3335",
+          "message": "🧪 Add headless java to test builds (#988)\n\nThis makes it easier to run the test suite,\r\nsince it inhibits window focus switching",
+          "timestamp": "2023-08-25T15:39:41+02:00",
+          "tree_id": "6eb6d339a4b5ac936f1268d5518c8804f657f763",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6caa3d1ccf4bd6df9f06122dc313e8308d1f3335"
+        },
+        "date": 1692971211089,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22755217799999627,
+            "unit": "s",
+            "extra": "Commit: 6caa3d1ccf4bd6df9f06122dc313e8308d1f3335\nBranch: master\nTime: 2023-08-25T15:39:41+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 73.65777392299998,
+            "unit": "s",
+            "extra": "Commit: 6caa3d1ccf4bd6df9f06122dc313e8308d1f3335\nBranch: master\nTime: 2023-08-25T15:39:41+02:00"
           }
         ]
       }
