@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1692971215748,
+  "lastUpdate": 1692971933900,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -3996,6 +3996,42 @@ window.BENCHMARK_DATA = {
             "value": 73.65777392299998,
             "unit": "s",
             "extra": "Commit: 6caa3d1ccf4bd6df9f06122dc313e8308d1f3335\nBranch: master\nTime: 2023-08-25T15:39:41+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a16fb72d44b2c9f65c4065e386e2ad37d0a25870",
+          "message": "🧪 Remove all make files in test build folders (#989)\n\nThese are unnecessary for the running of the tests,\r\nand this makes them more minimal",
+          "timestamp": "2023-08-25T15:51:47+02:00",
+          "tree_id": "97447780d3020a12481e8abbcfa0a45c6c02bbf8",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a16fb72d44b2c9f65c4065e386e2ad37d0a25870"
+        },
+        "date": 1692971929405,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2810397920000014,
+            "unit": "s",
+            "extra": "Commit: a16fb72d44b2c9f65c4065e386e2ad37d0a25870\nBranch: master\nTime: 2023-08-25T15:51:47+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 73.08104451999998,
+            "unit": "s",
+            "extra": "Commit: a16fb72d44b2c9f65c4065e386e2ad37d0a25870\nBranch: master\nTime: 2023-08-25T15:51:47+02:00"
           }
         ]
       }
