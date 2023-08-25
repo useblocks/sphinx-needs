@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Iterable, Optional, Set
 
@@ -6,6 +7,7 @@ from sphinx import version_info
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
 
+from sphinx_needs.filter_common import filter_needs
 from sphinx_needs.logging import get_logger
 from sphinx_needs.needsfile import NeedsList
 from sphinx_needs.utils import unwrap
@@ -43,9 +45,6 @@ class NeedsBuilder(Builder):
         # This is needed as needs could have been removed from documentation and if this is the case,
         # removed needs would stay in needs_list, if list gets not cleaned.
         needs_list.wipe_version(version)
-        #
-        from sphinx_needs.filter_common import filter_needs
-
         filter_string = self.app.config.needs_builder_filter
         filtered_needs = filter_needs(self.app, needs, filter_string)
 
@@ -157,3 +156,93 @@ def build_needumls_pumls(app: Sphinx, _exception: Exception) -> None:
         needs_builder.set_environment(env)
 
     needs_builder.finish()
+
+
+class NeedsPerPageBuilder(Builder):
+
+    """Json builder for needs, which creates separate docname-based json-files include all needs with same docname"""
+
+    name = "needs_per_page"
+    format = "needs"
+    file_suffix = ".txt"
+    links_suffix = None
+
+    def write_doc(self, docname: str, doctree: nodes.document) -> None:
+        pass
+
+    def finish(self) -> None:
+        env = unwrap(self.env)
+        needs = env.needs_all_needs.values()
+        needs_list = NeedsList(env.config, self.outdir, self.srcdir)
+        filter_string = self.app.config.needs_builder_filter
+        needs_per_page_build_path = self.app.config.needs_per_page_build_path
+        filtered_needs = filter_needs(self.app, needs, filter_string)
+        needs_per_page_dir = os.path.join(self.outdir, needs_per_page_build_path)
+
+        needs_per_page_data = {}
+        if not os.path.exists(needs_per_page_dir):
+            os.makedirs(needs_per_page_dir, exist_ok=True)
+
+        # Create list docname-based dict has key is docname and value is list of need with same the docname .
+        needs_per_page_data_key = []
+        for need in filtered_needs:
+            needs_id_dict = {}
+            id = need["id"]
+            needs_id_dict[id] = needs_list.make_simple_need(need)
+            docs_name = need.get("docname")
+            if docs_name in needs_per_page_data:
+                # add key docs_name
+                needs_per_page_data[docs_name].append(needs_id_dict)
+            else:
+                needs_per_page_data[docs_name] = [needs_id_dict]
+
+        # create seperate file for every docname-based dict
+        needs_per_page_data_key = needs_per_page_data.keys()
+        for docs_name_key in needs_per_page_data_key:
+            docs_name = f"{docs_name_key}.json"
+            docs_name_file = os.path.join(needs_per_page_dir, docs_name)
+            docs_name_file_dir = os.path.dirname(docs_name_file)
+            if not os.path.exists(docs_name_file_dir):
+                os.mkdir(docs_name_file_dir)
+            try:
+                with open(docs_name_file, "w") as f:
+                    data = {"needs": needs_per_page_data[docs_name_key]}
+                    json.dump(data, f, indent=4)
+
+            except Exception as e:
+                log.error(f"Needs-per-page: {docs_name_key} - error: {e}")
+
+        log.info("needs per page successfully exported")
+
+    def get_outdated_docs(self) -> Iterable[str]:
+        return []
+
+    def prepare_writing(self, _docnames: Set[str]) -> None:
+        pass
+
+    def write_doc_serialized(self, _docname: str, _doctree: nodes.document) -> None:
+        pass
+
+    def cleanup(self) -> None:
+        pass
+
+    def get_target_uri(self, _docname: str, _typ: Optional[str] = None) -> str:
+        return ""
+
+
+def build_needs_per_page_json(app: Sphinx, _exception: Exception) -> None:
+    env = unwrap(app.env)
+    if not env.config.needs_per_page:
+        return
+
+    # Do not create an additional needs_json for every needs_id, if builder is already "needs_id".
+    if isinstance(app.builder, NeedsPerPageBuilder):
+        return
+
+    try:
+        needs_per_page_builder = NeedsPerPageBuilder(app, env)
+    except TypeError:
+        needs_per_page_builder = NeedsPerPageBuilder(app)
+        needs_per_page_builder.set_environment(env)
+
+    needs_per_page_builder.finish()

@@ -16,6 +16,8 @@ Released: under development
 -----
 Released: under development
 
+*  Improvement: Added Builder :ref:`needs_per_page_builder:` added and config option :ref:`needs_per_page_build_path`
+
 * Improvement: Reduce document build time, by memoizing the inline parse in ``build_need`` (`#968 <https://github.com/useblocks/sphinx-needs/pull/968>`_)
 
 * Change `NeedsBuilder` format to `needs` (`#978 <https://github.com/useblocks/sphinx-needs/pull/978>`_)

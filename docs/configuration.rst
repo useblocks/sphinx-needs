@@ -2289,3 +2289,34 @@ If true, need options like status, tags or links are collapsed and shown only af
 Default value: True
 
 Can be overwritten for each single need by setting :ref:`need_collapse`.
+
+
+.. _needs_per_page:
+
+needs_per_page
+~~~~~~~~~~~~~~
+
+.. versionadded:: 1.4.0
+
+Build list of ``json`` files that contain all found needs with the same ``docname``. The name of each file should match the ``docname``.
+
+This option works like :ref:`needs_build_json`. 
+
+Default: False
+
+
+.. _needs_per_page_build_path:
+
+needs_per_page_build_path 
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.4.0
+
+This option sets the location of list of ``json`` files that contain all found needs with the same ``docname``.
+
+Default value: need_per_page
+
+
+.. hint::
+
+The created ``need_per_page`` folder gets stored in the ``outdir`` of the current builder folder. This is e.g `_build/needs_per_page/directives/list2need.json`
