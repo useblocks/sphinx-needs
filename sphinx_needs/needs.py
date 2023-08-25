@@ -1,5 +1,5 @@
 from timeit import default_timer as timer  # Used for timing measurements
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List, Type
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -17,6 +17,7 @@ from sphinx_needs.builder import (
     build_needumls_pumls,
 )
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData, merge_data
 from sphinx_needs.defaults import (
     LAYOUTS,
     NEED_DEFAULT_OPTIONS,
@@ -98,7 +99,6 @@ from sphinx_needs.roles.need_outgoing import NeedOutgoing, process_need_outgoing
 from sphinx_needs.roles.need_part import NeedPart, process_need_part
 from sphinx_needs.roles.need_ref import NeedRef, process_need_ref
 from sphinx_needs.services.github import GithubService
-from sphinx_needs.services.manager import ServiceManager
 from sphinx_needs.services.open_needs import OpenNeedsService
 from sphinx_needs.utils import INTERNALS, NEEDS_FUNCTIONS, node_match
 from sphinx_needs.warnings import process_warnings
@@ -106,12 +106,13 @@ from sphinx_needs.warnings import process_warnings
 VERSION = "1.3.0"
 NEEDS_FUNCTIONS.clear()
 
+_NODE_TYPES_T = Dict[Type[nodes.Element], Callable[[Sphinx, nodes.document, str, List[nodes.Element]], None]]
 
-NODE_TYPES_PRIO = {  # Node types to be checked before most others
+NODE_TYPES_PRIO: _NODE_TYPES_T = {  # Node types to be checked before most others
     Needextract: process_needextract,
 }
 
-NODE_TYPES = {
+NODE_TYPES: _NODE_TYPES_T = {
     Needbar: process_needbar,
     # Needextract: process_needextract,
     Needfilter: process_needfilters,
@@ -252,12 +253,14 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     }
 
 
-def process_creator(node_list, doc_category="all"):
+def process_creator(
+    node_list: _NODE_TYPES_T, doc_category: str = "all"
+) -> Callable[[Sphinx, nodes.document, str], None]:
     """
     Create a pre-configured process_caller for given Node types
     """
 
-    def process_caller(app: Sphinx, doctree: nodes.document, fromdocname: str):
+    def process_caller(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
         """
         A single event_handler for doc-tree-resolved, which cares about the doctree-parsing
         only once and calls the needed sub-handlers (like process_needtables and so).
@@ -268,7 +271,7 @@ def process_creator(node_list, doc_category="all"):
         """
         # We only need to analyse docs, which have Sphinx-Needs directives in it.
         if (
-            fromdocname not in app.builder.env.needs_all_docs.get(doc_category, [])
+            fromdocname not in SphinxNeedsData(app.env).get_or_create_docs().get(doc_category, [])
             and fromdocname != f"{app.config.root_doc}"
         ):
             return
@@ -401,37 +404,25 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
     Prepares the sphinx environment to store sphinx-needs internal data.
     """
     needs_config = NeedsSphinxConfig(app.config)
-
-    if not hasattr(env, "needs_all_needs"):
-        # Used to store all needed information about all needs in document
-        env.needs_all_needs = {}
-
-    if not hasattr(env, "needs_all_filters"):
-        # Used to store all needed information about all filters in document
-        env.needs_all_filters = {}
-
-    if not hasattr(env, "needs_services"):
-        # Used to store all needed information about all services
-        app.needs_services = ServiceManager(app)
-
-    if not hasattr(env, "needs_all_docs"):
-        # Used to store all docnames, which have need-function in it and therefor
-        # need to be handled later
-        env.needs_all_docs = {"all": []}
+    data = SphinxNeedsData(env)
+    data.get_or_create_needs()
+    data.get_or_create_filters()
+    data.get_or_create_docs()
+    services = data.get_or_create_services()
 
     # Register embedded services
-    app.needs_services.register("github-issues", GithubService, gh_type="issue")
-    app.needs_services.register("github-prs", GithubService, gh_type="pr")
-    app.needs_services.register("github-commits", GithubService, gh_type="commit")
-    app.needs_services.register("open-needs", OpenNeedsService)
+    services.register("github-issues", GithubService, gh_type="issue")
+    services.register("github-prs", GithubService, gh_type="pr")
+    services.register("github-commits", GithubService, gh_type="commit")
+    services.register("open-needs", OpenNeedsService)
 
     # Register user defined services
     for name, service in needs_config.services.items():
-        if name not in app.needs_services.services and "class" in service and "class_init" in service:
+        if name not in services.services and "class" in service and "class_init" in service:
             # We found a not yet registered service
             # But only register, if service-config contains class and class_init.
             # Otherwise, the service may get registered later by an external sphinx-needs extension
-            app.needs_services.register(name, service["class"], **service["class_init"])
+            services.register(name, service["class"], **service["class_init"])
 
     needs_functions = needs_config.functions
 
@@ -483,27 +474,12 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
             }
         )
 
-    app.config.needs_extra_links = common_links + needs_config.extra_links
-
-    app.config.needs_layouts = {**LAYOUTS, **needs_config.layouts}
+    needs_config.extra_links = common_links + needs_config.extra_links
+    needs_config.layouts = {**LAYOUTS, **needs_config.layouts}
 
     needs_config.flow_configs.update(NEEDFLOW_CONFIG_DEFAULTS)
 
-    if not hasattr(env, "needs_workflow"):
-        # Used to store workflow status information for already executed tasks.
-        # Some tasks like backlink_creation need be performed only once.
-        # But most sphinx-events get called several times (for each single document
-        # file), which would also execute our code several times...
-        env.needs_workflow = {
-            "backlink_creation_links": False,
-            "dynamic_values_resolved": False,
-            "links_checked": False,
-            "add_sections": False,
-            "variant_option_resolved": False,
-            "needs_extended": False,
-        }
-        for link_type in needs_config.extra_links:
-            env.needs_workflow["backlink_creation_{}".format(link_type["option"])] = False
+    data.get_or_create_workflow()
 
     # Set time measurement flag
     if needs_config.debug_measurement:
@@ -576,57 +552,6 @@ def check_configuration(_app: Sphinx, config: Config) -> None:
                 "Variant option `{}` is not added in either extra options or extra links. "
                 "This is not allowed.".format(option)
             )
-
-
-def merge_data(_app: Sphinx, env: BuildEnvironment, _docnames: List[str], other: BuildEnvironment):
-    """
-    Performs data merge of parallel executed workers.
-    Used only for parallel builds.
-
-    Needs to update env manually for all data Sphinx-Needs collect during read phase
-    """
-
-    # Update global needs dict
-    needs = env.needs_all_needs
-    other_needs = other.needs_all_needs
-    needs.update(other_needs)
-
-    def merge(name: str, is_complex_dict: bool = False) -> None:
-        # Update global needs dict
-        if not hasattr(env, name):
-            setattr(env, name, {})
-        objects = getattr(env, name)
-        if hasattr(other, name):
-            other_objects = getattr(other, name)
-            if isinstance(other_objects, dict) and isinstance(objects, dict):
-                if not is_complex_dict:
-                    objects.update(other_objects)
-                else:
-                    for other_key, other_value in other_objects.items():
-                        # other_value is a list from here on!
-                        if other_key in objects:
-                            objects[other_key] = list(set(objects[other_key]) | set(other_value))
-                        else:
-                            objects[other_key] = other_value
-            elif isinstance(other_objects, list) and isinstance(objects, list):
-                objects = list(set(objects) | set(other_objects))
-            else:
-                raise TypeError(
-                    f'Objects to "merge" must be dict or list, ' f"not {type(other_objects)} and {type(objects)}"
-                )
-
-    merge("need_all_needbar")
-    merge("need_all_needtables")
-    merge("need_all_needextend")
-    merge("need_all_needextracts")
-    merge("need_all_needfilters")
-    merge("need_all_needflows")
-    merge("need_all_needgantts")
-    merge("need_all_needlists")
-    merge("need_all_needpie")
-    merge("need_all_needsequences")
-    merge("needs_all_needumls")
-    merge("needs_all_docs", is_complex_dict=True)  # list type
 
 
 class NeedsConfigException(SphinxError):

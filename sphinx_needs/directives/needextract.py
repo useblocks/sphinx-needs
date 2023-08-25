@@ -12,6 +12,7 @@ from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.directives.utils import (
     no_needs_found_paragraph,
     used_filter_paragraph,
@@ -43,12 +44,6 @@ class NeedextractDirective(FilterBase):
 
     def run(self) -> Sequence[nodes.Node]:
         env = self.env
-        if not hasattr(env, "need_all_needextracts"):
-            env.need_all_needextracts = {}
-
-        # be sure, global var is available. If not, create it
-        if not hasattr(env, "needs_all_needs"):
-            env.needs_all_needs = {}
 
         targetid = "needextract-{docname}-{id}".format(docname=env.docname, id=env.new_serialno("needextract"))
         targetnode = nodes.target("", "", ids=[targetid])
@@ -56,7 +51,8 @@ class NeedextractDirective(FilterBase):
         filter_arg = self.arguments[0] if self.arguments else None
 
         # Add the need and all needed information
-        env.need_all_needextracts[targetid] = {
+        data = SphinxNeedsData(env).get_or_create_extracts()
+        data[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
@@ -65,15 +61,17 @@ class NeedextractDirective(FilterBase):
             "style": self.options.get("style"),
             "show_filters": "show_filters" in self.options,
             "filter_arg": filter_arg,
+            **self.collect_filter_attributes(),
         }
-        env.need_all_needextracts[targetid].update(self.collect_filter_attributes())
 
         add_doc(env, env.docname, "needextract")
 
         return [targetnode, Needextract("")]
 
 
-def process_needextract(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list) -> None:
+def process_needextract(
+    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
+) -> None:
     """
     Replace all needextract nodes with a list of the collected needs.
     """
@@ -93,10 +91,9 @@ def process_needextract(app: Sphinx, doctree: nodes.document, fromdocname: str, 
             continue
 
         id = node.attributes["ids"][0]
-        current_needextract = env.need_all_needextracts[id]
-        all_needs = env.needs_all_needs
+        current_needextract = SphinxNeedsData(env).get_or_create_extracts()[id]
+        all_needs = SphinxNeedsData(env).get_or_create_needs()
         content: List[nodes.Element] = []
-        all_needs = list(all_needs.values())
 
         # check if filter argument and option filter both exist
         need_filter_arg = current_needextract["filter_arg"]
@@ -104,14 +101,14 @@ def process_needextract(app: Sphinx, doctree: nodes.document, fromdocname: str, 
             raise NeedsInvalidFilter("Needextract can't have filter arguments and option filter at the same time.")
         elif need_filter_arg:
             # check if given filter argument is need-id
-            if need_filter_arg in env.needs_all_needs:
+            if need_filter_arg in all_needs:
                 need_filter_arg = f'id == "{need_filter_arg}"'
             elif re.fullmatch(needs_config.id_regex, need_filter_arg):
                 # check if given filter argument is need-id, but not exists
                 raise NeedsInvalidFilter(f"Provided id {need_filter_arg} for needextract does not exist.")
             current_needextract["filter"] = need_filter_arg
 
-        found_needs = process_filters(app, all_needs, current_needextract)
+        found_needs = process_filters(app, all_needs.values(), current_needextract)
 
         for need_info in found_needs:
             # if "is_target" is True:

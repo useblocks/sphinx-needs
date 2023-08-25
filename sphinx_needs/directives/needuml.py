@@ -1,13 +1,15 @@
 import html
 import os
-from typing import Sequence
+from typing import List, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
 from jinja2 import BaseLoader, Environment, Template
+from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link
 from sphinx_needs.directives.needflow import make_entity_name
@@ -39,8 +41,6 @@ class NeedumlDirective(SphinxDirective):
 
     def run(self) -> Sequence[nodes.Node]:
         env = self.env
-        if not hasattr(env, "needs_all_needumls"):
-            env.needs_all_needumls = {}
 
         if self.name == "needarch":
             targetid = "needarch-{docname}-{id}".format(docname=env.docname, id=env.new_serialno("needarch"))
@@ -89,7 +89,7 @@ class NeedumlDirective(SphinxDirective):
             else:
                 plantuml_code_out_path = save_path
 
-        env.needs_all_needumls[targetid] = {
+        SphinxNeedsData(env).get_or_create_umls()[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
@@ -226,8 +226,8 @@ class JinjaFunctions:
     Provides access to sphinx-app and all Needs objects.
     """
 
-    def __init__(self, app, fromdocname, parent_need_id: str, processed_need_ids: {}):
-        self.needs = app.builder.env.needs_all_needs
+    def __init__(self, app: Sphinx, fromdocname, parent_need_id: str, processed_need_ids: dict):
+        self.needs = SphinxNeedsData(app.env).get_or_create_needs()
         self.app = app
         self.fromdocname = fromdocname
         self.parent_need_id = parent_need_id
@@ -403,13 +403,13 @@ def is_element_of_need(node: nodes.Element) -> str:
 
 
 @measure_time("needuml")
-def process_needuml(app, doctree, fromdocname, found_nodes):
+def process_needuml(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
     env = app.builder.env
 
     # for node in doctree.findall(Needuml):
     for node in found_nodes:
         id = node.attributes["ids"][0]
-        current_needuml = env.needs_all_needumls[id]
+        current_needuml = SphinxNeedsData(env).get_or_create_umls()[id]
 
         parent_need_id = None
         # Check if current needuml is needarch

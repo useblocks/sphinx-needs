@@ -1,14 +1,16 @@
 import os
 from datetime import datetime
-from typing import Sequence
+from typing import List, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
+from sphinx.application import Sphinx
 from sphinxcontrib.plantuml import (
     generate_name,  # Need for plantuml filename calculation
 )
 
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.diagrams_common import (
     DiagramBase,
     add_config,
@@ -55,8 +57,6 @@ class NeedganttDirective(FilterBase, DiagramBase):
     def run(self) -> Sequence[nodes.Node]:
         env = self.env
         needs_config = NeedsSphinxConfig(env.config)
-        # Creates env.need_all_needgantts safely and other vars
-        self.prepare_env("needgantts")
 
         _id, targetid, targetnode = self.create_target("needgantt")
 
@@ -93,7 +93,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
         completion_option = self.options.get("completion_option", needs_config.completion_option)
 
         # Add the needgantt and all needed information
-        env.need_all_needgantts[targetid] = {
+        SphinxNeedsData(env).get_or_create_gantts()[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
@@ -106,18 +106,16 @@ class NeedganttDirective(FilterBase, DiagramBase):
             "no_color": no_color,
             "duration_option": duration_option,
             "completion_option": completion_option,
+            **self.collect_filter_attributes(),
+            **self.collect_diagram_attributes(),
         }
-        # Data for filtering
-        env.need_all_needgantts[targetid].update(self.collect_filter_attributes())
-        # Data for diagrams
-        env.need_all_needgantts[targetid].update(self.collect_diagram_attributes())
 
         add_doc(env, env.docname)
 
         return [targetnode] + [Needgantt("")]
 
 
-def process_needgantt(app, doctree, fromdocname, found_nodes):
+def process_needgantt(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
     # Replace all needgantt nodes with a list of the collected needs.
     env = app.builder.env
     needs_config = NeedsSphinxConfig(app.config)
@@ -140,8 +138,8 @@ def process_needgantt(app, doctree, fromdocname, found_nodes):
             continue
 
         id = node.attributes["ids"][0]
-        current_needgantt = env.need_all_needgantts[id]
-        all_needs_dict = env.needs_all_needs
+        current_needgantt = SphinxNeedsData(env).get_or_create_gantts()[id]
+        all_needs_dict = SphinxNeedsData(env).get_or_create_needs()
 
         content = []
         try:

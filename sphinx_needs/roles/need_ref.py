@@ -1,12 +1,13 @@
 import contextlib
 from collections.abc import Iterable
-from typing import Dict
+from typing import Dict, List
 
 from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.util.nodes import make_refnode
 
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
 from sphinx_needs.nodes import Need
@@ -52,10 +53,11 @@ def transform_need_to_dict(need: Need) -> Dict[str, str]:
     return dict_need
 
 
-def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes) -> None:
+def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
     needs_config = NeedsSphinxConfig(env.config)
+    all_needs = SphinxNeedsData(env).get_or_create_needs()
     # for node_need_ref in doctree.findall(NeedRef):
     for node_need_ref in found_nodes:
         # Let's create a dummy node, for the case we will not be able to create a real reference
@@ -80,8 +82,8 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
             ref_id = ref_id_complete
             part_id = None
 
-        if ref_id in env.needs_all_needs:
-            target_need = env.needs_all_needs[ref_id]
+        if ref_id in all_needs:
+            target_need = all_needs[ref_id]
 
             dict_need = transform_need_to_dict(target_need)  # Transform a dict in a dict of {str, str}
 

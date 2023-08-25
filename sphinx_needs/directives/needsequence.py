@@ -1,6 +1,6 @@
 import os
 import re
-from typing import Sequence
+from typing import List, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -10,6 +10,7 @@ from sphinxcontrib.plantuml import (
 )
 
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.diagrams_common import (
     DiagramBase,
     add_config,
@@ -47,10 +48,8 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
 
     def run(self) -> Sequence[nodes.Node]:
         env = self.env
-        # Creates env.need_all_needsequences safely and other vars
-        self.prepare_env("needsequences")
 
-        id, targetid, targetnode = self.create_target("needsequence")
+        _, targetid, targetnode = self.create_target("needsequence")
 
         start = self.options.get("start")
         if start is None or len(start.strip()) == 0:
@@ -59,26 +58,28 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
             )
 
         # Add the needsequence and all needed information
-        env.need_all_needsequences[targetid] = {
+        SphinxNeedsData(env).get_or_create_sequences()[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
             "start": self.options.get("start", ""),
+            **self.collect_filter_attributes(),
+            **self.collect_diagram_attributes(),
         }
-        # Data for filtering
-        env.need_all_needsequences[targetid].update(self.collect_filter_attributes())
-        # Data for diagrams
-        env.need_all_needsequences[targetid].update(self.collect_diagram_attributes())
 
         add_doc(env, env.docname)
 
         return [targetnode] + [Needsequence("")]
 
 
-def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list):
+def process_needsequence(
+    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
+) -> None:
     # Replace all needsequence nodes with a list of the collected needs.
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
+    needs_data = SphinxNeedsData(env)
+    all_needs_dict = needs_data.get_or_create_needs()
 
     needs_config = NeedsSphinxConfig(env.config)
     include_needs = needs_config.include_needs
@@ -100,8 +101,7 @@ def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str,
             continue
 
         id = node.attributes["ids"][0]
-        current_needsequence = env.need_all_needsequences[id]
-        all_needs_dict = env.needs_all_needs
+        current_needsequence = needs_data.get_or_create_sequences()[id]
 
         option_link_types = [link.upper() for link in current_needsequence["link_types"]]
         for lt in option_link_types:
@@ -161,7 +161,11 @@ def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str,
 
             # Add children of participants
             _msg_receiver_needs, p_string_new, c_string_new = get_message_needs(
-                app, need, current_needsequence["link_types"], all_needs_dict, filter=current_needsequence["filter"]
+                app,
+                need,
+                current_needsequence["link_types"],
+                all_needs_dict,
+                filter=current_needsequence["filter"],
             )
             p_string += p_string_new
             c_string += c_string_new

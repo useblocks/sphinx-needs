@@ -22,6 +22,7 @@ from sphinx_needs.api.exceptions import (
     NeedsTemplateException,
 )
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.directives.needuml import Needuml, NeedumlException
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import get_logger
@@ -271,11 +272,8 @@ def add_need(
     #############################################################################################
     # Add need to global need list
     #############################################################################################
-    # be sure, global var is available. If not, create it
-    if not hasattr(env, "needs_all_needs"):
-        env.needs_all_needs = {}
 
-    if need_id in env.needs_all_needs:
+    if need_id in SphinxNeedsData(env).get_or_create_needs():
         if id:
             raise NeedsDuplicatedId(
                 f"A need with ID {need_id} already exists! "
@@ -307,7 +305,7 @@ def add_need(
         doctype = ".rst"
 
     # Add the need and all needed information
-    needs_info = {
+    needs_info: NeedsInfoType = {
         "docname": docname,
         "doctype": doctype,
         "lineno": lineno,
@@ -403,7 +401,7 @@ def add_need(
         content = new_content
         needs_info["content"] = new_content
 
-    env.needs_all_needs[need_id] = needs_info
+    SphinxNeedsData(env).get_or_create_needs()[need_id] = needs_info
 
     # Template builds
     ##############################
@@ -457,7 +455,7 @@ def add_need(
         if isinstance(child, Needuml):
             needuml_id = child.rawsource
             try:
-                needuml = env.needs_all_needumls.get(needuml_id)
+                needuml = SphinxNeedsData(env).get_or_create_umls().get(needuml_id)
                 key_name = needuml["key"]
                 if key_name:
                     # check if key_name already exists in needs_info["arch"]
@@ -507,8 +505,9 @@ def del_need(app: Sphinx, need_id: str) -> None:
     :param need_id: Sphinx need id.
     """
     env = unwrap(app.env)
-    if need_id in env.needs_all_needs:
-        del env.needs_all_needs[need_id]
+    needs = SphinxNeedsData(env).get_or_create_needs()
+    if need_id in needs:
+        del needs[need_id]
     else:
         logger.warning(f"Given need id {need_id} not exists! [needs]", type="needs")
 

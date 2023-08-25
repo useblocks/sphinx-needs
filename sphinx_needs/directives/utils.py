@@ -5,6 +5,7 @@ from docutils import nodes
 from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.defaults import TITLE_REGEX
 
 
@@ -95,7 +96,7 @@ def analyse_needs_metrics(env: BuildEnvironment) -> Dict[str, Any]:
     :param env: Sphinx build environment
     :return: Dictionary consisting of needs metrics.
     """
-    needs: Dict = env.needs_all_needs
+    needs = SphinxNeedsData(env).get_or_create_needs()
     metric_data = {"needs_amount": len(needs)}
     needs_types = {i["directive"]: 0 for i in NeedsSphinxConfig(env.config).types}
 

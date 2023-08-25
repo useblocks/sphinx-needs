@@ -5,7 +5,8 @@ like needtable, needlist and needflow.
 
 import copy
 import re
-from typing import Any, Dict, List
+from types import CodeType
+from typing import Any, Dict, List, Optional
 
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
@@ -13,6 +14,7 @@ from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import NeedsFilteredBaseType, NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.utils import check_and_get_external_filter_func
 from sphinx_needs.utils import logger as log
@@ -65,20 +67,22 @@ class FilterBase(SphinxDirective):
         return collected_filter_options
 
 
-def process_filters(app: Sphinx, all_needs, current_needlist, include_external: bool = True):
+def process_filters(
+    app: Sphinx, all_needs: List[NeedsInfoType], filter_data: NeedsFilteredBaseType, include_external: bool = True
+):
     """
     Filters all needs with given configuration.
     Used by needlist, needtable and needflow.
 
     :param app: Sphinx application object
-    :param current_needlist: needlist object, which stores all filters
+    :param filter_data: Filter configuration
     :param all_needs: List of all needs inside document
     :param include_external: Boolean, which decides to include external needs or not
 
     :return: list of needs, which passed the filters
     """
 
-    sort_key = current_needlist["sort_by"]
+    sort_key = filter_data["sort_by"]
     if sort_key:
         try:
             all_needs = sorted(all_needs, key=lambda node: node[sort_key] or "")
@@ -100,50 +104,43 @@ def process_filters(app: Sphinx, all_needs, current_needlist, include_external: 
     all_needs_incl_parts = prepare_need_list(checked_all_needs)
 
     # Check if external filter code is defined
-    filter_func, filter_args = check_and_get_external_filter_func(current_needlist)
+    filter_func, filter_args = check_and_get_external_filter_func(filter_data)
 
     filter_code = None
     # Get filter_code from
-    if not filter_code and current_needlist["filter_code"]:
-        filter_code = "\n".join(current_needlist["filter_code"])
+    if not filter_code and filter_data["filter_code"]:
+        filter_code = "\n".join(filter_data["filter_code"])
 
     if (not filter_code or filter_code.isspace()) and not filter_func:
-        if bool(current_needlist["status"] or current_needlist["tags"] or current_needlist["types"]):
+        if bool(filter_data["status"] or filter_data["tags"] or filter_data["types"]):
             for need_info in all_needs_incl_parts:
                 status_filter_passed = False
-                if (
-                    not current_needlist["status"]
-                    or need_info["status"]
-                    and need_info["status"] in current_needlist["status"]
-                ):
+                if not filter_data["status"] or need_info["status"] and need_info["status"] in filter_data["status"]:
                     # Filtering for status was not requested or match was found
                     status_filter_passed = True
 
                 tags_filter_passed = False
-                if (
-                    len(set(need_info["tags"]) & set(current_needlist["tags"])) > 0
-                    or len(current_needlist["tags"]) == 0
-                ):
+                if len(set(need_info["tags"]) & set(filter_data["tags"])) > 0 or len(filter_data["tags"]) == 0:
                     tags_filter_passed = True
 
                 type_filter_passed = False
                 if (
-                    need_info["type"] in current_needlist["types"]
-                    or need_info["type_name"] in current_needlist["types"]
-                    or len(current_needlist["types"]) == 0
+                    need_info["type"] in filter_data["types"]
+                    or need_info["type_name"] in filter_data["types"]
+                    or len(filter_data["types"]) == 0
                 ):
                     type_filter_passed = True
 
                 if status_filter_passed and tags_filter_passed and type_filter_passed:
                     found_needs_by_options.append(need_info)
             # Get need by filter string
-            found_needs_by_string = filter_needs(app, all_needs_incl_parts, current_needlist["filter"])
+            found_needs_by_string = filter_needs(app, all_needs_incl_parts, filter_data["filter"])
             # Make an intersection of both lists
             found_needs = intersection_of_need_results(found_needs_by_options, found_needs_by_string)
         else:
             # There is no other config as the one for filter string.
             # So we only need this result.
-            found_needs = filter_needs(app, all_needs_incl_parts, current_needlist["filter"])
+            found_needs = filter_needs(app, all_needs_incl_parts, filter_data["filter"])
     else:
         # Provides only a copy of needs to avoid data manipulations.
         try:
@@ -188,21 +185,21 @@ def process_filters(app: Sphinx, all_needs, current_needlist, include_external: 
     # Store basic filter configuration and result global list.
     # Needed mainly for exporting the result to needs.json (if builder "needs" is used).
     env = app.env
-    filter_list = env.needs_all_filters
+    filter_list = SphinxNeedsData(env).get_or_create_filters()
     found_needs_ids = [need["id_complete"] for need in found_needs]
 
-    if "target_node" in current_needlist:
-        target_id = current_needlist["target_node"]["refid"]
+    if "target_node" in filter_data:
+        target_id = filter_data["target_node"]["refid"]
     else:
-        target_id = current_needlist["target_id"]
+        target_id = filter_data["target_id"]
 
     filter_list[target_id] = {
         # "target_node": current_needlist["target_node"],
-        "filter": current_needlist["filter"] or "",
-        "status": current_needlist["status"],
-        "tags": current_needlist["tags"],
-        "types": current_needlist["types"],
-        "export_id": current_needlist["export_id"].upper(),
+        "filter": filter_data["filter"] or "",
+        "status": filter_data["status"],
+        "tags": filter_data["tags"],
+        "types": filter_data["types"],
+        "export_id": filter_data["export_id"].upper(),
         "result": found_needs_ids,
         "amount": len(found_needs_ids),
     }
@@ -210,7 +207,7 @@ def process_filters(app: Sphinx, all_needs, current_needlist, include_external: 
     return found_needs
 
 
-def prepare_need_list(need_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def prepare_need_list(need_list: List[NeedsInfoType]) -> List[NeedsInfoType]:
     # all_needs_incl_parts = need_list.copy()
     try:
         all_needs_incl_parts = need_list[:]
@@ -241,7 +238,7 @@ def intersection_of_need_results(list_a, list_b) -> List[Dict[str, Any]]:
 
 
 @measure_time("filtering")
-def filter_needs(app: Sphinx, needs, filter_string: str = "", current_need=None):
+def filter_needs(app: Sphinx, needs: List[NeedsInfoType], filter_string: str = "", current_need=None):
     """
     Filters given needs based on a given filter string.
     Returns all needs, which pass the given filter.
@@ -279,7 +276,12 @@ def filter_needs(app: Sphinx, needs, filter_string: str = "", current_need=None)
 
 @measure_time("filtering")
 def filter_single_need(
-    app: Sphinx, need, filter_string: str = "", needs=None, current_need=None, filter_compiled=None
+    app: Sphinx,
+    need: NeedsInfoType,
+    filter_string: str = "",
+    needs: Optional[List[NeedsInfoType]] = None,
+    current_need=None,
+    filter_compiled: Optional[CodeType] = None,
 ) -> bool:
     """
     Checks if a single need/need_part passes a filter_string

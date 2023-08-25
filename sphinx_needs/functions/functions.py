@@ -16,6 +16,7 @@ from sphinx.environment import BuildEnvironment
 from sphinx.errors import SphinxError
 
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import NEEDS_FUNCTIONS, match_variants  # noqa: F401
@@ -37,8 +38,6 @@ def register_func(need_function: DynamicFunction, name: Optional[str] = None):
     :return: None
     """
 
-    # if not hasattr(env, 'needs_functions'):
-    #     env.needs_functions = {}
     global NEEDS_FUNCTIONS
     if NEEDS_FUNCTIONS is None:
         NEEDS_FUNCTIONS = {}
@@ -54,7 +53,6 @@ def register_func(need_function: DynamicFunction, name: Optional[str] = None):
         # This is mostly the case during tet runs.
         logger.info(f"sphinx-needs: Function name {func_name} already registered. Ignoring the new one!")
 
-    # env.needs_functions[func_name] = {
     NEEDS_FUNCTIONS[func_name] = {"name": func_name, "function": need_function}
 
 
@@ -69,14 +67,11 @@ def execute_func(env: BuildEnvironment, need, func_string: str):
     global NEEDS_FUNCTIONS
     func_name, func_args, func_kwargs = _analyze_func_string(func_string, need)
 
-    # if func_name not in env.needs_functions.keys():
     if func_name not in NEEDS_FUNCTIONS.keys():
         raise SphinxError("Unknown dynamic sphinx-needs function: {}. Found in need: {}".format(func_name, need["id"]))
 
-    # func = env.needs_functions[func_name]['function']
-
     func = measure_time(category="dyn_func", source="user", func=NEEDS_FUNCTIONS[func_name]["function"])
-    func_return = func(env.app, need, env.needs_all_needs, *func_args, **func_kwargs)
+    func_return = func(env.app, need, SphinxNeedsData(env).get_or_create_needs(), *func_args, **func_kwargs)
 
     if not isinstance(func_return, (str, int, float, list, unicode)) and func_return:
         raise SphinxError(
@@ -170,11 +165,13 @@ def resolve_dynamic_values(env: BuildEnvironment):
     :param env: Sphinx environment
     :return: return value of given function
     """
+    data = SphinxNeedsData(env)
+    workflow = data.get_or_create_workflow()
     # Only perform calculation if not already done yet
-    if env.needs_workflow["dynamic_values_resolved"]:
+    if workflow["dynamic_values_resolved"]:
         return
 
-    needs = env.needs_all_needs
+    needs = data.get_or_create_needs()
     for need in needs.values():
         for need_option in need:
             if need_option in ["docname", "lineno", "target_node", "content", "content_node", "content_id"]:
@@ -233,7 +230,7 @@ def resolve_dynamic_values(env: BuildEnvironment):
                 need[need_option] = new_values
 
     # Finally set a flag so that this function gets not executed several times
-    env.needs_workflow["dynamic_values_resolved"] = True
+    workflow["dynamic_values_resolved"] = True
 
 
 def resolve_variants_options(env: BuildEnvironment):
@@ -247,15 +244,17 @@ def resolve_variants_options(env: BuildEnvironment):
     :param env: Sphinx environment
     :return: None
     """
+    data = SphinxNeedsData(env)
+    workflow = data.get_or_create_workflow()
     # Only perform calculation if not already done yet
-    if env.needs_workflow["variant_option_resolved"]:
+    if workflow["variant_option_resolved"]:
         return
 
     needs_config = NeedsSphinxConfig(env.config)
     variants_options = needs_config.variant_options
 
     if variants_options:
-        needs: Dict = env.needs_all_needs
+        needs = data.get_or_create_needs()
         for need in needs.values():
             # Data to use as filter context.
             need_context: Dict = {**need}
@@ -273,7 +272,7 @@ def resolve_variants_options(env: BuildEnvironment):
                         need[var_option] = match_variants(option_value, need_context, needs_config.variants)
 
     # Finally set a flag so that this function gets not executed several times
-    env.needs_workflow["variant_option_resolved"] = True
+    workflow["variant_option_resolved"] = True
 
 
 def check_and_get_content(content: str, need, env: BuildEnvironment) -> str:

@@ -10,6 +10,7 @@ from sphinx.environment import BuildEnvironment
 from sphinx_needs.api import add_external_need, del_need
 from sphinx_needs.api.exceptions import NeedsDuplicatedId
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import clean_log, import_prefix_link_edit
 
@@ -112,12 +113,12 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, _docname: str) -> No
 
             # check if external needs already exist
             ext_need_id = need_params["id"]
-            if ext_need_id in env.needs_all_needs:
+
+            need = SphinxNeedsData(env).get_or_create_needs().get(ext_need_id)
+
+            if need is not None:
                 # check need_params for more detail
-                if (
-                    env.needs_all_needs[ext_need_id]["is_external"]
-                    and source["base_url"] in env.needs_all_needs[ext_need_id]["external_url"]
-                ):
+                if need["is_external"] and source["base_url"] in need["external_url"]:
                     # delete the already existing external need from api need
                     del_need(app, ext_need_id)
                 else:

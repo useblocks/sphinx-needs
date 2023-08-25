@@ -8,6 +8,7 @@ from sphinx.application import Sphinx
 from sphinx.util import logging
 
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.filter_common import filter_needs
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import unwrap
@@ -44,7 +45,7 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
 
     env.needs_warnings_executed = True
 
-    needs = env.needs_all_needs
+    needs = SphinxNeedsData(env).get_or_create_needs()
 
     # Exclude external needs for warnings check
     checked_needs = {}

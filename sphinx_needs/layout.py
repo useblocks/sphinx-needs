@@ -23,6 +23,7 @@ from sphinx.application import Sphinx
 from sphinx.environment.collectors.asset import DownloadFileCollector, ImageCollector
 
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.utils import INTERNALS, match_string_link, unwrap
 
@@ -42,7 +43,7 @@ def create_need(need_id: str, app: Sphinx, layout=None, style=None, docname: Opt
     :return:
     """
     env = app.builder.env
-    needs = env.needs_all_needs
+    needs = SphinxNeedsData(env).get_or_create_needs()
 
     if need_id not in needs.keys():
         raise SphinxNeedLayoutException(f"Given need id {need_id} does not exist.")
@@ -146,7 +147,7 @@ def build_need(layout, node, app: Sphinx, style=None, fromdocname: Optional[str]
     """
 
     env = app.builder.env
-    needs = env.needs_all_needs
+    needs = SphinxNeedsData(env).get_or_create_needs()
     node_container = nodes.container()
 
     need_layout = layout

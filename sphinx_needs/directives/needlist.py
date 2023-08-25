@@ -9,6 +9,7 @@ from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.directives.utils import (
     no_needs_found_paragraph,
     used_filter_paragraph,
@@ -37,36 +38,28 @@ class NeedlistDirective(FilterBase):
 
     def run(self) -> Sequence[nodes.Node]:
         env = self.env
-        if not hasattr(env, "need_all_needlists"):
-            env.need_all_needlists = {}
-
-        # be sure, global var is available. If not, create it
-        if not hasattr(env, "needs_all_needs"):
-            env.needs_all_needs = {}
 
         targetid = "needlist-{docname}-{id}".format(docname=env.docname, id=env.new_serialno("needlist"))
         targetnode = nodes.target("", "", ids=[targetid])
 
         # Add the need and all needed information
-        env.need_all_needlists[targetid] = {
+        SphinxNeedsData(env).get_or_create_lists()[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
-            # "target_node": targetnode,
             "target_id": targetid,
             "show_tags": "show_tags" in self.options,
             "show_status": "show_status" in self.options,
             "show_filters": "show_filters" in self.options,
             "export_id": self.options.get("export_id", ""),
-            # "env": env,
+            **self.collect_filter_attributes(),
         }
-        env.need_all_needlists[targetid].update(self.collect_filter_attributes())
 
         add_doc(env, env.docname)
 
         return [targetnode, Needlist("")]
 
 
-def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list) -> None:
+def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
     """
     Replace all needlist nodes with a list of the collected needs.
     Augment each need with a backlink to the original location.
@@ -89,8 +82,8 @@ def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
             continue
 
         id = node.attributes["ids"][0]
-        current_needfilter = env.need_all_needlists[id]
-        all_needs = env.needs_all_needs
+        current_needfilter = SphinxNeedsData(env).get_or_create_lists()[id]
+        all_needs = SphinxNeedsData(env).get_or_create_needs()
         content: List[nodes.Node] = []
         all_needs = list(all_needs.values())
         found_needs = process_filters(app, all_needs, current_needfilter)
