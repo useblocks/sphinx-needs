@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1692937788520,
+  "lastUpdate": 1692942846263,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -3888,6 +3888,42 @@ window.BENCHMARK_DATA = {
             "value": 100.610596337,
             "unit": "s",
             "extra": "Commit: 7aefddcfa60af3865f30da71f545e795b09e1f64\nBranch: master\nTime: 2023-08-25T06:20:08+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bf8528b7e4a944fa1cc66ce7dc1b033d325b18c9",
+          "message": "👌 Improve plantuml warnings (#982)\n\nThis commit adds source origin  information to plantuml nodes, so that they can be reported by Sphinx warnings (for example if the render fails).\r\nNote, that this change also requires https://github.com/sphinx-contrib/plantuml/pull/79, to actually emit the source positions during sphinx builds",
+          "timestamp": "2023-08-25T07:45:41+02:00",
+          "tree_id": "eb8fb1c099c7a8fa6bb41020c16ad18e7c97a6ae",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/bf8528b7e4a944fa1cc66ce7dc1b033d325b18c9"
+        },
+        "date": 1692942840609,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2732525760000044,
+            "unit": "s",
+            "extra": "Commit: bf8528b7e4a944fa1cc66ce7dc1b033d325b18c9\nBranch: master\nTime: 2023-08-25T07:45:41+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 82.86136220700007,
+            "unit": "s",
+            "extra": "Commit: bf8528b7e4a944fa1cc66ce7dc1b033d325b18c9\nBranch: master\nTime: 2023-08-25T07:45:41+02:00"
           }
         ]
       }
