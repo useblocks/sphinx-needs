@@ -102,7 +102,8 @@ def install_styles_static_files(app: Sphinx, env: BuildEnvironment) -> None:
         files_to_copy,
         "Copying static files for sphinx-needs custom style support...",
         brown,
-        len(files_to_copy),
+        length=len(files_to_copy),
+        stringify_func=lambda x: Path(x).name,
     ):
         source_file_path = Path(source_file_path)
 
@@ -138,6 +139,8 @@ def install_static_files(
         files_to_copy,
         message,
         brown,
+        length=len(files_to_copy),
+        stringify_func=lambda x: Path(x).name,
     ):
         source_file = Path(source_file_path)
 
