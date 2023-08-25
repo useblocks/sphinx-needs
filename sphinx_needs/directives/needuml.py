@@ -431,6 +431,10 @@ def process_needuml(app, doctree, fromdocname, found_nodes):
             config=config,
         )
 
+        # Add source origin
+        puml_node.line = current_needuml["lineno"]
+        puml_node.source = env.doc2path(current_needuml["docname"])
+
         # Add calculated needuml content
         current_needuml["content_calculated"] = puml_node["uml"]
 

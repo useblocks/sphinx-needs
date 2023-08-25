@@ -122,6 +122,11 @@ def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str, 
 
             plantuml_block_text = ".. plantuml::\n" "\n" "   @startuml" "   @enduml"
             puml_node = plantuml(plantuml_block_text)
+
+            # Add source origin
+            puml_node.line = current_needfilter["lineno"]
+            puml_node.source = env.doc2path(current_needfilter["docname"])
+
             puml_node["uml"] = "@startuml\n"
             puml_connections = ""
 
