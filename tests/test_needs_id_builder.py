@@ -28,4 +28,4 @@ def test_doc_needs_id_builder(test_app):
         with open(needs_json) as needs_file:
             needs_file_content = needs_file.read()
         needs_list = json.loads(needs_file_content)
-        assert needs_list[need_id]["docname"]
+        assert needs_list["versions"]["1.0"]["needs"][need_id]["docname"]

@@ -1,4 +1,3 @@
-import json
 import os
 from typing import Iterable, Optional, Set
 
@@ -166,7 +165,6 @@ class NeedsIdBuilder(Builder):
     format = "needs"
     file_suffix = ".txt"
     links_suffix = None
-    LIST_KEY_EXCLUSIONS_NEEDS = ["content_node"]
 
     def write_doc(self, docname: str, doctree: nodes.document) -> None:
         pass
@@ -174,20 +172,24 @@ class NeedsIdBuilder(Builder):
     def finish(self) -> None:
         env = unwrap(self.env)
         needs = env.needs_all_needs.values()
-        needs_build_json_per_id_path = self.app.config.needs_build_json_per_id_path
+        filters = env.needs_all_filters
+        config = env.config
+        version = getattr(config, "version", "unset")
+
         filter_string = self.app.config.needs_builder_filter
         filtered_needs = filter_needs(self.app, needs, filter_string)
-        needs_id_json_dir = os.path.join(self.outdir, needs_build_json_per_id_path)
-        if not os.path.exists(needs_id_json_dir):
-            os.mkdir(needs_id_json_dir)
+        needs_build_json_per_id_path = self.app.config.needs_build_json_per_id_path
         for need in filtered_needs:
-            needs_id_dict = {}
+            needs_list = NeedsList(config, self.outdir, self.srcdir)
+            needs_list.wipe_version(version)
+            needs_list.add_need(version, need)
+            for need_filter in filters.values():
+                if need_filter["export_id"]:
+                    needs_list.add_filter(version, need_filter)
             id = need["id"]
-            needs_id_dict[id] = {key: need[key] for key in need if key not in self.LIST_KEY_EXCLUSIONS_NEEDS}
             try:
-                fname = os.path.join(needs_id_json_dir, f"{id}.json")
-                with open(fname, "w") as f:
-                    json.dump(needs_id_dict, f, indent=4)
+                file_name = f"{id}.json"
+                needs_list.write_jsons(file_name, needs_build_json_per_id_path)
             except Exception as e:
                 log.error(f"Needs-ID Builder {id} error: {e}")
         log.info("Needs_id successfully exported")
