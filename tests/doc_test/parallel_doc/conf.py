@@ -42,7 +42,9 @@ needs_variants = {"change_author": "assignee == 'Randy Duodu'"}
 needs_variant_options = ["status", "author"]
 needs_filter_data = {"assignee": "Randy Duodu"}
 needs_extra_options = ["my_extra_option", "another_option", "author", "comment"]
-plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "utils", "plantuml.jar")
+plantuml = "java -Djava.awt.headless=true -jar %s" % os.path.join(
+    os.path.dirname(__file__), "..", "utils", "plantuml.jar"
+)
 plantuml_output_format = "svg"
 
 # Add any paths that contain templates here, relative to this directory.

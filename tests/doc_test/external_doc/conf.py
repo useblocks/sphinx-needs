@@ -53,7 +53,9 @@ needs_external_needs = [
 # Needed to export really ALL needs. The default entry would filter out all needs coming from external
 needs_builder_filter = "True"
 
-plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "utils", "plantuml.jar")
+plantuml = "java -Djava.awt.headless=true -jar %s" % os.path.join(
+    os.path.dirname(__file__), "..", "utils", "plantuml.jar"
+)
 plantuml_output_format = "svg"
 
 # Add any paths that contain templates here, relative to this directory.

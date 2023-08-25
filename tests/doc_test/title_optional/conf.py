@@ -35,7 +35,9 @@ needs_title_optional = True
 needs_max_title_length = 50
 smartquotes_action = "qD"
 
-plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "utils", "plantuml.jar")
+plantuml = "java -Djava.awt.headless=true -jar %s" % os.path.join(
+    os.path.dirname(__file__), "..", "utils", "plantuml.jar"
+)
 plantuml_output_format = "svg"
 
 # Add any paths that contain templates here, relative to this directory.
