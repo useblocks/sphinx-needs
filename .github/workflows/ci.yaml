@@ -23,7 +23,7 @@ jobs:
             sphinx-version: "4.5.0"
             docutils-version: "0.15"
     steps:
-      - uses: actions/checkout@v3.5.3
+      - uses: actions/checkout@v3.6.0
       - name: Set Up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
@@ -50,7 +50,7 @@ jobs:
     name: Lint
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3.5.3
+      - uses: actions/checkout@v3.6.0
       - name: Set Up Python
         uses: actions/setup-python@v4
         with:
