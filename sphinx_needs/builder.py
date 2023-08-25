@@ -178,6 +178,9 @@ class NeedsIdBuilder(Builder):
         filter_string = self.app.config.needs_builder_filter
         filtered_needs = filter_needs(self.app, needs, filter_string)
         needs_build_json_per_id_path = self.app.config.needs_build_json_per_id_path
+        needs_dir = os.path.join(self.outdir, needs_build_json_per_id_path)
+        if not os.path.exists(needs_dir):
+            os.makedirs(needs_dir, exist_ok=True)
         for need in filtered_needs:
             needs_list = NeedsList(config, self.outdir, self.srcdir)
             needs_list.wipe_version(version)
@@ -185,7 +188,7 @@ class NeedsIdBuilder(Builder):
             id = need["id"]
             try:
                 file_name = f"{id}.json"
-                needs_list.write_json(file_name, needs_build_json_per_id_path)
+                needs_list.write_json(file_name, needs_dir)
             except Exception as e:
                 log.error(f"Needs-ID Builder {id} error: {e}")
         log.info("Needs_id successfully exported")

@@ -101,9 +101,7 @@ class NeedsList:
 
         needs_json = json.dumps(self.needs_list, indent=4, sort_keys=True)
         if needs_path:
-            needs_dir = os.path.join(self.outdir, needs_path)
-            if not os.path.exists(needs_dir):
-                os.makedirs(needs_dir, exist_ok=True)
+            needs_dir = needs_path
         else:
             needs_dir = self.outdir
         file = os.path.join(needs_dir, needs_file)
