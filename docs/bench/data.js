@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1692884076202,
+  "lastUpdate": 1692937788520,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -3852,6 +3852,42 @@ window.BENCHMARK_DATA = {
             "value": 98.73546714500003,
             "unit": "s",
             "extra": "Commit: deef0f1f39170c06f104d1bc32c20a148e39448f\nBranch: master\nTime: 2023-08-24T15:24:58+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7aefddcfa60af3865f30da71f545e795b09e1f64",
+          "message": "🐛 Fix gantt chart rendering (#984)\n\nIn plantuml V1.2022.12 (23 Oct, 2022), it became a syntax error not to\r\nuse `@startgantt`: https://plantuml.com/changes\r\n\r\nfixes #977",
+          "timestamp": "2023-08-25T06:20:08+02:00",
+          "tree_id": "e42f78881c174b6f75e546404a1598ac2c22db31",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/7aefddcfa60af3865f30da71f545e795b09e1f64"
+        },
+        "date": 1692937782524,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.3555997060000209,
+            "unit": "s",
+            "extra": "Commit: 7aefddcfa60af3865f30da71f545e795b09e1f64\nBranch: master\nTime: 2023-08-25T06:20:08+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 100.610596337,
+            "unit": "s",
+            "extra": "Commit: 7aefddcfa60af3865f30da71f545e795b09e1f64\nBranch: master\nTime: 2023-08-25T06:20:08+02:00"
           }
         ]
       }
