@@ -172,7 +172,6 @@ class NeedsIdBuilder(Builder):
     def finish(self) -> None:
         env = unwrap(self.env)
         needs = env.needs_all_needs.values()
-        filters = env.needs_all_filters
         config = env.config
         version = getattr(config, "version", "unset")
 
@@ -183,13 +182,10 @@ class NeedsIdBuilder(Builder):
             needs_list = NeedsList(config, self.outdir, self.srcdir)
             needs_list.wipe_version(version)
             needs_list.add_need(version, need)
-            for need_filter in filters.values():
-                if need_filter["export_id"]:
-                    needs_list.add_filter(version, need_filter)
             id = need["id"]
             try:
                 file_name = f"{id}.json"
-                needs_list.write_jsons(file_name, needs_build_json_per_id_path)
+                needs_list.write_json(file_name, needs_build_json_per_id_path)
             except Exception as e:
                 log.error(f"Needs-ID Builder {id} error: {e}")
         log.info("Needs_id successfully exported")

@@ -93,14 +93,20 @@ class NeedsList:
         if version in self.needs_list["versions"]:
             del self.needs_list["versions"][version]
 
-    def write_json(self, needs_file: str = "needs.json") -> None:
+    def write_json(self, needs_file: str = "needs.json", needs_path=None) -> None:
         # We need to rewrite some data, because this kind of data gets overwritten during needs.json import.
         self.needs_list["created"] = datetime.now().isoformat()
         self.needs_list["current_version"] = self.current_version
         self.needs_list["project"] = self.project
 
         needs_json = json.dumps(self.needs_list, indent=4, sort_keys=True)
-        file = os.path.join(self.outdir, needs_file)
+        if needs_path:
+            needs_dir = os.path.join(self.outdir, needs_path)
+            if not os.path.exists(needs_dir):
+                os.makedirs(needs_dir, exist_ok=True)
+        else:
+            needs_dir = self.outdir
+        file = os.path.join(needs_dir, needs_file)
 
         with open(file, "w") as f:
             f.write(needs_json)
@@ -130,21 +136,6 @@ class NeedsList:
                 self.needs_list = needs_list
 
             self.log.debug(f"needs.json file loaded: {file}")
-
-    def write_jsons(self, needs_file, needs_path) -> None:
-        # We need to rewrite some data and map it into needs_file belong needs_path in config
-        self.needs_list["created"] = datetime.now().isoformat()
-        self.needs_list["current_version"] = self.current_version
-        self.needs_list["project"] = self.project
-
-        needs_json = json.dumps(self.needs_list, indent=4, sort_keys=True)
-        needs_id_json_dir = os.path.join(self.outdir, needs_path)
-        if not os.path.exists(needs_id_json_dir):
-            os.makedirs(needs_id_json_dir, exist_ok=True)
-        file = os.path.join(needs_id_json_dir, needs_file)
-
-        with open(file, "w") as f:
-            f.write(needs_json)
 
 
 class Errors:
