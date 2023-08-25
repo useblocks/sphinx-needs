@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1692942846263,
+  "lastUpdate": 1692951008253,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -3924,6 +3924,42 @@ window.BENCHMARK_DATA = {
             "value": 82.86136220700007,
             "unit": "s",
             "extra": "Commit: bf8528b7e4a944fa1cc66ce7dc1b033d325b18c9\nBranch: master\nTime: 2023-08-25T07:45:41+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4479bee5262bc5236251da69d9b6b9e301128ced",
+          "message": "🔧 Replace `Directive` with `SphinxDirective` (#986)\n\n`SphinxDirective` provides a number of additional helper methods over the docutils class, including access to the Sphinx environment.\r\nThis commit ensures it is used for all directives.",
+          "timestamp": "2023-08-25T10:02:41+02:00",
+          "tree_id": "63905004584c0a3632a5f9c0ab9322bd8b4d1bf8",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/4479bee5262bc5236251da69d9b6b9e301128ced"
+        },
+        "date": 1692951003275,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.23343986599996924,
+            "unit": "s",
+            "extra": "Commit: 4479bee5262bc5236251da69d9b6b9e301128ced\nBranch: master\nTime: 2023-08-25T10:02:41+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 75.400561455,
+            "unit": "s",
+            "extra": "Commit: 4479bee5262bc5236251da69d9b6b9e301128ced\nBranch: master\nTime: 2023-08-25T10:02:41+02:00"
           }
         ]
       }
