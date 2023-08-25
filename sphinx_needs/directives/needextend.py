@@ -37,7 +37,7 @@ class NeedextendDirective(SphinxDirective):
     }
 
     def run(self) -> Sequence[nodes.Node]:
-        env = self.state.document.settings.env
+        env = self.env
         if not hasattr(env, "need_all_needextend"):
             env.need_all_needextend = {}
 

@@ -1,14 +1,14 @@
 import json
 import os
 import re
-from typing import Sequence, cast
+from typing import Sequence
 from urllib.parse import urlparse
 
 import requests
 from docutils import nodes
-from docutils.parsers.rst import Directive, directives
+from docutils.parsers.rst import directives
 from requests_file import FileAdapter
-from sphinx.environment import BuildEnvironment
+from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api import add_need
 from sphinx_needs.config import NEEDS_CONFIG
@@ -22,7 +22,7 @@ class Needimport(nodes.General, nodes.Element):  # type: ignore
     pass
 
 
-class NeedimportDirective(Directive):
+class NeedimportDirective(SphinxDirective):
     has_content = False
 
     required_arguments = 1
@@ -228,10 +228,6 @@ class NeedimportDirective(Directive):
         add_doc(self.env, self.env.docname)
 
         return need_nodes
-
-    @property
-    def env(self) -> BuildEnvironment:
-        return cast(BuildEnvironment, self.state.document.settings.env)
 
     @property
     def docname(self) -> str:

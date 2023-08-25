@@ -59,7 +59,7 @@ class NeedpieDirective(FilterBase):
     # Update the options_spec only with value filter-func defined in the FilterBase class
 
     def run(self) -> Sequence[nodes.Node]:
-        env = self.state.document.settings.env
+        env = self.env
         if not hasattr(env, "need_all_needpie"):
             env.need_all_needpie = {}
 

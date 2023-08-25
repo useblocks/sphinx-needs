@@ -35,7 +35,7 @@ class NeedlistDirective(FilterBase):
     option_spec.update(FilterBase.base_option_spec)  # type: ignore[arg-type]
 
     def run(self) -> Sequence[nodes.Node]:
-        env = self.state.document.settings.env
+        env = self.env
         if not hasattr(env, "need_all_needlists"):
             env.need_all_needlists = {}
 

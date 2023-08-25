@@ -82,16 +82,16 @@ def add_need(
 
     .. code-block:: python
 
-        from docutils.parsers.rst import Directive
+        from sphinx.util.docutils import SphinxDirective
         from sphinx_needs.api import add_need
 
-        class MyDirective(Directive)
+        class MyDirective(SphinxDirective)
             # configs and init routine
 
             def run():
                 main_section = []
 
-                docname = self.state.document.settings.env.docname
+                docname = self.env.docname
 
                 # All needed sphinx-internal information we can take from our current directive class.
                 # e..g app, state, lineno

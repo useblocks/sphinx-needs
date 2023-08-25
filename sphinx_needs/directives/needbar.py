@@ -63,7 +63,7 @@ class NeedbarDirective(FilterBase):
     # 2. Stores infos for needbar
     def run(self) -> Sequence[nodes.Node]:
         # 1. define constants
-        env = self.state.document.settings.env
+        env = self.env
         if not hasattr(env, "need_all_needbar"):
             env.need_all_needbar = {}
 

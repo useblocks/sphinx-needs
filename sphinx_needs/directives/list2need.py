@@ -4,9 +4,10 @@ from contextlib import suppress
 from typing import Any, List, Sequence
 
 from docutils import nodes
-from docutils.parsers.rst import Directive, directives
+from docutils.parsers.rst import directives
 from jinja2 import Template
 from sphinx.errors import SphinxError, SphinxWarning
+from sphinx.util.docutils import SphinxDirective
 
 NEED_TEMPLATE = """.. {{type}}:: {{title}}
    {% if need_id is not none %}:id: {{need_id}}{%endif%}
@@ -28,7 +29,7 @@ class List2Need(nodes.General, nodes.Element):  # type: ignore
     pass
 
 
-class List2NeedDirective(Directive):
+class List2NeedDirective(SphinxDirective):
     """
     Directive to filter needs and present them inside a list, table or diagram.
 
@@ -54,7 +55,7 @@ class List2NeedDirective(Directive):
     }
 
     def run(self) -> Sequence[nodes.Node]:
-        env = self.state.document.settings.env
+        env = self.env
 
         presentation = self.options.get("presentation")
         if not presentation:

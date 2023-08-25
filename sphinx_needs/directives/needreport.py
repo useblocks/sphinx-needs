@@ -2,9 +2,10 @@ import os
 from typing import Sequence
 
 from docutils import nodes
-from docutils.parsers.rst import Directive, directives
+from docutils.parsers.rst import directives
 from jinja2 import Template
 from sphinx.errors import SphinxError
+from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.directives.utils import analyse_needs_metrics
 from sphinx_needs.utils import add_doc
@@ -14,7 +15,7 @@ class NeedsReportException(SphinxError):
     pass
 
 
-class NeedReportDirective(Directive):
+class NeedReportDirective(SphinxDirective):
     final_argument_whitespace = True
     option_spec = {
         "types": directives.unchanged,
@@ -24,7 +25,7 @@ class NeedReportDirective(Directive):
     }
 
     def run(self) -> Sequence[nodes.raw]:
-        env = self.state.document.settings.env
+        env = self.env
 
         if len(self.options.keys()) == 0:  # Check if options is empty
             error_file, error_line = self.state_machine.input_lines.items[0]

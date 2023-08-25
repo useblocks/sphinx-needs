@@ -1,11 +1,10 @@
-import typing
 from typing import Any, Dict, List, Sequence
 
 from docutils import nodes
-from docutils.parsers.rst import Directive, directives
+from docutils.parsers.rst import directives
 from docutils.parsers.rst.states import RSTState, RSTStateMachine
 from docutils.statemachine import StringList
-from sphinx.environment import BuildEnvironment
+from sphinx.util.docutils import SphinxDirective
 from sphinx_data_viewer.api import get_data_viewer_node
 
 from sphinx_needs.api import add_need
@@ -19,7 +18,7 @@ class Needservice(nodes.General, nodes.Element):  # type: ignore
     pass
 
 
-class NeedserviceDirective(Directive):
+class NeedserviceDirective(SphinxDirective):
     has_content = True
 
     required_arguments = 1
@@ -48,10 +47,6 @@ class NeedserviceDirective(Directive):
     ):
         super().__init__(name, arguments, options, content, lineno, content_offset, block_text, state, state_machine)
         self.log = get_logger(__name__)
-
-    @property
-    def env(self) -> BuildEnvironment:
-        return typing.cast(BuildEnvironment, self.state.document.settings.env)
 
     def run(self) -> Sequence[nodes.Node]:
         docname = self.env.docname
