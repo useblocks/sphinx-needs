@@ -45,7 +45,9 @@ needs_title_optional = True
 needs_title_from_content = True
 needs_id_from_title = True
 
-plantuml = "java -Djava.awt.headless=true -jar %s" % os.path.join(os.path.dirname(__file__), "..", "utils", "plantuml.jar")
+plantuml = "java -Djava.awt.headless=true -jar %s" % os.path.join(
+    os.path.dirname(__file__), "..", "utils", "plantuml.jar"
+)
 plantuml_output_format = "svg"
 
 # Add any paths that contain templates here, relative to this directory.

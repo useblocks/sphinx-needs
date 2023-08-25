@@ -60,7 +60,9 @@ needs_services = {
 }
 
 
-plantuml = "java -Djava.awt.headless=true -jar %s" % os.path.join(os.path.dirname(__file__), "..", "utils", "plantuml.jar")
+plantuml = "java -Djava.awt.headless=true -jar %s" % os.path.join(
+    os.path.dirname(__file__), "..", "utils", "plantuml.jar"
+)
 plantuml_output_format = "svg"
 
 # Add any paths that contain templates here, relative to this directory.
