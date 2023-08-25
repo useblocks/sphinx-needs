@@ -149,14 +149,14 @@ def process_needgantt(app, doctree, fromdocname, found_nodes):
             no_plantuml(node)
             continue
 
-        plantuml_block_text = ".. plantuml::\n" "\n" "   @startuml" "   @enduml"
+        plantuml_block_text = ".. plantuml::\n" "\n" "   @startgantt" "   @endgantt"
         puml_node = plantuml(plantuml_block_text)
 
         # Add source origin
         puml_node.line = current_needgantt["lineno"]
         puml_node.source = env.doc2path(current_needgantt["docname"])
 
-        puml_node["uml"] = "@startuml\n"
+        puml_node["uml"] = "@startgantt\n"
 
         # Adding config
         config = current_needgantt["config"]
@@ -270,7 +270,7 @@ def process_needgantt(app, doctree, fromdocname, found_nodes):
         if current_needgantt["show_legend"]:
             puml_node["uml"] += create_legend(app.config.needs_types)
 
-        puml_node["uml"] += "\n@enduml"
+        puml_node["uml"] += "\n@endgantt"
         puml_node["incdir"] = os.path.dirname(current_needgantt["docname"])
         puml_node["filename"] = os.path.split(current_needgantt["docname"])[1]  # Needed for plantuml >= 0.9
 
