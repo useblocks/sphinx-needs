@@ -429,9 +429,6 @@ def add_need(
     if needs_info["is_external"]:
         return []
 
-    if needs_info["hide"]:
-        return [target_node]
-
     # Adding of basic Need node.
     ############################
     # Title and meta data information gets added alter during event handling via process_need_nodes()
@@ -444,6 +441,10 @@ def add_need(
 
     # Add lineno to node
     node_need.line = needs_info["lineno"]
+
+    if needs_info["hide"]:
+        node_need["hidden"] = True
+        return [target_node, node_need]
 
     node_need_content = _render_template(content, docname, lineno, state)
 

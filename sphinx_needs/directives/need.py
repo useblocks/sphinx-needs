@@ -389,6 +389,8 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     # Used to store needs in the docs, which are needed again later
     found_needs_nodes = []
     for node_need in doctree.findall(Need):
+        if node_need.get("hidden"):
+            continue
         need_id = node_need.attributes["ids"][0]
         found_needs_nodes.append(node_need)
         need_data = needs[need_id]
@@ -555,6 +557,8 @@ def html_visit(self: Any, node: nodes.Node) -> None:
     Visitor method for Need-node of builder 'html'.
     Does only wrap the Need-content into an extra <div> with class=need
     """
+    if node.get("hidden"):
+        raise nodes.SkipNode
     self.body.append(self.starttag(node, "div", "", CLASS="need"))
 
 
@@ -563,7 +567,8 @@ def html_depart(self: Any, node: nodes.Node) -> None:
 
 
 def latex_visit(self: Any, node: nodes.Node) -> None:
-    pass
+    if node.get("hidden"):
+        raise nodes.SkipNode
 
 
 def latex_depart(self: Any, node: nodes.Node) -> None:
