@@ -75,7 +75,7 @@ def execute_func(env: BuildEnvironment, need, func_string: str):
     # func = env.needs_functions[func_name]['function']
 
     func = measure_time(category="dyn_func", source="user", func=NEEDS_FUNCTIONS[func_name]["function"])
-    func_return = func(env, need, env.needs_all_needs, *func_args, **func_kwargs)
+    func_return = func(env.app, need, env.needs_all_needs, *func_args, **func_kwargs)
 
     if not isinstance(func_return, (str, int, float, list, unicode)) and func_return:
         raise SphinxError(
