@@ -4,6 +4,7 @@ from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
 from sphinx_needs.api.configuration import NEEDS_CONFIG
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.directives.needservice import NeedserviceDirective
 from sphinx_needs.logging import get_logger
 from sphinx_needs.services.base import BaseService
@@ -18,7 +19,7 @@ class ServiceManager:
 
     def register(self, name: str, clazz, **kwargs) -> None:
         try:
-            config = self.app.config.needs_services[name]
+            config = NeedsSphinxConfig(self.app.config).services[name]
         except KeyError:
             self.log.debug(
                 "No service config found for {}. " "Add it in your conf.py to needs_services dictionary.".format(name)

@@ -9,6 +9,8 @@ from jinja2 import Template
 from sphinx.errors import SphinxError, SphinxWarning
 from sphinx.util.docutils import SphinxDirective
 
+from sphinx_needs.config import NeedsSphinxConfig
+
 NEED_TEMPLATE = """.. {{type}}:: {{title}}
    {% if need_id is not none %}:id: {{need_id}}{%endif%}
    {% if set_links_down %}:{{links_down_type}}: {{ links_down|join(', ') }}{%endif%}
@@ -56,6 +58,7 @@ class List2NeedDirective(SphinxDirective):
 
     def run(self) -> Sequence[nodes.Node]:
         env = self.env
+        needs_config = NeedsSphinxConfig(env.config)
 
         presentation = self.options.get("presentation")
         if not presentation:
@@ -74,7 +77,7 @@ class List2NeedDirective(SphinxDirective):
         # Create a dict, which delivers the need-type for the later level
         types = {}
         types_raw_list = [x.strip() for x in types_raw.split(",")]
-        conf_types = [x["directive"] for x in env.config.needs_types]
+        conf_types = [x["directive"] for x in needs_config.types]
         for x in range(0, len(types_raw_list)):
             types[x] = types_raw_list[x]
             if types[x] not in conf_types:
@@ -90,7 +93,7 @@ class List2NeedDirective(SphinxDirective):
             down_links_raw_list = []
         else:
             down_links_raw_list = [x.strip() for x in down_links_raw.split(",")]
-        link_types = [x["option"] for x in env.config.needs_extra_links]
+        link_types = [x["option"] for x in needs_config.extra_links]
         for i, down_link_raw in enumerate(down_links_raw_list):
             down_links_types[i] = down_link_raw
             if down_link_raw not in link_types:
@@ -132,8 +135,8 @@ class List2NeedDirective(SphinxDirective):
                 else:
                     # Calculate the hash value, so that we can later reuse it
                     prefix = ""
-                    needs_id_length = env.config.needs_id_length
-                    for need_type in env.config.needs_types:
+                    needs_id_length = needs_config.id_length
+                    for need_type in needs_config.types:
                         if need_type["directive"] == types[level]:
                             prefix = need_type["prefix"]
                             break

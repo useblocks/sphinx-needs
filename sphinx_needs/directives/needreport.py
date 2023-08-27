@@ -7,6 +7,7 @@ from jinja2 import Template
 from sphinx.errors import SphinxError
 from sphinx.util.docutils import SphinxDirective
 
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.directives.utils import analyse_needs_metrics
 from sphinx_needs.utils import add_doc
 
@@ -26,6 +27,7 @@ class NeedReportDirective(SphinxDirective):
 
     def run(self) -> Sequence[nodes.raw]:
         env = self.env
+        needs_config = NeedsSphinxConfig(env.config)
 
         if len(self.options.keys()) == 0:  # Check if options is empty
             error_file, error_line = self.state_machine.input_lines.items[0]
@@ -45,11 +47,11 @@ class NeedReportDirective(SphinxDirective):
         needs_metrics = {}
 
         if types is not None and isinstance(types, str):
-            needs_types = env.app.config.needs_types
+            needs_types = needs_config.types
         if extra_links is not None and isinstance(extra_links, str):
-            needs_extra_links = env.app.config.needs_extra_links
+            needs_extra_links = needs_config.extra_links
         if extra_options is not None and isinstance(extra_options, str):
-            needs_extra_options = env.app.config.needs_extra_options
+            needs_extra_options = needs_config.extra_options
         if usage is not None and isinstance(usage, str):
             needs_metrics = analyse_needs_metrics(env)
 
@@ -59,9 +61,9 @@ class NeedReportDirective(SphinxDirective):
             "links": needs_extra_links,
             "usage": needs_metrics,
         }
-        report_info.update(**env.app.config.needs_render_context)
+        report_info.update(**needs_config.render_context)
 
-        need_report_template_path: str = env.app.config.needs_report_template
+        need_report_template_path: str = needs_config.report_template
         # Absolute path starts with /, based on the conf.py directory. The / need to be striped
         correct_need_report_template_path = os.path.join(env.app.srcdir, need_report_template_path.lstrip("/"))
 

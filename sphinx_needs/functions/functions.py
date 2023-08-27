@@ -15,6 +15,7 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.errors import SphinxError
 
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.debug import measure_time
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import NEEDS_FUNCTIONS, match_variants  # noqa: F401
@@ -250,14 +251,15 @@ def resolve_variants_options(env: BuildEnvironment):
     if env.needs_workflow["variant_option_resolved"]:
         return
 
-    variants_options = env.app.config.needs_variant_options
+    needs_config = NeedsSphinxConfig(env.config)
+    variants_options = needs_config.variant_options
 
     if variants_options:
         needs: Dict = env.needs_all_needs
         for need in needs.values():
             # Data to use as filter context.
             need_context: Dict = {**need}
-            need_context.update(**env.app.config.needs_filter_data)  # Add needs_filter_data to filter context
+            need_context.update(**needs_config.filter_data)  # Add needs_filter_data to filter context
             _sphinx_tags = env.app.builder.tags.tags  # Get sphinx tags
             need_context.update(**_sphinx_tags)  # Add sphinx tags to filter context
 
@@ -265,10 +267,10 @@ def resolve_variants_options(env: BuildEnvironment):
                 if var_option in need and need[var_option] not in (None, "", []):
                     if not isinstance(need[var_option], (list, set, tuple)):
                         option_value: str = need[var_option]
-                        need[var_option] = match_variants(option_value, need_context, env.app.config.needs_variants)
+                        need[var_option] = match_variants(option_value, need_context, needs_config.variants)
                     else:
                         option_value = need[var_option]
-                        need[var_option] = match_variants(option_value, need_context, env.app.config.needs_variants)
+                        need[var_option] = match_variants(option_value, need_context, needs_config.variants)
 
     # Finally set a flag so that this function gets not executed several times
     env.needs_workflow["variant_option_resolved"] = True

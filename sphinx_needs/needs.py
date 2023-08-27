@@ -16,14 +16,12 @@ from sphinx_needs.builder import (
     build_needs_json,
     build_needumls_pumls,
 )
-from sphinx_needs.config import NEEDS_CONFIG
+from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.defaults import (
-    DEFAULT_DIAGRAM_TEMPLATE,
     LAYOUTS,
     NEED_DEFAULT_OPTIONS,
     NEEDEXTEND_NOT_ALLOWED_OPTIONS,
     NEEDFLOW_CONFIG_DEFAULTS,
-    NEEDS_TABLES_CLASSES,
 )
 from sphinx_needs.directives.list2need import List2Need, List2NeedDirective
 from sphinx_needs.directives.need import (
@@ -141,145 +139,8 @@ def setup(app: Sphinx) -> Dict[str, Any]:
 
     app.add_builder(NeedsBuilder)
     app.add_builder(NeedumlsBuilder)
-    app.add_config_value(
-        "needs_types",
-        [
-            {"directive": "req", "title": "Requirement", "prefix": "R_", "color": "#BFD8D2", "style": "node"},
-            {"directive": "spec", "title": "Specification", "prefix": "S_", "color": "#FEDCD2", "style": "node"},
-            {"directive": "impl", "title": "Implementation", "prefix": "I_", "color": "#DF744A", "style": "node"},
-            {"directive": "test", "title": "Test Case", "prefix": "T_", "color": "#DCB239", "style": "node"},
-            # Kept for backwards compatibility
-            {"directive": "need", "title": "Need", "prefix": "N_", "color": "#9856a5", "style": "node"},
-        ],
-        "html",
-    )
-    app.add_config_value("needs_include_needs", True, "html", types=[bool])
-    app.add_config_value("needs_need_name", "Need", "html", types=[str])
-    app.add_config_value("needs_spec_name", "Specification", "html", types=[str])
-    app.add_config_value("needs_id_prefix_needs", "", "html", types=[str])
-    app.add_config_value("needs_id_prefix_specs", "", "html", types=[str])
-    app.add_config_value("needs_id_length", 5, "html", types=[int])
-    app.add_config_value("needs_id_from_title", False, "html", types=[bool])
-    app.add_config_value("needs_specs_show_needlist", False, "html", types=[bool])
-    app.add_config_value("needs_id_required", False, "html", types=[bool])
-    app.add_config_value(
-        "needs_id_regex",
-        f"^[A-Z0-9_]{{{app.config.needs_id_length},}}",
-        "html",
-    )
-    app.add_config_value("needs_show_link_type", False, "html", types=[bool])
-    app.add_config_value("needs_show_link_title", False, "html", types=[bool])
-    app.add_config_value("needs_show_link_id", True, "html", types=[bool])
-    app.add_config_value("needs_file", None, "html")
-    app.add_config_value("needs_table_columns", "ID;TITLE;STATUS;TYPE;OUTGOING;TAGS", "html")
-    app.add_config_value("needs_table_style", "DATATABLES", "html")
 
-    app.add_config_value("needs_role_need_template", "{title} ({id})", "html")
-    app.add_config_value("needs_role_need_max_title_length", 30, "html", types=[int])
-
-    app.add_config_value("needs_extra_options", [], "html")
-    app.add_config_value("needs_title_optional", False, "html", types=[bool])
-    app.add_config_value("needs_max_title_length", -1, "html", types=[int])
-    app.add_config_value("needs_title_from_content", False, "html", types=[bool])
-
-    app.add_config_value("needs_diagram_template", DEFAULT_DIAGRAM_TEMPLATE, "html")
-
-    app.add_config_value("needs_functions", [], "html", types=[list])
-    app.add_config_value("needs_global_options", {}, "html", types=[dict])
-
-    app.add_config_value("needs_duration_option", "duration", "html")
-    app.add_config_value("needs_completion_option", "completion", "html")
-
-    app.add_config_value("needs_needextend_strict", True, "html", types=[bool])
-
-    # If given, only the defined status are allowed.
-    # Values needed for each status:
-    # * name
-    # * description
-    # Example: [{"name": "open", "description": "open status"}, {...}, {...}]
-    app.add_config_value("needs_statuses", [], "html")
-
-    # If given, only the defined tags are allowed.
-    # Values needed for each tag:
-    # * name
-    # * description
-    # Example: [{"name": "new", "description": "new needs"}, {...}, {...}]
-    app.add_config_value("needs_tags", [], "html", types=[list])
-
-    # Path of css file, which shall be used for need style
-    app.add_config_value("needs_css", "modern.css", "html")
-
-    # Prefix for need_part output in tables
-    app.add_config_value("needs_part_prefix", "\u2192\u00a0", "html")
-
-    # List of additional links, which can be used by setting related option
-    # Values needed for each new link:
-    # * name (will also be the option name)
-    # * incoming
-    # * copy_link (copy to common links data. Default: True)
-    # * color (used for needflow. Default: #000000)
-    # Example: [{"name": "blocks, "incoming": "is blocked by", "copy_link": True, "color": "#ffcc00"}]
-    app.add_config_value("needs_extra_links", [], "html")
-
-    # Deactivate log msgs of dead links if set to False, default is True
-    app.add_config_value("needs_report_dead_links", True, "html", types=[bool])
-
-    app.add_config_value("needs_filter_data", {}, "html")
-    app.add_config_value("needs_allow_unsafe_filters", False, "html")
-
-    app.add_config_value("needs_flow_show_links", False, "html")
-    app.add_config_value("needs_flow_link_types", ["links"], "html")
-
-    app.add_config_value("needs_warnings", {}, "html")
-    app.add_config_value("needs_warnings_always_warn", False, "html", types=[bool])
-    app.add_config_value("needs_layouts", {}, "html")
-    app.add_config_value("needs_default_layout", "clean", "html")
-    app.add_config_value("needs_default_style", None, "html")
-
-    app.add_config_value("needs_flow_configs", {}, "html")
-
-    app.add_config_value("needs_template_folder", "needs_templates/", "html")
-
-    app.add_config_value("needs_services", {}, "html")
-    app.add_config_value("needs_service_all_data", False, "html", types=[bool])
-
-    app.add_config_value("needs_debug_no_external_calls", False, "html", types=[bool])
-
-    app.add_config_value("needs_external_needs", [], "html")
-
-    app.add_config_value("needs_builder_filter", "is_external==False", "html", types=[str])
-
-    # Additional classes to set for needs and needtable.
-    app.add_config_value("needs_table_classes", NEEDS_TABLES_CLASSES, "html", types=[list])
-
-    app.add_config_value("needs_string_links", {}, "html", types=[dict])
-
-    app.add_config_value("needs_build_json", False, "html", types=[bool])
-
-    app.add_config_value("needs_build_needumls", "", "html", types=[str])
-
-    # Permalink related config values.
-    # path to permalink.html; absolute path from web-root
-    app.add_config_value("needs_permalink_file", "permalink.html", "html")
-    # path to needs.json relative to permalink.html
-    app.add_config_value("needs_permalink_data", "needs.json", "html")
-    # path to needs_report_template file which is based on the conf.py directory.
-    app.add_config_value("needs_report_template", "", "html", types=[str])
-
-    # add constraints option
-    app.add_config_value("needs_constraints", {}, "html", types=[dict])
-    app.add_config_value("needs_constraint_failed_options", {}, "html", types=[dict])
-    app.add_config_value("needs_constraints_failed_color", "", "html")
-
-    # add variants option
-    app.add_config_value("needs_variants", {}, "html", types=[dict])
-    app.add_config_value("needs_variant_options", [], "html", types=[list])
-
-    # add jinja context option
-    app.add_config_value("needs_render_context", {}, "html", types=[dict])
-
-    #
-    app.add_config_value("needs_debug_measurement", False, "html", types=[dict])
+    NeedsSphinxConfig.add_config_values(app)
 
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
@@ -435,29 +296,30 @@ def load_config(app: Sphinx, *_args) -> None:
     Register extra options and directive based on config from conf.py
     """
     log = get_logger(__name__)
-    types = app.config.needs_types
 
-    if isinstance(app.config.needs_extra_options, dict):
+    needs_config = NeedsSphinxConfig(app.config)
+
+    if isinstance(needs_config.extra_options, dict):
         log.info(
             'Config option "needs_extra_options" supports list and dict. However new default type since '
             "Sphinx-Needs 0.7.2 is list. Please see docs for details."
         )
 
     existing_extra_options = NEEDS_CONFIG.get("extra_options")
-    for option in app.config.needs_extra_options:
+    for option in needs_config.extra_options:
         if option in existing_extra_options:
             log.warning(f'extra_option "{option}" already registered. [needs]', type="needs")
         NEEDS_CONFIG.add("extra_options", {option: directives.unchanged}, dict, True)
     extra_options = NEEDS_CONFIG.get("extra_options")
 
     # Get extra links and create a dictionary of needed options.
-    extra_links_raw = app.config.needs_extra_links
+    extra_links_raw = needs_config.extra_links
     extra_links = {}
     for extra_link in extra_links_raw:
         extra_links[extra_link["option"]] = directives.unchanged
 
-    title_optional = app.config.needs_title_optional
-    title_from_content = app.config.needs_title_from_content
+    title_optional = needs_config.title_optional
+    title_from_content = needs_config.title_from_content
 
     # Update NeedDirective to use customized options
     NeedDirective.option_spec.update(extra_options)
@@ -515,12 +377,12 @@ def load_config(app: Sphinx, *_args) -> None:
         NeedDirective.required_arguments = 0
         NeedDirective.optional_arguments = 1
 
-    for t in types:
+    for t in needs_config.types:
         # Register requested types of needs
         app.add_directive(t["directive"], NeedDirective)
 
     existing_warnings = NEEDS_CONFIG.get("warnings")
-    for name, check in app.config.needs_warnings.items():
+    for name, check in needs_config.warnings.items():
         if name not in existing_warnings:
             NEEDS_CONFIG.add("warnings", {name: check}, dict, append=True)
         else:
@@ -538,6 +400,8 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
     """
     Prepares the sphinx environment to store sphinx-needs internal data.
     """
+    needs_config = NeedsSphinxConfig(app.config)
+
     if not hasattr(env, "needs_all_needs"):
         # Used to store all needed information about all needs in document
         env.needs_all_needs = {}
@@ -562,14 +426,14 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
     app.needs_services.register("open-needs", OpenNeedsService)
 
     # Register user defined services
-    for name, service in app.config.needs_services.items():
+    for name, service in needs_config.services.items():
         if name not in app.needs_services.services and "class" in service and "class_init" in service:
             # We found a not yet registered service
             # But only register, if service-config contains class and class_init.
             # Otherwise, the service may get registered later by an external sphinx-needs extension
             app.needs_services.register(name, service["class"], **service["class_init"])
 
-    needs_functions = app.config.needs_functions
+    needs_functions = needs_config.functions
 
     # Register built-in functions
     for need_common_func in needs_common_functions:
@@ -588,7 +452,7 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
     # The default link name. Must exist in all configurations. Therefore we set it here
     # for the user.
     common_links = []
-    link_types = app.config.needs_extra_links
+    link_types = needs_config.extra_links
     basic_link_type_found = False
     parent_needs_link_type_found = False
     for link_type in link_types:
@@ -619,11 +483,11 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
             }
         )
 
-    app.config.needs_extra_links = common_links + app.config.needs_extra_links
+    app.config.needs_extra_links = common_links + needs_config.extra_links
 
-    app.config.needs_layouts = {**LAYOUTS, **app.config.needs_layouts}
+    app.config.needs_layouts = {**LAYOUTS, **needs_config.layouts}
 
-    app.config.needs_flow_configs.update(NEEDFLOW_CONFIG_DEFAULTS)
+    needs_config.flow_configs.update(NEEDFLOW_CONFIG_DEFAULTS)
 
     if not hasattr(env, "needs_workflow"):
         # Used to store workflow status information for already executed tasks.
@@ -638,11 +502,11 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
             "variant_option_resolved": False,
             "needs_extended": False,
         }
-        for link_type in app.config.needs_extra_links:
+        for link_type in needs_config.extra_links:
             env.needs_workflow["backlink_creation_{}".format(link_type["option"])] = False
 
     # Set time measurement flag
-    if app.config.needs_debug_measurement:
+    if needs_config.debug_measurement:
         debug.START_TIME = timer()  # Store the rough start time of Sphinx build
         debug.EXECUTE_TIME_MEASUREMENTS = True
 

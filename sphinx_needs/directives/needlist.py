@@ -8,6 +8,7 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.directives.utils import (
     no_needs_found_paragraph,
     used_filter_paragraph,
@@ -73,9 +74,10 @@ def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
 
+    include_needs = NeedsSphinxConfig(env.config).include_needs
     # for node in doctree.findall(Needlist):
     for node in found_nodes:
-        if not app.config.needs_include_needs:
+        if not include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
             # But this is here the case, because we are using the attribute "ids" of a node.

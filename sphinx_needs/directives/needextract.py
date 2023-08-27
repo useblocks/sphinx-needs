@@ -11,6 +11,7 @@ from docutils.transforms.references import Substitutions
 from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.directives.utils import (
     no_needs_found_paragraph,
     used_filter_paragraph,
@@ -77,9 +78,10 @@ def process_needextract(app: Sphinx, doctree: nodes.document, fromdocname: str, 
     Replace all needextract nodes with a list of the collected needs.
     """
     env = unwrap(app.env)
+    needs_config = NeedsSphinxConfig(app.config)
 
     for node in found_nodes:
-        if not app.config.needs_include_needs:
+        if not needs_config.include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
             # But this is here the case, because we are using the attribute "ids" of a node.
@@ -104,7 +106,7 @@ def process_needextract(app: Sphinx, doctree: nodes.document, fromdocname: str, 
             # check if given filter argument is need-id
             if need_filter_arg in env.needs_all_needs:
                 need_filter_arg = f'id == "{need_filter_arg}"'
-            elif re.fullmatch(app.config.needs_id_regex, need_filter_arg):
+            elif re.fullmatch(needs_config.id_regex, need_filter_arg):
                 # check if given filter argument is need-id, but not exists
                 raise NeedsInvalidFilter(f"Provided id {need_filter_arg} for needextract does not exist.")
             current_needextract["filter"] = need_filter_arg

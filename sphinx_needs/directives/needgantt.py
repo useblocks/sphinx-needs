@@ -8,6 +8,7 @@ from sphinxcontrib.plantuml import (
     generate_name,  # Need for plantuml filename calculation
 )
 
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.diagrams_common import (
     DiagramBase,
     add_config,
@@ -53,6 +54,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
 
     def run(self) -> Sequence[nodes.Node]:
         env = self.env
+        needs_config = NeedsSphinxConfig(env.config)
         # Creates env.need_all_needgantts safely and other vars
         self.prepare_env("needgantts")
 
@@ -87,8 +89,8 @@ class NeedganttDirective(FilterBase, DiagramBase):
 
         no_color = "no_color" in self.options
 
-        duration_option = self.options.get("duration_option", env.app.config.needs_duration_option)
-        completion_option = self.options.get("completion_option", env.app.config.needs_completion_option)
+        duration_option = self.options.get("duration_option", needs_config.duration_option)
+        completion_option = self.options.get("completion_option", needs_config.completion_option)
 
         # Add the needgantt and all needed information
         env.need_all_needgantts[targetid] = {
@@ -118,14 +120,15 @@ class NeedganttDirective(FilterBase, DiagramBase):
 def process_needgantt(app, doctree, fromdocname, found_nodes):
     # Replace all needgantt nodes with a list of the collected needs.
     env = app.builder.env
+    needs_config = NeedsSphinxConfig(app.config)
 
-    # link_types = env.config.needs_extra_links
-    # allowed_link_types_options = [link.upper() for link in env.config.needs_flow_link_types]
+    # link_types = needs_config.extra_links
+    # allowed_link_types_options = [link.upper() for link in needs_config.flow_link_types]
 
     # NEEDGANTT
     # for node in doctree.findall(Needgantt):
     for node in found_nodes:
-        if not app.config.needs_include_needs:
+        if not needs_config.include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
             # But this is here the case, because we are using the attribute "ids" of a node.
@@ -268,7 +271,7 @@ def process_needgantt(app, doctree, fromdocname, found_nodes):
 
         # Create a legend
         if current_needgantt["show_legend"]:
-            puml_node["uml"] += create_legend(app.config.needs_types)
+            puml_node["uml"] += create_legend(needs_config.types)
 
         puml_node["uml"] += "\n@endgantt"
         puml_node["incdir"] = os.path.dirname(current_needgantt["docname"])

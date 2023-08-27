@@ -7,6 +7,7 @@ import numpy
 from docutils import nodes
 from sphinx.application import Sphinx
 
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
 from sphinx_needs.utils import add_doc, save_matplotlib_figure, unwrap
 
@@ -174,11 +175,12 @@ class NeedbarDirective(FilterBase):
 def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list) -> None:
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
+    needs_config = NeedsSphinxConfig(env.config)
 
     # NEEDFLOW
     # for node in doctree.findall(Needbar):
     for node in found_nodes:
-        if not app.config.needs_include_needs:
+        if not needs_config.include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
             # But this is here the case, because we are using the attribute "ids" of a node.

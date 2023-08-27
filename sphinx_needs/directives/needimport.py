@@ -11,7 +11,7 @@ from requests_file import FileAdapter
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api import add_need
-from sphinx_needs.config import NEEDS_CONFIG
+from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.debug import measure_time
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.needsfile import check_needs_file
@@ -152,13 +152,14 @@ class NeedimportDirective(SphinxDirective):
         needs_list = needs_list_filtered
 
         # If we need to set an id prefix, we also need to manipulate all used ids in the imported data.
+        extra_links = NeedsSphinxConfig(self.config).extra_links
         if id_prefix:
             needs_ids = needs_list.keys()
 
             for need in needs_list.values():
                 for id in needs_ids:
                     # Manipulate links in all link types
-                    for extra_link in self.env.config.needs_extra_links:
+                    for extra_link in extra_links:
                         if extra_link["option"] in need and id in need[extra_link["option"]]:
                             for n, link in enumerate(need[extra_link["option"]]):
                                 if id == link:
@@ -194,7 +195,7 @@ class NeedimportDirective(SphinxDirective):
 
             need["content"] = need["description"]
             # Remove unknown options, as they may be defined in source system, but not in this sphinx project
-            extra_link_keys = [x["option"] for x in self.env.config.needs_extra_links]
+            extra_link_keys = [x["option"] for x in extra_links]
             extra_option_keys = list(NEEDS_CONFIG.get("extra_options").keys())
             default_options = [
                 "title",

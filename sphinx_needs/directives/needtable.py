@@ -6,6 +6,7 @@ from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsInvalidException
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.debug import measure_time
 from sphinx_needs.directives.utils import (
     get_option_list,
@@ -59,7 +60,7 @@ class NeedtableDirective(FilterBase):
 
         columns = str(self.options.get("columns", ""))
         if len(columns) == 0:
-            columns = env.app.config.needs_table_columns
+            columns = NeedsSphinxConfig(env.app.config).table_columns
         if isinstance(columns, str):
             columns = [col.strip() for col in re.split(";|,", columns)]
 
@@ -125,10 +126,11 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str, f
     """
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
+    needs_config = NeedsSphinxConfig(app.config)
 
     # Create a link_type dictionary, which keys-list can be easily used to find columns
     link_type_list = {}
-    for link_type in app.config.needs_extra_links:
+    for link_type in needs_config.extra_links:
         link_type_list[link_type["option"].upper()] = link_type
         link_type_list[link_type["option"].upper() + "_BACK"] = link_type
         link_type_list[link_type["incoming"].upper()] = link_type
@@ -142,7 +144,7 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str, f
 
     # for node in doctree.findall(Needtable):
     for node in found_nodes:
-        if not app.config.needs_include_needs:
+        if not needs_config.include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
             # If we replace a node, docutils checks, if it will not lose any attributes.
@@ -159,10 +161,10 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str, f
         all_needs = env.needs_all_needs
 
         if current_needtable["style"] == "" or current_needtable["style"].upper() not in ["TABLE", "DATATABLES"]:
-            if app.config.needs_table_style == "":
+            if needs_config.table_style == "":
                 style = "DATATABLES"
             else:
-                style = app.config.needs_table_style.upper()
+                style = needs_config.table_style.upper()
         else:
             style = current_needtable["style"].upper()
 
@@ -176,7 +178,7 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str, f
         # care about table layout and styling. The normal "TABLE" style is using the Sphinx default table
         # css classes and therefore must be handled by the themes.
         if style != "TABLE":
-            classes.extend(app.config.needs_table_classes)
+            classes.extend(needs_config.table_classes)
 
         table_node = nodes.table(classes=classes, ids=[id + "-table_node"])
         tgroup = nodes.tgroup(cols=len(current_needtable["columns"]))
@@ -248,7 +250,7 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str, f
             else:
                 row = nodes.row(classes=["need_part", style_row])
                 temp_need["id"] = temp_need["id_complete"]
-                prefix = app.config.needs_part_prefix
+                prefix = needs_config.part_prefix
                 temp_need["title"] = temp_need["content"]
 
             for option, _title in current_needtable["columns"]:
@@ -299,7 +301,7 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str, f
                                 temp_part,
                                 "id_complete",
                                 make_ref=True,
-                                prefix=app.config.needs_part_prefix,
+                                prefix=needs_config.part_prefix,
                             )
                         elif option == "TITLE":
                             row += row_col_maker(
@@ -308,7 +310,7 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str, f
                                 env.needs_all_needs,
                                 temp_part,
                                 "content",
-                                prefix=app.config.needs_part_prefix,
+                                prefix=needs_config.part_prefix,
                             )
                         elif option in link_type_list and (
                             option

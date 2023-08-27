@@ -8,6 +8,7 @@ from sphinx.util.docutils import SphinxDirective
 from sphinx_data_viewer.api import get_data_viewer_node
 
 from sphinx_needs.api import add_need
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.directives.need import NeedDirective
 from sphinx_needs.logging import get_logger
 from sphinx_needs.services.base import BaseService
@@ -51,6 +52,9 @@ class NeedserviceDirective(SphinxDirective):
     def run(self) -> Sequence[nodes.Node]:
         docname = self.env.docname
         app = self.env.app
+        needs_config = NeedsSphinxConfig(self.config)
+        need_types = needs_config.types
+        all_data = needs_config.service_all_data
         needs_services: Dict[str, BaseService] = getattr(app, "needs_services", {})
 
         service_name = self.arguments[0]
@@ -71,7 +75,7 @@ class NeedserviceDirective(SphinxDirective):
 
                 if "type" not in datum.keys():
                     # Use the first defined type, if nothing got defined by service (should not be the case)
-                    need_type = self.env.app.config.needs_types[0]["directive"]
+                    need_type = need_types[0]["directive"]
                 else:
                     need_type = datum["type"]
                     del datum["type"]
@@ -95,7 +99,7 @@ class NeedserviceDirective(SphinxDirective):
                 for missing_option in missing_options:
                     del datum[missing_option]
 
-                if app.config.needs_service_all_data:
+                if all_data:
                     for name, value in missing_options.items():
                         content.append(f"\n:{name}: {value}")
 

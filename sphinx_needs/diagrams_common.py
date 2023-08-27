@@ -15,6 +15,7 @@ from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import unwrap
@@ -69,13 +70,14 @@ class DiagramBase(SphinxDirective):
                         location=(self.env.docname, self.lineno),
                     )
 
+        needs_config = NeedsSphinxConfig(self.config)
         config_names = self.options.get("config")
         configs = []
         if config_names:
             for config_name in config_names.split(","):
                 config_name = config_name.strip()
-                if config_name and config_name in self.config.needs_flow_configs:
-                    configs.append(self.config.needs_flow_configs[config_name])
+                if config_name and config_name in needs_config.flow_configs:
+                    configs.append(needs_config.flow_configs[config_name])
 
         scale = self.options.get("scale", "100").replace("%", "")
         if not scale.isdigit():
