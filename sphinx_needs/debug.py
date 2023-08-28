@@ -18,7 +18,7 @@ from sphinx.application import Sphinx
 TIME_MEASUREMENTS: Dict[str, Any] = {}  # Stores the timing results
 EXECUTE_TIME_MEASUREMENTS = False  # Will be used to de/activate measurements. Set during a Sphinx Event
 
-START_TIME = 0
+START_TIME = 0.0
 
 
 def measure_time(

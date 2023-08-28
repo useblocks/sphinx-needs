@@ -1,3 +1,5 @@
+from typing import Any, Callable, List
+
 from sphinx_needs.functions.common import (
     calc_sum,
     check_linked_values,
@@ -15,4 +17,11 @@ from sphinx_needs.functions.functions import (  # noqa: F401
     resolve_variants_options,
 )
 
-needs_common_functions = [test, echo, copy, check_linked_values, calc_sum, links_from_content]
+NEEDS_COMMON_FUNCTIONS: List[Callable[..., Any]] = [
+    test,
+    echo,
+    copy,
+    check_linked_values,
+    calc_sum,
+    links_from_content,
+]

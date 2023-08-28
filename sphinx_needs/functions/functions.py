@@ -29,7 +29,7 @@ ast_boolean = ast.NameConstant
 DynamicFunction = Callable[[Sphinx, Any, Any], Union[str, int, float, List[Union[str, int, float]]]]
 
 
-def register_func(need_function: DynamicFunction, name: Optional[str] = None):
+def register_func(need_function: DynamicFunction, name: Optional[str] = None) -> None:
     """
     Registers a new sphinx-needs function for the given sphinx environment.
     :param env: Sphinx environment

@@ -145,7 +145,7 @@ class NeedsSphinxConfig:
         default=DEFAULT_DIAGRAM_TEMPLATE,
         metadata={"rebuild": "html", "types": (str,)},
     )
-    functions: list[Any] = field(default_factory=list, metadata={"rebuild": "html", "types": (list,)})
+    functions: list[Callable[..., Any]] = field(default_factory=list, metadata={"rebuild": "html", "types": (list,)})
     global_options: dict[str, Any] = field(default_factory=dict, metadata={"rebuild": "html", "types": (dict,)})
     duration_option: str = field(default="duration", metadata={"rebuild": "html", "types": (str,)})
     completion_option: str = field(default="completion", metadata={"rebuild": "html", "types": (str,)})

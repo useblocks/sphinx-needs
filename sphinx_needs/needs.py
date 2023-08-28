@@ -88,7 +88,7 @@ from sphinx_needs.environment import (
     install_styles_static_files,
 )
 from sphinx_needs.external_needs import load_external_needs
-from sphinx_needs.functions import needs_common_functions, register_func
+from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS, register_func
 from sphinx_needs.logging import get_logger
 from sphinx_needs.roles import NeedsXRefRole
 from sphinx_needs.roles.need_count import NeedCount, process_need_count
@@ -273,7 +273,7 @@ def process_creator(
             and fromdocname != f"{app.config.root_doc}"
         ):
             return
-        current_nodes = {}
+        current_nodes: Dict[Type[nodes.Element], List[nodes.Element]] = {}
         check_nodes = list(node_list.keys())
         for node_need in doctree.findall(node_match(check_nodes)):
             for check_node in node_list:
@@ -292,7 +292,7 @@ def process_creator(
     return process_caller
 
 
-def load_config(app: Sphinx, *_args) -> None:
+def load_config(app: Sphinx, *_args: Any) -> None:
     """
     Register extra options and directive based on config from conf.py
     """
@@ -388,7 +388,7 @@ def load_config(app: Sphinx, *_args) -> None:
             log.warning(f'{name} for "warnings" is already registered. [needs]', type="needs")
 
 
-def visitor_dummy(*_args, **_kwargs) -> None:
+def visitor_dummy(*_args: Any, **_kwargs: Any) -> None:
     """
     Dummy class for visitor methods, which does nothing.
     """
@@ -420,14 +420,12 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
             # Otherwise, the service may get registered later by an external sphinx-needs extension
             services.register(name, service["class"], **service["class_init"])
 
-    needs_functions = needs_config.functions
-
     # Register built-in functions
-    for need_common_func in needs_common_functions:
+    for need_common_func in NEEDS_COMMON_FUNCTIONS:
         register_func(need_common_func)
 
     # Register functions configured by user
-    for needs_func in needs_functions:
+    for needs_func in needs_config.functions:
         register_func(needs_func)
 
     # Own extra options

@@ -5,7 +5,7 @@ import os
 import re
 from functools import reduce, wraps
 from re import Pattern
-from typing import Any, Dict, List, Optional, TypeVar, Union
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
 from urllib.parse import urlparse
 
 from docutils import nodes
@@ -554,7 +554,7 @@ def unwrap(obj: Optional[T]) -> T:
     return obj
 
 
-def node_match(node_types):
+def node_match(node_types: Union[Type[nodes.Element], List[Type[nodes.Element]]]) -> Callable[[nodes.Node], bool]:
     """
     Returns a condition function for doctuils.nodes.findall()
 

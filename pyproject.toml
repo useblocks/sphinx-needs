@@ -116,7 +116,6 @@ module = [
   'sphinx_needs.functions.common',
   'sphinx_needs.functions.functions',
   'sphinx_needs.layout',
-  'sphinx_needs.needs',
   'sphinx_needs.needsfile',
   'sphinx_needs.roles.need_incoming',
   'sphinx_needs.roles.need_outgoing',
