@@ -122,7 +122,6 @@ module = [
   'sphinx_needs.roles.need_part',
   'sphinx_needs.roles.need_ref',
   'sphinx_needs.services.github',
-  'sphinx_needs.services.manager',
   'sphinx_needs.utils',
 ]
 ignore_errors = true
