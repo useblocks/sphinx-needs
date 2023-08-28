@@ -1,6 +1,6 @@
 import os
 import re
-from typing import List, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -10,7 +10,7 @@ from sphinxcontrib.plantuml import (
 )
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.diagrams_common import (
     DiagramBase,
     add_config,
@@ -83,7 +83,7 @@ def process_needsequence(
 
     needs_config = NeedsSphinxConfig(env.config)
     include_needs = needs_config.include_needs
-    link_types = needs_config.extra_links
+    link_type_names = [link["option"].upper() for link in needs_config.extra_links]
     needs_types = needs_config.types
 
     # NEEDSEQUENCE
@@ -105,11 +105,11 @@ def process_needsequence(
 
         option_link_types = [link.upper() for link in current_needsequence["link_types"]]
         for lt in option_link_types:
-            if lt not in [link["option"].upper() for link in link_types]:
+            if lt not in link_type_names:
                 logger.warning(
                     "Unknown link type {link_type} in needsequence {flow}. Allowed values:"
                     " {link_types} [needs]".format(
-                        link_type=lt, flow=current_needsequence["target_id"], link_types=",".join(link_types)
+                        link_type=lt, flow=current_needsequence["target_id"], link_types=",".join(link_type_names)
                     ),
                     type="needs",
                 )
@@ -138,10 +138,11 @@ def process_needsequence(
 
         start_needs_id = [x.strip() for x in re.split(";|,", current_needsequence["start"])]
         if len(start_needs_id) == 0:
-            raise NeedsequenceDirective(
+            # TODO this should be a warning (and not tested)
+            raise NeedSequenceException(
                 "No start-id set for needsequence"
-                " File {}"
-                ":{}".format({current_needsequence["docname"]}, current_needsequence["lineno"])
+                f" docname {current_needsequence['docname']}"
+                f":{current_needsequence['lineno']}"
             )
 
         puml_node["uml"] += "\n' Nodes definition \n\n"
@@ -231,14 +232,21 @@ def process_needsequence(
         node.replace_self(content)
 
 
-def get_message_needs(app: Sphinx, sender, link_types, all_needs_dict, tracked_receivers=None, filter=None):
-    msg_needs = []
+def get_message_needs(
+    app: Sphinx,
+    sender: NeedsInfoType,
+    link_types: List[str],
+    all_needs_dict: Dict[str, NeedsInfoType],
+    tracked_receivers: Optional[List[str]] = None,
+    filter: Optional[str] = None,
+) -> Tuple[Dict[str, Dict[str, Any]], str, str]:
+    msg_needs: List[Dict[str, Any]] = []
     if tracked_receivers is None:
         tracked_receivers = []
     for link_type in link_types:
-        msg_needs += [all_needs_dict[x] for x in sender[link_type]]
+        msg_needs += [all_needs_dict[x] for x in sender[link_type]]  # type: ignore
 
-    messages = {}
+    messages: Dict[str, Dict[str, Any]] = {}
     p_string = ""
     c_string = ""
     for msg_need in msg_needs:
