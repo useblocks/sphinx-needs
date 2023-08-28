@@ -122,7 +122,7 @@ class NeedDirective(SphinxDirective):
         for extra_link in self.needs_config.extra_links:
             need_extra_options[extra_link["option"]] = self.options.get(extra_link["option"], "")
 
-        for extra_option in NEEDS_CONFIG.get("extra_options").keys():
+        for extra_option in NEEDS_CONFIG.extra_options:
             need_extra_options[extra_option] = self.options.get(extra_option, "")
 
         need_nodes = add_need(

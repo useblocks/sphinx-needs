@@ -9,7 +9,6 @@ from sphinx.environment import BuildEnvironment
 from sphinx.errors import SphinxError
 
 import sphinx_needs.debug as debug  # Need to set global var in it for timeing measurements
-from sphinx_needs.api.configuration import add_extra_option
 from sphinx_needs.builder import (
     NeedsBuilder,
     NeedumlsBuilder,
@@ -243,8 +242,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
 
     # Be sure Sphinx-Needs config gets erased before any events or external API calls get executed.
     # So never but this inside an event.
-    NEEDS_CONFIG.create("extra_options", dict, overwrite=True)
-    NEEDS_CONFIG.create("warnings", dict, overwrite=True)
+    NEEDS_CONFIG.clear()
 
     return {
         "version": VERSION,
@@ -308,12 +306,11 @@ def load_config(app: Sphinx, *_args) -> None:
             "Sphinx-Needs 0.7.2 is list. Please see docs for details."
         )
 
-    existing_extra_options = NEEDS_CONFIG.get("extra_options")
+    extra_options = NEEDS_CONFIG.extra_options
     for option in needs_config.extra_options:
-        if option in existing_extra_options:
+        if option in extra_options:
             log.warning(f'extra_option "{option}" already registered. [needs]', type="needs")
-        NEEDS_CONFIG.add("extra_options", {option: directives.unchanged}, dict, True)
-    extra_options = NEEDS_CONFIG.get("extra_options")
+        NEEDS_CONFIG.extra_options[option] = directives.unchanged
 
     # Get extra links and create a dictionary of needed options.
     extra_links_raw = needs_config.extra_links
@@ -384,10 +381,9 @@ def load_config(app: Sphinx, *_args) -> None:
         # Register requested types of needs
         app.add_directive(t["directive"], NeedDirective)
 
-    existing_warnings = NEEDS_CONFIG.get("warnings")
     for name, check in needs_config.warnings.items():
-        if name not in existing_warnings:
-            NEEDS_CONFIG.add("warnings", {name: check}, dict, append=True)
+        if name not in NEEDS_CONFIG.warnings:
+            NEEDS_CONFIG.warnings[name] = check
         else:
             log.warning(f'{name} for "warnings" is already registered. [needs]', type="needs")
 
@@ -437,8 +433,8 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
     # Own extra options
     for option in ["hidden", "duration", "completion", "has_dead_links", "has_forbidden_dead_links", "constraints"]:
         # Check if not already set by user
-        if option not in NEEDS_CONFIG.get("extra_options"):
-            add_extra_option(app, option)
+        if option not in NEEDS_CONFIG.extra_options:
+            NEEDS_CONFIG.extra_options[option] = directives.unchanged
 
     # The default link name. Must exist in all configurations. Therefore we set it here
     # for the user.
