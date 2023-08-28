@@ -434,7 +434,7 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
     for option in ["hidden", "duration", "completion", "has_dead_links", "has_forbidden_dead_links", "constraints"]:
         # Check if not already set by user
         if option not in NEEDS_CONFIG.extra_options:
-            NEEDS_CONFIG.extra_options[name] = directives.unchanged
+            NEEDS_CONFIG.extra_options[option] = directives.unchanged
 
     # The default link name. Must exist in all configurations. Therefore we set it here
     # for the user.
