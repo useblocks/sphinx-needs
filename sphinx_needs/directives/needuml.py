@@ -104,6 +104,7 @@ class NeedumlDirective(SphinxDirective):
             "key": key_name,
             "save": plantuml_code_out_path,
             "is_arch": is_arch,
+            "content_calculated": "",
         }
 
         add_doc(env, env.docname)

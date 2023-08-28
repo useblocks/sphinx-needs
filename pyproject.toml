@@ -92,7 +92,6 @@ warn_unused_ignores = false
 [[tool.mypy.overrides]]
 module = [
   'sphinx_needs.api.need',
-  'sphinx_needs.builder',
   'sphinx_needs.data',
   'sphinx_needs.diagrams_common',
   'sphinx_needs.directives.need',
