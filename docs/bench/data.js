@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1693198403665,
+  "lastUpdate": 1693198498203,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -4104,6 +4104,42 @@ window.BENCHMARK_DATA = {
             "value": 95.96086534100004,
             "unit": "s",
             "extra": "Commit: dc815b7df0e0d5741406863f79e526ab235b55a5\nBranch: master\nTime: 2023-08-28T06:44:28+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "87d326ec6c1ae164773f321d33e9644af0dc356a",
+          "message": "🐛 Fix execute_func (#994)\n\nNeeds functions were being parsed the sphinx env, as opposed to the required sphinx app, as the first argument.",
+          "timestamp": "2023-08-28T06:46:27+02:00",
+          "tree_id": "f0c6e05f91050a5df74df7f23bde4492fc0b24fd",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/87d326ec6c1ae164773f321d33e9644af0dc356a"
+        },
+        "date": 1693198493016,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2782094060000304,
+            "unit": "s",
+            "extra": "Commit: 87d326ec6c1ae164773f321d33e9644af0dc356a\nBranch: master\nTime: 2023-08-28T06:46:27+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 90.46323354300006,
+            "unit": "s",
+            "extra": "Commit: 87d326ec6c1ae164773f321d33e9644af0dc356a\nBranch: master\nTime: 2023-08-28T06:46:27+02:00"
           }
         ]
       }
