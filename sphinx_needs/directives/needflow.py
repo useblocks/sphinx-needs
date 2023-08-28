@@ -11,6 +11,7 @@ from sphinxcontrib.plantuml import (
     generate_name,  # Need for plantuml filename calculation
 )
 
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link, create_legend
 from sphinx_needs.filter_common import FilterBase, filter_single_need, process_filters
@@ -52,6 +53,7 @@ class NeedflowDirective(FilterBase):
     @measure_time("needflow")
     def run(self) -> Sequence[nodes.Node]:
         env = self.env
+        needs_config = NeedsSphinxConfig(env.config)
         if not hasattr(env, "need_all_needflows"):
             env.need_all_needflows = {}
 
@@ -63,7 +65,7 @@ class NeedflowDirective(FilterBase):
         targetid = f"needflow-{env.docname}-{id}"
         targetnode = nodes.target("", "", ids=[targetid])
 
-        all_link_types = ",".join(x["option"] for x in env.config.needs_extra_links)
+        all_link_types = ",".join(x["option"] for x in needs_config.extra_links)
         link_types = list(
             split_link_types(self.options.get("link_types", all_link_types), location=(env.docname, self.lineno))
         )
@@ -73,8 +75,8 @@ class NeedflowDirective(FilterBase):
         if config_names:
             for config_name in config_names.split(","):
                 config_name = config_name.strip()
-                if config_name and config_name in env.config.needs_flow_configs:
-                    configs.append(env.config.needs_flow_configs[config_name])
+                if config_name and config_name in needs_config.flow_configs:
+                    configs.append(needs_config.flow_configs[config_name])
 
         scale = self.options.get("scale", "100").replace("%", "")
         if not scale.isdigit():
@@ -141,10 +143,10 @@ def get_need_node_rep_for_plantuml(
     app: Sphinx, fromdocname: str, current_needflow: dict, all_needs: list, need_info: dict
 ) -> str:
     """Calculate need node representation for plantuml."""
+    needs_config = NeedsSphinxConfig(app.config)
+    diagram_template = get_template(needs_config.diagram_template)
 
-    diagram_template = get_template(app.config.needs_diagram_template)
-
-    node_text = diagram_template.render(**need_info, **app.config.needs_render_context)
+    node_text = diagram_template.render(**need_info, **needs_config.render_context)
 
     node_link = calculate_link(app, need_info, fromdocname)
 
@@ -289,14 +291,15 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
     # Replace all needflow nodes with a list of the collected needs.
     # Augment each need with a backlink to the original location.
     env = unwrap(app.env)
+    needs_config = NeedsSphinxConfig(app.config)
 
-    link_types = app.config.needs_extra_links
-    allowed_link_types_options = [link.upper() for link in app.config.needs_flow_link_types]
+    link_types = needs_config.extra_links
+    allowed_link_types_options = [link.upper() for link in needs_config.flow_link_types]
 
     # NEEDFLOW
     # for node in doctree.findall(Needflow):
     for node in found_nodes:
-        if not app.config.needs_include_needs:
+        if not needs_config.include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
             # But this is here the case, because we are using the attribute "ids" of a node.
@@ -378,7 +381,7 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                         # If source or target of link is a need_part, a specific style is needed
                         if "." in link or "." in need_info["id_complete"]:
                             final_link = link
-                            if current_needflow["show_link_names"] or app.config.needs_flow_show_links:
+                            if current_needflow["show_link_names"] or needs_config.flow_show_links:
                                 desc = link_type["outgoing"] + "\\n"
                                 comment = f": {desc}"
                             else:
@@ -390,7 +393,7 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                                 link_style = "[dotted]"
                         else:
                             final_link = link
-                            if current_needflow["show_link_names"] or app.config.needs_flow_show_links:
+                            if current_needflow["show_link_names"] or needs_config.flow_show_links:
                                 comment = ": {desc}".format(desc=link_type["outgoing"])
                             else:
                                 comment = ""
@@ -433,7 +436,7 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
 
             # Create a legend
             if current_needflow["show_legend"]:
-                puml_node["uml"] += create_legend(app.config.needs_types)
+                puml_node["uml"] += create_legend(needs_config.types)
 
             puml_node["uml"] += "\n@enduml"
             puml_node["incdir"] = os.path.dirname(current_needflow["docname"])

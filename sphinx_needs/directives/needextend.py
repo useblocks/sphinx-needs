@@ -11,6 +11,7 @@ from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.filter_common import filter_needs
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import add_doc, unwrap
@@ -53,7 +54,7 @@ class NeedextendDirective(SphinxDirective):
         if not extend_filter:
             raise NeedsInvalidFilter(f"Filter of needextend must be set. See {env.docname}:{self.lineno}")
 
-        strict_option = self.options.get("strict", str(self.env.app.config.needs_needextend_strict))
+        strict_option = self.options.get("strict", str(NeedsSphinxConfig(self.env.app.config).needextend_strict))
         strict = True
         if strict_option.upper() == "TRUE":
             strict = True
@@ -80,6 +81,7 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     """
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
+    needs_config = NeedsSphinxConfig(env.config)
     if not hasattr(env, "need_all_needextend"):
         env.need_all_needextend = {}
 
@@ -88,10 +90,10 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
 
         list_names = (
             ["tags", "links"]
-            + [x["option"] for x in app.config.needs_extra_links]
-            + [f"{x['option']}_back" for x in app.config.needs_extra_links]
+            + [x["option"] for x in needs_config.extra_links]
+            + [f"{x['option']}_back" for x in needs_config.extra_links]
         )  # back-links (incoming)
-        link_names = [x["option"] for x in app.config.needs_extra_links]
+        link_names = [x["option"] for x in needs_config.extra_links]
 
         for current_needextend in env.need_all_needextend.values():
             # Check if filter is just a need-id.
@@ -100,7 +102,7 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
             if need_filter in env.needs_all_needs:
                 need_filter = f'id == "{need_filter}"'
             # If it looks like a need id, but we haven't found one, raise an exception
-            elif re.fullmatch(app.config.needs_id_regex, need_filter):
+            elif re.fullmatch(needs_config.id_regex, need_filter):
                 error = f"Provided id {need_filter} for needextend does not exist."
                 if current_needextend["strict"]:
                     raise NeedsInvalidFilter(error)

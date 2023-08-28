@@ -7,6 +7,7 @@ from docutils.parsers.rst import directives
 from jinja2 import BaseLoader, Environment, Template
 from sphinx.util.docutils import SphinxDirective
 
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link
 from sphinx_needs.directives.needflow import make_entity_name
@@ -61,11 +62,12 @@ class NeedumlDirective(SphinxDirective):
 
         config_names = self.options.get("config")
         configs = []
+        flow_configs = NeedsSphinxConfig(env.config).flow_configs
         if config_names:
             for config_name in config_names.split(","):
                 config_name = config_name.strip()
-                if config_name and config_name in env.config.needs_flow_configs:
-                    configs.append(env.config.needs_flow_configs[config_name])
+                if config_name and config_name in flow_configs:
+                    configs.append(flow_configs[config_name])
 
         extra_dict = {}
         extras = self.options.get("extra")
@@ -192,7 +194,7 @@ def jinja2uml(
     # 5. Get data for the jinja processing
     data = {}
     # 5.1 Set default config to data
-    data.update(**app.config.needs_render_context)
+    data.update(**NeedsSphinxConfig(app.config).render_context)
     # 5.2 Set uml() kwargs to data and maybe overwrite default settings
     data.update(kwargs)
     # 5.3 Make the helpers available during rendering and overwrite maybe wrongly default and uml() kwargs settings
@@ -313,8 +315,9 @@ class JinjaFunctions:
         need_info = self.needs[need_id]
         link = calculate_link(self.app, need_info, self.fromdocname)
 
-        diagram_template = Template(self.app.builder.env.config.needs_diagram_template)
-        node_text = diagram_template.render(**need_info, **self.app.config.needs_render_context)
+        needs_config = NeedsSphinxConfig(self.app.config)
+        diagram_template = Template(needs_config.diagram_template)
+        node_text = diagram_template.render(**need_info, **needs_config.render_context)
 
         need_uml = '{style} "{node_text}" as {id} [[{link}]] #{color}'.format(
             id=make_entity_name(need_id),

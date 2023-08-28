@@ -6,6 +6,7 @@ from sphinx import version_info
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
 
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.logging import get_logger
 from sphinx_needs.needsfile import NeedsList
 from sphinx_needs.utils import unwrap
@@ -26,12 +27,12 @@ class NeedsBuilder(Builder):
         env = unwrap(self.env)
         needs = env.needs_all_needs.values()  # We need a list of needs for later filter checks
         filters = env.needs_all_filters
-        config = env.config
-        version = getattr(config, "version", "unset")
-        needs_list = NeedsList(config, self.outdir, self.srcdir)
+        version = getattr(env.config, "version", "unset")
+        needs_list = NeedsList(env.config, self.outdir, self.srcdir)
+        needs_config = NeedsSphinxConfig(env.config)
 
-        if config.needs_file:
-            needs_file = config.needs_file
+        if needs_config.file:
+            needs_file = needs_config.file
             needs_list.load_json(needs_file)
         else:
             # check if needs.json file exists in conf.py directory
@@ -46,7 +47,7 @@ class NeedsBuilder(Builder):
         #
         from sphinx_needs.filter_common import filter_needs
 
-        filter_string = self.app.config.needs_builder_filter
+        filter_string = needs_config.builder_filter
         filtered_needs = filter_needs(self.app, needs, filter_string)
 
         for need in filtered_needs:
@@ -82,7 +83,7 @@ class NeedsBuilder(Builder):
 def build_needs_json(app: Sphinx, _exception: Exception) -> None:
     env = unwrap(app.env)
 
-    if not env.config.needs_build_json:
+    if not NeedsSphinxConfig(env.config).build_json:
         return
 
     # Do not create an additional needs.json, if builder is already "needs".
@@ -139,8 +140,9 @@ class NeedumlsBuilder(Builder):
 
 def build_needumls_pumls(app: Sphinx, _exception: Exception) -> None:
     env = unwrap(app.env)
+    config = NeedsSphinxConfig(env.config)
 
-    if not env.config.needs_build_needumls:
+    if not config.build_needumls:
         return
 
     # Do not create additional files for saved plantuml content, if builder is already "needumls".
@@ -150,10 +152,10 @@ def build_needumls_pumls(app: Sphinx, _exception: Exception) -> None:
     # if other builder like html used together with config: needs_build_needumls
     if version_info[0] >= 5:
         needs_builder = NeedumlsBuilder(app, env)
-        needs_builder.outdir = os.path.join(needs_builder.outdir, env.config.needs_build_needumls)
+        needs_builder.outdir = os.path.join(needs_builder.outdir, config.build_needumls)
     else:
         needs_builder = NeedumlsBuilder(app)
-        needs_builder.outdir = os.path.join(needs_builder.outdir, env.config.needs_build_needumls)
+        needs_builder.outdir = os.path.join(needs_builder.outdir, config.build_needumls)
         needs_builder.set_environment(env)
 
     needs_builder.finish()

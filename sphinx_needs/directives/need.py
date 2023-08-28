@@ -13,7 +13,7 @@ from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api import add_need
 from sphinx_needs.api.exceptions import NeedsInvalidException
-from sphinx_needs.config import NEEDS_CONFIG
+from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.debug import measure_time
 from sphinx_needs.defaults import NEED_DEFAULT_OPTIONS
 from sphinx_needs.directives.needextend import process_needextend
@@ -63,6 +63,7 @@ class NeedDirective(SphinxDirective):
         state_machine: RSTStateMachine,
     ):
         super().__init__(name, arguments, options, content, lineno, content_offset, block_text, state, state_machine)
+        self.needs_config = NeedsSphinxConfig(self.env.config)
         self.log = get_logger(__name__)
         self.full_title = self._get_full_title()
 
@@ -117,7 +118,7 @@ class NeedDirective(SphinxDirective):
         completion = self.options.get("completion")
 
         need_extra_options = {"duration": duration, "completion": completion}
-        for extra_link in env.config.needs_extra_links:
+        for extra_link in self.needs_config.extra_links:
             need_extra_options[extra_link["option"]] = self.options.get(extra_link["option"], "")
 
         for extra_option in NEEDS_CONFIG.get("extra_options").keys():
@@ -177,7 +178,7 @@ class NeedDirective(SphinxDirective):
 
     @property
     def title_from_content(self):
-        return "title_from_content" in self.options or self.env.config.needs_title_from_content
+        return "title_from_content" in self.options or self.needs_config.title_from_content
 
     @property
     def docname(self) -> str:
@@ -196,7 +197,7 @@ class NeedDirective(SphinxDirective):
 
     @property
     def max_title_length(self) -> int:
-        max_title_length: int = self.env.config.needs_max_title_length
+        max_title_length: int = self.needs_config.max_title_length
         return max_title_length
 
     # ToDo. Keep this in directive
@@ -353,7 +354,8 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     :param fromdocname:
     :return:
     """
-    if not app.config.needs_include_needs:
+    needs_config = NeedsSphinxConfig(app.config)
+    if not needs_config.include_needs:
         for node in doctree.findall(Need):
             node.parent.remove(node)
         return
@@ -375,7 +377,7 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     check_links(env)
 
     # Create back links of common links and extra links
-    for links in env.config.needs_extra_links:
+    for links in needs_config.extra_links:
         create_back_links(env, links["option"])
 
     """
@@ -426,7 +428,7 @@ def print_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
         for index, attribute in enumerate(node_need.attributes["classes"]):
             node_need.attributes["classes"][index] = check_and_get_content(attribute, need_data, env)
 
-        layout = need_data["layout"] or app.config.needs_default_layout
+        layout = need_data["layout"] or NeedsSphinxConfig(app.config).default_layout
 
         build_need(layout, node_need, app, fromdocname=fromdocname)
 

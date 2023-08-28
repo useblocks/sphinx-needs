@@ -8,6 +8,7 @@ from sphinx.util import status_iterator
 from sphinx.util.console import brown
 from sphinx.util.osutil import copyfile
 
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.utils import logger, unwrap
 
 IMAGE_DIR_NAME = "_static"
@@ -84,11 +85,12 @@ def install_styles_static_files(app: Sphinx, env: BuildEnvironment) -> None:
     dest_dir = statics_dir / "sphinx-needs"
 
     def find_css_files() -> Iterable[Path]:
+        needs_css = NeedsSphinxConfig(app.config).css
         for theme in ["modern", "dark", "blank"]:
-            if app.config.needs_css == f"{theme}.css":
+            if needs_css == f"{theme}.css":
                 css_dir = css_root / theme
                 return [f for f in css_dir.glob("**/*") if f.is_file()]
-        return [app.config.needs_css]
+        return [needs_css]
 
     files_to_copy = [Path("common.css")]
     files_to_copy.extend(find_css_files())
@@ -206,12 +208,13 @@ def install_permalink_file(app: Sphinx, env: BuildEnvironment) -> None:
     template = jinja_env.get_template("permalink.html")
 
     # save file to build dir
-    out_file = Path(builder.outdir) / Path(env.config.needs_permalink_file).name
+    sphinx_config = NeedsSphinxConfig(env.config)
+    out_file = Path(builder.outdir) / Path(sphinx_config.permalink_file).name
     with open(out_file, "w", encoding="utf-8") as f:
         f.write(
             template.render(
-                permalink_file=env.config.needs_permalink_file,
-                needs_file=env.config.needs_permalink_data,
-                **app.config.needs_render_context,
+                permalink_file=sphinx_config.permalink_file,
+                needs_file=sphinx_config.permalink_data,
+                **sphinx_config.render_context,
             )
         )

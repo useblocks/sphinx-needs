@@ -2,6 +2,7 @@ from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.util.nodes import make_refnode
 
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.errors import NoUri
 from sphinx_needs.utils import check_and_calc_base_url_rel_path, unwrap
 
@@ -13,6 +14,7 @@ class NeedIncoming(nodes.Inline, nodes.Element):
 def process_need_incoming(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list) -> None:
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
+    needs_config = NeedsSphinxConfig(env.config)
 
     # for node_need_backref in doctree.findall(NeedIncoming):
     for node_need_backref in found_nodes:
@@ -31,15 +33,15 @@ def process_need_incoming(app: Sphinx, doctree: nodes.document, fromdocname: str
             if back_link in env.needs_all_needs:
                 try:
                     target_need = env.needs_all_needs[back_link]
-                    if env.config.needs_show_link_title:
+                    if needs_config.show_link_title:
                         link_text = f'{target_need["title"]}'
 
-                        if env.config.needs_show_link_id:
+                        if needs_config.show_link_id:
                             link_text += f' ({target_need["id"]})'
                     else:
                         link_text = target_need["id"]
 
-                    if env.config.needs_show_link_type:
+                    if needs_config.show_link_type:
                         link_text += " [{type}]".format(type=target_need["type_name"])
 
                     # if index + 1 < len(ref_need["links_back"]):

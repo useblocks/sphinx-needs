@@ -12,6 +12,7 @@ from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.debug import measure_time
 from sphinx_needs.utils import check_and_get_external_filter_func
 from sphinx_needs.utils import logger as log
@@ -175,7 +176,7 @@ def process_filters(app: Sphinx, all_needs, current_needlist, include_external: 
         found_needs = []
 
         # Check if config allow unsafe filters
-        if app.config.needs_allow_unsafe_filters:
+        if NeedsSphinxConfig(app.config).allow_unsafe_filters:
             found_needs = found_dirty_needs
         else:
             # Just take the ids from search result and use the related, but original need
@@ -300,7 +301,7 @@ def filter_single_need(
         filter_context["current_need"] = need
 
     # Get needs external filter data and merge to filter_context
-    filter_context.update(app.config.needs_filter_data)
+    filter_context.update(NeedsSphinxConfig(app.config).filter_data)
 
     filter_context["search"] = re.search
     result = False

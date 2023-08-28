@@ -10,7 +10,7 @@ from sphinx.application import Sphinx
 from sphinx.util.logging import SphinxLoggerAdapter
 
 from sphinx_needs.api.exceptions import NeedsApiConfigException, NeedsApiConfigWarning
-from sphinx_needs.config import NEEDS_CONFIG
+from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.functions import register_func
 from sphinx_needs.functions.functions import DynamicFunction
 
@@ -28,7 +28,7 @@ def get_need_types(app: Sphinx) -> List[str]:
     :param app: Sphinx application object
     :return: list of strings
     """
-    needs_types = app.config.needs_types
+    needs_types = NeedsSphinxConfig(app.config).types
     return [x["directive"] for x in needs_types]
 
 
@@ -58,7 +58,7 @@ def add_need_type(
     """
     import sphinx_needs.directives.need
 
-    needs_types = app.config.needs_types
+    needs_types = NeedsSphinxConfig(app.config).types
     type_names = [x["directive"] for x in needs_types]
 
     if directive in type_names:

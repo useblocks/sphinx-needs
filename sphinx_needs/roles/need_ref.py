@@ -6,6 +6,7 @@ from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.util.nodes import make_refnode
 
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
 from sphinx_needs.nodes import Need
@@ -54,6 +55,7 @@ def transform_need_to_dict(need: Need) -> Dict[str, str]:
 def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes) -> None:
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
+    needs_config = NeedsSphinxConfig(env.config)
     # for node_need_ref in doctree.findall(NeedRef):
     for node_need_ref in found_nodes:
         # Let's create a dummy node, for the case we will not be able to create a real reference
@@ -91,7 +93,7 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                 dict_need["title"] = target_need["parts"][part_id]["content"]
 
             # Shorten title, if necessary
-            max_length = app.config.needs_role_need_max_title_length
+            max_length = needs_config.role_need_max_title_length
             if 3 < max_length < len(dict_need["title"]):
                 title = dict_need["title"]
                 title = f"{title[: max_length - 3]}..."
@@ -120,7 +122,7 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                     # If ref_name differs from the need id, we treat the "ref_name content" as title.
                     dict_need["title"] = ref_name
                 try:
-                    link_text = app.config.needs_role_need_template.format(**dict_need)
+                    link_text = needs_config.role_need_template.format(**dict_need)
                 except KeyError as e:
                     link_text = (
                         '"the config parameter needs_role_need_template uses not supported placeholders: %s "' % e

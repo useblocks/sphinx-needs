@@ -7,6 +7,7 @@ import numpy as np
 from docutils import nodes
 from sphinx.application import Sphinx
 
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.debug import measure_time
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
 
@@ -121,9 +122,10 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
     env = unwrap(builder.env)
 
     # NEEDFLOW
+    include_needs = NeedsSphinxConfig(env.config).include_needs
     # for node in doctree.findall(Needpie):
     for node in found_nodes:
-        if not app.config.needs_include_needs:
+        if not include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
             # But this is here the case, because we are using the attribute "ids" of a node.

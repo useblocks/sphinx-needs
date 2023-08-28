@@ -1,4 +1,12 @@
-from typing import Any, Callable, Dict
+from __future__ import annotations
+
+from dataclasses import MISSING, dataclass, field, fields
+from typing import Any, Callable
+
+from sphinx.application import Sphinx
+from sphinx.config import Config as _SphinxConfig
+
+from sphinx_needs.defaults import DEFAULT_DIAGRAM_TEMPLATE, NEEDS_TABLES_CLASSES
 
 
 class Config:
@@ -12,7 +20,7 @@ class Config:
     """
 
     def __init__(self) -> None:
-        self.configs: Dict[str, Any] = {}
+        self.configs: dict[str, Any] = {}
 
     def add(
         self, name: str, value: Any, option_type: type = str, append: bool = False, overwrite: bool = False
@@ -47,3 +55,198 @@ class Config:
 
 
 NEEDS_CONFIG = Config()
+
+
+@dataclass
+class NeedsSphinxConfig:
+    """A wrapper around the Sphinx configuration,
+    to access the needs specific configuration values,
+    with working type annotations.
+    """
+
+    # This is a modification of the normal dataclass pattern,
+    # such that we simply redirect all attribute access to the
+    # Sphinx config object, but in a manner where type annotations will work
+    # for static type analysis.
+
+    def __init__(self, config: _SphinxConfig) -> None:
+        super().__setattr__("_config", config)
+
+    def __getattribute__(self, name: str) -> Any:
+        return getattr(super().__getattribute__("_config"), f"needs_{name}")
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        return setattr(super().__getattribute__("_config"), f"needs_{name}", value)
+
+    types: list[dict[str, Any]] = field(
+        default_factory=lambda: [
+            {
+                "directive": "req",
+                "title": "Requirement",
+                "prefix": "R_",
+                "color": "#BFD8D2",
+                "style": "node",
+            },
+            {
+                "directive": "spec",
+                "title": "Specification",
+                "prefix": "S_",
+                "color": "#FEDCD2",
+                "style": "node",
+            },
+            {
+                "directive": "impl",
+                "title": "Implementation",
+                "prefix": "I_",
+                "color": "#DF744A",
+                "style": "node",
+            },
+            {
+                "directive": "test",
+                "title": "Test Case",
+                "prefix": "T_",
+                "color": "#DCB239",
+                "style": "node",
+            },
+            # Kept for backwards compatibility
+            {
+                "directive": "need",
+                "title": "Need",
+                "prefix": "N_",
+                "color": "#9856a5",
+                "style": "node",
+            },
+        ],
+        metadata={"rebuild": "html", "types": ()},
+    )
+    """Custom user need types"""
+    include_needs: bool = field(default=True, metadata={"rebuild": "html", "types": (bool,)})
+    need_name: str = field(default="Need", metadata={"rebuild": "html", "types": (str,)})
+    spec_name: str = field(default="Specification", metadata={"rebuild": "html", "types": (str,)})
+    id_prefix_needs: str = field(default="", metadata={"rebuild": "html", "types": (str,)})
+    id_prefix_specs: str = field(default="", metadata={"rebuild": "html", "types": (str,)})
+    id_length: int = field(default=5, metadata={"rebuild": "html", "types": (int,)})
+    id_from_title: bool = field(default=False, metadata={"rebuild": "html", "types": (bool,)})
+    specs_show_needlist: bool = field(default=False, metadata={"rebuild": "html", "types": (bool,)})
+    id_required: bool = field(default=False, metadata={"rebuild": "html", "types": (bool,)})
+    id_regex: str = field(default="^[A-Z0-9_]{5,}", metadata={"rebuild": "html", "types": ()})
+    show_link_type: bool = field(default=False, metadata={"rebuild": "html", "types": (bool,)})
+    show_link_title: bool = field(default=False, metadata={"rebuild": "html", "types": (bool,)})
+    show_link_id: bool = field(default=True, metadata={"rebuild": "html", "types": (bool,)})
+    file: None | str = field(default=None, metadata={"rebuild": "html", "types": ()})
+    table_columns: str = field(
+        default="ID;TITLE;STATUS;TYPE;OUTGOING;TAGS", metadata={"rebuild": "html", "types": (str,)}
+    )
+    table_style: str = field(default="DATATABLES", metadata={"rebuild": "html", "types": (str,)})
+    role_need_template: str = field(default="{title} ({id})", metadata={"rebuild": "html", "types": (str,)})
+    role_need_max_title_length: int = field(default=30, metadata={"rebuild": "html", "types": (int,)})
+    extra_options: list[str] = field(default_factory=list, metadata={"rebuild": "html", "types": (list,)})
+    title_optional: bool = field(default=False, metadata={"rebuild": "html", "types": (bool,)})
+    max_title_length: int = field(default=-1, metadata={"rebuild": "html", "types": (int,)})
+    title_from_content: bool = field(default=False, metadata={"rebuild": "html", "types": (bool,)})
+    diagram_template: str = field(
+        default=DEFAULT_DIAGRAM_TEMPLATE,
+        metadata={"rebuild": "html", "types": (str,)},
+    )
+    functions: list[Any] = field(default_factory=list, metadata={"rebuild": "html", "types": (list,)})
+    global_options: dict[str, Any] = field(default_factory=dict, metadata={"rebuild": "html", "types": (dict,)})
+    duration_option: str = field(default="duration", metadata={"rebuild": "html", "types": (str,)})
+    completion_option: str = field(default="completion", metadata={"rebuild": "html", "types": (str,)})
+    needextend_strict: bool = field(default=True, metadata={"rebuild": "html", "types": (bool,)})
+    statuses: list[dict[str, str]] = field(default_factory=list, metadata={"rebuild": "html", "types": ()})
+    """If given, only the defined status are allowed.
+    Values needed for each status:
+    * name
+    * description
+    Example: [{"name": "open", "description": "open status"}, {...}, {...}]
+    """
+    tags: list[dict[str, str]] = field(default_factory=list, metadata={"rebuild": "html", "types": (list,)})
+    """If given, only the defined tags are allowed.
+    Values needed for each tag:
+    * name
+    * description
+    Example: [{"name": "new", "description": "new needs"}, {...}, {...}]
+    """
+    css: str = field(default="modern.css", metadata={"rebuild": "html", "types": (str,)})
+    """Path of css file, which shall be used for need style"""
+    part_prefix: str = field(default="→\xa0", metadata={"rebuild": "html", "types": (str,)})
+    """Prefix for need_part output in tables"""
+    extra_links: list[dict[str, Any]] = field(default_factory=list, metadata={"rebuild": "html", "types": ()})
+    """List of additional links, which can be used by setting related option
+    Values needed for each new link:
+    * name (will also be the option name)
+    * incoming
+    * copy_link (copy to common links data. Default: True)
+    * color (used for needflow. Default: #000000)
+    Example: [{"name": "blocks, "incoming": "is blocked by", "copy_link": True, "color": "#ffcc00"}]
+    """
+    report_dead_links: bool = field(default=True, metadata={"rebuild": "html", "types": (bool,)})
+    filter_data: dict[str, Any] = field(default_factory=dict, metadata={"rebuild": "html", "types": ()})
+    allow_unsafe_filters: bool = field(default=False, metadata={"rebuild": "html", "types": (bool,)})
+    flow_show_links: bool = field(default=False, metadata={"rebuild": "html", "types": (bool,)})
+    flow_link_types: list[str] = field(default_factory=lambda: ["links"], metadata={"rebuild": "html", "types": ()})
+    """Defines the link_types to show in a needflow diagram."""
+    warnings: dict[str, Any] = field(default_factory=dict, metadata={"rebuild": "html", "types": ()})
+    warnings_always_warn: bool = field(default=False, metadata={"rebuild": "html", "types": (bool,)})
+    layouts: dict[str, dict[str, Any]] = field(default_factory=dict, metadata={"rebuild": "html", "types": ()})
+    default_layout: str = field(default="clean", metadata={"rebuild": "html", "types": (str,)})
+    default_style: None | str = field(default=None, metadata={"rebuild": "html", "types": ()})
+    flow_configs: dict[str, str] = field(default_factory=dict, metadata={"rebuild": "html", "types": ()})
+    template_folder: str = field(default="needs_templates/", metadata={"rebuild": "html", "types": (str,)})
+    services: dict[str, dict[str, Any]] = field(default_factory=dict, metadata={"rebuild": "html", "types": ()})
+    service_all_data: bool = field(default=False, metadata={"rebuild": "html", "types": (bool,)})
+    debug_no_external_calls: bool = field(default=False, metadata={"rebuild": "html", "types": (bool,)})
+    external_needs: list[dict[str, Any]] = field(default_factory=list, metadata={"rebuild": "html", "types": ()})
+    """Reference external needs, outside of the documentation."""
+    builder_filter: str = field(default="is_external==False", metadata={"rebuild": "html", "types": (str,)})
+    table_classes: list[str] = field(
+        default_factory=lambda: NEEDS_TABLES_CLASSES, metadata={"rebuild": "html", "types": (list,)}
+    )
+    """Additional classes to set for needs and needtable."""
+    string_links: dict[str, dict[str, Any]] = field(
+        default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
+    )
+    build_json: bool = field(default=False, metadata={"rebuild": "html", "types": (bool,)})
+    build_needumls: str = field(default="", metadata={"rebuild": "html", "types": (str,)})
+    permalink_file: str = field(default="permalink.html", metadata={"rebuild": "html", "types": (str,)})
+    """Permalink related config values.
+    path to permalink.html; absolute path from web-root
+    """
+    permalink_data: str = field(default="needs.json", metadata={"rebuild": "html", "types": (str,)})
+    """path to needs.json relative to permalink.html"""
+    report_template: str = field(default="", metadata={"rebuild": "html", "types": (str,)})
+    """path to needs_report_template file which is based on the conf.py directory."""
+
+    # add constraints option
+    constraints: dict[str, dict[str, Any]] = field(default_factory=dict, metadata={"rebuild": "html", "types": (dict,)})
+    constraint_failed_options: dict[str, dict[str, Any]] = field(
+        default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
+    )
+    constraints_failed_color: str = field(default="", metadata={"rebuild": "html", "types": (str,)})
+
+    # add variants option
+    variants: dict[str, str] = field(default_factory=dict, metadata={"rebuild": "html", "types": (dict,)})
+    variant_options: list[str] = field(default_factory=list, metadata={"rebuild": "html", "types": (list,)})
+
+    # add render context option
+    render_context: dict[str, Any] = field(default_factory=dict, metadata={"rebuild": "html", "types": (dict,)})
+    """Jinja context for rendering templates"""
+
+    debug_measurement: bool = field(default=False, metadata={"rebuild": "html", "types": (bool,)})
+
+    @classmethod
+    def add_config_values(cls, app: Sphinx) -> None:
+        """Add all config values to the Sphinx application."""
+        for item in fields(cls):
+            if item.default_factory is not MISSING:
+                default = item.default_factory()
+            elif item.default is not MISSING:
+                default = item.default
+            else:
+                raise Exception(f"Config item {item.name} has no default value or factory.")
+            app.add_config_value(
+                f"needs_{item.name}",
+                default,
+                item.metadata["rebuild"],
+                types=item.metadata["types"],
+            )

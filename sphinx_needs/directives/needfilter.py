@@ -6,6 +6,8 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 from jinja2 import Template
 
+from sphinx_needs.config import NeedsSphinxConfig
+
 try:
     from sphinx.errors import NoUri  # Sphinx 3.0
 except ImportError:
@@ -83,11 +85,12 @@ def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str, 
     # Augment each need with a backlink to the original location.
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
+    needs_config = NeedsSphinxConfig(env.config)
 
     # NEEDFILTER
     # for node in doctree.findall(Needfilter):
     for node in found_nodes:
-        if not app.config.needs_include_needs:
+        if not needs_config.include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
             # But this is here the case, because we are using the attribute "ids" of a node.
@@ -216,8 +219,8 @@ def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str, 
                 except NoUri:
                     link = ""
 
-                diagram_template = Template(env.config.needs_diagram_template)
-                node_text = diagram_template.render(**need_info, **app.config.needs_render_context)
+                diagram_template = Template(needs_config.diagram_template)
+                node_text = diagram_template.render(**need_info, **needs_config.render_context)
 
                 puml_node["uml"] += '{style} "{node_text}" as {id} [[{link}]] {color}\n'.format(
                     id=need_info["id"],
@@ -238,7 +241,7 @@ def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str, 
             # Create a legend
 
             if current_needfilter["show_legend"]:
-                puml_node["uml"] += create_legend(app.config.needs_types)
+                puml_node["uml"] += create_legend(needs_config.types)
             puml_node["uml"] += "@enduml"
             puml_node["incdir"] = os.path.dirname(current_needfilter["docname"])
             puml_node["filename"] = os.path.split(current_needfilter["docname"])[1]  # Needed for plantuml >= 0.9

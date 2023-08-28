@@ -21,6 +21,7 @@ from sphinx_needs.api.exceptions import (
     NeedsTagNotAllowed,
     NeedsTemplateException,
 )
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.directives.needuml import Needuml, NeedumlException
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import get_logger
@@ -136,7 +137,8 @@ def add_need(
     # Get environment
     #############################################################################################
     env = app.env
-    types = app.config.needs_types
+    needs_config = NeedsSphinxConfig(app.config)
+    types = needs_config.types
     type_name = ""
     type_prefix = ""
     type_color = ""
@@ -176,7 +178,7 @@ def add_need(
     # TODO: Check, if id was already given. If True, recalculate id
     # id = self.options.get("id", ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for
     # _ in range(5)))
-    if id is None and app.config.needs_id_required:
+    if id is None and needs_config.id_required:
         raise NeedsNoIdException(
             "An id is missing for this need and must be set, because 'needs_id_required' "
             "is set to True in conf.py. Need '{}' in {} ({})".format(title, docname, lineno)
@@ -187,12 +189,8 @@ def add_need(
     else:
         need_id = id
 
-    if app.config.needs_id_regex and not re.match(app.config.needs_id_regex, need_id):
-        raise NeedsInvalidException(
-            "Given ID '{id}' does not match configured regex '{regex}'".format(
-                id=need_id, regex=app.config.needs_id_regex
-            )
-        )
+    if needs_config.id_regex and not re.match(needs_config.id_regex, need_id):
+        raise NeedsInvalidException(f"Given ID '{need_id}' does not match configured regex '{needs_config.id_regex}'")
 
     # Calculate target id, to be able to set a link back
     if is_external:
@@ -203,7 +201,7 @@ def add_need(
 
     # Handle status
     # Check if status is in needs_statuses. If not raise an error.
-    if app.config.needs_statuses and status not in [stat["name"] for stat in app.config.needs_statuses]:
+    if needs_config.statuses and status not in [stat["name"] for stat in needs_config.statuses]:
         raise NeedsStatusNotAllowed(
             f"Status {status} of need id {need_id} is not allowed " "by config value 'needs_statuses'."
         )
@@ -226,9 +224,9 @@ def add_need(
 
         tags = new_tags
         # Check if tag is in needs_tags. If not raise an error.
-        if app.config.needs_tags:
+        if needs_config.tags:
             for tag in tags:
-                needs_tags = [tag["name"] for tag in app.config.needs_tags]
+                needs_tags = [tag["name"] for tag in needs_config.tags]
                 if tag not in needs_tags:
                     raise NeedsTagNotAllowed(
                         f"Tag {tag} of need id {need_id} is not allowed " "by config value 'needs_tags'."
@@ -258,9 +256,9 @@ def add_need(
 
         constraints = new_constraints
         # Check if constraint is in needs_constraints. If not raise an error.
-        if env.app.config.needs_constraints:
+        if needs_config.constraints:
             for constraint in constraints:
-                if constraint not in env.app.config.needs_constraints.keys():
+                if constraint not in needs_config.constraints.keys():
                     raise NeedsConstraintNotAllowed(
                         f"Constraint {constraint} of need id {need_id} is not allowed "
                         "by config value 'needs_constraints'."
@@ -294,7 +292,7 @@ def add_need(
             )
 
     # Trim title if it is too long
-    max_length = app.config.needs_max_title_length
+    max_length = needs_config.max_title_length
     if max_length == -1 or len(title) <= max_length:
         trimmed_title = title
     elif max_length <= 3:
@@ -353,10 +351,10 @@ def add_need(
     needs_extra_option_names = NEEDS_CONFIG.get("extra_options").keys()
     _merge_extra_options(needs_info, kwargs, needs_extra_option_names)
 
-    needs_global_options = app.config.needs_global_options
+    needs_global_options = needs_config.global_options
     _merge_global_options(app, needs_info, needs_global_options)
 
-    link_names = [x["option"] for x in app.config.needs_extra_links]
+    link_names = [x["option"] for x in needs_config.extra_links]
     for keyword in kwargs:
         if keyword not in needs_extra_option_names and keyword not in link_names:
             raise NeedsInvalidOption(
@@ -368,7 +366,7 @@ def add_need(
     # Merge links
     copy_links = []
 
-    for link_type in app.config.needs_extra_links:
+    for link_type in needs_config.extra_links:
         # Check, if specific link-type got some arguments during method call
         if link_type["option"] not in kwargs and link_type["option"] not in needs_global_options:
             # if not we set no links, but entry in needS_info must be there
@@ -398,8 +396,8 @@ def add_need(
     # Jinja support for need content
     if jinja_content:
         need_content_context = {**needs_info}
-        need_content_context.update(**env.app.config.needs_filter_data)
-        need_content_context.update(**env.app.config.needs_render_context)
+        need_content_context.update(**needs_config.filter_data)
+        need_content_context.update(**needs_config.render_context)
         new_content = jinja_parse(need_content_context, needs_info["content"])
         # Overwrite current content
         content = new_content
@@ -572,7 +570,8 @@ def add_external_need(
 
 
 def _prepare_template(app: Sphinx, needs_info, template_key: str) -> str:
-    template_folder = app.config.needs_template_folder
+    needs_config = NeedsSphinxConfig(app.config)
+    template_folder = needs_config.template_folder
     if not os.path.isabs(template_folder):
         template_folder = os.path.join(app.srcdir, template_folder)
 
@@ -587,7 +586,7 @@ def _prepare_template(app: Sphinx, needs_info, template_key: str) -> str:
     with open(template_path) as template_file:
         template_content = "".join(template_file.readlines())
     template_obj = Template(template_content)
-    new_content = template_obj.render(**needs_info, **app.config.needs_render_context)
+    new_content = template_obj.render(**needs_info, **needs_config.render_context)
 
     return new_content
 
@@ -653,9 +652,10 @@ def make_hashed_id(app: Sphinx, need_type: str, full_title: str, content: str, i
     :param id_length: maximum length of the generated ID
     :return: ID as string
     """
-    types = app.config.needs_types
+    needs_config = NeedsSphinxConfig(app.config)
+    types = needs_config.types
     if id_length is None:
-        id_length = app.config.needs_id_length
+        id_length = needs_config.id_length
     type_prefix = None
     for ntype in types:
         if ntype["directive"] == need_type:
@@ -669,7 +669,7 @@ def make_hashed_id(app: Sphinx, need_type: str, full_title: str, content: str, i
 
     # check if needs_id_from_title is configured
     cal_hashed_id = hashed_id
-    if app.config.needs_id_from_title:
+    if needs_config.id_from_title:
         id_from_title = full_title.upper().replace(" ", "_") + "_"
         cal_hashed_id = id_from_title + hashed_id
 

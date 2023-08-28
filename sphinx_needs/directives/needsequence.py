@@ -9,6 +9,7 @@ from sphinxcontrib.plantuml import (
     generate_name,  # Need for plantuml filename calculation
 )
 
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.diagrams_common import (
     DiagramBase,
     add_config,
@@ -79,12 +80,15 @@ def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str,
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
 
-    link_types = env.config.needs_extra_links
+    needs_config = NeedsSphinxConfig(env.config)
+    include_needs = needs_config.include_needs
+    link_types = needs_config.extra_links
+    needs_types = needs_config.types
 
     # NEEDSEQUENCE
     # for node in doctree.findall(Needsequence):
     for node in found_nodes:
-        if not app.config.needs_include_needs:
+        if not include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
             # But this is here the case, because we are using the attribute "ids" of a node.
@@ -169,7 +173,7 @@ def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str,
 
         # Create a legend
         if current_needsequence["show_legend"]:
-            puml_node["uml"] += create_legend(app.config.needs_types)
+            puml_node["uml"] += create_legend(needs_types)
 
         puml_node["uml"] += "\n@enduml"
         puml_node["incdir"] = os.path.dirname(current_needsequence["docname"])

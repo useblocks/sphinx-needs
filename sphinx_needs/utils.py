@@ -13,6 +13,7 @@ from jinja2 import BaseLoader, Environment, Template
 from matplotlib.figure import FigureBase
 from sphinx.application import BuildEnvironment, Sphinx
 
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.defaults import NEEDS_PROFILING
 from sphinx_needs.logging import get_logger
 
@@ -106,12 +107,13 @@ def row_col_maker(
     """
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
+    needs_config = NeedsSphinxConfig(env.config)
 
     row_col = nodes.entry(classes=["needs_" + need_key])
     para_col = nodes.paragraph()
 
     needs_string_links_option: List[str] = []
-    for v in app.config.needs_string_links.values():
+    for v in needs_config.string_links.values():
         needs_string_links_option.extend(v["options"])
 
     if need_key in need_info and need_info[need_key] is not None:
@@ -128,13 +130,13 @@ def row_col_maker(
             link_part = None
 
             link_list = []
-            for link_type in env.config.needs_extra_links:
+            for link_type in needs_config.extra_links:
                 link_list.append(link_type["option"])
                 link_list.append(link_type["option"] + "_back")
 
             # For needs_string_links
             link_string_list = {}
-            for link_name, link_conf in app.config.needs_string_links.items():
+            for link_name, link_conf in needs_config.string_links.items():
                 link_string_list[link_name] = {
                     "url_template": Environment(loader=BaseLoader, autoescape=True).from_string(link_conf["link_url"]),
                     "name_template": Environment(loader=BaseLoader, autoescape=True).from_string(
@@ -193,7 +195,7 @@ def row_col_maker(
                     para_col += ref_col
             elif matching_link_confs:
                 para_col += match_string_link(
-                    datum_text, datum, need_key, matching_link_confs, render_context=app.config.needs_render_context
+                    datum_text, datum, need_key, matching_link_confs, render_context=needs_config.render_context
                 )
             else:
                 para_col += text_col
@@ -215,7 +217,9 @@ def rstjinja(app: Sphinx, docname: str, source: List[str]) -> None:
     if builder.format != "html":
         return
     src = source[0]
-    rendered = builder.templates.render_string(src, app.config.html_context, **app.config.needs_render_context)
+    rendered = builder.templates.render_string(
+        src, app.config.html_context, **NeedsSphinxConfig(app.config).render_context
+    )
     source[0] = rendered
 
 
@@ -227,7 +231,8 @@ def import_prefix_link_edit(needs: Dict[str, Any], id_prefix: str, needs_extra_l
 
     :param needs: Dict of all needs
     :param id_prefix: Prefix as string
-    :param needs_extra_links: config var of all supported extra links. Normally coming from env.config.needs_extra_links
+    :param needs_extra_links: config var of all supported extra links.
+        Normally coming from env.config.needs_extra_links
     :return:
     """
     if not id_prefix:

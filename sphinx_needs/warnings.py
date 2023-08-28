@@ -7,7 +7,7 @@ from typing import Optional
 from sphinx.application import Sphinx
 from sphinx.util import logging
 
-from sphinx_needs.config import NEEDS_CONFIG
+from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.filter_common import filter_needs
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import unwrap
@@ -54,7 +54,7 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
 
     warnings = NEEDS_CONFIG.get("warnings")
 
-    warnings_always_warn = app.config.needs_warnings_always_warn
+    warnings_always_warn = NeedsSphinxConfig(app.config).warnings_always_warn
 
     with logging.pending_logging():
         logger.info("\nChecking sphinx-needs warnings")
