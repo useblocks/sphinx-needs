@@ -15,7 +15,7 @@ from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsFilteredBaseType
+from sphinx_needs.data import NeedsFilteredBaseType, NeedsPartsInfoType
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import get_scale, split_link_types, unwrap
@@ -156,7 +156,7 @@ def get_debug_container(puml_node: nodes.Element) -> nodes.container:
     return debug_container
 
 
-def calculate_link(app: Sphinx, need_info: Dict[str, Any], _fromdocname: str) -> str:
+def calculate_link(app: Sphinx, need_info: NeedsPartsInfoType, _fromdocname: str) -> str:
     """
     Link calculation
     All links we can get from docutils functions will be relative.
@@ -172,7 +172,8 @@ def calculate_link(app: Sphinx, need_info: Dict[str, Any], _fromdocname: str) ->
     builder = unwrap(app.builder)
     try:
         if need_info["is_external"]:
-            link: str = need_info["external_url"]
+            assert need_info["external_url"] is not None, "external_url must be set for external needs"
+            link = need_info["external_url"]
             # check if need_info["external_url"] is relative path
             parsed_url = urlparse(need_info["external_url"])
             if not parsed_url.scheme and not os.path.isabs(need_info["external_url"]):

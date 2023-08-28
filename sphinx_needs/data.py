@@ -149,8 +149,9 @@ class NeedsInfoType(NeedsBaseDataType):
     """List of need IDs, which are referenced by this need."""
     links_back: list[str]
     """List of need IDs, which are referencing this need."""
-    # TODO there is a lot more dynamically added link information;
-    # for each item in needs_extra_links config,
+    # TODO there is more dynamically added link information;
+    # for each item in needs_extra_links config
+    # (and in prepare_env 'links' and 'parent_needs' are added if not present),
     # you end up with a key named by the "option" field,
     # and then another key named by the "option" field + "_back"
     # these all have value type `list[str]`
@@ -172,8 +173,15 @@ class NeedsInfoType(NeedsBaseDataType):
     signature: str | Text
     """Derived from a docutils desc_name node"""
     parent_needs: list[str]
+    """List of parents of the this need (by id),
+    i.e. if this need is nested in another
+    """
+    parent_needs_back: list[str]
+    """List of children of this need (by id),
+    i.e. if needs are nested within this one
+    """
     parent_need: str
-    """Simply the first parent"""
+    """Simply the first parent id"""
 
     # default extra options
     # TODO these all default to "" which I don't think is good
