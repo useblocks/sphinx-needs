@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import MISSING, dataclass, field, fields
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 from sphinx.application import Sphinx
 from sphinx.config import Config as _SphinxConfig
 
 from sphinx_needs.defaults import DEFAULT_DIAGRAM_TEMPLATE, NEEDS_TABLES_CLASSES
+
+if TYPE_CHECKING:
+    from sphinx.util.logging import SphinxLoggerAdapter
+
+    from sphinx_needs.data import NeedsInfoType
 
 
 class Config:
@@ -20,38 +25,25 @@ class Config:
     """
 
     def __init__(self) -> None:
-        self.configs: dict[str, Any] = {}
+        self._extra_options: dict[str, Callable[[str], Any]] = {}
+        self._warnings: dict[str, str | Callable[[NeedsInfoType, SphinxLoggerAdapter], bool]] = {}
 
-    def add(
-        self, name: str, value: Any, option_type: type = str, append: bool = False, overwrite: bool = False
-    ) -> None:
-        if name not in self.configs:
-            self.configs[name] = option_type()
-        elif not isinstance(self.configs[name], option_type):
-            raise Exception(
-                f"Type of needs config option {name} is {type(self.configs[name])}," f"but {option_type} is given"
-            )
+    def clear(self) -> None:
+        self._extra_options = {}
+        self._warnings = {}
 
-        if not append:
-            self.configs[name] = value
-        else:
-            if isinstance(self.configs[name], dict):
-                self.configs[name] = {**self.configs[name], **value}
-            else:
-                self.configs[name] += value
+    @property
+    def extra_options(self) -> dict[str, Callable[[str], Any]]:
+        """Options that are dynamically added to `NeedDirective` & `NeedserviceDirective`,
+        after the config is initialized.
 
-    def create(self, name: str, option_type: Callable[[], Any] = str, overwrite: bool = False) -> None:
-        if name in self.configs and not overwrite:
-            raise Exception(f"option {name} exists.")
-        self.configs[name] = option_type()
+        :returns: Mapping of name to validation function
+        """
+        return self._extra_options
 
-    def create_or_get(self, name: str, option_type: Callable[[], Any] = str) -> Any:
-        if name not in self.configs:
-            self.configs[name] = option_type()
-        return self.configs[name]
-
-    def get(self, name: str) -> Any:
-        return self.configs[name]
+    @property
+    def warnings(self) -> dict[str, str | Callable[[NeedsInfoType, SphinxLoggerAdapter], bool]]:
+        return self._warnings
 
 
 NEEDS_CONFIG = Config()

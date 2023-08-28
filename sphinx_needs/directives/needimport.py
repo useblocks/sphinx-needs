@@ -196,7 +196,7 @@ class NeedimportDirective(SphinxDirective):
             need["content"] = need["description"]
             # Remove unknown options, as they may be defined in source system, but not in this sphinx project
             extra_link_keys = [x["option"] for x in extra_links]
-            extra_option_keys = list(NEEDS_CONFIG.get("extra_options").keys())
+            extra_option_keys = list(NEEDS_CONFIG.extra_options)
             default_options = [
                 "title",
                 "status",
