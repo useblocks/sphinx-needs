@@ -126,7 +126,6 @@ module = [
   'sphinx_needs.services.github',
   'sphinx_needs.services.manager',
   'sphinx_needs.utils',
-  'sphinx_needs.warnings',
 ]
 ignore_errors = true
 
