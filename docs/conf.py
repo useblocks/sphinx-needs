@@ -45,6 +45,7 @@ version = "1.3"
 release = "1.3.0"
 
 extensions = [
+    "sphinx.ext.intersphinx",
     "sphinxcontrib.plantuml",
     "sphinx_needs",
     "sphinx.ext.autodoc",
@@ -55,6 +56,11 @@ extensions = [
     "sphinx.ext.duration",
     "sphinx_immaterial",
 ]
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3.8", None),
+    "sphinx": ("https://www.sphinx-doc.org/en/master", None),
+}
 
 # smartquotes = False
 
@@ -421,7 +427,6 @@ html_theme_options = {
     "site_url": "https://sphinxcontrib-needs.readthedocs.io/",
     "repo_url": "https://github.com/useblocks/sphinxcontrib-needs",
     "repo_name": "Sphinx-Needs",
-    "repo_type": "github",
     "edit_uri": "blob/master/docs",
     # "google_analytics": ["UA-XXXXX", "auto"],
     "globaltoc_collapse": True,
