@@ -106,7 +106,6 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = [
   'sphinx_needs.api.need',
-  'sphinx_needs.directives.need',
   'sphinx_needs.directives.needuml',
   'sphinx_needs.functions.functions',
   'sphinx_needs.layout',
