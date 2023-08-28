@@ -18,7 +18,7 @@ from sphinx_needs.needsfile import check_needs_file
 from sphinx_needs.utils import add_doc, logger
 
 
-class Needimport(nodes.General, nodes.Element):  # type: ignore
+class Needimport(nodes.General, nodes.Element):
     pass
 
 
