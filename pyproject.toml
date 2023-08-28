@@ -108,7 +108,6 @@ module = [
   'sphinx_needs.api.need',
   'sphinx_needs.data',
   'sphinx_needs.directives.need',
-  'sphinx_needs.directives.needbar',
   'sphinx_needs.directives.needuml',
   'sphinx_needs.functions.functions',
   'sphinx_needs.layout',

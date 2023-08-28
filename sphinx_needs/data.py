@@ -243,9 +243,9 @@ class NeedsBarType(NeedsBaseDataType):
     ylabels_rotation: str
     separator: str
     stacked: bool
-    show_sum: bool
-    show_top_sum: bool
-    sum_rotation: bool
+    show_sum: None | bool
+    show_top_sum: None | bool
+    sum_rotation: None | str
     transpose: bool
     horizontal: bool
     style: str
