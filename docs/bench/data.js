@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1693198498203,
+  "lastUpdate": 1693198653875,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -4140,6 +4140,42 @@ window.BENCHMARK_DATA = {
             "value": 90.46323354300006,
             "unit": "s",
             "extra": "Commit: 87d326ec6c1ae164773f321d33e9644af0dc356a\nBranch: master\nTime: 2023-08-28T06:46:27+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8b68f20322f924f2816937b1b3c43077a7ddb40c",
+          "message": "👌 Improve logging for static file copies (#992)\n\nOnly report file names",
+          "timestamp": "2023-08-28T06:47:57+02:00",
+          "tree_id": "c6ddb6ee8bb4dcd4a1c9bbe1ba55c65f3122c7f2",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8b68f20322f924f2816937b1b3c43077a7ddb40c"
+        },
+        "date": 1693198648800,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.30476238800002875,
+            "unit": "s",
+            "extra": "Commit: 8b68f20322f924f2816937b1b3c43077a7ddb40c\nBranch: master\nTime: 2023-08-28T06:47:57+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 101.174340777,
+            "unit": "s",
+            "extra": "Commit: 8b68f20322f924f2816937b1b3c43077a7ddb40c\nBranch: master\nTime: 2023-08-28T06:47:57+02:00"
           }
         ]
       }
