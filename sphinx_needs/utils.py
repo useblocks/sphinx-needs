@@ -13,6 +13,8 @@ from jinja2 import BaseLoader, Environment, Template
 from matplotlib.figure import FigureBase
 from sphinx.application import BuildEnvironment, Sphinx
 
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import NeedsFilteredBaseType, NeedsInfoType, SphinxNeedsData
 from sphinx_needs.defaults import NEEDS_PROFILING
 from sphinx_needs.logging import get_logger
 
@@ -84,7 +86,7 @@ MONTH_NAMES = [
 def row_col_maker(
     app: Sphinx,
     fromdocname: str,
-    all_needs,
+    all_needs: Dict[str, NeedsInfoType],
     need_info,
     need_key,
     make_ref: bool = False,
@@ -106,12 +108,13 @@ def row_col_maker(
     """
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
+    needs_config = NeedsSphinxConfig(env.config)
 
     row_col = nodes.entry(classes=["needs_" + need_key])
     para_col = nodes.paragraph()
 
     needs_string_links_option: List[str] = []
-    for v in app.config.needs_string_links.values():
+    for v in needs_config.string_links.values():
         needs_string_links_option.extend(v["options"])
 
     if need_key in need_info and need_info[need_key] is not None:
@@ -128,13 +131,13 @@ def row_col_maker(
             link_part = None
 
             link_list = []
-            for link_type in env.config.needs_extra_links:
+            for link_type in needs_config.extra_links:
                 link_list.append(link_type["option"])
                 link_list.append(link_type["option"] + "_back")
 
             # For needs_string_links
             link_string_list = {}
-            for link_name, link_conf in app.config.needs_string_links.items():
+            for link_name, link_conf in needs_config.string_links.items():
                 link_string_list[link_name] = {
                     "url_template": Environment(loader=BaseLoader, autoescape=True).from_string(link_conf["link_url"]),
                     "name_template": Environment(loader=BaseLoader, autoescape=True).from_string(
@@ -193,7 +196,7 @@ def row_col_maker(
                     para_col += ref_col
             elif matching_link_confs:
                 para_col += match_string_link(
-                    datum_text, datum, need_key, matching_link_confs, render_context=app.config.needs_render_context
+                    datum_text, datum, need_key, matching_link_confs, render_context=needs_config.render_context
                 )
             else:
                 para_col += text_col
@@ -215,7 +218,9 @@ def rstjinja(app: Sphinx, docname: str, source: List[str]) -> None:
     if builder.format != "html":
         return
     src = source[0]
-    rendered = builder.templates.render_string(src, app.config.html_context, **app.config.needs_render_context)
+    rendered = builder.templates.render_string(
+        src, app.config.html_context, **NeedsSphinxConfig(app.config).render_context
+    )
     source[0] = rendered
 
 
@@ -227,7 +232,8 @@ def import_prefix_link_edit(needs: Dict[str, Any], id_prefix: str, needs_extra_l
 
     :param needs: Dict of all needs
     :param id_prefix: Prefix as string
-    :param needs_extra_links: config var of all supported extra links. Normally coming from env.config.needs_extra_links
+    :param needs_extra_links: config var of all supported extra links.
+        Normally coming from env.config.needs_extra_links
     :return:
     """
     if not id_prefix:
@@ -296,19 +302,21 @@ def check_and_calc_base_url_rel_path(external_url: str, fromdocname: str) -> str
     return ref_uri
 
 
-def check_and_get_external_filter_func(current_needlist):
+def check_and_get_external_filter_func(filter_data: NeedsFilteredBaseType):
     """Check and import filter function from external python file."""
     # Check if external filter code is defined
     filter_func = None
     filter_args = []
 
-    filter_func_ref = current_needlist.get("filter_func")
+    filter_func_ref = filter_data.get("filter_func")
 
     if filter_func_ref:
         try:
             filter_module, filter_function = filter_func_ref.rsplit(".")
         except ValueError:
-            logger.warning(f'Filter function not valid "{filter_func_ref}". Example: my_module:my_func')
+            logger.warning(
+                f'Filter function not valid "{filter_func_ref}". Example: my_module:my_func [needs]', type="needs"
+            )
             return []  # No needs were found because of invalid filter function
 
         result = re.search(r"^(\w+)(?:\((.*)\))*$", filter_function)
@@ -319,7 +327,7 @@ def check_and_get_external_filter_func(current_needlist):
             final_module = importlib.import_module(filter_module)
             filter_func = getattr(final_module, filter_function)
         except Exception:
-            logger.warning(f"Could not import filter function: {filter_func_ref}")
+            logger.warning(f"Could not import filter function: {filter_func_ref} [needs]", type="needs")
             return []
 
     return filter_func, filter_args
@@ -423,7 +431,8 @@ def match_string_link(
     except Exception as e:
         logger.warning(
             f'Problems dealing with string to link transformation for value "{data}" of '
-            f'option "{need_key}". Error: {e}'
+            f'option "{need_key}". Error: {e} [needs]',
+            type="needs",
         )
     else:
         return ref_item
@@ -473,7 +482,10 @@ def match_variants(option_value: Union[str, List], keywords: Dict, needs_variant
                         no_variants_in_option = False
                         return output.lstrip(":")
                 except Exception as e:
-                    logger.warning(f'There was an error in the filter statement: "{filter_string}". ' f"Error Msg: {e}")
+                    logger.warning(
+                        f'There was an error in the filter statement: "{filter_string}". ' f"Error Msg: {e} [needs]",
+                        type="needs",
+                    )
             else:
                 no_variants_in_option = True
 
@@ -571,13 +583,55 @@ def node_match(node_types):
     return condition
 
 
-def add_doc(env: BuildEnvironment, docname: str, category=None):
+def add_doc(env: BuildEnvironment, docname: str, category: Optional[str] = None) -> None:
     """Stores a docname, to know later all need-relevant docs"""
-    if docname not in env.needs_all_docs["all"]:
-        env.needs_all_docs["all"].append(docname)
+    docs = SphinxNeedsData(env).get_or_create_docs()
+    if docname not in docs["all"]:
+        docs["all"].append(docname)
 
     if category:
-        if category not in env.needs_all_docs:
-            env.needs_all_docs[category] = []
-        if docname not in env.needs_all_docs[category]:
-            env.needs_all_docs[category].append(docname)
+        if category not in docs:
+            docs[category] = []
+        if docname not in docs[category]:
+            docs[category].append(docname)
+
+
+def split_link_types(link_types: str, location: Any) -> List[str]:
+    """Split link_types string into list of link_types."""
+
+    def _is_valid(link_type: str) -> bool:
+        if len(link_type) == 0 or link_type.isspace():
+            logger.warning(
+                "Scruffy link_type definition found. Defined link_type contains spaces only. [needs]",
+                type="needs",
+                location=location,
+            )
+            return False
+        return True
+
+    return list(
+        filter(
+            _is_valid,
+            (x.strip() for x in re.split(";|,", link_types)),
+        )
+    )
+
+
+def get_scale(options: Dict[str, Any], location: Any) -> str:
+    """Get scale for diagram, from directive option."""
+    scale = options.get("scale", "100").replace("%", "")
+    if not scale.isdigit():
+        logger.warning(
+            f'scale value must be a number. "{scale}" found [needs]',
+            type="needs",
+            location=location,
+        )
+        return "100"
+    if int(scale) < 1 or int(scale) > 300:
+        logger.warning(
+            f'scale value must be between 1 and 300. "{scale}" found [needs]',
+            type="needs",
+            location=location,
+        )
+        return "100"
+    return scale

@@ -4,6 +4,8 @@ from typing import Any, Dict, List, Tuple
 from docutils import nodes
 from sphinx.environment import BuildEnvironment
 
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.defaults import TITLE_REGEX
 
 
@@ -39,7 +41,7 @@ def used_filter_paragraph(current_needfilter) -> nodes.paragraph:
 
 def get_link_type_option(name: str, env: BuildEnvironment, node, default: str = "") -> List[str]:
     link_types = [x.strip() for x in re.split(";|,", node.options.get(name, default))]
-    conf_link_types = env.config.needs_extra_links
+    conf_link_types = NeedsSphinxConfig(env.config).extra_links
     conf_link_types_name = [x["option"] for x in conf_link_types]
 
     final_link_types = []
@@ -94,9 +96,9 @@ def analyse_needs_metrics(env: BuildEnvironment) -> Dict[str, Any]:
     :param env: Sphinx build environment
     :return: Dictionary consisting of needs metrics.
     """
-    needs: Dict = env.needs_all_needs
+    needs = SphinxNeedsData(env).get_or_create_needs()
     metric_data = {"needs_amount": len(needs)}
-    needs_types = {i["directive"]: 0 for i in env.app.config.needs_types}
+    needs_types = {i["directive"]: 0 for i in NeedsSphinxConfig(env.config).types}
 
     for i in needs.values():
         if i["type"] in needs_types:

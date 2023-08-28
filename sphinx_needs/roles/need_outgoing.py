@@ -4,6 +4,8 @@ from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.util.nodes import make_refnode
 
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import check_and_calc_base_url_rel_path, unwrap
@@ -18,16 +20,15 @@ class NeedOutgoing(nodes.Inline, nodes.Element):  # type: ignore
 def process_need_outgoing(
     app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
 ) -> None:
+    builder = unwrap(app.builder)
+    env = unwrap(app.env)
+    needs_config = NeedsSphinxConfig(app.config)
+    report_dead_links = needs_config.report_dead_links
     # for node_need_ref in doctree.findall(NeedOutgoing):
     for node_need_ref in found_nodes:
-        builder = unwrap(app.builder)
-        env = unwrap(builder.env)
-
         node_link_container = nodes.inline()
-        needs_all_needs = getattr(env, "needs_all_needs", {})
+        needs_all_needs = SphinxNeedsData(env).get_or_create_needs()
         ref_need = needs_all_needs[node_need_ref["reftarget"]]
-
-        report_dead_links = getattr(env.config, "needs_report_dead_links", True)
 
         # Let's check if NeedIncoming shall follow a specific link type
         if "link_type" in node_need_ref.attributes:
@@ -62,15 +63,15 @@ def process_need_outgoing(
                         target_title = target_need["title"]
                         target_id = target_need["id"]
 
-                    if env.config.needs_show_link_title:
+                    if needs_config.show_link_title:
                         link_text = f"{target_title}"
 
-                        if env.config.needs_show_link_id:
+                        if needs_config.show_link_id:
                             link_text += f" ({target_id})"
                     else:
                         link_text = target_id
 
-                    if env.config.needs_show_link_type:
+                    if needs_config.show_link_type:
                         link_text += " [{type}]".format(type=target_need["type_name"])
 
                     node_need_ref[0] = nodes.Text(link_text)
@@ -117,25 +118,29 @@ def process_need_outgoing(
                     and extra_links_dict[link_type]["allow_dead_links"]
                 ):
                     log_level = "INFO"
+                    kwargs = {}
                 else:
                     # Set an extra css class, if link type is not configured to allow dead links
                     dead_link_para.attributes["classes"].append("forbidden")
                     log_level = "WARNING"
+                    kwargs = {"type": "needs"}
 
                 if report_dead_links:
                     if node_need_ref and node_need_ref.line:
                         log.log(
                             log_level,
-                            f"Needs: linked need {link} not found "
-                            f"(Line {node_need_ref.line} of file {node_need_ref.source})",
+                            f"linked need {link} not found "
+                            f"(Line {node_need_ref.line} of file {node_need_ref.source}) [needs]",
+                            **kwargs,
                         )
                     else:
                         log.log(
                             log_level,
-                            "Needs: outgoing linked need {} not found (document: {}, "
-                            "source need {} on line {} )".format(
+                            "outgoing linked need {} not found (document: {}, "
+                            "source need {} on line {} ) [needs]".format(
                                 link, ref_need["docname"], ref_need["id"], ref_need["lineno"]
                             ),
+                            **kwargs,
                         )
 
             # If we have several links, we add an empty text between them

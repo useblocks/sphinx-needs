@@ -3,6 +3,9 @@ from pathlib import Path
 
 import pytest
 
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
+
 
 @pytest.mark.parametrize(
     "test_app", [{"buildername": "needs_id", "srcdir": "doc_test/doc_needs_builder"}], indirect=True
@@ -16,8 +19,10 @@ def test_doc_needs_id_builder(test_app):
     app.build()
     out_dir = app.outdir
     env = unwrap(app.env)
-    needs = env.needs_all_needs.values()
-    needs_build_json_per_id_path = app.config.needs_build_json_per_id_path
+    data = SphinxNeedsData(env)
+    needs_config = NeedsSphinxConfig(env.config)
+    needs = data.get_or_create_needs().values()  # We need a list of needs for later filter checks
+    needs_build_json_per_id_path = needs_config.needs_build_json_per_id_path
     needs_id_path = os.path.join(out_dir, needs_build_json_per_id_path)
     assert os.path.exists(needs_id_path)
     for need in needs:

@@ -1,11 +1,13 @@
 import contextlib
 from collections.abc import Iterable
-from typing import Dict
+from typing import Dict, List
 
 from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.util.nodes import make_refnode
 
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
 from sphinx_needs.nodes import Need
@@ -51,9 +53,11 @@ def transform_need_to_dict(need: Need) -> Dict[str, str]:
     return dict_need
 
 
-def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes) -> None:
+def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
+    needs_config = NeedsSphinxConfig(env.config)
+    all_needs = SphinxNeedsData(env).get_or_create_needs()
     # for node_need_ref in doctree.findall(NeedRef):
     for node_need_ref in found_nodes:
         # Let's create a dummy node, for the case we will not be able to create a real reference
@@ -78,8 +82,8 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
             ref_id = ref_id_complete
             part_id = None
 
-        if ref_id in env.needs_all_needs:
-            target_need = env.needs_all_needs[ref_id]
+        if ref_id in all_needs:
+            target_need = all_needs[ref_id]
 
             dict_need = transform_need_to_dict(target_need)  # Transform a dict in a dict of {str, str}
 
@@ -91,7 +95,7 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                 dict_need["title"] = target_need["parts"][part_id]["content"]
 
             # Shorten title, if necessary
-            max_length = app.config.needs_role_need_max_title_length
+            max_length = needs_config.role_need_max_title_length
             if 3 < max_length < len(dict_need["title"]):
                 title = dict_need["title"]
                 title = f"{title[: max_length - 3]}..."
@@ -108,25 +112,24 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                 try:
                     link_text = ref_name.format(**dict_need)
                 except KeyError as e:
-                    link_text = '"Needs: option placeholder %s for need %s not found (Line %i of file %s)"' % (
+                    link_text = '"option placeholder %s for need %s not found (Line %i of file %s)"' % (
                         e,
                         node_need_ref["reftarget"],
                         node_need_ref.line,
                         node_need_ref.source,
                     )
-                    log.warning(link_text)
+                    log.warning(link_text + " [needs]", type="needs")
             else:
                 if ref_name:
                     # If ref_name differs from the need id, we treat the "ref_name content" as title.
                     dict_need["title"] = ref_name
                 try:
-                    link_text = app.config.needs_role_need_template.format(**dict_need)
+                    link_text = needs_config.role_need_template.format(**dict_need)
                 except KeyError as e:
                     link_text = (
-                        '"Needs: the config parameter needs_role_need_template uses not supported placeholders: %s "'
-                        % e
+                        '"the config parameter needs_role_need_template uses not supported placeholders: %s "' % e
                     )
-                    log.warning(link_text)
+                    log.warning(link_text + " [needs]", type="needs")
 
             node_need_ref[0].children[0] = nodes.Text(link_text)
 
@@ -147,8 +150,9 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
 
         else:
             log.warning(
-                "Needs: linked need %s not found (Line %i of file %s)"
-                % (node_need_ref["reftarget"], node_need_ref.line, node_need_ref.source)
+                "linked need %s not found (Line %i of file %s) [needs]"
+                % (node_need_ref["reftarget"], node_need_ref.line, node_need_ref.source),
+                type="needs",
             )
 
         node_need_ref.replace_self(new_node_ref)

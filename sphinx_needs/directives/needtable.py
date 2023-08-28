@@ -1,11 +1,13 @@
 import re
-from typing import Sequence
+from typing import List, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsInvalidException
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.directives.utils import (
     get_option_list,
@@ -46,20 +48,14 @@ class NeedtableDirective(FilterBase):
 
     @profile("NEEDTABLE_RUN")
     def run(self) -> Sequence[nodes.Node]:
-        env = self.state.document.settings.env
-        if not hasattr(env, "need_all_needtables"):
-            env.need_all_needtables = {}
-
-        # be sure, global var is available. If not, create it
-        if not hasattr(env, "needs_all_needs"):
-            env.needs_all_needs = {}
+        env = self.env
 
         targetid = "needtable-{docname}-{id}".format(docname=env.docname, id=env.new_serialno("needtable"))
         targetnode = nodes.target("", "", ids=[targetid])
 
         columns = str(self.options.get("columns", ""))
         if len(columns) == 0:
-            columns = env.app.config.needs_table_columns
+            columns = NeedsSphinxConfig(env.app.config).table_columns
         if isinstance(columns, str):
             columns = [col.strip() for col in re.split(";|,", columns)]
 
@@ -88,7 +84,7 @@ class NeedtableDirective(FilterBase):
             title = self.arguments[0]
 
         # Add the need and all needed information
-        env.need_all_needtables[targetid] = {
+        SphinxNeedsData(env).get_or_create_tables()[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
@@ -104,8 +100,8 @@ class NeedtableDirective(FilterBase):
             # If not set, the options.get() method returns False
             "show_filters": "show_filters" in self.options,
             "show_parts": self.options.get("show_parts", False) is None,
+            **self.collect_filter_attributes(),
         }
-        env.need_all_needtables[targetid].update(self.collect_filter_attributes())
 
         add_doc(env, env.docname)
 
@@ -114,7 +110,9 @@ class NeedtableDirective(FilterBase):
 
 @measure_time("needtable")
 @profile("NEEDTABLE")
-def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list) -> None:
+def process_needtables(
+    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
+) -> None:
     """
     Replace all needtables nodes with a table of filtered nodes.
 
@@ -125,10 +123,12 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str, f
     """
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
+    needs_config = NeedsSphinxConfig(app.config)
+    needs_data = SphinxNeedsData(env)
 
     # Create a link_type dictionary, which keys-list can be easily used to find columns
     link_type_list = {}
-    for link_type in app.config.needs_extra_links:
+    for link_type in needs_config.extra_links:
         link_type_list[link_type["option"].upper()] = link_type
         link_type_list[link_type["option"].upper() + "_BACK"] = link_type
         link_type_list[link_type["incoming"].upper()] = link_type
@@ -140,9 +140,11 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str, f
             link_type_list["OUTGOING"] = link_type
             link_type_list["INCOMING"] = link_type
 
+    all_needs = needs_data.get_or_create_needs()
+
     # for node in doctree.findall(Needtable):
     for node in found_nodes:
-        if not app.config.needs_include_needs:
+        if not needs_config.include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
             # If we replace a node, docutils checks, if it will not lose any attributes.
@@ -155,14 +157,13 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str, f
             continue
 
         id = node.attributes["ids"][0]
-        current_needtable = env.need_all_needtables[id]
-        all_needs = env.needs_all_needs
+        current_needtable = needs_data.get_or_create_tables()[id]
 
         if current_needtable["style"] == "" or current_needtable["style"].upper() not in ["TABLE", "DATATABLES"]:
-            if app.config.needs_table_style == "":
+            if needs_config.table_style == "":
                 style = "DATATABLES"
             else:
-                style = app.config.needs_table_style.upper()
+                style = needs_config.table_style.upper()
         else:
             style = current_needtable["style"].upper()
 
@@ -176,7 +177,7 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str, f
         # care about table layout and styling. The normal "TABLE" style is using the Sphinx default table
         # css classes and therefore must be handled by the themes.
         if style != "TABLE":
-            classes.extend(app.config.needs_table_classes)
+            classes.extend(needs_config.table_classes)
 
         table_node = nodes.table(classes=classes, ids=[id + "-table_node"])
         tgroup = nodes.tgroup(cols=len(current_needtable["columns"]))
@@ -206,11 +207,9 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str, f
         # Add lineno to node
         table_node.line = current_needtable["lineno"]
 
-        all_needs = list(all_needs.values())
-
         # Perform filtering of needs
         try:
-            filtered_needs = process_filters(app, all_needs, current_needtable)
+            filtered_needs = process_filters(app, list(all_needs.values()), current_needtable)
         except Exception as e:
             raise e
 
@@ -248,33 +247,31 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str, f
             else:
                 row = nodes.row(classes=["need_part", style_row])
                 temp_need["id"] = temp_need["id_complete"]
-                prefix = app.config.needs_part_prefix
+                prefix = needs_config.part_prefix
                 temp_need["title"] = temp_need["content"]
 
             for option, _title in current_needtable["columns"]:
                 if option == "ID":
-                    row += row_col_maker(
-                        app, fromdocname, env.needs_all_needs, temp_need, "id", make_ref=True, prefix=prefix
-                    )
+                    row += row_col_maker(app, fromdocname, all_needs, temp_need, "id", make_ref=True, prefix=prefix)
                 elif option == "TITLE":
-                    row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need, "title", prefix=prefix)
+                    row += row_col_maker(app, fromdocname, all_needs, temp_need, "title", prefix=prefix)
                 elif option in link_type_list:
                     link_type = link_type_list[option]
                     if option in ["INCOMING", link_type["option"].upper() + "_BACK", link_type["incoming"].upper()]:
                         row += row_col_maker(
                             app,
                             fromdocname,
-                            env.needs_all_needs,
+                            all_needs,
                             temp_need,
                             link_type["option"] + "_back",
                             ref_lookup=True,
                         )
                     else:
                         row += row_col_maker(
-                            app, fromdocname, env.needs_all_needs, temp_need, link_type["option"], ref_lookup=True
+                            app, fromdocname, all_needs, temp_need, link_type["option"], ref_lookup=True
                         )
                 else:
-                    row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_need, option.lower())
+                    row += row_col_maker(app, fromdocname, all_needs, temp_need, option.lower())
             tbody += row
 
             # Need part rows
@@ -295,20 +292,20 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str, f
                             row += row_col_maker(
                                 app,
                                 fromdocname,
-                                env.needs_all_needs,
+                                all_needs,
                                 temp_part,
                                 "id_complete",
                                 make_ref=True,
-                                prefix=app.config.needs_part_prefix,
+                                prefix=needs_config.part_prefix,
                             )
                         elif option == "TITLE":
                             row += row_col_maker(
                                 app,
                                 fromdocname,
-                                env.needs_all_needs,
+                                all_needs,
                                 temp_part,
                                 "content",
-                                prefix=app.config.needs_part_prefix,
+                                prefix=needs_config.part_prefix,
                             )
                         elif option in link_type_list and (
                             option
@@ -321,13 +318,13 @@ def process_needtables(app: Sphinx, doctree: nodes.document, fromdocname: str, f
                             row += row_col_maker(
                                 app,
                                 fromdocname,
-                                env.needs_all_needs,
+                                all_needs,
                                 temp_part,
                                 link_type_list[option]["option"] + "_back",
                                 ref_lookup=True,
                             )
                         else:
-                            row += row_col_maker(app, fromdocname, env.needs_all_needs, temp_part, option.lower())
+                            row += row_col_maker(app, fromdocname, all_needs, temp_part, option.lower())
 
                     tbody += row
 

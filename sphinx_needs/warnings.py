@@ -7,7 +7,8 @@ from typing import Optional
 from sphinx.application import Sphinx
 from sphinx.util import logging
 
-from sphinx_needs.config import NEEDS_CONFIG
+from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.filter_common import filter_needs
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import unwrap
@@ -44,7 +45,7 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
 
     env.needs_warnings_executed = True
 
-    needs = env.needs_all_needs
+    needs = SphinxNeedsData(env).get_or_create_needs()
 
     # Exclude external needs for warnings check
     checked_needs = {}
@@ -54,7 +55,7 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
 
     warnings = NEEDS_CONFIG.get("warnings")
 
-    warnings_always_warn = app.config.needs_warnings_always_warn
+    warnings_always_warn = NeedsSphinxConfig(app.config).warnings_always_warn
 
     with logging.pending_logging():
         logger.info("\nChecking sphinx-needs warnings")
@@ -70,7 +71,7 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
                     if warning_filter(need, logger):
                         result.append(need)
             else:
-                logger.warning(f"Unknown needs warnings filter {warning_filter}!")
+                logger.warning(f"Unknown needs warnings filter {warning_filter}! [needs]", type="needs")
 
             if len(result) == 0:
                 logger.info(f"{warning_name}: passed")
@@ -94,9 +95,10 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
 
                 if warnings_always_warn:
                     logger.warning(
-                        "{}: failed\n\t\tfailed needs: {} ({})\n\t\tused filter: {}".format(
+                        "{}: failed\n\t\tfailed needs: {} ({})\n\t\tused filter: {} [needs]".format(
                             warning_name, len(need_ids), ", ".join(need_ids), warning_text
-                        )
+                        ),
+                        type="needs",
                     )
                 else:
                     logger.info(
@@ -107,4 +109,4 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
                     warning_raised = True
 
         if warning_raised:
-            logger.warning("Sphinx-Needs warnings were raised. See console / log output for details.")
+            logger.warning("warnings were raised. See console / log output for details. [needs]", type="needs")

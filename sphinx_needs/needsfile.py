@@ -11,6 +11,7 @@ from typing import Any, List
 
 from jsonschema import Draft7Validator
 
+from sphinx_needs.data import NeedsFilterType
 from sphinx_needs.logging import get_logger
 
 log = get_logger(__name__)
@@ -83,7 +84,7 @@ class NeedsList:
         self.needs_list["versions"][version]["needs"][need_info["id"]] = writable_needs
         self.needs_list["versions"][version]["needs_amount"] = len(self.needs_list["versions"][version]["needs"])
 
-    def add_filter(self, version, need_filter) -> None:
+    def add_filter(self, version, need_filter: NeedsFilterType) -> None:
         self.update_or_add_version(version)
         writable_filters = {key: need_filter[key] for key in need_filter if key not in self.JSON_KEY_EXCLUSIONS_FILTERS}
         self.needs_list["versions"][version]["filters"][need_filter["export_id"].upper()] = writable_filters
@@ -114,7 +115,7 @@ class NeedsList:
             file = os.path.join(self.confdir, file)
 
         if not os.path.exists(file):
-            self.log.warning(f"Could not load needs json file {file}")
+            self.log.warning(f"Could not load needs json file {file} [needs]", type="needs")
         else:
             errors = check_needs_file(file)
             # We only care for schema errors here, all other possible errors
@@ -129,7 +130,7 @@ class NeedsList:
             try:
                 needs_list = json.loads(needs_file_content)
             except json.JSONDecodeError:
-                self.log.warning(f"Could not decode json file {file}")
+                self.log.warning(f"Could not decode json file {file} [needs]", type="needs")
             else:
                 self.needs_list = needs_list
 

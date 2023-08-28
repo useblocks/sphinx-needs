@@ -1,13 +1,16 @@
 import os
 from datetime import datetime
-from typing import Sequence
+from typing import List, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
+from sphinx.application import Sphinx
 from sphinxcontrib.plantuml import (
     generate_name,  # Need for plantuml filename calculation
 )
 
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.diagrams_common import (
     DiagramBase,
     add_config,
@@ -52,9 +55,8 @@ class NeedganttDirective(FilterBase, DiagramBase):
     option_spec.update(DiagramBase.base_option_spec)
 
     def run(self) -> Sequence[nodes.Node]:
-        env = self.state.document.settings.env
-        # Creates env.need_all_needgantts safely and other vars
-        self.prepare_env("needgantts")
+        env = self.env
+        needs_config = NeedsSphinxConfig(env.config)
 
         _id, targetid, targetnode = self.create_target("needgantt")
 
@@ -87,11 +89,11 @@ class NeedganttDirective(FilterBase, DiagramBase):
 
         no_color = "no_color" in self.options
 
-        duration_option = self.options.get("duration_option", env.app.config.needs_duration_option)
-        completion_option = self.options.get("completion_option", env.app.config.needs_completion_option)
+        duration_option = self.options.get("duration_option", needs_config.duration_option)
+        completion_option = self.options.get("completion_option", needs_config.completion_option)
 
         # Add the needgantt and all needed information
-        env.need_all_needgantts[targetid] = {
+        SphinxNeedsData(env).get_or_create_gantts()[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
@@ -104,28 +106,27 @@ class NeedganttDirective(FilterBase, DiagramBase):
             "no_color": no_color,
             "duration_option": duration_option,
             "completion_option": completion_option,
+            **self.collect_filter_attributes(),
+            **self.collect_diagram_attributes(),
         }
-        # Data for filtering
-        env.need_all_needgantts[targetid].update(self.collect_filter_attributes())
-        # Data for diagrams
-        env.need_all_needgantts[targetid].update(self.collect_diagram_attributes())
 
         add_doc(env, env.docname)
 
         return [targetnode] + [Needgantt("")]
 
 
-def process_needgantt(app, doctree, fromdocname, found_nodes):
+def process_needgantt(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
     # Replace all needgantt nodes with a list of the collected needs.
     env = app.builder.env
+    needs_config = NeedsSphinxConfig(app.config)
 
-    # link_types = env.config.needs_extra_links
-    # allowed_link_types_options = [link.upper() for link in env.config.needs_flow_link_types]
+    # link_types = needs_config.extra_links
+    # allowed_link_types_options = [link.upper() for link in needs_config.flow_link_types]
 
     # NEEDGANTT
     # for node in doctree.findall(Needgantt):
     for node in found_nodes:
-        if not app.config.needs_include_needs:
+        if not needs_config.include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
             # But this is here the case, because we are using the attribute "ids" of a node.
@@ -137,8 +138,8 @@ def process_needgantt(app, doctree, fromdocname, found_nodes):
             continue
 
         id = node.attributes["ids"][0]
-        current_needgantt = env.need_all_needgantts[id]
-        all_needs_dict = env.needs_all_needs
+        current_needgantt = SphinxNeedsData(env).get_or_create_gantts()[id]
+        all_needs_dict = SphinxNeedsData(env).get_or_create_needs()
 
         content = []
         try:
@@ -149,9 +150,14 @@ def process_needgantt(app, doctree, fromdocname, found_nodes):
             no_plantuml(node)
             continue
 
-        plantuml_block_text = ".. plantuml::\n" "\n" "   @startuml" "   @enduml"
+        plantuml_block_text = ".. plantuml::\n" "\n" "   @startgantt" "   @endgantt"
         puml_node = plantuml(plantuml_block_text)
-        puml_node["uml"] = "@startuml\n"
+
+        # Add source origin
+        puml_node.line = current_needgantt["lineno"]
+        puml_node.source = env.doc2path(current_needgantt["docname"])
+
+        puml_node["uml"] = "@startgantt\n"
 
         # Adding config
         config = current_needgantt["config"]
@@ -204,7 +210,8 @@ def process_needgantt(app, doctree, fromdocname, found_nodes):
                 if not (duration and duration.isdigit()):
                     logger.warning(
                         "Duration not set or invalid for needgantt chart. "
-                        "Need: {}. Duration: {}".format(need["id"], duration)
+                        "Need: {}. Duration: {} [needs]".format(need["id"], duration),
+                        type="needs",
                     )
                     duration = 1
                 gantt_element = "[{}] as [{}] lasts {} days\n".format(need["title"], need["id"], duration)
@@ -262,9 +269,9 @@ def process_needgantt(app, doctree, fromdocname, found_nodes):
 
         # Create a legend
         if current_needgantt["show_legend"]:
-            puml_node["uml"] += create_legend(app.config.needs_types)
+            puml_node["uml"] += create_legend(needs_config.types)
 
-        puml_node["uml"] += "\n@enduml"
+        puml_node["uml"] += "\n@endgantt"
         puml_node["incdir"] = os.path.dirname(current_needgantt["docname"])
         puml_node["filename"] = os.path.split(current_needgantt["docname"])[1]  # Needed for plantuml >= 0.9
 
@@ -292,9 +299,6 @@ def process_needgantt(app, doctree, fromdocname, found_nodes):
             img_location = "../" * subfolder_amount + "_images/" + gen_flow_link[0].split("/")[-1]
             flow_ref = nodes.reference("t", current_needgantt["caption"], refuri=img_location)
             puml_node += nodes.caption("", "", flow_ref)
-
-        # Add lineno to node
-        puml_node.line = current_needgantt["lineno"]
 
         content.append(puml_node)
 

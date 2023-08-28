@@ -9,6 +9,7 @@ from sphinx.application import Sphinx
 
 from sphinx_needs.api import add_need_type
 from sphinx_needs.api.exceptions import NeedsApiConfigException
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.services.base import BaseService
 from sphinx_needs.services.config.github import (
     CONFIG_OPTIONS,
@@ -41,8 +42,9 @@ class GithubService(BaseService):
         self.username = self.config.get("username")
         self.token = self.config.get("token")
 
-        if "github" not in self.app.config.needs_layouts.keys():
-            self.app.config.needs_layouts["github"] = GITHUB_LAYOUT
+        layouts = NeedsSphinxConfig(self.app.config).layouts
+        if "github" not in layouts:
+            layouts["github"] = GITHUB_LAYOUT
 
         self.gh_type_config = {
             "issue": {"url": "search/issues", "query": "is:issue", "need_type": "issue"},
@@ -292,14 +294,16 @@ class GithubService(BaseService):
                         "    Status code: {}\n"
                         "    Reason: Looks like the authentication provider tries to redirect you."
                         " This is not supported and is a common problem, "
-                        "if you use GitHub Enterprise.".format(self.name, avatar_url, response.status_code)
+                        "if you use GitHub Enterprise. [needs]".format(self.name, avatar_url, response.status_code),
+                        type="needs",
                     )
                     avatar_file_path = default_avatar_file_path
                 else:
                     self.log.warning(
                         "GitHub service {} could not download avatar image "
                         "from {}.\n"
-                        "    Status code: {}".format(self.name, avatar_url, response.status_code)
+                        "    Status code: {} [needs]".format(self.name, avatar_url, response.status_code),
+                        type="needs",
                     )
                     avatar_file_path = default_avatar_file_path
         else:

@@ -1,7 +1,11 @@
+from typing import List
+
 from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.util.nodes import make_refnode
 
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.errors import NoUri
 from sphinx_needs.utils import check_and_calc_base_url_rel_path, unwrap
 
@@ -10,14 +14,18 @@ class NeedIncoming(nodes.Inline, nodes.Element):
     pass
 
 
-def process_need_incoming(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list) -> None:
+def process_need_incoming(
+    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
+) -> None:
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
+    needs_config = NeedsSphinxConfig(env.config)
+    all_needs = SphinxNeedsData(env).get_or_create_needs()
 
     # for node_need_backref in doctree.findall(NeedIncoming):
     for node_need_backref in found_nodes:
         node_link_container = nodes.inline()
-        ref_need = env.needs_all_needs[node_need_backref["reftarget"]]
+        ref_need = all_needs[node_need_backref["reftarget"]]
 
         # Let's check if NeedIncoming shall follow a specific link type
         if "link_type" in node_need_backref.attributes:
@@ -28,18 +36,18 @@ def process_need_incoming(app: Sphinx, doctree: nodes.document, fromdocname: str
 
         for index, back_link in enumerate(links_back):
             # If need back_link target exists, let's create the reference
-            if back_link in env.needs_all_needs:
+            if back_link in all_needs:
                 try:
-                    target_need = env.needs_all_needs[back_link]
-                    if env.config.needs_show_link_title:
+                    target_need = all_needs[back_link]
+                    if needs_config.show_link_title:
                         link_text = f'{target_need["title"]}'
 
-                        if env.config.needs_show_link_id:
+                        if needs_config.show_link_id:
                             link_text += f' ({target_need["id"]})'
                     else:
                         link_text = target_need["id"]
 
-                    if env.config.needs_show_link_type:
+                    if needs_config.show_link_type:
                         link_text += " [{type}]".format(type=target_need["type_name"])
 
                     # if index + 1 < len(ref_need["links_back"]):
@@ -74,7 +82,7 @@ def process_need_incoming(app: Sphinx, doctree: nodes.document, fromdocname: str
                     pass
 
             else:
-                env.warn_node("Needs: need %s not found" % node_need_backref["reftarget"], node_need_backref)
+                env.warn_node("need %s not found [needs]" % node_need_backref["reftarget"], node_need_backref)
 
         if len(node_link_container.children) == 0:
             node_link_container += nodes.Text("None")

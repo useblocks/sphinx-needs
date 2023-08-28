@@ -1,17 +1,17 @@
 import json
 import os
 import re
-from typing import Sequence, cast
+from typing import Sequence
 from urllib.parse import urlparse
 
 import requests
 from docutils import nodes
-from docutils.parsers.rst import Directive, directives
+from docutils.parsers.rst import directives
 from requests_file import FileAdapter
-from sphinx.environment import BuildEnvironment
+from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api import add_need
-from sphinx_needs.config import NEEDS_CONFIG
+from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.debug import measure_time
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.needsfile import check_needs_file
@@ -22,7 +22,7 @@ class Needimport(nodes.General, nodes.Element):  # type: ignore
     pass
 
 
-class NeedimportDirective(Directive):
+class NeedimportDirective(SphinxDirective):
     has_content = False
 
     required_arguments = 1
@@ -88,7 +88,9 @@ class NeedimportDirective(Directive):
                         logger.warning(
                             "Deprecation warning: Relative path must be relative to the current document in future, "
                             "not to the conf.py location. Use a starting '/', like '/needs.json', to make the path "
-                            "relative to conf.py."
+                            "relative to conf.py. [needs]",
+                            type="needs",
+                            location=(self.env.docname, self.lineno),
                         )
             else:
                 # Absolute path starts with /, based on the source directory. The / need to be striped
@@ -140,21 +142,24 @@ class NeedimportDirective(Directive):
                         needs_list_filtered[key] = need
                 except Exception as e:
                     logger.warning(
-                        "needimport: Filter {} not valid. Error: {}. {}{}".format(
+                        "needimport: Filter {} not valid. Error: {}. {}{} [needs]".format(
                             filter_string, e, self.docname, self.lineno
-                        )
+                        ),
+                        type="needs",
+                        location=(self.env.docname, self.lineno),
                     )
 
         needs_list = needs_list_filtered
 
         # If we need to set an id prefix, we also need to manipulate all used ids in the imported data.
+        extra_links = NeedsSphinxConfig(self.config).extra_links
         if id_prefix:
             needs_ids = needs_list.keys()
 
             for need in needs_list.values():
                 for id in needs_ids:
                     # Manipulate links in all link types
-                    for extra_link in self.env.config.needs_extra_links:
+                    for extra_link in extra_links:
                         if extra_link["option"] in need and id in need[extra_link["option"]]:
                             for n, link in enumerate(need[extra_link["option"]]):
                                 if id == link:
@@ -190,7 +195,7 @@ class NeedimportDirective(Directive):
 
             need["content"] = need["description"]
             # Remove unknown options, as they may be defined in source system, but not in this sphinx project
-            extra_link_keys = [x["option"] for x in self.env.config.needs_extra_links]
+            extra_link_keys = [x["option"] for x in extra_links]
             extra_option_keys = list(NEEDS_CONFIG.get("extra_options").keys())
             default_options = [
                 "title",
@@ -224,10 +229,6 @@ class NeedimportDirective(Directive):
         add_doc(self.env, self.env.docname)
 
         return need_nodes
-
-    @property
-    def env(self) -> BuildEnvironment:
-        return cast(BuildEnvironment, self.state.document.settings.env)
 
     @property
     def docname(self) -> str:

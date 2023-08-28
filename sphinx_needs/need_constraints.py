@@ -3,6 +3,7 @@ from typing import Any, Dict
 from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsConstraintFailed, NeedsConstraintNotAllowed
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import get_logger
 
@@ -16,8 +17,8 @@ def process_constraints(app: Sphinx, need: Dict[str, Any]) -> None:
     :param app: sphinx app for access to config files
     :param need: need object to process
     """
-
-    config_constraints = app.config.needs_constraints
+    needs_config = NeedsSphinxConfig(app.config)
+    config_constraints = needs_config.constraints
 
     need_id = need["id"]
 
@@ -50,7 +51,7 @@ def process_constraints(app: Sphinx, need: Dict[str, Any]) -> None:
                             need["constraints_results"][constraint] = {}
 
                         # defines what to do if a constraint is not fulfilled. from conf.py
-                        constraint_failed_options = app.config.needs_constraint_failed_options
+                        constraint_failed_options = needs_config.constraint_failed_options
 
                         # prepare structure for check_0, check_1 ...
                         if name not in need["constraints_results"][constraint].keys():
@@ -69,7 +70,9 @@ def process_constraints(app: Sphinx, need: Dict[str, Any]) -> None:
 
                         if "warn" in actions_on_fail:
                             logger.warning(
-                                f"Constraint {cmd} for need {need_id} FAILED! severity: {severity}", color="red"
+                                f"Constraint {cmd} for need {need_id} FAILED! severity: {severity} [needs]",
+                                type="needs",
+                                color="red",
                             )
 
                         if "break" in actions_on_fail:

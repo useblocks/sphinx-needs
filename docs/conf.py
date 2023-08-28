@@ -44,9 +44,8 @@ version = "1.3"
 # The full version, including alpha/beta/rc tags.
 release = "1.3.0"
 
-on_rtd = os.environ.get("READTHEDOCS") == "True"
-
 extensions = [
+    "sphinx.ext.intersphinx",
     "sphinxcontrib.plantuml",
     "sphinx_needs",
     "sphinx.ext.autodoc",
@@ -57,6 +56,11 @@ extensions = [
     "sphinx.ext.duration",
     "sphinx_immaterial",
 ]
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3.8", None),
+    "sphinx": ("https://www.sphinx-doc.org/en/master", None),
+}
 
 # smartquotes = False
 
@@ -249,11 +253,7 @@ needs_id_required = False
 # needs_css = "dark.css"
 
 local_plantuml_path = os.path.join(os.path.dirname(__file__), "utils", "plantuml-1.2022.14.jar")
-
-if on_rtd:
-    plantuml = f"java -Djava.awt.headless=true -jar {local_plantuml_path}"
-else:
-    plantuml = f"java -jar {local_plantuml_path}"
+plantuml = f"java -Djava.awt.headless=true -jar {local_plantuml_path}"
 
 # plantuml_output_format = 'png'
 plantuml_output_format = "svg_img"
@@ -360,6 +360,7 @@ needs_render_context = {
 
 # build needs.json to make permalinks work
 needs_build_json = True
+
 # build needs_json for every needs-id to make detail panel
 needs_build_json_per_id = False
 
@@ -429,7 +430,6 @@ html_theme_options = {
     "site_url": "https://sphinxcontrib-needs.readthedocs.io/",
     "repo_url": "https://github.com/useblocks/sphinxcontrib-needs",
     "repo_name": "Sphinx-Needs",
-    "repo_type": "github",
     "edit_uri": "blob/master/docs",
     # "google_analytics": ["UA-XXXXX", "auto"],
     "globaltoc_collapse": True,

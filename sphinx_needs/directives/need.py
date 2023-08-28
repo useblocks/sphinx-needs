@@ -13,7 +13,8 @@ from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api import add_need
 from sphinx_needs.api.exceptions import NeedsInvalidException
-from sphinx_needs.config import NEEDS_CONFIG
+from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.defaults import NEED_DEFAULT_OPTIONS
 from sphinx_needs.directives.needextend import process_needextend
@@ -63,6 +64,7 @@ class NeedDirective(SphinxDirective):
         state_machine: RSTStateMachine,
     ):
         super().__init__(name, arguments, options, content, lineno, content_offset, block_text, state, state_machine)
+        self.needs_config = NeedsSphinxConfig(self.env.config)
         self.log = get_logger(__name__)
         self.full_title = self._get_full_title()
 
@@ -117,7 +119,7 @@ class NeedDirective(SphinxDirective):
         completion = self.options.get("completion")
 
         need_extra_options = {"duration": duration, "completion": completion}
-        for extra_link in env.config.needs_extra_links:
+        for extra_link in self.needs_config.extra_links:
             need_extra_options[extra_link["option"]] = self.options.get(extra_link["option"], "")
 
         for extra_option in NEEDS_CONFIG.get("extra_options").keys():
@@ -157,7 +159,9 @@ class NeedDirective(SphinxDirective):
                 if link.isspace():
                     logger.warning(
                         f"Grubby link definition found in need '{self.trimmed_title}'. "
-                        "Defined link contains spaces only."
+                        "Defined link contains spaces only. [needs]",
+                        type="needs",
+                        location=(self.env.docname, self.lineno),
                     )
                 else:
                     links.append(link.strip())
@@ -175,7 +179,7 @@ class NeedDirective(SphinxDirective):
 
     @property
     def title_from_content(self):
-        return "title_from_content" in self.options or self.env.config.needs_title_from_content
+        return "title_from_content" in self.options or self.needs_config.title_from_content
 
     @property
     def docname(self) -> str:
@@ -194,7 +198,7 @@ class NeedDirective(SphinxDirective):
 
     @property
     def max_title_length(self) -> int:
-        max_title_length: int = self.env.config.needs_max_title_length
+        max_title_length: int = self.needs_config.max_title_length
         return max_title_length
 
     # ToDo. Keep this in directive
@@ -206,8 +210,10 @@ class NeedDirective(SphinxDirective):
         if len(self.arguments) > 0:  # a title was passed
             if "title_from_content" in self.options:
                 self.log.warning(
-                    'Needs: need "{}" has :title_from_content: set, '
-                    "but a title was provided. (see file {})".format(self.arguments[0], self.docname)
+                    'need "{}" has :title_from_content: set, '
+                    "but a title was provided. (see file {}) [needs]".format(self.arguments[0], self.docname),
+                    type="needs",
+                    location=(self.env.docname, self.lineno),
                 )
             return self.arguments[0]
         elif self.title_from_content:
@@ -271,22 +277,19 @@ def purge_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> None:
     Gets executed, if a doc file needs to be purged/ read in again.
     So this code delete all found needs for the given docname.
     """
-    if not hasattr(env, "needs_all_needs"):
-        return
-    env.needs_all_needs = {key: need for key, need in env.needs_all_needs.items() if need["docname"] != docname}
+    needs = SphinxNeedsData(env).get_or_create_needs()
+    for need_id in list(needs):
+        if needs[need_id]["docname"] == docname:
+            del needs[need_id]
 
 
-# def add_sections(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
 def add_sections(app: Sphinx, doctree: nodes.document) -> None:
     """Add section titles to the needs as additional attributes that can
     be used in tables and filters"""
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
 
-    # if env.needs_workflow["add_sections"]:
-    #     return
-
-    needs = getattr(env, "needs_all_needs", {})
+    needs = SphinxNeedsData(env).get_or_create_needs()
 
     for need_node in doctree.findall(Need):
         need_id = need_node["refid"]
@@ -324,9 +327,6 @@ def add_sections(app: Sphinx, doctree: nodes.document) -> None:
             need_info["parent_needs"] = parent_needs
             need_info["parent_need"] = parent_needs[0]
 
-    # Finally set a flag so that this function gets not executed several times
-    # env.needs_workflow["add_sections"] = True
-
 
 def previous_sibling(node):
     """Return preceding sibling node or ``None``."""
@@ -349,7 +349,8 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     :param fromdocname:
     :return:
     """
-    if not app.config.needs_include_needs:
+    needs_config = NeedsSphinxConfig(app.config)
+    if not needs_config.include_needs:
         for node in doctree.findall(Need):
             node.parent.remove(node)
         return
@@ -371,7 +372,7 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     check_links(env)
 
     # Create back links of common links and extra links
-    for links in env.config.needs_extra_links:
+    for links in needs_config.extra_links:
         create_back_links(env, links["option"])
 
     """
@@ -380,7 +381,7 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     https://www.sphinx-doc.org/en/master/extdev/index.html
 
     """
-    needs = env.needs_all_needs
+    needs = SphinxNeedsData(env).get_or_create_needs()
 
     # Used to store needs in the docs, which are needed again later
     found_needs_nodes = []
@@ -410,7 +411,7 @@ def print_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
     """
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
-    needs = env.needs_all_needs
+    needs = SphinxNeedsData(env).get_or_create_needs()
 
     # We try to avoid findall as much as possibles. so we reuse the already found need nodes in the current document.
     # for node_need in doctree.findall(Need):
@@ -422,7 +423,7 @@ def print_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
         for index, attribute in enumerate(node_need.attributes["classes"]):
             node_need.attributes["classes"][index] = check_and_get_content(attribute, need_data, env)
 
-        layout = need_data["layout"] or app.config.needs_default_layout
+        layout = need_data["layout"] or NeedsSphinxConfig(app.config).default_layout
 
         build_need(layout, node_need, app, fromdocname=fromdocname)
 
@@ -433,10 +434,12 @@ def check_links(env: BuildEnvironment) -> None:
     :param env: Sphinx environment
     :return:
     """
-    if env.needs_workflow["links_checked"]:
+    data = SphinxNeedsData(env)
+    workflow = data.get_or_create_workflow()
+    if workflow["links_checked"]:
         return
 
-    needs = env.needs_all_needs
+    needs = data.get_or_create_needs()
     extra_links = getattr(env.config, "needs_extra_links", [])
     for need in needs.values():
         for link_type in extra_links:
@@ -459,7 +462,7 @@ def check_links(env: BuildEnvironment) -> None:
                     break  # One found dead link is enough
 
     # Finally set a flag so that this function gets not executed several times
-    env.needs_workflow["links_checked"] = True
+    workflow["links_checked"] = True
 
 
 def create_back_links(env: BuildEnvironment, option) -> None:
@@ -470,11 +473,13 @@ def create_back_links(env: BuildEnvironment, option) -> None:
 
     :param env: sphinx environment
     """
+    data = SphinxNeedsData(env)
+    workflow = data.get_or_create_workflow()
     option_back = f"{option}_back"
-    if env.needs_workflow[f"backlink_creation_{option}"]:
+    if workflow[f"backlink_creation_{option}"]:
         return
 
-    needs = env.needs_all_needs
+    needs = data.get_or_create_needs()
     for key, need in needs.items():
         need_link_value = [need[option]] if isinstance(need[option], str) else need[option]
         for link in need_link_value:
@@ -494,7 +499,7 @@ def create_back_links(env: BuildEnvironment, option) -> None:
                         needs[link_main]["parts"][link_part][option_back] = []
                     needs[link_main]["parts"][link_part][option_back].append(key)
 
-    env.needs_workflow[f"backlink_creation_{option}"] = True
+    workflow[f"backlink_creation_{option}"] = True
 
 
 def _fix_list_dyn_func(list: List[str]) -> List[str]:

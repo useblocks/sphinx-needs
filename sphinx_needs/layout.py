@@ -22,6 +22,8 @@ from jinja2 import BaseLoader, Environment
 from sphinx.application import Sphinx
 from sphinx.environment.collectors.asset import DownloadFileCollector, ImageCollector
 
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.utils import INTERNALS, match_string_link, unwrap
 
@@ -41,7 +43,7 @@ def create_need(need_id: str, app: Sphinx, layout=None, style=None, docname: Opt
     :return:
     """
     env = app.builder.env
-    needs = env.needs_all_needs
+    needs = SphinxNeedsData(env).get_or_create_needs()
 
     if need_id not in needs.keys():
         raise SphinxNeedLayoutException(f"Given need id {need_id} does not exist.")
@@ -85,8 +87,9 @@ def create_need(need_id: str, app: Sphinx, layout=None, style=None, docname: Opt
 
     node_container.attributes["ids"].append(need_id)
 
-    layout = layout or need_data["layout"] or app.config.needs_default_layout
-    style = style or need_data["style"] or app.config.needs_default_style
+    needs_config = NeedsSphinxConfig(app.config)
+    layout = layout or need_data["layout"] or needs_config.default_layout
+    style = style or need_data["style"] or needs_config.default_style
 
     build_need(layout, node_container, app, style, docname)
 
@@ -144,7 +147,7 @@ def build_need(layout, node, app: Sphinx, style=None, fromdocname: Optional[str]
     """
 
     env = app.builder.env
-    needs = env.needs_all_needs
+    needs = SphinxNeedsData(env).get_or_create_needs()
     node_container = nodes.container()
 
     need_layout = layout
@@ -187,9 +190,10 @@ class LayoutHandler:
     def __init__(self, app: Sphinx, need, layout, node, style=None, fromdocname: Optional[str] = None) -> None:
         self.app = app
         self.need = need
+        self.config = NeedsSphinxConfig(app.config)
 
         self.layout_name = layout
-        available_layouts = app.config.needs_layouts
+        available_layouts = self.config.layouts
         if self.layout_name not in available_layouts.keys():
             raise SphinxNeedLayoutException(
                 'Given layout "{}" is unknown for need {}. Registered layouts are: {}'.format(
@@ -208,7 +212,7 @@ class LayoutHandler:
 
         # For ReadTheDocs Theme we need to add 'rtd-exclude-wy-table'.
         classes = ["need", "needs_grid_" + self.layout["grid"], "needs_layout_" + self.layout_name]
-        classes.extend(app.config.needs_table_classes)
+        classes.extend(self.config.table_classes)
 
         self.style = style or self.need["style"] or getattr(self.app.config, "needs_default_style", None)
 
@@ -308,7 +312,7 @@ class LayoutHandler:
         # This would lead to deepcopy()-errors, as needs_string_links gets some "pickled" and jinja Environment is
         # too complex for this.
         self.string_links = {}
-        for link_name, link_conf in app.config.needs_string_links.items():
+        for link_name, link_conf in self.config.string_links.items():
             self.string_links[link_name] = {
                 "url_template": Environment(loader=BaseLoader).from_string(link_conf["link_url"]),
                 "name_template": Environment(loader=BaseLoader).from_string(link_conf["link_name"]),
@@ -505,7 +509,7 @@ class LayoutHandler:
             # data_node.append(nodes.Text(data)
             # data_container.append(data_node)
             needs_string_links_option: List[str] = []
-            for v in self.app.config.needs_string_links.values():
+            for v in self.config.string_links.values():
                 needs_string_links_option.extend(v["options"])
 
             if name in needs_string_links_option:
@@ -525,7 +529,7 @@ class LayoutHandler:
                         data=datum,
                         need_key=name,
                         matching_link_confs=matching_link_confs,
-                        render_context=self.app.config.needs_render_context,
+                        render_context=self.config.render_context,
                     )
                 else:
                     # Normal text handling
@@ -631,8 +635,8 @@ class LayoutHandler:
             exclude += default_excludes
 
         if no_links:
-            link_names = [x["option"] for x in self.app.config.needs_extra_links]
-            link_names += [x["option"] + "_back" for x in self.app.config.needs_extra_links]
+            link_names = [x["option"] for x in self.config.extra_links]
+            link_names += [x["option"] + "_back" for x in self.config.extra_links]
             exclude += link_names
         data_container = nodes.inline()
         for data in self.need.keys():
@@ -663,13 +667,13 @@ class LayoutHandler:
         :return: docutils nodes
         """
         data_container = nodes.inline(classes=[name])
-        if name not in [x["option"] for x in self.app.config.needs_extra_links]:
+        if name not in [x["option"] for x in self.config.extra_links]:
             raise SphinxNeedLayoutException(f"Invalid link name {name} for link-type")
 
         # if incoming:
-        #     link_name = self.app.config.needs_extra_links[name]['incoming']
+        #     link_name = self.config.extra_links[name]['incoming']
         # else:
-        #     link_name = self.app.config.needs_extra_links[name]['outgoing']
+        #     link_name = self.config.extra_links[name]['outgoing']
 
         from sphinx_needs.roles.need_incoming import NeedIncoming
         from sphinx_needs.roles.need_outgoing import NeedOutgoing
@@ -693,7 +697,7 @@ class LayoutHandler:
         """
         exclude = exclude or []
         data_container = []
-        for link_type in self.app.config.needs_extra_links:
+        for link_type in self.config.extra_links:
             type_key = link_type["option"]
             if self.need[type_key] and type_key not in exclude:
                 outgoing_line = nodes.line()
@@ -996,8 +1000,7 @@ class LayoutHandler:
             image_url = "icon:share-2"
             image_width = "17px"
 
-        config = self.app.config
-        permalink = config.needs_permalink_file
+        permalink = self.config.permalink_file
         id = self.need["id"]
         docname = self.need["docname"]
         permalink_url = ""
