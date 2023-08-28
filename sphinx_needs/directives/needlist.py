@@ -107,6 +107,7 @@ def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
             if need_info["hide"]:
                 para += title
             elif need_info["is_external"]:
+                assert need_info["external_url"] is not None, "External need without URL"
                 ref = nodes.reference("", "")
 
                 ref["refuri"] = check_and_calc_base_url_rel_path(need_info["external_url"], fromdocname)
@@ -115,12 +116,7 @@ def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                 ref.append(title)
                 para += ref
             else:
-                # target_node should not be stored, but it may be still the case
-                if "target_node" in need_info:
-                    target_id = need_info["target_node"]["refid"]
-                else:
-                    target_id = need_info["target_id"]
-
+                target_id = need_info["target_id"]
                 ref = nodes.reference("", "")
                 ref["refdocname"] = need_info["docname"]
                 ref["refuri"] = builder.get_relative_uri(fromdocname, need_info["docname"])

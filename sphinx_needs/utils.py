@@ -27,7 +27,6 @@ INTERNALS = [
     "docname",
     "doctype",
     "lineno",
-    "target_node",
     "refid",
     "content",
     "pre_content",
@@ -87,12 +86,12 @@ def row_col_maker(
     app: Sphinx,
     fromdocname: str,
     all_needs: Dict[str, NeedsInfoType],
-    need_info,
-    need_key,
+    need_info: NeedsInfoType,
+    need_key: str,
     make_ref: bool = False,
     ref_lookup: bool = False,
     prefix: str = "",
-):
+) -> nodes.entry:
     """
     Creates and returns a column.
 
@@ -254,7 +253,10 @@ def import_prefix_link_edit(needs: Dict[str, Any], id_prefix: str, needs_extra_l
             need["description"] = need["description"].replace(id, "".join([id_prefix, id]))
 
 
-def profile(keyword: str):
+FuncT = TypeVar("FuncT")
+
+
+def profile(keyword: str) -> Callable[[FuncT], FuncT]:
     """
     Activate profiling for a specific function.
 

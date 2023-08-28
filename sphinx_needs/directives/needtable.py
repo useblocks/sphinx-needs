@@ -1,5 +1,5 @@
 import re
-from typing import List, Sequence
+from typing import Any, Callable, List, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -7,7 +7,7 @@ from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsInvalidException
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.directives.utils import (
     get_option_list,
@@ -53,13 +53,15 @@ class NeedtableDirective(FilterBase):
         targetid = "needtable-{docname}-{id}".format(docname=env.docname, id=env.new_serialno("needtable"))
         targetnode = nodes.target("", "", ids=[targetid])
 
-        columns = str(self.options.get("columns", ""))
-        if len(columns) == 0:
-            columns = NeedsSphinxConfig(env.app.config).table_columns
-        if isinstance(columns, str):
-            columns = [col.strip() for col in re.split(";|,", columns)]
+        columns_str = str(self.options.get("columns", ""))
+        if len(columns_str) == 0:
+            columns_str = NeedsSphinxConfig(env.app.config).table_columns
+        if isinstance(columns_str, str):
+            _columns = [col.strip() for col in re.split(";|,", columns_str)]
+        else:
+            _columns = columns_str
 
-        columns = [get_title(col) for col in columns]
+        columns = [get_title(col) for col in _columns]
 
         colwidths = str(self.options.get("colwidths", ""))
         colwidths_list = []
@@ -213,24 +215,25 @@ def process_needtables(
         except Exception as e:
             raise e
 
-        def get_sorter(key):
+        def get_sorter(key: str) -> Callable[[NeedsInfoType], Any]:
             """
             Returns a sort-function for a given need-key.
             :param key: key of need object as string
             :return:  function to use in sort(key=x)
             """
 
-            def sort(need):
+            def sort(need: NeedsInfoType) -> Any:
                 """
                 Returns a given value of need, which is used for list sorting.
                 :param need: need-element, which gets sort
                 :return: value of need
                 """
-                if isinstance(need[key], str):
+                value = need[key]  # type: ignore[literal-required]
+                if isinstance(value, str):
                     # if we filter for string (e.g. id) everything should be lowercase.
                     # Otherwise, "Z" will be above "a"
-                    return need[key].lower()
-                return need[key]
+                    return value.lower()
+                return value
 
             return sort
 
@@ -246,7 +249,9 @@ def process_needtables(
                 prefix = ""
             else:
                 row = nodes.row(classes=["need_part", style_row])
-                temp_need["id"] = temp_need["id_complete"]
+                temp_need["id"] = temp_need[
+                    "id_complete"  # type: ignore[typeddict-item] # TODO this is set in prepare_need_list
+                ]
                 prefix = needs_config.part_prefix
                 temp_need["title"] = temp_need["content"]
 
@@ -279,10 +284,10 @@ def process_needtables(
                 for part in need_info["parts"].values():
                     # update the part with all information from its parent
                     # this is required to make ID links work
-                    temp_part = part.copy()  # The dict has to be manipulated, so that row_col_maker() can be used
-                    temp_part = {**need_info, **temp_part}
-                    temp_part["id_complete"] = f"{need_info['id']}.{temp_part['id']}"
-                    temp_part["id_parent"] = need_info["id"]
+                    # The dict has to be manipulated, so that row_col_maker() can be used
+                    temp_part: NeedsInfoType = {**need_info, **part.copy()}  # type: ignore[typeddict-unknown-key]
+                    temp_part["id_complete"] = f"{need_info['id']}.{temp_part['id']}"  # type: ignore[typeddict-unknown-key]
+                    temp_part["id_parent"] = need_info["id"]  # type: ignore[typeddict-unknown-key]
                     temp_part["docname"] = need_info["docname"]
 
                     row = nodes.row(classes=["need_part"])

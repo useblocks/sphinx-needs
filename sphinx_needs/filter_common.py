@@ -86,7 +86,7 @@ class FilterBase(SphinxDirective):
 
 def process_filters(
     app: Sphinx, all_needs: List[NeedsInfoType], filter_data: NeedsFilteredBaseType, include_external: bool = True
-):
+) -> List[NeedsInfoType]:
     """
     Filters all needs with given configuration.
     Used by needlist, needtable and needflow.
@@ -205,13 +205,7 @@ def process_filters(
     filter_list = SphinxNeedsData(env).get_or_create_filters()
     found_needs_ids = [need["id_complete"] for need in found_needs]
 
-    if "target_node" in filter_data:
-        target_id = filter_data["target_node"]["refid"]
-    else:
-        target_id = filter_data["target_id"]
-
-    filter_list[target_id] = {
-        # "target_node": current_needlist["target_node"],
+    filter_list[filter_data["target_id"]] = {
         "filter": filter_data["filter"] or "",
         "status": filter_data["status"],
         "tags": filter_data["tags"],
@@ -243,9 +237,9 @@ def prepare_need_list(need_list: List[NeedsInfoType]) -> List[NeedsInfoType]:
 
         # Be sure extra attributes, which makes only sense for need_parts, are also available on
         # need level so that no KeyError gets raised, if search/filter get executed on needs with a need-part argument.
-        if "id_parent" not in need.keys():
+        if "id_parent" not in need:
             need["id_parent"] = need["id"]
-        if "id_complete" not in need.keys():
+        if "id_complete" not in need:
             need["id_complete"] = need["id"]
     return all_needs_incl_parts
 

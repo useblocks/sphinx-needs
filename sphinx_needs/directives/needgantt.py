@@ -204,9 +204,9 @@ def process_needgantt(app: Sphinx, doctree: nodes.document, fromdocname: str, fo
                 gantt_element = "[{}] as [{}] lasts 0 days\n".format(need["title"], need["id"])
             else:  # Normal gantt element handling
                 duration_option = current_needgantt["duration_option"]
-                duration = need[duration_option]
+                duration = need[duration_option]  # type: ignore[literal-required]
                 complete_option = current_needgantt["completion_option"]
-                complete = need[complete_option]
+                complete = need[complete_option]  # type: ignore[literal-required]
                 if not (duration and duration.isdigit()):
                     logger.warning(
                         "Duration not set or invalid for needgantt chart. "
@@ -258,7 +258,7 @@ def process_needgantt(app: Sphinx, doctree: nodes.document, fromdocname: str, fo
                     start_end_sync = "start"
 
                 for link_type in current_needgantt[con_type]:  # type: ignore[literal-required]
-                    start_with_links = need[link_type]
+                    start_with_links = need[link_type]  # type: ignore[literal-required]
                     for start_with_link in start_with_links:
                         start_need = all_needs_dict[start_with_link]
                         gantt_constraint = "[{}] {} at [{}]'s " "{}\n".format(

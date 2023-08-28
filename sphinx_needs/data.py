@@ -362,6 +362,7 @@ class NeedsTableType(NeedsFilteredBaseType):
     caption: None | str
     classes: list[str]
     columns: list[tuple[str, str]]
+    """List of (name, title)"""
     colwidths: list[int]
     style: str
     style_row: str

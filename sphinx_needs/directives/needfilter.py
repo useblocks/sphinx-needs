@@ -161,10 +161,7 @@ def process_needfilters(
 
         line_block = nodes.line_block()
         for need_info in found_needs:
-            if "target_node" in need_info:
-                target_id = need_info["target_node"]["refid"]
-            else:
-                target_id = need_info["target_id"]
+            target_id = need_info["target_id"]
 
             if current_needfilter["layout"] == "list":
                 para = nodes.line()

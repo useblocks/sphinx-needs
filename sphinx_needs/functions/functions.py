@@ -174,7 +174,7 @@ def resolve_dynamic_values(env: BuildEnvironment):
     needs = data.get_or_create_needs()
     for need in needs.values():
         for need_option in need:
-            if need_option in ["docname", "lineno", "target_node", "content", "content_node", "content_id"]:
+            if need_option in ["docname", "lineno", "content", "content_node", "content_id"]:
                 # dynamic values in this data are not allowed.
                 continue
             if not isinstance(need[need_option], (list, set)):
