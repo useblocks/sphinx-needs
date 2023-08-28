@@ -81,13 +81,18 @@ line-length = 120
 profile = "black"
 
 [tool.mypy]
+files = "sphinx_needs"
 strict = true
 show_error_codes = true
 implicit_reexport = true
-files = "sphinx_needs"
-ignore_missing_imports = true
 namespace_packages = true
-warn_unused_ignores = false
+
+[[tool.mypy.overrides]]
+module = [
+  "requests_file",
+  "sphinx_data_viewer.*"
+]
+ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = [

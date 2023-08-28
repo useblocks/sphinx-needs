@@ -15,7 +15,7 @@ from sphinx_needs.services.base import BaseService
 from sphinx_needs.utils import add_doc, unwrap
 
 
-class Needservice(nodes.General, nodes.Element):  # type: ignore
+class Needservice(nodes.General, nodes.Element):
     pass
 
 
