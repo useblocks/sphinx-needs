@@ -8,19 +8,20 @@ Most voodoo is done in need.py
 """
 import hashlib
 import re
-from typing import List
+from typing import List, cast
 
 from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
+from sphinx_needs.data import NeedsInfoType
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import unwrap
 
 log = get_logger(__name__)
 
 
-class NeedPart(nodes.Inline, nodes.Element):
+class NeedPart(nodes.Inline, nodes.Element):  # type: ignore
     pass
 
 
@@ -31,11 +32,11 @@ def process_need_part(app: Sphinx, doctree: nodes.document, fromdocname: str, fo
 part_pattern = re.compile(r"\(([\w-]+)\)(.*)")
 
 
-def update_need_with_parts(env: BuildEnvironment, need, part_nodes: List[NeedPart]) -> None:
+def update_need_with_parts(env: BuildEnvironment, need: NeedsInfoType, part_nodes: List[NeedPart]) -> None:
     app = unwrap(env.app)
     builder = unwrap(app.builder)
     for part_node in part_nodes:
-        content = part_node.children[0].children[0]  # ->inline->Text
+        content = cast(str, part_node.children[0].children[0])  # ->inline->Text
         result = part_pattern.match(content)
         if result:
             inline_id = result.group(1)
@@ -85,7 +86,7 @@ def update_need_with_parts(env: BuildEnvironment, need, part_nodes: List[NeedPar
         part_node.append(node_need_part_line)
 
 
-def find_parts(node: nodes.Element) -> List[NeedPart]:
+def find_parts(node: nodes.Node) -> List[NeedPart]:
     found_nodes = []
     for child in node.children:
         if isinstance(child, NeedPart):
