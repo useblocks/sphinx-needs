@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1692971933900,
+  "lastUpdate": 1693198347927,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -4032,6 +4032,42 @@ window.BENCHMARK_DATA = {
             "value": 73.08104451999998,
             "unit": "s",
             "extra": "Commit: a16fb72d44b2c9f65c4065e386e2ad37d0a25870\nBranch: master\nTime: 2023-08-25T15:51:47+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bae2a35eb69f49143ca975e92db8367d272230cf",
+          "message": "🧪 Remove boilerplate from test build `conf.py` files (#990)\n\nThis removes all boilerplate/default configuration from the conf.py files,\r\nmaking them more minimal to what is required for the test,\r\nand easier to identify exactly what is being tested.",
+          "timestamp": "2023-08-28T06:45:14+02:00",
+          "tree_id": "5f218771a9422c7e5362e665b666a17ee7676fa9",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/bae2a35eb69f49143ca975e92db8367d272230cf"
+        },
+        "date": 1693198344115,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2353293290000238,
+            "unit": "s",
+            "extra": "Commit: bae2a35eb69f49143ca975e92db8367d272230cf\nBranch: master\nTime: 2023-08-28T06:45:14+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 75.73410406899995,
+            "unit": "s",
+            "extra": "Commit: bae2a35eb69f49143ca975e92db8367d272230cf\nBranch: master\nTime: 2023-08-28T06:45:14+02:00"
           }
         ]
       }
