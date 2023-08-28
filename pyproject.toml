@@ -86,6 +86,12 @@ strict = true
 show_error_codes = true
 implicit_reexport = true
 namespace_packages = true
+disallow_any_generics = true
+disallow_subclassing_any = true
+# disallow_any_unimported = true
+# disallow_any_explicit = true
+# disallow_any_expr = true
+# disallow_any_decorated = true
 
 [[tool.mypy.overrides]]
 module = [
