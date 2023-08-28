@@ -127,7 +127,7 @@ def process_filters(
     all_needs_incl_parts = prepare_need_list(checked_all_needs)
 
     # Check if external filter code is defined
-    filter_func, filter_args = check_and_get_external_filter_func(filter_data)
+    filter_func, filter_args = check_and_get_external_filter_func(filter_data.get("filter_func"))
 
     filter_code = None
     # Get filter_code from

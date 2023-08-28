@@ -89,6 +89,8 @@ namespace_packages = true
 
 [[tool.mypy.overrides]]
 module = [
+  "matplotlib.*",
+  "numpy.*",
   "requests_file",
   "sphinx_data_viewer.*",
   "sphinxcontrib.plantuml.*",
@@ -102,7 +104,6 @@ module = [
   'sphinx_needs.directives.need',
   'sphinx_needs.directives.needbar',
   'sphinx_needs.directives.needextend',
-  'sphinx_needs.directives.needpie',
   'sphinx_needs.directives.needuml',
   'sphinx_needs.functions.functions',
   'sphinx_needs.layout',

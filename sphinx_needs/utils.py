@@ -14,7 +14,7 @@ from matplotlib.figure import FigureBase
 from sphinx.application import BuildEnvironment, Sphinx
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsFilteredBaseType, NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.defaults import NEEDS_PROFILING
 from sphinx_needs.logging import get_logger
 
@@ -304,13 +304,11 @@ def check_and_calc_base_url_rel_path(external_url: str, fromdocname: str) -> str
     return ref_uri
 
 
-def check_and_get_external_filter_func(filter_data: NeedsFilteredBaseType):
+def check_and_get_external_filter_func(filter_func_ref: Optional[str]):
     """Check and import filter function from external python file."""
     # Check if external filter code is defined
     filter_func = None
     filter_args = []
-
-    filter_func_ref = filter_data.get("filter_func")
 
     if filter_func_ref:
         try:
