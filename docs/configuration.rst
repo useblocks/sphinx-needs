@@ -2318,7 +2318,7 @@ needs_build_json_per_id_path
 
 This option sets the location of the set of ``needs.json`` for every needs-id.
 
-Default value: needs_id
+Default value: ``needs_id``
 
 Example:
 
