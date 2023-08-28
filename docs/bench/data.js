@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1693198653875,
+  "lastUpdate": 1693198803191,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -4176,6 +4176,42 @@ window.BENCHMARK_DATA = {
             "value": 101.174340777,
             "unit": "s",
             "extra": "Commit: 8b68f20322f924f2816937b1b3c43077a7ddb40c\nBranch: master\nTime: 2023-08-28T06:47:57+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1ecb2b7b6200fe7405429a6952558f47093f8a55",
+          "message": "🔧 Centralise access to sphinx-needs config (#998)\n\nAccessing sphinx-needs configuration via the sphinx `Config` object is difficult to work with and ensure type safety, due to its dynamic nature.\r\n\r\nThis commit moves all configuration specification to the `NeedsSphinxConfig` class, which is a thin wrapper around the sphinx `Config`, to define and provide type safe access to the sphinx-need specific configuration.\r\n\r\nThis is non-breaking change, since all configuration can still be accessed via the sphinx `Config`, (although this is now discouraged).",
+          "timestamp": "2023-08-28T06:51:50+02:00",
+          "tree_id": "c2ebd5f389c85ba76d1c51b47cc09a9137a8e619",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/1ecb2b7b6200fe7405429a6952558f47093f8a55"
+        },
+        "date": 1693198798217,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.31970985399999563,
+            "unit": "s",
+            "extra": "Commit: 1ecb2b7b6200fe7405429a6952558f47093f8a55\nBranch: master\nTime: 2023-08-28T06:51:50+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 82.64415827600004,
+            "unit": "s",
+            "extra": "Commit: 1ecb2b7b6200fe7405429a6952558f47093f8a55\nBranch: master\nTime: 2023-08-28T06:51:50+02:00"
           }
         ]
       }
