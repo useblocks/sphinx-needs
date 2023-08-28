@@ -121,7 +121,7 @@ def get_filter_para(node_element: nodes.Element) -> nodes.paragraph:
     return para
 
 
-def get_debug_container(puml_node: nodes.Node) -> nodes.container:
+def get_debug_container(puml_node: nodes.Element) -> nodes.container:
     """Return container containing the raw plantuml code"""
     debug_container = nodes.container()
     if isinstance(puml_node, nodes.figure):
