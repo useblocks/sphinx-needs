@@ -17,6 +17,7 @@ from sphinx_needs.functions.functions import (  # noqa: F401
     resolve_variants_options,
 )
 
+# TODO better type signature (Sphinx, NeedsInfoType, Dict[str, NeedsInfoType], *args, **kwargs)
 NEEDS_COMMON_FUNCTIONS: List[Callable[..., Any]] = [
     test,
     echo,

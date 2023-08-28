@@ -110,7 +110,6 @@ module = [
   'sphinx_needs.directives.utils',
   'sphinx_needs.external_needs',
   'sphinx_needs.filter_common',
-  'sphinx_needs.functions.common',
   'sphinx_needs.functions.functions',
   'sphinx_needs.layout',
   'sphinx_needs.roles.need_ref',
