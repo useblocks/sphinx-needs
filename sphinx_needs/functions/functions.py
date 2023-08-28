@@ -25,7 +25,7 @@ logger = get_logger(__name__)
 unicode = str
 ast_boolean = ast.NameConstant
 
-# this input args should actually be of type `Need` and `List[Need]`, however `Need` is *currently* untyped.
+# TODO this input args should actually be of type `Need` and `List[Need]`, however `Need` is *currently* untyped.
 DynamicFunction = Callable[[Sphinx, Any, Any], Union[str, int, float, List[Union[str, int, float]]]]
 
 

@@ -179,12 +179,31 @@ class NeedsInfoType(NeedsBaseDataType):
     hidden: str
     duration: str
     completion: str
-    # constraints: str
+    # constraints: str  # this is already set in create_need
     # these are updated in process_need_nodes (-> check_links) transform
     has_dead_links: str | bool
     has_forbidden_dead_links: str | bool
-    # TODO also options from `BaseService.options`` get added to every need,
-    # via `ServiceManager.register`, which adds them to extra_options
+    # options from `BaseService.options` get added to every need,
+    # via `ServiceManager.register`, which adds them to `extra_options``
+    # GithubService
+    avatar: str
+    closed_at: str
+    created_at: str
+    max_amount: str
+    service: str
+    specific: str
+    type: str
+    updated_at: str
+    user: str
+    # OpenNeedsService
+    params: str
+    prefix: str
+    url_postfix: str
+    # shared GithubService and OpenNeedsService
+    max_content_lines: str
+    id_prefix: str
+    query: str
+    url: str
 
     # Note there are also:
     # - dynamic default options that can be set by needs_extra_options config
