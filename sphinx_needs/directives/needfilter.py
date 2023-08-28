@@ -1,5 +1,5 @@
 import os
-from typing import Sequence
+from typing import List, Sequence
 from urllib.parse import urlparse
 
 from docutils import nodes
@@ -7,6 +7,7 @@ from docutils.parsers.rst import directives
 from jinja2 import Template
 
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 
 try:
     from sphinx.errors import NoUri  # Sphinx 3.0
@@ -50,18 +51,13 @@ class NeedfilterDirective(FilterBase):
 
     def run(self) -> Sequence[nodes.Node]:
         env = self.env
-        if not hasattr(env, "need_all_needfilters"):
-            env.need_all_needfilters = {}
-
-        # be sure, global var is available. If not, create it
-        if not hasattr(env, "needs_all_needs"):
-            env.needs_all_needs = {}
 
         targetid = "needfilter-{docname}-{id}".format(docname=env.docname, id=env.new_serialno("needfilter"))
         targetnode = nodes.target("", "", ids=[targetid])
 
         # Add the need and all needed information
-        env.need_all_needfilters[targetid] = {
+        data = SphinxNeedsData(env)._get_or_create_filters()
+        data[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
@@ -71,16 +67,17 @@ class NeedfilterDirective(FilterBase):
             "show_legend": "show_legend" in self.options,
             "layout": self.options.get("layout", "list"),
             "export_id": self.options.get("export_id", ""),
-            # "env": env,
+            **self.collect_filter_attributes(),
         }
-        env.need_all_needfilters[targetid].update(self.collect_filter_attributes())
 
         add_doc(env, env.docname)
 
         return [targetnode, Needfilter("")]
 
 
-def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list) -> None:
+def process_needfilters(
+    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
+) -> None:
     # Replace all needlist nodes with a list of the collected needs.
     # Augment each need with a backlink to the original location.
     builder = unwrap(app.builder)
@@ -102,8 +99,8 @@ def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str, 
             continue
 
         id = node.attributes["ids"][0]
-        current_needfilter = env.need_all_needfilters[id]
-        all_needs = env.needs_all_needs
+        current_needfilter = SphinxNeedsData(env)._get_or_create_filters()[id]
+        all_needs = SphinxNeedsData(env).get_or_create_needs()
 
         if current_needfilter["layout"] == "list":
             content = []
@@ -195,12 +192,12 @@ def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str, 
                 line_block.append(para)
             elif current_needfilter["layout"] == "table":
                 row = nodes.row()
-                row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, "id", make_ref=True)
-                row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, "title")
-                row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, "type_name")
-                row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, "status")
-                row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, "links", ref_lookup=True)
-                row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, "tags")
+                row += row_col_maker(app, fromdocname, all_needs, need_info, "id", make_ref=True)
+                row += row_col_maker(app, fromdocname, all_needs, need_info, "title")
+                row += row_col_maker(app, fromdocname, all_needs, need_info, "type_name")
+                row += row_col_maker(app, fromdocname, all_needs, need_info, "status")
+                row += row_col_maker(app, fromdocname, all_needs, need_info, "links", ref_lookup=True)
+                row += row_col_maker(app, fromdocname, all_needs, need_info, "tags")
                 tbody += row
             elif current_needfilter["layout"] == "diagram":
                 # Link calculation

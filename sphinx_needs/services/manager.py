@@ -21,9 +21,7 @@ class ServiceManager:
         try:
             config = NeedsSphinxConfig(self.app.config).services[name]
         except KeyError:
-            self.log.debug(
-                "No service config found for {}. " "Add it in your conf.py to needs_services dictionary.".format(name)
-            )
+            self.log.debug(f"No service config found for {name}. Add it in your conf.py to needs_services dictionary.")
             config = {}
 
         # Register options from service class

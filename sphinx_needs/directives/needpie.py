@@ -1,6 +1,6 @@
 import copy
 import os
-from typing import Iterable, Sequence
+from typing import Iterable, List, Sequence
 
 import matplotlib
 import numpy as np
@@ -8,6 +8,7 @@ from docutils import nodes
 from sphinx.application import Sphinx
 
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
 
@@ -61,12 +62,6 @@ class NeedpieDirective(FilterBase):
 
     def run(self) -> Sequence[nodes.Node]:
         env = self.env
-        if not hasattr(env, "need_all_needpie"):
-            env.need_all_needpie = {}
-
-        # be sure, global var is available. If not, create it
-        if not hasattr(env, "needs_all_needs"):
-            env.needs_all_needs = {}
 
         id = env.new_serialno("needpie")
         targetid = f"needpie-{env.docname}-{id}"
@@ -94,7 +89,7 @@ class NeedpieDirective(FilterBase):
         shadow = "shadow" in self.options
 
         # Stores infos for needpie
-        env.need_all_needpie[targetid] = {
+        SphinxNeedsData(env).get_or_create_pies()[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
@@ -107,19 +102,18 @@ class NeedpieDirective(FilterBase):
             "colors": colors,
             "shadow": shadow,
             "text_color": text_color,
+            "filter_func": self.collect_filter_attributes()["filter_func"],
         }
-        # update filter-func with needed information defined in FilterBase class
-        env.need_all_needpie[targetid]["filter_func"] = self.collect_filter_attributes()["filter_func"]
-
         add_doc(env, env.docname)
 
         return [targetnode, Needpie("")]
 
 
 @measure_time("needpie")
-def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list) -> None:
+def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
+    needs_data = SphinxNeedsData(env)
 
     # NEEDFLOW
     include_needs = NeedsSphinxConfig(env.config).include_needs
@@ -137,7 +131,7 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
             continue
 
         id = node.attributes["ids"][0]
-        current_needpie = env.need_all_needpie[id]
+        current_needpie = needs_data.get_or_create_pies()[id]
 
         # Set matplotlib style
         style_previous_to_script_execution = matplotlib.rcParams
@@ -149,7 +143,7 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
         content = current_needpie["content"]
 
         sizes = []
-        need_list = list(prepare_need_list(env.needs_all_needs.values()))  # adds parts to need_list
+        need_list = list(prepare_need_list(needs_data.get_or_create_needs().values()))  # adds parts to need_list
         if content and not current_needpie["filter_func"]:
             for line in content:
                 if line.isdigit():

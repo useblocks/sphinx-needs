@@ -7,6 +7,7 @@ from sphinx.application import Sphinx
 from sphinx.builders import Builder
 
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import get_logger
 from sphinx_needs.needsfile import NeedsList
 from sphinx_needs.utils import unwrap
@@ -25,8 +26,9 @@ class NeedsBuilder(Builder):
 
     def finish(self) -> None:
         env = unwrap(self.env)
-        needs = env.needs_all_needs.values()  # We need a list of needs for later filter checks
-        filters = env.needs_all_filters
+        data = SphinxNeedsData(env)
+        needs = data.get_or_create_needs().values()  # We need a list of needs for later filter checks
+        filters = data.get_or_create_filters()
         version = getattr(env.config, "version", "unset")
         needs_list = NeedsList(env.config, self.outdir, self.srcdir)
         needs_config = NeedsSphinxConfig(env.config)
@@ -107,7 +109,7 @@ class NeedumlsBuilder(Builder):
 
     def finish(self) -> None:
         env = unwrap(self.env)
-        needumls = env.needs_all_needumls.values()
+        needumls = SphinxNeedsData(env).get_or_create_umls().values()
 
         for needuml in needumls:
             if needuml["save"]:

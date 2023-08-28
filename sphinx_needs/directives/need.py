@@ -14,6 +14,7 @@ from sphinx.util.docutils import SphinxDirective
 from sphinx_needs.api import add_need
 from sphinx_needs.api.exceptions import NeedsInvalidException
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.defaults import NEED_DEFAULT_OPTIONS
 from sphinx_needs.directives.needextend import process_needextend
@@ -276,22 +277,19 @@ def purge_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> None:
     Gets executed, if a doc file needs to be purged/ read in again.
     So this code delete all found needs for the given docname.
     """
-    if not hasattr(env, "needs_all_needs"):
-        return
-    env.needs_all_needs = {key: need for key, need in env.needs_all_needs.items() if need["docname"] != docname}
+    needs = SphinxNeedsData(env).get_or_create_needs()
+    for need_id in list(needs):
+        if needs[need_id]["docname"] == docname:
+            del needs[need_id]
 
 
-# def add_sections(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
 def add_sections(app: Sphinx, doctree: nodes.document) -> None:
     """Add section titles to the needs as additional attributes that can
     be used in tables and filters"""
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
 
-    # if env.needs_workflow["add_sections"]:
-    #     return
-
-    needs = getattr(env, "needs_all_needs", {})
+    needs = SphinxNeedsData(env).get_or_create_needs()
 
     for need_node in doctree.findall(Need):
         need_id = need_node["refid"]
@@ -328,9 +326,6 @@ def add_sections(app: Sphinx, doctree: nodes.document) -> None:
         if parent_needs:
             need_info["parent_needs"] = parent_needs
             need_info["parent_need"] = parent_needs[0]
-
-    # Finally set a flag so that this function gets not executed several times
-    # env.needs_workflow["add_sections"] = True
 
 
 def previous_sibling(node):
@@ -386,7 +381,7 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     https://www.sphinx-doc.org/en/master/extdev/index.html
 
     """
-    needs = env.needs_all_needs
+    needs = SphinxNeedsData(env).get_or_create_needs()
 
     # Used to store needs in the docs, which are needed again later
     found_needs_nodes = []
@@ -416,7 +411,7 @@ def print_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
     """
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
-    needs = env.needs_all_needs
+    needs = SphinxNeedsData(env).get_or_create_needs()
 
     # We try to avoid findall as much as possibles. so we reuse the already found need nodes in the current document.
     # for node_need in doctree.findall(Need):
@@ -439,10 +434,12 @@ def check_links(env: BuildEnvironment) -> None:
     :param env: Sphinx environment
     :return:
     """
-    if env.needs_workflow["links_checked"]:
+    data = SphinxNeedsData(env)
+    workflow = data.get_or_create_workflow()
+    if workflow["links_checked"]:
         return
 
-    needs = env.needs_all_needs
+    needs = data.get_or_create_needs()
     extra_links = getattr(env.config, "needs_extra_links", [])
     for need in needs.values():
         for link_type in extra_links:
@@ -465,7 +462,7 @@ def check_links(env: BuildEnvironment) -> None:
                     break  # One found dead link is enough
 
     # Finally set a flag so that this function gets not executed several times
-    env.needs_workflow["links_checked"] = True
+    workflow["links_checked"] = True
 
 
 def create_back_links(env: BuildEnvironment, option) -> None:
@@ -476,11 +473,13 @@ def create_back_links(env: BuildEnvironment, option) -> None:
 
     :param env: sphinx environment
     """
+    data = SphinxNeedsData(env)
+    workflow = data.get_or_create_workflow()
     option_back = f"{option}_back"
-    if env.needs_workflow[f"backlink_creation_{option}"]:
+    if workflow[f"backlink_creation_{option}"]:
         return
 
-    needs = env.needs_all_needs
+    needs = data.get_or_create_needs()
     for key, need in needs.items():
         need_link_value = [need[option]] if isinstance(need[option], str) else need[option]
         for link in need_link_value:
@@ -500,7 +499,7 @@ def create_back_links(env: BuildEnvironment, option) -> None:
                         needs[link_main]["parts"][link_part][option_back] = []
                     needs[link_main]["parts"][link_part][option_back].append(key)
 
-    env.needs_workflow[f"backlink_creation_{option}"] = True
+    workflow[f"backlink_creation_{option}"] = True
 
 
 def _fix_list_dyn_func(list: List[str]) -> List[str]:

@@ -14,6 +14,7 @@ from matplotlib.figure import FigureBase
 from sphinx.application import BuildEnvironment, Sphinx
 
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import NeedsFilteredBaseType, NeedsInfoType, SphinxNeedsData
 from sphinx_needs.defaults import NEEDS_PROFILING
 from sphinx_needs.logging import get_logger
 
@@ -85,7 +86,7 @@ MONTH_NAMES = [
 def row_col_maker(
     app: Sphinx,
     fromdocname: str,
-    all_needs,
+    all_needs: Dict[str, NeedsInfoType],
     need_info,
     need_key,
     make_ref: bool = False,
@@ -301,13 +302,13 @@ def check_and_calc_base_url_rel_path(external_url: str, fromdocname: str) -> str
     return ref_uri
 
 
-def check_and_get_external_filter_func(current_needlist):
+def check_and_get_external_filter_func(filter_data: NeedsFilteredBaseType):
     """Check and import filter function from external python file."""
     # Check if external filter code is defined
     filter_func = None
     filter_args = []
 
-    filter_func_ref = current_needlist.get("filter_func")
+    filter_func_ref = filter_data.get("filter_func")
 
     if filter_func_ref:
         try:
@@ -582,13 +583,55 @@ def node_match(node_types):
     return condition
 
 
-def add_doc(env: BuildEnvironment, docname: str, category=None):
+def add_doc(env: BuildEnvironment, docname: str, category: Optional[str] = None) -> None:
     """Stores a docname, to know later all need-relevant docs"""
-    if docname not in env.needs_all_docs["all"]:
-        env.needs_all_docs["all"].append(docname)
+    docs = SphinxNeedsData(env).get_or_create_docs()
+    if docname not in docs["all"]:
+        docs["all"].append(docname)
 
     if category:
-        if category not in env.needs_all_docs:
-            env.needs_all_docs[category] = []
-        if docname not in env.needs_all_docs[category]:
-            env.needs_all_docs[category].append(docname)
+        if category not in docs:
+            docs[category] = []
+        if docname not in docs[category]:
+            docs[category].append(docname)
+
+
+def split_link_types(link_types: str, location: Any) -> List[str]:
+    """Split link_types string into list of link_types."""
+
+    def _is_valid(link_type: str) -> bool:
+        if len(link_type) == 0 or link_type.isspace():
+            logger.warning(
+                "Scruffy link_type definition found. Defined link_type contains spaces only. [needs]",
+                type="needs",
+                location=location,
+            )
+            return False
+        return True
+
+    return list(
+        filter(
+            _is_valid,
+            (x.strip() for x in re.split(";|,", link_types)),
+        )
+    )
+
+
+def get_scale(options: Dict[str, Any], location: Any) -> str:
+    """Get scale for diagram, from directive option."""
+    scale = options.get("scale", "100").replace("%", "")
+    if not scale.isdigit():
+        logger.warning(
+            f'scale value must be a number. "{scale}" found [needs]',
+            type="needs",
+            location=location,
+        )
+        return "100"
+    if int(scale) < 1 or int(scale) > 300:
+        logger.warning(
+            f'scale value must be between 1 and 300. "{scale}" found [needs]',
+            type="needs",
+            location=location,
+        )
+        return "100"
+    return scale

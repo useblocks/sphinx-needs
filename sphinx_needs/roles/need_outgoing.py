@@ -5,6 +5,7 @@ from sphinx.application import Sphinx
 from sphinx.util.nodes import make_refnode
 
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import check_and_calc_base_url_rel_path, unwrap
@@ -26,7 +27,7 @@ def process_need_outgoing(
     # for node_need_ref in doctree.findall(NeedOutgoing):
     for node_need_ref in found_nodes:
         node_link_container = nodes.inline()
-        needs_all_needs = getattr(env, "needs_all_needs", {})
+        needs_all_needs = SphinxNeedsData(env).get_or_create_needs()
         ref_need = needs_all_needs[node_need_ref["reftarget"]]
 
         # Let's check if NeedIncoming shall follow a specific link type

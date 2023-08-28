@@ -1,7 +1,6 @@
 import html
 import os
-import re
-from typing import Iterable, Sequence
+from typing import List, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -12,11 +11,12 @@ from sphinxcontrib.plantuml import (
 )
 
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link, create_legend
 from sphinx_needs.filter_common import FilterBase, filter_single_need, process_filters
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import add_doc, unwrap
+from sphinx_needs.utils import add_doc, get_scale, split_link_types, unwrap
 
 logger = get_logger(__name__)
 
@@ -54,21 +54,14 @@ class NeedflowDirective(FilterBase):
     def run(self) -> Sequence[nodes.Node]:
         env = self.env
         needs_config = NeedsSphinxConfig(env.config)
-        if not hasattr(env, "need_all_needflows"):
-            env.need_all_needflows = {}
-
-        # be sure, global var is available. If not, create it
-        if not hasattr(env, "needs_all_needs"):
-            env.needs_all_needs = {}
+        location = (env.docname, self.lineno)
 
         id = env.new_serialno("needflow")
         targetid = f"needflow-{env.docname}-{id}"
         targetnode = nodes.target("", "", ids=[targetid])
 
         all_link_types = ",".join(x["option"] for x in needs_config.extra_links)
-        link_types = list(
-            split_link_types(self.options.get("link_types", all_link_types), location=(env.docname, self.lineno))
-        )
+        link_types = split_link_types(self.options.get("link_types", all_link_types), location)
 
         config_names = self.options.get("config")
         configs = []
@@ -78,57 +71,30 @@ class NeedflowDirective(FilterBase):
                 if config_name and config_name in needs_config.flow_configs:
                     configs.append(needs_config.flow_configs[config_name])
 
-        scale = self.options.get("scale", "100").replace("%", "")
-        if not scale.isdigit():
-            raise Exception(f'Needflow scale value must be a number. "{scale}" found')
-        if int(scale) < 1 or int(scale) > 300:
-            raise Exception(f'Needflow scale value must be between 1 and 300. "{scale}" found')
-
-        highlight = self.options.get("highlight", "")
-
-        caption = None
-        if self.arguments:
-            caption = self.arguments[0]
-
         # Add the need and all needed information
-        env.need_all_needflows[targetid] = {
+        data = SphinxNeedsData(env).get_or_create_flows()
+        data[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
-            "caption": caption,
-            "show_filters": "show_filters" in self.options,
+            # note these are the same as DiagramBase.collect_diagram_attributes
             "show_legend": "show_legend" in self.options,
+            "show_filters": "show_filters" in self.options,
             "show_link_names": "show_link_names" in self.options,
-            "debug": "debug" in self.options,
-            "config_names": config_names,
-            "config": "\n".join(configs),
-            "scale": scale,
-            "highlight": highlight,
-            "align": self.options.get("align"),
             "link_types": link_types,
+            "config": "\n".join(configs),
+            "config_names": config_names,
+            "scale": get_scale(self.options, location),
+            "highlight": self.options.get("highlight", ""),
+            "align": self.options.get("align"),
+            "debug": "debug" in self.options,
+            "caption": self.arguments[0] if self.arguments else None,
+            **self.collect_filter_attributes(),
         }
-        env.need_all_needflows[targetid].update(self.collect_filter_attributes())
 
         add_doc(env, env.docname)
 
         return [targetnode, Needflow("")]
-
-
-def split_link_types(link_types: str, location=None) -> Iterable[str]:
-    def is_valid(link_type: str) -> bool:
-        if len(link_type) == 0 or link_type.isspace():
-            logger.warning(
-                "Scruffy link_type definition found in needflow." "Defined link_type contains spaces only. [needs]",
-                type="needs",
-                location=location,
-            )
-            return False
-        return True
-
-    return filter(
-        is_valid,
-        (x.strip() for x in re.split(";|,", link_types)),
-    )
 
 
 def make_entity_name(name: str) -> str:
@@ -287,11 +253,12 @@ def cal_needs_node(app: Sphinx, fromdocname: str, current_needflow: dict, all_ne
 
 
 @measure_time("needflow")
-def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list) -> None:
+def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
     # Replace all needflow nodes with a list of the collected needs.
     # Augment each need with a backlink to the original location.
     env = unwrap(app.env)
     needs_config = NeedsSphinxConfig(app.config)
+    env_data = SphinxNeedsData(env)
 
     link_types = needs_config.extra_links
     allowed_link_types_options = [link.upper() for link in needs_config.flow_link_types]
@@ -311,8 +278,8 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
             continue
 
         id = node.attributes["ids"][0]
-        current_needflow = env.need_all_needflows[id]
-        all_needs = env.needs_all_needs
+        current_needflow = env_data.get_or_create_flows()[id]
+        all_needs = env_data.get_or_create_needs()
 
         option_link_types = [link.upper() for link in current_needflow["link_types"]]
         for lt in option_link_types:

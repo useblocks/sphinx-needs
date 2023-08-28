@@ -93,6 +93,7 @@ warn_unused_ignores = false
 module = [
   'sphinx_needs.api.need',
   'sphinx_needs.builder',
+  'sphinx_needs.data',
   'sphinx_needs.diagrams_common',
   'sphinx_needs.directives.need',
   'sphinx_needs.directives.needbar',
@@ -116,6 +117,7 @@ module = [
   'sphinx_needs.needs',
   'sphinx_needs.needsfile',
   'sphinx_needs.roles.need_incoming',
+  'sphinx_needs.roles.need_outgoing',
   'sphinx_needs.roles.need_part',
   'sphinx_needs.roles.need_ref',
   'sphinx_needs.services.github',
