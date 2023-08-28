@@ -386,6 +386,8 @@ class NeedsUmlType(NeedsBaseDataType):
     key: None | str
     save: None | str
     is_arch: bool
+    # set in process_needuml
+    content_calculated: str
 
 
 class SphinxNeedsData:
