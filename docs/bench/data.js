@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1693212397619,
+  "lastUpdate": 1693220458385,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -4320,6 +4320,42 @@ window.BENCHMARK_DATA = {
             "value": 89.02614280600005,
             "unit": "s",
             "extra": "Commit: a09a5399cd415b13795ce41a00251889eaa775a7\nBranch: master\nTime: 2023-08-28T10:37:32+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9eb5143518a315dd8282560073fac5dce3b3b7bb",
+          "message": "🔧 Make mypy pre-commit hook isolated (#1003)\n\nThis makes it easier to run pre-commit in isolation, with no system dependencies other than pre-commit itself.",
+          "timestamp": "2023-08-28T12:53:58+02:00",
+          "tree_id": "c1f1621d35f3823137d5c3e76b4c124e1e69234f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/9eb5143518a315dd8282560073fac5dce3b3b7bb"
+        },
+        "date": 1693220453937,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22089727900004164,
+            "unit": "s",
+            "extra": "Commit: 9eb5143518a315dd8282560073fac5dce3b3b7bb\nBranch: master\nTime: 2023-08-28T12:53:58+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 71.60718991899995,
+            "unit": "s",
+            "extra": "Commit: 9eb5143518a315dd8282560073fac5dce3b3b7bb\nBranch: master\nTime: 2023-08-28T12:53:58+02:00"
           }
         ]
       }
