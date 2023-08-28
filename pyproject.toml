@@ -108,7 +108,6 @@ module = [
   'sphinx_needs.directives.needpie',
   'sphinx_needs.directives.needuml',
   'sphinx_needs.directives.utils',
-  'sphinx_needs.external_needs',
   'sphinx_needs.filter_common',
   'sphinx_needs.functions.functions',
   'sphinx_needs.layout',
