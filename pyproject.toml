@@ -106,7 +106,6 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = [
   'sphinx_needs.api.need',
-  'sphinx_needs.data',
   'sphinx_needs.directives.need',
   'sphinx_needs.directives.needuml',
   'sphinx_needs.functions.functions',
@@ -117,10 +116,17 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = [
-  'sphinx_needs.directives.needextend'
+  "sphinx_needs.directives.needextend"
 ]
 # TODO dynamically overriding TypeDict keys is a bit tricky
-disable_error_code = 'literal-required'
+disable_error_code = "literal-required"
+
+[[tool.mypy.overrides]]
+module = [
+  "sphinx_needs.data"
+]
+disable_error_code = ["attr-defined", "no-any-return"]
+
 
 [build-system]
 requires = ["setuptools", "poetry_core>=1.0.8"]  # setuptools for deps like plantuml

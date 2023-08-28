@@ -9,7 +9,7 @@ try:
     from typing import Literal, TypedDict
 except ImportError:
     # introduced in python 3.8
-    from typing_extensions import Literal, TypedDict
+    from typing_extensions import Literal, TypedDict  # type: ignore
 
 if TYPE_CHECKING:
     from docutils.nodes import Element, Text
@@ -201,7 +201,7 @@ class NeedsInfoType(NeedsBaseDataType):
     max_amount: str
     service: str
     specific: str
-    type: str
+    # _type: str  # type is already set in create_need
     updated_at: str
     user: str
     # OpenNeedsService
@@ -293,7 +293,6 @@ class NeedsFilteredDiagramBaseType(NeedsFilteredBaseType):
 class NeedsExtractType(NeedsFilteredBaseType):
     """Data to extract needs from a document."""
 
-    export_id: str
     layout: str
     style: str
     show_filters: bool
@@ -311,23 +310,10 @@ class _NeedsFilterType(NeedsFilteredBaseType):
     show_filters: bool
     show_legend: bool
     layout: Literal["list", "table", "diagram"]
-    export_id: str
 
 
 class NeedsFlowType(NeedsFilteredDiagramBaseType):
     """Data for a single (filtered) flow chart."""
-
-    caption: None | str
-    show_filters: bool
-    show_legend: bool
-    show_link_names: bool
-    debug: bool
-    config_names: str
-    config: str
-    scale: str
-    highlight: str
-    align: str
-    link_types: list[str]
 
 
 class NeedsGanttType(NeedsFilteredDiagramBaseType):
@@ -350,7 +336,6 @@ class NeedsListType(NeedsFilteredBaseType):
     show_tags: bool
     show_status: bool
     show_filters: bool
-    export_id: str
 
 
 class NeedsPieType(NeedsBaseDataType):
@@ -467,7 +452,7 @@ class SphinxNeedsData:
             for link_type in self.env.app.config.needs_extra_links:
                 self.env.needs_workflow["backlink_creation_{}".format(link_type["option"])] = False
 
-        return self.env.needs_workflow
+        return self.env.needs_workflow  # type: ignore[return-value]
 
     def get_or_create_services(self) -> ServiceManager:
         """Get information about services.
