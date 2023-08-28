@@ -37,12 +37,17 @@ class Config:
         """Options that are dynamically added to `NeedDirective` & `NeedserviceDirective`,
         after the config is initialized.
 
+        These fields are also added to the each needs data item.
+
         :returns: Mapping of name to validation function
         """
         return self._extra_options
 
     @property
     def warnings(self) -> dict[str, str | Callable[[NeedsInfoType, SphinxLoggerAdapter], bool]]:
+        """Warning handlers that are added by the user,
+        then called at the end of the build.
+        """
         return self._warnings
 
 
