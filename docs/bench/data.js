@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1693206263899,
+  "lastUpdate": 1693212397619,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -4284,6 +4284,42 @@ window.BENCHMARK_DATA = {
             "value": 74.39007368099999,
             "unit": "s",
             "extra": "Commit: fed296589bb54b88350e0437da0045a8d5d2662c\nBranch: master\nTime: 2023-08-28T08:57:18+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a09a5399cd415b13795ce41a00251889eaa775a7",
+          "message": "🔧 Make `NEEDS_CONFIG` type safe (#1001)\n\nThis commit makes `NEEDS_CONFIG` specific to the actual data that it holds, rather than just a generic data store.",
+          "timestamp": "2023-08-28T10:37:32+02:00",
+          "tree_id": "528f11e35c53403a06273011cb8709cba0c44544",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a09a5399cd415b13795ce41a00251889eaa775a7"
+        },
+        "date": 1693212392056,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.3243779130000348,
+            "unit": "s",
+            "extra": "Commit: a09a5399cd415b13795ce41a00251889eaa775a7\nBranch: master\nTime: 2023-08-28T10:37:32+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 89.02614280600005,
+            "unit": "s",
+            "extra": "Commit: a09a5399cd415b13795ce41a00251889eaa775a7\nBranch: master\nTime: 2023-08-28T10:37:32+02:00"
           }
         ]
       }
