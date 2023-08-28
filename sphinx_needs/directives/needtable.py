@@ -249,9 +249,7 @@ def process_needtables(
                 prefix = ""
             else:
                 row = nodes.row(classes=["need_part", style_row])
-                temp_need["id"] = temp_need[
-                    "id_complete"  # type: ignore[typeddict-item] # TODO this is set in prepare_need_list
-                ]
+                temp_need["id"] = temp_need["id_complete"]
                 prefix = needs_config.part_prefix
                 temp_need["title"] = temp_need["content"]
 

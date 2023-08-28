@@ -6,7 +6,7 @@ like needtable, needlist and needflow.
 import copy
 import re
 from types import CodeType
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, TypeVar
 
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
@@ -14,7 +14,12 @@ from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsFilteredBaseType, NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import (
+    NeedsFilteredBaseType,
+    NeedsInfoType,
+    NeedsPartsInfoType,
+    SphinxNeedsData,
+)
 from sphinx_needs.debug import measure_time
 from sphinx_needs.utils import check_and_get_external_filter_func
 from sphinx_needs.utils import logger as log
@@ -51,9 +56,8 @@ class FilterBase(SphinxDirective):
     }
 
     def collect_filter_attributes(self) -> FilterAttributesType:
-        tags = str(self.options.get("tags", ""))
-        if tags:
-            tags = [tag.strip() for tag in re.split(";|,", tags) if len(tag) > 0]
+        _tags = str(self.options.get("tags", ""))
+        tags = [tag.strip() for tag in re.split(";|,", _tags) if len(tag) > 0] if _tags else []
 
         status = self.options.get("status")
         if status:
@@ -71,7 +75,7 @@ class FilterBase(SphinxDirective):
             types = [typ.strip() for typ in re.split(";|,", types)]
 
         # Add the need and all needed information
-        collected_filter_options = {
+        collected_filter_options: FilterAttributesType = {
             "status": status,
             "tags": tags,
             "types": types,
@@ -85,8 +89,8 @@ class FilterBase(SphinxDirective):
 
 
 def process_filters(
-    app: Sphinx, all_needs: List[NeedsInfoType], filter_data: NeedsFilteredBaseType, include_external: bool = True
-) -> List[NeedsInfoType]:
+    app: Sphinx, all_needs: Iterable[NeedsInfoType], filter_data: NeedsFilteredBaseType, include_external: bool = True
+) -> List[NeedsPartsInfoType]:
     """
     Filters all needs with given configuration.
     Used by needlist, needtable and needflow.
@@ -98,24 +102,25 @@ def process_filters(
 
     :return: list of needs, which passed the filters
     """
-
+    found_needs: List[NeedsPartsInfoType]
     sort_key = filter_data["sort_by"]
     if sort_key:
         try:
-            all_needs = sorted(all_needs, key=lambda node: node[sort_key] or "")
+            all_needs = sorted(all_needs, key=lambda node: node[sort_key] or "")  # type: ignore[literal-required]
         except KeyError as e:
             log.warning(f"Sorting parameter {sort_key} not valid: Error: {e} [needs]", type="needs")
 
     # check if include external needs
-    checked_all_needs = []
+    checked_all_needs: Iterable[NeedsInfoType]
     if not include_external:
+        checked_all_needs = []
         for need in all_needs:
             if not need["is_external"]:
                 checked_all_needs.append(need)
     else:
         checked_all_needs = all_needs
 
-    found_needs_by_options = []
+    found_needs_by_options: List[NeedsPartsInfoType] = []
 
     # Add all need_parts of given needs to the search list
     all_needs_incl_parts = prepare_need_list(checked_all_needs)
@@ -160,13 +165,10 @@ def process_filters(
             found_needs = filter_needs(app, all_needs_incl_parts, filter_data["filter"])
     else:
         # Provides only a copy of needs to avoid data manipulations.
-        try:
-            context = {
-                "needs": copy.deepcopy(all_needs_incl_parts),
-                "results": [],
-            }
-        except Exception as e:
-            raise e
+        context = {
+            "needs": copy.deepcopy(all_needs_incl_parts),
+            "results": [],
+        }
 
         if filter_code:  # code from content
             exec(filter_code, context)
@@ -186,7 +188,7 @@ def process_filters(
             return []
 
         # The filter results may be dirty, as it may continue manipulated needs.
-        found_dirty_needs = context["results"]
+        found_dirty_needs: List[NeedsPartsInfoType] = context["results"]  # type: ignore
         found_needs = []
 
         # Check if config allow unsafe filters
@@ -218,38 +220,43 @@ def process_filters(
     return found_needs
 
 
-def prepare_need_list(need_list: List[NeedsInfoType]) -> List[NeedsInfoType]:
+def prepare_need_list(need_list: Iterable[NeedsInfoType]) -> List[NeedsPartsInfoType]:
     # all_needs_incl_parts = need_list.copy()
+    all_needs_incl_parts: List[NeedsPartsInfoType]
     try:
-        all_needs_incl_parts = need_list[:]
+        all_needs_incl_parts = need_list[:]  # type: ignore
     except TypeError:
         try:
-            all_needs_incl_parts = need_list.copy()
+            all_needs_incl_parts = need_list.copy()  # type: ignore
         except AttributeError:
-            all_needs_incl_parts = list(need_list)[:]
+            all_needs_incl_parts = list(need_list)[:]  # type: ignore
 
     for need in need_list:
         for part in need["parts"].values():
-            filter_part = {**need, **part}  # noqa: SIM904
-            filter_part["id_parent"] = need["id"]
-            filter_part["id_complete"] = ".".join([need["id"], filter_part["id"]])
+            id_complete = ".".join([need["id"], part["id"]])
+            filter_part: NeedsPartsInfoType = {**need, **part, **{"id_parent": need["id"], "id_complete": id_complete}}
             all_needs_incl_parts.append(filter_part)
 
         # Be sure extra attributes, which makes only sense for need_parts, are also available on
         # need level so that no KeyError gets raised, if search/filter get executed on needs with a need-part argument.
         if "id_parent" not in need:
-            need["id_parent"] = need["id"]
+            need["id_parent"] = need["id"]  # type: ignore[typeddict-unknown-key]
         if "id_complete" not in need:
-            need["id_complete"] = need["id"]
+            need["id_complete"] = need["id"]  # type: ignore[typeddict-unknown-key]
     return all_needs_incl_parts
 
 
-def intersection_of_need_results(list_a, list_b) -> List[Dict[str, Any]]:
+T = TypeVar("T")
+
+
+def intersection_of_need_results(list_a: List[T], list_b: List[T]) -> List[T]:
     return [a for a in list_a if a in list_b]
 
 
 @measure_time("filtering")
-def filter_needs(app: Sphinx, needs: List[NeedsInfoType], filter_string: str = "", current_need=None):
+def filter_needs(
+    app: Sphinx, needs: List[NeedsInfoType], filter_string: str = "", current_need: Optional[NeedsInfoType] = None
+) -> List[NeedsInfoType]:
     """
     Filters given needs based on a given filter string.
     Returns all needs, which pass the given filter.
@@ -291,7 +298,7 @@ def filter_single_need(
     need: NeedsInfoType,
     filter_string: str = "",
     needs: Optional[List[NeedsInfoType]] = None,
-    current_need=None,
+    current_need: Optional[NeedsInfoType] = None,
     filter_compiled: Optional[CodeType] = None,
 ) -> bool:
     """
@@ -305,7 +312,7 @@ def filter_single_need(
     :param needs: list of all needs
     :return: True, if need passes the filter_string, else False
     """
-    filter_context = need.copy()
+    filter_context: Dict[str, Any] = need.copy()  # type: ignore
     if needs:
         filter_context["needs"] = needs
     if current_need:
