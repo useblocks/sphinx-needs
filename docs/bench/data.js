@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1693198803191,
+  "lastUpdate": 1693204209510,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -4212,6 +4212,42 @@ window.BENCHMARK_DATA = {
             "value": 82.64415827600004,
             "unit": "s",
             "extra": "Commit: 1ecb2b7b6200fe7405429a6952558f47093f8a55\nBranch: master\nTime: 2023-08-28T06:51:50+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9ca4e23ce4f9d595b19c940a0981987ccb869aa1",
+          "message": "🔧 Centralise sphinx `env` data access (and add schemas) (#987)\n\nThe sphinx-needs data stored on the Sphinx `BuildEnvironment` is currently difficult to interpret and work with,\r\nsince the dynamic nature of `BuildEnvironment` provides no type safety or static introspection.\r\n\r\nThis commit centralises access to sphinx-needs data, via `sphinx_needs.data.SphinxNeedsData`,\r\nwhich is a thin wrapper around the sphinx `BuildEnvironment`,\r\nto define and provide type safe access to the sphinx-need specific data.\r\n\r\n`TypedDict` are used to type annotate the dictionary keys for the different data types,\r\nand thus `sphinx_needs.data` essentially provides a schema for the data that sphinx-needs stores.\r\n\r\nThis is a non-breaking change, since all data can still be accessed via the sphinx `BuildEnvironment`,\r\n(although this is now discouraged).",
+          "timestamp": "2023-08-28T08:21:46+02:00",
+          "tree_id": "b460c6e95892d4d78ba85618fa5a11f913953626",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/9ca4e23ce4f9d595b19c940a0981987ccb869aa1"
+        },
+        "date": 1693204203340,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2825240579999786,
+            "unit": "s",
+            "extra": "Commit: 9ca4e23ce4f9d595b19c940a0981987ccb869aa1\nBranch: master\nTime: 2023-08-28T08:21:46+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 84.24864441199998,
+            "unit": "s",
+            "extra": "Commit: 9ca4e23ce4f9d595b19c940a0981987ccb869aa1\nBranch: master\nTime: 2023-08-28T08:21:46+02:00"
           }
         ]
       }
