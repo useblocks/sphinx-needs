@@ -102,7 +102,6 @@ module = [
   'sphinx_needs.directives.need',
   'sphinx_needs.directives.needbar',
   'sphinx_needs.directives.needextend',
-  'sphinx_needs.directives.needfilter',
   'sphinx_needs.directives.needflow',
   'sphinx_needs.directives.needpie',
   'sphinx_needs.directives.needuml',

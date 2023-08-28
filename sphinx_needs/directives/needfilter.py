@@ -5,17 +5,11 @@ from urllib.parse import urlparse
 from docutils import nodes
 from docutils.parsers.rst import directives
 from jinja2 import Template
+from sphinx.application import Sphinx
+from sphinx.errors import NoUri
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
-
-try:
-    from sphinx.errors import NoUri  # Sphinx 3.0
-except ImportError:
-    from sphinx.environment import NoUri  # Sphinx < 3.0
-
-from sphinx.application import Sphinx
-
 from sphinx_needs.diagrams_common import create_legend
 from sphinx_needs.filter_common import FilterBase, process_filters
 from sphinx_needs.utils import add_doc, row_col_maker, unwrap
@@ -35,7 +29,7 @@ class NeedfilterDirective(FilterBase):
 
     @staticmethod
     def layout(argument: str) -> str:
-        return directives.choice(argument, ("list", "table", "diagram"))
+        return directives.choice(argument, ("list", "table", "diagram"))  # type: ignore
 
     option_spec = {
         "show_status": directives.flag,
@@ -83,6 +77,7 @@ def process_needfilters(
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
     needs_config = NeedsSphinxConfig(env.config)
+    all_needs = SphinxNeedsData(env).get_or_create_needs()
 
     # NEEDFILTER
     # for node in doctree.findall(Needfilter):
@@ -100,8 +95,8 @@ def process_needfilters(
 
         id = node.attributes["ids"][0]
         current_needfilter = SphinxNeedsData(env)._get_or_create_filters()[id]
-        all_needs = SphinxNeedsData(env).get_or_create_needs()
 
+        content: List[nodes.Element]
         if current_needfilter["layout"] == "list":
             content = []
 
@@ -156,8 +151,7 @@ def process_needfilters(
             tgroup += tbody
             content += tgroup
 
-        all_needs = list(all_needs.values())
-        found_needs = process_filters(app, all_needs, current_needfilter)
+        found_needs = process_filters(app, all_needs.values(), current_needfilter)
 
         line_block = nodes.line_block()
         for need_info in found_needs:
