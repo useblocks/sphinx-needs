@@ -7,10 +7,10 @@ from sphinx.util.nodes import make_refnode
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.errors import NoUri
-from sphinx_needs.utils import check_and_calc_base_url_rel_path, unwrap
+from sphinx_needs.utils import check_and_calc_base_url_rel_path, logger, unwrap
 
 
-class NeedIncoming(nodes.Inline, nodes.Element):
+class NeedIncoming(nodes.Inline, nodes.Element):  # type: ignore
     pass
 
 
@@ -29,7 +29,7 @@ def process_need_incoming(
 
         # Let's check if NeedIncoming shall follow a specific link type
         if "link_type" in node_need_backref.attributes:
-            links_back = ref_need[node_need_backref.attributes["link_type"]]
+            links_back = ref_need[node_need_backref.attributes["link_type"]]  # type: ignore[literal-required]
         # if not, follow back to default links
         else:
             links_back = ref_need["links_back"]
@@ -64,6 +64,7 @@ def process_need_incoming(
                             node_need_backref["reftarget"],
                         )
                     else:
+                        assert target_need["external_url"] is not None, "External URL must not be set"
                         new_node_ref = nodes.reference(target_need["id"], target_need["id"])
                         new_node_ref["refuri"] = check_and_calc_base_url_rel_path(
                             target_need["external_url"], fromdocname
@@ -81,7 +82,7 @@ def process_need_incoming(
                     pass
 
             else:
-                env.warn_node("need %s not found [needs]" % node_need_backref["reftarget"], node_need_backref)
+                logger.warning(f"need {node_need_backref['reftarget']} not found [needs]", location=node_need_backref)
 
         if len(node_link_container.children) == 0:
             node_link_container += nodes.Text("None")

@@ -171,7 +171,7 @@ class NeedsSphinxConfig:
     extra_links: list[dict[str, Any]] = field(default_factory=list, metadata={"rebuild": "html", "types": ()})
     """List of additional links, which can be used by setting related option
     Values needed for each new link:
-    * name (will also be the option name)
+    * option (will also be the option name)
     * incoming
     * copy_link (copy to common links data. Default: True)
     * color (used for needflow. Default: #000000)

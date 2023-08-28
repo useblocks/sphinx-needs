@@ -71,10 +71,10 @@ class NeedsPartType(TypedDict):
     """Content of the part."""
     document: str
     """docname where the part is defined."""
-    links_back: list[str]
-    """List of need IDs, which are referencing this part."""
     links: list[str]
     """List of need IDs, which are referenced by this part."""
+    links_back: list[str]
+    """List of need IDs, which are referencing this part."""
 
 
 class NeedsInfoType(NeedsBaseDataType):
@@ -149,11 +149,14 @@ class NeedsInfoType(NeedsBaseDataType):
     # link information
     links: list[str]
     """List of need IDs, which are referenced by this need."""
+    links_back: list[str]
+    """List of need IDs, which are referencing this need."""
     # TODO there is a lot more dynamically added link information;
     # for each item in needs_extra_links config,
     # you end up with a key named by the "option" field,
     # and then another key named by the "option" field + "_back"
     # these all have value type `list[str]`
+    # back links are all set in process_need_nodes (-> create_back_links) transform
 
     # constraints information
     # set in process_need_nodes (-> process_constraints) transform

@@ -597,7 +597,7 @@ class LayoutHandler:
         show_empty: bool = False,
     ):
         """
-        ``meta_all()`` excludes by default the output of: ``docname``, ``lineno``, ``target_node``, ``refid``,
+        ``meta_all()`` excludes by default the output of: ``docname``, ``lineno``, ``refid``,
         ``content``, ``collapse``, ``parts``, ``id_parent``,
         ``id_complete``, ``title``, ``full_title``, ``is_part``, ``is_need``,
         ``type_prefix``, ``type_color``, ``type_style``, ``type``, ``type_name``, ``id``,
