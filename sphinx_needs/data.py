@@ -3,7 +3,7 @@ which is stored in the Sphinx environment.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 try:
     from typing import Literal, TypedDict
@@ -161,7 +161,7 @@ class NeedsInfoType(NeedsBaseDataType):
     # set in process_need_nodes (-> process_constraints) transform
     constraints: list[str]
     constraints_passed: None | bool
-    constraints_results: dict[str, dict[str, bool]]
+    constraints_results: dict[str, dict[str, Any]]
 
     # additional source information
     doctype: str

@@ -2,6 +2,7 @@
 Contains debug features to track down
 runtime and other problems with Sphinx-Needs
 """
+from __future__ import annotations
 
 import inspect
 import json
@@ -10,22 +11,22 @@ from datetime import datetime
 from functools import wraps
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, TypeVar
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 from sphinx.application import Sphinx
 
-TIME_MEASUREMENTS: Dict[str, Any] = {}  # Stores the timing results
+TIME_MEASUREMENTS: dict[str, Any] = {}  # Stores the timing results
 EXECUTE_TIME_MEASUREMENTS = False  # Will be used to de/activate measurements. Set during a Sphinx Event
 
 START_TIME = 0.0
 
+T = TypeVar("T", bound=Callable[..., Any])
 
-def measure_time(
-    category: "str | None" = None, source: str = "internal", name: "str | None" = None, func: "object | None" = None
-) -> Callable[..., Callable[..., Any]]:
+
+def measure_time(category: str | None = None, source: str = "internal", name: str | None = None) -> Callable[[T], T]:
     """
-    Measures the needed execution time of a specific function.
+    Decorator for measuring the needed execution time of a specific function.
 
     It measures:
 
@@ -46,23 +47,15 @@ def measure_time(
         def my_cool_function(a, b,c ):
             # does something
 
-    Usage as function::
-
-        from sphinx_needs.utils import measure_time
-
-        # Old call: my_cool_function(a,b,c)
-        new_func = measure_time('my_category', func=my_cool_function)
-        new_func(a,b,c)
-
     :param category: Name of a category, which helps to cluster the measured functions.
     :param source: Should be "internal" or "user". Used to easily structure function written by user.
     :param name: Name to use for the measured. If not given, the function name is used.
     :param func: Can contain a func, which shall get decorated. Not used if ``measure_time`` is used as decorator.
     """
 
-    def inner(func: Any) -> Callable[..., Any]:
+    def inner(func: T) -> T:
         @wraps(func)
-        def wrapper(*args: List[object], **kwargs: Dict[object, object]) -> Any:
+        def wrapper(*args: list[object], **kwargs: dict[object, object]) -> Any:
             """
             Wrapper function around a given/decorated function, which cares about measurement and storing the result
 
@@ -121,13 +114,23 @@ def measure_time(
             runtime_dict["avg"] = runtime_dict["overall"] / runtime_dict["amount"]
             return result
 
-        return wrapper
-
-    # if `measure_time` is used as function and not as decorator, execute the `inner()` with given func directly
-    if func is not None:
-        return inner(func)
+        return wrapper  # type: ignore
 
     return inner
+
+
+def measure_time_func(func: T, category: str | None = None, source: str = "internal", name: str | None = None) -> T:
+    """Wrapper for measuring the needed execution time of a specific function.
+
+    Usage as function::
+
+        from sphinx_needs.utils import measure_time
+
+        # Old call: my_cool_function(a,b,c)
+        new_func = measure_time_func('my_category', func=my_cool_function)
+        new_func(a,b,c)
+    """
+    return measure_time(category, source, name)(func)
 
 
 def print_timing_results() -> None:
@@ -140,7 +143,7 @@ def print_timing_results() -> None:
         print(f' min:     {value["min"]:2f} \n')
 
 
-def store_timing_results_json(outdir: str, build_data: Dict[str, Any]) -> None:
+def store_timing_results_json(outdir: str, build_data: dict[str, Any]) -> None:
     json_result_path = os.path.join(outdir, "debug_measurement.json")
 
     data = {"build": build_data, "measurements": TIME_MEASUREMENTS}
@@ -150,7 +153,7 @@ def store_timing_results_json(outdir: str, build_data: Dict[str, Any]) -> None:
     print(f"Timing measurement results (JSON) stored under {json_result_path}")
 
 
-def store_timing_results_html(outdir: str, build_data: Dict[str, Any]) -> None:
+def store_timing_results_html(outdir: str, build_data: dict[str, Any]) -> None:
     jinja_env = Environment(loader=PackageLoader("sphinx_needs"), autoescape=select_autoescape())
     template = jinja_env.get_template("time_measurements.html")
     out_file = Path(outdir) / "debug_measurement.html"
@@ -159,7 +162,7 @@ def store_timing_results_html(outdir: str, build_data: Dict[str, Any]) -> None:
     print(f"Timing measurement report (HTML) stored under {out_file}")
 
 
-def process_timing(app: Sphinx, _exception: Optional[Exception]) -> None:
+def process_timing(app: Sphinx, _exception: Exception | None) -> None:
     if EXECUTE_TIME_MEASUREMENTS:
         build_data = {
             "project": app.config["project"],

@@ -2,11 +2,12 @@
 filter_base is used to provide common filter functionality for directives
 like needtable, needlist and needflow.
 """
+from __future__ import annotations
 
 import copy
 import re
 from types import CodeType
-from typing import Any, Dict, Iterable, List, Optional, TypeVar
+from typing import Any, Iterable, TypeVar
 
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
@@ -20,7 +21,7 @@ from sphinx_needs.data import (
     NeedsPartsInfoType,
     SphinxNeedsData,
 )
-from sphinx_needs.debug import measure_time
+from sphinx_needs.debug import measure_time, measure_time_func
 from sphinx_needs.utils import check_and_get_external_filter_func
 from sphinx_needs.utils import logger as log
 
@@ -32,12 +33,12 @@ except ImportError:
 
 
 class FilterAttributesType(TypedDict):
-    status: List[str]
-    tags: List[str]
-    types: List[str]
+    status: list[str]
+    tags: list[str]
+    types: list[str]
     filter: str
     sort_by: str
-    filter_code: List[str]
+    filter_code: list[str]
     filter_func: str
     export_id: str
 
@@ -90,7 +91,7 @@ class FilterBase(SphinxDirective):
 
 def process_filters(
     app: Sphinx, all_needs: Iterable[NeedsInfoType], filter_data: NeedsFilteredBaseType, include_external: bool = True
-) -> List[NeedsPartsInfoType]:
+) -> list[NeedsPartsInfoType]:
     """
     Filters all needs with given configuration.
     Used by needlist, needtable and needflow.
@@ -102,7 +103,7 @@ def process_filters(
 
     :return: list of needs, which passed the filters
     """
-    found_needs: List[NeedsPartsInfoType]
+    found_needs: list[NeedsPartsInfoType]
     sort_key = filter_data["sort_by"]
     if sort_key:
         try:
@@ -120,7 +121,7 @@ def process_filters(
     else:
         checked_all_needs = all_needs
 
-    found_needs_by_options: List[NeedsPartsInfoType] = []
+    found_needs_by_options: list[NeedsPartsInfoType] = []
 
     # Add all need_parts of given needs to the search list
     all_needs_incl_parts = prepare_need_list(checked_all_needs)
@@ -181,14 +182,14 @@ def process_filters(
                 context[f"arg{index+1}"] = arg
 
             # Decorate function to allow time measurments
-            filter_func = measure_time(category="filter_func", source="user", func=filter_func)
+            filter_func = measure_time_func(filter_func, category="filter_func", source="user")
             filter_func(**context)
         else:
             log.warning("Something went wrong running filter [needs]", type="needs")
             return []
 
         # The filter results may be dirty, as it may continue manipulated needs.
-        found_dirty_needs: List[NeedsPartsInfoType] = context["results"]  # type: ignore
+        found_dirty_needs: list[NeedsPartsInfoType] = context["results"]  # type: ignore
         found_needs = []
 
         # Check if config allow unsafe filters
@@ -220,9 +221,9 @@ def process_filters(
     return found_needs
 
 
-def prepare_need_list(need_list: Iterable[NeedsInfoType]) -> List[NeedsPartsInfoType]:
+def prepare_need_list(need_list: Iterable[NeedsInfoType]) -> list[NeedsPartsInfoType]:
     # all_needs_incl_parts = need_list.copy()
-    all_needs_incl_parts: List[NeedsPartsInfoType]
+    all_needs_incl_parts: list[NeedsPartsInfoType]
     try:
         all_needs_incl_parts = need_list[:]  # type: ignore
     except TypeError:
@@ -249,14 +250,20 @@ def prepare_need_list(need_list: Iterable[NeedsInfoType]) -> List[NeedsPartsInfo
 T = TypeVar("T")
 
 
-def intersection_of_need_results(list_a: List[T], list_b: List[T]) -> List[T]:
+def intersection_of_need_results(list_a: list[T], list_b: list[T]) -> list[T]:
     return [a for a in list_a if a in list_b]
+
+
+V = TypeVar("V", bound=NeedsInfoType)
 
 
 @measure_time("filtering")
 def filter_needs(
-    app: Sphinx, needs: List[NeedsInfoType], filter_string: str = "", current_need: Optional[NeedsInfoType] = None
-) -> List[NeedsInfoType]:
+    app: Sphinx,
+    needs: Iterable[V],
+    filter_string: None | str = "",
+    current_need: NeedsInfoType | None = None,
+) -> list[V]:
     """
     Filters given needs based on a given filter string.
     Returns all needs, which pass the given filter.
@@ -270,7 +277,7 @@ def filter_needs(
     """
 
     if not filter_string:
-        return needs
+        return list(needs)
 
     found_needs = []
 
@@ -297,9 +304,9 @@ def filter_single_need(
     app: Sphinx,
     need: NeedsInfoType,
     filter_string: str = "",
-    needs: Optional[List[NeedsInfoType]] = None,
-    current_need: Optional[NeedsInfoType] = None,
-    filter_compiled: Optional[CodeType] = None,
+    needs: Iterable[NeedsInfoType] | None = None,
+    current_need: NeedsInfoType | None = None,
+    filter_compiled: CodeType | None = None,
 ) -> bool:
     """
     Checks if a single need/need_part passes a filter_string
@@ -312,7 +319,7 @@ def filter_single_need(
     :param needs: list of all needs
     :return: True, if need passes the filter_string, else False
     """
-    filter_context: Dict[str, Any] = need.copy()  # type: ignore
+    filter_context: dict[str, Any] = need.copy()  # type: ignore
     if needs:
         filter_context["needs"] = needs
     if current_need:

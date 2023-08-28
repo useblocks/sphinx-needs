@@ -17,7 +17,7 @@ from sphinx.errors import SphinxError
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
-from sphinx_needs.debug import measure_time
+from sphinx_needs.debug import measure_time_func
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import NEEDS_FUNCTIONS, match_variants  # noqa: F401
 
@@ -67,10 +67,10 @@ def execute_func(env: BuildEnvironment, need, func_string: str):
     global NEEDS_FUNCTIONS
     func_name, func_args, func_kwargs = _analyze_func_string(func_string, need)
 
-    if func_name not in NEEDS_FUNCTIONS.keys():
+    if func_name not in NEEDS_FUNCTIONS:
         raise SphinxError("Unknown dynamic sphinx-needs function: {}. Found in need: {}".format(func_name, need["id"]))
 
-    func = measure_time(category="dyn_func", source="user", func=NEEDS_FUNCTIONS[func_name]["function"])
+    func = measure_time_func(NEEDS_FUNCTIONS[func_name]["function"], category="dyn_func", source="user")
     func_return = func(env.app, need, SphinxNeedsData(env).get_or_create_needs(), *func_args, **func_kwargs)
 
     if not isinstance(func_return, (str, int, float, list, unicode)) and func_return:
