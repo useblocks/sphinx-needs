@@ -6,7 +6,7 @@ diagram related directive. E.g. needflow and needsequence.
 import html
 import os
 import textwrap
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
 from docutils import nodes
@@ -15,11 +15,32 @@ from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import NeedsFilteredBaseType
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import get_scale, split_link_types, unwrap
 
+try:
+    from typing import TypedDict
+except ImportError:
+    # introduced in python 3.8
+    from typing_extensions import TypedDict
+
 logger = get_logger(__name__)
+
+
+class DiagramAttributesType(TypedDict):
+    show_legend: bool
+    show_filters: bool
+    show_link_names: bool
+    link_types: List[str]
+    config: str
+    config_names: str
+    scale: str
+    highlight: str
+    align: Optional[str]
+    debug: bool
+    caption: Optional[str]
 
 
 class DiagramBase(SphinxDirective):
@@ -44,7 +65,7 @@ class DiagramBase(SphinxDirective):
 
         return id, targetid, targetnode
 
-    def collect_diagram_attributes(self) -> Dict[str, Any]:
+    def collect_diagram_attributes(self) -> DiagramAttributesType:
         location = (self.env.docname, self.lineno)
         link_types = split_link_types(self.options.get("link_types", "links"), location)
 
@@ -58,7 +79,7 @@ class DiagramBase(SphinxDirective):
                 if config_name and config_name in needs_config.flow_configs:
                     configs.append(needs_config.flow_configs[config_name])
 
-        collected_diagram_options = {
+        collected_diagram_options: DiagramAttributesType = {
             "show_legend": "show_legend" in self.options,
             "show_filters": "show_filters" in self.options,
             "show_link_names": "show_link_names" in self.options,
@@ -104,7 +125,7 @@ def add_config(config: str) -> str:
     return uml
 
 
-def get_filter_para(node_element: nodes.Element) -> nodes.paragraph:
+def get_filter_para(node_element: NeedsFilteredBaseType) -> nodes.paragraph:
     """Return paragraph containing the used filter description"""
     para = nodes.paragraph()
     filter_text = "Used filter:"

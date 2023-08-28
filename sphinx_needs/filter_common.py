@@ -19,6 +19,23 @@ from sphinx_needs.debug import measure_time
 from sphinx_needs.utils import check_and_get_external_filter_func
 from sphinx_needs.utils import logger as log
 
+try:
+    from typing import TypedDict
+except ImportError:
+    # introduced in python 3.8
+    from typing_extensions import TypedDict
+
+
+class FilterAttributesType(TypedDict):
+    status: List[str]
+    tags: List[str]
+    types: List[str]
+    filter: str
+    sort_by: str
+    filter_code: List[str]
+    filter_func: str
+    export_id: str
+
 
 class FilterBase(SphinxDirective):
     has_content = True
@@ -33,7 +50,7 @@ class FilterBase(SphinxDirective):
         "export_id": directives.unchanged,
     }
 
-    def collect_filter_attributes(self) -> Dict[str, Any]:
+    def collect_filter_attributes(self) -> FilterAttributesType:
         tags = str(self.options.get("tags", ""))
         if tags:
             tags = [tag.strip() for tag in re.split(";|,", tags) if len(tag) > 0]

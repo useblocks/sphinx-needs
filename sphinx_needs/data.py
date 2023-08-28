@@ -246,13 +246,12 @@ class NeedsExtendType(NeedsBaseDataType):
 class NeedsFilteredBaseType(NeedsBaseDataType):
     """A base type for all filtered data."""
 
-    # Filter attributes
     status: list[str]
     tags: list[str]
     types: list[str]
     filter: None | str
     sort_by: None | str
-    filter_code: str
+    filter_code: list[str]
     filter_func: None | str
     export_id: str
 
