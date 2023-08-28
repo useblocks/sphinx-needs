@@ -113,7 +113,6 @@ module = [
   'sphinx_needs.functions.common',
   'sphinx_needs.functions.functions',
   'sphinx_needs.layout',
-  'sphinx_needs.needsfile',
   'sphinx_needs.roles.need_ref',
   'sphinx_needs.services.github',
   'sphinx_needs.utils',
