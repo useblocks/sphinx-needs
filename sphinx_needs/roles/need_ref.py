@@ -1,26 +1,25 @@
 import contextlib
 from collections.abc import Iterable
-from typing import Dict, List
+from typing import Dict, List, Union
 
 from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.util.nodes import make_refnode
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
-from sphinx_needs.nodes import Need
 from sphinx_needs.utils import check_and_calc_base_url_rel_path, unwrap
 
 log = get_logger(__name__)
 
 
-class NeedRef(nodes.Inline, nodes.Element):
+class NeedRef(nodes.Inline, nodes.Element):  # type: ignore
     pass
 
 
-def transform_need_to_dict(need: Need) -> Dict[str, str]:
+def transform_need_to_dict(need: NeedsInfoType) -> Dict[str, str]:
     """
     The function will transform a need in a dictionary of strings. Used to
     be given e.g. to a python format string.
@@ -37,18 +36,16 @@ def transform_need_to_dict(need: Need) -> Dict[str, str]:
     """
     dict_need = {}
 
-    for element in need:
-        if isinstance(need[element], str):
+    for element, value in need.items():
+        if isinstance(value, str):
             # As string are iterable, we have to handle strings first.
-            dict_need[element] = need[element]
-        elif isinstance(need[element], list):
-            dict_need[element] = ";".join(need[element])
-        elif isinstance(need[element], dict):
-            dict_need[element] = ";".join([str(i) for i in need[element].items()])
-        elif isinstance(need[element], Iterable):
-            dict_need[element] = ";".join([str(i) for i in need[element]])
+            dict_need[element] = value
+        elif isinstance(value, dict):
+            dict_need[element] = ";".join([str(i) for i in value.items()])
+        elif isinstance(value, (Iterable, list, tuple)):
+            dict_need[element] = ";".join([str(i) for i in value])
         else:
-            dict_need[element] = need[element]
+            dict_need[element] = str(value)
 
     return dict_need
 
@@ -101,7 +98,7 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                 title = f"{title[: max_length - 3]}..."
                 dict_need["title"] = title
 
-            ref_name = node_need_ref.children[0].children[0]
+            ref_name: Union[None, str, nodes.Text] = node_need_ref.children[0].children[0]  # type: ignore[assignment]
             # Only use ref_name, if it differs from ref_id
             if str(ref_id_complete) == str(ref_name):
                 ref_name = None
@@ -112,13 +109,11 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                 try:
                     link_text = ref_name.format(**dict_need)
                 except KeyError as e:
-                    link_text = '"option placeholder %s for need %s not found (Line %i of file %s)"' % (
-                        e,
-                        node_need_ref["reftarget"],
-                        node_need_ref.line,
-                        node_need_ref.source,
+                    log.warning(
+                        f"option placeholder {e} for need {node_need_ref['reftarget']} not found [needs]",
+                        type="needs",
+                        location=node_need_ref,
                     )
-                    log.warning(link_text + " [needs]", type="needs")
             else:
                 if ref_name:
                     # If ref_name differs from the need id, we treat the "ref_name content" as title.
@@ -131,7 +126,7 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                     )
                     log.warning(link_text + " [needs]", type="needs")
 
-            node_need_ref[0].children[0] = nodes.Text(link_text)
+            node_need_ref[0].children[0] = nodes.Text(link_text)  # type: ignore[index]
 
             with contextlib.suppress(NoUri):
                 if not target_need.get("is_external", False):
@@ -144,15 +139,16 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                         node_need_ref["reftarget"],
                     )
                 else:
+                    assert target_need["external_url"] is not None, "external_url must be set for external needs"
                     new_node_ref = nodes.reference(target_need["id"], target_need["id"])
                     new_node_ref["refuri"] = check_and_calc_base_url_rel_path(target_need["external_url"], fromdocname)
                     new_node_ref["classes"].append(target_need["external_css"])
 
         else:
             log.warning(
-                "linked need %s not found (Line %i of file %s) [needs]"
-                % (node_need_ref["reftarget"], node_need_ref.line, node_need_ref.source),
+                f"linked need {node_need_ref['reftarget']} not found [needs]",
                 type="needs",
+                location=node_need_ref,
             )
 
         node_need_ref.replace_self(new_node_ref)

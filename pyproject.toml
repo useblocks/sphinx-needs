@@ -106,7 +106,6 @@ module = [
   'sphinx_needs.directives.needuml',
   'sphinx_needs.functions.functions',
   'sphinx_needs.layout',
-  'sphinx_needs.roles.need_ref',
   'sphinx_needs.utils',
 ]
 ignore_errors = true
