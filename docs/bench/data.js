@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1693220458385,
+  "lastUpdate": 1693300689341,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -4356,6 +4356,42 @@ window.BENCHMARK_DATA = {
             "value": 71.60718991899995,
             "unit": "s",
             "extra": "Commit: 9eb5143518a315dd8282560073fac5dce3b3b7bb\nBranch: master\nTime: 2023-08-28T12:53:58+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "00e6afbdbe4e2494094fcf10833b3ecc5cc379ad",
+          "message": "🔀🔧 MERGE: Add strict typing for most sphinx_needs modules (#1002)\n\nThis PR adds strict typing to most of the package, building on #987 and #998 to try to confine use of dynamic types to a small surface area.\r\nThis hopefully makes it easier for developers to navigate the code base, and lessens the potential for bugs arising from type mismatches.\r\n\r\n---\r\n\r\nThere are still some open questions, particularly around `NeedsInfoType`, which\r\n\r\n1. has some dynamic fields (such as user defined links/options) and,\r\n2. has some fields which are only set after post-transforms (such `process_need_nodes`)",
+          "timestamp": "2023-08-29T11:08:26+02:00",
+          "tree_id": "fe78faf031313c5654d248afb4811437f1f2d2f3",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/00e6afbdbe4e2494094fcf10833b3ecc5cc379ad"
+        },
+        "date": 1693300683301,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.3475135600000385,
+            "unit": "s",
+            "extra": "Commit: 00e6afbdbe4e2494094fcf10833b3ecc5cc379ad\nBranch: master\nTime: 2023-08-29T11:08:26+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 102.01361660700002,
+            "unit": "s",
+            "extra": "Commit: 00e6afbdbe4e2494094fcf10833b3ecc5cc379ad\nBranch: master\nTime: 2023-08-29T11:08:26+02:00"
           }
         ]
       }
