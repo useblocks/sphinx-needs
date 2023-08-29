@@ -1,6 +1,6 @@
 import html
 import os
-from typing import List, Sequence
+from typing import Dict, Iterable, List, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -11,7 +11,12 @@ from sphinxcontrib.plantuml import (
 )
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.data import (
+    NeedsFlowType,
+    NeedsInfoType,
+    NeedsPartsInfoType,
+    SphinxNeedsData,
+)
 from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link, create_legend
 from sphinx_needs.filter_common import FilterBase, filter_single_need, process_filters
@@ -21,7 +26,7 @@ from sphinx_needs.utils import add_doc, get_scale, split_link_types, unwrap
 logger = get_logger(__name__)
 
 
-NEEDFLOW_TEMPLATES = {}
+NEEDFLOW_TEMPLATES: Dict[str, Template] = {}
 
 
 class Needflow(nodes.General, nodes.Element):
@@ -106,7 +111,11 @@ def make_entity_name(name: str) -> str:
 
 
 def get_need_node_rep_for_plantuml(
-    app: Sphinx, fromdocname: str, current_needflow: dict, all_needs: list, need_info: dict
+    app: Sphinx,
+    fromdocname: str,
+    current_needflow: NeedsFlowType,
+    all_needs: Iterable[NeedsInfoType],
+    need_info: NeedsPartsInfoType,
 ) -> str:
     """Calculate need node representation for plantuml."""
     needs_config = NeedsSphinxConfig(app.config)
@@ -144,11 +153,11 @@ def get_need_node_rep_for_plantuml(
 def walk_curr_need_tree(
     app: Sphinx,
     fromdocname: str,
-    current_needflow: dict,
-    all_needs: list,
-    found_needs: list,
-    need: dict,
-):
+    current_needflow: NeedsFlowType,
+    all_needs: Iterable[NeedsInfoType],
+    found_needs: List[NeedsPartsInfoType],
+    need: NeedsPartsInfoType,
+) -> str:
     """
     Walk through each need to find all its child needs and need parts recursively and wrap them together in nested structure.
     """
@@ -213,7 +222,7 @@ def walk_curr_need_tree(
     return curr_need_tree
 
 
-def get_root_needs(found_needs: list) -> list:
+def get_root_needs(found_needs: List[NeedsPartsInfoType]) -> List[NeedsPartsInfoType]:
     return_list = []
     for current_need in found_needs:
         if current_need["is_need"]:
@@ -231,7 +240,13 @@ def get_root_needs(found_needs: list) -> list:
     return return_list
 
 
-def cal_needs_node(app: Sphinx, fromdocname: str, current_needflow: dict, all_needs: list, found_needs: list) -> str:
+def cal_needs_node(
+    app: Sphinx,
+    fromdocname: str,
+    current_needflow: NeedsFlowType,
+    all_needs: Iterable[NeedsInfoType],
+    found_needs: List[NeedsPartsInfoType],
+) -> str:
     """Calculate and get needs node representaion for plantuml including all child needs and need parts."""
     top_needs = get_root_needs(found_needs)
     curr_need_tree = ""
@@ -259,8 +274,10 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
     env = unwrap(app.env)
     needs_config = NeedsSphinxConfig(app.config)
     env_data = SphinxNeedsData(env)
+    all_needs = env_data.get_or_create_needs()
 
     link_types = needs_config.extra_links
+    link_type_names = [link["option"].upper() for link in link_types]
     allowed_link_types_options = [link.upper() for link in needs_config.flow_link_types]
 
     # NEEDFLOW
@@ -279,14 +296,13 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
 
         id = node.attributes["ids"][0]
         current_needflow = env_data.get_or_create_flows()[id]
-        all_needs = env_data.get_or_create_needs()
 
         option_link_types = [link.upper() for link in current_needflow["link_types"]]
         for lt in option_link_types:
-            if lt not in [link["option"].upper() for link in link_types]:
+            if lt not in link_type_names:
                 logger.warning(
                     "Unknown link type {link_type} in needflow {flow}. Allowed values: {link_types} [needs]".format(
-                        link_type=lt, flow=current_needflow["target_id"], link_types=",".join(link_types)
+                        link_type=lt, flow=current_needflow["target_id"], link_types=",".join(link_type_names)
                     ),
                     type="needs",
                 )
@@ -305,8 +321,7 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
             node.replace_self(content)
             continue
 
-        all_needs = list(all_needs.values())
-        found_needs = process_filters(app, all_needs, current_needflow)
+        found_needs = process_filters(app, all_needs.values(), current_needflow)
 
         if found_needs:
             plantuml_block_text = ".. plantuml::\n" "\n" "   @startuml" "   @enduml"
@@ -344,7 +359,7 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                     if link_type["option"] == "parent_needs":
                         continue
 
-                    for link in need_info[link_type["option"]]:
+                    for link in need_info[link_type["option"]]:  # type: ignore[literal-required]
                         # If source or target of link is a need_part, a specific style is needed
                         if "." in link or "." in need_info["id_complete"]:
                             final_link = link
@@ -396,7 +411,7 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                         )
 
             # calculate needs node representation for plantuml
-            puml_node["uml"] += cal_needs_node(app, fromdocname, current_needflow, all_needs, found_needs)
+            puml_node["uml"] += cal_needs_node(app, fromdocname, current_needflow, all_needs.values(), found_needs)
 
             puml_node["uml"] += "\n' Connection definition \n\n"
             puml_node["uml"] += puml_connections
@@ -489,10 +504,10 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
         node.replace_self(content)
 
 
-def get_template(template_name):
+def get_template(template_name: str) -> Template:
     """Checks if a template got already rendered, if it's the case, return it"""
 
-    if template_name not in NEEDFLOW_TEMPLATES.keys():
+    if template_name not in NEEDFLOW_TEMPLATES:
         NEEDFLOW_TEMPLATES[template_name] = Template(template_name)
 
     return NEEDFLOW_TEMPLATES[template_name]

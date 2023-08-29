@@ -1,16 +1,15 @@
-from typing import Any, Dict
-
 from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsConstraintFailed, NeedsConstraintNotAllowed
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import NeedsInfoType
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-def process_constraints(app: Sphinx, need: Dict[str, Any]) -> None:
+def process_constraints(app: Sphinx, need: NeedsInfoType) -> None:
     """
     Finally creates the need-node in the docurils node-tree.
 
@@ -47,14 +46,14 @@ def process_constraints(app: Sphinx, need: Dict[str, Any]) -> None:
 
                     if not constraint_passed:
                         # prepare structure per name
-                        if constraint not in need["constraints_results"].keys():
+                        if constraint not in need["constraints_results"]:
                             need["constraints_results"][constraint] = {}
 
                         # defines what to do if a constraint is not fulfilled. from conf.py
                         constraint_failed_options = needs_config.constraint_failed_options
 
                         # prepare structure for check_0, check_1 ...
-                        if name not in need["constraints_results"][constraint].keys():
+                        if name not in need["constraints_results"][constraint]:
                             need["constraints_results"][constraint][name] = {}
 
                         need["constraints_results"][constraint][name] = False

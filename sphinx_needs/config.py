@@ -145,7 +145,7 @@ class NeedsSphinxConfig:
         default=DEFAULT_DIAGRAM_TEMPLATE,
         metadata={"rebuild": "html", "types": (str,)},
     )
-    functions: list[Any] = field(default_factory=list, metadata={"rebuild": "html", "types": (list,)})
+    functions: list[Callable[..., Any]] = field(default_factory=list, metadata={"rebuild": "html", "types": (list,)})
     global_options: dict[str, Any] = field(default_factory=dict, metadata={"rebuild": "html", "types": (dict,)})
     duration_option: str = field(default="duration", metadata={"rebuild": "html", "types": (str,)})
     completion_option: str = field(default="completion", metadata={"rebuild": "html", "types": (str,)})
@@ -171,7 +171,7 @@ class NeedsSphinxConfig:
     extra_links: list[dict[str, Any]] = field(default_factory=list, metadata={"rebuild": "html", "types": ()})
     """List of additional links, which can be used by setting related option
     Values needed for each new link:
-    * name (will also be the option name)
+    * option (will also be the option name)
     * incoming
     * copy_link (copy to common links data. Default: True)
     * color (used for needflow. Default: #000000)

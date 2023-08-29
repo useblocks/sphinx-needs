@@ -1,4 +1,5 @@
 import os
+import re
 from datetime import datetime
 from typing import List, Sequence
 
@@ -19,7 +20,7 @@ from sphinx_needs.diagrams_common import (
     get_filter_para,
     no_plantuml,
 )
-from sphinx_needs.directives.utils import get_link_type_option
+from sphinx_needs.directives.utils import SphinxNeedsLinkTypeException
 from sphinx_needs.filter_common import FilterBase, filter_single_need, process_filters
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import MONTH_NAMES, add_doc
@@ -60,9 +61,9 @@ class NeedganttDirective(FilterBase, DiagramBase):
 
         _id, targetid, targetnode = self.create_target("needgantt")
 
-        starts_with_links = get_link_type_option("starts_with_links", env, self, "")
-        starts_after_links = get_link_type_option("starts_after_links", env, self, "links")
-        ends_with_links = get_link_type_option("ends_with_links", env, self)
+        starts_with_links = self.get_link_type_option("starts_with_links")
+        starts_after_links = self.get_link_type_option("starts_after_links", "links")
+        ends_with_links = self.get_link_type_option("ends_with_links")
 
         milestone_filter = self.options.get("milestone_filter")
         start_date = self.options.get("start_date")
@@ -113,6 +114,23 @@ class NeedganttDirective(FilterBase, DiagramBase):
         add_doc(env, env.docname)
 
         return [targetnode] + [Needgantt("")]
+
+    def get_link_type_option(self, name: str, default: str = "") -> List[str]:
+        link_types = [x.strip() for x in re.split(";|,", self.options.get(name, default))]
+        conf_link_types = NeedsSphinxConfig(self.env.config).extra_links
+        conf_link_types_name = [x["option"] for x in conf_link_types]
+
+        final_link_types = []
+        for link_type in link_types:
+            if link_type is None or link_type == "":
+                continue
+            if link_type not in conf_link_types_name:
+                raise SphinxNeedsLinkTypeException(
+                    link_type + "does not exist in configuration option needs_extra_links"
+                )
+
+            final_link_types.append(link_type)
+        return final_link_types
 
 
 def process_needgantt(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
@@ -204,9 +222,9 @@ def process_needgantt(app: Sphinx, doctree: nodes.document, fromdocname: str, fo
                 gantt_element = "[{}] as [{}] lasts 0 days\n".format(need["title"], need["id"])
             else:  # Normal gantt element handling
                 duration_option = current_needgantt["duration_option"]
-                duration = need[duration_option]
+                duration = need[duration_option]  # type: ignore[literal-required]
                 complete_option = current_needgantt["completion_option"]
-                complete = need[complete_option]
+                complete = need[complete_option]  # type: ignore[literal-required]
                 if not (duration and duration.isdigit()):
                     logger.warning(
                         "Duration not set or invalid for needgantt chart. "
@@ -244,8 +262,7 @@ def process_needgantt(app: Sphinx, doctree: nodes.document, fromdocname: str, fo
                 is_milestone = filter_single_need(app, need, current_needgantt["milestone_filter"])
             else:
                 is_milestone = False
-            constrain_types = ["starts_with_links", "starts_after_links", "ends_with_links"]
-            for con_type in constrain_types:
+            for con_type in ("starts_with_links", "starts_after_links", "ends_with_links"):
                 if is_milestone:
                     keyword = "happens"
                 elif con_type in ["starts_with_links", "starts_after_links"]:
@@ -258,8 +275,8 @@ def process_needgantt(app: Sphinx, doctree: nodes.document, fromdocname: str, fo
                 else:
                     start_end_sync = "start"
 
-                for link_type in current_needgantt[con_type]:
-                    start_with_links = need[link_type]
+                for link_type in current_needgantt[con_type]:  # type: ignore[literal-required]
+                    start_with_links = need[link_type]  # type: ignore[literal-required]
                     for start_with_link in start_with_links:
                         start_need = all_needs_dict[start_with_link]
                         gantt_constraint = "[{}] {} at [{}]'s " "{}\n".format(

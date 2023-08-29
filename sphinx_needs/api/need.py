@@ -309,7 +309,6 @@ def add_need(
         "docname": docname,
         "doctype": doctype,
         "lineno": lineno,
-        # "target_node": target_node,
         "target_id": need_id,
         "external_url": external_url,
         "content_node": None,  # gets set after rst parsing

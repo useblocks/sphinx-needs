@@ -35,6 +35,7 @@ repos:
       additional_dependencies:
       - sphinx==6
       - types-docutils
+      - types-jsonschema
       - types-requests
 
   - repo: https://github.com/python-poetry/poetry

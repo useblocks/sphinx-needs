@@ -43,7 +43,7 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
     if hasattr(env, "needs_warnings_executed") and env.needs_warnings_executed:
         return
 
-    env.needs_warnings_executed = True
+    env.needs_warnings_executed = True  # type: ignore[attr-defined]
 
     needs = SphinxNeedsData(env).get_or_create_needs()
 

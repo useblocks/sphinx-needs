@@ -100,7 +100,7 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
             if need_filter in all_needs:
                 need_filter = f'id == "{need_filter}"'
             # If it looks like a need id, but we haven't found one, raise an exception
-            elif re.fullmatch(needs_config.id_regex, need_filter):
+            elif need_filter is not None and re.fullmatch(needs_config.id_regex, need_filter):
                 error = f"Provided id {need_filter} for needextend does not exist."
                 if current_needextend["strict"]:
                     raise NeedsInvalidFilter(error)
@@ -190,7 +190,7 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
         removed_needextend_node(node)
 
 
-def removed_needextend_node(node) -> None:
+def removed_needextend_node(node: Needextend) -> None:
     """
     # Remove needextend from docutils node-tree, so that no output gets generated for it.
     # Ok, this is really dirty.

@@ -32,7 +32,7 @@ def process_need_outgoing(
 
         # Let's check if NeedIncoming shall follow a specific link type
         if "link_type" in node_need_ref.attributes:
-            links = ref_need[node_need_ref.attributes["link_type"]]
+            links = ref_need[node_need_ref.attributes["link_type"]]  # type: ignore[literal-required]
             link_type = node_need_ref.attributes["link_type"]
         # if not, follow back to default links
         else:
@@ -86,6 +86,7 @@ def process_need_outgoing(
                             node_need_ref["reftarget"],
                         )
                     else:
+                        assert target_need["external_url"] is not None, "External URL must be set"
                         new_node_ref = nodes.reference(target_need["id"], target_need["id"])
                         new_node_ref["refuri"] = check_and_calc_base_url_rel_path(
                             target_need["external_url"], fromdocname

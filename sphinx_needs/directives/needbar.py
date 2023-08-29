@@ -279,14 +279,14 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
         # 6. calculate index according to configuration and content size
         index = []
         for row in range(len(local_data_number)):
-            line = []
+            _line = []
             for column in range(len(local_data_number[0])):
                 if current_needbar["stacked"]:
-                    line.append(column)
+                    _line.append(column)
                 else:
                     value = row + column * len(local_data_number) + column
-                    line.append(value)
-            index.append(line)
+                    _line.append(value)
+            index.append(_line)
 
         # 7. styling and coloring
         style_previous_to_script_execution = matplotlib.rcParams
