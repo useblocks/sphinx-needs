@@ -257,7 +257,7 @@ def resolve_variants_options(env: BuildEnvironment):
         needs = data.get_or_create_needs()
         for need in needs.values():
             # Data to use as filter context.
-            need_context: Dict = {**need}
+            need_context: Dict[str, Any] = {**need}
             need_context.update(**needs_config.filter_data)  # Add needs_filter_data to filter context
             _sphinx_tags = env.app.builder.tags.tags  # Get sphinx tags
             need_context.update(**_sphinx_tags)  # Add sphinx tags to filter context
