@@ -98,7 +98,6 @@ class NeedsList:
         self.needs_list["created"] = datetime.now().isoformat()
         self.needs_list["current_version"] = self.current_version
         self.needs_list["project"] = self.project
-        print(f"tye:{type(needs_path)}")
         if needs_path:
             needs_dir = needs_path
         else:
