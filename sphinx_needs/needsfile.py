@@ -93,11 +93,12 @@ class NeedsList:
         if version in self.needs_list["versions"]:
             del self.needs_list["versions"][version]
 
-    def write_json(self, needs_file: str = "needs.json", needs_path=None) -> None:
+    def write_json(self, needs_file: str = "needs.json", needs_path: str = "") -> None:
         # We need to rewrite some data, because this kind of data gets overwritten during needs.json import.
         self.needs_list["created"] = datetime.now().isoformat()
         self.needs_list["current_version"] = self.current_version
         self.needs_list["project"] = self.project
+        print(f"tye:{type(needs_path)}")
         if needs_path:
             needs_dir = needs_path
         else:
