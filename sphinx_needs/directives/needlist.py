@@ -34,7 +34,7 @@ class NeedlistDirective(FilterBase):
     }
 
     # Update the options_spec with values defined in the FilterBase class
-    option_spec.update(FilterBase.base_option_spec)  # type: ignore[arg-type]
+    option_spec.update(FilterBase.base_option_spec)
 
     def run(self) -> Sequence[nodes.Node]:
         env = self.env
@@ -83,9 +83,8 @@ def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
 
         id = node.attributes["ids"][0]
         current_needfilter = SphinxNeedsData(env).get_or_create_lists()[id]
-        all_needs = SphinxNeedsData(env).get_or_create_needs()
         content: List[nodes.Node] = []
-        all_needs = list(all_needs.values())
+        all_needs = list(SphinxNeedsData(env).get_or_create_needs().values())
         found_needs = process_filters(app, all_needs, current_needfilter)
 
         line_block = nodes.line_block()
@@ -108,6 +107,7 @@ def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
             if need_info["hide"]:
                 para += title
             elif need_info["is_external"]:
+                assert need_info["external_url"] is not None, "External need without URL"
                 ref = nodes.reference("", "")
 
                 ref["refuri"] = check_and_calc_base_url_rel_path(need_info["external_url"], fromdocname)
@@ -116,12 +116,7 @@ def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                 ref.append(title)
                 para += ref
             else:
-                # target_node should not be stored, but it may be still the case
-                if "target_node" in need_info:
-                    target_id = need_info["target_node"]["refid"]
-                else:
-                    target_id = need_info["target_id"]
-
+                target_id = need_info["target_id"]
                 ref = nodes.reference("", "")
                 ref["refdocname"] = need_info["docname"]
                 ref["refuri"] = builder.get_relative_uri(fromdocname, need_info["docname"])

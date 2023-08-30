@@ -154,7 +154,7 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
         elif current_needpie["filter_func"] and not content:
             try:
                 # check and get filter_func
-                filter_func, filter_args = check_and_get_external_filter_func(current_needpie)
+                filter_func, filter_args = check_and_get_external_filter_func(current_needpie.get("filter_func"))
                 # execute filter_func code
                 # Provides only a copy of needs to avoid data manipulations.
                 context = {

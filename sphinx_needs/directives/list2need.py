@@ -27,7 +27,7 @@ OPTION_AREA_REGEX = re.compile(r"\(\((.*)\)\)")
 OPTIONS_REGEX = re.compile(r"([^=,\s]*)=[\"']([^\"]*)[\"']")
 
 
-class List2Need(nodes.General, nodes.Element):  # type: ignore
+class List2Need(nodes.General, nodes.Element):
     pass
 
 

@@ -2,13 +2,13 @@
 Cares about handling and execution warnings.
 
 """
-from typing import Optional
+from typing import Dict, Optional
 
 from sphinx.application import Sphinx
 from sphinx.util import logging
 
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.filter_common import filter_needs
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import unwrap
@@ -43,24 +43,22 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
     if hasattr(env, "needs_warnings_executed") and env.needs_warnings_executed:
         return
 
-    env.needs_warnings_executed = True
+    env.needs_warnings_executed = True  # type: ignore[attr-defined]
 
     needs = SphinxNeedsData(env).get_or_create_needs()
 
     # Exclude external needs for warnings check
-    checked_needs = {}
+    checked_needs: Dict[str, NeedsInfoType] = {}
     for need_id, need in needs.items():
         if not need["is_external"]:
             checked_needs[need_id] = need
-
-    warnings = NEEDS_CONFIG.get("warnings")
 
     warnings_always_warn = NeedsSphinxConfig(app.config).warnings_always_warn
 
     with logging.pending_logging():
         logger.info("\nChecking sphinx-needs warnings")
         warning_raised = False
-        for warning_name, warning_filter in warnings.items():
+        for warning_name, warning_filter in NEEDS_CONFIG.warnings.items():
             if isinstance(warning_filter, str):
                 # filter string used
                 result = filter_needs(app, checked_needs.values(), warning_filter)

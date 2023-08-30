@@ -17,7 +17,7 @@ from sphinx.errors import SphinxError
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
-from sphinx_needs.debug import measure_time
+from sphinx_needs.debug import measure_time_func
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import NEEDS_FUNCTIONS, match_variants  # noqa: F401
 
@@ -29,7 +29,7 @@ ast_boolean = ast.NameConstant
 DynamicFunction = Callable[[Sphinx, Any, Any], Union[str, int, float, List[Union[str, int, float]]]]
 
 
-def register_func(need_function: DynamicFunction, name: Optional[str] = None):
+def register_func(need_function: DynamicFunction, name: Optional[str] = None) -> None:
     """
     Registers a new sphinx-needs function for the given sphinx environment.
     :param env: Sphinx environment
@@ -67,10 +67,10 @@ def execute_func(env: BuildEnvironment, need, func_string: str):
     global NEEDS_FUNCTIONS
     func_name, func_args, func_kwargs = _analyze_func_string(func_string, need)
 
-    if func_name not in NEEDS_FUNCTIONS.keys():
+    if func_name not in NEEDS_FUNCTIONS:
         raise SphinxError("Unknown dynamic sphinx-needs function: {}. Found in need: {}".format(func_name, need["id"]))
 
-    func = measure_time(category="dyn_func", source="user", func=NEEDS_FUNCTIONS[func_name]["function"])
+    func = measure_time_func(NEEDS_FUNCTIONS[func_name]["function"], category="dyn_func", source="user")
     func_return = func(env.app, need, SphinxNeedsData(env).get_or_create_needs(), *func_args, **func_kwargs)
 
     if not isinstance(func_return, (str, int, float, list, unicode)) and func_return:
@@ -174,7 +174,7 @@ def resolve_dynamic_values(env: BuildEnvironment):
     needs = data.get_or_create_needs()
     for need in needs.values():
         for need_option in need:
-            if need_option in ["docname", "lineno", "target_node", "content", "content_node", "content_id"]:
+            if need_option in ["docname", "lineno", "content", "content_node", "content_id"]:
                 # dynamic values in this data are not allowed.
                 continue
             if not isinstance(need[need_option], (list, set)):
@@ -257,7 +257,7 @@ def resolve_variants_options(env: BuildEnvironment):
         needs = data.get_or_create_needs()
         for need in needs.values():
             # Data to use as filter context.
-            need_context: Dict = {**need}
+            need_context: Dict[str, Any] = {**need}
             need_context.update(**needs_config.filter_data)  # Add needs_filter_data to filter context
             _sphinx_tags = env.app.builder.tags.tags  # Get sphinx tags
             need_context.update(**_sphinx_tags)  # Add sphinx tags to filter context

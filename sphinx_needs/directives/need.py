@@ -122,7 +122,7 @@ class NeedDirective(SphinxDirective):
         for extra_link in self.needs_config.extra_links:
             need_extra_options[extra_link["option"]] = self.options.get(extra_link["option"], "")
 
-        for extra_option in NEEDS_CONFIG.get("extra_options").keys():
+        for extra_option in NEEDS_CONFIG.extra_options:
             need_extra_options[extra_option] = self.options.get(extra_option, "")
 
         need_nodes = add_need(
@@ -148,7 +148,7 @@ class NeedDirective(SphinxDirective):
             **need_extra_options,
         )
         add_doc(env, self.docname)
-        return need_nodes
+        return need_nodes  # type: ignore[no-any-return]
 
     def read_in_links(self, name: str) -> List[str]:
         # Get links
@@ -178,7 +178,7 @@ class NeedDirective(SphinxDirective):
         )
 
     @property
-    def title_from_content(self):
+    def title_from_content(self) -> bool:
         return "title_from_content" in self.options or self.needs_config.title_from_content
 
     @property
@@ -215,7 +215,7 @@ class NeedDirective(SphinxDirective):
                     type="needs",
                     location=(self.env.docname, self.lineno),
                 )
-            return self.arguments[0]
+            return self.arguments[0]  # type: ignore[no-any-return]
         elif self.title_from_content:
             first_sentence = re.split(r"[.\n]", "\n".join(self.content))[0]
             if not first_sentence:
@@ -229,7 +229,9 @@ class NeedDirective(SphinxDirective):
             return ""
 
 
-def get_sections_and_signature_and_needs(need_node) -> Tuple[List[str], Optional[nodes.Text], List[str]]:
+def get_sections_and_signature_and_needs(
+    need_node: Optional[nodes.Node],
+) -> Tuple[List[str], Optional[nodes.Text], List[str]]:
     """Gets the hierarchy of the section nodes as a list starting at the
     section of the current need and then its parent sections"""
     sections = []
@@ -238,7 +240,7 @@ def get_sections_and_signature_and_needs(need_node) -> Tuple[List[str], Optional
     current_node = need_node
     while current_node:
         if isinstance(current_node, nodes.section):
-            title = typing.cast(str, current_node.children[0].astext())  # type: ignore[no-untyped-call]
+            title = typing.cast(str, current_node.children[0].astext())
             # If using auto-section numbering, then Sphinx inserts
             # multiple non-breaking space unicode characters into the title
             # we'll replace those with a simple space to make them easier to
@@ -328,13 +330,13 @@ def add_sections(app: Sphinx, doctree: nodes.document) -> None:
             need_info["parent_need"] = parent_needs[0]
 
 
-def previous_sibling(node):
+def previous_sibling(node: nodes.Node) -> Optional[nodes.Node]:
     """Return preceding sibling node or ``None``."""
     try:
-        i = node.parent.index(node)
+        i = node.parent.index(node)  # type: ignore
     except AttributeError:
         return None
-    return node.parent[i - 1] if i > 0 else None
+    return node.parent[i - 1] if i > 0 else None  # type: ignore
 
 
 @profile("NEED_PROCESS")
@@ -352,7 +354,8 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     needs_config = NeedsSphinxConfig(app.config)
     if not needs_config.include_needs:
         for node in doctree.findall(Need):
-            node.parent.remove(node)
+            if node.parent is not None:
+                node.parent.remove(node)  # type: ignore
         return
 
     builder = unwrap(app.builder)
@@ -400,7 +403,7 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
 
 
 @profile("NEED_PRINT")
-def print_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str, found_needs_nodes: list) -> None:
+def print_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str, found_needs_nodes: List[Need]) -> None:
     """
     Finally creates the need-node in the docutils node-tree.
 
@@ -445,7 +448,7 @@ def check_links(env: BuildEnvironment) -> None:
         for link_type in extra_links:
             dead_links_allowed = link_type.get("allow_dead_links", False)
             need_link_value = (
-                [need[link_type["option"]]] if isinstance(need[link_type["option"]], str) else need[link_type["option"]]
+                [need[link_type["option"]]] if isinstance(need[link_type["option"]], str) else need[link_type["option"]]  # type: ignore
             )
             for link in need_link_value:
                 if "." in link:
@@ -465,7 +468,7 @@ def check_links(env: BuildEnvironment) -> None:
     workflow["links_checked"] = True
 
 
-def create_back_links(env: BuildEnvironment, option) -> None:
+def create_back_links(env: BuildEnvironment, option: str) -> None:
     """
     Create back-links in all found needs.
     But do this only once, as all needs are already collected and this sorting is for all
@@ -476,12 +479,12 @@ def create_back_links(env: BuildEnvironment, option) -> None:
     data = SphinxNeedsData(env)
     workflow = data.get_or_create_workflow()
     option_back = f"{option}_back"
-    if workflow[f"backlink_creation_{option}"]:
+    if workflow[f"backlink_creation_{option}"]:  # type: ignore[literal-required]
         return
 
     needs = data.get_or_create_needs()
     for key, need in needs.items():
-        need_link_value = [need[option]] if isinstance(need[option], str) else need[option]
+        need_link_value = [need[option]] if isinstance(need[option], str) else need[option]  # type: ignore[literal-required]
         for link in need_link_value:
             link_main = link.split(".")[0]
             try:
@@ -490,16 +493,16 @@ def create_back_links(env: BuildEnvironment, option) -> None:
                 link_part = None
 
             if link_main in needs:
-                if key not in needs[link_main][option_back]:
-                    needs[link_main][option_back].append(key)
+                if key not in needs[link_main][option_back]:  # type: ignore[literal-required]
+                    needs[link_main][option_back].append(key)  # type: ignore[literal-required]
 
                 # Handling of links to need_parts inside a need
                 if link_part and link_part in needs[link_main]["parts"]:
                     if option_back not in needs[link_main]["parts"][link_part].keys():
-                        needs[link_main]["parts"][link_part][option_back] = []
-                    needs[link_main]["parts"][link_part][option_back].append(key)
+                        needs[link_main]["parts"][link_part][option_back] = []  # type: ignore[literal-required]
+                    needs[link_main]["parts"][link_part][option_back].append(key)  # type: ignore[literal-required]
 
-    workflow[f"backlink_creation_{option}"] = True
+    workflow[f"backlink_creation_{option}"] = True  # type: ignore[literal-required]
 
 
 def _fix_list_dyn_func(list: List[str]) -> List[str]:
@@ -547,7 +550,7 @@ def _fix_list_dyn_func(list: List[str]) -> List[str]:
 # Need-Node.
 
 
-def html_visit(self, node) -> None:
+def html_visit(self: Any, node: nodes.Node) -> None:
     """
     Visitor method for Need-node of builder 'html'.
     Does only wrap the Need-content into an extra <div> with class=need
@@ -555,13 +558,13 @@ def html_visit(self, node) -> None:
     self.body.append(self.starttag(node, "div", "", CLASS="need"))
 
 
-def html_depart(self, node) -> None:
+def html_depart(self: Any, node: nodes.Node) -> None:
     self.body.append("</div>")
 
 
-def latex_visit(self, node) -> None:
+def latex_visit(self: Any, node: nodes.Node) -> None:
     pass
 
 
-def latex_depart(self, node) -> None:
+def latex_depart(self: Any, node: nodes.Node) -> None:
     pass

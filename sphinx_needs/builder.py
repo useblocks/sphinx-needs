@@ -1,5 +1,5 @@
 import os
-from typing import Iterable, Optional, Set
+from typing import Iterable, List, Optional, Set
 
 from docutils import nodes
 from sphinx import version_info
@@ -7,7 +7,7 @@ from sphinx.application import Sphinx
 from sphinx.builders import Builder
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.filter_common import filter_needs
 from sphinx_needs.logging import get_logger
 from sphinx_needs.needsfile import NeedsList
@@ -28,7 +28,6 @@ class NeedsBuilder(Builder):
     def finish(self) -> None:
         env = unwrap(self.env)
         data = SphinxNeedsData(env)
-        needs = data.get_or_create_needs().values()  # We need a list of needs for later filter checks
         filters = data.get_or_create_filters()
         version = getattr(env.config, "version", "unset")
         needs_list = NeedsList(env.config, self.outdir, self.srcdir)
@@ -49,7 +48,7 @@ class NeedsBuilder(Builder):
         needs_list.wipe_version(version)
 
         filter_string = needs_config.builder_filter
-        filtered_needs = filter_needs(self.app, needs, filter_string)
+        filtered_needs: List[NeedsInfoType] = filter_needs(self.app, data.get_or_create_needs().values(), filter_string)
 
         for need in filtered_needs:
             needs_list.add_need(version, need)

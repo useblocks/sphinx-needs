@@ -309,7 +309,6 @@ def add_need(
         "docname": docname,
         "doctype": doctype,
         "lineno": lineno,
-        # "target_node": target_node,
         "target_id": need_id,
         "external_url": external_url,
         "content_node": None,  # gets set after rst parsing
@@ -346,7 +345,7 @@ def add_need(
         "is_modified": False,  # needed by needextend
         "modifications": 0,  # needed by needextend
     }
-    needs_extra_option_names = NEEDS_CONFIG.get("extra_options").keys()
+    needs_extra_option_names = list(NEEDS_CONFIG.extra_options)
     _merge_extra_options(needs_info, kwargs, needs_extra_option_names)
 
     needs_global_options = needs_config.global_options

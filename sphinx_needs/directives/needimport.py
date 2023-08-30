@@ -18,7 +18,7 @@ from sphinx_needs.needsfile import check_needs_file
 from sphinx_needs.utils import add_doc, logger
 
 
-class Needimport(nodes.General, nodes.Element):  # type: ignore
+class Needimport(nodes.General, nodes.Element):
     pass
 
 
@@ -123,6 +123,7 @@ class NeedimportDirective(SphinxDirective):
         if version not in needs_import_list["versions"].keys():
             raise VersionNotFound(f"Version {version} not found in needs import file {correct_need_import_path}")
 
+        # TODO type this (it uncovers lots of bugs)
         needs_list = needs_import_list["versions"][version]["needs"]
 
         # Filter imported needs
@@ -131,8 +132,7 @@ class NeedimportDirective(SphinxDirective):
             if filter_string is None:
                 needs_list_filtered[key] = need
             else:
-                # filter_context = {key: value for key, value in need.items()}
-                filter_context = dict(need)
+                filter_context = need.copy()
 
                 # Support both ways of addressing the description, as "description" is used in json file, but
                 # "content" is the sphinx internal name for this kind of information
@@ -154,10 +154,8 @@ class NeedimportDirective(SphinxDirective):
         # If we need to set an id prefix, we also need to manipulate all used ids in the imported data.
         extra_links = NeedsSphinxConfig(self.config).extra_links
         if id_prefix:
-            needs_ids = needs_list.keys()
-
             for need in needs_list.values():
-                for id in needs_ids:
+                for id in needs_list:
                     # Manipulate links in all link types
                     for extra_link in extra_links:
                         if extra_link["option"] in need and id in need[extra_link["option"]]:
@@ -196,7 +194,7 @@ class NeedimportDirective(SphinxDirective):
             need["content"] = need["description"]
             # Remove unknown options, as they may be defined in source system, but not in this sphinx project
             extra_link_keys = [x["option"] for x in extra_links]
-            extra_option_keys = list(NEEDS_CONFIG.get("extra_options").keys())
+            extra_option_keys = list(NEEDS_CONFIG.extra_options)
             default_options = [
                 "title",
                 "status",

@@ -9,7 +9,6 @@ from sphinx.environment import BuildEnvironment
 from sphinx.errors import SphinxError
 
 import sphinx_needs.debug as debug  # Need to set global var in it for timeing measurements
-from sphinx_needs.api.configuration import add_extra_option
 from sphinx_needs.builder import (
     NeedsBuilder,
     NeedsIdBuilder,
@@ -91,7 +90,7 @@ from sphinx_needs.environment import (
     install_styles_static_files,
 )
 from sphinx_needs.external_needs import load_external_needs
-from sphinx_needs.functions import needs_common_functions, register_func
+from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS, register_func
 from sphinx_needs.logging import get_logger
 from sphinx_needs.roles import NeedsXRefRole
 from sphinx_needs.roles.need_count import NeedCount, process_need_count
@@ -248,8 +247,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
 
     # Be sure Sphinx-Needs config gets erased before any events or external API calls get executed.
     # So never but this inside an event.
-    NEEDS_CONFIG.create("extra_options", dict, overwrite=True)
-    NEEDS_CONFIG.create("warnings", dict, overwrite=True)
+    NEEDS_CONFIG.clear()
 
     return {
         "version": VERSION,
@@ -280,7 +278,7 @@ def process_creator(
             and fromdocname != f"{app.config.root_doc}"
         ):
             return
-        current_nodes = {}
+        current_nodes: Dict[Type[nodes.Element], List[nodes.Element]] = {}
         check_nodes = list(node_list.keys())
         for node_need in doctree.findall(node_match(check_nodes)):
             for check_node in node_list:
@@ -299,7 +297,7 @@ def process_creator(
     return process_caller
 
 
-def load_config(app: Sphinx, *_args) -> None:
+def load_config(app: Sphinx, *_args: Any) -> None:
     """
     Register extra options and directive based on config from conf.py
     """
@@ -313,12 +311,11 @@ def load_config(app: Sphinx, *_args) -> None:
             "Sphinx-Needs 0.7.2 is list. Please see docs for details."
         )
 
-    existing_extra_options = NEEDS_CONFIG.get("extra_options")
+    extra_options = NEEDS_CONFIG.extra_options
     for option in needs_config.extra_options:
-        if option in existing_extra_options:
+        if option in extra_options:
             log.warning(f'extra_option "{option}" already registered. [needs]', type="needs")
-        NEEDS_CONFIG.add("extra_options", {option: directives.unchanged}, dict, True)
-    extra_options = NEEDS_CONFIG.get("extra_options")
+        NEEDS_CONFIG.extra_options[option] = directives.unchanged
 
     # Get extra links and create a dictionary of needed options.
     extra_links_raw = needs_config.extra_links
@@ -389,15 +386,14 @@ def load_config(app: Sphinx, *_args) -> None:
         # Register requested types of needs
         app.add_directive(t["directive"], NeedDirective)
 
-    existing_warnings = NEEDS_CONFIG.get("warnings")
     for name, check in needs_config.warnings.items():
-        if name not in existing_warnings:
-            NEEDS_CONFIG.add("warnings", {name: check}, dict, append=True)
+        if name not in NEEDS_CONFIG.warnings:
+            NEEDS_CONFIG.warnings[name] = check
         else:
             log.warning(f'{name} for "warnings" is already registered. [needs]', type="needs")
 
 
-def visitor_dummy(*_args, **_kwargs) -> None:
+def visitor_dummy(*_args: Any, **_kwargs: Any) -> None:
     """
     Dummy class for visitor methods, which does nothing.
     """
@@ -429,21 +425,19 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
             # Otherwise, the service may get registered later by an external sphinx-needs extension
             services.register(name, service["class"], **service["class_init"])
 
-    needs_functions = needs_config.functions
-
     # Register built-in functions
-    for need_common_func in needs_common_functions:
+    for need_common_func in NEEDS_COMMON_FUNCTIONS:
         register_func(need_common_func)
 
     # Register functions configured by user
-    for needs_func in needs_functions:
+    for needs_func in needs_config.functions:
         register_func(needs_func)
 
     # Own extra options
     for option in ["hidden", "duration", "completion", "has_dead_links", "has_forbidden_dead_links", "constraints"]:
         # Check if not already set by user
-        if option not in NEEDS_CONFIG.get("extra_options"):
-            add_extra_option(app, option)
+        if option not in NEEDS_CONFIG.extra_options:
+            NEEDS_CONFIG.extra_options[option] = directives.unchanged
 
     # The default link name. Must exist in all configurations. Therefore we set it here
     # for the user.
