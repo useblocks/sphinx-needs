@@ -8,7 +8,6 @@ from sphinx.builders import Builder
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
-from sphinx_needs.filter_common import filter_needs
 from sphinx_needs.logging import get_logger
 from sphinx_needs.needsfile import NeedsList
 from sphinx_needs.utils import unwrap
@@ -46,6 +45,8 @@ class NeedsBuilder(Builder):
         # This is needed as needs could have been removed from documentation and if this is the case,
         # removed needs would stay in needs_list, if list gets not cleaned.
         needs_list.wipe_version(version)
+        #
+        from sphinx_needs.filter_common import filter_needs
 
         filter_string = needs_config.builder_filter
         filtered_needs: List[NeedsInfoType] = filter_needs(self.app, data.get_or_create_needs().values(), filter_string)
@@ -180,6 +181,8 @@ class NeedsIdBuilder(Builder):
         version = getattr(env.config, "version", "unset")
         needs_config = NeedsSphinxConfig(env.config)
         filter_string = needs_config.builder_filter
+        from sphinx_needs.filter_common import filter_needs
+
         filtered_needs = filter_needs(self.app, needs, filter_string)
         needs_build_json_per_id_path = needs_config.build_json_per_id_path
         needs_dir = os.path.join(self.outdir, needs_build_json_per_id_path)
