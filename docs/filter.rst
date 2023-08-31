@@ -200,6 +200,7 @@ Additional variables for :ref:`need_part`:
 If your expression is valid and it's True, the related need is added to the filter result list.
 If it is invalid or returns False, the related need is not taken into account for the current filter.
 
+
 .. dropdown:: Show example
 
    .. code-block:: rst
