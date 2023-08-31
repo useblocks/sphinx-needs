@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1693480084196,
+  "lastUpdate": 1693486568438,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -4428,6 +4428,42 @@ window.BENCHMARK_DATA = {
             "value": 77.34520534799998,
             "unit": "s",
             "extra": "Commit: 9c09e847a48d2530fa0a8267019a8db2a9791378\nBranch: master\nTime: 2023-08-31T13:00:46+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "321dcd538729c63366d9f320ea250ccb7716d105",
+          "message": "🐛 Fix adding sections to hidden needs (#995)\n\nPreviously, hidden needs would not be added to the doctree.\r\nHowever, this meant that the `add_sections` transform did not add section related fields to the needs data.\r\nThis caused errors in the docs builds when filters required these fields.\r\n\r\nThe needs node is now created in the doctree, but marked with a `hidden` attribute, and these nodes are removed before rendering.",
+          "timestamp": "2023-08-31T14:47:10+02:00",
+          "tree_id": "0aec3705de92582a8758aba029cde1fdf2e1eb8c",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/321dcd538729c63366d9f320ea250ccb7716d105"
+        },
+        "date": 1693486562156,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.32408505600000126,
+            "unit": "s",
+            "extra": "Commit: 321dcd538729c63366d9f320ea250ccb7716d105\nBranch: master\nTime: 2023-08-31T14:47:10+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 95.96116390199995,
+            "unit": "s",
+            "extra": "Commit: 321dcd538729c63366d9f320ea250ccb7716d105\nBranch: master\nTime: 2023-08-31T14:47:10+02:00"
           }
         ]
       }
