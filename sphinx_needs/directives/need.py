@@ -544,6 +544,13 @@ def _fix_list_dyn_func(list: List[str]) -> List[str]:
     return new_list
 
 
+def remove_hidden_needs(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
+    """Remove hidden needs from the doctree, before it is rendered."""
+    for node_need in doctree.findall(Need):
+        if node_need.get("hidden"):
+            node_need.parent.remove(node_need)  # type: ignore
+
+
 #####################
 # Visitor functions #
 #####################
@@ -557,19 +564,17 @@ def html_visit(self: Any, node: nodes.Node) -> None:
     Visitor method for Need-node of builder 'html'.
     Does only wrap the Need-content into an extra <div> with class=need
     """
-    if node.get("hidden"):
-        raise nodes.SkipNode
     self.body.append(self.starttag(node, "div", "", CLASS="need"))
 
 
 def html_depart(self: Any, node: nodes.Node) -> None:
+    """Visitor method for departing Need-node of builder 'html' (closes extra div)"""
     self.body.append("</div>")
 
 
 def latex_visit(self: Any, node: nodes.Node) -> None:
-    if node.get("hidden"):
-        raise nodes.SkipNode
+    """Visitor method for entering Need-node of builder 'latex' (no-op)"""
 
 
 def latex_depart(self: Any, node: nodes.Node) -> None:
-    pass
+    """Visitor method for departing Need-node of builder 'latex' (no-op)"""
