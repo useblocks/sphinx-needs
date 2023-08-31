@@ -2297,7 +2297,7 @@ needs_build_json_per_id
 
 .. versionadded:: 1.4.0
     
-Builds list json file for each need, which have name is ``ID`` of need.
+Builds list json files for each need. The name of each file is the ``id`` of need.
 This option works like :ref:`needs_build_json`. 
 
 Default: False
@@ -2309,7 +2309,8 @@ Example:
     needs_build_json_per_id = False
 
 .. hint::
- The created single json file per need, located in :ref:`needs_build_json_per_id_path` folder. This is e.g ``_build/needs_id/abc_432.json``
+
+    The created single json file per need, located in :ref:`needs_build_json_per_id_path` folder, e.g ``_build/needs_id/abc_432.json``
  
 .. _needs_build_json_per_id_path:
 
@@ -2327,9 +2328,8 @@ Example:
     needs_build_json_per_id_path = "needs_id"
 
 .. hint::
-    
-Default: False
-   The created ``needs_id`` folder gets stored in the ``outdir`` of the current builder. The final location is e.g. ``_build/needs_id``
+
+    The created ``needs_id`` folder gets stored in the ``outdir`` of the current builder. The final location is e.g. ``_build/needs_id``
 
 
 
