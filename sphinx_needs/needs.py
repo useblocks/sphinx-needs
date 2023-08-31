@@ -34,6 +34,7 @@ from sphinx_needs.directives.need import (
     latex_visit,
     process_need_nodes,
     purge_needs,
+    remove_hidden_needs,
 )
 from sphinx_needs.directives.needbar import Needbar, NeedbarDirective, process_needbar
 from sphinx_needs.directives.needextend import Needextend, NeedextendDirective
@@ -226,9 +227,10 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     # doctree-read. So manipulating the doctree may result in conflicts, as e.g. images get not
     # registered for sphinx. So some sphinx-internal tasks/functions may be called by hand again...
     # See also https://github.com/sphinx-doc/sphinx/issues/7054#issuecomment-578019701 for an example
-    app.connect("doctree-resolved", process_need_nodes)
     app.connect("doctree-resolved", process_creator(NODE_TYPES_PRIO, "needextract"), priority=100)
+    app.connect("doctree-resolved", process_need_nodes)
     app.connect("doctree-resolved", process_creator(NODE_TYPES))
+    app.connect("doctree-resolved", remove_hidden_needs, priority=1000)
 
     app.connect("build-finished", process_warnings)
     app.connect("build-finished", build_needs_json)
