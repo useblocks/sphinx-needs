@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1693300689341,
+  "lastUpdate": 1693480084196,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -4392,6 +4392,42 @@ window.BENCHMARK_DATA = {
             "value": 102.01361660700002,
             "unit": "s",
             "extra": "Commit: 00e6afbdbe4e2494094fcf10833b3ecc5cc379ad\nBranch: master\nTime: 2023-08-29T11:08:26+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9c09e847a48d2530fa0a8267019a8db2a9791378",
+          "message": "Bump cypress-io/github-action from 5 to 6 (#981)\n\nBumps cypress-io/github-action from 5 to 6.",
+          "timestamp": "2023-08-31T13:00:46+02:00",
+          "tree_id": "f641a1b48df588323dae9a6568533af15960bd29",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/9c09e847a48d2530fa0a8267019a8db2a9791378"
+        },
+        "date": 1693480079695,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.24096599099999594,
+            "unit": "s",
+            "extra": "Commit: 9c09e847a48d2530fa0a8267019a8db2a9791378\nBranch: master\nTime: 2023-08-31T13:00:46+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 77.34520534799998,
+            "unit": "s",
+            "extra": "Commit: 9c09e847a48d2530fa0a8267019a8db2a9791378\nBranch: master\nTime: 2023-08-31T13:00:46+02:00"
           }
         ]
       }
