@@ -193,13 +193,6 @@ def add_need(
     if needs_config.id_regex and not re.match(needs_config.id_regex, need_id):
         raise NeedsInvalidException(f"Given ID '{need_id}' does not match configured regex '{needs_config.id_regex}'")
 
-    # Calculate target id, to be able to set a link back
-    if is_external:
-        target_node = None
-    else:
-        target_node = nodes.target("", "", ids=[need_id], refid=need_id, anonymous="")
-        external_url = None
-
     # Handle status
     # Check if status is in needs_statuses. If not raise an error.
     if needs_config.statuses and status not in [stat["name"] for stat in needs_config.statuses]:
@@ -310,7 +303,7 @@ def add_need(
         "doctype": doctype,
         "lineno": lineno,
         "target_id": need_id,
-        "external_url": external_url,
+        "external_url": external_url if is_external else None,
         "content_node": None,  # gets set after rst parsing
         "content_id": None,  # gets set after rst parsing
         "type": need_type,
@@ -443,8 +436,10 @@ def add_need(
     node_need.line = needs_info["lineno"]
 
     if needs_info["hide"]:
+        # add node to doctree, so we can later compute the containing section(s)
+        # (for use with section filters)
         node_need["hidden"] = True
-        return [target_node, node_need]
+        return [node_need]
 
     node_need_content = _render_template(content, docname, lineno, state)
 
@@ -485,7 +480,13 @@ def add_need(
     # Create a copy of the content
     needs_info["content_node"] = node_need.deepcopy()
 
-    return_nodes = [target_node] + [node_need]
+    return_nodes = [node_need]
+    if not is_external:
+        # Calculate target id, to be able to set a link back
+        target_node = nodes.target("", "", ids=[need_id], refid=need_id, anonymous="")
+        # TODO add to document?
+        return_nodes = [target_node, node_need]
+
     if pre_content:
         node_need_pre_content = _render_template(pre_content, docname, lineno, state)
         return_nodes = node_need_pre_content.children + return_nodes

@@ -548,7 +548,7 @@ def remove_hidden_needs(app: Sphinx, doctree: nodes.document, fromdocname: str) 
     """Remove hidden needs from the doctree, before it is rendered."""
     if fromdocname not in SphinxNeedsData(app.env).get_or_create_docs().get("all", []):
         return
-    for node_need in doctree.findall(Need):
+    for node_need in list(doctree.findall(Need)):
         if node_need.get("hidden"):
             node_need.parent.remove(node_need)  # type: ignore
 

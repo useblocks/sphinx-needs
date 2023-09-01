@@ -1,7 +1,7 @@
 import json
 import os
 import re
-from typing import Sequence
+from typing import Dict, Sequence
 from urllib.parse import urlparse
 
 import requests
@@ -12,6 +12,7 @@ from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api import add_need
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
+from sphinx_needs.data import NeedsInfoType
 from sphinx_needs.debug import measure_time
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.needsfile import check_needs_file
@@ -105,12 +106,11 @@ class NeedimportDirective(SphinxDirective):
                 for error in errors.schema:
                     logger.info(f'  {error.message} -> {".".join(error.path)}')
 
-            with open(correct_need_import_path) as needs_file:
-                needs_file_content = needs_file.read()
             try:
-                needs_import_list = json.loads(needs_file_content)
+                with open(correct_need_import_path) as needs_file:
+                    needs_import_list = json.load(needs_file)
             except json.JSONDecodeError as e:
-                # ToDo: Add exception handling
+                # TODO: Add exception handling
                 raise e
 
         if version is None:
@@ -123,8 +123,8 @@ class NeedimportDirective(SphinxDirective):
         if version not in needs_import_list["versions"].keys():
             raise VersionNotFound(f"Version {version} not found in needs import file {correct_need_import_path}")
 
-        # TODO type this (it uncovers lots of bugs)
-        needs_list = needs_import_list["versions"][version]["needs"]
+        # TODO this is not exactly NeedsInfoType, because the export removes/adds some keys
+        needs_list: Dict[str, NeedsInfoType] = needs_import_list["versions"][version]["needs"]
 
         # Filter imported needs
         needs_list_filtered = {}
@@ -136,7 +136,7 @@ class NeedimportDirective(SphinxDirective):
 
                 # Support both ways of addressing the description, as "description" is used in json file, but
                 # "content" is the sphinx internal name for this kind of information
-                filter_context["content"] = need["description"]
+                filter_context["content"] = need["description"]  # type: ignore[typeddict-item]
                 try:
                     if filter_single_need(self.env.app, filter_context, filter_string):
                         needs_list_filtered[key] = need
@@ -158,70 +158,67 @@ class NeedimportDirective(SphinxDirective):
                 for id in needs_list:
                     # Manipulate links in all link types
                     for extra_link in extra_links:
-                        if extra_link["option"] in need and id in need[extra_link["option"]]:
-                            for n, link in enumerate(need[extra_link["option"]]):
+                        if extra_link["option"] in need and id in need[extra_link["option"]]:  # type: ignore[literal-required]
+                            for n, link in enumerate(need[extra_link["option"]]):  # type: ignore[literal-required]
                                 if id == link:
-                                    need[extra_link["option"]][n] = "".join([id_prefix, id])
+                                    need[extra_link["option"]][n] = "".join([id_prefix, id])  # type: ignore[literal-required]
                     # Manipulate descriptions
                     # ToDo: Use regex for better matches.
-                    need["description"] = need["description"].replace(id, "".join([id_prefix, id]))
+                    need["description"] = need["description"].replace(id, "".join([id_prefix, id]))  # type: ignore[typeddict-item]
 
         # tags update
         for need in needs_list.values():
             need["tags"] = need["tags"] + tags
 
+        known_options = (
+            "title",
+            "status",
+            "content",
+            "id",
+            "tags",
+            "hide",
+            "template",
+            "pre_template",
+            "post_template",
+            "collapse",
+            "style",
+            "layout",
+            "need_type",
+            *[x["option"] for x in extra_links],
+            *NEEDS_CONFIG.extra_options,
+        )
         need_nodes = []
         for need in needs_list.values():
             # Set some values based on given option or value from imported need.
-            need["template"] = self.options.get("template", getattr(need, "template", None))
-            need["pre_template"] = self.options.get("pre_template", getattr(need, "pre_template", None))
-            need["post_template"] = self.options.get("post_template", getattr(need, "post_template", None))
-            need["layout"] = self.options.get("layout", getattr(need, "layout", None))
-            need["style"] = self.options.get("style", getattr(need, "style", None))
-            need["style"] = self.options.get("style", getattr(need, "style", None))
+            need["template"] = self.options.get("template", need.get("template"))
+            need["pre_template"] = self.options.get("pre_template", need.get("pre_template"))
+            need["post_template"] = self.options.get("post_template", need.get("post_template"))
+            need["layout"] = self.options.get("layout", need.get("layout"))
+            need["style"] = self.options.get("style", need.get("style"))
+
             if "hide" in self.options:
                 need["hide"] = True
             else:
-                need["hide"] = getattr(need, "hide", None)
-            need["collapse"] = self.options.get("collapse", getattr(need, "collapse", None))
+                need["hide"] = need.get("hide", False)
+            need["collapse"] = self.options.get("collapse", need.get("collapse"))
 
             # The key needs to be different for add_need() api call.
-            need["need_type"] = need["type"]
+            need["need_type"] = need["type"]  # type: ignore[typeddict-unknown-key]
 
             # Replace id, to get unique ids
             need["id"] = id_prefix + need["id"]
 
-            need["content"] = need["description"]
-            # Remove unknown options, as they may be defined in source system, but not in this sphinx project
-            extra_link_keys = [x["option"] for x in extra_links]
-            extra_option_keys = list(NEEDS_CONFIG.extra_options)
-            default_options = [
-                "title",
-                "status",
-                "content",
-                "id",
-                "tags",
-                "hide",
-                "template",
-                "pre_template",
-                "post_template",
-                "collapse",
-                "style",
-                "layout",
-                "need_type",
-            ]
-            delete_options = []
-            for option in need.keys():
-                if option not in default_options + extra_link_keys + extra_option_keys:
-                    delete_options.append(option)
+            need["content"] = need["description"]  # type: ignore[typeddict-item]
 
-            for option in delete_options:
-                del need[option]
+            # Remove unknown options, as they may be defined in source system, but not in this sphinx project
+            for option in list(need):
+                if option not in known_options:
+                    del need[option]  # type: ignore
 
             need["docname"] = self.docname
             need["lineno"] = self.lineno
 
-            nodes = add_need(self.env.app, self.state, **need)
+            nodes = add_need(self.env.app, self.state, **need)  # type: ignore[call-arg]
             need_nodes.extend(nodes)
 
         add_doc(self.env, self.env.docname)
