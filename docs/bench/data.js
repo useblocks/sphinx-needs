@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1693486568438,
+  "lastUpdate": 1693736076314,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -4464,6 +4464,42 @@ window.BENCHMARK_DATA = {
             "value": 95.96116390199995,
             "unit": "s",
             "extra": "Commit: 321dcd538729c63366d9f320ea250ccb7716d105\nBranch: master\nTime: 2023-08-31T14:47:10+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "86d7da7a1f141a17d0994f30b171eaafdbc99123",
+          "message": "🐛 FIX: `NeedImport` logic (#1006)\n\nThis commit fixes `NeedImport.run`, which was incorrectly using `getattr`on the needs data dictionary, instead of `dict.get`, meaning that the default `None` was always added for these fields.\r\n\r\nEfficiency is also improved, by using `json.load` instead of `json.loads`, and not recreating the `known_options` list within a loop",
+          "timestamp": "2023-09-03T12:07:38+02:00",
+          "tree_id": "9577a0a587251e45bc8a3b8645eb29f111860b00",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/86d7da7a1f141a17d0994f30b171eaafdbc99123"
+        },
+        "date": 1693736070219,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21392691900001637,
+            "unit": "s",
+            "extra": "Commit: 86d7da7a1f141a17d0994f30b171eaafdbc99123\nBranch: master\nTime: 2023-09-03T12:07:38+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 69.36053752500004,
+            "unit": "s",
+            "extra": "Commit: 86d7da7a1f141a17d0994f30b171eaafdbc99123\nBranch: master\nTime: 2023-09-03T12:07:38+02:00"
           }
         ]
       }
