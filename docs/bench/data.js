@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1693736076314,
+  "lastUpdate": 1693810860047,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -4500,6 +4500,42 @@ window.BENCHMARK_DATA = {
             "value": 69.36053752500004,
             "unit": "s",
             "extra": "Commit: 86d7da7a1f141a17d0994f30b171eaafdbc99123\nBranch: master\nTime: 2023-09-03T12:07:38+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bf359b20849535989cb0e4d5469445e9cacdcf6a",
+          "message": "🐛 Fix creation of need title nodes (#1008)\n\nPreviously the logic was mistakenly looping over every character of the string, and so creating a `Text` node per character, rather than a single `Text` node for the full title string.",
+          "timestamp": "2023-09-04T08:53:47+02:00",
+          "tree_id": "4531a61dd298524e78078593c8bc097e610311cd",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/bf359b20849535989cb0e4d5469445e9cacdcf6a"
+        },
+        "date": 1693810855856,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.24558582400004525,
+            "unit": "s",
+            "extra": "Commit: bf359b20849535989cb0e4d5469445e9cacdcf6a\nBranch: master\nTime: 2023-09-04T08:53:47+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 70.93331940100006,
+            "unit": "s",
+            "extra": "Commit: bf359b20849535989cb0e4d5469445e9cacdcf6a\nBranch: master\nTime: 2023-09-04T08:53:47+02:00"
           }
         ]
       }
