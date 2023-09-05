@@ -299,7 +299,7 @@ def filter_needs(
     return found_needs
 
 
-def need_search(*args, **kwargs):
+def need_search(*args: Any, **kwargs: Any) -> bool:
     return bool(re.search(*args, **kwargs))
 
 
