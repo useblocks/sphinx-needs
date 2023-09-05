@@ -2,13 +2,15 @@ import json
 import os
 
 import requests
-from jinja2 import BaseLoader, Environment
+from jinja2 import Environment
 from requests_file import FileAdapter
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.api import add_external_need, del_need
 from sphinx_needs.api.exceptions import NeedsDuplicatedId
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import clean_log, import_prefix_link_edit
 
@@ -16,7 +18,8 @@ log = get_logger(__name__)
 
 
 def load_external_needs(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
-    for source in app.config.needs_external_needs:
+    needs_config = NeedsSphinxConfig(app.config)
+    for source in needs_config.external_needs:
         if source["base_url"].endswith("/"):
             source["base_url"] = source["base_url"][:-1]
 
@@ -73,14 +76,14 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, _docname: str) -> No
         log.debug(f"Loading {len(needs)} needs.")
 
         prefix = source.get("id_prefix", "").upper()
-        import_prefix_link_edit(needs, prefix, env.config.needs_extra_links)
+        import_prefix_link_edit(needs, prefix, needs_config.extra_links)
         for need in needs.values():
             need_params = {**need}
 
-            extra_links = [x["option"] for x in app.config.needs_extra_links]
+            extra_links = [x["option"] for x in needs_config.extra_links]
             for key in list(need_params.keys()):
                 if (
-                    key not in app.config.needs_extra_options
+                    key not in needs_config.extra_options
                     and key not in extra_links
                     and key not in ["title", "type", "id", "description", "tags", "docname", "status"]
                 ):
@@ -92,7 +95,7 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, _docname: str) -> No
 
             if target_url:
                 # render jinja content
-                mem_template = Environment(loader=BaseLoader).from_string(target_url)
+                mem_template = Environment().from_string(target_url)
                 cal_target_url = mem_template.render(**{"need": need})
                 need_params["external_url"] = f'{source["base_url"]}/{cal_target_url}'
             else:
@@ -110,12 +113,12 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, _docname: str) -> No
 
             # check if external needs already exist
             ext_need_id = need_params["id"]
-            if ext_need_id in env.needs_all_needs:
+
+            need = SphinxNeedsData(env).get_or_create_needs().get(ext_need_id)
+
+            if need is not None:
                 # check need_params for more detail
-                if (
-                    env.needs_all_needs[ext_need_id]["is_external"]
-                    and source["base_url"] in env.needs_all_needs[ext_need_id]["external_url"]
-                ):
+                if need["is_external"] and source["base_url"] in need["external_url"]:
                     # delete the already existing external need from api need
                     del_need(app, ext_need_id)
                 else:

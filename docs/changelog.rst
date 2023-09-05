@@ -20,6 +20,8 @@ Released: under development
 
 * Change `NeedsBuilder` format to `needs` (`#978 <https://github.com/useblocks/sphinx-needs/pull/978>`_)
 
+* Improvement: Suffix all warnings with ``[needs]``, and allow them to be suppressed (`#975 <https://github.com/useblocks/sphinx-needs/pull/975>`_)
+
 1.3.0
 -----
 Released: 16.08.2023

@@ -1,25 +1,25 @@
-import typing
 from typing import Any, Dict, List, Sequence
 
 from docutils import nodes
-from docutils.parsers.rst import Directive, directives
+from docutils.parsers.rst import directives
 from docutils.parsers.rst.states import RSTState, RSTStateMachine
 from docutils.statemachine import StringList
-from sphinx.environment import BuildEnvironment
+from sphinx.util.docutils import SphinxDirective
 from sphinx_data_viewer.api import get_data_viewer_node
 
 from sphinx_needs.api import add_need
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.directives.need import NeedDirective
 from sphinx_needs.logging import get_logger
 from sphinx_needs.services.base import BaseService
 from sphinx_needs.utils import add_doc, unwrap
 
 
-class Needservice(nodes.General, nodes.Element):  # type: ignore
+class Needservice(nodes.General, nodes.Element):
     pass
 
 
-class NeedserviceDirective(Directive):
+class NeedserviceDirective(SphinxDirective):
     has_content = True
 
     required_arguments = 1
@@ -49,13 +49,12 @@ class NeedserviceDirective(Directive):
         super().__init__(name, arguments, options, content, lineno, content_offset, block_text, state, state_machine)
         self.log = get_logger(__name__)
 
-    @property
-    def env(self) -> BuildEnvironment:
-        return typing.cast(BuildEnvironment, self.state.document.settings.env)
-
     def run(self) -> Sequence[nodes.Node]:
         docname = self.env.docname
         app = self.env.app
+        needs_config = NeedsSphinxConfig(self.config)
+        need_types = needs_config.types
+        all_data = needs_config.service_all_data
         needs_services: Dict[str, BaseService] = getattr(app, "needs_services", {})
 
         service_name = self.arguments[0]
@@ -76,7 +75,7 @@ class NeedserviceDirective(Directive):
 
                 if "type" not in datum.keys():
                     # Use the first defined type, if nothing got defined by service (should not be the case)
-                    need_type = self.env.app.config.needs_types[0]["directive"]
+                    need_type = need_types[0]["directive"]
                 else:
                     need_type = datum["type"]
                     del datum["type"]
@@ -100,7 +99,7 @@ class NeedserviceDirective(Directive):
                 for missing_option in missing_options:
                     del datum[missing_option]
 
-                if app.config.needs_service_all_data:
+                if all_data:
                     for name, value in missing_options.items():
                         content.append(f"\n:{name}: {value}")
 

@@ -11,6 +11,8 @@ from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.filter_common import filter_needs
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import add_doc, unwrap
@@ -37,13 +39,7 @@ class NeedextendDirective(SphinxDirective):
     }
 
     def run(self) -> Sequence[nodes.Node]:
-        env = self.state.document.settings.env
-        if not hasattr(env, "need_all_needextend"):
-            env.need_all_needextend = {}
-
-        # be sure, global var is available. If not, create it
-        if not hasattr(env, "needs_all_needs"):
-            env.needs_all_needs = {}
+        env = self.env
 
         id = env.new_serialno("needextend")
         targetid = f"needextend-{env.docname}-{id}"
@@ -53,14 +49,15 @@ class NeedextendDirective(SphinxDirective):
         if not extend_filter:
             raise NeedsInvalidFilter(f"Filter of needextend must be set. See {env.docname}:{self.lineno}")
 
-        strict_option = self.options.get("strict", str(self.env.app.config.needs_needextend_strict))
+        strict_option = self.options.get("strict", str(NeedsSphinxConfig(self.env.app.config).needextend_strict))
         strict = True
         if strict_option.upper() == "TRUE":
             strict = True
         elif strict_option.upper() == "FALSE":
             strict = False
 
-        env.need_all_needextend[targetid] = {
+        data = SphinxNeedsData(env).get_or_create_extends()
+        data[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
@@ -80,27 +77,30 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     """
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
-    if not hasattr(env, "need_all_needextend"):
-        env.need_all_needextend = {}
+    needs_config = NeedsSphinxConfig(env.config)
+    data = SphinxNeedsData(env)
+    workflow = data.get_or_create_workflow()
 
-    if not env.needs_workflow["needs_extended"]:
-        env.needs_workflow["needs_extended"] = True
+    if not workflow["needs_extended"]:
+        workflow["needs_extended"] = True
 
         list_names = (
             ["tags", "links"]
-            + [x["option"] for x in app.config.needs_extra_links]
-            + [f"{x['option']}_back" for x in app.config.needs_extra_links]
+            + [x["option"] for x in needs_config.extra_links]
+            + [f"{x['option']}_back" for x in needs_config.extra_links]
         )  # back-links (incoming)
-        link_names = [x["option"] for x in app.config.needs_extra_links]
+        link_names = [x["option"] for x in needs_config.extra_links]
 
-        for current_needextend in env.need_all_needextend.values():
+        all_needs = data.get_or_create_needs()
+
+        for current_needextend in data.get_or_create_extends().values():
             # Check if filter is just a need-id.
             # In this case create the needed filter string
             need_filter = current_needextend["filter"]
-            if need_filter in env.needs_all_needs:
+            if need_filter in all_needs:
                 need_filter = f'id == "{need_filter}"'
             # If it looks like a need id, but we haven't found one, raise an exception
-            elif re.fullmatch(app.config.needs_id_regex, need_filter):
+            elif need_filter is not None and re.fullmatch(needs_config.id_regex, need_filter):
                 error = f"Provided id {need_filter} for needextend does not exist."
                 if current_needextend["strict"]:
                     raise NeedsInvalidFilter(error)
@@ -108,7 +108,7 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
                     logger.info(error)
                     continue
             try:
-                found_needs = filter_needs(app, env.needs_all_needs.values(), need_filter)
+                found_needs = filter_needs(app, all_needs.values(), need_filter)
             except NeedsInvalidFilter as e:
                 raise NeedsInvalidFilter(
                     f"Filter not valid for needextend on page {current_needextend['docname']}:\n{e}"
@@ -116,7 +116,7 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
 
             for found_need in found_needs:
                 # Work in the stored needs, not on the search result
-                need = env.needs_all_needs[found_need["id"]]
+                need = all_needs[found_need["id"]]
                 need["is_modified"] = True
                 need["modifications"] += 1
 
@@ -138,8 +138,8 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
                                 for ref_need in re.split(";|,", value):
                                     # Remove whitespaces
                                     ref_need = ref_need.strip()
-                                    if found_need["id"] not in env.needs_all_needs[ref_need][f"{option_name}_back"]:
-                                        env.needs_all_needs[ref_need][f"{option_name}_back"] += [found_need["id"]]
+                                    if found_need["id"] not in all_needs[ref_need][f"{option_name}_back"]:
+                                        all_needs[ref_need][f"{option_name}_back"] += [found_need["id"]]
 
                         # else it must be a normal string
                         else:
@@ -156,7 +156,7 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
                             # If we manipulate links, we need to delete the reference in the target need as well
                             if option_name in link_names:
                                 for ref_need in old_content:  # There may be several links
-                                    env.needs_all_needs[ref_need][f"{option_name}_back"].remove(found_need["id"])
+                                    all_needs[ref_need][f"{option_name}_back"].remove(found_need["id"])
 
                         else:
                             need[option_name] = ""
@@ -175,12 +175,12 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
                             if option in link_names:
                                 # Remove old links
                                 for ref_need in old_content:  # There may be several links
-                                    env.needs_all_needs[ref_need][f"{option}_back"].remove(found_need["id"])
+                                    all_needs[ref_need][f"{option}_back"].remove(found_need["id"])
 
                                 # Add new links
                                 for ref_need in need[option]:  # There may be several links
-                                    if found_need["id"] not in env.needs_all_needs[ref_need][f"{option}_back"]:
-                                        env.needs_all_needs[ref_need][f"{option}_back"] += [found_need["id"]]
+                                    if found_need["id"] not in all_needs[ref_need][f"{option}_back"]:
+                                        all_needs[ref_need][f"{option}_back"] += [found_need["id"]]
 
                         else:
                             need[option] = value
@@ -190,7 +190,7 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
         removed_needextend_node(node)
 
 
-def removed_needextend_node(node) -> None:
+def removed_needextend_node(node: Needextend) -> None:
     """
     # Remove needextend from docutils node-tree, so that no output gets generated for it.
     # Ok, this is really dirty.

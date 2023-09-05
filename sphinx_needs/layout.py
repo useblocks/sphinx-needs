@@ -9,7 +9,7 @@ import uuid
 from contextlib import suppress
 from functools import lru_cache
 from optparse import Values
-from typing import List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlparse
 
 import requests
@@ -18,16 +18,20 @@ from docutils.frontend import OptionParser
 from docutils.parsers.rst import Parser, languages
 from docutils.parsers.rst.states import Inliner, Struct
 from docutils.utils import new_document
-from jinja2 import BaseLoader, Environment
+from jinja2 import Environment
 from sphinx.application import Sphinx
 from sphinx.environment.collectors.asset import DownloadFileCollector, ImageCollector
 
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.utils import INTERNALS, match_string_link, unwrap
 
 
 @measure_time("need")
-def create_need(need_id: str, app: Sphinx, layout=None, style=None, docname: Optional[str] = None) -> nodes.container:
+def create_need(
+    need_id: str, app: Sphinx, layout: Optional[str] = None, style: Optional[str] = None, docname: Optional[str] = None
+) -> nodes.container:
     """
     Creates a new need-node for a given layout.
 
@@ -41,7 +45,7 @@ def create_need(need_id: str, app: Sphinx, layout=None, style=None, docname: Opt
     :return:
     """
     env = app.builder.env
-    needs = env.needs_all_needs
+    needs = SphinxNeedsData(env).get_or_create_needs()
 
     if need_id not in needs.keys():
         raise SphinxNeedLayoutException(f"Given need id {need_id} does not exist.")
@@ -60,7 +64,9 @@ def create_need(need_id: str, app: Sphinx, layout=None, style=None, docname: Opt
     # We must create a standalone copy of the content_node, as it may be reused several time
     # (multiple needextract for the same need) and the Sphinx ImageTransformator add location specific
     # uri to some nodes, which are not valid for all locations.
-    node_inner = needs[need_id]["content_node"].deepcopy()
+    content_node = needs[need_id]["content_node"]
+    assert content_node is not None, f"Need {need_id} has no content node."
+    node_inner = content_node.deepcopy()
 
     # Rerun some important Sphinx collectors for need-content coming from "needsexternal".
     # This is needed, as Sphinx needs to know images and download paths.
@@ -70,8 +76,8 @@ def create_need(need_id: str, app: Sphinx, layout=None, style=None, docname: Opt
     # Overwrite the docname, which must be the original one from the reused need, as all used paths are relative
     # to the original location, not to the current document.
     env.temp_data["docname"] = need_data["docname"]  # Dirty, as in this phase normally no docname is set anymore in env
-    ImageCollector().process_doc(app, node_inner)
-    DownloadFileCollector().process_doc(app, node_inner)
+    ImageCollector().process_doc(app, node_inner)  # type: ignore[arg-type]
+    DownloadFileCollector().process_doc(app, node_inner)  # type: ignore[arg-type]
 
     del env.temp_data["docname"]  # Be sure our env is as it was before
 
@@ -85,8 +91,9 @@ def create_need(need_id: str, app: Sphinx, layout=None, style=None, docname: Opt
 
     node_container.attributes["ids"].append(need_id)
 
-    layout = layout or need_data["layout"] or app.config.needs_default_layout
-    style = style or need_data["style"] or app.config.needs_default_style
+    needs_config = NeedsSphinxConfig(app.config)
+    layout = layout or need_data["layout"] or needs_config.default_layout
+    style = style or need_data["style"] or needs_config.default_style
 
     build_need(layout, node_container, app, style, docname)
 
@@ -99,7 +106,7 @@ def create_need(need_id: str, app: Sphinx, layout=None, style=None, docname: Opt
     return node_container
 
 
-def replace_pending_xref_refdoc(node, new_refdoc: str) -> None:
+def replace_pending_xref_refdoc(node: nodes.Element, new_refdoc: str) -> None:
     """
     Overwrites the refdoc attribute of all pending_xref nodes.
     This is needed, if a doctree with references gets copied used somewhereelse in the documentation.
@@ -114,11 +121,13 @@ def replace_pending_xref_refdoc(node, new_refdoc: str) -> None:
         node.attributes["refdoc"] = new_refdoc
     else:
         for child in node.children:
-            replace_pending_xref_refdoc(child, new_refdoc)
+            replace_pending_xref_refdoc(child, new_refdoc)  # type: ignore[arg-type]
 
 
 @measure_time("need")
-def build_need(layout, node, app: Sphinx, style=None, fromdocname: Optional[str] = None) -> None:
+def build_need(
+    layout: str, node: nodes.Element, app: Sphinx, style: Optional[str] = None, fromdocname: Optional[str] = None
+) -> None:
     """
     Builds a need based on a given layout for a given need-node.
 
@@ -134,31 +143,24 @@ def build_need(layout, node, app: Sphinx, style=None, fromdocname: Optional[str]
         ------ custom layout nodes
 
     The level structure must be kept, otherwise docutils can not handle it!
-
-    :param layout:
-    :param node:
-    :param app:
-    :param style:
-    :param fromdocname:
-    :return:
     """
 
     env = app.builder.env
-    needs = env.needs_all_needs
+    needs = SphinxNeedsData(env).get_or_create_needs()
     node_container = nodes.container()
 
-    need_layout = layout
     need_id = node.attributes["ids"][0]
     need_data = needs[need_id]
 
     if need_data["hide"]:
-        node.parent.replace(node, [])
+        if node.parent:
+            node.parent.replace(node, [])  # type: ignore
         return
 
     if fromdocname is None:
         fromdocname = need_data["docname"]
 
-    lh = LayoutHandler(app, need_data, need_layout, node, style, fromdocname)
+    lh = LayoutHandler(app, need_data, layout, node, style, fromdocname)
     new_need_node = lh.get_need_table()
     node_container.append(new_need_node)
 
@@ -168,14 +170,14 @@ def build_need(layout, node, app: Sphinx, style=None, fromdocname: Optional[str]
 
     # We need to replace the current need-node (containing content only) with our new table need node.
     # node.parent.replace(node, node_container)
-    node.parent.replace(node, node_container)
+    node.parent.replace(node, node_container)  # type: ignore
 
 
 @lru_cache(1)
 def _generate_inline_parser() -> Tuple[Values, Inliner]:
     doc_settings = OptionParser(components=(Parser,)).get_default_values()
     inline_parser = Inliner()
-    inline_parser.init_customizations(doc_settings)
+    inline_parser.init_customizations(doc_settings)  # type: ignore
     return doc_settings, inline_parser
 
 
@@ -184,12 +186,21 @@ class LayoutHandler:
     Cares about the correct layout handling
     """
 
-    def __init__(self, app: Sphinx, need, layout, node, style=None, fromdocname: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        app: Sphinx,
+        need: NeedsInfoType,
+        layout: str,
+        node: nodes.Element,
+        style: Optional[str] = None,
+        fromdocname: Optional[str] = None,
+    ) -> None:
         self.app = app
         self.need = need
+        self.needs_config = NeedsSphinxConfig(app.config)
 
         self.layout_name = layout
-        available_layouts = app.config.needs_layouts
+        available_layouts = self.needs_config.layouts
         if self.layout_name not in available_layouts.keys():
             raise SphinxNeedLayoutException(
                 'Given layout "{}" is unknown for need {}. Registered layouts are: {}'.format(
@@ -208,9 +219,9 @@ class LayoutHandler:
 
         # For ReadTheDocs Theme we need to add 'rtd-exclude-wy-table'.
         classes = ["need", "needs_grid_" + self.layout["grid"], "needs_layout_" + self.layout_name]
-        classes.extend(app.config.needs_table_classes)
+        classes.extend(self.needs_config.table_classes)
 
-        self.style = style or self.need["style"] or getattr(self.app.config, "needs_default_style", None)
+        self.style = style or self.need["style"] or self.needs_config.default_style
 
         if self.style:
             for style in self.style.strip().split(","):
@@ -290,7 +301,7 @@ class LayoutHandler:
             inliner=None,
         )
 
-        self.functions = {
+        self.functions: Dict[str, Callable[..., Union[None, nodes.Node, List[nodes.Node]]]] = {
             "meta": self.meta,
             "meta_all": self.meta_all,
             "meta_links": self.meta_links,
@@ -308,10 +319,10 @@ class LayoutHandler:
         # This would lead to deepcopy()-errors, as needs_string_links gets some "pickled" and jinja Environment is
         # too complex for this.
         self.string_links = {}
-        for link_name, link_conf in app.config.needs_string_links.items():
+        for link_name, link_conf in self.needs_config.string_links.items():
             self.string_links[link_name] = {
-                "url_template": Environment(loader=BaseLoader).from_string(link_conf["link_url"]),
-                "name_template": Environment(loader=BaseLoader).from_string(link_conf["link_name"]),
+                "url_template": Environment().from_string(link_conf["link_url"]),
+                "name_template": Environment().from_string(link_conf["link_name"]),
                 "regex_compiled": re.compile(link_conf["regex"]),
                 "options": link_conf["options"],
                 "name": link_name,
@@ -327,7 +338,7 @@ class LayoutHandler:
         if callable(func):
             func()
         else:
-            func["func"](**func["configs"])
+            func["func"](**func["configs"])  # type: ignore[index]
 
         return self.node_table
 
@@ -362,12 +373,12 @@ class LayoutHandler:
         :param line: string to parse
         :return: nodes
         """
-        result, message = self.inline_parser.parse(line, 0, self.doc_memo, self.dummy_doc)
+        result, message = self.inline_parser.parse(line, 0, self.doc_memo, self.dummy_doc)  # type: ignore
         if message:
             raise SphinxNeedLayoutException(message)
-        return result
+        return result  # type: ignore[no-any-return]
 
-    def _func_replace(self, section_nodes):
+    def _func_replace(self, section_nodes: List[nodes.Node]) -> List[nodes.Node]:
         """
         Replaces a function definition like ``<<meta(a, ,b)>>`` with the related docutils nodes.
 
@@ -378,11 +389,12 @@ class LayoutHandler:
         :return: docutils nodes
         """
         return_nodes = []
+        result: Union[None, nodes.Node, List[nodes.Node]]
         for node in section_nodes:
             if not isinstance(node, nodes.Text):
                 for child in node.children:
                     new_child = self._func_replace([child])
-                    node.replace(child, new_child)
+                    node.replace(child, new_child)  # type: ignore[attr-defined]
                 return_nodes.append(node)
             else:
                 node_str = str(node)
@@ -458,18 +470,18 @@ class LayoutHandler:
                 return_nodes.append(node_line)
         return return_nodes
 
-    def _replace_place_holder(self, data):
+    def _replace_place_holder(self, data: str) -> str:
         replace_items = re.findall(r"{{(.*)}}", data)
         for item in replace_items:
-            if item not in self.need.keys():
+            if item not in self.need:
                 raise SphinxNeedLayoutException(item)
             # To escape { we need to use 2 of them.
             # So {{ becomes {{{{
             replace_string = f"{{{{{item}}}}}"
-            data = data.replace(replace_string, self.need[item])
+            data = data.replace(replace_string, self.need[item])  # type: ignore[literal-required]
         return data
 
-    def meta(self, name: str, prefix: Optional[str] = None, show_empty: bool = False):
+    def meta(self, name: str, prefix: Optional[str] = None, show_empty: bool = False) -> nodes.inline:
         """
         Returns the specific metadata of a need inside docutils nodes.
         Usage::
@@ -481,7 +493,6 @@ class LayoutHandler:
         :param show_empty: If false and requested need-value is None or '', no output is returned. Default: false
         :return: docutils node
         """
-
         data_container = nodes.inline(classes=["needs_" + name])
         if prefix:
             prefix_node = self._parse(prefix)
@@ -489,7 +500,7 @@ class LayoutHandler:
             label_node += prefix_node
             data_container.append(label_node)
         try:
-            data = self.need[name]
+            data = self.need[name]  # type: ignore[literal-required]
         except KeyError:
             data = ""
 
@@ -501,16 +512,16 @@ class LayoutHandler:
         if isinstance(data, str):
             if len(data) == 0 and not show_empty:
                 return []
-            # data_node = nodes.inline(classes=["needs_data"])
-            # data_node.append(nodes.Text(data)
-            # data_container.append(data_node)
+
             needs_string_links_option: List[str] = []
-            for v in self.app.config.needs_string_links.values():
+            for v in self.needs_config.string_links.values():
                 needs_string_links_option.extend(v["options"])
 
-            if name in needs_string_links_option:
-                data = re.split(r",|;", data)
-                data = [i.strip() for i in data if len(i) != 0]
+            data_list: List[str] = (
+                [i.strip() for i in re.split(r",|;", data) if len(i) != 0]
+                if name in needs_string_links_option
+                else [data]
+            )
 
             matching_link_confs = []
             for link_conf in self.string_links.values():
@@ -518,21 +529,21 @@ class LayoutHandler:
                     matching_link_confs.append(link_conf)
 
             data_node = nodes.inline(classes=["needs_data"])
-            for index, datum in enumerate(data):
+            for index, datum in enumerate(data_list):
                 if matching_link_confs:
                     data_node += match_string_link(
                         text_item=datum,
                         data=datum,
                         need_key=name,
                         matching_link_confs=matching_link_confs,
-                        render_context=self.app.config.needs_render_context,
+                        render_context=self.needs_config.render_context,
                     )
                 else:
                     # Normal text handling
                     ref_item = nodes.Text(datum)
                     data_node += ref_item
 
-                if (isinstance(data, list) and index + 1 < len(data)) or index + 1 < len([data]):
+                if (name in needs_string_links_option and index + 1 < len(data)) or index + 1 < len([data]):
                     data_node += nodes.emphasis("; ", "; ")
 
             data_container.append(data_node)
@@ -556,7 +567,7 @@ class LayoutHandler:
 
         return data_container
 
-    def meta_id(self):
+    def meta_id(self) -> nodes.inline:
         """
         Returns the current need id as clickable and linked reference.
 
@@ -587,13 +598,13 @@ class LayoutHandler:
         self,
         prefix: str = "",
         postfix: str = "",
-        exclude=None,
+        exclude: Optional[List[str]] = None,
         no_links: bool = False,
         defaults: bool = True,
         show_empty: bool = False,
-    ):
+    ) -> nodes.inline:
         """
-        ``meta_all()`` excludes by default the output of: ``docname``, ``lineno``, ``target_node``, ``refid``,
+        ``meta_all()`` excludes by default the output of: ``docname``, ``lineno``, ``refid``,
         ``content``, ``collapse``, ``parts``, ``id_parent``,
         ``id_complete``, ``title``, ``full_title``, ``is_part``, ``is_need``,
         ``type_prefix``, ``type_color``, ``type_style``, ``type``, ``type_name``, ``id``,
@@ -631,8 +642,8 @@ class LayoutHandler:
             exclude += default_excludes
 
         if no_links:
-            link_names = [x["option"] for x in self.app.config.needs_extra_links]
-            link_names += [x["option"] + "_back" for x in self.app.config.needs_extra_links]
+            link_names = [x["option"] for x in self.needs_config.extra_links]
+            link_names += [x["option"] + "_back" for x in self.needs_config.extra_links]
             exclude += link_names
         data_container = nodes.inline()
         for data in self.need.keys():
@@ -653,7 +664,7 @@ class LayoutHandler:
 
         return data_container
 
-    def meta_links(self, name: str, incoming: bool = False):
+    def meta_links(self, name: str, incoming: bool = False) -> nodes.inline:
         """
         Documents the set links of a given link type.
         The documented links are all full clickable links to the target needs.
@@ -663,13 +674,13 @@ class LayoutHandler:
         :return: docutils nodes
         """
         data_container = nodes.inline(classes=[name])
-        if name not in [x["option"] for x in self.app.config.needs_extra_links]:
+        if name not in [x["option"] for x in self.needs_config.extra_links]:
             raise SphinxNeedLayoutException(f"Invalid link name {name} for link-type")
 
         # if incoming:
-        #     link_name = self.app.config.needs_extra_links[name]['incoming']
+        #     link_name = self.config.extra_links[name]['incoming']
         # else:
-        #     link_name = self.app.config.needs_extra_links[name]['outgoing']
+        #     link_name = self.config.extra_links[name]['outgoing']
 
         from sphinx_needs.roles.need_incoming import NeedIncoming
         from sphinx_needs.roles.need_outgoing import NeedOutgoing
@@ -682,7 +693,9 @@ class LayoutHandler:
         data_container.append(node_links)
         return data_container
 
-    def meta_links_all(self, prefix: str = "", postfix: str = "", exclude=None):
+    def meta_links_all(
+        self, prefix: str = "", postfix: str = "", exclude: Optional[List[str]] = None
+    ) -> List[nodes.line]:
         """
         Documents all used link types for the current need automatically.
 
@@ -693,9 +706,9 @@ class LayoutHandler:
         """
         exclude = exclude or []
         data_container = []
-        for link_type in self.app.config.needs_extra_links:
+        for link_type in self.needs_config.extra_links:
             type_key = link_type["option"]
-            if self.need[type_key] and type_key not in exclude:
+            if self.need[type_key] and type_key not in exclude:  # type: ignore[literal-required]
                 outgoing_line = nodes.line()
                 outgoing_label = prefix + "{}:".format(link_type["outgoing"]) + postfix + " "
                 outgoing_line += self._parse(outgoing_label)
@@ -703,7 +716,7 @@ class LayoutHandler:
                 data_container.append(outgoing_line)
 
             type_key = link_type["option"] + "_back"
-            if self.need[type_key] and type_key not in exclude:
+            if self.need[type_key] and type_key not in exclude:  # type: ignore[literal-required]
                 incoming_line = nodes.line()
                 incoming_label = prefix + "{}:".format(link_type["incoming"]) + postfix + " "
                 incoming_line += self._parse(incoming_label)
@@ -714,11 +727,11 @@ class LayoutHandler:
 
     def image(
         self,
-        url,
-        height=None,
-        width=None,
-        align=None,
-        no_link=False,
+        url: str,
+        height: Optional[str] = None,
+        width: Optional[str] = None,
+        align: Optional[str] = None,
+        no_link: bool = False,
         prefix: str = "",
         is_external: bool = False,
         img_class: str = "",
@@ -798,7 +811,7 @@ class LayoutHandler:
         elif url.startswith("field:"):
             field = url.split(":")[1]
             try:
-                value = self.need[field]
+                value = self.need[field]  # type: ignore[literal-required]
             except KeyError:
                 value = ""
 
@@ -856,8 +869,8 @@ class LayoutHandler:
         url: str,
         text: Optional[str] = None,
         image_url: Optional[str] = None,
-        image_height=None,
-        image_width=None,
+        image_height: Optional[str] = None,
+        image_width: Optional[str] = None,
         prefix: str = "",
         is_dynamic: bool = False,
     ) -> nodes.inline:
@@ -890,7 +903,7 @@ class LayoutHandler:
 
         if is_dynamic:
             try:
-                url = self.need[url]
+                url = self.need[url]  # type: ignore[literal-required]
             except KeyError:
                 url = ""
 
@@ -969,11 +982,11 @@ class LayoutHandler:
     def permalink(
         self,
         image_url: Optional[str] = None,
-        image_height=None,
-        image_width=None,
+        image_height: Optional[str] = None,
+        image_width: Optional[str] = None,
         text: Optional[str] = None,
         prefix: str = "",
-    ):
+    ) -> nodes.inline:
         """
         Shows a permanent link to the need.
         Link can be a text, an image or both
@@ -996,8 +1009,7 @@ class LayoutHandler:
             image_url = "icon:share-2"
             image_width = "17px"
 
-        config = self.app.config
-        permalink = config.needs_permalink_file
+        permalink = self.needs_config.permalink_file
         id = self.need["id"]
         docname = self.need["docname"]
         permalink_url = ""
@@ -1014,7 +1026,9 @@ class LayoutHandler:
             prefix=prefix,
         )
 
-    def _grid_simple(self, colwidths, side_left, side_right, footer):
+    def _grid_simple(
+        self, colwidths: List[int], side_left: Union[bool, str], side_right: Union[bool, str], footer: bool
+    ) -> None:
         """
         Creates most "simple" grid layouts.
         Side parts and footer can be activated via config.
@@ -1187,7 +1201,7 @@ class LayoutHandler:
         # Construct table
         node_tgroup += self.node_tbody
 
-    def _grid_content(self, colwidths, side_left, side_right, footer):
+    def _grid_content(self, colwidths: List[int], side_left: bool, side_right: bool, footer: bool) -> None:
         """
         Creates most "content" based grid layouts.
         Side parts and footer can be activated via config.

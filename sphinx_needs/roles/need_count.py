@@ -10,6 +10,7 @@ from docutils import nodes
 from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.filter_common import filter_needs, prepare_need_list
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import unwrap
@@ -28,7 +29,7 @@ def process_need_count(
     env = unwrap(builder.env)
     # for node_need_count in doctree.findall(NeedCount):
     for node_need_count in found_nodes:
-        all_needs = list(getattr(env, "needs_all_needs", {}).values())
+        all_needs = list(SphinxNeedsData(env).get_or_create_needs().values())
         filter = node_need_count["reftarget"]
 
         if filter:

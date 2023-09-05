@@ -1,13 +1,14 @@
 from pathlib import Path, PurePosixPath
-from typing import Iterable
+from typing import Iterable, List
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util import status_iterator
-from sphinx.util.console import brown
+from sphinx.util.console import brown  # type: ignore[attr-defined]
 from sphinx.util.osutil import copyfile
 
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.utils import logger, unwrap
 
 IMAGE_DIR_NAME = "_static"
@@ -27,18 +28,18 @@ def safe_add_file(filename: Path, app: Sphinx) -> None:
     """
     builder = unwrap(app.builder)
     # Use PurePosixPath, so that the path can be used as "web"-path
-    filename = PurePosixPath(filename)
-    static_data_file = PurePosixPath("_static") / filename
+    pure_path = PurePosixPath(filename)
+    static_data_file = PurePosixPath("_static") / pure_path
 
-    if filename.suffix == ".js":
+    if pure_path.suffix == ".js":
         # Make sure the calculated (posix)-path is not already registered as "web"-path
         if hasattr(builder, "script_files") and str(static_data_file) not in builder.script_files:
-            app.add_js_file(str(filename))
-    elif filename.suffix == ".css":
+            app.add_js_file(str(pure_path))
+    elif pure_path.suffix == ".css":
         if hasattr(builder, "css_files") and str(static_data_file) not in builder.css_files:
-            app.add_css_file(str(filename))
+            app.add_css_file(str(pure_path))
     else:
-        raise NotImplementedError(f"File type {filename.suffix} not support by save_add_file")
+        raise NotImplementedError(f"File type {pure_path.suffix} not support by save_add_file")
 
 
 def safe_remove_file(filename: Path, app: Sphinx) -> None:
@@ -53,10 +54,9 @@ def safe_remove_file(filename: Path, app: Sphinx) -> None:
     :param app: app object
     :return: None
     """
-    static_data_file = Path("_static") / filename
-    static_data_file = PurePosixPath(static_data_file)
+    static_data_file = PurePosixPath(Path("_static") / filename)
 
-    def remove_file(file: Path, attribute: str) -> None:
+    def _remove_file(file: PurePosixPath, attribute: str) -> None:
         files = getattr(app.builder, attribute, [])
         if str(file) in files:
             files.remove(str(file))
@@ -68,7 +68,7 @@ def safe_remove_file(filename: Path, app: Sphinx) -> None:
 
     attribute = attributes.get(filename.suffix)
     if attribute:
-        remove_file(static_data_file, attribute)
+        _remove_file(static_data_file, attribute)
 
 
 # Base implementation from sphinxcontrib-images
@@ -83,15 +83,16 @@ def install_styles_static_files(app: Sphinx, env: BuildEnvironment) -> None:
     css_root = Path(__file__).parent / "css"
     dest_dir = statics_dir / "sphinx-needs"
 
-    def find_css_files() -> Iterable[Path]:
+    def _find_css_files() -> Iterable[Path]:
+        needs_css = NeedsSphinxConfig(app.config).css
         for theme in ["modern", "dark", "blank"]:
-            if app.config.needs_css == f"{theme}.css":
+            if needs_css == f"{theme}.css":
                 css_dir = css_root / theme
                 return [f for f in css_dir.glob("**/*") if f.is_file()]
-        return [app.config.needs_css]
+        return [Path(needs_css)]
 
     files_to_copy = [Path("common.css")]
-    files_to_copy.extend(find_css_files())
+    files_to_copy.extend(_find_css_files())
 
     # Be sure no "old" css layout is already set
     for theme in ["common", "modern", "dark", "blank"]:
@@ -102,7 +103,8 @@ def install_styles_static_files(app: Sphinx, env: BuildEnvironment) -> None:
         files_to_copy,
         "Copying static files for sphinx-needs custom style support...",
         brown,
-        len(files_to_copy),
+        length=len(files_to_copy),
+        stringify_func=lambda x: x.name,
     ):
         source_file_path = Path(source_file_path)
 
@@ -111,7 +113,7 @@ def install_styles_static_files(app: Sphinx, env: BuildEnvironment) -> None:
 
         if not source_file_path.exists():
             source_file_path = css_root / "blank" / "blank.css"
-            logger.warning(f"{source_file_path} not found. Copying sphinx-internal blank.css")
+            logger.warning(f"{source_file_path} not found. Copying sphinx-internal blank.css [needs]", type="needs")
 
         dest_file = dest_dir / source_file_path.name
         dest_dir.mkdir(exist_ok=True)
@@ -126,7 +128,7 @@ def install_static_files(
     app: Sphinx,
     source_dir: Path,
     destination_dir: Path,
-    files_to_copy: Iterable[Path],
+    files_to_copy: List[Path],
     message: str,
 ) -> None:
     builder = unwrap(app.builder)
@@ -138,6 +140,8 @@ def install_static_files(
         files_to_copy,
         message,
         brown,
+        length=len(files_to_copy),
+        stringify_func=lambda x: Path(x).name,
     ):
         source_file = Path(source_file_path)
 
@@ -203,12 +207,13 @@ def install_permalink_file(app: Sphinx, env: BuildEnvironment) -> None:
     template = jinja_env.get_template("permalink.html")
 
     # save file to build dir
-    out_file = Path(builder.outdir) / Path(env.config.needs_permalink_file).name
+    sphinx_config = NeedsSphinxConfig(env.config)
+    out_file = Path(builder.outdir) / Path(sphinx_config.permalink_file).name
     with open(out_file, "w", encoding="utf-8") as f:
         f.write(
             template.render(
-                permalink_file=env.config.needs_permalink_file,
-                needs_file=env.config.needs_permalink_data,
-                **app.config.needs_render_context,
+                permalink_file=sphinx_config.permalink_file,
+                needs_file=sphinx_config.permalink_data,
+                **sphinx_config.render_context,
             )
         )

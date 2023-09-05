@@ -10,7 +10,9 @@ from datetime import datetime
 from typing import Any, List
 
 from jsonschema import Draft7Validator
+from sphinx.config import Config
 
+from sphinx_needs.data import NeedsFilterType, NeedsInfoType
 from sphinx_needs.logging import get_logger
 
 log = get_logger(__name__)
@@ -21,7 +23,6 @@ class NeedsList:
         "links_back",
         "type_color",
         "hide_status",
-        "target_node",
         "hide",
         "type_prefix",
         "lineno",
@@ -36,7 +37,6 @@ class NeedsList:
         "links_back",
         "type_color",
         "hide_status",
-        "target_node",
         "hide",
         "type_prefix",
         "lineno",
@@ -47,7 +47,7 @@ class NeedsList:
         "content_node",
     }
 
-    def __init__(self, config, outdir, confdir) -> None:
+    def __init__(self, config: Config, outdir: str, confdir: str) -> None:
         self.config = config
         self.outdir = outdir
         self.confdir = confdir
@@ -61,7 +61,7 @@ class NeedsList:
         }
         self.log = log
 
-    def update_or_add_version(self, version) -> None:
+    def update_or_add_version(self, version: str) -> None:
         if version not in self.needs_list["versions"].keys():
             self.needs_list["versions"][version] = {
                 "created": "",
@@ -76,16 +76,16 @@ class NeedsList:
 
         self.needs_list["versions"][version]["created"] = datetime.now().isoformat()
 
-    def add_need(self, version, need_info) -> None:
+    def add_need(self, version: str, need_info: NeedsInfoType) -> None:
         self.update_or_add_version(version)
-        writable_needs = {key: need_info[key] for key in need_info if key not in self.JSON_KEY_EXCLUSIONS_NEEDS}
+        writable_needs = {key: need_info[key] for key in need_info if key not in self.JSON_KEY_EXCLUSIONS_NEEDS}  # type: ignore[literal-required]
         writable_needs["description"] = need_info["content"]
         self.needs_list["versions"][version]["needs"][need_info["id"]] = writable_needs
         self.needs_list["versions"][version]["needs_amount"] = len(self.needs_list["versions"][version]["needs"])
 
-    def add_filter(self, version, need_filter) -> None:
+    def add_filter(self, version: str, need_filter: NeedsFilterType) -> None:
         self.update_or_add_version(version)
-        writable_filters = {key: need_filter[key] for key in need_filter if key not in self.JSON_KEY_EXCLUSIONS_FILTERS}
+        writable_filters = {key: need_filter[key] for key in need_filter if key not in self.JSON_KEY_EXCLUSIONS_FILTERS}  # type: ignore[literal-required]
         self.needs_list["versions"][version]["filters"][need_filter["export_id"].upper()] = writable_filters
         self.needs_list["versions"][version]["filters_amount"] = len(self.needs_list["versions"][version]["filters"])
 
@@ -99,18 +99,15 @@ class NeedsList:
         self.needs_list["current_version"] = self.current_version
         self.needs_list["project"] = self.project
 
-        needs_json = json.dumps(self.needs_list, indent=4, sort_keys=True)
-        file = os.path.join(self.outdir, needs_file)
+        with open(os.path.join(self.outdir, needs_file), "w") as f:
+            json.dump(self.needs_list, f, indent=4, sort_keys=True)
 
-        with open(file, "w") as f:
-            f.write(needs_json)
-
-    def load_json(self, file) -> None:
+    def load_json(self, file: str) -> None:
         if not os.path.isabs(file):
             file = os.path.join(self.confdir, file)
 
         if not os.path.exists(file):
-            self.log.warning(f"Could not load needs json file {file}")
+            self.log.warning(f"Could not load needs json file {file} [needs]", type="needs")
         else:
             errors = check_needs_file(file)
             # We only care for schema errors here, all other possible errors
@@ -121,13 +118,12 @@ class NeedsList:
                     self.log.info(f'  {error.message} -> {".".join(error.path)}')
 
             with open(file) as needs_file:
-                needs_file_content = needs_file.read()
-            try:
-                needs_list = json.loads(needs_file_content)
-            except json.JSONDecodeError:
-                self.log.warning(f"Could not decode json file {file}")
-            else:
-                self.needs_list = needs_list
+                try:
+                    needs_list = json.load(needs_file)
+                except json.JSONDecodeError:
+                    self.log.warning(f"Could not decode json file {file} [needs]", type="needs")
+                else:
+                    self.needs_list = needs_list
 
             self.log.debug(f"needs.json file loaded: {file}")
 

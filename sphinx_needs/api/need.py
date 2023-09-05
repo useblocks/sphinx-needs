@@ -21,6 +21,8 @@ from sphinx_needs.api.exceptions import (
     NeedsTagNotAllowed,
     NeedsTemplateException,
 )
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.directives.needuml import Needuml, NeedumlException
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import get_logger
@@ -82,16 +84,16 @@ def add_need(
 
     .. code-block:: python
 
-        from docutils.parsers.rst import Directive
+        from sphinx.util.docutils import SphinxDirective
         from sphinx_needs.api import add_need
 
-        class MyDirective(Directive)
+        class MyDirective(SphinxDirective)
             # configs and init routine
 
             def run():
                 main_section = []
 
-                docname = self.state.document.settings.env.docname
+                docname = self.env.docname
 
                 # All needed sphinx-internal information we can take from our current directive class.
                 # e..g app, state, lineno
@@ -136,7 +138,8 @@ def add_need(
     # Get environment
     #############################################################################################
     env = app.env
-    types = app.config.needs_types
+    needs_config = NeedsSphinxConfig(app.config)
+    types = needs_config.types
     type_name = ""
     type_prefix = ""
     type_color = ""
@@ -148,7 +151,8 @@ def add_need(
     if need_type not in configured_need_types:
         logger.warning(
             "Couldn't create need {}. Reason: The need-type (i.e. `{}`) is not set "
-            "in the project's 'need_types' configuration in conf.py.".format(id, need_type)
+            "in the project's 'need_types' configuration in conf.py. [needs]".format(id, need_type),
+            type="needs",
         )
 
     for ntype in types:
@@ -175,7 +179,7 @@ def add_need(
     # TODO: Check, if id was already given. If True, recalculate id
     # id = self.options.get("id", ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for
     # _ in range(5)))
-    if id is None and app.config.needs_id_required:
+    if id is None and needs_config.id_required:
         raise NeedsNoIdException(
             "An id is missing for this need and must be set, because 'needs_id_required' "
             "is set to True in conf.py. Need '{}' in {} ({})".format(title, docname, lineno)
@@ -186,23 +190,12 @@ def add_need(
     else:
         need_id = id
 
-    if app.config.needs_id_regex and not re.match(app.config.needs_id_regex, need_id):
-        raise NeedsInvalidException(
-            "Given ID '{id}' does not match configured regex '{regex}'".format(
-                id=need_id, regex=app.config.needs_id_regex
-            )
-        )
-
-    # Calculate target id, to be able to set a link back
-    if is_external:
-        target_node = None
-    else:
-        target_node = nodes.target("", "", ids=[need_id], refid=need_id, anonymous="")
-        external_url = None
+    if needs_config.id_regex and not re.match(needs_config.id_regex, need_id):
+        raise NeedsInvalidException(f"Given ID '{need_id}' does not match configured regex '{needs_config.id_regex}'")
 
     # Handle status
     # Check if status is in needs_statuses. If not raise an error.
-    if app.config.needs_statuses and status not in [stat["name"] for stat in app.config.needs_statuses]:
+    if needs_config.statuses and status not in [stat["name"] for stat in needs_config.statuses]:
         raise NeedsStatusNotAllowed(
             f"Status {status} of need id {need_id} is not allowed " "by config value 'needs_statuses'."
         )
@@ -216,15 +209,18 @@ def add_need(
         new_tags = []  # Shall contain only valid tags
         for i in range(len(tags)):
             if len(tags[i]) == 0 or tags[i].isspace():
-                logger.warning(f"Scruffy tag definition found in need {need_id}. " "Defined tag contains spaces only.")
+                logger.warning(
+                    f"Scruffy tag definition found in need {need_id}. " "Defined tag contains spaces only. [needs]",
+                    type="needs",
+                )
             else:
                 new_tags.append(tags[i])
 
         tags = new_tags
         # Check if tag is in needs_tags. If not raise an error.
-        if app.config.needs_tags:
+        if needs_config.tags:
             for tag in tags:
-                needs_tags = [tag["name"] for tag in app.config.needs_tags]
+                needs_tags = [tag["name"] for tag in needs_config.tags]
                 if tag not in needs_tags:
                     raise NeedsTagNotAllowed(
                         f"Tag {tag} of need id {need_id} is not allowed " "by config value 'needs_tags'."
@@ -245,16 +241,18 @@ def add_need(
         for i in range(len(constraints)):
             if len(constraints[i]) == 0 or constraints[i].isspace():
                 logger.warning(
-                    f"Scruffy tag definition found in need {need_id}. " "Defined constraint contains spaces only."
+                    f"Scruffy tag definition found in need {need_id}. "
+                    "Defined constraint contains spaces only. [needs]",
+                    type="needs",
                 )
             else:
                 new_constraints.append(constraints[i])
 
         constraints = new_constraints
         # Check if constraint is in needs_constraints. If not raise an error.
-        if env.app.config.needs_constraints:
+        if needs_config.constraints:
             for constraint in constraints:
-                if constraint not in env.app.config.needs_constraints.keys():
+                if constraint not in needs_config.constraints.keys():
                     raise NeedsConstraintNotAllowed(
                         f"Constraint {constraint} of need id {need_id} is not allowed "
                         "by config value 'needs_constraints'."
@@ -267,11 +265,8 @@ def add_need(
     #############################################################################################
     # Add need to global need list
     #############################################################################################
-    # be sure, global var is available. If not, create it
-    if not hasattr(env, "needs_all_needs"):
-        env.needs_all_needs = {}
 
-    if need_id in env.needs_all_needs:
+    if need_id in SphinxNeedsData(env).get_or_create_needs():
         if id:
             raise NeedsDuplicatedId(
                 f"A need with ID {need_id} already exists! "
@@ -288,7 +283,7 @@ def add_need(
             )
 
     # Trim title if it is too long
-    max_length = app.config.needs_max_title_length
+    max_length = needs_config.max_title_length
     if max_length == -1 or len(title) <= max_length:
         trimmed_title = title
     elif max_length <= 3:
@@ -303,13 +298,12 @@ def add_need(
         doctype = ".rst"
 
     # Add the need and all needed information
-    needs_info = {
+    needs_info: NeedsInfoType = {
         "docname": docname,
         "doctype": doctype,
         "lineno": lineno,
-        # "target_node": target_node,
         "target_id": need_id,
-        "external_url": external_url,
+        "external_url": external_url if is_external else None,
         "content_node": None,  # gets set after rst parsing
         "content_id": None,  # gets set after rst parsing
         "type": need_type,
@@ -344,13 +338,13 @@ def add_need(
         "is_modified": False,  # needed by needextend
         "modifications": 0,  # needed by needextend
     }
-    needs_extra_option_names = NEEDS_CONFIG.get("extra_options").keys()
+    needs_extra_option_names = list(NEEDS_CONFIG.extra_options)
     _merge_extra_options(needs_info, kwargs, needs_extra_option_names)
 
-    needs_global_options = app.config.needs_global_options
+    needs_global_options = needs_config.global_options
     _merge_global_options(app, needs_info, needs_global_options)
 
-    link_names = [x["option"] for x in app.config.needs_extra_links]
+    link_names = [x["option"] for x in needs_config.extra_links]
     for keyword in kwargs:
         if keyword not in needs_extra_option_names and keyword not in link_names:
             raise NeedsInvalidOption(
@@ -362,7 +356,7 @@ def add_need(
     # Merge links
     copy_links = []
 
-    for link_type in app.config.needs_extra_links:
+    for link_type in needs_config.extra_links:
         # Check, if specific link-type got some arguments during method call
         if link_type["option"] not in kwargs and link_type["option"] not in needs_global_options:
             # if not we set no links, but entry in needS_info must be there
@@ -392,14 +386,14 @@ def add_need(
     # Jinja support for need content
     if jinja_content:
         need_content_context = {**needs_info}
-        need_content_context.update(**env.app.config.needs_filter_data)
-        need_content_context.update(**env.app.config.needs_render_context)
+        need_content_context.update(**needs_config.filter_data)
+        need_content_context.update(**needs_config.render_context)
         new_content = jinja_parse(need_content_context, needs_info["content"])
         # Overwrite current content
         content = new_content
         needs_info["content"] = new_content
 
-    env.needs_all_needs[need_id] = needs_info
+    SphinxNeedsData(env).get_or_create_needs()[need_id] = needs_info
 
     # Template builds
     ##############################
@@ -428,9 +422,6 @@ def add_need(
     if needs_info["is_external"]:
         return []
 
-    if needs_info["hide"]:
-        return [target_node]
-
     # Adding of basic Need node.
     ############################
     # Title and meta data information gets added alter during event handling via process_need_nodes()
@@ -444,6 +435,12 @@ def add_need(
     # Add lineno to node
     node_need.line = needs_info["lineno"]
 
+    if needs_info["hide"]:
+        # add node to doctree, so we can later compute the containing section(s)
+        # (for use with section filters)
+        node_need["hidden"] = True
+        return [node_need]
+
     node_need_content = _render_template(content, docname, lineno, state)
 
     # Extract plantuml diagrams and store needumls with keys in arch, e.g. need_info['arch']['diagram']
@@ -453,7 +450,7 @@ def add_need(
         if isinstance(child, Needuml):
             needuml_id = child.rawsource
             try:
-                needuml = env.needs_all_needumls.get(needuml_id)
+                needuml = SphinxNeedsData(env).get_or_create_umls().get(needuml_id)
                 key_name = needuml["key"]
                 if key_name:
                     # check if key_name already exists in needs_info["arch"]
@@ -483,7 +480,13 @@ def add_need(
     # Create a copy of the content
     needs_info["content_node"] = node_need.deepcopy()
 
-    return_nodes = [target_node] + [node_need]
+    return_nodes = [node_need]
+    if not is_external:
+        # Calculate target id, to be able to set a link back
+        target_node = nodes.target("", "", ids=[need_id], refid=need_id, anonymous="")
+        # TODO add to document?
+        return_nodes = [target_node, node_need]
+
     if pre_content:
         node_need_pre_content = _render_template(pre_content, docname, lineno, state)
         return_nodes = node_need_pre_content.children + return_nodes
@@ -503,10 +506,11 @@ def del_need(app: Sphinx, need_id: str) -> None:
     :param need_id: Sphinx need id.
     """
     env = unwrap(app.env)
-    if need_id in env.needs_all_needs:
-        del env.needs_all_needs[need_id]
+    needs = SphinxNeedsData(env).get_or_create_needs()
+    if need_id in needs:
+        del needs[need_id]
     else:
-        logger.warning(f"Given need id {need_id} not exists!")
+        logger.warning(f"Given need id {need_id} not exists! [needs]", type="needs")
 
 
 def add_external_need(
@@ -566,7 +570,8 @@ def add_external_need(
 
 
 def _prepare_template(app: Sphinx, needs_info, template_key: str) -> str:
-    template_folder = app.config.needs_template_folder
+    needs_config = NeedsSphinxConfig(app.config)
+    template_folder = needs_config.template_folder
     if not os.path.isabs(template_folder):
         template_folder = os.path.join(app.srcdir, template_folder)
 
@@ -581,7 +586,7 @@ def _prepare_template(app: Sphinx, needs_info, template_key: str) -> str:
     with open(template_path) as template_file:
         template_content = "".join(template_file.readlines())
     template_obj = Template(template_content)
-    new_content = template_obj.render(**needs_info, **app.config.needs_render_context)
+    new_content = template_obj.render(**needs_info, **needs_config.render_context)
 
     return new_content
 
@@ -621,7 +626,10 @@ def _read_in_links(links_string: Union[str, List[str]]) -> List[str]:
             link_list = links_string
         for link in link_list:
             if link.isspace():
-                logger.warning(f"Grubby link definition found in need {id}. " "Defined link contains spaces only.")
+                logger.warning(
+                    f"Grubby link definition found in need {id}. " "Defined link contains spaces only. [needs]",
+                    type="needs",
+                )
             else:
                 links.append(link.strip())
 
@@ -644,9 +652,10 @@ def make_hashed_id(app: Sphinx, need_type: str, full_title: str, content: str, i
     :param id_length: maximum length of the generated ID
     :return: ID as string
     """
-    types = app.config.needs_types
+    needs_config = NeedsSphinxConfig(app.config)
+    types = needs_config.types
     if id_length is None:
-        id_length = app.config.needs_id_length
+        id_length = needs_config.id_length
     type_prefix = None
     for ntype in types:
         if ntype["directive"] == need_type:
@@ -660,7 +669,7 @@ def make_hashed_id(app: Sphinx, need_type: str, full_title: str, content: str, i
 
     # check if needs_id_from_title is configured
     cal_hashed_id = hashed_id
-    if app.config.needs_id_from_title:
+    if needs_config.id_from_title:
         id_from_title = full_title.upper().replace(" ", "_") + "_"
         cal_hashed_id = id_from_title + hashed_id
 

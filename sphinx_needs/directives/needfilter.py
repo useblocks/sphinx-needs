@@ -1,18 +1,15 @@
 import os
-from typing import Sequence
+from typing import List, Sequence
 from urllib.parse import urlparse
 
 from docutils import nodes
 from docutils.parsers.rst import directives
 from jinja2 import Template
-
-try:
-    from sphinx.errors import NoUri  # Sphinx 3.0
-except ImportError:
-    from sphinx.environment import NoUri  # Sphinx < 3.0
-
 from sphinx.application import Sphinx
+from sphinx.errors import NoUri
 
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.diagrams_common import create_legend
 from sphinx_needs.filter_common import FilterBase, process_filters
 from sphinx_needs.utils import add_doc, row_col_maker, unwrap
@@ -32,7 +29,7 @@ class NeedfilterDirective(FilterBase):
 
     @staticmethod
     def layout(argument: str) -> str:
-        return directives.choice(argument, ("list", "table", "diagram"))
+        return directives.choice(argument, ("list", "table", "diagram"))  # type: ignore
 
     option_spec = {
         "show_status": directives.flag,
@@ -47,19 +44,14 @@ class NeedfilterDirective(FilterBase):
     option_spec.update(FilterBase.base_option_spec)
 
     def run(self) -> Sequence[nodes.Node]:
-        env = self.state.document.settings.env
-        if not hasattr(env, "need_all_needfilters"):
-            env.need_all_needfilters = {}
-
-        # be sure, global var is available. If not, create it
-        if not hasattr(env, "needs_all_needs"):
-            env.needs_all_needs = {}
+        env = self.env
 
         targetid = "needfilter-{docname}-{id}".format(docname=env.docname, id=env.new_serialno("needfilter"))
         targetnode = nodes.target("", "", ids=[targetid])
 
         # Add the need and all needed information
-        env.need_all_needfilters[targetid] = {
+        data = SphinxNeedsData(env)._get_or_create_filters()
+        data[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
@@ -69,25 +61,28 @@ class NeedfilterDirective(FilterBase):
             "show_legend": "show_legend" in self.options,
             "layout": self.options.get("layout", "list"),
             "export_id": self.options.get("export_id", ""),
-            # "env": env,
+            **self.collect_filter_attributes(),
         }
-        env.need_all_needfilters[targetid].update(self.collect_filter_attributes())
 
         add_doc(env, env.docname)
 
         return [targetnode, Needfilter("")]
 
 
-def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list) -> None:
+def process_needfilters(
+    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
+) -> None:
     # Replace all needlist nodes with a list of the collected needs.
     # Augment each need with a backlink to the original location.
     builder = unwrap(app.builder)
     env = unwrap(builder.env)
+    needs_config = NeedsSphinxConfig(env.config)
+    all_needs = SphinxNeedsData(env).get_or_create_needs()
 
     # NEEDFILTER
     # for node in doctree.findall(Needfilter):
     for node in found_nodes:
-        if not app.config.needs_include_needs:
+        if not needs_config.include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
             # But this is here the case, because we are using the attribute "ids" of a node.
@@ -99,9 +94,9 @@ def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str, 
             continue
 
         id = node.attributes["ids"][0]
-        current_needfilter = env.need_all_needfilters[id]
-        all_needs = env.needs_all_needs
+        current_needfilter = SphinxNeedsData(env)._get_or_create_filters()[id]
 
+        content: List[nodes.Element]
         if current_needfilter["layout"] == "list":
             content = []
 
@@ -122,6 +117,11 @@ def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str, 
 
             plantuml_block_text = ".. plantuml::\n" "\n" "   @startuml" "   @enduml"
             puml_node = plantuml(plantuml_block_text)
+
+            # Add source origin
+            puml_node.line = current_needfilter["lineno"]
+            puml_node.source = env.doc2path(current_needfilter["docname"])
+
             puml_node["uml"] = "@startuml\n"
             puml_connections = ""
 
@@ -151,15 +151,11 @@ def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str, 
             tgroup += tbody
             content += tgroup
 
-        all_needs = list(all_needs.values())
-        found_needs = process_filters(app, all_needs, current_needfilter)
+        found_needs = process_filters(app, all_needs.values(), current_needfilter)
 
         line_block = nodes.line_block()
         for need_info in found_needs:
-            if "target_node" in need_info:
-                target_id = need_info["target_node"]["refid"]
-            else:
-                target_id = need_info["target_id"]
+            target_id = need_info["target_id"]
 
             if current_needfilter["layout"] == "list":
                 para = nodes.line()
@@ -187,12 +183,12 @@ def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str, 
                 line_block.append(para)
             elif current_needfilter["layout"] == "table":
                 row = nodes.row()
-                row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, "id", make_ref=True)
-                row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, "title")
-                row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, "type_name")
-                row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, "status")
-                row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, "links", ref_lookup=True)
-                row += row_col_maker(app, fromdocname, env.needs_all_needs, need_info, "tags")
+                row += row_col_maker(app, fromdocname, all_needs, need_info, "id", make_ref=True)
+                row += row_col_maker(app, fromdocname, all_needs, need_info, "title")
+                row += row_col_maker(app, fromdocname, all_needs, need_info, "type_name")
+                row += row_col_maker(app, fromdocname, all_needs, need_info, "status")
+                row += row_col_maker(app, fromdocname, all_needs, need_info, "links", ref_lookup=True)
+                row += row_col_maker(app, fromdocname, all_needs, need_info, "tags")
                 tbody += row
             elif current_needfilter["layout"] == "diagram":
                 # Link calculation
@@ -211,8 +207,8 @@ def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str, 
                 except NoUri:
                     link = ""
 
-                diagram_template = Template(env.config.needs_diagram_template)
-                node_text = diagram_template.render(**need_info, **app.config.needs_render_context)
+                diagram_template = Template(needs_config.diagram_template)
+                node_text = diagram_template.render(**need_info, **needs_config.render_context)
 
                 puml_node["uml"] += '{style} "{node_text}" as {id} [[{link}]] {color}\n'.format(
                     id=need_info["id"],
@@ -233,7 +229,7 @@ def process_needfilters(app: Sphinx, doctree: nodes.document, fromdocname: str, 
             # Create a legend
 
             if current_needfilter["show_legend"]:
-                puml_node["uml"] += create_legend(app.config.needs_types)
+                puml_node["uml"] += create_legend(needs_config.types)
             puml_node["uml"] += "@enduml"
             puml_node["incdir"] = os.path.dirname(current_needfilter["docname"])
             puml_node["filename"] = os.path.split(current_needfilter["docname"])[1]  # Needed for plantuml >= 0.9
