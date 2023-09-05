@@ -22,6 +22,9 @@ Released: under development
 
 * Improvement: Suffix all warnings with ``[needs]``, and allow them to be suppressed (`#975 <https://github.com/useblocks/sphinx-needs/pull/975>`_)
 
+* Bugfix: Check filter strings for correctness.
+  (`#964 <https://github.com/useblocks/sphinx-needs/pull/964>`_)
+
 1.3.0
 -----
 Released: 16.08.2023
@@ -29,9 +32,6 @@ Released: 16.08.2023
 * Improvement: Configuration option :ref:`needs_debug_measurement` added, which creates a runtime report
   for debugging purposes.
   (`#917 <https://github.com/useblocks/sphinx-needs/pull/917>`_)
-
-* Bugfix: Check filter strings for correctness.
-  (`#964 <https://github.com/useblocks/sphinx-needs/pull/964>`_)
 * Bugfix: Replace hardcoded `index` with config value `root_doc`.
   (`#877 <https://github.com/useblocks/sphinx-needs/pull/877>`_)
 * Bugfix: Fix unbounded memory usage in pickle environment.
