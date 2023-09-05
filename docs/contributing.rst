@@ -185,7 +185,7 @@ to ``test.pypi.org`` and ``pypy.org``.
 Structure of the extension's logic
 ----------------------------------
 
-The following is an outline of the build events which this extension adds to the Sphinx build process:
+The following is an outline of the build events which this extension adds to the :ref:`Sphinx build process <events>`:
 
 #. After configuration has been initialised (``config-inited`` event):
 
