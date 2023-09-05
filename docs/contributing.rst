@@ -182,10 +182,6 @@ The release jobs will build the source and wheel distribution and try to upload 
 to ``test.pypi.org`` and ``pypy.org``.
 
 
-.. Include our contributors and maintainers.
-.. include:: ../AUTHORS
-
-
 Structure of the extension's logic
 ----------------------------------
 
@@ -245,3 +241,6 @@ The following is an outline of the build events which this extension adds to the
    - Write the ``needs.json`` to the output folder (``build_needs_json``)
    - Write all required UML files to the output file (``build_needumls_pumls``)
    - Print process timing, if enabled (``process_timing``)
+
+.. Include our contributors and maintainers.
+.. include:: ../AUTHORS
