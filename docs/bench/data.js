@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1693810860047,
+  "lastUpdate": 1693999436375,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -4536,6 +4536,42 @@ window.BENCHMARK_DATA = {
             "value": 70.93331940100006,
             "unit": "s",
             "extra": "Commit: bf359b20849535989cb0e4d5469445e9cacdcf6a\nBranch: master\nTime: 2023-09-04T08:53:47+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "43779320+nhatnamnguyengtvthcm@users.noreply.github.com",
+            "name": "Namnn07",
+            "username": "nhatnamnguyengtvthcm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1fc6bde22cb5ac9138cf93ec67fcf5d37311db35",
+          "message": "Namnn/need per id json (#960)\n\n1. In the builder, I build one builder which is name build_needs_id_json\r\nto build Json file per need id\r\n2. Using command: make docs-html-fast to run.\r\n3. Finally, in the \"_build\" folder will be gen the \"needs_id\" folder\r\ninclude all file json of need id.",
+          "timestamp": "2023-09-06T13:16:57+02:00",
+          "tree_id": "84b7df89c1c2548bd4f26be2ee683c2be97e6f85",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/1fc6bde22cb5ac9138cf93ec67fcf5d37311db35"
+        },
+        "date": 1693999432179,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22896084000001338,
+            "unit": "s",
+            "extra": "Commit: 1fc6bde22cb5ac9138cf93ec67fcf5d37311db35\nBranch: master\nTime: 2023-09-06T13:16:57+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 70.78094094300002,
+            "unit": "s",
+            "extra": "Commit: 1fc6bde22cb5ac9138cf93ec67fcf5d37311db35\nBranch: master\nTime: 2023-09-06T13:16:57+02:00"
           }
         ]
       }
