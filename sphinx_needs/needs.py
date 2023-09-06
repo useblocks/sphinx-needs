@@ -393,7 +393,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             NEEDS_CONFIG.warnings[name] = check
         else:
             log.warning(
-                f'{name} for "needs_warnings" is already registered. [needs.config]', type="needs", subtype="config"
+                f"{name!r} in 'needs_warnings' is already registered. [needs.config]", type="needs", subtype="config"
             )
 
     if needs_config.constraints_failed_color:
