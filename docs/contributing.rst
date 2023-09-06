@@ -182,5 +182,65 @@ The release jobs will build the source and wheel distribution and try to upload 
 to ``test.pypi.org`` and ``pypy.org``.
 
 
+Structure of the extension's logic
+----------------------------------
+
+The following is an outline of the build events which this extension adds to the :ref:`Sphinx build process <events>`:
+
+#. After configuration has been initialised (``config-inited`` event):
+
+   - Register additional directives, directive options and warnings (``load_config``)
+   - Check configuration consistency (``check_configuration``)
+
+#. Before reading changed documents (``env-before-read-docs`` event):
+
+   - Initialise ``BuildEnvironment`` variables (``prepare_env``)
+   - Register services (``prepare_env``)
+   - Register functions  (``prepare_env``)
+   - Initialise default extra options (``prepare_env``)
+   - Initialise extra link types (``prepare_env``)
+   - Ensure default configurations are set (``prepare_env``)
+   - Start process timing, if enabled (``prepare_env``)
+   - Load external needs (``load_external_needs``)
+
+#. For all removed and changed documents (``env-before-read-docs`` event):
+
+   - Remove all cached need items that originate from the document (``purge_needs``)
+
+#. For changed documents (``doctree-read`` event, priority 880 of transforms)
+
+   - Determine and add data on containing sections and parents to needs (``add_sections``)
+
+#. When building in parallel mode (``env-merge-info`` event), merge ``BuildEnvironment`` data (``merge_data``)
+
+#. After all documents have been read and transformed (``env-updated`` event) (NOTE these are skipped for ``needs`` builder)
+
+   - Copy vendored JS libraries (with CSS) to build folder (``install_lib_static_files``)
+   - Generate permalink file (``install_permalink_file``)
+   - Copy vendored CSS files to build folder (``install_styles_static_files``)
+
+#. Note, the ``BuildEnvironment`` is cached at this point, only if any documents were updated.
+
+#. For all changed documents, or their dependants (``doctree-resolved``)
+
+   - Replace all ```Needextract``` nodes with a list of the collected ``Need`` (``process_creator``)
+   - Remove all ``Need`` nodes, if ``needs_include_needs`` is ``True`` (``process_need_nodes``)
+   - Call dynamic functions, set as values on the need data items and replace them with their return values (``process_need_nodes -> resolve_dynamic_values``)
+   - Replace needs data variant values (``process_need_nodes -> resolve_variants_options``)
+   - Check for dead links (``process_need_nodes -> check_links``)
+   - Generate back links (``process_need_nodes -> create_back_links``)
+   - Process constraints, for each ``Need`` node (``process_need_nodes -> process_constraints``)
+   - Perform all modifications on need data items, due to ``Needextend`` nodes (``process_need_nodes -> process_needextend``)
+   - Format each ``Need`` node to give the desired visual output (``process_need_nodes -> print_need_nodes``)
+   - Process all need specific nodes, replacing them with the desired visual output (``process_creator``)
+   - Remove  ``Need`` nodes marked as ``hidden`` (``remove_hidden_needs``)
+
+#. At the end of the build (``build-finished`` event)
+
+   - Call all user defined need data checks, a.k.a warnings (``process_warnings``)
+   - Write the ``needs.json`` to the output folder (``build_needs_json``)
+   - Write all required UML files to the output file (``build_needumls_pumls``)
+   - Print process timing, if enabled (``process_timing``)
+
 .. Include our contributors and maintainers.
 .. include:: ../AUTHORS
