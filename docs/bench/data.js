@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1694003548313,
+  "lastUpdate": 1694010659538,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -4608,6 +4608,42 @@ window.BENCHMARK_DATA = {
             "value": 87.90341669099996,
             "unit": "s",
             "extra": "Commit: 03bd887a8d20140318d48fe8b3bb06804ec6d4ec\nBranch: master\nTime: 2023-09-06T14:23:49+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4faedec27c24e314b7da9c298dc9aa67e97e9ff6",
+          "message": "👌 Improve removal of hidden need nodes (#1013)\n\nThis commit improves on the current logic (from #995) and moves it to occur earlier in the build process, directly after the need location has been analysed (i.e. once it is no longer necessary).",
+          "timestamp": "2023-09-06T16:23:43+02:00",
+          "tree_id": "9eeab9d766543566a95fb0270ea28105d35669f3",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/4faedec27c24e314b7da9c298dc9aa67e97e9ff6"
+        },
+        "date": 1694010654703,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22741633699996555,
+            "unit": "s",
+            "extra": "Commit: 4faedec27c24e314b7da9c298dc9aa67e97e9ff6\nBranch: master\nTime: 2023-09-06T16:23:43+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 73.70988601800002,
+            "unit": "s",
+            "extra": "Commit: 4faedec27c24e314b7da9c298dc9aa67e97e9ff6\nBranch: master\nTime: 2023-09-06T16:23:43+02:00"
           }
         ]
       }
