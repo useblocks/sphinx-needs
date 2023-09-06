@@ -337,6 +337,12 @@ def add_need(
         "external_css": external_css or "external_link",
         "is_modified": False,  # needed by needextend
         "modifications": 0,  # needed by needextend
+        # these are set later in the analyse_need_locations transform
+        "sections": [],
+        "section_name": "",
+        "signature": "",
+        "parent_needs": [],
+        "parent_need": "",
     }
     needs_extra_option_names = list(NEEDS_CONFIG.extra_options)
     _merge_extra_options(needs_info, kwargs, needs_extra_option_names)
@@ -436,8 +442,9 @@ def add_need(
     node_need.line = needs_info["lineno"]
 
     if needs_info["hide"]:
-        # add node to doctree, so we can later compute the containing section(s)
-        # (for use with section filters)
+        # still add node to doctree,
+        # so we can later compute its relative location in the document
+        # (see analyse_need_locations function)
         node_need["hidden"] = True
         return [node_need]
 
