@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1693999436375,
+  "lastUpdate": 1694003548313,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -4572,6 +4572,42 @@ window.BENCHMARK_DATA = {
             "value": 70.78094094300002,
             "unit": "s",
             "extra": "Commit: 1fc6bde22cb5ac9138cf93ec67fcf5d37311db35\nBranch: master\nTime: 2023-09-06T13:16:57+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "03bd887a8d20140318d48fe8b3bb06804ec6d4ec",
+          "message": "📚 DOCS: Add outline of extension logic (#1012)\n\nThis commit adds a section in the contributing documentation, to outline the logic of the extension, in relation to what events it adds to the sphinx build.\r\nHopefully, this can help contributers to understand how the extension works, and how/where to suggest fixes/improvements in the code base",
+          "timestamp": "2023-09-06T14:23:49+02:00",
+          "tree_id": "70c181d1c782649f7e9b63676cb3d8c9e8a3decd",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/03bd887a8d20140318d48fe8b3bb06804ec6d4ec"
+        },
+        "date": 1694003541301,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.26152960300004224,
+            "unit": "s",
+            "extra": "Commit: 03bd887a8d20140318d48fe8b3bb06804ec6d4ec\nBranch: master\nTime: 2023-09-06T14:23:49+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 87.90341669099996,
+            "unit": "s",
+            "extra": "Commit: 03bd887a8d20140318d48fe8b3bb06804ec6d4ec\nBranch: master\nTime: 2023-09-06T14:23:49+02:00"
           }
         ]
       }
