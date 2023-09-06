@@ -11,7 +11,9 @@ from sphinx.errors import SphinxError
 import sphinx_needs.debug as debug  # Need to set global var in it for timeing measurements
 from sphinx_needs.builder import (
     NeedsBuilder,
+    NeedsIdBuilder,
     NeedumlsBuilder,
+    build_needs_id_json,
     build_needs_json,
     build_needumls_pumls,
 )
@@ -140,6 +142,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
 
     app.add_builder(NeedsBuilder)
     app.add_builder(NeedumlsBuilder)
+    app.add_builder(NeedsIdBuilder)
 
     NeedsSphinxConfig.add_config_values(app)
 
@@ -239,6 +242,8 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.connect("env-updated", install_lib_static_files)
     app.connect("env-updated", install_permalink_file)
 
+    #
+    app.connect("build-finished", build_needs_id_json)
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect("env-updated", install_styles_static_files)
 

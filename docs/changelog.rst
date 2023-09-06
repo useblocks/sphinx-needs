@@ -7,7 +7,7 @@ License
 -------
 
 .. include:: ../LICENSE
-
+  
 2.0.0
 -----
 Released: under development
@@ -15,6 +15,7 @@ Released: under development
 1.4.0
 -----
 Released: under development
+* Improvement: Added Builder :ref:`needs_id_builder` added and config option :ref:`needs_build_json_per_id` in `conf.py`. 
 
 * Improvement: Reduce document build time, by memoizing the inline parse in ``build_need`` (`#968 <https://github.com/useblocks/sphinx-needs/pull/968>`_)
 
@@ -29,7 +30,6 @@ Released: 16.08.2023
 * Improvement: Configuration option :ref:`needs_debug_measurement` added, which creates a runtime report
   for debugging purposes.
   (`#917 <https://github.com/useblocks/sphinx-needs/pull/917>`_)
-
 * Bugfix: Replace hardcoded `index` with config value `root_doc`.
   (`#877 <https://github.com/useblocks/sphinx-needs/pull/877>`_)
 * Bugfix: Fix unbounded memory usage in pickle environment.
@@ -914,3 +914,5 @@ custom css definitions you need to update them.
 * Integrated interaction with the activated plantuml sphinx extension
 
 * Added role **need** to create a reference to a need by giving the id
+
+
