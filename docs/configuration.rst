@@ -2317,6 +2317,8 @@ Example:
 needs_build_json_per_id_path 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. versionadded:: 1.4.0
+    
 This option sets the location of the set of ``needs.json`` for every needs-id.
 
 Default value: ``needs_id``
