@@ -29,14 +29,13 @@ from sphinx_needs.directives.list2need import List2Need, List2NeedDirective
 from sphinx_needs.directives.need import (
     Need,
     NeedDirective,
-    add_sections,
+    analyse_need_locations,
     html_depart,
     html_visit,
     latex_depart,
     latex_visit,
     process_need_nodes,
     purge_needs,
-    remove_hidden_needs,
 )
 from sphinx_needs.directives.needbar import Needbar, NeedbarDirective, process_needbar
 from sphinx_needs.directives.needextend import Needextend, NeedextendDirective
@@ -214,14 +213,22 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     # EVENTS
     ########################################################################
     # Make connections to events
-    app.connect("env-purge-doc", purge_needs)
     app.connect("config-inited", load_config)
+    app.connect("config-inited", check_configuration)
+
     app.connect("env-before-read-docs", prepare_env)
     app.connect("env-before-read-docs", load_external_needs)
-    app.connect("config-inited", check_configuration)
-    # app.connect("doctree-resolved", add_sections)
-    app.connect("doctree-read", add_sections)
+
+    app.connect("env-purge-doc", purge_needs)
+
+    app.connect("doctree-read", analyse_need_locations)
+
     app.connect("env-merge-info", merge_data)
+
+    app.connect("env-updated", install_lib_static_files)
+    app.connect("env-updated", install_permalink_file)
+    # This should be called last, so that need-styles can override styles from used libraries
+    app.connect("env-updated", install_styles_static_files)
 
     # There is also the event doctree-read.
     # But it looks like in this event no references are already solved, which
@@ -233,19 +240,12 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.connect("doctree-resolved", process_creator(NODE_TYPES_PRIO, "needextract"), priority=100)
     app.connect("doctree-resolved", process_need_nodes)
     app.connect("doctree-resolved", process_creator(NODE_TYPES))
-    app.connect("doctree-resolved", remove_hidden_needs, priority=1000)
 
     app.connect("build-finished", process_warnings)
     app.connect("build-finished", build_needs_json)
+    app.connect("build-finished", build_needs_id_json)
     app.connect("build-finished", build_needumls_pumls)
     app.connect("build-finished", debug.process_timing)
-    app.connect("env-updated", install_lib_static_files)
-    app.connect("env-updated", install_permalink_file)
-
-    #
-    app.connect("build-finished", build_needs_id_json)
-    # This should be called last, so that need-styles can override styles from used libraries
-    app.connect("env-updated", install_styles_static_files)
 
     # Be sure Sphinx-Needs config gets erased before any events or external API calls get executed.
     # So never but this inside an event.

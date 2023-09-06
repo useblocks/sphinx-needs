@@ -166,7 +166,7 @@ class NeedsInfoType(NeedsBaseDataType):
     # additional source information
     doctype: str
     """Type of the document where the need is defined, e.g. '.rst'"""
-    # set in add_sections transform
+    # set in analyse_need_locations transform
     sections: list[str]
     section_name: str
     """Simply the first section"""
