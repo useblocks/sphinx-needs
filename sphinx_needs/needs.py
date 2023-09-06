@@ -213,13 +213,22 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     # EVENTS
     ########################################################################
     # Make connections to events
-    app.connect("env-purge-doc", purge_needs)
     app.connect("config-inited", load_config)
+    app.connect("config-inited", check_configuration)
+
     app.connect("env-before-read-docs", prepare_env)
     app.connect("env-before-read-docs", load_external_needs)
-    app.connect("config-inited", check_configuration)
+
+    app.connect("env-purge-doc", purge_needs)
+
     app.connect("doctree-read", analyse_need_locations)
+
     app.connect("env-merge-info", merge_data)
+
+    app.connect("env-updated", install_lib_static_files)
+    app.connect("env-updated", install_permalink_file)
+    # This should be called last, so that need-styles can override styles from used libraries
+    app.connect("env-updated", install_styles_static_files)
 
     # There is also the event doctree-read.
     # But it looks like in this event no references are already solved, which
@@ -234,15 +243,9 @@ def setup(app: Sphinx) -> Dict[str, Any]:
 
     app.connect("build-finished", process_warnings)
     app.connect("build-finished", build_needs_json)
+    app.connect("build-finished", build_needs_id_json)
     app.connect("build-finished", build_needumls_pumls)
     app.connect("build-finished", debug.process_timing)
-    app.connect("env-updated", install_lib_static_files)
-    app.connect("env-updated", install_permalink_file)
-
-    #
-    app.connect("build-finished", build_needs_id_json)
-    # This should be called last, so that need-styles can override styles from used libraries
-    app.connect("env-updated", install_styles_static_files)
 
     # Be sure Sphinx-Needs config gets erased before any events or external API calls get executed.
     # So never but this inside an event.
