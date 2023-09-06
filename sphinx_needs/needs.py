@@ -311,7 +311,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     extra_options = NEEDS_CONFIG.extra_options
     for option in needs_config.extra_options:
         if option in extra_options:
-            log.warning(f'extra_option "{option}" already registered. [needs]', type="needs")
+            log.warning(f'extra_option "{option}" already registered. [needs.config]', type="needs", subtype="config")
         NEEDS_CONFIG.extra_options[option] = directives.unchanged
 
     # Get extra links and create a dictionary of needed options.
@@ -387,7 +387,16 @@ def load_config(app: Sphinx, *_args: Any) -> None:
         if name not in NEEDS_CONFIG.warnings:
             NEEDS_CONFIG.warnings[name] = check
         else:
-            log.warning(f'{name} for "warnings" is already registered. [needs]', type="needs")
+            log.warning(
+                f'{name} for "needs_warnings" is already registered. [needs.config]', type="needs", subtype="config"
+            )
+
+    if needs_config.constraints_failed_color:
+        log.warning(
+            'Config option "needs_constraints_failed_color" is deprecated. Please use "needs_constraint_failed_options" styles instead. [needs.config]',
+            type="needs",
+            subtype="config",
+        )
 
 
 def visitor_dummy(*_args: Any, **_kwargs: Any) -> None:

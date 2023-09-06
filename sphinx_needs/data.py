@@ -3,7 +3,7 @@ which is stored in the Sphinx environment.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 try:
     from typing import Literal, TypedDict
@@ -158,10 +158,13 @@ class NeedsInfoType(NeedsBaseDataType):
     # back links are all set in process_need_nodes (-> create_back_links) transform
 
     # constraints information
-    # set in process_need_nodes (-> process_constraints) transform
     constraints: list[str]
+    """List of constraint names, which are defined for this need."""
+    # set in process_need_nodes (-> process_constraints) transform
+    constraints_results: dict[str, dict[str, bool]]
+    """Mapping of constraint name, to check name, to result."""
     constraints_passed: None | bool
-    constraints_results: dict[str, dict[str, Any]]
+    """True if all constraints passed, False if any failed, None if not yet checked."""
 
     # additional source information
     doctype: str
