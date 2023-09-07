@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1694010659538,
+  "lastUpdate": 1694063362635,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -4644,6 +4644,42 @@ window.BENCHMARK_DATA = {
             "value": 73.70988601800002,
             "unit": "s",
             "extra": "Commit: 4faedec27c24e314b7da9c298dc9aa67e97e9ff6\nBranch: master\nTime: 2023-09-06T16:23:43+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "795ca1981566c7a6d5e130609ecdb6d37681d3d7",
+          "message": "👌 Improve `process_constraints` (#1015)\n\n- Add deprecation warning for `needs_constraints_failed_color` config option, which is no longer used\r\n- Improve exception messages for missing keys in config options\r\n- Add source location to failing constraints warnings\r\n- Improve docstrings and type annotations for data fields/config options",
+          "timestamp": "2023-09-07T06:59:48+02:00",
+          "tree_id": "5badd62a30cf5155705dcfddf3cbe6221901a110",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/795ca1981566c7a6d5e130609ecdb6d37681d3d7"
+        },
+        "date": 1694063357503,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.29717738099998314,
+            "unit": "s",
+            "extra": "Commit: 795ca1981566c7a6d5e130609ecdb6d37681d3d7\nBranch: master\nTime: 2023-09-07T06:59:48+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 100.55016616800003,
+            "unit": "s",
+            "extra": "Commit: 795ca1981566c7a6d5e130609ecdb6d37681d3d7\nBranch: master\nTime: 2023-09-07T06:59:48+02:00"
           }
         ]
       }
