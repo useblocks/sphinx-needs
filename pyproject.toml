@@ -73,6 +73,9 @@ packaging = "*"
 
 [tool.pytest.ini_options]
 asyncio_mode= "auto"
+markers = [
+    "jstest: marks tests as JavaScript test (deselect with '-m \"not jstest\"')",
+]
 
 [tool.black]
 line-length = 120

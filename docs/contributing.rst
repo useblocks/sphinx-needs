@@ -112,7 +112,7 @@ Running JavaScript Tests in Python Test Files
 
 **Enable Cypress Test in Python Test Files**
 
-* First, create a test folder to store your Cypress JS test files (files should end with: ``*.cy.js``). For each Cypress JS test file, you will need to write the Cypress JS test cases in the file. You can read more from the `Cypress Docs <https://docs.cypress.io/>`_. You can also refer to the ``tests/js_test/js-test-sn-collapse-button.cy.js`` file as reference.
+* First, create a test folder to store your Cypress JS test files (files should end with: ``*.cy.js``). For each Cypress JS test file, you will need to write the Cypress JS test cases in the file. You can read more from the `Cypress Docs <https://docs.cypress.io/>`_. You can also check the ``tests/js_test/js-test-sn-collapse-button.cy.js`` file as reference.
 * In your Python test files, you must mark every JS related test case with the marker - ``jstest`` and you also need to pass the ``spec_pattern`` key-value pair as part of the ``test_app`` fixture parameter. For example, your test case could look like the below:
     .. code-block:: python
 
