@@ -8,6 +8,12 @@ from sphinx.config import Config as _SphinxConfig
 
 from sphinx_needs.defaults import DEFAULT_DIAGRAM_TEMPLATE, NEEDS_TABLES_CLASSES
 
+try:
+    from typing import Literal, TypedDict
+except ImportError:
+    # introduced in python 3.8
+    from typing_extensions import Literal, TypedDict  # type: ignore
+
 if TYPE_CHECKING:
     from sphinx.util.logging import SphinxLoggerAdapter
 
@@ -52,6 +58,17 @@ class Config:
 
 
 NEEDS_CONFIG = Config()
+
+
+class ConstraintFailedType(TypedDict):
+    """Defines what to do if a constraint is not fulfilled"""
+
+    on_fail: list[Literal["warn", "break"]]
+    """warn: log a warning, break: raise a ``NeedsConstraintFailed`` exception"""
+    style: list[str]
+    """How to style the rendered need."""
+    force_style: bool
+    """If True, append styles to existing styles, else replace existing styles."""
 
 
 @dataclass
@@ -214,12 +231,14 @@ class NeedsSphinxConfig:
     report_template: str = field(default="", metadata={"rebuild": "html", "types": (str,)})
     """path to needs_report_template file which is based on the conf.py directory."""
 
-    # add constraints option
-    constraints: dict[str, dict[str, Any]] = field(default_factory=dict, metadata={"rebuild": "html", "types": (dict,)})
-    constraint_failed_options: dict[str, dict[str, Any]] = field(
+    constraints: dict[str, dict[str, str]] = field(default_factory=dict, metadata={"rebuild": "html", "types": (dict,)})
+    """Mapping of constraint name, to check name, to filter string."""
+    constraint_failed_options: dict[str, ConstraintFailedType] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
     )
+    """Mapping of constraint severity to what to do if a constraint is not fulfilled."""
     constraints_failed_color: str = field(default="", metadata={"rebuild": "html", "types": (str,)})
+    """DEPRECATED: Use constraint_failed_options instead."""
 
     # add variants option
     variants: dict[str, str] = field(default_factory=dict, metadata={"rebuild": "html", "types": (dict,)})

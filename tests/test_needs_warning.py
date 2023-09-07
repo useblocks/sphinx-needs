@@ -13,7 +13,7 @@ def test_needs_warnings(test_app):
     warnings = warning.getvalue()
 
     # check multiple warning registration
-    assert 'invalid_status for "warnings" is already registered.' in warnings
+    assert "'invalid_status' in 'needs_warnings' is already registered." in warnings
 
     # check warnings contents
     assert "WARNING: invalid_status: failed" in warnings
