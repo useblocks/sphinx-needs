@@ -28,7 +28,7 @@ from sphinx_needs.layout import build_need
 from sphinx_needs.logging import get_logger
 from sphinx_needs.need_constraints import process_constraints
 from sphinx_needs.nodes import Need
-from sphinx_needs.utils import add_doc, profile, unwrap
+from sphinx_needs.utils import add_doc, profile
 
 logger = get_logger(__name__)
 
@@ -296,8 +296,7 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
     (i.e. ones that should not be rendered in the output)
     are removed from the doctree.
     """
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    env = app.env
 
     needs = SphinxNeedsData(env).get_or_create_needs()
 
@@ -363,11 +362,6 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     """
     Event handler to add title meta data (status, tags, links, ...) information to the Need node. Also processes
     constraints.
-
-    :param app:
-    :param doctree:
-    :param fromdocname:
-    :return:
     """
     needs_config = NeedsSphinxConfig(app.config)
     if not needs_config.include_needs:
@@ -376,11 +370,11 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
                 node.parent.remove(node)  # type: ignore
         return
 
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    env = app.env
 
     # If no needs were defined, we do not need to do anything
-    if not hasattr(env, "needs_all_needs"):
+    needs_data = SphinxNeedsData(env).get_or_create_needs()
+    if not needs_data:
         return
 
     # Call dynamic functions and replace related node data with their return values
@@ -396,49 +390,34 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     for links in needs_config.extra_links:
         create_back_links(env, links["option"])
 
-    """
-    The output of this phase is a doctree for each source file; that is a tree of docutils nodes.
-
-    https://www.sphinx-doc.org/en/master/extdev/index.html
-
-    """
-    needs = SphinxNeedsData(env).get_or_create_needs()
-
-    # Used to store needs in the docs, which are needed again later
-    found_needs_nodes = []
+    # add constraints results to needs data
+    found_needs_nodes: List[Need] = []
     for node_need in doctree.findall(Need):
         need_id = node_need.attributes["ids"][0]
         found_needs_nodes.append(node_need)
-        need_data = needs[need_id]
+        process_constraints(app, needs_data[need_id])
 
-        process_constraints(app, need_data)
+    process_needextend(app, doctree)
 
-    # We call process_needextend here by our own, so that we are able
-    # to give print_need_nodes the already found need_nodes.
-    process_needextend(app, doctree, fromdocname)
-
-    print_need_nodes(app, doctree, fromdocname, found_needs_nodes)
+    replace_need_nodes(app, doctree, fromdocname, found_needs_nodes)
 
 
-@profile("NEED_PRINT")
-def print_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str, found_needs_nodes: List[Need]) -> None:
+@profile("NEED_REPLACE")
+def replace_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str, found_needs_nodes: List[Need]) -> None:
+    """Replace ``Need`` nodes with renderable nodes
+    (or NeedsIncoming / NeedsOutgoing nodes, which are later replaced).
+
+    **Important**: This function should not modify the needs data,
+    since it will be skipped for needs data writers.
     """
-    Finally creates the need-node in the docutils node-tree.
-
-    :param app:
-    :param doctree:
-    :param fromdocname:
-    :return:
-    """
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
-    needs = SphinxNeedsData(env).get_or_create_needs()
+    env = app.env
+    needs_data = SphinxNeedsData(env).get_or_create_needs()
 
     # We try to avoid findall as much as possibles. so we reuse the already found need nodes in the current document.
     # for node_need in doctree.findall(Need):
     for node_need in found_needs_nodes:
         need_id = node_need.attributes["ids"][0]
-        need_data = needs[need_id]
+        need_data = needs_data[need_id]
 
         find_and_replace_node_content(node_need, env, need_data)
         for index, attribute in enumerate(node_need.attributes["classes"]):

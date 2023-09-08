@@ -93,13 +93,9 @@ def execute_func(env: BuildEnvironment, need, func_string: str):
 func_pattern = re.compile(r"\[\[(.*?)\]\]")  # RegEx to detect function strings
 
 
-def find_and_replace_node_content(node, env: BuildEnvironment, need):
-    """
-    Search inside a given node and its children for nodes of type Text,
+def find_and_replace_node_content(node: nodes.Element, env: BuildEnvironment, need) -> None:
+    """Search inside a given node and its children for nodes of type Text,
     if found, check if it contains a function string and run/replace it.
-
-    :param node: Node to analyse
-    :return: None
     """
     new_children = []
     if not node.children and isinstance(node, nodes.Text) or isinstance(node, nodes.reference):

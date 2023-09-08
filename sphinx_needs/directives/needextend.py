@@ -71,12 +71,11 @@ class NeedextendDirective(SphinxDirective):
         return [targetnode, Needextend("")]
 
 
-def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
+def process_needextend(app: Sphinx, doctree: nodes.document) -> None:
+    """Perform all modifications of needs data,
+    and then remove all needextend nodes from the doctree.
     """
-    Perform all modifications on needs
-    """
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    env = app.env
     needs_config = NeedsSphinxConfig(env.config)
     data = SphinxNeedsData(env)
     workflow = data.get_or_create_workflow()

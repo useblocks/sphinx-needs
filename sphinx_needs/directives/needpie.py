@@ -9,7 +9,6 @@ from sphinx.application import Sphinx
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
-from sphinx_needs.debug import measure_time
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
 
 if not os.environ.get("DISPLAY"):
@@ -24,7 +23,6 @@ from sphinx_needs.utils import (
     add_doc,
     check_and_get_external_filter_func,
     save_matplotlib_figure,
-    unwrap,
 )
 
 logger = get_logger(__name__)
@@ -109,15 +107,18 @@ class NeedpieDirective(FilterBase):
         return [targetnode, Needpie("")]
 
 
-@measure_time("needpie")
-def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
-    needs_data = SphinxNeedsData(env)
+def replace_needpie_nodes(
+    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
+) -> None:
+    """Replace all ``Needpie`` nodes with renderable nodes.
 
-    # NEEDFLOW
+    **Important**: This function should not modify the needs data,
+    since it will be skipped for needs data builders.
+    """
+    env = app.env
+    needs_data = SphinxNeedsData(env)
     include_needs = NeedsSphinxConfig(env.config).include_needs
-    # for node in doctree.findall(Needpie):
+
     for node in found_nodes:
         if not include_needs:
             # Ok, this is really dirty.

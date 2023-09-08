@@ -20,108 +20,11 @@ from docutils.parsers.rst.states import Inliner, Struct
 from docutils.utils import new_document
 from jinja2 import Environment
 from sphinx.application import Sphinx
-from sphinx.environment.collectors.asset import DownloadFileCollector, ImageCollector
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.utils import INTERNALS, match_string_link, unwrap
-
-
-@measure_time("need")
-def create_need(
-    need_id: str, app: Sphinx, layout: Optional[str] = None, style: Optional[str] = None, docname: Optional[str] = None
-) -> nodes.container:
-    """
-    Creates a new need-node for a given layout.
-
-    Need must already exist in internal dictionary.
-    This creates a new representation only.
-    :param need_id: need id
-    :param app: sphinx application
-    :param layout: layout to use, overrides layout set by need itself
-    :param style: style to use, overrides styles set by need itself
-    :param docname: Needed for calculating references
-    :return:
-    """
-    env = app.builder.env
-    needs = SphinxNeedsData(env).get_or_create_needs()
-
-    if need_id not in needs.keys():
-        raise SphinxNeedLayoutException(f"Given need id {need_id} does not exist.")
-
-    need_data = needs[need_id]
-
-    # Resolve internal references.
-    # This is done for original need content automatically.
-    # But as we are working on  a copy, we have to trigger this on our own.
-    if docname is None:
-        docname = needs[need_id]["docname"]  # needed to calculate relative references
-
-    node_container = nodes.container()
-    # node_container += needs[need_id]["need_node"].children
-
-    # We must create a standalone copy of the content_node, as it may be reused several time
-    # (multiple needextract for the same need) and the Sphinx ImageTransformator add location specific
-    # uri to some nodes, which are not valid for all locations.
-    content_node = needs[need_id]["content_node"]
-    assert content_node is not None, f"Need {need_id} has no content node."
-    node_inner = content_node.deepcopy()
-
-    # Rerun some important Sphinx collectors for need-content coming from "needsexternal".
-    # This is needed, as Sphinx needs to know images and download paths.
-    # Normally this gets done much earlier in the process, so that for the copied need-content this
-    # handling was and will not be done by Sphinx itself anymore.
-
-    # Overwrite the docname, which must be the original one from the reused need, as all used paths are relative
-    # to the original location, not to the current document.
-    env.temp_data["docname"] = need_data["docname"]  # Dirty, as in this phase normally no docname is set anymore in env
-    ImageCollector().process_doc(app, node_inner)  # type: ignore[arg-type]
-    DownloadFileCollector().process_doc(app, node_inner)  # type: ignore[arg-type]
-
-    del env.temp_data["docname"]  # Be sure our env is as it was before
-
-    node_container.append(node_inner)
-
-    # resolve_references() ignores the given docname and takes the docname from the pending_xref node.
-    # Therefore, we need to manipulate this first, before we can ask Sphinx to perform the normal
-    # reference handling for us.
-    replace_pending_xref_refdoc(node_container, docname)
-    env.resolve_references(node_container, docname, env.app.builder)
-
-    node_container.attributes["ids"].append(need_id)
-
-    needs_config = NeedsSphinxConfig(app.config)
-    layout = layout or need_data["layout"] or needs_config.default_layout
-    style = style or need_data["style"] or needs_config.default_style
-
-    build_need(layout, node_container, app, style, docname)
-
-    # set the layout and style for the new need
-    node_container[0].attributes = node_container.parent.children[0].attributes
-    node_container[0].children[0].attributes = node_container.parent.children[0].children[0].attributes
-
-    node_container.attributes["ids"] = []
-
-    return node_container
-
-
-def replace_pending_xref_refdoc(node: nodes.Element, new_refdoc: str) -> None:
-    """
-    Overwrites the refdoc attribute of all pending_xref nodes.
-    This is needed, if a doctree with references gets copied used somewhereelse in the documentation.
-    What is the normal case when using needextract.
-    :param node: doctree
-    :param new_refdoc: string, should be an existing docname
-    :return: None
-    """
-    from sphinx.addnodes import pending_xref
-
-    if isinstance(node, pending_xref):
-        node.attributes["refdoc"] = new_refdoc
-    else:
-        for child in node.children:
-            replace_pending_xref_refdoc(child, new_refdoc)  # type: ignore[arg-type]
 
 
 @measure_time("need")
@@ -146,11 +49,11 @@ def build_need(
     """
 
     env = app.builder.env
-    needs = SphinxNeedsData(env).get_or_create_needs()
+    needs_data = SphinxNeedsData(env).get_or_create_needs()
     node_container = nodes.container()
 
     need_id = node.attributes["ids"][0]
-    need_data = needs[need_id]
+    need_data = needs_data[need_id]
 
     if need_data["hide"]:
         if node.parent:
@@ -169,7 +72,6 @@ def build_need(
     node_container.attributes["classes"] = ["need_container"]
 
     # We need to replace the current need-node (containing content only) with our new table need node.
-    # node.parent.replace(node, node_container)
     node.parent.replace(node, node_container)  # type: ignore
 
 

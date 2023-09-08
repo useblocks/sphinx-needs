@@ -69,18 +69,19 @@ class NeedfilterDirective(FilterBase):
         return [targetnode, Needfilter("")]
 
 
-def process_needfilters(
+def replace_needfilter_nodes(
     app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
 ) -> None:
-    # Replace all needlist nodes with a list of the collected needs.
-    # Augment each need with a backlink to the original location.
+    """Replace all ``Needfilter`` nodes with renderable nodes.
+
+    **Important**: This function should not modify the needs data,
+    since it will be skipped for needs data builders.
+    """
     builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    env = app.env
     needs_config = NeedsSphinxConfig(env.config)
     all_needs = SphinxNeedsData(env).get_or_create_needs()
 
-    # NEEDFILTER
-    # for node in doctree.findall(Needfilter):
     for node in found_nodes:
         if not needs_config.include_needs:
             # Ok, this is really dirty.

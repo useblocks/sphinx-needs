@@ -8,7 +8,6 @@ from sphinx.application import Sphinx
 from sphinx_needs.api.exceptions import NeedsInvalidException
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
-from sphinx_needs.debug import measure_time
 from sphinx_needs.directives.utils import (
     get_option_list,
     get_title,
@@ -17,7 +16,7 @@ from sphinx_needs.directives.utils import (
 )
 from sphinx_needs.filter_common import FilterBase, process_filters
 from sphinx_needs.functions.functions import check_and_get_content
-from sphinx_needs.utils import add_doc, profile, row_col_maker, unwrap
+from sphinx_needs.utils import add_doc, profile, row_col_maker
 
 
 class Needtable(nodes.General, nodes.Element):
@@ -110,21 +109,16 @@ class NeedtableDirective(FilterBase):
         return [targetnode] + [Needtable("")]
 
 
-@measure_time("needtable")
 @profile("NEEDTABLE")
-def process_needtables(
+def replace_needtable_nodes(
     app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
 ) -> None:
-    """
-    Replace all needtables nodes with a table of filtered nodes.
+    """Replace all ``Needtable`` nodes with renderable nodes.
 
-    :param app:
-    :param doctree:
-    :param fromdocname:
-    :return:
+    **Important**: This function should not modify the needs data,
+    since it will be skipped for needs data builders.
     """
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    env = app.env
     needs_config = NeedsSphinxConfig(app.config)
     needs_data = SphinxNeedsData(env)
 

@@ -14,11 +14,16 @@ class NeedIncoming(nodes.Inline, nodes.Element):  # type: ignore
     pass
 
 
-def process_need_incoming(
+def replace_need_incoming_nodes(
     app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
 ) -> None:
+    """Replace all ``NeedIncoming`` nodes with renderable nodes.
+
+    **Important**: This function should not modify the needs data,
+    since it will be skipped for needs data builders.
+    """
     builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    env = app.env
     needs_config = NeedsSphinxConfig(env.config)
     all_needs = SphinxNeedsData(env).get_or_create_needs()
 

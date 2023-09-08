@@ -10,7 +10,6 @@ from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
-from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link
 from sphinx_needs.directives.needflow import make_entity_name
 from sphinx_needs.filter_common import filter_needs
@@ -109,7 +108,10 @@ class NeedumlDirective(SphinxDirective):
 
         add_doc(env, env.docname)
 
-        return [targetnode] + [Needuml(targetid)]
+        node = Needuml(targetid)
+        self.set_source_info(node)
+
+        return [targetnode] + [node]
 
 
 class NeedarchDirective(NeedumlDirective):
@@ -403,9 +405,15 @@ def is_element_of_need(node: nodes.Element) -> str:
     return is_element_of
 
 
-@measure_time("needuml")
-def process_needuml(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
-    env = app.builder.env
+def replace_needuml_nodes(
+    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
+) -> None:
+    """Replace all ``Needuml`` nodes with renderable nodes.
+
+    **Important**: This function should not modify the needs data,
+    since it will be skipped for needs data builders.
+    """
+    env = app.env
 
     # for node in doctree.findall(Needuml):
     for node in found_nodes:
@@ -418,7 +426,7 @@ def process_needuml(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
             # Check if needarch is only used inside a need
             parent_need_id = is_element_of_need(node)
             if not parent_need_id:
-                raise NeedArchException("Directive needarch can only be used inside a need.")
+                raise NeedArchException(f"Directive needarch can only be used inside a need. {node.source} {node.line}")
         content = []
 
         # Adding config

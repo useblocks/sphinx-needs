@@ -13,7 +13,6 @@ from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.filter_common import filter_needs, prepare_need_list
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import unwrap
 
 log = get_logger(__name__)
 
@@ -22,12 +21,16 @@ class NeedCount(nodes.Inline, nodes.Element):  # type: ignore
     pass
 
 
-def process_need_count(
+def replace_need_count_nodes(
     app: Sphinx, doctree: nodes.document, _fromdocname: str, found_nodes: List[nodes.Element]
 ) -> None:
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
-    # for node_need_count in doctree.findall(NeedCount):
+    """Replace all ``NeedCount`` nodes with renderable nodes.
+
+    **Important**: This function should not modify the needs data,
+    since it will be skipped for needs data builders.
+    """
+    env = app.env
+
     for node_need_count in found_nodes:
         all_needs = list(SphinxNeedsData(env).get_or_create_needs().values())
         filter = node_need_count["reftarget"]

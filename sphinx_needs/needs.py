@@ -37,52 +37,60 @@ from sphinx_needs.directives.need import (
     process_need_nodes,
     purge_needs,
 )
-from sphinx_needs.directives.needbar import Needbar, NeedbarDirective, process_needbar
+from sphinx_needs.directives.needbar import (
+    Needbar,
+    NeedbarDirective,
+    replace_needbar_nodes,
+)
 from sphinx_needs.directives.needextend import Needextend, NeedextendDirective
 from sphinx_needs.directives.needextract import (
     Needextract,
     NeedextractDirective,
-    process_needextract,
+    replace_needextract_nodes,
 )
 from sphinx_needs.directives.needfilter import (
     Needfilter,
     NeedfilterDirective,
-    process_needfilters,
+    replace_needfilter_nodes,
 )
 from sphinx_needs.directives.needflow import (
     Needflow,
     NeedflowDirective,
-    process_needflow,
+    replace_needflow_nodes,
 )
 from sphinx_needs.directives.needgantt import (
     Needgantt,
     NeedganttDirective,
-    process_needgantt,
+    replace_needgantt_nodes,
 )
 from sphinx_needs.directives.needimport import Needimport, NeedimportDirective
 from sphinx_needs.directives.needlist import (
     Needlist,
     NeedlistDirective,
-    process_needlist,
+    replace_needlist_nodes,
 )
-from sphinx_needs.directives.needpie import Needpie, NeedpieDirective, process_needpie
+from sphinx_needs.directives.needpie import (
+    Needpie,
+    NeedpieDirective,
+    replace_needpie_nodes,
+)
 from sphinx_needs.directives.needreport import NeedReportDirective
 from sphinx_needs.directives.needsequence import (
     Needsequence,
     NeedsequenceDirective,
-    process_needsequence,
+    replace_needsequence_nodes,
 )
 from sphinx_needs.directives.needservice import Needservice, NeedserviceDirective
 from sphinx_needs.directives.needtable import (
     Needtable,
     NeedtableDirective,
-    process_needtables,
+    replace_needtable_nodes,
 )
 from sphinx_needs.directives.needuml import (
     NeedarchDirective,
     Needuml,
     NeedumlDirective,
-    process_needuml,
+    replace_needuml_nodes,
 )
 from sphinx_needs.environment import (
     install_lib_static_files,
@@ -93,12 +101,12 @@ from sphinx_needs.external_needs import load_external_needs
 from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS, register_func
 from sphinx_needs.logging import get_logger
 from sphinx_needs.roles import NeedsXRefRole
-from sphinx_needs.roles.need_count import NeedCount, process_need_count
-from sphinx_needs.roles.need_func import NeedFunc, process_need_func
-from sphinx_needs.roles.need_incoming import NeedIncoming, process_need_incoming
-from sphinx_needs.roles.need_outgoing import NeedOutgoing, process_need_outgoing
-from sphinx_needs.roles.need_part import NeedPart, process_need_part
-from sphinx_needs.roles.need_ref import NeedRef, process_need_ref
+from sphinx_needs.roles.need_count import NeedCount, replace_need_count_nodes
+from sphinx_needs.roles.need_func import NeedFunc, replace_need_func_nodes
+from sphinx_needs.roles.need_incoming import NeedIncoming, replace_need_incoming_nodes
+from sphinx_needs.roles.need_outgoing import NeedOutgoing, replace_need_outgoing_nodes
+from sphinx_needs.roles.need_part import NeedPart
+from sphinx_needs.roles.need_ref import NeedRef, replace_needref_nodes
 from sphinx_needs.services.github import GithubService
 from sphinx_needs.services.open_needs import OpenNeedsService
 from sphinx_needs.utils import INTERNALS, NEEDS_FUNCTIONS, node_match
@@ -106,31 +114,6 @@ from sphinx_needs.warnings import process_warnings
 
 VERSION = "1.3.0"
 NEEDS_FUNCTIONS.clear()
-
-_NODE_TYPES_T = Dict[Type[nodes.Element], Callable[[Sphinx, nodes.document, str, List[nodes.Element]], None]]
-
-NODE_TYPES_PRIO: _NODE_TYPES_T = {  # Node types to be checked before most others
-    Needextract: process_needextract,
-}
-
-NODE_TYPES: _NODE_TYPES_T = {
-    Needbar: process_needbar,
-    # Needextract: process_needextract,
-    Needfilter: process_needfilters,
-    Needlist: process_needlist,
-    Needtable: process_needtables,
-    Needflow: process_needflow,
-    Needpie: process_needpie,
-    Needsequence: process_needsequence,
-    Needgantt: process_needgantt,
-    Needuml: process_needuml,
-    NeedPart: process_need_part,
-    NeedRef: process_need_ref,
-    NeedIncoming: process_need_incoming,
-    NeedOutgoing: process_need_outgoing,
-    NeedCount: process_need_count,
-    NeedFunc: process_need_func,
-}
 
 
 def setup(app: Sphinx) -> Dict[str, Any]:
@@ -147,9 +130,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
 
     # Define nodes
     app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
-    app.add_node(
-        Needfilter,
-    )
+    app.add_node(Needfilter)
     app.add_node(Needbar)
     app.add_node(Needimport)
     app.add_node(Needlist)
@@ -237,9 +218,33 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     # doctree-read. So manipulating the doctree may result in conflicts, as e.g. images get not
     # registered for sphinx. So some sphinx-internal tasks/functions may be called by hand again...
     # See also https://github.com/sphinx-doc/sphinx/issues/7054#issuecomment-578019701 for an example
-    app.connect("doctree-resolved", process_creator(NODE_TYPES_PRIO, "needextract"), priority=100)
+    app.connect(
+        "doctree-resolved", replace_nodes_creator({Needextract: replace_needextract_nodes}, "needextract"), priority=100
+    )
     app.connect("doctree-resolved", process_need_nodes)
-    app.connect("doctree-resolved", process_creator(NODE_TYPES))
+    app.connect(
+        "doctree-resolved",
+        replace_nodes_creator(
+            {
+                Needbar: replace_needbar_nodes,
+                Needfilter: replace_needfilter_nodes,
+                Needlist: replace_needlist_nodes,
+                Needtable: replace_needtable_nodes,
+                Needflow: replace_needflow_nodes,
+                Needpie: replace_needpie_nodes,
+                Needsequence: replace_needsequence_nodes,
+                Needgantt: replace_needgantt_nodes,
+                Needuml: replace_needuml_nodes,
+                # NeedPart: replace_need_part_nodes,  # TODO not implemented
+                NeedRef: replace_needref_nodes,
+                NeedIncoming: replace_need_incoming_nodes,
+                NeedOutgoing: replace_need_outgoing_nodes,
+                NeedCount: replace_need_count_nodes,
+                NeedFunc: replace_need_func_nodes,
+            },
+            skip_for_needs_builders=True,
+        ),
+    )
 
     app.connect("build-finished", process_warnings)
     app.connect("build-finished", build_needs_json)
@@ -258,11 +263,16 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     }
 
 
-def process_creator(
-    node_list: _NODE_TYPES_T, doc_category: str = "all"
+def replace_nodes_creator(
+    node_list: Dict[Type[nodes.Element], Callable[[Sphinx, nodes.document, str, List[nodes.Element]], None]],
+    doc_category: str = "all",
+    skip_for_needs_builders: bool = False,
 ) -> Callable[[Sphinx, nodes.document, str], None]:
     """
-    Create a pre-configured process_caller for given Node types
+    Create a combined transform, which searches the doctree for all given node types,
+    and calls the given function for that node type.
+
+    The function should replace the node with one(s) that can be rendered by the output builders.
     """
 
     def process_caller(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
@@ -274,6 +284,8 @@ def process_creator(
         got parsed several times. This is now done at a single place and the related process-xy get a
         list of found docutil node-object for their case.
         """
+        if skip_for_needs_builders and app.builder.name == "needs":
+            return
         # We only need to analyse docs, which have Sphinx-Needs directives in it.
         if (
             fromdocname not in SphinxNeedsData(app.env).get_or_create_docs().get(doc_category, [])
@@ -294,7 +306,9 @@ def process_creator(
         for check_node, check_func in node_list.items():
             # Call the handler only, if it defined, and we found some nodes for it
             if check_node in current_nodes and check_func is not None and current_nodes[check_node]:
-                check_func(app, doctree, fromdocname, current_nodes[check_node])
+                debug.measure_time_func(check_func, check_func.__name__)(
+                    app, doctree, fromdocname, current_nodes[check_node]
+                )
 
     return process_caller
 

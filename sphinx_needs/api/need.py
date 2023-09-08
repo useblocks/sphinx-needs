@@ -304,8 +304,8 @@ def add_need(
         "lineno": lineno,
         "target_id": need_id,
         "external_url": external_url if is_external else None,
-        "content_node": None,  # gets set after rst parsing
-        "content_id": None,  # gets set after rst parsing
+        "content_node": None,  # gets set below, after the need node is generated
+        "content_id": None,  # gets set below, after the need node is generated
         "type": need_type,
         "type_name": type_name,
         "type_prefix": type_prefix,

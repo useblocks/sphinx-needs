@@ -10,7 +10,7 @@ from sphinx.application import Sphinx
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
-from sphinx_needs.utils import add_doc, save_matplotlib_figure, unwrap
+from sphinx_needs.utils import add_doc, save_matplotlib_figure
 
 if not os.environ.get("DISPLAY"):
     matplotlib.use("Agg")
@@ -167,9 +167,15 @@ class NeedbarDirective(FilterBase):
 # 8. create figure
 # 9. final storage
 # 10. cleanup matplotlib
-def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+def replace_needbar_nodes(
+    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
+) -> None:
+    """Replace all ``Needbar`` nodes with renderable nodes.
+
+    **Important**: This function should not modify the needs data,
+    since it will be skipped for needs data builders.
+    """
+    env = app.env
     needs_config = NeedsSphinxConfig(env.config)
 
     # NEEDFLOW

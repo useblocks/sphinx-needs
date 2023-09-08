@@ -59,16 +59,18 @@ class NeedlistDirective(FilterBase):
         return [targetnode, Needlist("")]
 
 
-def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
-    """
-    Replace all needlist nodes with a list of the collected needs.
-    Augment each need with a backlink to the original location.
+def replace_needlist_nodes(
+    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
+) -> None:
+    """Replace all ``Needlist`` nodes with renderable nodes.
+
+    **Important**: This function should not modify the needs data,
+    since it will be skipped for needs data builders.
     """
     builder = unwrap(app.builder)
-    env = unwrap(builder.env)
-
+    env = app.env
     include_needs = NeedsSphinxConfig(env.config).include_needs
-    # for node in doctree.findall(Needlist):
+
     for node in found_nodes:
         if not include_needs:
             # Ok, this is really dirty.

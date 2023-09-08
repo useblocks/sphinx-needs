@@ -50,9 +50,16 @@ def transform_need_to_dict(need: NeedsInfoType) -> Dict[str, str]:
     return dict_need
 
 
-def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
+def replace_needref_nodes(
+    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
+) -> None:
+    """Replace all ``NeedRef`` nodes with renderable nodes.
+
+    **Important**: This function should not modify the needs data,
+    since it will be skipped for needs data builders.
+    """
     builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    env = app.env
     needs_config = NeedsSphinxConfig(env.config)
     all_needs = SphinxNeedsData(env).get_or_create_needs()
     # for node_need_ref in doctree.findall(NeedRef):

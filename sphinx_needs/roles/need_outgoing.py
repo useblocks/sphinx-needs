@@ -17,11 +17,16 @@ class NeedOutgoing(nodes.Inline, nodes.Element):  # type: ignore
     pass
 
 
-def process_need_outgoing(
+def replace_need_outgoing_nodes(
     app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
 ) -> None:
+    """Replace all ``NeedOutgoing`` nodes with renderable nodes.
+
+    **Important**: This function should not modify the needs data,
+    since it will be skipped for needs data builders.
+    """
     builder = unwrap(app.builder)
-    env = unwrap(app.env)
+    env = app.env
     needs_config = NeedsSphinxConfig(app.config)
     report_dead_links = needs_config.report_dead_links
     # for node_need_ref in doctree.findall(NeedOutgoing):

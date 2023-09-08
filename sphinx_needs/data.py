@@ -12,10 +12,11 @@ except ImportError:
     from typing_extensions import Literal, TypedDict  # type: ignore
 
 if TYPE_CHECKING:
-    from docutils.nodes import Element, Text
+    from docutils.nodes import Text
     from sphinx.application import Sphinx
     from sphinx.environment import BuildEnvironment
 
+    from sphinx_needs.nodes import Need
     from sphinx_needs.services.manager import ServiceManager
 
 
@@ -139,10 +140,12 @@ class NeedsInfoType(NeedsBaseDataType):
     content: str
     pre_content: str
     post_content: str
-    content_id: None | str
-    """ID of the content node."""
-    content_node: None | Element
-    """deep copy of the content node."""
+
+    # the node created for this need
+    content_node: Need
+    """Deep copy of the Need node for this item."""
+    content_id: str
+    """First ``id`` attribute of the Need node."""
 
     # link information
     links: list[str]

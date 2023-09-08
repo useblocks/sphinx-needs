@@ -21,7 +21,7 @@ from sphinx_needs.diagrams_common import (
 )
 from sphinx_needs.filter_common import FilterBase
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import add_doc, unwrap
+from sphinx_needs.utils import add_doc
 
 logger = get_logger(__name__)
 
@@ -72,12 +72,15 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
         return [targetnode] + [Needsequence("")]
 
 
-def process_needsequence(
+def replace_needsequence_nodes(
     app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
 ) -> None:
-    # Replace all needsequence nodes with a list of the collected needs.
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    """Replace all ``Needsequence`` nodes with renderable nodes.
+
+    **Important**: This function should not modify the needs data,
+    since it will be skipped for needs data builders.
+    """
+    env = app.env
     needs_data = SphinxNeedsData(env)
     all_needs_dict = needs_data.get_or_create_needs()
 

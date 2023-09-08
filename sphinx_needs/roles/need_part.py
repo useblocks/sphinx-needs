@@ -25,8 +25,14 @@ class NeedPart(nodes.Inline, nodes.Element):  # type: ignore
     pass
 
 
-def process_need_part(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
-    pass
+def replace_need_part_nodes(
+    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
+) -> None:
+    """Replace all ``NeedPart`` nodes with renderable nodes.
+
+    **Important**: This function should not modify the needs data,
+    since it will be skipped for needs data builders.
+    """
 
 
 part_pattern = re.compile(r"\(([\w-]+)\)(.*)")

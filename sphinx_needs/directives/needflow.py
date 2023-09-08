@@ -21,7 +21,7 @@ from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link, create_legend
 from sphinx_needs.filter_common import FilterBase, filter_single_need, process_filters
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import add_doc, get_scale, split_link_types, unwrap
+from sphinx_needs.utils import add_doc, get_scale, split_link_types
 
 logger = get_logger(__name__)
 
@@ -267,11 +267,17 @@ def cal_needs_node(
     return curr_need_tree
 
 
-@measure_time("needflow")
-def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
+def replace_needflow_nodes(
+    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
+) -> None:
+    """Replace all ``Needflow`` nodes with renderable nodes.
+
+    **Important**: This function should not modify the needs data,
+    since it will be skipped for needs data builders.
+    """
     # Replace all needflow nodes with a list of the collected needs.
     # Augment each need with a backlink to the original location.
-    env = unwrap(app.env)
+    env = app.env
     needs_config = NeedsSphinxConfig(app.config)
     env_data = SphinxNeedsData(env)
     all_needs = env_data.get_or_create_needs()
@@ -280,8 +286,6 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
     link_type_names = [link["option"].upper() for link in link_types]
     allowed_link_types_options = [link.upper() for link in needs_config.flow_link_types]
 
-    # NEEDFLOW
-    # for node in doctree.findall(Needflow):
     for node in found_nodes:
         if not needs_config.include_needs:
             # Ok, this is really dirty.

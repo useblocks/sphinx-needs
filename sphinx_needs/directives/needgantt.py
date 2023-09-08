@@ -133,9 +133,15 @@ class NeedganttDirective(FilterBase, DiagramBase):
         return final_link_types
 
 
-def process_needgantt(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
-    # Replace all needgantt nodes with a list of the collected needs.
-    env = app.builder.env
+def replace_needgantt_nodes(
+    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
+) -> None:
+    """Replace all ``Needgantt`` nodes with renderable nodes.
+
+    **Important**: This function should not modify the needs data,
+    since it will be skipped for needs data builders.
+    """
+    env = app.env
     needs_config = NeedsSphinxConfig(app.config)
 
     # link_types = needs_config.extra_links
