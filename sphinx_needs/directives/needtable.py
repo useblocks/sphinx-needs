@@ -17,7 +17,7 @@ from sphinx_needs.directives.utils import (
 )
 from sphinx_needs.filter_common import FilterBase, process_filters
 from sphinx_needs.functions.functions import check_and_get_content
-from sphinx_needs.utils import add_doc, profile, row_col_maker, unwrap
+from sphinx_needs.utils import add_doc, profile, row_col_maker
 
 
 class Needtable(nodes.General, nodes.Element):
@@ -117,14 +117,8 @@ def process_needtables(
 ) -> None:
     """
     Replace all needtables nodes with a table of filtered nodes.
-
-    :param app:
-    :param doctree:
-    :param fromdocname:
-    :return:
     """
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    env = app.env
     needs_config = NeedsSphinxConfig(app.config)
     needs_data = SphinxNeedsData(env)
 

@@ -28,7 +28,7 @@ from sphinx_needs.layout import build_need
 from sphinx_needs.logging import get_logger
 from sphinx_needs.need_constraints import process_constraints
 from sphinx_needs.nodes import Need
-from sphinx_needs.utils import add_doc, profile, unwrap
+from sphinx_needs.utils import add_doc, profile
 
 logger = get_logger(__name__)
 
@@ -296,8 +296,7 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
     (i.e. ones that should not be rendered in the output)
     are removed from the doctree.
     """
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    env = app.env
 
     needs = SphinxNeedsData(env).get_or_create_needs()
 
@@ -376,8 +375,7 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
                 node.parent.remove(node)  # type: ignore
         return
 
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    env = app.env
 
     # If no needs were defined, we do not need to do anything
     if not hasattr(env, "needs_all_needs"):
@@ -430,8 +428,7 @@ def print_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
     :param fromdocname:
     :return:
     """
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    env = app.env
     needs = SphinxNeedsData(env).get_or_create_needs()
 
     # We try to avoid findall as much as possibles. so we reuse the already found need nodes in the current document.
