@@ -358,10 +358,12 @@ By using :ref:`needs_extra_links <needs_extra_links>`, you can use the configure
       {
          "option": "blocks",
          "incoming": "is blocked by",
+         "outgoing": "blocks"
       },
       {
          "option": "tests",
          "incoming": "is tested by",
+         "outgoing": "tests",
          "copy": False,
          "color": "#00AA00"
       }
