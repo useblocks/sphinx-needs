@@ -248,6 +248,7 @@ def get_message_needs(
     messages: Dict[str, Dict[str, Any]] = {}
     p_string = ""
     c_string = ""
+    config = NeedsSphinxConfig(app.config)
     for msg_need in msg_needs:
         messages[msg_need["id"]] = {"id": msg_need["id"], "title": msg_need["title"], "receivers": {}}
         if sender["id"] not in tracked_receivers:
@@ -259,7 +260,7 @@ def get_message_needs(
                 if filter:
                     from sphinx_needs.filter_common import filter_single_need
 
-                    if not filter_single_need(app, all_needs_dict[rec_id], filter, needs=all_needs_dict.values()):
+                    if not filter_single_need(config, all_needs_dict[rec_id], filter, needs=all_needs_dict.values()):
                         continue
 
                 rec_data = {"id": rec_id, "title": all_needs_dict[rec_id]["title"], "messages": []}

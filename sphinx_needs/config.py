@@ -87,6 +87,8 @@ class NeedsSphinxConfig:
         super().__setattr__("_config", config)
 
     def __getattribute__(self, name: str) -> Any:
+        if name.startswith("__"):
+            return super().__getattribute__(name)
         return getattr(super().__getattribute__("_config"), f"needs_{name}")
 
     def __setattr__(self, name: str, value: Any) -> None:

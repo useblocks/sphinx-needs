@@ -16,7 +16,7 @@ from sphinx.environment import BuildEnvironment
 from sphinx.errors import SphinxError
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time_func
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import NEEDS_FUNCTIONS, match_variants  # noqa: F401
@@ -151,26 +151,17 @@ def find_and_replace_node_content(node, env: BuildEnvironment, need):
     return node
 
 
-def resolve_dynamic_values(env: BuildEnvironment):
-    """
-    Resolve dynamic values inside need data.
+def resolve_dynamic_values(data: SphinxNeedsData, _config: NeedsSphinxConfig, env: BuildEnvironment) -> None:
+    """Search for field values that match the pattern ``[[...]]``,
+    and replace them with the return value of the function call.
 
     Rough workflow:
 
-    #. Parse all needs and their data for a string like [[ my_func(a,b,c) ]]
+    #. Parse all needs and their data for a string like ``[[ my_func(a,b,c) ]]``
     #. Extract function name and call parameters
     #. Execute registered function name with extracted call parameters
     #. Replace original string with return value
-
-    :param env: Sphinx environment
-    :return: return value of given function
     """
-    data = SphinxNeedsData(env)
-    workflow = data.get_or_create_workflow()
-    # Only perform calculation if not already done yet
-    if workflow["dynamic_values_resolved"]:
-        return
-
     needs = data.get_or_create_needs()
     for need in needs.values():
         for need_option in need:
@@ -229,50 +220,32 @@ def resolve_dynamic_values(env: BuildEnvironment):
 
                 need[need_option] = new_values
 
-    # Finally set a flag so that this function gets not executed several times
-    workflow["dynamic_values_resolved"] = True
 
-
-def resolve_variants_options(env: BuildEnvironment):
+def resolve_variants_options(data: SphinxNeedsData, config: NeedsSphinxConfig, sphinx_tags: Dict[str, bool]) -> None:
+    """Resolve specific (user defined) fields,
+    whose final value is determined by processing the value,
+    according to a pre-defined syntax.
     """
-    Resolve variants options inside need data.
+    variants_options = config.variant_options
 
-    Rough workflow:
-    #. Parse all needs and their data for variant handling
-    #. Replace original string with return value
-
-    :param env: Sphinx environment
-    :return: None
-    """
-    data = SphinxNeedsData(env)
-    workflow = data.get_or_create_workflow()
-    # Only perform calculation if not already done yet
-    if workflow["variant_option_resolved"]:
+    if not variants_options:
         return
 
-    needs_config = NeedsSphinxConfig(env.config)
-    variants_options = needs_config.variant_options
+    needs = data.get_or_create_needs()
+    for need in needs.values():
+        # Data to use as filter context.
+        need_context: Dict[str, Any] = {**need}
+        need_context.update(**config.filter_data)  # Add needs_filter_data to filter context
+        need_context.update(**sphinx_tags)  # Add sphinx tags to filter context
 
-    if variants_options:
-        needs = data.get_or_create_needs()
-        for need in needs.values():
-            # Data to use as filter context.
-            need_context: Dict[str, Any] = {**need}
-            need_context.update(**needs_config.filter_data)  # Add needs_filter_data to filter context
-            _sphinx_tags = env.app.builder.tags.tags  # Get sphinx tags
-            need_context.update(**_sphinx_tags)  # Add sphinx tags to filter context
-
-            for var_option in variants_options:
-                if var_option in need and need[var_option] not in (None, "", []):
-                    if not isinstance(need[var_option], (list, set, tuple)):
-                        option_value: str = need[var_option]
-                        need[var_option] = match_variants(option_value, need_context, needs_config.variants)
-                    else:
-                        option_value = need[var_option]
-                        need[var_option] = match_variants(option_value, need_context, needs_config.variants)
-
-    # Finally set a flag so that this function gets not executed several times
-    workflow["variant_option_resolved"] = True
+        for var_option in variants_options:
+            if var_option in need and need[var_option] not in (None, "", []):
+                if not isinstance(need[var_option], (list, set, tuple)):
+                    option_value: str = need[var_option]
+                    need[var_option] = match_variants(option_value, need_context, config.variants)
+                else:
+                    option_value = need[var_option]
+                    need[var_option] = match_variants(option_value, need_context, config.variants)
 
 
 def check_and_get_content(content: str, need, env: BuildEnvironment) -> str:
@@ -304,7 +277,8 @@ def check_and_get_content(content: str, need, env: BuildEnvironment) -> str:
     return content
 
 
-def _detect_and_execute(content, need, env):
+def _detect_and_execute(content: Any, need: NeedsInfoType, env: BuildEnvironment):
+    """Detects if given content is a function call and executes it."""
     try:
         content = str(content)
     except UnicodeEncodeError:

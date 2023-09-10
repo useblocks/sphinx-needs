@@ -112,6 +112,7 @@ class NeedpieDirective(FilterBase):
 def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
     env = app.env
     needs_data = SphinxNeedsData(env)
+    needs_config = NeedsSphinxConfig(env.config)
 
     # NEEDFLOW
     include_needs = NeedsSphinxConfig(env.config).include_needs
@@ -147,7 +148,7 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
                 if line.isdigit():
                     sizes.append(abs(float(line)))
                 else:
-                    result = len(filter_needs(app, need_list, line))
+                    result = len(filter_needs(needs_config, need_list, line))
                     sizes.append(result)
         elif current_needpie["filter_func"] and not content:
             try:

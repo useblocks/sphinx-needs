@@ -476,7 +476,7 @@ def match_variants(
     :param keywords: Data to use as filtering context
     :param needs_variants: Needs variants data set in users conf.py
     :return: A string, list, or None to be used as value for option.
-    :rtype: Union[str, List, None]
+
     """
 
     def variant_handling(

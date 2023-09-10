@@ -130,7 +130,9 @@ def get_need_node_rep_for_plantuml(
         # We set # later, as the user may not have given a color and the node must get highlighted
         node_colors.append(need_info["type_color"].replace("#", ""))
 
-    if current_needflow["highlight"] and filter_single_need(app, need_info, current_needflow["highlight"], all_needs):
+    if current_needflow["highlight"] and filter_single_need(
+        needs_config, need_info, current_needflow["highlight"], all_needs
+    ):
         node_colors.append("line:FF0000")
 
     # need parts style use default "rectangle"

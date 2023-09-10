@@ -30,6 +30,8 @@ from sphinx_needs.directives.need import (
     Need,
     NeedDirective,
     analyse_need_locations,
+    check_links,
+    create_back_links,
     html_depart,
     html_visit,
     latex_depart,
@@ -38,7 +40,12 @@ from sphinx_needs.directives.need import (
     purge_needs,
 )
 from sphinx_needs.directives.needbar import Needbar, NeedbarDirective, process_needbar
-from sphinx_needs.directives.needextend import Needextend, NeedextendDirective
+from sphinx_needs.directives.needextend import (
+    Needextend,
+    NeedextendDirective,
+    extend_needs_data,
+    process_needextend,
+)
 from sphinx_needs.directives.needextract import (
     Needextract,
     NeedextractDirective,
@@ -91,7 +98,12 @@ from sphinx_needs.environment import (
 )
 from sphinx_needs.external_needs import load_external_needs
 from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS, register_func
+from sphinx_needs.functions.functions import (
+    resolve_dynamic_values,
+    resolve_variants_options,
+)
 from sphinx_needs.logging import get_logger
+from sphinx_needs.need_constraints import process_constraints
 from sphinx_needs.roles import NeedsXRefRole
 from sphinx_needs.roles.need_count import NeedCount, process_need_count
 from sphinx_needs.roles.need_func import NeedFunc, process_need_func
@@ -114,8 +126,8 @@ NODE_TYPES_PRIO: _NODE_TYPES_T = {  # Node types to be checked before most other
 }
 
 NODE_TYPES: _NODE_TYPES_T = {
+    Needextend: process_needextend,
     Needbar: process_needbar,
-    # Needextract: process_needextract,
     Needfilter: process_needfilters,
     Needlist: process_needlist,
     Needtable: process_needtables,
@@ -230,13 +242,12 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect("env-updated", install_styles_static_files)
 
-    # There is also the event doctree-read.
-    # But it looks like in this event no references are already solved, which
-    # makes trouble in our code.
-    # However, some sphinx-internal actions (like image collection) are already called during
-    # doctree-read. So manipulating the doctree may result in conflicts, as e.g. images get not
-    # registered for sphinx. So some sphinx-internal tasks/functions may be called by hand again...
-    # See also https://github.com/sphinx-doc/sphinx/issues/7054#issuecomment-578019701 for an example
+    # NOTE: the environment is cached at this point in the event chain,
+    # i.e. we do not cache the post-processed needs data,
+    # to ensure all dynamic values are resolved correctly, with the latest data.
+
+    app.connect("env-check-consistency", post_process_needs_data)
+
     app.connect("doctree-resolved", process_creator(NODE_TYPES_PRIO, "needextract"), priority=100)
     app.connect("doctree-resolved", process_need_nodes)
     app.connect("doctree-resolved", process_creator(NODE_TYPES))
@@ -489,8 +500,6 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
 
     needs_config.flow_configs.update(NEEDFLOW_CONFIG_DEFAULTS)
 
-    data.get_or_create_workflow()
-
     # Set time measurement flag
     if needs_config.debug_measurement:
         debug.START_TIME = timer()  # Store the rough start time of Sphinx build
@@ -566,3 +575,33 @@ def check_configuration(_app: Sphinx, config: Config) -> None:
 
 class NeedsConfigException(SphinxError):
     pass
+
+
+@debug.measure_time("post_process")
+def post_process_needs_data(_app: Sphinx, env: BuildEnvironment) -> List[str]:
+    """This function is called after all documents have been read,
+    and after the environment has been cached.
+    It performs post-processing on the collected needs data,
+    that requires knowledge the full needs data.
+
+    After this step, the data should be fully processed,
+    and thus should not be further mutated.
+    """
+    config = NeedsSphinxConfig(env.config)
+    data = SphinxNeedsData(env)
+
+    # can skip if no needs data present
+    if not data.get_or_create_needs():
+        return []
+
+    # TODO skip if no needs data was changed?
+    # but how to detect that?
+
+    resolve_dynamic_values(data, config, env)
+    resolve_variants_options(data, config, env.app.builder.tags.tags)
+    check_links(data, config)
+    create_back_links(data, config)
+    process_constraints(data, config)
+    extend_needs_data(data, config)
+
+    return []

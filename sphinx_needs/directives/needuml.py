@@ -230,6 +230,7 @@ class JinjaFunctions:
     def __init__(self, app: Sphinx, fromdocname, parent_need_id: str, processed_need_ids: dict):
         self.needs = SphinxNeedsData(app.env).get_or_create_needs()
         self.app = app
+        self.needs_config = NeedsSphinxConfig(app.config)
         self.fromdocname = fromdocname
         self.parent_need_id = parent_need_id
         if parent_need_id and parent_need_id not in self.needs:
@@ -350,8 +351,7 @@ class JinjaFunctions:
         """
         Return a list of found needs that pass the given filter string.
         """
-
-        return filter_needs(self.app, list(self.needs.values()), filter_string=filter_string)
+        return filter_needs(self.needs_config, list(self.needs.values()), filter_string=filter_string)
 
     def imports(self, *args):
         if not self.parent_need_id:

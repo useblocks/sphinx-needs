@@ -103,6 +103,7 @@ def process_filters(
 
     :return: list of needs, which passed the filters
     """
+    needs_config = NeedsSphinxConfig(app.config)
     found_needs: list[NeedsPartsInfoType]
     sort_key = filter_data["sort_by"]
     if sort_key:
@@ -157,13 +158,13 @@ def process_filters(
                 if status_filter_passed and tags_filter_passed and type_filter_passed:
                     found_needs_by_options.append(need_info)
             # Get need by filter string
-            found_needs_by_string = filter_needs(app, all_needs_incl_parts, filter_data["filter"])
+            found_needs_by_string = filter_needs(needs_config, all_needs_incl_parts, filter_data["filter"])
             # Make an intersection of both lists
             found_needs = intersection_of_need_results(found_needs_by_options, found_needs_by_string)
         else:
             # There is no other config as the one for filter string.
             # So we only need this result.
-            found_needs = filter_needs(app, all_needs_incl_parts, filter_data["filter"])
+            found_needs = filter_needs(needs_config, all_needs_incl_parts, filter_data["filter"])
     else:
         # Provides only a copy of needs to avoid data manipulations.
         context = {
@@ -259,7 +260,7 @@ V = TypeVar("V", bound=NeedsInfoType)
 
 @measure_time("filtering")
 def filter_needs(
-    app: Sphinx,
+    config: NeedsSphinxConfig,
     needs: Iterable[V],
     filter_string: None | str = "",
     current_need: NeedsInfoType | None = None,
@@ -268,7 +269,7 @@ def filter_needs(
     Filters given needs based on a given filter string.
     Returns all needs, which pass the given filter.
 
-    :param app: Sphinx application object
+    :param config: Configuration for needs
     :param needs: list of needs, which shall be filtered
     :param filter_string: strings, which gets evaluated against each need
     :param current_need: current need, which uses the filter.
@@ -287,7 +288,7 @@ def filter_needs(
     for filter_need in needs:
         try:
             if filter_single_need(
-                app, filter_need, filter_string, needs, current_need, filter_compiled=filter_compiled
+                config, filter_need, filter_string, needs, current_need, filter_compiled=filter_compiled
             ):
                 found_needs.append(filter_need)
         except Exception as e:
@@ -301,7 +302,7 @@ def filter_needs(
 
 @measure_time("filtering")
 def filter_single_need(
-    app: Sphinx,
+    config: NeedsSphinxConfig,
     need: NeedsInfoType,
     filter_string: str = "",
     needs: Iterable[NeedsInfoType] | None = None,
@@ -311,7 +312,7 @@ def filter_single_need(
     """
     Checks if a single need/need_part passes a filter_string
 
-    :param app: Sphinx application object
+    :param config: Configuration for needs
     :param current_need:
     :param filter_compiled: An already compiled filter_string to safe time
     :param need: need or need_part
@@ -328,7 +329,7 @@ def filter_single_need(
         filter_context["current_need"] = need
 
     # Get needs external filter data and merge to filter_context
-    filter_context.update(NeedsSphinxConfig(app.config).filter_data)
+    filter_context.update(config.filter_data)
 
     filter_context["search"] = re.search
     result = False

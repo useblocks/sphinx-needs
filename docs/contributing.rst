@@ -214,24 +214,29 @@ The following is an outline of the build events which this extension adds to the
 
 #. When building in parallel mode (``env-merge-info`` event), merge ``BuildEnvironment`` data (``merge_data``)
 
-#. After all documents have been read and transformed (``env-updated`` event) (NOTE these are skipped for ``needs`` builder)
+#. After all documents have been read and transformed (``env-updated`` event)
 
-   - Copy vendored JS libraries (with CSS) to build folder (``install_lib_static_files``)
-   - Generate permalink file (``install_permalink_file``)
-   - Copy vendored CSS files to build folder (``install_styles_static_files``)
+   - Create additional files in the build folder (note, these are skipped for ``needs`` builders):
 
-#. Note, the ``BuildEnvironment`` is cached at this point, only if any documents were updated.
+     - Copy vendored JS libraries (with CSS) to build folder (``install_lib_static_files``)
+     - Generate permalink file (``install_permalink_file``)
+     - Copy vendored CSS files to build folder (``install_styles_static_files``)
 
-#. For all changed documents, or their dependants (``doctree-resolved``)
+#. If documents were updated, and after the ``BuildEnvironment`` is cached for re-builds (``env-check-consistency`` event): 
+
+   - Post-process all collected needs data (``post_process_needs_data``)
+
+      - Resolve dynamic values (``resolve_dynamic_values``)
+      - Resolve variant values (``resolve_variants_options``)
+      - Check for dead links (``check_links``)
+      - Generate back links (``create_back_links``)
+      - Process constraints (``process_constraints``)
+      - Extend needs with data from ``needextend`` directives (``extend_needs_data``)
+
+#. For all changed documents, or their dependants (``doctree-resolved`` event), note the ``needs`` builder does not call these events: 
 
    - Replace all ``Needextract`` nodes with a list of the collected ``Need`` (``process_creator``)
    - Remove all ``Need`` nodes, if ``needs_include_needs`` is ``True`` (``process_need_nodes``)
-   - Call dynamic functions, set as values on the need data items and replace them with their return values (``process_need_nodes -> resolve_dynamic_values``)
-   - Replace needs data variant values (``process_need_nodes -> resolve_variants_options``)
-   - Check for dead links (``process_need_nodes -> check_links``)
-   - Generate back links (``process_need_nodes -> create_back_links``)
-   - Process constraints, for each ``Need`` node (``process_need_nodes -> process_constraints``)
-   - Perform all modifications on need data items, due to ``Needextend`` nodes (``process_need_nodes -> process_needextend``)
    - Format each ``Need`` node to give the desired visual output (``process_need_nodes -> print_need_nodes``)
    - Process all other need specific nodes, replacing them with the desired visual output (``process_creator``)
 

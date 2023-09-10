@@ -271,7 +271,7 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
                 if element.isdigit():
                     line_number.append(float(element))
                 else:
-                    result = len(filter_needs(app, need_list, element))
+                    result = len(filter_needs(needs_config, need_list, element))
                     line_number.append(float(result))
             local_data_number.append(line_number)
 

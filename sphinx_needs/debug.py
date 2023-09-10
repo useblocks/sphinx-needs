@@ -50,7 +50,6 @@ def measure_time(category: str | None = None, source: str = "internal", name: st
     :param category: Name of a category, which helps to cluster the measured functions.
     :param source: Should be "internal" or "user". Used to easily structure function written by user.
     :param name: Name to use for the measured. If not given, the function name is used.
-    :param func: Can contain a func, which shall get decorated. Not used if ``measure_time`` is used as decorator.
     """
 
     def inner(func: T) -> T:
