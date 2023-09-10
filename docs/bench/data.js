@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1694063362635,
+  "lastUpdate": 1694337958207,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -4680,6 +4680,42 @@ window.BENCHMARK_DATA = {
             "value": 100.55016616800003,
             "unit": "s",
             "extra": "Commit: 795ca1981566c7a6d5e130609ecdb6d37681d3d7\nBranch: master\nTime: 2023-09-07T06:59:48+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "87643052+piotr-zyskowski-rai@users.noreply.github.com",
+            "name": "Piotr Zyskowski",
+            "username": "piotr-zyskowski-rai"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a0ba9b4feeb8f2b6539c1694031c1b26eecadae5",
+          "message": "Fixed extra links example (#1016)\n\n## PR description\r\nThis PR fixes [extra links field\r\nexample](https://sphinx-needs.readthedocs.io/en/latest/directives/need.html#extra-links)\r\nin the docs.\r\n\r\n## Why is it needed?\r\nDocumentation describing [need/req's extra\r\nlinks](https://sphinx-needs.readthedocs.io/en/latest/directives/need.html#extra-links)\r\nhas an incorrect example - `outgoing` dictionary entry is missing:\r\n\r\n```\r\n# conf.py\r\nneeds_extra_links = [\r\n   {\r\n      \"option\": \"blocks\",\r\n      \"incoming\": \"is blocked by\",\r\n   },\r\n   {\r\n      \"option\": \"tests\",\r\n      \"incoming\": \"is tested by\",\r\n      \"copy\": False,\r\n      \"color\": \"#00AA00\"\r\n   }\r\n]\r\n```\r\n\r\nWhen used it causes this error:\r\n```\r\nExtension error (sphinx_needs.directives.need):\r\nHandler <function process_need_nodes at 0x7f5d5123e9e0> for event 'doctree-resolved' threw an exception (exception: 'outgoing')\r\n```\r\nDocumentation of `needs_extra_links`\r\n([here](https://sphinx-needs.readthedocs.io/en/latest/configuration.html#needs-extra-links))\r\nstates that the `outgoing` field is necessary and the example above is\r\nunnecessarily misleading.",
+          "timestamp": "2023-09-10T11:17:37+02:00",
+          "tree_id": "d7a6aac85d7b4ccb7d1c095a0ce20a0dde340002",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a0ba9b4feeb8f2b6539c1694031c1b26eecadae5"
+        },
+        "date": 1694337951105,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.26061408999999003,
+            "unit": "s",
+            "extra": "Commit: a0ba9b4feeb8f2b6539c1694031c1b26eecadae5\nBranch: master\nTime: 2023-09-10T11:17:37+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 84.49711373899999,
+            "unit": "s",
+            "extra": "Commit: a0ba9b4feeb8f2b6539c1694031c1b26eecadae5\nBranch: master\nTime: 2023-09-10T11:17:37+02:00"
           }
         ]
       }
