@@ -28,7 +28,7 @@ from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import get_logger
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
-from sphinx_needs.utils import jinja_parse, unwrap
+from sphinx_needs.utils import jinja_parse
 
 logger = get_logger(__name__)
 
@@ -512,7 +512,7 @@ def del_need(app: Sphinx, need_id: str) -> None:
     :param app: Sphinx application object.
     :param need_id: Sphinx need id.
     """
-    env = unwrap(app.env)
+    env = app.env
     needs = SphinxNeedsData(env).get_or_create_needs()
     if need_id in needs:
         del needs[need_id]

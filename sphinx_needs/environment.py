@@ -9,7 +9,7 @@ from sphinx.util.console import brown  # type: ignore[attr-defined]
 from sphinx.util.osutil import copyfile
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.utils import logger, unwrap
+from sphinx_needs.utils import logger
 
 IMAGE_DIR_NAME = "_static"
 
@@ -26,7 +26,7 @@ def safe_add_file(filename: Path, app: Sphinx) -> None:
     :param app: app object
     :return: None
     """
-    builder = unwrap(app.builder)
+    builder = app.builder
     # Use PurePosixPath, so that the path can be used as "web"-path
     pure_path = PurePosixPath(filename)
     static_data_file = PurePosixPath("_static") / pure_path
@@ -74,7 +74,7 @@ def safe_remove_file(filename: Path, app: Sphinx) -> None:
 # Base implementation from sphinxcontrib-images
 # https://github.com/spinus/sphinxcontrib-images/blob/master/sphinxcontrib/images.py#L203
 def install_styles_static_files(app: Sphinx, env: BuildEnvironment) -> None:
-    builder = unwrap(app.builder)
+    builder = app.builder
     # Do not copy static_files for our "needs" builder
     if builder.name == "needs":
         return
@@ -131,7 +131,7 @@ def install_static_files(
     files_to_copy: List[Path],
     message: str,
 ) -> None:
-    builder = unwrap(app.builder)
+    builder = app.builder
     # Do not copy static_files for our "needs" builder
     if builder.name == "needs":
         return
@@ -165,7 +165,7 @@ def install_lib_static_files(app: Sphinx, env: BuildEnvironment) -> None:
     :param env:
     :return:
     """
-    builder = unwrap(app.builder)
+    builder = app.builder
     # Do not copy static_files for our "needs" builder
     if builder.name == "needs":
         return
@@ -197,7 +197,7 @@ def install_permalink_file(app: Sphinx, env: BuildEnvironment) -> None:
     :param env:
     :return:
     """
-    builder = unwrap(app.builder)
+    builder = app.builder
     # Do not copy static_files for our "needs" builder
     if builder.name == "needs":
         return

@@ -8,7 +8,7 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import check_and_calc_base_url_rel_path, unwrap
+from sphinx_needs.utils import check_and_calc_base_url_rel_path
 
 log = get_logger(__name__)
 
@@ -20,8 +20,8 @@ class NeedOutgoing(nodes.Inline, nodes.Element):  # type: ignore
 def process_need_outgoing(
     app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
 ) -> None:
-    builder = unwrap(app.builder)
-    env = unwrap(app.env)
+    builder = app.builder
+    env = app.env
     needs_config = NeedsSphinxConfig(app.config)
     report_dead_links = needs_config.report_dead_links
     # for node_need_ref in doctree.findall(NeedOutgoing):

@@ -15,7 +15,7 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.filter_common import filter_needs
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import add_doc, unwrap
+from sphinx_needs.utils import add_doc
 
 logger = get_logger(__name__)
 
@@ -75,8 +75,7 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     """
     Perform all modifications on needs
     """
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    env = app.env
     needs_config = NeedsSphinxConfig(env.config)
     data = SphinxNeedsData(env)
     workflow = data.get_or_create_workflow()

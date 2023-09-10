@@ -10,7 +10,6 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.logging import get_logger
 from sphinx_needs.needsfile import NeedsList
-from sphinx_needs.utils import unwrap
 
 log = get_logger(__name__)
 
@@ -25,7 +24,7 @@ class NeedsBuilder(Builder):
         pass
 
     def finish(self) -> None:
-        env = unwrap(self.env)
+        env = self.env
         data = SphinxNeedsData(env)
         filters = data.get_or_create_filters()
         version = getattr(env.config, "version", "unset")
@@ -82,7 +81,7 @@ class NeedsBuilder(Builder):
 
 
 def build_needs_json(app: Sphinx, _exception: Exception) -> None:
-    env = unwrap(app.env)
+    env = app.env
 
     if not NeedsSphinxConfig(env.config).build_json:
         return
@@ -107,7 +106,7 @@ class NeedumlsBuilder(Builder):
         pass
 
     def finish(self) -> None:
-        env = unwrap(self.env)
+        env = self.env
         needumls = SphinxNeedsData(env).get_or_create_umls().values()
 
         for needuml in needumls:
@@ -140,7 +139,7 @@ class NeedumlsBuilder(Builder):
 
 
 def build_needumls_pumls(app: Sphinx, _exception: Exception) -> None:
-    env = unwrap(app.env)
+    env = app.env
     config = NeedsSphinxConfig(env.config)
 
     if not config.build_needumls:
@@ -174,7 +173,7 @@ class NeedsIdBuilder(Builder):
         pass
 
     def finish(self) -> None:
-        env = unwrap(self.env)
+        env = self.env
         data = SphinxNeedsData(env)
         needs = data.get_or_create_needs().values()  # We need a list of needs for later filter checks
         version = getattr(env.config, "version", "unset")
@@ -216,7 +215,7 @@ class NeedsIdBuilder(Builder):
 
 
 def build_needs_id_json(app: Sphinx, _exception: Exception) -> None:
-    env = unwrap(app.env)
+    env = app.env
 
     if not NeedsSphinxConfig(env.config).build_json_per_id:
         return

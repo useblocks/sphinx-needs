@@ -135,7 +135,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
 
 def process_needgantt(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
     # Replace all needgantt nodes with a list of the collected needs.
-    env = app.builder.env
+    env = app.env
     needs_config = NeedsSphinxConfig(app.config)
 
     # link_types = needs_config.extra_links

@@ -10,7 +10,7 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import check_and_calc_base_url_rel_path, unwrap
+from sphinx_needs.utils import check_and_calc_base_url_rel_path
 
 log = get_logger(__name__)
 
@@ -51,8 +51,8 @@ def transform_need_to_dict(need: NeedsInfoType) -> Dict[str, str]:
 
 
 def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    builder = app.builder
+    env = app.env
     needs_config = NeedsSphinxConfig(env.config)
     all_needs = SphinxNeedsData(env).get_or_create_needs()
     # for node_need_ref in doctree.findall(NeedRef):

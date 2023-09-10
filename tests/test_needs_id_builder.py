@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -11,14 +12,10 @@ from sphinx_needs.data import SphinxNeedsData
     "test_app", [{"buildername": "needs_id", "srcdir": "doc_test/doc_needs_builder"}], indirect=True
 )
 def test_doc_needs_id_builder(test_app):
-    import os
-
-    from sphinx_needs.utils import unwrap
-
     app = test_app
     app.build()
     out_dir = app.outdir
-    env = unwrap(app.env)
+    env = app.env
     data = SphinxNeedsData(env)
     needs_config = NeedsSphinxConfig(env.config)
     needs = data.get_or_create_needs().values()  # We need a list of needs for later filter checks
