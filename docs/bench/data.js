@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1694337958207,
+  "lastUpdate": 1694338111337,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -4716,6 +4716,42 @@ window.BENCHMARK_DATA = {
             "value": 84.49711373899999,
             "unit": "s",
             "extra": "Commit: a0ba9b4feeb8f2b6539c1694031c1b26eecadae5\nBranch: master\nTime: 2023-09-10T11:17:37+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c1682ba1a36aec564ac5e98055303af7b7f630fd",
+          "message": "🔧 Remove `unwrap` function (#1017)\n\nThis run-time null check is effectively now replaced by the static\r\ntype-checking.",
+          "timestamp": "2023-09-10T11:19:59+02:00",
+          "tree_id": "72e6cc176bd03650da10727428864e1cbb11edd5",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c1682ba1a36aec564ac5e98055303af7b7f630fd"
+        },
+        "date": 1694338104933,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2827092449999782,
+            "unit": "s",
+            "extra": "Commit: c1682ba1a36aec564ac5e98055303af7b7f630fd\nBranch: master\nTime: 2023-09-10T11:19:59+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 87.50611750299998,
+            "unit": "s",
+            "extra": "Commit: c1682ba1a36aec564ac5e98055303af7b7f630fd\nBranch: master\nTime: 2023-09-10T11:19:59+02:00"
           }
         ]
       }
