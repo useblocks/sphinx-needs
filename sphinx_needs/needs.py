@@ -601,7 +601,7 @@ def post_process_needs_data(_app: Sphinx, env: BuildEnvironment) -> List[str]:
     resolve_variants_options(data, config, env.app.builder.tags.tags)
     check_links(data, config)
     create_back_links(data, config)
-    process_constraints(data, config)
     extend_needs_data(data, config)
+    process_constraints(data, config)
 
     return []
