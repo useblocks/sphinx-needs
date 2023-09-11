@@ -7,7 +7,7 @@ import pytest
 @pytest.mark.parametrize(
     "test_app", [{"buildername": "needs_lut", "srcdir": "doc_test/doc_needs_builder"}], indirect=True
 )
-def test_doc_needs_id_builder(test_app):
+def test_doc_needs_lut_builder(test_app):
     app = test_app
     app.build()
 
