@@ -1,6 +1,6 @@
 import os
 import re
-from typing import Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -9,6 +9,8 @@ from sphinxcontrib.plantuml import (
     generate_name,  # Need for plantuml filename calculation
 )
 
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.diagrams_common import (
     DiagramBase,
     add_config,
@@ -19,7 +21,7 @@ from sphinx_needs.diagrams_common import (
 )
 from sphinx_needs.filter_common import FilterBase
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import add_doc, unwrap
+from sphinx_needs.utils import add_doc
 
 logger = get_logger(__name__)
 
@@ -45,11 +47,9 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
     option_spec.update(DiagramBase.base_option_spec)
 
     def run(self) -> Sequence[nodes.Node]:
-        env = self.state.document.settings.env
-        # Creates env.need_all_needsequences safely and other vars
-        self.prepare_env("needsequences")
+        env = self.env
 
-        id, targetid, targetnode = self.create_target("needsequence")
+        _, targetid, targetnode = self.create_target("needsequence")
 
         start = self.options.get("start")
         if start is None or len(start.strip()) == 0:
@@ -58,33 +58,37 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
             )
 
         # Add the needsequence and all needed information
-        env.need_all_needsequences[targetid] = {
+        SphinxNeedsData(env).get_or_create_sequences()[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
             "start": self.options.get("start", ""),
+            **self.collect_filter_attributes(),
+            **self.collect_diagram_attributes(),
         }
-        # Data for filtering
-        env.need_all_needsequences[targetid].update(self.collect_filter_attributes())
-        # Data for diagrams
-        env.need_all_needsequences[targetid].update(self.collect_diagram_attributes())
 
         add_doc(env, env.docname)
 
         return [targetnode] + [Needsequence("")]
 
 
-def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list):
+def process_needsequence(
+    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
+) -> None:
     # Replace all needsequence nodes with a list of the collected needs.
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    env = app.env
+    needs_data = SphinxNeedsData(env)
+    all_needs_dict = needs_data.get_or_create_needs()
 
-    link_types = env.config.needs_extra_links
+    needs_config = NeedsSphinxConfig(env.config)
+    include_needs = needs_config.include_needs
+    link_type_names = [link["option"].upper() for link in needs_config.extra_links]
+    needs_types = needs_config.types
 
     # NEEDSEQUENCE
     # for node in doctree.findall(Needsequence):
     for node in found_nodes:
-        if not app.config.needs_include_needs:
+        if not include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
             # But this is here the case, because we are using the attribute "ids" of a node.
@@ -96,17 +100,17 @@ def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str,
             continue
 
         id = node.attributes["ids"][0]
-        current_needsequence = env.need_all_needsequences[id]
-        all_needs_dict = env.needs_all_needs
+        current_needsequence = needs_data.get_or_create_sequences()[id]
 
         option_link_types = [link.upper() for link in current_needsequence["link_types"]]
         for lt in option_link_types:
-            if lt not in [link["option"].upper() for link in link_types]:
+            if lt not in link_type_names:
                 logger.warning(
                     "Unknown link type {link_type} in needsequence {flow}. Allowed values:"
-                    " {link_types}".format(
-                        link_type=lt, flow=current_needsequence["target_id"], link_types=",".join(link_types)
-                    )
+                    " {link_types} [needs]".format(
+                        link_type=lt, flow=current_needsequence["target_id"], link_types=",".join(link_type_names)
+                    ),
+                    type="needs",
                 )
 
         content = []
@@ -120,6 +124,11 @@ def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str,
 
         plantuml_block_text = ".. plantuml::\n" "\n" "   @startuml" "   @enduml"
         puml_node = plantuml(plantuml_block_text)
+
+        # Add source origin
+        puml_node.line = current_needsequence["lineno"]
+        puml_node.source = env.doc2path(current_needsequence["docname"])
+
         puml_node["uml"] = "@startuml\n"
 
         # Adding config
@@ -128,10 +137,11 @@ def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str,
 
         start_needs_id = [x.strip() for x in re.split(";|,", current_needsequence["start"])]
         if len(start_needs_id) == 0:
-            raise NeedsequenceDirective(
+            # TODO this should be a warning (and not tested)
+            raise NeedSequenceException(
                 "No start-id set for needsequence"
-                " File {}"
-                ":{}".format({current_needsequence["docname"]}, current_needsequence["lineno"])
+                f" docname {current_needsequence['docname']}"
+                f":{current_needsequence['lineno']}"
             )
 
         puml_node["uml"] += "\n' Nodes definition \n\n"
@@ -151,7 +161,11 @@ def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str,
 
             # Add children of participants
             _msg_receiver_needs, p_string_new, c_string_new = get_message_needs(
-                app, need, current_needsequence["link_types"], all_needs_dict, filter=current_needsequence["filter"]
+                app,
+                need,
+                current_needsequence["link_types"],
+                all_needs_dict,
+                filter=current_needsequence["filter"],
             )
             p_string += p_string_new
             c_string += c_string_new
@@ -163,7 +177,7 @@ def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str,
 
         # Create a legend
         if current_needsequence["show_legend"]:
-            puml_node["uml"] += create_legend(app.config.needs_types)
+            puml_node["uml"] += create_legend(needs_types)
 
         puml_node["uml"] += "\n@enduml"
         puml_node["incdir"] = os.path.dirname(current_needsequence["docname"])
@@ -217,14 +231,21 @@ def process_needsequence(app: Sphinx, doctree: nodes.document, fromdocname: str,
         node.replace_self(content)
 
 
-def get_message_needs(app: Sphinx, sender, link_types, all_needs_dict, tracked_receivers=None, filter=None):
-    msg_needs = []
+def get_message_needs(
+    app: Sphinx,
+    sender: NeedsInfoType,
+    link_types: List[str],
+    all_needs_dict: Dict[str, NeedsInfoType],
+    tracked_receivers: Optional[List[str]] = None,
+    filter: Optional[str] = None,
+) -> Tuple[Dict[str, Dict[str, Any]], str, str]:
+    msg_needs: List[Dict[str, Any]] = []
     if tracked_receivers is None:
         tracked_receivers = []
     for link_type in link_types:
-        msg_needs += [all_needs_dict[x] for x in sender[link_type]]
+        msg_needs += [all_needs_dict[x] for x in sender[link_type]]  # type: ignore
 
-    messages = {}
+    messages: Dict[str, Dict[str, Any]] = {}
     p_string = ""
     c_string = ""
     for msg_need in msg_needs:

@@ -164,15 +164,34 @@ or
 
     As an alternative, you can set the config option :ref:`needs_build_needumls` to export the needumls files during each build.
 
+
+.. _needs_id_builder:
+
+needs_id
+--------
+.. versionadded:: 1.4.0
+
+The **needs_id** builder exports all found needs and selected filter results to a set json files of each need with the name is ``id`` of need.
+
+The build creates a folder called :ref:``needs_build_json_per_id_path`` and all file json of each need inside the given build-folder.
+
+Usage
++++++
+
+.. code-block:: bash
+
+    sphinx-build -b needs_id source_dir build_dir
+
+
 .. _needs_lut_builder:
 
 needs_lut
 ---------
 .. versionadded:: 1.4.0
 
-The **needs_lut** builder exports all found needs to a single json file, which only include list of key ``id`` and value of ``docname`` or ``external_url``.
+The **needs_lut** (Needs Lookup Table) builder exports all found needs to a single json file, which only include list of key ``id`` and value of ``docname`` or ``external_url``.
 
-The build creates file called **needs_lut.json** inside the given build-folder.
+The build creates a file called **needs_lut.json** inside the given build-folder.
 Usage
 +++++
 

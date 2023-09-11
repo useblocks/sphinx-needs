@@ -1,14 +1,16 @@
 import math
 import os
-from typing import Sequence
+from typing import List, Sequence
 
 import matplotlib
 import numpy
 from docutils import nodes
 from sphinx.application import Sphinx
 
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
-from sphinx_needs.utils import add_doc, save_matplotlib_figure, unwrap
+from sphinx_needs.utils import add_doc, save_matplotlib_figure
 
 if not os.environ.get("DISPLAY"):
     matplotlib.use("Agg")
@@ -63,22 +65,15 @@ class NeedbarDirective(FilterBase):
     # 2. Stores infos for needbar
     def run(self) -> Sequence[nodes.Node]:
         # 1. define constants
-        env = self.state.document.settings.env
-        if not hasattr(env, "need_all_needbar"):
-            env.need_all_needbar = {}
-
-        # be sure, global var is available. If not, create it
-        if not hasattr(env, "needs_all_needs"):
-            env.needs_all_needs = {}
+        env = self.env
 
         id = env.new_serialno("needbar")
         targetid = f"needbar-{env.docname}-{id}"
         targetnode = nodes.target("", "", ids=[targetid])
         error_id = f"Needbar - file '{env.docname}' - line '{self.lineno}'"
 
+        self.assert_has_content()
         content = self.content
-        if not content:
-            raise Exception(f"{error_id} content cannot be empty.")
 
         title = self.arguments[0].strip() if self.arguments else None
 
@@ -129,7 +124,8 @@ class NeedbarDirective(FilterBase):
         horizontal = "horizontal" in self.options
 
         # 2. Stores infos for needbar
-        env.need_all_needbar[targetid] = {
+        data = SphinxNeedsData(self.env).get_or_create_bars()
+        data[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
@@ -171,14 +167,14 @@ class NeedbarDirective(FilterBase):
 # 8. create figure
 # 9. final storage
 # 10. cleanup matplotlib
-def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list) -> None:
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
+    env = app.env
+    needs_config = NeedsSphinxConfig(env.config)
 
     # NEEDFLOW
     # for node in doctree.findall(Needbar):
     for node in found_nodes:
-        if not app.config.needs_include_needs:
+        if not needs_config.include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
             # But this is here the case, because we are using the attribute "ids" of a node.
@@ -190,7 +186,7 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
             continue
 
         id = node.attributes["ids"][0]
-        current_needbar = env.need_all_needbar[id]
+        current_needbar = SphinxNeedsData(env).get_or_create_bars()[id]
 
         # 1. define constants
         error_id = current_needbar["error_id"]
@@ -264,7 +260,9 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
 
         # 5. process content
         local_data_number = []
-        need_list = list(prepare_need_list(env.needs_all_needs.values()))  # adds parts to need_list
+        need_list = list(
+            prepare_need_list(SphinxNeedsData(env).get_or_create_needs().values())
+        )  # adds parts to need_list
 
         for line in local_data:
             line_number = []
@@ -280,14 +278,14 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
         # 6. calculate index according to configuration and content size
         index = []
         for row in range(len(local_data_number)):
-            line = []
+            _line = []
             for column in range(len(local_data_number[0])):
                 if current_needbar["stacked"]:
-                    line.append(column)
+                    _line.append(column)
                 else:
                     value = row + column * len(local_data_number) + column
-                    line.append(value)
-            index.append(line)
+                    _line.append(value)
+            index.append(_line)
 
         # 7. styling and coloring
         style_previous_to_script_execution = matplotlib.rcParams

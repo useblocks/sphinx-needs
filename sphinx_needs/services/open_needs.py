@@ -6,6 +6,7 @@ import requests
 from jinja2 import Template
 from sphinx.application import Sphinx
 
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.utils import dict_get, jinja_parse
 
 from .base import BaseService
@@ -100,17 +101,17 @@ class OpenNeedsService(BaseService):
         :param options: dict of set directive options
         :return: list of need-data
         """
-
+        needs_config = NeedsSphinxConfig(self.app.config)
         need_data = []
         if options is None:
             options = {}
         # How to know if a referenced link is a need object in the data we are retrieving from the Open Needs Server
         id_selector = self.mappings.get("id")
         ids_of_needs_data = []  # list of all IDs of need objects being retrieved from the Open Needs Server
-        needs_id_validator = self.app.config.needs_id_regex or "^[A-Z0-9_]{5,}"
+        needs_id_validator = needs_config.id_regex or "^[A-Z0-9_]{5,}"
         for item in data:
             if isinstance(id_selector, str):
-                context = {**item, **self.app.config.needs_render_context}
+                context = {**item, **needs_config.render_context}
                 value = jinja_parse(context, id_selector)
             else:
                 value = str(dict_get(item, id_selector))
@@ -133,7 +134,7 @@ class OpenNeedsService(BaseService):
                 if isinstance(selector, str):
                     # Set the "hard-coded" string or
                     # combine the "hard-coded" string and dynamic value
-                    context = {**item, **self.app.config.needs_render_context}
+                    context = {**item, **needs_config.render_context}
                     selector = jinja_parse(context, selector)
                     # Set the returned string as value
                     extra_data[name] = selector
@@ -141,7 +142,7 @@ class OpenNeedsService(BaseService):
                     extra_data[name] = dict_get(item, selector)
 
             content_template = Template(self.content, autoescape=True)
-            context = {"data": item, "options": options, **self.app.config.needs_render_context}
+            context = {"data": item, "options": options, **needs_config.render_context}
             content = content_template.render(context)
             content += "\n\n| \n"  # Add enough space between content and extra_data
 
@@ -163,7 +164,7 @@ class OpenNeedsService(BaseService):
                 if isinstance(selector, str):
                     # Set the "hard-coded" string or
                     # combine the "hard-coded" string and dynamic value
-                    context = {**item, **self.app.config.needs_render_context}
+                    context = {**item, **needs_config.render_context}
                     selector = jinja_parse(context, selector)
                     # Set the returned string as value
                     need_values[name] = selector

@@ -5,27 +5,53 @@ import os
 import re
 from functools import reduce, wraps
 from re import Pattern
-from typing import Any, Dict, List, Optional, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 from urllib.parse import urlparse
 
 from docutils import nodes
-from jinja2 import BaseLoader, Environment, Template
+from jinja2 import Environment, Template
 from matplotlib.figure import FigureBase
 from sphinx.application import BuildEnvironment, Sphinx
 
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.defaults import NEEDS_PROFILING
 from sphinx_needs.logging import get_logger
 
+try:
+    from typing import TypedDict
+except ImportError:
+    from typing_extensions import TypedDict
+
+if TYPE_CHECKING:
+    from sphinx_needs.functions.functions import DynamicFunction
+
 logger = get_logger(__name__)
 
-NEEDS_FUNCTIONS = {}
+
+class NeedFunctionsType(TypedDict):
+    name: str
+    function: "DynamicFunction"
+
+
+NEEDS_FUNCTIONS: Dict[str, NeedFunctionsType] = {}
 
 # List of internal need option names. They should not be used by or presented to user.
 INTERNALS = [
     "docname",
     "doctype",
     "lineno",
-    "target_node",
     "refid",
     "content",
     "pre_content",
@@ -84,13 +110,13 @@ MONTH_NAMES = [
 def row_col_maker(
     app: Sphinx,
     fromdocname: str,
-    all_needs,
-    need_info,
-    need_key,
+    all_needs: Dict[str, NeedsInfoType],
+    need_info: NeedsInfoType,
+    need_key: str,
     make_ref: bool = False,
     ref_lookup: bool = False,
     prefix: str = "",
-):
+) -> nodes.entry:
     """
     Creates and returns a column.
 
@@ -104,42 +130,42 @@ def row_col_maker(
     :param prefix: string, which is used as prefix for the text output
     :return: column object (nodes.entry)
     """
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    builder = app.builder
+    env = app.env
+    needs_config = NeedsSphinxConfig(env.config)
 
     row_col = nodes.entry(classes=["needs_" + need_key])
     para_col = nodes.paragraph()
 
     needs_string_links_option: List[str] = []
-    for v in app.config.needs_string_links.values():
+    for v in needs_config.string_links.values():
         needs_string_links_option.extend(v["options"])
 
-    if need_key in need_info and need_info[need_key] is not None:
-        if isinstance(need_info[need_key], (list, set)):
-            data = need_info[need_key]
-        elif isinstance(need_info[need_key], str) and need_key in needs_string_links_option:
-            data = re.split(r",|;", need_info[need_key])
+    if need_key in need_info and need_info[need_key] is not None:  # type: ignore[literal-required]
+        value = need_info[need_key]  # type: ignore[literal-required]
+        if isinstance(value, (list, set)):
+            data = value
+        elif isinstance(value, str) and need_key in needs_string_links_option:
+            data = re.split(r",|;", value)
             data = [i.strip() for i in data if len(i) != 0]
         else:
-            data = [need_info[need_key]]
+            data = [value]
 
         for index, datum in enumerate(data):
             link_id = datum
             link_part = None
 
             link_list = []
-            for link_type in env.config.needs_extra_links:
+            for link_type in needs_config.extra_links:
                 link_list.append(link_type["option"])
                 link_list.append(link_type["option"] + "_back")
 
             # For needs_string_links
             link_string_list = {}
-            for link_name, link_conf in app.config.needs_string_links.items():
+            for link_name, link_conf in needs_config.string_links.items():
                 link_string_list[link_name] = {
-                    "url_template": Environment(loader=BaseLoader, autoescape=True).from_string(link_conf["link_url"]),
-                    "name_template": Environment(loader=BaseLoader, autoescape=True).from_string(
-                        link_conf["link_name"]
-                    ),
+                    "url_template": Environment(autoescape=True).from_string(link_conf["link_url"]),
+                    "name_template": Environment(autoescape=True).from_string(link_conf["link_name"]),
                     "regex_compiled": re.compile(link_conf["regex"]),
                     "options": link_conf["options"],
                     "name": link_name,
@@ -168,6 +194,7 @@ def row_col_maker(
 
                     if make_ref:
                         if need_info["is_external"]:
+                            assert need_info["external_url"] is not None, "external_url must be set for external needs"
                             ref_col["refuri"] = check_and_calc_base_url_rel_path(need_info["external_url"], fromdocname)
                             ref_col["classes"].append(need_info["external_css"])
                             row_col["classes"].append(need_info["external_css"])
@@ -177,6 +204,7 @@ def row_col_maker(
                     elif ref_lookup:
                         temp_need = all_needs[link_id]
                         if temp_need["is_external"]:
+                            assert temp_need["external_url"] is not None, "external_url must be set for external needs"
                             ref_col["refuri"] = check_and_calc_base_url_rel_path(temp_need["external_url"], fromdocname)
                             ref_col["classes"].append(temp_need["external_css"])
                             row_col["classes"].append(temp_need["external_css"])
@@ -193,7 +221,7 @@ def row_col_maker(
                     para_col += ref_col
             elif matching_link_confs:
                 para_col += match_string_link(
-                    datum_text, datum, need_key, matching_link_confs, render_context=app.config.needs_render_context
+                    datum_text, datum, need_key, matching_link_confs, render_context=needs_config.render_context
                 )
             else:
                 para_col += text_col
@@ -210,12 +238,14 @@ def rstjinja(app: Sphinx, docname: str, source: List[str]) -> None:
     """
     Render our pages as a jinja template for fancy templating goodness.
     """
-    builder = unwrap(app.builder)
+    builder = app.builder
     # Make sure we're outputting HTML
     if builder.format != "html":
         return
     src = source[0]
-    rendered = builder.templates.render_string(src, app.config.html_context, **app.config.needs_render_context)
+    rendered = builder.templates.render_string(
+        src, app.config.html_context, **NeedsSphinxConfig(app.config).render_context
+    )
     source[0] = rendered
 
 
@@ -227,7 +257,8 @@ def import_prefix_link_edit(needs: Dict[str, Any], id_prefix: str, needs_extra_l
 
     :param needs: Dict of all needs
     :param id_prefix: Prefix as string
-    :param needs_extra_links: config var of all supported extra links. Normally coming from env.config.needs_extra_links
+    :param needs_extra_links: config var of all supported extra links.
+        Normally coming from env.config.needs_extra_links
     :return:
     """
     if not id_prefix:
@@ -248,16 +279,19 @@ def import_prefix_link_edit(needs: Dict[str, Any], id_prefix: str, needs_extra_l
             need["description"] = need["description"].replace(id, "".join([id_prefix, id]))
 
 
-def profile(keyword: str):
+FuncT = TypeVar("FuncT")
+
+
+def profile(keyword: str) -> Callable[[FuncT], FuncT]:
     """
     Activate profiling for a specific function.
 
     Activation only happens, if given keyword is part of ``needs_profiling``.
     """
 
-    def inner(func):
+    def inner(func):  # type: ignore
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs):  # type: ignore
             with cProfile.Profile() as pr:
                 result = func(*args, **kwargs)
 
@@ -296,36 +330,38 @@ def check_and_calc_base_url_rel_path(external_url: str, fromdocname: str) -> str
     return ref_uri
 
 
-def check_and_get_external_filter_func(current_needlist):
+def check_and_get_external_filter_func(filter_func_ref: Optional[str]) -> Tuple[Any, str]:
     """Check and import filter function from external python file."""
     # Check if external filter code is defined
     filter_func = None
-    filter_args = []
-
-    filter_func_ref = current_needlist.get("filter_func")
+    filter_args = ""
 
     if filter_func_ref:
         try:
             filter_module, filter_function = filter_func_ref.rsplit(".")
         except ValueError:
-            logger.warning(f'Filter function not valid "{filter_func_ref}". Example: my_module:my_func')
-            return []  # No needs were found because of invalid filter function
+            logger.warning(
+                f'Filter function not valid "{filter_func_ref}". Example: my_module:my_func [needs]', type="needs"
+            )
+            return filter_func, filter_args
 
         result = re.search(r"^(\w+)(?:\((.*)\))*$", filter_function)
+        if not result:
+            return filter_func, filter_args
         filter_function = result.group(1)
-        filter_args = result.group(2) or []
+        filter_args = result.group(2) or ""
 
         try:
             final_module = importlib.import_module(filter_module)
             filter_func = getattr(final_module, filter_function)
         except Exception:
-            logger.warning(f"Could not import filter function: {filter_func_ref}")
-            return []
+            logger.warning(f"Could not import filter function: {filter_func_ref} [needs]", type="needs")
+            return filter_func, filter_args
 
     return filter_func, filter_args
 
 
-def jinja_parse(context: Dict, jinja_string: str) -> str:
+def jinja_parse(context: Dict[str, Any], jinja_string: str) -> str:
     """
     Function to parse mapping options set to a string containing jinja template format.
 
@@ -347,8 +383,8 @@ def jinja_parse(context: Dict, jinja_string: str) -> str:
 
 
 def save_matplotlib_figure(app: Sphinx, figure: FigureBase, basename: str, fromdocname: str) -> nodes.image:
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    builder = app.builder
+    env = app.env
 
     image_folder = os.path.join(builder.outdir, builder.imagedir)
     os.makedirs(image_folder, exist_ok=True)
@@ -385,7 +421,7 @@ def save_matplotlib_figure(app: Sphinx, figure: FigureBase, basename: str, fromd
     return image_node
 
 
-def dict_get(root, items, default=None) -> Any:
+def dict_get(root: Dict[str, Any], items: Any, default: Any = None) -> Any:
     """
     Access a nested object in root by item sequence.
 
@@ -403,7 +439,7 @@ def dict_get(root, items, default=None) -> Any:
 
 
 def match_string_link(
-    text_item: str, data: str, need_key: str, matching_link_confs: List[Dict], render_context: Dict[str, Any]
+    text_item: str, data: str, need_key: str, matching_link_confs: List[Dict[str, Any]], render_context: Dict[str, Any]
 ) -> Any:
     try:
         link_name = None
@@ -423,29 +459,29 @@ def match_string_link(
     except Exception as e:
         logger.warning(
             f'Problems dealing with string to link transformation for value "{data}" of '
-            f'option "{need_key}". Error: {e}'
+            f'option "{need_key}". Error: {e} [needs]',
+            type="needs",
         )
     else:
         return ref_item
 
 
-def match_variants(option_value: Union[str, List], keywords: Dict, needs_variants: Dict) -> Union[str, List, None]:
+def match_variants(
+    option_value: Union[str, List[str]], keywords: Dict[str, Any], needs_variants: Dict[str, str]
+) -> Union[None, str, List[str]]:
     """
     Function to handle variant option management.
 
     :param option_value: Value assigned to an option
-    :type option_value: Union[str, List]
     :param keywords: Data to use as filtering context
-    :type keywords: Dict
     :param needs_variants: Needs variants data set in users conf.py
-    :type needs_variants: Dict
     :return: A string, list, or None to be used as value for option.
     :rtype: Union[str, List, None]
     """
 
     def variant_handling(
-        variant_definitions: List, variant_data: Dict, variant_pattern: Pattern
-    ) -> Union[str, List, None]:
+        variant_definitions: List[str], variant_data: Dict[str, Any], variant_pattern: Pattern  # type: ignore[type-arg]
+    ) -> Optional[str]:
         filter_context = variant_data
         # filter_result = []
         no_variants_in_option = False
@@ -473,7 +509,10 @@ def match_variants(option_value: Union[str, List], keywords: Dict, needs_variant
                         no_variants_in_option = False
                         return output.lstrip(":")
                 except Exception as e:
-                    logger.warning(f'There was an error in the filter statement: "{filter_string}". ' f"Error Msg: {e}")
+                    logger.warning(
+                        f'There was an error in the filter statement: "{filter_string}". ' f"Error Msg: {e} [needs]",
+                        type="needs",
+                    )
             else:
                 no_variants_in_option = True
 
@@ -493,8 +532,8 @@ def match_variants(option_value: Union[str, List], keywords: Dict, needs_variant
 
     # Handling multiple variant definitions
     if isinstance(option_value, str):
-        multiple_variants: List = variant_splitting.split(rf"""{option_value}""")
-        multiple_variants: List = [
+        multiple_variants: List[str] = variant_splitting.split(rf"""{option_value}""")
+        multiple_variants = [
             re.sub(r"^([;, ]+)|([;, ]+$)", "", i) for i in multiple_variants if i not in (None, ";", "", " ")
         ]
         if len(multiple_variants) == 1 and not variant_rule_matching.search(multiple_variants[0]):
@@ -504,7 +543,7 @@ def match_variants(option_value: Union[str, List], keywords: Dict, needs_variant
             return option_value
         return new_option_value
     elif isinstance(option_value, (list, set, tuple)):
-        multiple_variants: List = list(option_value)
+        multiple_variants = list(option_value)
         # In case an option value is a list (:tags: open; close), and does not contain any variant definition,
         # then return the unmodified value
         # options = all([bool(not variant_rule_matching.search(i)) for i in multiple_variants])
@@ -534,15 +573,7 @@ def clean_log(data: str) -> str:
     return clean_credentials
 
 
-T = TypeVar("T")
-
-
-def unwrap(obj: Optional[T]) -> T:
-    assert obj is not None
-    return obj
-
-
-def node_match(node_types):
+def node_match(node_types: Union[Type[nodes.Element], List[Type[nodes.Element]]]) -> Callable[[nodes.Node], bool]:
     """
     Returns a condition function for doctuils.nodes.findall()
 
@@ -562,22 +593,63 @@ def node_match(node_types):
     :param node_types: List of docutils node types
     :return: function, which can be used as constraint-function for docutils findall()
     """
-    if not isinstance(node_types, list):
-        node_types = [node_types]
+    node_types_list = node_types if isinstance(node_types, list) else [node_types]
 
-    def condition(node, node_types=node_types):
+    def condition(node: nodes.Node, node_types: List[Type[nodes.Element]] = node_types_list) -> bool:
         return any(isinstance(node, x) for x in node_types)
 
     return condition
 
 
-def add_doc(env: BuildEnvironment, docname: str, category=None):
+def add_doc(env: BuildEnvironment, docname: str, category: Optional[str] = None) -> None:
     """Stores a docname, to know later all need-relevant docs"""
-    if docname not in env.needs_all_docs["all"]:
-        env.needs_all_docs["all"].append(docname)
+    docs = SphinxNeedsData(env).get_or_create_docs()
+    if docname not in docs["all"]:
+        docs["all"].append(docname)
 
     if category:
-        if category not in env.needs_all_docs:
-            env.needs_all_docs[category] = []
-        if docname not in env.needs_all_docs[category]:
-            env.needs_all_docs[category].append(docname)
+        if category not in docs:
+            docs[category] = []
+        if docname not in docs[category]:
+            docs[category].append(docname)
+
+
+def split_link_types(link_types: str, location: Any) -> List[str]:
+    """Split link_types string into list of link_types."""
+
+    def _is_valid(link_type: str) -> bool:
+        if len(link_type) == 0 or link_type.isspace():
+            logger.warning(
+                "Scruffy link_type definition found. Defined link_type contains spaces only. [needs]",
+                type="needs",
+                location=location,
+            )
+            return False
+        return True
+
+    return list(
+        filter(
+            _is_valid,
+            (x.strip() for x in re.split(";|,", link_types)),
+        )
+    )
+
+
+def get_scale(options: Dict[str, Any], location: Any) -> str:
+    """Get scale for diagram, from directive option."""
+    scale: str = options.get("scale", "100").replace("%", "")
+    if not scale.isdigit():
+        logger.warning(
+            f'scale value must be a number. "{scale}" found [needs]',
+            type="needs",
+            location=location,
+        )
+        return "100"
+    if int(scale) < 1 or int(scale) > 300:
+        logger.warning(
+            f'scale value must be between 1 and 300. "{scale}" found [needs]',
+            type="needs",
+            location=location,
+        )
+        return "100"
+    return scale
