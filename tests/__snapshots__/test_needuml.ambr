@@ -1,0 +1,1334 @@
+# serializer version: 1
+# name: test_doc_build_html[test_app0]
+  dict({
+    'COMP_001': dict({
+      'arch': dict({
+      }),
+      'avatar': '',
+      'closed_at': '',
+      'collapse': None,
+      'completion': '',
+      'constraints': list([
+      ]),
+      'constraints_passed': True,
+      'constraints_results': dict({
+      }),
+      'content': '''
+        class "test component" as comp {
+            name
+            functions
+            activate()
+        }
+        
+        {{uml("INT_001")}}
+        
+        comp --> int
+      ''',
+      'content_id': 'COMP_001',
+      'created_at': '',
+      'delete': None,
+      'docname': 'index',
+      'doctype': '.rst',
+      'duration': '',
+      'external_css': 'external_link',
+      'external_url': None,
+      'full_title': 'Test component',
+      'has_dead_links': '',
+      'has_forbidden_dead_links': '',
+      'hidden': '',
+      'hide': False,
+      'id': 'COMP_001',
+      'id_complete': 'COMP_001',
+      'id_parent': 'COMP_001',
+      'id_prefix': '',
+      'is_external': False,
+      'is_modified': False,
+      'is_need': True,
+      'is_part': False,
+      'jinja_content': None,
+      'layout': '',
+      'lineno': 19,
+      'links': list([
+      ]),
+      'links_back': list([
+      ]),
+      'max_amount': '',
+      'max_content_lines': '',
+      'modifications': 0,
+      'params': '',
+      'parent_need': '',
+      'parent_needs': list([
+      ]),
+      'parent_needs_back': list([
+      ]),
+      'parts': dict({
+      }),
+      'post_template': None,
+      'pre_template': None,
+      'prefix': '',
+      'query': '',
+      'section_name': 'TEST DOCUMENT NEEDUML',
+      'sections': list([
+        'TEST DOCUMENT NEEDUML',
+      ]),
+      'service': '',
+      'signature': '',
+      'specific': '',
+      'status': None,
+      'style': None,
+      'tags': list([
+      ]),
+      'target_id': 'COMP_001',
+      'template': None,
+      'title': 'Test component',
+      'type': 'comp',
+      'type_color': '#BFD8D2',
+      'type_name': 'Component',
+      'type_prefix': 'C_',
+      'type_style': 'card',
+      'updated_at': '',
+      'url': '',
+      'url_postfix': '',
+      'user': '',
+    }),
+    'INT_001': dict({
+      'arch': dict({
+      }),
+      'avatar': '',
+      'closed_at': '',
+      'collapse': None,
+      'completion': '',
+      'constraints': list([
+      ]),
+      'constraints_passed': True,
+      'constraints_results': dict({
+      }),
+      'content': 'circle "Int_X" as int',
+      'content_id': 'INT_001',
+      'created_at': '',
+      'delete': None,
+      'docname': 'index',
+      'doctype': '.rst',
+      'duration': '',
+      'external_css': 'external_link',
+      'external_url': None,
+      'full_title': 'Test interface',
+      'has_dead_links': '',
+      'has_forbidden_dead_links': '',
+      'hidden': '',
+      'hide': False,
+      'id': 'INT_001',
+      'id_complete': 'INT_001',
+      'id_parent': 'INT_001',
+      'id_prefix': '',
+      'is_external': False,
+      'is_modified': False,
+      'is_need': True,
+      'is_part': False,
+      'jinja_content': None,
+      'layout': '',
+      'lineno': 14,
+      'links': list([
+      ]),
+      'links_back': list([
+      ]),
+      'max_amount': '',
+      'max_content_lines': '',
+      'modifications': 0,
+      'params': '',
+      'parent_need': '',
+      'parent_needs': list([
+      ]),
+      'parent_needs_back': list([
+      ]),
+      'parts': dict({
+      }),
+      'post_template': None,
+      'pre_template': None,
+      'prefix': '',
+      'query': '',
+      'section_name': 'TEST DOCUMENT NEEDUML',
+      'sections': list([
+        'TEST DOCUMENT NEEDUML',
+      ]),
+      'service': '',
+      'signature': '',
+      'specific': '',
+      'status': None,
+      'style': None,
+      'tags': list([
+      ]),
+      'target_id': 'INT_001',
+      'template': None,
+      'title': 'Test interface',
+      'type': 'int',
+      'type_color': '#BFD8D2',
+      'type_name': 'Interface',
+      'type_prefix': 'I_',
+      'type_style': 'card',
+      'updated_at': '',
+      'url': '',
+      'url_postfix': '',
+      'user': '',
+    }),
+    'INT_002': dict({
+      'arch': dict({
+        'diagram': '''
+          class "{{needs['ST_001'].title}}" as test {
+             implement
+             {{needs['ST_001'].status}}
+          }
+          
+          {{uml("SYS_001")}}
+        ''',
+        'sequence': '''
+          Alice -> Bob: Hi Bob
+          Bob --> Alice: Hi Alice
+        ''',
+      }),
+      'avatar': '',
+      'closed_at': '',
+      'collapse': None,
+      'completion': '',
+      'constraints': list([
+      ]),
+      'constraints_passed': True,
+      'constraints_results': dict({
+      }),
+      'content': '''
+        .. needuml::
+           :scale: 50%
+           :align: center
+           :config: mixing
+        
+           class "{{needs['ST_001'].title}}" as test {
+              implement
+              {{needs['ST_001'].status}}
+           }
+        
+           {{uml("SYS_001")}}
+        
+        .. needuml::
+           :scale: 50%
+           :align: center
+           :config: mixing
+           :key: sequence
+        
+           Alice -> Bob: Hi Bob
+           Bob --> Alice: Hi Alice
+      ''',
+      'content_id': 'INT_002',
+      'created_at': '',
+      'delete': None,
+      'docname': 'index',
+      'doctype': '.rst',
+      'duration': '',
+      'external_css': 'external_link',
+      'external_url': None,
+      'full_title': 'Test interface2',
+      'has_dead_links': '',
+      'has_forbidden_dead_links': '',
+      'hidden': '',
+      'hide': False,
+      'id': 'INT_002',
+      'id_complete': 'INT_002',
+      'id_parent': 'INT_002',
+      'id_prefix': '',
+      'is_external': False,
+      'is_modified': False,
+      'is_need': True,
+      'is_part': False,
+      'jinja_content': None,
+      'layout': '',
+      'lineno': 70,
+      'links': list([
+      ]),
+      'links_back': list([
+      ]),
+      'max_amount': '',
+      'max_content_lines': '',
+      'modifications': 0,
+      'params': '',
+      'parent_need': '',
+      'parent_needs': list([
+      ]),
+      'parent_needs_back': list([
+      ]),
+      'parts': dict({
+      }),
+      'post_template': None,
+      'pre_template': None,
+      'prefix': '',
+      'query': '',
+      'section_name': 'TEST DOCUMENT NEEDUML',
+      'sections': list([
+        'TEST DOCUMENT NEEDUML',
+      ]),
+      'service': '',
+      'signature': '',
+      'specific': '',
+      'status': None,
+      'style': None,
+      'tags': list([
+      ]),
+      'target_id': 'INT_002',
+      'template': None,
+      'title': 'Test interface2',
+      'type': 'int',
+      'type_color': '#BFD8D2',
+      'type_name': 'Interface',
+      'type_prefix': 'I_',
+      'type_style': 'card',
+      'updated_at': '',
+      'url': '',
+      'url_postfix': '',
+      'user': '',
+    }),
+    'INT_003': dict({
+      'arch': dict({
+        'class': '''
+          allowmixing
+          
+          class "{{needs['ST_001'].title}}" as test {
+             implement
+             {{needs['ST_001'].status}}
+          }
+          
+          {{uml("INT_002", "sequence")}}
+        ''',
+        'sequence': '''
+          Alice -> Bob: Hi Bob
+          Bob --> Alice: Hi Alice
+        ''',
+      }),
+      'avatar': '',
+      'closed_at': '',
+      'collapse': None,
+      'completion': '',
+      'constraints': list([
+      ]),
+      'constraints_passed': True,
+      'constraints_results': dict({
+      }),
+      'content': '''
+        .. needuml::
+           :key: class
+        
+           allowmixing
+        
+           class "{{needs['ST_001'].title}}" as test {
+              implement
+              {{needs['ST_001'].status}}
+           }
+        
+           {{uml("INT_002", "sequence")}}
+        
+        .. needuml::
+           :key: sequence
+        
+           Alice -> Bob: Hi Bob
+           Bob --> Alice: Hi Alice
+      ''',
+      'content_id': 'INT_003',
+      'created_at': '',
+      'delete': None,
+      'docname': 'index',
+      'doctype': '.rst',
+      'duration': '',
+      'external_css': 'external_link',
+      'external_url': None,
+      'full_title': 'Test interface3',
+      'has_dead_links': '',
+      'has_forbidden_dead_links': '',
+      'hidden': '',
+      'hide': False,
+      'id': 'INT_003',
+      'id_complete': 'INT_003',
+      'id_parent': 'INT_003',
+      'id_prefix': '',
+      'is_external': False,
+      'is_modified': False,
+      'is_need': True,
+      'is_part': False,
+      'jinja_content': None,
+      'layout': '',
+      'lineno': 95,
+      'links': list([
+      ]),
+      'links_back': list([
+      ]),
+      'max_amount': '',
+      'max_content_lines': '',
+      'modifications': 0,
+      'params': '',
+      'parent_need': '',
+      'parent_needs': list([
+      ]),
+      'parent_needs_back': list([
+      ]),
+      'parts': dict({
+      }),
+      'post_template': None,
+      'pre_template': None,
+      'prefix': '',
+      'query': '',
+      'section_name': 'TEST DOCUMENT NEEDUML',
+      'sections': list([
+        'TEST DOCUMENT NEEDUML',
+      ]),
+      'service': '',
+      'signature': '',
+      'specific': '',
+      'status': None,
+      'style': None,
+      'tags': list([
+      ]),
+      'target_id': 'INT_003',
+      'template': None,
+      'title': 'Test interface3',
+      'type': 'int',
+      'type_color': '#BFD8D2',
+      'type_name': 'Interface',
+      'type_prefix': 'I_',
+      'type_style': 'card',
+      'updated_at': '',
+      'url': '',
+      'url_postfix': '',
+      'user': '',
+    }),
+    'INT_004': dict({
+      'arch': dict({
+        'class': '''
+          allowmixing
+          
+          class "{{needs['ST_001'].title}}" as test {
+             implement
+             {{needs['ST_001'].status}}
+          }
+          
+          {{uml("SYS_001")}}
+        ''',
+        'diagram': '''
+          Superman -> Batman: Hi Bruce
+          Batman --> Superman: Hi Clark
+        ''',
+        'sequence': '''
+          DC -> Marvel: Hi Kevin
+          Marvel --> DC: Anyone there?
+        ''',
+      }),
+      'avatar': '',
+      'closed_at': '',
+      'collapse': None,
+      'completion': '',
+      'constraints': list([
+      ]),
+      'constraints_passed': True,
+      'constraints_results': dict({
+      }),
+      'content': '''
+        .. needuml::
+           :scale: 50%
+           :key: class
+        
+           allowmixing
+        
+           class "{{needs['ST_001'].title}}" as test {
+              implement
+              {{needs['ST_001'].status}}
+           }
+        
+           {{uml("SYS_001")}}
+        
+        .. needuml::
+        
+           Superman -> Batman: Hi Bruce
+           Batman --> Superman: Hi Clark
+        
+        .. needuml::
+           :key: sequence
+        
+           DC -> Marvel: Hi Kevin
+           Marvel --> DC: Anyone there?
+        
+        .. needuml::
+        
+           Alice -> Bob: Hi Bob
+           Bob --> Alice: Hi Alice
+      ''',
+      'content_id': 'INT_004',
+      'created_at': '',
+      'delete': None,
+      'docname': 'index',
+      'doctype': '.rst',
+      'duration': '',
+      'external_css': 'external_link',
+      'external_url': None,
+      'full_title': 'Test interface4',
+      'has_dead_links': '',
+      'has_forbidden_dead_links': '',
+      'hidden': '',
+      'hide': False,
+      'id': 'INT_004',
+      'id_complete': 'INT_004',
+      'id_parent': 'INT_004',
+      'id_prefix': '',
+      'is_external': False,
+      'is_modified': False,
+      'is_need': True,
+      'is_part': False,
+      'jinja_content': None,
+      'layout': '',
+      'lineno': 117,
+      'links': list([
+      ]),
+      'links_back': list([
+      ]),
+      'max_amount': '',
+      'max_content_lines': '',
+      'modifications': 0,
+      'params': '',
+      'parent_need': '',
+      'parent_needs': list([
+      ]),
+      'parent_needs_back': list([
+      ]),
+      'parts': dict({
+      }),
+      'post_template': None,
+      'pre_template': None,
+      'prefix': '',
+      'query': '',
+      'section_name': 'TEST DOCUMENT NEEDUML',
+      'sections': list([
+        'TEST DOCUMENT NEEDUML',
+      ]),
+      'service': '',
+      'signature': '',
+      'specific': '',
+      'status': None,
+      'style': None,
+      'tags': list([
+      ]),
+      'target_id': 'INT_004',
+      'template': None,
+      'title': 'Test interface4',
+      'type': 'int',
+      'type_color': '#BFD8D2',
+      'type_name': 'Interface',
+      'type_prefix': 'I_',
+      'type_style': 'card',
+      'updated_at': '',
+      'url': '',
+      'url_postfix': '',
+      'user': '',
+    }),
+    'PROD_001': dict({
+      'arch': dict({
+      }),
+      'avatar': '',
+      'closed_at': '',
+      'collapse': None,
+      'completion': '',
+      'constraints': list([
+      ]),
+      'constraints_passed': True,
+      'constraints_results': dict({
+      }),
+      'content': '''
+        allowmixing
+        {{uml("SYS_001")}}
+        
+        node "System A" as sys_2
+        sys_2 --> int
+      ''',
+      'content_id': 'PROD_001',
+      'created_at': '',
+      'delete': None,
+      'docname': 'index',
+      'doctype': '.rst',
+      'duration': '',
+      'external_css': 'external_link',
+      'external_url': None,
+      'full_title': 'Test Product',
+      'has_dead_links': '',
+      'has_forbidden_dead_links': '',
+      'hidden': '',
+      'hide': False,
+      'id': 'PROD_001',
+      'id_complete': 'PROD_001',
+      'id_parent': 'PROD_001',
+      'id_prefix': '',
+      'is_external': False,
+      'is_modified': False,
+      'is_need': True,
+      'is_part': False,
+      'jinja_content': None,
+      'layout': '',
+      'lineno': 46,
+      'links': list([
+      ]),
+      'links_back': list([
+      ]),
+      'max_amount': '',
+      'max_content_lines': '',
+      'modifications': 0,
+      'params': '',
+      'parent_need': '',
+      'parent_needs': list([
+      ]),
+      'parent_needs_back': list([
+      ]),
+      'parts': dict({
+      }),
+      'post_template': None,
+      'pre_template': None,
+      'prefix': '',
+      'query': '',
+      'section_name': 'TEST DOCUMENT NEEDUML',
+      'sections': list([
+        'TEST DOCUMENT NEEDUML',
+      ]),
+      'service': '',
+      'signature': '',
+      'specific': '',
+      'status': None,
+      'style': None,
+      'tags': list([
+      ]),
+      'target_id': 'PROD_001',
+      'template': None,
+      'title': 'Test Product',
+      'type': 'prod',
+      'type_color': '#FF68D2',
+      'type_name': 'Product',
+      'type_prefix': 'P_',
+      'type_style': 'node',
+      'updated_at': '',
+      'url': '',
+      'url_postfix': '',
+      'user': '',
+    }),
+    'ST_001': dict({
+      'arch': dict({
+      }),
+      'avatar': '',
+      'closed_at': '',
+      'collapse': None,
+      'completion': '',
+      'constraints': list([
+      ]),
+      'constraints_passed': True,
+      'constraints_results': dict({
+      }),
+      'content': 'Some content',
+      'content_id': 'ST_001',
+      'created_at': '',
+      'delete': None,
+      'docname': 'index',
+      'doctype': '.rst',
+      'duration': '',
+      'external_css': 'external_link',
+      'external_url': None,
+      'full_title': 'Test story',
+      'has_dead_links': '',
+      'has_forbidden_dead_links': '',
+      'hidden': '',
+      'hide': False,
+      'id': 'ST_001',
+      'id_complete': 'ST_001',
+      'id_parent': 'ST_001',
+      'id_prefix': '',
+      'is_external': False,
+      'is_modified': False,
+      'is_need': True,
+      'is_part': False,
+      'jinja_content': None,
+      'layout': '',
+      'lineno': 4,
+      'links': list([
+      ]),
+      'links_back': list([
+      ]),
+      'max_amount': '',
+      'max_content_lines': '',
+      'modifications': 0,
+      'params': '',
+      'parent_need': '',
+      'parent_needs': list([
+      ]),
+      'parent_needs_back': list([
+      ]),
+      'parts': dict({
+      }),
+      'post_template': None,
+      'pre_template': None,
+      'prefix': '',
+      'query': '',
+      'section_name': 'TEST DOCUMENT NEEDUML',
+      'sections': list([
+        'TEST DOCUMENT NEEDUML',
+      ]),
+      'service': '',
+      'signature': '',
+      'specific': '',
+      'status': None,
+      'style': None,
+      'tags': list([
+      ]),
+      'target_id': 'ST_001',
+      'template': None,
+      'title': 'Test story',
+      'type': 'story',
+      'type_color': '#BFD8D2',
+      'type_name': 'User Story',
+      'type_prefix': 'US_',
+      'type_style': 'node',
+      'updated_at': '',
+      'url': '',
+      'url_postfix': '',
+      'user': '',
+    }),
+    'ST_002': dict({
+      'arch': dict({
+      }),
+      'avatar': '',
+      'closed_at': '',
+      'collapse': None,
+      'completion': '',
+      'constraints': list([
+      ]),
+      'constraints_passed': True,
+      'constraints_results': dict({
+      }),
+      'content': 'Some content 2',
+      'content_id': 'ST_002',
+      'created_at': '',
+      'delete': None,
+      'docname': 'index',
+      'doctype': '.rst',
+      'duration': '',
+      'external_css': 'external_link',
+      'external_url': None,
+      'full_title': 'Test story2',
+      'has_dead_links': '',
+      'has_forbidden_dead_links': '',
+      'hidden': '',
+      'hide': False,
+      'id': 'ST_002',
+      'id_complete': 'ST_002',
+      'id_parent': 'ST_002',
+      'id_prefix': '',
+      'is_external': False,
+      'is_modified': False,
+      'is_need': True,
+      'is_part': False,
+      'jinja_content': None,
+      'layout': '',
+      'lineno': 9,
+      'links': list([
+      ]),
+      'links_back': list([
+      ]),
+      'max_amount': '',
+      'max_content_lines': '',
+      'modifications': 0,
+      'params': '',
+      'parent_need': '',
+      'parent_needs': list([
+      ]),
+      'parent_needs_back': list([
+      ]),
+      'parts': dict({
+      }),
+      'post_template': None,
+      'pre_template': None,
+      'prefix': '',
+      'query': '',
+      'section_name': 'TEST DOCUMENT NEEDUML',
+      'sections': list([
+        'TEST DOCUMENT NEEDUML',
+      ]),
+      'service': '',
+      'signature': '',
+      'specific': '',
+      'status': None,
+      'style': None,
+      'tags': list([
+      ]),
+      'target_id': 'ST_002',
+      'template': None,
+      'title': 'Test story2',
+      'type': 'story',
+      'type_color': '#BFD8D2',
+      'type_name': 'User Story',
+      'type_prefix': 'US_',
+      'type_style': 'node',
+      'updated_at': '',
+      'url': '',
+      'url_postfix': '',
+      'user': '',
+    }),
+    'SYS_001': dict({
+      'arch': dict({
+      }),
+      'avatar': '',
+      'closed_at': '',
+      'collapse': None,
+      'completion': '',
+      'constraints': list([
+      ]),
+      'constraints_passed': True,
+      'constraints_results': dict({
+      }),
+      'content': '''
+        {{uml("COMP_001")}}
+        
+        class "Component 2" as comp_2 {
+            name
+            street
+        }
+        
+        comp_2 --> int
+      ''',
+      'content_id': 'SYS_001',
+      'created_at': '',
+      'delete': None,
+      'docname': 'index',
+      'doctype': '.rst',
+      'duration': '',
+      'external_css': 'external_link',
+      'external_url': None,
+      'full_title': 'Test System',
+      'has_dead_links': '',
+      'has_forbidden_dead_links': '',
+      'hidden': '',
+      'hide': False,
+      'id': 'SYS_001',
+      'id_complete': 'SYS_001',
+      'id_parent': 'SYS_001',
+      'id_prefix': '',
+      'is_external': False,
+      'is_modified': False,
+      'is_need': True,
+      'is_part': False,
+      'jinja_content': None,
+      'layout': '',
+      'lineno': 33,
+      'links': list([
+      ]),
+      'links_back': list([
+      ]),
+      'max_amount': '',
+      'max_content_lines': '',
+      'modifications': 0,
+      'params': '',
+      'parent_need': '',
+      'parent_needs': list([
+      ]),
+      'parent_needs_back': list([
+      ]),
+      'parts': dict({
+      }),
+      'post_template': None,
+      'pre_template': None,
+      'prefix': '',
+      'query': '',
+      'section_name': 'TEST DOCUMENT NEEDUML',
+      'sections': list([
+        'TEST DOCUMENT NEEDUML',
+      ]),
+      'service': '',
+      'signature': '',
+      'specific': '',
+      'status': None,
+      'style': None,
+      'tags': list([
+      ]),
+      'target_id': 'SYS_001',
+      'template': None,
+      'title': 'Test System',
+      'type': 'sys',
+      'type_color': '#FF68D2',
+      'type_name': 'System',
+      'type_prefix': 'S_',
+      'type_style': 'node',
+      'updated_at': '',
+      'url': '',
+      'url_postfix': '',
+      'user': '',
+    }),
+  })
+# ---
+# name: test_doc_build_html[test_app0].1
+  dict({
+    'needuml-index-0': dict({
+      'align': 'center',
+      'caption': None,
+      'config': '''
+        
+                allowmixing
+            
+      ''',
+      'config_names': 'mixing',
+      'content': '''
+        class "{{needs['ST_001'].title}}" as test {
+          implement
+          {{needs['ST_001'].status}}
+        }
+        
+        {{uml("SYS_001")}}
+      ''',
+      'content_calculated': '''
+        @startuml
+        
+        ' Config
+        
+        allowmixing
+        
+        
+        class "Test story" as test {
+          implement
+          None
+        }
+        
+        node "<size:12>System</size>\n**Test System**\n<size:10>SYS_001</size>" as SYS_001 [[../index.html#SYS_001]] #FF68D2
+        @enduml
+  
+      ''',
+      'debug': True,
+      'docname': 'index',
+      'extra': dict({
+      }),
+      'is_arch': False,
+      'key': None,
+      'lineno': 56,
+      'save': None,
+      'scale': '50',
+      'target_id': 'needuml-index-0',
+    }),
+    'needuml-index-1': dict({
+      'align': 'center',
+      'caption': None,
+      'config': '''
+        
+                allowmixing
+            
+      ''',
+      'config_names': 'mixing',
+      'content': '''
+        class "{{needs['ST_001'].title}}" as test {
+           implement
+           {{needs['ST_001'].status}}
+        }
+        
+        {{uml("SYS_001")}}
+      ''',
+      'content_calculated': '''
+        @startuml
+        
+        ' Config
+        
+        allowmixing
+        
+        
+        class "Test story" as test {
+           implement
+           None
+        }
+        
+        node "<size:12>System</size>\n**Test System**\n<size:10>SYS_001</size>" as SYS_001 [[../index.html#SYS_001]] #FF68D2
+        @enduml
+  
+      ''',
+      'debug': False,
+      'docname': 'index',
+      'extra': dict({
+      }),
+      'is_arch': False,
+      'key': None,
+      'lineno': 1,
+      'save': None,
+      'scale': '50',
+      'target_id': 'needuml-index-1',
+    }),
+    'needuml-index-2': dict({
+      'align': 'center',
+      'caption': None,
+      'config': '''
+        
+                allowmixing
+            
+      ''',
+      'config_names': 'mixing',
+      'content': '''
+        Alice -> Bob: Hi Bob
+        Bob --> Alice: Hi Alice
+      ''',
+      'content_calculated': '''
+        @startuml
+        
+        ' Config
+        
+        allowmixing
+        
+        
+        Alice -> Bob: Hi Bob
+        Bob --> Alice: Hi Alice
+        @enduml
+  
+      ''',
+      'debug': False,
+      'docname': 'index',
+      'extra': dict({
+      }),
+      'is_arch': False,
+      'key': 'sequence',
+      'lineno': 13,
+      'save': None,
+      'scale': '50',
+      'target_id': 'needuml-index-2',
+    }),
+    'needuml-index-3': dict({
+      'align': 'center',
+      'caption': None,
+      'config': '',
+      'config_names': None,
+      'content': '''
+        allowmixing
+        
+        class "{{needs['ST_001'].title}}" as test {
+           implement
+           {{needs['ST_001'].status}}
+        }
+        
+        {{uml("INT_002", "sequence")}}
+      ''',
+      'content_calculated': '''
+        @startuml
+        
+        allowmixing
+        
+        class "Test story" as test {
+           implement
+           None
+        }
+        
+        Alice -> Bob: Hi Bob
+        Bob --> Alice: Hi Alice
+        @enduml
+  
+      ''',
+      'debug': False,
+      'docname': 'index',
+      'extra': dict({
+      }),
+      'is_arch': False,
+      'key': 'class',
+      'lineno': 1,
+      'save': None,
+      'scale': '',
+      'target_id': 'needuml-index-3',
+    }),
+    'needuml-index-4': dict({
+      'align': 'center',
+      'caption': None,
+      'config': '',
+      'config_names': None,
+      'content': '''
+        Alice -> Bob: Hi Bob
+        Bob --> Alice: Hi Alice
+      ''',
+      'content_calculated': '''
+        @startuml
+        
+        Alice -> Bob: Hi Bob
+        Bob --> Alice: Hi Alice
+        @enduml
+  
+      ''',
+      'debug': False,
+      'docname': 'index',
+      'extra': dict({
+      }),
+      'is_arch': False,
+      'key': 'sequence',
+      'lineno': 13,
+      'save': None,
+      'scale': '',
+      'target_id': 'needuml-index-4',
+    }),
+    'needuml-index-5': dict({
+      'align': 'center',
+      'caption': None,
+      'config': '',
+      'config_names': None,
+      'content': '''
+        allowmixing
+        
+        class "{{needs['ST_001'].title}}" as test {
+           implement
+           {{needs['ST_001'].status}}
+        }
+        
+        {{uml("SYS_001")}}
+      ''',
+      'content_calculated': '''
+        @startuml
+        
+        allowmixing
+        
+        class "Test story" as test {
+           implement
+           None
+        }
+        
+        node "<size:12>System</size>\n**Test System**\n<size:10>SYS_001</size>" as SYS_001 [[../index.html#SYS_001]] #FF68D2
+        @enduml
+  
+      ''',
+      'debug': False,
+      'docname': 'index',
+      'extra': dict({
+      }),
+      'is_arch': False,
+      'key': 'class',
+      'lineno': 1,
+      'save': None,
+      'scale': '50',
+      'target_id': 'needuml-index-5',
+    }),
+    'needuml-index-6': dict({
+      'align': 'center',
+      'caption': None,
+      'config': '',
+      'config_names': None,
+      'content': '''
+        Superman -> Batman: Hi Bruce
+        Batman --> Superman: Hi Clark
+      ''',
+      'content_calculated': '''
+        @startuml
+        
+        Superman -> Batman: Hi Bruce
+        Batman --> Superman: Hi Clark
+        @enduml
+  
+      ''',
+      'debug': False,
+      'docname': 'index',
+      'extra': dict({
+      }),
+      'is_arch': False,
+      'key': None,
+      'lineno': 14,
+      'save': None,
+      'scale': '',
+      'target_id': 'needuml-index-6',
+    }),
+    'needuml-index-7': dict({
+      'align': 'center',
+      'caption': None,
+      'config': '',
+      'config_names': None,
+      'content': '''
+        DC -> Marvel: Hi Kevin
+        Marvel --> DC: Anyone there?
+      ''',
+      'content_calculated': '''
+        @startuml
+        
+        DC -> Marvel: Hi Kevin
+        Marvel --> DC: Anyone there?
+        @enduml
+  
+      ''',
+      'debug': False,
+      'docname': 'index',
+      'extra': dict({
+      }),
+      'is_arch': False,
+      'key': 'sequence',
+      'lineno': 19,
+      'save': None,
+      'scale': '',
+      'target_id': 'needuml-index-7',
+    }),
+    'needuml-index-8': dict({
+      'align': 'center',
+      'caption': None,
+      'config': '',
+      'config_names': None,
+      'content': '''
+        Alice -> Bob: Hi Bob
+        Bob --> Alice: Hi Alice
+      ''',
+      'content_calculated': '''
+        @startuml
+        
+        Alice -> Bob: Hi Bob
+        Bob --> Alice: Hi Alice
+        @enduml
+  
+      ''',
+      'debug': False,
+      'docname': 'index',
+      'extra': dict({
+      }),
+      'is_arch': False,
+      'key': None,
+      'lineno': 25,
+      'save': None,
+      'scale': '',
+      'target_id': 'needuml-index-8',
+    }),
+  })
+# ---
+# name: test_needuml_filter[test_app0]
+  dict({
+    'needuml-index-0': dict({
+      'align': 'center',
+      'caption': None,
+      'config': '',
+      'config_names': None,
+      'content': '''
+        DC -> Marvel: Hi Kevin
+        Marvel --> DC: Anyone there?
+        
+        {% for need in filter("type == 'story' and status != 'open'") %}
+        {{uml(need.id)}}
+        {% endfor %}
+      ''',
+      'content_calculated': '''
+        @startuml
+        
+        DC -> Marvel: Hi Kevin
+        Marvel --> DC: Anyone there?
+        
+        
+        node "<size:12>User Story</size>\n**Test story 02**\n<size:10>ST_002</size>" as ST_002 [[../index.html#ST_002]] #BFD8D2
+        
+        @enduml
+  
+      ''',
+      'debug': False,
+      'docname': 'index',
+      'extra': dict({
+      }),
+      'is_arch': False,
+      'key': None,
+      'lineno': 1,
+      'save': None,
+      'scale': '',
+      'target_id': 'needuml-index-0',
+    }),
+  })
+# ---
+# name: test_needuml_jinja_func_flow[test_app0]
+  dict({
+    'needuml-index-0': dict({
+      'align': 'center',
+      'caption': None,
+      'config': '',
+      'config_names': None,
+      'content': '''
+        DC -> Marvel: Hi Kevin
+        Marvel --> DC: Anyone there?
+        
+        {{flow("ST_001")}}
+      ''',
+      'content_calculated': '''
+        @startuml
+        
+        DC -> Marvel: Hi Kevin
+        Marvel --> DC: Anyone there?
+        
+        node "<size:12>User Story</size>\n**Test story**\n<size:10>ST_001</size>" as ST_001 [[../index.html#ST_001]] #BFD8D2
+        @enduml
+  
+      ''',
+      'debug': False,
+      'docname': 'index',
+      'extra': dict({
+      }),
+      'is_arch': False,
+      'key': None,
+      'lineno': 1,
+      'save': None,
+      'scale': '',
+      'target_id': 'needuml-index-0',
+    }),
+  })
+# ---
+# name: test_needuml_jinja_func_ref[test_app0]
+  dict({
+    'needuml-index-0': dict({
+      'align': 'center',
+      'caption': None,
+      'config': '',
+      'config_names': None,
+      'content': '''
+        DC -> Marvel: {{ref("ST_001", option="title")}}
+        Marvel --> DC: {{ref("ST_002", text="Different text to explain the story")}}
+      ''',
+      'content_calculated': '''
+        @startuml
+        
+        DC -> Marvel:  [[../index.html#ST_001 Test story]]
+        Marvel --> DC:  [[../index.html#ST_002 Different text to explain the story]]
+        @enduml
+  
+      ''',
+      'debug': False,
+      'docname': 'index',
+      'extra': dict({
+      }),
+      'is_arch': False,
+      'key': None,
+      'lineno': 1,
+      'save': None,
+      'scale': '',
+      'target_id': 'needuml-index-0',
+    }),
+  })
+# ---
+# name: test_needuml_save[test_app0]
+  dict({
+    'uml1': '''
+      @startuml
+      
+      DC -> Marvel: Hi Kevin
+      Marvel --> DC: Anyone there?
+      @enduml
+  
+    ''',
+    'uml2': '''
+      @startuml
+      
+      node "<size:12>User Story</size>\n**Test story**\n<size:10>ST_001</size>" as ST_001 [[../index.html#ST_001]] #BFD8D2
+      node "<size:12>User Story</size>\n**Test story 2**\n<size:10>ST_002</size>" as ST_002 [[../index.html#ST_002]] #BFD8D2
+      @enduml
+  
+    ''',
+  })
+# ---
+# name: test_needumls_builder[test_app0]
+  dict({
+    'uml1': '''
+      @startuml
+      
+      DC -> Marvel: Hi Kevin
+      Marvel --> DC: Anyone there?
+      @enduml
+  
+    ''',
+    'uml2': '''
+      @startuml
+      
+      node "<size:12>User Story</size>\n**Test story**\n<size:10>ST_001</size>" as ST_001 [[../#ST_001]] #BFD8D2
+      node "<size:12>User Story</size>\n**Test story 2**\n<size:10>ST_002</size>" as ST_002 [[../#ST_002]] #BFD8D2
+      @enduml
+  
+    ''',
+  })
+# ---

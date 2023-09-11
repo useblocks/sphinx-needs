@@ -1,0 +1,77 @@
+# serializer version: 1
+# name: test_doc_needarch_jinja_import[test_app0]
+  dict({
+    'needarch-index-0': dict({
+      'align': 'center',
+      'caption': None,
+      'config': '',
+      'config_names': None,
+      'content': '''
+        Alice -> Bob: Hi Bob
+        Bob --> Alice: hi Alice
+        
+        {{import("uses", "tests")}}
+      ''',
+      'content_calculated': '''
+        @startuml
+        
+        Alice -> Bob: Hi Bob
+        Bob --> Alice: hi Alice
+        
+        node "<size:12>User Story</size>\n**Story**\n<size:10>US_001</size>" as US_001 [[../index.html#US_001]] #BFD8D2
+        node "<size:12>User Story</size>\n**Story 002**\n<size:10>US_002</size>" as US_002 [[../index.html#US_002]] #BFD8D2
+        card "<size:12>Interface</size>\n**Test interface**\n<size:10>INT_001</size>" as INT_001 [[../index.html#INT_001]] #BFD8D2
+        card "<size:12>Interface</size>\n**Test interface2**\n<size:10>INT_002</size>" as INT_002 [[../index.html#INT_002]] #BFD8D2
+        
+        @enduml
+  
+      ''',
+      'debug': True,
+      'docname': 'index',
+      'extra': dict({
+      }),
+      'is_arch': True,
+      'key': None,
+      'lineno': 3,
+      'save': None,
+      'scale': '50',
+      'target_id': 'needarch-index-0',
+    }),
+  })
+# ---
+# name: test_needarch_jinja_func_need[test_app0]
+  dict({
+    'needarch-index-0': dict({
+      'align': 'center',
+      'caption': None,
+      'config': '',
+      'config_names': None,
+      'content': '''
+        DC -> Marvel: Hi Kevin
+        Marvel --> DC: Anyone there?
+        
+        {{flow(need().id)}}
+      ''',
+      'content_calculated': '''
+        @startuml
+        
+        DC -> Marvel: Hi Kevin
+        Marvel --> DC: Anyone there?
+        
+        card "<size:12>Interface</size>\n**Test needuml**\n**jinja func need**\n<size:10>INT_001</size>" as INT_001 [[../index.html#INT_001]] #BFD8D2
+        @enduml
+  
+      ''',
+      'debug': False,
+      'docname': 'index',
+      'extra': dict({
+      }),
+      'is_arch': True,
+      'key': None,
+      'lineno': 1,
+      'save': None,
+      'scale': '',
+      'target_id': 'needarch-index-0',
+    }),
+  })
+# ---

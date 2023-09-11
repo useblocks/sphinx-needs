@@ -56,6 +56,7 @@ installed in an isolated environment by Poetry.
 
 List make targets
 -----------------
+
 **Sphinx-Needs** uses ``make`` to invoke most development related actions.
 
 Use ``make list`` to get a list of available targets.
@@ -92,20 +93,43 @@ To check if all used links in the documentation are still valid, run:
 
 Running Tests
 -------------
-.. hint::
 
-   Please be sure to have the dependencies of the official documentation installed:
+You can either run the tests directly using ``pytest``, in an existing environment:
 
 .. code-block:: bash
 
-   pip install -r docs/requirements.txt
+   pytest tests/
+
+Or you can use the provided Makefile:
+
+.. code-block:: bash
+
    make test
+
+Note some tests use `syrupy <https://github.com/tophat/syrupy>`__ to perform snapshot testing.
+These snapshots can be updated by running::
+
+   pytest tests/ --snapshot-update
+
+.. hint::
+
+   Please be sure to have the dependencies of the official documentation also installed:
+
+   .. code-block:: bash
+
+      pip install -r docs/requirements.txt
 
 Linting & Formatting
 --------------------
 
-**Sphinx-Needs** uses `black <https://github.com/psf/black>`_ and
-`isort <https://pycqa.github.io/isort/>`_ to format its source code.
+**Sphinx-Needs** uses `pre-commit <https://pre-commit.com/>`__ to run formatting and checking of source code.
+This can be run directly using:
+
+.. code-block:: bash
+
+    pre-commit run --all-files
+
+or via the provided Makefile:
 
 .. code-block:: bash
 
