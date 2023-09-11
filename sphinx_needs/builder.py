@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Iterable, Sequence
+from typing import Any, Iterable, Sequence, Set
 
 from sphinx import version_info
 from sphinx.application import Sphinx
@@ -22,16 +22,18 @@ class NeedsBuilderBase(Builder):
     and implement the ``finish()`` method,
     to write the needs data in the required format to the output directory.
 
-    The builder assumes that the data (stored in the environment)
+    The builder normally assumes that the data (stored in the environment)
     is finalised before the write stage.
     This allows for the full write stage to be skipped,
     skipping the unnecessary reading and resolution of cached doctrees,
     which makes the builder a lot more efficient.
+    This can be disabled by setting ``skip_write_phase`` to False.
     """
 
     format = "needs"
     file_suffix = ".txt"
     links_suffix = None
+    skip_write_phase: bool = True
 
     def get_outdated_docs(self) -> Iterable[str]:
         return self.env.found_docs
@@ -45,6 +47,24 @@ class NeedsBuilderBase(Builder):
         updated_docnames: Sequence[str],
         method: str = "update",
     ) -> None:
+        if self.skip_write_phase:
+            return
+        return super().write(build_docnames, updated_docnames, method)
+    
+    def prepare_writing(self, _docnames: set[str]) -> None:
+        # only needed for subclasses that run the write phase
+        pass
+
+    def write_doc(self, _docname: str, _doctree: Any) -> None:
+        # only needed for subclasses that run the write phase
+        pass
+
+    def write_doc_serialized(self, _docname: str, _doctree: Any) -> None:
+        # only needed for subclasses that run the write phase
+        pass
+
+    def cleanup(self) -> None:
+        # only needed for subclasses that run the write phase
         pass
 
     @property
@@ -64,9 +84,16 @@ class NeedsBuilder(NeedsBuilderBase):
     filtering by the ``needs_builder_filter`` config option if set,
     and writing to ``needs.json`` (or the ``needs_file`` config option if set)
     in the output folder.
+
+    Note, in principle this builder could skip the write phase,
+    since all need data is already finalised in the environment.
+    However, this is not the case if ``export_id`` is set on any of the filters,
+    since this data is currently only added in the write phase (by ``process_filters``).
+    So for now we always run the write phase.
     """
 
     name = "needs"
+    skip_write_phase = False
 
     def finish(self) -> None:
         # import here due to circular import
