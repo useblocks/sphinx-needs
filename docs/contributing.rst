@@ -107,7 +107,9 @@ Or you can use the provided Makefile:
    make test
 
 Note some tests use `syrupy <https://github.com/tophat/syrupy>`__ to perform snapshot testing.
-These snapshots can be updated by running::
+These snapshots can be updated by running:
+
+.. code-block:: bash
 
    pytest tests/ --snapshot-update
 
