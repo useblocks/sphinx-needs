@@ -71,4 +71,8 @@ def snapshot_doctree(snapshot):
 
     Here we try to sanitize the doctree, to make the snapshots reproducible.
     """
-    return snapshot.with_defaults(extension_class=DoctreeSnapshotExtension)
+    try:
+        return snapshot.with_defaults(extension_class=DoctreeSnapshotExtension)
+    except AttributeError:
+        # fallback for older versions of pytest-snapshot
+        return snapshot.use_extension(DoctreeSnapshotExtension)
