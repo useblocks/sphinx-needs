@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1694338111337,
+  "lastUpdate": 1694495996588,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -4752,6 +4752,42 @@ window.BENCHMARK_DATA = {
             "value": 87.50611750299998,
             "unit": "s",
             "extra": "Commit: c1682ba1a36aec564ac5e98055303af7b7f630fd\nBranch: master\nTime: 2023-09-10T11:19:59+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "09277e30b404500a7c1fffd7f66949938d36f7cb",
+          "message": "🧪 Add snapshot testing for needs data (#1019)\n\nPreviously, the validity of needs data was tested by asserting for only specific keys and values.\r\nThis commit adds snapshot testing, with https://github.com/tophat/syrupy, to more fully capture the generated data.\r\nThis should help to better identify any regressions caused by future changes.",
+          "timestamp": "2023-09-12T07:11:11+02:00",
+          "tree_id": "9201308961b387fda41d6f32b81d3c4e5be34d64",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/09277e30b404500a7c1fffd7f66949938d36f7cb"
+        },
+        "date": 1694495990999,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2716886640000098,
+            "unit": "s",
+            "extra": "Commit: 09277e30b404500a7c1fffd7f66949938d36f7cb\nBranch: master\nTime: 2023-09-12T07:11:11+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 92.28797705,
+            "unit": "s",
+            "extra": "Commit: 09277e30b404500a7c1fffd7f66949938d36f7cb\nBranch: master\nTime: 2023-09-12T07:11:11+02:00"
           }
         ]
       }
