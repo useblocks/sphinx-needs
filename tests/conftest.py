@@ -3,7 +3,9 @@ import shutil
 from tempfile import mkdtemp
 
 import pytest
+from docutils.nodes import document
 from sphinx.testing.path import path
+from syrupy.extensions.single_file import SingleFileSnapshotExtension, WriteMode
 
 pytest_plugins = "sphinx.testing.fixtures"
 
@@ -48,3 +50,25 @@ def test_app(make_app, request):
 
     # cleanup test temporary directory
     shutil.rmtree(sphinx_test_tempdir, False)
+
+
+class DoctreeSnapshotExtension(SingleFileSnapshotExtension):
+    _write_mode = WriteMode.TEXT
+    _file_extension = "doctree.xml"
+
+    def serialize(self, data, **kwargs):
+        if not isinstance(data, document):
+            raise TypeError(f"Expected document, got {type(data)}")
+        doc = data.deepcopy()
+        doc["source"] = "<source>"  # this will be a temp path
+        doc.attributes.pop("translation_progress", None)  # added in sphinx 7.1
+        return doc.pformat()
+
+
+@pytest.fixture
+def snapshot_doctree(snapshot):
+    """Snapshot fixture for doctrees.
+
+    Here we try to sanitize the doctree, to make the snapshots reproducible.
+    """
+    return snapshot.with_defaults(extension_class=DoctreeSnapshotExtension)
