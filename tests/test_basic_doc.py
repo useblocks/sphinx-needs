@@ -9,7 +9,7 @@ from random import randrange
 
 import pytest
 import responses
-import sphinx.application
+from sphinx.application import Sphinx
 from syrupy.filters import props
 
 from sphinx_needs.api.need import NeedsNoIdException
@@ -70,7 +70,7 @@ def test_build_html(test_app):
 
 @responses.activate
 @pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/generic_doc"}], indirect=True)
-def test_build_html_parallel(test_app):
+def test_build_html_parallel(test_app: Sphinx, snapshot_doctree):
     responses.add_callback(
         responses.GET,
         re.compile(r"https://api.github.com/.*"),
@@ -88,6 +88,8 @@ def test_build_html_parallel(test_app):
     assert build_dir / "sphinx_needs_collapse.js" in files
     assert build_dir / "datatables_loader.js" in files
     assert build_dir / "DataTables-1.10.16" / "js" / "jquery.dataTables.min.js" in files
+
+    assert app.env.get_doctree("index") == snapshot_doctree
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="assert fails on windows, need to fix later.")
@@ -232,7 +234,7 @@ def test_sphinx_api_build():
     temp_dir = tempfile.mkdtemp()
     src_dir = os.path.join(os.path.dirname(__file__), "doc_test", "doc_basic")
 
-    sphinx_app = sphinx.application.Sphinx(
+    sphinx_app = Sphinx(
         srcdir=src_dir,
         confdir=src_dir,
         outdir=temp_dir,
