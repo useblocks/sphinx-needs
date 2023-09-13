@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1694580777157,
+  "lastUpdate": 1694580819424,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -4824,6 +4824,42 @@ window.BENCHMARK_DATA = {
             "value": 73.380024935,
             "unit": "s",
             "extra": "Commit: 8165047dcbb917086626e3b195d55fcea3556889\nBranch: master\nTime: 2023-09-13T06:45:54+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "193a27ce6c369a80b176c134c9bfaaf64f21fd87",
+          "message": "Bump docker/login-action from 1 to 3 (#1021)",
+          "timestamp": "2023-09-13T06:46:27+02:00",
+          "tree_id": "3b3ccea16e4b80399d87559977cf077627db7b13",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/193a27ce6c369a80b176c134c9bfaaf64f21fd87"
+        },
+        "date": 1694580814138,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2215197229999717,
+            "unit": "s",
+            "extra": "Commit: 193a27ce6c369a80b176c134c9bfaaf64f21fd87\nBranch: master\nTime: 2023-09-13T06:46:27+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 75.761771635,
+            "unit": "s",
+            "extra": "Commit: 193a27ce6c369a80b176c134c9bfaaf64f21fd87\nBranch: master\nTime: 2023-09-13T06:46:27+02:00"
           }
         ]
       }
