@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1694582644637,
+  "lastUpdate": 1694591142431,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -4968,6 +4968,42 @@ window.BENCHMARK_DATA = {
             "value": 88.39255626400006,
             "unit": "s",
             "extra": "Commit: b83532a246e6741989754e12379dc3e5ca0d4150\nBranch: master\nTime: 2023-09-13T07:15:31+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6f28dc2588e357cdab0bdd704306672b6c6ef098",
+          "message": "🧪 Add snapshot testing for cached doctrees (#1020)\n\nThis adds some snapshot testing for cached doctrees of a sphinx build, with the `snapshot_doctree` fixture.",
+          "timestamp": "2023-09-13T09:38:46+02:00",
+          "tree_id": "b021b43a9b981f2ea089a954577efae14a9cfae7",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6f28dc2588e357cdab0bdd704306672b6c6ef098"
+        },
+        "date": 1694591136241,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21161673799997516,
+            "unit": "s",
+            "extra": "Commit: 6f28dc2588e357cdab0bdd704306672b6c6ef098\nBranch: master\nTime: 2023-09-13T09:38:46+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 70.037822602,
+            "unit": "s",
+            "extra": "Commit: 6f28dc2588e357cdab0bdd704306672b6c6ef098\nBranch: master\nTime: 2023-09-13T09:38:46+02:00"
           }
         ]
       }
