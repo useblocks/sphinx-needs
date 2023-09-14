@@ -34,7 +34,7 @@ def test_doc_needarch_negative(test_app):
 @pytest.mark.parametrize(
     "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needarch_jinja_func_import"}], indirect=True
 )
-def test_doc_needarch_jinja_import(test_app):
+def test_doc_needarch_jinja_import(test_app, snapshot):
     app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
@@ -42,43 +42,18 @@ def test_doc_needarch_jinja_import(test_app):
 
     # check needarch
     all_needumls = app.env.needs_all_needumls
-    assert len(all_needumls) == 1
-
-    need_arch = all_needumls["needarch-index-0"]
-    assert need_arch["is_arch"]
-    assert need_arch["content"] == 'Alice -> Bob: Hi Bob\nBob --> Alice: hi Alice\n\n{{import("uses", "tests")}}'
-
-    assert need_arch["content_calculated"]
-    assert "@startuml\n\nAlice -> Bob: Hi Bob\n" in need_arch["content_calculated"]
-    assert (
-        'node "<size:12>User Story</size>\\n**Story**\\n<size:10>US_001</size>" as US_001 [[../index.html#US_001]] #BFD8D2\n'
-        in need_arch["content_calculated"]
-    )
-    assert (
-        'node "<size:12>User Story</size>\\n**Story 002**\\n<size:10>US_002</size>" as US_002'
-        in need_arch["content_calculated"]
-    )
-    assert (
-        'card "<size:12>Interface</size>\\n**Test interface**\\n<size:10>INT_001</size>" as INT_001'
-        in need_arch["content_calculated"]
-    )
-    assert (
-        'card "<size:12>Interface</size>\\n**Test interface2**\\n<size:10>INT_002</size>" as INT_002'
-        in need_arch["content_calculated"]
-    )
+    assert all_needumls == snapshot
 
 
 @pytest.mark.parametrize(
     "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needarch_jinja_func_need"}], indirect=True
 )
-def test_needarch_jinja_func_need(test_app):
+def test_needarch_jinja_func_need(test_app, snapshot):
     app = test_app
     app.build()
 
     all_needumls = app.env.needs_all_needumls
-    assert len(all_needumls) == 1
-
-    assert "{{flow(need().id)}}" in all_needumls["needarch-index-0"]["content"]
+    assert all_needumls == snapshot
 
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     assert "as INT_001 [[../index.html#INT_001]]" in html

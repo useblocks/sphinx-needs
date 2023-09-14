@@ -1,0 +1,12 @@
+<document source="<source>">
+    <section ids="test-document" names="test\ document">
+        <title>
+            TEST DOCUMENT
+        <target anonymous="" ids="SP_TOO_001" refid="SP_TOO_001">
+        <Need classes="need need-spec" ids="SP_TOO_001" refid="SP_TOO_001">
+            <paragraph>
+                The Tool awesome shall have a command line interface.
+        <target anonymous="" ids="US_63252" refid="US_63252">
+        <Need classes="need need-story" ids="US_63252" refid="US_63252">
+        <target refid="needfilter-index-0">
+        <Needfilter ids="needfilter-index-0">
