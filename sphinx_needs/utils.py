@@ -667,7 +667,7 @@ def get_scale(options: Dict[str, Any], location: Any) -> str:
     return scale
 
 
-def error_on_missing_matplotlib(matplotlib_available: bool):
+def error_on_missing_matplotlib(matplotlib_available: bool) -> None:
     """Raise an import error if matplotlib isn't available (optional dep)"""
     if not matplotlib_available:
         raise ImportError(

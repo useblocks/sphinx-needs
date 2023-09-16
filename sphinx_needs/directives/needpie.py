@@ -17,18 +17,16 @@ try:
 except ImportError:
     MATPLOTLIB_AVAILABLE = False
 
+import hashlib
+
 from docutils import nodes
+from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
-
-import hashlib
-
-from docutils.parsers.rst import directives
-
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import (
     add_doc,
@@ -73,12 +71,6 @@ class NeedpieDirective(FilterBase):
     def run(self) -> Sequence[nodes.Node]:
         error_on_missing_matplotlib(MATPLOTLIB_AVAILABLE)
         env = self.env
-        if not hasattr(env, "need_all_needpie"):
-            env.need_all_needpie = {}
-
-        # be sure, global var is available. If not, create it
-        if not hasattr(env, "needs_all_needs"):
-            env.needs_all_needs = {}
 
         id = env.new_serialno("needpie")
         targetid = f"needpie-{env.docname}-{id}"

@@ -22,19 +22,16 @@ import hashlib
 
 from docutils import nodes
 from docutils.parsers.rst import directives
-from docutils import nodes
 from sphinx.application import Sphinx
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
-
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import (
     add_doc,
     error_on_missing_matplotlib,
     save_matplotlib_figure,
-    unwrap,
 )
 
 logger = get_logger(__name__)
