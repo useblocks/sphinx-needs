@@ -3,14 +3,15 @@ API to get or add specific sphinx needs configuration parameters.
 
 All functions here are available under ``sphinxcontrib.api``. So do not import this module directly.
 """
-from typing import Any, Callable, List, Optional
+from typing import Callable, List, Optional
 
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 from sphinx.util.logging import SphinxLoggerAdapter
 
 from sphinx_needs.api.exceptions import NeedsApiConfigException, NeedsApiConfigWarning
-from sphinx_needs.config import NEEDS_CONFIG
+from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
+from sphinx_needs.data import NeedsInfoType
 from sphinx_needs.functions import register_func
 from sphinx_needs.functions.functions import DynamicFunction
 
@@ -28,7 +29,7 @@ def get_need_types(app: Sphinx) -> List[str]:
     :param app: Sphinx application object
     :return: list of strings
     """
-    needs_types = app.config.needs_types
+    needs_types = NeedsSphinxConfig(app.config).types
     return [x["directive"] for x in needs_types]
 
 
@@ -58,7 +59,7 @@ def add_need_type(
     """
     import sphinx_needs.directives.need
 
-    needs_types = app.config.needs_types
+    needs_types = NeedsSphinxConfig(app.config).types
     type_names = [x["directive"] for x in needs_types]
 
     if directive in type_names:
@@ -84,13 +85,9 @@ def add_extra_option(app: Sphinx, name: str) -> None:
     :param name: Name as string of the extra option
     :return: None
     """
-
-    extra_options = NEEDS_CONFIG.create_or_get("extra_options", dict)
-
-    if name in extra_options:
+    if name in NEEDS_CONFIG.extra_options:
         raise NeedsApiConfigWarning(f"Option {name} already registered.")
-
-    NEEDS_CONFIG.add("extra_options", {name: directives.unchanged}, dict, append=True)
+    NEEDS_CONFIG.extra_options[name] = directives.unchanged
 
 
 def add_dynamic_function(app: Sphinx, function: DynamicFunction, name: Optional[str] = None) -> None:
@@ -121,7 +118,7 @@ def add_dynamic_function(app: Sphinx, function: DynamicFunction, name: Optional[
 
 
 # 'Need' is untyped, so we temporarily use 'Any' here
-WarningCheck = Callable[[Any, SphinxLoggerAdapter], bool]
+WarningCheck = Callable[[NeedsInfoType, SphinxLoggerAdapter], bool]
 
 
 def add_warning(
@@ -138,8 +135,6 @@ def add_warning(
     :param filter_string: filter_string to use for the warning
     :return: None
     """
-    warnings_option = NEEDS_CONFIG.create_or_get("warnings", dict)
-
     if function is None and filter_string is None:
         raise NeedsApiConfigException("Function or filter_string must be given for add_warning_func")
 
@@ -150,7 +145,10 @@ def add_warning(
 
     warning_check = function or filter_string
 
-    if name in warnings_option:
+    if warning_check is None:
+        raise NeedsApiConfigException("either function or filter_string must be given")
+
+    if name in NEEDS_CONFIG.warnings:
         raise NeedsApiConfigException(f"Warning {name} already registered.")
 
-    NEEDS_CONFIG.add("warnings", {name: warning_check}, dict, append=True)
+    NEEDS_CONFIG.warnings[name] = warning_check

@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 import requests_mock
+from syrupy.filters import props
 
 
 @pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/import_doc"}], indirect=True)
@@ -97,38 +98,18 @@ def test_import_non_exists_json(test_app):
 
 
 @pytest.mark.parametrize("test_app", [{"buildername": "needs", "srcdir": "doc_test/import_doc"}], indirect=True)
-def test_import_builder(test_app):
+def test_import_builder(test_app, snapshot):
     app = test_app
     app.build()
     needs_text = Path(app.outdir, "needs.json").read_text()
     needs = json.loads(needs_text)
-    assert "created" in needs
-    need = needs["versions"]["1.0"]["needs"]["REQ_1"]
-
-    check_keys = [
-        "id",
-        "type",
-        "description",
-        "full_title",
-        "is_need",
-        "is_part",
-        "links",
-        "section_name",
-        "status",
-        "tags",
-        "title",
-        "type_name",
-    ]
-
-    for key in check_keys:
-        if key not in need.keys():
-            raise AssertionError("%s not in exported need" % key)
+    assert needs == snapshot(exclude=props("created"))
 
 
 @pytest.mark.parametrize(
     "test_app", [{"buildername": "needs", "srcdir": "doc_test/doc_needimport_download_needs_json"}], indirect=True
 )
-def test_needimport_needs_json_download(test_app):
+def test_needimport_needs_json_download(test_app, snapshot):
     app = test_app
 
     # Mock requests
@@ -189,14 +170,7 @@ def test_needimport_needs_json_download(test_app):
         app.build()
 
     needs_all_needs = app.env.needs_all_needs
-    assert len(needs_all_needs) == 3
-
-    # check import needs from needs.json
-    assert "IMP_TEST_101" in needs_all_needs
-
-    imported_need = remote_json["versions"]["1.0"]["needs"]["TEST_101"]
-    assert needs_all_needs["IMP_TEST_101"]["tags"] == imported_need["tags"]
-    assert needs_all_needs["IMP_TEST_101"]["title"] == imported_need["title"]
+    assert needs_all_needs == snapshot(exclude=props("content_node"))
 
 
 @pytest.mark.parametrize(

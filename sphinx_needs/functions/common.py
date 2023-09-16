@@ -6,16 +6,17 @@ Collection of common sphinx-needs functions for dynamic values
 
 import contextlib
 import re
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
+from sphinx_needs.data import NeedsInfoType
 from sphinx_needs.filter_common import filter_needs, filter_single_need
 from sphinx_needs.utils import logger
 
 
-def test(app: Sphinx, need, needs, *args, **kwargs) -> str:
+def test(app: Sphinx, need: NeedsInfoType, needs: Dict[str, NeedsInfoType], *args: Any, **kwargs: Any) -> str:
     """
     Test function for dynamic functions in sphinx needs.
 
@@ -36,7 +37,9 @@ def test(app: Sphinx, need, needs, *args, **kwargs) -> str:
     return f"Test output of need {need['id']}. args: {args}. kwargs: {kwargs}"
 
 
-def echo(app: Sphinx, need, needs, text: str, *args, **kwargs) -> str:
+def echo(
+    app: Sphinx, need: NeedsInfoType, needs: Dict[str, NeedsInfoType], text: str, *args: Any, **kwargs: Any
+) -> str:
     """
     .. versionadded:: 0.6.3
 
@@ -53,7 +56,16 @@ def echo(app: Sphinx, need, needs, text: str, *args, **kwargs) -> str:
     return text
 
 
-def copy(app: Sphinx, need, needs, option, need_id=None, lower: bool = False, upper: bool = False, filter=None) -> str:
+def copy(
+    app: Sphinx,
+    need: NeedsInfoType,
+    needs: Dict[str, NeedsInfoType],
+    option: str,
+    need_id: Optional[str] = None,
+    lower: bool = False,
+    upper: bool = False,
+    filter: Optional[str] = None,
+) -> Any:
     """
     Copies the value of one need option to another
 
@@ -112,7 +124,7 @@ def copy(app: Sphinx, need, needs, option, need_id=None, lower: bool = False, up
         .. test:: test of current_need value
            :id: copy_4
 
-           The following copy command copies the title of the first need found under the same highest
+           The es the title of the first need found under the same highest
            section (headline):
 
            [[copy('title', filter='current_need["sections"][-1]==sections[-1]')]]
@@ -143,24 +155,28 @@ def copy(app: Sphinx, need, needs, option, need_id=None, lower: bool = False, up
         if result:
             need = result[0]
 
-    if lower:
-        return need[option].lower()
-    if upper:
-        return need[option].upper()
+    value = need[option]  # type: ignore[literal-required]
 
-    return need[option]
+    # TODO check if str?
+
+    if lower:
+        return value.lower()
+    if upper:
+        return value.upper()
+
+    return value
 
 
 def check_linked_values(
     app: Sphinx,
-    need,
-    needs,
-    result,
-    search_option,
-    search_value,
+    need: NeedsInfoType,
+    needs: Dict[str, NeedsInfoType],
+    result: Any,
+    search_option: str,
+    search_value: Any,
     filter_string: Optional[str] = None,
     one_hit: bool = False,
-):
+) -> Any:
     """
     Returns a specific value, if for all linked needs a given option has a given value.
 
@@ -297,22 +313,31 @@ def check_linked_values(
         search_value = [search_value]
 
     for link in links:
+        need = needs[link]
         if filter_string:
             try:
-                if not filter_single_need(app, needs[link], filter_string):
+                if not filter_single_need(app, need, filter_string):
                     continue
             except Exception as e:
-                logger.warning(f"CheckLinkedValues: Filter {filter_string} not valid: Error: {e}")
+                logger.warning(f"CheckLinkedValues: Filter {filter_string} not valid: Error: {e} [needs]", type="needs")
 
-        if not one_hit and needs[link][search_option] not in search_value:
+        need_value = need[search_option]  # type: ignore[literal-required]
+        if not one_hit and need_value not in search_value:
             return None
-        elif one_hit and needs[link][search_option] in search_value:
+        elif one_hit and need_value in search_value:
             return result
 
     return result
 
 
-def calc_sum(app: Sphinx, need, needs, option, filter=None, links_only: bool = False) -> float:
+def calc_sum(
+    app: Sphinx,
+    need: NeedsInfoType,
+    needs: Dict[str, NeedsInfoType],
+    option: str,
+    filter: Optional[str] = None,
+    links_only: bool = False,
+) -> float:
     """
     Sums the values of a given option in filtered needs up to single number.
 
@@ -392,12 +417,7 @@ def calc_sum(app: Sphinx, need, needs, option, filter=None, links_only: bool = F
 
     :return: A float number
     """
-    if links_only:
-        check_needs = []
-        for link in need["links"]:
-            check_needs.append(needs[link])
-    else:
-        check_needs = needs.values()
+    check_needs = [needs[link] for link in need["links"]] if links_only else needs.values()
 
     calculated_sum = 0.0
 
@@ -409,15 +429,21 @@ def calc_sum(app: Sphinx, need, needs, option, filter=None, links_only: bool = F
             except ValueError:
                 pass
             except NeedsInvalidFilter as ex:
-                logger.warning(f"Given filter is not valid. Error: {ex}")
+                logger.warning(f"Given filter is not valid. Error: {ex} [needs]", type="needs")
 
         with contextlib.suppress(ValueError):
-            calculated_sum += float(check_need[option])
+            calculated_sum += float(check_need[option])  # type: ignore[literal-required]
 
     return calculated_sum
 
 
-def links_from_content(app: Sphinx, need, needs, need_id=None, filter=None) -> List[str]:
+def links_from_content(
+    app: Sphinx,
+    need: NeedsInfoType,
+    needs: Dict[str, NeedsInfoType],
+    need_id: Optional[str] = None,
+    filter: Optional[str] = None,
+) -> List[str]:
     """
     Extracts links from content of a need.
 
@@ -469,10 +495,7 @@ def links_from_content(app: Sphinx, need, needs, need_id=None, filter=None) -> L
     :param filter: :ref:`filter_string`, which a found need-link must pass.
     :return: List of linked need-ids in content
     """
-    if need_id:
-        source_need = needs[need_id]
-    else:
-        source_need = need
+    source_need = needs[need_id] if need_id else need
 
     links = re.findall(r":need:`(\w+)`|:need:`.+\<(.+)\>`", source_need["content"])
     raw_links = []

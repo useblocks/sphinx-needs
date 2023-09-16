@@ -4,9 +4,12 @@ from contextlib import suppress
 from typing import Any, List, Sequence
 
 from docutils import nodes
-from docutils.parsers.rst import Directive, directives
+from docutils.parsers.rst import directives
 from jinja2 import Template
 from sphinx.errors import SphinxError, SphinxWarning
+from sphinx.util.docutils import SphinxDirective
+
+from sphinx_needs.config import NeedsSphinxConfig
 
 NEED_TEMPLATE = """.. {{type}}:: {{title}}
    {% if need_id is not none %}:id: {{need_id}}{%endif%}
@@ -24,11 +27,11 @@ OPTION_AREA_REGEX = re.compile(r"\(\((.*)\)\)")
 OPTIONS_REGEX = re.compile(r"([^=,\s]*)=[\"']([^\"]*)[\"']")
 
 
-class List2Need(nodes.General, nodes.Element):  # type: ignore
+class List2Need(nodes.General, nodes.Element):
     pass
 
 
-class List2NeedDirective(Directive):
+class List2NeedDirective(SphinxDirective):
     """
     Directive to filter needs and present them inside a list, table or diagram.
 
@@ -54,7 +57,8 @@ class List2NeedDirective(Directive):
     }
 
     def run(self) -> Sequence[nodes.Node]:
-        env = self.state.document.settings.env
+        env = self.env
+        needs_config = NeedsSphinxConfig(env.config)
 
         presentation = self.options.get("presentation")
         if not presentation:
@@ -73,7 +77,7 @@ class List2NeedDirective(Directive):
         # Create a dict, which delivers the need-type for the later level
         types = {}
         types_raw_list = [x.strip() for x in types_raw.split(",")]
-        conf_types = [x["directive"] for x in env.config.needs_types]
+        conf_types = [x["directive"] for x in needs_config.types]
         for x in range(0, len(types_raw_list)):
             types[x] = types_raw_list[x]
             if types[x] not in conf_types:
@@ -89,7 +93,7 @@ class List2NeedDirective(Directive):
             down_links_raw_list = []
         else:
             down_links_raw_list = [x.strip() for x in down_links_raw.split(",")]
-        link_types = [x["option"] for x in env.config.needs_extra_links]
+        link_types = [x["option"] for x in needs_config.extra_links]
         for i, down_link_raw in enumerate(down_links_raw_list):
             down_links_types[i] = down_link_raw
             if down_link_raw not in link_types:
@@ -131,8 +135,8 @@ class List2NeedDirective(Directive):
                 else:
                     # Calculate the hash value, so that we can later reuse it
                     prefix = ""
-                    needs_id_length = env.config.needs_id_length
-                    for need_type in env.config.needs_types:
+                    needs_id_length = needs_config.id_length
+                    for need_type in needs_config.types:
                         if need_type["directive"] == types[level]:
                             prefix = need_type["prefix"]
                             break

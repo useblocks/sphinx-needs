@@ -1,11 +1,15 @@
 import html
 import os
-from typing import Sequence
+from typing import List, Sequence
 
 from docutils import nodes
-from docutils.parsers.rst import Directive, directives
+from docutils.parsers.rst import directives
 from jinja2 import BaseLoader, Environment, Template
+from sphinx.application import Sphinx
+from sphinx.util.docutils import SphinxDirective
 
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link
 from sphinx_needs.directives.needflow import make_entity_name
@@ -17,7 +21,7 @@ class Needuml(nodes.General, nodes.Element):
     pass
 
 
-class NeedumlDirective(Directive):
+class NeedumlDirective(SphinxDirective):
     """
     Directive to get flow charts.
     """
@@ -36,9 +40,7 @@ class NeedumlDirective(Directive):
     }
 
     def run(self) -> Sequence[nodes.Node]:
-        env = self.state.document.settings.env
-        if not hasattr(env, "needs_all_needumls"):
-            env.needs_all_needumls = {}
+        env = self.env
 
         if self.name == "needarch":
             targetid = "needarch-{docname}-{id}".format(docname=env.docname, id=env.new_serialno("needarch"))
@@ -60,11 +62,12 @@ class NeedumlDirective(Directive):
 
         config_names = self.options.get("config")
         configs = []
+        flow_configs = NeedsSphinxConfig(env.config).flow_configs
         if config_names:
             for config_name in config_names.split(","):
                 config_name = config_name.strip()
-                if config_name and config_name in env.config.needs_flow_configs:
-                    configs.append(env.config.needs_flow_configs[config_name])
+                if config_name and config_name in flow_configs:
+                    configs.append(flow_configs[config_name])
 
         extra_dict = {}
         extras = self.options.get("extra")
@@ -86,7 +89,7 @@ class NeedumlDirective(Directive):
             else:
                 plantuml_code_out_path = save_path
 
-        env.needs_all_needumls[targetid] = {
+        SphinxNeedsData(env).get_or_create_umls()[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
@@ -101,6 +104,7 @@ class NeedumlDirective(Directive):
             "key": key_name,
             "save": plantuml_code_out_path,
             "is_arch": is_arch,
+            "content_calculated": "",
         }
 
         add_doc(env, env.docname)
@@ -191,7 +195,7 @@ def jinja2uml(
     # 5. Get data for the jinja processing
     data = {}
     # 5.1 Set default config to data
-    data.update(**app.config.needs_render_context)
+    data.update(**NeedsSphinxConfig(app.config).render_context)
     # 5.2 Set uml() kwargs to data and maybe overwrite default settings
     data.update(kwargs)
     # 5.3 Make the helpers available during rendering and overwrite maybe wrongly default and uml() kwargs settings
@@ -223,8 +227,8 @@ class JinjaFunctions:
     Provides access to sphinx-app and all Needs objects.
     """
 
-    def __init__(self, app, fromdocname, parent_need_id: str, processed_need_ids: {}):
-        self.needs = app.builder.env.needs_all_needs
+    def __init__(self, app: Sphinx, fromdocname, parent_need_id: str, processed_need_ids: dict):
+        self.needs = SphinxNeedsData(app.env).get_or_create_needs()
         self.app = app
         self.fromdocname = fromdocname
         self.parent_need_id = parent_need_id
@@ -312,8 +316,9 @@ class JinjaFunctions:
         need_info = self.needs[need_id]
         link = calculate_link(self.app, need_info, self.fromdocname)
 
-        diagram_template = Template(self.app.builder.env.config.needs_diagram_template)
-        node_text = diagram_template.render(**need_info, **self.app.config.needs_render_context)
+        needs_config = NeedsSphinxConfig(self.app.config)
+        diagram_template = Template(needs_config.diagram_template)
+        node_text = diagram_template.render(**need_info, **needs_config.render_context)
 
         need_uml = '{style} "{node_text}" as {id} [[{link}]] #{color}'.format(
             id=make_entity_name(need_id),
@@ -399,13 +404,13 @@ def is_element_of_need(node: nodes.Element) -> str:
 
 
 @measure_time("needuml")
-def process_needuml(app, doctree, fromdocname, found_nodes):
-    env = app.builder.env
+def process_needuml(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
+    env = app.env
 
     # for node in doctree.findall(Needuml):
     for node in found_nodes:
         id = node.attributes["ids"][0]
-        current_needuml = env.needs_all_needumls[id]
+        current_needuml = SphinxNeedsData(env).get_or_create_umls()[id]
 
         parent_need_id = None
         # Check if current needuml is needarch
@@ -430,6 +435,10 @@ def process_needuml(app, doctree, fromdocname, found_nodes):
             kwargs=current_needuml["extra"],
             config=config,
         )
+
+        # Add source origin
+        puml_node.line = current_needuml["lineno"]
+        puml_node.source = env.doc2path(current_needuml["docname"])
 
         # Add calculated needuml content
         current_needuml["content_calculated"] = puml_node["uml"]

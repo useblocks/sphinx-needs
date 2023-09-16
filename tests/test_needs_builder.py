@@ -2,24 +2,16 @@ import json
 from pathlib import Path
 
 import pytest
+from syrupy.filters import props
 
 
 @pytest.mark.parametrize("test_app", [{"buildername": "needs", "srcdir": "doc_test/doc_needs_builder"}], indirect=True)
-def test_doc_needs_builder(test_app):
+def test_doc_needs_builder(test_app, snapshot):
     app = test_app
     app.build()
 
-    needs_json = Path(app.outdir, "needs.json")
-    with open(needs_json) as needs_file:
-        needs_file_content = needs_file.read()
-
-    needs_list = json.loads(needs_file_content)
-    assert needs_list["versions"]["1.0"]
-    assert needs_list["versions"]["1.0"]["needs"]["TC_NEG_001"]
-
-    # needs builder added new version needs from needs_files
-    assert needs_list["versions"]["2.0"]
-    assert needs_list["versions"]["2.0"]["needs"]["TEST_01"]
+    needs_list = json.loads(Path(app.outdir, "needs.json").read_text())
+    assert needs_list == snapshot(exclude=props("created"))
 
 
 @pytest.mark.parametrize(

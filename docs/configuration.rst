@@ -646,7 +646,7 @@ needs_report_template
 
 .. versionadded:: 1.0.1
 
-You can customize the layout of :ref:`needreport` using `Jinja <http://jinja.pocoo.org/>`_.
+You can customize the layout of :ref:`needreport` using `Jinja <http://jinja.pocoo.org/>`__.
 
 Set the value of ``needs_report_template`` to the path of the template you want to use.
 
@@ -1792,6 +1792,50 @@ Example:
    The created ``needs.json`` file gets stored in the ``outdir`` of the current builder.
    So if ``html`` is used as builder, the final location is e.g. ``_build/html/needs.json``.
 
+
+.. _needs_build_json_per_id:
+
+needs_build_json_per_id 
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.4.0
+    
+Builds list json files for each need. The name of each file is the ``id`` of need.
+This option works like :ref:`needs_build_json`. 
+
+Default: False
+
+Example:
+
+.. code-block:: python
+
+    needs_build_json_per_id = False
+
+.. hint::
+
+    The created single json file per need, located in :ref:`needs_build_json_per_id_path` folder, e.g ``_build/needs_id/abc_432.json``
+ 
+.. _needs_build_json_per_id_path:
+
+needs_build_json_per_id_path 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.4.0
+    
+This option sets the location of the set of ``needs.json`` for every needs-id.
+
+Default value: ``needs_id``
+
+Example:
+
+.. code-block:: python
+
+    needs_build_json_per_id_path = "needs_id"
+
+.. hint::
+
+    The created ``needs_id`` folder gets stored in the ``outdir`` of the current builder. The final location is e.g. ``_build/needs_id``
+
 .. _needs_build_needumls:
 
 needs_build_needumls
@@ -2040,7 +2084,7 @@ needs_render_context
 ~~~~~~~~~~~~~~~~~~~~~
 .. versionadded:: 1.0.3
 
-This option allows you to use custom data as context when rendering `Jinja <https://jinja.palletsprojects.com/>`_ templates or strings.
+This option allows you to use custom data as context when rendering `Jinja <https://jinja.palletsprojects.com/>`__ templates or strings.
 
 Configuration example:
 
@@ -2134,7 +2178,7 @@ needs_template
 
 *removed: 0.3.0*
 
-The layout of needs can be fully customized by using `jinja <http://jinja.pocoo.org/>`_.
+The layout of needs can be fully customized by using `jinja <http://jinja.pocoo.org/>`__.
 
 If nothing is set, the following default template is used:
 

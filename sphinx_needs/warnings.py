@@ -2,15 +2,15 @@
 Cares about handling and execution warnings.
 
 """
-from typing import Optional
+from typing import Dict, Optional
 
 from sphinx.application import Sphinx
 from sphinx.util import logging
 
-from sphinx_needs.config import NEEDS_CONFIG
+from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
+from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.filter_common import filter_needs
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import unwrap
 
 logger = get_logger(__name__)
 
@@ -31,7 +31,7 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
     if exception:
         return
 
-    env = unwrap(app.env)
+    env = app.env
     # If no needs were defined, we do not need to do anything
     if not hasattr(env, "needs_all_needs"):
         return
@@ -42,24 +42,22 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
     if hasattr(env, "needs_warnings_executed") and env.needs_warnings_executed:
         return
 
-    env.needs_warnings_executed = True
+    env.needs_warnings_executed = True  # type: ignore[attr-defined]
 
-    needs = env.needs_all_needs
+    needs = SphinxNeedsData(env).get_or_create_needs()
 
     # Exclude external needs for warnings check
-    checked_needs = {}
+    checked_needs: Dict[str, NeedsInfoType] = {}
     for need_id, need in needs.items():
         if not need["is_external"]:
             checked_needs[need_id] = need
 
-    warnings = NEEDS_CONFIG.get("warnings")
-
-    warnings_always_warn = app.config.needs_warnings_always_warn
+    warnings_always_warn = NeedsSphinxConfig(app.config).warnings_always_warn
 
     with logging.pending_logging():
         logger.info("\nChecking sphinx-needs warnings")
         warning_raised = False
-        for warning_name, warning_filter in warnings.items():
+        for warning_name, warning_filter in NEEDS_CONFIG.warnings.items():
             if isinstance(warning_filter, str):
                 # filter string used
                 result = filter_needs(app, checked_needs.values(), warning_filter)
@@ -70,7 +68,7 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
                     if warning_filter(need, logger):
                         result.append(need)
             else:
-                logger.warning(f"Unknown needs warnings filter {warning_filter}!")
+                logger.warning(f"Unknown needs warnings filter {warning_filter}! [needs]", type="needs")
 
             if len(result) == 0:
                 logger.info(f"{warning_name}: passed")
@@ -94,9 +92,10 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
 
                 if warnings_always_warn:
                     logger.warning(
-                        "{}: failed\n\t\tfailed needs: {} ({})\n\t\tused filter: {}".format(
+                        "{}: failed\n\t\tfailed needs: {} ({})\n\t\tused filter: {} [needs]".format(
                             warning_name, len(need_ids), ", ".join(need_ids), warning_text
-                        )
+                        ),
+                        type="needs",
                     )
                 else:
                     logger.info(
@@ -107,4 +106,4 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
                     warning_raised = True
 
         if warning_raised:
-            logger.warning("Sphinx-Needs warnings were raised. See console / log output for details.")
+            logger.warning("warnings were raised. See console / log output for details. [needs]", type="needs")
