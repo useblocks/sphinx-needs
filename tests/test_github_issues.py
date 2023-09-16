@@ -3,10 +3,11 @@ from pathlib import Path
 from subprocess import STDOUT, check_output
 
 import pytest
+from sphinx.application import Sphinx
 
 
 @pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_github_issue_44"}], indirect=True)
-def test_doc_github_44(test_app):
+def test_doc_github_44(test_app: Sphinx):
     """
     https://github.com/useblocks/sphinxcontrib-needs/issues/44
     """
@@ -33,7 +34,7 @@ def test_doc_github_44(test_app):
 
 
 @pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_github_issue_61"}], indirect=True)
-def test_doc_github_61(test_app):
+def test_doc_github_61(test_app: Sphinx):
     """
     Test for https://github.com/useblocks/sphinxcontrib-needs/issues/61
     """
@@ -58,8 +59,18 @@ def test_doc_github_61(test_app):
 @pytest.mark.parametrize(
     "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_github_issue_160"}], indirect=True
 )
-def test_doc_github_160(test_app):
+def test_doc_github_160(test_app: Sphinx):
     app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert '<a class="reference internal" href="#A-001" title="A-002">A-001</a>' in html
+
+
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_github_issue_1010"}], indirect=True
+)
+def test_doc_github_1010(test_app: Sphinx):
+    app = test_app
+    app.build()
+    warnings = app._warning.getvalue()
+    assert 'Constraint author == "Bob" for need TEST123 FAILED! severity: CRITICAL [needs.constraint]' in warnings
