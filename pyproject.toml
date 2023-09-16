@@ -2,7 +2,7 @@
 name = "sphinx-needs"
 
 # !! Don't miss updates in needs.py, conf.py, changelog.rst, and .github/workflows/docker !!!
-version = "1.2.2"
+version = "1.3.0"
 
 description = "Sphinx needs extension for managing needs/requirements and specifications"
 authors = ["team useblocks <info@useblocks.com>"]
@@ -49,6 +49,7 @@ pre-commit = "^2"
 lxml = "^4.6.5"
 pytest = "^7"
 pytest-xdist="*"  # parallelisation
+syrupy = ">=3,<5"
 responses = "^0.22.0"
 requests-mock = ">=1.9.3"
 tabulate = "^0.9.0"
@@ -85,49 +86,49 @@ line-length = 120
 profile = "black"
 
 [tool.mypy]
+files = "sphinx_needs"
 strict = true
 show_error_codes = true
 implicit_reexport = true
-files = "sphinx_needs"
-ignore_missing_imports = true
 namespace_packages = true
-warn_unused_ignores = false
+disallow_any_generics = true
+disallow_subclassing_any = true
+# disallow_any_unimported = true
+# disallow_any_explicit = true
+# disallow_any_expr = true
+# disallow_any_decorated = true
+
+[[tool.mypy.overrides]]
+module = [
+  "matplotlib.*",
+  "numpy.*",
+  "requests_file",
+  "sphinx_data_viewer.*",
+  "sphinxcontrib.plantuml.*",
+]
+ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = [
   'sphinx_needs.api.need',
-  'sphinx_needs.builder',
-  'sphinx_needs.diagrams_common',
-  'sphinx_needs.directives.need',
-  'sphinx_needs.directives.needbar',
-  'sphinx_needs.directives.needextend',
-  'sphinx_needs.directives.needextract',
-  'sphinx_needs.directives.needfilter',
-  'sphinx_needs.directives.needflow',
-  'sphinx_needs.directives.needgantt',
-  'sphinx_needs.directives.needlist',
-  'sphinx_needs.directives.needpie',
-  'sphinx_needs.directives.needsequence',
-  'sphinx_needs.directives.needtable',
   'sphinx_needs.directives.needuml',
-  'sphinx_needs.directives.utils',
-  'sphinx_needs.environment',
-  'sphinx_needs.external_needs',
-  'sphinx_needs.filter_common',
-  'sphinx_needs.functions.common',
   'sphinx_needs.functions.functions',
-  'sphinx_needs.layout',
-  'sphinx_needs.needs',
-  'sphinx_needs.needsfile',
-  'sphinx_needs.roles.need_incoming',
-  'sphinx_needs.roles.need_part',
-  'sphinx_needs.roles.need_ref',
-  'sphinx_needs.services.github',
-  'sphinx_needs.services.manager',
-  'sphinx_needs.utils',
-  'sphinx_needs.warnings',
 ]
 ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = [
+  "sphinx_needs.directives.needextend"
+]
+# TODO dynamically overriding TypeDict keys is a bit tricky
+disable_error_code = "literal-required"
+
+[[tool.mypy.overrides]]
+module = [
+  "sphinx_needs.data"
+]
+disable_error_code = ["attr-defined", "no-any-return"]
+
 
 [build-system]
 requires = ["setuptools", "poetry_core>=1.0.8"]  # setuptools for deps like plantuml

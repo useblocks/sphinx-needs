@@ -1,6 +1,6 @@
 import copy
 import os
-from typing import Iterable, Sequence
+from typing import Iterable, List, Sequence
 
 try:
     import matplotlib
@@ -17,13 +17,14 @@ try:
 except ImportError:
     MATPLOTLIB_AVAILABLE = False
 
-
 import hashlib
 
 from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
 from sphinx_needs.logging import get_logger
@@ -32,7 +33,6 @@ from sphinx_needs.utils import (
     check_and_get_external_filter_func,
     error_on_missing_matplotlib,
     save_matplotlib_figure,
-    unwrap,
 )
 
 logger = get_logger(__name__)
@@ -70,13 +70,7 @@ class NeedpieDirective(FilterBase):
 
     def run(self) -> Sequence[nodes.Node]:
         error_on_missing_matplotlib(MATPLOTLIB_AVAILABLE)
-        env = self.state.document.settings.env
-        if not hasattr(env, "need_all_needpie"):
-            env.need_all_needpie = {}
-
-        # be sure, global var is available. If not, create it
-        if not hasattr(env, "needs_all_needs"):
-            env.needs_all_needs = {}
+        env = self.env
 
         id = env.new_serialno("needpie")
         targetid = f"needpie-{env.docname}-{id}"
@@ -104,7 +98,7 @@ class NeedpieDirective(FilterBase):
         shadow = "shadow" in self.options
 
         # Stores infos for needpie
-        env.need_all_needpie[targetid] = {
+        SphinxNeedsData(env).get_or_create_pies()[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
@@ -117,24 +111,23 @@ class NeedpieDirective(FilterBase):
             "colors": colors,
             "shadow": shadow,
             "text_color": text_color,
+            "filter_func": self.collect_filter_attributes()["filter_func"],
         }
-        # update filter-func with needed information defined in FilterBase class
-        env.need_all_needpie[targetid]["filter_func"] = self.collect_filter_attributes()["filter_func"]
-
         add_doc(env, env.docname)
 
         return [targetnode, Needpie("")]
 
 
 @measure_time("needpie")
-def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list) -> None:
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
+    env = app.env
+    needs_data = SphinxNeedsData(env)
 
     # NEEDFLOW
+    include_needs = NeedsSphinxConfig(env.config).include_needs
     # for node in doctree.findall(Needpie):
     for node in found_nodes:
-        if not app.config.needs_include_needs:
+        if not include_needs:
             # Ok, this is really dirty.
             # If we replace a node, docutils checks, if it will not lose any attributes.
             # But this is here the case, because we are using the attribute "ids" of a node.
@@ -146,7 +139,7 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
             continue
 
         id = node.attributes["ids"][0]
-        current_needpie = env.need_all_needpie[id]
+        current_needpie = needs_data.get_or_create_pies()[id]
 
         # Set matplotlib style
 
@@ -160,7 +153,7 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
         content = current_needpie["content"]
 
         sizes = []
-        need_list = list(prepare_need_list(env.needs_all_needs.values()))  # adds parts to need_list
+        need_list = list(prepare_need_list(needs_data.get_or_create_needs().values()))  # adds parts to need_list
         if content and not current_needpie["filter_func"]:
             for line in content:
                 if line.isdigit():
@@ -171,7 +164,7 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
         elif current_needpie["filter_func"] and not content:
             try:
                 # check and get filter_func
-                filter_func, filter_args = check_and_get_external_filter_func(current_needpie)
+                filter_func, filter_args = check_and_get_external_filter_func(current_needpie.get("filter_func"))
                 # execute filter_func code
                 # Provides only a copy of needs to avoid data manipulations.
                 context = {

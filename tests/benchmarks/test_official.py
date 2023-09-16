@@ -1,4 +1,3 @@
-import os
 import re
 from pathlib import Path
 
@@ -20,9 +19,6 @@ def test_official_time(test_app, benchmark):
     )
     responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
 
-    os.environ["ON_CI"] = "true"
-    os.environ["FAST_BUILD"] = "true"
-
     app = test_app
     benchmark.pedantic(app.builder.build_all, rounds=1, iterations=1)
 
@@ -42,9 +38,6 @@ def test_official_memory(test_app):
         content_type="application/json",
     )
     responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
-
-    os.environ["ON_CI"] = "true"
-    os.environ["FAST_BUILD"] = "true"
 
     app = test_app
 

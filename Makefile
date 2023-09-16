@@ -36,6 +36,10 @@ docs-html:
 docs-html-fast:
 	poetry run sphinx-build -j auto -b html docs/ docs/_build
 
+.PHONY: needs
+needs:
+	poetry run sphinx-build -a -E -j auto -b needs docs/ docs/_build
+
 .PHONY: docs-pdf
 docs-pdf:
 	poetry run make --directory docs/ clean && make --directory docs/ latexpdf

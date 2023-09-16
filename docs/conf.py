@@ -40,13 +40,12 @@ sys.path.append(os.path.abspath("../sphinxcontrib"))
 # built documents.
 #
 # The short X.Y version.
-version = "1.2"
+version = "1.3"
 # The full version, including alpha/beta/rc tags.
-release = "1.2.2"
-
-on_rtd = os.environ.get("READTHEDOCS") == "True"
+release = "1.3.0"
 
 extensions = [
+    "sphinx.ext.intersphinx",
     "sphinxcontrib.plantuml",
     "sphinx_needs",
     "sphinx.ext.autodoc",
@@ -57,6 +56,13 @@ extensions = [
     "sphinx.ext.duration",
     "sphinx_immaterial",
 ]
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3.8", None),
+    "sphinx": ("https://www.sphinx-doc.org/en/master", None),
+}
+
+# smartquotes = False
 
 needs_debug_measurement = True
 
@@ -127,6 +133,8 @@ DEFAULT_DIAGRAM_TEMPLATE = (
 
 # Absolute path to the needs_report_template_file based on the conf.py directory
 # needs_report_template = "/needs_templates/report_template.need"   # Use custom report template
+
+needs_report_dead_links = False
 
 needs_types = [
     # Architecture types
@@ -245,11 +253,7 @@ needs_id_required = False
 # needs_css = "dark.css"
 
 local_plantuml_path = os.path.join(os.path.dirname(__file__), "utils", "plantuml-1.2022.14.jar")
-
-if on_rtd:
-    plantuml = f"java -Djava.awt.headless=true -jar {local_plantuml_path}"
-else:
-    plantuml = f"java -jar {local_plantuml_path}"
+plantuml = f"java -Djava.awt.headless=true -jar {local_plantuml_path}"
 
 # plantuml_output_format = 'png'
 plantuml_output_format = "svg_img"
@@ -301,45 +305,22 @@ needs_layouts = {
             "meta": ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"],
         },
     },
+    "detail_view": {
+        "grid": "simple",
+        "layout": {
+            "head": [
+                '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>> <<permalink()>> <<collapse_button("meta", '
+                'collapsed="icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=False)>> '
+                '<<sidebar("")>>'
+            ],
+            "meta": ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"],
+        },
+    },
 }
 
 needs_service_all_data = True
 
-needs_services = {
-    "github-issues": {
-        "url": "https://api.github.com/",
-        "max_content_lines": 20,
-        "id_prefix": "GH_ISSUE_",
-    },
-    "github-prs": {
-        "url": "https://api.github.com/",
-        "max_content_lines": 20,
-        "id_prefix": "GH_PR_",
-    },
-    "github-commits": {
-        "url": "https://api.github.com/",
-        "max_content_lines": 20,
-        "id_prefix": "GH_COM_",
-    },
-    "open-needs": {
-        "url": "http://127.0.0.1:9595",
-        "user": os.environ.get("ONS_USERNAME", ""),
-        "password": os.environ.get("ONS_PASSWORD", ""),
-        "id_prefix": "ONS_",
-        "mappings": {
-            "id": "{{key}}",
-            "type": ["type"],
-            "title": "{{title}}",
-            "status": ["options", "status"],
-            "links": ["references", "links"],
-        },
-        "extra_data": {
-            "Priority": ["options", "priority"],
-            "Approval": ["options", "approved"],
-            "Cost": ["options", "costs"],
-        },
-    },
-}
+needs_services = {}
 
 needs_string_links = {
     "config_link": {
@@ -380,19 +361,8 @@ needs_render_context = {
 # build needs.json to make permalinks work
 needs_build_json = True
 
-# Get and maybe set GitHub credentials for services.
-# This is needed as the rate limit for not authenticated users is too low for the amount of requests we
-# need to perform for this documentation
-github_username = os.environ.get("GITHUB_USERNAME", "")
-github_token = os.environ.get("GITHUB_TOKEN", "")
-
-if github_username != "" and github_token != "":
-    print(f"---> GITHUB: Using as username: {github_username}. length token: {len(github_token)}")
-    for service in ["github-issues", "github-prs", "github-commits"]:
-        needs_services[service]["username"] = github_username
-        needs_services[service]["token"] = github_token
-else:
-    print("---> GITHUB: No auth provided")
+# build needs_json for every needs-id to make detail panel
+needs_build_json_per_id = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -460,7 +430,6 @@ html_theme_options = {
     "site_url": "https://sphinxcontrib-needs.readthedocs.io/",
     "repo_url": "https://github.com/useblocks/sphinxcontrib-needs",
     "repo_name": "Sphinx-Needs",
-    "repo_type": "github",
     "edit_uri": "blob/master/docs",
     # "google_analytics": ["UA-XXXXX", "auto"],
     "globaltoc_collapse": True,
@@ -581,13 +550,7 @@ rst_epilog = """
 
 """
 
-# Check, if docs get built on ci.
-# If this is the case, external services like Open-Needs are not available and
-# docs will show images instead of getting real data.
-on_ci = os.environ.get("ON_CI", "False").upper() == "TRUE"
-fast_build = os.environ.get("FAST_BUILD", "False").upper() == "TRUE"
-
-html_context = {"on_ci": on_ci, "fast_build": fast_build}
+html_context = {}
 
 
 def rstjinja(app: Sphinx, _docname: str, source: List[str]) -> None:
@@ -606,8 +569,6 @@ def rstjinja(app: Sphinx, _docname: str, source: List[str]) -> None:
 
 
 def setup(app: Sphinx) -> None:
-    print(f"---> ON_CI is: {on_ci}")
-    print(f"---> FAST_BUILD is: {fast_build}")
     app.connect("source-read", rstjinja)
 
 

@@ -3,9 +3,6 @@ on: [pull_request]
 jobs:
   js_tests:
     runs-on: ubuntu-latest
-    env:
-      ON_CI: true
-      FAST_BUILD: true
     steps:
     - name: Set Up Python 3.10.8
       uses: actions/setup-python@v4
@@ -15,7 +12,7 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: 18
-    - uses: actions/checkout@v3.5.3
+    - uses: actions/checkout@v4
     - name: Update pip
       run: |
         pip install -U wheel
@@ -44,7 +41,7 @@ jobs:
       id: sphinx-build-docs
       run: sphinx-build -a -T -E -j 4 -b html -d /tmp/sphinx_build/doctrees ./docs /tmp/sphinx_build/html
     - name: E2E Cypress Test on Chrome
-      uses: cypress-io/github-action@v5
+      uses: cypress-io/github-action@v6
       with:
         browser: chrome
         config-file: tests/js_test/cypress.config.js

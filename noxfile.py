@@ -14,6 +14,7 @@ DOCUTILS_VERSIONS = ["0.19", "0.17", "0.16", "0.15"]
 TEST_DEPENDENCIES = [
     "pytest",
     "pytest-xdist",
+    "syrupy",
     "responses",
     "lxml",
     "pyparsing!=3.0.4",
@@ -77,7 +78,6 @@ def benchmark_time(session):
         "--benchmark-json",
         "output.json",
         external=True,
-        env={"ON_CI": "true", "FAST_BUILD": "true"},
     )
 
 
@@ -94,7 +94,6 @@ def benchmark_memory(session):
         "--benchmark-json",
         "output.json",
         external=True,
-        env={"ON_CI": "true", "FAST_BUILD": "true"},
     )
     session.run("memray", "flamegraph", "-o", "mem_out.html", "mem_out.bin")
 

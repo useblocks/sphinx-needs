@@ -4,6 +4,8 @@ from typing import Any, Dict, List, Tuple
 from docutils import nodes
 from sphinx.environment import BuildEnvironment
 
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import NeedsFilteredBaseType, SphinxNeedsData
 from sphinx_needs.defaults import TITLE_REGEX
 
 
@@ -15,7 +17,7 @@ def no_needs_found_paragraph() -> nodes.paragraph:
     return para
 
 
-def used_filter_paragraph(current_needfilter) -> nodes.paragraph:
+def used_filter_paragraph(current_needfilter: NeedsFilteredBaseType) -> nodes.paragraph:
     para = nodes.paragraph()
     filter_text = "Used filter:"
     filter_text += (
@@ -37,22 +39,6 @@ def used_filter_paragraph(current_needfilter) -> nodes.paragraph:
     return para
 
 
-def get_link_type_option(name: str, env: BuildEnvironment, node, default: str = "") -> List[str]:
-    link_types = [x.strip() for x in re.split(";|,", node.options.get(name, default))]
-    conf_link_types = env.config.needs_extra_links
-    conf_link_types_name = [x["option"] for x in conf_link_types]
-
-    final_link_types = []
-    for link_type in link_types:
-        if link_type is None or link_type == "":
-            continue
-        if link_type not in conf_link_types_name:
-            raise SphinxNeedsLinkTypeException(link_type + "does not exist in configuration option needs_extra_links")
-
-        final_link_types.append(link_type)
-    return final_link_types
-
-
 def get_title(option_string: str) -> Tuple[str, str]:
     """
     Returns a tuple of uppercase option and calculated title of given option string.
@@ -72,7 +58,7 @@ def get_title(option_string: str) -> Tuple[str, str]:
     return option_name.upper(), title
 
 
-def get_option_list(options, name: str) -> List[str]:
+def get_option_list(options: Dict[str, Any], name: str) -> List[str]:
     """
     Gets and creates a list of a given directive option value in a safe way
     :param options: List of options
@@ -94,9 +80,9 @@ def analyse_needs_metrics(env: BuildEnvironment) -> Dict[str, Any]:
     :param env: Sphinx build environment
     :return: Dictionary consisting of needs metrics.
     """
-    needs: Dict = env.needs_all_needs
-    metric_data = {"needs_amount": len(needs)}
-    needs_types = {i["directive"]: 0 for i in env.app.config.needs_types}
+    needs = SphinxNeedsData(env).get_or_create_needs()
+    metric_data: Dict[str, Any] = {"needs_amount": len(needs)}
+    needs_types = {i["directive"]: 0 for i in NeedsSphinxConfig(env.config).types}
 
     for i in needs.values():
         if i["type"] in needs_types:

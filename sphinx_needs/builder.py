@@ -1,21 +1,22 @@
 import os
-from typing import Iterable, Optional, Set
+from typing import Iterable, List, Optional, Set
 
 from docutils import nodes
 from sphinx import version_info
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
 
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.logging import get_logger
 from sphinx_needs.needsfile import NeedsList
-from sphinx_needs.utils import unwrap
 
 log = get_logger(__name__)
 
 
 class NeedsBuilder(Builder):
     name = "needs"
-    format = "json"
+    format = "needs"
     file_suffix = ".txt"
     links_suffix = None
 
@@ -23,15 +24,15 @@ class NeedsBuilder(Builder):
         pass
 
     def finish(self) -> None:
-        env = unwrap(self.env)
-        needs = env.needs_all_needs.values()  # We need a list of needs for later filter checks
-        filters = env.needs_all_filters
-        config = env.config
-        version = getattr(config, "version", "unset")
-        needs_list = NeedsList(config, self.outdir, self.srcdir)
+        env = self.env
+        data = SphinxNeedsData(env)
+        filters = data.get_or_create_filters()
+        version = getattr(env.config, "version", "unset")
+        needs_list = NeedsList(env.config, self.outdir, self.srcdir)
+        needs_config = NeedsSphinxConfig(env.config)
 
-        if config.needs_file:
-            needs_file = config.needs_file
+        if needs_config.file:
+            needs_file = needs_config.file
             needs_list.load_json(needs_file)
         else:
             # check if needs.json file exists in conf.py directory
@@ -46,8 +47,8 @@ class NeedsBuilder(Builder):
         #
         from sphinx_needs.filter_common import filter_needs
 
-        filter_string = self.app.config.needs_builder_filter
-        filtered_needs = filter_needs(self.app, needs, filter_string)
+        filter_string = needs_config.builder_filter
+        filtered_needs: List[NeedsInfoType] = filter_needs(self.app, data.get_or_create_needs().values(), filter_string)
 
         for need in filtered_needs:
             needs_list.add_need(version, need)
@@ -80,9 +81,9 @@ class NeedsBuilder(Builder):
 
 
 def build_needs_json(app: Sphinx, _exception: Exception) -> None:
-    env = unwrap(app.env)
+    env = app.env
 
-    if not env.config.needs_build_json:
+    if not NeedsSphinxConfig(env.config).build_json:
         return
 
     # Do not create an additional needs.json, if builder is already "needs".
@@ -105,8 +106,8 @@ class NeedumlsBuilder(Builder):
         pass
 
     def finish(self) -> None:
-        env = unwrap(self.env)
-        needumls = env.needs_all_needumls.values()
+        env = self.env
+        needumls = SphinxNeedsData(env).get_or_create_umls().values()
 
         for needuml in needumls:
             if needuml["save"]:
@@ -138,9 +139,10 @@ class NeedumlsBuilder(Builder):
 
 
 def build_needumls_pumls(app: Sphinx, _exception: Exception) -> None:
-    env = unwrap(app.env)
+    env = app.env
+    config = NeedsSphinxConfig(env.config)
 
-    if not env.config.needs_build_needumls:
+    if not config.build_needumls:
         return
 
     # Do not create additional files for saved plantuml content, if builder is already "needumls".
@@ -150,10 +152,81 @@ def build_needumls_pumls(app: Sphinx, _exception: Exception) -> None:
     # if other builder like html used together with config: needs_build_needumls
     if version_info[0] >= 5:
         needs_builder = NeedumlsBuilder(app, env)
-        needs_builder.outdir = os.path.join(needs_builder.outdir, env.config.needs_build_needumls)
+        needs_builder.outdir = os.path.join(needs_builder.outdir, config.build_needumls)
     else:
         needs_builder = NeedumlsBuilder(app)
-        needs_builder.outdir = os.path.join(needs_builder.outdir, env.config.needs_build_needumls)
+        needs_builder.outdir = os.path.join(needs_builder.outdir, config.build_needumls)
         needs_builder.set_environment(env)
 
     needs_builder.finish()
+
+
+class NeedsIdBuilder(Builder):
+    """Json builder for needs, which creates separate json-files per need"""
+
+    name = "needs_id"
+    format = "needs"
+    file_suffix = ".txt"
+    links_suffix = None
+
+    def write_doc(self, docname: str, doctree: nodes.document) -> None:
+        pass
+
+    def finish(self) -> None:
+        env = self.env
+        data = SphinxNeedsData(env)
+        needs = data.get_or_create_needs().values()  # We need a list of needs for later filter checks
+        version = getattr(env.config, "version", "unset")
+        needs_config = NeedsSphinxConfig(env.config)
+        filter_string = needs_config.builder_filter
+        from sphinx_needs.filter_common import filter_needs
+
+        filtered_needs = filter_needs(self.app, needs, filter_string)
+        needs_build_json_per_id_path = needs_config.build_json_per_id_path
+        needs_dir = os.path.join(self.outdir, needs_build_json_per_id_path)
+        if not os.path.exists(needs_dir):
+            os.makedirs(needs_dir, exist_ok=True)
+        for need in filtered_needs:
+            needs_list = NeedsList(env.config, self.outdir, self.srcdir)
+            needs_list.wipe_version(version)
+            needs_list.add_need(version, need)
+            id = need["id"]
+            try:
+                file_name = f"{id}.json"
+                needs_list.write_json(file_name, needs_dir)
+            except Exception as e:
+                log.error(f"Needs-ID Builder {id} error: {e}")
+        log.info("Needs_id successfully exported")
+
+    def get_outdated_docs(self) -> Iterable[str]:
+        return []
+
+    def prepare_writing(self, _docnames: Set[str]) -> None:
+        pass
+
+    def write_doc_serialized(self, _docname: str, _doctree: nodes.document) -> None:
+        pass
+
+    def cleanup(self) -> None:
+        pass
+
+    def get_target_uri(self, _docname: str, _typ: Optional[str] = None) -> str:
+        return ""
+
+
+def build_needs_id_json(app: Sphinx, _exception: Exception) -> None:
+    env = app.env
+
+    if not NeedsSphinxConfig(env.config).build_json_per_id:
+        return
+
+    # Do not create an additional needs_json for every needs_id, if builder is already "needs_id".
+    if isinstance(app.builder, NeedsIdBuilder):
+        return
+    try:
+        needs_id_builder = NeedsIdBuilder(app, env)
+    except TypeError:
+        needs_id_builder = NeedsIdBuilder(app)
+        needs_id_builder.set_environment(env)
+
+    needs_id_builder.finish()

@@ -2,6 +2,7 @@ import os
 import textwrap
 import time
 from contextlib import suppress
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
 import requests
@@ -9,6 +10,7 @@ from sphinx.application import Sphinx
 
 from sphinx_needs.api import add_need_type
 from sphinx_needs.api.exceptions import NeedsApiConfigException
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.services.base import BaseService
 from sphinx_needs.services.config.github import (
     CONFIG_OPTIONS,
@@ -23,7 +25,7 @@ from sphinx_needs.services.config.github import (
 class GithubService(BaseService):
     options = CONFIG_OPTIONS + EXTRA_DATA_OPTIONS + EXTRA_LINK_OPTIONS + EXTRA_IMAGE_OPTIONS
 
-    def __init__(self, app: Sphinx, name: str, config, **kwargs) -> None:
+    def __init__(self, app: Sphinx, name: str, config: Dict[str, Any], **kwargs: Any) -> None:
         self.app = app
         self.name = name
         self.config = config
@@ -41,8 +43,9 @@ class GithubService(BaseService):
         self.username = self.config.get("username")
         self.token = self.config.get("token")
 
-        if "github" not in self.app.config.needs_layouts.keys():
-            self.app.config.needs_layouts["github"] = GITHUB_LAYOUT
+        layouts = NeedsSphinxConfig(self.app.config).layouts
+        if "github" not in layouts:
+            layouts["github"] = GITHUB_LAYOUT
 
         self.gh_type_config = {
             "issue": {"url": "search/issues", "query": "is:issue", "need_type": "issue"},
@@ -71,7 +74,7 @@ class GithubService(BaseService):
 
         super().__init__()
 
-    def _send(self, query, options, specific: bool = False):
+    def _send(self, query: str, options: Dict[str, Any], specific: bool = False) -> Dict[str, Any]:
         headers = {}
         if self.gh_type == "commit":
             headers["Accept"] = "application/vnd.github.cloak-preview+json"
@@ -102,8 +105,10 @@ class GithubService(BaseService):
 
         self.log.info(f"Service {self.name} requesting data for query: {query}")
 
+        auth: Optional[Tuple[str, str]]
         if self.username:
-            auth = (self.username, self.token)
+            # TODO token can be None
+            auth = (self.username, self.token)  # type: ignore
         else:
             auth = None
 
@@ -139,9 +144,9 @@ class GithubService(BaseService):
 
         if specific:
             return {"items": [resp.json()]}
-        return resp.json()
+        return resp.json()  # type: ignore
 
-    def request(self, options=None):
+    def request(self, options: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         if options is None:
             options = {}
         self.log.debug(f"Requesting data for service {self.name}")
@@ -175,7 +180,7 @@ class GithubService(BaseService):
 
         return data
 
-    def prepare_issue_data(self, items, options):
+    def prepare_issue_data(self, items: List[Dict[str, Any]], options: Dict[str, Any]) -> List[Dict[str, Any]]:
         data = []
         for item in items:
             # ensure that "None" can not reach .splitlines()
@@ -185,7 +190,7 @@ class GithubService(BaseService):
             # wraps content lines, if they are too long. Respects already existing newlines.
             content_lines = [
                 "\n   ".join(textwrap.wrap(line, 60, break_long_words=True, replace_whitespace=False))
-                for line in item["body"].splitlines()
+                for line in item["body"].splitlines()  # type: ignore
                 if line.strip()
             ]
 
@@ -235,7 +240,7 @@ class GithubService(BaseService):
 
         return data
 
-    def prepare_commit_data(self, items, options):
+    def prepare_commit_data(self, items: List[Dict[str, Any]], options: Dict[str, Any]) -> List[Dict[str, Any]]:
         data = []
 
         for item in items:
@@ -292,14 +297,16 @@ class GithubService(BaseService):
                         "    Status code: {}\n"
                         "    Reason: Looks like the authentication provider tries to redirect you."
                         " This is not supported and is a common problem, "
-                        "if you use GitHub Enterprise.".format(self.name, avatar_url, response.status_code)
+                        "if you use GitHub Enterprise. [needs]".format(self.name, avatar_url, response.status_code),
+                        type="needs",
                     )
                     avatar_file_path = default_avatar_file_path
                 else:
                     self.log.warning(
                         "GitHub service {} could not download avatar image "
                         "from {}.\n"
-                        "    Status code: {}".format(self.name, avatar_url, response.status_code)
+                        "    Status code: {} [needs]".format(self.name, avatar_url, response.status_code),
+                        type="needs",
                     )
                     avatar_file_path = default_avatar_file_path
         else:
@@ -307,7 +314,7 @@ class GithubService(BaseService):
 
         return avatar_file_path
 
-    def _add_given_options(self, options, element_data) -> None:
+    def _add_given_options(self, options: Dict[str, Any], element_data: Dict[str, Any]) -> None:
         """
         Add data from options, which was defined by user but is not set by this service
 

@@ -10,4 +10,4 @@ def test_doc_build_html(test_app):
     # stdout warnings
     warnings = warning.getvalue()
 
-    assert "Needs: linked need BROKEN_LINK not found" in warnings
+    assert "linked need BROKEN_LINK not found" in warnings
