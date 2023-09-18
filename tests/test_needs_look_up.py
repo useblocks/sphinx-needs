@@ -2,18 +2,16 @@ import json
 from pathlib import Path
 
 import pytest
+from syrupy.filters import props
 
 
 @pytest.mark.parametrize(
     "test_app", [{"buildername": "needs_lut", "srcdir": "doc_test/doc_needs_builder"}], indirect=True
 )
-def test_doc_needs_lut_builder(test_app):
+def test_doc_needs_lut_builder(test_app, snapshot):
     app = test_app
     app.build()
-
-    needs_json = Path(app.outdir, "needs_lut.json")
-    with open(needs_json) as needs_file:
-        needs_file_content = needs_file.read()
-
-    needs_list = json.loads(needs_file_content)
-    assert needs_list["TC_NEG_001"]
+    needs_list = json.loads(Path(app.outdir, "needs_lut.json").read_text())
+    print(needs_list)
+    print(snapshot(exclude=props("created")))
+    assert needs_list == snapshot(exclude=props("created"))

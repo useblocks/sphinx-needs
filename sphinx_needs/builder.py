@@ -248,22 +248,24 @@ class NeedsLookUpTableBuilder(Builder):
     def finish(self) -> None:
         env = self.env
         data = SphinxNeedsData(env)
-        needs = data.get_or_create_needs().values()  # We need a list of needs for later filter checks
         needs_dict = {}
         needs_config = NeedsSphinxConfig(env.config)
         filter_string = needs_config.builder_filter
         from sphinx_needs.filter_common import filter_needs
 
-        filtered_needs = filter_needs(self.app, needs, filter_string)
-        for need in filtered_needs:
-            if need["is_external"]:
-                needs_dict[need["id"]] = need["external_url"]
-            else:
-                needs_dict[need["id"]] = need["docname"]
-
         version = getattr(env.config, "version", "unset")
         needs_list = NeedsList(env.config, self.outdir, self.srcdir)
-        needs_list.add_lut_need(version, needs_dict)
+        needs_list.wipe_version(version)
+        filtered_needs: List[NeedsInfoType] = filter_needs(self.app, data.get_or_create_needs().values(), filter_string)
+        for need in filtered_needs:
+            if need["is_external"]:
+                needs_dict = {"id": need["id"], "docname": need["external_url"], "content": need["content"]}
+
+            else:
+                needs_dict = {"id": need["id"], "docname": need["docname"], "content": need["content"]}
+                need["docname"] = need["external_url"]
+
+            needs_list.add_need(version, needs_dict)
         try:
             needs_list.write_json("needs_lut.json")
         except Exception as e:
@@ -290,7 +292,7 @@ class NeedsLookUpTableBuilder(Builder):
 def build_needs_look_up_json(app: Sphinx, _exception: Exception) -> None:
     env = app.env
 
-    if not NeedsSphinxConfig(env.config).lut_build_json:
+    if not NeedsSphinxConfig(env.config).build_lut_json:
         return
 
     # Do not create an additional look up table json, if builder is already in use.

@@ -1897,7 +1897,6 @@ an absolute path (on the web server) or an URL.
 
 Default value: ``needs.json``
 
-You can choose needs_lut_build_json  ``needs_lut.json`` after setting :ref:`needs_lut_build_json`
 
 .. _needs_constraints:
 
@@ -2335,9 +2334,9 @@ Default value: True
 
 Can be overwritten for each single need by setting :ref:`need_collapse`.
 
-.. __needs_lut_build_json:
+.. _needs_build_lut_json:
 
-needs_lut_build_json
+needs_build_lut_json
 ~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 1.4.0
@@ -2350,7 +2349,7 @@ Example:
 
 .. code-block:: python
 
-    needs_lut_build_json = False
+    needs_build_lut_json = False
 
 .. hint::
 

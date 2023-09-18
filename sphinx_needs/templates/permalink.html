@@ -23,51 +23,35 @@
         function main() {
             loadJSON('{{ needs_file }}', function (response) {
                 const needs = JSON.parse(response);
-                if(needs.hasOwnProperty("current_version")) {
-                    const needs = JSON.parse(response);
-                    const current_version = needs['current_version'];
-                    const versions = needs['versions'];
-                    const version = versions[current_version];
-                    const needs_obj = version['needs'];
+                const current_version = needs['current_version'];
+                const versions = needs['versions'];
+                const version = versions[current_version];
+                const needs_obj = version['needs'];
 
-                    const id = getParameterByName('id');
-                    var pathname = new URL(window.location.href).pathname;
-                    pathname = pathname.substring(0, pathname.lastIndexOf('{{ permalink_file }}'));
+                const id = getParameterByName('id');
+                var pathname = new URL(window.location.href).pathname; 
 
-                    const keys = Object.keys(needs_obj);
+                pathname = pathname.substring(0, pathname.lastIndexOf('{{ permalink_file }}'));
 
-                    var docname = 'index';
+                const keys = Object.keys(needs_obj);
 
-                    keys.forEach((key, index) => {
-                        if (key === id) {
-                            const need = needs_obj[key];
-                            docname = need['docname'];
-                            return;
-                        }
-                    });
+                var docname = 'index';
 
+                keys.forEach((key, index) => {
+                    if (key === id) {
+                        const need = needs_obj[key];
+                        docname = need['docname'];
+                        return;
+                    }
+                });
+
+                if (docname.includes("#" + id)) {
+                    window.location.replace(pathname + docname);
+                } else {
                     window.location.replace(pathname + docname + '.html#' + id);
                 }
-                else {
-                    const needs = JSON.parse(response);
-                    const id = getParameterByName('id');
-                    var pathname = new URL(window.location.href).pathname;
-                    pathname = pathname.substring(0, pathname.lastIndexOf('permalink.html'));
-                    const keys = Object.keys(needs);
-                    var docname = 'index';
-                    keys.forEach((key, index) => {
-                        if (key === id) {
-                            docname = needs[key];
-                            return;
-                        }
-                    });
 
-                    if (docname.includes("#" + id)) {
-                        window.location.replace(pathname + docname);
-                    } else {
-                        window.location.replace(pathname + docname + '.html#' + id);
-                    }
-                }
+
             });
 
 
