@@ -9,7 +9,7 @@ import uuid
 from contextlib import suppress
 from functools import lru_cache
 from optparse import Values
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlparse
 
 import requests
@@ -26,6 +26,9 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.utils import INTERNALS, match_string_link, unwrap
+
+# Cache to store parsed results of lines/lables given by meta().
+PARSE_CACHE: Dict[str, Tuple[Any, Any]] = {}
 
 
 @measure_time("need")
@@ -373,7 +376,13 @@ class LayoutHandler:
         :param line: string to parse
         :return: nodes
         """
-        result, message = self.inline_parser.parse(line, 0, self.doc_memo, self.dummy_doc)  # type: ignore
+        # Check if the same line got already parsed and we can safe some calculation time
+        # by just taking the values from the cache.
+        if line in PARSE_CACHE:
+            result, message = PARSE_CACHE[line]
+        else:
+            result, message = self.inline_parser.parse(line, 0, self.doc_memo, self.dummy_doc)  # type: ignore
+            PARSE_CACHE[line] = (result, message)
         if message:
             raise SphinxNeedLayoutException(message)
         return result  # type: ignore[no-any-return]
