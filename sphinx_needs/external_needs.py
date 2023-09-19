@@ -1,5 +1,7 @@
 import json
 import os
+from functools import lru_cache
+from typing import Any
 
 import requests
 from jinja2 import Environment
@@ -15,6 +17,15 @@ from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import clean_log, import_prefix_link_edit
 
 log = get_logger(__name__)
+
+
+@lru_cache(maxsize=20)
+def get_target_template(target_url: str) -> Any:
+    """Provides template for target_link style
+    Can be cached, as the template is always the same for a given target_url
+    """
+    mem_template = Environment().from_string(target_url)
+    return mem_template
 
 
 def load_external_needs(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
@@ -95,7 +106,7 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, _docname: str) -> No
 
             if target_url:
                 # render jinja content
-                mem_template = Environment().from_string(target_url)
+                mem_template = get_target_template(target_url)
                 cal_target_url = mem_template.render(**{"need": need})
                 need_params["external_url"] = f'{source["base_url"]}/{cal_target_url}'
             else:
