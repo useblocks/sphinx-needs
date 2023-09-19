@@ -1,10 +1,9 @@
 import json
 import os
 from functools import lru_cache
-from typing import Any
 
 import requests
-from jinja2 import Environment
+from jinja2 import Environment, Template
 from requests_file import FileAdapter
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
@@ -20,8 +19,9 @@ log = get_logger(__name__)
 
 
 @lru_cache(maxsize=20)
-def get_target_template(target_url: str) -> Any:
-    """Provides template for target_link style
+def get_target_template(target_url: str) -> Template:
+    """
+    Provides template for target_link style
     Can be cached, as the template is always the same for a given target_url
     """
     mem_template = Environment().from_string(target_url)
