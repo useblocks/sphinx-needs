@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1694591142431,
+  "lastUpdate": 1695197168111,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -5004,6 +5004,42 @@ window.BENCHMARK_DATA = {
             "value": 70.037822602,
             "unit": "s",
             "extra": "Commit: 6f28dc2588e357cdab0bdd704306672b6c6ef098\nBranch: master\nTime: 2023-09-13T09:38:46+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5213b15d79bb0253e2908d20e413c2f25b8f0e3f",
+          "message": "👌 Optimize needextend filter_needs usage (#1030)\n\nInstead of using `filter_needs()` for a single need (`id == \"\"XY`) , the\r\nneed is taken directly from `all_needs`, so that we do not need to\r\nperform any filtering.",
+          "timestamp": "2023-09-20T09:58:38+02:00",
+          "tree_id": "c06eedf4e9b5b6a18cb2e690cf2ca4a5157a1b56",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/5213b15d79bb0253e2908d20e413c2f25b8f0e3f"
+        },
+        "date": 1695197163107,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22110616600002686,
+            "unit": "s",
+            "extra": "Commit: 5213b15d79bb0253e2908d20e413c2f25b8f0e3f\nBranch: master\nTime: 2023-09-20T09:58:38+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 78.02770701899999,
+            "unit": "s",
+            "extra": "Commit: 5213b15d79bb0253e2908d20e413c2f25b8f0e3f\nBranch: master\nTime: 2023-09-20T09:58:38+02:00"
           }
         ]
       }
