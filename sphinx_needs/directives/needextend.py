@@ -97,7 +97,7 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
             # In this case create the needed filter string
             need_filter = current_needextend["filter"]
             if need_filter in all_needs:
-                need_filter = f'id == "{need_filter}"'
+                found_needs = [all_needs[need_filter]]
             # If it looks like a need id, but we haven't found one, raise an exception
             elif need_filter is not None and re.fullmatch(needs_config.id_regex, need_filter):
                 error = f"Provided id {need_filter} for needextend does not exist."
@@ -106,12 +106,13 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
                 else:
                     logger.info(error)
                     continue
-            try:
-                found_needs = filter_needs(app, all_needs.values(), need_filter)
-            except NeedsInvalidFilter as e:
-                raise NeedsInvalidFilter(
-                    f"Filter not valid for needextend on page {current_needextend['docname']}:\n{e}"
-                )
+            else:
+                try:
+                    found_needs = filter_needs(app, all_needs.values(), need_filter)
+                except NeedsInvalidFilter as e:
+                    raise NeedsInvalidFilter(
+                        f"Filter not valid for needextend on page {current_needextend['docname']}:\n{e}"
+                    )
 
             for found_need in found_needs:
                 # Work in the stored needs, not on the search result
