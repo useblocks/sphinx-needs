@@ -106,17 +106,17 @@ Running JavaScript Tests in Python Test Files
 **Setup Cypress Locally**
 
 * Install Node JS on your computer and ensure it can be accessed through the CMD.
-* Install Cypress using the npm package manager by running npm install cypress. Read more from this link https://docs.cypress.io/guides/getting-started/installing-cypress#npm-install.
-* Verify if Cypress is installed correctly and is executable by running: npx cypress verify. Read more from this link https://docs.cypress.io/guides/guides/command-line.
+* Install Cypress using the npm package manager by running ``npm install cypress``. Visit this link for more information on `how to install Cypress <https://docs.cypress.io/guides/getting-started/installing-cypress#npm-install>`_.
+* Verify if Cypress is installed correctly and is executable by running: ``npx cypress verify``. Get out this page for more information about `Cypress commandline <https://docs.cypress.io/guides/guides/command-line>`_.
 * If everything is successful then we can use Cypress.
 
 **Enable Cypress Test in Python Test Files**
 
-* First, create a test folder to store your Cypress JS test files (files should end with: ``*.cy.js``). For each Cypress JS test file, you will need to write the Cypress JS test cases in the file. You can read more from the `Cypress Docs <https://docs.cypress.io/>`_. You can also check the ``tests/js_test/js-test-sn-collapse-button.cy.js`` file as reference.
+* Under the ``js_test`` folder, you can save your Cypress JS test files (files should end with: ``*.cy.js``). For each Cypress JS test file, you will need to write the Cypress JS test cases in the file. You can read more from the `Cypress Docs <https://docs.cypress.io/>`_. You can also check the ``tests/js_test/sn-collapse-button.cy.js`` file as reference.
 * In your Python test files, you must mark every JS related test case with the marker - ``jstest`` and you also need to pass the ``spec_pattern`` key-value pair as part of the ``test_app`` fixture parameter. For example, your test case could look like the below:
     .. code-block:: python
 
-        # test_js_code
+        # tests/test_sn_collapse_button.py
 
         import pytest
 
@@ -144,7 +144,7 @@ Running JavaScript Tests in Python Test Files
 * After you have set the ``spec_pattern`` key-value pair as part of the ``test_app`` fixture parameter, you can call the ``app.test_js()`` in your Python test case to run the JS test for the ``spec_pattern`` you provided. For example, you can use it like below:
     .. code-block:: python
 
-        # test_js_code
+        # tests/test_sn_collapse_button.py
 
         import pytest
 

@@ -9,12 +9,12 @@ import pytest
             "buildername": "html",
             "srcdir": "doc_test/variant_doc",
             "tags": ["tag_a"],
-            "spec_pattern": "js_test/js-test-sn-collapse-button.cy.js",
+            "spec_pattern": "js_test/sn-collapse-button.cy.js",
         }
     ],
     indirect=True,
 )
-def test_collapse_button_in_variant_doc(test_app):
+def test_collapse_button_in_variant_doc(test_app, test_server):
     """Check if the Sphinx-Needs collapse button works in the provided documentation source."""
     app = test_app
     app.build()
@@ -34,12 +34,12 @@ def test_collapse_button_in_variant_doc(test_app):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_basic",
-            "spec_pattern": "js_test/js-test-sn-collapse-button.cy.js",
+            "spec_pattern": "js_test/sn-collapse-button.cy.js",
         }
     ],
     indirect=True,
 )
-def test_collapse_button_in_doc_basic(test_app):
+def test_collapse_button_in_doc_basic(test_app, test_server):
     """Check if the Sphinx-Needs collapse button works in the provided documentation source."""
     app = test_app
     app.build()

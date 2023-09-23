@@ -14,7 +14,7 @@ test:
 
 .PHONY: test
 test-short:
-	poetry run pytest -n auto -m "not jstest" --tb=long --ignore-glob="*official*" --ignore=tests/benchmarks tests/
+	poetry run pytest -n auto -m "jstest" --tb=long --ignore-glob="*official*" --ignore=tests/benchmarks tests/
 
 .PHONY: benchmark-time
 benchmark-time:
