@@ -9,21 +9,9 @@
         }),
         'filters_amount': 0,
         'needs': dict({
-          'TC_001': dict({
-            'description': '',
-            'docname': 'index',
-            'id': 'TC_001',
-          }),
-          'TC_NEG_001': dict({
-            'description': '',
-            'docname': 'index',
-            'id': 'TC_NEG_001',
-          }),
-          'US_63252': dict({
-            'description': '',
-            'docname': 'index',
-            'id': 'US_63252',
-          }),
+          'TC_001': 'index',
+          'TC_NEG_001': 'index',
+          'US_63252': 'index',
         }),
         'needs_amount': 3,
       }),

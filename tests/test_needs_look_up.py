@@ -12,6 +12,4 @@ def test_doc_needs_lut_builder(test_app, snapshot):
     app = test_app
     app.build()
     needs_list = json.loads(Path(app.outdir, "needs_lut.json").read_text())
-    print(needs_list)
-    print(snapshot(exclude=props("created")))
     assert needs_list == snapshot(exclude=props("created"))

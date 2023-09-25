@@ -40,7 +40,14 @@
                 keys.forEach((key, index) => {
                     if (key === id) {
                         const need = needs_obj[key];
-                        docname = need['docname'];
+                        if (typeof need === "object"){
+                            // need.json file
+                            docname = need['docname'];
+                        }
+                        else {
+                            // need_lut file only value is docname or external_link
+                            docname = need
+                        }
                         return;
                     }
                 });
