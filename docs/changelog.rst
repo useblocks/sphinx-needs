@@ -16,7 +16,6 @@ Released: under development
 -----
 Released: under development
 * Improvement: Added Builder :ref:`needs_lut_builder` and config option :ref:`needs_build_lut_json` in `conf.py`.
-
 * Improvement: Added Builder :ref:`needs_id_builder` added and config option :ref:`needs_build_json_per_id` in `conf.py`. 
 * Improvement: Reduce document build time, by memoizing the inline parse in ``build_need``
   (`#968 <https://github.com/useblocks/sphinx-needs/pull/968>`_)
@@ -25,6 +24,7 @@ Released: under development
 * Improvement: Suffix all warnings with ``[needs]``, and allow them to be suppressed
   (`#975 <https://github.com/useblocks/sphinx-needs/pull/975>`_)
 * Improvement: :ref:`needextend` for single needs is much faster.
+* Improvement: external_needs is using cached templates to save generation time.
 
 1.3.0
 -----
