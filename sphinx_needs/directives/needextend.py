@@ -125,8 +125,7 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
                         option_name = option[1:]
 
                         if option_name in link_names:
-                            # If we add links, check they exist,
-                            # and add the corresponding back link
+                            # If we add links, then add all corresponding back links
                             for ref_need in [i.strip() for i in re.split(";|,", value)]:
                                 if ref_need not in all_needs:
                                     continue
@@ -160,8 +159,7 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
                             need[option_name] = ""
                     else:
                         if option in link_names:
-                            # If we change links,
-                            # we need to modify all corresponding back links
+                            # If we change links, then modify all corresponding back links
                             old_links = [i for i in need[option] if i in all_needs]
                             need[option] = [i.strip() for i in re.split(";|,", value) if i.strip() in all_needs]
                             for ref_need in old_links:
