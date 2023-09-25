@@ -83,7 +83,7 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     if not workflow["needs_extended"]:
         workflow["needs_extended"] = True
 
-        list_names = (
+        list_values = (
             ["tags", "links"]
             + [x["option"] for x in needs_config.extra_links]
             + [f"{x['option']}_back" for x in needs_config.extra_links]
@@ -93,13 +93,12 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
         all_needs = data.get_or_create_needs()
 
         for current_needextend in data.get_or_create_extends().values():
-            # Check if filter is just a need-id.
-            # In this case create the needed filter string
             need_filter = current_needextend["filter"]
             if need_filter in all_needs:
+                # a single known ID
                 found_needs = [all_needs[need_filter]]
-            # If it looks like a need id, but we haven't found one, raise an exception
             elif need_filter is not None and re.fullmatch(needs_config.id_regex, need_filter):
+                # an unknown ID
                 error = f"Provided id {need_filter} for needextend does not exist."
                 if current_needextend["strict"]:
                     raise NeedsInvalidFilter(error)
@@ -107,6 +106,7 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
                     logger.info(error)
                     continue
             else:
+                # a filter string
                 try:
                     found_needs = filter_needs(app, all_needs.values(), need_filter)
                 except NeedsInvalidFilter as e:
@@ -124,64 +124,65 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
                     if option.startswith("+"):
                         option_name = option[1:]
 
-                        # If we need to handle a list
-                        if option_name in list_names:
-                            for link in re.split(";|,", value):
-                                # Remove whitespaces
-                                link = link.strip()
-                                if link not in need[option_name]:
-                                    need[option_name].append(link)
+                        if option_name in list_values:
+                            items = [i.strip() for i in re.split(";|,", value)]
 
-                            # If we manipulate links, we need to set all the reference in the target need
-                            # under e.g. links_back
+                            for item in items:
+                                if item not in need[option_name]:
+                                    need[option_name].append(item)
+
+                            # If we add links,
+                            # we need to add all the corresponding back links
                             if option_name in link_names:
-                                for ref_need in re.split(";|,", value):
-                                    # Remove whitespaces
-                                    ref_need = ref_need.strip()
-                                    if found_need["id"] not in all_needs[ref_need][f"{option_name}_back"]:
+                                for ref_need in items:
+                                    if (
+                                        ref_need in all_needs
+                                        and found_need["id"] not in all_needs[ref_need][f"{option_name}_back"]
+                                    ):
                                         all_needs[ref_need][f"{option_name}_back"] += [found_need["id"]]
 
-                        # else it must be a normal string
                         else:
-                            # If content is already stored, we need to add some whitespace
                             if need[option_name]:
+                                # If content is already stored, we need to add some whitespace
                                 need[option_name] += " "
                             need[option_name] += value
+
                     elif option.startswith("-"):
                         option_name = option[1:]
-                        if option_name in list_names:
-                            old_content = need[option_name]  # Save it, as it may be need to identify referenced needs
+                        if option_name in list_values:
+                            old_content = need[option_name]
                             need[option_name] = []
 
-                            # If we manipulate links, we need to delete the reference in the target need as well
+                            # If we remove links,
+                            # we need to remove all corresponding back links
                             if option_name in link_names:
-                                for ref_need in old_content:  # There may be several links
-                                    all_needs[ref_need][f"{option_name}_back"].remove(found_need["id"])
+                                for ref_need in old_content:
+                                    if ref_need in all_needs:
+                                        all_needs[ref_need][f"{option_name}_back"].remove(found_need["id"])
 
                         else:
                             need[option_name] = ""
                     else:
-                        if option in list_names:
+                        if option in list_values:
                             old_content = need[option].copy()
-
                             need[option] = []
-                            for link in re.split(";|,", value):
-                                # Remove whitespaces
-                                link = link.strip()
-                                if link not in need[option]:
-                                    need[option].append(link)
 
-                            # If add new links also as "link_s_back" to the referenced need.
+                            for item in [i.strip() for i in re.split(";|,", value)]:
+                                if item not in need[option]:
+                                    need[option].append(item)
+
+                            # If we change links,
+                            # we need to modify all corresponding back links
                             if option in link_names:
-                                # Remove old links
-                                for ref_need in old_content:  # There may be several links
-                                    all_needs[ref_need][f"{option}_back"].remove(found_need["id"])
-
-                                # Add new links
-                                for ref_need in need[option]:  # There may be several links
-                                    if found_need["id"] not in all_needs[ref_need][f"{option}_back"]:
+                                for ref_need in old_content:
+                                    if ref_need in all_needs:
+                                        all_needs[ref_need][f"{option}_back"].remove(found_need["id"])
+                                for ref_need in need[option]:
+                                    if (
+                                        ref_need in all_needs
+                                        and found_need["id"] not in all_needs[ref_need][f"{option}_back"]
+                                    ):
                                         all_needs[ref_need][f"{option}_back"] += [found_need["id"]]
-
                         else:
                             need[option] = value
 
