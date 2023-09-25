@@ -145,14 +145,14 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
 
                     elif option.startswith("-"):
                         option_name = option[1:]
-                        if option_name in list_values:
+                        if option_name in link_names:
                             # If we remove links, then remove all corresponding back links
                             old_links = [i for i in need[option] if i in all_needs]
                             need[option_name] = []
-                            if option_name in link_names:
-                                for ref_need in old_links:
-                                    all_needs[ref_need][f"{option_name}_back"].remove(found_need["id"])
-
+                            for ref_need in old_links:
+                                all_needs[ref_need][f"{option_name}_back"].remove(found_need["id"])
+                        if option_name in list_values:
+                            need[option_name] = []
                         else:
                             need[option_name] = ""
                     else:
