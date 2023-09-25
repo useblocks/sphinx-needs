@@ -124,23 +124,20 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
                     if option.startswith("+"):
                         option_name = option[1:]
 
-                        if option_name in list_values:
-                            items = [i.strip() for i in re.split(";|,", value)]
-
-                            for item in items:
+                        if option_name in link_names:
+                            # If we add links, check they exist,
+                            # and add the corresponding back link
+                            for ref_need in [i.strip() for i in re.split(";|,", value)]:
+                                if ref_need not in all_needs:
+                                    continue
+                                if ref_need not in need[option_name]:
+                                    need[option_name].append(ref_need)
+                                if found_need["id"] not in all_needs[ref_need][f"{option_name}_back"]:
+                                    all_needs[ref_need][f"{option_name}_back"] += [found_need["id"]]
+                        elif option_name in list_values:
+                            for item in [i.strip() for i in re.split(";|,", value)]:
                                 if item not in need[option_name]:
                                     need[option_name].append(item)
-
-                            # If we add links,
-                            # we need to add all the corresponding back links
-                            if option_name in link_names:
-                                for ref_need in items:
-                                    if (
-                                        ref_need in all_needs
-                                        and found_need["id"] not in all_needs[ref_need][f"{option_name}_back"]
-                                    ):
-                                        all_needs[ref_need][f"{option_name}_back"] += [found_need["id"]]
-
                         else:
                             if need[option_name]:
                                 # If content is already stored, we need to add some whitespace
@@ -153,8 +150,7 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
                             old_content = need[option_name]
                             need[option_name] = []
 
-                            # If we remove links,
-                            # we need to remove all corresponding back links
+                            # If we remove links, then remove all corresponding back links
                             if option_name in link_names:
                                 for ref_need in old_content:
                                     if ref_need in all_needs:
@@ -163,26 +159,18 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
                         else:
                             need[option_name] = ""
                     else:
-                        if option in list_values:
-                            old_content = need[option].copy()
-                            need[option] = []
-
-                            for item in [i.strip() for i in re.split(";|,", value)]:
-                                if item not in need[option]:
-                                    need[option].append(item)
-
+                        if option in link_names:
                             # If we change links,
                             # we need to modify all corresponding back links
-                            if option in link_names:
-                                for ref_need in old_content:
-                                    if ref_need in all_needs:
-                                        all_needs[ref_need][f"{option}_back"].remove(found_need["id"])
-                                for ref_need in need[option]:
-                                    if (
-                                        ref_need in all_needs
-                                        and found_need["id"] not in all_needs[ref_need][f"{option}_back"]
-                                    ):
-                                        all_needs[ref_need][f"{option}_back"] += [found_need["id"]]
+                            old_links = [i for i in need[option] if i in all_needs]
+                            need[option] = [i.strip() for i in re.split(";|,", value) if i.strip() in all_needs]
+                            for ref_need in old_links:
+                                all_needs[ref_need][f"{option}_back"].remove(found_need["id"])
+                            for ref_need in need[option]:
+                                if found_need["id"] not in all_needs[ref_need][f"{option}_back"]:
+                                    all_needs[ref_need][f"{option}_back"] += [found_need["id"]]
+                        elif option in list_values:
+                            need[option] = [i.strip() for i in re.split(";|,", value)]
                         else:
                             need[option] = value
 
