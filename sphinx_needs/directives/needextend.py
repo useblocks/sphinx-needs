@@ -146,7 +146,7 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
                         option_name = option[1:]
                         if option_name in link_names:
                             # If we remove links, then remove all corresponding back links
-                            for ref_need in (i for i in need[option] if i in all_needs):
+                            for ref_need in (i for i in need[option_name] if i in all_needs):
                                 all_needs[ref_need][f"{option_name}_back"].remove(found_need["id"])
                             need[option_name] = []
                         if option_name in list_values:
