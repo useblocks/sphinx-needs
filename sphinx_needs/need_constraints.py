@@ -1,3 +1,4 @@
+import jinja2
 from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsConstraintFailed, NeedsConstraintNotAllowed
@@ -32,8 +33,8 @@ def process_constraints(app: Sphinx, need: NeedsInfoType) -> None:
 
         # name is check_0, check_1, ...
         for name, cmd in executable_constraints.items():
-            if name == "severity":
-                # special key, that is not a check
+            if name in ("severity", "error_message"):
+                # special keys, that are not a check
                 continue
 
             # compile constraint and check if need fulfils it
@@ -44,6 +45,11 @@ def process_constraints(app: Sphinx, need: NeedsInfoType) -> None:
             else:
                 need["constraints_results"].setdefault(constraint, {})[name] = False
                 need["constraints_passed"] = False
+
+                if "error_message" in executable_constraints:
+                    need["constraints_error"] = jinja2.Template(str(executable_constraints["error_message"])).render(
+                        **need
+                    )
 
                 if "severity" not in executable_constraints:
                     raise NeedsConstraintFailed(

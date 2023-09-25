@@ -165,6 +165,8 @@ class NeedsInfoType(NeedsBaseDataType):
     """Mapping of constraint name, to check name, to result."""
     constraints_passed: None | bool
     """True if all constraints passed, False if any failed, None if not yet checked."""
+    constraints_error: str
+    """An error message set if any constraint failed, and `error_message` field is set in config."""
 
     # additional source information
     doctype: str
