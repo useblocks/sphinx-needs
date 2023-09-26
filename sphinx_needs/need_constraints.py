@@ -1,92 +1,106 @@
+from typing import Dict
+
 import jinja2
 from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsConstraintFailed, NeedsConstraintNotAllowed
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-def process_constraints(app: Sphinx, need: NeedsInfoType) -> None:
+def process_constraints(app: Sphinx) -> None:
     """Analyse constraints of a single need,
     and set corresponding fields on the need data item.
     """
-    needs_config = NeedsSphinxConfig(app.config)
+    env = app.env
+    needs_config = NeedsSphinxConfig(env.config)
     config_constraints = needs_config.constraints
-    need_id = need["id"]
-    constraints = need["constraints"]
+    needs = SphinxNeedsData(env).get_or_create_needs()
+    workflow = SphinxNeedsData(env).get_or_create_workflow()
 
-    # flag that is set to False if any check fails
-    need["constraints_passed"] = True
+    if workflow["needs_constraints"]:
+        return
 
-    for constraint in constraints:
-        try:
-            executable_constraints = config_constraints[constraint]
-        except KeyError:
-            # Note, this is already checked for in add_need
-            raise NeedsConstraintNotAllowed(
-                f"Constraint {constraint} of need id {need_id} is not allowed by config value 'needs_constraints'."
-            )
+    workflow["needs_constraints"] = True
 
-        # name is check_0, check_1, ...
-        for name, cmd in executable_constraints.items():
-            if name in ("severity", "error_message"):
-                # special keys, that are not a check
-                continue
+    error_templates_cache: Dict[str, jinja2.Template] = {}
 
-            # compile constraint and check if need fulfils it
-            constraint_passed = filter_single_need(app, need, cmd)
+    for need in needs.values():
+        need_id = need["id"]
+        constraints = need["constraints"]
 
-            if constraint_passed:
-                need["constraints_results"].setdefault(constraint, {})[name] = True
-            else:
-                need["constraints_results"].setdefault(constraint, {})[name] = False
-                need["constraints_passed"] = False
+        # flag that is set to False if any check fails
+        need["constraints_passed"] = True
 
-                if "error_message" in executable_constraints:
-                    need["constraints_error"] = jinja2.Template(str(executable_constraints["error_message"])).render(
-                        **need
-                    )
+        for constraint in constraints:
+            try:
+                executable_constraints = config_constraints[constraint]
+            except KeyError:
+                # Note, this is already checked for in add_need
+                raise NeedsConstraintNotAllowed(
+                    f"Constraint {constraint} of need id {need_id} is not allowed by config value 'needs_constraints'."
+                )
 
-                if "severity" not in executable_constraints:
-                    raise NeedsConstraintFailed(
-                        f"'severity' key not set for constraint {constraint!r} in config 'needs_constraints'"
-                    )
-                severity = executable_constraints["severity"]
-                if severity not in needs_config.constraint_failed_options:
-                    raise NeedsConstraintFailed(
-                        f"Severity {severity!r} not set in config 'needs_constraint_failed_options'"
-                    )
-                failed_options = needs_config.constraint_failed_options[severity]
+            # name is check_0, check_1, ...
+            for name, cmd in executable_constraints.items():
+                if name in ("severity", "error_message"):
+                    # special keys, that are not a check
+                    continue
 
-                # log/except if needed
-                if "warn" in failed_options.get("on_fail", []):
-                    logger.warning(
-                        f"Constraint {cmd} for need {need_id} FAILED! severity: {severity} {need.get('constraints_error', '')} [needs.constraint]",
-                        type="needs",
-                        subtype="constraint",
-                        color="red",
-                        location=(need["docname"], need["lineno"]),
-                    )
-                if "break" in failed_options.get("on_fail", []):
-                    raise NeedsConstraintFailed(
-                        f"FAILED a breaking constraint: >> {cmd} << for need "
-                        f"{need_id} FAILED! breaking build process"
-                    )
+                # compile constraint and check if need fulfils it
+                constraint_passed = filter_single_need(app, need, cmd)
 
-                # set styles
-                old_style = need["style"]
-                if old_style and len(old_style) > 0:
-                    new_styles = "".join(", " + x for x in failed_options.get("style", []))
+                if constraint_passed:
+                    need["constraints_results"].setdefault(constraint, {})[name] = True
                 else:
-                    old_style = ""
-                    new_styles = "".join(x + "," for x in failed_options.get("style", []))
+                    need["constraints_results"].setdefault(constraint, {})[name] = False
+                    need["constraints_passed"] = False
 
-                if failed_options.get("force_style", False):
-                    need["style"] = new_styles.strip(", ")
-                else:
-                    constraint_failed_style = old_style + new_styles
-                    need["style"] = constraint_failed_style
+                    if "error_message" in executable_constraints:
+                        msg = str(executable_constraints["error_message"])
+                        template = error_templates_cache.setdefault(msg, jinja2.Template(msg))
+                        need["constraints_error"] = template.render(**need)
+
+                    if "severity" not in executable_constraints:
+                        raise NeedsConstraintFailed(
+                            f"'severity' key not set for constraint {constraint!r} in config 'needs_constraints'"
+                        )
+                    severity = executable_constraints["severity"]
+                    if severity not in needs_config.constraint_failed_options:
+                        raise NeedsConstraintFailed(
+                            f"Severity {severity!r} not set in config 'needs_constraint_failed_options'"
+                        )
+                    failed_options = needs_config.constraint_failed_options[severity]
+
+                    # log/except if needed
+                    if "warn" in failed_options.get("on_fail", []):
+                        logger.warning(
+                            f"Constraint {cmd} for need {need_id} FAILED! severity: {severity} {need.get('constraints_error', '')} [needs.constraint]",
+                            type="needs",
+                            subtype="constraint",
+                            color="red",
+                            location=(need["docname"], need["lineno"]),
+                        )
+                    if "break" in failed_options.get("on_fail", []):
+                        raise NeedsConstraintFailed(
+                            f"FAILED a breaking constraint: >> {cmd} << for need "
+                            f"{need_id} FAILED! breaking build process"
+                        )
+
+                    # set styles
+                    old_style = need["style"]
+                    if old_style and len(old_style) > 0:
+                        new_styles = "".join(", " + x for x in failed_options.get("style", []))
+                    else:
+                        old_style = ""
+                        new_styles = "".join(x + "," for x in failed_options.get("style", []))
+
+                    if failed_options.get("force_style", False):
+                        need["style"] = new_styles.strip(", ")
+                    else:
+                        constraint_failed_style = old_style + new_styles
+                        need["style"] = constraint_failed_style

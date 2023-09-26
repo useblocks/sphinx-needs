@@ -44,6 +44,7 @@ class NeedsWorkflowType(TypedDict):
     add_sections: bool
     variant_option_resolved: bool
     needs_extended: bool
+    needs_constraints: bool
 
 
 class NeedsBaseDataType(TypedDict):
@@ -462,8 +463,8 @@ class SphinxNeedsData:
                 "add_sections": False,
                 "variant_option_resolved": False,
                 "needs_extended": False,
+                "needs_constraints": False,
             }
-            # TODO use needs_config here
             for link_type in self.env.app.config.needs_extra_links:
                 self.env.needs_workflow["backlink_creation_{}".format(link_type["option"])] = False
 

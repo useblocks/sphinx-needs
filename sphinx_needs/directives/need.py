@@ -394,28 +394,13 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     for links in needs_config.extra_links:
         create_back_links(env, links["option"])
 
-    """
-    The output of this phase is a doctree for each source file; that is a tree of docutils nodes.
-
-    https://www.sphinx-doc.org/en/master/extdev/index.html
-
-    """
-    needs = SphinxNeedsData(env).get_or_create_needs()
-
-    # Used to store needs in the docs, which are needed again later
-    found_needs_nodes = []
-    for node_need in doctree.findall(Need):
-        need_id = node_need.attributes["ids"][0]
-        found_needs_nodes.append(node_need)
-        need_data = needs[need_id]
-
-        process_constraints(app, need_data)
+    process_constraints(app)
 
     # We call process_needextend here by our own, so that we are able
     # to give print_need_nodes the already found need_nodes.
     process_needextend(app, doctree, fromdocname)
 
-    print_need_nodes(app, doctree, fromdocname, found_needs_nodes)
+    print_need_nodes(app, doctree, fromdocname, list(doctree.findall(Need)))
 
 
 @profile("NEED_PRINT")
