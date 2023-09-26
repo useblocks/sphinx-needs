@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1695357456750,
+  "lastUpdate": 1695718765367,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -5076,6 +5076,42 @@ window.BENCHMARK_DATA = {
             "value": 74.90389589899996,
             "unit": "s",
             "extra": "Commit: 0954a50847ddecffef3edb6ae96f9e255b713453\nBranch: master\nTime: 2023-09-22T06:30:24+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4e604d0d187911f38b0c1a764c492b4bb521d0a1",
+          "message": "🐛 Improve logic for `process_needextend` (#1037)\n\nDo not add non-existing links (warn if found)",
+          "timestamp": "2023-09-26T05:50:13-03:00",
+          "tree_id": "d1e05488e792daf00d0a8eb6fe8e13eeb16fce49",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/4e604d0d187911f38b0c1a764c492b4bb521d0a1"
+        },
+        "date": 1695718759416,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.3235628499999734,
+            "unit": "s",
+            "extra": "Commit: 4e604d0d187911f38b0c1a764c492b4bb521d0a1\nBranch: master\nTime: 2023-09-26T05:50:13-03:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 100.11557720400003,
+            "unit": "s",
+            "extra": "Commit: 4e604d0d187911f38b0c1a764c492b4bb521d0a1\nBranch: master\nTime: 2023-09-26T05:50:13-03:00"
           }
         ]
       }
