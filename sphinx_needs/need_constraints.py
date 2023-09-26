@@ -65,7 +65,7 @@ def process_constraints(app: Sphinx, need: NeedsInfoType) -> None:
                 # log/except if needed
                 if "warn" in failed_options.get("on_fail", []):
                     logger.warning(
-                        f"Constraint {cmd} for need {need_id} FAILED! severity: {severity} [needs.constraint]",
+                        f"Constraint {cmd} for need {need_id} FAILED! severity: {severity} {need.get('constraints_error', '')} [needs.constraint]",
                         type="needs",
                         subtype="constraint",
                         color="red",
