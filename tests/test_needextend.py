@@ -1,13 +1,20 @@
+import json
 import sys
 from pathlib import Path
 
 import pytest
+from sphinx.application import Sphinx
+from syrupy.filters import props
 
 
 @pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needextend"}], indirect=True)
-def test_doc_needextend_html(test_app):
+def test_doc_needextend_html(test_app: Sphinx, snapshot):
     app = test_app
     app.build()
+
+    needs_data = json.loads(Path(app.outdir, "needs.json").read_text())
+    assert needs_data == snapshot(exclude=props("created"))
+
     index_html = Path(app.outdir, "index.html").read_text()
     assert "extend_test_003" in index_html
 

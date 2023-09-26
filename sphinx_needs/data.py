@@ -122,9 +122,10 @@ class NeedsInfoType(NeedsBaseDataType):
     """Hexadecimal color code of the type."""
     type_style: str
 
-    # Used by needextend
     is_modified: bool
+    """Whether the need was modified by needextend."""
     modifications: int
+    """Number of modifications by needextend."""
 
     # parts information
     parts: dict[str, NeedsPartType]
@@ -259,11 +260,20 @@ class NeedsBarType(NeedsBaseDataType):
 
 
 class NeedsExtendType(NeedsBaseDataType):
-    """Data to modify an existing need."""
+    """Data to modify existing need(s)."""
 
     filter: None | str
+    """Single need ID or filter string to select multiple needs."""
     modifications: dict[str, str]
+    """Mapping of field name to new value.
+    If the field name starts with a ``+``, the new value is appended to the existing value.
+    If the field name starts with a ``-``, the existing value is cleared (new value is ignored).
+    """
     strict: bool
+    """If ``filter`` conforms to ``needs_id_regex``,
+    and is not an existing need ID,
+    whether to except the build (otherwise log-info message is written).
+    """
 
 
 class NeedsFilteredBaseType(NeedsBaseDataType):
