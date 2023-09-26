@@ -1939,6 +1939,22 @@ constraints_passed is a bool showing if ALL constraints of a corresponding need 
 
 constraints_results is a dictionary similar in structure to needs_constraints above. Instead of executable python statements, inner values contain a bool describing if check_0, check_1 ... passed successfully.
 
+.. versionadded:: 1.4.0
+
+    The ``"error_message"`` key can contain a string, with Jinja templating, which will be displayed if the constraint fails, and saved on the need as ``constraints_error``:
+
+    .. code-block:: python
+
+        needs_constraints = {
+
+            "critical": {
+                "check_0": "'critical' in tags",
+                "severity": "CRITICAL",
+                "error_message": "need {% raw %}{{id}}{% endraw %} does not fulfill CRITICAL constraint, because tags are {% raw %}{{tags}}{% endraw %}"
+            }
+        
+        }
+
 
 .. code-block:: rst
 
