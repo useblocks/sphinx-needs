@@ -127,6 +127,11 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
                             # If we add links, then add all corresponding back links
                             for ref_need in [i.strip() for i in re.split(";|,", value)]:
                                 if ref_need not in all_needs:
+                                    logger.warning(
+                                        f"Provided link id {ref_need} for needextend does not exist. [needs]",
+                                        type="needs",
+                                        location=(current_needextend["docname"], current_needextend["lineno"]),
+                                    )
                                     continue
                                 if ref_need not in need[option_name]:
                                     need[option_name].append(ref_need)
@@ -158,7 +163,16 @@ def process_needextend(app: Sphinx, doctree: nodes.document, fromdocname: str) -
                             # If we change links, then modify all corresponding back links
                             for ref_need in (i for i in need[option] if i in all_needs):
                                 all_needs[ref_need][f"{option}_back"].remove(found_need["id"])
-                            need[option] = [i.strip() for i in re.split(";|,", value) if i.strip() in all_needs]
+                            need[option] = []
+                            for ref_need in [i.strip() for i in re.split(";|,", value)]:
+                                if ref_need not in all_needs:
+                                    logger.warning(
+                                        f"Provided link id {ref_need} for needextend does not exist. [needs]",
+                                        type="needs",
+                                        location=(current_needextend["docname"], current_needextend["lineno"]),
+                                    )
+                                    continue
+                                need[option].append(ref_need)
                             for ref_need in need[option]:
                                 if found_need["id"] not in all_needs[ref_need][f"{option}_back"]:
                                     all_needs[ref_need][f"{option}_back"] += [found_need["id"]]
