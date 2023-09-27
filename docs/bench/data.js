@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1695718765367,
+  "lastUpdate": 1695830582794,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -5112,6 +5112,42 @@ window.BENCHMARK_DATA = {
             "value": 100.11557720400003,
             "unit": "s",
             "extra": "Commit: 4e604d0d187911f38b0c1a764c492b4bb521d0a1\nBranch: master\nTime: 2023-09-26T05:50:13-03:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "469c77c2053a9d4a1246c52764cec7c0d96841f2",
+          "message": " 👌 Removing deepcopy (#1033)\n\nRemove deepcopy calls for filtering functions\r\n\r\n\r\nLooks like this little change brings up to 80% better performance in a\r\nbuild.\r\nHuge project got down to 5min from 28min.\r\nAlso memory consumption is cut down to 50-60%.\r\n\r\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2023-09-27T17:54:26+02:00",
+          "tree_id": "5e057030458716ac3ad45c0491da21ab526c46e7",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/469c77c2053a9d4a1246c52764cec7c0d96841f2"
+        },
+        "date": 1695830575955,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2756139879999182,
+            "unit": "s",
+            "extra": "Commit: 469c77c2053a9d4a1246c52764cec7c0d96841f2\nBranch: master\nTime: 2023-09-27T17:54:26+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 89.25133906999997,
+            "unit": "s",
+            "extra": "Commit: 469c77c2053a9d4a1246c52764cec7c0d96841f2\nBranch: master\nTime: 2023-09-27T17:54:26+02:00"
           }
         ]
       }
