@@ -23,6 +23,7 @@ Released: under development
 * Improvement: Suffix all warnings with ``[needs]``, and allow them to be suppressed
   (`#975 <https://github.com/useblocks/sphinx-needs/pull/975>`_)
 * Improvement: :ref:`needextend` for single needs is much faster.
+* Improvement: General performance improvement (up to 50%) and less memory consumption (~40%).
 * Improvement: external_needs is using cached templates to save generation time.
 
 1.3.0
