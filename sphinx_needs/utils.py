@@ -130,8 +130,8 @@ def row_col_maker(
     :param prefix: string, which is used as prefix for the text output
     :return: column object (nodes.entry)
     """
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    builder = app.builder
+    env = app.env
     needs_config = NeedsSphinxConfig(env.config)
 
     row_col = nodes.entry(classes=["needs_" + need_key])
@@ -238,7 +238,7 @@ def rstjinja(app: Sphinx, docname: str, source: List[str]) -> None:
     """
     Render our pages as a jinja template for fancy templating goodness.
     """
-    builder = unwrap(app.builder)
+    builder = app.builder
     # Make sure we're outputting HTML
     if builder.format != "html":
         return
@@ -383,8 +383,8 @@ def jinja_parse(context: Dict[str, Any], jinja_string: str) -> str:
 
 
 def save_matplotlib_figure(app: Sphinx, figure: FigureBase, basename: str, fromdocname: str) -> nodes.image:
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    builder = app.builder
+    env = app.env
 
     image_folder = os.path.join(builder.outdir, builder.imagedir)
     os.makedirs(image_folder, exist_ok=True)
@@ -571,14 +571,6 @@ def clean_log(data: str) -> str:
 
     clean_credentials = data_compile.sub(r"\1****:****@\4", data)
     return clean_credentials
-
-
-T = TypeVar("T")
-
-
-def unwrap(obj: Optional[T]) -> T:
-    assert obj is not None
-    return obj
 
 
 def node_match(node_types: Union[Type[nodes.Element], List[Type[nodes.Element]]]) -> Callable[[nodes.Node], bool]:

@@ -19,7 +19,7 @@ from sphinx_needs.directives.utils import (
 )
 from sphinx_needs.filter_common import FilterBase, process_filters
 from sphinx_needs.layout import create_need
-from sphinx_needs.utils import add_doc, unwrap
+from sphinx_needs.utils import add_doc
 
 
 class Needextract(nodes.General, nodes.Element):
@@ -75,7 +75,7 @@ def process_needextract(
     """
     Replace all needextract nodes with a list of the collected needs.
     """
-    env = unwrap(app.env)
+    env = app.env
     needs_config = NeedsSphinxConfig(app.config)
 
     for node in found_nodes:

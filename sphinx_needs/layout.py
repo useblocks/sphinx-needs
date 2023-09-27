@@ -25,7 +25,7 @@ from sphinx.environment.collectors.asset import DownloadFileCollector, ImageColl
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
-from sphinx_needs.utils import INTERNALS, match_string_link, unwrap
+from sphinx_needs.utils import INTERNALS, match_string_link
 
 
 @measure_time("need")
@@ -44,7 +44,7 @@ def create_need(
     :param docname: Needed for calculating references
     :return:
     """
-    env = app.builder.env
+    env = app.env
     needs = SphinxNeedsData(env).get_or_create_needs()
 
     if need_id not in needs.keys():
@@ -145,7 +145,7 @@ def build_need(
     The level structure must be kept, otherwise docutils can not handle it!
     """
 
-    env = app.builder.env
+    env = app.env
     needs = SphinxNeedsData(env).get_or_create_needs()
     node_container = nodes.container()
 
@@ -493,7 +493,6 @@ class LayoutHandler:
         :param show_empty: If false and requested need-value is None or '', no output is returned. Default: false
         :return: docutils node
         """
-
         data_container = nodes.inline(classes=["needs_" + name])
         if prefix:
             prefix_node = self._parse(prefix)
@@ -513,16 +512,16 @@ class LayoutHandler:
         if isinstance(data, str):
             if len(data) == 0 and not show_empty:
                 return []
-            # data_node = nodes.inline(classes=["needs_data"])
-            # data_node.append(nodes.Text(data)
-            # data_container.append(data_node)
+
             needs_string_links_option: List[str] = []
             for v in self.needs_config.string_links.values():
                 needs_string_links_option.extend(v["options"])
 
-            if name in needs_string_links_option:
-                data = re.split(r",|;", data)
-                data = [i.strip() for i in data if len(i) != 0]
+            data_list: List[str] = (
+                [i.strip() for i in re.split(r",|;", data) if len(i) != 0]
+                if name in needs_string_links_option
+                else [data]
+            )
 
             matching_link_confs = []
             for link_conf in self.string_links.values():
@@ -530,7 +529,7 @@ class LayoutHandler:
                     matching_link_confs.append(link_conf)
 
             data_node = nodes.inline(classes=["needs_data"])
-            for index, datum in enumerate(data):
+            for index, datum in enumerate(data_list):
                 if matching_link_confs:
                     data_node += match_string_link(
                         text_item=datum,
@@ -544,7 +543,7 @@ class LayoutHandler:
                     ref_item = nodes.Text(datum)
                     data_node += ref_item
 
-                if (isinstance(data, list) and index + 1 < len(data)) or index + 1 < len([data]):
+                if (name in needs_string_links_option and index + 1 < len(data)) or index + 1 < len([data]):
                     data_node += nodes.emphasis("; ", "; ")
 
             data_container.append(data_node)
@@ -764,8 +763,8 @@ class LayoutHandler:
         :return: An inline docutils node element
         :rtype: :class: docutils.nodes.inline
         """
-        builder = unwrap(self.app.builder)
-        env = unwrap(builder.env)
+        builder = self.app.builder
+        env = self.app.env
 
         data_container = nodes.inline()
         if prefix:
@@ -935,7 +934,7 @@ class LayoutHandler:
         :param initial: If True, initial status will hide rows after loading page.
         :return: docutils nodes
         """
-        builder = unwrap(self.app.builder)
+        builder = self.app.builder
         if any(x in builder.name.upper() for x in ["PDF", "LATEX"]):
             # PDF/Latex output do not support collapse functions
             return None

@@ -16,7 +16,6 @@ from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.data import NeedsInfoType
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import unwrap
 
 log = get_logger(__name__)
 
@@ -33,8 +32,8 @@ part_pattern = re.compile(r"\(([\w-]+)\)(.*)")
 
 
 def update_need_with_parts(env: BuildEnvironment, need: NeedsInfoType, part_nodes: List[NeedPart]) -> None:
-    app = unwrap(env.app)
-    builder = unwrap(app.builder)
+    app = env.app
+    builder = app.builder
     for part_node in part_nodes:
         content = cast(str, part_node.children[0].children[0])  # ->inline->Text
         result = part_pattern.match(content)

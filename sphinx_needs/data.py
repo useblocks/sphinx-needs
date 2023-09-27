@@ -3,7 +3,7 @@ which is stored in the Sphinx environment.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 try:
     from typing import Literal, TypedDict
@@ -122,9 +122,10 @@ class NeedsInfoType(NeedsBaseDataType):
     """Hexadecimal color code of the type."""
     type_style: str
 
-    # Used by needextend
     is_modified: bool
+    """Whether the need was modified by needextend."""
     modifications: int
+    """Number of modifications by needextend."""
 
     # parts information
     parts: dict[str, NeedsPartType]
@@ -158,15 +159,18 @@ class NeedsInfoType(NeedsBaseDataType):
     # back links are all set in process_need_nodes (-> create_back_links) transform
 
     # constraints information
-    # set in process_need_nodes (-> process_constraints) transform
     constraints: list[str]
+    """List of constraint names, which are defined for this need."""
+    # set in process_need_nodes (-> process_constraints) transform
+    constraints_results: dict[str, dict[str, bool]]
+    """Mapping of constraint name, to check name, to result."""
     constraints_passed: None | bool
-    constraints_results: dict[str, dict[str, Any]]
+    """True if all constraints passed, False if any failed, None if not yet checked."""
 
     # additional source information
     doctype: str
     """Type of the document where the need is defined, e.g. '.rst'"""
-    # set in add_sections transform
+    # set in analyse_need_locations transform
     sections: list[str]
     section_name: str
     """Simply the first section"""
@@ -254,11 +258,20 @@ class NeedsBarType(NeedsBaseDataType):
 
 
 class NeedsExtendType(NeedsBaseDataType):
-    """Data to modify an existing need."""
+    """Data to modify existing need(s)."""
 
     filter: None | str
+    """Single need ID or filter string to select multiple needs."""
     modifications: dict[str, str]
+    """Mapping of field name to new value.
+    If the field name starts with a ``+``, the new value is appended to the existing value.
+    If the field name starts with a ``-``, the existing value is cleared (new value is ignored).
+    """
     strict: bool
+    """If ``filter`` conforms to ``needs_id_regex``,
+    and is not an existing need ID,
+    whether to except the build (otherwise log-info message is written).
+    """
 
 
 class NeedsFilteredBaseType(NeedsBaseDataType):

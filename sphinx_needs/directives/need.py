@@ -28,7 +28,7 @@ from sphinx_needs.layout import build_need
 from sphinx_needs.logging import get_logger
 from sphinx_needs.need_constraints import process_constraints
 from sphinx_needs.nodes import Need
-from sphinx_needs.utils import add_doc, profile, unwrap
+from sphinx_needs.utils import add_doc, profile
 
 logger = get_logger(__name__)
 
@@ -285,14 +285,22 @@ def purge_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> None:
             del needs[need_id]
 
 
-def add_sections(app: Sphinx, doctree: nodes.document) -> None:
-    """Add section titles to the needs as additional attributes that can
-    be used in tables and filters"""
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
+    """Determine the location of each need in the doctree,
+    relative to its parent section(s) and need(s).
+
+    This data is added to the need's data stored in the Sphinx environment,
+    so that it can be used in tables and filters.
+
+    Once this data is determined, any hidden needs
+    (i.e. ones that should not be rendered in the output)
+    are removed from the doctree.
+    """
+    env = app.env
 
     needs = SphinxNeedsData(env).get_or_create_needs()
 
+    hidden_needs: List[Need] = []
     for need_node in doctree.findall(Need):
         need_id = need_node["refid"]
         need_info = needs[need_id]
@@ -329,6 +337,15 @@ def add_sections(app: Sphinx, doctree: nodes.document) -> None:
             need_info["parent_needs"] = parent_needs
             need_info["parent_need"] = parent_needs[0]
 
+        if need_node.get("hidden"):
+            hidden_needs.append(need_node)
+
+    # now we have gathered all the information we need,
+    # we can remove the hidden needs from the doctree
+    for need_node in hidden_needs:
+        if need_node.parent is not None:
+            need_node.parent.remove(need_node)  # type: ignore[attr-defined]
+
 
 def previous_sibling(node: nodes.Node) -> Optional[nodes.Node]:
     """Return preceding sibling node or ``None``."""
@@ -358,8 +375,7 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
                 node.parent.remove(node)  # type: ignore
         return
 
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    env = app.env
 
     # If no needs were defined, we do not need to do anything
     if not hasattr(env, "needs_all_needs"):
@@ -389,8 +405,6 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     # Used to store needs in the docs, which are needed again later
     found_needs_nodes = []
     for node_need in doctree.findall(Need):
-        if node_need.get("hidden"):
-            continue
         need_id = node_need.attributes["ids"][0]
         found_needs_nodes.append(node_need)
         need_data = needs[need_id]
@@ -414,8 +428,7 @@ def print_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
     :param fromdocname:
     :return:
     """
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    env = app.env
     needs = SphinxNeedsData(env).get_or_create_needs()
 
     # We try to avoid findall as much as possibles. so we reuse the already found need nodes in the current document.
@@ -542,15 +555,6 @@ def _fix_list_dyn_func(list: List[str]) -> List[str]:
         else:
             new_list.append(element)
     return new_list
-
-
-def remove_hidden_needs(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
-    """Remove hidden needs from the doctree, before it is rendered."""
-    if fromdocname not in SphinxNeedsData(app.env).get_or_create_docs().get("all", []):
-        return
-    for node_need in doctree.findall(Need):
-        if node_need.get("hidden"):
-            node_need.parent.remove(node_need)  # type: ignore
 
 
 #####################

@@ -14,6 +14,7 @@ DOCUTILS_VERSIONS = ["0.19", "0.17", "0.16", "0.15"]
 TEST_DEPENDENCIES = [
     "pytest",
     "pytest-xdist",
+    "syrupy",
     "responses",
     "lxml",
     "pyparsing!=3.0.4",

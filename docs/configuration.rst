@@ -1792,6 +1792,50 @@ Example:
    The created ``needs.json`` file gets stored in the ``outdir`` of the current builder.
    So if ``html`` is used as builder, the final location is e.g. ``_build/html/needs.json``.
 
+
+.. _needs_build_json_per_id:
+
+needs_build_json_per_id 
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.4.0
+    
+Builds list json files for each need. The name of each file is the ``id`` of need.
+This option works like :ref:`needs_build_json`. 
+
+Default: False
+
+Example:
+
+.. code-block:: python
+
+    needs_build_json_per_id = False
+
+.. hint::
+
+    The created single json file per need, located in :ref:`needs_build_json_per_id_path` folder, e.g ``_build/needs_id/abc_432.json``
+ 
+.. _needs_build_json_per_id_path:
+
+needs_build_json_per_id_path 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.4.0
+    
+This option sets the location of the set of ``needs.json`` for every needs-id.
+
+Default value: ``needs_id``
+
+Example:
+
+.. code-block:: python
+
+    needs_build_json_per_id_path = "needs_id"
+
+.. hint::
+
+    The created ``needs_id`` folder gets stored in the ``outdir`` of the current builder. The final location is e.g. ``_build/needs_id``
+
 .. _needs_build_needumls:
 
 needs_build_needumls
