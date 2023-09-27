@@ -65,6 +65,7 @@ intersphinx_mapping = {
 nitpicky = True
 nitpick_ignore = [
     ("py:class", "T"),
+    ("py:class", "sphinx_needs.debug.T"),
     ("py:class", "sphinx_needs.data.NeedsInfoType"),
 ]
 
