@@ -166,7 +166,6 @@ def process_filters(
     else:
         # Provides only a copy of needs to avoid data manipulations.
         context = {
-            # "needs": copy.deepcopy(all_needs_incl_parts),
             "needs": all_needs_incl_parts,
             "results": [],
         }
