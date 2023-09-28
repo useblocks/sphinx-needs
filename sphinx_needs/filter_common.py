@@ -4,7 +4,6 @@ like needtable, needlist and needflow.
 """
 from __future__ import annotations
 
-import copy
 import re
 from types import CodeType
 from typing import Any, Iterable, TypeVar
@@ -167,7 +166,7 @@ def process_filters(
     else:
         # Provides only a copy of needs to avoid data manipulations.
         context = {
-            "needs": copy.deepcopy(all_needs_incl_parts),
+            "needs": all_needs_incl_parts,
             "results": [],
         }
 

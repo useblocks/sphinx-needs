@@ -1,4 +1,3 @@
-import copy
 import os
 from typing import Iterable, List, Sequence
 
@@ -156,7 +155,7 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
                 # execute filter_func code
                 # Provides only a copy of needs to avoid data manipulations.
                 context = {
-                    "needs": copy.deepcopy(need_list),
+                    "needs": need_list,
                     "results": [],
                 }
                 args = []
