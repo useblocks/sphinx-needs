@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 import pytest
+import xprocess
 from sphinx.application import Sphinx
 from sphinx.testing.path import path
 from xprocess import ProcessStarter
@@ -17,11 +18,28 @@ pytest_plugins = "sphinx.testing.fixtures"
 
 
 def generate_random_string() -> str:
+    """
+    Generate a random string of 10 characters consisting of letters (both uppercase and lowercase) and digits.
+
+    :return: A random string.
+    """
     characters = string.ascii_letters + string.digits
     return "".join(secrets.choice(characters) for i in range(10))
 
 
 def copy_srcdir_to_tmpdir(srcdir: path, tmp: path) -> path:
+    """
+    Copy Source Directory to Temporary Directory.
+
+    This function copies the contents of a source directory to a temporary
+    directory. It generates a random subdirectory within the temporary directory
+    to avoid conflicts and enable parallel processes to run without conflicts.
+
+    :param srcdir: Path to the source directory.
+    :param tmp: Path to the temporary directory.
+
+    :return: Path to the newly created directory in the temporary directory.
+    """
     srcdir = path(__file__).parent.abspath() / srcdir
     tmproot = tmp.joinpath(generate_random_string()) / path(srcdir).basename()
     shutil.copytree(srcdir, tmproot)
@@ -44,28 +62,30 @@ def get_abspath(relpath: str) -> str:
 
 
 @pytest.fixture(scope="session")
-def test_server(xprocess, sphinx_test_tempdir):
+def test_server(sphinx_test_tempdir):
+    """
+    Fixture to start and manage the test server process.
+
+    :param sphinx_test_tempdir: The directory to serve.
+    :return: Information about the server process.
+    """
+
     class Starter(ProcessStarter):
-        # pattern = "HTTP Server started on port [0-9]+!"
         pattern = "Serving HTTP on [0-9.]+ port [0-9]+"
-        # wait for 10 seconds before timing out
         timeout = 10
-        # terminate and clean up all started processes and their resources upon interruptions
-        # during pytest runs (CTRL+C, SIGINT and internal errors)
         terminate_on_interrupt = True
-        # command to start process
-        # args = ["python", f"{path(__file__).parent.abspath()}/server.py", sphinx_test_tempdir]
         args = ["python", "-m", "http.server", "--directory", sphinx_test_tempdir, "--bind", "127.0.0.1", "62343"]
 
-    # ensure process is running and return its logfile
-    logfile = xprocess.ensure("http_server", Starter, restart=True)  # noqa:F841
+    # Start the process and ensure it is running
+    logfile = xprocess.ensure("http_server", Starter)  # noqa:F841
+
     http_server_process = xprocess.getinfo("http_server")
     server_url = "http://localhost:62343"
     http_server_process.url = server_url
 
     yield http_server_process
 
-    # clean up whole process tree afterward
+    # Clean up the process after the tests
     http_server_process.terminate()
 
 
@@ -134,7 +154,15 @@ def test_js(self) -> Dict[str, Any]:
 
 
 @pytest.fixture(scope="session")
-def sphinx_test_tempdir():
+def sphinx_test_tempdir() -> path:
+    """
+    Fixture to provide a temporary directory for Sphinx testing.
+
+    This function creates a custom temporary folder to avoid potential conflicts
+    with utility functions from Sphinx and pytest.
+
+    :return Path: Path object representing the temporary directory.
+    """
     # We create a temp-folder on our own, as the util-functions from sphinx and pytest make troubles.
     # It seems like they reuse certain-temp names
     sphinx_test_tempdir = path(tempfile.gettempdir()).joinpath("sn_test_build_data")
@@ -155,6 +183,20 @@ def sphinx_test_tempdir():
 
 @pytest.fixture(scope="function")
 def test_app(make_app, sphinx_test_tempdir, request):
+    """
+    Fixture for creating a Sphinx application for testing.
+
+    This fixture creates a Sphinx application with specified builder parameters and
+    config overrides. It also copies the test source directory to the test temporary
+    directory. The fixture yields the Sphinx application, and cleans up the temporary
+    source directory after the test function has executed.
+
+    :param make_app: A fixture for creating Sphinx applications.
+    :param sphinx_test_tempdir: A fixture for providing the Sphinx test temporary directory.
+    :param request: A pytest request object for accessing fixture parameters.
+
+    :return: A Sphinx application object.
+    """
     builder_params = request.param
 
     sphinx_conf_overrides = builder_params.get("confoverrides", {})
