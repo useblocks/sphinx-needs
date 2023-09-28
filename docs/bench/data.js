@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1695897080150,
+  "lastUpdate": 1695910018956,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -5220,6 +5220,42 @@ window.BENCHMARK_DATA = {
             "value": 92.79749354999996,
             "unit": "s",
             "extra": "Commit: d06f3a6d97560845e17d6cb5baf3f5c22e646684\nBranch: master\nTime: 2023-09-28T07:22:05-03:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0f0ae771ffc1e9d37ca46921dc576a7abd4549ea",
+          "message": "🔧 Consolidate needs data post-processing (#1039)\n\nThis commit is a step towards being able to generate the needs.json without running the Sphinx `BUILD` phase.\r\n\r\nHere we consolidate all functions that post-process the needs data, after it has been fully extracted from all documents and external sources.\r\nWe remove the individual logic from within these functions, to check if the post-processing has already been done, and instead check before running all the functions.\r\n\r\nThis refactor does not actually change the sphinx-needs process in any way, this will come later.",
+          "timestamp": "2023-09-28T10:59:28-03:00",
+          "tree_id": "76527daced53c448482bafe435a8583290a45154",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/0f0ae771ffc1e9d37ca46921dc576a7abd4549ea"
+        },
+        "date": 1695910013316,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2449556560000019,
+            "unit": "s",
+            "extra": "Commit: 0f0ae771ffc1e9d37ca46921dc576a7abd4549ea\nBranch: master\nTime: 2023-09-28T10:59:28-03:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 77.67021260199999,
+            "unit": "s",
+            "extra": "Commit: 0f0ae771ffc1e9d37ca46921dc576a7abd4549ea\nBranch: master\nTime: 2023-09-28T10:59:28-03:00"
           }
         ]
       }
