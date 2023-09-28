@@ -13,19 +13,17 @@ logger = get_logger(__name__)
 
 
 def process_constraints(app: Sphinx) -> None:
-    """Analyse constraints of a single need,
-    and set corresponding fields on the need data item.
+    """Analyse constraints of all needs,
+    and set corresponding fields on the need data item:
+    ``constraints_passed`` and ``constraints_results``.
+
+    The ``style`` field may also be changed, if a constraint fails
+    (depending on the config value ``constraint_failed_options``)
     """
     env = app.env
     needs_config = NeedsSphinxConfig(env.config)
     config_constraints = needs_config.constraints
     needs = SphinxNeedsData(env).get_or_create_needs()
-    workflow = SphinxNeedsData(env).get_or_create_workflow()
-
-    if workflow["needs_constraints"]:
-        return
-
-    workflow["needs_constraints"] = True
 
     error_templates_cache: Dict[str, jinja2.Template] = {}
 

@@ -489,8 +489,6 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
 
     needs_config.flow_configs.update(NEEDFLOW_CONFIG_DEFAULTS)
 
-    data.get_or_create_workflow()
-
     # Set time measurement flag
     if needs_config.debug_measurement:
         debug.START_TIME = timer()  # Store the rough start time of Sphinx build

@@ -30,23 +30,6 @@ class NeedsFilterType(TypedDict):
     amount: int
 
 
-class NeedsWorkflowType(TypedDict):
-    """
-    Used to store workflow status information for already executed tasks.
-    Some tasks like backlink_creation need be performed only once.
-    But most sphinx-events get called several times (for each single document file),
-    which would also execute our code several times...
-    """
-
-    backlink_creation_links: bool
-    dynamic_values_resolved: bool
-    links_checked: bool
-    add_sections: bool
-    variant_option_resolved: bool
-    needs_extended: bool
-    needs_constraints: bool
-
-
 class NeedsBaseDataType(TypedDict):
     """A base type for all data."""
 
@@ -448,27 +431,18 @@ class SphinxNeedsData:
             self.env.needs_all_docs = {"all": []}
         return self.env.needs_all_docs
 
-    def get_or_create_workflow(self) -> NeedsWorkflowType:
-        """Get workflow information.
-
-        This is lazily created and cached in the environment.
-        """
+    @property
+    def needs_is_post_processed(self) -> bool:
+        """Whether needs have been post-processed."""
         try:
-            return self.env.needs_workflow
+            return self.env.needs_is_post_processed
         except AttributeError:
-            self.env.needs_workflow = {
-                "backlink_creation_links": False,
-                "dynamic_values_resolved": False,
-                "links_checked": False,
-                "add_sections": False,
-                "variant_option_resolved": False,
-                "needs_extended": False,
-                "needs_constraints": False,
-            }
-            for link_type in self.env.app.config.needs_extra_links:
-                self.env.needs_workflow["backlink_creation_{}".format(link_type["option"])] = False
+            self.env.needs_is_post_processed = False
+        return self.env.needs_is_post_processed
 
-        return self.env.needs_workflow  # type: ignore[return-value]
+    @needs_is_post_processed.setter
+    def needs_is_post_processed(self, value: bool) -> None:
+        self.env.needs_is_post_processed = value
 
     def get_or_create_services(self) -> ServiceManager:
         """Get information about services.

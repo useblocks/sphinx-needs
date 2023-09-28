@@ -17,7 +17,11 @@ from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.defaults import NEED_DEFAULT_OPTIONS
-from sphinx_needs.directives.needextend import process_needextend
+from sphinx_needs.directives.needextend import (
+    Needextend,
+    extend_needs_data,
+    remove_needextend_node,
+)
 from sphinx_needs.functions import (
     find_and_replace_node_content,
     resolve_dynamic_values,
@@ -376,29 +380,23 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
         return
 
     env = app.env
+    needs_data = SphinxNeedsData(env)
 
     # If no needs were defined, we do not need to do anything
-    if not hasattr(env, "needs_all_needs"):
+    if not needs_data.get_or_create_needs():
         return
 
-    # Call dynamic functions and replace related node data with their return values
-    resolve_dynamic_values(env)
+    if not needs_data.needs_is_post_processed:
+        resolve_dynamic_values(env)
+        resolve_variants_options(env)
+        check_links(env)
+        create_back_links(env)
+        process_constraints(app)
+        extend_needs_data(app)
+        needs_data.needs_is_post_processed = True
 
-    # Apply variant handling on options and replace its values with their return values
-    resolve_variants_options(env)
-
-    # check if we have dead links
-    check_links(env)
-
-    # Create back links of common links and extra links
-    for links in needs_config.extra_links:
-        create_back_links(env, links["option"])
-
-    process_constraints(app)
-
-    # We call process_needextend here by our own, so that we are able
-    # to give print_need_nodes the already found need_nodes.
-    process_needextend(app, doctree, fromdocname)
+    for extend_node in doctree.findall(Needextend):
+        remove_needextend_node(extend_node)
 
     print_need_nodes(app, doctree, fromdocname, list(doctree.findall(Need)))
 
@@ -432,18 +430,16 @@ def print_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
 
 
 def check_links(env: BuildEnvironment) -> None:
-    """
-    Checks if set links are valid or are dead (referenced need does not exist.)
-    :param env: Sphinx environment
-    :return:
-    """
-    data = SphinxNeedsData(env)
-    workflow = data.get_or_create_workflow()
-    if workflow["links_checked"]:
-        return
+    """Checks if set links are valid or are dead (referenced need does not exist.)
 
+    For needs with dead links, an extra ``has_dead_links`` field is added and,
+    if the link is not allowed to be dead,
+    the ``has_forbidden_dead_links`` field is also added.
+    """
+    config = NeedsSphinxConfig(env.config)
+    data = SphinxNeedsData(env)
     needs = data.get_or_create_needs()
-    extra_links = getattr(env.config, "needs_extra_links", [])
+    extra_links = config.extra_links
     for need in needs.values():
         for link_type in extra_links:
             dead_links_allowed = link_type.get("allow_dead_links", False)
@@ -464,45 +460,39 @@ def check_links(env: BuildEnvironment) -> None:
                         need["has_forbidden_dead_links"] = True
                     break  # One found dead link is enough
 
-    # Finally set a flag so that this function gets not executed several times
-    workflow["links_checked"] = True
 
+def create_back_links(env: BuildEnvironment) -> None:
+    """Create back-links in all found needs.
 
-def create_back_links(env: BuildEnvironment, option: str) -> None:
-    """
-    Create back-links in all found needs.
-    But do this only once, as all needs are already collected and this sorting is for all
-    needs and not only for the ones of the current document.
-
-    :param env: sphinx environment
+    These are fields for each link type, ``<link_name>_back``,
+    which contain a list of all IDs of needs that link to the current need.
     """
     data = SphinxNeedsData(env)
-    workflow = data.get_or_create_workflow()
-    option_back = f"{option}_back"
-    if workflow[f"backlink_creation_{option}"]:  # type: ignore[literal-required]
-        return
-
+    needs_config = NeedsSphinxConfig(env.config)
     needs = data.get_or_create_needs()
-    for key, need in needs.items():
-        need_link_value = [need[option]] if isinstance(need[option], str) else need[option]  # type: ignore[literal-required]
-        for link in need_link_value:
-            link_main = link.split(".")[0]
-            try:
-                link_part = link.split(".")[1]
-            except IndexError:
-                link_part = None
 
-            if link_main in needs:
-                if key not in needs[link_main][option_back]:  # type: ignore[literal-required]
-                    needs[link_main][option_back].append(key)  # type: ignore[literal-required]
+    for links in needs_config.extra_links:
+        option = links["option"]
+        option_back = f"{option}_back"
 
-                # Handling of links to need_parts inside a need
-                if link_part and link_part in needs[link_main]["parts"]:
-                    if option_back not in needs[link_main]["parts"][link_part].keys():
-                        needs[link_main]["parts"][link_part][option_back] = []  # type: ignore[literal-required]
-                    needs[link_main]["parts"][link_part][option_back].append(key)  # type: ignore[literal-required]
+        for key, need in needs.items():
+            need_link_value = [need[option]] if isinstance(need[option], str) else need[option]  # type: ignore[literal-required]
+            for link in need_link_value:
+                link_main = link.split(".")[0]
+                try:
+                    link_part = link.split(".")[1]
+                except IndexError:
+                    link_part = None
 
-    workflow[f"backlink_creation_{option}"] = True  # type: ignore[literal-required]
+                if link_main in needs:
+                    if key not in needs[link_main][option_back]:  # type: ignore[literal-required]
+                        needs[link_main][option_back].append(key)  # type: ignore[literal-required]
+
+                    # Handling of links to need_parts inside a need
+                    if link_part and link_part in needs[link_main]["parts"]:
+                        if option_back not in needs[link_main]["parts"][link_part].keys():
+                            needs[link_main]["parts"][link_part][option_back] = []  # type: ignore[literal-required]
+                        needs[link_main]["parts"][link_part][option_back].append(key)  # type: ignore[literal-required]
 
 
 def _fix_list_dyn_func(list: List[str]) -> List[str]:
