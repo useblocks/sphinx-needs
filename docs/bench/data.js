@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1695866549759,
+  "lastUpdate": 1695897080150,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -5184,6 +5184,42 @@ window.BENCHMARK_DATA = {
             "value": 75.25005205400004,
             "unit": "s",
             "extra": "Commit: 8fd73a79907fe3dfd3396e1ccc0135dad7cf7538\nBranch: master\nTime: 2023-09-27T22:55:21-03:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d06f3a6d97560845e17d6cb5baf3f5c22e646684",
+          "message": "✨ Add error messages for constraint failures (#1036)\n\nThis commit adds the ability to set an optional `error_message` key for each constraint in the `needs_constraint` configuration.\r\nThis can contain Jinja placeholders, for needs data fields, and will be added to the need data, under the `constraints_error` field, if the constraint fails.",
+          "timestamp": "2023-09-28T07:22:05-03:00",
+          "tree_id": "81a3a2981b57c44e05305754e78ca115724bb087",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/d06f3a6d97560845e17d6cb5baf3f5c22e646684"
+        },
+        "date": 1695897073424,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2654911230000039,
+            "unit": "s",
+            "extra": "Commit: d06f3a6d97560845e17d6cb5baf3f5c22e646684\nBranch: master\nTime: 2023-09-28T07:22:05-03:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 92.79749354999996,
+            "unit": "s",
+            "extra": "Commit: d06f3a6d97560845e17d6cb5baf3f5c22e646684\nBranch: master\nTime: 2023-09-28T07:22:05-03:00"
           }
         ]
       }
