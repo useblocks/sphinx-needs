@@ -8,3 +8,4 @@ sphinx-design
 click
 tabulate
 sphinx-immaterial==0.11.7
+pytest-xprocess

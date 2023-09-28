@@ -8,8 +8,8 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict
 
-from docutils.nodes import document
 import pytest
+from docutils.nodes import document
 from sphinx.application import Sphinx
 from sphinx.testing.path import path
 from syrupy.extensions.single_file import SingleFileSnapshotExtension, WriteMode
@@ -63,7 +63,7 @@ def get_abspath(relpath: str) -> str:
 
 
 @pytest.fixture(scope="session")
-def test_server(sphinx_test_tempdir):
+def test_server(xprocess, sphinx_test_tempdir):
     """
     Fixture to start and manage the test server process.
 
