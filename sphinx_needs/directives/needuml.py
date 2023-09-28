@@ -350,8 +350,9 @@ class JinjaFunctions:
         """
         Return a list of found needs that pass the given filter string.
         """
+        needs_config = NeedsSphinxConfig(self.app.config)
 
-        return filter_needs(self.app, list(self.needs.values()), filter_string=filter_string)
+        return filter_needs(list(self.needs.values()), needs_config, filter_string=filter_string)
 
     def imports(self, *args):
         if not self.parent_need_id:

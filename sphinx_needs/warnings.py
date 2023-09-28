@@ -32,8 +32,9 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
         return
 
     env = app.env
+    needs = SphinxNeedsData(env).get_or_create_needs()
     # If no needs were defined, we do not need to do anything
-    if not hasattr(env, "needs_all_needs"):
+    if not needs:
         return
 
     # Check if warnings already got executed.
@@ -44,15 +45,14 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
 
     env.needs_warnings_executed = True  # type: ignore[attr-defined]
 
-    needs = SphinxNeedsData(env).get_or_create_needs()
-
     # Exclude external needs for warnings check
     checked_needs: Dict[str, NeedsInfoType] = {}
     for need_id, need in needs.items():
         if not need["is_external"]:
             checked_needs[need_id] = need
 
-    warnings_always_warn = NeedsSphinxConfig(app.config).warnings_always_warn
+    needs_config = NeedsSphinxConfig(app.config)
+    warnings_always_warn = needs_config.warnings_always_warn
 
     with logging.pending_logging():
         logger.info("\nChecking sphinx-needs warnings")
@@ -60,7 +60,7 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
         for warning_name, warning_filter in NEEDS_CONFIG.warnings.items():
             if isinstance(warning_filter, str):
                 # filter string used
-                result = filter_needs(app, checked_needs.values(), warning_filter)
+                result = filter_needs(checked_needs.values(), needs_config, warning_filter)
             elif callable(warning_filter):
                 # custom defined filter code used from conf.py
                 result = []

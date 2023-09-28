@@ -1,18 +1,17 @@
 from typing import Dict
 
 import jinja2
-from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsConstraintFailed, NeedsConstraintNotAllowed
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-def process_constraints(app: Sphinx) -> None:
+def process_constraints(needs: Dict[str, NeedsInfoType], config: NeedsSphinxConfig) -> None:
     """Analyse constraints of all needs,
     and set corresponding fields on the need data item:
     ``constraints_passed`` and ``constraints_results``.
@@ -20,10 +19,7 @@ def process_constraints(app: Sphinx) -> None:
     The ``style`` field may also be changed, if a constraint fails
     (depending on the config value ``constraint_failed_options``)
     """
-    env = app.env
-    needs_config = NeedsSphinxConfig(env.config)
-    config_constraints = needs_config.constraints
-    needs = SphinxNeedsData(env).get_or_create_needs()
+    config_constraints = config.constraints
 
     error_templates_cache: Dict[str, jinja2.Template] = {}
 
@@ -50,7 +46,7 @@ def process_constraints(app: Sphinx) -> None:
                     continue
 
                 # compile constraint and check if need fulfils it
-                constraint_passed = filter_single_need(app, need, cmd)
+                constraint_passed = filter_single_need(need, config, cmd)
 
                 if constraint_passed:
                     need["constraints_results"].setdefault(constraint, {})[name] = True
@@ -68,11 +64,11 @@ def process_constraints(app: Sphinx) -> None:
                             f"'severity' key not set for constraint {constraint!r} in config 'needs_constraints'"
                         )
                     severity = executable_constraints["severity"]
-                    if severity not in needs_config.constraint_failed_options:
+                    if severity not in config.constraint_failed_options:
                         raise NeedsConstraintFailed(
                             f"Severity {severity!r} not set in config 'needs_constraint_failed_options'"
                         )
-                    failed_options = needs_config.constraint_failed_options[severity]
+                    failed_options = config.constraint_failed_options[severity]
 
                     # log/except if needed
                     if "warn" in failed_options.get("on_fail", []):

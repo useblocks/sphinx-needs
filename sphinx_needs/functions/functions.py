@@ -16,7 +16,7 @@ from sphinx.environment import BuildEnvironment
 from sphinx.errors import SphinxError
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time_func
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import NEEDS_FUNCTIONS, match_variants  # noqa: F401
@@ -25,8 +25,10 @@ logger = get_logger(__name__)
 unicode = str
 ast_boolean = ast.NameConstant
 
-# TODO this input args should actually be of type `Need` and `List[Need]`, however `Need` is *currently* untyped.
-DynamicFunction = Callable[[Sphinx, Any, Any], Union[str, int, float, List[Union[str, int, float]]]]
+# TODO these functions also take optional *args and **kwargs
+DynamicFunction = Callable[
+    [Sphinx, NeedsInfoType, Dict[str, NeedsInfoType]], Union[str, int, float, List[Union[str, int, float]]]
+]
 
 
 def register_func(need_function: DynamicFunction, name: Optional[str] = None) -> None:
@@ -56,12 +58,12 @@ def register_func(need_function: DynamicFunction, name: Optional[str] = None) ->
     NEEDS_FUNCTIONS[func_name] = {"name": func_name, "function": need_function}
 
 
-def execute_func(env: BuildEnvironment, need, func_string: str):
-    """
-    Executes a given function string.
+def execute_func(app: Sphinx, need: NeedsInfoType, func_string: str):
+    """Executes a given function string.
+
     :param env: Sphinx environment
     :param need: Actual need, which contains the found function string
-    :param func_string: string of the found function. Without [[ ]]
+    :param func_string: string of the found function. Without ``[[ ]]``
     :return: return value of executed function
     """
     global NEEDS_FUNCTIONS
@@ -71,7 +73,7 @@ def execute_func(env: BuildEnvironment, need, func_string: str):
         raise SphinxError("Unknown dynamic sphinx-needs function: {}. Found in need: {}".format(func_name, need["id"]))
 
     func = measure_time_func(NEEDS_FUNCTIONS[func_name]["function"], category="dyn_func", source="user")
-    func_return = func(env.app, need, SphinxNeedsData(env).get_or_create_needs(), *func_args, **func_kwargs)
+    func_return = func(app, need, SphinxNeedsData(app.env).get_or_create_needs(), *func_args, **func_kwargs)
 
     if not isinstance(func_return, (str, int, float, list, unicode)) and func_return:
         raise SphinxError(
@@ -93,7 +95,7 @@ def execute_func(env: BuildEnvironment, need, func_string: str):
 func_pattern = re.compile(r"\[\[(.*?)\]\]")  # RegEx to detect function strings
 
 
-def find_and_replace_node_content(node, env: BuildEnvironment, need):
+def find_and_replace_node_content(node, env: BuildEnvironment, need: NeedsInfoType):
     """
     Search inside a given node and its children for nodes of type Text,
     if found, check if it contains a function string and run/replace it.
@@ -125,7 +127,7 @@ def find_and_replace_node_content(node, env: BuildEnvironment, need):
 
             func_string = func_string.replace("‘", "'")
             func_string = func_string.replace("’", "'")
-            func_return = execute_func(env, need, func_string)
+            func_return = execute_func(env.app, need, func_string)
 
             # This should never happen, but we can not be sure.
             if isinstance(func_return, list):
@@ -151,20 +153,25 @@ def find_and_replace_node_content(node, env: BuildEnvironment, need):
     return node
 
 
-def resolve_dynamic_values(env: BuildEnvironment) -> None:
+def resolve_dynamic_values(needs: Dict[str, NeedsInfoType], app: Sphinx) -> None:
     """
     Resolve dynamic values inside need data.
 
     Rough workflow:
 
-    #. Parse all needs and their data for a string like ``[[ my_func(a,b,c) ]]``
+    #. Parse all needs and their field values for a string like ``[[ my_func(a, b, c) ]]``
     #. Extract function name and call parameters
     #. Execute registered function name with extracted call parameters
     #. Replace original string with return value
-    """
-    data = SphinxNeedsData(env)
 
-    needs = data.get_or_create_needs()
+    The registered functions should take the following parameters:
+
+    - ``app``: Sphinx application
+    - ``need``: Need data
+    - ``all_needs``: All needs of the current sphinx project
+    - ``*args``: optional arguments (specified in the function string)
+    - ``**kwargs``: optional keyword arguments (specified in the function string)
+    """
     for need in needs.values():
         for need_option in need:
             if need_option in ["docname", "lineno", "content", "content_node", "content_id"]:
@@ -174,7 +181,7 @@ def resolve_dynamic_values(env: BuildEnvironment) -> None:
                 func_call = True
                 while func_call:
                     try:
-                        func_call, func_return = _detect_and_execute(need[need_option], need, env)
+                        func_call, func_return = _detect_and_execute(need[need_option], need, app)
                     except FunctionParsingException:
                         raise SphinxError(
                             "Function definition of {option} in file {file}:{line} has "
@@ -198,7 +205,7 @@ def resolve_dynamic_values(env: BuildEnvironment) -> None:
                 new_values = []
                 for element in need[need_option]:
                     try:
-                        func_call, func_return = _detect_and_execute(element, need, env)
+                        func_call, func_return = _detect_and_execute(element, need, app)
                     except FunctionParsingException:
                         raise SphinxError(
                             "Function definition of {option} in file {file}:{line} has "
@@ -223,29 +230,31 @@ def resolve_dynamic_values(env: BuildEnvironment) -> None:
                 need[need_option] = new_values
 
 
-def resolve_variants_options(env: BuildEnvironment) -> None:
+def resolve_variants_options(
+    needs: Dict[str, NeedsInfoType], needs_config: NeedsSphinxConfig, tags: Dict[str, bool]
+) -> None:
     """
     Resolve variants options inside need data.
 
+    These are fields specified by the user,
+    that have string values with a special markup syntax like ``var_a:open``.
+    These need to be resolved to the actual value.
+
     Rough workflow:
-    #. Parse all needs and their data for variant handling
+    #. Parse all needs and their fields for variant handling
     #. Replace original string with return value
 
     """
-    data = SphinxNeedsData(env)
-    needs_config = NeedsSphinxConfig(env.config)
     variants_options = needs_config.variant_options
 
     if not variants_options:
         return
 
-    needs = data.get_or_create_needs()
     for need in needs.values():
         # Data to use as filter context.
         need_context: Dict[str, Any] = {**need}
         need_context.update(**needs_config.filter_data)  # Add needs_filter_data to filter context
-        _sphinx_tags = env.app.builder.tags.tags  # Get sphinx tags
-        need_context.update(**_sphinx_tags)  # Add sphinx tags to filter context
+        need_context.update(**tags)  # Add sphinx tags to filter context
 
         for var_option in variants_options:
             if var_option in need and need[var_option] not in (None, "", []):
@@ -279,14 +288,15 @@ def check_and_get_content(content: str, need, env: BuildEnvironment) -> str:
         return content
 
     func_call = func_match.group(1)  # Extract function call
-    func_return = execute_func(env, need, func_call)  # Execute function call and get return value
+    func_return = execute_func(env.app, need, func_call)  # Execute function call and get return value
 
     # Replace the function_call with the calculated value
     content = content.replace(f"[[{func_call}]]", func_return)
     return content
 
 
-def _detect_and_execute(content, need, env):
+def _detect_and_execute(content: Any, need: NeedsInfoType, app: Sphinx):
+    """Detects if given content is a function call and executes it."""
     try:
         content = str(content)
     except UnicodeEncodeError:
@@ -297,7 +307,7 @@ def _detect_and_execute(content, need, env):
         return None, None
 
     func_call = func_match.group(1)  # Extract function call
-    func_return = execute_func(env, need, func_call)  # Execute function call and get return value
+    func_return = execute_func(app, need, func_call)  # Execute function call and get return value
 
     return func_call, func_return
 
