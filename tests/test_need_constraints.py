@@ -1,15 +1,21 @@
+import json
 import subprocess
 from pathlib import Path
 
 import pytest
+from syrupy.filters import props
 
 from sphinx_needs.api.exceptions import NeedsConstraintNotAllowed
 
 
 @pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/need_constraints"}], indirect=True)
-def test_need_constraints(test_app):
+def test_need_constraints(test_app, snapshot):
     app = test_app
     app.build()
+
+    json_text = Path(app.outdir, "needs.json").read_text()
+    needs_data = json.loads(json_text)
+    assert needs_data == snapshot(exclude=props("created"))
 
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"
