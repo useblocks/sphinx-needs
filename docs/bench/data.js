@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1695830582794,
+  "lastUpdate": 1695866549759,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -5148,6 +5148,42 @@ window.BENCHMARK_DATA = {
             "value": 89.25133906999997,
             "unit": "s",
             "extra": "Commit: 469c77c2053a9d4a1246c52764cec7c0d96841f2\nBranch: master\nTime: 2023-09-27T17:54:26+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8fd73a79907fe3dfd3396e1ccc0135dad7cf7538",
+          "message": "🧪 CI: Make documentation builds fail on warnings (#1005)\n\nUsing ReadTheDocs PR builds",
+          "timestamp": "2023-09-27T22:55:21-03:00",
+          "tree_id": "3e88b658054546b1f72e4e0c576085de048e1cfa",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8fd73a79907fe3dfd3396e1ccc0135dad7cf7538"
+        },
+        "date": 1695866545041,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21899874799998997,
+            "unit": "s",
+            "extra": "Commit: 8fd73a79907fe3dfd3396e1ccc0135dad7cf7538\nBranch: master\nTime: 2023-09-27T22:55:21-03:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 75.25005205400004,
+            "unit": "s",
+            "extra": "Commit: 8fd73a79907fe3dfd3396e1ccc0135dad7cf7538\nBranch: master\nTime: 2023-09-27T22:55:21-03:00"
           }
         ]
       }
