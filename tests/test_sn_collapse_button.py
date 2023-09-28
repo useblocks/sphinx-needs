@@ -21,7 +21,8 @@ def test_collapse_button_in_variant_doc(test_app, test_server):
 
     # Call `app.test_js()` to run the JS test for a particular specPattern
     js_test_result = app.test_js()
-
+    if js_test_result["returncode"] != 0:
+        print(f"Return code {js_test_result['returncode']}: {js_test_result['stdout']}")
     # Check the return code and stdout
     assert js_test_result["returncode"] == 0
     assert "All specs passed!" in js_test_result["stdout"].decode("utf-8")
@@ -46,6 +47,8 @@ def test_collapse_button_in_doc_basic(test_app, test_server):
 
     # Call `app.test_js()` to run the JS test for a particular specPattern
     js_test_result = app.test_js()
+    if js_test_result["returncode"] != 0:
+        print(f"Return code {js_test_result['returncode']}: {js_test_result['stdout']}")
 
     # Check the return code and stdout
     assert js_test_result["returncode"] == 0

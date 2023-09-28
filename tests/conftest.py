@@ -6,6 +6,7 @@ import shutil
 import string
 import tempfile
 from pathlib import Path
+import socket
 from typing import Any, Dict
 
 import pytest
@@ -70,24 +71,43 @@ def test_server(xprocess, sphinx_test_tempdir):
     :param sphinx_test_tempdir: The directory to serve.
     :return: Information about the server process.
     """
+    ADR = "127.0.0.1"
+    PORT = 62343
+
 
     class Starter(ProcessStarter):
-        pattern = "Serving HTTP on [0-9.]+ port [0-9]+"
+        # pattern = "Serving HTTP on [0-9.]+ port [0-9]+"
+        pattern = "Serving HTTP"
         timeout = 10
         terminate_on_interrupt = True
-        args = ["python", "-m", "http.server", "--directory", sphinx_test_tempdir, "--bind", "127.0.0.1", "62343"]
+        args = ["python", "-m", "http.server", "--directory", sphinx_test_tempdir, "--bind", ADR, PORT]
+
+    print("Starting server ...", end='')
+
+    # Check if needed socket is available
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    result = sock.connect_ex((ADR, PORT))
+    if result == 0:
+        print("Port is open")
+    else:
+        print("Port is not open")
+    sock.close()
 
     # Start the process and ensure it is running
     logfile = xprocess.ensure("http_server", Starter)  # noqa:F841
 
-    http_server_process = xprocess.getinfo("http_server")
-    server_url = "http://localhost:62343"
-    http_server_process.url = server_url
+    # http_server_process = xprocess.getinfo("http_server")
+    server_data = {
+        'adr': ADR,
+        'port': PORT,
+        'server_url': f"http://{ADR}:{PORT}"
+    }
+    print(" done ")
 
-    yield http_server_process
+    yield server_data
 
     # Clean up the process after the tests
-    http_server_process.terminate()
+    xprocess.getinfo("http_server").terminate(timeout=2)
 
 
 def test_js(self) -> Dict[str, Any]:
@@ -131,7 +151,8 @@ def test_js(self) -> Dict[str, Any]:
                 "cypress",
                 "run",
                 "--browser",
-                "chrome",
+                #"chrome",
+                "firefox",
                 "--config-file",
                 rf"{cypress_config_file}",
                 "--config",
