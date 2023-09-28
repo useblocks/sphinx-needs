@@ -342,7 +342,7 @@ The following is an outline of the build events which this extension adds to the
    - Check for dead links (``process_need_nodes -> check_links``)
    - Generate back links (``process_need_nodes -> create_back_links``)
    - Process constraints, for each ``Need`` node (``process_need_nodes -> process_constraints``)
-   - Perform all modifications on need data items, due to ``Needextend`` nodes (``process_need_nodes -> process_needextend``)
+   - Perform all modifications on need data items, due to ``Needextend`` nodes (``process_need_nodes -> extend_needs_data``)
    - Format each ``Need`` node to give the desired visual output (``process_need_nodes -> print_need_nodes``)
    - Process all other need specific nodes, replacing them with the desired visual output (``process_creator``)
 
