@@ -9,7 +9,8 @@ from random import randrange
 
 import pytest
 import responses
-import sphinx.application
+from sphinx.application import Sphinx
+from syrupy.filters import props
 
 from sphinx_needs.api.need import NeedsNoIdException
 from tests.data.service_github import (
@@ -69,7 +70,7 @@ def test_build_html(test_app):
 
 @responses.activate
 @pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/generic_doc"}], indirect=True)
-def test_build_html_parallel(test_app):
+def test_build_html_parallel(test_app: Sphinx, snapshot_doctree):
     responses.add_callback(
         responses.GET,
         re.compile(r"https://api.github.com/.*"),
@@ -87,6 +88,8 @@ def test_build_html_parallel(test_app):
     assert build_dir / "sphinx_needs_collapse.js" in files
     assert build_dir / "datatables_loader.js" in files
     assert build_dir / "DataTables-1.10.16" / "js" / "jquery.dataTables.min.js" in files
+
+    assert app.env.get_doctree("index") == snapshot_doctree
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="assert fails on windows, need to fix later.")
@@ -176,7 +179,7 @@ def test_build_json(test_app):
 
 @responses.activate
 @pytest.mark.parametrize("test_app", [{"buildername": "needs", "srcdir": "doc_test/doc_basic"}], indirect=True)
-def test_build_needs(test_app):
+def test_build_needs(test_app, snapshot):
     responses.add_callback(
         responses.GET,
         re.compile(r"https://api.github.com/.*"),
@@ -190,27 +193,7 @@ def test_build_needs(test_app):
     json_text = Path(app.outdir, "needs.json").read_text()
     needs_data = json.loads(json_text)
 
-    # Validate top-level data
-    assert "created" in needs_data
-    assert "project" in needs_data
-    assert "versions" in needs_data
-    assert "current_version" in needs_data
-    current_version = needs_data["current_version"]
-    assert current_version == app.config.version
-
-    # Validate current version data
-    current_version_data = needs_data["versions"][current_version]
-    assert "created" in current_version_data
-    assert "needs" in current_version_data
-    assert "needs_amount" in current_version_data
-    assert "needs_amount" in current_version_data
-    assert current_version_data["needs_amount"] == len(current_version_data["needs"])
-
-    # Validate individual needs data
-    current_needs = current_version_data["needs"]
-    expected_keys = ("description", "id", "links", "sections", "status", "tags", "title", "type_name")
-    for need in current_needs.values():
-        assert all(key in need for key in expected_keys)
+    assert needs_data == snapshot(exclude=props("created"))
 
 
 # Test with needs_id_required=True and missing ids in docs.
@@ -251,7 +234,7 @@ def test_sphinx_api_build():
     temp_dir = tempfile.mkdtemp()
     src_dir = os.path.join(os.path.dirname(__file__), "doc_test", "doc_basic")
 
-    sphinx_app = sphinx.application.Sphinx(
+    sphinx_app = Sphinx(
         srcdir=src_dir,
         confdir=src_dir,
         outdir=temp_dir,

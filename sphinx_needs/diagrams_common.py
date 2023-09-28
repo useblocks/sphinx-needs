@@ -18,7 +18,7 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsFilteredBaseType, NeedsPartsInfoType
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import get_scale, split_link_types, unwrap
+from sphinx_needs.utils import get_scale, split_link_types
 
 try:
     from typing import TypedDict
@@ -169,7 +169,7 @@ def calculate_link(app: Sphinx, need_info: NeedsPartsInfoType, _fromdocname: str
     :param fromdocname:
     :return:
     """
-    builder = unwrap(app.builder)
+    builder = app.builder
     try:
         if need_info["is_external"]:
             assert need_info["external_url"] is not None, "external_url must be set for external needs"

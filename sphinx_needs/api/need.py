@@ -28,7 +28,7 @@ from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import get_logger
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
-from sphinx_needs.utils import jinja_parse, unwrap
+from sphinx_needs.utils import jinja_parse
 
 logger = get_logger(__name__)
 
@@ -193,13 +193,6 @@ def add_need(
     if needs_config.id_regex and not re.match(needs_config.id_regex, need_id):
         raise NeedsInvalidException(f"Given ID '{need_id}' does not match configured regex '{needs_config.id_regex}'")
 
-    # Calculate target id, to be able to set a link back
-    if is_external:
-        target_node = None
-    else:
-        target_node = nodes.target("", "", ids=[need_id], refid=need_id, anonymous="")
-        external_url = None
-
     # Handle status
     # Check if status is in needs_statuses. If not raise an error.
     if needs_config.statuses and status not in [stat["name"] for stat in needs_config.statuses]:
@@ -310,7 +303,7 @@ def add_need(
         "doctype": doctype,
         "lineno": lineno,
         "target_id": need_id,
-        "external_url": external_url,
+        "external_url": external_url if is_external else None,
         "content_node": None,  # gets set after rst parsing
         "content_id": None,  # gets set after rst parsing
         "type": need_type,
@@ -344,6 +337,12 @@ def add_need(
         "external_css": external_css or "external_link",
         "is_modified": False,  # needed by needextend
         "modifications": 0,  # needed by needextend
+        # these are set later in the analyse_need_locations transform
+        "sections": [],
+        "section_name": "",
+        "signature": "",
+        "parent_needs": [],
+        "parent_need": "",
     }
     needs_extra_option_names = list(NEEDS_CONFIG.extra_options)
     _merge_extra_options(needs_info, kwargs, needs_extra_option_names)
@@ -443,8 +442,11 @@ def add_need(
     node_need.line = needs_info["lineno"]
 
     if needs_info["hide"]:
+        # still add node to doctree,
+        # so we can later compute its relative location in the document
+        # (see analyse_need_locations function)
         node_need["hidden"] = True
-        return [target_node, node_need]
+        return [node_need]
 
     node_need_content = _render_template(content, docname, lineno, state)
 
@@ -485,7 +487,13 @@ def add_need(
     # Create a copy of the content
     needs_info["content_node"] = node_need.deepcopy()
 
-    return_nodes = [target_node] + [node_need]
+    return_nodes = [node_need]
+    if not is_external:
+        # Calculate target id, to be able to set a link back
+        target_node = nodes.target("", "", ids=[need_id], refid=need_id, anonymous="")
+        # TODO add to document?
+        return_nodes = [target_node, node_need]
+
     if pre_content:
         node_need_pre_content = _render_template(pre_content, docname, lineno, state)
         return_nodes = node_need_pre_content.children + return_nodes
@@ -504,7 +512,7 @@ def del_need(app: Sphinx, need_id: str) -> None:
     :param app: Sphinx application object.
     :param need_id: Sphinx need id.
     """
-    env = unwrap(app.env)
+    env = app.env
     needs = SphinxNeedsData(env).get_or_create_needs()
     if need_id in needs:
         del needs[need_id]

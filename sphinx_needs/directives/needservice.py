@@ -12,7 +12,7 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.directives.need import NeedDirective
 from sphinx_needs.logging import get_logger
 from sphinx_needs.services.base import BaseService
-from sphinx_needs.utils import add_doc, unwrap
+from sphinx_needs.utils import add_doc
 
 
 class Needservice(nodes.General, nodes.Element):
@@ -58,7 +58,8 @@ class NeedserviceDirective(SphinxDirective):
         needs_services: Dict[str, BaseService] = getattr(app, "needs_services", {})
 
         service_name = self.arguments[0]
-        service = unwrap(needs_services.get(service_name))
+        service = needs_services.get(service_name)
+        assert service is not None
         section = []
 
         if "debug" not in self.options:

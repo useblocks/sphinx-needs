@@ -1,4 +1,3 @@
-import copy
 import os
 from typing import Iterable, List, Sequence
 
@@ -24,7 +23,6 @@ from sphinx_needs.utils import (
     add_doc,
     check_and_get_external_filter_func,
     save_matplotlib_figure,
-    unwrap,
 )
 
 logger = get_logger(__name__)
@@ -111,8 +109,7 @@ class NeedpieDirective(FilterBase):
 
 @measure_time("needpie")
 def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    env = app.env
     needs_data = SphinxNeedsData(env)
 
     # NEEDFLOW
@@ -158,7 +155,7 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
                 # execute filter_func code
                 # Provides only a copy of needs to avoid data manipulations.
                 context = {
-                    "needs": copy.deepcopy(need_list),
+                    "needs": need_list,
                     "results": [],
                 }
                 args = []

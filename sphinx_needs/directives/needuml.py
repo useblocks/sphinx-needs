@@ -405,7 +405,7 @@ def is_element_of_need(node: nodes.Element) -> str:
 
 @measure_time("needuml")
 def process_needuml(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
-    env = app.builder.env
+    env = app.env
 
     # for node in doctree.findall(Needuml):
     for node in found_nodes:

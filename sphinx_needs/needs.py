@@ -11,7 +11,9 @@ from sphinx.errors import SphinxError
 import sphinx_needs.debug as debug  # Need to set global var in it for timeing measurements
 from sphinx_needs.builder import (
     NeedsBuilder,
+    NeedsIdBuilder,
     NeedumlsBuilder,
+    build_needs_id_json,
     build_needs_json,
     build_needumls_pumls,
 )
@@ -27,14 +29,13 @@ from sphinx_needs.directives.list2need import List2Need, List2NeedDirective
 from sphinx_needs.directives.need import (
     Need,
     NeedDirective,
-    add_sections,
+    analyse_need_locations,
     html_depart,
     html_visit,
     latex_depart,
     latex_visit,
     process_need_nodes,
     purge_needs,
-    remove_hidden_needs,
 )
 from sphinx_needs.directives.needbar import Needbar, NeedbarDirective, process_needbar
 from sphinx_needs.directives.needextend import Needextend, NeedextendDirective
@@ -140,6 +141,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
 
     app.add_builder(NeedsBuilder)
     app.add_builder(NeedumlsBuilder)
+    app.add_builder(NeedsIdBuilder)
 
     NeedsSphinxConfig.add_config_values(app)
 
@@ -211,14 +213,22 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     # EVENTS
     ########################################################################
     # Make connections to events
-    app.connect("env-purge-doc", purge_needs)
     app.connect("config-inited", load_config)
+    app.connect("config-inited", check_configuration)
+
     app.connect("env-before-read-docs", prepare_env)
     app.connect("env-before-read-docs", load_external_needs)
-    app.connect("config-inited", check_configuration)
-    # app.connect("doctree-resolved", add_sections)
-    app.connect("doctree-read", add_sections)
+
+    app.connect("env-purge-doc", purge_needs)
+
+    app.connect("doctree-read", analyse_need_locations)
+
     app.connect("env-merge-info", merge_data)
+
+    app.connect("env-updated", install_lib_static_files)
+    app.connect("env-updated", install_permalink_file)
+    # This should be called last, so that need-styles can override styles from used libraries
+    app.connect("env-updated", install_styles_static_files)
 
     # There is also the event doctree-read.
     # But it looks like in this event no references are already solved, which
@@ -230,17 +240,12 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.connect("doctree-resolved", process_creator(NODE_TYPES_PRIO, "needextract"), priority=100)
     app.connect("doctree-resolved", process_need_nodes)
     app.connect("doctree-resolved", process_creator(NODE_TYPES))
-    app.connect("doctree-resolved", remove_hidden_needs, priority=1000)
 
     app.connect("build-finished", process_warnings)
     app.connect("build-finished", build_needs_json)
+    app.connect("build-finished", build_needs_id_json)
     app.connect("build-finished", build_needumls_pumls)
     app.connect("build-finished", debug.process_timing)
-    app.connect("env-updated", install_lib_static_files)
-    app.connect("env-updated", install_permalink_file)
-
-    # This should be called last, so that need-styles can override styles from used libraries
-    app.connect("env-updated", install_styles_static_files)
 
     # Be sure Sphinx-Needs config gets erased before any events or external API calls get executed.
     # So never but this inside an event.
@@ -311,7 +316,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     extra_options = NEEDS_CONFIG.extra_options
     for option in needs_config.extra_options:
         if option in extra_options:
-            log.warning(f'extra_option "{option}" already registered. [needs]', type="needs")
+            log.warning(f'extra_option "{option}" already registered. [needs.config]', type="needs", subtype="config")
         NEEDS_CONFIG.extra_options[option] = directives.unchanged
 
     # Get extra links and create a dictionary of needed options.
@@ -387,7 +392,16 @@ def load_config(app: Sphinx, *_args: Any) -> None:
         if name not in NEEDS_CONFIG.warnings:
             NEEDS_CONFIG.warnings[name] = check
         else:
-            log.warning(f'{name} for "warnings" is already registered. [needs]', type="needs")
+            log.warning(
+                f"{name!r} in 'needs_warnings' is already registered. [needs.config]", type="needs", subtype="config"
+            )
+
+    if needs_config.constraints_failed_color:
+        log.warning(
+            'Config option "needs_constraints_failed_color" is deprecated. Please use "needs_constraint_failed_options" styles instead. [needs.config]',
+            type="needs",
+            subtype="config",
+        )
 
 
 def visitor_dummy(*_args: Any, **_kwargs: Any) -> None:

@@ -7,7 +7,7 @@ from sphinx.util.nodes import make_refnode
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.errors import NoUri
-from sphinx_needs.utils import check_and_calc_base_url_rel_path, logger, unwrap
+from sphinx_needs.utils import check_and_calc_base_url_rel_path, logger
 
 
 class NeedIncoming(nodes.Inline, nodes.Element):  # type: ignore
@@ -17,8 +17,8 @@ class NeedIncoming(nodes.Inline, nodes.Element):  # type: ignore
 def process_need_incoming(
     app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
 ) -> None:
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    builder = app.builder
+    env = app.env
     needs_config = NeedsSphinxConfig(env.config)
     all_needs = SphinxNeedsData(env).get_or_create_needs()
 

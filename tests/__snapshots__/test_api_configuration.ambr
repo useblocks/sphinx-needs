@@ -1,0 +1,40 @@
+# serializer version: 1
+# name: test_api_add_type[test_app0]
+  list([
+    dict({
+      'color': '#BFD8D2',
+      'directive': 'story',
+      'prefix': 'US_',
+      'style': 'node',
+      'title': 'User Story',
+    }),
+    dict({
+      'color': '#FEDCD2',
+      'directive': 'spec',
+      'prefix': 'SP_',
+      'style': 'node',
+      'title': 'Specification',
+    }),
+    dict({
+      'color': '#DF744A',
+      'directive': 'impl',
+      'prefix': 'IM_',
+      'style': 'node',
+      'title': 'Implementation',
+    }),
+    dict({
+      'color': '#DCB239',
+      'directive': 'test',
+      'prefix': 'TC_',
+      'style': 'node',
+      'title': 'Test Case',
+    }),
+    dict({
+      'color': '#000000',
+      'directive': 'awesome',
+      'prefix': 'AW_',
+      'style': 'cloud',
+      'title': 'Awesome',
+    }),
+  ])
+# ---

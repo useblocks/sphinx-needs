@@ -3,21 +3,15 @@ import os
 from pathlib import Path
 
 import pytest
+from syrupy.filters import props
 
 
 @pytest.mark.parametrize("test_app", [{"buildername": "needs", "srcdir": "doc_test/doc_export_id"}], indirect=True)
-def test_export_id(test_app):
+def test_export_id(test_app, snapshot):
     app = test_app
     app.build()
-    content = Path(app.outdir, "needs.json").read_text()
-    assert "filters" in content
-
-    content_obj = json.loads(content)
-    assert content_obj is not None
-    assert "created" in content_obj
-    assert "FLOW_1" in content_obj["versions"]["1.0"]["filters"]
-    assert "TABLE_1" in content_obj["versions"]["1.0"]["filters"]
-    assert "LIST_1" in content_obj["versions"]["1.0"]["filters"]
+    needs_data = json.loads(Path(app.outdir, "needs.json").read_text())
+    assert needs_data == snapshot(exclude=props("created"))
 
 
 @pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_export_id"}], indirect=True)
