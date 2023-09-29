@@ -8,7 +8,7 @@ in need configurations.
 
 import ast
 import re
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -58,7 +58,7 @@ def register_func(need_function: DynamicFunction, name: Optional[str] = None) ->
     NEEDS_FUNCTIONS[func_name] = {"name": func_name, "function": need_function}
 
 
-def execute_func(app: Sphinx, need: NeedsInfoType, func_string: str):
+def execute_func(app: Sphinx, need: NeedsInfoType, func_string: str) -> Any:
     """Executes a given function string.
 
     :param env: Sphinx environment
@@ -95,7 +95,7 @@ def execute_func(app: Sphinx, need: NeedsInfoType, func_string: str):
 func_pattern = re.compile(r"\[\[(.*?)\]\]")  # RegEx to detect function strings
 
 
-def find_and_replace_node_content(node, env: BuildEnvironment, need: NeedsInfoType):
+def find_and_replace_node_content(node: nodes.Node, env: BuildEnvironment, need: NeedsInfoType) -> nodes.Node:
     """
     Search inside a given node and its children for nodes of type Text,
     if found, check if it contains a function string and run/replace it.
@@ -111,7 +111,7 @@ def find_and_replace_node_content(node, env: BuildEnvironment, need: NeedsInfoTy
             except KeyError:
                 # If no refuri is set, we don't need to modify anything.
                 # So stop here and return the untouched node.
-                return node
+                return node  # type: ignore
         else:
             new_text = node
         func_match = func_pattern.findall(new_text)
@@ -144,7 +144,7 @@ def find_and_replace_node_content(node, env: BuildEnvironment, need: NeedsInfoTy
                 node.children = new_children
         else:
             node = nodes.Text(new_text)
-        return node
+        return node  # type: ignore
     else:
         for child in node.children:
             new_child = find_and_replace_node_content(child, env, need)
@@ -178,7 +178,7 @@ def resolve_dynamic_values(needs: Dict[str, NeedsInfoType], app: Sphinx) -> None
                 # dynamic values in this data are not allowed.
                 continue
             if not isinstance(need[need_option], (list, set)):
-                func_call = True
+                func_call: Optional[str] = "init"
                 while func_call:
                     try:
                         func_call, func_return = _detect_and_execute(need[need_option], need, app)
@@ -266,7 +266,7 @@ def resolve_variants_options(
                     need[var_option] = match_variants(option_value, need_context, needs_config.variants)
 
 
-def check_and_get_content(content: str, need, env: BuildEnvironment) -> str:
+def check_and_get_content(content: str, need: NeedsInfoType, env: BuildEnvironment) -> str:
     """
     Checks if the given content is a function call.
     If not, content is returned.
@@ -281,7 +281,7 @@ def check_and_get_content(content: str, need, env: BuildEnvironment) -> str:
     try:
         content = str(content)
     except UnicodeEncodeError:
-        content = content.encode("utf-8")
+        content = content.encode("utf-8")  # type: ignore
 
     func_match = func_pattern.search(content)
     if func_match is None:
@@ -295,7 +295,7 @@ def check_and_get_content(content: str, need, env: BuildEnvironment) -> str:
     return content
 
 
-def _detect_and_execute(content: Any, need: NeedsInfoType, app: Sphinx):
+def _detect_and_execute(content: Any, need: NeedsInfoType, app: Sphinx) -> Tuple[Optional[str], Any]:
     """Detects if given content is a function call and executes it."""
     try:
         content = str(content)
@@ -312,7 +312,7 @@ def _detect_and_execute(content: Any, need: NeedsInfoType, app: Sphinx):
     return func_call, func_return
 
 
-def _analyze_func_string(func_string: str, need):
+def _analyze_func_string(func_string: str, need: Optional[NeedsInfoType]) -> Tuple[str, List[Any], Dict[str, Any]]:
     """
     Analyze given function string and extract:
 
@@ -328,22 +328,22 @@ def _analyze_func_string(func_string: str, need):
     try:
         func = ast.parse(func_string)
     except SyntaxError as e:
-        need_id = need["id"] or "UNKNOWN"
+        need_id = need["id"] if need else "UNKNOWN"
         raise SphinxError(f"Parsing function string failed for need {need_id}: {func_string}. {e}")
     try:
-        func_call = func.body[0].value
+        func_call = func.body[0].value  # type: ignore
         func_name = func_call.func.id
     except AttributeError:
         raise SphinxError(f"Given dynamic function string is not a valid python call. Got: {func_string}")
 
-    func_args = []
+    func_args: List[Any] = []
     for arg in func_call.args:
         if isinstance(arg, ast.Num):
             func_args.append(arg.n)
         elif isinstance(arg, (ast.Str, ast.BoolOp)):
-            func_args.append(arg.s)
+            func_args.append(arg.s)  # type: ignore
         elif isinstance(arg, ast.List):
-            arg_list = []
+            arg_list: List[Any] = []
             for element in arg.elts:
                 if isinstance(element, ast.Num):
                     arg_list.append(element.n)
@@ -351,7 +351,7 @@ def _analyze_func_string(func_string: str, need):
                     arg_list.append(element.s)
             func_args.append(arg_list)
         elif isinstance(arg, ast.Attribute):
-            if arg.value.id == "need" and need:
+            if arg.value.id == "need" and need:  # type: ignore
                 func_args.append(need[arg.attr])
             else:
                 raise FunctionParsingException("usage of need attribute not supported.")
@@ -367,7 +367,7 @@ def _analyze_func_string(func_string: str, need):
                 "Unsupported type found in function definition: {}. "
                 "Supported are numbers, strings, bool and list".format(func_string)
             )
-    func_kargs = {}
+    func_kargs: Dict[str, Any] = {}
     for keyword in func_call.keywords:
         kvalue = keyword.value
         kkey = keyword.arg
