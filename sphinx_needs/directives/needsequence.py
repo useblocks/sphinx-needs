@@ -259,7 +259,9 @@ def get_message_needs(
                 if filter:
                     from sphinx_needs.filter_common import filter_single_need
 
-                    if not filter_single_need(app, all_needs_dict[rec_id], filter, needs=all_needs_dict.values()):
+                    if not filter_single_need(
+                        all_needs_dict[rec_id], NeedsSphinxConfig(app.config), filter, needs=all_needs_dict.values()
+                    ):
                         continue
 
                 rec_data = {"id": rec_id, "title": all_needs_dict[rec_id]["title"], "messages": []}

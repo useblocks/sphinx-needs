@@ -14,7 +14,7 @@ from sphinx.util.docutils import SphinxDirective
 from sphinx_needs.api import add_need
 from sphinx_needs.api.exceptions import NeedsInvalidException
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.defaults import NEED_DEFAULT_OPTIONS
 from sphinx_needs.directives.needextend import (
@@ -366,11 +366,6 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     """
     Event handler to add title meta data (status, tags, links, ...) information to the Need node. Also processes
     constraints.
-
-    :param app:
-    :param doctree:
-    :param fromdocname:
-    :return:
     """
     needs_config = NeedsSphinxConfig(app.config)
     if not needs_config.include_needs:
@@ -381,18 +376,19 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
 
     env = app.env
     needs_data = SphinxNeedsData(env)
+    needs = needs_data.get_or_create_needs()
 
     # If no needs were defined, we do not need to do anything
-    if not needs_data.get_or_create_needs():
+    if not needs:
         return
 
     if not needs_data.needs_is_post_processed:
-        resolve_dynamic_values(env)
-        resolve_variants_options(env)
-        check_links(env)
-        create_back_links(env)
-        process_constraints(app)
-        extend_needs_data(app)
+        resolve_dynamic_values(needs, app)
+        resolve_variants_options(needs, needs_config, app.builder.tags.tags)
+        check_links(needs, needs_config)
+        create_back_links(needs, needs_config)
+        process_constraints(needs, needs_config)
+        extend_needs_data(needs, needs_data.get_or_create_extends(), needs_config)
         needs_data.needs_is_post_processed = True
 
     for extend_node in doctree.findall(Needextend):
@@ -429,16 +425,13 @@ def print_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
         build_need(layout, node_need, app, fromdocname=fromdocname)
 
 
-def check_links(env: BuildEnvironment) -> None:
+def check_links(needs: Dict[str, NeedsInfoType], config: NeedsSphinxConfig) -> None:
     """Checks if set links are valid or are dead (referenced need does not exist.)
 
     For needs with dead links, an extra ``has_dead_links`` field is added and,
     if the link is not allowed to be dead,
     the ``has_forbidden_dead_links`` field is also added.
     """
-    config = NeedsSphinxConfig(env.config)
-    data = SphinxNeedsData(env)
-    needs = data.get_or_create_needs()
     extra_links = config.extra_links
     for need in needs.values():
         for link_type in extra_links:
@@ -461,17 +454,13 @@ def check_links(env: BuildEnvironment) -> None:
                     break  # One found dead link is enough
 
 
-def create_back_links(env: BuildEnvironment) -> None:
+def create_back_links(needs: Dict[str, NeedsInfoType], config: NeedsSphinxConfig) -> None:
     """Create back-links in all found needs.
 
     These are fields for each link type, ``<link_name>_back``,
     which contain a list of all IDs of needs that link to the current need.
     """
-    data = SphinxNeedsData(env)
-    needs_config = NeedsSphinxConfig(env.config)
-    needs = data.get_or_create_needs()
-
-    for links in needs_config.extra_links:
+    for links in config.extra_links:
         option = links["option"]
         option_back = f"{option}_back"
 
