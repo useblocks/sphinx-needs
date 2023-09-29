@@ -746,6 +746,7 @@ def _merge_global_options(app: Sphinx, needs_info, global_options) -> None:
     """Add all global defined options to needs_info"""
     if global_options is None:
         return
+    config = NeedsSphinxConfig(app.config)
     for key, value in global_options.items():
         # If key already exists in needs_info, this global_option got overwritten manually in current need
         if key in needs_info and needs_info[key]:
@@ -762,7 +763,7 @@ def _merge_global_options(app: Sphinx, needs_info, global_options) -> None:
         for single_value in values:
             if len(single_value) < 2 or len(single_value) > 3:
                 raise NeedsInvalidException(f"global option tuple has wrong amount of parameters: {key}")
-            if filter_single_need(app, needs_info, single_value[1]):
+            if filter_single_need(needs_info, config, single_value[1]):
                 # Set value, if filter has matched
                 needs_info[key] = single_value[0]
             elif len(single_value) == 3 and (key not in needs_info.keys() or len(str(needs_info[key])) > 0):

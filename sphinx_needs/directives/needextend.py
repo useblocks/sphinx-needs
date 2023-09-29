@@ -7,12 +7,11 @@ from typing import Any, Callable, Dict, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
-from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.data import NeedsExtendType, NeedsInfoType, SphinxNeedsData
 from sphinx_needs.filter_common import filter_needs
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import add_doc
@@ -71,11 +70,10 @@ class NeedextendDirective(SphinxDirective):
         return [targetnode, Needextend("")]
 
 
-def extend_needs_data(app: Sphinx) -> None:
+def extend_needs_data(
+    all_needs: Dict[str, NeedsInfoType], extends: Dict[str, NeedsExtendType], needs_config: NeedsSphinxConfig
+) -> None:
     """Use data gathered from needextend directives to modify fields of existing needs."""
-    env = app.env
-    needs_config = NeedsSphinxConfig(env.config)
-    data = SphinxNeedsData(env)
 
     list_values = (
         ["tags", "links"]
@@ -84,9 +82,7 @@ def extend_needs_data(app: Sphinx) -> None:
     )  # back-links (incoming)
     link_names = [x["option"] for x in needs_config.extra_links]
 
-    all_needs = data.get_or_create_needs()
-
-    for current_needextend in data.get_or_create_extends().values():
+    for current_needextend in extends.values():
         need_filter = current_needextend["filter"]
         if need_filter in all_needs:
             # a single known ID
@@ -102,7 +98,7 @@ def extend_needs_data(app: Sphinx) -> None:
         else:
             # a filter string
             try:
-                found_needs = filter_needs(app, all_needs.values(), need_filter)
+                found_needs = filter_needs(all_needs.values(), needs_config, need_filter)
             except NeedsInvalidFilter as e:
                 raise NeedsInvalidFilter(
                     f"Filter not valid for needextend on page {current_needextend['docname']}:\n{e}"

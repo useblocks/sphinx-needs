@@ -123,6 +123,7 @@ class NeedimportDirective(SphinxDirective):
         if version not in needs_import_list["versions"].keys():
             raise VersionNotFound(f"Version {version} not found in needs import file {correct_need_import_path}")
 
+        needs_config = NeedsSphinxConfig(self.config)
         # TODO this is not exactly NeedsInfoType, because the export removes/adds some keys
         needs_list: Dict[str, NeedsInfoType] = needs_import_list["versions"][version]["needs"]
 
@@ -138,7 +139,7 @@ class NeedimportDirective(SphinxDirective):
                 # "content" is the sphinx internal name for this kind of information
                 filter_context["content"] = need["description"]  # type: ignore[typeddict-item]
                 try:
-                    if filter_single_need(self.env.app, filter_context, filter_string):
+                    if filter_single_need(filter_context, needs_config, filter_string):
                         needs_list_filtered[key] = need
                 except Exception as e:
                     logger.warning(
@@ -152,7 +153,7 @@ class NeedimportDirective(SphinxDirective):
         needs_list = needs_list_filtered
 
         # If we need to set an id prefix, we also need to manipulate all used ids in the imported data.
-        extra_links = NeedsSphinxConfig(self.config).extra_links
+        extra_links = needs_config.extra_links
         if id_prefix:
             for need in needs_list.values():
                 for id in needs_list:
