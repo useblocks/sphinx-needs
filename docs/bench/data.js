@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1695910018956,
+  "lastUpdate": 1695988468023,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -5256,6 +5256,42 @@ window.BENCHMARK_DATA = {
             "value": 77.67021260199999,
             "unit": "s",
             "extra": "Commit: 0f0ae771ffc1e9d37ca46921dc576a7abd4549ea\nBranch: master\nTime: 2023-09-28T10:59:28-03:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f1769b63ea02eea0e7933df4c86356bb3ef866e7",
+          "message": "♻️ Refactor needs post-processing function signatures (#1040)\n\nThis commit refactors the functions that post-process needs data, to only get passed what they actually require (rather than just `app` or `env`).\r\nThis makes it clearer what they are doing, and in all cases except `resolve_dynamic_values` effectively de-couples the post-processing from Sphinx, since you just need to pass them the needs data and needs configuration.",
+          "timestamp": "2023-09-29T08:45:25-03:00",
+          "tree_id": "5a565aad0f91e069549f07319ccfdc8211f4e218",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f1769b63ea02eea0e7933df4c86356bb3ef866e7"
+        },
+        "date": 1695988460584,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.292421126000022,
+            "unit": "s",
+            "extra": "Commit: f1769b63ea02eea0e7933df4c86356bb3ef866e7\nBranch: master\nTime: 2023-09-29T08:45:25-03:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 92.07588673099997,
+            "unit": "s",
+            "extra": "Commit: f1769b63ea02eea0e7933df4c86356bb3ef866e7\nBranch: master\nTime: 2023-09-29T08:45:25-03:00"
           }
         ]
       }
