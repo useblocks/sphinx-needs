@@ -257,7 +257,7 @@ class NeedsLookUpTableBuilder(Builder):
 
         version = getattr(env.config, "version", "unset")
         needs_list = NeedsList(env.config, self.outdir, self.srcdir)
-        filtered_needs = filter_needs(self.app, needs, filter_string)
+        filtered_needs: List[NeedsInfoType] = filter_needs(needs, needs_config, filter_string)
         for need in filtered_needs:
             needs_list.add_need(version, need)
         try:
