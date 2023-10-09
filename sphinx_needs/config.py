@@ -87,6 +87,8 @@ class NeedsSphinxConfig:
         super().__setattr__("_config", config)
 
     def __getattribute__(self, name: str) -> Any:
+        if name.startswith("__"):
+            return super().__getattribute__(name)
         return getattr(super().__getattribute__("_config"), f"needs_{name}")
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -232,7 +234,12 @@ class NeedsSphinxConfig:
     """path to needs_report_template file which is based on the conf.py directory."""
 
     constraints: dict[str, dict[str, str]] = field(default_factory=dict, metadata={"rebuild": "html", "types": (dict,)})
-    """Mapping of constraint name, to check name, to filter string."""
+    """Mapping of constraint name, to check name, to filter string.
+    There are also some special keys for a constraint:
+
+    - severity: The severity of the constraint. This is used to determine what to do if the constraint is not fulfilled.
+    - error_message: A help text for the constraint, can include Jinja2 variables.
+    """
     constraint_failed_options: dict[str, ConstraintFailedType] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
     )

@@ -30,22 +30,6 @@ class NeedsFilterType(TypedDict):
     amount: int
 
 
-class NeedsWorkflowType(TypedDict):
-    """
-    Used to store workflow status information for already executed tasks.
-    Some tasks like backlink_creation need be performed only once.
-    But most sphinx-events get called several times (for each single document file),
-    which would also execute our code several times...
-    """
-
-    backlink_creation_links: bool
-    dynamic_values_resolved: bool
-    links_checked: bool
-    add_sections: bool
-    variant_option_resolved: bool
-    needs_extended: bool
-
-
 class NeedsBaseDataType(TypedDict):
     """A base type for all data."""
 
@@ -122,9 +106,10 @@ class NeedsInfoType(NeedsBaseDataType):
     """Hexadecimal color code of the type."""
     type_style: str
 
-    # Used by needextend
     is_modified: bool
+    """Whether the need was modified by needextend."""
     modifications: int
+    """Number of modifications by needextend."""
 
     # parts information
     parts: dict[str, NeedsPartType]
@@ -165,6 +150,8 @@ class NeedsInfoType(NeedsBaseDataType):
     """Mapping of constraint name, to check name, to result."""
     constraints_passed: None | bool
     """True if all constraints passed, False if any failed, None if not yet checked."""
+    constraints_error: str
+    """An error message set if any constraint failed, and `error_message` field is set in config."""
 
     # additional source information
     doctype: str
@@ -257,11 +244,20 @@ class NeedsBarType(NeedsBaseDataType):
 
 
 class NeedsExtendType(NeedsBaseDataType):
-    """Data to modify an existing need."""
+    """Data to modify existing need(s)."""
 
     filter: None | str
+    """Single need ID or filter string to select multiple needs."""
     modifications: dict[str, str]
+    """Mapping of field name to new value.
+    If the field name starts with a ``+``, the new value is appended to the existing value.
+    If the field name starts with a ``-``, the existing value is cleared (new value is ignored).
+    """
     strict: bool
+    """If ``filter`` conforms to ``needs_id_regex``,
+    and is not an existing need ID,
+    whether to except the build (otherwise log-info message is written).
+    """
 
 
 class NeedsFilteredBaseType(NeedsBaseDataType):
@@ -435,27 +431,18 @@ class SphinxNeedsData:
             self.env.needs_all_docs = {"all": []}
         return self.env.needs_all_docs
 
-    def get_or_create_workflow(self) -> NeedsWorkflowType:
-        """Get workflow information.
-
-        This is lazily created and cached in the environment.
-        """
+    @property
+    def needs_is_post_processed(self) -> bool:
+        """Whether needs have been post-processed."""
         try:
-            return self.env.needs_workflow
+            return self.env.needs_is_post_processed
         except AttributeError:
-            self.env.needs_workflow = {
-                "backlink_creation_links": False,
-                "dynamic_values_resolved": False,
-                "links_checked": False,
-                "add_sections": False,
-                "variant_option_resolved": False,
-                "needs_extended": False,
-            }
-            # TODO use needs_config here
-            for link_type in self.env.app.config.needs_extra_links:
-                self.env.needs_workflow["backlink_creation_{}".format(link_type["option"])] = False
+            self.env.needs_is_post_processed = False
+        return self.env.needs_is_post_processed
 
-        return self.env.needs_workflow  # type: ignore[return-value]
+    @needs_is_post_processed.setter
+    def needs_is_post_processed(self, value: bool) -> None:
+        self.env.needs_is_post_processed = value
 
     def get_or_create_services(self) -> ServiceManager:
         """Get information about services.

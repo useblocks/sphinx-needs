@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType
 from sphinx_needs.filter_common import filter_needs, filter_single_need
 from sphinx_needs.utils import logger
@@ -151,7 +152,7 @@ def copy(
         need = needs[need_id]
 
     if filter:
-        result = filter_needs(app, needs.values(), filter, need)
+        result = filter_needs(needs.values(), NeedsSphinxConfig(app.config), filter, need)
         if result:
             need = result[0]
 
@@ -308,6 +309,7 @@ def check_linked_values(
     :param one_hit: If True, only one linked need must have a positive check
     :return: result, if all checks are positive
     """
+    needs_config = NeedsSphinxConfig(app.config)
     links = need["links"]
     if not isinstance(search_value, list):
         search_value = [search_value]
@@ -316,7 +318,7 @@ def check_linked_values(
         need = needs[link]
         if filter_string:
             try:
-                if not filter_single_need(app, need, filter_string):
+                if not filter_single_need(need, needs_config, filter_string):
                     continue
             except Exception as e:
                 logger.warning(f"CheckLinkedValues: Filter {filter_string} not valid: Error: {e} [needs]", type="needs")
@@ -417,6 +419,7 @@ def calc_sum(
 
     :return: A float number
     """
+    needs_config = NeedsSphinxConfig(app.config)
     check_needs = [needs[link] for link in need["links"]] if links_only else needs.values()
 
     calculated_sum = 0.0
@@ -424,7 +427,7 @@ def calc_sum(
     for check_need in check_needs:
         if filter:
             try:
-                if not filter_single_need(app, check_need, filter):
+                if not filter_single_need(check_need, needs_config, filter):
                     continue
             except ValueError:
                 pass
@@ -506,9 +509,10 @@ def links_from_content(
             raw_links.append(link[1])
 
     if filter:
+        needs_config = NeedsSphinxConfig(app.config)
         filtered_links = []
         for link in raw_links:
-            if link not in filtered_links and filter_single_need(app, needs[link], filter):
+            if link not in filtered_links and filter_single_need(needs[link], needs_config, filter):
                 filtered_links.append(link)
         return filtered_links
 

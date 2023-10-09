@@ -1,4 +1,3 @@
-import copy
 import os
 from typing import Iterable, List, Sequence
 
@@ -112,9 +111,10 @@ class NeedpieDirective(FilterBase):
 def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
     env = app.env
     needs_data = SphinxNeedsData(env)
+    needs_config = NeedsSphinxConfig(env.config)
 
     # NEEDFLOW
-    include_needs = NeedsSphinxConfig(env.config).include_needs
+    include_needs = needs_config.include_needs
     # for node in doctree.findall(Needpie):
     for node in found_nodes:
         if not include_needs:
@@ -147,7 +147,7 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
                 if line.isdigit():
                     sizes.append(abs(float(line)))
                 else:
-                    result = len(filter_needs(app, need_list, line))
+                    result = len(filter_needs(need_list, needs_config, line))
                     sizes.append(result)
         elif current_needpie["filter_func"] and not content:
             try:
@@ -156,7 +156,7 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
                 # execute filter_func code
                 # Provides only a copy of needs to avoid data manipulations.
                 context = {
-                    "needs": copy.deepcopy(need_list),
+                    "needs": need_list,
                     "results": [],
                 }
                 args = []
