@@ -3,6 +3,7 @@ import json
 import os.path
 import secrets
 import shutil
+import socket
 import string
 import tempfile
 from pathlib import Path
@@ -70,18 +71,32 @@ def test_server(xprocess, sphinx_test_tempdir):
     :param sphinx_test_tempdir: The directory to serve.
     :return: Information about the server process.
     """
+    addr = "127.0.0.1"
+    port = 62343
 
     class Starter(ProcessStarter):
-        pattern = "Serving HTTP on [0-9.]+ port [0-9]+"
-        timeout = 10
+        pattern = "Serving HTTP"
+        timeout = 20
         terminate_on_interrupt = True
-        args = ["python", "-m", "http.server", "--directory", sphinx_test_tempdir, "--bind", "127.0.0.1", "62343"]
+        args = ["python", "-m", "http.server", "--directory", sphinx_test_tempdir, "--bind", addr, port]
 
-    # Start the process and ensure it is running
-    logfile = xprocess.ensure("http_server", Starter)  # noqa:F841
+        # checks if our server is ready with a ping
+
+    def check_server_connection():
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        result = sock.connect_ex((addr, port))
+        sock.close()
+        if result == 0:
+            print("Serving HTTP on 127.0.0.1 port 62343 (http://127.0.0.1:62343/) ...")
+            return True
+        return False
 
     http_server_process = xprocess.getinfo("http_server")
-    server_url = "http://localhost:62343"
+    if not check_server_connection():
+        # Start the process and ensure it is running
+        logfile = xprocess.ensure("http_server", Starter)  # noqa:F841
+
+    server_url = f"http://{addr}:{port}"
     http_server_process.url = server_url
 
     yield http_server_process
