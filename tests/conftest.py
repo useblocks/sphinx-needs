@@ -4,15 +4,15 @@ from tempfile import mkdtemp
 
 import pytest
 from docutils.nodes import document
-from sphinx.testing.path import path
+from pathlib import Path
 from syrupy.extensions.single_file import SingleFileSnapshotExtension, WriteMode
 
 pytest_plugins = "sphinx.testing.fixtures"
 
 
 def copy_srcdir_to_tmpdir(srcdir, tmp):
-    srcdir = path(__file__).parent.abspath() / srcdir
-    tmproot = tmp / path(srcdir).basename()
+    srcdir = Path(__file__).parent.resolve() / srcdir
+    tmproot = tmp / Path(srcdir).name
     shutil.copytree(srcdir, tmproot)
     return tmproot
 
@@ -21,12 +21,12 @@ def copy_srcdir_to_tmpdir(srcdir, tmp):
 def test_app(make_app, request):
     # We create a temp-folder on our own, as the util-functions from sphinx and pytest make troubles.
     # It seems like they reuse certain-temp names
-    sphinx_test_tempdir = path(mkdtemp())
+    sphinx_test_tempdir = Path(mkdtemp())
 
     builder_params = request.param
 
     # copy plantuml.jar to current test temdir
-    plantuml_jar_file = path(__file__).parent.abspath() / "doc_test/utils"
+    plantuml_jar_file = Path(__file__).parent.resolve() / "doc_test/utils"
     shutil.copytree(plantuml_jar_file, sphinx_test_tempdir / "utils")
 
     # copy test srcdir to test temporary directory sphinx_test_tempdir
