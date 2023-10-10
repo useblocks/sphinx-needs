@@ -4,7 +4,7 @@ from typing import Iterable, List
 from jinja2 import Environment, PackageLoader, select_autoescape
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
-from sphinx.util import status_iterator
+from sphinx.util.display import status_iterator
 from sphinx.util.console import brown  # type: ignore[attr-defined]
 from sphinx.util.osutil import copyfile
 
