@@ -1,4 +1,4 @@
-sphinx>=4.0,<6.0
+sphinx>=4.0,<8.0
 sphinxcontrib-plantuml
 sphinx-needs
 matplotlib
