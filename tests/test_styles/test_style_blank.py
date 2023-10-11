@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import pytest
-from sphinx.builders.html import StandaloneHTMLBuilder
 
 
 @pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_style_blank"}], indirect=True)

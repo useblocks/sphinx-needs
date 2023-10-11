@@ -1,10 +1,10 @@
 """Pytest conftest module containing common test configuration and fixtures."""
 import shutil
+from pathlib import Path
 from tempfile import mkdtemp
 
 import pytest
 from docutils.nodes import document
-from pathlib import Path
 from syrupy.extensions.single_file import SingleFileSnapshotExtension, WriteMode
 
 pytest_plugins = "sphinx.testing.fixtures"

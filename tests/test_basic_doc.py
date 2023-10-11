@@ -106,12 +106,14 @@ def test_html_head_files(test_app):
     script_nodes = root_tree.xpath("/html/head/script")
     script_files = [x.attrib["src"] for x in script_nodes]
     # scripts links '_static/sphinx-needs/libs/html/datatables.min.js?v=8a4aee21'
-    script_files_datatables = [x for x in script_files if x.startswith('_static/sphinx-needs/libs/html/datatables.min.js')]
+    script_files_datatables = [
+        x for x in script_files if x.startswith("_static/sphinx-needs/libs/html/datatables.min.js")
+    ]
     assert len(script_files_datatables) == 1
 
     link_nodes = root_tree.xpath("/html/head/link")
     link_files = [x.attrib["href"] for x in link_nodes]
-    script_files_theme = [x for x in link_files if x.startswith('_static/sphinx-needs/modern.css')]
+    script_files_theme = [x for x in link_files if x.startswith("_static/sphinx-needs/modern.css")]
     assert len(script_files_theme) == 1
 
     # Checks if not \ (Backslash) is found as path of js/css files
