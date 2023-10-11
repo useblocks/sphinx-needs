@@ -26,49 +26,16 @@ def safe_add_file(filename: Path, app: Sphinx) -> None:
     :param app: app object
     :return: None
     """
-    builder = app.builder
     # Use PurePosixPath, so that the path can be used as "web"-path
     pure_path = PurePosixPath(filename)
-    static_data_file = PurePosixPath("_static") / pure_path
 
     if pure_path.suffix == ".js":
         # Make sure the calculated (posix)-path is not already registered as "web"-path
-        if hasattr(builder, "script_files") and str(static_data_file) not in builder.script_files:
-            app.add_js_file(str(pure_path))
+        app.add_js_file(str(pure_path))
     elif pure_path.suffix == ".css":
-        if hasattr(builder, "css_files") and str(static_data_file) not in builder.css_files:
-            app.add_css_file(str(pure_path))
+        app.add_css_file(str(pure_path))
     else:
         raise NotImplementedError(f"File type {pure_path.suffix} not support by save_add_file")
-
-
-def safe_remove_file(filename: Path, app: Sphinx) -> None:
-    """
-    Removes a given resource file from builder resources.
-
-    Needed mostly during test, if multiple sphinx-build are started. During these tests
-    js/cass-files are not cleaned, so a css_file from run A is still registered in run
-    B.
-
-    :param filename: filename to remove
-    :param app: app object
-    :return: None
-    """
-    static_data_file = PurePosixPath(Path("_static") / filename)
-
-    def _remove_file(file: PurePosixPath, attribute: str) -> None:
-        files = getattr(app.builder, attribute, [])
-        if str(file) in files:
-            files.remove(str(file))
-
-    attributes = {
-        ".js": "script_files",
-        ".css": "css_files",
-    }
-
-    attribute = attributes.get(filename.suffix)
-    if attribute:
-        _remove_file(static_data_file, attribute)
 
 
 # Base implementation from sphinxcontrib-images
@@ -93,11 +60,6 @@ def install_styles_static_files(app: Sphinx, env: BuildEnvironment) -> None:
 
     files_to_copy = [Path("common.css")]
     files_to_copy.extend(_find_css_files())
-
-    # Be sure no "old" css layout is already set
-    for theme in ["common", "modern", "dark", "blank"]:
-        path = Path("sphinx-needs") / f"{theme}.css"
-        safe_remove_file(path, app)
 
     for source_file_path in status_iterator(
         files_to_copy,
