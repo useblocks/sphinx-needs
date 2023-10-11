@@ -102,6 +102,7 @@ module = [
   "requests_file",
   "sphinx_data_viewer.*",
   "sphinxcontrib.plantuml.*",
+  "sphinx.util.display",
 ]
 ignore_missing_imports = true
 

@@ -7,7 +7,7 @@ from nox_poetry import session
 # custom local tests
 
 PYTHON_VERSIONS = ["3.9", "3.10", "3.11"]
-SPHINX_VERSIONS = ["7.0.1", "7.1.2", "7.2.6"]
+SPHINX_VERSIONS = ["7.2.0", "7.2.6"]
 DOCUTILS_VERSIONS = ["0.19", "0.20", "0.20.1"]
 
 
