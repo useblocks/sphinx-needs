@@ -105,7 +105,7 @@ def test_html_head_files(test_app):
     root_tree = html_parser.parse(html_path)
     script_nodes = root_tree.xpath("/html/head/script")
     script_files = [x.attrib["src"] for x in script_nodes]
-    # scripts links '_static/sphinx-needs/libs/html/datatables.min.js?v=8a4aee21'
+    # script links look like '_static/sphinx-needs/libs/html/datatables.min.js?v=8a4aee21'
     script_files_datatables = [
         x for x in script_files if x.startswith("_static/sphinx-needs/libs/html/datatables.min.js")
     ]
