@@ -33,9 +33,8 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4"
-sphinx = ">=7.2.5"
-# sphinx = { path = "../sphinx/", develop = true }
-docutils = ">=0.15"
+sphinx = ">=7.2"
+docutils = ">=0.19"
 
 matplotlib = ">=3.3.0"  # needpie
 requests-file = "^1.5.1"  # external links
