@@ -6,9 +6,9 @@ from nox_poetry import session
 # This list can contain more versions as used by the github workflows to support
 # custom local tests
 
-PYTHON_VERSIONS = ["3.8", "3.10", "3.11"]
-SPHINX_VERSIONS = ["7.2.5", "5.2.1", "4.5.0"]
-DOCUTILS_VERSIONS = ["0.19", "0.17", "0.16", "0.15"]
+PYTHON_VERSIONS = ["3.9", "3.10", "3.11"]
+SPHINX_VERSIONS = ["7.2.5"]
+DOCUTILS_VERSIONS = ["0.19", "0.20", "0.20.1"]
 
 
 TEST_DEPENDENCIES = [
