@@ -10,18 +10,18 @@ jobs:
         os: ["ubuntu-latest"]
         # 3.9.8 seems to be broken with type_ast
         # https://www.mail-archive.com/debian-bugs-dist@lists.debian.org/msg1829077.html
-        python-version: ["3.8", "3.10"]
-        sphinx-version: ['5.2.1', '4.5.0']
-        docutils-version: ['0.19', '0.15']
+        python-version: ["3.9", "3.10", "3.11"]
+        sphinx-version: ["7.0.1", "7.1.2", "7.2.6"]
+        docutils-version: ["0.19", "0.20", "0.20.1"]
         exclude:
           - sphinx-version: "4.5.0"
             docutils-version: "0.19"
         include:
           # Check only newest setups for win server
           - os: "windows-latest"
-            python-version: "3.8"
-            sphinx-version: "4.5.0"
-            docutils-version: "0.15"
+            python-version: "3.11"
+            sphinx-version: "7.2.6"
+            docutils-version: "0.20.1"
     steps:
       - uses: actions/checkout@v4
       - name: Set Up Python ${{ matrix.python-version }}
