@@ -13,5 +13,9 @@ TEST DOCUMENT
 .. spec:: title_example_layout
    :layout: example
 
+.. spec:: title_layout_optional_author
+   :layout: optional_author
+   :author: some author
+
 .. spec:: title_layout_footer_grid
    :layout: footer_grid

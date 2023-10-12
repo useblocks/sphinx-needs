@@ -397,7 +397,7 @@ class LayoutHandler:
                     node.replace(child, new_child)  # type: ignore[attr-defined]
                 return_nodes.append(node)
             else:
-                node_str = str(node)
+                node_str = node.astext()
                 # func_elements = re.findall(r'<<([a-z_()]*)>>', node_str)
                 node_line = nodes.inline()
 
@@ -486,7 +486,7 @@ class LayoutHandler:
         Returns the specific metadata of a need inside docutils nodes.
         Usage::
 
-            <<meta('status', prefix='**status**', show_empty=True)>>
+            <<meta('status', prefix='\\*\\*status\\*\\*: ', show_empty=True)>>
 
         :param name: name of the need item
         :param prefix: string as rst-code, will be added infront of the value output
