@@ -488,6 +488,10 @@ class LayoutHandler:
 
             <<meta('status', prefix='\\*\\*status\\*\\*: ', show_empty=True)>>
 
+        .. note::
+
+           You must escape all rst_content in your function strings! E.g. to get `**` one must use `\\\\*\\\\*`.
+
         :param name: name of the need item
         :param prefix: string as rst-code, will be added infront of the value output
         :param show_empty: If false and requested need-value is None or '', no output is returned. Default: false
