@@ -28,7 +28,7 @@ from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import get_logger
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
-from sphinx_needs.utils import jinja_parse, unwrap
+from sphinx_needs.utils import jinja_parse
 
 logger = get_logger(__name__)
 
@@ -337,6 +337,12 @@ def add_need(
         "external_css": external_css or "external_link",
         "is_modified": False,  # needed by needextend
         "modifications": 0,  # needed by needextend
+        # these are set later in the analyse_need_locations transform
+        "sections": [],
+        "section_name": "",
+        "signature": "",
+        "parent_needs": [],
+        "parent_need": "",
     }
     needs_extra_option_names = list(NEEDS_CONFIG.extra_options)
     _merge_extra_options(needs_info, kwargs, needs_extra_option_names)
@@ -436,8 +442,9 @@ def add_need(
     node_need.line = needs_info["lineno"]
 
     if needs_info["hide"]:
-        # add node to doctree, so we can later compute the containing section(s)
-        # (for use with section filters)
+        # still add node to doctree,
+        # so we can later compute its relative location in the document
+        # (see analyse_need_locations function)
         node_need["hidden"] = True
         return [node_need]
 
@@ -505,7 +512,7 @@ def del_need(app: Sphinx, need_id: str) -> None:
     :param app: Sphinx application object.
     :param need_id: Sphinx need id.
     """
-    env = unwrap(app.env)
+    env = app.env
     needs = SphinxNeedsData(env).get_or_create_needs()
     if need_id in needs:
         del needs[need_id]
@@ -739,6 +746,7 @@ def _merge_global_options(app: Sphinx, needs_info, global_options) -> None:
     """Add all global defined options to needs_info"""
     if global_options is None:
         return
+    config = NeedsSphinxConfig(app.config)
     for key, value in global_options.items():
         # If key already exists in needs_info, this global_option got overwritten manually in current need
         if key in needs_info and needs_info[key]:
@@ -755,7 +763,7 @@ def _merge_global_options(app: Sphinx, needs_info, global_options) -> None:
         for single_value in values:
             if len(single_value) < 2 or len(single_value) > 3:
                 raise NeedsInvalidException(f"global option tuple has wrong amount of parameters: {key}")
-            if filter_single_need(app, needs_info, single_value[1]):
+            if filter_single_need(needs_info, config, single_value[1]):
                 # Set value, if filter has matched
                 needs_info[key] = single_value[0]
             elif len(single_value) == 3 and (key not in needs_info.keys() or len(str(needs_info[key])) > 0):

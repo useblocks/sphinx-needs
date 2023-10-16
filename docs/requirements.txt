@@ -7,4 +7,4 @@ sphinxcontrib-programoutput
 sphinx-design
 click
 tabulate
-sphinx-immaterial==0.11.6
+sphinx-immaterial==0.11.7

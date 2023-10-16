@@ -15,7 +15,7 @@ from sphinx_needs.directives.utils import (
     used_filter_paragraph,
 )
 from sphinx_needs.filter_common import FilterBase, process_filters
-from sphinx_needs.utils import add_doc, check_and_calc_base_url_rel_path, unwrap
+from sphinx_needs.utils import add_doc, check_and_calc_base_url_rel_path
 
 
 class Needlist(nodes.General, nodes.Element):
@@ -64,8 +64,8 @@ def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
     Replace all needlist nodes with a list of the collected needs.
     Augment each need with a backlink to the original location.
     """
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    builder = app.builder
+    env = app.env
 
     include_needs = NeedsSphinxConfig(env.config).include_needs
     # for node in doctree.findall(Needlist):

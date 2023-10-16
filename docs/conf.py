@@ -62,6 +62,13 @@ intersphinx_mapping = {
     "sphinx": ("https://www.sphinx-doc.org/en/master", None),
 }
 
+nitpicky = True
+nitpick_ignore = [
+    ("py:class", "T"),
+    ("py:class", "sphinx_needs.debug.T"),
+    ("py:class", "sphinx_needs.data.NeedsInfoType"),
+]
+
 # smartquotes = False
 
 needs_debug_measurement = True
@@ -360,6 +367,9 @@ needs_render_context = {
 
 # build needs.json to make permalinks work
 needs_build_json = True
+
+# build needs_json for every needs-id to make detail panel
+needs_build_json_per_id = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

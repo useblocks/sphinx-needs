@@ -25,7 +25,7 @@ from sphinx.environment.collectors.asset import DownloadFileCollector, ImageColl
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
-from sphinx_needs.utils import INTERNALS, match_string_link, unwrap
+from sphinx_needs.utils import INTERNALS, match_string_link
 
 
 @measure_time("need")
@@ -44,7 +44,7 @@ def create_need(
     :param docname: Needed for calculating references
     :return:
     """
-    env = app.builder.env
+    env = app.env
     needs = SphinxNeedsData(env).get_or_create_needs()
 
     if need_id not in needs.keys():
@@ -145,7 +145,7 @@ def build_need(
     The level structure must be kept, otherwise docutils can not handle it!
     """
 
-    env = app.builder.env
+    env = app.env
     needs = SphinxNeedsData(env).get_or_create_needs()
     node_container = nodes.container()
 
@@ -763,8 +763,8 @@ class LayoutHandler:
         :return: An inline docutils node element
         :rtype: :class: docutils.nodes.inline
         """
-        builder = unwrap(self.app.builder)
-        env = unwrap(builder.env)
+        builder = self.app.builder
+        env = self.app.env
 
         data_container = nodes.inline()
         if prefix:
@@ -934,7 +934,7 @@ class LayoutHandler:
         :param initial: If True, initial status will hide rows after loading page.
         :return: docutils nodes
         """
-        builder = unwrap(self.app.builder)
+        builder = self.app.builder
         if any(x in builder.name.upper() for x in ["PDF", "LATEX"]):
             # PDF/Latex output do not support collapse functions
             return None

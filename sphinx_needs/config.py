@@ -8,6 +8,12 @@ from sphinx.config import Config as _SphinxConfig
 
 from sphinx_needs.defaults import DEFAULT_DIAGRAM_TEMPLATE, NEEDS_TABLES_CLASSES
 
+try:
+    from typing import Literal, TypedDict
+except ImportError:
+    # introduced in python 3.8
+    from typing_extensions import Literal, TypedDict  # type: ignore
+
 if TYPE_CHECKING:
     from sphinx.util.logging import SphinxLoggerAdapter
 
@@ -54,6 +60,17 @@ class Config:
 NEEDS_CONFIG = Config()
 
 
+class ConstraintFailedType(TypedDict):
+    """Defines what to do if a constraint is not fulfilled"""
+
+    on_fail: list[Literal["warn", "break"]]
+    """warn: log a warning, break: raise a ``NeedsConstraintFailed`` exception"""
+    style: list[str]
+    """How to style the rendered need."""
+    force_style: bool
+    """If True, append styles to existing styles, else replace existing styles."""
+
+
 @dataclass
 class NeedsSphinxConfig:
     """A wrapper around the Sphinx configuration,
@@ -70,6 +87,8 @@ class NeedsSphinxConfig:
         super().__setattr__("_config", config)
 
     def __getattribute__(self, name: str) -> Any:
+        if name.startswith("__"):
+            return super().__getattribute__(name)
         return getattr(super().__getattribute__("_config"), f"needs_{name}")
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -214,12 +233,19 @@ class NeedsSphinxConfig:
     report_template: str = field(default="", metadata={"rebuild": "html", "types": (str,)})
     """path to needs_report_template file which is based on the conf.py directory."""
 
-    # add constraints option
-    constraints: dict[str, dict[str, Any]] = field(default_factory=dict, metadata={"rebuild": "html", "types": (dict,)})
-    constraint_failed_options: dict[str, dict[str, Any]] = field(
+    constraints: dict[str, dict[str, str]] = field(default_factory=dict, metadata={"rebuild": "html", "types": (dict,)})
+    """Mapping of constraint name, to check name, to filter string.
+    There are also some special keys for a constraint:
+
+    - severity: The severity of the constraint. This is used to determine what to do if the constraint is not fulfilled.
+    - error_message: A help text for the constraint, can include Jinja2 variables.
+    """
+    constraint_failed_options: dict[str, ConstraintFailedType] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
     )
+    """Mapping of constraint severity to what to do if a constraint is not fulfilled."""
     constraints_failed_color: str = field(default="", metadata={"rebuild": "html", "types": (str,)})
+    """DEPRECATED: Use constraint_failed_options instead."""
 
     # add variants option
     variants: dict[str, str] = field(default_factory=dict, metadata={"rebuild": "html", "types": (dict,)})
@@ -230,6 +256,9 @@ class NeedsSphinxConfig:
     """Jinja context for rendering templates"""
 
     debug_measurement: bool = field(default=False, metadata={"rebuild": "html", "types": (bool,)})
+    # add config for needs_id_builder
+    build_json_per_id: bool = field(default=False, metadata={"rebuild": "html", "types": (bool,)})
+    build_json_per_id_path: str = field(default="needs_id", metadata={"rebuild": "html", "types": (str,)})
 
     @classmethod
     def add_config_values(cls, app: Sphinx) -> None:

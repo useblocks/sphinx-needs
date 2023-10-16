@@ -12,7 +12,7 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.diagrams_common import create_legend
 from sphinx_needs.filter_common import FilterBase, process_filters
-from sphinx_needs.utils import add_doc, row_col_maker, unwrap
+from sphinx_needs.utils import add_doc, row_col_maker
 
 
 class Needfilter(nodes.General, nodes.Element):
@@ -74,8 +74,8 @@ def process_needfilters(
 ) -> None:
     # Replace all needlist nodes with a list of the collected needs.
     # Augment each need with a backlink to the original location.
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    builder = app.builder
+    env = app.env
     needs_config = NeedsSphinxConfig(env.config)
     all_needs = SphinxNeedsData(env).get_or_create_needs()
 

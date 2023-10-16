@@ -1,4 +1,6 @@
-from sphinx.application import Sphinx
+from typing import Dict
+
+import jinja2
 
 from sphinx_needs.api.exceptions import NeedsConstraintFailed, NeedsConstraintNotAllowed
 from sphinx_needs.config import NeedsSphinxConfig
@@ -9,102 +11,90 @@ from sphinx_needs.logging import get_logger
 logger = get_logger(__name__)
 
 
-def process_constraints(app: Sphinx, need: NeedsInfoType) -> None:
+def process_constraints(needs: Dict[str, NeedsInfoType], config: NeedsSphinxConfig) -> None:
+    """Analyse constraints of all needs,
+    and set corresponding fields on the need data item:
+    ``constraints_passed`` and ``constraints_results``.
+
+    The ``style`` field may also be changed, if a constraint fails
+    (depending on the config value ``constraint_failed_options``)
     """
-    Finally creates the need-node in the docurils node-tree.
+    config_constraints = config.constraints
 
-    :param app: sphinx app for access to config files
-    :param need: need object to process
-    """
-    needs_config = NeedsSphinxConfig(app.config)
-    config_constraints = needs_config.constraints
+    error_templates_cache: Dict[str, jinja2.Template] = {}
 
-    need_id = need["id"]
+    for need in needs.values():
+        need_id = need["id"]
+        constraints = need["constraints"]
 
-    constraints = need["constraints"]
+        # flag that is set to False if any check fails
+        need["constraints_passed"] = True
 
-    for constraint in constraints:
-        # check if constraint is defined in config
-        if constraint not in config_constraints.keys():
-            raise NeedsConstraintNotAllowed(
-                f"Constraint {constraint} of need id {need_id} is not allowed by config value 'needs_constraints'."
-            )
-        else:
-            # access constraints defined in conf.py
-            executable_constraints = config_constraints[constraint]
-
-            # lazily gather all results to determine results_passed later
-            results_list = []
+        for constraint in constraints:
+            try:
+                executable_constraints = config_constraints[constraint]
+            except KeyError:
+                # Note, this is already checked for in add_need
+                raise NeedsConstraintNotAllowed(
+                    f"Constraint {constraint} of need id {need_id} is not allowed by config value 'needs_constraints'."
+                )
 
             # name is check_0, check_1, ...
             for name, cmd in executable_constraints.items():
-                # compile constraint and check single need if it fulfills constraint
-                if name != "severity":
-                    # check current need if it meets constraint given in check_0, check_1 in conf.py ...
-                    constraint_passed = filter_single_need(app, need, cmd)
-                    results_list.append(constraint_passed)
+                if name in ("severity", "error_message"):
+                    # special keys, that are not a check
+                    continue
 
-                    if not constraint_passed:
-                        # prepare structure per name
-                        if constraint not in need["constraints_results"]:
-                            need["constraints_results"][constraint] = {}
+                # compile constraint and check if need fulfils it
+                constraint_passed = filter_single_need(need, config, cmd)
 
-                        # defines what to do if a constraint is not fulfilled. from conf.py
-                        constraint_failed_options = needs_config.constraint_failed_options
+                if constraint_passed:
+                    need["constraints_results"].setdefault(constraint, {})[name] = True
+                else:
+                    need["constraints_results"].setdefault(constraint, {})[name] = False
+                    need["constraints_passed"] = False
 
-                        # prepare structure for check_0, check_1 ...
-                        if name not in need["constraints_results"][constraint]:
-                            need["constraints_results"][constraint][name] = {}
+                    if "error_message" in executable_constraints:
+                        msg = str(executable_constraints["error_message"])
+                        template = error_templates_cache.setdefault(msg, jinja2.Template(msg))
+                        need["constraints_error"] = template.render(**need)
 
-                        need["constraints_results"][constraint][name] = False
+                    if "severity" not in executable_constraints:
+                        raise NeedsConstraintFailed(
+                            f"'severity' key not set for constraint {constraint!r} in config 'needs_constraints'"
+                        )
+                    severity = executable_constraints["severity"]
+                    if severity not in config.constraint_failed_options:
+                        raise NeedsConstraintFailed(
+                            f"Severity {severity!r} not set in config 'needs_constraint_failed_options'"
+                        )
+                    failed_options = config.constraint_failed_options[severity]
 
-                        # severity of failed constraint
-                        severity = executable_constraints["severity"]
+                    # log/except if needed
+                    if "warn" in failed_options.get("on_fail", []):
+                        logger.warning(
+                            f"Constraint {cmd} for need {need_id} FAILED! severity: {severity} {need.get('constraints_error', '')} [needs.constraint]",
+                            type="needs",
+                            subtype="constraint",
+                            color="red",
+                            location=(need["docname"], need["lineno"]),
+                        )
+                    if "break" in failed_options.get("on_fail", []):
+                        raise NeedsConstraintFailed(
+                            f"FAILED a breaking constraint: >> {cmd} << for need "
+                            f"{need_id} FAILED! breaking build process"
+                        )
 
-                        # configurable force of constraint failed style
-                        force_style = constraint_failed_options[severity]["force_style"]
-
-                        actions_on_fail = constraint_failed_options[severity]["on_fail"]
-                        style_on_fail = constraint_failed_options[severity]["style"]
-
-                        if "warn" in actions_on_fail:
-                            logger.warning(
-                                f"Constraint {cmd} for need {need_id} FAILED! severity: {severity} [needs]",
-                                type="needs",
-                                color="red",
-                            )
-
-                        if "break" in actions_on_fail:
-                            raise NeedsConstraintFailed(
-                                f"FAILED a breaking constraint: >> {cmd} << for need "
-                                f"{need_id} FAILED! breaking build process"
-                            )
-
-                        old_style = need["style"]
-
-                        # append to style if present
-                        if old_style and len(old_style) > 0:
-                            new_styles = "".join(", " + x for x in style_on_fail)
-                        else:
-                            old_style = ""
-                            new_styles = "".join(x + "," for x in style_on_fail)
-
-                        if force_style:
-                            need["style"] = new_styles.strip(", ")
-                        else:
-                            constraint_failed_style = old_style + new_styles
-                            need["style"] = constraint_failed_style
-
+                    # set styles
+                    old_style = need["style"]
+                    if old_style and len(old_style) > 0:
+                        new_styles = "".join(", " + x for x in failed_options.get("style", []))
                     else:
-                        # constraint is met, fill corresponding need attributes
+                        old_style = ""
+                        new_styles = "".join(x + "," for x in failed_options.get("style", []))
 
-                        # prepare structure
-                        if constraint not in need["constraints_results"].keys():
-                            need["constraints_results"][constraint] = {}
-                        need["constraints_results"][constraint][name] = constraint_passed
-
-            # access all previous results, if one check failed, set constraints_passed to False for easy filtering
-            if False in results_list:
-                need["constraints_passed"] = False
-            else:
-                need["constraints_passed"] = True
+                    if failed_options.get("force_style", False):
+                        need["style"] = new_styles.strip(", ")
+                    else:
+                        constraint_failed_style = old_style + new_styles
+                        need["style"] = constraint_failed_style

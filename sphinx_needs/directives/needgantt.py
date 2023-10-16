@@ -135,7 +135,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
 
 def process_needgantt(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
     # Replace all needgantt nodes with a list of the collected needs.
-    env = app.builder.env
+    env = app.env
     needs_config = NeedsSphinxConfig(app.config)
 
     # link_types = needs_config.extra_links
@@ -214,7 +214,7 @@ def process_needgantt(app: Sphinx, doctree: nodes.document, fromdocname: str, fo
             complete = None
 
             if current_needgantt["milestone_filter"]:
-                is_milestone = filter_single_need(app, need, current_needgantt["milestone_filter"])
+                is_milestone = filter_single_need(need, needs_config, current_needgantt["milestone_filter"])
             else:
                 is_milestone = False
 
@@ -259,7 +259,7 @@ def process_needgantt(app: Sphinx, doctree: nodes.document, fromdocname: str, fo
         puml_node["uml"] += "\n' Constraints definition \n\n"
         for need in found_needs:
             if current_needgantt["milestone_filter"]:
-                is_milestone = filter_single_need(app, need, current_needgantt["milestone_filter"])
+                is_milestone = filter_single_need(need, needs_config, current_needgantt["milestone_filter"])
             else:
                 is_milestone = False
             for con_type in ("starts_with_links", "starts_after_links", "ends_with_links"):

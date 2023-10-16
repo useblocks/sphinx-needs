@@ -10,7 +10,7 @@ from sphinx.application import Sphinx
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
-from sphinx_needs.utils import add_doc, save_matplotlib_figure, unwrap
+from sphinx_needs.utils import add_doc, save_matplotlib_figure
 
 if not os.environ.get("DISPLAY"):
     matplotlib.use("Agg")
@@ -168,8 +168,7 @@ class NeedbarDirective(FilterBase):
 # 9. final storage
 # 10. cleanup matplotlib
 def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    env = app.env
     needs_config = NeedsSphinxConfig(env.config)
 
     # NEEDFLOW
@@ -272,7 +271,7 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
                 if element.isdigit():
                     line_number.append(float(element))
                 else:
-                    result = len(filter_needs(app, need_list, element))
+                    result = len(filter_needs(need_list, needs_config, element))
                     line_number.append(float(result))
             local_data_number.append(line_number)
 

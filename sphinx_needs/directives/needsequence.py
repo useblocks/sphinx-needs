@@ -21,7 +21,7 @@ from sphinx_needs.diagrams_common import (
 )
 from sphinx_needs.filter_common import FilterBase
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import add_doc, unwrap
+from sphinx_needs.utils import add_doc
 
 logger = get_logger(__name__)
 
@@ -76,8 +76,7 @@ def process_needsequence(
     app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
 ) -> None:
     # Replace all needsequence nodes with a list of the collected needs.
-    builder = unwrap(app.builder)
-    env = unwrap(builder.env)
+    env = app.env
     needs_data = SphinxNeedsData(env)
     all_needs_dict = needs_data.get_or_create_needs()
 
@@ -260,7 +259,9 @@ def get_message_needs(
                 if filter:
                     from sphinx_needs.filter_common import filter_single_need
 
-                    if not filter_single_need(app, all_needs_dict[rec_id], filter, needs=all_needs_dict.values()):
+                    if not filter_single_need(
+                        all_needs_dict[rec_id], NeedsSphinxConfig(app.config), filter, needs=all_needs_dict.values()
+                    ):
                         continue
 
                 rec_data = {"id": rec_id, "title": all_needs_dict[rec_id]["title"], "messages": []}

@@ -350,8 +350,9 @@ class JinjaFunctions:
         """
         Return a list of found needs that pass the given filter string.
         """
+        needs_config = NeedsSphinxConfig(self.app.config)
 
-        return filter_needs(self.app, list(self.needs.values()), filter_string=filter_string)
+        return filter_needs(list(self.needs.values()), needs_config, filter_string=filter_string)
 
     def imports(self, *args):
         if not self.parent_need_id:
@@ -405,7 +406,7 @@ def is_element_of_need(node: nodes.Element) -> str:
 
 @measure_time("needuml")
 def process_needuml(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
-    env = app.builder.env
+    env = app.env
 
     # for node in doctree.findall(Needuml):
     for node in found_nodes:

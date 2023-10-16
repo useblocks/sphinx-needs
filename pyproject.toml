@@ -49,6 +49,7 @@ pre-commit = "^2"
 lxml = "^4.6.5"
 pytest = "^7"
 pytest-xdist="*"  # parallelisation
+syrupy = ">=3,<5"
 responses = "^0.22.0"
 requests-mock = ">=1.9.3"
 tabulate = "^0.9.0"
@@ -107,13 +108,13 @@ ignore_missing_imports = true
 module = [
   'sphinx_needs.api.need',
   'sphinx_needs.directives.needuml',
-  'sphinx_needs.functions.functions',
 ]
 ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = [
-  "sphinx_needs.directives.needextend"
+  "sphinx_needs.directives.needextend",
+  "sphinx_needs.functions.functions",
 ]
 # TODO dynamically overriding TypeDict keys is a bit tricky
 disable_error_code = "literal-required"

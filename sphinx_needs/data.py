@@ -3,7 +3,7 @@ which is stored in the Sphinx environment.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 try:
     from typing import Literal, TypedDict
@@ -28,22 +28,6 @@ class NeedsFilterType(TypedDict):
     export_id: str
     result: list[str]
     amount: int
-
-
-class NeedsWorkflowType(TypedDict):
-    """
-    Used to store workflow status information for already executed tasks.
-    Some tasks like backlink_creation need be performed only once.
-    But most sphinx-events get called several times (for each single document file),
-    which would also execute our code several times...
-    """
-
-    backlink_creation_links: bool
-    dynamic_values_resolved: bool
-    links_checked: bool
-    add_sections: bool
-    variant_option_resolved: bool
-    needs_extended: bool
 
 
 class NeedsBaseDataType(TypedDict):
@@ -122,9 +106,10 @@ class NeedsInfoType(NeedsBaseDataType):
     """Hexadecimal color code of the type."""
     type_style: str
 
-    # Used by needextend
     is_modified: bool
+    """Whether the need was modified by needextend."""
     modifications: int
+    """Number of modifications by needextend."""
 
     # parts information
     parts: dict[str, NeedsPartType]
@@ -158,15 +143,20 @@ class NeedsInfoType(NeedsBaseDataType):
     # back links are all set in process_need_nodes (-> create_back_links) transform
 
     # constraints information
-    # set in process_need_nodes (-> process_constraints) transform
     constraints: list[str]
+    """List of constraint names, which are defined for this need."""
+    # set in process_need_nodes (-> process_constraints) transform
+    constraints_results: dict[str, dict[str, bool]]
+    """Mapping of constraint name, to check name, to result."""
     constraints_passed: None | bool
-    constraints_results: dict[str, dict[str, Any]]
+    """True if all constraints passed, False if any failed, None if not yet checked."""
+    constraints_error: str
+    """An error message set if any constraint failed, and `error_message` field is set in config."""
 
     # additional source information
     doctype: str
     """Type of the document where the need is defined, e.g. '.rst'"""
-    # set in add_sections transform
+    # set in analyse_need_locations transform
     sections: list[str]
     section_name: str
     """Simply the first section"""
@@ -254,11 +244,20 @@ class NeedsBarType(NeedsBaseDataType):
 
 
 class NeedsExtendType(NeedsBaseDataType):
-    """Data to modify an existing need."""
+    """Data to modify existing need(s)."""
 
     filter: None | str
+    """Single need ID or filter string to select multiple needs."""
     modifications: dict[str, str]
+    """Mapping of field name to new value.
+    If the field name starts with a ``+``, the new value is appended to the existing value.
+    If the field name starts with a ``-``, the existing value is cleared (new value is ignored).
+    """
     strict: bool
+    """If ``filter`` conforms to ``needs_id_regex``,
+    and is not an existing need ID,
+    whether to except the build (otherwise log-info message is written).
+    """
 
 
 class NeedsFilteredBaseType(NeedsBaseDataType):
@@ -432,27 +431,18 @@ class SphinxNeedsData:
             self.env.needs_all_docs = {"all": []}
         return self.env.needs_all_docs
 
-    def get_or_create_workflow(self) -> NeedsWorkflowType:
-        """Get workflow information.
-
-        This is lazily created and cached in the environment.
-        """
+    @property
+    def needs_is_post_processed(self) -> bool:
+        """Whether needs have been post-processed."""
         try:
-            return self.env.needs_workflow
+            return self.env.needs_is_post_processed
         except AttributeError:
-            self.env.needs_workflow = {
-                "backlink_creation_links": False,
-                "dynamic_values_resolved": False,
-                "links_checked": False,
-                "add_sections": False,
-                "variant_option_resolved": False,
-                "needs_extended": False,
-            }
-            # TODO use needs_config here
-            for link_type in self.env.app.config.needs_extra_links:
-                self.env.needs_workflow["backlink_creation_{}".format(link_type["option"])] = False
+            self.env.needs_is_post_processed = False
+        return self.env.needs_is_post_processed
 
-        return self.env.needs_workflow  # type: ignore[return-value]
+    @needs_is_post_processed.setter
+    def needs_is_post_processed(self, value: bool) -> None:
+        self.env.needs_is_post_processed = value
 
     def get_or_create_services(self) -> ServiceManager:
         """Get information about services.
