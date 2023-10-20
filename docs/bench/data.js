@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1695989117115,
+  "lastUpdate": 1697790131798,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -5328,6 +5328,42 @@ window.BENCHMARK_DATA = {
             "value": 91.58897747400005,
             "unit": "s",
             "extra": "Commit: ce247a6f1523717ca9a5dd83079d5c3eb262fe3d\nBranch: master\nTime: 2023-09-29T08:56:30-03:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "simon@leiner.me",
+            "name": "Simon Leiner",
+            "username": "sleiner"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "38c287067cb5836a2db475ab5ed1ddb5273f9bab",
+          "message": "Fix usage of reST syntax in prefix parameter of meta (#1046)\n\nThe usage of the `prefix` parameter of the `meta` layout function (as\r\nper the docs) does not work. There are two problems with this:\r\n\r\n1. The documentation for `meta` does not mention that backslashes need\r\nto be escaped and shows unescaped backslashes instead. The docs for\r\n`meta_all` do not make this mistake.\r\n2. [Since version\r\n0.16](https://docutils.sourceforge.io/HISTORY.html#release-0-16-2020-01-16),\r\ndocutils inserts null-characters when parsing escaped backslashes, which\r\nin turn is not accepted by\r\n[`ast.parse`](https://docs.python.org/3/library/ast.html#ast.parse). The\r\nsolution is described in the [release notes for docutils\r\n0.16](https://docutils.sourceforge.io/HISTORY.html#release-0-16-2020-01-16):\r\nUsing `node.astext()` instead of `str(node)`",
+          "timestamp": "2023-10-20T10:13:16+02:00",
+          "tree_id": "de190e0a527a919dd4a89e080327f63bfed02198",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/38c287067cb5836a2db475ab5ed1ddb5273f9bab"
+        },
+        "date": 1697790124019,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.26611119199998257,
+            "unit": "s",
+            "extra": "Commit: 38c287067cb5836a2db475ab5ed1ddb5273f9bab\nBranch: master\nTime: 2023-10-20T10:13:16+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 93.05236577,
+            "unit": "s",
+            "extra": "Commit: 38c287067cb5836a2db475ab5ed1ddb5273f9bab\nBranch: master\nTime: 2023-10-20T10:13:16+02:00"
           }
         ]
       }
