@@ -1865,7 +1865,7 @@ needs_permalink_file
 The option specifies the name of the permalink html file,
 which will be copied to the html build directory during build.
 
-The permalink web site will load a ``needs.json`` file as specified
+The permalink web site will load a ``needs.json`` or ``needs_lut.json`` file as specified
 by :ref:`needs_permalink_data` and re-direct the web browser to the html document
 of the need, which is specified by appending the need ID as a query
 parameter, e.g., ``http://localhost:8000/permalink.html?id=REQ_4711``. 
@@ -2349,3 +2349,25 @@ If true, need options like status, tags or links are collapsed and shown only af
 Default value: True
 
 Can be overwritten for each single need by setting :ref:`need_collapse`.
+
+.. _needs_build_lut_json:
+
+needs_build_lut_json
+~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.4.0
+
+Builds a ``needs_lut.json`` file during other builds (like ``html``), which is different from ``needs.json``, only include list of key ``id`` and value of ``docname`` or ``external_url``.
+This is helpful for loading data fastly when you need improve performance.
+Default: False
+
+Example:
+
+.. code-block:: python
+
+    needs_build_lut_json = False
+
+.. hint::
+
+   The created ``needs_lut.json`` file gets stored in the ``outdir`` of the current builder.
+   So if ``html`` is used as builder, the final location is e.g. ``_build/html/needs_lut.json``.

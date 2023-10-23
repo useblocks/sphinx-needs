@@ -30,6 +30,7 @@
 
                 const id = getParameterByName('id');
                 var pathname = new URL(window.location.href).pathname;
+
                 pathname = pathname.substring(0, pathname.lastIndexOf('{{ permalink_file }}'));
 
                 const keys = Object.keys(needs_obj);
@@ -39,15 +40,29 @@
                 keys.forEach((key, index) => {
                     if (key === id) {
                         const need = needs_obj[key];
-                        docname = need['docname'];
+                        if (typeof need === "object"){
+                            // need.json file
+                            docname = need['docname'];
+                        }
+                        else {
+                            // need_lut file only value is docname or external_link
+                            docname = need
+                        }
                         return;
                     }
                 });
 
-                window.location.replace(pathname + docname + '.html#' + id);
-            });
-        }
+                if (docname.includes("#" + id)) {
+                    window.location.replace(pathname + docname);
+                } else {
+                    window.location.replace(pathname + docname + '.html#' + id);
+                }
 
+
+            });
+
+
+        }
         function getParameterByName(name, url = window.location.href) {
             name = name.replace(/[\[\]]/g, '\\$&');
             var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),

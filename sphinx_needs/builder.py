@@ -232,3 +232,71 @@ def build_needs_id_json(app: Sphinx, _exception: Exception) -> None:
         needs_id_builder.set_environment(env)
 
     needs_id_builder.finish()
+
+
+class NeedsLookUpTableBuilder(Builder):
+    """
+    JSON builder for needs, which creates a simple JSON file including only all keys is need' id and the value is doc name or external_url
+    """
+
+    name = "needs_lut"
+    format = "needs"
+    file_suffix = ".txt"
+    links_suffix = None
+
+    def write_doc(self, docname: str, doctree: nodes.document) -> None:
+        pass
+
+    def finish(self) -> None:
+        env = self.env
+        data = SphinxNeedsData(env)
+        needs = data.get_or_create_needs().values()  # We need a list of needs for later filter checks
+        needs_config = NeedsSphinxConfig(env.config)
+        filter_string = needs_config.builder_filter
+        from sphinx_needs.filter_common import filter_needs
+
+        version = getattr(env.config, "version", "unset")
+        needs_list = NeedsList(env.config, self.outdir, self.srcdir)
+        filtered_needs: List[NeedsInfoType] = filter_needs(needs, needs_config, filter_string)
+        for need in filtered_needs:
+            needs_list.add_need(version, need)
+        try:
+            needs_list.write_lut_json(version, "needs_lut.json")
+        except Exception as e:
+            log.error(f"Error during writing json file: {e}")
+        else:
+            log.info("Needs lookup table json successfully created")
+
+    def get_outdated_docs(self) -> Iterable[str]:
+        return []
+
+    def prepare_writing(self, _docnames: Set[str]) -> None:
+        pass
+
+    def write_doc_serialized(self, _docname: str, _doctree: nodes.document) -> None:
+        pass
+
+    def cleanup(self) -> None:
+        pass
+
+    def get_target_uri(self, _docname: str, _typ: Optional[str] = None) -> str:
+        return ""
+
+
+def build_needs_look_up_json(app: Sphinx, _exception: Exception) -> None:
+    env = app.env
+
+    if not NeedsSphinxConfig(env.config).build_lut_json:
+        return
+
+    # Do not create an additional look up table json, if builder is already in use.
+    if isinstance(app.builder, NeedsLookUpTableBuilder):
+        return
+
+    try:
+        needs_lut_builder = NeedsLookUpTableBuilder(app, env)
+    except TypeError:
+        needs_lut_builder = NeedsLookUpTableBuilder(app)
+        needs_lut_builder.set_environment(env)
+
+    needs_lut_builder.finish()

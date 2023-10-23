@@ -12,9 +12,11 @@ import sphinx_needs.debug as debug  # Need to set global var in it for timeing m
 from sphinx_needs.builder import (
     NeedsBuilder,
     NeedsIdBuilder,
+    NeedsLookUpTableBuilder,
     NeedumlsBuilder,
     build_needs_id_json,
     build_needs_json,
+    build_needs_look_up_json,
     build_needumls_pumls,
 )
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
@@ -142,7 +144,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_builder(NeedsBuilder)
     app.add_builder(NeedumlsBuilder)
     app.add_builder(NeedsIdBuilder)
-
+    app.add_builder(NeedsLookUpTableBuilder)
     NeedsSphinxConfig.add_config_values(app)
 
     # Define nodes
@@ -245,6 +247,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.connect("build-finished", build_needs_json)
     app.connect("build-finished", build_needs_id_json)
     app.connect("build-finished", build_needumls_pumls)
+    app.connect("build-finished", build_needs_look_up_json)
     app.connect("build-finished", debug.process_timing)
 
     # Be sure Sphinx-Needs config gets erased before any events or external API calls get executed.

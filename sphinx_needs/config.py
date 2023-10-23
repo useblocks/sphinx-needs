@@ -259,6 +259,7 @@ class NeedsSphinxConfig:
     # add config for needs_id_builder
     build_json_per_id: bool = field(default=False, metadata={"rebuild": "html", "types": (bool,)})
     build_json_per_id_path: str = field(default="needs_id", metadata={"rebuild": "html", "types": (str,)})
+    build_lut_json: bool = field(default=False, metadata={"rebuild": "html", "types": (bool,)})
 
     @classmethod
     def add_config_values(cls, app: Sphinx) -> None:

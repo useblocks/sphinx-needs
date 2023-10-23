@@ -1,0 +1,20 @@
+# serializer version: 1
+# name: test_doc_needs_lut_builder[test_app0]
+  dict({
+    'current_version': '1.0',
+    'project': 'Python',
+    'versions': dict({
+      '1.0': dict({
+        'filters': dict({
+        }),
+        'filters_amount': 0,
+        'needs': dict({
+          'TC_001': 'index',
+          'TC_NEG_001': 'index',
+          'US_63252': 'index',
+        }),
+        'needs_amount': 3,
+      }),
+    }),
+  })
+# ---

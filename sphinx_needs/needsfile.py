@@ -131,6 +131,23 @@ class NeedsList:
 
             self.log.debug(f"needs.json file loaded: {file}")
 
+    def write_lut_json(self, version: str, needs_file: str = "needs.json") -> None:
+        self.needs_list["created"] = datetime.now().isoformat()
+        self.needs_list["current_version"] = self.current_version
+        self.needs_list["project"] = self.project
+        needs_lut = self.needs_list["versions"][version]["needs"]
+
+        for need_id in list(needs_lut.keys()):
+            if needs_lut[need_id].get("is_external"):
+                self.needs_list["versions"][version]["needs"][need_id] = needs_lut[need_id].get("external")
+            else:
+                self.needs_list["versions"][version]["needs"][need_id] = needs_lut[need_id].get("docname")
+
+        needs_dir = self.outdir
+
+        with open(os.path.join(needs_dir, needs_file), "w") as f:
+            json.dump(self.needs_list, f, indent=4, sort_keys=True)
+
 
 class Errors:
     def __init__(self, schema_errors: List[Any]):

@@ -371,6 +371,9 @@ needs_build_json = True
 # build needs_json for every needs-id to make detail panel
 needs_build_json_per_id = False
 
+# build needs_lut.json to make permalinks work
+needs_build_lut_json = False
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
