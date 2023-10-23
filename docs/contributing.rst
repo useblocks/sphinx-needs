@@ -121,8 +121,9 @@ These snapshots can be updated by running:
 
       pip install -r docs/requirements.txt
 
-Running JavaScript Tests in Python Test Files
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Running JS Testcases with PyTest
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 **Setup Cypress Locally**
 
 * Install Node JS on your computer and ensure it can be accessed through the CMD.
@@ -133,7 +134,7 @@ Running JavaScript Tests in Python Test Files
 **Enable Cypress Test in Python Test Files**
 
 * Under the ``js_test`` folder, you can save your Cypress JS test files (files should end with: ``*.cy.js``). For each Cypress JS test file, you will need to write the Cypress JS test cases in the file. You can read more from the `Cypress Docs <https://docs.cypress.io/>`_. You can also check the ``tests/js_test/sn-collapse-button.cy.js`` file as reference.
-* In your Python test files, you must mark every JS related test case with the marker - ``jstest`` and you also need to pass the ``spec_pattern`` key-value pair as part of the ``test_app`` fixture parameter. For example, your test case could look like the below:
+* In your Python test files, you must mark every JS related test case with the marker - ``jstest`` and you must also set the ``spec_pattern`` key-value pair as part of the ``test_app`` fixture parameter. For example, your test case could look like this:
     .. code-block:: python
 
         # tests/test_sn_collapse_button.py
@@ -161,7 +162,7 @@ Running JavaScript Tests in Python Test Files
 
         The ``spec_pattern`` key is required to ensure Cypress locates your test files or folder. Visit this link for more info on how to set the `spec_pattern <https://docs.cypress.io/guides/guides/command-line#cypress-run-spec-lt-spec-gt>`_.
 
-* After you have set the ``spec_pattern`` key-value pair as part of the ``test_app`` fixture parameter, you can call the ``app.test_js()`` in your Python test case to run the JS test for the ``spec_pattern`` you provided. For example, you can use it like below:
+* After you set the ``spec_pattern`` key-value pair as part of the ``test_app`` fixture parameter, you can call ``app.test_js()`` in your Python test case to run a JS test for the ``spec_pattern`` you provided. For example, you can use ``app.test_js()`` like below:
     .. code-block:: python
 
         # tests/test_sn_collapse_button.py
@@ -205,7 +206,13 @@ Running JavaScript Tests in Python Test Files
                 "stdout": "Test passed string",
                 "stderr": "Errors encountered,
             }
-            
+
+* You can run the ``make test-js`` command to check all JS testcases.
+    .. note::
+
+        The ``http_server`` process invoked by the ``make test-js`` command may not terminate properly in some instances.
+        Kindly check your system's monitoring app to end the process if not terminated automatically.
+
 Linting & Formatting
 --------------------
 

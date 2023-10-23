@@ -30,6 +30,13 @@ needs_layouts = {
             "side": ['<<image("_images/{{author}}.png", align="center")>>'],
         },
     },
+    "optional_author": {
+        "grid": "simple",
+        "layout": {
+            "head": ['**<<meta("title")>>**'],
+            "meta": ['**status**: <<meta("status")>>', r'<<meta("author", prefix="\*\*author\*\*: ")>>'],
+        },
+    },
     "footer_grid": {
         "grid": "simple_footer",
         "layout": {

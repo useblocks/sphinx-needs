@@ -75,34 +75,39 @@ def test_server(xprocess, sphinx_test_tempdir):
     port = 62343
 
     class Starter(ProcessStarter):
-        pattern = "Serving HTTP"
+        pattern = "Serving HTTP on [0-9.]+ port 62343|Address already in use"
         timeout = 20
         terminate_on_interrupt = True
-        args = ["python", "-m", "http.server", "--directory", sphinx_test_tempdir, "--bind", addr, port]
+        args = ["python3", "-m", "http.server", "--directory", sphinx_test_tempdir, "--bind", addr, port]
+        env = {"PYTHONUNBUFFERED": "1"}
 
-        # checks if our server is ready with a ping
-
-    def check_server_connection():
+    def check_server_connection(log_path: str):
+        """
+        Checks the connection status to a server.
+        :param log_path: The path to the log file.
+        :return: True if the server connection is successful, False otherwise.
+        """
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         result = sock.connect_ex((addr, port))
         sock.close()
         if result == 0:
-            print("Serving HTTP on 127.0.0.1 port 62343 (http://127.0.0.1:62343/) ...")
+            with open(str(log_path), "wb", 0) as stdout:
+                stdout.write(bytes("Serving HTTP on 127.0.0.1 port 62343 (http://127.0.0.1:62343/) ...\n", "utf8"))
             return True
         return False
 
-    http_server_process = xprocess.getinfo("http_server")
-    if not check_server_connection():
+    if not check_server_connection(log_path=xprocess.getinfo("http_server").logpath):
         # Start the process and ensure it is running
-        logfile = xprocess.ensure("http_server", Starter)  # noqa:F841
+        _, logfile = xprocess.ensure("http_server", Starter, persist_logs=False)  # noqa:F841
 
+    http_server_process = xprocess.getinfo("http_server")
     server_url = f"http://{addr}:{port}"
     http_server_process.url = server_url
 
     yield http_server_process
 
-    # Clean up the process after the tests
-    http_server_process.terminate()
+    # clean up whole process tree afterward
+    xprocess.getinfo("http_server").terminate()
 
 
 def test_js(self) -> Dict[str, Any]:
@@ -125,7 +130,7 @@ def test_js(self) -> Dict[str, Any]:
             "stderr": f"The spec_pattern '{self.spec_pattern}' cannot be found.",
         }
     _, out_dir = str(self.outdir).split("sn_test_build_data")
-    srcdir_url = f"http://localhost:62343/{out_dir.lstrip('/')}/"
+    srcdir_url = f"http://127.0.0.1:62343/{out_dir.lstrip('/')}/"
     js_test_config = {
         "specPattern": cypress_testpath,
         "supportFile": get_abspath("js_test/cypress/support/e2e.js"),
@@ -184,10 +189,10 @@ def sphinx_test_tempdir() -> path:
     sphinx_test_tempdir = path(tempfile.gettempdir()).joinpath("sn_test_build_data")
     utils_dir = sphinx_test_tempdir.joinpath("utils")
 
-    if not (sphinx_test_tempdir.exists() and sphinx_test_tempdir.isdir()):
-        sphinx_test_tempdir.makedirs()
-    if not (utils_dir.exists() and utils_dir.isdir()):
-        utils_dir.makedirs()
+    # if not (sphinx_test_tempdir.exists() and sphinx_test_tempdir.isdir()):
+    sphinx_test_tempdir.makedirs(exist_ok=True)
+    # if not (utils_dir.exists() and utils_dir.isdir()):
+    utils_dir.makedirs(exist_ok=True)
 
     # copy plantuml.jar to current test tempdir. We want to do this once
     # since the same plantuml.jar is used for each test
