@@ -49,6 +49,7 @@ pre-commit = "^2"
 lxml = "^4.6.5"
 pytest = "^7"
 pytest-xdist="*"  # parallelisation
+pytest-xprocess = "^0.22.2"
 syrupy = ">=3,<5"
 responses = "^0.22.0"
 requests-mock = ">=1.9.3"
@@ -74,6 +75,9 @@ packaging = "*"
 
 [tool.pytest.ini_options]
 asyncio_mode= "auto"
+markers = [
+    "jstest: marks tests as JavaScript test (deselect with '-m \"not jstest\"')",
+]
 
 [tool.black]
 line-length = 120

@@ -1,3 +1,4 @@
+import os
 import sys
 from pathlib import Path
 
@@ -10,26 +11,29 @@ from docutils import __version__ as doc_ver
 @pytest.mark.parametrize(
     "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_external_needs"}], indirect=True
 )
-def test_doc_build_html(test_app):
+def test_doc_build_html(test_app, sphinx_test_tempdir):
     import subprocess
 
     app = test_app
 
     src_dir = Path(app.srcdir)
     out_dir = Path(app.outdir)
-    output = subprocess.run(["sphinx-build", "-M", "html", src_dir, out_dir], capture_output=True)
-    assert not output.stderr, f"Should not have stderr: {output.stderr}"
+    plantuml = r"java -Djava.awt.headless=true -jar %s" % os.path.join(sphinx_test_tempdir, "utils", "plantuml.jar")
+    output = subprocess.run(
+        ["sphinx-build", "-b", "html", "-D", rf"plantuml={plantuml}", src_dir, out_dir], capture_output=True
+    )
+    assert not output.stderr, f"Build failed with stderr: {output.stderr}"
 
     # run second time and check
-    output_second = subprocess.run(["sphinx-build", "-M", "html", src_dir, out_dir], capture_output=True)
+    output_second = subprocess.run(
+        ["sphinx-build", "-b", "html", "-D", rf"plantuml={plantuml}", src_dir, out_dir], capture_output=True
+    )
     assert not output_second.stderr
 
     # check if incremental build used
     # first build output
-    assert "making output directory" in output.stdout.decode("utf-8")
     assert "updating environment: [new config] 3 added, 0 changed, 0 removed" in output.stdout.decode("utf-8")
     # second build output
-    assert "making output directory" not in output_second.stdout.decode("utf-8")
     assert "loading pickled environment" in output_second.stdout.decode("utf-8")
     assert "updating environment: [new config] 3 added, 0 changed, 0 removed" not in output_second.stdout.decode(
         "utf-8"
