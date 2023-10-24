@@ -160,7 +160,7 @@ def install_static_files(
 
 def install_lib_static_files(app: Sphinx, env: BuildEnvironment) -> None:
     """
-    Copies ccs and js files from needed js/css libs
+    Copies css and js files from needed js/css libs
     :param app:
     :param env:
     :return:
@@ -186,7 +186,13 @@ def install_lib_static_files(app: Sphinx, env: BuildEnvironment) -> None:
 
     # Add the needed datatables js and css file
     lib_path = Path("sphinx-needs") / "libs" / "html"
-    for f in ["datatables.min.js", "datatables_loader.js", "datatables.min.css", "sphinx_needs_collapse.js"]:
+    for f in [
+        "jquery-3.6.0.min.js",
+        "datatables.min.js",
+        "datatables_loader.js",
+        "datatables.min.css",
+        "sphinx_needs_collapse.js",
+    ]:
         safe_add_file(lib_path / f, app)
 
 
