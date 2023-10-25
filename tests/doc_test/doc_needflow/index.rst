@@ -35,8 +35,10 @@ TEST DOCUMENT NEEDFLOW
 
 .. needflow::
    :debug:
+   :config: handwritten
 
 Empty needflow, with no results.
 
 .. needflow::
    :filter: status == "NOTHING"
+   :config: handwritten
