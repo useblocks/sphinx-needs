@@ -75,11 +75,7 @@ def extend_needs_data(
 ) -> None:
     """Use data gathered from needextend directives to modify fields of existing needs."""
 
-    list_values = (
-        ["tags", "links"]
-        + [x["option"] for x in needs_config.extra_links]
-        + [f"{x['option']}_back" for x in needs_config.extra_links]
-    )  # back-links (incoming)
+    list_values = ["tags", "links"] + [x["option"] for x in needs_config.extra_links]
     link_names = [x["option"] for x in needs_config.extra_links]
 
     for current_needextend in extends.values():
@@ -114,23 +110,26 @@ def extend_needs_data(
                 if option.startswith("+"):
                     option_name = option[1:]
                     if option_name in link_names:
-                        # If we add links, then add all corresponding back links
-                        for ref_need in [i.strip() for i in re.split(";|,", value)]:
-                            if ref_need not in all_needs:
-                                logger.warning(
-                                    f"Provided link id {ref_need} for needextend does not exist. [needs]",
-                                    type="needs",
-                                    location=(current_needextend["docname"], current_needextend["lineno"]),
-                                )
-                                continue
-                            if ref_need not in need[option_name]:
-                                need[option_name].append(ref_need)
-                            if found_need["id"] not in all_needs[ref_need][f"{option_name}_back"]:
-                                all_needs[ref_need][f"{option_name}_back"] += [found_need["id"]]
+                        if value.strip().startswith("[[") and value.strip().endswith("]]"):  # dynamic function
+                            need[option_name].append(value)
+                        else:
+                            for ref_need in [i.strip() for i in re.split(";|,", value)]:
+                                if ref_need not in all_needs:
+                                    logger.warning(
+                                        f"Provided link id {ref_need} for needextend does not exist. [needs]",
+                                        type="needs",
+                                        location=(current_needextend["docname"], current_needextend["lineno"]),
+                                    )
+                                    continue
+                                if ref_need not in need[option_name]:
+                                    need[option_name].append(ref_need)
                     elif option_name in list_values:
-                        for item in [i.strip() for i in re.split(";|,", value)]:
-                            if item not in need[option_name]:
-                                need[option_name].append(item)
+                        if value.strip().startswith("[[") and value.strip().endswith("]]"):  # dynamic function
+                            need[option_name].append(value)
+                        else:
+                            for item in [i.strip() for i in re.split(";|,", value)]:
+                                if item not in need[option_name]:
+                                    need[option_name].append(item)
                     else:
                         if need[option_name]:
                             # If content is already stored, we need to add some whitespace
@@ -140,9 +139,6 @@ def extend_needs_data(
                 elif option.startswith("-"):
                     option_name = option[1:]
                     if option_name in link_names:
-                        # If we remove links, then remove all corresponding back links
-                        for ref_need in (i for i in need[option_name] if i in all_needs):
-                            all_needs[ref_need][f"{option_name}_back"].remove(found_need["id"])
                         need[option_name] = []
                     if option_name in list_values:
                         need[option_name] = []
@@ -150,24 +146,24 @@ def extend_needs_data(
                         need[option_name] = ""
                 else:
                     if option in link_names:
-                        # If we change links, then modify all corresponding back links
-                        for ref_need in (i for i in need[option] if i in all_needs):
-                            all_needs[ref_need][f"{option}_back"].remove(found_need["id"])
                         need[option] = []
-                        for ref_need in [i.strip() for i in re.split(";|,", value)]:
-                            if ref_need not in all_needs:
-                                logger.warning(
-                                    f"Provided link id {ref_need} for needextend does not exist. [needs]",
-                                    type="needs",
-                                    location=(current_needextend["docname"], current_needextend["lineno"]),
-                                )
-                                continue
-                            need[option].append(ref_need)
-                        for ref_need in need[option]:
-                            if found_need["id"] not in all_needs[ref_need][f"{option}_back"]:
-                                all_needs[ref_need][f"{option}_back"] += [found_need["id"]]
+                        if value.strip().startswith("[[") and value.strip().endswith("]]"):  # dynamic function
+                            need[option].append(value)
+                        else:
+                            for ref_need in [i.strip() for i in re.split(";|,", value)]:
+                                if ref_need not in all_needs:
+                                    logger.warning(
+                                        f"Provided link id {ref_need} for needextend does not exist. [needs]",
+                                        type="needs",
+                                        location=(current_needextend["docname"], current_needextend["lineno"]),
+                                    )
+                                    continue
+                                need[option].append(ref_need)
                     elif option in list_values:
-                        need[option] = [i.strip() for i in re.split(";|,", value)]
+                        if value.strip().startswith("[[") and value.strip().endswith("]]"):  # dynamic function
+                            need[option].append(value)
+                        else:
+                            need[option] = [i.strip() for i in re.split(";|,", value)]
                     else:
                         need[option] = value
 
