@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1697790131798,
+  "lastUpdate": 1698397020795,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -5364,6 +5364,42 @@ window.BENCHMARK_DATA = {
             "value": 93.05236577,
             "unit": "s",
             "extra": "Commit: 38c287067cb5836a2db475ab5ed1ddb5273f9bab\nBranch: master\nTime: 2023-10-20T10:13:16+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d8b0a28beb9084f45d6b6c2e6055e44ccfc59bd5",
+          "message": "👌 Allow `needextend` to use dynamic functions (#1052)\n\nIt is of note that a key change here is that we alter the needs data post-processing order,\r\nto extend the needs, before processing dynamic values, links and constraints.",
+          "timestamp": "2023-10-27T10:49:56+02:00",
+          "tree_id": "4ac7801dbad139dc394b854ee1b9197f98f25c22",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/d8b0a28beb9084f45d6b6c2e6055e44ccfc59bd5"
+        },
+        "date": 1698397015241,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21971299200004069,
+            "unit": "s",
+            "extra": "Commit: d8b0a28beb9084f45d6b6c2e6055e44ccfc59bd5\nBranch: master\nTime: 2023-10-27T10:49:56+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 78.56822084700002,
+            "unit": "s",
+            "extra": "Commit: d8b0a28beb9084f45d6b6c2e6055e44ccfc59bd5\nBranch: master\nTime: 2023-10-27T10:49:56+02:00"
           }
         ]
       }
