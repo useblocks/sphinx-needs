@@ -5,7 +5,7 @@ jobs:
     name: "py${{ matrix.python-version }} sp${{ matrix.sphinx-version }} do${{ matrix.docutils-version }} ${{ matrix.os }}"
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: true  # Set on "false" to get the results of ALL builds
+      fail-fast: false  # Set on "false" to get the results of ALL builds
       matrix:
         os: ["ubuntu-latest"]
         # 3.9.8 seems to be broken with type_ast

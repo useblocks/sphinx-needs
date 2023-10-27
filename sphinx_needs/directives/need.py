@@ -383,12 +383,12 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
         return
 
     if not needs_data.needs_is_post_processed:
+        extend_needs_data(needs, needs_data.get_or_create_extends(), needs_config)
         resolve_dynamic_values(needs, app)
         resolve_variants_options(needs, needs_config, app.builder.tags.tags)
         check_links(needs, needs_config)
         create_back_links(needs, needs_config)
         process_constraints(needs, needs_config)
-        extend_needs_data(needs, needs_data.get_or_create_extends(), needs_config)
         needs_data.needs_is_post_processed = True
 
     for extend_node in doctree.findall(Needextend):
