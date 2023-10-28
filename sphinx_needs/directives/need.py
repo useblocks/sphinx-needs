@@ -360,8 +360,32 @@ def previous_sibling(node: nodes.Node) -> Optional[nodes.Node]:
     return node.parent[i - 1] if i > 0 else None  # type: ignore
 
 
-@profile("NEED_PROCESS")
-@measure_time("need")
+@profile("NEEDS_POST_PROCESS")
+@measure_time("need_post_process")
+def post_process_needs_data(app: Sphinx) -> None:
+    """In-place post-processing of needs data.
+
+    This should be called after all needs (and extend) data has been collected.
+
+    This function is idempotent;
+    it will only be run on the first call, and will not be run again.
+
+    After this function has been run, one should assume that the needs data is finalised,
+    and so in principle should be treated as read-only.
+    """
+    needs_config = NeedsSphinxConfig(app.config)
+    needs_data = SphinxNeedsData(app.env)
+    needs = needs_data.get_or_create_needs()
+    if needs and not needs_data.needs_is_post_processed:
+        extend_needs_data(needs, needs_data.get_or_create_extends(), needs_config)
+        resolve_dynamic_values(needs, app)
+        resolve_variants_options(needs, needs_config, app.builder.tags.tags)
+        check_links(needs, needs_config)
+        create_back_links(needs, needs_config)
+        process_constraints(needs, needs_config)
+        needs_data.needs_is_post_processed = True
+
+
 def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:
     """
     Event handler to add title meta data (status, tags, links, ...) information to the Need node. Also processes
@@ -374,39 +398,23 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
                 node.parent.remove(node)  # type: ignore
         return
 
-    env = app.env
-    needs_data = SphinxNeedsData(env)
-    needs = needs_data.get_or_create_needs()
+    needs_data = SphinxNeedsData(app.env)
 
     # If no needs were defined, we do not need to do anything
-    if not needs:
+    if not needs_data.get_or_create_needs():
         return
 
-    if not needs_data.needs_is_post_processed:
-        extend_needs_data(needs, needs_data.get_or_create_extends(), needs_config)
-        resolve_dynamic_values(needs, app)
-        resolve_variants_options(needs, needs_config, app.builder.tags.tags)
-        check_links(needs, needs_config)
-        create_back_links(needs, needs_config)
-        process_constraints(needs, needs_config)
-        needs_data.needs_is_post_processed = True
+    post_process_needs_data(app)
 
     for extend_node in doctree.findall(Needextend):
         remove_needextend_node(extend_node)
 
-    print_need_nodes(app, doctree, fromdocname, list(doctree.findall(Need)))
+    format_need_nodes(app, doctree, fromdocname, list(doctree.findall(Need)))
 
 
-@profile("NEED_PRINT")
-def print_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str, found_needs_nodes: List[Need]) -> None:
-    """
-    Finally creates the need-node in the docutils node-tree.
-
-    :param app:
-    :param doctree:
-    :param fromdocname:
-    :return:
-    """
+@profile("NEED_FORMAT")
+def format_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str, found_needs_nodes: List[Need]) -> None:
+    """Replace need nodes in the document with node trees suitable for output"""
     env = app.env
     needs = SphinxNeedsData(env).get_or_create_needs()
 

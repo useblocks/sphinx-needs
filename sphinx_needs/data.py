@@ -25,9 +25,10 @@ class NeedsFilterType(TypedDict):
     status: list[str]
     tags: list[str]
     types: list[str]
-    export_id: str
     result: list[str]
     amount: int
+    export_id: str
+    """If set, the filter is exported with this ID in the needs.json file."""
 
 
 class NeedsBaseDataType(TypedDict):
@@ -271,6 +272,7 @@ class NeedsFilteredBaseType(NeedsBaseDataType):
     filter_code: list[str]
     filter_func: None | str
     export_id: str
+    """If set, the filter is exported with this ID in the needs.json file."""
 
 
 class NeedsFilteredDiagramBaseType(NeedsFilteredBaseType):
@@ -408,6 +410,18 @@ class SphinxNeedsData:
         except AttributeError:
             self.env.needs_all_needs = {}
         return self.env.needs_all_needs
+
+    @property
+    def has_export_filters(self) -> bool:
+        """Whether any filters have export IDs."""
+        try:
+            return self.env.needs_filters_export_id
+        except AttributeError:
+            return False
+
+    @has_export_filters.setter
+    def has_export_filters(self, value: bool) -> None:
+        self.env.needs_filters_export_id = value
 
     def get_or_create_filters(self) -> dict[str, NeedsFilterType]:
         """Get all filters, mapped by ID.
@@ -593,6 +607,8 @@ def merge_data(_app: Sphinx, env: BuildEnvironment, _docnames: list[str], other:
     needs = SphinxNeedsData(env).get_or_create_needs()
     other_needs = SphinxNeedsData(other).get_or_create_needs()
     needs.update(other_needs)
+    if SphinxNeedsData(other).has_export_filters:
+        SphinxNeedsData(env).has_export_filters = True
 
     def _merge(name: str, is_complex_dict: bool = False) -> None:
         # Update global needs dict
