@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1698397020795,
+  "lastUpdate": 1698680163608,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -5400,6 +5400,42 @@ window.BENCHMARK_DATA = {
             "value": 78.56822084700002,
             "unit": "s",
             "extra": "Commit: d8b0a28beb9084f45d6b6c2e6055e44ccfc59bd5\nBranch: master\nTime: 2023-10-27T10:49:56+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bc0b8c9239fbe184c7f74ca5f85b58e248865234",
+          "message": "👌 Remove some unnecessary keys from `needs.json` (#1053)\n\nRemove additional keys from the `needs.json`, that are not intended to be exposed to the user:\r\n- back links for user defined link types (standard back links are already ommited),\r\n- `id_parent` and `id_complete`, which are only relevant to parts expansion.",
+          "timestamp": "2023-10-30T16:28:20+01:00",
+          "tree_id": "1beb6330fb1b7cd9f75e81427217a3b732a04bb3",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/bc0b8c9239fbe184c7f74ca5f85b58e248865234"
+        },
+        "date": 1698680156348,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2305916659999525,
+            "unit": "s",
+            "extra": "Commit: bc0b8c9239fbe184c7f74ca5f85b58e248865234\nBranch: master\nTime: 2023-10-30T16:28:20+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 81.55599827399999,
+            "unit": "s",
+            "extra": "Commit: bc0b8c9239fbe184c7f74ca5f85b58e248865234\nBranch: master\nTime: 2023-10-30T16:28:20+01:00"
           }
         ]
       }
