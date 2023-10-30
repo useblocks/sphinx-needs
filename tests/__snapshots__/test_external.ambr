@@ -34,8 +34,6 @@
             'has_forbidden_dead_links': '',
             'hidden': '',
             'id': 'EXT_TEST_01',
-            'id_complete': 'EXT_TEST_01',
-            'id_parent': 'EXT_TEST_01',
             'id_prefix': '',
             'is_external': True,
             'is_modified': False,
@@ -52,8 +50,6 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
-            ]),
-            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -106,8 +102,6 @@
             'has_forbidden_dead_links': '',
             'hidden': '',
             'id': 'EXT_TEST_02',
-            'id_complete': 'EXT_TEST_02',
-            'id_parent': 'EXT_TEST_02',
             'id_prefix': '',
             'is_external': True,
             'is_modified': False,
@@ -125,8 +119,6 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
-            ]),
-            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -181,8 +173,6 @@
             'has_forbidden_dead_links': '',
             'hidden': '',
             'id': 'REQ_1',
-            'id_complete': 'REQ_1',
-            'id_parent': 'REQ_1',
             'id_prefix': '',
             'is_external': False,
             'is_modified': False,
@@ -198,8 +188,6 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
-            ]),
-            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -253,8 +241,6 @@
             'has_forbidden_dead_links': '',
             'hidden': '',
             'id': 'SPEC_1',
-            'id_complete': 'SPEC_1',
-            'id_parent': 'SPEC_1',
             'id_prefix': '',
             'is_external': False,
             'is_modified': False,
@@ -272,8 +258,6 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
-            ]),
-            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -327,8 +311,6 @@
             'has_forbidden_dead_links': '',
             'hidden': '',
             'id': 'SUB_002',
-            'id_complete': 'SUB_002',
-            'id_parent': 'SUB_002',
             'id_prefix': '',
             'is_external': False,
             'is_modified': False,
@@ -344,8 +326,6 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
-            ]),
-            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),

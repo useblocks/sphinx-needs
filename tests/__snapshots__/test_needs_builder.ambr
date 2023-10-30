@@ -50,8 +50,6 @@
             'parent_need': '',
             'parent_needs': list([
             ]),
-            'parent_needs_back': list([
-            ]),
             'parts': dict({
             }),
             'post_template': None,
@@ -120,8 +118,6 @@
             'parent_need': '',
             'parent_needs': list([
             ]),
-            'parent_needs_back': list([
-            ]),
             'parts': dict({
             }),
             'post_template': None,
@@ -189,8 +185,6 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
-            ]),
-            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
