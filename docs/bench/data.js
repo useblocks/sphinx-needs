@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1698680163608,
+  "lastUpdate": 1698731532532,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -5436,6 +5436,42 @@ window.BENCHMARK_DATA = {
             "value": 81.55599827399999,
             "unit": "s",
             "extra": "Commit: bc0b8c9239fbe184c7f74ca5f85b58e248865234\nBranch: master\nTime: 2023-10-30T16:28:20+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6d0952bedeb5535d760184061e20830e38728179",
+          "message": "👌 Improve performance of needs builders (#1054)\n\nThis commit refactors the `needs` and `needs_id` builders, so that they can completely skip the \"write\" phase of the Sphinx build.\r\n\r\nThe main aim of these builders is to output the final needs data, in a particular format.\r\nThe needs data is collected during the \"read\" phase of the Sphinx build, i.e. when all documents are read, then after all needs data has been collected, a number of \"post-processing\" functions are applied to the needs data.\r\nThis post-processing is independant of (a) the individual documents, (b) the output format, and so does not require the Sphinx \"write\" phase to run.\r\n\r\nHere we combine all of the post-processing into a single `post_process_needs_data` function that can be called directly by these builders.\r\nNote, ideally this would be called in a [Sphinx event](https://www.sphinx-doc.org/en/master/extdev/appapi.html#emitting-events) occuring between the \"read\" and \"write\" events, however, this does not currently exist (the closest is `env-check-consistency`, but this is not triggered on \"write-only\" rebuilds).\r\n\r\nThe only corner case for skipping the \"write\" phase, is when the `needs` builder is required to also export filters, due to the presence of `export_id` options on certain directives.\r\nThese filters are currently computed during the \"write\" phase, so here we do run that, but emit a warning, to let the user know of this degradation in performance.",
+          "timestamp": "2023-10-31T06:44:43+01:00",
+          "tree_id": "0e3bc96e7eac88013200fe6f6438d15c8fd20e8e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6d0952bedeb5535d760184061e20830e38728179"
+        },
+        "date": 1698731526012,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21360144499999478,
+            "unit": "s",
+            "extra": "Commit: 6d0952bedeb5535d760184061e20830e38728179\nBranch: master\nTime: 2023-10-31T06:44:43+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 78.26095493699995,
+            "unit": "s",
+            "extra": "Commit: 6d0952bedeb5535d760184061e20830e38728179\nBranch: master\nTime: 2023-10-31T06:44:43+01:00"
           }
         ]
       }
