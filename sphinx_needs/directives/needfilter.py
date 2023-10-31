@@ -60,7 +60,6 @@ class NeedfilterDirective(FilterBase):
             "show_filters": "show_filters" in self.options,
             "show_legend": "show_legend" in self.options,
             "layout": self.options.get("layout", "list"),
-            "export_id": self.options.get("export_id", ""),
             **self.collect_filter_attributes(),
         }
 
