@@ -50,7 +50,6 @@ class NeedlistDirective(FilterBase):
             "show_tags": "show_tags" in self.options,
             "show_status": "show_status" in self.options,
             "show_filters": "show_filters" in self.options,
-            "export_id": self.options.get("export_id", ""),
             **self.collect_filter_attributes(),
         }
 
