@@ -1,23 +1,17 @@
-import os
+import hashlib
 from typing import Iterable, List, Sequence
 
 import matplotlib
+import matplotlib.pyplot
 import numpy as np
 from docutils import nodes
+from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
-
-if not os.environ.get("DISPLAY"):
-    matplotlib.use("Agg")
-import hashlib
-
-import matplotlib.pyplot
-from docutils.parsers.rst import directives
-
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import (
     add_doc,
@@ -25,6 +19,7 @@ from sphinx_needs.utils import (
     save_matplotlib_figure,
 )
 
+matplotlib.use("Agg")
 logger = get_logger(__name__)
 
 
