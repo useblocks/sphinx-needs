@@ -10,11 +10,15 @@ lint:
 
 .PHONY: test
 test:
-	poetry run pytest -n auto --tb=long --ignore=tests/benchmarks tests/
+	poetry run pytest -n auto -m "not jstest" --tb=long --ignore=tests/benchmarks tests/
 
 .PHONY: test
 test-short:
-	poetry run pytest -n auto --tb=long --ignore-glob="*official*" --ignore=tests/benchmarks tests/
+	poetry run pytest -n auto -m "not jstest" --tb=long --ignore-glob="*official*" --ignore=tests/benchmarks tests/
+
+.PHONY: test
+test-js:
+	poetry run pytest -n 1 -m "jstest" --tb=long --ignore-glob="*official*" --ignore=tests/benchmarks tests/
 
 .PHONY: benchmark-time
 benchmark-time:
