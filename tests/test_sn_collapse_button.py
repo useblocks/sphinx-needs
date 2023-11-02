@@ -24,7 +24,7 @@ def test_collapse_button_in_variant_doc(test_app, test_server):
 
     # Check the return code and stdout
     assert js_test_result["returncode"] == 0
-    assert "All specs passed!" in js_test_result["stdout"].decode("utf-8")
+    assert "All specs passed!" in js_test_result["stdout"]
 
 
 @pytest.mark.jstest
@@ -49,4 +49,4 @@ def test_collapse_button_in_doc_basic(test_app, test_server):
 
     # Check the return code and stdout
     assert js_test_result["returncode"] == 0
-    assert "All specs passed!" in js_test_result["stdout"].decode("utf-8")
+    assert "All specs passed!" in js_test_result["stdout"]

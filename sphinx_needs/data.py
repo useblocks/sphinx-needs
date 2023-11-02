@@ -3,13 +3,7 @@ which is stored in the Sphinx environment.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-try:
-    from typing import Literal, TypedDict
-except ImportError:
-    # introduced in python 3.8
-    from typing_extensions import Literal, TypedDict  # type: ignore
+from typing import TYPE_CHECKING, Literal, TypedDict
 
 if TYPE_CHECKING:
     from docutils.nodes import Element, Text

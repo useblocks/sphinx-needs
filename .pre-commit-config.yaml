@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/psf/black
-    rev: 23.7.0
+    rev: 23.10.1
     hooks:
       - id: black
 
@@ -20,14 +20,14 @@ repos:
       - id: isort
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.10.1
+    rev: v3.15.0
     hooks:
       - id: pyupgrade
         args:
           - --py36-plus
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.5.1
+    rev: v1.6.1
     hooks:
     - id: mypy
       files: sphinx_needs/.*
@@ -39,6 +39,6 @@ repos:
       - types-requests
 
   - repo: https://github.com/python-poetry/poetry
-    rev: 1.5.0
+    rev: 1.7.0
     hooks:
       - id: poetry-check

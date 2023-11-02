@@ -104,11 +104,11 @@ def test_html_head_files(test_app):
     html_path = str(Path(app.outdir, "index.html"))
     root_tree = html_parser.parse(html_path)
     script_nodes = root_tree.xpath("/html/head/script")
-    script_files = [x.attrib["src"] for x in script_nodes]
+    script_files = [x.attrib["src"].rsplit("?", 1)[0] for x in script_nodes]
     assert script_files.count("_static/sphinx-needs/libs/html/datatables.min.js") == 1
 
     link_nodes = root_tree.xpath("/html/head/link")
-    link_files = [x.attrib["href"] for x in link_nodes]
+    link_files = [x.attrib["href"].rsplit("?", 1)[0] for x in link_nodes]
     assert link_files.count("_static/sphinx-needs/modern.css") == 1
 
     # Checks if not \ (Backslash) is found as path of js/css files

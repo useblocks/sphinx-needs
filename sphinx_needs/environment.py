@@ -4,12 +4,17 @@ from typing import Iterable, List
 from jinja2 import Environment, PackageLoader, select_autoescape
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
-from sphinx.util import status_iterator
 from sphinx.util.console import brown  # type: ignore[attr-defined]
 from sphinx.util.osutil import copyfile
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.utils import logger
+
+try:
+    from sphinx.util.display import status_iterator  # type: ignore
+except ImportError:
+    # will be removed in Sphinx 8.0
+    from sphinx.util import status_iterator
 
 IMAGE_DIR_NAME = "_static"
 
