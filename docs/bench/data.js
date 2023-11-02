@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1698731532532,
+  "lastUpdate": 1698919702221,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -5472,6 +5472,42 @@ window.BENCHMARK_DATA = {
             "value": 78.26095493699995,
             "unit": "s",
             "extra": "Commit: 6d0952bedeb5535d760184061e20830e38728179\nBranch: master\nTime: 2023-10-31T06:44:43+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "duodurandy19@gmail.com",
+            "name": "Randy Duodu",
+            "username": "iSOLveIT"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e37896dafd464a6b21a8c3b88c7f8cf9a2849bf9",
+          "message": "🧪 Testing of JS scripts using Cypress integrated into PyTest (#1051)\n\nThe changes included are:\r\n\r\n- Updated conftest.py to enable JS testing using Cypress and PyTest.\r\n- Added ``make test-js`` command to Makefile.\r\n\r\n**NOTE:** This is an improved version of PR #1007 which is closed due to\r\ncommit conflicts and rebase issues.",
+          "timestamp": "2023-11-02T10:59:41+01:00",
+          "tree_id": "2c6514db459650b1ea3d14db01ce78573b4fc579",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e37896dafd464a6b21a8c3b88c7f8cf9a2849bf9"
+        },
+        "date": 1698919696782,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2937988180000275,
+            "unit": "s",
+            "extra": "Commit: e37896dafd464a6b21a8c3b88c7f8cf9a2849bf9\nBranch: master\nTime: 2023-11-02T10:59:41+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 101.73772096599998,
+            "unit": "s",
+            "extra": "Commit: e37896dafd464a6b21a8c3b88c7f8cf9a2849bf9\nBranch: master\nTime: 2023-11-02T10:59:41+01:00"
           }
         ]
       }
