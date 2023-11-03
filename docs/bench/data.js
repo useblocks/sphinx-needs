@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1699005266798,
+  "lastUpdate": 1699005995704,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -5544,6 +5544,42 @@ window.BENCHMARK_DATA = {
             "value": 77.660021143,
             "unit": "s",
             "extra": "Commit: 2966474fae6a659bd26c8f9f2fd479534b9e414f\nBranch: master\nTime: 2023-11-03T10:47:14+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6391935679b6600228c0eaa6f6e67335a964249d",
+          "message": "Remove node install from core tests CI (#1057)",
+          "timestamp": "2023-11-03T10:57:58+01:00",
+          "tree_id": "0d50c6cf7d8227607d16fd155d836a17b2433dab",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6391935679b6600228c0eaa6f6e67335a964249d"
+        },
+        "date": 1699005988948,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.308271047000062,
+            "unit": "s",
+            "extra": "Commit: 6391935679b6600228c0eaa6f6e67335a964249d\nBranch: master\nTime: 2023-11-03T10:57:58+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 91.14406612799996,
+            "unit": "s",
+            "extra": "Commit: 6391935679b6600228c0eaa6f6e67335a964249d\nBranch: master\nTime: 2023-11-03T10:57:58+01:00"
           }
         ]
       }
