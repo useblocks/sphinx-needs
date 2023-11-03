@@ -1,5 +1,3 @@
-import os
-
 extensions = ["sphinx_needs"]
 
 needs_types = [
@@ -12,8 +10,3 @@ needs_types = [
 needs_role_need_template = "[{id}] {title} ({status}) {type_name}/{type} - {tags} - {links} - {links_back} - {content}"
 
 needs_role_need_max_title_length = 10
-
-plantuml = "java -Djava.awt.headless=true -jar %s" % os.path.join(
-    os.path.dirname(__file__), "..", "utils", "plantuml.jar"
-)
-plantuml_output_format = "svg"

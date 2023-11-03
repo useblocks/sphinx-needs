@@ -4,6 +4,9 @@ version = "1.0"
 
 extensions = ["sphinxcontrib.plantuml", "sphinx_needs"]
 
+# note, the plantuml executable command is set globally in the test suite
+plantuml_output_format = "svg"
+
 needs_id_regex = "^[A-Za-z0-9_]"
 
 needs_types = [
@@ -25,8 +28,3 @@ needs_external_needs = [
 
 # Needed to export really ALL needs. The default entry would filter out all needs coming from external
 needs_builder_filter = "True"
-
-plantuml = "java -Djava.awt.headless=true -jar %s" % os.path.join(
-    os.path.dirname(__file__), "..", "utils", "plantuml.jar"
-)
-plantuml_output_format = "svg"

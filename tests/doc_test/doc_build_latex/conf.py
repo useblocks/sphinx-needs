@@ -1,12 +1,8 @@
-import os
-
 project = "needs test docs"
 
 extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
 
-plantuml = "java -Djava.awt.headless=true -jar %s" % os.path.join(
-    os.path.dirname(__file__), "..", "utils", "plantuml.jar"
-)
+# note, the plantuml executable command is set globally in the test suite
 plantuml_output_format = "svg"
 
 # figures, tables and code-blocks are automatically numbered if they have a caption
