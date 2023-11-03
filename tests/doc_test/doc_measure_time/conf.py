@@ -9,9 +9,7 @@ sys.path.insert(0, os.path.abspath("."))
 
 extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
 
-plantuml = "java -Djava.awt.headless=true -jar %s" % os.path.join(
-    os.path.dirname(__file__), "..", "utils", "plantuml.jar"
-)
+# note, the plantuml executable command is set globally in the test suite
 plantuml_output_format = "svg"
 
 needs_debug_measurement = True

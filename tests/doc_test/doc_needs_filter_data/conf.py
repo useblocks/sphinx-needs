@@ -7,6 +7,9 @@ sys.path.insert(0, os.path.abspath("./"))
 
 extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
 
+# note, the plantuml executable command is set globally in the test suite
+plantuml_output_format = "svg"
+
 needs_id_regex = "^[A-Za-z0-9_]*"
 needs_types = [
     {"directive": "story", "title": "User Story", "prefix": "US_", "color": "#BFD8D2", "style": "node"},
@@ -31,8 +34,3 @@ needs_warnings = {
 }
 
 needs_warnings_always_warn = True
-
-plantuml = "java -Djava.awt.headless=true -jar %s" % os.path.join(
-    os.path.dirname(__file__), "..", "utils", "plantuml.jar"
-)
-plantuml_output_format = "svg"

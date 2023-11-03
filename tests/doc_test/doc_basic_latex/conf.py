@@ -1,12 +1,8 @@
-import os
-
 project = "basic test"
 
 extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
 
-plantuml = "java -Djava.awt.headless=true -jar %s" % os.path.join(
-    os.path.dirname(__file__), "..", "utils", "plantuml.jar"
-)
+# note, the plantuml executable command is set globally in the test suite
 plantuml_output_format = "svg"
 
 needs_id_regex = "^[A-Za-z0-9_]"
