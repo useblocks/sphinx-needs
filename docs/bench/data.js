@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1698919702221,
+  "lastUpdate": 1699005266798,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -5508,6 +5508,42 @@ window.BENCHMARK_DATA = {
             "value": 101.73772096599998,
             "unit": "s",
             "extra": "Commit: e37896dafd464a6b21a8c3b88c7f8cf9a2849bf9\nBranch: master\nTime: 2023-11-02T10:59:41+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2966474fae6a659bd26c8f9f2fd479534b9e414f",
+          "message": "Add `check` CI job (#1058)\n\nThis job simply passes if all other jobs pass.\r\nThis means that it can be used as a singlular \"required\" for branch protection rules, rather than having to change every time the test matrix changes",
+          "timestamp": "2023-11-03T10:47:14+01:00",
+          "tree_id": "73b636cdc97405f46f0f36448e17ce4442373f68",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/2966474fae6a659bd26c8f9f2fd479534b9e414f"
+        },
+        "date": 1699005261581,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2472325840000167,
+            "unit": "s",
+            "extra": "Commit: 2966474fae6a659bd26c8f9f2fd479534b9e414f\nBranch: master\nTime: 2023-11-03T10:47:14+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 77.660021143,
+            "unit": "s",
+            "extra": "Commit: 2966474fae6a659bd26c8f9f2fd479534b9e414f\nBranch: master\nTime: 2023-11-03T10:47:14+01:00"
           }
         ]
       }
