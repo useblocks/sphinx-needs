@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1699005995704,
+  "lastUpdate": 1699007067020,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -5580,6 +5580,42 @@ window.BENCHMARK_DATA = {
             "value": 91.14406612799996,
             "unit": "s",
             "extra": "Commit: 6391935679b6600228c0eaa6f6e67335a964249d\nBranch: master\nTime: 2023-11-03T10:57:58+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2a97e955c6f2a90b9f73dff38847b3e8c398cd6e",
+          "message": "🧪 Remove plantuml config from test builds conf.py (#1059)\n\nIn #1051 setting of the `plantuml` config option was moved centrally into `test_app`.\r\nThis commit removes the config from individual `conf.py`",
+          "timestamp": "2023-11-03T11:17:01+01:00",
+          "tree_id": "9cc84304bb853c6d2c465e0e483214309e5af341",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/2a97e955c6f2a90b9f73dff38847b3e8c398cd6e"
+        },
+        "date": 1699007061024,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22294931900000847,
+            "unit": "s",
+            "extra": "Commit: 2a97e955c6f2a90b9f73dff38847b3e8c398cd6e\nBranch: master\nTime: 2023-11-03T11:17:01+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 80.24777574100005,
+            "unit": "s",
+            "extra": "Commit: 2a97e955c6f2a90b9f73dff38847b3e8c398cd6e\nBranch: master\nTime: 2023-11-03T11:17:01+01:00"
           }
         ]
       }
