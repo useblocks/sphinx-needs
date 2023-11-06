@@ -121,6 +121,103 @@ These snapshots can be updated by running:
 
       pip install -r docs/requirements.txt
 
+Running JS Testcases with PyTest
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Setup Cypress Locally**
+
+* Install Node JS on your computer and ensure it can be accessed through the CMD.
+* Install Cypress using the npm package manager by running ``npm install cypress``. Visit this link for more information on `how to install Cypress <https://docs.cypress.io/guides/getting-started/installing-cypress#npm-install>`_.
+* Verify if Cypress is installed correctly and is executable by running: ``npx cypress verify``. Get out this page for more information about `Cypress commandline <https://docs.cypress.io/guides/guides/command-line>`_.
+* If everything is successful then we can use Cypress.
+
+**Enable Cypress Test in Python Test Files**
+
+Under the ``js_test`` folder, you can save your Cypress JS test files (files should end with: ``*.cy.js``). For each Cypress JS test file, you will need to write the Cypress JS test cases in the file. You can read more from the `Cypress Docs <https://docs.cypress.io/>`_. You can also check the ``tests/js_test/sn-collapse-button.cy.js`` file as reference.
+
+In your Python test files, you must mark every JS related test case with the marker - ``jstest`` and you must include the ``spec_pattern`` key-value pair as part of the ``test_app`` fixture parameter.
+Also, you need to pass the ``test_server`` fixture to your test function for it to use the automated HTTP test server. For example, your test case could look like this:
+
+.. code-block:: python
+
+    # tests/test_sn_collapse_button.py
+
+    import pytest
+
+
+    @pytest.mark.jstest
+    @pytest.mark.parametrize(
+        "test_app",
+        [
+            {
+                "buildername": "html",
+                "srcdir": "doc_test/variant_doc",
+                "tags": ["tag_a"],
+                "spec_pattern": "js_test/js-test-sn-collapse-button.cy.js"
+            }
+        ],
+        indirect=True,
+    )
+    def test_collapse_button_in_docs(test_app, test_server):
+        ...
+
+.. note::
+
+    The ``spec_pattern`` key is required to ensure Cypress locates your test files or folder. Visit this link for more info on how to set the `spec_pattern <https://docs.cypress.io/guides/guides/command-line#cypress-run-spec-lt-spec-gt>`_.
+
+After you set the ``spec_pattern`` key-value pair as part of the ``test_app`` fixture parameter, you can call ``app.test_js()`` in your Python test case to run a JS test for the ``spec_pattern`` you provided. For example, you can use ``app.test_js()`` like below:
+
+.. code-block:: python
+
+    # tests/test_sn_collapse_button.py
+
+    import pytest
+
+
+    @pytest.mark.jstest
+    @pytest.mark.parametrize(
+        "test_app",
+        [
+            {
+                "buildername": "html",
+                "srcdir": "doc_test/variant_doc",
+                "tags": ["tag_a"],
+                "spec_pattern": "js_test/js-test-sn-collapse-button.cy.js"
+            }
+        ],
+        indirect=True,
+    )
+    def test_collapse_button_in_docs(test_app, test_server):
+        """Check if the Sphinx-Needs collapse button works in the provided documentation source."""
+        app = test_app
+        app.build()
+
+        # Call `app.test_js()` to run the JS test for a particular specPattern
+        js_test_result = app.test_js()
+
+        # Check the return code and stdout
+        assert js_test_result["returncode"] == 0
+        assert "All specs passed!" in js_test_result["stdout"].decode("utf-8")
+
+.. note::
+
+    ``app.test_js()`` will return a dictionary object containing the ``returncode``, ``stdout``, and ``stderr``. Example:
+
+    .. code-block:: python
+
+        return {
+            "returncode": 0,
+            "stdout": "Test passed string",
+            "stderr": "Errors encountered,
+        }
+
+You can run the ``make test-js`` command to check all JS testcases.
+
+.. note::
+
+    The ``http_server`` process invoked by the ``make test-js`` command may not terminate properly in some instances.
+    Kindly check your system's monitoring app to end the process if not terminated automatically.
+
 Linting & Formatting
 --------------------
 

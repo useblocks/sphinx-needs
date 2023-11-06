@@ -14,6 +14,7 @@ DOCUTILS_VERSIONS = ["0.19", "0.17", "0.16", "0.15"]
 TEST_DEPENDENCIES = [
     "pytest",
     "pytest-xdist",
+    "pytest-xprocess",
     "syrupy",
     "responses",
     "lxml",

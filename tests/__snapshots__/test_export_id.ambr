@@ -119,9 +119,6 @@
             'blocks': list([
               'REQ_003',
             ]),
-            'blocks_back': list([
-              'REQ_005',
-            ]),
             'closed_at': '',
             'completion': '',
             'constraints': list([
@@ -143,8 +140,6 @@
             'has_forbidden_dead_links': '',
             'hidden': '',
             'id': 'REQ_001',
-            'id_complete': 'REQ_001',
-            'id_parent': 'REQ_001',
             'id_prefix': '',
             'is_external': False,
             'is_modified': False,
@@ -163,8 +158,6 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
-            ]),
-            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -188,10 +181,6 @@
             'template': None,
             'tests': list([
             ]),
-            'tests_back': list([
-              'TEST_001',
-              'TEST_002',
-            ]),
             'title': 'My requirement',
             'type': 'story',
             'type_name': 'User Story',
@@ -205,8 +194,6 @@
             }),
             'avatar': '',
             'blocks': list([
-            ]),
-            'blocks_back': list([
             ]),
             'closed_at': '',
             'completion': '',
@@ -229,8 +216,6 @@
             'has_forbidden_dead_links': '',
             'hidden': '',
             'id': 'REQ_002',
-            'id_complete': 'REQ_002',
-            'id_parent': 'REQ_002',
             'id_prefix': '',
             'is_external': False,
             'is_modified': False,
@@ -246,8 +231,6 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
-            ]),
-            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -271,8 +254,6 @@
             'template': None,
             'tests': list([
             ]),
-            'tests_back': list([
-            ]),
             'title': 'My requirement 2',
             'type': 'story',
             'type_name': 'User Story',
@@ -286,9 +267,6 @@
             }),
             'avatar': '',
             'blocks': list([
-            ]),
-            'blocks_back': list([
-              'REQ_001',
             ]),
             'closed_at': '',
             'completion': '',
@@ -311,8 +289,6 @@
             'has_forbidden_dead_links': '',
             'hidden': '',
             'id': 'REQ_003',
-            'id_complete': 'REQ_003',
-            'id_parent': 'REQ_003',
             'id_prefix': '',
             'is_external': False,
             'is_modified': False,
@@ -328,8 +304,6 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
-            ]),
-            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -353,9 +327,6 @@
             'template': None,
             'tests': list([
             ]),
-            'tests_back': list([
-              'TEST_001',
-            ]),
             'title': 'My requirement 3',
             'type': 'story',
             'type_name': 'User Story',
@@ -369,8 +340,6 @@
             }),
             'avatar': '',
             'blocks': list([
-            ]),
-            'blocks_back': list([
             ]),
             'closed_at': '',
             'completion': '',
@@ -393,8 +362,6 @@
             'has_forbidden_dead_links': '',
             'hidden': '',
             'id': 'REQ_004',
-            'id_complete': 'REQ_004',
-            'id_parent': 'REQ_004',
             'id_prefix': '',
             'is_external': False,
             'is_modified': False,
@@ -410,8 +377,6 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
-            ]),
-            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -435,8 +400,6 @@
             'template': None,
             'tests': list([
             ]),
-            'tests_back': list([
-            ]),
             'title': 'My requirement 4',
             'type': 'story',
             'type_name': 'User Story',
@@ -451,8 +414,6 @@
             'avatar': '',
             'blocks': list([
               'REQ_001',
-            ]),
-            'blocks_back': list([
             ]),
             'closed_at': '',
             'completion': '',
@@ -479,8 +440,6 @@
             'has_forbidden_dead_links': '',
             'hidden': '',
             'id': 'REQ_005',
-            'id_complete': 'REQ_005',
-            'id_parent': 'REQ_005',
             'id_prefix': '',
             'is_external': False,
             'is_modified': False,
@@ -498,8 +457,6 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
-            ]),
-            'parent_needs_back': list([
             ]),
             'parts': dict({
               '1': dict({
@@ -552,9 +509,6 @@
             'template': None,
             'tests': list([
             ]),
-            'tests_back': list([
-              'TEST_003',
-            ]),
             'title': 'Req 5',
             'type': 'story',
             'type_name': 'User Story',
@@ -568,8 +522,6 @@
             }),
             'avatar': '',
             'blocks': list([
-            ]),
-            'blocks_back': list([
             ]),
             'closed_at': '',
             'completion': '',
@@ -592,8 +544,6 @@
             'has_forbidden_dead_links': '',
             'hidden': '',
             'id': 'TEST_001',
-            'id_complete': 'TEST_001',
-            'id_parent': 'TEST_001',
             'id_prefix': '',
             'is_external': False,
             'is_modified': False,
@@ -609,8 +559,6 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
-            ]),
-            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -636,8 +584,6 @@
               'REQ_001',
               'REQ_003',
             ]),
-            'tests_back': list([
-            ]),
             'title': 'Test of requirements',
             'type': 'test',
             'type_name': 'Test Case',
@@ -651,8 +597,6 @@
             }),
             'avatar': '',
             'blocks': list([
-            ]),
-            'blocks_back': list([
             ]),
             'closed_at': '',
             'completion': '',
@@ -675,8 +619,6 @@
             'has_forbidden_dead_links': '',
             'hidden': '',
             'id': 'TEST_002',
-            'id_complete': 'TEST_002',
-            'id_parent': 'TEST_002',
             'id_prefix': '',
             'is_external': False,
             'is_modified': False,
@@ -693,8 +635,6 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
-            ]),
-            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -719,8 +659,6 @@
             'tests': list([
               'REQ_001',
             ]),
-            'tests_back': list([
-            ]),
             'title': 'Test of requirements2',
             'type': 'test',
             'type_name': 'Test Case',
@@ -734,8 +672,6 @@
             }),
             'avatar': '',
             'blocks': list([
-            ]),
-            'blocks_back': list([
             ]),
             'closed_at': '',
             'completion': '',
@@ -758,8 +694,6 @@
             'has_forbidden_dead_links': '',
             'hidden': '',
             'id': 'TEST_003',
-            'id_complete': 'TEST_003',
-            'id_parent': 'TEST_003',
             'id_prefix': '',
             'is_external': False,
             'is_modified': False,
@@ -776,8 +710,6 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
-            ]),
-            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -802,8 +734,6 @@
             'tests': list([
               'REQ_005.1',
               'REQ_005.cool',
-            ]),
-            'tests_back': list([
             ]),
             'title': 'Test of requirements 5',
             'type': 'test',

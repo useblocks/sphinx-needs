@@ -30,7 +30,8 @@ docs/_images/need_bar_*.*
 .dockerignore
 
 .benchmarks/
-
+tests/cypress/
+cypress/
 
 need_bar_*.png
 need_pie_*.png

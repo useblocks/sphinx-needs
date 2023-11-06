@@ -40,6 +40,7 @@ class FilterAttributesType(TypedDict):
     filter_code: list[str]
     filter_func: str
     export_id: str
+    """If set, the filter is exported with this ID in the needs.json file."""
 
 
 class FilterBase(SphinxDirective):
@@ -73,6 +74,10 @@ class FilterBase(SphinxDirective):
         types = self.options.get("types", [])
         if isinstance(types, str):
             types = [typ.strip() for typ in re.split(";|,", types)]
+
+        if self.options.get("export_id", ""):
+            # this is used by needs builders
+            SphinxNeedsData(self.env).has_export_filters = True
 
         # Add the need and all needed information
         collected_filter_options: FilterAttributesType = {

@@ -1,5 +1,3 @@
-import os
-
 extensions = ["sphinx_needs"]
 
 needs_table_style = "TABLE"
@@ -41,8 +39,3 @@ needs_string_links = {
         "options": ["github"],
     },
 }
-
-plantuml = "java -Djava.awt.headless=true -jar %s" % os.path.join(
-    os.path.dirname(__file__), "..", "utils", "plantuml.jar"
-)
-plantuml_output_format = "svg"

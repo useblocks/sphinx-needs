@@ -34,8 +34,6 @@
             'has_forbidden_dead_links': '',
             'hidden': '',
             'id': 'ST_001',
-            'id_complete': 'ST_001',
-            'id_parent': 'ST_001',
             'id_prefix': '',
             'is_external': False,
             'is_modified': False,
@@ -51,8 +49,6 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
-            ]),
-            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -106,8 +102,6 @@
             'has_forbidden_dead_links': '',
             'hidden': '',
             'id': 'US_38823',
-            'id_complete': 'US_38823',
-            'id_parent': 'US_38823',
             'id_prefix': '',
             'is_external': False,
             'is_modified': False,
@@ -123,8 +117,6 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
-            ]),
-            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),

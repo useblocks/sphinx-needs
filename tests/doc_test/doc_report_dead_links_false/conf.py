@@ -1,6 +1,7 @@
-import os
-
 extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
+
+# note, the plantuml executable command is set globally in the test suite
+plantuml_output_format = "svg"
 
 needs_types = [
     {"directive": "story", "title": "User Story", "prefix": "US_", "color": "#BFD8D2", "style": "node"},
@@ -29,8 +30,3 @@ needs_extra_links = [
         "style_part": "dotted,#00AA00",
     },
 ]
-
-plantuml = "java -Djava.awt.headless=true -jar %s" % os.path.join(
-    os.path.dirname(__file__), "..", "utils", "plantuml.jar"
-)
-plantuml_output_format = "svg"

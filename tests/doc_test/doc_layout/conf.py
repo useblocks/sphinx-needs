@@ -1,13 +1,6 @@
-import os
-
 from docutils.parsers.rst import directives
 
 extensions = ["sphinx_needs"]
-
-plantuml = "java -Djava.awt.headless=true -jar %s" % os.path.join(
-    os.path.dirname(__file__), "..", "utils", "plantuml.jar"
-)
-plantuml_output_format = "svg"
 
 needs_types = [
     {"directive": "story", "title": "User Story", "prefix": "US_", "color": "#BFD8D2", "style": "node"},
@@ -28,6 +21,13 @@ needs_layouts = {
             "head": ['**<<meta("title")>>** for *<<meta("author")>>*'],
             "meta": ['**status**: <<meta("status")>>', '**author**: <<meta("author")>>'],
             "side": ['<<image("_images/{{author}}.png", align="center")>>'],
+        },
+    },
+    "optional_author": {
+        "grid": "simple",
+        "layout": {
+            "head": ['**<<meta("title")>>**'],
+            "meta": ['**status**: <<meta("status")>>', r'<<meta("author", prefix="\*\*author\*\*: ")>>'],
         },
     },
     "footer_grid": {
