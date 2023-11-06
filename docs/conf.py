@@ -49,7 +49,6 @@ extensions = [
     "sphinxcontrib.plantuml",
     "sphinx_needs",
     "sphinx.ext.autodoc",
-    "matplotlib.sphinxext.plot_directive",
     "sphinx_copybutton",
     "sphinxcontrib.programoutput",
     "sphinx_design",

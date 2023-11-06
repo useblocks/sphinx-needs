@@ -3,7 +3,7 @@ import importlib
 import operator
 import os
 import re
-from functools import reduce, wraps
+from functools import lru_cache, reduce, wraps
 from re import Pattern
 from typing import (
     TYPE_CHECKING,
@@ -21,7 +21,6 @@ from urllib.parse import urlparse
 
 from docutils import nodes
 from jinja2 import Environment, Template
-from matplotlib.figure import FigureBase
 from sphinx.application import BuildEnvironment, Sphinx
 
 from sphinx_needs.config import NeedsSphinxConfig
@@ -35,6 +34,9 @@ except ImportError:
     from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
+    import matplotlib
+    from matplotlib.figure import FigureBase
+
     from sphinx_needs.functions.functions import DynamicFunction
 
 logger = get_logger(__name__)
@@ -382,7 +384,23 @@ def jinja_parse(context: Dict[str, Any], jinja_string: str) -> str:
     return content
 
 
-def save_matplotlib_figure(app: Sphinx, figure: FigureBase, basename: str, fromdocname: str) -> nodes.image:
+@lru_cache()
+def import_matplotlib() -> Optional["matplotlib"]:
+    """Import and return matplotlib, or return None if it cannot be imported.
+
+    Also sets the interactive backend to ``Agg``, if ``DISPLAY`` is not set.
+    """
+    try:
+        import matplotlib
+        import matplotlib.pyplot
+    except ImportError:
+        return None
+    if not os.environ.get("DISPLAY"):
+        matplotlib.use("Agg")
+    return matplotlib
+
+
+def save_matplotlib_figure(app: Sphinx, figure: "FigureBase", basename: str, fromdocname: str) -> nodes.image:
     builder = app.builder
     env = app.env
 

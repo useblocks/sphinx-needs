@@ -1,24 +1,21 @@
+import hashlib
 import math
-import os
 from typing import List, Sequence
 
-import matplotlib
-import numpy
 from docutils import nodes
+from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
-from sphinx_needs.utils import add_doc, remove_node_from_tree, save_matplotlib_figure
-
-if not os.environ.get("DISPLAY"):
-    matplotlib.use("Agg")
-import hashlib
-
-from docutils.parsers.rst import directives
-
 from sphinx_needs.logging import get_logger
+from sphinx_needs.utils import (
+    add_doc,
+    import_matplotlib,
+    remove_node_from_tree,
+    save_matplotlib_figure,
+)
 
 logger = get_logger(__name__)
 
@@ -82,7 +79,8 @@ class NeedbarDirective(FilterBase):
             text_color = text_color.strip()
 
         style = self.options.get("style")
-        style = style.strip() if style else matplotlib.style.use("default")
+        matplotlib = import_matplotlib()
+        style = style.strip() if style else (matplotlib.style.use("default") if matplotlib else "default")
 
         legend = "legend" in self.options
 
@@ -169,17 +167,29 @@ class NeedbarDirective(FilterBase):
 # 10. cleanup matplotlib
 def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
     env = app.env
+    needs_data = SphinxNeedsData(env)
     needs_config = NeedsSphinxConfig(env.config)
+
+    matplotlib = import_matplotlib()
+
+    if matplotlib is None and found_nodes and needs_config.include_needs:
+        logger.warning(
+            "Matplotlib is not installed and required by needbar. "
+            "Install with `sphinx-needs[plotting]` to use. [needs.mpl]",
+            once=True,
+            type="needs",
+            subtype="mpl",
+        )
 
     # NEEDFLOW
     # for node in doctree.findall(Needbar):
     for node in found_nodes:
-        if not needs_config.include_needs:
+        if matplotlib is None or not needs_config.include_needs:
             remove_node_from_tree(node)
             continue
 
         id = node.attributes["ids"][0]
-        current_needbar = SphinxNeedsData(env).get_or_create_bars()[id]
+        current_needbar = needs_data.get_or_create_bars()[id]
 
         # 1. define constants
         error_id = current_needbar["error_id"]
@@ -253,9 +263,7 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
 
         # 5. process content
         local_data_number = []
-        need_list = list(
-            prepare_need_list(SphinxNeedsData(env).get_or_create_needs().values())
-        )  # adds parts to need_list
+        need_list = list(prepare_need_list(needs_data.get_or_create_needs().values()))  # adds parts to need_list
 
         for line in local_data:
             line_number = []
@@ -322,7 +330,7 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
         colors = colors * multi
         colors = colors[: len(local_data)]
 
-        y_offset = numpy.zeros(len(local_data_number[0]))
+        y_offset = [0.0 for _ in range(len(local_data_number[0]))]
 
         # 8. create figure
         bar_labels = []
@@ -347,7 +355,7 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
 
             if current_needbar["stacked"]:
                 # handle stacked bar
-                y_offset = y_offset + numpy.array(local_data_number[x])
+                y_offset = [i + j for i, j in zip(y_offset, local_data_number[x])]
 
             if current_needbar["show_sum"]:
                 try:
@@ -375,15 +383,14 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
             if sum_rotation.isdigit():
                 matplotlib.pyplot.setp(bar_labels, rotation=int(sum_rotation))
 
+        centers = [(i + j) / 2.0 for i, j in zip(index[0], index[len(local_data_number) - 1])]
         if not current_needbar["horizontal"]:
             # We want to support even older version of matplotlib, which do not support axes.set_xticks(labels)
-            x_pos = (numpy.array(index[0]) + numpy.array(index[len(local_data_number) - 1])) / 2
-            axes.set_xticks(x_pos)
+            axes.set_xticks(centers)
             axes.set_xticklabels(labels=xlabels)
         else:
             # We want to support even older version of matplotlib, which do not support axes.set_yticks(labels)
-            y_pos = (numpy.array(index[0]) + numpy.array(index[len(local_data_number) - 1])) / 2
-            axes.set_yticks(y_pos)
+            axes.set_yticks(centers)
             axes.set_yticklabels(labels=xlabels)
             axes.invert_yaxis()  # labels read top-to-bottom
 

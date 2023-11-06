@@ -1,27 +1,19 @@
-import os
+import hashlib
 from typing import Iterable, List, Sequence
 
-import matplotlib
-import numpy as np
 from docutils import nodes
+from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
-
-if not os.environ.get("DISPLAY"):
-    matplotlib.use("Agg")
-import hashlib
-
-import matplotlib.pyplot
-from docutils.parsers.rst import directives
-
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import (
     add_doc,
     check_and_get_external_filter_func,
+    import_matplotlib,
     remove_node_from_tree,
     save_matplotlib_figure,
 )
@@ -114,11 +106,21 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
     needs_data = SphinxNeedsData(env)
     needs_config = NeedsSphinxConfig(env.config)
 
+    matplotlib = import_matplotlib()
+
+    if matplotlib is None and found_nodes and needs_config.include_needs:
+        logger.warning(
+            "Matplotlib is not installed and required by needpie. "
+            "Install with `sphinx-needs[plotting]` to use. [needs.mpl]",
+            once=True,
+            type="needs",
+            subtype="mpl",
+        )
+
     # NEEDFLOW
-    include_needs = needs_config.include_needs
     # for node in doctree.findall(Needpie):
     for node in found_nodes:
-        if not include_needs:
+        if matplotlib is None or not needs_config.include_needs:
             remove_node_from_tree(node)
             continue
 
@@ -215,7 +217,7 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
         if text_color:
             pie_kwargs["textprops"] = {"color": text_color}
 
-        wedges, _texts, autotexts = axes.pie(sizes, normalize=np.asarray(sizes, np.float32).sum() >= 1, **pie_kwargs)
+        wedges, _texts, autotexts = axes.pie(sizes, normalize=sum(float(s) for s in sizes) >= 1, **pie_kwargs)
 
         ratio = 20  # we will remove all labels with size smaller 5%
         legend_enforced = False

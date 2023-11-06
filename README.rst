@@ -61,6 +61,12 @@ Using pip
 
     pip install sphinx-needs
 
+If you wish to also use the plotting features of sphinx-needs (see :ref:`needbar` and :ref:`needpie`), you need to also install ``matplotlib``, which is available *via* the ``plotting`` extra:
+
+.. code-block:: bash
+
+    pip install sphinx-needs[plotting]
+
 .. note::
 
    Prior version **1.0.1** the package was named ``sphinxcontrib-needs``.
