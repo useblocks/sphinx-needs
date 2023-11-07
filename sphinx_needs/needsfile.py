@@ -110,6 +110,8 @@ class NeedsList:
         # We need to rewrite some data, because this kind of data gets overwritten during needs.json import.
         if not self.needs_config.reproducible_json:
             self.needs_list["created"] = datetime.now().isoformat()
+        else:
+            self.needs_list.pop("created", None)
         self.needs_list["current_version"] = self.current_version
         self.needs_list["project"] = self.project
         if needs_path:

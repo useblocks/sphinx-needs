@@ -390,7 +390,6 @@
 # ---
 # name: test_doc_needs_builder_reproducible[test_app0]
   dict({
-    'created': '2021-05-11T13:54:22.331741',
     'current_version': '1.0',
     'project': 'Python',
     'versions': dict({
