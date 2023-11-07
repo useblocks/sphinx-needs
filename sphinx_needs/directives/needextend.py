@@ -166,18 +166,3 @@ def extend_needs_data(
                             need[option] = [i.strip() for i in re.split(";|,", value)]
                     else:
                         need[option] = value
-
-
-def remove_needextend_node(node: Needextend) -> None:
-    """
-    Remove needextend from docutils node-tree, so that no output gets generated for it.
-    Ok, this is really dirty.
-    If we replace a node, docutils checks, if it will not lose any attributes.
-    But this is here the case, because we are using the attribute "ids" of a node.
-    However, I do not understand, why losing an attribute is such a big deal, so we delete everything
-    before docutils claims about it.
-    """
-
-    for att in ("ids", "names", "classes", "dupnames"):
-        node[att] = []
-    node.replace_self([])

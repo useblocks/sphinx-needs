@@ -10,7 +10,7 @@ from sphinx.application import Sphinx
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
-from sphinx_needs.utils import add_doc, save_matplotlib_figure
+from sphinx_needs.utils import add_doc, remove_node_from_tree, save_matplotlib_figure
 
 if not os.environ.get("DISPLAY"):
     matplotlib.use("Agg")
@@ -175,14 +175,7 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
     # for node in doctree.findall(Needbar):
     for node in found_nodes:
         if not needs_config.include_needs:
-            # Ok, this is really dirty.
-            # If we replace a node, docutils checks, if it will not lose any attributes.
-            # But this is here the case, because we are using the attribute "ids" of a node.
-            # However, I do not understand, why losing an attribute is such a big deal, so we delete everything
-            # before docutils claims about it.
-            for att in ("ids", "names", "classes", "dupnames"):
-                node[att] = []
-            node.replace_self([])
+            remove_node_from_tree(node)
             continue
 
         id = node.attributes["ids"][0]

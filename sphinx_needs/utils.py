@@ -653,3 +653,15 @@ def get_scale(options: Dict[str, Any], location: Any) -> str:
         )
         return "100"
     return scale
+
+
+def remove_node_from_tree(node: nodes.Element) -> None:
+    """Remove a docutils node in-place from its node-tree."""
+    # Ok, this is really dirty.
+    # If we replace a node, docutils checks, if it will not lose any attributes.
+    # But this is here the case, because we are using the attribute "ids" of a node.
+    # However, I do not understand, why losing an attribute is such a big deal, so we delete everything
+    # before docutils claims about it.
+    for att in ("ids", "names", "classes", "dupnames"):
+        node[att] = []
+    node.replace_self([])

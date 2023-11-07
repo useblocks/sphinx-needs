@@ -15,7 +15,11 @@ from sphinx_needs.directives.utils import (
     used_filter_paragraph,
 )
 from sphinx_needs.filter_common import FilterBase, process_filters
-from sphinx_needs.utils import add_doc, check_and_calc_base_url_rel_path
+from sphinx_needs.utils import (
+    add_doc,
+    check_and_calc_base_url_rel_path,
+    remove_node_from_tree,
+)
 
 
 class Needlist(nodes.General, nodes.Element):
@@ -70,14 +74,7 @@ def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
     # for node in doctree.findall(Needlist):
     for node in found_nodes:
         if not include_needs:
-            # Ok, this is really dirty.
-            # If we replace a node, docutils checks, if it will not lose any attributes.
-            # But this is here the case, because we are using the attribute "ids" of a node.
-            # However, I do not understand, why losing an attribute is such a big deal, so we delete everything
-            # before docutils claims about it.
-            for att in ("ids", "names", "classes", "dupnames"):
-                node[att] = []
-            node.replace_self([])
+            remove_node_from_tree(node)
             continue
 
         id = node.attributes["ids"][0]

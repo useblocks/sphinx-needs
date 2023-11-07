@@ -22,6 +22,7 @@ from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import (
     add_doc,
     check_and_get_external_filter_func,
+    remove_node_from_tree,
     save_matplotlib_figure,
 )
 
@@ -118,14 +119,7 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
     # for node in doctree.findall(Needpie):
     for node in found_nodes:
         if not include_needs:
-            # Ok, this is really dirty.
-            # If we replace a node, docutils checks, if it will not lose any attributes.
-            # But this is here the case, because we are using the attribute "ids" of a node.
-            # However, I do not understand, why losing an attribute is such a big deal, so we delete everything
-            # before docutils claims about it.
-            for att in ("ids", "names", "classes", "dupnames"):
-                node[att] = []
-            node.replace_self([])
+            remove_node_from_tree(node)
             continue
 
         id = node.attributes["ids"][0]
