@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1699343157432,
+  "lastUpdate": 1699344915367,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -5688,6 +5688,42 @@ window.BENCHMARK_DATA = {
             "value": 63.18062914000001,
             "unit": "s",
             "extra": "Commit: 0888e0869a573bb2ce0695ae0163e6f5b2c48889\nBranch: master\nTime: 2023-11-07T08:43:10+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2140da01251413cbf20ac59cfa3523370e553e21",
+          "message": "🔧 Add `remove_node_from_tree` utility function (#1063)\n\nJust de-duplicates some logic used in multiple places",
+          "timestamp": "2023-11-07T09:11:54+01:00",
+          "tree_id": "9c3297ec5dba857a75d3bce79a5c912e73c8ed1a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/2140da01251413cbf20ac59cfa3523370e553e21"
+        },
+        "date": 1699344906948,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.3506217609999567,
+            "unit": "s",
+            "extra": "Commit: 2140da01251413cbf20ac59cfa3523370e553e21\nBranch: master\nTime: 2023-11-07T09:11:54+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 90.39176266499999,
+            "unit": "s",
+            "extra": "Commit: 2140da01251413cbf20ac59cfa3523370e553e21\nBranch: master\nTime: 2023-11-07T09:11:54+01:00"
           }
         ]
       }
