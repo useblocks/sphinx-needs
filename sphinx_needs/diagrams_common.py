@@ -6,7 +6,7 @@ diagram related directive. E.g. needflow and needsequence.
 import html
 import os
 import textwrap
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, TypedDict
 from urllib.parse import urlparse
 
 from docutils import nodes
@@ -19,12 +19,6 @@ from sphinx_needs.data import NeedsFilteredBaseType, NeedsPartsInfoType
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import get_scale, split_link_types
-
-try:
-    from typing import TypedDict
-except ImportError:
-    # introduced in python 3.8
-    from typing_extensions import TypedDict
 
 logger = get_logger(__name__)
 

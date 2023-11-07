@@ -5,12 +5,15 @@ import secrets
 import shutil
 import socket
 import string
+import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any, Dict
 
 import pytest
 from docutils.nodes import document
+from sphinx import version_info
 from sphinx.application import Sphinx
 from sphinx.testing.path import path
 from syrupy.extensions.single_file import SingleFileSnapshotExtension, WriteMode
@@ -142,41 +145,43 @@ def test_js(self) -> Dict[str, Any]:
     cypress_config = json.dumps(js_test_config)
     cypress_config_file = get_abspath("js_test/cypress.config.js")
 
-    try:
-        import subprocess
+    # Run the Cypress test command
+    completed_process = subprocess.run(
+        [
+            "npx",
+            "cypress",
+            "run",
+            # "--browser",
+            # "chrome",
+            "--config-file",
+            rf"{cypress_config_file}",
+            "--config",
+            rf"{cypress_config}",
+        ],
+        capture_output=True,
+    )
 
-        # Run the Cypress test command
-        completed_process = subprocess.run(
-            [
-                "npx",
-                "cypress",
-                "run",
-                # "--browser",
-                # "chrome",
-                "--config-file",
-                rf"{cypress_config_file}",
-                "--config",
-                rf"{cypress_config}",
-            ],
-            capture_output=True,
-        )
+    # Send back return code, stdout, and stderr
+    stdout = completed_process.stdout.decode("utf-8")
+    stderr = completed_process.stderr.decode("utf-8")
 
-        # Send back return code, stdout, and stderr
-        return {
-            "returncode": completed_process.returncode,
-            "stdout": completed_process.stdout,
-            "stderr": completed_process.stderr,
-        }
-    except (Exception, subprocess.CalledProcessError) as e:
-        return {
-            "returncode": 1,
-            "stdout": "",
-            "stderr": e,
-        }
+    if completed_process.returncode != 0:
+        print(stdout)
+        print(stderr, file=sys.stderr)
+
+    return {
+        "returncode": completed_process.returncode,
+        "stdout": stdout,
+        "stderr": stderr,
+    }
+
+
+def pytest_addoption(parser):
+    parser.addoption("--sn-build-dir", action="store", default=None, help="Base directory for sphinx-needs builds")
 
 
 @pytest.fixture(scope="session")
-def sphinx_test_tempdir() -> path:
+def sphinx_test_tempdir(request) -> path:
     """
     Fixture to provide a temporary directory for Sphinx testing.
 
@@ -187,7 +192,10 @@ def sphinx_test_tempdir() -> path:
     """
     # We create a temp-folder on our own, as the util-functions from sphinx and pytest make troubles.
     # It seems like they reuse certain-temp names
-    sphinx_test_tempdir = path(tempfile.gettempdir()).joinpath("sn_test_build_data")
+
+    temp_base = os.path.abspath(request.config.getoption("--sn-build-dir") or tempfile.gettempdir())
+
+    sphinx_test_tempdir = path(temp_base).joinpath("sn_test_build_data")
     utils_dir = sphinx_test_tempdir.joinpath("utils")
 
     # if not (sphinx_test_tempdir.exists() and sphinx_test_tempdir.isdir()):
@@ -230,6 +238,10 @@ def test_app(make_app, sphinx_test_tempdir, request):
     # copy test srcdir to test temporary directory sphinx_test_tempdir
     srcdir = builder_params.get("srcdir")
     src_dir = copy_srcdir_to_tmpdir(srcdir, sphinx_test_tempdir)
+    parent_path = Path(str(src_dir.parent.abspath()))
+
+    if version_info >= (7, 2):
+        src_dir = Path(str(src_dir))
 
     # return sphinx.testing fixture make_app and new srcdir which is in sphinx_test_tempdir
     app: Sphinx = make_app(
@@ -256,7 +268,8 @@ def test_app(make_app, sphinx_test_tempdir, request):
     yield app
 
     # Clean up the srcdir of each Sphinx app after the test function has executed
-    shutil.rmtree(src_dir.parent.abspath(), ignore_errors=True)
+    if request.config.getoption("--sn-build-dir") is None:
+        shutil.rmtree(parent_path, ignore_errors=True)
 
 
 class DoctreeSnapshotExtension(SingleFileSnapshotExtension):

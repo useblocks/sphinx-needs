@@ -6,71 +6,24 @@ from nox_poetry import session
 # This list can contain more versions as used by the github workflows to support
 # custom local tests
 
-PYTHON_VERSIONS = ["3.8", "3.10"]
-SPHINX_VERSIONS = ["5.2.1", "4.5.0"]
-DOCUTILS_VERSIONS = ["0.19", "0.17", "0.16", "0.15"]
-
-
-TEST_DEPENDENCIES = [
-    "pytest",
-    "pytest-xdist",
-    "pytest-xprocess",
-    "syrupy",
-    "responses",
-    "lxml",
-    "pyparsing!=3.0.4",
-    "requests-mock",
-]
-
-# Some pytest-extension do not work well with pytest-benchmark, so we create our
-# own list for benchmarking
-BENCHMARK_DEPENDENCIES = [e for e in TEST_DEPENDENCIES if e not in ['"pytest-xdist"']]
-BENCHMARK_DEPENDENCIES.append("py")
-BENCHMARK_DEPENDENCIES.append("memray")
-BENCHMARK_DEPENDENCIES.append("pytest-benchmark")
-
-
-def is_supported(python: str, sphinx: str, docutils: str) -> bool:
-    return not (sphinx in ["4.5.0"] and docutils in ["0.19", "0.18"])
-
-
-def run_tests(session, sphinx, docutils):
-    session.install(".")
-    session.install(*TEST_DEPENDENCIES)
-    session.run("pip", "install", "-r", "docs/requirements.txt", silent=True)
-    session.run("pip", "install", f"sphinx=={sphinx}", silent=True)
-    session.run("pip", "install", f"docutils=={docutils}", silent=True)
-    session.run("echo", "TEST FINAL PACKAGE LIST")
-    session.run("pip", "freeze")
-    session.run("make", "test", external=True)
+PYTHON_VERSIONS = ["3.8", "3.9", "3.10", "3.11"]
+SPHINX_VERSIONS = ["5.0", "6.0", "7.0"]
 
 
 @session(python=PYTHON_VERSIONS)
-@nox.parametrize("docutils", DOCUTILS_VERSIONS)  # order is important, last options needs to be given first ...
-@nox.parametrize("sphinx", SPHINX_VERSIONS)  # ... by GH workflow
-def tests(session, sphinx, docutils):
-    if is_supported(session.python, sphinx, docutils):
-        run_tests(session, sphinx, docutils)
-    else:
-        session.skip("unsupported combination")
-
-
-@session(python="3.10")
-def linkcheck(session):
-    session.install(".")
-    # LinkCheck can handle rate limits since Sphinx 3.4, which is needed as
-    # our doc has too many links to GitHub.
-    session.run("pip", "install", "sphinx==3.5.4", silent=True)
-
-    session.run("pip", "install", "-r", "docs/requirements.txt", silent=True)
-    session.run("make", "docs-linkcheck", external=True)
+@nox.parametrize("sphinx", SPHINX_VERSIONS)
+def tests(session, sphinx):
+    session.install(".[test]")
+    session.run("pip", "install", f"sphinx~={sphinx}", silent=True)
+    session.run("echo", "TEST FINAL PACKAGE LIST")
+    session.run("pip", "freeze")
+    posargs = session.posargs or ["tests"]
+    session.run("pytest", "--ignore", "tests/benchmarks", *posargs, external=True)
 
 
 @session(python="3.10")
 def benchmark_time(session):
-    session.install(".")
-    session.install(*BENCHMARK_DEPENDENCIES)
-    session.run("pip", "install", "-r", "docs/requirements.txt", silent=True)
+    session.install(".[test,benchmark,docs]")
     session.run(
         "pytest",
         "tests/benchmarks",
@@ -78,15 +31,14 @@ def benchmark_time(session):
         "_time",
         "--benchmark-json",
         "output.json",
+        *session.posargs,
         external=True,
     )
 
 
 @session(python="3.10")
 def benchmark_memory(session):
-    session.install(".")
-    session.install(*BENCHMARK_DEPENDENCIES)
-    session.run("pip", "install", "-r", "docs/requirements.txt", silent=True)
+    session.install(".[test,benchmark,docs]")
     session.run(
         "pytest",
         "tests/benchmarks",
@@ -94,6 +46,7 @@ def benchmark_memory(session):
         "_memory",
         "--benchmark-json",
         "output.json",
+        *session.posargs,
         external=True,
     )
     session.run("memray", "flamegraph", "-o", "mem_out.html", "mem_out.bin")
@@ -103,4 +56,11 @@ def benchmark_memory(session):
 def pre_commit(session):
     session.run_always("poetry", "install", external=True)
     session.install("pre-commit")
-    session.run("pre-commit", "run", "--all-files", external=True)
+    session.run("pre-commit", "run", "--all-files", *session.posargs, external=True)
+
+
+@session(python="3.10")
+def linkcheck(session):
+    session.install(".[docs]")
+    with session.chdir("docs"):
+        session.run("sphinx-build", "-b", "linkcheck", ".", "_build", *session.posargs, external=True)

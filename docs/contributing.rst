@@ -26,10 +26,13 @@ Your PR should conform with the following rules:
 Installing Dependencies
 -----------------------
 
-**Sphinx-Needs** requires only
-`Poetry <https://python-poetry.org/>`__ to be installed as a system
-dependency, the rest of the dependencies are 'bootstrapped' and
-installed in an isolated environment by Poetry.
+To develop **Sphinx-Needs**  it can be installed, with development extras, into an existing Python environment using ``pip``:
+
+.. code-block:: bash
+
+   pip install sphinx-needs[test,benchmark,docs]
+
+or using `Poetry <https://python-poetry.org/>`__ to install the dependencies into an isolated environment:
 
 1. `Install Poetry <https://python-poetry.org/docs/#installation>`__
 
@@ -37,31 +40,18 @@ installed in an isolated environment by Poetry.
 
    .. code-block:: bash
 
-      poetry install
+      poetry install --all-extras
 
-3. `Install Pre-Commit <https://pre-commit.com/>`__
+To run the formatting and linting suite, pre-commit is used:
 
-4. Install the Pre-Commit hooks
+1. `Install Pre-Commit <https://pre-commit.com/>`__
+
+2. Install the Pre-Commit hooks
 
    .. code-block:: bash
 
       pre-commit install
 
-5. For running tests, install the dependencies of our official documentation:
-
-   .. code-block:: bash
-
-      pip install -r docs/requirements.txt
-
-
-List make targets
------------------
-
-**Sphinx-Needs** uses ``make`` to invoke most development related actions.
-
-Use ``make list`` to get a list of available targets.
-
-.. program-output:: make --no-print-directory --directory ../ list
 
 Build docs
 ----------
@@ -293,6 +283,14 @@ See the Poetry documentation for a list of commands.
 In order to run custom commands inside the isolated environment, they
 should be prefixed with ``poetry run`` (ie. ``poetry run <command>``).
 
+List make targets
+-----------------
+
+**Sphinx-Needs** uses ``make`` to invoke most development related actions.
+
+Use ``make list`` to get a list of available targets.
+
+.. program-output:: make --no-print-directory --directory ../ list
 
 Publishing a new release
 ------------------------
