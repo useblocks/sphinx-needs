@@ -1,18 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import MISSING, dataclass, field, fields
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, Literal, TypedDict
 
 from sphinx.application import Sphinx
 from sphinx.config import Config as _SphinxConfig
 
 from sphinx_needs.defaults import DEFAULT_DIAGRAM_TEMPLATE, NEEDS_TABLES_CLASSES
-
-try:
-    from typing import Literal, TypedDict
-except ImportError:
-    # introduced in python 3.8
-    from typing_extensions import Literal, TypedDict  # type: ignore
 
 if TYPE_CHECKING:
     from sphinx.util.logging import SphinxLoggerAdapter

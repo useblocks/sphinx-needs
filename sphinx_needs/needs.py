@@ -138,6 +138,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     log.debug("Starting setup of Sphinx-Needs")
     log.debug("Load Sphinx-Data-Viewer for Sphinx-Needs")
     app.setup_extension("sphinx_data_viewer")
+    app.setup_extension("sphinxcontrib.jquery")
 
     app.add_builder(NeedsBuilder)
     app.add_builder(NeedumlsBuilder)
