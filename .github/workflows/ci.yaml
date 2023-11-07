@@ -42,7 +42,7 @@ jobs:
           python -m pip freeze
       - name: Run pytest
         run: |
-          python -m pytest -vv --ignore=tests/benchmarks -m "not jstest" tests
+          python -m pytest -v --ignore=tests/benchmarks -m "not jstest" tests
 
   tests-js:
     name: "JS py${{ matrix.python-version }} sphinx~=${{ matrix.sphinx-version }} ${{ matrix.os }}"
