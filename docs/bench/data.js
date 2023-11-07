@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1699007067020,
+  "lastUpdate": 1699342017815,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -5616,6 +5616,42 @@ window.BENCHMARK_DATA = {
             "value": 80.24777574100005,
             "unit": "s",
             "extra": "Commit: 2a97e955c6f2a90b9f73dff38847b3e8c398cd6e\nBranch: master\nTime: 2023-11-03T11:17:01+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d7ae06154f727612f3d2b9ef6365394b0b1960d9",
+          "message": "⬆️ Update to Sphinx 7 (#1056)\n\nThe principle goal of this commit is to update code/tests to allow for use with sphinx 7 and upgrade to Python 3.8 - 3.11.\r\nTo do this a number of other changes are made:\r\n\r\n- The development dependency configuratio, in `pyproject.toml`, is modified to use separate [extras](https://python-poetry.org/docs/pyproject/#extras) for tests, benchmarks and docs\r\n  - This allows for the `docs/requirements.txt` to be removed\r\n- The noxfile now directly calls pytest/sphinx, rather than call `make`. This removes a confusing indirection, and allows for [passing arguments to sessions](https://nox.thea.codes/en/stable/config.html#passing-arguments-into-sessions)\r\n- The CI now also directly calls pytest, again removing confusing indirections\r\n  - The tests are split into core and JS tests (JS were previously not actually run)\r\n- The `typing_extensions` backport for python<=3.7 is removed\r\n- The [`sphinxcontrib-jquery`](https://github.com/sphinx-contrib/jquery) dependency is added, which re-adds the jquery JavaScript removed in sphinx>=6\r\n  - This fixes the JS tests for sphinx 7",
+          "timestamp": "2023-11-07T08:24:04+01:00",
+          "tree_id": "7c3b167dfb474a384bb4ef97dce870df997527ed",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/d7ae06154f727612f3d2b9ef6365394b0b1960d9"
+        },
+        "date": 1699342011771,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2547676430000365,
+            "unit": "s",
+            "extra": "Commit: d7ae06154f727612f3d2b9ef6365394b0b1960d9\nBranch: master\nTime: 2023-11-07T08:24:04+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 79.50014359399995,
+            "unit": "s",
+            "extra": "Commit: d7ae06154f727612f3d2b9ef6365394b0b1960d9\nBranch: master\nTime: 2023-11-07T08:24:04+01:00"
           }
         ]
       }
