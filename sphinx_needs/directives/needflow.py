@@ -21,7 +21,12 @@ from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link, create_legend
 from sphinx_needs.filter_common import FilterBase, filter_single_need, process_filters
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import add_doc, get_scale, split_link_types
+from sphinx_needs.utils import (
+    add_doc,
+    get_scale,
+    remove_node_from_tree,
+    split_link_types,
+)
 
 logger = get_logger(__name__)
 
@@ -286,14 +291,7 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
     # for node in doctree.findall(Needflow):
     for node in found_nodes:
         if not needs_config.include_needs:
-            # Ok, this is really dirty.
-            # If we replace a node, docutils checks, if it will not lose any attributes.
-            # But this is here the case, because we are using the attribute "ids" of a node.
-            # However, I do not understand, why losing an attribute is such a big deal, so we delete everything
-            # before docutils claims about it.
-            for att in ("ids", "names", "classes", "dupnames"):
-                node[att] = []
-            node.replace_self([])
+            remove_node_from_tree(node)
             continue
 
         id = node.attributes["ids"][0]
