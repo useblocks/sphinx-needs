@@ -11,4 +11,4 @@ needs_types = [
     {"directive": "test", "title": "Test Case", "prefix": "TC_", "color": "#DCB239", "style": "node"},
 ]
 
-needs_file = "custom_needs_test.json"
+# needs_file = "custom_needs_test.json"
