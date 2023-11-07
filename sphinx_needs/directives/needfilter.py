@@ -12,7 +12,7 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.diagrams_common import create_legend
 from sphinx_needs.filter_common import FilterBase, process_filters
-from sphinx_needs.utils import add_doc, row_col_maker
+from sphinx_needs.utils import add_doc, remove_node_from_tree, row_col_maker
 
 
 class Needfilter(nodes.General, nodes.Element):
@@ -82,14 +82,7 @@ def process_needfilters(
     # for node in doctree.findall(Needfilter):
     for node in found_nodes:
         if not needs_config.include_needs:
-            # Ok, this is really dirty.
-            # If we replace a node, docutils checks, if it will not lose any attributes.
-            # But this is here the case, because we are using the attribute "ids" of a node.
-            # However, I do not understand, why losing an attribute is such a big deal, so we delete everything
-            # before docutils claims about it.
-            for att in ("ids", "names", "classes", "dupnames"):
-                node[att] = []
-            node.replace_self([])
+            remove_node_from_tree(node)
             continue
 
         id = node.attributes["ids"][0]

@@ -49,7 +49,7 @@ jobs:
           alert-comment-cc-users: '@danwos'
 
       - name: Run Benchmark for memory
-        run: pytest --benchmark-json output.json -k _time tests/benchmarks
+        run: pytest --benchmark-json output.json -k _memory tests/benchmarks
       - name: Create memory flamegraph
         run: memray flamegraph -o mem_out.html mem_out.bin
       - name: Publish memory flamegraph

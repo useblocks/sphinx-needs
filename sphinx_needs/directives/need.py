@@ -17,11 +17,7 @@ from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.defaults import NEED_DEFAULT_OPTIONS
-from sphinx_needs.directives.needextend import (
-    Needextend,
-    extend_needs_data,
-    remove_needextend_node,
-)
+from sphinx_needs.directives.needextend import Needextend, extend_needs_data
 from sphinx_needs.functions import (
     find_and_replace_node_content,
     resolve_dynamic_values,
@@ -32,7 +28,7 @@ from sphinx_needs.layout import build_need
 from sphinx_needs.logging import get_logger
 from sphinx_needs.need_constraints import process_constraints
 from sphinx_needs.nodes import Need
-from sphinx_needs.utils import add_doc, profile
+from sphinx_needs.utils import add_doc, profile, remove_node_from_tree
 
 logger = get_logger(__name__)
 
@@ -407,7 +403,7 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     post_process_needs_data(app)
 
     for extend_node in doctree.findall(Needextend):
-        remove_needextend_node(extend_node)
+        remove_node_from_tree(extend_node)
 
     format_need_nodes(app, doctree, fromdocname, list(doctree.findall(Need)))
 
