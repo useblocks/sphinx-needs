@@ -147,6 +147,6 @@ TEST DOCUMENT NEEDUML
       Bob --> Alice: Hi Alice
 
 .. needtable:: 
-   :filter: arch
+   :filter: len(arch) > 0
    :style: table
    :columns: id, type, title

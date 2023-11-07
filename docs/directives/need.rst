@@ -267,14 +267,14 @@ are representing some kind of a diagram.
 .. code-block:: rst
 
    .. needtable::
-      :filter: arch
+      :filter: len(arch) > 0
       :style: table
       :columns: id, type, title
 
 |out|
 
 .. needtable::
-   :filter: arch
+   :filter: len(arch) > 0
    :style: table
    :columns: id, type, title
 
