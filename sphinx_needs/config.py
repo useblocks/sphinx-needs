@@ -289,7 +289,7 @@ class NeedsSphinxConfig:
     )
     """Added to options on need directives, and key on need data items, for use by ``needgantt``"""
     needextend_strict: bool = field(
-        default=True, metadata={"rebuild": "html", "types": (bool,)}
+        default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
     statuses: list[dict[str, str]] = field(
         default_factory=list, metadata={"rebuild": "html", "types": ()}
