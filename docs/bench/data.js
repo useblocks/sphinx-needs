@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1699342017815,
+  "lastUpdate": 1699343157432,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -5652,6 +5652,42 @@ window.BENCHMARK_DATA = {
             "value": 79.50014359399995,
             "unit": "s",
             "extra": "Commit: d7ae06154f727612f3d2b9ef6365394b0b1960d9\nBranch: master\nTime: 2023-11-07T08:24:04+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0888e0869a573bb2ce0695ae0163e6f5b2c48889",
+          "message": "🔧 Fix benchmark.yaml CI regression (#1062)",
+          "timestamp": "2023-11-07T08:43:10+01:00",
+          "tree_id": "eae2b781ea4758bf627ba0fa268a72e750e974d6",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/0888e0869a573bb2ce0695ae0163e6f5b2c48889"
+        },
+        "date": 1699343151934,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22847071799998275,
+            "unit": "s",
+            "extra": "Commit: 0888e0869a573bb2ce0695ae0163e6f5b2c48889\nBranch: master\nTime: 2023-11-07T08:43:10+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 63.18062914000001,
+            "unit": "s",
+            "extra": "Commit: 0888e0869a573bb2ce0695ae0163e6f5b2c48889\nBranch: master\nTime: 2023-11-07T08:43:10+01:00"
           }
         ]
       }
