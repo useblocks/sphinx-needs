@@ -217,6 +217,9 @@ class NeedsSphinxConfig:
         default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
     )
     build_json: bool = field(default=False, metadata={"rebuild": "html", "types": (bool,)})
+    """If True, the JSON needs file should be built."""
+    reproducible_json: bool = field(default=False, metadata={"rebuild": "html", "types": (bool,)})
+    """If True, the JSON needs file should be idempotent for multiple builds fo the same documentation."""
     build_needumls: str = field(default="", metadata={"rebuild": "html", "types": (str,)})
     permalink_file: str = field(default="permalink.html", metadata={"rebuild": "html", "types": (str,)})
     """Permalink related config values.
