@@ -46,6 +46,7 @@ matplotlib = { version = ">=3.3.0", optional = true }
 
 # [project.optional-dependencies.test]
 pytest = { version = "^7", optional = true }
+pytest-cov = { version = "^4", optional = true }
 lxml = { version = "^4.6.5", optional = true }
 requests-mock = { version = ">=1.9.3", optional = true }
 responses = { version = "^0.22.0", optional = true }
@@ -68,7 +69,17 @@ sphinx-immaterial = { version="0.11.7", optional = true }
 
 [tool.poetry.extras]
 plotting = ["matplotlib"]
-test = ["matplotlib", "pytest", "syrupy", "sphinxcontrib-plantuml", "requests-mock", "lxml", "responses", "pytest-xprocess"]
+test = [
+  "matplotlib",
+  "pytest",
+  "pytest-cov",
+  "syrupy",
+  "sphinxcontrib-plantuml",
+  "requests-mock",
+  "lxml",
+  "responses",
+  "pytest-xprocess"
+]
 test-parallel = ["pytest-xdist"]
 benchmark = ["pytest-benchmark", "memray"]
 docs = [
