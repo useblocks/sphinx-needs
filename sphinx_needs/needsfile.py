@@ -54,6 +54,7 @@ class NeedsList:
 
     def __init__(self, config: Config, outdir: str, confdir: str) -> None:
         self.config = config
+        self.needs_config = NeedsSphinxConfig(config)
         self.outdir = outdir
         self.confdir = confdir
         self.current_version = config.version
@@ -61,29 +62,32 @@ class NeedsList:
         self.needs_list = {
             "project": self.project,
             "current_version": self.current_version,
-            "created": "",
             "versions": {},
         }
+        if not self.needs_config.reproducible_json:
+            self.needs_list["created"] = ""
         self.log = log
         # also exclude back links for link types dynamically set by the user
-        back_link_keys = {x["option"] + "_back" for x in NeedsSphinxConfig(config).extra_links}
+        back_link_keys = {x["option"] + "_back" for x in self.needs_config.extra_links}
         self._exclude_need_keys = self.JSON_KEY_EXCLUSIONS_NEEDS | back_link_keys
         self._exclude_filter_keys = self.JSON_KEY_EXCLUSIONS_FILTERS | back_link_keys
 
     def update_or_add_version(self, version: str) -> None:
         if version not in self.needs_list["versions"].keys():
             self.needs_list["versions"][version] = {
-                "created": "",
                 "needs_amount": 0,
                 "needs": {},
                 "filters_amount": 0,
                 "filters": {},
             }
+            if not self.needs_config.reproducible_json:
+                self.needs_list["versions"][version]["created"] = ""
 
         if "needs" not in self.needs_list["versions"][version].keys():
             self.needs_list["versions"][version]["needs"] = {}
 
-        self.needs_list["versions"][version]["created"] = datetime.now().isoformat()
+        if not self.needs_config.reproducible_json:
+            self.needs_list["versions"][version]["created"] = datetime.now().isoformat()
 
     def add_need(self, version: str, need_info: NeedsInfoType) -> None:
         self.update_or_add_version(version)
@@ -104,7 +108,10 @@ class NeedsList:
 
     def write_json(self, needs_file: str = "needs.json", needs_path: str = "") -> None:
         # We need to rewrite some data, because this kind of data gets overwritten during needs.json import.
-        self.needs_list["created"] = datetime.now().isoformat()
+        if not self.needs_config.reproducible_json:
+            self.needs_list["created"] = datetime.now().isoformat()
+        else:
+            self.needs_list.pop("created", None)
         self.needs_list["current_version"] = self.current_version
         self.needs_list["project"] = self.project
         if needs_path:

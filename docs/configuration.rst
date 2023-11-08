@@ -1792,6 +1792,11 @@ Example:
    The created ``needs.json`` file gets stored in the ``outdir`` of the current builder.
    So if ``html`` is used as builder, the final location is e.g. ``_build/html/needs.json``.
 
+.. versionadded:: 1.4.0
+
+    Setting ``needs_reproducible_json = True`` will ensure the JSON output is reproducible,
+    e.g. by removing timestamps from the output.
+
 
 .. _needs_build_json_per_id:
 

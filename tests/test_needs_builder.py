@@ -1,4 +1,6 @@
 import json
+import os
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -15,12 +17,28 @@ def test_doc_needs_builder(test_app, snapshot):
 
 
 @pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "srcdir": "doc_test/doc_needs_builder",
+            "confoverrides": {"needs_reproducible_json": True},
+        }
+    ],
+    indirect=True,
+)
+def test_doc_needs_builder_reproducible(test_app, snapshot):
+    app = test_app
+    app.build()
+
+    needs_list = json.loads(Path(app.outdir, "needs.json").read_text())
+    assert needs_list == snapshot
+
+
+@pytest.mark.parametrize(
     "test_app", [{"buildername": "needs", "srcdir": "doc_test/doc_needs_builder_negative_tests"}], indirect=True
 )
 def test_doc_needs_build_without_needs_file(test_app):
-    import os
-    import subprocess
-
     app = test_app
 
     srcdir = Path(app.srcdir)
@@ -38,10 +56,6 @@ def test_needs_html_and_json(test_app):
     """
     Build html output and needs.json in one sphinx-build
     """
-    import json
-    import os
-    import subprocess
-
     app = test_app
     app.build()
 
