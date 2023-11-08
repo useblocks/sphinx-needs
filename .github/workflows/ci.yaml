@@ -78,8 +78,7 @@ jobs:
         run: |
           python -m pytest -v --ignore=tests/benchmarks -m "jstest" tests
 
-  docs-no-mpl:
-    # the docs should build without matplotlib (just issuing warnings)
+  tests-no-mpl:
     name: Docs no matplotlib
     runs-on: ubuntu-latest
     steps:
@@ -92,10 +91,14 @@ jobs:
         run: python -m pip install --upgrade pip
       - name: Install Dependencies
         run: |
-          python -m pip install -e .[docs]
+          python -m pip install -e .[test,docs]
           python -m pip uninstall -y matplotlib numpy
           python -m pip freeze
+      - name: Run pytest
+        run: |
+          python -m pytest -v tests/no_mpl_tests.py
       - name: Run HTML build
+        # the docs should build without matplotlib (just issuing warnings)
         run: sphinx-build -b html . _build 
         working-directory: docs
 
@@ -110,7 +113,7 @@ jobs:
     - lint
     - tests-core
     - tests-js
-    - docs-no-mpl
+    - tests-no-mpl
 
     runs-on: ubuntu-latest
 

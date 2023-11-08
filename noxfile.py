@@ -21,6 +21,16 @@ def tests(session, sphinx):
     session.run("pytest", "--ignore", "tests/benchmarks", *posargs, external=True)
 
 
+@session(python=PYTHON_VERSIONS)
+def tests_no_mpl(session):
+    session.install(".[test]")
+    session.run("pip", "uninstall", "-y", "matplotlib", "numpy", silent=True)
+    session.run("echo", "TEST FINAL PACKAGE LIST")
+    session.run("pip", "freeze")
+    posargs = session.posargs or ["tests/no_mpl_tests.py"]
+    session.run("pytest", *posargs, external=True)
+
+
 @session(python="3.10")
 def benchmark_time(session):
     session.install(".[test,benchmark,docs]")
