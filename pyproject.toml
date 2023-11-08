@@ -34,12 +34,15 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.8,<4"
 sphinx = ">=5.0,<8"
-matplotlib = ">=3.3.0"  # needpie
 requests-file = "^1.5.1"  # external links
 requests = "^2.25.1"  # external_links
 jsonschema = ">=3.2.0"  # needsimport schema validation
 sphinx-data-viewer = "^0.1.1"  # needservice debug output
 sphinxcontrib-jquery = "^4"  # needed for datatables in sphinx>=6
+
+# [project.optional-dependencies.plotting]
+# for needpie / needbar
+matplotlib = { version = ">=3.3.0", optional = true }
 
 # [project.optional-dependencies.test]
 pytest = { version = "^7", optional = true }
@@ -64,10 +67,12 @@ sphinx-design = { version="^0.5", optional = true }
 sphinx-immaterial = { version="0.11.7", optional = true }
 
 [tool.poetry.extras]
-test = ["pytest", "syrupy", "sphinxcontrib-plantuml", "requests-mock", "lxml", "responses", "pytest-xprocess"]
+plotting = ["matplotlib"]
+test = ["matplotlib", "pytest", "syrupy", "sphinxcontrib-plantuml", "requests-mock", "lxml", "responses", "pytest-xprocess"]
 test-parallel = ["pytest-xdist"]
 benchmark = ["pytest-benchmark", "memray"]
 docs = [
+  "matplotlib",
   "sphinxcontrib-plantuml",
   "sphinx-copybutton",
   "sphinxcontrib-programoutput",
