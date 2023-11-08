@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1699435805038,
+  "lastUpdate": 1699457261498,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -5760,6 +5760,42 @@ window.BENCHMARK_DATA = {
             "value": 59.276463209999974,
             "unit": "s",
             "extra": "Commit: 40856b2b9cfae042abf0039734680613349f0b6b\nBranch: master\nTime: 2023-11-08T10:27:20+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5783d92a7417a542366d7a830ded50306c46203e",
+          "message": "♻️ Make matplotlib dependency optional (#1061)\n\nThis commit makes matplotlib (and numpy) optional dependencies, using `pip install sphinx-needs[plotting]`, by:\r\n\r\n1. Removing direct uses of numpy\r\n2. Moving the matplotlib import to a function, which can return `None`\r\n3. Handling the `None` case in the `needbar`/`needpie` post-processing, by emmiting a warning and replacing the nodes with error admonitions.\r\n\r\nA seperate test job and related test file is added for testing builds with needbar/needpie directives, for when matplotlib is uninstalled.",
+          "timestamp": "2023-11-08T16:24:07+01:00",
+          "tree_id": "06794e818b9f43e25e4ce6587494ca6b4ff7f97a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/5783d92a7417a542366d7a830ded50306c46203e"
+        },
+        "date": 1699457253676,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.3480288539999776,
+            "unit": "s",
+            "extra": "Commit: 5783d92a7417a542366d7a830ded50306c46203e\nBranch: master\nTime: 2023-11-08T16:24:07+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 97.03009744299999,
+            "unit": "s",
+            "extra": "Commit: 5783d92a7417a542366d7a830ded50306c46203e\nBranch: master\nTime: 2023-11-08T16:24:07+01:00"
           }
         ]
       }
