@@ -79,7 +79,7 @@ jobs:
           python -m pytest -v --ignore=tests/benchmarks -m "jstest" tests
 
   tests-no-mpl:
-    name: Docs no matplotlib
+    name: Test matplotlib uninstalled
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

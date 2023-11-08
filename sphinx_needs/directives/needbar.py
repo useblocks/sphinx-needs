@@ -184,12 +184,19 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
     # NEEDFLOW
     # for node in doctree.findall(Needbar):
     for node in found_nodes:
-        if matplotlib is None or not needs_config.include_needs:
+        if not needs_config.include_needs:
             remove_node_from_tree(node)
             continue
 
         id = node.attributes["ids"][0]
         current_needbar = needs_data.get_or_create_bars()[id]
+
+        if matplotlib is None:
+            message = "Matplotlib missing for needbar plot"
+            if current_needbar["title"]:
+                message += f" {current_needbar['title']!r}"
+            node.replace_self(nodes.error("", nodes.paragraph(text=message)))
+            continue
 
         # 1. define constants
         error_id = current_needbar["error_id"]

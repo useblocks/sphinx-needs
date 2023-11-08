@@ -27,8 +27,7 @@ def tests_no_mpl(session):
     session.run("pip", "uninstall", "-y", "matplotlib", "numpy", silent=True)
     session.run("echo", "TEST FINAL PACKAGE LIST")
     session.run("pip", "freeze")
-    posargs = session.posargs or ["tests/no_mpl_tests.py"]
-    session.run("pytest", *posargs, external=True)
+    session.run("pytest", "tests/no_mpl_tests.py", *session.posargs, external=True)
 
 
 @session(python="3.10")

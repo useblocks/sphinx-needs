@@ -120,12 +120,19 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
     # NEEDFLOW
     # for node in doctree.findall(Needpie):
     for node in found_nodes:
-        if matplotlib is None or not needs_config.include_needs:
+        if not needs_config.include_needs:
             remove_node_from_tree(node)
             continue
 
         id = node.attributes["ids"][0]
         current_needpie = needs_data.get_or_create_pies()[id]
+
+        if matplotlib is None:
+            message = "Matplotlib missing for needpie plot"
+            if current_needpie["title"]:
+                message += f" {current_needpie['title']!r}"
+            node.replace_self(nodes.error("", nodes.paragraph(text=message)))
+            continue
 
         # Set matplotlib style
         style_previous_to_script_execution = matplotlib.rcParams
