@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1699344915367,
+  "lastUpdate": 1699435805038,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -5724,6 +5724,42 @@ window.BENCHMARK_DATA = {
             "value": 90.39176266499999,
             "unit": "s",
             "extra": "Commit: 2140da01251413cbf20ac59cfa3523370e553e21\nBranch: master\nTime: 2023-11-07T09:11:54+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "40856b2b9cfae042abf0039734680613349f0b6b",
+          "message": "✨ NEW: `needs_reproducible_json` config option (#1065)\n\nSetting ``needs_reproducible_json = True`` will ensure the JSON output is reproducible, e.g. by removing timestamps from the output.",
+          "timestamp": "2023-11-08T10:27:20+01:00",
+          "tree_id": "1313d4c12c51deba66db0a78278957de7878389a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/40856b2b9cfae042abf0039734680613349f0b6b"
+        },
+        "date": 1699435799159,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.20427617399991504,
+            "unit": "s",
+            "extra": "Commit: 40856b2b9cfae042abf0039734680613349f0b6b\nBranch: master\nTime: 2023-11-08T10:27:20+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.276463209999974,
+            "unit": "s",
+            "extra": "Commit: 40856b2b9cfae042abf0039734680613349f0b6b\nBranch: master\nTime: 2023-11-08T10:27:20+01:00"
           }
         ]
       }
