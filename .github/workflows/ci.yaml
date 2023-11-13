@@ -42,7 +42,17 @@ jobs:
           python -m pip freeze
       - name: Run pytest
         run: |
-          python -m pytest -v --ignore=tests/benchmarks -m "not jstest" tests
+          python -m pytest -v --ignore=tests/benchmarks -m "not jstest" --cov=sphinx_needs --cov-report=xml --cov-report=term-missing tests
+          coverage xml
+      - name: Upload to Codecov
+        if: github.repository == 'useblocks/sphinx-needs' && matrix.os == 'ubuntu-latest'
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          name: sphinx-need-pytests
+          flags: pytests
+          file: ./coverage.xml
+          fail_ci_if_error: true
 
   tests-js:
     name: "JS py${{ matrix.python-version }} sphinx~=${{ matrix.sphinx-version }} ${{ matrix.os }}"
