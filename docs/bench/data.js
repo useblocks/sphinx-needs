@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1699902359901,
+  "lastUpdate": 1699903408376,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -5976,6 +5976,42 @@ window.BENCHMARK_DATA = {
             "value": 61.81784592699998,
             "unit": "s",
             "extra": "Commit: f5fd0926fa9e6e4e71f43baa57a1f4f6d3af7098\nBranch: master\nTime: 2023-11-13T19:03:12+00:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6ffb0973b306f8fd296676f20e6b25afb8a5e330",
+          "message": "🔧 Fix Docker deployment (#1070)\n\nFix the Docker build, which failed on the last deployment\r\n\r\nAlso:\r\n\r\n- Add the new `plotting` extra, to install `matplotlib`\r\n- Makes the docker build workflow run (without deployment) in PRs that modify the Docker files,\r\n- fixes deprecation warning in workflow: https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/",
+          "timestamp": "2023-11-13T19:20:41Z",
+          "tree_id": "55b8a58f46366977c6764109d514522778503159",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6ffb0973b306f8fd296676f20e6b25afb8a5e330"
+        },
+        "date": 1699903402740,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.24113626900000895,
+            "unit": "s",
+            "extra": "Commit: 6ffb0973b306f8fd296676f20e6b25afb8a5e330\nBranch: master\nTime: 2023-11-13T19:20:41+00:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.820990945999995,
+            "unit": "s",
+            "extra": "Commit: 6ffb0973b306f8fd296676f20e6b25afb8a5e330\nBranch: master\nTime: 2023-11-13T19:20:41+00:00"
           }
         ]
       }
