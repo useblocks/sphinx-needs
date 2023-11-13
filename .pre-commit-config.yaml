@@ -42,3 +42,15 @@ repos:
     rev: 1.7.0
     hooks:
       - id: poetry-check
+
+  - repo: local
+    hooks:
+      - id: check-readme
+        name: check-readme
+        files: README.rst
+        language: python
+        entry: rst2html.py README.rst --halt=warning
+        pass_filenames: false
+        additional_dependencies:
+        - docutils==0.20.1
+        - pygments
