@@ -13,7 +13,7 @@ License
 -----
 
 :Released: 13.11.2023
-:Full Changelog: `1.3.0...v2.0.0 <https://github.com/useblocks/sphinx-needs/compare/1.3.0...v2.0.0>`__
+:Full Changelog: `1.3.0...v2.0.0 <https://github.com/useblocks/sphinx-needs/compare/1.3.0...faba19e>`__
 
 This release is focussed on improving the internal code-base and its build time performance, as well as improved build warnings and other functionality improvements / fixes.  
 
