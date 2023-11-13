@@ -1,1 +1,1 @@
-from sphinx_needs.needs import setup  # noqa: F401
+from sphinx_needs.needs import __version__, setup  # noqa: F401
