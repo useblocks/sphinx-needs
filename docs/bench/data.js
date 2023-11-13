@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1699903408376,
+  "lastUpdate": 1699906910951,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -6012,6 +6012,42 @@ window.BENCHMARK_DATA = {
             "value": 61.820990945999995,
             "unit": "s",
             "extra": "Commit: 6ffb0973b306f8fd296676f20e6b25afb8a5e330\nBranch: master\nTime: 2023-11-13T19:20:41+00:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2ddc0a2fc9b69b446f3b89f0d8c39d07ab010559",
+          "message": "🧪 Run CI also on pushes to master (#1073)\n\nThis is mainly because it is required by codecov, for comparing coverage of PRs",
+          "timestamp": "2023-11-13T20:19:01Z",
+          "tree_id": "8179a44e9cf1a83fadfd5f3e2c2061d976ffc2f4",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/2ddc0a2fc9b69b446f3b89f0d8c39d07ab010559"
+        },
+        "date": 1699906904248,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.20128201700001114,
+            "unit": "s",
+            "extra": "Commit: 2ddc0a2fc9b69b446f3b89f0d8c39d07ab010559\nBranch: master\nTime: 2023-11-13T20:19:01+00:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.937918615,
+            "unit": "s",
+            "extra": "Commit: 2ddc0a2fc9b69b446f3b89f0d8c39d07ab010559\nBranch: master\nTime: 2023-11-13T20:19:01+00:00"
           }
         ]
       }
