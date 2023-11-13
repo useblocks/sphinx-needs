@@ -22,6 +22,7 @@ env:
 jobs:
   build:
     strategy:
+      fail-fast: ${{ github.event_name != 'pull_request' }}
       matrix:
         base-image: ["sphinxdoc/sphinx:latest", "sphinxdoc/sphinx-latexpdf:latest"]
         image: ["sphinxneeds", "sphinxneeds-latexpdf"]
