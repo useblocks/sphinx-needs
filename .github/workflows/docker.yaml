@@ -12,8 +12,12 @@ on:
   push:
     tags:
       - '*.*.*'
+  pull_request:
+    paths: ['docker/**']
+
 env:
   NEEDS_VERSION: 2.0.0
+  DEPLOY_IMAGE: ${{ github.event_name != 'pull_request' }}
 
 jobs:
   build:
@@ -46,30 +50,27 @@ jobs:
             latest=true
           tags: |
             type=pep440,pattern={{version}}
-      -
-        # Check if deployment is needed (if no manual trigger was done, defaults to 'y')
-        name: Check if deployment is needed
-        id: deploycheck
+
+      - name: Check if deployment manually disabled
+        if: github.event.inputs.deploy == 'n'
         run: |
-          DEPLOY_CHECK=${{ github.event.inputs.deploy }}
-          echo "::set-output name=value::${DEPLOY_CHECK:-"y"}"
-      -
-        # Login to Docker Hub Docker Registry for deployment
-        name: Login to Docker Hub Docker Registry 🐸
+          echo "DEPLOY_IMAGE=false" >> "$GITHUB_ENV"
+
+      - name: Login to Docker Hub Docker Registry 🐸
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      -
-        name: Build and push html image to Doker Hub Docker Registry 🐳
+
+      - name: Build and push html image to Doker Hub Docker Registry 🐳
         id: docker_build
         uses: docker/build-push-action@v5
         with:
-          push: ${{ github.event_name != 'pull_request' && steps.deploycheck.outputs.value == 'y' }}
+          push: ${{ env.DEPLOY_IMAGE == 'true' }}
           file: docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           build-args: |
             NEEDS_VERSION=${{ env.NEEDS_VERSION }}
             BASE_IMAGE=${{ matrix.base-image }}
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}}
+          labels: ${{ steps.meta.outputs.labels }}
