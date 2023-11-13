@@ -68,8 +68,15 @@ def pre_commit(session):
     session.run("pre-commit", "run", "--all-files", *session.posargs, external=True)
 
 
-@session(python="3.10")
+@session(python="3.11")
 def linkcheck(session):
     session.install(".[docs]")
     with session.chdir("docs"):
-        session.run("sphinx-build", "-b", "linkcheck", ".", "_build", *session.posargs, external=True)
+        session.run("sphinx-build", "-b", "linkcheck", ".", "_build/linkcheck", *session.posargs, external=True)
+
+
+@session(python="3.11")
+def docs(session):
+    session.install(".[docs]")
+    with session.chdir("docs"):
+        session.run("sphinx-build", ".", "_build", *session.posargs, external=True)
