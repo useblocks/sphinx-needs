@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1699891654749,
+  "lastUpdate": 1699902359901,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -5940,6 +5940,42 @@ window.BENCHMARK_DATA = {
             "value": 92.694119398,
             "unit": "s",
             "extra": "Commit: 83d0934b40941106ce0d7612f5fe2df361821cb0\nBranch: master\nTime: 2023-11-13T16:04:05+00:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f5fd0926fa9e6e4e71f43baa57a1f4f6d3af7098",
+          "message": "📚 Pin pydantic version (#1071)",
+          "timestamp": "2023-11-13T19:03:12Z",
+          "tree_id": "4e6640cc3b261971b1091cbe9c98acf2f94254a9",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f5fd0926fa9e6e4e71f43baa57a1f4f6d3af7098"
+        },
+        "date": 1699902354594,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21675786500000527,
+            "unit": "s",
+            "extra": "Commit: f5fd0926fa9e6e4e71f43baa57a1f4f6d3af7098\nBranch: master\nTime: 2023-11-13T19:03:12+00:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.81784592699998,
+            "unit": "s",
+            "extra": "Commit: f5fd0926fa9e6e4e71f43baa57a1f4f6d3af7098\nBranch: master\nTime: 2023-11-13T19:03:12+00:00"
           }
         ]
       }
