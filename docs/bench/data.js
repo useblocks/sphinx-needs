@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1699457261498,
+  "lastUpdate": 1699871508200,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -5796,6 +5796,42 @@ window.BENCHMARK_DATA = {
             "value": 97.03009744299999,
             "unit": "s",
             "extra": "Commit: 5783d92a7417a542366d7a830ded50306c46203e\nBranch: master\nTime: 2023-11-08T16:24:07+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a8ab5204eb6f6cc689ccf83e5d815f8fd19fe74b",
+          "message": "🧪 Add code coverage to CI testing (#1067)",
+          "timestamp": "2023-11-13T10:28:30Z",
+          "tree_id": "70765115138ef4db504735fe1718f659a4a48037",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a8ab5204eb6f6cc689ccf83e5d815f8fd19fe74b"
+        },
+        "date": 1699871499579,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2635748739999997,
+            "unit": "s",
+            "extra": "Commit: a8ab5204eb6f6cc689ccf83e5d815f8fd19fe74b\nBranch: master\nTime: 2023-11-13T10:28:30+00:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 70.94963632399998,
+            "unit": "s",
+            "extra": "Commit: a8ab5204eb6f6cc689ccf83e5d815f8fd19fe74b\nBranch: master\nTime: 2023-11-13T10:28:30+00:00"
           }
         ]
       }
