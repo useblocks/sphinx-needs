@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1699871508200,
+  "lastUpdate": 1699874517906,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -5832,6 +5832,42 @@ window.BENCHMARK_DATA = {
             "value": 70.94963632399998,
             "unit": "s",
             "extra": "Commit: a8ab5204eb6f6cc689ccf83e5d815f8fd19fe74b\nBranch: master\nTime: 2023-11-13T10:28:30+00:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "faba19ec9c52c8f743f7f09cb85213efa822f5e6",
+          "message": "🔧 Bump actions/setup-node from 3 to 4 (#1050)\n\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2023-11-13T11:19:06Z",
+          "tree_id": "57a5565ec78b1151e89fb00b5ccfe4c411565bf8",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/faba19ec9c52c8f743f7f09cb85213efa822f5e6"
+        },
+        "date": 1699874511907,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2897079019999751,
+            "unit": "s",
+            "extra": "Commit: faba19ec9c52c8f743f7f09cb85213efa822f5e6\nBranch: master\nTime: 2023-11-13T11:19:06+00:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 79.32887683199999,
+            "unit": "s",
+            "extra": "Commit: faba19ec9c52c8f743f7f09cb85213efa822f5e6\nBranch: master\nTime: 2023-11-13T11:19:06+00:00"
           }
         ]
       }
