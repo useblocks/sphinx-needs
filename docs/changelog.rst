@@ -13,20 +13,23 @@ License
 -----
 
 :Released: 13.11.2023
-:Full Changelog: `https://github.com/useblocks/sphinx-needs/compare/1.3.0...v2.0.0`_
+:Full Changelog: `1.3.0...v2.0.0 <https://github.com/useblocks/sphinx-needs/compare/1.3.0...v2.0.0>`__
+
+This release is focussed on improving the internal code-base and its build time performance, as well as improved build warnings and other functionality improvements / fixes.  
 
 Changed
 .......
 
-* Update to Sphinx 7 and drop Python 3.7 (`#1056 <https://github.com/useblocks/sphinx-needs/pull/1056>`_)
-* Make matplotlib dependency optional (`#1061 <https://github.com/useblocks/sphinx-needs/pull/1061>`_)
-* Change ``NeedsBuilder`` format to ``needs`` (`#978 <https://github.com/useblocks/sphinx-needs/pull/978>`_)
+* Add Sphinx 7 support and drop Python 3.7 (`#1056 <https://github.com/useblocks/sphinx-needs/pull/1056>`_).
+  Sphinx 5, 6, 7 and Python 3.8 to 3.11 are now fully supported and tested.
+* The ``matplotlib`` dependency (for ``needbar`` and ``needpie`` plots) is now optional, and should be installed with ``sphinx-needs[plotting]``, see :ref:`installation`  (`#1061 <https://github.com/useblocks/sphinx-needs/pull/1061>`_)
+* The ``NeedsBuilder`` format name is changed to ``needs`` (`#978 <https://github.com/useblocks/sphinx-needs/pull/978>`_)
 
 New
 ...
 
 * Added Builder :ref:`needs_id_builder` and config option :ref:`needs_build_json_per_id` in ``conf.py`` (`#960 <https://github.com/useblocks/sphinx-needs/pull/960>`_)
-* Added `needs_reproducible_json` config option (`#1065 <https://github.com/useblocks/sphinx-needs/pull/1065>`_)
+* Added ``needs_reproducible_json`` config option for the needs builder, see :ref:`needs_build_json` (`#1065 <https://github.com/useblocks/sphinx-needs/pull/1065>`_)
 * Added error messages for constraint failures (`#1036 <https://github.com/useblocks/sphinx-needs/pull/1036>`_)
 
 Improved
