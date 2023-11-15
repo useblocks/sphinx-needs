@@ -7,22 +7,89 @@ License
 -------
 
 .. include:: ../LICENSE
-  
+
+
 2.0.0
 -----
-Released: under development
 
-1.4.0
------
-Released: under development
+:Released: 13.11.2023
+:Full Changelog: `1.3.0...v2.0.0 <https://github.com/useblocks/sphinx-needs/compare/1.3.0...faba19e>`__
 
-* Improvement: Added Builder :ref:`needs_id_builder` added and config option :ref:`needs_build_json_per_id` in `conf.py`. 
-* Improvement: Reduce document build time, by memoizing the inline parse in ``build_need`` (`#968 <https://github.com/useblocks/sphinx-needs/pull/968>`_)
-* Change `NeedsBuilder` format to `needs` (`#978 <https://github.com/useblocks/sphinx-needs/pull/978>`_)
-* Improvement: Suffix all warnings with ``[needs]``, and allow them to be suppressed (`#975 <https://github.com/useblocks/sphinx-needs/pull/975>`_)
-* Improvement: :ref:`needextend` for single needs is much faster.
-* Improvement: General performance improvement (up to 50%) and less memory consumption (~40%).
-* Improvement: external_needs is using cached templates to save generation time.
+This release is focussed on improving the internal code-base and its build time performance, as well as improved build warnings and other functionality improvements / fixes.  
+
+Changed
+.......
+
+* Add Sphinx 7 support and drop Python 3.7 (`#1056 <https://github.com/useblocks/sphinx-needs/pull/1056>`_).
+  Sphinx 5, 6, 7 and Python 3.8 to 3.11 are now fully supported and tested.
+* The ``matplotlib`` dependency (for ``needbar`` and ``needpie`` plots) is now optional, and should be installed with ``sphinx-needs[plotting]``, see :ref:`installation`  (`#1061 <https://github.com/useblocks/sphinx-needs/pull/1061>`_)
+* The ``NeedsBuilder`` format name is changed to ``needs`` (`#978 <https://github.com/useblocks/sphinx-needs/pull/978>`_)
+
+New
+...
+
+* Added Builder :ref:`needs_id_builder` and config option :ref:`needs_build_json_per_id` in ``conf.py`` (`#960 <https://github.com/useblocks/sphinx-needs/pull/960>`_)
+* Added ``needs_reproducible_json`` config option for the needs builder, see :ref:`needs_build_json` (`#1065 <https://github.com/useblocks/sphinx-needs/pull/1065>`_)
+* Added error messages for constraint failures (`#1036 <https://github.com/useblocks/sphinx-needs/pull/1036>`_)
+
+Improved
+........
+
+Performance: 
+
+* General performance improvement (up to 50%) and less memory consumption (~40%).
+* ``external_needs`` now uses cached templates to save generation time.
+* Improved performance for :ref:`needextend` with single needs.
+* Improved performance by memoizing the inline parse in ``build_need`` (`#968 <https://github.com/useblocks/sphinx-needs/pull/968>`_)
+* Remove ``deepcopy`` of needs data (`#1033 <https://github.com/useblocks/sphinx-needs/pull/1033>`_)
+* Optimize ``needextend`` filter_needs usage (`#1030 <https://github.com/useblocks/sphinx-needs/pull/1030>`_)
+* Improve performance of needs builders by skipping document post-transforms (`#1054 <https://github.com/useblocks/sphinx-needs/pull/1054>`_)
+
+Other:
+
+* Improve sphinx warnings (`#975 <https://github.com/useblocks/sphinx-needs/pull/975>`_, `#982 <https://github.com/useblocks/sphinx-needs/pull/982>`_)
+  All warnings are now suffixed with ``[needs]``, and can be suppressed (see `suppress_warnings <https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-suppress_warnings>`_)
+* Improve logging for static file copies (`#992 <https://github.com/useblocks/sphinx-needs/pull/992>`_)
+* Improve removal of hidden need nodes (`#1013 <https://github.com/useblocks/sphinx-needs/pull/1013>`_)
+* Improve ``process_constraints`` function (`#1015 <https://github.com/useblocks/sphinx-needs/pull/1015>`_)
+* Allow ``needextend`` directive to use dynamic functions (`#1052 <https://github.com/useblocks/sphinx-needs/pull/1052>`_)
+* Remove some unnecessary keys from output ``needs.json`` (`#1053 <https://github.com/useblocks/sphinx-needs/pull/1053>`_)
+
+Fixed
+.....
+
+* Fix gantt chart rendering (`#984 <https://github.com/useblocks/sphinx-needs/pull/984>`_)
+* Fix ``execute_func`` (`#994 <https://github.com/useblocks/sphinx-needs/pull/994>`_)
+* Fix adding sections to hidden needs (`#995 <https://github.com/useblocks/sphinx-needs/pull/995>`_)
+* Fix ``NeedImport`` logic (`#1006 <https://github.com/useblocks/sphinx-needs/pull/1006>`_)
+* Fix creation of need title nodes (`#1008 <https://github.com/useblocks/sphinx-needs/pull/1008>`_)
+* Fix logic for ``process_needextend`` function (`#1037 <https://github.com/useblocks/sphinx-needs/pull/1037>`_)
+* Fix usage of reST syntax in prefix parameter of meta (`#1046 <https://github.com/useblocks/sphinx-needs/pull/1046>`_)
+
+Internal
+........
+
+* 🔧 Centralise access to sphinx-needs config to ``NeedsSphinxConfig``  (`#998 <https://github.com/useblocks/sphinx-needs/pull/998>`_)
+* 🔧 Centralise sphinx ``env`` data access to ``SphinxNeedsData`` (`#987 <https://github.com/useblocks/sphinx-needs/pull/987>`_)
+* 🔧 Consolidate needs data post-processing into ``post_process_needs_data`` function  (`#1039 <https://github.com/useblocks/sphinx-needs/pull/1039>`_)
+* 🔧 Add strict type checking (`#1000 <https://github.com/useblocks/sphinx-needs/pull/1000>`_, `#1002 <https://github.com/useblocks/sphinx-needs/pull/1002>`_, `#1042 <https://github.com/useblocks/sphinx-needs/pull/1042>`)
+* 🔧 Replace ``Directive`` with ``SphinxDirective`` (`#986 <https://github.com/useblocks/sphinx-needs/pull/986>`_)
+* 🔧 Remove ``unwrap`` function (`#1017 <https://github.com/useblocks/sphinx-needs/pull/1017>`_)
+* 🔧 Add ``remove_node_from_tree`` utility function (`#1063 <https://github.com/useblocks/sphinx-needs/pull/1063>`_)
+* ♻️ Refactor needs post-processing function signatures (`#1040 <https://github.com/useblocks/sphinx-needs/pull/1040>`_)
+
+* 📚 Simplify Sphinx-Needs docs builds (`#972 <https://github.com/useblocks/sphinx-needs/pull/972>`_)
+* 📚 Always use headless plantuml (`#983 <https://github.com/useblocks/sphinx-needs/pull/983>`_)
+* 📚 Add intersphinx (`#991 <https://github.com/useblocks/sphinx-needs/pull/991>`_)
+* 📚 Add outline of extension logic (`#1012 <https://github.com/useblocks/sphinx-needs/pull/1012>`_)
+* 📚 Fixed extra links example (`#1016 <https://github.com/useblocks/sphinx-needs/pull/1016>`_)
+
+* 🧪 Remove boilerplate from test build ``conf.py`` files (`#989 <https://github.com/useblocks/sphinx-needs/pull/989>`_, `#990 <https://github.com/useblocks/sphinx-needs/pull/990>`_)
+* 🧪 Add headless java to test builds (`#988 <https://github.com/useblocks/sphinx-needs/pull/988>`_)
+* 🧪 Add snapshot testing (`#1019 <https://github.com/useblocks/sphinx-needs/pull/1019>`_, `#1020 <https://github.com/useblocks/sphinx-needs/pull/1020>`_, `#1059 <https://github.com/useblocks/sphinx-needs/pull/1059>`_)
+* 🧪 Make documentation builds fail on warnings (`#1005 <https://github.com/useblocks/sphinx-needs/pull/1005>`_)
+* 🧪 Add testing of JS scripts using Cypress integrated into PyTest (`#1051 <https://github.com/useblocks/sphinx-needs/pull/1051>`_)
+* 🧪 Add code coverage to CI testing (`#1067 <https://github.com/useblocks/sphinx-needs/pull/1067>`_)
 
 * Bugfix: Check filter strings for correctness.
   (`#964 <https://github.com/useblocks/sphinx-needs/pull/964>`_)

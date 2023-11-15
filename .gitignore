@@ -17,6 +17,7 @@ _build
 .cache/
 .pytest_cache
 .coverage
+coverage.xml
 .doctrees
 docs/github_images/
 .eggs/

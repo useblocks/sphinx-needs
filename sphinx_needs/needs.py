@@ -104,7 +104,7 @@ from sphinx_needs.services.open_needs import OpenNeedsService
 from sphinx_needs.utils import INTERNALS, NEEDS_FUNCTIONS, node_match
 from sphinx_needs.warnings import process_warnings
 
-VERSION = "1.3.0"
+__version__ = VERSION = "2.0.0"
 NEEDS_FUNCTIONS.clear()
 
 _NODE_TYPES_T = Dict[Type[nodes.Element], Callable[[Sphinx, nodes.document, str, List[nodes.Element]], None]]

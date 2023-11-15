@@ -1792,7 +1792,7 @@ Example:
    The created ``needs.json`` file gets stored in the ``outdir`` of the current builder.
    So if ``html`` is used as builder, the final location is e.g. ``_build/html/needs.json``.
 
-.. versionadded:: 1.4.0
+.. versionadded:: 2.0.0
 
     Setting ``needs_reproducible_json = True`` will ensure the JSON output is reproducible,
     e.g. by removing timestamps from the output.
@@ -1803,7 +1803,7 @@ Example:
 needs_build_json_per_id 
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 1.4.0
+.. versionadded:: 2.0.0
     
 Builds list json files for each need. The name of each file is the ``id`` of need.
 This option works like :ref:`needs_build_json`. 
@@ -1825,7 +1825,7 @@ Example:
 needs_build_json_per_id_path 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 1.4.0
+.. versionadded:: 2.0.0
     
 This option sets the location of the set of ``needs.json`` for every needs-id.
 
@@ -1944,7 +1944,7 @@ constraints_passed is a bool showing if ALL constraints of a corresponding need 
 
 constraints_results is a dictionary similar in structure to needs_constraints above. Instead of executable python statements, inner values contain a bool describing if check_0, check_1 ... passed successfully.
 
-.. versionadded:: 1.4.0
+.. versionadded:: 2.0.0
 
     The ``"error_message"`` key can contain a string, with Jinja templating, which will be displayed if the constraint fails, and saved on the need as ``constraints_error``:
 
