@@ -72,7 +72,7 @@ Internal
 * 🔧 Centralise access to sphinx-needs config to ``NeedsSphinxConfig``  (`#998 <https://github.com/useblocks/sphinx-needs/pull/998>`_)
 * 🔧 Centralise sphinx ``env`` data access to ``SphinxNeedsData`` (`#987 <https://github.com/useblocks/sphinx-needs/pull/987>`_)
 * 🔧 Consolidate needs data post-processing into ``post_process_needs_data`` function  (`#1039 <https://github.com/useblocks/sphinx-needs/pull/1039>`_)
-* 🔧 Add strict type checking (`#1000 <https://github.com/useblocks/sphinx-needs/pull/1000>`_, `#1002 <https://github.com/useblocks/sphinx-needs/pull/1002>`_, `#1042 <https://github.com/useblocks/sphinx-needs/pull/1042>`)
+* 🔧 Add strict type checking (`#1000 <https://github.com/useblocks/sphinx-needs/pull/1000>`_, `#1002 <https://github.com/useblocks/sphinx-needs/pull/1002>`_, `#1042 <https://github.com/useblocks/sphinx-needs/pull/1042>`_)
 * 🔧 Replace ``Directive`` with ``SphinxDirective`` (`#986 <https://github.com/useblocks/sphinx-needs/pull/986>`_)
 * 🔧 Remove ``unwrap`` function (`#1017 <https://github.com/useblocks/sphinx-needs/pull/1017>`_)
 * 🔧 Add ``remove_node_from_tree`` utility function (`#1063 <https://github.com/useblocks/sphinx-needs/pull/1063>`_)
