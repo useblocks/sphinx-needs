@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1699950867045,
+  "lastUpdate": 1700141435562,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -6084,6 +6084,42 @@ window.BENCHMARK_DATA = {
             "value": 61.212566737,
             "unit": "s",
             "extra": "Commit: 3486ac383ea2ba1a3f65c2484c84b69647e119c4\nBranch: master\nTime: 2023-11-14T08:31:39+00:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "150bcd6de55bc6e91c152f48fad8c806ab5b1ae0",
+          "message": "📚 Fix link typo (#1075)",
+          "timestamp": "2023-11-16T13:27:45Z",
+          "tree_id": "43e5819dc5a11292c20a70d6bc3ef484f2cbbe91",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/150bcd6de55bc6e91c152f48fad8c806ab5b1ae0"
+        },
+        "date": 1700141430009,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22583159999999225,
+            "unit": "s",
+            "extra": "Commit: 150bcd6de55bc6e91c152f48fad8c806ab5b1ae0\nBranch: master\nTime: 2023-11-16T13:27:45+00:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.14118978900001,
+            "unit": "s",
+            "extra": "Commit: 150bcd6de55bc6e91c152f48fad8c806ab5b1ae0\nBranch: master\nTime: 2023-11-16T13:27:45+00:00"
           }
         ]
       }
