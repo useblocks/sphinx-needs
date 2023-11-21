@@ -6,6 +6,8 @@ import pytest
 from sphinx.application import Sphinx
 from syrupy.filters import props
 
+from sphinx_needs.directives.needextend import _split_value
+
 
 @pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needextend"}], indirect=True)
 def test_doc_needextend_html(test_app: Sphinx, snapshot):
@@ -64,6 +66,26 @@ def test_doc_needextend_strict(test_app):
             "Sphinx error:\nProvided id strict_enable_extend_test for needextend does not exist."
             in out.stderr.decode("utf-8")
         )
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        ("a", [("a", False)]),
+        ("a,", [("a", False)]),
+        ("[[a]]", [("[[a]]", True)]),
+        ("[[a]]b", [("[[a]]b", False)]),
+        ("[[a;]],", [("[[a;]]", True)]),
+        ("a,b;c", [("a", False), ("b", False), ("c", False)]),
+        ("[[a]],[[b]];[[c]]", [("[[a]]", True), ("[[b]]", True), ("[[c]]", True)]),
+        (" a ,, b; c ", [("a", False), ("b", False), ("c", False)]),
+        (" [[a]] ,, [[b]] ; [[c]] ", [("[[a]]", True), ("[[b]]", True), ("[[c]]", True)]),
+        ("a,[[b]];c", [("a", False), ("[[b]]", True), ("c", False)]),
+        (" a ,, [[b;]] ; c ", [("a", False), ("[[b;]]", True), ("c", False)]),
+    ],
+)
+def test_split_value(value, expected):
+    assert _split_value(value) == expected
 
 
 @pytest.mark.parametrize(
