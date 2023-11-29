@@ -297,7 +297,7 @@ def filter_needs(
 
 
 def need_search(*args: Any, **kwargs: Any) -> bool:
-    return bool(re.search(*args, **kwargs))
+    return re.search(*args, **kwargs) is not None
 
 
 @measure_time("filtering")
