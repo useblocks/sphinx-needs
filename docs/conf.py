@@ -18,9 +18,7 @@ import datetime
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-from typing import Any, Dict, List
-
-from sphinx.application import Sphinx
+from typing import Any, Dict
 
 from sphinx_needs import __version__
 
@@ -541,25 +539,6 @@ rst_epilog = """
 """
 
 html_context = {}
-
-
-def rstjinja(app: Sphinx, _docname: str, source: List[str]) -> None:
-    """
-    Render our pages as a jinja template for fancy templating goodness.
-    """
-    # Make sure we're outputting HTML
-    if app.builder.format != "html" and app.builder.name != "linkcheck":
-        return
-    src = source[0]
-    from jinja2 import Template
-
-    template = Template(src, autoescape=True)
-    rendered = template.render(**app.config.html_context)
-    source[0] = rendered
-
-
-def setup(app: Sphinx) -> None:
-    app.connect("source-read", rstjinja)
 
 
 # LINKCHECK config
