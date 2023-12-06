@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1700141435562,
+  "lastUpdate": 1701845509671,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -6120,6 +6120,42 @@ window.BENCHMARK_DATA = {
             "value": 60.14118978900001,
             "unit": "s",
             "extra": "Commit: 150bcd6de55bc6e91c152f48fad8c806ab5b1ae0\nBranch: master\nTime: 2023-11-16T13:27:45+00:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "41382439+csIcaK@users.noreply.github.com",
+            "name": "csIcaK",
+            "username": "csIcaK"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c27bc6449c0d2a106d953f4ec9e3051a9dc4500b",
+          "message": "Update permalink.html with a frienly text (#1081)\n\n### Changed\r\n- added text to display while loading the content.\r\n\r\n### Reason\r\nCurrently on bigger projects it takes considerable amount of time to\r\nload the location of the selected ID. During that time currently there\r\nis a blank page shown to the user.\r\n\r\nThis change will display a static text: `Searching, Please Wait...`",
+          "timestamp": "2023-12-06T07:48:57+01:00",
+          "tree_id": "90ce586f9050c5266cf1de81decba06f5aee8dbe",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c27bc6449c0d2a106d953f4ec9e3051a9dc4500b"
+        },
+        "date": 1701845504090,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22356009099999596,
+            "unit": "s",
+            "extra": "Commit: c27bc6449c0d2a106d953f4ec9e3051a9dc4500b\nBranch: master\nTime: 2023-12-06T07:48:57+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 63.60541658100004,
+            "unit": "s",
+            "extra": "Commit: c27bc6449c0d2a106d953f4ec9e3051a9dc4500b\nBranch: master\nTime: 2023-12-06T07:48:57+01:00"
           }
         ]
       }
