@@ -58,4 +58,3 @@ def test_filter_build_html(test_app):
     assert html_6.count("No required needs found in table") == 1
     assert html_6.count("No required needs found in list") == 0  # the list will not be shown, seems dead code
     assert "</tbody>\n<p></p>\n</table>" in html_6
-

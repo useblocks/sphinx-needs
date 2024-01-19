@@ -228,7 +228,11 @@ def process_needfilters(
             content.append(puml_node)
 
         if len(content) == 0:
-            nothing_found = current_need_filter["filter_warning"] if "filter_warning" in current_need_filter and current_need_filter["filter_warning"] is not None  else "No needs passed the filters"
+            nothing_found = (
+                current_need_filter["filter_warning"]
+                if "filter_warning" in current_need_filter and current_need_filter["filter_warning"] is not None
+                else "No needs passed the filters"
+            )
             para = nodes.line()
             nothing_found_node = nodes.Text(nothing_found)
             para += nothing_found_node
