@@ -457,7 +457,7 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
 
             content.append(puml_node)
         else:  # no needs found
-            nothing_found = "No needs passed the filters"
+            nothing_found = current_needflow["filter_warning"] if "filter_warning" in current_needflow and current_needflow["filter_warning"] is not None else "No needs passed the filters"
             para = nodes.paragraph()
             nothing_found_node = nodes.Text(nothing_found)
             para += nothing_found_node

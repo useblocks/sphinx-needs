@@ -48,6 +48,7 @@ class FilterBase(SphinxDirective):
         "filter-func": directives.unchanged_required,
         "sort_by": directives.unchanged,
         "export_id": directives.unchanged,
+        "filter_warning": directives.unchanged,
     }
 
     def collect_filter_attributes(self) -> FilterAttributesType:
@@ -83,6 +84,7 @@ class FilterBase(SphinxDirective):
             "filter_code": self.content,
             "filter_func": self.options.get("filter-func"),
             "export_id": self.options.get("export_id", ""),
+            "filter_warning": self.options.get("filter_warning", None),
         }
         return collected_filter_options
 

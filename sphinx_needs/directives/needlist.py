@@ -123,7 +123,7 @@ def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
         content.append(line_block)
 
         if len(content) == 0:
-            content.append(no_needs_found_paragraph())
+            content.append(no_needs_found_paragraph(current_needfilter["filter_warning"] if "filter_warning" in current_needfilter else None))
 
         if current_needfilter["show_filters"]:
             content.append(used_filter_paragraph(current_needfilter))

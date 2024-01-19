@@ -52,3 +52,8 @@ def test_filter_build_html(test_app):
         '<div class="line">parent needs: <span class="parent_needs"><span><a class="reference internal" '
         'href="#CHILD_1_STORY" title="CHILD_2_STORY">CHILD_1_STORY</a></span></span></div>' in html_5
     )
+
+    html_6 = Path(app.outdir, "filter_no_needs.html").read_text()
+    print(html_6)
+    assert html_6.count("No needs passed the filters") == 1
+    assert html_6.count("No required needs found") == 1

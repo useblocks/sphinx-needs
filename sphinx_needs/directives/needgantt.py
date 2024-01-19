@@ -313,7 +313,7 @@ def process_needgantt(app: Sphinx, doctree: nodes.document, fromdocname: str, fo
         content.append(puml_node)
 
         if len(content) == 0:
-            nothing_found = "No needs passed the filters"
+            nothing_found = current_needgantt["filter_warning"] if "filter_warning" in current_needgantt and current_needgantt["filter_warning"] is not None else "No needs passed the filters"
             para = nodes.paragraph()
             nothing_found_node = nodes.Text(nothing_found)
             para += nothing_found_node

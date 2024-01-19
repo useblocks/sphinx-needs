@@ -9,8 +9,8 @@ from sphinx_needs.data import NeedsFilteredBaseType, SphinxNeedsData
 from sphinx_needs.defaults import TITLE_REGEX
 
 
-def no_needs_found_paragraph() -> nodes.paragraph:
-    nothing_found = "No needs passed the filters"
+def no_needs_found_paragraph(message) -> nodes.paragraph:
+    nothing_found = "No needs passed the filters" if message is None else message
     para = nodes.paragraph()
     nothing_found_node = nodes.Text(nothing_found)
     para += nothing_found_node

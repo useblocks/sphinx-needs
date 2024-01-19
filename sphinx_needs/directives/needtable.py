@@ -318,7 +318,7 @@ def process_needtables(
                     tbody += row
 
         if len(filtered_needs) == 0:
-            table_node.append(no_needs_found_paragraph())
+            table_node.append(no_needs_found_paragraph(current_needtable["filter_warning"] if "filter_warning" in current_needtable else "No needs passed the filters"))
 
         # add filter information to output
         if current_needtable["show_filters"]:
