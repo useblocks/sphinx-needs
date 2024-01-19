@@ -15,5 +15,12 @@ filter_no_needs
 
 .. needtable::
    :filter: ("6" in tags)
-   :filter_warning: "No required needs found"
-  
+   :filter_warning: No required needs found in table
+
+.. needlist::
+   :tags: 4711
+   :filter_warning: No required needs found in list
+
+.. needtable::
+   :filter: ("7" in tags)
+   :filter_warning: 

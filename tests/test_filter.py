@@ -54,6 +54,8 @@ def test_filter_build_html(test_app):
     )
 
     html_6 = Path(app.outdir, "filter_no_needs.html").read_text()
-    print(html_6)
     assert html_6.count("No needs passed the filters") == 1
-    assert html_6.count("No required needs found") == 1
+    assert html_6.count("No required needs found in table") == 1
+    assert html_6.count("No required needs found in list") == 0  # the list will not be shown, seems dead code
+    assert "</tbody>\n<p></p>\n</table>" in html_6
+
