@@ -266,6 +266,7 @@ class NeedsFilteredBaseType(NeedsBaseDataType):
     filter_code: list[str]
     filter_func: None | str
     export_id: str
+    filter_warning: str
     """If set, the filter is exported with this ID in the needs.json file."""
 
 
