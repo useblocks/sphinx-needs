@@ -155,7 +155,6 @@ Should show default message
    :start: USER_A, USER_B
    :link_types: links, triggers
    :filter: ("User" not in title)
-   :filter_warning: got filter warning from needsequence
 
 
 Should show no specific message and no default message
