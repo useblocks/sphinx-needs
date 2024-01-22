@@ -75,3 +75,5 @@ def test_filter_build_html(test_app):
         html_6.count("got filter warning from needsequence") == 1
     )  # maybe fixed later, now always start node is shown
     assert "no filter warning from needsequence" not in html_6
+
+    assert html_6.count('<p class="need_filter_empty"') == 15
