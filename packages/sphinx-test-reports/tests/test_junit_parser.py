@@ -15,6 +15,8 @@ xml_nose_path = os.path.join(
     os.path.dirname(__file__), "doc_test/utils", "nose_data.xml"
 )
 
+xml_ctest_path = os.path.join(os.path.dirname(__file__), "doc_test/utils", "ctest.xml")
+
 
 def test_init_parser():
     from sphinxcontrib.test_reports.junitparser import JUnitParser
@@ -115,3 +117,34 @@ def test_parse_pytest_61_gets_test_suite_attributes():
     assert test_suite["skips"] == 3
     assert test_suite["passed"] == 1
     assert test_suite["time"] == 4.088
+
+
+def test_parse_ctest_xml():
+    from sphinxcontrib.test_reports.junitparser import JUnitParser
+
+    parser = JUnitParser(xml_ctest_path)
+    test_suites = parser.parse()
+
+    assert len(test_suites) == 1
+    test_suite = test_suites[0]
+
+    print(test_suite["testcases"])
+
+    assert test_suite["tests"] == 5
+    assert test_suite["errors"] == -1
+    assert test_suite["failures"] == 1
+    assert test_suite["skips"] == 1
+    assert test_suite["passed"] == 3
+
+    assert test_suite["testcases"][0]["name"] == "usage_test"
+    assert test_suite["testcases"][0]["result"] == "passed"
+    assert test_suite["testcases"][1]["name"] == "success_test"
+    assert test_suite["testcases"][1]["result"] == "passed"
+    assert (
+        test_suite["testcases"][2]["name"] == "fail_test"
+    )  # fail in name, but nowhere in status, faked fail
+    assert test_suite["testcases"][2]["result"] == "passed"
+    assert test_suite["testcases"][3]["name"] == "fail_test_output"
+    assert test_suite["testcases"][3]["result"] == "failure"
+    assert test_suite["testcases"][4]["name"] == "skipped_test"
+    assert test_suite["testcases"][4]["result"] == "skipped"
