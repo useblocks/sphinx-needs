@@ -318,14 +318,15 @@ def process_needtables(
                     tbody += row
 
         if len(filtered_needs) == 0:
-            table_node.append(
-                no_needs_found_paragraph(
-                    current_needtable["filter_warning"]
-                    if "filter_warning" in current_needtable
-                    else "No needs passed the filters"
-                )
-            )
-
+            content = no_needs_found_paragraph(current_needtable.get("filter_warning"))
+        else:
+            # Put the table in a div-wrapper, so that we can control overflow / scroll layout
+            if style == "TABLE":
+                table_wrapper = nodes.container(classes=["needstable_wrapper"])
+                table_wrapper.insert(0, table_node)
+                content = table_wrapper
+            else:
+                content = table_node
         # add filter information to output
         if current_needtable["show_filters"]:
             table_node.append(used_filter_paragraph(current_needtable))
@@ -335,11 +336,4 @@ def process_needtables(
             title = nodes.title(title_text, "", nodes.Text(title_text))
             table_node.insert(0, title)
 
-        # Put the table in a div-wrapper, so that we can control overflow / scroll layout
-        if style == "TABLE":
-            table_wrapper = nodes.container(classes=["needstable_wrapper"])
-            table_wrapper.insert(0, table_node)
-            node.replace_self(table_wrapper)
-
-        else:
-            node.replace_self(table_node)
+        node.replace_self(content)

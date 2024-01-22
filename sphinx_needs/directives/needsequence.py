@@ -19,6 +19,7 @@ from sphinx_needs.diagrams_common import (
     get_filter_para,
     no_plantuml,
 )
+from sphinx_needs.directives.utils import no_needs_found_paragraph
 from sphinx_needs.filter_common import FilterBase
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import add_doc, remove_node_from_tree
@@ -209,16 +210,8 @@ def process_needsequence(
 
         content.append(puml_node)
 
-        if len(content) == 0:
-            nothing_found = (
-                current_needsequence["filter_warning"]
-                if "filter_warning" in current_needsequence and current_needsequence["filter_warning"] is not None
-                else "No needs passed the filters"
-            )
-            para = nodes.paragraph()
-            nothing_found_node = nodes.Text(nothing_found)
-            para += nothing_found_node
-            content.append(para)
+        if len(c_string) == 0 and p_string.count("participant") == 1:  # no connections and just one (start) participant
+            content = [(no_needs_found_paragraph(current_needsequence.get("filter_warning")))]
         if current_needsequence["show_filters"]:
             content.append(get_filter_para(current_needsequence))
 

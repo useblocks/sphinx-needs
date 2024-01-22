@@ -11,6 +11,7 @@ from sphinx.errors import NoUri
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.diagrams_common import create_legend
+from sphinx_needs.directives.utils import no_needs_found_paragraph
 from sphinx_needs.filter_common import FilterBase, process_filters
 from sphinx_needs.utils import add_doc, remove_node_from_tree, row_col_maker
 
@@ -228,15 +229,7 @@ def process_needfilters(
             content.append(puml_node)
 
         if len(content) == 0:
-            nothing_found = (
-                current_needfilter["filter_warning"]
-                if "filter_warning" in current_needfilter and current_needfilter["filter_warning"] is not None
-                else "No needs passed the filters"
-            )
-            para = nodes.line()
-            nothing_found_node = nodes.Text(nothing_found)
-            para += nothing_found_node
-            content.append(para)
+            content.append(no_needs_found_paragraph(current_needfilter.get("filter_warning")))
         if current_needfilter["show_filters"]:
             para = nodes.paragraph()
             filter_text = "Used filter:"

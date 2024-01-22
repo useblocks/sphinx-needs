@@ -120,11 +120,7 @@ def process_needextract(
                 content.append(need_extract)
 
         if len(content) == 0:
-            content.append(
-                no_needs_found_paragraph(
-                    current_needextract["filter_warning"] if "filter_warning" in current_needextract else None
-                )
-            )
+            content.append(no_needs_found_paragraph(current_needextract.get("filter_warning")))
 
         if current_needextract["show_filters"]:
             content.append(used_filter_paragraph(current_needextract))
