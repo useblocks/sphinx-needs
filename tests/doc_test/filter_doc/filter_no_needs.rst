@@ -97,7 +97,7 @@ Should show no specific message cause needs found
    :filter_warning: no filter warning from needflow
 
    
-Testing Gant
+Testing Gantt
 -------------------------
    
 Should show specific message
