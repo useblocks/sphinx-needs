@@ -8,6 +8,7 @@ from sphinx.application import Sphinx
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
+from sphinx_needs.directives.utils import no_needs_found_paragraph
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import (
@@ -47,6 +48,7 @@ class NeedpieDirective(FilterBase):
         "text_color": directives.unchanged_required,
         "shadow": directives.flag,
         "filter-func": FilterBase.base_option_spec["filter-func"],
+        "filter_warning": FilterBase.base_option_spec["filter_warning"],
     }
 
     # Update the options_spec only with value filter-func defined in the FilterBase class
@@ -94,6 +96,7 @@ class NeedpieDirective(FilterBase):
             "shadow": shadow,
             "text_color": text_color,
             "filter_func": self.collect_filter_attributes()["filter_func"],
+            "filter_warning": self.collect_filter_attributes()["filter_warning"],
         }
         add_doc(env, env.docname)
 
@@ -273,7 +276,10 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
         # Add lineno to node
         image_node.line = current_needpie["lineno"]
 
-        node.replace_self(image_node)
+        if len(sizes) == 0 or all(s == 0 for s in sizes):
+            node.replace_self(no_needs_found_paragraph(current_needpie.get("filter_warning")))
+        else:
+            node.replace_self(image_node)
 
         # Cleanup matplotlib
         # Reset the style configuration:

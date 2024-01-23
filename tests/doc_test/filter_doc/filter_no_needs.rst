@@ -171,3 +171,44 @@ Should show no specific message cause needs found
    :start: USER_A, USER_B
    :link_types: links, triggers
    :filter_warning: no filter warning from needsequence
+
+Testing Pie
+-------------------------
+   
+Should show specific message
+
+.. needpie:: Empty Pie 0
+   :labels: Running, Others
+   :filter_warning: got filter warning from needpie
+   
+   '7' in tags
+   '9' in tags
+
+Should show default message
+
+.. needpie:: Empty Pie 1
+   :labels: Running, Others
+
+   '7' in tags
+   '9' in tags
+
+Should show no specific message and no default message
+
+.. needpie:: Empty Pie 2
+   :labels: Running, Others
+   :filter_warning: 
+   
+   '7' in tags
+   '9' in tags
+
+Should show no specific message cause needs found
+   
+.. needpie:: Success Pie
+   :labels: Open, Closed, Others
+   :filter_warning: no filter warning from needpie
+   
+   10
+   20
+   30
+
+   

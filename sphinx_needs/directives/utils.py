@@ -12,7 +12,7 @@ from sphinx_needs.defaults import TITLE_REGEX
 def no_needs_found_paragraph(message: Optional[str]) -> nodes.paragraph:
     nothing_found = "No needs passed the filters" if message is None else message
     para = nodes.paragraph()
-    para["classes"].append("need_filter_empty")
+    para["classes"].append("needs_filter_warning")
     nothing_found_node = nodes.Text(nothing_found)
     para += nothing_found_node
     return para

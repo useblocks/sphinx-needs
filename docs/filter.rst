@@ -469,3 +469,6 @@ filter_warning
 ~~~~~~~~~~~~~~
 
 Add specific text with this option or add no text to display nothing. The default text will not be shown.
+
+The specified output could be styled with the css class ``needs_filter_warning``
+

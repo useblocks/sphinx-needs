@@ -54,8 +54,8 @@ def test_filter_build_html(test_app):
     )
 
     html_6 = Path(app.outdir, "filter_no_needs.html").read_text()
-    assert html_6.count("No needs passed the filters") == 5
-    assert html_6.count("Should show no specific message and no default message") == 5
+    assert html_6.count("No needs passed the filters") == 6
+    assert html_6.count("Should show no specific message and no default message") == 6
     assert html_6.count("<figure class=") == 3
 
     assert html_6.count("got filter warning from needtable") == 1
@@ -76,4 +76,8 @@ def test_filter_build_html(test_app):
     )  # maybe fixed later, now always start node is shown
     assert "no filter warning from needsequence" not in html_6
 
-    assert html_6.count('<p class="need_filter_empty"') == 15
+    assert html_6.count("got filter warning from needpie") == 1
+    assert "no filter warning from needpie" not in html_6
+    assert '<img alt="_images/need_pie_' in html_6
+
+    assert html_6.count('<p class="needs_filter_warning"') == 18

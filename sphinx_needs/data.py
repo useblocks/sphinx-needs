@@ -347,6 +347,7 @@ class NeedsPieType(NeedsBaseDataType):
     text_color: None | str
     shadow: bool
     filter_func: None | str
+    filter_warning: str
 
 
 class NeedsSequenceType(NeedsFilteredDiagramBaseType):

@@ -1,3 +1,5 @@
+import os
+
 extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
 
 # note, the plantuml executable command is set globally in the test suite
@@ -26,3 +28,5 @@ needs_extra_links = [
         "allow_dead_links": True,
     },
 ]
+
+needs_css = os.path.join(os.path.dirname(__file__), "filter.css")
