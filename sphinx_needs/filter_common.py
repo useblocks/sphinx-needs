@@ -34,6 +34,7 @@ class FilterAttributesType(TypedDict):
     filter_code: list[str]
     filter_func: str
     export_id: str
+    filter_warning: str
     """If set, the filter is exported with this ID in the needs.json file."""
 
 
@@ -48,6 +49,7 @@ class FilterBase(SphinxDirective):
         "filter-func": directives.unchanged_required,
         "sort_by": directives.unchanged,
         "export_id": directives.unchanged,
+        "filter_warning": directives.unchanged,
     }
 
     def collect_filter_attributes(self) -> FilterAttributesType:
@@ -83,6 +85,7 @@ class FilterBase(SphinxDirective):
             "filter_code": self.content,
             "filter_func": self.options.get("filter-func"),
             "export_id": self.options.get("export_id", ""),
+            "filter_warning": self.options.get("filter_warning"),
         }
         return collected_filter_options
 

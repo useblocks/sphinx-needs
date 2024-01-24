@@ -52,3 +52,32 @@ def test_filter_build_html(test_app):
         '<div class="line">parent needs: <span class="parent_needs"><span><a class="reference internal" '
         'href="#CHILD_1_STORY" title="CHILD_2_STORY">CHILD_1_STORY</a></span></span></div>' in html_5
     )
+
+    html_6 = Path(app.outdir, "filter_no_needs.html").read_text()
+    assert html_6.count("No needs passed the filters") == 6
+    assert html_6.count("Should show no specific message and no default message") == 6
+    assert html_6.count("<figure class=") == 3
+
+    assert html_6.count("got filter warning from needtable") == 1
+    assert "no filter warning from needtable" not in html_6
+    assert html_6.count('<table class="NEEDS_DATATABLES') == 1
+
+    assert html_6.count("got filter warning from needlist") == 1
+    assert "no filter warning from needlist" not in html_6
+
+    assert html_6.count("got filter warning from needflow") == 1
+    assert "no filter warning from needflow" not in html_6
+
+    assert html_6.count("got filter warning from needgant") == 1
+    assert "no filter warning from needgant" not in html_6
+
+    assert (
+        html_6.count("got filter warning from needsequence") == 1
+    )  # maybe fixed later, now always start node is shown
+    assert "no filter warning from needsequence" not in html_6
+
+    assert html_6.count("got filter warning from needpie") == 1
+    assert "no filter warning from needpie" not in html_6
+    assert '<img alt="_images/need_pie_' in html_6
+
+    assert html_6.count('<p class="needs_filter_warning"') == 18

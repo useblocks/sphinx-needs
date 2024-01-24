@@ -19,6 +19,7 @@ from sphinx_needs.data import (
 )
 from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link, create_legend
+from sphinx_needs.directives.utils import no_needs_found_paragraph
 from sphinx_needs.filter_common import FilterBase, filter_single_need, process_filters
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import (
@@ -457,11 +458,7 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
 
             content.append(puml_node)
         else:  # no needs found
-            nothing_found = "No needs passed the filters"
-            para = nodes.paragraph()
-            nothing_found_node = nodes.Text(nothing_found)
-            para += nothing_found_node
-            content.append(para)
+            content.append(no_needs_found_paragraph(current_needflow.get("filter_warning")))
 
         if current_needflow["show_filters"]:
             para = nodes.paragraph()
