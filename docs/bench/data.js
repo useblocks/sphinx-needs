@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1701845509671,
+  "lastUpdate": 1706107675557,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -6156,6 +6156,42 @@ window.BENCHMARK_DATA = {
             "value": 63.60541658100004,
             "unit": "s",
             "extra": "Commit: c27bc6449c0d2a106d953f4ec9e3051a9dc4500b\nBranch: master\nTime: 2023-12-06T07:48:57+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "j.kreuzberger@procitec.de",
+            "name": "Jörg Kreuzberger",
+            "username": "kreuzberger"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "73b961e29583bc0ac8892ef9c4e2bfb75f7f46bb",
+          "message": "#947 filter_warning option to replace default \"No needs passed the filters\" text (#1093)\n\nAdd option `:filter_warning:` to directives (e.g. needtable) to show no\r\ntext or given text instead of the default text.",
+          "timestamp": "2024-01-24T15:44:59+01:00",
+          "tree_id": "f8a9b33084051bb63ffdf85e10ee2e253335fd91",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/73b961e29583bc0ac8892ef9c4e2bfb75f7f46bb"
+        },
+        "date": 1706107668312,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.24102158600001644,
+            "unit": "s",
+            "extra": "Commit: 73b961e29583bc0ac8892ef9c4e2bfb75f7f46bb\nBranch: master\nTime: 2024-01-24T15:44:59+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.26840552800002,
+            "unit": "s",
+            "extra": "Commit: 73b961e29583bc0ac8892ef9c4e2bfb75f7f46bb\nBranch: master\nTime: 2024-01-24T15:44:59+01:00"
           }
         ]
       }
