@@ -23,6 +23,7 @@ needs_extra_options = [
     "github",
     "value",
     "unit",
+    "special-chars!",
 ]
 
 needs_string_links = {
