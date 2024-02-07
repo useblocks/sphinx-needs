@@ -109,6 +109,22 @@ MONTH_NAMES = [
 ]
 
 
+def split_need_id(need_id_full: str) -> Tuple[str, Optional[str]]:
+    """A need id can be a combination of a main id and a part id,
+    split by a dot.
+    This function splits them:
+    If there is no dot, the part id is None,
+    otherwise everything before the first dot is the main id,
+    and everything after the first dot is the part id.
+    """
+    if "." in need_id_full:
+        need_id, need_part_id = need_id_full.split(".", maxsplit=1)
+    else:
+        need_id = need_id_full
+        need_part_id = None
+    return need_id, need_part_id
+
+
 def row_col_maker(
     app: Sphinx,
     fromdocname: str,

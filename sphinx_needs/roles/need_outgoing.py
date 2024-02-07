@@ -8,7 +8,7 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import check_and_calc_base_url_rel_path
+from sphinx_needs.utils import check_and_calc_base_url_rel_path, split_need_id
 
 log = get_logger(__name__)
 
@@ -41,24 +41,21 @@ def process_need_outgoing(
 
         link_list = [links] if isinstance(links, str) else links
 
-        for index, link in enumerate(link_list):
-            link_split = link.split(".")
-            link = link_split[0]
-            try:
-                link_part = link_split[1]
-            except IndexError:
-                link_part = None
+        for index, need_id_full in enumerate(link_list):
+            need_id_main, need_id_part = split_need_id(need_id_full)
 
             # If the need target exists, let's create the reference
-            if (link in needs_all_needs and not link_part) or (
-                link_part and link in needs_all_needs and link_part in needs_all_needs[link]["parts"]
+            if (need_id_main in needs_all_needs and not need_id_part) or (
+                need_id_part
+                and need_id_main in needs_all_needs
+                and need_id_part in needs_all_needs[need_id_main]["parts"]
             ):
                 try:
-                    target_need = needs_all_needs[link]
-                    if link_part and link_part in target_need["parts"]:
-                        part_content = target_need["parts"][link_part]["content"]
+                    target_need = needs_all_needs[need_id_main]
+                    if need_id_part and need_id_part in target_need["parts"]:
+                        part_content = target_need["parts"][need_id_part]["content"]
                         target_title = part_content if len(part_content) < 30 else part_content[:27] + "..."
-                        target_id = ".".join([link, link_part])
+                        target_id = ".".join([need_id_main, need_id_part])
                     else:
                         target_title = target_need["title"]
                         target_id = target_need["id"]
@@ -102,9 +99,9 @@ def process_need_outgoing(
             else:
                 # Let's add a normal text here instead of a link.
                 # So really each link set by the user gets shown.
-                link_text = f"{link}"
-                if link_part:
-                    link_text += f".{link_part}"
+                link_text = f"{need_id_main}"
+                if need_id_part:
+                    link_text += f".{need_id_part}"
                 dead_link_text = nodes.Text(link_text)
                 dead_link_para = nodes.inline(classes=["needs_dead_link"])
                 dead_link_para.append(dead_link_text)
@@ -130,7 +127,7 @@ def process_need_outgoing(
                     if node_need_ref and node_need_ref.line:
                         log.log(
                             log_level,
-                            f"linked need {link} not found "
+                            f"linked need {need_id_main} not found "
                             f"(Line {node_need_ref.line} of file {node_need_ref.source}) [needs]",
                             **kwargs,
                         )
@@ -139,7 +136,7 @@ def process_need_outgoing(
                             log_level,
                             "outgoing linked need {} not found (document: {}, "
                             "source need {} on line {} ) [needs]".format(
-                                link, ref_need["docname"], ref_need["id"], ref_need["lineno"]
+                                need_id_main, ref_need["docname"], ref_need["id"], ref_need["lineno"]
                             ),
                             **kwargs,
                         )

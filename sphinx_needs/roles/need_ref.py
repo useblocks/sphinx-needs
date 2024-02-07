@@ -10,7 +10,7 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import check_and_calc_base_url_rel_path
+from sphinx_needs.utils import check_and_calc_base_url_rel_path, split_need_id
 
 log = get_logger(__name__)
 
@@ -71,25 +71,20 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
         prefix = "[["
         postfix = "]]"
 
-        ref_id_complete = node_need_ref["reftarget"]
+        need_id_full = node_need_ref["reftarget"]
+        need_id_main, need_id_part = split_need_id(need_id_full)
 
-        if "." in ref_id_complete:
-            ref_id, part_id = ref_id_complete.split(".")
-        else:
-            ref_id = ref_id_complete
-            part_id = None
-
-        if ref_id in all_needs:
-            target_need = all_needs[ref_id]
+        if need_id_main in all_needs:
+            target_need = all_needs[need_id_main]
 
             dict_need = transform_need_to_dict(target_need)  # Transform a dict in a dict of {str, str}
 
             # We set the id to the complete id maintained in node_need_ref["reftarget"]
-            dict_need["id"] = ref_id_complete
+            dict_need["id"] = need_id_full
 
-            if part_id:
+            if need_id_part:
                 # If part_id, we have to fetch the title from the content.
-                dict_need["title"] = target_need["parts"][part_id]["content"]
+                dict_need["title"] = target_need["parts"][need_id_part]["content"]
 
             # Shorten title, if necessary
             max_length = needs_config.role_need_max_title_length
@@ -100,7 +95,7 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
 
             ref_name: Union[None, str, nodes.Text] = node_need_ref.children[0].children[0]  # type: ignore[assignment]
             # Only use ref_name, if it differs from ref_id
-            if str(ref_id_complete) == str(ref_name):
+            if str(need_id_full) == str(ref_name):
                 ref_name = None
 
             if ref_name and prefix in ref_name and postfix in ref_name:
