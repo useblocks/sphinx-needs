@@ -9,7 +9,9 @@ from random import randrange
 
 import pytest
 import responses
+from sphinx import version_info
 from sphinx.application import Sphinx
+from sphinx.testing.util import SphinxTestApp
 from syrupy.filters import props
 
 from sphinx_needs.api.need import NeedsNoIdException
@@ -234,14 +236,24 @@ def test_sphinx_api_build():
     temp_dir = tempfile.mkdtemp()
     src_dir = os.path.join(os.path.dirname(__file__), "doc_test", "doc_basic")
 
-    sphinx_app = Sphinx(
+    if version_info >= (7, 2):
+        src_dir = Path(src_dir)
+        temp_dir = Path(temp_dir)
+    else:
+        from sphinx.testing.path import path
+
+        src_dir = path(src_dir)
+        temp_dir = path(temp_dir)
+
+    sphinx_app = SphinxTestApp(
         srcdir=src_dir,
-        confdir=src_dir,
-        outdir=temp_dir,
-        doctreedir=temp_dir,
+        builddir=temp_dir,
         buildername="html",
         parallel=4,
         freshenv=True,
     )
-    sphinx_app.build()
-    assert sphinx_app.statuscode == 0
+    try:
+        sphinx_app.build()
+        assert sphinx_app.statuscode == 0
+    finally:
+        sphinx_app.cleanup()

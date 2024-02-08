@@ -141,8 +141,9 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
 
         else:
             log.warning(
-                f"linked need {node_need_ref['reftarget']} not found [needs]",
+                f"linked need {node_need_ref['reftarget']} not found [needs.link_ref]",
                 type="needs",
+                subtype="link_ref",
                 location=node_need_ref,
             )
 

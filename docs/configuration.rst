@@ -294,7 +294,13 @@ In this cases, you can provide a list of tuples.
 needs_report_dead_links
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Deactivate/activate log messages of outgoing dead links. If set to ``False``, then deactivate.
+.. deprecated:: 2.1.0
+
+    Instead add ``needs.link_outgoing`` to the `suppress_warnings <https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-suppress_warnings>`__ list::
+
+        suppress_warnings = ["needs.link_outgoing"]
+
+Deactivate/activate log messages of disallowed outgoing dead links. If set to ``False``, then deactivate.
 
 Default value is ``True``.
 

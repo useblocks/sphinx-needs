@@ -191,6 +191,7 @@ class NeedsSphinxConfig:
     Example: [{"name": "blocks, "incoming": "is blocked by", "copy_link": True, "color": "#ffcc00"}]
     """
     report_dead_links: bool = field(default=True, metadata={"rebuild": "html", "types": (bool,)})
+    """DEPRECATED: Use ``suppress_warnings = ["needs.link_outgoing"]`` instead."""
     filter_data: dict[str, Any] = field(default_factory=dict, metadata={"rebuild": "html", "types": ()})
     allow_unsafe_filters: bool = field(default=False, metadata={"rebuild": "html", "types": (bool,)})
     flow_show_links: bool = field(default=False, metadata={"rebuild": "html", "types": (bool,)})
