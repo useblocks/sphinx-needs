@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 from typing import Sequence
 
 from docutils import nodes
@@ -21,13 +21,14 @@ class NeedReportDirective(SphinxDirective):
         "links": directives.flag,
         "options": directives.flag,
         "usage": directives.flag,
+        "template": directives.unchanged,
     }
 
     def run(self) -> Sequence[nodes.raw]:
         env = self.env
         needs_config = NeedsSphinxConfig(env.config)
 
-        if len(self.options.keys()) == 0:  # Check if options is empty
+        if not set(self.options).intersection({"types", "links", "options", "usage"}):
             LOGGER.warning(
                 "No options specified to generate need report [needs.report]",
                 location=self.get_location(),
@@ -45,28 +46,26 @@ class NeedReportDirective(SphinxDirective):
         }
         report_info.update(**needs_config.render_context)
 
-        need_report_template_path: str = needs_config.report_template
-        # Absolute path starts with /, based on the conf.py directory. The / need to be striped
-        correct_need_report_template_path = os.path.join(env.app.srcdir, need_report_template_path.lstrip("/"))
+        if "template" in self.options:
+            need_report_template_path = Path(self.env.relfn2path(self.options["template"], self.env.docname)[1])
+        elif needs_config.report_template:
+            # Absolute path starts with /, based on the conf.py directory. The / need to be striped
+            need_report_template_path = Path(str(env.app.srcdir)) / needs_config.report_template.lstrip("/")
+        else:
+            need_report_template_path = Path(__file__).parent / "needreport_template.rst"
 
-        if len(need_report_template_path) == 0:
-            default_template_path = "needreport_template.rst"
-            correct_need_report_template_path = os.path.join(os.path.dirname(__file__), default_template_path)
-
-        if not os.path.exists(correct_need_report_template_path):
+        if not need_report_template_path.is_file():
             LOGGER.warning(
-                f"Could not load needs report template file {correct_need_report_template_path} [needs.report]",
+                f"Could not load needs report template file {need_report_template_path} [needs.report]",
                 location=self.get_location(),
                 type="needs",
                 subtype="report",
             )
             return []
 
-        with open(correct_need_report_template_path) as needs_report_template_file:
-            needs_report_template_file_content = needs_report_template_file.read()
+        needs_report_template_file_content = need_report_template_path.read_text(encoding="utf8")
 
         template = Template(needs_report_template_file_content, autoescape=True)
-
         text = template.render(**report_info)
         self.state_machine.insert_input(text.split("\n"), self.state_machine.document.attributes["source"])
 

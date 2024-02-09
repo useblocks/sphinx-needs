@@ -7,6 +7,10 @@ Needs Report
 
 .. needreport::
       :types:
+      :template: unknown.rst
+
+.. needreport::
+      :types:
       :links:
       :options:
       :usage:
