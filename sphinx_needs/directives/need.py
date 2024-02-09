@@ -340,6 +340,13 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
         if need_node.get("hidden"):
             hidden_needs.append(need_node)
 
+        if need_node_excluded_by_only_directive(env, need_node):
+            # the need is excluded as contained in an "only" directive evaluated to False for current tags
+            if hasattr(env, "needs_all_needs"):
+                del env.needs_all_needs[need_id]
+            if need_node.parent is not None and hasattr(need_node.parent, "remove"):
+                need_node.parent.remove(need_node)
+
     # now we have gathered all the information we need,
     # we can remove the hidden needs from the doctree
     for need_node in hidden_needs:
@@ -354,6 +361,18 @@ def previous_sibling(node: nodes.Node) -> Optional[nodes.Node]:
     except AttributeError:
         return None
     return node.parent[i - 1] if i > 0 else None  # type: ignore
+
+
+def need_node_excluded_by_only_directive(env: BuildEnvironment, node: nodes.Node) -> bool:
+    """Return True if the node is under an "only" directive that shall be excluded given to the current tags"""
+    parent = node.parent
+    while parent is not None:
+        if hasattr(parent, "tagname") and parent.tagname == "only" and hasattr(parent, "attributes"):
+            # note: we do not manage nested only directive
+            only_tags = parent.attributes.get("expr", "")
+            return not env.app.builder.tags.eval_condition(only_tags)
+        parent = parent.parent
+    return False
 
 
 @profile("NEEDS_POST_PROCESS")
