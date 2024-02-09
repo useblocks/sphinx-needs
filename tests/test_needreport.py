@@ -7,6 +7,9 @@ import pytest
 def test_doc_needarch(test_app):
     app = test_app
     app.build()
+    # check for warning about missing options
+    warnings = app._warning.getvalue()
+    assert "index.rst:6: WARNING: No options specified to generate need report [needs.report]" in warnings
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     assert "Need Types" in html
     assert "Need Extra Links" in html
