@@ -28,7 +28,7 @@ from sphinx_needs.layout import build_need
 from sphinx_needs.logging import get_logger
 from sphinx_needs.need_constraints import process_constraints
 from sphinx_needs.nodes import Need
-from sphinx_needs.utils import add_doc, profile, remove_node_from_tree
+from sphinx_needs.utils import add_doc, profile, remove_node_from_tree, split_need_id
 
 logger = get_logger(__name__)
 
@@ -440,17 +440,14 @@ def check_links(needs: Dict[str, NeedsInfoType], config: NeedsSphinxConfig) -> N
     for need in needs.values():
         for link_type in extra_links:
             dead_links_allowed = link_type.get("allow_dead_links", False)
-            need_link_value = (
+            need_link_value: List[str] = (
                 [need[link_type["option"]]] if isinstance(need[link_type["option"]], str) else need[link_type["option"]]  # type: ignore
             )
-            for link in need_link_value:
-                if "." in link:
-                    need_id, need_part_id = link.split(".")
-                else:
-                    need_id = link
-                    need_part_id = None
-                if need_id not in needs or (
-                    need_id in needs and need_part_id and need_part_id not in needs[need_id]["parts"]
+            for need_id_full in need_link_value:
+                need_id_main, need_id_part = split_need_id(need_id_full)
+
+                if need_id_main not in needs or (
+                    need_id_main in needs and need_id_part and need_id_part not in needs[need_id_main]["parts"]
                 ):
                     need["has_dead_links"] = True
                     if not dead_links_allowed:
@@ -469,23 +466,19 @@ def create_back_links(needs: Dict[str, NeedsInfoType], config: NeedsSphinxConfig
         option_back = f"{option}_back"
 
         for key, need in needs.items():
-            need_link_value = [need[option]] if isinstance(need[option], str) else need[option]  # type: ignore[literal-required]
-            for link in need_link_value:
-                link_main = link.split(".")[0]
-                try:
-                    link_part = link.split(".")[1]
-                except IndexError:
-                    link_part = None
+            need_link_value: List[str] = [need[option]] if isinstance(need[option], str) else need[option]  # type: ignore[literal-required]
+            for need_id_full in need_link_value:
+                need_id_main, need_id_part = split_need_id(need_id_full)
 
-                if link_main in needs:
-                    if key not in needs[link_main][option_back]:  # type: ignore[literal-required]
-                        needs[link_main][option_back].append(key)  # type: ignore[literal-required]
+                if need_id_main in needs:
+                    if key not in needs[need_id_main][option_back]:  # type: ignore[literal-required]
+                        needs[need_id_main][option_back].append(key)  # type: ignore[literal-required]
 
                     # Handling of links to need_parts inside a need
-                    if link_part and link_part in needs[link_main]["parts"]:
-                        if option_back not in needs[link_main]["parts"][link_part].keys():
-                            needs[link_main]["parts"][link_part][option_back] = []  # type: ignore[literal-required]
-                        needs[link_main]["parts"][link_part][option_back].append(key)  # type: ignore[literal-required]
+                    if need_id_part and need_id_part in needs[need_id_main]["parts"]:
+                        if option_back not in needs[need_id_main]["parts"][need_id_part].keys():
+                            needs[need_id_main]["parts"][need_id_part][option_back] = []  # type: ignore[literal-required]
+                        needs[need_id_main]["parts"][need_id_part][option_back].append(key)  # type: ignore[literal-required]
 
 
 def _fix_list_dyn_func(list: List[str]) -> List[str]:
