@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1707727087193,
+  "lastUpdate": 1707727188258,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -6228,6 +6228,42 @@ window.BENCHMARK_DATA = {
             "value": 60.610427948999984,
             "unit": "s",
             "extra": "Commit: 6abd389369c5bbd5216f5ecdc3da1323ebe8620d\nBranch: master\nTime: 2024-02-12T09:36:07+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d74f4dedaf8fdfdeaf253e1f3effb1c44a93ece4",
+          "message": "📚 DOCS remove jinja templating (#1079)\n\nIt has no benefit and causes issues with raw jinja and latex builds",
+          "timestamp": "2024-02-12T09:37:32+01:00",
+          "tree_id": "f0f0191bd4dbe8d973e97cc2670bb516df702863",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/d74f4dedaf8fdfdeaf253e1f3effb1c44a93ece4"
+        },
+        "date": 1707727181464,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21958140099999923,
+            "unit": "s",
+            "extra": "Commit: d74f4dedaf8fdfdeaf253e1f3effb1c44a93ece4\nBranch: master\nTime: 2024-02-12T09:37:32+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.382255811,
+            "unit": "s",
+            "extra": "Commit: d74f4dedaf8fdfdeaf253e1f3effb1c44a93ece4\nBranch: master\nTime: 2024-02-12T09:37:32+01:00"
           }
         ]
       }
