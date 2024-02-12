@@ -21,6 +21,16 @@ The :ref:`needs_report_template` value is a path to the
 `jinja2 <https://jinja.palletsprojects.com/en/2.11.x/templates/>`_ template file.
 You can use the template file to customise the content generated  by ``needreport``.
 
+.. note::
+
+   The default needs report template is set to use ``dropdown`` directives for containing each configuration type, which requires the ``dropdown`` directive to be available in your Sphinx environment. If you do not have the ``dropdown`` directive available, you can use the following configuration to set the default needs report template to use ``admonition`` directives instead:
+
+   .. code-block:: python
+
+      needs_render_context = {
+         "report_directive": "admonition",
+      }
+
 |ex|
 
 .. code-block:: rst
