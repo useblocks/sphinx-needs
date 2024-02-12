@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1707727188258,
+  "lastUpdate": 1707727415649,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -6264,6 +6264,42 @@ window.BENCHMARK_DATA = {
             "value": 67.382255811,
             "unit": "s",
             "extra": "Commit: d74f4dedaf8fdfdeaf253e1f3effb1c44a93ece4\nBranch: master\nTime: 2024-02-12T09:37:32+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f6b090ad79ff37d6e07897bdc3bae96e138ade52",
+          "message": "🐛 FIX: Centralise splitting of need ID (#1101)\n\nEnsure the splitting of a need ID, on a `.` into `main.part` IDs, cannot\r\nexcept (and remove duplication of the logic)\r\n\r\ncloses #1096",
+          "timestamp": "2024-02-12T09:41:32+01:00",
+          "tree_id": "30498b320124d2bdfd9a0c25d968eabcd3efd30d",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f6b090ad79ff37d6e07897bdc3bae96e138ade52"
+        },
+        "date": 1707727409648,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22227620200004594,
+            "unit": "s",
+            "extra": "Commit: f6b090ad79ff37d6e07897bdc3bae96e138ade52\nBranch: master\nTime: 2024-02-12T09:41:32+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.721411966999995,
+            "unit": "s",
+            "extra": "Commit: f6b090ad79ff37d6e07897bdc3bae96e138ade52\nBranch: master\nTime: 2024-02-12T09:41:32+01:00"
           }
         ]
       }
