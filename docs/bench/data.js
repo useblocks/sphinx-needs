@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1706107675557,
+  "lastUpdate": 1707727087193,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -6192,6 +6192,42 @@ window.BENCHMARK_DATA = {
             "value": 59.26840552800002,
             "unit": "s",
             "extra": "Commit: 73b961e29583bc0ac8892ef9c4e2bfb75f7f46bb\nBranch: master\nTime: 2024-01-24T15:44:59+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6abd389369c5bbd5216f5ecdc3da1323ebe8620d",
+          "message": "🧪 Add test for `needreport` directive (#1105)\n\nCurrently there is no test for this directive, this PR adds one.\r\n\r\nThis PR also fixes the directive:\r\n\r\n- Make the options flags\r\n- Change errors in the directive to emit warnings, rather than excepting\r\nthe whole build\r\n- Allow for `template` to be specified as a directive option\r\n- Allow the the `dropdown` directive used in the default template, which\r\nrequires an external sphinx extension, to be overriden using\r\n`needs_render_context = {\"report_directive\": \"admonition\"}` (I left the\r\ndefault as `dropdown`, so as not to introduce a breaking change)",
+          "timestamp": "2024-02-12T09:36:07+01:00",
+          "tree_id": "f4d12ed387505ee76d69c9f7ef43d3a1008d3edd",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6abd389369c5bbd5216f5ecdc3da1323ebe8620d"
+        },
+        "date": 1707727081262,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2042651990000195,
+            "unit": "s",
+            "extra": "Commit: 6abd389369c5bbd5216f5ecdc3da1323ebe8620d\nBranch: master\nTime: 2024-02-12T09:36:07+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.610427948999984,
+            "unit": "s",
+            "extra": "Commit: 6abd389369c5bbd5216f5ecdc3da1323ebe8620d\nBranch: master\nTime: 2024-02-12T09:36:07+01:00"
           }
         ]
       }
