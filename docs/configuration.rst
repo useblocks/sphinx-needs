@@ -661,8 +661,6 @@ If you do not set ``needs_report_template``, the default template used is:
 
 .. code-block:: jinja
 
-   {% raw -%}
-
    {# Output for needs_types #}
    {% if types|length != 0 %}
    .. dropdown:: Need Types
@@ -739,7 +737,7 @@ If you do not set ``needs_report_template``, the default template used is:
    {% endif %}
    {# Output for needs metrics #}
 
-   {% endraw %}
+   
 
 The plugin provides the following variables which you can use in your custom Jinja template:
 
@@ -770,13 +768,12 @@ By default the following template is used:
 
 .. code-block:: jinja
 
-    {% raw -%}
     {%- if is_need -%}
     <size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>
     {%- else -%}
     <size:12>{{type_name}} (part)</size>\\n**{{content|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id_parent}}.**{{id}}**</size>
     {%- endif -%}
-    {% endraw %}
+    
 
 
 .. _needs_id_required:
@@ -1550,7 +1547,7 @@ Default: ``False``.
     needs_service_all_data = True
 
 
-{% raw %}
+
 
 .. _needs_external_needs:
 
@@ -1626,7 +1623,7 @@ keys:
             The related CSS class definition must be done by the user, e.g. by :ref:`own_css`.
             (*optional*) (*default*: ``external_link``)
 
-{% endraw %}
+
 
 .. _needs_needextend_strict:
 
@@ -1718,7 +1715,7 @@ All named capture group values get injected, so that parts of the option-value c
 link name and url.
 
 **Example**:
-{% raw %}
+
 
 .. code-block:: python
 
@@ -1740,7 +1737,7 @@ link name and url.
             'options': ['github']
         }
     }
-{% endraw %}
+
 
 |ex|
 
@@ -1955,7 +1952,7 @@ constraints_results is a dictionary similar in structure to needs_constraints ab
             "critical": {
                 "check_0": "'critical' in tags",
                 "severity": "CRITICAL",
-                "error_message": "need {% raw %}{{id}}{% endraw %} does not fulfill CRITICAL constraint, because tags are {% raw %}{{tags}}{% endraw %}"
+                "error_message": "need {{id}} does not fulfill CRITICAL constraint, because tags are {{tags}}"
             }
         
         }
@@ -2137,8 +2134,6 @@ You can use the data passed via needs_render_context as shown below:
 
 .. code-block:: jinja
 
-    {% raw -%}
-
     .. req:: Need with jinja_content enabled
        :id: JINJA1D8913
        :jinja_content: true
@@ -2153,9 +2148,7 @@ You can use the data passed via needs_render_context as shown below:
             + author[1]
        {% endfor %}
 
-    {% endraw %}
-
-{% raw -%}
+    
 
 .. req:: Need with jinja_content enabled
    :id: JINJA1D8913
@@ -2168,7 +2161,7 @@ You can use the data passed via needs_render_context as shown below:
    * {{ author[0] }} --> ID-{{ author[1] }}
    {% endfor %}
 
-{% endraw %}
+
 
 
 .. _needs_debug_measurement:
@@ -2205,8 +2198,6 @@ If nothing is set, the following default template is used:
 
 .. code-block:: jinja
 
-   {% raw -%}
-
    .. _{{id}}:
 
    {% if hide == false -%}
@@ -2236,7 +2227,7 @@ If nothing is set, the following default template is used:
 
    {% endif -%}
 
-   {% endraw %}
+   
 
 Available jinja variables are:
 
@@ -2254,7 +2245,7 @@ Available jinja variables are:
 
 .. warning::
 
-   You must add a reference like `.. _{{ '{{id}}' }}:` to the template. Otherwise linking will not work!
+   You must add a reference like `.. _{{id}}:` to the template. Otherwise linking will not work!
 
 .. _needs_template_collapse:
 
@@ -2267,8 +2258,6 @@ Defines a template used for a need with active option **collapse**.
 Default value:
 
 .. code-block:: jinja
-
-    {% raw -%}
 
     .. _{{id}}:
 
@@ -2298,7 +2287,7 @@ Default value:
        {{content|indent(4) }}
 
    {% endif -%}
-   {% endraw %}
+   
 
 For more details please see :ref:`needs_template`.
 

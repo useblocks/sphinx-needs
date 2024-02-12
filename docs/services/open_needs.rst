@@ -1,6 +1,6 @@
 .. _open_needs_service:
 
-{% raw %}
+
 
 Open-Needs services
 ===================
@@ -199,7 +199,7 @@ The logic and syntax is the same as used by `mapping <#mapping>`_.
    :language: python
    :lines: 329-346
 
-{% endraw %}
+
 
 Examples
 --------
