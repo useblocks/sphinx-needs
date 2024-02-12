@@ -1,4 +1,5 @@
 """Pytest conftest module containing common test configuration and fixtures."""
+
 import json
 import os.path
 import secrets

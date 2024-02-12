@@ -2,6 +2,7 @@
 Cares about handling and execution warnings.
 
 """
+
 from typing import Dict, Optional
 
 from sphinx.application import Sphinx

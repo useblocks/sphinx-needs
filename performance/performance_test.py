@@ -2,6 +2,7 @@
 Executes several performance tests.
 
 """
+
 import os.path
 import shutil
 import subprocess

@@ -3,6 +3,7 @@ Cares about the correct creation and handling of need layout.
 
 Based on https://github.com/useblocks/sphinxcontrib-needs/issues/102
 """
+
 import os
 import re
 import uuid

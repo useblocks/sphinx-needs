@@ -2,6 +2,7 @@
 filter_base is used to provide common filter functionality for directives
 like needtable, needlist and needflow.
 """
+
 from __future__ import annotations
 
 import re
