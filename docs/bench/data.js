@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1708010048667,
+  "lastUpdate": 1708010069126,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -6624,6 +6624,42 @@ window.BENCHMARK_DATA = {
             "value": 73.43165868199998,
             "unit": "s",
             "extra": "Commit: bbdf7bf0ff906fb88c4ef232aa845ef9b470d53b\nBranch: master\nTime: 2024-02-15T16:11:33+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8e2fcd687f00ec7af977ef0a77c40bc7fde5c714",
+          "message": "Bump pillow from 10.1.0 to 10.2.0 (#1094)\n\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2024-02-15T16:12:21+01:00",
+          "tree_id": "10244be8a3f063ab49991b07a3b4b7a54c172e4e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8e2fcd687f00ec7af977ef0a77c40bc7fde5c714"
+        },
+        "date": 1708010060269,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22143506000000457,
+            "unit": "s",
+            "extra": "Commit: 8e2fcd687f00ec7af977ef0a77c40bc7fde5c714\nBranch: master\nTime: 2024-02-15T16:12:21+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.986948823999995,
+            "unit": "s",
+            "extra": "Commit: 8e2fcd687f00ec7af977ef0a77c40bc7fde5c714\nBranch: master\nTime: 2024-02-15T16:12:21+01:00"
           }
         ]
       }
