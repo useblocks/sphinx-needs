@@ -1,5 +1,4 @@
 import json
-import sys
 from pathlib import Path
 
 import pytest
@@ -38,32 +37,15 @@ def test_doc_needextend_html(test_app: Sphinx, snapshot):
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needextend_strict"}], indirect=True
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needextend_unknown_id"}], indirect=True
 )
-def test_doc_needextend_strict(test_app):
-    import os
-    import subprocess
-
+def test_doc_needextend_unknown_id(test_app):
     app = test_app
+    app.build()
 
-    srcdir = Path(app.srcdir)
-    out_dir = os.path.join(srcdir, "_build")
+    expected = "index.rst:19: WARNING: Provided id 'unknown_id' for needextend does not exist. [needs.extend]"
 
-    out = subprocess.run(["sphinx-build", "-b", "html", srcdir, out_dir], capture_output=True)
-
-    # Strict option is set to false on needextend. Log info-level message
-    assert "Provided id strict_disable_extend_test for needextend does not exist." in out.stdout.decode("utf-8")
-    # Strict option is set to true on needextend. Raise Exception
-    if sys.platform == "win32":
-        assert (
-            "Sphinx error:\r\nProvided id strict_enable_extend_test for needextend does not exist."
-            in out.stderr.decode("utf-8")
-        )
-    else:
-        assert (
-            "Sphinx error:\nProvided id strict_enable_extend_test for needextend does not exist."
-            in out.stderr.decode("utf-8")
-        )
+    assert expected in app._warning.getvalue()
 
 
 @pytest.mark.parametrize(

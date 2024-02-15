@@ -162,7 +162,7 @@ class NeedsSphinxConfig:
     global_options: dict[str, Any] = field(default_factory=dict, metadata={"rebuild": "html", "types": (dict,)})
     duration_option: str = field(default="duration", metadata={"rebuild": "html", "types": (str,)})
     completion_option: str = field(default="completion", metadata={"rebuild": "html", "types": (str,)})
-    needextend_strict: bool = field(default=True, metadata={"rebuild": "html", "types": (bool,)})
+    needextend_strict: bool = field(default=False, metadata={"rebuild": "html", "types": (bool,)})
     statuses: list[dict[str, str]] = field(default_factory=list, metadata={"rebuild": "html", "types": ()})
     """If given, only the defined status are allowed.
     Values needed for each status:

@@ -81,22 +81,20 @@ Options
 
 strict
 ~~~~~~
-The purpose of the ``:strict:`` option is to handle whether an exception gets thrown
-or a log-info message gets written if there is no need object to match the ``needextend's``
-required argument (e.g. an ID).
+The purpose of the ``:strict:`` option is to handle whether an exception gets thrown or a warning log message gets written, if there is no need object to match the ``needextend's`` required argument (e.g. an ID).
 
 If you set the ``:strict:`` option value to ``true``,
 ``needextend`` raises an exception because the given ID does not exist, and the build stops.
 
 If you set  the ``:strict:`` option value to ``false``,
-``needextend`` logs an info-level message in the console, and the build continues.
+``needextend`` logs an warning-level message in the console, and the build continues.
 
 Allowed values:
 
 * true or
 * false
 
-Default: true
+Default: false
 
 .. note::
 

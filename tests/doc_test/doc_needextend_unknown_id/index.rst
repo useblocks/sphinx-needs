@@ -1,5 +1,5 @@
-needextend strict-mode disabled
-===============================
+needextend unknown id
+=====================
 
 .. story:: needextend Example 3
    :id: extend_test_003
@@ -16,9 +16,5 @@ needextend strict-mode disabled
 .. needextend:: extend_test_003
    :links: extend_test_004
 
-.. needextend:: strict_disable_extend_test
+.. needextend:: unknown_id
    :status: open
-   :strict: false
-
-.. needextend:: strict_enable_extend_test
-   :status: closed

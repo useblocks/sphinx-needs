@@ -46,11 +46,11 @@ class NeedextendDirective(SphinxDirective):
         if not extend_filter:
             raise NeedsInvalidFilter(f"Filter of needextend must be set. See {env.docname}:{self.lineno}")
 
-        strict_option = self.options.get("strict", str(NeedsSphinxConfig(self.env.app.config).needextend_strict))
-        strict = True
-        if strict_option.upper() == "TRUE":
+        strict = NeedsSphinxConfig(self.env.app.config).needextend_strict
+        strict_option = self.options.get("strict", "").upper()
+        if strict_option == "TRUE":
             strict = True
-        elif strict_option.upper() == "FALSE":
+        elif strict_option == "FALSE":
             strict = False
 
         data = SphinxNeedsData(env).get_or_create_extends()
@@ -83,20 +83,29 @@ def extend_needs_data(
             found_needs = [all_needs[need_filter]]
         elif need_filter is not None and re.fullmatch(needs_config.id_regex, need_filter):
             # an unknown ID
-            error = f"Provided id {need_filter} for needextend does not exist."
+            error = f"Provided id {need_filter!r} for needextend does not exist. [needs.extend]"
             if current_needextend["strict"]:
                 raise NeedsInvalidFilter(error)
             else:
-                logger.info(error)
-                continue
+                logger.warning(
+                    error,
+                    type="needs",
+                    subtype="extend",
+                    location=(current_needextend["docname"], current_needextend["lineno"]),
+                )
+            continue
         else:
             # a filter string
             try:
                 found_needs = filter_needs(all_needs.values(), needs_config, need_filter)
             except NeedsInvalidFilter as e:
-                raise NeedsInvalidFilter(
-                    f"Filter not valid for needextend on page {current_needextend['docname']}:\n{e}"
+                logger.warning(
+                    f"Invalid filter {need_filter!r}: {e} [needs.extend]",
+                    type="needs",
+                    subtype="extend",
+                    location=(current_needextend["docname"], current_needextend["lineno"]),
                 )
+                continue
 
         for found_need in found_needs:
             # Work in the stored needs, not on the search result
