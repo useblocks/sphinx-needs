@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1708008063292,
+  "lastUpdate": 1708009998266,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -6552,6 +6552,42 @@ window.BENCHMARK_DATA = {
             "value": 61.98984573099999,
             "unit": "s",
             "extra": "Commit: 6b26526759fb97810968c882788d99a1aceee5f8\nBranch: master\nTime: 2024-02-15T15:39:01+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e0bc813741e28edf32a4291f2cf9a7e8a3d455e3",
+          "message": "🔧 Use future annotations in all modules (#1111)\n\nJust to keep things consistent across the code-base",
+          "timestamp": "2024-02-15T16:11:17+01:00",
+          "tree_id": "03a9da238a6cb939a34f7b2622591e2c5e766f35",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e0bc813741e28edf32a4291f2cf9a7e8a3d455e3"
+        },
+        "date": 1708009989870,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22627956399998084,
+            "unit": "s",
+            "extra": "Commit: e0bc813741e28edf32a4291f2cf9a7e8a3d455e3\nBranch: master\nTime: 2024-02-15T16:11:17+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.53416377299999,
+            "unit": "s",
+            "extra": "Commit: e0bc813741e28edf32a4291f2cf9a7e8a3d455e3\nBranch: master\nTime: 2024-02-15T16:11:17+01:00"
           }
         ]
       }
