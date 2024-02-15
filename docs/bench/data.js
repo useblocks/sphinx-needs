@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1708006609633,
+  "lastUpdate": 1708007006087,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -6480,6 +6480,42 @@ window.BENCHMARK_DATA = {
             "value": 65.951944298,
             "unit": "s",
             "extra": "Commit: ab6d6c2880620ad8c352d949b67bf7177635fd91\nBranch: master\nTime: 2024-02-15T15:14:37+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f083bbd5e1d5148ed17f80697a0f39352ebb48d3",
+          "message": "Bump actions/download-artifact from 2 to 4 (#1086)\n\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2024-02-15T15:21:13+01:00",
+          "tree_id": "412426231d2de17e5c3cdfc0d1034ba6bf0d2985",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f083bbd5e1d5148ed17f80697a0f39352ebb48d3"
+        },
+        "date": 1708006998135,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.23237845500000276,
+            "unit": "s",
+            "extra": "Commit: f083bbd5e1d5148ed17f80697a0f39352ebb48d3\nBranch: master\nTime: 2024-02-15T15:21:13+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 65.27117560900004,
+            "unit": "s",
+            "extra": "Commit: f083bbd5e1d5148ed17f80697a0f39352ebb48d3\nBranch: master\nTime: 2024-02-15T15:21:13+01:00"
           }
         ]
       }
