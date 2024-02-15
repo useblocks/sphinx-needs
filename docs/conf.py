@@ -18,9 +18,7 @@ import datetime
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-from typing import Any, Dict, List
-
-from sphinx.application import Sphinx
+from typing import Any, Dict
 
 from sphinx_needs import __version__
 
@@ -82,43 +80,11 @@ NOTE_TEMPLATE = """
    {% endif %}
 """
 
-EXTRA_CONTENT_TEMPLATE_COLLAPSE = """
-.. _{{id}}:
-
-{% if hide == false -%}
-.. role:: needs_tag
-.. role:: needs_status
-.. role:: needs_type
-.. role:: needs_id
-.. role:: needs_title
-
-.. rst-class:: need
-.. rst-class:: need_{{type_name}}
-
-.. dropdown::
-   :class: need
-
-            :needs_type:`{{type_name}}`: {% if title %}:needs_title:`{{title}}`{% endif %} :needs_id:`{{id}}`
-
-{% if status and  status|upper != "NONE" and not hide_status %}        | status: :needs_status:`{{status}}`{% endif %}
-{% if tags and not hide_tags %}        | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`{% endif %}
-{% if my_extra_option != "" %}        | my_extra_option: {{ my_extra_option }}{% endif %}
-{% if another_option != "" %}        | another_option: {{ another_option }}{% endif %}
-        | links incoming: :need_incoming:`{{id}}`
-        | links outgoing: :need_outgoing:`{{id}}`
-
-    {{content|indent(4) }}
-
-{% endif -%}
-"""
-
 DEFAULT_DIAGRAM_TEMPLATE = (
     "<size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>"
 )
 
 # You can uncomment some of the following lines to override the default configuration for Sphinx-Needs.
-
-# needs_template = TITLE_TEMPLATE
 # needs_diagram_template = DEFAULT_DIAGRAM_TEMPLATE
 
 # Absolute path to the needs_report_template_file based on the conf.py directory
@@ -251,7 +217,6 @@ plantuml_output_format = "svg_img"
 needs_table_style = "datatables"
 needs_table_columns = "ID;TITLE;STATUS;OUTGOING"
 
-needs_template_collapse = EXTRA_CONTENT_TEMPLATE_COLLAPSE
 needs_extra_options = [
     "my_extra_option",
     "another_option",
@@ -541,25 +506,6 @@ rst_epilog = """
 """
 
 html_context = {}
-
-
-def rstjinja(app: Sphinx, _docname: str, source: List[str]) -> None:
-    """
-    Render our pages as a jinja template for fancy templating goodness.
-    """
-    # Make sure we're outputting HTML
-    if app.builder.format != "html" and app.builder.name != "linkcheck":
-        return
-    src = source[0]
-    from jinja2 import Template
-
-    template = Template(src, autoescape=True)
-    rendered = template.render(**app.config.html_context)
-    source[0] = rendered
-
-
-def setup(app: Sphinx) -> None:
-    app.connect("source-read", rstjinja)
 
 
 # LINKCHECK config

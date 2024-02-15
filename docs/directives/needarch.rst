@@ -1,4 +1,4 @@
-{% raw %}
+
 
 .. _needarch:
 
@@ -256,4 +256,4 @@ does detect different parameter sets and does import `uml()` calls with differen
       {{uml('COMP_T_002')}}
       {% endif %}
 
-{% endraw %}
+

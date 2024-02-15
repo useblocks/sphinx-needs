@@ -1,84 +1,71 @@
-import os
+from pathlib import Path
 from typing import Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
 from jinja2 import Template
-from sphinx.errors import SphinxError
+from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.directives.utils import analyse_needs_metrics
 from sphinx_needs.utils import add_doc
 
-
-class NeedsReportException(SphinxError):
-    pass
+LOGGER = logging.getLogger(__name__)
 
 
 class NeedReportDirective(SphinxDirective):
     final_argument_whitespace = True
     option_spec = {
-        "types": directives.unchanged,
-        "links": directives.unchanged,
-        "options": directives.unchanged,
-        "usage": directives.unchanged,
+        "types": directives.flag,
+        "links": directives.flag,
+        "options": directives.flag,
+        "usage": directives.flag,
+        "template": directives.unchanged,
     }
 
     def run(self) -> Sequence[nodes.raw]:
         env = self.env
         needs_config = NeedsSphinxConfig(env.config)
 
-        if len(self.options.keys()) == 0:  # Check if options is empty
-            error_file, error_line = self.state_machine.input_lines.items[0]
-            error_msg = "{}:{}: NeedReportError: No options specified to generate need report.".format(
-                error_file, error_line + self.state_machine.input_lines.data.index(".. needreport::") + 1
+        if not set(self.options).intersection({"types", "links", "options", "usage"}):
+            LOGGER.warning(
+                "No options specified to generate need report [needs.report]",
+                location=self.get_location(),
+                type="needs",
+                subtype="report",
             )
-            raise NeedsReportException(error_msg)
-
-        types = self.options.get("types")
-        extra_links = self.options.get("links")
-        extra_options = self.options.get("options")
-        usage = self.options.get("usage")
-
-        needs_types = []
-        needs_extra_links = []
-        needs_extra_options = []
-        needs_metrics = {}
-
-        if types is not None and isinstance(types, str):
-            needs_types = needs_config.types
-        if extra_links is not None and isinstance(extra_links, str):
-            needs_extra_links = needs_config.extra_links
-        if extra_options is not None and isinstance(extra_options, str):
-            needs_extra_options = needs_config.extra_options
-        if usage is not None and isinstance(usage, str):
-            needs_metrics = analyse_needs_metrics(env)
+            return []
 
         report_info = {
-            "types": needs_types,
-            "options": needs_extra_options,
-            "links": needs_extra_links,
-            "usage": needs_metrics,
+            "types": needs_config.types if "types" in self.options else [],
+            "options": needs_config.extra_options if "options" in self.options else [],
+            "links": needs_config.extra_links if "links" in self.options else [],
+            "usage": analyse_needs_metrics(env) if "usage" in self.options else {},
+            "report_directive": "dropdown",
         }
         report_info.update(**needs_config.render_context)
 
-        need_report_template_path: str = needs_config.report_template
-        # Absolute path starts with /, based on the conf.py directory. The / need to be striped
-        correct_need_report_template_path = os.path.join(env.app.srcdir, need_report_template_path.lstrip("/"))
+        if "template" in self.options:
+            need_report_template_path = Path(self.env.relfn2path(self.options["template"], self.env.docname)[1])
+        elif needs_config.report_template:
+            # Absolute path starts with /, based on the conf.py directory. The / need to be striped
+            need_report_template_path = Path(str(env.app.srcdir)) / needs_config.report_template.lstrip("/")
+        else:
+            need_report_template_path = Path(__file__).parent / "needreport_template.rst"
 
-        if len(need_report_template_path) == 0:
-            default_template_path = "needreport_template.rst"
-            correct_need_report_template_path = os.path.join(os.path.dirname(__file__), default_template_path)
+        if not need_report_template_path.is_file():
+            LOGGER.warning(
+                f"Could not load needs report template file {need_report_template_path} [needs.report]",
+                location=self.get_location(),
+                type="needs",
+                subtype="report",
+            )
+            return []
 
-        if not os.path.exists(correct_need_report_template_path):
-            raise ReferenceError(f"Could not load needs report template file {correct_need_report_template_path}")
-
-        with open(correct_need_report_template_path) as needs_report_template_file:
-            needs_report_template_file_content = needs_report_template_file.read()
+        needs_report_template_file_content = need_report_template_path.read_text(encoding="utf8")
 
         template = Template(needs_report_template_file_content, autoescape=True)
-
         text = template.render(**report_info)
         self.state_machine.insert_input(text.split("\n"), self.state_machine.document.attributes["source"])
 
