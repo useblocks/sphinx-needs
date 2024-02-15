@@ -1,6 +1,11 @@
 TEST DOCUMENT NEEDS EXTERNAL NEEDS
 ==================================
 
+.. spec:: Internal need
+   :id: INTERNAL_001
+
+   An internal requirement with an id check by the regex. External needs identifiers shall not be checked for regex matching.
+
 .. needlist::
    :tags: ext_test
 

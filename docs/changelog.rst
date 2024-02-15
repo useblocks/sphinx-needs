@@ -9,6 +9,15 @@ License
 .. include:: ../LICENSE
 
 
+2.1.0
+-----
+
+Fixed
+.....
+
+* Fix external needs identifier checked by regex (`#1099 <https://github.com/useblocks/sphinx-needs/pull/1099>`_)
+
+
 2.0.0
 -----
 
