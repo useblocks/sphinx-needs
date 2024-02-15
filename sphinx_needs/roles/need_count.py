@@ -23,7 +23,10 @@ class NeedCount(nodes.Inline, nodes.Element):
 
 
 def process_need_count(
-    app: Sphinx, doctree: nodes.document, _fromdocname: str, found_nodes: list[nodes.Element]
+    app: Sphinx,
+    doctree: nodes.document,
+    _fromdocname: str,
+    found_nodes: list[nodes.Element],
 ) -> None:
     needs_config = NeedsSphinxConfig(app.config)
     for node_need_count in found_nodes:

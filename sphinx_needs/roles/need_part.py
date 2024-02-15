@@ -27,14 +27,21 @@ class NeedPart(nodes.Inline, nodes.Element):
     pass
 
 
-def process_need_part(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list[nodes.Element]) -> None:
+def process_need_part(
+    app: Sphinx,
+    doctree: nodes.document,
+    fromdocname: str,
+    found_nodes: list[nodes.Element],
+) -> None:
     pass
 
 
 part_pattern = re.compile(r"\(([\w-]+)\)(.*)")
 
 
-def update_need_with_parts(env: BuildEnvironment, need: NeedsInfoType, part_nodes: list[NeedPart]) -> None:
+def update_need_with_parts(
+    env: BuildEnvironment, need: NeedsInfoType, part_nodes: list[NeedPart]
+) -> None:
     app = env.app
     builder = app.builder
     for part_node in part_nodes:
@@ -45,7 +52,9 @@ def update_need_with_parts(env: BuildEnvironment, need: NeedsInfoType, part_node
             part_content = result.group(2)
         else:
             part_content = content
-            inline_id = hashlib.sha1(part_content.encode("UTF-8")).hexdigest().upper()[:3]
+            inline_id = (
+                hashlib.sha1(part_content.encode("UTF-8")).hexdigest().upper()[:3]
+            )
 
         if "parts" not in need:
             need["parts"] = {}
@@ -78,7 +87,9 @@ def update_need_with_parts(env: BuildEnvironment, need: NeedsInfoType, part_node
 
         from sphinx.util.nodes import make_refnode
 
-        part_ref_node = make_refnode(builder, need["docname"], need["docname"], part_id_ref, part_link_node)
+        part_ref_node = make_refnode(
+            builder, need["docname"], need["docname"], part_id_ref, part_link_node
+        )
         part_ref_node["classes"] += ["needs-id"]
 
         part_node.children = []

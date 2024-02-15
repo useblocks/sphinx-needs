@@ -22,7 +22,12 @@ class MockGetResponse:
                 "description": "We finally need to build our Neptune3000 rocket.",
                 "format": "txt",
                 "project_id": 1,
-                "options": {"status": "done", "priority": "high", "costs": 3500000, "approved": 1},
+                "options": {
+                    "status": "done",
+                    "priority": "high",
+                    "costs": 3500000,
+                    "approved": 1,
+                },
                 "references": {},
             },
             {
@@ -32,7 +37,12 @@ class MockGetResponse:
                 "description": "Lets test the rocket on a test bench",
                 "format": "txt",
                 "project_id": 1,
-                "options": {"status": "open", "priority": "high", "costs": 500000, "approved": 0},
+                "options": {
+                    "status": "open",
+                    "priority": "high",
+                    "costs": 500000,
+                    "approved": 0,
+                },
                 "references": {},
             },
             {
@@ -42,7 +52,12 @@ class MockGetResponse:
                 "description": "Red and blue. No other colors please.",
                 "format": "txt",
                 "project_id": 1,
-                "options": {"status": "open", "priority": "low", "costs": 20000, "approved": 1},
+                "options": {
+                    "status": "open",
+                    "priority": "low",
+                    "costs": 20000,
+                    "approved": 1,
+                },
                 "references": {"links": ["NEP_001", "NEP_002"]},
             },
             {
@@ -66,11 +81,16 @@ class MockPostResponse:
 
     @staticmethod
     def json():
-        return {"access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9", "token_type": "bearer"}
+        return {
+            "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9",
+            "token_type": "bearer",
+        }
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_open_needs_service"}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_open_needs_service"}],
+    indirect=True,
 )
 def test_ons_service(test_app, monkeypatch):
     def mock_get(*args, **kwargs):

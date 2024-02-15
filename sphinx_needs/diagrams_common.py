@@ -114,7 +114,9 @@ def add_config(config: str) -> str:
     uml = ""
     if config and len(config) >= 3:
         # Remove all empty lines
-        config = "\n".join([line.strip() for line in config.split("\n") if line.strip()])
+        config = "\n".join(
+            [line.strip() for line in config.split("\n") if line.strip()]
+        )
         uml += "\n' Config\n\n"
         uml += config
         uml += "\n\n"
@@ -125,13 +127,27 @@ def get_filter_para(node_element: NeedsFilteredBaseType) -> nodes.paragraph:
     """Return paragraph containing the used filter description"""
     para = nodes.paragraph()
     filter_text = "Used filter:"
-    filter_text += " status(%s)" % " OR ".join(node_element["status"]) if len(node_element["status"]) > 0 else ""
+    filter_text += (
+        " status(%s)" % " OR ".join(node_element["status"])
+        if len(node_element["status"]) > 0
+        else ""
+    )
     if len(node_element["status"]) > 0 and len(node_element["tags"]) > 0:
         filter_text += " AND "
-    filter_text += " tags(%s)" % " OR ".join(node_element["tags"]) if len(node_element["tags"]) > 0 else ""
-    if (len(node_element["status"]) > 0 or len(node_element["tags"]) > 0) and len(node_element["types"]) > 0:
+    filter_text += (
+        " tags(%s)" % " OR ".join(node_element["tags"])
+        if len(node_element["tags"]) > 0
+        else ""
+    )
+    if (len(node_element["status"]) > 0 or len(node_element["tags"]) > 0) and len(
+        node_element["types"]
+    ) > 0:
         filter_text += " AND "
-    filter_text += " types(%s)" % " OR ".join(node_element["types"]) if len(node_element["types"]) > 0 else ""
+    filter_text += (
+        " types(%s)" % " OR ".join(node_element["types"])
+        if len(node_element["types"]) > 0
+        else ""
+    )
 
     filter_node = nodes.emphasis(filter_text, filter_text)
     para += filter_node
@@ -152,7 +168,9 @@ def get_debug_container(puml_node: nodes.Element) -> nodes.container:
     return debug_container
 
 
-def calculate_link(app: Sphinx, need_info: NeedsPartsInfoType, _fromdocname: str) -> str:
+def calculate_link(
+    app: Sphinx, need_info: NeedsPartsInfoType, _fromdocname: str
+) -> str:
     """
     Link calculation
     All links we can get from docutils functions will be relative.
@@ -168,7 +186,9 @@ def calculate_link(app: Sphinx, need_info: NeedsPartsInfoType, _fromdocname: str
     builder = app.builder
     try:
         if need_info["is_external"]:
-            assert need_info["external_url"] is not None, "external_url must be set for external needs"
+            assert (
+                need_info["external_url"] is not None
+            ), "external_url must be set for external needs"
             link = need_info["external_url"]
             # check if need_info["external_url"] is relative path
             parsed_url = urlparse(need_info["external_url"])
@@ -176,7 +196,12 @@ def calculate_link(app: Sphinx, need_info: NeedsPartsInfoType, _fromdocname: str
                 # only need to add ../ or ..\ to get out of the image folder
                 link = ".." + os.path.sep + need_info["external_url"]
         else:
-            link = "../" + builder.get_target_uri(need_info["docname"]) + "#" + need_info["target_id"]
+            link = (
+                "../"
+                + builder.get_target_uri(need_info["docname"])
+                + "#"
+                + need_info["target_id"]
+            )
             if need_info["is_part"]:
                 link = f"{link}.{need_info['id']}"
 
@@ -188,7 +213,9 @@ def calculate_link(app: Sphinx, need_info: NeedsPartsInfoType, _fromdocname: str
 
 def create_legend(need_types: list[dict[str, Any]]) -> str:
     def create_row(need_type: dict[str, Any]) -> str:
-        return "\n|<back:{color}> {color} </back>| {name} |".format(color=need_type["color"], name=need_type["title"])
+        return "\n|<back:{color}> {color} </back>| {name} |".format(
+            color=need_type["color"], name=need_type["title"]
+        )
 
     rows = map(create_row, need_types)
     table = "|= Color |= Type |" + "".join(rows)

@@ -33,7 +33,11 @@ from sphinx_needs.utils import INTERNALS, match_string_link
 
 @measure_time("need")
 def create_need(
-    need_id: str, app: Sphinx, layout: str | None = None, style: str | None = None, docname: str | None = None
+    need_id: str,
+    app: Sphinx,
+    layout: str | None = None,
+    style: str | None = None,
+    docname: str | None = None,
 ) -> nodes.container:
     """
     Creates a new need-node for a given layout.
@@ -78,7 +82,9 @@ def create_need(
 
     # Overwrite the docname, which must be the original one from the reused need, as all used paths are relative
     # to the original location, not to the current document.
-    env.temp_data["docname"] = need_data["docname"]  # Dirty, as in this phase normally no docname is set anymore in env
+    env.temp_data["docname"] = need_data[
+        "docname"
+    ]  # Dirty, as in this phase normally no docname is set anymore in env
     ImageCollector().process_doc(app, node_inner)  # type: ignore[arg-type]
     DownloadFileCollector().process_doc(app, node_inner)  # type: ignore[arg-type]
 
@@ -102,7 +108,9 @@ def create_need(
 
     # set the layout and style for the new need
     node_container[0].attributes = node_container.parent.children[0].attributes  # type: ignore
-    node_container[0].children[0].attributes = node_container.parent.children[0].children[0].attributes  # type: ignore
+    node_container[0].children[0].attributes = (  # type: ignore
+        node_container.parent.children[0].children[0].attributes  # type: ignore
+    )
 
     node_container.attributes["ids"] = []
 
@@ -129,7 +137,11 @@ def replace_pending_xref_refdoc(node: nodes.Element, new_refdoc: str) -> None:
 
 @measure_time("need")
 def build_need(
-    layout: str, node: nodes.Element, app: Sphinx, style: str | None = None, fromdocname: str | None = None
+    layout: str,
+    node: nodes.Element,
+    app: Sphinx,
+    style: str | None = None,
+    fromdocname: str | None = None,
 ) -> None:
     """
     Builds a need based on a given layout for a given need-node.
@@ -221,7 +233,11 @@ class LayoutHandler:
             self.fromdocname = fromdocname
 
         # For ReadTheDocs Theme we need to add 'rtd-exclude-wy-table'.
-        classes = ["need", "needs_grid_" + self.layout["grid"], "needs_layout_" + self.layout_name]
+        classes = [
+            "need",
+            "needs_grid_" + self.layout["grid"],
+            "needs_layout_" + self.layout_name,
+        ]
         classes.extend(self.needs_config.table_classes)
 
         self.style = style or self.need["style"] or self.needs_config.default_style
@@ -241,59 +257,121 @@ class LayoutHandler:
         self.grids = {
             "simple": {
                 "func": self._grid_simple,
-                "configs": {"colwidths": [100], "side_left": False, "side_right": False, "footer": False},
+                "configs": {
+                    "colwidths": [100],
+                    "side_left": False,
+                    "side_right": False,
+                    "footer": False,
+                },
             },
             "simple_footer": {
                 "func": self._grid_simple,
-                "configs": {"colwidths": [100], "side_left": False, "side_right": False, "footer": True},
+                "configs": {
+                    "colwidths": [100],
+                    "side_left": False,
+                    "side_right": False,
+                    "footer": True,
+                },
             },
             "simple_side_left": {
                 "func": self._grid_simple,
-                "configs": {"colwidths": [30, 70], "side_left": "full", "side_right": False, "footer": False},
+                "configs": {
+                    "colwidths": [30, 70],
+                    "side_left": "full",
+                    "side_right": False,
+                    "footer": False,
+                },
             },
             "simple_side_right": {
                 "func": self._grid_simple,
-                "configs": {"colwidths": [70, 30], "side_left": False, "side_right": "full", "footer": False},
+                "configs": {
+                    "colwidths": [70, 30],
+                    "side_left": False,
+                    "side_right": "full",
+                    "footer": False,
+                },
             },
             "simple_side_left_partial": {
                 "func": self._grid_simple,
-                "configs": {"colwidths": [20, 80], "side_left": "part", "side_right": False, "footer": False},
+                "configs": {
+                    "colwidths": [20, 80],
+                    "side_left": "part",
+                    "side_right": False,
+                    "footer": False,
+                },
             },
             "simple_side_right_partial": {
                 "func": self._grid_simple,
-                "configs": {"colwidths": [80, 20], "side_left": False, "side_right": "part", "footer": False},
+                "configs": {
+                    "colwidths": [80, 20],
+                    "side_left": False,
+                    "side_right": "part",
+                    "footer": False,
+                },
             },
             "complex": self._grid_complex,
             "content": {
                 "func": self._grid_content,
-                "configs": {"colwidths": [100], "side_left": False, "side_right": False, "footer": False},
+                "configs": {
+                    "colwidths": [100],
+                    "side_left": False,
+                    "side_right": False,
+                    "footer": False,
+                },
             },
             "content_footer": {
                 "func": self._grid_content,
-                "configs": {"colwidths": [100], "side_left": False, "side_right": False, "footer": True},
+                "configs": {
+                    "colwidths": [100],
+                    "side_left": False,
+                    "side_right": False,
+                    "footer": True,
+                },
             },
             "content_side_left": {
                 "func": self._grid_content,
-                "configs": {"colwidths": [5, 95], "side_left": True, "side_right": False, "footer": False},
+                "configs": {
+                    "colwidths": [5, 95],
+                    "side_left": True,
+                    "side_right": False,
+                    "footer": False,
+                },
             },
             "content_side_right": {
                 "func": self._grid_content,
-                "configs": {"colwidths": [95, 5], "side_left": False, "side_right": True, "footer": False},
+                "configs": {
+                    "colwidths": [95, 5],
+                    "side_left": False,
+                    "side_right": True,
+                    "footer": False,
+                },
             },
             "content_footer_side_left": {
                 "func": self._grid_content,
-                "configs": {"colwidths": [5, 95], "side_left": True, "side_right": False, "footer": True},
+                "configs": {
+                    "colwidths": [5, 95],
+                    "side_left": True,
+                    "side_right": False,
+                    "footer": True,
+                },
             },
             "content_footer_side_right": {
                 "func": self._grid_content,
-                "configs": {"colwidths": [95, 5], "side_left": False, "side_right": True, "footer": True},
+                "configs": {
+                    "colwidths": [95, 5],
+                    "side_left": False,
+                    "side_right": True,
+                    "footer": True,
+                },
             },
         }
 
         # Dummy Document setup
         self.doc_settings, self.inline_parser = _generate_inline_parser()
         self.dummy_doc = new_document("dummy", self.doc_settings)
-        self.doc_language = languages.get_language(self.dummy_doc.settings.language_code)
+        self.doc_language = languages.get_language(
+            self.dummy_doc.settings.language_code
+        )
         self.doc_memo = Struct(
             document=self.dummy_doc,
             reporter=self.dummy_doc.reporter,
@@ -304,7 +382,9 @@ class LayoutHandler:
             inliner=None,
         )
 
-        self.functions: dict[str, Callable[..., None | nodes.Node | list[nodes.Node]]] = {
+        self.functions: dict[
+            str, Callable[..., None | nodes.Node | list[nodes.Node]]
+        ] = {
             "meta": self.meta,  # type: ignore[dict-item]
             "meta_all": self.meta_all,
             "meta_links": self.meta_links,
@@ -334,7 +414,9 @@ class LayoutHandler:
     def get_need_table(self) -> nodes.table:
         if self.layout["grid"] not in self.grids.keys():
             raise SphinxNeedLayoutException(
-                "Unknown layout-grid: {}. Supported are {}".format(self.layout["grid"], ", ".join(self.grids.keys()))
+                "Unknown layout-grid: {}. Supported are {}".format(
+                    self.layout["grid"], ", ".join(self.grids.keys())
+                )
             )
 
         func = self.grids[self.layout["grid"]]
@@ -376,7 +458,9 @@ class LayoutHandler:
         :param line: string to parse
         :return: nodes
         """
-        result, message = self.inline_parser.parse(line, 0, self.doc_memo, self.dummy_doc)  # type: ignore
+        result, message = self.inline_parser.parse(  # type: ignore
+            line, 0, self.doc_memo, self.dummy_doc
+        )
         if message:
             raise SphinxNeedLayoutException(message)
         return result  # type: ignore[no-any-return]
@@ -420,7 +504,9 @@ class LayoutHandler:
                         )
 
                         func_def_clean = func_def.replace("<<", "").replace(">>", "")
-                        func_name, func_args, func_kargs = _analyze_func_string(func_def_clean, None)
+                        func_name, func_args, func_kargs = _analyze_func_string(
+                            func_def_clean, None
+                        )
 
                         # Replace place holders
                         # Looks for {{name}}, where name must be an option of need, and replaces it with the
@@ -552,7 +638,9 @@ class LayoutHandler:
                     ref_item = nodes.Text(datum)
                     data_node += ref_item
 
-                if (name in needs_string_links_option and index + 1 < len(data)) or index + 1 < len([data]):
+                if (
+                    name in needs_string_links_option and index + 1 < len(data)
+                ) or index + 1 < len([data]):
                     data_node += nodes.emphasis("; ", "; ")
 
             data_container.append(data_node)
@@ -703,7 +791,9 @@ class LayoutHandler:
         data_container.append(node_links)
         return data_container
 
-    def meta_links_all(self, prefix: str = "", postfix: str = "", exclude: list[str] | None = None) -> list[nodes.line]:
+    def meta_links_all(
+        self, prefix: str = "", postfix: str = "", exclude: list[str] | None = None
+    ) -> list[nodes.line]:
         """
         Documents all used link types for the current need automatically.
 
@@ -718,7 +808,9 @@ class LayoutHandler:
             type_key = link_type["option"]
             if self.need[type_key] and type_key not in exclude:  # type: ignore[literal-required]
                 outgoing_line = nodes.line()
-                outgoing_label = prefix + "{}:".format(link_type["outgoing"]) + postfix + " "
+                outgoing_label = (
+                    prefix + "{}:".format(link_type["outgoing"]) + postfix + " "
+                )
                 outgoing_line += self._parse(outgoing_label)
                 outgoing_line += self.meta_links(link_type["option"], incoming=False)
                 data_container.append(outgoing_line)
@@ -726,7 +818,9 @@ class LayoutHandler:
             type_key = link_type["option"] + "_back"
             if self.need[type_key] and type_key not in exclude:  # type: ignore[literal-required]
                 incoming_line = nodes.line()
-                incoming_label = prefix + "{}:".format(link_type["incoming"]) + postfix + " "
+                incoming_label = (
+                    prefix + "{}:".format(link_type["incoming"]) + postfix + " "
+                )
                 incoming_line += self._parse(incoming_label)
                 incoming_line += self.meta_links(link_type["option"], incoming=True)
                 data_container.append(incoming_line)
@@ -791,7 +885,9 @@ class LayoutHandler:
             options["align"] = align
 
         if url is None or not isinstance(url, str):
-            raise SphinxNeedLayoutException("not valid url given for image function in layout")
+            raise SphinxNeedLayoutException(
+                "not valid url given for image function in layout"
+            )
 
         if url.startswith("icon:"):
             if any(x in builder.name.upper() for x in ["PDF", "LATEX"]):
@@ -926,7 +1022,11 @@ class LayoutHandler:
         return data_container
 
     def collapse_button(
-        self, target: str = "meta", collapsed: str = "Show", visible: str = "Close", initial: bool = False
+        self,
+        target: str = "meta",
+        collapsed: str = "Show",
+        visible: str = "Close",
+        initial: bool = False,
     ) -> nodes.inline | None:
         """
         To show icons instead of text on the button, use collapse_button() like this::
@@ -952,16 +1052,28 @@ class LayoutHandler:
 
         if collapsed.startswith("image:") or collapsed.startswith("icon:"):
             coll_node_collapsed.append(
-                self.image(collapsed.replace("image:", ""), width="17px", no_link=True, img_class="sn_collapse_img")
+                self.image(
+                    collapsed.replace("image:", ""),
+                    width="17px",
+                    no_link=True,
+                    img_class="sn_collapse_img",
+                )
             )
         elif collapsed.startswith("Debug view"):
-            coll_node_collapsed.append(nodes.container(classes=["debug_on_layout_btn"]))  # For debug layout
+            coll_node_collapsed.append(
+                nodes.container(classes=["debug_on_layout_btn"])
+            )  # For debug layout
         else:
             coll_node_collapsed.append(nodes.Text(collapsed))
 
         if visible.startswith("image:") or visible.startswith("icon:"):
             coll_node_visible.append(
-                self.image(visible.replace("image:", ""), width="17px", no_link=True, img_class="sn_collapse_img")
+                self.image(
+                    visible.replace("image:", ""),
+                    width="17px",
+                    no_link=True,
+                    img_class="sn_collapse_img",
+                )
             )
         elif visible.startswith("Debug view"):
             coll_node_visible.append(nodes.container(classes=["debug_off_layout_btn"]))
@@ -972,7 +1084,9 @@ class LayoutHandler:
         # docutils doesn't allow has to add any html-attributes beside class and id to nodes.
         # So we misused "id" for this and use "__" (2x _) as separator for row-target names
 
-        if (not self.need["collapse"]) or (self.need["collapse"] is None and not initial):
+        if (not self.need["collapse"]) or (
+            self.need["collapse"] is None and not initial
+        ):
             status = "show"
 
         if (self.need["collapse"]) or (not self.need["collapse"] and initial):
@@ -1034,7 +1148,13 @@ class LayoutHandler:
             prefix=prefix,
         )
 
-    def _grid_simple(self, colwidths: list[int], side_left: bool | str, side_right: bool | str, footer: bool) -> None:
+    def _grid_simple(
+        self,
+        colwidths: list[int],
+        side_left: bool | str,
+        side_right: bool | str,
+        footer: bool,
+    ) -> None:
         """
         Creates most "simple" grid layouts.
         Side parts and footer can be activated via config.
@@ -1104,7 +1224,9 @@ class LayoutHandler:
         head_row = nodes.row(classes=["need", "head"])
 
         if side_left:
-            side_entry = nodes.entry(classes=["need", "side"], morerows=side_left_morerows)
+            side_entry = nodes.entry(
+                classes=["need", "side"], morerows=side_left_morerows
+            )
             side_entry += self.get_section("side")
             head_row += side_entry
 
@@ -1113,7 +1235,9 @@ class LayoutHandler:
         head_row += head_entry
 
         if side_right:
-            side_entry = nodes.entry(classes=["need", "side"], morerows=side_right_morerows)
+            side_entry = nodes.entry(
+                classes=["need", "side"], morerows=side_right_morerows
+            )
             side_entry += self.get_section("side")
             head_row += side_entry
 
@@ -1125,14 +1249,18 @@ class LayoutHandler:
 
         # CONTENT row
         content_row = nodes.row(classes=["need", "content"])
-        content_entry = nodes.entry(classes=["need", "content"], morecols=common_more_cols)
+        content_entry = nodes.entry(
+            classes=["need", "content"], morecols=common_more_cols
+        )
         content_entry.insert(0, self.node.children)
         content_row += content_entry
 
         # FOOTER row
         if footer:
             footer_row = nodes.row(classes=["need", "footer"])
-            footer_entry = nodes.entry(classes=["need", "footer"], morecols=common_more_cols)
+            footer_entry = nodes.entry(
+                classes=["need", "footer"], morecols=common_more_cols
+            )
             footer_entry += self.get_section("footer")
             footer_row += footer_entry
 
@@ -1207,7 +1335,9 @@ class LayoutHandler:
         # Construct table
         node_tgroup += self.node_tbody
 
-    def _grid_content(self, colwidths: list[int], side_left: bool, side_right: bool, footer: bool) -> None:
+    def _grid_content(
+        self, colwidths: list[int], side_left: bool, side_right: bool, footer: bool
+    ) -> None:
         """
         Creates most "content" based grid layouts.
         Side parts and footer can be activated via config.

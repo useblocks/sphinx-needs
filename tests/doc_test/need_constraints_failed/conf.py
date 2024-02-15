@@ -3,14 +3,42 @@ extensions = ["sphinx_needs"]
 needs_table_style = "TABLE"
 
 needs_types = [
-    {"directive": "story", "title": "User Story", "prefix": "US_", "color": "#BFD8D2", "style": "node"},
-    {"directive": "spec", "title": "Specification", "prefix": "SP_", "color": "#FEDCD2", "style": "node"},
-    {"directive": "impl", "title": "Implementation", "prefix": "IM_", "color": "#DF744A", "style": "node"},
-    {"directive": "test", "title": "Test Case", "prefix": "TC_", "color": "#DCB239", "style": "node"},
+    {
+        "directive": "story",
+        "title": "User Story",
+        "prefix": "US_",
+        "color": "#BFD8D2",
+        "style": "node",
+    },
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "SP_",
+        "color": "#FEDCD2",
+        "style": "node",
+    },
+    {
+        "directive": "impl",
+        "title": "Implementation",
+        "prefix": "IM_",
+        "color": "#DF744A",
+        "style": "node",
+    },
+    {
+        "directive": "test",
+        "title": "Test Case",
+        "prefix": "TC_",
+        "color": "#DCB239",
+        "style": "node",
+    },
 ]
 
 needs_external_needs = [
-    {"base_url": "http://my_company.com/docs/v1/", "json_path": "needs_test_small.json", "id_prefix": "ext_"}
+    {
+        "base_url": "http://my_company.com/docs/v1/",
+        "json_path": "needs_test_small.json",
+        "id_prefix": "ext_",
+    }
 ]
 
 
@@ -38,7 +66,11 @@ def setup(app):
 
     add_warning(app, "api_warning_filter", filter_string="status == 'example_2'")
     add_warning(app, "api_warning_func", custom_warning_func)
-    add_warning(app, "invalid_status", "status not in ['open', 'closed', 'done', 'example_2', 'example_3']")
+    add_warning(
+        app,
+        "invalid_status",
+        "status not in ['open', 'closed', 'done', 'example_2', 'example_3']",
+    )
 
 
 # Needs option to set True or False to raise sphinx-warning for each not passed warning check

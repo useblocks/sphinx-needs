@@ -3,7 +3,11 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/filter_doc"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/filter_doc"}],
+    indirect=True,
+)
 def test_filter_build_html(test_app):
     app = test_app
     app.build()
@@ -46,11 +50,13 @@ def test_filter_build_html(test_app):
     assert "CHILD_2_STORY" in html_5
     assert (
         '<div class="line">child needs: <span class="parent_needs"><span><a class="reference internal" '
-        'href="#CHILD_1_STORY" title="STORY_PARENT">CHILD_1_STORY</a></span></span></div>' in html_5
+        'href="#CHILD_1_STORY" title="STORY_PARENT">CHILD_1_STORY</a></span></span></div>'
+        in html_5
     )
     assert (
         '<div class="line">parent needs: <span class="parent_needs"><span><a class="reference internal" '
-        'href="#CHILD_1_STORY" title="CHILD_2_STORY">CHILD_1_STORY</a></span></span></div>' in html_5
+        'href="#CHILD_1_STORY" title="CHILD_2_STORY">CHILD_1_STORY</a></span></span></div>'
+        in html_5
     )
 
     html_6 = Path(app.outdir, "filter_no_needs.html").read_text()

@@ -4,7 +4,9 @@ import pytest
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_need_jinja_content"}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_need_jinja_content"}],
+    indirect=True,
 )
 def test_doc_need_jinja_content(test_app):
     app = test_app

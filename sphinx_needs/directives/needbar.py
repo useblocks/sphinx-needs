@@ -82,7 +82,11 @@ class NeedbarDirective(FilterBase):
 
         style = self.options.get("style")
         matplotlib = import_matplotlib()
-        style = style.strip() if style else (matplotlib.style.use("default") if matplotlib else "default")
+        style = (
+            style.strip()
+            if style
+            else (matplotlib.style.use("default") if matplotlib else "default")
+        )
 
         legend = "legend" in self.options
 
@@ -167,7 +171,12 @@ class NeedbarDirective(FilterBase):
 # 8. create figure
 # 9. final storage
 # 10. cleanup matplotlib
-def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list[nodes.Element]) -> None:
+def process_needbar(
+    app: Sphinx,
+    doctree: nodes.document,
+    fromdocname: str,
+    found_nodes: list[nodes.Element],
+) -> None:
     env = app.env
     needs_data = SphinxNeedsData(env)
     needs_config = NeedsSphinxConfig(env.config)
@@ -221,13 +230,19 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
             else:
                 # We can only process content with the same lenght for each line
                 if test_columns_length != len(row_data):
-                    raise Exception(f"{error_id}: each content line must have the same length")
+                    raise Exception(
+                        f"{error_id}: each content line must have the same length"
+                    )
 
         # 3. process the labels (maybe from content)
         xlabels = current_needbar["xlabels"]
-        xlabels_in_content = bool(xlabels and len(xlabels) >= 1 and xlabels[0] == "FROM_DATA")
+        xlabels_in_content = bool(
+            xlabels and len(xlabels) >= 1 and xlabels[0] == "FROM_DATA"
+        )
         ylabels = current_needbar["ylabels"]
-        ylabels_in_content = bool(ylabels and len(ylabels) >= 1 and ylabels[0] == "FROM_DATA")
+        ylabels_in_content = bool(
+            ylabels and len(ylabels) >= 1 and ylabels[0] == "FROM_DATA"
+        )
 
         if xlabels_in_content:
             # get xlabels from content => first row in content
@@ -265,14 +280,19 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
 
         # 4. transpose the data if needed
         if current_needbar["transpose"]:
-            local_data = [[local_data[j][i] for j in range(len(local_data))] for i in range(len(local_data[0]))]
+            local_data = [
+                [local_data[j][i] for j in range(len(local_data))]
+                for i in range(len(local_data[0]))
+            ]
             tmp = ylabels
             ylabels = xlabels
             xlabels = tmp
 
         # 5. process content
         local_data_number = []
-        need_list = list(prepare_need_list(needs_data.get_or_create_needs().values()))  # adds parts to need_list
+        need_list = list(
+            prepare_need_list(needs_data.get_or_create_needs().values())
+        )  # adds parts to need_list
 
         for line in local_data:
             line_number = []
@@ -335,7 +355,9 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
             colors = colors + matplotlib.rcParams["axes.prop_cycle"].by_key()["color"]
         multi = math.ceil(len(local_data) / len(colors))
         if multi > 1:
-            print(f"{error_id} warning: color schema is smaller than data, double coloring is occurring")
+            print(
+                f"{error_id} warning: color schema is smaller than data, double coloring is occurring"
+            )
         colors = colors * multi
         colors = colors[: len(local_data)]
 
@@ -368,9 +390,13 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
 
             if current_needbar["show_sum"]:
                 try:
-                    bar_label = axes.bar_label(bar, label_type="center")  # show label in the middel of each bar
+                    bar_label = axes.bar_label(
+                        bar, label_type="center"
+                    )  # show label in the middel of each bar
                     bar_labels.append(bar_label)
-                except AttributeError:  # bar_label is not support in older matplotlib versions
+                except (
+                    AttributeError
+                ):  # bar_label is not support in older matplotlib versions
                     current_needbar["show_sum"] = None
                     current_needbar["show_top_sum"] = None
 
@@ -381,18 +407,24 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
                 try:
                     bar_label = axes.bar_label(bar)
                     bar_labels.append(bar_label)
-                except AttributeError:  # bar_label is not support in older matplotlib versions
+                except (
+                    AttributeError
+                ):  # bar_label is not support in older matplotlib versions
                     current_needbar["show_sum"] = None
                     current_needbar["show_top_sum"] = None
 
         sum_rotation = current_needbar["sum_rotation"]
-        if sum_rotation and (current_needbar["show_top_sum"] or current_needbar["show_sum"]):
+        if sum_rotation and (
+            current_needbar["show_top_sum"] or current_needbar["show_sum"]
+        ):
             sum_rotation = sum_rotation.strip()
             # Rotate the bar labels
             if sum_rotation.isdigit():
                 matplotlib.pyplot.setp(bar_labels, rotation=int(sum_rotation))
 
-        centers = [(i + j) / 2.0 for i, j in zip(index[0], index[len(local_data_number) - 1])]
+        centers = [
+            (i + j) / 2.0 for i, j in zip(index[0], index[len(local_data_number) - 1])
+        ]
         if not current_needbar["horizontal"]:
             # We want to support even older version of matplotlib, which do not support axes.set_xticks(labels)
             axes.set_xticks(centers)
@@ -408,14 +440,18 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
             xlabels_rotation = xlabels_rotation.strip()
             # Rotate the tick labels
             if xlabels_rotation.isdigit():
-                matplotlib.pyplot.setp(axes.get_xticklabels(), rotation=int(xlabels_rotation))
+                matplotlib.pyplot.setp(
+                    axes.get_xticklabels(), rotation=int(xlabels_rotation)
+                )
 
         ylabels_rotation = current_needbar["ylabels_rotation"]
         if ylabels_rotation:
             ylabels_rotation = ylabels_rotation.strip()
             # Rotate the tick labels
             if ylabels_rotation.isdigit():
-                matplotlib.pyplot.setp(axes.get_yticklabels(), rotation=int(ylabels_rotation))
+                matplotlib.pyplot.setp(
+                    axes.get_yticklabels(), rotation=int(ylabels_rotation)
+                )
 
         if current_needbar["title"]:
             axes.set_title(current_needbar["title"].strip())
@@ -433,7 +469,9 @@ def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
 
         # We need to calculate an unique bar-image file name
         hash_value = hashlib.sha256(id.encode()).hexdigest()[:5]
-        image_node = save_matplotlib_figure(app, figure, f"need_bar_{hash_value}", fromdocname)
+        image_node = save_matplotlib_figure(
+            app, figure, f"need_bar_{hash_value}", fromdocname
+        )
 
         # Add lineno to node
         image_node.line = current_needbar["lineno"]

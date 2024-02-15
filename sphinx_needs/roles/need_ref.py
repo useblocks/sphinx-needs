@@ -51,7 +51,12 @@ def transform_need_to_dict(need: NeedsInfoType) -> dict[str, str]:
     return dict_need
 
 
-def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list[nodes.Element]) -> None:
+def process_need_ref(
+    app: Sphinx,
+    doctree: nodes.document,
+    fromdocname: str,
+    found_nodes: list[nodes.Element],
+) -> None:
     builder = app.builder
     env = app.env
     needs_config = NeedsSphinxConfig(env.config)
@@ -78,7 +83,9 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
         if need_id_main in all_needs:
             target_need = all_needs[need_id_main]
 
-            dict_need = transform_need_to_dict(target_need)  # Transform a dict in a dict of {str, str}
+            dict_need = transform_need_to_dict(
+                target_need
+            )  # Transform a dict in a dict of {str, str}
 
             # We set the id to the complete id maintained in node_need_ref["reftarget"]
             dict_need["id"] = need_id_full
@@ -118,7 +125,8 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                     link_text = needs_config.role_need_template.format(**dict_need)
                 except KeyError as e:
                     link_text = (
-                        '"the config parameter needs_role_need_template uses not supported placeholders: %s "' % e
+                        '"the config parameter needs_role_need_template uses not supported placeholders: %s "'
+                        % e
                     )
                     log.warning(link_text + " [needs]", type="needs")
 
@@ -135,9 +143,13 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                         node_need_ref["reftarget"],
                     )
                 else:
-                    assert target_need["external_url"] is not None, "external_url must be set for external needs"
+                    assert (
+                        target_need["external_url"] is not None
+                    ), "external_url must be set for external needs"
                     new_node_ref = nodes.reference(target_need["id"], target_need["id"])
-                    new_node_ref["refuri"] = check_and_calc_base_url_rel_path(target_need["external_url"], fromdocname)
+                    new_node_ref["refuri"] = check_and_calc_base_url_rel_path(
+                        target_need["external_url"], fromdocname
+                    )
                     new_node_ref["classes"].append(target_need["external_css"])
 
         else:

@@ -9,7 +9,9 @@ from tests.test_basic_doc import random_data_callback
 
 
 @responses.activate
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "../docs"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "html", "srcdir": "../docs"}], indirect=True
+)
 def test_official_time(test_app, benchmark):
     responses.add_callback(
         responses.GET,
@@ -17,7 +19,9 @@ def test_official_time(test_app, benchmark):
         callback=random_data_callback,
         content_type="application/json",
     )
-    responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
+    responses.add(
+        responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body=""
+    )
 
     app = test_app
     benchmark.pedantic(app.builder.build_all, rounds=1, iterations=1)
@@ -29,7 +33,11 @@ def test_official_time(test_app, benchmark):
 
 
 @responses.activate
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "../docs", "parallel": 1}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "../docs", "parallel": 1}],
+    indirect=True,
+)
 def test_official_memory(test_app):
     responses.add_callback(
         responses.GET,
@@ -37,7 +45,9 @@ def test_official_memory(test_app):
         callback=random_data_callback,
         content_type="application/json",
     )
-    responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
+    responses.add(
+        responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body=""
+    )
 
     app = test_app
 

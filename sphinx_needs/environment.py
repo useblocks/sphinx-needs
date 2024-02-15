@@ -40,13 +40,21 @@ def safe_add_file(filename: Path, app: Sphinx) -> None:
 
     if pure_path.suffix == ".js":
         # Make sure the calculated (posix)-path is not already registered as "web"-path
-        if hasattr(builder, "script_files") and str(static_data_file) not in builder.script_files:
+        if (
+            hasattr(builder, "script_files")
+            and str(static_data_file) not in builder.script_files
+        ):
             app.add_js_file(str(pure_path))
     elif pure_path.suffix == ".css":
-        if hasattr(builder, "css_files") and str(static_data_file) not in builder.css_files:
+        if (
+            hasattr(builder, "css_files")
+            and str(static_data_file) not in builder.css_files
+        ):
             app.add_css_file(str(pure_path))
     else:
-        raise NotImplementedError(f"File type {pure_path.suffix} not support by save_add_file")
+        raise NotImplementedError(
+            f"File type {pure_path.suffix} not support by save_add_file"
+        )
 
 
 def safe_remove_file(filename: Path, app: Sphinx) -> None:
@@ -120,7 +128,10 @@ def install_styles_static_files(app: Sphinx, env: BuildEnvironment) -> None:
 
         if not source_file_path.exists():
             source_file_path = css_root / "blank" / "blank.css"
-            logger.warning(f"{source_file_path} not found. Copying sphinx-internal blank.css [needs]", type="needs")
+            logger.warning(
+                f"{source_file_path} not found. Copying sphinx-internal blank.css [needs]",
+                type="needs",
+            )
 
         dest_file = dest_dir / source_file_path.name
         dest_dir.mkdir(exist_ok=True)
@@ -215,7 +226,9 @@ def install_permalink_file(app: Sphinx, env: BuildEnvironment) -> None:
         return
 
     # load jinja template
-    jinja_env = Environment(loader=PackageLoader("sphinx_needs"), autoescape=select_autoescape())
+    jinja_env = Environment(
+        loader=PackageLoader("sphinx_needs"), autoescape=select_autoescape()
+    )
     template = jinja_env.get_template("permalink.html")
 
     # save file to build dir

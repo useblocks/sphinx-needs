@@ -24,7 +24,9 @@ from .config.open_needs import (
 class OpenNeedsService(BaseService):
     options = CONFIG_OPTIONS + EXTRA_DATA_OPTIONS + EXTRA_LINK_OPTIONS
 
-    def __init__(self, app: Sphinx, name: str, config: dict[str, Any], **kwargs: Any) -> None:
+    def __init__(
+        self, app: Sphinx, name: str, config: dict[str, Any], **kwargs: Any
+    ) -> None:
         self.app = app
         self.name = name
         self.config = config
@@ -41,7 +43,9 @@ class OpenNeedsService(BaseService):
         self.query = self.config.get("query", "")
         self.content = self.config.get("content", DEFAULT_CONTENT)
         self.mappings: dict[str, Any] = self.config.get("mappings", {})
-        self.mapping_replaces = self.config.get("mappings_replaces", MAPPINGS_REPLACES_DEFAULT)
+        self.mapping_replaces = self.config.get(
+            "mappings_replaces", MAPPINGS_REPLACES_DEFAULT
+        )
 
         self.extra_data: dict[str, Any] = self.config.get("extra_data", {})
         self.params = self.config.get("params", "skip=0,limit=100")
@@ -59,8 +63,8 @@ class OpenNeedsService(BaseService):
             if login_resp.status_code != 200:
                 raise OpenNeedsServiceException(
                     "ONS service error during request.\n"
-                    "Status code: {}\n"
-                    "Error: {}\n".format(login_resp.status_code, login_resp.text)
+                    f"Status code: {login_resp.status_code}\n"
+                    f"Error: {login_resp.text}\n"
                 )
             oauth_credentials = dict(**login_resp.json())
             self.token_type = oauth_credentials.get("token_type")
@@ -72,8 +76,13 @@ class OpenNeedsService(BaseService):
         url: str = options.get("url", self.url)
         url = url + str(self.url_postfix)
 
-        headers: dict[str, str] = {"Authorization": f"{self.token_type} {self.access_token}"}
-        params: list[str] = [param.strip() for param in re.split(r";|,", options.get("params", self.params))]
+        headers: dict[str, str] = {
+            "Authorization": f"{self.token_type} {self.access_token}"
+        }
+        params: list[str] = [
+            param.strip()
+            for param in re.split(r";|,", options.get("params", self.params))
+        ]
         new_params: str = "&".join(params)
 
         url = f"{url}?{new_params}"
@@ -93,10 +102,14 @@ class OpenNeedsService(BaseService):
 
         result: Any = requests.get(**request)
         if result.status_code >= 300:
-            raise OpenNeedsServiceException(f"Problem accessing {result.url}.\nReason: {result.text}")
+            raise OpenNeedsServiceException(
+                f"Problem accessing {result.url}.\nReason: {result.text}"
+            )
         return result
 
-    def _extract_data(self, data: list[dict[str, Any]], options: dict[str, Any]) -> list[dict[str, Any]]:
+    def _extract_data(
+        self, data: list[dict[str, Any]], options: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """
         Extract data of a list/dictionary, which was retrieved via send_request.
         :param data: list or dict
@@ -176,7 +189,10 @@ class OpenNeedsService(BaseService):
                         if name == "links":
                             # Add a prefix to the referenced link if it is an ID of a need object in
                             # the data retrieved from the Open Needs Server or don't add prefix
-                            value = [(prefix + link if link in ids_of_needs_data else link) for link in value]
+                            value = [
+                                (prefix + link if link in ids_of_needs_data else link)
+                                for link in value
+                            ]
                         value = ";".join(value)
                     # Ensures mapping option with value == None is not implemented. E.g. the links option
                     # can't be == None since there will be nothing to link to and that will raise a warning
@@ -184,7 +200,9 @@ class OpenNeedsService(BaseService):
                         need_values[name] = value
 
                 for regex, new_str in self.mapping_replaces.items():
-                    need_values[name] = re.sub(regex, new_str, need_values.get(name, ""))
+                    need_values[name] = re.sub(
+                        regex, new_str, need_values.get(name, "")
+                    )
 
                 if name == "id":
                     need_values[name] = str(prefix) + str(need_values.get(name, ""))

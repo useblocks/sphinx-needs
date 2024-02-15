@@ -83,7 +83,16 @@ def test_server(xprocess, sphinx_test_tempdir):
         pattern = "Serving HTTP on [0-9.]+ port 62343|Address already in use"
         timeout = 20
         terminate_on_interrupt = True
-        args = ["python3", "-m", "http.server", "--directory", sphinx_test_tempdir, "--bind", addr, port]
+        args = [
+            "python3",
+            "-m",
+            "http.server",
+            "--directory",
+            sphinx_test_tempdir,
+            "--bind",
+            addr,
+            port,
+        ]
         env = {"PYTHONUNBUFFERED": "1"}
 
     def check_server_connection(log_path: str):
@@ -98,13 +107,18 @@ def test_server(xprocess, sphinx_test_tempdir):
         sock.close()
         if result == 0:
             with open(str(log_path), "wb", 0) as stdout:
-                stdout.write(bytes("Serving HTTP on 127.0.0.1 port 62343 (http://127.0.0.1:62343/) ...\n", "utf8"))
+                stdout.write(
+                    bytes(
+                        "Serving HTTP on 127.0.0.1 port 62343 (http://127.0.0.1:62343/) ...\n",
+                        "utf8",
+                    )
+                )
             return True
         return False
 
     if not check_server_connection(log_path=xprocess.getinfo("http_server").logpath):
         # Start the process and ensure it is running
-        _, logfile = xprocess.ensure("http_server", Starter, persist_logs=False)  # noqa:F841
+        _, logfile = xprocess.ensure("http_server", Starter, persist_logs=False)
 
     http_server_process = xprocess.getinfo("http_server")
     server_url = f"http://{addr}:{port}"
@@ -129,7 +143,9 @@ def test_js(self) -> Dict[str, Any]:
     """
     cypress_testpath = get_abspath(self.spec_pattern)
 
-    if not cypress_testpath or not (os.path.isabs(cypress_testpath) and os.path.exists(cypress_testpath)):
+    if not cypress_testpath or not (
+        os.path.isabs(cypress_testpath) and os.path.exists(cypress_testpath)
+    ):
         return {
             "returncode": 1,
             "stdout": None,
@@ -179,7 +195,12 @@ def test_js(self) -> Dict[str, Any]:
 
 
 def pytest_addoption(parser):
-    parser.addoption("--sn-build-dir", action="store", default=None, help="Base directory for sphinx-needs builds")
+    parser.addoption(
+        "--sn-build-dir",
+        action="store",
+        default=None,
+        help="Base directory for sphinx-needs builds",
+    )
 
 
 @pytest.fixture(scope="session")
@@ -195,7 +216,9 @@ def sphinx_test_tempdir(request) -> path:
     # We create a temp-folder on our own, as the util-functions from sphinx and pytest make troubles.
     # It seems like they reuse certain-temp names
 
-    temp_base = os.path.abspath(request.config.getoption("--sn-build-dir") or tempfile.gettempdir())
+    temp_base = os.path.abspath(
+        request.config.getoption("--sn-build-dir") or tempfile.gettempdir()
+    )
 
     sphinx_test_tempdir = path(temp_base).joinpath("sn_test_build_data")
     utils_dir = sphinx_test_tempdir.joinpath("utils")
@@ -235,7 +258,9 @@ def test_app(make_app, sphinx_test_tempdir, request):
     if not builder_params.get("no_plantuml", False):
         # Since we don't want copy the plantuml.jar file for each test function,
         # we need to override the plantuml conf variable and set it to what we have already
-        plantuml = "java -Djava.awt.headless=true -jar %s" % os.path.join(sphinx_test_tempdir, "utils", "plantuml.jar")
+        plantuml = "java -Djava.awt.headless=true -jar %s" % os.path.join(
+            sphinx_test_tempdir, "utils", "plantuml.jar"
+        )
         sphinx_conf_overrides.update(plantuml=plantuml)
 
     # copy test srcdir to test temporary directory sphinx_test_tempdir

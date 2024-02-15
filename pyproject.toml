@@ -101,11 +101,19 @@ markers = [
     "jstest: marks tests as JavaScript test (deselect with '-m \"not jstest\"')",
 ]
 
-[tool.black]
-line-length = 120
-
-[tool.isort]
-profile = "black"
+[tool.ruff]
+extend-select = [
+  "B",   # flake8-bugbear  
+  "C4",  # flake8-comprehensions
+  "I",   # isort
+  "ICN", # flake8-import-conventions
+  "ISC", # flake8-implicit-str-concat
+  "N",   # pep8-naming
+  "RUF", # Ruff-specific rules
+  "SIM", # flake8-simplify
+  "UP",  # pyupgrade
+]
+extend-ignore = ["B904", "ISC001", "ICN001", "N818", "RUF005", "RUF013", "RUF012", "SIM108", "SIM118"]
 
 [tool.mypy]
 files = "sphinx_needs"

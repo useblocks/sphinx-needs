@@ -18,7 +18,10 @@ class NeedOutgoing(nodes.Inline, nodes.Element):
 
 
 def process_need_outgoing(
-    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list[nodes.Element]
+    app: Sphinx,
+    doctree: nodes.document,
+    fromdocname: str,
+    found_nodes: list[nodes.Element],
 ) -> None:
     builder = app.builder
     env = app.env
@@ -55,7 +58,11 @@ def process_need_outgoing(
                     target_need = needs_all_needs[need_id_main]
                     if need_id_part and need_id_part in target_need["parts"]:
                         part_content = target_need["parts"][need_id_part]["content"]
-                        target_title = part_content if len(part_content) < 30 else part_content[:27] + "..."
+                        target_title = (
+                            part_content
+                            if len(part_content) < 30
+                            else part_content[:27] + "..."
+                        )
                         target_id = ".".join([need_id_main, need_id_part])
                     else:
                         target_title = target_need["title"]
@@ -84,8 +91,12 @@ def process_need_outgoing(
                             node_need_ref["reftarget"],
                         )
                     else:
-                        assert target_need["external_url"] is not None, "External URL must be set"
-                        new_node_ref = nodes.reference(target_need["id"], target_need["id"])
+                        assert (
+                            target_need["external_url"] is not None
+                        ), "External URL must be set"
+                        new_node_ref = nodes.reference(
+                            target_need["id"], target_need["id"]
+                        )
                         new_node_ref["refuri"] = check_and_calc_base_url_rel_path(
                             target_need["external_url"], fromdocname
                         )

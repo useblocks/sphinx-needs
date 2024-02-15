@@ -4,7 +4,11 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/extra_options"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/extra_options"}],
+    indirect=True,
+)
 def test_custom_attributes_appear(test_app):
     app = test_app
     app.build()
@@ -37,6 +41,8 @@ def test_custom_attributes_appear(test_app):
     assert "R_12346" not in tables[3]
 
     # Need list should only have component B requirements
-    items = re.findall('(<div class="line-block" id="needlist-index-.*?</div>)', html, re.DOTALL)
+    items = re.findall(
+        '(<div class="line-block" id="needlist-index-.*?</div>)', html, re.DOTALL
+    )
     assert len(items) == 1
     assert "R_12346" in items[0]

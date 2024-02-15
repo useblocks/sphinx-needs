@@ -7,7 +7,11 @@ import pytest
 import sphinx
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needpie"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needpie"}],
+    indirect=True,
+)
 def test_doc_build_html(test_app):
     app = test_app
     app.build()

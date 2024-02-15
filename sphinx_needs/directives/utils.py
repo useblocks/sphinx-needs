@@ -24,17 +24,25 @@ def used_filter_paragraph(current_needfilter: NeedsFilteredBaseType) -> nodes.pa
     para = nodes.paragraph()
     filter_text = "Used filter:"
     filter_text += (
-        " status(%s)" % " OR ".join(current_needfilter["status"]) if len(current_needfilter["status"]) > 0 else ""
+        " status(%s)" % " OR ".join(current_needfilter["status"])
+        if len(current_needfilter["status"]) > 0
+        else ""
     )
     if len(current_needfilter["status"]) > 0 and len(current_needfilter["tags"]) > 0:
         filter_text += " AND "
-    filter_text += " tags(%s)" % " OR ".join(current_needfilter["tags"]) if len(current_needfilter["tags"]) > 0 else ""
-    if (len(current_needfilter["status"]) > 0 or len(current_needfilter["tags"]) > 0) and len(
-        current_needfilter["types"]
-    ) > 0:
+    filter_text += (
+        " tags(%s)" % " OR ".join(current_needfilter["tags"])
+        if len(current_needfilter["tags"]) > 0
+        else ""
+    )
+    if (
+        len(current_needfilter["status"]) > 0 or len(current_needfilter["tags"]) > 0
+    ) and len(current_needfilter["types"]) > 0:
         filter_text += " AND "
     filter_text += (
-        " types(%s)" % " OR ".join(current_needfilter["types"]) if len(current_needfilter["types"]) > 0 else ""
+        " types(%s)" % " OR ".join(current_needfilter["types"])
+        if len(current_needfilter["types"]) > 0
+        else ""
     )
 
     filter_node = nodes.emphasis(filter_text, filter_text)
@@ -91,7 +99,9 @@ def analyse_needs_metrics(env: BuildEnvironment) -> dict[str, Any]:
         if i["type"] in needs_types:
             needs_types[i["type"]] += 1
 
-    metric_data["needs_types"] = {i[0]: i[1] for i in sorted(needs_types.items(), key=lambda x: x[0])}
+    metric_data["needs_types"] = {
+        i[0]: i[1] for i in sorted(needs_types.items(), key=lambda x: x[0])
+    }
     return metric_data
 
 

@@ -74,7 +74,9 @@ class NeedflowDirective(FilterBase):
         targetnode = nodes.target("", "", ids=[targetid])
 
         all_link_types = ",".join(x["option"] for x in needs_config.extra_links)
-        link_types = split_link_types(self.options.get("link_types", all_link_types), location)
+        link_types = split_link_types(
+            self.options.get("link_types", all_link_types), location
+        )
 
         config_names = self.options.get("config")
         configs = []
@@ -220,7 +222,12 @@ def walk_curr_need_tree(
                     # check curr need child has children or has parts
                     if curr_child_need["parent_needs_back"] or curr_child_need["parts"]:
                         curr_need_tree += walk_curr_need_tree(
-                            app, fromdocname, current_needflow, all_needs, found_needs, curr_child_need
+                            app,
+                            fromdocname,
+                            current_needflow,
+                            all_needs,
+                            found_needs,
+                            curr_child_need,
                         )
                     # add newline for next element
                     curr_need_tree += "\n"
@@ -261,7 +268,9 @@ def cal_needs_node(
     top_needs = get_root_needs(found_needs)
     curr_need_tree = ""
     for top_need in top_needs:
-        top_need_node = get_need_node_rep_for_plantuml(app, fromdocname, current_needflow, all_needs, top_need)
+        top_need_node = get_need_node_rep_for_plantuml(
+            app, fromdocname, current_needflow, all_needs, top_need
+        )
         curr_need_tree += (
             top_need_node
             + walk_curr_need_tree(
@@ -278,7 +287,12 @@ def cal_needs_node(
 
 
 @measure_time("needflow")
-def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list[nodes.Element]) -> None:
+def process_needflow(
+    app: Sphinx,
+    doctree: nodes.document,
+    fromdocname: str,
+    found_nodes: list[nodes.Element],
+) -> None:
     # Replace all needflow nodes with a list of the collected needs.
     # Augment each need with a backlink to the original location.
     env = app.env
@@ -305,7 +319,9 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
             if lt not in link_type_names:
                 logger.warning(
                     "Unknown link type {link_type} in needflow {flow}. Allowed values: {link_types} [needs]".format(
-                        link_type=lt, flow=current_needflow["target_id"], link_types=",".join(link_type_names)
+                        link_type=lt,
+                        flow=current_needflow["target_id"],
+                        link_types=",".join(link_type_names),
                     ),
                     type="needs",
                 )
@@ -342,7 +358,9 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
             config = current_needflow["config"]
             if config and len(config) >= 3:
                 # Remove all empty lines
-                config = "\n".join([line.strip() for line in config.split("\n") if line.strip()])
+                config = "\n".join(
+                    [line.strip() for line in config.split("\n") if line.strip()]
+                )
                 puml_node["uml"] += "\n' Config\n\n"
                 puml_node["uml"] += config
                 puml_node["uml"] += "\n\n"
@@ -353,9 +371,13 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                 for link_type in link_types:
                     # Skip link-type handling, if it is not part of a specified list of allowed link_types or
                     # if not part of the overall configuration of needs_flow_link_types
-                    if (current_needflow["link_types"] and link_type["option"].upper() not in option_link_types) or (
+                    if (
+                        current_needflow["link_types"]
+                        and link_type["option"].upper() not in option_link_types
+                    ) or (
                         not current_needflow["link_types"]
-                        and link_type["option"].upper() not in allowed_link_types_options
+                        and link_type["option"].upper()
+                        not in allowed_link_types_options
                     ):
                         continue
 
@@ -367,30 +389,42 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                         # If source or target of link is a need_part, a specific style is needed
                         if "." in link or "." in need_info["id_complete"]:
                             final_link = link
-                            if current_needflow["show_link_names"] or needs_config.flow_show_links:
+                            if (
+                                current_needflow["show_link_names"]
+                                or needs_config.flow_show_links
+                            ):
                                 desc = link_type["outgoing"] + "\\n"
                                 comment = f": {desc}"
                             else:
                                 comment = ""
 
                             if "style_part" in link_type and link_type["style_part"]:
-                                link_style = "[{style}]".format(style=link_type["style_part"])
+                                link_style = "[{style}]".format(
+                                    style=link_type["style_part"]
+                                )
                             else:
                                 link_style = "[dotted]"
                         else:
                             final_link = link
-                            if current_needflow["show_link_names"] or needs_config.flow_show_links:
+                            if (
+                                current_needflow["show_link_names"]
+                                or needs_config.flow_show_links
+                            ):
                                 comment = ": {desc}".format(desc=link_type["outgoing"])
                             else:
                                 comment = ""
 
                             if "style" in link_type and link_type["style"]:
-                                link_style = "[{style}]".format(style=link_type["style"])
+                                link_style = "[{style}]".format(
+                                    style=link_type["style"]
+                                )
                             else:
                                 link_style = ""
 
                         # Do not create an links, if the link target is not part of the search result.
-                        if final_link not in [x["id"] for x in found_needs if x["is_need"]] and final_link not in [
+                        if final_link not in [
+                            x["id"] for x in found_needs if x["is_need"]
+                        ] and final_link not in [
                             x["id_complete"] for x in found_needs if x["is_part"]
                         ]:
                             continue
@@ -415,7 +449,9 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                         )
 
             # calculate needs node representation for plantuml
-            puml_node["uml"] += cal_needs_node(app, fromdocname, current_needflow, all_needs.values(), found_needs)
+            puml_node["uml"] += cal_needs_node(
+                app, fromdocname, current_needflow, all_needs.values(), found_needs
+            )
 
             puml_node["uml"] += "\n' Connection definition \n\n"
             puml_node["uml"] += puml_connections
@@ -426,7 +462,9 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
 
             puml_node["uml"] += "\n@enduml"
             puml_node["incdir"] = os.path.dirname(current_needflow["docname"])
-            puml_node["filename"] = os.path.split(current_needflow["docname"])[1]  # Needed for plantuml >= 0.9
+            puml_node["filename"] = os.path.split(current_needflow["docname"])[
+                1
+            ]  # Needed for plantuml >= 0.9
 
             scale = int(current_needflow["scale"])
             # if scale != 100:
@@ -452,8 +490,14 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                 gen_flow_link = generate_name(app, puml_node.children[0], file_ext)
                 current_file_parts = fromdocname.split("/")
                 subfolder_amount = len(current_file_parts) - 1
-                img_locaton = "../" * subfolder_amount + "_images/" + gen_flow_link[0].split("/")[-1]
-                flow_ref = nodes.reference("t", current_needflow["caption"], refuri=img_locaton)
+                img_locaton = (
+                    "../" * subfolder_amount
+                    + "_images/"
+                    + gen_flow_link[0].split("/")[-1]
+                )
+                flow_ref = nodes.reference(
+                    "t", current_needflow["caption"], refuri=img_locaton
+                )
                 puml_node += nodes.caption("", "", flow_ref)
 
             # Add lineno to node
@@ -461,25 +505,36 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
 
             content.append(puml_node)
         else:  # no needs found
-            content.append(no_needs_found_paragraph(current_needflow.get("filter_warning")))
+            content.append(
+                no_needs_found_paragraph(current_needflow.get("filter_warning"))
+            )
 
         if current_needflow["show_filters"]:
             para = nodes.paragraph()
             filter_text = "Used filter:"
             filter_text += (
-                " status(%s)" % " OR ".join(current_needflow["status"]) if len(current_needflow["status"]) > 0 else ""
+                " status(%s)" % " OR ".join(current_needflow["status"])
+                if len(current_needflow["status"]) > 0
+                else ""
             )
-            if len(current_needflow["status"]) > 0 and len(current_needflow["tags"]) > 0:
+            if (
+                len(current_needflow["status"]) > 0
+                and len(current_needflow["tags"]) > 0
+            ):
                 filter_text += " AND "
             filter_text += (
-                " tags(%s)" % " OR ".join(current_needflow["tags"]) if len(current_needflow["tags"]) > 0 else ""
+                " tags(%s)" % " OR ".join(current_needflow["tags"])
+                if len(current_needflow["tags"]) > 0
+                else ""
             )
-            if (len(current_needflow["status"]) > 0 or len(current_needflow["tags"]) > 0) and len(
-                current_needflow["types"]
-            ) > 0:
+            if (
+                len(current_needflow["status"]) > 0 or len(current_needflow["tags"]) > 0
+            ) and len(current_needflow["types"]) > 0:
                 filter_text += " AND "
             filter_text += (
-                " types(%s)" % " OR ".join(current_needflow["types"]) if len(current_needflow["types"]) > 0 else ""
+                " types(%s)" % " OR ".join(current_needflow["types"])
+                if len(current_needflow["types"]) > 0
+                else ""
             )
 
             filter_node = nodes.emphasis(filter_text, filter_text)

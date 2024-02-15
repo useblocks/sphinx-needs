@@ -173,8 +173,12 @@ def row_col_maker(
             link_string_list = {}
             for link_name, link_conf in needs_config.string_links.items():
                 link_string_list[link_name] = {
-                    "url_template": Environment(autoescape=True).from_string(link_conf["link_url"]),
-                    "name_template": Environment(autoescape=True).from_string(link_conf["link_name"]),
+                    "url_template": Environment(autoescape=True).from_string(
+                        link_conf["link_url"]
+                    ),
+                    "name_template": Environment(autoescape=True).from_string(
+                        link_conf["link_name"]
+                    ),
                     "regex_compiled": re.compile(link_conf["regex"]),
                     "options": link_conf["options"],
                     "name": link_name,
@@ -203,22 +207,34 @@ def row_col_maker(
 
                     if make_ref:
                         if need_info["is_external"]:
-                            assert need_info["external_url"] is not None, "external_url must be set for external needs"
-                            ref_col["refuri"] = check_and_calc_base_url_rel_path(need_info["external_url"], fromdocname)
+                            assert (
+                                need_info["external_url"] is not None
+                            ), "external_url must be set for external needs"
+                            ref_col["refuri"] = check_and_calc_base_url_rel_path(
+                                need_info["external_url"], fromdocname
+                            )
                             ref_col["classes"].append(need_info["external_css"])
                             row_col["classes"].append(need_info["external_css"])
                         else:
-                            ref_col["refuri"] = builder.get_relative_uri(fromdocname, need_info["docname"])
+                            ref_col["refuri"] = builder.get_relative_uri(
+                                fromdocname, need_info["docname"]
+                            )
                             ref_col["refuri"] += "#" + datum
                     elif ref_lookup:
                         temp_need = all_needs[link_id]
                         if temp_need["is_external"]:
-                            assert temp_need["external_url"] is not None, "external_url must be set for external needs"
-                            ref_col["refuri"] = check_and_calc_base_url_rel_path(temp_need["external_url"], fromdocname)
+                            assert (
+                                temp_need["external_url"] is not None
+                            ), "external_url must be set for external needs"
+                            ref_col["refuri"] = check_and_calc_base_url_rel_path(
+                                temp_need["external_url"], fromdocname
+                            )
                             ref_col["classes"].append(temp_need["external_css"])
                             row_col["classes"].append(temp_need["external_css"])
                         else:
-                            ref_col["refuri"] = builder.get_relative_uri(fromdocname, temp_need["docname"])
+                            ref_col["refuri"] = builder.get_relative_uri(
+                                fromdocname, temp_need["docname"]
+                            )
                             ref_col["refuri"] += "#" + temp_need["id"]
                             if link_part:
                                 ref_col["refuri"] += "." + link_part
@@ -230,7 +246,11 @@ def row_col_maker(
                     para_col += ref_col
             elif matching_link_confs:
                 para_col += match_string_link(
-                    datum_text, datum, need_key, matching_link_confs, render_context=needs_config.render_context
+                    datum_text,
+                    datum,
+                    need_key,
+                    matching_link_confs,
+                    render_context=needs_config.render_context,
                 )
             else:
                 para_col += text_col
@@ -258,7 +278,9 @@ def rstjinja(app: Sphinx, docname: str, source: list[str]) -> None:
     source[0] = rendered
 
 
-def import_prefix_link_edit(needs: dict[str, Any], id_prefix: str, needs_extra_links: list[dict[str, Any]]) -> None:
+def import_prefix_link_edit(
+    needs: dict[str, Any], id_prefix: str, needs_extra_links: list[dict[str, Any]]
+) -> None:
     """
     Changes existing links to support given prefix.
     Only link-ids get touched, which are part of ``needs`` (so are linking them).
@@ -285,7 +307,9 @@ def import_prefix_link_edit(needs: dict[str, Any], id_prefix: str, needs_extra_l
                             need[extra_link["option"]][n] = f"{id_prefix}{id}"
             # Manipulate descriptions
             # ToDo: Use regex for better matches.
-            need["description"] = need["description"].replace(id, "".join([id_prefix, id]))
+            need["description"] = need["description"].replace(
+                id, "".join([id_prefix, id])
+            )
 
 
 FuncT = TypeVar("FuncT")
@@ -332,7 +356,11 @@ def check_and_calc_base_url_rel_path(external_url: str, fromdocname: str) -> str
     # get path sep considering plattform dependency, '\' for Windows, '/' fro Unix
     curr_path_sep = os.path.sep
     # check / or \ to determine the relative path to conf.py directory
-    if not parsed_url.scheme and not os.path.isabs(external_url) and curr_path_sep in fromdocname:
+    if (
+        not parsed_url.scheme
+        and not os.path.isabs(external_url)
+        and curr_path_sep in fromdocname
+    ):
         sub_level = len(fromdocname.split(curr_path_sep)) - 1
         ref_uri = os.path.join(sub_level * (".." + curr_path_sep), external_url)
 
@@ -350,7 +378,8 @@ def check_and_get_external_filter_func(filter_func_ref: str | None) -> tuple[Any
             filter_module, filter_function = filter_func_ref.rsplit(".")
         except ValueError:
             logger.warning(
-                f'Filter function not valid "{filter_func_ref}". Example: my_module:my_func [needs]', type="needs"
+                f'Filter function not valid "{filter_func_ref}". Example: my_module:my_func [needs]',
+                type="needs",
             )
             return filter_func, filter_args
 
@@ -364,7 +393,10 @@ def check_and_get_external_filter_func(filter_func_ref: str | None) -> tuple[Any
             final_module = importlib.import_module(filter_module)
             filter_func = getattr(final_module, filter_function)
         except Exception:
-            logger.warning(f"Could not import filter function: {filter_func_ref} [needs]", type="needs")
+            logger.warning(
+                f"Could not import filter function: {filter_func_ref} [needs]",
+                type="needs",
+            )
             return filter_func, filter_args
 
     return filter_func, filter_args
@@ -385,7 +417,10 @@ def jinja_parse(context: dict[str, Any], jinja_string: str) -> str:
     try:
         content_template = Template(jinja_string, autoescape=True)
     except Exception as e:
-        raise ReferenceError(f'There was an error in the jinja statement: "{jinja_string}". ' f"Error Msg: {e}")
+        raise ReferenceError(
+            f'There was an error in the jinja statement: "{jinja_string}". '
+            f"Error Msg: {e}"
+        )
 
     content = content_template.render(**context)
     return content
@@ -407,7 +442,9 @@ def import_matplotlib() -> matplotlib | None:
     return matplotlib
 
 
-def save_matplotlib_figure(app: Sphinx, figure: FigureBase, basename: str, fromdocname: str) -> nodes.image:
+def save_matplotlib_figure(
+    app: Sphinx, figure: FigureBase, basename: str, fromdocname: str
+) -> nodes.image:
     builder = app.builder
     env = app.env
 
@@ -464,20 +501,34 @@ def dict_get(root: dict[str, Any], items: Any, default: Any = None) -> Any:
 
 
 def match_string_link(
-    text_item: str, data: str, need_key: str, matching_link_confs: list[dict[str, Any]], render_context: dict[str, Any]
+    text_item: str,
+    data: str,
+    need_key: str,
+    matching_link_confs: list[dict[str, Any]],
+    render_context: dict[str, Any],
 ) -> Any:
     try:
         link_name = None
         link_url = None
-        link_conf = matching_link_confs[0]  # We only handle the first matching string_link
+        link_conf = matching_link_confs[
+            0
+        ]  # We only handle the first matching string_link
         match = link_conf["regex_compiled"].search(data)
         if match:
             render_content = match.groupdict()
-            link_url = link_conf["url_template"].render(**render_content, **render_context)
-            link_name = link_conf["name_template"].render(**render_content, **render_context)
+            link_url = link_conf["url_template"].render(
+                **render_content, **render_context
+            )
+            link_name = link_conf["name_template"].render(
+                **render_content, **render_context
+            )
 
         # if no string_link match was made, we handle it as normal string value
-        ref_item = nodes.reference(link_name, link_name, refuri=link_url) if link_name else nodes.Text(text_item)
+        ref_item = (
+            nodes.reference(link_name, link_name, refuri=link_url)
+            if link_name
+            else nodes.Text(text_item)
+        )
 
     except Exception as e:
         logger.warning(
@@ -490,7 +541,9 @@ def match_string_link(
 
 
 def match_variants(
-    option_value: str | list[str], keywords: dict[str, Any], needs_variants: dict[str, str]
+    option_value: str | list[str],
+    keywords: dict[str, Any],
+    needs_variants: dict[str, str],
 ) -> None | str | list[str]:
     """
     Function to handle variant option management.
@@ -503,7 +556,9 @@ def match_variants(
     """
 
     def variant_handling(
-        variant_definitions: list[str], variant_data: dict[str, Any], variant_pattern: Pattern  # type: ignore[type-arg]
+        variant_definitions: list[str],
+        variant_data: dict[str, Any],
+        variant_pattern: Pattern,  # type: ignore[type-arg]
     ) -> str | None:
         filter_context = variant_data
         # filter_result = []
@@ -515,9 +570,15 @@ def match_variants(
             if check_definition:
                 variants_in_option = True
                 # Separate variant definition from value to use for the option
-                filter_string, output, _ = re.split(r"(:[\w':.\-\" ]+)$", variant_definition)
+                filter_string, output, _ = re.split(
+                    r"(:[\w':.\-\" ]+)$", variant_definition
+                )
                 filter_string = re.sub(r"^\[|[:\]]$", "", filter_string)
-                filter_string = needs_variants[filter_string] if filter_string in needs_variants else filter_string
+                filter_string = (
+                    needs_variants[filter_string]
+                    if filter_string in needs_variants
+                    else filter_string
+                )
                 try:
                     # https://docs.python.org/3/library/functions.html?highlight=compile#compile
                     filter_compiled = compile(filter_string, "<string>", "eval")
@@ -533,7 +594,8 @@ def match_variants(
                         return output.lstrip(":")
                 except Exception as e:
                     logger.warning(
-                        f'There was an error in the filter statement: "{filter_string}". ' f"Error Msg: {e} [needs]",
+                        f'There was an error in the filter statement: "{filter_string}". '
+                        f"Error Msg: {e} [needs]",
                         type="needs",
                     )
             else:
@@ -557,11 +619,17 @@ def match_variants(
     if isinstance(option_value, str):
         multiple_variants: list[str] = variant_splitting.split(rf"""{option_value}""")
         multiple_variants = [
-            re.sub(r"^([;, ]+)|([;, ]+$)", "", i) for i in multiple_variants if i not in (None, ";", "", " ")
+            re.sub(r"^([;, ]+)|([;, ]+$)", "", i)
+            for i in multiple_variants
+            if i not in (None, ";", "", " ")
         ]
-        if len(multiple_variants) == 1 and not variant_rule_matching.search(multiple_variants[0]):
+        if len(multiple_variants) == 1 and not variant_rule_matching.search(
+            multiple_variants[0]
+        ):
             return option_value
-        new_option_value = variant_handling(multiple_variants, keywords, variant_rule_matching)
+        new_option_value = variant_handling(
+            multiple_variants, keywords, variant_rule_matching
+        )
         if new_option_value is None:
             return option_value
         return new_option_value
@@ -570,10 +638,14 @@ def match_variants(
         # In case an option value is a list (:tags: open; close), and does not contain any variant definition,
         # then return the unmodified value
         # options = all([bool(not variant_rule_matching.search(i)) for i in multiple_variants])
-        options = all(bool(not variant_rule_matching.search(i)) for i in multiple_variants)
+        options = all(
+            bool(not variant_rule_matching.search(i)) for i in multiple_variants
+        )
         if options:
             return option_value
-        new_option_value = variant_handling(multiple_variants, keywords, variant_rule_matching)
+        new_option_value = variant_handling(
+            multiple_variants, keywords, variant_rule_matching
+        )
         return new_option_value
     else:
         return option_value
@@ -596,7 +668,9 @@ def clean_log(data: str) -> str:
     return clean_credentials
 
 
-def node_match(node_types: type[nodes.Element] | list[type[nodes.Element]]) -> Callable[[nodes.Node], bool]:
+def node_match(
+    node_types: type[nodes.Element] | list[type[nodes.Element]]
+) -> Callable[[nodes.Node], bool]:
     """
     Returns a condition function for doctuils.nodes.findall()
 
@@ -618,7 +692,9 @@ def node_match(node_types: type[nodes.Element] | list[type[nodes.Element]]) -> C
     """
     node_types_list = node_types if isinstance(node_types, list) else [node_types]
 
-    def condition(node: nodes.Node, node_types: list[type[nodes.Element]] = node_types_list) -> bool:
+    def condition(
+        node: nodes.Node, node_types: list[type[nodes.Element]] = node_types_list
+    ) -> bool:
         return any(isinstance(node, x) for x in node_types)
 
     return condition

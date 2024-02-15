@@ -21,10 +21,16 @@ class HtmlNeed:
     @property
     def title(self):
         title = self.need.find(".//html:span[@class='needs_title']", NS)
-        return title[0].text if title is not None else None  # title[0] aims to the span_data element
+        return (
+            title[0].text if title is not None else None
+        )  # title[0] aims to the span_data element
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/title_optional"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/title_optional"}],
+    indirect=True,
+)
 def test_title_optional_scenarios(test_app):
     app = test_app
     app.build()

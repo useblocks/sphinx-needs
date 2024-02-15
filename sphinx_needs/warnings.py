@@ -61,7 +61,9 @@ def process_warnings(app: Sphinx, exception: Exception | None) -> None:
         for warning_name, warning_filter in NEEDS_CONFIG.warnings.items():
             if isinstance(warning_filter, str):
                 # filter string used
-                result = filter_needs(checked_needs.values(), needs_config, warning_filter)
+                result = filter_needs(
+                    checked_needs.values(), needs_config, warning_filter
+                )
             elif callable(warning_filter):
                 # custom defined filter code used from conf.py
                 result = []
@@ -69,7 +71,10 @@ def process_warnings(app: Sphinx, exception: Exception | None) -> None:
                     if warning_filter(need, logger):
                         result.append(need)
             else:
-                logger.warning(f"Unknown needs warnings filter {warning_filter}! [needs]", type="needs")
+                logger.warning(
+                    f"Unknown needs warnings filter {warning_filter}! [needs]",
+                    type="needs",
+                )
 
             if len(result) == 0:
                 logger.info(f"{warning_name}: passed")
@@ -94,17 +99,26 @@ def process_warnings(app: Sphinx, exception: Exception | None) -> None:
                 if warnings_always_warn:
                     logger.warning(
                         "{}: failed\n\t\tfailed needs: {} ({})\n\t\tused filter: {} [needs]".format(
-                            warning_name, len(need_ids), ", ".join(need_ids), warning_text
+                            warning_name,
+                            len(need_ids),
+                            ", ".join(need_ids),
+                            warning_text,
                         ),
                         type="needs",
                     )
                 else:
                     logger.info(
                         "{}: failed\n\t\tfailed needs: {} ({})\n\t\tused filter: {}".format(
-                            warning_name, len(need_ids), ", ".join(need_ids), warning_text
+                            warning_name,
+                            len(need_ids),
+                            ", ".join(need_ids),
+                            warning_text,
                         )
                     )
                     warning_raised = True
 
         if warning_raised:
-            logger.warning("warnings were raised. See console / log output for details. [needs]", type="needs")
+            logger.warning(
+                "warnings were raised. See console / log output for details. [needs]",
+                type="needs",
+            )

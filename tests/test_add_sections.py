@@ -4,7 +4,11 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/add_sections"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/add_sections"}],
+    indirect=True,
+)
 def test_section_is_usable_in_filters(test_app):
     app = test_app
     app.builder.build_all()
