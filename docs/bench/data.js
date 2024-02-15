@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1708009998266,
+  "lastUpdate": 1708010048667,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -6588,6 +6588,42 @@ window.BENCHMARK_DATA = {
             "value": 59.53416377299999,
             "unit": "s",
             "extra": "Commit: e0bc813741e28edf32a4291f2cf9a7e8a3d455e3\nBranch: master\nTime: 2024-02-15T16:11:17+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bbdf7bf0ff906fb88c4ef232aa845ef9b470d53b",
+          "message": "Bump jinja2 from 3.1.2 to 3.1.3 (#1091)\n\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2024-02-15T16:11:33+01:00",
+          "tree_id": "3bb0b6b35a9df278b5dbbedcfbb648bce7d32e18",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/bbdf7bf0ff906fb88c4ef232aa845ef9b470d53b"
+        },
+        "date": 1708010041471,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2576898660000211,
+            "unit": "s",
+            "extra": "Commit: bbdf7bf0ff906fb88c4ef232aa845ef9b470d53b\nBranch: master\nTime: 2024-02-15T16:11:33+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 73.43165868199998,
+            "unit": "s",
+            "extra": "Commit: bbdf7bf0ff906fb88c4ef232aa845ef9b470d53b\nBranch: master\nTime: 2024-02-15T16:11:33+01:00"
           }
         ]
       }
