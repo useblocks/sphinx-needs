@@ -2,6 +2,7 @@
 
 
 """
+
 from typing import List, Sequence
 
 from docutils import nodes
