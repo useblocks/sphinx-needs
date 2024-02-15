@@ -6,6 +6,7 @@ Provides the ability to mark specific parts of a need with an own id.
 Most voodoo is done in need.py
 
 """
+
 import hashlib
 import re
 from typing import List, cast
@@ -20,7 +21,7 @@ from sphinx_needs.logging import get_logger
 log = get_logger(__name__)
 
 
-class NeedPart(nodes.Inline, nodes.Element):  # type: ignore
+class NeedPart(nodes.Inline, nodes.Element):
     pass
 
 

@@ -17,9 +17,7 @@ def test_doc_github_44(test_app):
     app = test_app
 
     output = str(
-        check_output(
-            ["sphinx-build", "-a", "-E", "-b", "html", app.srcdir, app.outdir], stderr=STDOUT, universal_newlines=True
-        )
+        check_output(["sphinx-build", "-a", "-E", "-b", "html", app.srcdir, app.outdir], stderr=STDOUT, text=True)
     )
     # app.build() Uncomment, if build should stop on breakpoints
     html = Path(app.outdir, "index.html").read_text()

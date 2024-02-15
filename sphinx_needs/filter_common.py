@@ -2,6 +2,7 @@
 filter_base is used to provide common filter functionality for directives
 like needtable, needlist and needflow.
 """
+
 from __future__ import annotations
 
 import re
@@ -236,7 +237,7 @@ def prepare_need_list(need_list: Iterable[NeedsInfoType]) -> list[NeedsPartsInfo
     for need in need_list:
         for part in need["parts"].values():
             id_complete = ".".join([need["id"], part["id"]])
-            filter_part: NeedsPartsInfoType = {**need, **part, **{"id_parent": need["id"], "id_complete": id_complete}}
+            filter_part: NeedsPartsInfoType = {**need, **part, **{"id_parent": need["id"], "id_complete": id_complete}}  # type: ignore[typeddict-item]
             all_needs_incl_parts.append(filter_part)
 
         # Be sure extra attributes, which makes only sense for need_parts, are also available on

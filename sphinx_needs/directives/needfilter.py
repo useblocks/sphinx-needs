@@ -1,5 +1,5 @@
 import os
-from typing import List, Sequence
+from typing import List, Sequence, Union
 from urllib.parse import urlparse
 
 from docutils import nodes
@@ -89,7 +89,7 @@ def process_needfilters(
         id = node.attributes["ids"][0]
         current_needfilter = SphinxNeedsData(env)._get_or_create_filters()[id]
 
-        content: List[nodes.Element]
+        content: Union[nodes.Element, List[nodes.Element]]
         if current_needfilter["layout"] == "list":
             content = []
 
@@ -100,12 +100,12 @@ def process_needfilters(
                     raise ImportError
                 from sphinxcontrib.plantuml import plantuml
             except ImportError:
-                content = nodes.error()
-                para = nodes.paragraph()
+                error_node = nodes.error()
+                para_node = nodes.paragraph()
                 text = nodes.Text("PlantUML is not available!")
-                para += text
-                content.append(para)
-                node.replace_self(content)
+                para_node += text
+                error_node.append(para_node)
+                node.replace_self(error_node)
                 continue
 
             plantuml_block_text = ".. plantuml::\n" "\n" "   @startuml" "   @enduml"
@@ -151,7 +151,7 @@ def process_needfilters(
             target_id = need_info["target_id"]
 
             if current_needfilter["layout"] == "list":
-                para = nodes.line()
+                line_node = nodes.line()
                 description = "{}: {}".format(need_info["id"], need_info["title"])
 
                 if current_needfilter["show_status"] and need_info["status"]:
@@ -164,16 +164,16 @@ def process_needfilters(
 
                 # Create a reference
                 if need_info["hide"]:
-                    para += title
+                    line_node += title
                 else:
                     ref = nodes.reference("", "")
                     ref["refdocname"] = need_info["docname"]
                     ref["refuri"] = builder.get_relative_uri(fromdocname, need_info["docname"])
                     ref["refuri"] += "#" + target_id
                     ref.append(title)
-                    para += ref
+                    line_node += ref
 
-                line_block.append(para)
+                line_block.append(line_node)
             elif current_needfilter["layout"] == "table":
                 row = nodes.row()
                 row += row_col_maker(app, fromdocname, all_needs, need_info, "id", make_ref=True)
@@ -231,7 +231,7 @@ def process_needfilters(
         if len(content) == 0:
             content.append(no_needs_found_paragraph(current_needfilter.get("filter_warning")))
         if current_needfilter["show_filters"]:
-            para = nodes.paragraph()
+            para_node = nodes.paragraph()
             filter_text = "Used filter:"
             filter_text += (
                 " status(%s)" % " OR ".join(current_needfilter["status"])
@@ -252,7 +252,7 @@ def process_needfilters(
             )
 
             filter_node = nodes.emphasis(filter_text, filter_text)
-            para += filter_node
-            content.append(para)
+            para_node += filter_node
+            content.append(para_node)
 
         node.replace_self(content)

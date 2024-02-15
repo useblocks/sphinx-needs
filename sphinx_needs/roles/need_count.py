@@ -18,7 +18,7 @@ from sphinx_needs.logging import get_logger
 log = get_logger(__name__)
 
 
-class NeedCount(nodes.Inline, nodes.Element):  # type: ignore
+class NeedCount(nodes.Inline, nodes.Element):
     pass
 
 

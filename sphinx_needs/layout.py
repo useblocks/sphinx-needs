@@ -3,6 +3,7 @@ Cares about the correct creation and handling of need layout.
 
 Based on https://github.com/useblocks/sphinxcontrib-needs/issues/102
 """
+
 import os
 import re
 import uuid
@@ -87,7 +88,7 @@ def create_need(
     # Therefore, we need to manipulate this first, before we can ask Sphinx to perform the normal
     # reference handling for us.
     replace_pending_xref_refdoc(node_container, docname)
-    env.resolve_references(node_container, docname, env.app.builder)
+    env.resolve_references(node_container, docname, env.app.builder)  # type: ignore[arg-type]
 
     node_container.attributes["ids"].append(need_id)
 
@@ -98,8 +99,8 @@ def create_need(
     build_need(layout, node_container, app, style, docname)
 
     # set the layout and style for the new need
-    node_container[0].attributes = node_container.parent.children[0].attributes
-    node_container[0].children[0].attributes = node_container.parent.children[0].children[0].attributes
+    node_container[0].attributes = node_container.parent.children[0].attributes  # type: ignore
+    node_container[0].children[0].attributes = node_container.parent.children[0].children[0].attributes  # type: ignore
 
     node_container.attributes["ids"] = []
 
@@ -154,7 +155,7 @@ def build_need(
 
     if need_data["hide"]:
         if node.parent:
-            node.parent.replace(node, [])  # type: ignore
+            node.parent.replace(node, [])
         return
 
     if fromdocname is None:
@@ -170,7 +171,7 @@ def build_need(
 
     # We need to replace the current need-node (containing content only) with our new table need node.
     # node.parent.replace(node, node_container)
-    node.parent.replace(node, node_container)  # type: ignore
+    node.parent.replace(node, node_container)
 
 
 @lru_cache(1)
@@ -201,10 +202,10 @@ class LayoutHandler:
 
         self.layout_name = layout
         available_layouts = self.needs_config.layouts
-        if self.layout_name not in available_layouts.keys():
+        if self.layout_name not in available_layouts:
             raise SphinxNeedLayoutException(
                 'Given layout "{}" is unknown for need {}. Registered layouts are: {}'.format(
-                    self.layout_name, need["id"], " ,".join(available_layouts.keys())
+                    self.layout_name, need["id"], " ,".join(available_layouts)
                 )
             )
         self.layout = available_layouts[self.layout_name]
@@ -302,12 +303,12 @@ class LayoutHandler:
         )
 
         self.functions: Dict[str, Callable[..., Union[None, nodes.Node, List[nodes.Node]]]] = {
-            "meta": self.meta,
+            "meta": self.meta,  # type: ignore[dict-item]
             "meta_all": self.meta_all,
             "meta_links": self.meta_links,
-            "meta_links_all": self.meta_links_all,
+            "meta_links_all": self.meta_links_all,  # type: ignore[dict-item]
             "meta_id": self.meta_id,
-            "image": self.image,
+            "image": self.image,  # type: ignore[dict-item]
             "link": self.link,
             "collapse_button": self.collapse_button,
             "permalink": self.permalink,
@@ -342,16 +343,16 @@ class LayoutHandler:
 
         return self.node_table
 
-    def get_section(self, section: str) -> Optional[nodes.line_block]:
+    def get_section(self, section: str) -> Union[nodes.line_block, List[nodes.Element]]:
         try:
             lines = self.layout["layout"][section]
         except KeyError:
             # Return nothing, if not specific configuration is given for layout section
-            return None
+            return []
 
         # Needed for PDF/Latex output, where empty line_blocks raise exceptions during build
         if len(lines) == 0:
-            return None
+            return []
 
         lines_container = nodes.line_block(classes=[f"needs_{section}"])
 
@@ -481,7 +482,9 @@ class LayoutHandler:
             data = data.replace(replace_string, self.need[item])  # type: ignore[literal-required]
         return data
 
-    def meta(self, name: str, prefix: Optional[str] = None, show_empty: bool = False) -> nodes.inline:
+    def meta(
+        self, name: str, prefix: Optional[str] = None, show_empty: bool = False
+    ) -> Union[nodes.inline, List[nodes.Element]]:
         """
         Returns the specific metadata of a need inside docutils nodes.
         Usage::
@@ -689,10 +692,11 @@ class LayoutHandler:
         from sphinx_needs.roles.need_incoming import NeedIncoming
         from sphinx_needs.roles.need_outgoing import NeedOutgoing
 
-        if incoming:
-            node_links = NeedIncoming(reftarget=self.need["id"], link_type=f"{name}_back")
-        else:
-            node_links = NeedOutgoing(reftarget=self.need["id"], link_type=f"{name}")
+        node_links = (
+            NeedIncoming(reftarget=self.need["id"], link_type=f"{name}_back")
+            if incoming
+            else NeedOutgoing(reftarget=self.need["id"], link_type=f"{name}")
+        )
         node_links.append(nodes.inline(self.need["id"], self.need["id"]))
         data_container.append(node_links)
         return data_container
@@ -739,7 +743,7 @@ class LayoutHandler:
         prefix: str = "",
         is_external: bool = False,
         img_class: str = "",
-    ) -> nodes.inline:
+    ) -> Union[nodes.inline, List[nodes.Element]]:
         """
         See https://docutils.sourceforge.io/docs/ref/rst/directives.html#images
 

@@ -1,11 +1,11 @@
 repos:
   - repo: https://github.com/psf/black
-    rev: 23.10.1
+    rev: 24.2.0
     hooks:
       - id: black
 
   - repo: https://github.com/PyCQA/flake8
-    rev: 6.1.0
+    rev: 7.0.0
     hooks:
       - id: flake8
         additional_dependencies:
@@ -15,7 +15,7 @@ repos:
           - pep8-naming
 
   - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
+    rev: 5.13.2
     hooks:
       - id: isort
 
@@ -24,17 +24,18 @@ repos:
     hooks:
       - id: pyupgrade
         args:
-          - --py36-plus
+          - --py38-plus
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.6.1
+    rev: v1.8.0
     hooks:
     - id: mypy
       files: sphinx_needs/.*
       args: []
       additional_dependencies:
-      - sphinx==6
-      - types-docutils
+      - sphinx==6.2.1
+      - docutils==0.19
+      - types-docutils==0.20.0.20240201
       - types-jsonschema
       - types-requests
 

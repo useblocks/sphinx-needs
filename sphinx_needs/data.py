@@ -1,6 +1,7 @@
 """Module to control access to sphinx-needs data,
 which is stored in the Sphinx environment.
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, TypedDict

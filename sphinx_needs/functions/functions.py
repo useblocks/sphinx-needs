@@ -111,7 +111,7 @@ def find_and_replace_node_content(node: nodes.Node, env: BuildEnvironment, need:
             except KeyError:
                 # If no refuri is set, we don't need to modify anything.
                 # So stop here and return the untouched node.
-                return node  # type: ignore
+                return node
         else:
             new_text = node
         func_match = func_pattern.findall(new_text)
@@ -144,7 +144,7 @@ def find_and_replace_node_content(node: nodes.Node, env: BuildEnvironment, need:
                 node.children = new_children
         else:
             node = nodes.Text(new_text)
-        return node  # type: ignore
+        return node
     else:
         for child in node.children:
             new_child = find_and_replace_node_content(child, env, need)

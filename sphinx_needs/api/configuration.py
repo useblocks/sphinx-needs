@@ -3,6 +3,7 @@ API to get or add specific sphinx needs configuration parameters.
 
 All functions here are available under ``sphinxcontrib.api``. So do not import this module directly.
 """
+
 from typing import Callable, List, Optional
 
 from docutils.parsers.rst import directives

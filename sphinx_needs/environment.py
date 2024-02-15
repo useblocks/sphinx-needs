@@ -11,10 +11,10 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.utils import logger
 
 try:
-    from sphinx.util.display import status_iterator  # type: ignore
+    from sphinx.util.display import status_iterator
 except ImportError:
     # will be removed in Sphinx 8.0
-    from sphinx.util import status_iterator
+    from sphinx.util import status_iterator  # type: ignore
 
 IMAGE_DIR_NAME = "_static"
 
