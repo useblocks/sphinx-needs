@@ -308,19 +308,20 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                     type="needs",
                 )
 
-        content = []
         try:
             if "sphinxcontrib.plantuml" not in app.config.extensions:
                 raise ImportError
             from sphinxcontrib.plantuml import plantuml
         except ImportError:
-            content = nodes.error()
+            error_node = nodes.error()
             para = nodes.paragraph()
             text = nodes.Text("PlantUML is not available!")
             para += text
-            content.append(para)
-            node.replace_self(content)
+            error_node.append(para)
+            node.replace_self(error_node)
             continue
+
+        content: List[nodes.Element] = []
 
         found_needs = process_filters(app, all_needs.values(), current_needflow)
 
@@ -490,13 +491,13 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
             # Otherwise it was not been set, or we get outdated data
             debug_container = nodes.container()
             if isinstance(puml_node, nodes.figure):
-                data = puml_node.children[0]["uml"]
+                data = puml_node.children[0]["uml"]  # type: ignore
             else:
                 data = puml_node["uml"]
             data = "\n".join([html.escape(line) for line in data.split("\n")])
             debug_para = nodes.raw("", f"<pre>{data}</pre>", format="html")
             debug_container += debug_para
-            content += debug_container
+            content.append(debug_container)
 
         node.replace_self(content)
 

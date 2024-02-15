@@ -317,6 +317,7 @@ def process_needtables(
 
                     tbody += row
 
+        content: nodes.Element
         if len(filtered_needs) == 0:
             content = no_needs_found_paragraph(current_needtable.get("filter_warning"))
         else:
@@ -333,7 +334,7 @@ def process_needtables(
 
         if current_needtable["caption"]:
             title_text = current_needtable["caption"]
-            title = nodes.title(title_text, "", nodes.Text(title_text))
-            table_node.insert(0, title)
+            title_node = nodes.title(title_text, "", nodes.Text(title_text))
+            table_node.insert(0, title_node)
 
         node.replace_self(content)

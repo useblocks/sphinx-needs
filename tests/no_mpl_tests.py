@@ -1,4 +1,5 @@
 """These tests should only be run in an environment without matplotlib installed."""
+
 import pytest
 
 

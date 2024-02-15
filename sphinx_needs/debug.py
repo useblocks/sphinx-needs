@@ -2,6 +2,7 @@
 Contains debug features to track down
 runtime and other problems with Sphinx-Needs
 """
+
 from __future__ import annotations
 
 import inspect

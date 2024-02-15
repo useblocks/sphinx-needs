@@ -13,7 +13,7 @@ from sphinx_needs.logging import get_logger
 log = get_logger(__name__)
 
 
-class NeedFunc(nodes.Inline, nodes.Element):  # type: ignore
+class NeedFunc(nodes.Inline, nodes.Element):
     pass
 
 

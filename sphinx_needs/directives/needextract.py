@@ -2,6 +2,7 @@
 
 
 """
+
 import re
 from typing import List, Sequence
 
@@ -131,4 +132,4 @@ def process_needextract(
         # Run docutils/sphinx transformers for the by needextract added nodes.
         # Transformers use the complete document (doctree), so we perform this action once per
         # needextract. No matter if one or multiple needs got copied
-        Substitutions(doctree).apply()
+        Substitutions(doctree).apply()  # type: ignore[no-untyped-call]

@@ -400,7 +400,7 @@ def jinja_parse(context: Dict[str, Any], jinja_string: str) -> str:
     return content
 
 
-@lru_cache()
+@lru_cache
 def import_matplotlib() -> Optional["matplotlib"]:
     """Import and return matplotlib, or return None if it cannot be imported.
 
@@ -484,11 +484,9 @@ def match_string_link(
             render_content = match.groupdict()
             link_url = link_conf["url_template"].render(**render_content, **render_context)
             link_name = link_conf["name_template"].render(**render_content, **render_context)
-        if link_name:
-            ref_item = nodes.reference(link_name, link_name, refuri=link_url)
-        else:
-            # if no string_link match was made, we handle it as normal string value
-            ref_item = nodes.Text(text_item)
+
+        # if no string_link match was made, we handle it as normal string value
+        ref_item = nodes.reference(link_name, link_name, refuri=link_url) if link_name else nodes.Text(text_item)
 
     except Exception as e:
         logger.warning(

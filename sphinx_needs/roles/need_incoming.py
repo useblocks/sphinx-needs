@@ -10,7 +10,7 @@ from sphinx_needs.errors import NoUri
 from sphinx_needs.utils import check_and_calc_base_url_rel_path, logger
 
 
-class NeedIncoming(nodes.Inline, nodes.Element):  # type: ignore
+class NeedIncoming(nodes.Inline, nodes.Element):
     pass
 
 

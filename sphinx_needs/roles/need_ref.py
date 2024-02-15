@@ -15,7 +15,7 @@ from sphinx_needs.utils import check_and_calc_base_url_rel_path, split_need_id
 log = get_logger(__name__)
 
 
-class NeedRef(nodes.Inline, nodes.Element):  # type: ignore
+class NeedRef(nodes.Inline, nodes.Element):
     pass
 
 

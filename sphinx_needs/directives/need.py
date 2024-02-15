@@ -1,6 +1,5 @@
 import hashlib
 import re
-import typing
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from docutils import nodes
@@ -240,7 +239,7 @@ def get_sections_and_signature_and_needs(
     current_node = need_node
     while current_node:
         if isinstance(current_node, nodes.section):
-            title = typing.cast(str, current_node.children[0].astext())
+            title = current_node.children[0].astext()
             # If using auto-section numbering, then Sphinx inserts
             # multiple non-breaking space unicode characters into the title
             # we'll replace those with a simple space to make them easier to
@@ -344,16 +343,16 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
     # we can remove the hidden needs from the doctree
     for need_node in hidden_needs:
         if need_node.parent is not None:
-            need_node.parent.remove(need_node)  # type: ignore[attr-defined]
+            need_node.parent.remove(need_node)
 
 
 def previous_sibling(node: nodes.Node) -> Optional[nodes.Node]:
     """Return preceding sibling node or ``None``."""
     try:
-        i = node.parent.index(node)  # type: ignore
+        i = node.parent.index(node)
     except AttributeError:
         return None
-    return node.parent[i - 1] if i > 0 else None  # type: ignore
+    return node.parent[i - 1] if i > 0 else None
 
 
 @profile("NEEDS_POST_PROCESS")
@@ -391,7 +390,7 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     if not needs_config.include_needs:
         for node in doctree.findall(Need):
             if node.parent is not None:
-                node.parent.remove(node)  # type: ignore
+                node.parent.remove(node)
         return
 
     needs_data = SphinxNeedsData(app.env)
