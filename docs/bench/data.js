@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1708005971879,
+  "lastUpdate": 1708006363353,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -6408,6 +6408,42 @@ window.BENCHMARK_DATA = {
             "value": 60.859338396,
             "unit": "s",
             "extra": "Commit: 050bec750ff2c5acf881415fa2b5efb5fcce8414\nBranch: master\nTime: 2024-02-15T15:04:06+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e9582edb45ffbb7bb90296d910b7c00352d7c800",
+          "message": "👌 Make needtable titles more permissive (#1102)\n\nFor `key as \"title\"` columns, the regex has been changed, to allow for the key to contain anything except whitespace characters, and the title to contain anything except the `\"` character",
+          "timestamp": "2024-02-15T15:10:36+01:00",
+          "tree_id": "bf887214c4896ac391d558f27ace7fffec8ff589",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e9582edb45ffbb7bb90296d910b7c00352d7c800"
+        },
+        "date": 1708006356267,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.28491559100000075,
+            "unit": "s",
+            "extra": "Commit: e9582edb45ffbb7bb90296d910b7c00352d7c800\nBranch: master\nTime: 2024-02-15T15:10:36+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 63.09548080900001,
+            "unit": "s",
+            "extra": "Commit: e9582edb45ffbb7bb90296d910b7c00352d7c800\nBranch: master\nTime: 2024-02-15T15:10:36+01:00"
           }
         ]
       }
