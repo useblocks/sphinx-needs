@@ -592,7 +592,9 @@ class SphinxNeedsData:
         return self.env.needs_all_needumls
 
 
-def merge_data(_app: Sphinx, env: BuildEnvironment, _docnames: list[str], other: BuildEnvironment) -> None:
+def merge_data(
+    _app: Sphinx, env: BuildEnvironment, _docnames: list[str], other: BuildEnvironment
+) -> None:
     """
     Performs data merge of parallel executed workers.
     Used only for parallel builds.
@@ -621,14 +623,17 @@ def merge_data(_app: Sphinx, env: BuildEnvironment, _docnames: list[str], other:
                     for other_key, other_value in other_objects.items():
                         # other_value is a list from here on!
                         if other_key in objects:
-                            objects[other_key] = list(set(objects[other_key]) | set(other_value))
+                            objects[other_key] = list(
+                                set(objects[other_key]) | set(other_value)
+                            )
                         else:
                             objects[other_key] = other_value
             elif isinstance(other_objects, list) and isinstance(objects, list):
                 objects = list(set(objects) | set(other_objects))
             else:
                 raise TypeError(
-                    f'Objects to "merge" must be dict or list, ' f"not {type(other_objects)} and {type(objects)}"
+                    f'Objects to "merge" must be dict or list, '
+                    f"not {type(other_objects)} and {type(objects)}"
                 )
 
     _merge("needs_all_docs", is_complex_dict=True)

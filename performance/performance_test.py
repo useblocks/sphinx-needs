@@ -23,7 +23,15 @@ def cli():
 
 
 def start(
-    needs=1000, needtables=0, dummies=0, pages=1, parallel=1, keep=False, browser=False, debug=False, basic=False
+    needs=1000,
+    needtables=0,
+    dummies=0,
+    pages=1,
+    parallel=1,
+    keep=False,
+    browser=False,
+    debug=False,
+    basic=False,
 ):
     """
     Test run implementation
@@ -163,11 +171,31 @@ def start(
 
 
 @cli.command()
-@click.option("--profile", default=[], type=str, multiple=True, help="Activates profiling for given area")
-@click.option("--needs", default=[50, 10], type=int, multiple=True, help="Number of maximum needs.")
-@click.option("--needtables", default=-1, type=int, help="Number of maximum needtables.")
+@click.option(
+    "--profile",
+    default=[],
+    type=str,
+    multiple=True,
+    help="Activates profiling for given area",
+)
+@click.option(
+    "--needs",
+    default=[50, 10],
+    type=int,
+    multiple=True,
+    help="Number of maximum needs.",
+)
+@click.option(
+    "--needtables", default=-1, type=int, help="Number of maximum needtables."
+)
 @click.option("--dummies", default=-1, type=int, help="Number of standard rst dummies.")
-@click.option("--pages", default=[5, 1], type=int, multiple=True, help="Number of additional pages with needs.")
+@click.option(
+    "--pages",
+    default=[5, 1],
+    type=int,
+    multiple=True,
+    help="Number of additional pages with needs.",
+)
 @click.option(
     "--parallel",
     default=[1, 4],
@@ -177,9 +205,19 @@ def start(
 )
 @click.option("--keep", is_flag=True, help="Keeps the temporary src and build folders")
 @click.option("--browser", is_flag=True, help="Opens the project in your browser")
-@click.option("--snakeviz", is_flag=True, help="Opens snakeviz view for measured profiles in browser")
-@click.option("--debug", is_flag=True, help="Prints more information, incl. sphinx build output")
-@click.option("--basic", is_flag=True, help="Use only default config of Sphinx-Needs (e.g. no extra options)")
+@click.option(
+    "--snakeviz",
+    is_flag=True,
+    help="Opens snakeviz view for measured profiles in browser",
+)
+@click.option(
+    "--debug", is_flag=True, help="Prints more information, incl. sphinx build output"
+)
+@click.option(
+    "--basic",
+    is_flag=True,
+    help="Use only default config of Sphinx-Needs (e.g. no extra options)",
+)
 def series(
     profile,
     needs,

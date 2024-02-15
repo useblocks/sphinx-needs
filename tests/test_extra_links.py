@@ -3,7 +3,11 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_extra_links"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_extra_links"}],
+    indirect=True,
+)
 def test_extra_links_html(test_app):
     app = test_app
     app.build()
@@ -16,11 +20,17 @@ def test_extra_links_html(test_app):
 
     # Check for correct dead_links handling
     assert '<span class="needs_dead_link">DEAD_LINK_ALLOWED</span>' in html
-    assert '<span class="needs_dead_link forbidden">DEAD_LINK_NOT_ALLOWED</span>' in html
+    assert (
+        '<span class="needs_dead_link forbidden">DEAD_LINK_NOT_ALLOWED</span>' in html
+    )
     assert '<span class="needs_dead_link forbidden">REQ_005.invalid</span>' in html
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "latex", "srcdir": "doc_test/doc_extra_links"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "latex", "srcdir": "doc_test/doc_extra_links"}],
+    indirect=True,
+)
 def test_extra_links_latex(test_app):
     app = test_app
     app.build()

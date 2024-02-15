@@ -109,7 +109,10 @@ from sphinx_needs.warnings import process_warnings
 __version__ = VERSION = "2.0.0"
 NEEDS_FUNCTIONS.clear()
 
-_NODE_TYPES_T = Dict[Type[nodes.Element], Callable[[Sphinx, nodes.document, str, List[nodes.Element]], None]]
+_NODE_TYPES_T = Dict[
+    Type[nodes.Element],
+    Callable[[Sphinx, nodes.document, str, List[nodes.Element]], None],
+]
 
 NODE_TYPES_PRIO: _NODE_TYPES_T = {  # Node types to be checked before most others
     Needextract: process_needextract,
@@ -150,7 +153,9 @@ def setup(app: Sphinx) -> dict[str, Any]:
     NeedsSphinxConfig.add_config_values(app)
 
     # Define nodes
-    app.add_node(Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart))
+    app.add_node(
+        Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart)
+    )
     app.add_node(
         Needfilter,
     )
@@ -167,7 +172,11 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_node(Needextend)
     app.add_node(Needuml)
     app.add_node(List2Need)
-    app.add_node(NeedPart, html=(visitor_dummy, visitor_dummy), latex=(visitor_dummy, visitor_dummy))
+    app.add_node(
+        NeedPart,
+        html=(visitor_dummy, visitor_dummy),
+        latex=(visitor_dummy, visitor_dummy),
+    )
 
     ########################################################################
     # DIRECTIVES
@@ -195,23 +204,54 @@ def setup(app: Sphinx) -> dict[str, Any]:
     # ROLES
     ########################################################################
     # Provides :need:`ABC_123` for inline links.
-    app.add_role("need", NeedsXRefRole(nodeclass=NeedRef, innernodeclass=nodes.emphasis, warn_dangling=True))
-
     app.add_role(
-        "need_incoming", NeedsXRefRole(nodeclass=NeedIncoming, innernodeclass=nodes.emphasis, warn_dangling=True)
+        "need",
+        NeedsXRefRole(
+            nodeclass=NeedRef, innernodeclass=nodes.emphasis, warn_dangling=True
+        ),
     )
 
     app.add_role(
-        "need_outgoing", NeedsXRefRole(nodeclass=NeedOutgoing, innernodeclass=nodes.emphasis, warn_dangling=True)
+        "need_incoming",
+        NeedsXRefRole(
+            nodeclass=NeedIncoming, innernodeclass=nodes.emphasis, warn_dangling=True
+        ),
     )
 
-    app.add_role("need_part", NeedsXRefRole(nodeclass=NeedPart, innernodeclass=nodes.inline, warn_dangling=True))
+    app.add_role(
+        "need_outgoing",
+        NeedsXRefRole(
+            nodeclass=NeedOutgoing, innernodeclass=nodes.emphasis, warn_dangling=True
+        ),
+    )
+
+    app.add_role(
+        "need_part",
+        NeedsXRefRole(
+            nodeclass=NeedPart, innernodeclass=nodes.inline, warn_dangling=True
+        ),
+    )
     # Shortcut for need_part
-    app.add_role("np", NeedsXRefRole(nodeclass=NeedPart, innernodeclass=nodes.inline, warn_dangling=True))
+    app.add_role(
+        "np",
+        NeedsXRefRole(
+            nodeclass=NeedPart, innernodeclass=nodes.inline, warn_dangling=True
+        ),
+    )
 
-    app.add_role("need_count", NeedsXRefRole(nodeclass=NeedCount, innernodeclass=nodes.inline, warn_dangling=True))
+    app.add_role(
+        "need_count",
+        NeedsXRefRole(
+            nodeclass=NeedCount, innernodeclass=nodes.inline, warn_dangling=True
+        ),
+    )
 
-    app.add_role("need_func", NeedsXRefRole(nodeclass=NeedFunc, innernodeclass=nodes.inline, warn_dangling=True))
+    app.add_role(
+        "need_func",
+        NeedsXRefRole(
+            nodeclass=NeedFunc, innernodeclass=nodes.inline, warn_dangling=True
+        ),
+    )
 
     ########################################################################
     # EVENTS
@@ -241,7 +281,11 @@ def setup(app: Sphinx) -> dict[str, Any]:
     # doctree-read. So manipulating the doctree may result in conflicts, as e.g. images get not
     # registered for sphinx. So some sphinx-internal tasks/functions may be called by hand again...
     # See also https://github.com/sphinx-doc/sphinx/issues/7054#issuecomment-578019701 for an example
-    app.connect("doctree-resolved", process_creator(NODE_TYPES_PRIO, "needextract"), priority=100)
+    app.connect(
+        "doctree-resolved",
+        process_creator(NODE_TYPES_PRIO, "needextract"),
+        priority=100,
+    )
     app.connect("doctree-resolved", process_need_nodes)
     app.connect("doctree-resolved", process_creator(NODE_TYPES))
 
@@ -280,7 +324,8 @@ def process_creator(
         """
         # We only need to analyse docs, which have Sphinx-Needs directives in it.
         if (
-            fromdocname not in SphinxNeedsData(app.env).get_or_create_docs().get(doc_category, [])
+            fromdocname
+            not in SphinxNeedsData(app.env).get_or_create_docs().get(doc_category, [])
             and fromdocname != f"{app.config.root_doc}"
         ):
             return
@@ -297,7 +342,11 @@ def process_creator(
         # Let's call the handlers
         for check_node, check_func in node_list.items():
             # Call the handler only, if it defined, and we found some nodes for it
-            if check_node in current_nodes and check_func is not None and current_nodes[check_node]:
+            if (
+                check_node in current_nodes
+                and check_func is not None
+                and current_nodes[check_node]
+            ):
                 check_func(app, doctree, fromdocname, current_nodes[check_node])
 
     return process_caller
@@ -319,7 +368,9 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     for option in needs_config.extra_options:
         if option in extra_options:
             LOGGER.warning(
-                f'extra_option "{option}" already registered. [needs.config]', type="needs", subtype="config"
+                f'extra_option "{option}" already registered. [needs.config]',
+                type="needs",
+                subtype="config",
             )
         NEEDS_CONFIG.extra_options[option] = directives.unchanged
 
@@ -397,7 +448,9 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             NEEDS_CONFIG.warnings[name] = check
         else:
             LOGGER.warning(
-                f"{name!r} in 'needs_warnings' is already registered. [needs.config]", type="needs", subtype="config"
+                f"{name!r} in 'needs_warnings' is already registered. [needs.config]",
+                type="needs",
+                subtype="config",
             )
 
     if needs_config.constraints_failed_color:
@@ -441,7 +494,11 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
 
     # Register user defined services
     for name, service in needs_config.services.items():
-        if name not in services.services and "class" in service and "class_init" in service:
+        if (
+            name not in services.services
+            and "class" in service
+            and "class_init" in service
+        ):
             # We found a not yet registered service
             # But only register, if service-config contains class and class_init.
             # Otherwise, the service may get registered later by an external sphinx-needs extension
@@ -456,7 +513,14 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
         register_func(needs_func)
 
     # Own extra options
-    for option in ["hidden", "duration", "completion", "has_dead_links", "has_forbidden_dead_links", "constraints"]:
+    for option in [
+        "hidden",
+        "duration",
+        "completion",
+        "has_dead_links",
+        "has_forbidden_dead_links",
+        "constraints",
+    ]:
         # Check if not already set by user
         if option not in NEEDS_CONFIG.extra_options:
             NEEDS_CONFIG.extra_options[option] = directives.unchanged
@@ -525,25 +589,29 @@ def check_configuration(_app: Sphinx, config: Config) -> None:
         # Check if needs external filter and extra option are using the same name
         if extern_filter in extra_options:
             raise NeedsConfigException(
-                "Same name for external filter and extra option: {}." " This is not allowed.".format(extern_filter)
+                f"Same name for external filter and extra option: {extern_filter}."
+                " This is not allowed."
             )
 
     # Check for usage of internal names
     for internal in INTERNALS:
         if internal in extra_options:
             raise NeedsConfigException(
-                'Extra option "{}" already used internally. ' " Please use another name.".format(internal)
+                f'Extra option "{internal}" already used internally. '
+                " Please use another name."
             )
         if internal in link_types:
             raise NeedsConfigException(
-                'Link type name "{}" already used internally. ' " Please use another name.".format(internal)
+                f'Link type name "{internal}" already used internally. '
+                " Please use another name."
             )
 
     # Check if option and link are using the same name
     for link in link_types:
         if link in extra_options:
             raise NeedsConfigException(
-                "Same name for link type and extra option: {}." " This is not allowed.".format(link)
+                f"Same name for link type and extra option: {link}."
+                " This is not allowed."
             )
         if link + "_back" in extra_options:
             raise NeedsConfigException(
@@ -562,7 +630,11 @@ def check_configuration(_app: Sphinx, config: Config) -> None:
 
     for option in external_variant_options:
         # Check variant option is added in either extra options or extra links or NEED_DEFAULT_OPTIONS
-        if option not in extra_options and option not in link_types and option not in NEED_DEFAULT_OPTIONS.keys():
+        if (
+            option not in extra_options
+            and option not in link_types
+            and option not in NEED_DEFAULT_OPTIONS.keys()
+        ):
             raise NeedsConfigException(
                 "Variant option `{}` is not added in either extra options or extra links. "
                 "This is not allowed.".format(option)

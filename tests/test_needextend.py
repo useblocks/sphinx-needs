@@ -7,7 +7,11 @@ from sphinx.application import Sphinx
 from syrupy.filters import props
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needextend"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needextend"}],
+    indirect=True,
+)
 def test_doc_needextend_html(test_app: Sphinx, snapshot):
     app = test_app
     app.build()
@@ -20,13 +24,15 @@ def test_doc_needextend_html(test_app: Sphinx, snapshot):
 
     assert (
         '<div class="line">links outgoing: <span class="links"><span><a class="reference internal" href="#extend_'
-        'test_004" title="extend_test_003">extend_test_004</a></span></span></div>' in index_html
+        'test_004" title="extend_test_003">extend_test_004</a></span></span></div>'
+        in index_html
     )
 
     assert (
         '<div class="line">links outgoing: <span class="links"><span><a class="reference internal" href="#extend_'
         'test_003" title="extend_test_006">extend_test_003</a>, <a class="reference internal" href="#extend_'
-        'test_004" title="extend_test_006">extend_test_004</a></span></span></div>' in index_html
+        'test_004" title="extend_test_006">extend_test_004</a></span></span></div>'
+        in index_html
     )
 
     page_1__html = Path(app.outdir, "page_1.html").read_text()
@@ -38,7 +44,9 @@ def test_doc_needextend_html(test_app: Sphinx, snapshot):
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needextend_strict"}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needextend_strict"}],
+    indirect=True,
 )
 def test_doc_needextend_strict(test_app):
     import os
@@ -49,10 +57,15 @@ def test_doc_needextend_strict(test_app):
     srcdir = Path(app.srcdir)
     out_dir = os.path.join(srcdir, "_build")
 
-    out = subprocess.run(["sphinx-build", "-b", "html", srcdir, out_dir], capture_output=True)
+    out = subprocess.run(
+        ["sphinx-build", "-b", "html", srcdir, out_dir], capture_output=True
+    )
 
     # Strict option is set to false on needextend. Log info-level message
-    assert "Provided id strict_disable_extend_test for needextend does not exist." in out.stdout.decode("utf-8")
+    assert (
+        "Provided id strict_disable_extend_test for needextend does not exist."
+        in out.stdout.decode("utf-8")
+    )
     # Strict option is set to true on needextend. Raise Exception
     if sys.platform == "win32":
         assert (
@@ -67,7 +80,9 @@ def test_doc_needextend_strict(test_app):
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needextend_dynamic"}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needextend_dynamic"}],
+    indirect=True,
 )
 def test_doc_needextend_dynamic(test_app, snapshot):
     app = test_app

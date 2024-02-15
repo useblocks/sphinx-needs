@@ -22,7 +22,9 @@ exec(dummy_code, dummy_extension.__dict__)
 sys.modules["dummy_extension.dummy"] = dummy_extension
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/api_doc"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/api_doc"}], indirect=True
+)
 def test_api_configuration(test_app):
     app = test_app
 

@@ -5,7 +5,11 @@ from sphinx import version_info
 from sphinx.builders.html import StandaloneHTMLBuilder
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_style_blank"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_style_blank"}],
+    indirect=True,
+)
 def test_doc_style_blank(test_app):
     # css_files is not cleared between test runs so css files get
     # progressively added.  This forces it to clear before re-building

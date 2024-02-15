@@ -3,10 +3,34 @@ import os
 extensions = ["sphinx_needs"]
 
 needs_types = [
-    {"directive": "req", "title": "Requirement", "prefix": "R_", "color": "#BFD8D2", "style": "node"},
-    {"directive": "spec", "title": "Specification", "prefix": "SP_", "color": "#FEDCD2", "style": "node"},
-    {"directive": "impl", "title": "Implementation", "prefix": "IM_", "color": "#DF744A", "style": "node"},
-    {"directive": "task", "title": "Task", "prefix": "T_", "color": "#DCB239", "style": "node"},
+    {
+        "directive": "req",
+        "title": "Requirement",
+        "prefix": "R_",
+        "color": "#BFD8D2",
+        "style": "node",
+    },
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "SP_",
+        "color": "#FEDCD2",
+        "style": "node",
+    },
+    {
+        "directive": "impl",
+        "title": "Implementation",
+        "prefix": "IM_",
+        "color": "#DF744A",
+        "style": "node",
+    },
+    {
+        "directive": "task",
+        "title": "Task",
+        "prefix": "T_",
+        "color": "#DCB239",
+        "style": "node",
+    },
 ]
 
 needs_services = {

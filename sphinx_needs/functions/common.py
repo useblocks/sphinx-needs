@@ -19,7 +19,13 @@ from sphinx_needs.filter_common import filter_needs, filter_single_need
 from sphinx_needs.utils import logger
 
 
-def test(app: Sphinx, need: NeedsInfoType, needs: dict[str, NeedsInfoType], *args: Any, **kwargs: Any) -> str:
+def test(
+    app: Sphinx,
+    need: NeedsInfoType,
+    needs: dict[str, NeedsInfoType],
+    *args: Any,
+    **kwargs: Any,
+) -> str:
     """
     Test function for dynamic functions in sphinx needs.
 
@@ -41,7 +47,12 @@ def test(app: Sphinx, need: NeedsInfoType, needs: dict[str, NeedsInfoType], *arg
 
 
 def echo(
-    app: Sphinx, need: NeedsInfoType, needs: dict[str, NeedsInfoType], text: str, *args: Any, **kwargs: Any
+    app: Sphinx,
+    need: NeedsInfoType,
+    needs: dict[str, NeedsInfoType],
+    text: str,
+    *args: Any,
+    **kwargs: Any,
 ) -> str:
     """
     .. versionadded:: 0.6.3
@@ -154,7 +165,9 @@ def copy(
         need = needs[need_id]
 
     if filter:
-        result = filter_needs(needs.values(), NeedsSphinxConfig(app.config), filter, need)
+        result = filter_needs(
+            needs.values(), NeedsSphinxConfig(app.config), filter, need
+        )
         if result:
             need = result[0]
 
@@ -323,7 +336,10 @@ def check_linked_values(
                 if not filter_single_need(need, needs_config, filter_string):
                     continue
             except Exception as e:
-                logger.warning(f"CheckLinkedValues: Filter {filter_string} not valid: Error: {e} [needs]", type="needs")
+                logger.warning(
+                    f"CheckLinkedValues: Filter {filter_string} not valid: Error: {e} [needs]",
+                    type="needs",
+                )
 
         need_value = need[search_option]  # type: ignore[literal-required]
         if not one_hit and need_value not in search_value:
@@ -422,7 +438,9 @@ def calc_sum(
     :return: A float number
     """
     needs_config = NeedsSphinxConfig(app.config)
-    check_needs = [needs[link] for link in need["links"]] if links_only else needs.values()
+    check_needs = (
+        [needs[link] for link in need["links"]] if links_only else needs.values()
+    )
 
     calculated_sum = 0.0
 
@@ -434,7 +452,9 @@ def calc_sum(
             except ValueError:
                 pass
             except NeedsInvalidFilter as ex:
-                logger.warning(f"Given filter is not valid. Error: {ex} [needs]", type="needs")
+                logger.warning(
+                    f"Given filter is not valid. Error: {ex} [needs]", type="needs"
+                )
 
         with contextlib.suppress(ValueError):
             calculated_sum += float(check_need[option])  # type: ignore[literal-required]
@@ -514,7 +534,9 @@ def links_from_content(
         needs_config = NeedsSphinxConfig(app.config)
         filtered_links = []
         for link in raw_links:
-            if link not in filtered_links and filter_single_need(needs[link], needs_config, filter):
+            if link not in filtered_links and filter_single_need(
+                needs[link], needs_config, filter
+            ):
                 filtered_links.append(link)
         return filtered_links
 

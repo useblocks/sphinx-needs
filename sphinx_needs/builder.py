@@ -50,7 +50,9 @@ class NeedsBuilder(Builder):
         if not SphinxNeedsData(self.env).has_export_filters:
             return
         LOGGER.warning(
-            "At least one use of `export_id` directive option, requires a slower build", type="needs", subtype="build"
+            "At least one use of `export_id` directive option, requires a slower build",
+            type="needs",
+            subtype="build",
         )
         return super().write(build_docnames, updated_docnames, method)
 
@@ -70,7 +72,9 @@ class NeedsBuilder(Builder):
             # check if needs.json file exists in conf.py directory
             needs_json = os.path.join(self.srcdir, "needs.json")
             if os.path.exists(needs_json):
-                LOGGER.info("needs.json found, but will not be used because needs_file not configured.")
+                LOGGER.info(
+                    "needs.json found, but will not be used because needs_file not configured."
+                )
 
         # Clean needs_list from already stored needs of the current version.
         # This is needed as needs could have been removed from documentation and if this is the case,
@@ -170,7 +174,9 @@ class NeedsIdBuilder(Builder):
         post_process_needs_data(self.app)
 
         data = SphinxNeedsData(self.env)
-        needs = data.get_or_create_needs().values()  # We need a list of needs for later filter checks
+        needs = (
+            data.get_or_create_needs().values()
+        )  # We need a list of needs for later filter checks
         version = getattr(self.env.config, "version", "unset")
         needs_config = NeedsSphinxConfig(self.env.config)
         filter_string = needs_config.builder_filter

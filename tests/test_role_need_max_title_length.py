@@ -6,7 +6,12 @@ import pytest
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_role_need_max_title_length_unlimited"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_role_need_max_title_length_unlimited",
+        }
+    ],
     indirect=True,
 )
 def test_max_title_length_unlimited(test_app):
@@ -23,7 +28,9 @@ def test_max_title_length_unlimited(test_app):
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_role_need_max_title_length"}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_role_need_max_title_length"}],
+    indirect=True,
 )
 def test_max_title_length_10(test_app):
     os.environ["MAX_TITLE_LENGTH"] = "10"

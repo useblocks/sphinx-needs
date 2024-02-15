@@ -23,7 +23,9 @@ class ServiceManager:
         try:
             config = NeedsSphinxConfig(self.app.config).services[name]
         except KeyError:
-            self.log.debug(f"No service config found for {name}. Add it in your conf.py to needs_services dictionary.")
+            self.log.debug(
+                f"No service config found for {name}. Add it in your conf.py to needs_services dictionary."
+            )
             config = {}
 
         # Register options from service class
@@ -43,7 +45,9 @@ class ServiceManager:
             return self.services[name]
         else:
             raise NeedsServiceException(
-                "Service {} could not be found. " "Available services are {}".format(name, ", ".join(self.services))
+                "Service {} could not be found. " "Available services are {}".format(
+                    name, ", ".join(self.services)
+                )
             )
 
 

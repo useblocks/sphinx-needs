@@ -3,7 +3,11 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/broken_syntax_doc"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/broken_syntax_doc"}],
+    indirect=True,
+)
 def test_doc_broken_syntax(test_app):
     app = test_app
 

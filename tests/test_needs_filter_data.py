@@ -5,7 +5,9 @@ from docutils import __version__ as doc_ver
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_filter_data"}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needs_filter_data"}],
+    indirect=True,
 )
 def test_doc_needs_filter_data_html(test_app):
     app = test_app
@@ -29,7 +31,10 @@ def test_doc_needs_filter_data_html(test_app):
     # Check needtable works
     assert '<span class="caption-text">Example table' in index_html
     assert '<td class="needs_title"><p>Test Example 3</p></td>' in index_html
-    assert '<td class="needs_tags"><p>my_tag<em>; </em>current_variant</p></td>' in index_html
+    assert (
+        '<td class="needs_tags"><p>my_tag<em>; </em>current_variant</p></td>'
+        in index_html
+    )
 
     # check needflow works
     if int(doc_ver.split(".")[1]) >= 18:
@@ -48,7 +53,8 @@ def test_doc_needs_filter_data_html(test_app):
     assert (
         '<span class="needs_tags"><span class="needs_label">tags: </span>'
         '<span class="needs_data_container"><span class="needs_data">test_tag_001</span>'
-        '<span class="needs_spacer">, </span><span class="needs_data">current_variant</span></span>' in index_html
+        '<span class="needs_spacer">, </span><span class="needs_data">current_variant</span></span>'
+        in index_html
     )
 
     # check needs_warnings works
@@ -62,7 +68,9 @@ def test_doc_needs_filter_data_html(test_app):
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_filter_data"}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needs_filter_data"}],
+    indirect=True,
 )
 def test_doc_needs_filter_code(test_app):
     app = test_app

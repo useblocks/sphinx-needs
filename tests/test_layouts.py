@@ -3,7 +3,11 @@ import pytest
 from tests.util import extract_needs_from_html
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_layout"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_layout"}],
+    indirect=True,
+)
 def test_doc_build_html(test_app):
     app = test_app
     app.build()
@@ -17,7 +21,8 @@ def test_doc_build_html(test_app):
     assert len(needs) == 6
 
     assert (
-        '<span class="needs_label"><strong>author</strong>: </span><span class="needs_data">some author</span>' in html
+        '<span class="needs_label"><strong>author</strong>: </span><span class="needs_data">some author</span>'
+        in html
     )
     assert '<tr class="footer row-even"><td class="footer_left" colspan="2">' in html
 

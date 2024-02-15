@@ -55,7 +55,11 @@ class FilterBase(SphinxDirective):
 
     def collect_filter_attributes(self) -> FilterAttributesType:
         _tags = str(self.options.get("tags", ""))
-        tags = [tag.strip() for tag in re.split(";|,", _tags) if len(tag) > 0] if _tags else []
+        tags = (
+            [tag.strip() for tag in re.split(";|,", _tags) if len(tag) > 0]
+            if _tags
+            else []
+        )
 
         status = self.options.get("status")
         if status:
@@ -92,7 +96,10 @@ class FilterBase(SphinxDirective):
 
 
 def process_filters(
-    app: Sphinx, all_needs: Iterable[NeedsInfoType], filter_data: NeedsFilteredBaseType, include_external: bool = True
+    app: Sphinx,
+    all_needs: Iterable[NeedsInfoType],
+    filter_data: NeedsFilteredBaseType,
+    include_external: bool = True,
 ) -> list[NeedsPartsInfoType]:
     """
     Filters all needs with given configuration.
@@ -112,7 +119,10 @@ def process_filters(
         try:
             all_needs = sorted(all_needs, key=lambda node: node[sort_key] or "")  # type: ignore[literal-required]
         except KeyError as e:
-            log.warning(f"Sorting parameter {sort_key} not valid: Error: {e} [needs]", type="needs")
+            log.warning(
+                f"Sorting parameter {sort_key} not valid: Error: {e} [needs]",
+                type="needs",
+            )
 
     # check if include external needs
     checked_all_needs: Iterable[NeedsInfoType]
@@ -130,7 +140,9 @@ def process_filters(
     all_needs_incl_parts = prepare_need_list(checked_all_needs)
 
     # Check if external filter code is defined
-    filter_func, filter_args = check_and_get_external_filter_func(filter_data.get("filter_func"))
+    filter_func, filter_args = check_and_get_external_filter_func(
+        filter_data.get("filter_func")
+    )
 
     filter_code = None
     # Get filter_code from
@@ -141,12 +153,19 @@ def process_filters(
         if bool(filter_data["status"] or filter_data["tags"] or filter_data["types"]):
             for need_info in all_needs_incl_parts:
                 status_filter_passed = False
-                if not filter_data["status"] or need_info["status"] and need_info["status"] in filter_data["status"]:
+                if (
+                    not filter_data["status"]
+                    or need_info["status"]
+                    and need_info["status"] in filter_data["status"]
+                ):
                     # Filtering for status was not requested or match was found
                     status_filter_passed = True
 
                 tags_filter_passed = False
-                if len(set(need_info["tags"]) & set(filter_data["tags"])) > 0 or len(filter_data["tags"]) == 0:
+                if (
+                    len(set(need_info["tags"]) & set(filter_data["tags"])) > 0
+                    or len(filter_data["tags"]) == 0
+                ):
                     tags_filter_passed = True
 
                 type_filter_passed = False
@@ -160,13 +179,19 @@ def process_filters(
                 if status_filter_passed and tags_filter_passed and type_filter_passed:
                     found_needs_by_options.append(need_info)
             # Get need by filter string
-            found_needs_by_string = filter_needs(all_needs_incl_parts, needs_config, filter_data["filter"])
+            found_needs_by_string = filter_needs(
+                all_needs_incl_parts, needs_config, filter_data["filter"]
+            )
             # Make an intersection of both lists
-            found_needs = intersection_of_need_results(found_needs_by_options, found_needs_by_string)
+            found_needs = intersection_of_need_results(
+                found_needs_by_options, found_needs_by_string
+            )
         else:
             # There is no other config as the one for filter string.
             # So we only need this result.
-            found_needs = filter_needs(all_needs_incl_parts, needs_config, filter_data["filter"])
+            found_needs = filter_needs(
+                all_needs_incl_parts, needs_config, filter_data["filter"]
+            )
     else:
         # Provides only a copy of needs to avoid data manipulations.
         context = {
@@ -185,7 +210,9 @@ def process_filters(
                 context[f"arg{index+1}"] = arg
 
             # Decorate function to allow time measurments
-            filter_func = measure_time_func(filter_func, category="filter_func", source="user")
+            filter_func = measure_time_func(
+                filter_func, category="filter_func", source="user"
+            )
             filter_func(**context)
         else:
             log.warning("Something went wrong running filter [needs]", type="needs")
@@ -237,7 +264,11 @@ def prepare_need_list(need_list: Iterable[NeedsInfoType]) -> list[NeedsPartsInfo
     for need in need_list:
         for part in need["parts"].values():
             id_complete = ".".join([need["id"], part["id"]])
-            filter_part: NeedsPartsInfoType = {**need, **part, **{"id_parent": need["id"], "id_complete": id_complete}}  # type: ignore[typeddict-item]
+            filter_part: NeedsPartsInfoType = {
+                **need,
+                **part,
+                **{"id_parent": need["id"], "id_complete": id_complete},  # type: ignore[typeddict-item]
+            }
             all_needs_incl_parts.append(filter_part)
 
         # Be sure extra attributes, which makes only sense for need_parts, are also available on
@@ -288,12 +319,21 @@ def filter_needs(
     for filter_need in needs:
         try:
             if filter_single_need(
-                filter_need, config, filter_string, needs, current_need, filter_compiled=filter_compiled
+                filter_need,
+                config,
+                filter_string,
+                needs,
+                current_need,
+                filter_compiled=filter_compiled,
             ):
                 found_needs.append(filter_need)
         except Exception as e:
             if not error_reported:  # Let's report a filter-problem only onces
-                location = (current_need["docname"], current_need["lineno"]) if current_need else None
+                location = (
+                    (current_need["docname"], current_need["lineno"])
+                    if current_need
+                    else None
+                )
                 log.warning(str(e) + " [needs]", type="needs", location=location)
                 error_reported = True
 

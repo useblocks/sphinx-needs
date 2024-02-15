@@ -94,16 +94,30 @@ class NeedsList:
 
     def add_need(self, version: str, need_info: NeedsInfoType) -> None:
         self.update_or_add_version(version)
-        writable_needs = {key: need_info[key] for key in need_info if key not in self._exclude_need_keys}  # type: ignore[literal-required]
+        writable_needs = {
+            key: need_info[key]  # type: ignore[literal-required]
+            for key in need_info
+            if key not in self._exclude_need_keys
+        }
         writable_needs["description"] = need_info["content"]
         self.needs_list["versions"][version]["needs"][need_info["id"]] = writable_needs
-        self.needs_list["versions"][version]["needs_amount"] = len(self.needs_list["versions"][version]["needs"])
+        self.needs_list["versions"][version]["needs_amount"] = len(
+            self.needs_list["versions"][version]["needs"]
+        )
 
     def add_filter(self, version: str, need_filter: NeedsFilterType) -> None:
         self.update_or_add_version(version)
-        writable_filters = {key: need_filter[key] for key in need_filter if key not in self._exclude_filter_keys}  # type: ignore[literal-required]
-        self.needs_list["versions"][version]["filters"][need_filter["export_id"].upper()] = writable_filters
-        self.needs_list["versions"][version]["filters_amount"] = len(self.needs_list["versions"][version]["filters"])
+        writable_filters = {
+            key: need_filter[key]  # type: ignore[literal-required]
+            for key in need_filter
+            if key not in self._exclude_filter_keys
+        }
+        self.needs_list["versions"][version]["filters"][
+            need_filter["export_id"].upper()
+        ] = writable_filters
+        self.needs_list["versions"][version]["filters_amount"] = len(
+            self.needs_list["versions"][version]["filters"]
+        )
 
     def wipe_version(self, version: str) -> None:
         if version in self.needs_list["versions"]:
@@ -130,7 +144,9 @@ class NeedsList:
             file = os.path.join(self.confdir, file)
 
         if not os.path.exists(file):
-            self.log.warning(f"Could not load needs json file {file} [needs]", type="needs")
+            self.log.warning(
+                f"Could not load needs json file {file} [needs]", type="needs"
+            )
         else:
             errors = check_needs_file(file)
             # We only care for schema errors here, all other possible errors
@@ -144,7 +160,9 @@ class NeedsList:
                 try:
                     needs_list = json.load(needs_file)
                 except json.JSONDecodeError:
-                    self.log.warning(f"Could not decode json file {file} [needs]", type="needs")
+                    self.log.warning(
+                        f"Could not decode json file {file} [needs]", type="needs"
+                    )
                 else:
                     self.needs_list = needs_list
 

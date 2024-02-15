@@ -11,7 +11,9 @@ from sphinx_needs.logging import get_logger
 logger = get_logger(__name__)
 
 
-def process_constraints(needs: dict[str, NeedsInfoType], config: NeedsSphinxConfig) -> None:
+def process_constraints(
+    needs: dict[str, NeedsInfoType], config: NeedsSphinxConfig
+) -> None:
     """Analyse constraints of all needs,
     and set corresponding fields on the need data item:
     ``constraints_passed`` and ``constraints_results``.
@@ -56,7 +58,9 @@ def process_constraints(needs: dict[str, NeedsInfoType], config: NeedsSphinxConf
 
                     if "error_message" in executable_constraints:
                         msg = str(executable_constraints["error_message"])
-                        template = error_templates_cache.setdefault(msg, jinja2.Template(msg))
+                        template = error_templates_cache.setdefault(
+                            msg, jinja2.Template(msg)
+                        )
                         need["constraints_error"] = template.render(**need)
 
                     if "severity" not in executable_constraints:
@@ -88,10 +92,14 @@ def process_constraints(needs: dict[str, NeedsInfoType], config: NeedsSphinxConf
                     # set styles
                     old_style = need["style"]
                     if old_style and len(old_style) > 0:
-                        new_styles = "".join(", " + x for x in failed_options.get("style", []))
+                        new_styles = "".join(
+                            ", " + x for x in failed_options.get("style", [])
+                        )
                     else:
                         old_style = ""
-                        new_styles = "".join(x + "," for x in failed_options.get("style", []))
+                        new_styles = "".join(
+                            x + "," for x in failed_options.get("style", [])
+                        )
 
                     if failed_options.get("force_style", False):
                         need["style"] = new_styles.strip(", ")
