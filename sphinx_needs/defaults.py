@@ -199,7 +199,7 @@ NEEDFLOW_CONFIG_DEFAULTS = {
     """,
 }
 
-TITLE_REGEX = r'([\w]+) as "([\w ]+)"'
+TITLE_REGEX = r'([^\s]+) as "([^"]+)"'
 
 
 NEED_DEFAULT_OPTIONS: Dict[str, Any] = {

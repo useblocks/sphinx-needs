@@ -149,3 +149,5 @@ def test_doc_needtable_titles(test_app):
     html = Path(app.outdir, "test_titles.html").read_text()
     assert '<th class="head"><p>Headline</p></th>' in html
     assert '<th class="head"><p>To this need123</p></th>' in html
+    assert '<th class="head"><p>Special Characters!</p></th>' in html
+    assert '<td class="needs_special-chars!"><p>special-chars value</p></td>' in html
