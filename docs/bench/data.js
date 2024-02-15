@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1708010069126,
+  "lastUpdate": 1708012442722,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -6660,6 +6660,42 @@ window.BENCHMARK_DATA = {
             "value": 60.986948823999995,
             "unit": "s",
             "extra": "Commit: 8e2fcd687f00ec7af977ef0a77c40bc7fde5c714\nBranch: master\nTime: 2024-02-15T16:12:21+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "84a5f72f2e72ab1471ab2d1bb5c570d6115ef199",
+          "message": "🔧 Replace black/isort/pyupgrade/flake8 with ruff (#1080)",
+          "timestamp": "2024-02-15T16:51:32+01:00",
+          "tree_id": "acd8b285e40378ab2a166086e8fd14e017321d4f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/84a5f72f2e72ab1471ab2d1bb5c570d6115ef199"
+        },
+        "date": 1708012435154,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.29929876699998204,
+            "unit": "s",
+            "extra": "Commit: 84a5f72f2e72ab1471ab2d1bb5c570d6115ef199\nBranch: master\nTime: 2024-02-15T16:51:32+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 66.85267127999998,
+            "unit": "s",
+            "extra": "Commit: 84a5f72f2e72ab1471ab2d1bb5c570d6115ef199\nBranch: master\nTime: 2024-02-15T16:51:32+01:00"
           }
         ]
       }
