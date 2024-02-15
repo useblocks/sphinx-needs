@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1707727415649,
+  "lastUpdate": 1708005081944,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -6300,6 +6300,42 @@ window.BENCHMARK_DATA = {
             "value": 61.721411966999995,
             "unit": "s",
             "extra": "Commit: f6b090ad79ff37d6e07897bdc3bae96e138ade52\nBranch: master\nTime: 2024-02-12T09:41:32+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c67c5c83e1e5f4ccaed48fea5efaa794e60026fb",
+          "message": "🔧 Update pre-commit hooks (#1109)\n\nUpdate hooks, fix issues, and also pin dependencies for mypy more\r\nstrictly (to reduce potential for differences between local and remote\r\nruns of mypy)",
+          "timestamp": "2024-02-15T14:49:20+01:00",
+          "tree_id": "a0c88030d35d90d6082e874c6f3693008404f7e4",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c67c5c83e1e5f4ccaed48fea5efaa794e60026fb"
+        },
+        "date": 1708005075387,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2875710300000094,
+            "unit": "s",
+            "extra": "Commit: c67c5c83e1e5f4ccaed48fea5efaa794e60026fb\nBranch: master\nTime: 2024-02-15T14:49:20+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.339062842999994,
+            "unit": "s",
+            "extra": "Commit: c67c5c83e1e5f4ccaed48fea5efaa794e60026fb\nBranch: master\nTime: 2024-02-15T14:49:20+01:00"
           }
         ]
       }
