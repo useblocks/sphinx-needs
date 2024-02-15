@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1708007006087,
+  "lastUpdate": 1708008063292,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -6516,6 +6516,42 @@ window.BENCHMARK_DATA = {
             "value": 65.27117560900004,
             "unit": "s",
             "extra": "Commit: f083bbd5e1d5148ed17f80697a0f39352ebb48d3\nBranch: master\nTime: 2024-02-15T15:21:13+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6b26526759fb97810968c882788d99a1aceee5f8",
+          "message": "🐛👌 Centralise need missing link reporting (#1104)\n\nPreviously, warnings for need outgoing links that reference a non-existent ID, were only generated \"indirectly\" in the render phase; where  `NeedOutgoing` nodes are converted to nodes that are understood by sphinx builders (HTML, PDF, ...).\r\n\r\nSince this render phase is no longer needed/run for simply creating the `needs.json`, using the `needs` builder, these warnings were no longer generated.\r\nAdditionally, any needs that are not explicitly rendered in the documentation, like externally imported needs, were also skipped.\r\n\r\nThis commit moves the reporting of unknown links to the `check_links` function, meaning it is now run for all needs and all builders. The warnings have also been given a subtype `link_outgoing` or `external_link_outgoing`, e.g.\r\n\r\n```\r\nsrcdir/index.rst:12: WARNING: Need 'SP_TOO_002' has unknown outgoing link 'NOT_WORKING_LINK' in field 'links' [needs.link_outgoing]\r\nWARNING: http://my_company.com/docs/v1/index.html#TEST_01: Need 'EXT_TEST_01' has unknown outgoing link 'SPEC_1' in field 'links' [needs.external_link_outgoing]\r\n```\r\n\r\nThis means they can be suppressed using the standard Sphinx config: \r\n\r\n```python\r\nsuppress_warnings = [\"needs.link_outgoing\", \"needs.external_link_outgoing\"]` \r\n```\r\n\r\nThis deprecates the need for the `needs_report_dead_links` configuration, which now emits a deprecation warning if set by the user.",
+          "timestamp": "2024-02-15T15:39:01+01:00",
+          "tree_id": "679ed0fc9635c931d30c5544f92b3462554e5e23",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6b26526759fb97810968c882788d99a1aceee5f8"
+        },
+        "date": 1708008056035,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.19528090500000417,
+            "unit": "s",
+            "extra": "Commit: 6b26526759fb97810968c882788d99a1aceee5f8\nBranch: master\nTime: 2024-02-15T15:39:01+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.98984573099999,
+            "unit": "s",
+            "extra": "Commit: 6b26526759fb97810968c882788d99a1aceee5f8\nBranch: master\nTime: 2024-02-15T15:39:01+01:00"
           }
         ]
       }
