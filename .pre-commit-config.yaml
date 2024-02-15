@@ -34,7 +34,7 @@ repos:
       args: []
       additional_dependencies:
       - sphinx==6
-      - types-docutils
+      - types-docutils==0.20.0.20240201
       - types-jsonschema
       - types-requests
 
