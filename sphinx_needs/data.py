@@ -200,6 +200,11 @@ class NeedsInfoType(NeedsBaseDataType):
     query: str
     url: str
 
+    only_expressions: list[str]
+    """List of parent only expressions, from outer to inner.
+    Note this key is only present if there are any only expressions.
+    """
+
     # Note there are also:
     # - dynamic default options that can be set by needs_extra_options config
     # - dynamic global options that can be set by needs_global_options config
