@@ -452,7 +452,7 @@ def check_links(needs: Dict[str, NeedsInfoType], config: NeedsSphinxConfig) -> N
                     if not link_type.get("allow_dead_links", False):
                         need["has_forbidden_dead_links"] = True
                         if report_dead_links:
-                            message = f"Need '{need['id']}' has unknown outgoing link '{link}' in field '{link_type['option']}'"
+                            message = f"Need '{need['id']}' has unknown outgoing link '{need_id_full}' in field '{link_type['option']}'"
                             # if the need has been imported from an external URL,
                             # we want to provide that URL as the location of the warning,
                             # otherwise we use the location of the need in the source file
