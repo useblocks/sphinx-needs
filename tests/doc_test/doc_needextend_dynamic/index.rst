@@ -13,8 +13,11 @@ needextend dynamic functions
 .. req:: Requirement C 1
    :id: REQ_C_1
 
-.. needextend:: REQ_1
-   :links: [[get_matching_need_ids("REQ_A_")]]
+.. req:: Requirement D 1
+   :id: REQ_D_1
 
 .. needextend:: REQ_1
-   :+links: [[get_matching_need_ids("REQ_B_")]]
+   :links: [[get_matching_need_ids("REQ_A_")]];REQ_D_1
+
+.. needextend:: REQ_1
+   :+links: REQ_D_1 , [[get_matching_need_ids("REQ_B_")]]
