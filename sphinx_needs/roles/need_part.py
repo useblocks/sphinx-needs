@@ -7,9 +7,11 @@ Most voodoo is done in need.py
 
 """
 
+from __future__ import annotations
+
 import hashlib
 import re
-from typing import List, cast
+from typing import cast
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -25,14 +27,14 @@ class NeedPart(nodes.Inline, nodes.Element):
     pass
 
 
-def process_need_part(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
+def process_need_part(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list[nodes.Element]) -> None:
     pass
 
 
 part_pattern = re.compile(r"\(([\w-]+)\)(.*)")
 
 
-def update_need_with_parts(env: BuildEnvironment, need: NeedsInfoType, part_nodes: List[NeedPart]) -> None:
+def update_need_with_parts(env: BuildEnvironment, need: NeedsInfoType, part_nodes: list[NeedPart]) -> None:
     app = env.app
     builder = app.builder
     for part_node in part_nodes:
@@ -86,7 +88,7 @@ def update_need_with_parts(env: BuildEnvironment, need: NeedsInfoType, part_node
         part_node.append(node_need_part_line)
 
 
-def find_parts(node: nodes.Node) -> List[NeedPart]:
+def find_parts(node: nodes.Node) -> list[NeedPart]:
     found_nodes = []
     for child in node.children:
         if isinstance(child, NeedPart):

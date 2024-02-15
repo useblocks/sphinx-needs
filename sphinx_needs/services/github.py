@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import os
 import textwrap
 import time
 from contextlib import suppress
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 from urllib.parse import urlparse
 
 import requests
@@ -25,7 +27,7 @@ from sphinx_needs.services.config.github import (
 class GithubService(BaseService):
     options = CONFIG_OPTIONS + EXTRA_DATA_OPTIONS + EXTRA_LINK_OPTIONS + EXTRA_IMAGE_OPTIONS
 
-    def __init__(self, app: Sphinx, name: str, config: Dict[str, Any], **kwargs: Any) -> None:
+    def __init__(self, app: Sphinx, name: str, config: dict[str, Any], **kwargs: Any) -> None:
         self.app = app
         self.name = name
         self.config = config
@@ -74,7 +76,7 @@ class GithubService(BaseService):
 
         super().__init__()
 
-    def _send(self, query: str, options: Dict[str, Any], specific: bool = False) -> Dict[str, Any]:
+    def _send(self, query: str, options: dict[str, Any], specific: bool = False) -> dict[str, Any]:
         headers = {}
         if self.gh_type == "commit":
             headers["Accept"] = "application/vnd.github.cloak-preview+json"
@@ -105,7 +107,7 @@ class GithubService(BaseService):
 
         self.log.info(f"Service {self.name} requesting data for query: {query}")
 
-        auth: Optional[Tuple[str, str]]
+        auth: tuple[str, str] | None
         if self.username:
             # TODO token can be None
             auth = (self.username, self.token)  # type: ignore
@@ -146,7 +148,7 @@ class GithubService(BaseService):
             return {"items": [resp.json()]}
         return resp.json()  # type: ignore
 
-    def request(self, options: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    def request(self, options: dict[str, Any] | None = None) -> list[dict[str, Any]]:
         if options is None:
             options = {}
         self.log.debug(f"Requesting data for service {self.name}")
@@ -180,7 +182,7 @@ class GithubService(BaseService):
 
         return data
 
-    def prepare_issue_data(self, items: List[Dict[str, Any]], options: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def prepare_issue_data(self, items: list[dict[str, Any]], options: dict[str, Any]) -> list[dict[str, Any]]:
         data = []
         for item in items:
             # ensure that "None" can not reach .splitlines()
@@ -240,7 +242,7 @@ class GithubService(BaseService):
 
         return data
 
-    def prepare_commit_data(self, items: List[Dict[str, Any]], options: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def prepare_commit_data(self, items: list[dict[str, Any]], options: dict[str, Any]) -> list[dict[str, Any]]:
         data = []
 
         for item in items:
@@ -314,7 +316,7 @@ class GithubService(BaseService):
 
         return avatar_file_path
 
-    def _add_given_options(self, options: Dict[str, Any], element_data: Dict[str, Any]) -> None:
+    def _add_given_options(self, options: dict[str, Any], element_data: dict[str, Any]) -> None:
         """
         Add data from options, which was defined by user but is not set by this service
 

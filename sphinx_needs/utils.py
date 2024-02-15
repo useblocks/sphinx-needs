@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import cProfile
 import importlib
 import operator
@@ -5,18 +7,7 @@ import os
 import re
 from functools import lru_cache, reduce, wraps
 from re import Pattern
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 from urllib.parse import urlparse
 
 from docutils import nodes
@@ -44,10 +35,10 @@ logger = get_logger(__name__)
 
 class NeedFunctionsType(TypedDict):
     name: str
-    function: "DynamicFunction"
+    function: DynamicFunction
 
 
-NEEDS_FUNCTIONS: Dict[str, NeedFunctionsType] = {}
+NEEDS_FUNCTIONS: dict[str, NeedFunctionsType] = {}
 
 # List of internal need option names. They should not be used by or presented to user.
 INTERNALS = [
@@ -109,7 +100,7 @@ MONTH_NAMES = [
 ]
 
 
-def split_need_id(need_id_full: str) -> Tuple[str, Optional[str]]:
+def split_need_id(need_id_full: str) -> tuple[str, str | None]:
     """A need id can be a combination of a main id and a part id,
     split by a dot.
     This function splits them:
@@ -128,7 +119,7 @@ def split_need_id(need_id_full: str) -> Tuple[str, Optional[str]]:
 def row_col_maker(
     app: Sphinx,
     fromdocname: str,
-    all_needs: Dict[str, NeedsInfoType],
+    all_needs: dict[str, NeedsInfoType],
     need_info: NeedsInfoType,
     need_key: str,
     make_ref: bool = False,
@@ -155,7 +146,7 @@ def row_col_maker(
     row_col = nodes.entry(classes=["needs_" + need_key])
     para_col = nodes.paragraph()
 
-    needs_string_links_option: List[str] = []
+    needs_string_links_option: list[str] = []
     for v in needs_config.string_links.values():
         needs_string_links_option.extend(v["options"])
 
@@ -252,7 +243,7 @@ def row_col_maker(
     return row_col
 
 
-def rstjinja(app: Sphinx, docname: str, source: List[str]) -> None:
+def rstjinja(app: Sphinx, docname: str, source: list[str]) -> None:
     """
     Render our pages as a jinja template for fancy templating goodness.
     """
@@ -267,7 +258,7 @@ def rstjinja(app: Sphinx, docname: str, source: List[str]) -> None:
     source[0] = rendered
 
 
-def import_prefix_link_edit(needs: Dict[str, Any], id_prefix: str, needs_extra_links: List[Dict[str, Any]]) -> None:
+def import_prefix_link_edit(needs: dict[str, Any], id_prefix: str, needs_extra_links: list[dict[str, Any]]) -> None:
     """
     Changes existing links to support given prefix.
     Only link-ids get touched, which are part of ``needs`` (so are linking them).
@@ -348,7 +339,7 @@ def check_and_calc_base_url_rel_path(external_url: str, fromdocname: str) -> str
     return ref_uri
 
 
-def check_and_get_external_filter_func(filter_func_ref: Optional[str]) -> Tuple[Any, str]:
+def check_and_get_external_filter_func(filter_func_ref: str | None) -> tuple[Any, str]:
     """Check and import filter function from external python file."""
     # Check if external filter code is defined
     filter_func = None
@@ -379,7 +370,7 @@ def check_and_get_external_filter_func(filter_func_ref: Optional[str]) -> Tuple[
     return filter_func, filter_args
 
 
-def jinja_parse(context: Dict[str, Any], jinja_string: str) -> str:
+def jinja_parse(context: dict[str, Any], jinja_string: str) -> str:
     """
     Function to parse mapping options set to a string containing jinja template format.
 
@@ -401,7 +392,7 @@ def jinja_parse(context: Dict[str, Any], jinja_string: str) -> str:
 
 
 @lru_cache
-def import_matplotlib() -> Optional["matplotlib"]:
+def import_matplotlib() -> matplotlib | None:
     """Import and return matplotlib, or return None if it cannot be imported.
 
     Also sets the interactive backend to ``Agg``, if ``DISPLAY`` is not set.
@@ -416,7 +407,7 @@ def import_matplotlib() -> Optional["matplotlib"]:
     return matplotlib
 
 
-def save_matplotlib_figure(app: Sphinx, figure: "FigureBase", basename: str, fromdocname: str) -> nodes.image:
+def save_matplotlib_figure(app: Sphinx, figure: FigureBase, basename: str, fromdocname: str) -> nodes.image:
     builder = app.builder
     env = app.env
 
@@ -455,7 +446,7 @@ def save_matplotlib_figure(app: Sphinx, figure: "FigureBase", basename: str, fro
     return image_node
 
 
-def dict_get(root: Dict[str, Any], items: Any, default: Any = None) -> Any:
+def dict_get(root: dict[str, Any], items: Any, default: Any = None) -> Any:
     """
     Access a nested object in root by item sequence.
 
@@ -473,7 +464,7 @@ def dict_get(root: Dict[str, Any], items: Any, default: Any = None) -> Any:
 
 
 def match_string_link(
-    text_item: str, data: str, need_key: str, matching_link_confs: List[Dict[str, Any]], render_context: Dict[str, Any]
+    text_item: str, data: str, need_key: str, matching_link_confs: list[dict[str, Any]], render_context: dict[str, Any]
 ) -> Any:
     try:
         link_name = None
@@ -499,8 +490,8 @@ def match_string_link(
 
 
 def match_variants(
-    option_value: Union[str, List[str]], keywords: Dict[str, Any], needs_variants: Dict[str, str]
-) -> Union[None, str, List[str]]:
+    option_value: str | list[str], keywords: dict[str, Any], needs_variants: dict[str, str]
+) -> None | str | list[str]:
     """
     Function to handle variant option management.
 
@@ -512,8 +503,8 @@ def match_variants(
     """
 
     def variant_handling(
-        variant_definitions: List[str], variant_data: Dict[str, Any], variant_pattern: Pattern  # type: ignore[type-arg]
-    ) -> Optional[str]:
+        variant_definitions: list[str], variant_data: dict[str, Any], variant_pattern: Pattern  # type: ignore[type-arg]
+    ) -> str | None:
         filter_context = variant_data
         # filter_result = []
         no_variants_in_option = False
@@ -564,7 +555,7 @@ def match_variants(
 
     # Handling multiple variant definitions
     if isinstance(option_value, str):
-        multiple_variants: List[str] = variant_splitting.split(rf"""{option_value}""")
+        multiple_variants: list[str] = variant_splitting.split(rf"""{option_value}""")
         multiple_variants = [
             re.sub(r"^([;, ]+)|([;, ]+$)", "", i) for i in multiple_variants if i not in (None, ";", "", " ")
         ]
@@ -605,7 +596,7 @@ def clean_log(data: str) -> str:
     return clean_credentials
 
 
-def node_match(node_types: Union[Type[nodes.Element], List[Type[nodes.Element]]]) -> Callable[[nodes.Node], bool]:
+def node_match(node_types: type[nodes.Element] | list[type[nodes.Element]]) -> Callable[[nodes.Node], bool]:
     """
     Returns a condition function for doctuils.nodes.findall()
 
@@ -627,13 +618,13 @@ def node_match(node_types: Union[Type[nodes.Element], List[Type[nodes.Element]]]
     """
     node_types_list = node_types if isinstance(node_types, list) else [node_types]
 
-    def condition(node: nodes.Node, node_types: List[Type[nodes.Element]] = node_types_list) -> bool:
+    def condition(node: nodes.Node, node_types: list[type[nodes.Element]] = node_types_list) -> bool:
         return any(isinstance(node, x) for x in node_types)
 
     return condition
 
 
-def add_doc(env: BuildEnvironment, docname: str, category: Optional[str] = None) -> None:
+def add_doc(env: BuildEnvironment, docname: str, category: str | None = None) -> None:
     """Stores a docname, to know later all need-relevant docs"""
     docs = SphinxNeedsData(env).get_or_create_docs()
     if docname not in docs["all"]:
@@ -646,7 +637,7 @@ def add_doc(env: BuildEnvironment, docname: str, category: Optional[str] = None)
             docs[category].append(docname)
 
 
-def split_link_types(link_types: str, location: Any) -> List[str]:
+def split_link_types(link_types: str, location: Any) -> list[str]:
     """Split link_types string into list of link_types."""
 
     def _is_valid(link_type: str) -> bool:
@@ -667,7 +658,7 @@ def split_link_types(link_types: str, location: Any) -> List[str]:
     )
 
 
-def get_scale(options: Dict[str, Any], location: Any) -> str:
+def get_scale(options: dict[str, Any], location: Any) -> str:
     """Get scale for diagram, from directive option."""
     scale: str = options.get("scale", "100").replace("%", "")
     if not scale.isdigit():

@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import json
 import os
 import re
-from typing import Dict, Sequence
+from typing import Sequence
 from urllib.parse import urlparse
 
 import requests
@@ -125,7 +127,7 @@ class NeedimportDirective(SphinxDirective):
 
         needs_config = NeedsSphinxConfig(self.config)
         # TODO this is not exactly NeedsInfoType, because the export removes/adds some keys
-        needs_list: Dict[str, NeedsInfoType] = needs_import_list["versions"][version]["needs"]
+        needs_list: dict[str, NeedsInfoType] = needs_import_list["versions"][version]["needs"]
 
         # Filter imported needs
         needs_list_filtered = {}

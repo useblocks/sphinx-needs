@@ -1,4 +1,6 @@
-from typing import Any, Dict, List, Sequence
+from __future__ import annotations
+
+from typing import Any, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -37,8 +39,8 @@ class NeedserviceDirective(SphinxDirective):
     def __init__(
         self,
         name: str,
-        arguments: List[str],
-        options: Dict[str, Any],
+        arguments: list[str],
+        options: dict[str, Any],
         content: StringList,
         lineno: int,
         content_offset: int,
@@ -55,7 +57,7 @@ class NeedserviceDirective(SphinxDirective):
         needs_config = NeedsSphinxConfig(self.config)
         need_types = needs_config.types
         all_data = needs_config.service_all_data
-        needs_services: Dict[str, BaseService] = getattr(app, "needs_services", {})
+        needs_services: dict[str, BaseService] = getattr(app, "needs_services", {})
 
         service_name = self.arguments[0]
         service = needs_services.get(service_name)

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import os
-from typing import List, Sequence, Union
+from typing import Sequence
 from urllib.parse import urlparse
 
 from docutils import nodes
@@ -70,7 +72,7 @@ class NeedfilterDirective(FilterBase):
 
 
 def process_needfilters(
-    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
+    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list[nodes.Element]
 ) -> None:
     # Replace all needlist nodes with a list of the collected needs.
     # Augment each need with a backlink to the original location.
@@ -89,7 +91,7 @@ def process_needfilters(
         id = node.attributes["ids"][0]
         current_needfilter = SphinxNeedsData(env)._get_or_create_filters()[id]
 
-        content: Union[nodes.Element, List[nodes.Element]]
+        content: nodes.Element | list[nodes.Element]
         if current_needfilter["layout"] == "list":
             content = []
 

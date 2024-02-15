@@ -1,4 +1,4 @@
-from typing import List
+from __future__ import annotations
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -18,7 +18,7 @@ class NeedOutgoing(nodes.Inline, nodes.Element):
 
 
 def process_need_outgoing(
-    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
+    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list[nodes.Element]
 ) -> None:
     builder = app.builder
     env = app.env

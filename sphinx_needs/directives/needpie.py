@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import hashlib
-from typing import Iterable, List, Sequence
+from typing import Iterable, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -104,7 +106,7 @@ class NeedpieDirective(FilterBase):
 
 
 @measure_time("needpie")
-def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
+def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list[nodes.Element]) -> None:
     env = app.env
     needs_data = SphinxNeedsData(env)
     needs_config = NeedsSphinxConfig(env.config)

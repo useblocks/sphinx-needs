@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import hashlib
 import re
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState, RSTStateMachine
@@ -53,8 +55,8 @@ class NeedDirective(SphinxDirective):
     def __init__(
         self,
         name: str,
-        arguments: List[str],
-        options: Dict[str, Any],
+        arguments: list[str],
+        options: dict[str, Any],
         content: StringList,
         lineno: int,
         content_offset: int,
@@ -149,7 +151,7 @@ class NeedDirective(SphinxDirective):
         add_doc(env, self.docname)
         return need_nodes  # type: ignore[no-any-return]
 
-    def read_in_links(self, name: str) -> List[str]:
+    def read_in_links(self, name: str) -> list[str]:
         # Get links
         links_string = self.options.get(name)
         links = []
@@ -229,12 +231,12 @@ class NeedDirective(SphinxDirective):
 
 
 def get_sections_and_signature_and_needs(
-    need_node: Optional[nodes.Node],
-) -> Tuple[List[str], Optional[nodes.Text], List[str]]:
+    need_node: nodes.Node | None,
+) -> tuple[list[str], nodes.Text | None, list[str]]:
     """Gets the hierarchy of the section nodes as a list starting at the
     section of the current need and then its parent sections"""
     sections = []
-    parent_needs: List[str] = []
+    parent_needs: list[str] = []
     signature = None
     current_node = need_node
     while current_node:
@@ -299,7 +301,7 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
 
     needs = SphinxNeedsData(env).get_or_create_needs()
 
-    hidden_needs: List[Need] = []
+    hidden_needs: list[Need] = []
     for need_node in doctree.findall(Need):
         need_id = need_node["refid"]
         need_info = needs[need_id]
@@ -346,7 +348,7 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
             need_node.parent.remove(need_node)
 
 
-def previous_sibling(node: nodes.Node) -> Optional[nodes.Node]:
+def previous_sibling(node: nodes.Node) -> nodes.Node | None:
     """Return preceding sibling node or ``None``."""
     try:
         i = node.parent.index(node)
@@ -408,7 +410,7 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
 
 
 @profile("NEED_FORMAT")
-def format_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str, found_needs_nodes: List[Need]) -> None:
+def format_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str, found_needs_nodes: list[Need]) -> None:
     """Replace need nodes in the document with node trees suitable for output"""
     env = app.env
     needs = SphinxNeedsData(env).get_or_create_needs()
@@ -428,7 +430,7 @@ def format_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str, fo
         build_need(layout, node_need, app, fromdocname=fromdocname)
 
 
-def check_links(needs: Dict[str, NeedsInfoType], config: NeedsSphinxConfig) -> None:
+def check_links(needs: dict[str, NeedsInfoType], config: NeedsSphinxConfig) -> None:
     """Checks if set links are valid or are dead (referenced need does not exist.)
 
     For needs with dead links, an extra ``has_dead_links`` field is added and,
@@ -471,7 +473,7 @@ def check_links(needs: Dict[str, NeedsInfoType], config: NeedsSphinxConfig) -> N
                                 )
 
 
-def create_back_links(needs: Dict[str, NeedsInfoType], config: NeedsSphinxConfig) -> None:
+def create_back_links(needs: dict[str, NeedsInfoType], config: NeedsSphinxConfig) -> None:
     """Create back-links in all found needs.
 
     These are fields for each link type, ``<link_name>_back``,
@@ -482,7 +484,7 @@ def create_back_links(needs: Dict[str, NeedsInfoType], config: NeedsSphinxConfig
         option_back = f"{option}_back"
 
         for key, need in needs.items():
-            need_link_value: List[str] = [need[option]] if isinstance(need[option], str) else need[option]  # type: ignore[literal-required]
+            need_link_value: list[str] = [need[option]] if isinstance(need[option], str) else need[option]  # type: ignore[literal-required]
             for need_id_full in need_link_value:
                 need_id_main, need_id_part = split_need_id(need_id_full)
 
@@ -497,7 +499,7 @@ def create_back_links(needs: Dict[str, NeedsInfoType], config: NeedsSphinxConfig
                         needs[need_id_main]["parts"][need_id_part][option_back].append(key)  # type: ignore[literal-required]
 
 
-def _fix_list_dyn_func(list: List[str]) -> List[str]:
+def _fix_list_dyn_func(list: list[str]) -> list[str]:
     """
     This searches a list for dynamic function fragments, which may have been cut by generic searches for ",|;".
 

@@ -1,4 +1,4 @@
-from typing import Dict
+from __future__ import annotations
 
 import jinja2
 
@@ -11,7 +11,7 @@ from sphinx_needs.logging import get_logger
 logger = get_logger(__name__)
 
 
-def process_constraints(needs: Dict[str, NeedsInfoType], config: NeedsSphinxConfig) -> None:
+def process_constraints(needs: dict[str, NeedsInfoType], config: NeedsSphinxConfig) -> None:
     """Analyse constraints of all needs,
     and set corresponding fields on the need data item:
     ``constraints_passed`` and ``constraints_results``.
@@ -21,7 +21,7 @@ def process_constraints(needs: Dict[str, NeedsInfoType], config: NeedsSphinxConf
     """
     config_constraints = config.constraints
 
-    error_templates_cache: Dict[str, jinja2.Template] = {}
+    error_templates_cache: dict[str, jinja2.Template] = {}
 
     for need in needs.values():
         need_id = need["id"]

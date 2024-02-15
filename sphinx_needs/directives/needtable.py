@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import re
-from typing import Any, Callable, List, Sequence
+from typing import Any, Callable, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -113,7 +115,7 @@ class NeedtableDirective(FilterBase):
 @measure_time("needtable")
 @profile("NEEDTABLE")
 def process_needtables(
-    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
+    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list[nodes.Element]
 ) -> None:
     """
     Replace all needtables nodes with a table of filtered nodes.

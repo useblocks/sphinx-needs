@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import os
 import re
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -74,7 +76,7 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
 
 
 def process_needsequence(
-    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
+    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list[nodes.Element]
 ) -> None:
     # Replace all needsequence nodes with a list of the collected needs.
     env = app.env
@@ -224,18 +226,18 @@ def process_needsequence(
 def get_message_needs(
     app: Sphinx,
     sender: NeedsInfoType,
-    link_types: List[str],
-    all_needs_dict: Dict[str, NeedsInfoType],
-    tracked_receivers: Optional[List[str]] = None,
-    filter: Optional[str] = None,
-) -> Tuple[Dict[str, Dict[str, Any]], str, str]:
-    msg_needs: List[Dict[str, Any]] = []
+    link_types: list[str],
+    all_needs_dict: dict[str, NeedsInfoType],
+    tracked_receivers: list[str] | None = None,
+    filter: str | None = None,
+) -> tuple[dict[str, dict[str, Any]], str, str]:
+    msg_needs: list[dict[str, Any]] = []
     if tracked_receivers is None:
         tracked_receivers = []
     for link_type in link_types:
         msg_needs += [all_needs_dict[x] for x in sender[link_type]]  # type: ignore
 
-    messages: Dict[str, Dict[str, Any]] = {}
+    messages: dict[str, dict[str, Any]] = {}
     p_string = ""
     c_string = ""
     for msg_need in msg_needs:

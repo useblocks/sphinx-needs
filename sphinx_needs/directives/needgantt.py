@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import os
 import re
 from datetime import datetime
-from typing import List, Sequence
+from typing import Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -118,7 +120,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
 
         return [targetnode] + [Needgantt("")]
 
-    def get_link_type_option(self, name: str, default: str = "") -> List[str]:
+    def get_link_type_option(self, name: str, default: str = "") -> list[str]:
         link_types = [x.strip() for x in re.split(";|,", self.options.get(name, default))]
         conf_link_types = NeedsSphinxConfig(self.env.config).extra_links
         conf_link_types_name = [x["option"] for x in conf_link_types]
@@ -136,7 +138,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
         return final_link_types
 
 
-def process_needgantt(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
+def process_needgantt(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list[nodes.Element]) -> None:
     # Replace all needgantt nodes with a list of the collected needs.
     env = app.env
     needs_config = NeedsSphinxConfig(app.config)

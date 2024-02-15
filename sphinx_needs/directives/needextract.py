@@ -1,10 +1,7 @@
-"""
-
-
-"""
+from __future__ import annotations
 
 import re
-from typing import List, Sequence
+from typing import Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -70,7 +67,7 @@ class NeedextractDirective(FilterBase):
 
 
 def process_needextract(
-    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
+    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list[nodes.Element]
 ) -> None:
     """
     Replace all needextract nodes with a list of the collected needs.
@@ -86,7 +83,7 @@ def process_needextract(
         id = node.attributes["ids"][0]
         current_needextract = SphinxNeedsData(env).get_or_create_extracts()[id]
         all_needs = SphinxNeedsData(env).get_or_create_needs()
-        content: List[nodes.Element] = []
+        content: list[nodes.Element] = []
 
         # check if filter argument and option filter both exist
         need_filter_arg = current_needextract["filter_arg"]

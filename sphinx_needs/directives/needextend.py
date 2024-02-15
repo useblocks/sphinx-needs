@@ -1,10 +1,7 @@
-"""
-
-
-"""
+from __future__ import annotations
 
 import re
-from typing import Any, Callable, Dict, Sequence
+from typing import Any, Callable, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -34,7 +31,7 @@ class NeedextendDirective(SphinxDirective):
     optional_arguments = 0
     final_argument_whitespace = True
 
-    option_spec: Dict[str, Callable[[str], Any]] = {
+    option_spec: dict[str, Callable[[str], Any]] = {
         "strict": directives.unchanged_required,
     }
 
@@ -72,7 +69,7 @@ class NeedextendDirective(SphinxDirective):
 
 
 def extend_needs_data(
-    all_needs: Dict[str, NeedsInfoType], extends: Dict[str, NeedsExtendType], needs_config: NeedsSphinxConfig
+    all_needs: dict[str, NeedsInfoType], extends: dict[str, NeedsExtendType], needs_config: NeedsSphinxConfig
 ) -> None:
     """Use data gathered from needextend directives to modify fields of existing needs."""
 

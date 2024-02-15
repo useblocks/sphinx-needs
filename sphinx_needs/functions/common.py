@@ -4,9 +4,11 @@ Collection of common sphinx-needs functions for dynamic values
 .. note:: The function parameters ``app``, ``need``, ``needs`` are set automatically and can not be overridden by user.
 """
 
+from __future__ import annotations
+
 import contextlib
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from sphinx.application import Sphinx
 
@@ -17,7 +19,7 @@ from sphinx_needs.filter_common import filter_needs, filter_single_need
 from sphinx_needs.utils import logger
 
 
-def test(app: Sphinx, need: NeedsInfoType, needs: Dict[str, NeedsInfoType], *args: Any, **kwargs: Any) -> str:
+def test(app: Sphinx, need: NeedsInfoType, needs: dict[str, NeedsInfoType], *args: Any, **kwargs: Any) -> str:
     """
     Test function for dynamic functions in sphinx needs.
 
@@ -39,7 +41,7 @@ def test(app: Sphinx, need: NeedsInfoType, needs: Dict[str, NeedsInfoType], *arg
 
 
 def echo(
-    app: Sphinx, need: NeedsInfoType, needs: Dict[str, NeedsInfoType], text: str, *args: Any, **kwargs: Any
+    app: Sphinx, need: NeedsInfoType, needs: dict[str, NeedsInfoType], text: str, *args: Any, **kwargs: Any
 ) -> str:
     """
     .. versionadded:: 0.6.3
@@ -60,12 +62,12 @@ def echo(
 def copy(
     app: Sphinx,
     need: NeedsInfoType,
-    needs: Dict[str, NeedsInfoType],
+    needs: dict[str, NeedsInfoType],
     option: str,
-    need_id: Optional[str] = None,
+    need_id: str | None = None,
     lower: bool = False,
     upper: bool = False,
-    filter: Optional[str] = None,
+    filter: str | None = None,
 ) -> Any:
     """
     Copies the value of one need option to another
@@ -171,11 +173,11 @@ def copy(
 def check_linked_values(
     app: Sphinx,
     need: NeedsInfoType,
-    needs: Dict[str, NeedsInfoType],
+    needs: dict[str, NeedsInfoType],
     result: Any,
     search_option: str,
     search_value: Any,
-    filter_string: Optional[str] = None,
+    filter_string: str | None = None,
     one_hit: bool = False,
 ) -> Any:
     """
@@ -335,9 +337,9 @@ def check_linked_values(
 def calc_sum(
     app: Sphinx,
     need: NeedsInfoType,
-    needs: Dict[str, NeedsInfoType],
+    needs: dict[str, NeedsInfoType],
     option: str,
-    filter: Optional[str] = None,
+    filter: str | None = None,
     links_only: bool = False,
 ) -> float:
     """
@@ -443,10 +445,10 @@ def calc_sum(
 def links_from_content(
     app: Sphinx,
     need: NeedsInfoType,
-    needs: Dict[str, NeedsInfoType],
-    need_id: Optional[str] = None,
-    filter: Optional[str] = None,
-) -> List[str]:
+    needs: dict[str, NeedsInfoType],
+    need_id: str | None = None,
+    filter: str | None = None,
+) -> list[str]:
     """
     Extracts links from content of a need.
 

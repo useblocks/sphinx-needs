@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from timeit import default_timer as timer  # Used for timing measurements
 from typing import Any, Callable, Dict, List, Type
 
@@ -135,7 +137,7 @@ NODE_TYPES: _NODE_TYPES_T = {
 LOGGER = get_logger(__name__)
 
 
-def setup(app: Sphinx) -> Dict[str, Any]:
+def setup(app: Sphinx) -> dict[str, Any]:
     LOGGER.debug("Starting setup of Sphinx-Needs")
     LOGGER.debug("Load Sphinx-Data-Viewer for Sphinx-Needs")
     app.setup_extension("sphinx_data_viewer")
@@ -282,7 +284,7 @@ def process_creator(
             and fromdocname != f"{app.config.root_doc}"
         ):
             return
-        current_nodes: Dict[Type[nodes.Element], List[nodes.Element]] = {}
+        current_nodes: dict[type[nodes.Element], list[nodes.Element]] = {}
         check_nodes = list(node_list.keys())
         for node_need in doctree.findall(node_match(check_nodes)):
             for check_node in node_list:

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 EXTRA_DATA_OPTIONS = ["params", "prefix"]
 EXTRA_LINK_OPTIONS = ["url", "url_postfix"]
 CONFIG_OPTIONS = ["query", "max_content_lines", "id_prefix"]
