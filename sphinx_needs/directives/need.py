@@ -29,7 +29,7 @@ from sphinx_needs.need_constraints import process_constraints
 from sphinx_needs.nodes import Need
 from sphinx_needs.utils import add_doc, profile, remove_node_from_tree, split_need_id
 
-logger = get_logger(__name__)
+LOGGER = get_logger(__name__)
 
 NON_BREAKING_SPACE = re.compile("\xa0+")
 
@@ -156,7 +156,7 @@ class NeedDirective(SphinxDirective):
         if links_string:
             for link in re.split(r";|,", links_string):
                 if link.isspace():
-                    logger.warning(
+                    LOGGER.warning(
                         f"Grubby link definition found in need '{self.trimmed_title}'. "
                         "Defined link contains spaces only. [needs]",
                         type="needs",
@@ -436,10 +436,10 @@ def check_links(needs: Dict[str, NeedsInfoType], config: NeedsSphinxConfig) -> N
     the ``has_forbidden_dead_links`` field is also added.
     """
     extra_links = config.extra_links
+    report_dead_links = config.report_dead_links
     for need in needs.values():
         for link_type in extra_links:
-            dead_links_allowed = link_type.get("allow_dead_links", False)
-            need_link_value: List[str] = (
+            need_link_value = (
                 [need[link_type["option"]]] if isinstance(need[link_type["option"]], str) else need[link_type["option"]]  # type: ignore
             )
             for need_id_full in need_link_value:
@@ -449,9 +449,26 @@ def check_links(needs: Dict[str, NeedsInfoType], config: NeedsSphinxConfig) -> N
                     need_id_main in needs and need_id_part and need_id_part not in needs[need_id_main]["parts"]
                 ):
                     need["has_dead_links"] = True
-                    if not dead_links_allowed:
+                    if not link_type.get("allow_dead_links", False):
                         need["has_forbidden_dead_links"] = True
-                    break  # One found dead link is enough
+                        if report_dead_links:
+                            message = f"Need '{need['id']}' has unknown outgoing link '{need_id_full}' in field '{link_type['option']}'"
+                            # if the need has been imported from an external URL,
+                            # we want to provide that URL as the location of the warning,
+                            # otherwise we use the location of the need in the source file
+                            if need.get("is_external", False):
+                                LOGGER.warning(
+                                    f"{need['external_url']}: {message} [needs.external_link_outgoing]",
+                                    type="needs",
+                                    subtype="external_link_outgoing",
+                                )
+                            else:
+                                LOGGER.warning(
+                                    f"{message} [needs.link_outgoing]",
+                                    location=(need["docname"], need["lineno"]),
+                                    type="needs",
+                                    subtype="link_outgoing",
+                                )
 
 
 def create_back_links(needs: Dict[str, NeedsInfoType], config: NeedsSphinxConfig) -> None:

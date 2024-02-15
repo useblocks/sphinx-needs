@@ -1,6 +1,6 @@
 import re
+import subprocess
 from pathlib import Path
-from subprocess import STDOUT, check_output
 
 import pytest
 
@@ -16,9 +16,10 @@ def test_doc_github_44(test_app):
     # So we call the needed command directly, but still use the sphinx_testing app to create the outdir for us.
     app = test_app
 
-    output = str(
-        check_output(["sphinx-build", "-a", "-E", "-b", "html", app.srcdir, app.outdir], stderr=STDOUT, text=True)
+    output = subprocess.run(
+        ["sphinx-build", "-a", "-E", "-b", "html", app.srcdir, app.outdir], check=True, capture_output=True
     )
+
     # app.build() Uncomment, if build should stop on breakpoints
     html = Path(app.outdir, "index.html").read_text()
     assert "<h1>Github Issue 44 test" in html
@@ -26,8 +27,11 @@ def test_doc_github_44(test_app):
     assert "Test 2" in html
     assert "Test 3" in html
 
-    assert "linked need test_3 not found" not in output
-    assert "outgoing linked need test_123_broken not found" in output
+    stderr = output.stderr.decode("utf-8")
+    stderr = stderr.replace(str(app.srcdir), "srcdir")
+    assert stderr.splitlines() == [
+        "srcdir/index.rst:11: WARNING: Need 'test_3' has unknown outgoing link 'test_123_broken' in field 'links' [needs.link_outgoing]"
+    ]
 
 
 @pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_github_issue_61"}], indirect=True)

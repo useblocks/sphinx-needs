@@ -132,11 +132,12 @@ NODE_TYPES: _NODE_TYPES_T = {
     NeedFunc: process_need_func,
 }
 
+LOGGER = get_logger(__name__)
+
 
 def setup(app: Sphinx) -> Dict[str, Any]:
-    log = get_logger(__name__)
-    log.debug("Starting setup of Sphinx-Needs")
-    log.debug("Load Sphinx-Data-Viewer for Sphinx-Needs")
+    LOGGER.debug("Starting setup of Sphinx-Needs")
+    LOGGER.debug("Load Sphinx-Data-Viewer for Sphinx-Needs")
     app.setup_extension("sphinx_data_viewer")
     app.setup_extension("sphinxcontrib.jquery")
 
@@ -304,12 +305,10 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     """
     Register extra options and directive based on config from conf.py
     """
-    log = get_logger(__name__)
-
     needs_config = NeedsSphinxConfig(app.config)
 
     if isinstance(needs_config.extra_options, dict):
-        log.info(
+        LOGGER.info(
             'Config option "needs_extra_options" supports list and dict. However new default type since '
             "Sphinx-Needs 0.7.2 is list. Please see docs for details."
         )
@@ -317,7 +316,9 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     extra_options = NEEDS_CONFIG.extra_options
     for option in needs_config.extra_options:
         if option in extra_options:
-            log.warning(f'extra_option "{option}" already registered. [needs.config]', type="needs", subtype="config")
+            LOGGER.warning(
+                f'extra_option "{option}" already registered. [needs.config]', type="needs", subtype="config"
+            )
         NEEDS_CONFIG.extra_options[option] = directives.unchanged
 
     # Get extra links and create a dictionary of needed options.
@@ -393,13 +394,20 @@ def load_config(app: Sphinx, *_args: Any) -> None:
         if name not in NEEDS_CONFIG.warnings:
             NEEDS_CONFIG.warnings[name] = check
         else:
-            log.warning(
+            LOGGER.warning(
                 f"{name!r} in 'needs_warnings' is already registered. [needs.config]", type="needs", subtype="config"
             )
 
     if needs_config.constraints_failed_color:
-        log.warning(
+        LOGGER.warning(
             'Config option "needs_constraints_failed_color" is deprecated. Please use "needs_constraint_failed_options" styles instead. [needs.config]',
+            type="needs",
+            subtype="config",
+        )
+
+    if needs_config.report_dead_links is not True:
+        LOGGER.warning(
+            'Config option "needs_constraints_failed_color" is deprecated. Please use `suppress_warnings = ["needs.link_outgoing"]` instead. [needs.config]',
             type="needs",
             subtype="config",
         )
@@ -497,19 +505,15 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
 
 
 def check_configuration(_app: Sphinx, config: Config) -> None:
-    """
-    Checks the configuration for invalid options.
+    """Checks the configuration for invalid options.
 
     E.g. defined need-option, which is already defined internally
-
-    :param app:
-    :param config:
-    :return:
     """
-    extra_options = config["needs_extra_options"]
-    link_types = [x["option"] for x in config["needs_extra_links"]]
+    needs_config = NeedsSphinxConfig(config)
+    extra_options = needs_config.extra_options
+    link_types = [x["option"] for x in needs_config.extra_links]
 
-    external_filter = getattr(config, "needs_filter_data", {})
+    external_filter = needs_config.filter_data
     for extern_filter, value in external_filter.items():
         # Check if external filter values is really a string
         if not isinstance(value, str):
@@ -545,8 +549,8 @@ def check_configuration(_app: Sphinx, config: Config) -> None:
                 " This is not allowed.".format(link + "_back")
             )
 
-    external_variants = getattr(config, "needs_variants", {})
-    external_variant_options = getattr(config, "needs_variant_options", [])
+    external_variants = needs_config.variants
+    external_variant_options = needs_config.variant_options
     for value in external_variants.values():
         # Check if external filter values is really a string
         if not isinstance(value, str):

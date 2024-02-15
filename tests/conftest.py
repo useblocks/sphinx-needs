@@ -17,6 +17,7 @@ from docutils.nodes import document
 from sphinx import version_info
 from sphinx.application import Sphinx
 from sphinx.testing.path import path
+from sphinx.testing.util import SphinxTestApp
 from syrupy.extensions.single_file import SingleFileSnapshotExtension, WriteMode
 from xprocess import ProcessStarter
 
@@ -231,10 +232,11 @@ def test_app(make_app, sphinx_test_tempdir, request):
     builder_params = request.param
 
     sphinx_conf_overrides = builder_params.get("confoverrides", {})
-    # Since we don't want copy the plantuml.jar file for each test function,
-    # we need to override the plantuml conf variable and set it to what we have already
-    plantuml = "java -Djava.awt.headless=true -jar %s" % os.path.join(sphinx_test_tempdir, "utils", "plantuml.jar")
-    sphinx_conf_overrides.update(plantuml=plantuml)
+    if not builder_params.get("no_plantuml", False):
+        # Since we don't want copy the plantuml.jar file for each test function,
+        # we need to override the plantuml conf variable and set it to what we have already
+        plantuml = "java -Djava.awt.headless=true -jar %s" % os.path.join(sphinx_test_tempdir, "utils", "plantuml.jar")
+        sphinx_conf_overrides.update(plantuml=plantuml)
 
     # copy test srcdir to test temporary directory sphinx_test_tempdir
     srcdir = builder_params.get("srcdir")
@@ -245,7 +247,7 @@ def test_app(make_app, sphinx_test_tempdir, request):
         src_dir = Path(str(src_dir))
 
     # return sphinx.testing fixture make_app and new srcdir which is in sphinx_test_tempdir
-    app: Sphinx = make_app(
+    app: SphinxTestApp = make_app(
         buildername=builder_params.get("buildername", "html"),
         srcdir=src_dir,
         freshenv=builder_params.get("freshenv"),
@@ -267,6 +269,8 @@ def test_app(make_app, sphinx_test_tempdir, request):
     app.test_js = test_js.__get__(app, Sphinx)
 
     yield app
+
+    app.cleanup()
 
     # Clean up the srcdir of each Sphinx app after the test function has executed
     if request.config.getoption("--sn-build-dir") is None:

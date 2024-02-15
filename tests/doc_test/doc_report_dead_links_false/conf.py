@@ -10,7 +10,7 @@ needs_types = [
     {"directive": "test", "title": "Test Case", "prefix": "TC_", "color": "#DCB239", "style": "node"},
 ]
 
-needs_report_dead_links = False
+suppress_warnings = ["needs.link_outgoing"]
 
 needs_extra_links = [
     {

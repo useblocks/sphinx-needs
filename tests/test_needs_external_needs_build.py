@@ -22,7 +22,10 @@ def test_doc_build_html(test_app, sphinx_test_tempdir):
     output = subprocess.run(
         ["sphinx-build", "-b", "html", "-D", rf"plantuml={plantuml}", src_dir, out_dir], capture_output=True
     )
-    assert not output.stderr, f"Build failed with stderr: {output.stderr}"
+    assert output.stderr.decode("utf-8").splitlines() == [
+        "WARNING: http://my_company.com/docs/v1/index.html#TEST_01: Need 'EXT_TEST_01' has unknown outgoing link 'SPEC_1' in field 'links' [needs.external_link_outgoing]",
+        "WARNING: ../../_build/html/index.html#TEST_01: Need 'EXT_REL_PATH_TEST_01' has unknown outgoing link 'SPEC_1' in field 'links' [needs.external_link_outgoing]",
+    ]
 
     # run second time and check
     output_second = subprocess.run(

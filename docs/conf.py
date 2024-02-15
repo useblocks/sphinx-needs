@@ -90,7 +90,7 @@ DEFAULT_DIAGRAM_TEMPLATE = (
 # Absolute path to the needs_report_template_file based on the conf.py directory
 # needs_report_template = "/needs_templates/report_template.need"   # Use custom report template
 
-needs_report_dead_links = False
+suppress_warnings = ["needs.link_outgoing"]
 
 needs_types = [
     # Architecture types
