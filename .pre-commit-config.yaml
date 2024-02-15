@@ -33,7 +33,8 @@ repos:
       files: sphinx_needs/.*
       args: []
       additional_dependencies:
-      - sphinx==6
+      - sphinx==6.2.1
+      - docutils==0.19
       - types-docutils==0.20.0.20240201
       - types-jsonschema
       - types-requests

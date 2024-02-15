@@ -343,7 +343,7 @@ class LayoutHandler:
 
         return self.node_table
 
-    def get_section(self, section: str) -> List[nodes.line_block]:
+    def get_section(self, section: str) -> Union[nodes.line_block, List[nodes.Element]]:
         try:
             lines = self.layout["layout"][section]
         except KeyError:
@@ -365,7 +365,7 @@ class LayoutHandler:
             line_node += line_ready
             lines_container.append(line_node)
 
-        return [lines_container]
+        return lines_container
 
     def _parse(self, line: str) -> List[nodes.Node]:
         """
