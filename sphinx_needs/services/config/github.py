@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 EXTRA_DATA_OPTIONS = ["user", "created_at", "updated_at", "closed_at", "service"]
 EXTRA_LINK_OPTIONS = ["url"]
 EXTRA_IMAGE_OPTIONS = ["avatar"]

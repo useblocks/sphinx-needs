@@ -1,4 +1,6 @@
-from typing import Any, Dict, Type
+from __future__ import annotations
+
+from typing import Any
 
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
@@ -15,9 +17,9 @@ class ServiceManager:
         self.app = app
 
         self.log = get_logger(__name__)
-        self.services: Dict[str, BaseService] = {}
+        self.services: dict[str, BaseService] = {}
 
-    def register(self, name: str, klass: Type[BaseService], **kwargs: Any) -> None:
+    def register(self, name: str, klass: type[BaseService], **kwargs: Any) -> None:
         try:
             config = NeedsSphinxConfig(self.app.config).services[name]
         except KeyError:

@@ -3,10 +3,12 @@ Diagrams common module, which stores all class definitions and functions, which 
 diagram related directive. E.g. needflow and needsequence.
 """
 
+from __future__ import annotations
+
 import html
 import os
 import textwrap
-from typing import Any, Dict, List, Optional, Tuple, TypedDict
+from typing import Any, TypedDict
 from urllib.parse import urlparse
 
 from docutils import nodes
@@ -27,14 +29,14 @@ class DiagramAttributesType(TypedDict):
     show_legend: bool
     show_filters: bool
     show_link_names: bool
-    link_types: List[str]
+    link_types: list[str]
     config: str
     config_names: str
     scale: str
     highlight: str
-    align: Optional[str]
+    align: str | None
     debug: bool
-    caption: Optional[str]
+    caption: str | None
 
 
 class DiagramBase(SphinxDirective):
@@ -52,7 +54,7 @@ class DiagramBase(SphinxDirective):
         "debug": directives.flag,
     }
 
-    def create_target(self, target_name: str) -> Tuple[int, str, nodes.target]:
+    def create_target(self, target_name: str) -> tuple[int, str, nodes.target]:
         id = self.env.new_serialno(target_name)
         targetid = f"{target_name}-{self.env.docname}-{id}"
         targetnode = nodes.target("", "", ids=[targetid])
@@ -184,8 +186,8 @@ def calculate_link(app: Sphinx, need_info: NeedsPartsInfoType, _fromdocname: str
     return link
 
 
-def create_legend(need_types: List[Dict[str, Any]]) -> str:
-    def create_row(need_type: Dict[str, Any]) -> str:
+def create_legend(need_types: list[dict[str, Any]]) -> str:
+    def create_row(need_type: dict[str, Any]) -> str:
         return "\n|<back:{color}> {color} </back>| {name} |".format(color=need_type["color"], name=need_type["title"])
 
     rows = map(create_row, need_types)

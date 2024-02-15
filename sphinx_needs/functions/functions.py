@@ -6,9 +6,11 @@ Cares about the correct registration and execution of sphinx-needs functions to 
 in need configurations.
 """
 
+from __future__ import annotations
+
 import ast
 import re
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Union
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -31,7 +33,7 @@ DynamicFunction = Callable[
 ]
 
 
-def register_func(need_function: DynamicFunction, name: Optional[str] = None) -> None:
+def register_func(need_function: DynamicFunction, name: str | None = None) -> None:
     """
     Registers a new sphinx-needs function for the given sphinx environment.
     :param env: Sphinx environment
@@ -153,7 +155,7 @@ def find_and_replace_node_content(node: nodes.Node, env: BuildEnvironment, need:
     return node
 
 
-def resolve_dynamic_values(needs: Dict[str, NeedsInfoType], app: Sphinx) -> None:
+def resolve_dynamic_values(needs: dict[str, NeedsInfoType], app: Sphinx) -> None:
     """
     Resolve dynamic values inside need data.
 
@@ -178,7 +180,7 @@ def resolve_dynamic_values(needs: Dict[str, NeedsInfoType], app: Sphinx) -> None
                 # dynamic values in this data are not allowed.
                 continue
             if not isinstance(need[need_option], (list, set)):
-                func_call: Optional[str] = "init"
+                func_call: str | None = "init"
                 while func_call:
                     try:
                         func_call, func_return = _detect_and_execute(need[need_option], need, app)
@@ -231,7 +233,7 @@ def resolve_dynamic_values(needs: Dict[str, NeedsInfoType], app: Sphinx) -> None
 
 
 def resolve_variants_options(
-    needs: Dict[str, NeedsInfoType], needs_config: NeedsSphinxConfig, tags: Dict[str, bool]
+    needs: dict[str, NeedsInfoType], needs_config: NeedsSphinxConfig, tags: dict[str, bool]
 ) -> None:
     """
     Resolve variants options inside need data.
@@ -252,7 +254,7 @@ def resolve_variants_options(
 
     for need in needs.values():
         # Data to use as filter context.
-        need_context: Dict[str, Any] = {**need}
+        need_context: dict[str, Any] = {**need}
         need_context.update(**needs_config.filter_data)  # Add needs_filter_data to filter context
         need_context.update(**tags)  # Add sphinx tags to filter context
 
@@ -295,7 +297,7 @@ def check_and_get_content(content: str, need: NeedsInfoType, env: BuildEnvironme
     return content
 
 
-def _detect_and_execute(content: Any, need: NeedsInfoType, app: Sphinx) -> Tuple[Optional[str], Any]:
+def _detect_and_execute(content: Any, need: NeedsInfoType, app: Sphinx) -> tuple[str | None, Any]:
     """Detects if given content is a function call and executes it."""
     try:
         content = str(content)
@@ -312,7 +314,7 @@ def _detect_and_execute(content: Any, need: NeedsInfoType, app: Sphinx) -> Tuple
     return func_call, func_return
 
 
-def _analyze_func_string(func_string: str, need: Optional[NeedsInfoType]) -> Tuple[str, List[Any], Dict[str, Any]]:
+def _analyze_func_string(func_string: str, need: NeedsInfoType | None) -> tuple[str, list[Any], dict[str, Any]]:
     """
     Analyze given function string and extract:
 
@@ -336,14 +338,14 @@ def _analyze_func_string(func_string: str, need: Optional[NeedsInfoType]) -> Tup
     except AttributeError:
         raise SphinxError(f"Given dynamic function string is not a valid python call. Got: {func_string}")
 
-    func_args: List[Any] = []
+    func_args: list[Any] = []
     for arg in func_call.args:
         if isinstance(arg, ast.Num):
             func_args.append(arg.n)
         elif isinstance(arg, (ast.Str, ast.BoolOp)):
             func_args.append(arg.s)  # type: ignore
         elif isinstance(arg, ast.List):
-            arg_list: List[Any] = []
+            arg_list: list[Any] = []
             for element in arg.elts:
                 if isinstance(element, ast.Num):
                     arg_list.append(element.n)
@@ -367,7 +369,7 @@ def _analyze_func_string(func_string: str, need: Optional[NeedsInfoType]) -> Tup
                 "Unsupported type found in function definition: {}. "
                 "Supported are numbers, strings, bool and list".format(func_string)
             )
-    func_kargs: Dict[str, Any] = {}
+    func_kargs: dict[str, Any] = {}
     for keyword in func_call.keywords:
         kvalue = keyword.value
         kkey = keyword.arg

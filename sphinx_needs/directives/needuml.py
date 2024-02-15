@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import html
 import os
-from typing import List, Sequence
+from typing import Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -405,7 +407,7 @@ def is_element_of_need(node: nodes.Element) -> str:
 
 
 @measure_time("needuml")
-def process_needuml(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
+def process_needuml(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list[nodes.Element]) -> None:
     env = app.env
 
     # for node in doctree.findall(Needuml):

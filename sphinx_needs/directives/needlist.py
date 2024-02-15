@@ -1,9 +1,6 @@
-"""
+from __future__ import annotations
 
-
-"""
-
-from typing import List, Sequence
+from typing import Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -63,7 +60,7 @@ class NeedlistDirective(FilterBase):
         return [targetnode, Needlist("")]
 
 
-def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
+def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list[nodes.Element]) -> None:
     """
     Replace all needlist nodes with a list of the collected needs.
     Augment each need with a backlink to the original location.
@@ -80,7 +77,7 @@ def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
 
         id = node.attributes["ids"][0]
         current_needfilter = SphinxNeedsData(env).get_or_create_lists()[id]
-        content: List[nodes.Node] = []
+        content: list[nodes.Node] = []
         all_needs = list(SphinxNeedsData(env).get_or_create_needs().values())
         found_needs = process_filters(app, all_needs, current_needfilter)
 

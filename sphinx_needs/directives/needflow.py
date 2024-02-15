@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import html
 import os
-from typing import Dict, Iterable, List, Sequence
+from typing import Iterable, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -32,7 +34,7 @@ from sphinx_needs.utils import (
 logger = get_logger(__name__)
 
 
-NEEDFLOW_TEMPLATES: Dict[str, Template] = {}
+NEEDFLOW_TEMPLATES: dict[str, Template] = {}
 
 
 class Needflow(nodes.General, nodes.Element):
@@ -163,7 +165,7 @@ def walk_curr_need_tree(
     fromdocname: str,
     current_needflow: NeedsFlowType,
     all_needs: Iterable[NeedsInfoType],
-    found_needs: List[NeedsPartsInfoType],
+    found_needs: list[NeedsPartsInfoType],
     need: NeedsPartsInfoType,
 ) -> str:
     """
@@ -230,7 +232,7 @@ def walk_curr_need_tree(
     return curr_need_tree
 
 
-def get_root_needs(found_needs: List[NeedsPartsInfoType]) -> List[NeedsPartsInfoType]:
+def get_root_needs(found_needs: list[NeedsPartsInfoType]) -> list[NeedsPartsInfoType]:
     return_list = []
     for current_need in found_needs:
         if current_need["is_need"]:
@@ -253,7 +255,7 @@ def cal_needs_node(
     fromdocname: str,
     current_needflow: NeedsFlowType,
     all_needs: Iterable[NeedsInfoType],
-    found_needs: List[NeedsPartsInfoType],
+    found_needs: list[NeedsPartsInfoType],
 ) -> str:
     """Calculate and get needs node representaion for plantuml including all child needs and need parts."""
     top_needs = get_root_needs(found_needs)
@@ -276,7 +278,7 @@ def cal_needs_node(
 
 
 @measure_time("needflow")
-def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
+def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list[nodes.Element]) -> None:
     # Replace all needflow nodes with a list of the collected needs.
     # Augment each need with a backlink to the original location.
     env = app.env
@@ -321,7 +323,7 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
             node.replace_self(error_node)
             continue
 
-        content: List[nodes.Element] = []
+        content: list[nodes.Element] = []
 
         found_needs = process_filters(app, all_needs.values(), current_needflow)
 

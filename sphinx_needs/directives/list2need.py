@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import hashlib
 import re
 from contextlib import suppress
-from typing import Any, List, Sequence
+from typing import Any, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -201,7 +203,7 @@ class List2NeedDirective(SphinxDirective):
             type_prefix, hashlib.sha1(hashable_content.encode("UTF-8")).hexdigest().upper()[:id_length]
         )
 
-    def get_down_needs(self, list_needs: List[Any], index: int) -> List[str]:
+    def get_down_needs(self, list_needs: list[Any], index: int) -> list[str]:
         """
         Return all needs which are directly under the one given by the index
         """

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 try:
     # Sphinx 3.0
     from sphinx.errors import NoUri

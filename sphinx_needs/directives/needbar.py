@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import hashlib
 import math
-from typing import List, Sequence
+from typing import Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -165,7 +167,7 @@ class NeedbarDirective(FilterBase):
 # 8. create figure
 # 9. final storage
 # 10. cleanup matplotlib
-def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
+def process_needbar(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list[nodes.Element]) -> None:
     env = app.env
     needs_data = SphinxNeedsData(env)
     needs_config = NeedsSphinxConfig(env.config)

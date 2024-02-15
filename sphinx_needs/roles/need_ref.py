@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import contextlib
 from collections.abc import Iterable
-from typing import Dict, List, Union
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -19,7 +20,7 @@ class NeedRef(nodes.Inline, nodes.Element):
     pass
 
 
-def transform_need_to_dict(need: NeedsInfoType) -> Dict[str, str]:
+def transform_need_to_dict(need: NeedsInfoType) -> dict[str, str]:
     """
     The function will transform a need in a dictionary of strings. Used to
     be given e.g. to a python format string.
@@ -50,7 +51,7 @@ def transform_need_to_dict(need: NeedsInfoType) -> Dict[str, str]:
     return dict_need
 
 
-def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
+def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: list[nodes.Element]) -> None:
     builder = app.builder
     env = app.env
     needs_config = NeedsSphinxConfig(env.config)
@@ -93,7 +94,7 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                 title = f"{title[: max_length - 3]}..."
                 dict_need["title"] = title
 
-            ref_name: Union[None, str, nodes.Text] = node_need_ref.children[0].children[0]  # type: ignore[assignment]
+            ref_name: None | str | nodes.Text = node_need_ref.children[0].children[0]  # type: ignore[assignment]
             # Only use ref_name, if it differs from ref_id
             if str(need_id_full) == str(ref_name):
                 ref_name = None

@@ -3,7 +3,7 @@ Cares about handling and execution warnings.
 
 """
 
-from typing import Dict, Optional
+from __future__ import annotations
 
 from sphinx.application import Sphinx
 from sphinx.util import logging
@@ -16,7 +16,7 @@ from sphinx_needs.logging import get_logger
 logger = get_logger(__name__)
 
 
-def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
+def process_warnings(app: Sphinx, exception: Exception | None) -> None:
     """
     Checks the configured warnings.
 
@@ -47,7 +47,7 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
     env.needs_warnings_executed = True  # type: ignore[attr-defined]
 
     # Exclude external needs for warnings check
-    checked_needs: Dict[str, NeedsInfoType] = {}
+    checked_needs: dict[str, NeedsInfoType] = {}
     for need_id, need in needs.items():
         if not need["is_external"]:
             checked_needs[need_id] = need

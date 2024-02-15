@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from pathlib import Path, PurePosixPath
-from typing import Iterable, List
+from typing import Iterable
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 from sphinx.application import Sphinx
@@ -133,7 +135,7 @@ def install_static_files(
     app: Sphinx,
     source_dir: Path,
     destination_dir: Path,
-    files_to_copy: List[Path],
+    files_to_copy: list[Path],
     message: str,
 ) -> None:
     builder = app.builder

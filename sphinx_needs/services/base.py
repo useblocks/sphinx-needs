@@ -1,10 +1,12 @@
-from typing import Any, ClassVar, List
+from __future__ import annotations
+
+from typing import Any, ClassVar
 
 from sphinx_needs.logging import get_logger
 
 
 class BaseService:
-    options: ClassVar[List[str]]
+    options: ClassVar[list[str]]
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.log = get_logger(__name__)

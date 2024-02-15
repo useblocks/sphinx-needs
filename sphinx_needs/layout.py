@@ -4,13 +4,15 @@ Cares about the correct creation and handling of need layout.
 Based on https://github.com/useblocks/sphinxcontrib-needs/issues/102
 """
 
+from __future__ import annotations
+
 import os
 import re
 import uuid
 from contextlib import suppress
 from functools import lru_cache
 from optparse import Values
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable
 from urllib.parse import urlparse
 
 import requests
@@ -31,7 +33,7 @@ from sphinx_needs.utils import INTERNALS, match_string_link
 
 @measure_time("need")
 def create_need(
-    need_id: str, app: Sphinx, layout: Optional[str] = None, style: Optional[str] = None, docname: Optional[str] = None
+    need_id: str, app: Sphinx, layout: str | None = None, style: str | None = None, docname: str | None = None
 ) -> nodes.container:
     """
     Creates a new need-node for a given layout.
@@ -127,7 +129,7 @@ def replace_pending_xref_refdoc(node: nodes.Element, new_refdoc: str) -> None:
 
 @measure_time("need")
 def build_need(
-    layout: str, node: nodes.Element, app: Sphinx, style: Optional[str] = None, fromdocname: Optional[str] = None
+    layout: str, node: nodes.Element, app: Sphinx, style: str | None = None, fromdocname: str | None = None
 ) -> None:
     """
     Builds a need based on a given layout for a given need-node.
@@ -175,7 +177,7 @@ def build_need(
 
 
 @lru_cache(1)
-def _generate_inline_parser() -> Tuple[Values, Inliner]:
+def _generate_inline_parser() -> tuple[Values, Inliner]:
     doc_settings = OptionParser(components=(Parser,)).get_default_values()
     inline_parser = Inliner()
     inline_parser.init_customizations(doc_settings)  # type: ignore
@@ -193,8 +195,8 @@ class LayoutHandler:
         need: NeedsInfoType,
         layout: str,
         node: nodes.Element,
-        style: Optional[str] = None,
-        fromdocname: Optional[str] = None,
+        style: str | None = None,
+        fromdocname: str | None = None,
     ) -> None:
         self.app = app
         self.need = need
@@ -302,7 +304,7 @@ class LayoutHandler:
             inliner=None,
         )
 
-        self.functions: Dict[str, Callable[..., Union[None, nodes.Node, List[nodes.Node]]]] = {
+        self.functions: dict[str, Callable[..., None | nodes.Node | list[nodes.Node]]] = {
             "meta": self.meta,  # type: ignore[dict-item]
             "meta_all": self.meta_all,
             "meta_links": self.meta_links,
@@ -343,7 +345,7 @@ class LayoutHandler:
 
         return self.node_table
 
-    def get_section(self, section: str) -> Union[nodes.line_block, List[nodes.Element]]:
+    def get_section(self, section: str) -> nodes.line_block | list[nodes.Element]:
         try:
             lines = self.layout["layout"][section]
         except KeyError:
@@ -367,7 +369,7 @@ class LayoutHandler:
 
         return lines_container
 
-    def _parse(self, line: str) -> List[nodes.Node]:
+    def _parse(self, line: str) -> list[nodes.Node]:
         """
         Parses a single line/string for inline rst statements, like strong, emphasis, literal, ...
 
@@ -379,7 +381,7 @@ class LayoutHandler:
             raise SphinxNeedLayoutException(message)
         return result  # type: ignore[no-any-return]
 
-    def _func_replace(self, section_nodes: List[nodes.Node]) -> List[nodes.Node]:
+    def _func_replace(self, section_nodes: list[nodes.Node]) -> list[nodes.Node]:
         """
         Replaces a function definition like ``<<meta(a, ,b)>>`` with the related docutils nodes.
 
@@ -390,7 +392,7 @@ class LayoutHandler:
         :return: docutils nodes
         """
         return_nodes = []
-        result: Union[None, nodes.Node, List[nodes.Node]]
+        result: None | nodes.Node | list[nodes.Node]
         for node in section_nodes:
             if not isinstance(node, nodes.Text):
                 for child in node.children:
@@ -483,8 +485,8 @@ class LayoutHandler:
         return data
 
     def meta(
-        self, name: str, prefix: Optional[str] = None, show_empty: bool = False
-    ) -> Union[nodes.inline, List[nodes.Element]]:
+        self, name: str, prefix: str | None = None, show_empty: bool = False
+    ) -> nodes.inline | list[nodes.Element]:
         """
         Returns the specific metadata of a need inside docutils nodes.
         Usage::
@@ -520,11 +522,11 @@ class LayoutHandler:
             if len(data) == 0 and not show_empty:
                 return []
 
-            needs_string_links_option: List[str] = []
+            needs_string_links_option: list[str] = []
             for v in self.needs_config.string_links.values():
                 needs_string_links_option.extend(v["options"])
 
-            data_list: List[str] = (
+            data_list: list[str] = (
                 [i.strip() for i in re.split(r",|;", data) if len(i) != 0]
                 if name in needs_string_links_option
                 else [data]
@@ -605,7 +607,7 @@ class LayoutHandler:
         self,
         prefix: str = "",
         postfix: str = "",
-        exclude: Optional[List[str]] = None,
+        exclude: list[str] | None = None,
         no_links: bool = False,
         defaults: bool = True,
         show_empty: bool = False,
@@ -701,9 +703,7 @@ class LayoutHandler:
         data_container.append(node_links)
         return data_container
 
-    def meta_links_all(
-        self, prefix: str = "", postfix: str = "", exclude: Optional[List[str]] = None
-    ) -> List[nodes.line]:
+    def meta_links_all(self, prefix: str = "", postfix: str = "", exclude: list[str] | None = None) -> list[nodes.line]:
         """
         Documents all used link types for the current need automatically.
 
@@ -736,14 +736,14 @@ class LayoutHandler:
     def image(
         self,
         url: str,
-        height: Optional[str] = None,
-        width: Optional[str] = None,
-        align: Optional[str] = None,
+        height: str | None = None,
+        width: str | None = None,
+        align: str | None = None,
         no_link: bool = False,
         prefix: str = "",
         is_external: bool = False,
         img_class: str = "",
-    ) -> Union[nodes.inline, List[nodes.Element]]:
+    ) -> nodes.inline | list[nodes.Element]:
         """
         See https://docutils.sourceforge.io/docs/ref/rst/directives.html#images
 
@@ -875,10 +875,10 @@ class LayoutHandler:
     def link(
         self,
         url: str,
-        text: Optional[str] = None,
-        image_url: Optional[str] = None,
-        image_height: Optional[str] = None,
-        image_width: Optional[str] = None,
+        text: str | None = None,
+        image_url: str | None = None,
+        image_height: str | None = None,
+        image_width: str | None = None,
         prefix: str = "",
         is_dynamic: bool = False,
     ) -> nodes.inline:
@@ -927,7 +927,7 @@ class LayoutHandler:
 
     def collapse_button(
         self, target: str = "meta", collapsed: str = "Show", visible: str = "Close", initial: bool = False
-    ) -> Optional[nodes.inline]:
+    ) -> nodes.inline | None:
         """
         To show icons instead of text on the button, use collapse_button() like this::
 
@@ -989,10 +989,10 @@ class LayoutHandler:
 
     def permalink(
         self,
-        image_url: Optional[str] = None,
-        image_height: Optional[str] = None,
-        image_width: Optional[str] = None,
-        text: Optional[str] = None,
+        image_url: str | None = None,
+        image_height: str | None = None,
+        image_width: str | None = None,
+        text: str | None = None,
         prefix: str = "",
     ) -> nodes.inline:
         """
@@ -1034,9 +1034,7 @@ class LayoutHandler:
             prefix=prefix,
         )
 
-    def _grid_simple(
-        self, colwidths: List[int], side_left: Union[bool, str], side_right: Union[bool, str], footer: bool
-    ) -> None:
+    def _grid_simple(self, colwidths: list[int], side_left: bool | str, side_right: bool | str, footer: bool) -> None:
         """
         Creates most "simple" grid layouts.
         Side parts and footer can be activated via config.
@@ -1209,7 +1207,7 @@ class LayoutHandler:
         # Construct table
         node_tgroup += self.node_tbody
 
-    def _grid_content(self, colwidths: List[int], side_left: bool, side_right: bool, footer: bool) -> None:
+    def _grid_content(self, colwidths: list[int], side_left: bool, side_right: bool, footer: bool) -> None:
         """
         Creates most "content" based grid layouts.
         Side parts and footer can be activated via config.

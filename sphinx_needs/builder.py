@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import os
-from typing import Iterable, List, Optional, Sequence, Set
+from typing import Iterable, Sequence
 
 from docutils import nodes
 from sphinx import version_info
@@ -78,7 +80,7 @@ class NeedsBuilder(Builder):
         from sphinx_needs.filter_common import filter_needs
 
         filter_string = needs_config.builder_filter
-        filtered_needs: List[NeedsInfoType] = filter_needs(
+        filtered_needs: list[NeedsInfoType] = filter_needs(
             data.get_or_create_needs().values(), needs_config, filter_string
         )
 
@@ -96,11 +98,11 @@ class NeedsBuilder(Builder):
         else:
             LOGGER.info("Needs successfully exported")
 
-    def get_target_uri(self, _docname: str, _typ: Optional[str] = None) -> str:
+    def get_target_uri(self, _docname: str, _typ: str | None = None) -> str:
         # only needed if the write phase is run
         return ""
 
-    def prepare_writing(self, _docnames: Set[str]) -> None:
+    def prepare_writing(self, _docnames: set[str]) -> None:
         # only needed if the write phase is run
         pass
 
@@ -242,7 +244,7 @@ class NeedumlsBuilder(Builder):
     def get_outdated_docs(self) -> Iterable[str]:
         return []
 
-    def prepare_writing(self, _docnames: Set[str]) -> None:
+    def prepare_writing(self, _docnames: set[str]) -> None:
         pass
 
     def write_doc_serialized(self, _docname: str, _doctree: nodes.document) -> None:
@@ -251,7 +253,7 @@ class NeedumlsBuilder(Builder):
     def cleanup(self) -> None:
         pass
 
-    def get_target_uri(self, _docname: str, _typ: Optional[str] = None) -> str:
+    def get_target_uri(self, _docname: str, _typ: str | None = None) -> str:
         return ""
 
 
