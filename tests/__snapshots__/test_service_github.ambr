@@ -1,0 +1,342 @@
+# name: test_build[test_app0]
+  dict({
+    'current_version': '1',
+    'project': 'Python',
+    'versions': dict({
+      '1': dict({
+        'filters': dict({
+        }),
+        'filters_amount': 0,
+        'needs': dict({
+          'GITHUB_050bec': dict({
+            'arch': dict({
+            }),
+            'closed_at': '',
+            'completion': '',
+            'constraints': list([
+            ]),
+            'constraints_passed': True,
+            'constraints_results': dict({
+            }),
+            'content_id': 'GITHUB_050bec',
+            'created_at': '2024-02-15T14:04:06Z',
+            'delete': False,
+            'description': '''
+              Bump actions/cache from 3 to 4 (#1092)
+              
+              Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+            ''',
+            'docname': 'index',
+            'doctype': '.rst',
+            'duration': '',
+            'external_css': 'external_link',
+            'external_url': None,
+            'full_title': 'Bump actions/cache from 3 to 4 (#1092)',
+            'has_dead_links': '',
+            'has_forbidden_dead_links': '',
+            'hidden': '',
+            'id': 'GITHUB_050bec',
+            'id_prefix': '',
+            'is_external': False,
+            'is_modified': False,
+            'is_need': True,
+            'is_part': False,
+            'jinja_content': False,
+            'layout': 'github',
+            'links': list([
+            ]),
+            'max_amount': '',
+            'max_content_lines': '',
+            'modifications': 0,
+            'params': '',
+            'parent_need': '',
+            'parent_needs': list([
+            ]),
+            'parts': dict({
+            }),
+            'post_template': None,
+            'pre_template': None,
+            'prefix': '',
+            'query': '',
+            'section_name': 'Title',
+            'sections': list([
+              'Title',
+            ]),
+            'service': 'github-commits',
+            'signature': '',
+            'specific': 'useblocks/sphinx-needs/050bec750ff2c5acf881415fa2b5efb5fcce8414',
+            'status': None,
+            'style': None,
+            'tags': list([
+            ]),
+            'target_id': 'GITHUB_050bec',
+            'template': None,
+            'title': 'Bump actions/cache from 3 to 4 (#1092)',
+            'type': 'commit',
+            'type_name': 'Commit',
+            'updated_at': '',
+            'url': 'https://github.com/useblocks/sphinx-needs/commit/050bec750ff2c5acf881415fa2b5efb5fcce8414',
+            'url_postfix': '',
+            'user': 'dependabot[bot]',
+          }),
+          'GITHUB_1110': dict({
+            'arch': dict({
+            }),
+            'closed_at': 'None',
+            'completion': '',
+            'constraints': list([
+            ]),
+            'constraints_passed': True,
+            'constraints_results': dict({
+            }),
+            'content_id': 'GITHUB_1110',
+            'created_at': '2024-02-15T12:19:11Z',
+            'delete': False,
+            'description': '''
+              .. code-block:: text
+              
+                 I've also just realised there is a bug in this directive:
+              
+              
+                 [...]
+  
+            ''',
+            'docname': 'index',
+            'doctype': '.rst',
+            'duration': '',
+            'external_css': 'external_link',
+            'external_url': None,
+            'full_title': 'needreport usage should count needs in post-process',
+            'has_dead_links': '',
+            'has_forbidden_dead_links': '',
+            'hidden': '',
+            'id': 'GITHUB_1110',
+            'id_prefix': '',
+            'is_external': False,
+            'is_modified': False,
+            'is_need': True,
+            'is_part': False,
+            'jinja_content': False,
+            'layout': 'github',
+            'links': list([
+            ]),
+            'max_amount': '1',
+            'max_content_lines': '2',
+            'modifications': 0,
+            'params': '',
+            'parent_need': '',
+            'parent_needs': list([
+            ]),
+            'parts': dict({
+            }),
+            'post_template': None,
+            'pre_template': None,
+            'prefix': '',
+            'query': 'repo:useblocks/sphinx-needs',
+            'section_name': 'Title',
+            'sections': list([
+              'Title',
+            ]),
+            'service': 'github-issues',
+            'signature': '',
+            'specific': '',
+            'status': 'open',
+            'style': None,
+            'tags': list([
+              'bug',
+            ]),
+            'target_id': 'GITHUB_1110',
+            'template': None,
+            'title': 'needreport usage should count needs in post-process',
+            'type': 'issue',
+            'type_name': 'Issue',
+            'updated_at': '2024-02-15T12:19:30Z',
+            'url': 'https://github.com/useblocks/sphinx-needs/issues/1110',
+            'url_postfix': '',
+            'user': 'chrisjsewell',
+          }),
+          'GITHUB_1112': dict({
+            'arch': dict({
+            }),
+            'closed_at': 'None',
+            'completion': '',
+            'constraints': list([
+            ]),
+            'constraints_passed': True,
+            'constraints_results': dict({
+            }),
+            'content_id': 'GITHUB_1112',
+            'created_at': '2024-02-15T20:45:12Z',
+            'delete': False,
+            'description': '''
+              .. code-block:: text
+              
+                 @David-Le-Nir and @danwos, as I explained in
+                 https://github.com/useblocks/sphinx-
+                 needs/issues/1103#issuecomment-1936305902, I think this is a
+                 better solution for handling need defined  within `only`
+                 directives.
+              
+                 In this first "read" phase, we simply just note all the
+                 parent `only` expressions of the need, storing them on an
+                 (optional) `only_expressions` field of the need data item.
+              
+                 If desired, in a subsequent "build" post-processing phase,
+                 called from the cached data (once per build), you could then
+                 evaluate the `only_expressions` and remove needs as a
+                 necessary (or do whatever).
+              
+                 This logic would go here:
+                 https://github.com/useblocks/sphinx-needs/blob/84a5f72f2e72a
+                 b1471ab2d1bb5c570d6115ef199/sphinx_needs/directives/need.py#
+                 L385
+              
+                 this is more in-line with the logic of the `only` directive,
+                 where everything is cached and parts of the doctree are only
+                 removed during the build phase.
+              
+                 would supercede #1106
+              
+                 closes #1103
+            ''',
+            'docname': 'index',
+            'doctype': '.rst',
+            'duration': '',
+            'external_css': 'external_link',
+            'external_url': None,
+            'full_title': '👌 Capture `only` expressions for each need',
+            'has_dead_links': '',
+            'has_forbidden_dead_links': '',
+            'hidden': '',
+            'id': 'GITHUB_1112',
+            'id_prefix': '',
+            'is_external': False,
+            'is_modified': False,
+            'is_need': True,
+            'is_part': False,
+            'jinja_content': False,
+            'layout': 'github',
+            'links': list([
+            ]),
+            'max_amount': '1',
+            'max_content_lines': '',
+            'modifications': 0,
+            'params': '',
+            'parent_need': '',
+            'parent_needs': list([
+            ]),
+            'parts': dict({
+            }),
+            'post_template': None,
+            'pre_template': None,
+            'prefix': '',
+            'query': 'repo:useblocks/sphinx-needs',
+            'section_name': 'Title',
+            'sections': list([
+              'Title',
+            ]),
+            'service': 'github-prs',
+            'signature': '',
+            'specific': '',
+            'status': 'open',
+            'style': None,
+            'tags': list([
+            ]),
+            'target_id': 'GITHUB_1112',
+            'template': None,
+            'title': '👌 Capture `only` expressions for each need',
+            'type': 'pr',
+            'type_name': 'PullRequest',
+            'updated_at': '2024-02-15T20:55:43Z',
+            'url': 'https://github.com/useblocks/sphinx-needs/pull/1112',
+            'url_postfix': '',
+            'user': 'chrisjsewell',
+          }),
+          'GITHUB_6abd38': dict({
+            'arch': dict({
+            }),
+            'closed_at': '',
+            'completion': '',
+            'constraints': list([
+            ]),
+            'constraints_passed': True,
+            'constraints_results': dict({
+            }),
+            'content_id': 'GITHUB_6abd38',
+            'created_at': '2024-02-12T08:36:07.000Z',
+            'delete': False,
+            'description': '''
+              🧪 Add test for `needreport` directive (#1105)
+              
+              Currently there is no test for this directive, this PR adds one.
+              
+              This PR also fixes the directive:
+              
+              - Make the options flags
+              - Change errors in the directive to emit warnings, rather than excepting
+              the whole build
+              - Allow for `template` to be specified as a directive option
+              - Allow the the `dropdown` directive used in the default template, which
+              requires an external sphinx extension, to be overriden using
+              `needs_render_context = {"report_directive": "admonition"}` (I left the
+              default as `dropdown`, so as not to introduce a breaking change)
+            ''',
+            'docname': 'index',
+            'doctype': '.rst',
+            'duration': '',
+            'external_css': 'external_link',
+            'external_url': None,
+            'full_title': '🧪 Add test for `needreport` directive (#1105)',
+            'has_dead_links': '',
+            'has_forbidden_dead_links': '',
+            'hidden': '',
+            'id': 'GITHUB_6abd38',
+            'id_prefix': '',
+            'is_external': False,
+            'is_modified': False,
+            'is_need': True,
+            'is_part': False,
+            'jinja_content': False,
+            'layout': 'github',
+            'links': list([
+            ]),
+            'max_amount': '1',
+            'max_content_lines': '',
+            'modifications': 0,
+            'params': '',
+            'parent_need': '',
+            'parent_needs': list([
+            ]),
+            'parts': dict({
+            }),
+            'post_template': None,
+            'pre_template': None,
+            'prefix': '',
+            'query': 'repo:useblocks/sphinx-needs error',
+            'section_name': 'Title',
+            'sections': list([
+              'Title',
+            ]),
+            'service': 'github-commits',
+            'signature': '',
+            'specific': '',
+            'status': None,
+            'style': None,
+            'tags': list([
+            ]),
+            'target_id': 'GITHUB_6abd38',
+            'template': None,
+            'title': '🧪 Add test for `needreport` directive (#1105)',
+            'type': 'commit',
+            'type_name': 'Commit',
+            'updated_at': '',
+            'url': 'https://github.com/useblocks/sphinx-needs/commit/6abd389369c5bbd5216f5ecdc3da1323ebe8620d',
+            'url_postfix': '',
+            'user': 'chrisjsewell',
+          }),
+        }),
+        'needs_amount': 4,
+      }),
+    }),
+  })
+# ---

@@ -1,8 +1,9 @@
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
-import requests_mock
+import responses
 from syrupy.filters import props
 
 
@@ -193,7 +194,7 @@ def test_needimport_needs_json_download(test_app, snapshot):
         },
     }
 
-    with requests_mock.Mocker() as m:
+    with responses.RequestsMock() as m:
         m.get("http://my_company.com/docs/v1/remote-needs.json", json=remote_json)
         app.build()
 
@@ -212,48 +213,13 @@ def test_needimport_needs_json_download(test_app, snapshot):
     indirect=True,
 )
 def test_needimport_needs_json_download_negative(test_app):
-    import subprocess
-
     app = test_app
-
-    remote_json = {
-        "created": "2022-05-11T13:54:22.331741",
-        "current_version": "1.0",
-        "project": "needs test docs",
-        "versions": {
-            "1.0": {
-                "created": "2021-05-11T13:54:22.331724",
-                "filters": {},
-                "filters_amount": 0,
-                "needs": {
-                    "TEST_101": {
-                        "id": "TEST_101",
-                        "description": "TEST_101 DESCRIPTION",
-                        "docname": "index",
-                        "external_css": "external_link",
-                        "external_url": "http://my_company.com/docs/v1/index.html#TEST_01",
-                        "title": "TEST_101 TITLE",
-                        "type": "impl",
-                        "tags": ["ext_test"],
-                    },
-                },
-            },
-        },
-    }
-
-    with requests_mock.Mocker() as m:
-        # test with invalid url
-        m.get(
-            "http://my_wrong_name_company.com/docs/v1/remote-needs.json",
-            json=remote_json,
-        )
-
-        src_dir = Path(app.srcdir)
-        out_dir = Path(app.outdir)
-        output = subprocess.run(
-            ["sphinx-build", "-M", "html", src_dir, out_dir], capture_output=True
-        )
-        assert (
-            "NeedimportException: Getting http://my_wrong_name_company.com/docs/v1/remote-needs.json didn't work."
-            in output.stderr.decode("utf-8")
-        )
+    src_dir = Path(app.srcdir)
+    out_dir = Path(app.outdir)
+    output = subprocess.run(
+        ["sphinx-build", "-M", "html", src_dir, out_dir], capture_output=True
+    )
+    assert (
+        "NeedimportException: Getting http://my_wrong_name_company.com/docs/v1/remote-needs.json didn't work."
+        in output.stderr.decode("utf-8")
+    )

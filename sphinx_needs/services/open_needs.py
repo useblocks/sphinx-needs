@@ -7,6 +7,7 @@ from typing import Any
 import requests
 from jinja2 import Template
 from sphinx.application import Sphinx
+from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.utils import dict_get, jinja_parse
@@ -213,10 +214,12 @@ class OpenNeedsService(BaseService):
             need_data.append(finale_data)
         return need_data
 
-    def request(self, options: Any = None, *args: Any, **kwargs: Any) -> Any:
+    def request_from_directive(
+        self, directive: SphinxDirective, /
+    ) -> list[dict[str, Any]]:
         self.log.info(f"Requesting data for service {self.name}")
         self._oauthorization()  # Get authorization token
-        params = self._prepare_request(options)
+        params = self._prepare_request(directive.options)
 
         request_params = {
             "url": params["url"],
@@ -230,7 +233,7 @@ class OpenNeedsService(BaseService):
             if "description" not in datum or datum["description"] is None:
                 datum["description"] = ""
 
-        need_data = self._extract_data(data, options)
+        need_data = self._extract_data(data, directive.options)
 
         return need_data
 
