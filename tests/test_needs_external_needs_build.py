@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 import pytest
-import requests_mock
+import responses
 import sphinx
 from docutils import __version__ as doc_ver
 
@@ -350,7 +350,7 @@ def test_external_needs_json_url(test_app):
         },
     }
 
-    with requests_mock.Mocker() as m:
+    with responses.RequestsMock() as m:
         m.get("http://my_company.com/docs/v1/remote-needs.json", json=remote_json)
         app.build()
 

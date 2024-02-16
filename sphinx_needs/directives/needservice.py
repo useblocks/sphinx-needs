@@ -11,9 +11,9 @@ from sphinx_data_viewer.api import get_data_viewer_node
 
 from sphinx_needs.api import add_need
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.directives.need import NeedDirective
 from sphinx_needs.logging import get_logger
-from sphinx_needs.services.base import BaseService
 from sphinx_needs.utils import add_doc
 
 
@@ -67,7 +67,7 @@ class NeedserviceDirective(SphinxDirective):
         needs_config = NeedsSphinxConfig(self.config)
         need_types = needs_config.types
         all_data = needs_config.service_all_data
-        needs_services: dict[str, BaseService] = getattr(app, "needs_services", {})
+        needs_services = SphinxNeedsData(self.env).get_or_create_services()
 
         service_name = self.arguments[0]
         service = needs_services.get(service_name)
@@ -75,7 +75,7 @@ class NeedserviceDirective(SphinxDirective):
         section = []
 
         if "debug" not in self.options:
-            service_data = service.request(self.options)
+            service_data = service.request_from_directive(self)
             for datum in service_data:
                 options = {}
 

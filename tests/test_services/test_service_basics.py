@@ -15,7 +15,8 @@ class ServiceTest(BaseService):
 
         super().__init__()
 
-    def request(self, options):
+    def request(self, directive):
+        options = directive.options
         data = [
             {
                 "title": "service_test_title",
@@ -49,7 +50,7 @@ class NoDebugService(BaseService):
     def __init__(self, _app: Sphinx, _name: str, config, **kwargs):
         super().__init__()
 
-    def request(self, _options):
+    def request(self, _directive):
         return []
 
 

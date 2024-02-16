@@ -9,6 +9,8 @@ from urllib.parse import urlparse
 
 import requests
 from sphinx.application import Sphinx
+from sphinx.util.docutils import SphinxDirective
+from sphinx.util.logging import getLogger
 
 from sphinx_needs.api import add_need_type
 from sphinx_needs.api.exceptions import NeedsApiConfigException
@@ -22,6 +24,8 @@ from sphinx_needs.services.config.github import (
     GITHUB_DATA,
     GITHUB_LAYOUT,
 )
+
+LOGGER = getLogger(__name__)
 
 
 class GithubService(BaseService):
@@ -109,7 +113,7 @@ class GithubService(BaseService):
                     single_type = "commits"
                 url = self.url + f"repos/{owner}/{repo}/{single_type}/{number}"
             except IndexError:
-                raise NeedGithubServiceException(
+                raise _SendException(
                     'Single option ot valid, must follow "owner/repo/number"'
                 )
 
@@ -147,18 +151,18 @@ class GithubService(BaseService):
                 resp = requests.get(url, params=params, auth=auth, headers=headers)
                 if resp.status_code > 299:
                     if "rate limit" in resp.json()["message"]:
-                        raise NeedGithubServiceException(
+                        raise _SendException(
                             "GitHub: API rate limit exceeded (twice). Stop here."
                         )
                     else:
-                        raise NeedGithubServiceException(
+                        raise _SendException(
                             "Github service error during request.\n"
                             f"Status code: {resp.status_code}\n"
                             f"Error: {resp.text}\n"
                             f"{extra_info}"
                         )
             else:
-                raise NeedGithubServiceException(
+                raise _SendException(
                     "Github service error during request.\n"
                     f"Status code: {resp.status_code}\n"
                     f"Error: {resp.text}\n"
@@ -169,48 +173,63 @@ class GithubService(BaseService):
             return {"items": [resp.json()]}
         return resp.json()  # type: ignore
 
-    def request(self, options: dict[str, Any] | None = None) -> list[dict[str, Any]]:
-        if options is None:
-            options = {}
+    def request_from_directive(
+        self, directive: SphinxDirective, /
+    ) -> list[dict[str, Any]]:
         self.log.debug(f"Requesting data for service {self.name}")
+        options = directive.options
 
         if "query" not in options and "specific" not in options:
-            raise NeedGithubServiceException(
-                '"query" or "specific" missing as option for github service.'
+            create_warning(
+                directive,
+                '"query" or "specific" missing as option for github service.',
             )
-        elif "query" in options and "specific" in options:
-            raise NeedGithubServiceException(
-                'Only "query" or "specific" allowed for github service. Not both!'
+            return []
+
+        if "query" in options and "specific" in options:
+            create_warning(
+                directive,
+                'Only "query" or "specific" allowed for github service. Not both!',
             )
-        elif "query" in options:
+            return []
+
+        if "query" in options:
             query = options["query"]
             specific = False
         else:
             query = options["specific"]
             specific = True
 
-        response = self._send(query, options, specific=specific)
+        try:
+            response = self._send(query, options, specific=specific)
+        except _SendException as e:
+            create_warning(directive, str(e))
+            return []
         if "items" not in response:
             if "errors" in response:
-                raise NeedGithubServiceException(
+                create_warning(
+                    directive,
                     "GitHub service query error: {}\n" "Used query: {}".format(
                         response["errors"][0]["message"], query
-                    )
+                    ),
                 )
+                return []
             else:
-                raise NeedGithubServiceException("Github service: Unknown error.")
+                create_warning(directive, "Github service: Unknown error")
+                return []
 
         if self.gh_type == "issue" or self.gh_type == "pr":
-            data = self.prepare_issue_data(response["items"], options)
+            data = self.prepare_issue_data(response["items"], directive)
         elif self.gh_type == "commit":
-            data = self.prepare_commit_data(response["items"], options)
+            data = self.prepare_commit_data(response["items"], directive)
         else:
-            raise NeedGithubServiceException("Github service failed. Wrong gh_type...")
+            create_warning(directive, "Github service failed. Wrong gh_type...")
+            return []
 
         return data
 
     def prepare_issue_data(
-        self, items: list[dict[str, Any]], options: dict[str, Any]
+        self, items: list[dict[str, Any]], directive: SphinxDirective
     ) -> list[dict[str, Any]]:
         data = []
         for item in items:
@@ -231,9 +250,11 @@ class GithubService(BaseService):
 
             content = "\n\n   ".join(content_lines)
             # Reduce content length, if requested by config
-            if self.max_content_lines > 0:
+            if (self.max_content_lines > 0) or (
+                "max_content_lines" in directive.options
+            ):
                 max_lines = int(
-                    options.get("max_content_lines", self.max_content_lines)
+                    directive.options.get("max_content_lines", self.max_content_lines)
                 )
                 content_lines = content.splitlines()
                 if len(content_lines) > max_lines:
@@ -245,21 +266,21 @@ class GithubService(BaseService):
             # everything in a safe code-block
             content = ".. code-block:: text\n\n   " + content
 
-            prefix = options.get("id_prefix", self.id_prefix)
+            prefix = directive.options.get("id_prefix", self.id_prefix)
             need_id = prefix + str(item["number"])
-            given_tags = options.get("tags", False)
+            given_tags = directive.options.get("tags", False)
             github_tags = ",".join([x["name"] for x in item["labels"]])
             if given_tags:
                 tags = str(given_tags) + ", " + str(github_tags)
             else:
                 tags = github_tags
 
-            avatar_file_path = self._get_avatar(item["user"]["avatar_url"])
+            avatar_file_path = self._get_avatar(item["user"]["avatar_url"], directive)
 
             element_data = {
                 "service": self.name,
-                "type": options.get("type", self.need_type),
-                "layout": options.get("layout", self.layout),
+                "type": directive.options.get("type", self.need_type),
+                "layout": directive.options.get("layout", self.layout),
                 "id": need_id,
                 "title": item["title"],
                 "content": content,
@@ -272,23 +293,23 @@ class GithubService(BaseService):
                 "updated_at": item["updated_at"],
                 "closed_at": item["closed_at"],
             }
-            self._add_given_options(options, element_data)
+            self._add_given_options(directive.options, element_data)
             data.append(element_data)
 
         return data
 
     def prepare_commit_data(
-        self, items: list[dict[str, Any]], options: dict[str, Any]
+        self, items: list[dict[str, Any]], directive: SphinxDirective
     ) -> list[dict[str, Any]]:
         data = []
 
         for item in items:
-            avatar_file_path = self._get_avatar(item["author"]["avatar_url"])
+            avatar_file_path = self._get_avatar(item["author"]["avatar_url"], directive)
 
             element_data = {
                 "service": self.name,
-                "type": options.get("type", self.need_type),
-                "layout": options.get("layout", self.layout),
+                "type": directive.options.get("type", self.need_type),
+                "layout": directive.options.get("layout", self.layout),
                 "id": self.id_prefix + item["sha"][:6],
                 "title": item["commit"]["message"].split("\n")[0][
                     :60
@@ -299,18 +320,13 @@ class GithubService(BaseService):
                 "avatar": avatar_file_path,
                 "created_at": item["commit"]["author"]["date"],
             }
-            self._add_given_options(options, element_data)
+            self._add_given_options(directive.options, element_data)
             data.append(element_data)
 
         return data
 
-    def _get_avatar(self, avatar_url: str) -> str:
-        """
-        Download and store avatar image
-
-        :param avatar_url:
-        :return:
-        """
+    def _get_avatar(self, avatar_url: str, directive: SphinxDirective) -> str:
+        """Download and store avatar image"""
         url_parsed = urlparse(avatar_url)
         filename = os.path.basename(url_parsed.path) + ".png"
         path = os.path.join(self.app.srcdir, self.download_folder)
@@ -334,22 +350,22 @@ class GithubService(BaseService):
                     with open(avatar_file_path, "wb") as f:
                         f.write(response.content)
                 elif response.status_code == 302:
-                    self.log.warning(
+                    create_warning(
+                        directive,
                         f"GitHub service {self.name} could not download avatar image "
                         f"from {avatar_url}.\n"
                         f"    Status code: {response.status_code}\n"
                         "    Reason: Looks like the authentication provider tries to redirect you."
                         " This is not supported and is a common problem, "
-                        "if you use GitHub Enterprise. [needs]",
-                        type="needs",
+                        "if you use GitHub Enterprise.",
                     )
                     avatar_file_path = default_avatar_file_path
                 else:
-                    self.log.warning(
+                    create_warning(
+                        directive,
                         f"GitHub service {self.name} could not download avatar image "
                         f"from {avatar_url}.\n"
-                        f"    Status code: {response.status_code} [needs]",
-                        type="needs",
+                        f"    Status code: {response.status_code}",
                     )
                     avatar_file_path = default_avatar_file_path
         else:
@@ -373,5 +389,14 @@ class GithubService(BaseService):
                 element_data[key] = value
 
 
-class NeedGithubServiceException(BaseException):
+class _SendException(Exception):
     pass
+
+
+def create_warning(directive: SphinxDirective, message: str) -> None:
+    LOGGER.warning(
+        message + " [needs.github]",
+        type="needs",
+        subtype="github",
+        location=directive.get_location(),
+    )
