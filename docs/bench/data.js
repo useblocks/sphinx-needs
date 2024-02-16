@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1708012442722,
+  "lastUpdate": 1708086984362,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -6696,6 +6696,42 @@ window.BENCHMARK_DATA = {
             "value": 66.85267127999998,
             "unit": "s",
             "extra": "Commit: 84a5f72f2e72ab1471ab2d1bb5c570d6115ef199\nBranch: master\nTime: 2024-02-15T16:51:32+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9a626fa1cabaa0b9cf993b18ee18fcfc02634e65",
+          "message": "👌 Improve and test github `needservice` directive (#1113)\n\nThis directive was untested in the current test suite, so this commit adds a test and also makes some improvements to the testing and directive functionality:\r\n\r\n- remove duplication of request mocking solutions in the test-suite (removing https://github.com/jamielennox/requests-mock in favor of (https://github.com/getsentry/responses)\r\n- remove superfluous requests mocking in basic docs tests (that do not make any requests)\r\n- add test for github `needservice` directives\r\n- replace raising`NeedGithubServiceException` with emitting `needs.github` warnings\r\n- pass the directive to the `service.request` method (in a non-breaking manner) so that it can be used to add the directive source location to the warnings\r\n- Replace remaining tests that used `Sphinx` with `SphinxTestApp`, which can be \"cleaned\" after running (otherwise later test were emitting warnings caused by global variables previously mutated by these earlier tests)",
+          "timestamp": "2024-02-16T13:34:16+01:00",
+          "tree_id": "9284195ef05710e4cca047320e5f404f766a3e92",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/9a626fa1cabaa0b9cf993b18ee18fcfc02634e65"
+        },
+        "date": 1708086976522,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.23232172600000922,
+            "unit": "s",
+            "extra": "Commit: 9a626fa1cabaa0b9cf993b18ee18fcfc02634e65\nBranch: master\nTime: 2024-02-16T13:34:16+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 62.44940152900003,
+            "unit": "s",
+            "extra": "Commit: 9a626fa1cabaa0b9cf993b18ee18fcfc02634e65\nBranch: master\nTime: 2024-02-16T13:34:16+01:00"
           }
         ]
       }
