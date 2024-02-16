@@ -69,6 +69,38 @@ class ConstraintFailedType(TypedDict):
     """If True, append styles to existing styles, else replace existing styles."""
 
 
+class ExternalSource(TypedDict, total=False):
+    """Defines an external source to import needs from.
+
+    External source will be a JSON with the key path::
+
+        versions -> <local project version> -> needs -> <list of needs>
+
+    """
+
+    # either
+    json_path: str
+    """A local path to a JSON file"""
+    # or
+    json_url: str
+    """A remote URL to a JSON object"""
+
+    version: str
+    """Override `current_version` from loaded JSON (optional)"""
+
+    base_url: str
+    """Used to create the `external_url` field for each need item (required)"""
+
+    target_url: str
+    """Used to create the `external_url` field for each need item (optional)"""
+
+    id_prefix: str
+    """Prefix all IDs from the external source with this string (optional, uppercased)"""
+
+    css_class: str
+    """Added as the `external_css` field for each need item (optional)"""
+
+
 @dataclass
 class NeedsSphinxConfig:
     """A wrapper around the Sphinx configuration,
@@ -300,10 +332,10 @@ class NeedsSphinxConfig:
     debug_no_external_calls: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
-    external_needs: list[dict[str, Any]] = field(
-        default_factory=list, metadata={"rebuild": "html", "types": ()}
+    external_needs: list[ExternalSource] = field(
+        default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )
-    """Reference external needs, outside of the documentation."""
+    """List of external sources to load needs from."""
     builder_filter: str = field(
         default="is_external==False", metadata={"rebuild": "html", "types": (str,)}
     )
