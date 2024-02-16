@@ -56,6 +56,20 @@ def test_build(test_app, snapshot):
         json=COMMIT_SPECIFIC_RESPONSE,
     )
     responses.get(
+        "https://api.github.com/repos/useblocks/sphinx-needs/commits/rate_limit",
+        status=300,
+        json={"message": "API rate limit exceeded"},
+    )
+    responses.get(
+        "https://api.github.com/rate_limit",
+        status=200,
+        json={
+            "resources": {
+                "core": {"limit": 5000, "remaining": 4999, "reset": 1613414020}
+            }
+        },
+    )
+    responses.get(
         "https://avatars.githubusercontent.com/u/2997570",
         match=[responses.matchers.query_param_matcher({"v": "4"})],
         status=200,
@@ -73,7 +87,8 @@ def test_build(test_app, snapshot):
     warnings = strip_colors(app._warning.getvalue().replace(str(app.srcdir), "srcdir"))
     print(warnings)
     assert warnings.splitlines() == [
-        'srcdir/index.rst:4: WARNING: "query" or "specific" missing as option for github service. [needs.github]'
+        'srcdir/index.rst:4: WARNING: "query" or "specific" missing as option for github service. [needs.github]',
+        "srcdir/index.rst:22: WARNING: GitHub: API rate limit exceeded (twice). Stop here. [needs.github]",
     ]
 
     needs_data = json.loads((Path(app.outdir) / "needs.json").read_text("utf8"))

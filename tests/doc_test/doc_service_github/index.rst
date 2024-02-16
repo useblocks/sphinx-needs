@@ -18,3 +18,6 @@ Title
 
 .. needservice:: github-commits
    :specific: useblocks/sphinx-needs/050bec750ff2c5acf881415fa2b5efb5fcce8414
+
+.. needservice:: github-commits
+   :specific: useblocks/sphinx-needs/rate_limit

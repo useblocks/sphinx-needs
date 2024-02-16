@@ -43,6 +43,7 @@ class GithubService(BaseService):
         self.url = self.config.get("url", "https://api.github.com/")
         if not self.url.endswith("/"):
             self.url = f"{self.url}/"
+        self.retry_delay = self.config.get("retry_delay", 61)
         self.max_amount = self.config.get("max_amount", -1)
         self.max_content_lines = self.config.get("max_content_lines", -1)
         self.id_prefix = self.config.get("id_prefix", "GITHUB_")
@@ -144,10 +145,10 @@ class GithubService(BaseService):
                 resp_limit = requests.get(self.url + "rate_limit", auth=auth)
                 extra_info = resp_limit.json()
                 self.log.info(
-                    "GitHub: API rate limit exceeded. We need to wait 60 secs..."
+                    f"GitHub: API rate limit exceeded. trying again in {self.retry_delay} seconds..."
                 )
                 self.log.info(extra_info)
-                time.sleep(61)
+                time.sleep(self.retry_delay)
                 resp = requests.get(url, params=params, auth=auth, headers=headers)
                 if resp.status_code > 299:
                     if "rate limit" in resp.json()["message"]:
