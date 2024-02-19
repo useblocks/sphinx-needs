@@ -136,6 +136,14 @@ class NeedsInfoType(TypedDict):
     # these all have value type `list[str]`
     # back links are all set in process_need_nodes (-> create_back_links) transform
 
+    # these default to False and are updated in check_links post-process
+    has_dead_links: bool
+    """True if any links reference need ids that are not found in the need list."""
+    has_forbidden_dead_links: bool
+    """True if any links reference need ids that are not found in the need list,
+    and the link type does not allow dead links.
+    """
+
     # constraints information
     constraints: list[str]
     """List of constraint names, which are defined for this need."""
@@ -173,9 +181,6 @@ class NeedsInfoType(TypedDict):
     duration: str
     completion: str
     # constraints: str  # this is already set in create_need
-    # these are updated in process_need_nodes (-> check_links) transform
-    has_dead_links: str | bool
-    has_forbidden_dead_links: str | bool
     # options from `BaseService.options` get added to every need,
     # via `ServiceManager.register`, which adds them to `extra_options``
     # GithubService

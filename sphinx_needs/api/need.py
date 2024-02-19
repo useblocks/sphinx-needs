@@ -354,6 +354,8 @@ def add_need(
         "external_css": external_css or "external_link",
         "is_modified": False,  # needed by needextend
         "modifications": 0,  # needed by needextend
+        "has_dead_links": False,
+        "has_forbidden_dead_links": False,
         # these are set later in the analyse_need_locations transform
         "sections": [],
         "section_name": "",

@@ -1,4 +1,3 @@
-# serializer version: 1
 # name: test_build_needs[test_app0]
   dict({
     'current_version': '',
@@ -30,8 +29,8 @@
             'external_css': 'external_link',
             'external_url': None,
             'full_title': 'Test story',
-            'has_dead_links': '',
-            'has_forbidden_dead_links': '',
+            'has_dead_links': False,
+            'has_forbidden_dead_links': False,
             'hidden': '',
             'id': 'ST_001',
             'id_prefix': '',
@@ -98,8 +97,8 @@
             'external_css': 'external_link',
             'external_url': None,
             'full_title': 'No ID',
-            'has_dead_links': '',
-            'has_forbidden_dead_links': '',
+            'has_dead_links': False,
+            'has_forbidden_dead_links': False,
             'hidden': '',
             'id': 'US_38823',
             'id_prefix': '',
