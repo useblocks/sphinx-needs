@@ -23,7 +23,7 @@ from sphinx_needs.api.exceptions import (
     NeedsTagNotAllowed,
     NeedsTemplateException,
 )
-from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.config import GlobalOptionsType, NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.directives.needuml import Needuml, NeedumlException
 from sphinx_needs.filter_common import filter_single_need
@@ -795,7 +795,7 @@ def _merge_extra_options(
 
 
 def _merge_global_options(
-    app: Sphinx, needs_info: NeedsInfoType, global_options: dict[str, Any]
+    app: Sphinx, needs_info: NeedsInfoType, global_options: GlobalOptionsType
 ) -> None:
     """Add all global defined options to needs_info"""
     if global_options is None:
@@ -815,7 +815,9 @@ def _merge_global_options(
             continue
 
         for single_value in values:
+            # TODO should first match break loop?
             if len(single_value) < 2 or len(single_value) > 3:
+                # TODO this should be validated earlier at the "config" level
                 raise NeedsInvalidException(
                     f"global option tuple has wrong amount of parameters: {key}"
                 )
