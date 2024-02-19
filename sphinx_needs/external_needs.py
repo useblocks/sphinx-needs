@@ -31,6 +31,7 @@ def get_target_template(target_url: str) -> Template:
 
 
 def load_external_needs(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
+    """Load needs from configured external sources."""
     needs_config = NeedsSphinxConfig(app.config)
     for source in needs_config.external_needs:
         if source["base_url"].endswith("/"):
