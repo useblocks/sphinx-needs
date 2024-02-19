@@ -163,7 +163,7 @@ class NeedDirective(SphinxDirective):
             **need_extra_options,
         )
         add_doc(env, self.docname)
-        return need_nodes  # type: ignore[no-any-return]
+        return need_nodes
 
     def read_in_links(self, name: str) -> list[str]:
         # Get links

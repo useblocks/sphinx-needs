@@ -138,14 +138,9 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = [
-  'sphinx_needs.api.need',
-]
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = [
   "sphinx_needs.directives.needextend",
   "sphinx_needs.functions.functions",
+  "sphinx_needs.api.need",
 ]
 # TODO dynamically overriding TypeDict keys is a bit tricky
 disable_error_code = "literal-required"

@@ -37,34 +37,34 @@ logger = get_logger(__name__)
 
 def add_need(
     app: Sphinx,
-    state,
-    docname: str,
-    lineno: int,
-    need_type,
+    state: None | RSTState,
+    docname: None | str,
+    lineno: None | int,
+    need_type: str,
     title: str,
     id: str | None = None,
     content: str = "",
     status: str | None = None,
-    tags=None,
-    constraints=None,
-    constraints_passed=None,
-    links_string: str | None = None,
+    tags: None | str | list[str] = None,
+    constraints: None | str | list[str] = None,
+    constraints_passed: None | bool = None,
+    links_string: None | str | list[str] = None,
     delete: bool = False,
     jinja_content: bool = False,
     hide: bool = False,
     hide_tags: bool = False,
     hide_status: bool = False,
-    collapse=None,
-    style=None,
-    layout=None,
-    template=None,
+    collapse: None | bool = None,
+    style: None | str = None,
+    layout: None | str = None,
+    template: None | str = None,
     pre_template: str | None = None,
     post_template: str | None = None,
     is_external: bool = False,
     external_url: str | None = None,
     external_css: str = "external_link",
-    **kwargs,
-):
+    **kwargs: Any,
+) -> list[nodes.Node]:
     """
     Creates a new need and returns its node.
 
@@ -239,6 +239,8 @@ def add_need(
         # This may have cut also dynamic function strings, as they can contain , as well.
         # So let put them together again
         # ToDo: There may be a smart regex for the splitting. This would avoid this mess of code...
+    else:
+        tags = []
     tags = _fix_list_dyn_func(tags)
 
     if constraints is None:
@@ -273,6 +275,8 @@ def add_need(
         # This may have cut also dynamic function strings, as they can contain , as well.
         # So let put them together again
         # ToDo: There may be a smart regex for the splitting. This would avoid this mess of code...
+    else:
+        constraints = []
     constraints = _fix_list_dyn_func(constraints)
 
     #############################################################################################
@@ -311,7 +315,7 @@ def add_need(
         doctype = ".rst"
 
     # Add the need and all needed information
-    needs_info: NeedsInfoType = {
+    needs_info: NeedsInfoType = {  # type: ignore[typeddict-item]
         "docname": docname,
         "doctype": doctype,
         "lineno": lineno,
@@ -473,22 +477,22 @@ def add_need(
     for child in node_need_content.children:
         if isinstance(child, Needuml):
             needuml_id = child.rawsource
-            try:
-                needuml = SphinxNeedsData(env).get_or_create_umls().get(needuml_id)
-                key_name = needuml["key"]
-                if key_name:
-                    # check if key_name already exists in needs_info["arch"]
-                    if key_name in node_need_needumls_key_names:
-                        raise NeedumlException(
-                            f"Inside need: {need_id}, found duplicate Needuml option key name: {key_name}"
-                        )
+            if needuml := SphinxNeedsData(env).get_or_create_umls().get(needuml_id):
+                try:
+                    key_name = needuml["key"]
+                    if key_name:
+                        # check if key_name already exists in needs_info["arch"]
+                        if key_name in node_need_needumls_key_names:
+                            raise NeedumlException(
+                                f"Inside need: {need_id}, found duplicate Needuml option key name: {key_name}"
+                            )
+                        else:
+                            needs_info["arch"][key_name] = needuml["content"]
+                            node_need_needumls_key_names.append(key_name)
                     else:
-                        needs_info["arch"][key_name] = needuml["content"]
-                        node_need_needumls_key_names.append(key_name)
-                else:
-                    node_need_needumls_without_key.append(needuml)
-            except KeyError:
-                pass
+                        node_need_needumls_without_key.append(needuml)
+                except KeyError:
+                    pass
 
     # only store the first needuml-node which has no key option under diagram
     if node_need_needumls_without_key:
@@ -504,7 +508,7 @@ def add_need(
     # Create a copy of the content
     needs_info["content_node"] = node_need.deepcopy()
 
-    return_nodes = [node_need]
+    return_nodes: list[nodes.Node] = [node_need]
     if not is_external:
         # Calculate target id, to be able to set a link back
         target_node = nodes.target("", "", ids=[need_id], refid=need_id, anonymous="")
@@ -539,7 +543,7 @@ def del_need(app: Sphinx, need_id: str) -> None:
 
 def add_external_need(
     app: Sphinx,
-    need_type,
+    need_type: str,
     title: str | None = None,
     id: str | None = None,
     external_url: str | None = None,
@@ -550,7 +554,7 @@ def add_external_need(
     constraints: str | None = None,
     links_string: str | None = None,
     **kwargs: Any,
-):
+) -> list[nodes.Node]:
     """
     Adds an external need from an external source.
     This need does not have any representation in the current documentation project.
@@ -570,30 +574,40 @@ def add_external_need(
     :param constraints: constraints as single, comma separated string.
     :param links_string: Links as single string.
     :param external_css: CSS class name as string, which is set for the <a> tag.
-    :param kwargs:
 
-    :return: Empty list
     """
+    for fixed_key in ("state", "docname", "lineno", "is_external"):
+        if fixed_key in kwargs:
+            kwargs.pop(fixed_key)
+            # TODO Although it seems prudent to not silently ignore user input here,
+            # raising an error here currently breaks some existing tests
+            # raise ValueError(
+            #     f"{fixed_key} is not allowed in kwargs for add_external_need"
+            # )
 
-    kwargs["state"] = None
-    kwargs["docname"] = None
-    kwargs["lineno"] = None
-    kwargs["need_type"] = need_type
-    kwargs["id"] = id
-    kwargs["content"] = content
-    kwargs["title"] = title
-    kwargs["status"] = status
-    kwargs["tags"] = tags
-    kwargs["constraints"] = constraints
-    kwargs["links_string"] = links_string
-    kwargs["is_external"] = True
-    kwargs["external_url"] = external_url
-    kwargs["external_css"] = external_css
+    return add_need(
+        app=app,
+        state=None,
+        docname=None,
+        lineno=None,
+        need_type=need_type,
+        id=id,
+        content=content,
+        # TODO a title being None is not "type compatible" with other parts of the code base,
+        # however, at present changing it to an empty string breaks some existing tests.
+        title=title,  # type: ignore
+        status=status,
+        tags=tags,
+        constraints=constraints,
+        links_string=links_string,
+        is_external=True,
+        external_url=external_url,
+        external_css=external_css,
+        **kwargs,
+    )
 
-    return add_need(app=app, **kwargs)
 
-
-def _prepare_template(app: Sphinx, needs_info, template_key: str) -> str:
+def _prepare_template(app: Sphinx, needs_info: NeedsInfoType, template_key: str) -> str:
     needs_config = NeedsSphinxConfig(app.config)
     template_folder = needs_config.template_folder
     if not os.path.isabs(template_folder):
@@ -618,10 +632,12 @@ def _prepare_template(app: Sphinx, needs_info, template_key: str) -> str:
 
 
 def _render_template(
-    content: str, docname: str, lineno: int, state: RSTState
+    content: str, docname: str | None, lineno: int | None, state: RSTState
 ) -> nodes.Element:
     rst = StringList()
     for line in content.split("\n"):
+        # TODO how to handle if the source mapping here, if the content is from an external need?
+        # (i.e. does not have a docname and lineno)
         rst.append(line, docname, lineno)
     node_need_content = nodes.Element()
     node_need_content.document = state.document
@@ -644,7 +660,7 @@ def _render_plantuml_template(
     return node_need_content
 
 
-def _read_in_links(links_string: str | list[str]) -> list[str]:
+def _read_in_links(links_string: None | str | list[str]) -> list[str]:
     # Get links
     links = []
     if links_string:
@@ -759,7 +775,11 @@ def _fix_list_dyn_func(list: list[str]) -> list[str]:
     return new_list
 
 
-def _merge_extra_options(needs_info, needs_kwargs, needs_extra_options):
+def _merge_extra_options(
+    needs_info: NeedsInfoType,
+    needs_kwargs: dict[str, Any],
+    needs_extra_options: list[str],
+) -> set[str]:
     """Add any extra options introduced via options_ext to needs_info"""
     extra_keys = set(needs_kwargs.keys()).difference(set(needs_info.keys()))
 
@@ -774,7 +794,9 @@ def _merge_extra_options(needs_info, needs_kwargs, needs_extra_options):
     return extra_keys
 
 
-def _merge_global_options(app: Sphinx, needs_info, global_options) -> None:
+def _merge_global_options(
+    app: Sphinx, needs_info: NeedsInfoType, global_options: dict[str, Any]
+) -> None:
     """Add all global defined options to needs_info"""
     if global_options is None:
         return
