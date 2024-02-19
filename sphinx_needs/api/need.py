@@ -781,7 +781,7 @@ def _merge_global_options(app: Sphinx, needs_info, global_options) -> None:
     config = NeedsSphinxConfig(app.config)
     for key, value in global_options.items():
         # If key already exists in needs_info, this global_option got overwritten manually in current need
-        if key in needs_info and needs_info[key]:
+        if needs_info.get(key):
             continue
 
         if isinstance(value, tuple):

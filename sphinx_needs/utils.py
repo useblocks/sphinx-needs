@@ -669,7 +669,7 @@ def clean_log(data: str) -> str:
 
 
 def node_match(
-    node_types: type[nodes.Element] | list[type[nodes.Element]]
+    node_types: type[nodes.Element] | list[type[nodes.Element]],
 ) -> Callable[[nodes.Node], bool]:
     """
     Returns a condition function for doctuils.nodes.findall()
