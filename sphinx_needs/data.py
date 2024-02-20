@@ -26,17 +26,6 @@ class NeedsFilterType(TypedDict):
     """If set, the filter is exported with this ID in the needs.json file."""
 
 
-class NeedsBaseDataType(TypedDict):
-    """A base type for all data."""
-
-    docname: str
-    """Name of the document where the need is defined."""
-    lineno: int
-    """Line number where the need is defined."""
-    target_id: str
-    """ID of the data."""
-
-
 class NeedsPartType(TypedDict):
     """Data for a single need part."""
 
@@ -56,11 +45,20 @@ class NeedsPartType(TypedDict):
     """List of need IDs, which are referencing this part."""
 
 
-class NeedsInfoType(NeedsBaseDataType):
+class NeedsInfoType(TypedDict):
     """Data for a single need."""
 
+    target_id: str
+    """ID of the data."""
     id: str
     """ID of the data (same as target_id)"""
+
+    # TODO docname and lineno can be None, if the need is external,
+    # but currently this raises mypy errors for other parts of the code base
+    docname: str
+    """Name of the document where the need is defined."""
+    lineno: int
+    """Line number where the need is defined."""
 
     # meta information
     full_title: str
@@ -71,7 +69,7 @@ class NeedsInfoType(NeedsBaseDataType):
     tags: list[str]
 
     # rendering information
-    collapse: bool
+    collapse: None | bool
     """hide the meta-data information of the need."""
     hide: bool
     """If true, the need is not rendered."""
@@ -212,6 +210,17 @@ class NeedsPartsInfoType(NeedsInfoType):
     """docname where the part is defined."""
     id_parent: str
     id_complete: str
+
+
+class NeedsBaseDataType(TypedDict):
+    """A base type for data items collected from directives."""
+
+    docname: str
+    """Name of the document where the need is defined."""
+    lineno: int
+    """Line number where the need is defined."""
+    target_id: str
+    """ID of the data."""
 
 
 class NeedsBarType(NeedsBaseDataType):

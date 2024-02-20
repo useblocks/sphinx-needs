@@ -45,6 +45,8 @@ intersphinx_mapping = {
 
 nitpicky = True
 nitpick_ignore = [
+    ("py:class", "docutils.nodes.Node"),
+    ("py:class", "docutils.parsers.rst.states.RSTState"),
     ("py:class", "T"),
     ("py:class", "sphinx_needs.debug.T"),
     ("py:class", "sphinx_needs.data.NeedsInfoType"),
