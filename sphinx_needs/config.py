@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import MISSING, dataclass, field, fields
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypedDict
+from typing import TYPE_CHECKING, Any, Callable, Dict, Literal, TypedDict
 
 from sphinx.application import Sphinx
 from sphinx.config import Config as _SphinxConfig
@@ -99,6 +99,20 @@ class ExternalSource(TypedDict, total=False):
 
     css_class: str
     """Added as the `external_css` field for each need item (optional)"""
+
+
+GlobalOptionsType = Dict[str, Any]
+"""Default values given to specified fields of needs
+
+Values can be:
+
+- a tuple: ``(value, filter_string)``, where the default is only applied if the filter_string is fulfilled
+- a tuple: ``(value, filter_string, alternative default)``, 
+    where the default is applied if the filter_string is fulfilled, 
+    otherwise the alternative default is used
+- a list of the tuples above
+- otherwise, always set as the given value
+"""
 
 
 @dataclass
@@ -236,9 +250,10 @@ class NeedsSphinxConfig:
     functions: list[Callable[..., Any]] = field(
         default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )
-    global_options: dict[str, Any] = field(
+    global_options: GlobalOptionsType = field(
         default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
     )
+    """Default values given to specified fields of needs"""
     duration_option: str = field(
         default="duration", metadata={"rebuild": "html", "types": (str,)}
     )
