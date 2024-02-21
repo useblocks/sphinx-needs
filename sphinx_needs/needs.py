@@ -517,8 +517,6 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
         "hidden",
         "duration",
         "completion",
-        "has_dead_links",
-        "has_forbidden_dead_links",
         "constraints",
     ]:
         # Check if not already set by user

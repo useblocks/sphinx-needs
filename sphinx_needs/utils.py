@@ -41,7 +41,7 @@ class NeedFunctionsType(TypedDict):
 NEEDS_FUNCTIONS: dict[str, NeedFunctionsType] = {}
 
 # List of internal need option names. They should not be used by or presented to user.
-INTERNALS = [
+INTERNALS = (
     "docname",
     "doctype",
     "lineno",
@@ -82,7 +82,9 @@ INTERNALS = [
     "constraints_results",
     "arch",
     "target_id",
-]
+    "has_dead_links",
+    "has_forbidden_dead_links",
+)
 
 MONTH_NAMES = [
     "January",

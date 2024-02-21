@@ -1,4 +1,3 @@
-# serializer version: 1
 # name: test_doc_needs_id_builder[test_app0]
   dict({
     'TC_001.json': dict({
@@ -31,8 +30,8 @@
               'external_css': 'external_link',
               'external_url': None,
               'full_title': 'Test example',
-              'has_dead_links': '',
-              'has_forbidden_dead_links': '',
+              'has_dead_links': False,
+              'has_forbidden_dead_links': False,
               'hidden': '',
               'id': 'TC_001',
               'id_prefix': '',
@@ -113,8 +112,8 @@
               'external_css': 'external_link',
               'external_url': None,
               'full_title': 'Negative test example',
-              'has_dead_links': '',
-              'has_forbidden_dead_links': '',
+              'has_dead_links': False,
+              'has_forbidden_dead_links': False,
               'hidden': '',
               'id': 'TC_NEG_001',
               'id_prefix': '',
@@ -195,8 +194,8 @@
               'external_css': 'external_link',
               'external_url': None,
               'full_title': 'A story',
-              'has_dead_links': '',
-              'has_forbidden_dead_links': '',
+              'has_dead_links': False,
+              'has_forbidden_dead_links': False,
               'hidden': '',
               'id': 'US_63252',
               'id_prefix': '',
