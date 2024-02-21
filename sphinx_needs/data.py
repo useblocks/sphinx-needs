@@ -179,7 +179,6 @@ class NeedsInfoType(TypedDict):
     # TODO these all default to "" which I don't think is good
     duration: str
     completion: str
-    # constraints: str  # this is already set in create_need
     # options from `BaseService.options` get added to every need,
     # via `ServiceManager.register`, which adds them to `extra_options``
     # GithubService

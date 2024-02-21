@@ -516,7 +516,6 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
     for option in [
         "duration",
         "completion",
-        "constraints",
     ]:
         # Check if not already set by user
         if option not in NEEDS_CONFIG.extra_options:

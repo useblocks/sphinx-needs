@@ -212,6 +212,7 @@ class NeedimportDirective(SphinxDirective):
             "style",
             "layout",
             "need_type",
+            "constraints",
             *[x["option"] for x in extra_links],
             *NEEDS_CONFIG.extra_options,
         )
