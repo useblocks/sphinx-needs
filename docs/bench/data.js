@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1708503898373,
+  "lastUpdate": 1708503921984,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -6912,6 +6912,42 @@ window.BENCHMARK_DATA = {
             "value": 62.07576260900001,
             "unit": "s",
             "extra": "Commit: eaa5f679f6150cfb0ca1763ca73d42b960f5c96a\nBranch: master\nTime: 2024-02-21T09:22:49+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d162693602091f613b049b431f2cafcf2d451d71",
+          "message": "🔧 Add better typing for `global_options` config variable (#1120)",
+          "timestamp": "2024-02-21T09:23:08+01:00",
+          "tree_id": "2fd08253592331de5949a164947415c33f333d42",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/d162693602091f613b049b431f2cafcf2d451d71"
+        },
+        "date": 1708503916962,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2659379469999976,
+            "unit": "s",
+            "extra": "Commit: d162693602091f613b049b431f2cafcf2d451d71\nBranch: master\nTime: 2024-02-21T09:23:08+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.969121526,
+            "unit": "s",
+            "extra": "Commit: d162693602091f613b049b431f2cafcf2d451d71\nBranch: master\nTime: 2024-02-21T09:23:08+01:00"
           }
         ]
       }
