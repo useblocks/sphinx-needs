@@ -398,7 +398,7 @@ def process_needflow(
                             else:
                                 comment = ""
 
-                            if "style_part" in link_type and link_type["style_part"]:
+                            if link_type.get("style_part"):
                                 link_style = "[{style}]".format(
                                     style=link_type["style_part"]
                                 )
@@ -414,7 +414,7 @@ def process_needflow(
                             else:
                                 comment = ""
 
-                            if "style" in link_type and link_type["style"]:
+                            if link_type.get("style"):
                                 link_style = "[{style}]".format(
                                     style=link_type["style"]
                                 )
@@ -429,12 +429,12 @@ def process_needflow(
                         ]:
                             continue
 
-                        if "style_start" in link_type and link_type["style_start"]:
+                        if link_type.get("style_start"):
                             style_start = link_type["style_start"]
                         else:
                             style_start = "-"
 
-                        if "style_end" in link_type and link_type["style_end"]:
+                        if link_type.get("style_end"):
                             style_end = link_type["style_end"]
                         else:
                             style_end = "->"
