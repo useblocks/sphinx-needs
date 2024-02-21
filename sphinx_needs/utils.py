@@ -576,11 +576,7 @@ def match_variants(
                     r"(:[\w':.\-\" ]+)$", variant_definition
                 )
                 filter_string = re.sub(r"^\[|[:\]]$", "", filter_string)
-                filter_string = (
-                    needs_variants[filter_string]
-                    if filter_string in needs_variants
-                    else filter_string
-                )
+                filter_string = needs_variants.get(filter_string, filter_string)
                 try:
                     # https://docs.python.org/3/library/functions.html?highlight=compile#compile
                     filter_compiled = compile(filter_string, "<string>", "eval")
@@ -671,7 +667,7 @@ def clean_log(data: str) -> str:
 
 
 def node_match(
-    node_types: type[nodes.Element] | list[type[nodes.Element]]
+    node_types: type[nodes.Element] | list[type[nodes.Element]],
 ) -> Callable[[nodes.Node], bool]:
     """
     Returns a condition function for doctuils.nodes.findall()

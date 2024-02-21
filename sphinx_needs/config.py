@@ -47,7 +47,7 @@ class Config:
 
     @property
     def warnings(
-        self
+        self,
     ) -> dict[str, str | Callable[[NeedsInfoType, SphinxLoggerAdapter], bool]]:
         """Warning handlers that are added by the user,
         then called at the end of the build.
