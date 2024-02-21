@@ -177,7 +177,6 @@ class NeedsInfoType(TypedDict):
 
     # default extra options
     # TODO these all default to "" which I don't think is good
-    hidden: str
     duration: str
     completion: str
     # constraints: str  # this is already set in create_need
