@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1708445837292,
+  "lastUpdate": 1708503898373,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -6876,6 +6876,42 @@ window.BENCHMARK_DATA = {
             "value": 62.321399439000004,
             "unit": "s",
             "extra": "Commit: 99cb3e451b39045b02bad2dd28ce308d83304d71\nBranch: master\nTime: 2024-02-20T17:15:07+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "eaa5f679f6150cfb0ca1763ca73d42b960f5c96a",
+          "message": "🔧 Move dead link need fields to internals (#1119)\n\nCurrently, `has_dead_links` and `has_forbidden_dead_links` are set as default \"extra options\".\r\nThis means they are set to default `\"\"` and, in principle, the user can set them to something else.\r\n\r\nThis commit changes them to be \"internal\" fields, since this is an internal consistency check:\r\n\r\n- when initialised they should always be set to `False` (ignoring any previous value, if they are from an external source)\r\n- In the `check_links` post-processing of the needs, they are then set to `True`, if required",
+          "timestamp": "2024-02-21T09:22:49+01:00",
+          "tree_id": "f2ade574c5d3987b01f8dddc42f77f5e3b93ed1a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/eaa5f679f6150cfb0ca1763ca73d42b960f5c96a"
+        },
+        "date": 1708503892539,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.20570668499999556,
+            "unit": "s",
+            "extra": "Commit: eaa5f679f6150cfb0ca1763ca73d42b960f5c96a\nBranch: master\nTime: 2024-02-21T09:22:49+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 62.07576260900001,
+            "unit": "s",
+            "extra": "Commit: eaa5f679f6150cfb0ca1763ca73d42b960f5c96a\nBranch: master\nTime: 2024-02-21T09:22:49+01:00"
           }
         ]
       }
