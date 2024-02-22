@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1708509981004,
+  "lastUpdate": 1708606402016,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -6984,6 +6984,42 @@ window.BENCHMARK_DATA = {
             "value": 59.781168019999996,
             "unit": "s",
             "extra": "Commit: e142d24bc73be95ea1e4270fd2d7404372e1badf\nBranch: master\nTime: 2024-02-21T11:04:19+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "98777ea96c19be5c09b1d8a38b76c042bd1d1323",
+          "message": "🔧 Remove `hidden` field from `extra_options` (#1124)\n\nThis field is never used, and is likely unintentional duplicate of `hide` (denoting a need that is hidden in the rendered documentation)",
+          "timestamp": "2024-02-22T13:51:16+01:00",
+          "tree_id": "6fece114341ce4d8cc176f6916c5ae24f9a7f653",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/98777ea96c19be5c09b1d8a38b76c042bd1d1323"
+        },
+        "date": 1708606395701,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.27559990499997866,
+            "unit": "s",
+            "extra": "Commit: 98777ea96c19be5c09b1d8a38b76c042bd1d1323\nBranch: master\nTime: 2024-02-22T13:51:16+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 62.821603385999964,
+            "unit": "s",
+            "extra": "Commit: 98777ea96c19be5c09b1d8a38b76c042bd1d1323\nBranch: master\nTime: 2024-02-22T13:51:16+01:00"
           }
         ]
       }
