@@ -385,7 +385,9 @@ def filter_single_need(
         else:
             result = eval(filter_string, filter_context)
         if not isinstance(result, bool):
-            raise NeedsInvalidFilter(f"Filter did not evaluate to a boolean, instead {type(result)}: {result}")
+            raise NeedsInvalidFilter(
+                f"Filter did not evaluate to a boolean, instead {type(result)}: {result}"
+            )
     except Exception as e:
         raise NeedsInvalidFilter(f"Filter {filter_string} not valid. Error: {e}.")
     return result
