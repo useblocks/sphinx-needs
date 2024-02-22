@@ -202,7 +202,7 @@ class NeedsInfoType(TypedDict):
     # Note there are also these dynamic keys:
     # - items in ``needs_extra_options`` + ``needs_duration_option`` + ``needs_completion_option``,
     #   which get added to ``NEEDS_CONFIG.extra_options``,
-    #   and in turn means they are added to every need via ``add_need``
+    #   and in turn means they are added to every need via ``add_need`` (as strings)
     # - keys in ``needs_global_options`` config are added to every need via ``add_need``
 
 
