@@ -124,7 +124,10 @@ class NeedganttDirective(FilterBase, DiagramBase):
 
         add_doc(env, env.docname)
 
-        return [targetnode] + [Needgantt("")]
+        gantt_node = Needgantt("")
+        self.set_source_info(gantt_node)
+
+        return [targetnode, gantt_node]
 
     def get_link_type_option(self, name: str, default: str = "") -> list[str]:
         link_types = [
@@ -244,10 +247,17 @@ def process_needgantt(
                 complete_option = current_needgantt["completion_option"]
                 complete = need[complete_option]  # type: ignore[literal-required]
                 if not (duration and duration.isdigit()):
+                    need_location = (
+                        f" (located: {need['docname']}:{need['lineno']})"
+                        if need["docname"]
+                        else ""
+                    )
                     logger.warning(
                         "Duration not set or invalid for needgantt chart. "
-                        "Need: {}. Duration: {} [needs]".format(need["id"], duration),
+                        f"Need: {need['id']!r}{need_location}. Duration: {duration!r} [needs.gantt]",
                         type="needs",
+                        subtype="gantt",
+                        location=node,
                     )
                     duration = 1
                 gantt_element = "[{}] as [{}] lasts {} days\n".format(
