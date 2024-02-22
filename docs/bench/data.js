@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1708606402016,
+  "lastUpdate": 1708606840616,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7020,6 +7020,42 @@ window.BENCHMARK_DATA = {
             "value": 62.821603385999964,
             "unit": "s",
             "extra": "Commit: 98777ea96c19be5c09b1d8a38b76c042bd1d1323\nBranch: master\nTime: 2024-02-22T13:51:16+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9c8c721194ae32b018b34db787124dd9ac3f7b20",
+          "message": "🔧  Remove `constraints` from `extra_options` (#1123)\n\n`constraints` is a core sphinx-need option, and so it is not necessary to add it to the `extra_options`",
+          "timestamp": "2024-02-22T13:58:37+01:00",
+          "tree_id": "d01375b185b861cc4a997bddcb54de0beb7b100b",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/9c8c721194ae32b018b34db787124dd9ac3f7b20"
+        },
+        "date": 1708606835256,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2317462560000081,
+            "unit": "s",
+            "extra": "Commit: 9c8c721194ae32b018b34db787124dd9ac3f7b20\nBranch: master\nTime: 2024-02-22T13:58:37+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.10704998599999,
+            "unit": "s",
+            "extra": "Commit: 9c8c721194ae32b018b34db787124dd9ac3f7b20\nBranch: master\nTime: 2024-02-22T13:58:37+01:00"
           }
         ]
       }
