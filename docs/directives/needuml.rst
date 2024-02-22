@@ -1,4 +1,4 @@
-{% raw %}
+
 
 .. _needuml:
 
@@ -741,4 +741,4 @@ NeedUml Examples
 
       class_x o-- class_y
 
-{% endraw %}
+

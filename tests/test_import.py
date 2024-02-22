@@ -1,12 +1,17 @@
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
-import requests_mock
+import responses
 from syrupy.filters import props
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/import_doc"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/import_doc"}],
+    indirect=True,
+)
 def test_import_json(test_app):
     app = test_app
     app.build()
@@ -40,7 +45,9 @@ def test_import_json(test_app):
     assert "small_rel_path_TEST_01" in rel_path_import_html
 
     # Check deprecated relative path import based on conf.py
-    deprec_rel_path_import_html = Path(app.outdir, "subdoc/deprecated_rel_path_import.html").read_text()
+    deprec_rel_path_import_html = Path(
+        app.outdir, "subdoc/deprecated_rel_path_import.html"
+    ).read_text()
     assert "small_depr_rel_path_TEST_01" in deprec_rel_path_import_html
 
     warning = app._warning
@@ -48,7 +55,11 @@ def test_import_json(test_app):
     assert "Deprecation warning:" in warnings
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/import_doc_invalid"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/import_doc_invalid"}],
+    indirect=True,
+)
 def test_json_schema_console_check(test_app):
     """Checks the console output for hints about json schema validation errors"""
     import os
@@ -58,12 +69,18 @@ def test_json_schema_console_check(test_app):
 
     srcdir = Path(app.srcdir)
     out_dir = os.path.join(srcdir, "_build")
-    out = subprocess.run(["sphinx-build", "-b", "html", srcdir, out_dir], capture_output=True)
+    out = subprocess.run(
+        ["sphinx-build", "-b", "html", srcdir, out_dir], capture_output=True
+    )
 
     assert "Schema validation errors detected" in str(out.stdout)
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/import_doc_invalid"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/import_doc_invalid"}],
+    indirect=True,
+)
 def test_json_schema_file_check(test_app):
     """Checks that an invalid json-file gets normally still imported and is used as normal (if possible)"""
     app = test_app
@@ -74,7 +91,11 @@ def test_json_schema_file_check(test_app):
     assert "new_tag" in html
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/import_doc_empty"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/import_doc_empty"}],
+    indirect=True,
+)
 def test_empty_file_check(test_app):
     """Checks that an empty needs.json throws an exception"""
     app = test_app
@@ -85,7 +106,9 @@ def test_empty_file_check(test_app):
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/non_exists_file_import"}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/non_exists_file_import"}],
+    indirect=True,
 )
 def test_import_non_exists_json(test_app):
     # Check non exists file import
@@ -97,7 +120,11 @@ def test_import_non_exists_json(test_app):
         assert "non_exists_file_import" in err.args[0]
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "needs", "srcdir": "doc_test/import_doc"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "needs", "srcdir": "doc_test/import_doc"}],
+    indirect=True,
+)
 def test_import_builder(test_app, snapshot):
     app = test_app
     app.build()
@@ -107,7 +134,9 @@ def test_import_builder(test_app, snapshot):
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "needs", "srcdir": "doc_test/doc_needimport_download_needs_json"}], indirect=True
+    "test_app",
+    [{"buildername": "needs", "srcdir": "doc_test/doc_needimport_download_needs_json"}],
+    indirect=True,
 )
 def test_needimport_needs_json_download(test_app, snapshot):
     app = test_app
@@ -165,7 +194,7 @@ def test_needimport_needs_json_download(test_app, snapshot):
         },
     }
 
-    with requests_mock.Mocker() as m:
+    with responses.RequestsMock() as m:
         m.get("http://my_company.com/docs/v1/remote-needs.json", json=remote_json)
         app.build()
 
@@ -175,47 +204,22 @@ def test_needimport_needs_json_download(test_app, snapshot):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "needs", "srcdir": "doc_test/doc_needimport_download_needs_json_negative"}],
+    [
+        {
+            "buildername": "needs",
+            "srcdir": "doc_test/doc_needimport_download_needs_json_negative",
+        }
+    ],
     indirect=True,
 )
 def test_needimport_needs_json_download_negative(test_app):
-    import subprocess
-
     app = test_app
-
-    remote_json = {
-        "created": "2022-05-11T13:54:22.331741",
-        "current_version": "1.0",
-        "project": "needs test docs",
-        "versions": {
-            "1.0": {
-                "created": "2021-05-11T13:54:22.331724",
-                "filters": {},
-                "filters_amount": 0,
-                "needs": {
-                    "TEST_101": {
-                        "id": "TEST_101",
-                        "description": "TEST_101 DESCRIPTION",
-                        "docname": "index",
-                        "external_css": "external_link",
-                        "external_url": "http://my_company.com/docs/v1/index.html#TEST_01",
-                        "title": "TEST_101 TITLE",
-                        "type": "impl",
-                        "tags": ["ext_test"],
-                    },
-                },
-            },
-        },
-    }
-
-    with requests_mock.Mocker() as m:
-        # test with invalid url
-        m.get("http://my_wrong_name_company.com/docs/v1/remote-needs.json", json=remote_json)
-
-        src_dir = Path(app.srcdir)
-        out_dir = Path(app.outdir)
-        output = subprocess.run(["sphinx-build", "-M", "html", src_dir, out_dir], capture_output=True)
-        assert (
-            "NeedimportException: Getting http://my_wrong_name_company.com/docs/v1/remote-needs.json didn't work."
-            in output.stderr.decode("utf-8")
-        )
+    src_dir = Path(app.srcdir)
+    out_dir = Path(app.outdir)
+    output = subprocess.run(
+        ["sphinx-build", "-M", "html", src_dir, out_dir], capture_output=True
+    )
+    assert (
+        "NeedimportException: Getting http://my_wrong_name_company.com/docs/v1/remote-needs.json didn't work."
+        in output.stderr.decode("utf-8")
+    )

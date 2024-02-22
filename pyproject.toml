@@ -48,7 +48,6 @@ matplotlib = { version = ">=3.3.0", optional = true }
 pytest = { version = "^7", optional = true }
 pytest-cov = { version = "^4", optional = true }
 lxml = { version = "^4.6.5", optional = true }
-requests-mock = { version = ">=1.9.3", optional = true }
 responses = { version = "^0.22.0", optional = true }
 sphinxcontrib-plantuml = { version = "^0", optional = true }
 syrupy = { version = "^3", optional = true }
@@ -76,7 +75,6 @@ test = [
   "pytest-cov",
   "syrupy",
   "sphinxcontrib-plantuml",
-  "requests-mock",
   "lxml",
   "responses",
   "pytest-xprocess"
@@ -101,11 +99,19 @@ markers = [
     "jstest: marks tests as JavaScript test (deselect with '-m \"not jstest\"')",
 ]
 
-[tool.black]
-line-length = 120
-
-[tool.isort]
-profile = "black"
+[tool.ruff.lint]
+extend-select = [
+  "B",   # flake8-bugbear  
+  "C4",  # flake8-comprehensions
+  "I",   # isort
+  "ICN", # flake8-import-conventions
+  "ISC", # flake8-implicit-str-concat
+  "N",   # pep8-naming
+  "RUF", # Ruff-specific rules
+  "SIM", # flake8-simplify
+  "UP",  # pyupgrade
+]
+extend-ignore = ["B904", "ISC001", "ICN001", "N818", "RUF005", "RUF013", "RUF012", "SIM108", "SIM118"]
 
 [tool.mypy]
 files = "sphinx_needs"
@@ -132,15 +138,9 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = [
-  'sphinx_needs.api.need',
-  'sphinx_needs.directives.needuml',
-]
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = [
   "sphinx_needs.directives.needextend",
   "sphinx_needs.functions.functions",
+  "sphinx_needs.api.need",
 ]
 # TODO dynamically overriding TypeDict keys is a bit tricky
 disable_error_code = "literal-required"
@@ -150,7 +150,6 @@ module = [
   "sphinx_needs.data"
 ]
 disable_error_code = ["attr-defined", "no-any-return"]
-
 
 [build-system]
 requires = ["setuptools", "poetry_core>=1.0.8"]  # setuptools for deps like plantuml

@@ -3,7 +3,11 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/role_need_doc"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/role_need_doc"}],
+    indirect=True,
+)
 def test_role_need(test_app):
     app = test_app
     app.build()
@@ -24,5 +28,6 @@ def test_role_need(test_app):
     # External need ref
     assert (
         '<a class="external_link reference external" '
-        'href="http://my_company.com/docs/v1/index.html#TEST_01">EXT_TEST_01</a>' in html
+        'href="http://my_company.com/docs/v1/index.html#TEST_01">EXT_TEST_01</a>'
+        in html
     )

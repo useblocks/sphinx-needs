@@ -7,6 +7,7 @@ TEST DOCUMENT
     filter_all
     filter_search
     nested_needs
+    filter_no_needs
 
 Testing simple filter
 ---------------------

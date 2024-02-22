@@ -14,7 +14,9 @@ exec(dummy_code, dummy_extension.__dict__)
 sys.modules["dummy_extension.dummy"] = dummy_extension
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/api_doc"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/api_doc"}], indirect=True
+)
 def test_api_get_types(test_app):
     from sphinx_needs.api import get_need_types
 
@@ -24,7 +26,11 @@ def test_api_get_types(test_app):
     assert set(need_types) == {"story", "spec", "impl", "test"}
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/api_doc_awesome"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/api_doc_awesome"}],
+    indirect=True,
+)
 def test_api_add_type(test_app, snapshot):
     from sphinx_needs.api import add_need_type
 

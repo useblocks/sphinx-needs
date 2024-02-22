@@ -7,7 +7,11 @@ import pytest
 from syrupy.filters import props
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "needs", "srcdir": "doc_test/doc_needs_builder"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "needs", "srcdir": "doc_test/doc_needs_builder"}],
+    indirect=True,
+)
 def test_doc_needs_builder(test_app, snapshot):
     app = test_app
     app.build()
@@ -36,7 +40,9 @@ def test_doc_needs_builder_reproducible(test_app, snapshot):
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "needs", "srcdir": "doc_test/doc_needs_builder_negative_tests"}], indirect=True
+    "test_app",
+    [{"buildername": "needs", "srcdir": "doc_test/doc_needs_builder_negative_tests"}],
+    indirect=True,
 )
 def test_doc_needs_build_without_needs_file(test_app):
     app = test_app
@@ -44,13 +50,20 @@ def test_doc_needs_build_without_needs_file(test_app):
     srcdir = Path(app.srcdir)
     out_dir = os.path.join(srcdir, "_build")
 
-    out = subprocess.run(["sphinx-build", "-b", "needs", srcdir, out_dir], capture_output=True)
+    out = subprocess.run(
+        ["sphinx-build", "-b", "needs", srcdir, out_dir], capture_output=True
+    )
     assert not out.stderr
-    assert "needs.json found, but will not be used because needs_file not configured." in out.stdout.decode("utf-8")
+    assert (
+        "needs.json found, but will not be used because needs_file not configured."
+        in out.stdout.decode("utf-8")
+    )
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_builder_parallel"}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needs_builder_parallel"}],
+    indirect=True,
 )
 def test_needs_html_and_json(test_app):
     """
@@ -64,7 +77,12 @@ def test_needs_html_and_json(test_app):
 
     srcdir = app.srcdir
     build_dir = os.path.join(app.outdir, "../needs")
-    subprocess.run(["sphinx-build", "-b", "needs", srcdir, build_dir], capture_output=True)
+    print(build_dir)
+    output = subprocess.run(
+        ["python", "-m", "sphinx.cmd.build", "-b", "needs", srcdir, build_dir],
+        capture_output=True,
+    )
+    print(output)
     needs_json_path_2 = os.path.join(build_dir, "needs.json")
     assert os.path.exists(needs_json_path_2)
 

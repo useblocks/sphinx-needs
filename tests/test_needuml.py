@@ -5,7 +5,11 @@ import pytest
 from syrupy.filters import props
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needuml"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needuml"}],
+    indirect=True,
+)
 def test_doc_build_html(test_app, snapshot):
     app = test_app
     app.build()
@@ -20,7 +24,9 @@ def test_doc_build_html(test_app, snapshot):
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needuml_duplicate_key"}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needuml_duplicate_key"}],
+    indirect=True,
 )
 def test_needuml_option_key_duplicate(test_app):
     app = test_app
@@ -28,17 +34,22 @@ def test_needuml_option_key_duplicate(test_app):
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"
 
-    out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
+    out = subprocess.run(
+        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+    )
     assert out.returncode == 1
 
     assert (
         "sphinx_needs.directives.needuml.NeedumlException: Inside need: INT_001, "
-        "found duplicate Needuml option key name: sequence" in out.stderr.decode("utf-8")
+        "found duplicate Needuml option key name: sequence"
+        in out.stderr.decode("utf-8")
     )
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needuml_key_name_diagram"}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needuml_key_name_diagram"}],
+    indirect=True,
 )
 def test_needuml_option_key_forbidden(test_app):
     app = test_app
@@ -46,7 +57,9 @@ def test_needuml_option_key_forbidden(test_app):
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"
 
-    out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
+    out = subprocess.run(
+        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+    )
     assert out.returncode == 1
 
     assert (
@@ -56,7 +69,9 @@ def test_needuml_option_key_forbidden(test_app):
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needuml_diagram_allowmixing"}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needuml_diagram_allowmixing"}],
+    indirect=True,
 )
 def test_needuml_diagram_allowmixing(test_app):
     app = test_app
@@ -64,11 +79,17 @@ def test_needuml_diagram_allowmixing(test_app):
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"
 
-    out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
+    out = subprocess.run(
+        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+    )
     assert out.returncode == 0
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needuml_save"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needuml_save"}],
+    indirect=True,
+)
 def test_needuml_save(test_app, snapshot):
     app = test_app
     app.build()
@@ -91,7 +112,9 @@ def test_needuml_save(test_app, snapshot):
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needuml_save_with_abs_path"}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needuml_save_with_abs_path"}],
+    indirect=True,
 )
 def test_needuml_save_with_abs_path(test_app):
     app = test_app
@@ -99,17 +122,22 @@ def test_needuml_save_with_abs_path(test_app):
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"
 
-    out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
+    out = subprocess.run(
+        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+    )
     assert out.returncode == 1
 
     assert (
         "sphinx_needs.directives.needuml.NeedumlException: "
-        "Given save path: /_out/my_needuml.puml, is not a relative path." in out.stderr.decode("utf-8")
+        "Given save path: /_out/my_needuml.puml, is not a relative path."
+        in out.stderr.decode("utf-8")
     )
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "needumls", "srcdir": "doc_test/doc_needuml_save"}], indirect=True
+    "test_app",
+    [{"buildername": "needumls", "srcdir": "doc_test/doc_needuml_save"}],
+    indirect=True,
 )
 def test_needumls_builder(test_app, snapshot):
     app = test_app
@@ -131,7 +159,11 @@ def test_needumls_builder(test_app, snapshot):
     assert umls == snapshot
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needuml_filter"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needuml_filter"}],
+    indirect=True,
+)
 def test_needuml_filter(test_app, snapshot):
     app = test_app
     app.build()
@@ -145,12 +177,16 @@ def test_needuml_filter(test_app, snapshot):
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"
 
-    out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
+    out = subprocess.run(
+        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+    )
     assert out.returncode == 0
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needuml_jinja_func_flow"}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needuml_jinja_func_flow"}],
+    indirect=True,
 )
 def test_needuml_jinja_func_flow(test_app, snapshot):
     app = test_app
@@ -165,12 +201,16 @@ def test_needuml_jinja_func_flow(test_app, snapshot):
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"
 
-    out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
+    out = subprocess.run(
+        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+    )
     assert out.returncode == 0
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needuml_jinja_func_need_removed"}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needuml_jinja_func_need_removed"}],
+    indirect=True,
 )
 def test_needuml_jinja_func_need_removed(test_app):
     app = test_app
@@ -178,17 +218,25 @@ def test_needuml_jinja_func_need_removed(test_app):
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"
 
-    out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
+    out = subprocess.run(
+        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+    )
     assert out.returncode == 1
     assert (
         "sphinx_needs.directives.needuml.NeedumlException: "
-        "Jinja function 'need()' is not supported in needuml directive." in out.stderr.decode("utf-8")
+        "Jinja function 'need()' is not supported in needuml directive."
+        in out.stderr.decode("utf-8")
     )
 
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_needuml_jinja_func_import_negative_tests"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_needuml_jinja_func_import_negative_tests",
+        }
+    ],
     indirect=True,
 )
 def test_doc_needarch_jinja_import_negative(test_app):
@@ -197,17 +245,22 @@ def test_doc_needarch_jinja_import_negative(test_app):
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"
 
-    out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
+    out = subprocess.run(
+        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+    )
 
     assert out.returncode == 1
     assert (
         "sphinx_needs.directives.needuml.NeedumlException: "
-        "Jinja function 'import()' is not supported in needuml directive." in out.stderr.decode("utf-8")
+        "Jinja function 'import()' is not supported in needuml directive."
+        in out.stderr.decode("utf-8")
     )
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needuml_jinja_func_ref"}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needuml_jinja_func_ref"}],
+    indirect=True,
 )
 def test_needuml_jinja_func_ref(test_app, snapshot):
     app = test_app
@@ -223,5 +276,7 @@ def test_needuml_jinja_func_ref(test_app, snapshot):
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"
 
-    out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
+    out = subprocess.run(
+        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+    )
     assert out.returncode == 0

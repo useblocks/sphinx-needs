@@ -1,8 +1,6 @@
-"""
+from __future__ import annotations
 
-
-"""
-from typing import List, Sequence
+from typing import Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -43,7 +41,9 @@ class NeedlistDirective(FilterBase):
     def run(self) -> Sequence[nodes.Node]:
         env = self.env
 
-        targetid = "needlist-{docname}-{id}".format(docname=env.docname, id=env.new_serialno("needlist"))
+        targetid = "needlist-{docname}-{id}".format(
+            docname=env.docname, id=env.new_serialno("needlist")
+        )
         targetnode = nodes.target("", "", ids=[targetid])
 
         # Add the need and all needed information
@@ -62,7 +62,12 @@ class NeedlistDirective(FilterBase):
         return [targetnode, Needlist("")]
 
 
-def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
+def process_needlist(
+    app: Sphinx,
+    doctree: nodes.document,
+    fromdocname: str,
+    found_nodes: list[nodes.Element],
+) -> None:
     """
     Replace all needlist nodes with a list of the collected needs.
     Augment each need with a backlink to the original location.
@@ -79,52 +84,60 @@ def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
 
         id = node.attributes["ids"][0]
         current_needfilter = SphinxNeedsData(env).get_or_create_lists()[id]
-        content: List[nodes.Node] = []
+        content: list[nodes.Node] = []
         all_needs = list(SphinxNeedsData(env).get_or_create_needs().values())
         found_needs = process_filters(app, all_needs, current_needfilter)
 
-        line_block = nodes.line_block()
+        if len(found_needs) > 0:
+            line_block = nodes.line_block()
 
-        # Add lineno to node
-        line_block.line = current_needfilter["lineno"]
-        for need_info in found_needs:
-            para = nodes.line()
-            description = "{}: {}".format(need_info["id"], need_info["title"])
+            # Add lineno to node
+            line_block.line = current_needfilter["lineno"]
+            for need_info in found_needs:
+                para = nodes.line()
+                description = "{}: {}".format(need_info["id"], need_info["title"])
 
-            if current_needfilter["show_status"] and need_info["status"]:
-                description += " (%s)" % need_info["status"]
+                if current_needfilter["show_status"] and need_info["status"]:
+                    description += " (%s)" % need_info["status"]
 
-            if current_needfilter["show_tags"] and need_info["tags"]:
-                description += " [%s]" % "; ".join(need_info["tags"])
+                if current_needfilter["show_tags"] and need_info["tags"]:
+                    description += " [%s]" % "; ".join(need_info["tags"])
 
-            title = nodes.Text(description)
+                title = nodes.Text(description)
 
-            # Create a reference
-            if need_info["hide"]:
-                para += title
-            elif need_info["is_external"]:
-                assert need_info["external_url"] is not None, "External need without URL"
-                ref = nodes.reference("", "")
+                # Create a reference
+                if need_info["hide"]:
+                    para += title
+                elif need_info["is_external"]:
+                    assert (
+                        need_info["external_url"] is not None
+                    ), "External need without URL"
+                    ref = nodes.reference("", "")
 
-                ref["refuri"] = check_and_calc_base_url_rel_path(need_info["external_url"], fromdocname)
+                    ref["refuri"] = check_and_calc_base_url_rel_path(
+                        need_info["external_url"], fromdocname
+                    )
 
-                ref["classes"].append(need_info["external_css"])
-                ref.append(title)
-                para += ref
-            else:
-                target_id = need_info["target_id"]
-                ref = nodes.reference("", "")
-                ref["refdocname"] = need_info["docname"]
-                ref["refuri"] = builder.get_relative_uri(fromdocname, need_info["docname"])
-                ref["refuri"] += "#" + target_id
-                ref.append(title)
-                para += ref
-            line_block.append(para)
-        content.append(line_block)
+                    ref["classes"].append(need_info["external_css"])
+                    ref.append(title)
+                    para += ref
+                else:
+                    target_id = need_info["target_id"]
+                    ref = nodes.reference("", "")
+                    ref["refdocname"] = need_info["docname"]
+                    ref["refuri"] = builder.get_relative_uri(
+                        fromdocname, need_info["docname"]
+                    )
+                    ref["refuri"] += "#" + target_id
+                    ref.append(title)
+                    para += ref
+                line_block.append(para)
+            content.append(line_block)
 
         if len(content) == 0:
-            content.append(no_needs_found_paragraph())
-
+            content.append(
+                no_needs_found_paragraph(current_needfilter.get("filter_warning"))
+            )
         if current_needfilter["show_filters"]:
             content.append(used_filter_paragraph(current_needfilter))
 

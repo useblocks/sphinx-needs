@@ -6,9 +6,12 @@ Provides the ability to mark specific parts of a need with an own id.
 Most voodoo is done in need.py
 
 """
+
+from __future__ import annotations
+
 import hashlib
 import re
-from typing import List, cast
+from typing import cast
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -20,18 +23,25 @@ from sphinx_needs.logging import get_logger
 log = get_logger(__name__)
 
 
-class NeedPart(nodes.Inline, nodes.Element):  # type: ignore
+class NeedPart(nodes.Inline, nodes.Element):
     pass
 
 
-def process_need_part(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
+def process_need_part(
+    app: Sphinx,
+    doctree: nodes.document,
+    fromdocname: str,
+    found_nodes: list[nodes.Element],
+) -> None:
     pass
 
 
 part_pattern = re.compile(r"\(([\w-]+)\)(.*)")
 
 
-def update_need_with_parts(env: BuildEnvironment, need: NeedsInfoType, part_nodes: List[NeedPart]) -> None:
+def update_need_with_parts(
+    env: BuildEnvironment, need: NeedsInfoType, part_nodes: list[NeedPart]
+) -> None:
     app = env.app
     builder = app.builder
     for part_node in part_nodes:
@@ -42,7 +52,9 @@ def update_need_with_parts(env: BuildEnvironment, need: NeedsInfoType, part_node
             part_content = result.group(2)
         else:
             part_content = content
-            inline_id = hashlib.sha1(part_content.encode("UTF-8")).hexdigest().upper()[:3]
+            inline_id = (
+                hashlib.sha1(part_content.encode("UTF-8")).hexdigest().upper()[:3]
+            )
 
         if "parts" not in need:
             need["parts"] = {}
@@ -75,7 +87,9 @@ def update_need_with_parts(env: BuildEnvironment, need: NeedsInfoType, part_node
 
         from sphinx.util.nodes import make_refnode
 
-        part_ref_node = make_refnode(builder, need["docname"], need["docname"], part_id_ref, part_link_node)
+        part_ref_node = make_refnode(
+            builder, need["docname"], need["docname"], part_id_ref, part_link_node
+        )
         part_ref_node["classes"] += ["needs-id"]
 
         part_node.children = []
@@ -85,7 +99,7 @@ def update_need_with_parts(env: BuildEnvironment, need: NeedsInfoType, part_node
         part_node.append(node_need_part_line)
 
 
-def find_parts(node: nodes.Node) -> List[NeedPart]:
+def find_parts(node: nodes.Node) -> list[NeedPart]:
     found_nodes = []
     for child in node.children:
         if isinstance(child, NeedPart):

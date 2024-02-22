@@ -1,8 +1,6 @@
 import pytest
-import responses
 
 
-@responses.activate
 @pytest.mark.parametrize(
     "test_app",
     [{"buildername": "html", "srcdir": "doc_test/doc_measure_time"}],

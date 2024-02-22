@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import hashlib
 import re
 from contextlib import suppress
-from typing import Any, List, Sequence
+from typing import Any, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -21,8 +23,12 @@ NEED_TEMPLATE = """.. {{type}}:: {{title}}
 
 """
 
-LINE_REGEX = re.compile(r"(?P<indent>[^\S\n]*)\*\s*(?P<text>.*)|[\S\*]*(?P<more_text>.*)")
-ID_REGEX = re.compile(r"(\((?P<need_id>[^\"'=\n]+)?\))")  # Exclude some chars, which are used by option list
+LINE_REGEX = re.compile(
+    r"(?P<indent>[^\S\n]*)\*\s*(?P<text>.*)|[\S\*]*(?P<more_text>.*)"
+)
+ID_REGEX = re.compile(
+    r"(\((?P<need_id>[^\"'=\n]+)?\))"
+)  # Exclude some chars, which are used by option list
 OPTION_AREA_REGEX = re.compile(r"\(\((.*)\)\)")
 OPTIONS_REGEX = re.compile(r"([^=,\s]*)=[\"']([^\"]*)[\"']")
 
@@ -81,7 +87,9 @@ class List2NeedDirective(SphinxDirective):
         for x in range(0, len(types_raw_list)):
             types[x] = types_raw_list[x]
             if types[x] not in conf_types:
-                raise SphinxError(f"Unknown type configured: {types[x]}. Allowed are {', '.join(conf_types)}")
+                raise SphinxError(
+                    f"Unknown type configured: {types[x]}. Allowed are {', '.join(conf_types)}"
+                )
 
         down_links_raw = self.options.get("links-down")
         if down_links_raw is None or down_links_raw == "":
@@ -97,7 +105,10 @@ class List2NeedDirective(SphinxDirective):
         for i, down_link_raw in enumerate(down_links_raw_list):
             down_links_types[i] = down_link_raw
             if down_link_raw not in link_types:
-                raise SphinxError(f"Unknown link configured: {down_link_raw}. " f"Allowed are {', '.join(link_types)}")
+                raise SphinxError(
+                    f"Unknown link configured: {down_link_raw}. "
+                    f"Allowed are {', '.join(link_types)}"
+                )
         list_needs = []
         # Storing the data in a sorted list
         for content_line in content_raw.split("\n"):
@@ -110,23 +121,30 @@ class List2NeedDirective(SphinxDirective):
             if text:
                 indent = len(indent)
                 if not indent % 2 == 0:
-                    raise IndentationError("Indentation for list must be always a multiply of 2.")
+                    raise IndentationError(
+                        "Indentation for list must be always a multiply of 2."
+                    )
                 level = int(indent / 2)
 
                 if level not in types:
                     raise SphinxWarning(
-                        f"No need type defined for indentation level {level}." f" Defined types {types}"
+                        f"No need type defined for indentation level {level}."
+                        f" Defined types {types}"
                     )
 
                 if down_links_types and level > len(down_links_types):
-                    raise SphinxWarning(f"Not enough links-down defined for indentation level {level}.")
+                    raise SphinxWarning(
+                        f"Not enough links-down defined for indentation level {level}."
+                    )
 
                 splitted_text = text.split(delimiter)
                 title = splitted_text[0]
 
                 content = ""
                 with suppress(IndexError):
-                    content = delimiter.join(splitted_text[1:])  # Put the content together again
+                    content = delimiter.join(
+                        splitted_text[1:]
+                    )  # Put the content together again
 
                 need_id_result = ID_REGEX.search(title)
                 if need_id_result:
@@ -156,7 +174,9 @@ class List2NeedDirective(SphinxDirective):
                 more_text = more_text.lstrip()
                 if more_text.startswith(":"):
                     more_text = f"   {more_text}"
-                list_needs[-1]["content"] = f"{list_needs[-1]['content']}\n   {more_text}"
+                list_needs[-1][
+                    "content"
+                ] = f"{list_needs[-1]['content']}\n   {more_text}"
 
         # Finally creating the rst code
         overall_text = []
@@ -177,7 +197,11 @@ class List2NeedDirective(SphinxDirective):
 
             data = list_need
             need_links_down = self.get_down_needs(list_needs, index)
-            if down_links_types and list_need["level"] in down_links_types and need_links_down:
+            if (
+                down_links_types
+                and list_need["level"] in down_links_types
+                and need_links_down
+            ):
                 data["links_down"] = need_links_down
                 data["links_down_type"] = down_links_types[list_need["level"]]
                 data["set_links_down"] = True
@@ -191,17 +215,22 @@ class List2NeedDirective(SphinxDirective):
                 text_list = indented_text_list
             overall_text += text_list
 
-        self.state_machine.insert_input(overall_text, self.state_machine.document.attributes["source"])
+        self.state_machine.insert_input(
+            overall_text, self.state_machine.document.attributes["source"]
+        )
 
         return []
 
     def make_hashed_id(self, type_prefix: str, title: str, id_length: int) -> str:
         hashable_content = title
         return "{}{}".format(
-            type_prefix, hashlib.sha1(hashable_content.encode("UTF-8")).hexdigest().upper()[:id_length]
+            type_prefix,
+            hashlib.sha1(hashable_content.encode("UTF-8"))
+            .hexdigest()
+            .upper()[:id_length],
         )
 
-    def get_down_needs(self, list_needs: List[Any], index: int) -> List[str]:
+    def get_down_needs(self, list_needs: list[Any], index: int) -> list[str]:
         """
         Return all needs which are directly under the one given by the index
         """

@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import html
 import os
-from typing import List, Sequence
+from typing import TYPE_CHECKING, Any, Dict, List, Sequence, TypedDict
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -9,12 +11,24 @@ from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link
 from sphinx_needs.directives.needflow import make_entity_name
 from sphinx_needs.filter_common import filter_needs
 from sphinx_needs.utils import add_doc
+
+if TYPE_CHECKING:
+    from sphinxcontrib.plantuml import plantuml
+
+
+class ProcessedDataType(TypedDict):
+    art: str
+    key: None | str
+    arguments: dict[str, Any]
+
+
+ProcessedNeedsType = Dict[str, List[ProcessedDataType]]
 
 
 class Needuml(nodes.General, nodes.Element):
@@ -43,10 +57,14 @@ class NeedumlDirective(SphinxDirective):
         env = self.env
 
         if self.name == "needarch":
-            targetid = "needarch-{docname}-{id}".format(docname=env.docname, id=env.new_serialno("needarch"))
+            targetid = "needarch-{docname}-{id}".format(
+                docname=env.docname, id=env.new_serialno("needarch")
+            )
             is_arch = True
         else:
-            targetid = "needuml-{docname}-{id}".format(docname=env.docname, id=env.new_serialno("needuml"))
+            targetid = "needuml-{docname}-{id}".format(
+                docname=env.docname, id=env.new_serialno("needuml")
+            )
             is_arch = False
 
         targetnode = nodes.target("", "", ids=[targetid])
@@ -85,7 +103,9 @@ class NeedumlDirective(SphinxDirective):
         plantuml_code_out_path = None
         if save_path:
             if os.path.isabs(save_path):
-                raise NeedumlException(f"Given save path: {save_path}, is not a relative path.")
+                raise NeedumlException(
+                    f"Given save path: {save_path}, is not a relative path."
+                )
             else:
                 plantuml_code_out_path = save_path
 
@@ -121,7 +141,14 @@ class NeedarchDirective(NeedumlDirective):
         return NeedumlDirective.run(self)
 
 
-def transform_uml_to_plantuml_node(app, uml_content: str, parent_need_id: str, key: str, kwargs: dict, config: str):
+def transform_uml_to_plantuml_node(
+    app: Sphinx,
+    uml_content: str,
+    parent_need_id: None | str,
+    key: None | str,
+    kwargs: dict[str, Any],
+    config: str,
+) -> plantuml:
     try:
         if "sphinxcontrib.plantuml" not in app.config.extensions:
             raise ImportError
@@ -148,7 +175,7 @@ def transform_uml_to_plantuml_node(app, uml_content: str, parent_need_id: str, k
         puml_node["uml"] += "\n\n"
 
     # jinja2uml to translate jinja statements to uml text
-    (uml_content_return, processed_need_ids_return) = jinja2uml(
+    (uml_content_return, _) = jinja2uml(
         app=app,
         fromdocname=None,
         uml_content=uml_content,
@@ -157,16 +184,15 @@ def transform_uml_to_plantuml_node(app, uml_content: str, parent_need_id: str, k
         processed_need_ids={},
         kwargs=kwargs,
     )
-    # silently discard processed_need_ids_return
 
     puml_node["uml"] += f"\n{uml_content_return}"
     puml_node["uml"] += "\n@enduml\n"
     return puml_node
 
 
-def get_debug_node_from_puml_node(puml_node):
+def get_debug_node_from_puml_node(puml_node: plantuml) -> nodes.container:
     if isinstance(puml_node, nodes.figure):
-        data = puml_node.children[0]["uml"]
+        data = puml_node.children[0]["uml"]  # type: ignore[index]
     data = puml_node.get("uml", "")
     data = "\n".join([html.escape(line) for line in data.split("\n")])
     debug_para = nodes.raw("", f"<pre>{data}</pre>", format="html")
@@ -176,24 +202,32 @@ def get_debug_node_from_puml_node(puml_node):
 
 
 def jinja2uml(
-    app, fromdocname, uml_content: str, parent_need_id: str, key: str, processed_need_ids: {}, kwargs: dict
-) -> (str, {}):
+    app: Sphinx,
+    fromdocname: None | str,
+    uml_content: str,
+    parent_need_id: None | str,
+    key: None | str,
+    processed_need_ids: ProcessedNeedsType,
+    kwargs: dict[str, Any],
+) -> tuple[str, ProcessedNeedsType]:
     # Let's render jinja templates with uml content template to 'plantuml syntax' uml
     # 1. Remove @startuml and @enduml
     uml_content = uml_content.replace("@startuml", "").replace("@enduml", "")
 
     # 2. Prepare jinja template
-    mem_template = Environment(loader=BaseLoader).from_string(uml_content)
+    mem_template = Environment(loader=BaseLoader()).from_string(uml_content)
 
     # 3. Get a new instance of Jinja Helper Functions
     jinja_utils = JinjaFunctions(app, fromdocname, parent_need_id, processed_need_ids)
 
     # 4. Append need_id to processed_need_ids, so it will not been processed again
     if parent_need_id:
-        jinja_utils.append_need_to_processed_needs(need_id=parent_need_id, art="uml", key=key, kwargs=kwargs)
+        jinja_utils.append_need_to_processed_needs(
+            need_id=parent_need_id, art="uml", key=key, kwargs=kwargs
+        )
 
     # 5. Get data for the jinja processing
-    data = {}
+    data: dict[str, Any] = {}
     # 5.1 Set default config to data
     data.update(**NeedsSphinxConfig(app.config).render_context)
     # 5.2 Set uml() kwargs to data and maybe overwrite default settings
@@ -227,31 +261,45 @@ class JinjaFunctions:
     Provides access to sphinx-app and all Needs objects.
     """
 
-    def __init__(self, app: Sphinx, fromdocname, parent_need_id: str, processed_need_ids: dict):
+    def __init__(
+        self,
+        app: Sphinx,
+        fromdocname: None | str,
+        parent_need_id: None | str,
+        processed_need_ids: ProcessedNeedsType,
+    ) -> None:
         self.needs = SphinxNeedsData(app.env).get_or_create_needs()
         self.app = app
         self.fromdocname = fromdocname
         self.parent_need_id = parent_need_id
         if parent_need_id and parent_need_id not in self.needs:
-            raise NeedumlException(f"JinjaFunctions initialized with undefined parent_need_id: '{parent_need_id}'")
+            raise NeedumlException(
+                f"JinjaFunctions initialized with undefined parent_need_id: '{parent_need_id}'"
+            )
         self.processed_need_ids = processed_need_ids
 
-    def need_to_processed_data(self, art: str, key: str, kwargs: dict) -> {}:
-        d = {
+    def need_to_processed_data(
+        self, art: str, key: None | str, kwargs: dict[str, Any]
+    ) -> ProcessedDataType:
+        d: ProcessedDataType = {
             "art": art,
             "key": key,
             "arguments": kwargs,
         }
         return d
 
-    def append_need_to_processed_needs(self, need_id: str, art: str, key: str, kwargs: dict) -> None:
+    def append_need_to_processed_needs(
+        self, need_id: str, art: str, key: None | str, kwargs: dict[str, Any]
+    ) -> None:
         data = self.need_to_processed_data(art=art, key=key, kwargs=kwargs)
         if need_id not in self.processed_need_ids:
             self.processed_need_ids[need_id] = []
         if data not in self.processed_need_ids[need_id]:
             self.processed_need_ids[need_id].append(data)
 
-    def append_needs_to_processed_needs(self, processed_needs_data: dict) -> None:
+    def append_needs_to_processed_needs(
+        self, processed_needs_data: ProcessedNeedsType
+    ) -> None:
         for k, v in processed_needs_data.items():
             if k not in self.processed_need_ids:
                 self.processed_need_ids[k] = []
@@ -259,18 +307,26 @@ class JinjaFunctions:
                 if d not in self.processed_need_ids[k]:
                     self.processed_need_ids[k].append(d)
 
-    def data_in_processed_data(self, need_id: str, art: str, key: str, kwargs: dict) -> bool:
+    def data_in_processed_data(
+        self, need_id: str, art: str, key: str, kwargs: dict[str, Any]
+    ) -> bool:
         data = self.need_to_processed_data(art=art, key=key, kwargs=kwargs)
-        return (need_id in self.processed_need_ids) and (data in self.processed_need_ids[need_id])
+        return (need_id in self.processed_need_ids) and (
+            data in self.processed_need_ids[need_id]
+        )
 
-    def get_processed_need_ids(self) -> {}:
+    def get_processed_need_ids(self) -> ProcessedNeedsType:
         return self.processed_need_ids
 
-    def uml_from_need(self, need_id: str, key: str = "diagram", **kwargs) -> str:
+    def uml_from_need(self, need_id: str, key: str = "diagram", **kwargs: Any) -> str:
         if need_id not in self.needs:
-            raise NeedumlException(f"Jinja function uml() is called with undefined need_id: '{need_id}'.")
+            raise NeedumlException(
+                f"Jinja function uml() is called with undefined need_id: '{need_id}'."
+            )
 
-        if self.data_in_processed_data(need_id=need_id, art="uml", key=key, kwargs=kwargs):
+        if self.data_in_processed_data(
+            need_id=need_id, art="uml", key=key, kwargs=kwargs
+        ):
             return ""
 
         need_info = self.needs[need_id]
@@ -279,7 +335,9 @@ class JinjaFunctions:
             if need_info["arch"][key]:
                 uml_content = need_info["arch"][key]
             else:
-                raise NeedumlException(f"Option key name: {key} does not exist in need {need_id}.")
+                raise NeedumlException(
+                    f"Option key name: {key} does not exist in need {need_id}."
+                )
         else:
             if "diagram" in need_info["arch"] and need_info["arch"]["diagram"]:
                 uml_content = need_info["arch"]["diagram"]
@@ -303,15 +361,19 @@ class JinjaFunctions:
 
         return uml
 
-    def flow(self, need_id) -> str:
+    def flow(self, need_id: str) -> str:
         if need_id not in self.needs:
-            raise NeedumlException(f"Jinja function flow is called with undefined need_id: '{need_id}'.")
+            raise NeedumlException(
+                f"Jinja function flow is called with undefined need_id: '{need_id}'."
+            )
 
         if self.data_in_processed_data(need_id=need_id, art="flow", key="", kwargs={}):
             return ""
 
         # append need_id to processed_need_ids, so it will not been processed again
-        self.append_need_to_processed_needs(need_id=need_id, art="flow", key="", kwargs={})
+        self.append_need_to_processed_needs(
+            need_id=need_id, art="flow", key="", kwargs={}
+        )
 
         need_info = self.needs[need_id]
         link = calculate_link(self.app, need_info, self.fromdocname)
@@ -330,11 +392,17 @@ class JinjaFunctions:
 
         return need_uml
 
-    def ref(self, need_id: str, option: str = None, text: str = None) -> str:
+    def ref(
+        self, need_id: str, option: None | str = None, text: None | str = None
+    ) -> str:
         if need_id not in self.needs:
-            raise NeedumlException(f"Jinja function ref is called with undefined need_id: '{need_id}'.")
+            raise NeedumlException(
+                f"Jinja function ref is called with undefined need_id: '{need_id}'."
+            )
         if (option and text) and (not option and not text):
-            raise NeedumlException("Jinja function ref requires exactly one entry 'option' or 'text'")
+            raise NeedumlException(
+                "Jinja function ref requires exactly one entry 'option' or 'text'"
+            )
 
         need_info = self.needs[need_id]
         link = calculate_link(self.app, need_info, self.fromdocname)
@@ -346,24 +414,34 @@ class JinjaFunctions:
 
         return need_uml
 
-    def filter(self, filter_string):
+    def filter(self, filter_string: str) -> list[NeedsInfoType]:
         """
         Return a list of found needs that pass the given filter string.
         """
         needs_config = NeedsSphinxConfig(self.app.config)
 
-        return filter_needs(list(self.needs.values()), needs_config, filter_string=filter_string)
+        return filter_needs(
+            list(self.needs.values()), needs_config, filter_string=filter_string
+        )
 
-    def imports(self, *args):
+    def imports(self, *args: str) -> str:
         if not self.parent_need_id:
-            raise NeedumlException("Jinja function 'import()' is not supported in needuml directive.")
+            raise NeedumlException(
+                "Jinja function 'import()' is not supported in needuml directive."
+            )
         # gets all need ids from need links/extra_links options and wrap into jinja function uml()
         need_info = self.needs[self.parent_need_id]
         uml_ids = []
         for option_name in args:
             # check if link option_name exists in current need object
-            if option_name in need_info and need_info[option_name]:
-                for id in need_info[option_name]:
+            if option_value := need_info.get(option_name):
+                try:
+                    iterable_value = list(option_value)  # type: ignore
+                except TypeError:
+                    raise NeedumlException(
+                        f"Option value for {option_name!r} is not iterable."
+                    )
+                for id in iterable_value:
                     uml_ids.append(id)
         umls = ""
         if uml_ids:
@@ -374,9 +452,11 @@ class JinjaFunctions:
                 umls += local_uml_from_need
         return umls
 
-    def need(self):
+    def need(self) -> NeedsInfoType:
         if not self.parent_need_id:
-            raise NeedumlException("Jinja function 'need()' is not supported in needuml directive.")
+            raise NeedumlException(
+                "Jinja function 'need()' is not supported in needuml directive."
+            )
         return self.needs[self.parent_need_id]
 
 
@@ -405,7 +485,12 @@ def is_element_of_need(node: nodes.Element) -> str:
 
 
 @measure_time("needuml")
-def process_needuml(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
+def process_needuml(
+    app: Sphinx,
+    doctree: nodes.document,
+    fromdocname: str,
+    found_nodes: list[nodes.Element],
+) -> None:
     env = app.env
 
     # for node in doctree.findall(Needuml):
@@ -419,14 +504,18 @@ def process_needuml(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
             # Check if needarch is only used inside a need
             parent_need_id = is_element_of_need(node)
             if not parent_need_id:
-                raise NeedArchException("Directive needarch can only be used inside a need.")
+                raise NeedArchException(
+                    "Directive needarch can only be used inside a need."
+                )
         content = []
 
         # Adding config
         config = current_needuml["config"]
         if config and len(config) >= 3:
             # Remove all empty lines
-            config = "\n".join([line.strip() for line in config.split("\n") if line.strip()])
+            config = "\n".join(
+                [line.strip() for line in config.split("\n") if line.strip()]
+            )
 
         puml_node = transform_uml_to_plantuml_node(
             app=app,
@@ -457,7 +546,9 @@ def process_needuml(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
             puml_node["align"] = "center"
 
         puml_node["incdir"] = os.path.dirname(current_needuml["docname"])
-        puml_node["filename"] = os.path.split(current_needuml["docname"])[1]  # Needed for plantuml >= 0.9
+        puml_node["filename"] = os.path.split(current_needuml["docname"])[
+            1
+        ]  # Needed for plantuml >= 0.9
 
         content.append(puml_node)
 

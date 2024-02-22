@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import contextlib
 from collections.abc import Iterable
-from typing import Dict, List, Union
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -10,16 +11,16 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import check_and_calc_base_url_rel_path
+from sphinx_needs.utils import check_and_calc_base_url_rel_path, split_need_id
 
 log = get_logger(__name__)
 
 
-class NeedRef(nodes.Inline, nodes.Element):  # type: ignore
+class NeedRef(nodes.Inline, nodes.Element):
     pass
 
 
-def transform_need_to_dict(need: NeedsInfoType) -> Dict[str, str]:
+def transform_need_to_dict(need: NeedsInfoType) -> dict[str, str]:
     """
     The function will transform a need in a dictionary of strings. Used to
     be given e.g. to a python format string.
@@ -50,7 +51,12 @@ def transform_need_to_dict(need: NeedsInfoType) -> Dict[str, str]:
     return dict_need
 
 
-def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
+def process_need_ref(
+    app: Sphinx,
+    doctree: nodes.document,
+    fromdocname: str,
+    found_nodes: list[nodes.Element],
+) -> None:
     builder = app.builder
     env = app.env
     needs_config = NeedsSphinxConfig(env.config)
@@ -71,25 +77,22 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
         prefix = "[["
         postfix = "]]"
 
-        ref_id_complete = node_need_ref["reftarget"]
+        need_id_full = node_need_ref["reftarget"]
+        need_id_main, need_id_part = split_need_id(need_id_full)
 
-        if "." in ref_id_complete:
-            ref_id, part_id = ref_id_complete.split(".")
-        else:
-            ref_id = ref_id_complete
-            part_id = None
+        if need_id_main in all_needs:
+            target_need = all_needs[need_id_main]
 
-        if ref_id in all_needs:
-            target_need = all_needs[ref_id]
-
-            dict_need = transform_need_to_dict(target_need)  # Transform a dict in a dict of {str, str}
+            dict_need = transform_need_to_dict(
+                target_need
+            )  # Transform a dict in a dict of {str, str}
 
             # We set the id to the complete id maintained in node_need_ref["reftarget"]
-            dict_need["id"] = ref_id_complete
+            dict_need["id"] = need_id_full
 
-            if part_id:
+            if need_id_part:
                 # If part_id, we have to fetch the title from the content.
-                dict_need["title"] = target_need["parts"][part_id]["content"]
+                dict_need["title"] = target_need["parts"][need_id_part]["content"]
 
             # Shorten title, if necessary
             max_length = needs_config.role_need_max_title_length
@@ -98,9 +101,9 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                 title = f"{title[: max_length - 3]}..."
                 dict_need["title"] = title
 
-            ref_name: Union[None, str, nodes.Text] = node_need_ref.children[0].children[0]  # type: ignore[assignment]
+            ref_name: None | str | nodes.Text = node_need_ref.children[0].children[0]  # type: ignore[assignment]
             # Only use ref_name, if it differs from ref_id
-            if str(ref_id_complete) == str(ref_name):
+            if str(need_id_full) == str(ref_name):
                 ref_name = None
 
             if ref_name and prefix in ref_name and postfix in ref_name:
@@ -122,7 +125,8 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                     link_text = needs_config.role_need_template.format(**dict_need)
                 except KeyError as e:
                     link_text = (
-                        '"the config parameter needs_role_need_template uses not supported placeholders: %s "' % e
+                        '"the config parameter needs_role_need_template uses not supported placeholders: %s "'
+                        % e
                     )
                     log.warning(link_text + " [needs]", type="needs")
 
@@ -139,15 +143,20 @@ def process_need_ref(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                         node_need_ref["reftarget"],
                     )
                 else:
-                    assert target_need["external_url"] is not None, "external_url must be set for external needs"
+                    assert (
+                        target_need["external_url"] is not None
+                    ), "external_url must be set for external needs"
                     new_node_ref = nodes.reference(target_need["id"], target_need["id"])
-                    new_node_ref["refuri"] = check_and_calc_base_url_rel_path(target_need["external_url"], fromdocname)
+                    new_node_ref["refuri"] = check_and_calc_base_url_rel_path(
+                        target_need["external_url"], fromdocname
+                    )
                     new_node_ref["classes"].append(target_need["external_css"])
 
         else:
             log.warning(
-                f"linked need {node_need_ref['reftarget']} not found [needs]",
+                f"linked need {node_need_ref['reftarget']} not found [needs.link_ref]",
                 type="needs",
+                subtype="link_ref",
                 location=node_need_ref,
             )
 

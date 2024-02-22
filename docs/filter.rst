@@ -453,3 +453,22 @@ Example:
 
       results.append(cnt_x)
       results.append(cnt_y)
+
+Filter matches nothing
+----------------------
+
+Depending on the directive used a filter that matches no needs may add text to inform that no needs are found.
+
+The default text "No needs passed the filter".
+
+If this is not intended, add the option
+
+.. _option_filter_warning:
+
+filter_warning
+~~~~~~~~~~~~~~
+
+Add specific text with this option or add no text to display nothing. The default text will not be shown.
+
+The specified output could be styled with the css class ``needs_filter_warning``
+

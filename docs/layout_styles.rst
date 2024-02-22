@@ -287,13 +287,13 @@ The head-line for the default Sphinx-Needs layout ``clean`` looks like this::
 You are free to surround a layout function with a rst role. Like ``**<<meta("title")>>**`` to get a bold printed title.
 
 Sometimes an argument for a layout function shall be based on a given need option. In this cases the option name
-can be surrounded by ``{%raw%}{{ .. }}{%endraw%}``.
+can be surrounded by ``{{ .. }}``.
 As example, there may be an ``author`` option in a bug-need and you want to show a picture of the author in the grid
 ``simple_side_right_partial``.
 
 The line for the ``side`` area could look like::
 
-   '<<image("_images/{%raw%}{{author}}{%endraw%}.png", align="center")>>'
+   '<<image("_images/{{author}}.png", align="center")>>'
 
 .. spec:: My test spec
    :author: daniel
@@ -326,7 +326,7 @@ Here is the complete used code::
                'head': ['**<<meta("title")>>** for *<<meta("author")>>*'],
                'meta': ['**status**: <<meta("status")>>',
                         '**author**: <<meta("author")>>'],
-               'side': ['<<image("_images/{%raw%}{{author}}{%endraw%}.png", align="center")>>']
+               'side': ['<<image("_images/{{author}}.png", align="center")>>']
            }
        }
    }

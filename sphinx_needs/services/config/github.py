@@ -1,9 +1,24 @@
+from __future__ import annotations
+
 EXTRA_DATA_OPTIONS = ["user", "created_at", "updated_at", "closed_at", "service"]
 EXTRA_LINK_OPTIONS = ["url"]
 EXTRA_IMAGE_OPTIONS = ["avatar"]
-CONFIG_OPTIONS = ["type", "query", "specific", "max_amount", "max_content_lines", "id_prefix"]
-GITHUB_DATA = ["status", "tags"] + EXTRA_DATA_OPTIONS + EXTRA_LINK_OPTIONS + EXTRA_IMAGE_OPTIONS
-GITHUB_DATA_STR = '"' + '","'.join(EXTRA_DATA_OPTIONS + EXTRA_LINK_OPTIONS + EXTRA_IMAGE_OPTIONS) + '"'
+CONFIG_OPTIONS = [
+    "type",
+    "query",
+    "specific",
+    "max_amount",
+    "max_content_lines",
+    "id_prefix",
+]
+GITHUB_DATA = (
+    ["status", "tags"] + EXTRA_DATA_OPTIONS + EXTRA_LINK_OPTIONS + EXTRA_IMAGE_OPTIONS
+)
+GITHUB_DATA_STR = (
+    '"'
+    + '","'.join(EXTRA_DATA_OPTIONS + EXTRA_LINK_OPTIONS + EXTRA_IMAGE_OPTIONS)
+    + '"'
+)
 CONFIG_DATA_STR = '"' + '","'.join(CONFIG_OPTIONS) + '"'
 GITHUB_LAYOUT = {
     "grid": "complex",
@@ -16,14 +31,20 @@ GITHUB_LAYOUT = {
         "head": [
             '**<<meta("title")>>** ('
             + ", ".join(
-                ['<<link("{value}", text="{value}", is_dynamic=True)>>'.format(value=x) for x in EXTRA_LINK_OPTIONS]
+                [
+                    f'<<link("{x}", text="{x}", is_dynamic=True)>>'
+                    for x in EXTRA_LINK_OPTIONS
+                ]
             )
             + ")"
         ],
-        "head_right": ['<<image("field:avatar", width="40px", align="middle")>>', '<<meta("user")>>'],
-        "meta_left": ['<<meta("{value}", prefix="{value}: ")>>'.format(value=x) for x in EXTRA_DATA_OPTIONS]
+        "head_right": [
+            '<<image("field:avatar", width="40px", align="middle")>>',
+            '<<meta("user")>>',
+        ],
+        "meta_left": [f'<<meta("{x}", prefix="{x}: ")>>' for x in EXTRA_DATA_OPTIONS]
         + [
-            '<<link("{value}", text="Link", prefix="{value}: ", is_dynamic=True)>>'.format(value=x)
+            f'<<link("{x}", text="Link", prefix="{x}: ", is_dynamic=True)>>'
             for x in EXTRA_LINK_OPTIONS
         ],
         "meta_right": [
