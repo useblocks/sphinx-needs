@@ -11,8 +11,6 @@
           'GITHUB_050bec': dict({
             'arch': dict({
             }),
-            'closed_at': '',
-            'completion': '',
             'constraints': list([
             ]),
             'constraints_passed': True,
@@ -28,14 +26,12 @@
             ''',
             'docname': 'index',
             'doctype': '.rst',
-            'duration': '',
             'external_css': 'external_link',
             'external_url': None,
             'full_title': 'Bump actions/cache from 3 to 4 (#1092)',
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'GITHUB_050bec',
-            'id_prefix': '',
             'is_external': False,
             'is_modified': False,
             'is_need': True,
@@ -44,10 +40,7 @@
             'layout': 'github',
             'links': list([
             ]),
-            'max_amount': '',
-            'max_content_lines': '',
             'modifications': 0,
-            'params': '',
             'parent_need': '',
             'parent_needs': list([
             ]),
@@ -55,8 +48,6 @@
             }),
             'post_template': None,
             'pre_template': None,
-            'prefix': '',
-            'query': '',
             'section_name': 'Title',
             'sections': list([
               'Title',
@@ -73,16 +64,13 @@
             'title': 'Bump actions/cache from 3 to 4 (#1092)',
             'type': 'commit',
             'type_name': 'Commit',
-            'updated_at': '',
             'url': 'https://github.com/useblocks/sphinx-needs/commit/050bec750ff2c5acf881415fa2b5efb5fcce8414',
-            'url_postfix': '',
             'user': 'dependabot[bot]',
           }),
           'GITHUB_1110': dict({
             'arch': dict({
             }),
-            'closed_at': 'None',
-            'completion': '',
+            'closed_at': None,
             'constraints': list([
             ]),
             'constraints_passed': True,
@@ -102,14 +90,12 @@
             ''',
             'docname': 'index',
             'doctype': '.rst',
-            'duration': '',
             'external_css': 'external_link',
             'external_url': None,
             'full_title': 'needreport usage should count needs in post-process',
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'GITHUB_1110',
-            'id_prefix': '',
             'is_external': False,
             'is_modified': False,
             'is_need': True,
@@ -121,7 +107,6 @@
             'max_amount': '1',
             'max_content_lines': '2',
             'modifications': 0,
-            'params': '',
             'parent_need': '',
             'parent_needs': list([
             ]),
@@ -129,7 +114,6 @@
             }),
             'post_template': None,
             'pre_template': None,
-            'prefix': '',
             'query': 'repo:useblocks/sphinx-needs',
             'section_name': 'Title',
             'sections': list([
@@ -137,7 +121,6 @@
             ]),
             'service': 'github-issues',
             'signature': '',
-            'specific': '',
             'status': 'open',
             'style': None,
             'tags': list([
@@ -150,14 +133,12 @@
             'type_name': 'Issue',
             'updated_at': '2024-02-15T12:19:30Z',
             'url': 'https://github.com/useblocks/sphinx-needs/issues/1110',
-            'url_postfix': '',
             'user': 'chrisjsewell',
           }),
           'GITHUB_1112': dict({
             'arch': dict({
             }),
-            'closed_at': 'None',
-            'completion': '',
+            'closed_at': None,
             'constraints': list([
             ]),
             'constraints_passed': True,
@@ -199,14 +180,12 @@
             ''',
             'docname': 'index',
             'doctype': '.rst',
-            'duration': '',
             'external_css': 'external_link',
             'external_url': None,
             'full_title': '👌 Capture `only` expressions for each need',
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'GITHUB_1112',
-            'id_prefix': '',
             'is_external': False,
             'is_modified': False,
             'is_need': True,
@@ -216,9 +195,7 @@
             'links': list([
             ]),
             'max_amount': '1',
-            'max_content_lines': '',
             'modifications': 0,
-            'params': '',
             'parent_need': '',
             'parent_needs': list([
             ]),
@@ -226,7 +203,6 @@
             }),
             'post_template': None,
             'pre_template': None,
-            'prefix': '',
             'query': 'repo:useblocks/sphinx-needs',
             'section_name': 'Title',
             'sections': list([
@@ -234,7 +210,6 @@
             ]),
             'service': 'github-prs',
             'signature': '',
-            'specific': '',
             'status': 'open',
             'style': None,
             'tags': list([
@@ -246,14 +221,11 @@
             'type_name': 'PullRequest',
             'updated_at': '2024-02-15T20:55:43Z',
             'url': 'https://github.com/useblocks/sphinx-needs/pull/1112',
-            'url_postfix': '',
             'user': 'chrisjsewell',
           }),
           'GITHUB_6abd38': dict({
             'arch': dict({
             }),
-            'closed_at': '',
-            'completion': '',
             'constraints': list([
             ]),
             'constraints_passed': True,
@@ -280,14 +252,12 @@
             ''',
             'docname': 'index',
             'doctype': '.rst',
-            'duration': '',
             'external_css': 'external_link',
             'external_url': None,
             'full_title': '🧪 Add test for `needreport` directive (#1105)',
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'GITHUB_6abd38',
-            'id_prefix': '',
             'is_external': False,
             'is_modified': False,
             'is_need': True,
@@ -297,9 +267,7 @@
             'links': list([
             ]),
             'max_amount': '1',
-            'max_content_lines': '',
             'modifications': 0,
-            'params': '',
             'parent_need': '',
             'parent_needs': list([
             ]),
@@ -307,7 +275,6 @@
             }),
             'post_template': None,
             'pre_template': None,
-            'prefix': '',
             'query': 'repo:useblocks/sphinx-needs error',
             'section_name': 'Title',
             'sections': list([
@@ -315,7 +282,6 @@
             ]),
             'service': 'github-commits',
             'signature': '',
-            'specific': '',
             'status': None,
             'style': None,
             'tags': list([
@@ -325,9 +291,7 @@
             'title': '🧪 Add test for `needreport` directive (#1105)',
             'type': 'commit',
             'type_name': 'Commit',
-            'updated_at': '',
             'url': 'https://github.com/useblocks/sphinx-needs/commit/6abd389369c5bbd5216f5ecdc3da1323ebe8620d',
-            'url_postfix': '',
             'user': 'chrisjsewell',
           }),
         }),

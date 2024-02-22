@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import os
 import re
-from typing import Any
+from typing import Any, AsyncIterator, Iterator
 
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState
@@ -367,6 +367,7 @@ def add_need(
         "section_name": "",
         "signature": "",
         "parent_needs": [],
+        "parent_needs_back": [],
         "parent_need": "",
     }
     needs_extra_option_names = list(NEEDS_CONFIG.extra_options)
@@ -420,9 +421,11 @@ def add_need(
 
     # Jinja support for need content
     if jinja_content:
-        need_content_context = {**needs_info}
-        need_content_context.update(**needs_config.filter_data)
-        need_content_context.update(**needs_config.render_context)
+        need_content_context = {
+            **needs_info,
+            **needs_config.filter_data,
+            **needs_config.render_context,
+        }
         new_content = jinja_parse(need_content_context, needs_info["content"])
         # Overwrite current content
         content = new_content
@@ -783,6 +786,103 @@ def _fix_list_dyn_func(list: list[str]) -> list[str]:
     return new_list
 
 
+class UndefinedError(Exception):
+    """Raised when an undefined value is accessed."""
+
+
+class Undefined:
+    """A class to represent an undefined value.
+
+    It mostly copies:
+    https://github.com/pallets/jinja/blob/5962edeb271d93687eb93f32d53ffe53f86871e0/src/jinja2/runtime.py#L840,
+    but is altered slightly to be picklable.
+
+    This undefined type can be printed and iterated over,
+    but every other access will raise an exception:
+
+    >>> foo = Undefined(name='foo')
+    >>> str(foo)
+    ''
+    >>> not foo
+    True
+    >>> foo + 42
+    Traceback (most recent call last):
+      ...
+    ValueError: 'foo' is undefined
+    """
+
+    __slots__ = (
+        "_undefined_name",
+        "_undefined_exception",
+    )
+
+    def __init__(
+        self,
+        name: str,
+        exc: type[Exception] = UndefinedError,
+    ) -> None:
+        self._undefined_name = name
+        self._undefined_exception = exc
+
+    @property
+    def _undefined_message(self) -> str:
+        """Build a message about the undefined value based on how it was
+        accessed.
+        """
+        return f"{self._undefined_name!r} is undefined"
+
+    def _fail_with_undefined_error(self, *args: Any, **kwargs: Any) -> None:
+        """Raise an :exc:`UndefinedError` when operations are performed
+        on the undefined value.
+        """
+        raise self._undefined_exception(self._undefined_message)
+
+    def __getattr__(self, name: str) -> Any:
+        if name[:2] == "__":
+            raise AttributeError(name)
+
+        return self._fail_with_undefined_error()
+
+    __add__ = __radd__ = __sub__ = __rsub__ = _fail_with_undefined_error
+    __mul__ = __rmul__ = __div__ = __rdiv__ = _fail_with_undefined_error
+    __truediv__ = __rtruediv__ = _fail_with_undefined_error
+    __floordiv__ = __rfloordiv__ = _fail_with_undefined_error
+    __mod__ = __rmod__ = _fail_with_undefined_error
+    __pos__ = __neg__ = _fail_with_undefined_error
+    __call__ = __getitem__ = _fail_with_undefined_error
+    __lt__ = __le__ = __gt__ = __ge__ = _fail_with_undefined_error
+    __int__ = __float__ = __complex__ = _fail_with_undefined_error
+    __pow__ = __rpow__ = _fail_with_undefined_error
+
+    def __eq__(self, other: Any) -> bool:
+        return type(self) is type(other)
+
+    def __ne__(self, other: Any) -> bool:
+        return not self.__eq__(other)
+
+    def __hash__(self) -> int:
+        return id(type(self))
+
+    def __str__(self) -> str:
+        return ""
+
+    def __len__(self) -> int:
+        return 0
+
+    def __iter__(self) -> Iterator[Any]:
+        yield from ()
+
+    async def __aiter__(self) -> AsyncIterator[Any]:
+        for _ in ():
+            yield
+
+    def __bool__(self) -> bool:
+        return False
+
+    def __repr__(self) -> str:
+        return "Undefined"
+
+
 def _merge_extra_options(
     needs_info: NeedsInfoType,
     needs_kwargs: dict[str, Any],
@@ -793,11 +893,11 @@ def _merge_extra_options(
 
     for key in needs_extra_options:
         if key in extra_keys:
-            needs_info[key] = str(needs_kwargs[key])
+            needs_info[key] = needs_kwargs[key]
         elif key not in needs_info.keys():
             # Finally add all not used extra options with empty value to need_info.
             # Needed for filters, which need to access these empty/not used options.
-            needs_info[key] = ""
+            needs_info[key] = Undefined(key)
 
     return extra_keys
 
@@ -841,4 +941,4 @@ def _merge_global_options(
                 # If not value was set until now, we have to set an empty value, so that we are sure that each need
                 # has at least the key.
                 if key not in needs_info.keys():
-                    needs_info[key] = ""
+                    needs_info[key] = Undefined(key)

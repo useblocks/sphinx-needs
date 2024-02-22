@@ -15,6 +15,7 @@ from typing import Any
 from jsonschema import Draft7Validator
 from sphinx.config import Config
 
+from sphinx_needs.api.need import Undefined
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsFilterType, NeedsInfoType
 from sphinx_needs.logging import get_logger
@@ -95,9 +96,9 @@ class NeedsList:
     def add_need(self, version: str, need_info: NeedsInfoType) -> None:
         self.update_or_add_version(version)
         writable_needs = {
-            key: need_info[key]  # type: ignore[literal-required]
-            for key in need_info
-            if key not in self._exclude_need_keys
+            key: value
+            for key, value in need_info.items()
+            if key not in self._exclude_need_keys and not isinstance(value, Undefined)
         }
         writable_needs["description"] = need_info["content"]
         self.needs_list["versions"][version]["needs"][need_info["id"]] = writable_needs
