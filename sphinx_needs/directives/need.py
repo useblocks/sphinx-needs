@@ -130,6 +130,7 @@ class NeedDirective(SphinxDirective):
         post_template = self.options.get("post_template")
         duration = self.options.get("duration")
         completion = self.options.get("completion")
+        constraints = self.options.get("constraints", [])
 
         need_extra_options = {"duration": duration, "completion": completion}
         for extra_link in self.needs_config.extra_links:
@@ -160,6 +161,7 @@ class NeedDirective(SphinxDirective):
             layout=layout,
             delete=delete_opt,
             jinja_content=jinja_content,
+            constraints=constraints,
             **need_extra_options,
         )
         add_doc(env, self.docname)
