@@ -155,17 +155,6 @@ And use it like:
       :tags: important;complex;
       :impacts: really everything
 
-Default value:
-
-.. code-block:: python
-
-   {'hidden': directives.unchanged}
-
-The ``hidden`` option is a globally available option always hidden and used to easily execute :ref:`dynamic_functions`.
-
-Extra options automatically appear in needs, if a value is set.
-By using :ref:`needs_hide_options` the output of such options can be hidden.
-
 .. note:: To filter on these options in `needlist`, `needtable`, etc. you
           must use the :ref:`filter` option.
 

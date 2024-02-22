@@ -514,7 +514,6 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
 
     # Own extra options
     for option in [
-        "hidden",
         "duration",
         "completion",
         "constraints",

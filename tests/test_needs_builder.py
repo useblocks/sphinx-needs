@@ -77,9 +77,12 @@ def test_needs_html_and_json(test_app):
 
     srcdir = app.srcdir
     build_dir = os.path.join(app.outdir, "../needs")
-    subprocess.run(
-        ["sphinx-build", "-b", "needs", srcdir, build_dir], capture_output=True
+    print(build_dir)
+    output = subprocess.run(
+        ["python", "-m", "sphinx.cmd.build", "-b", "needs", srcdir, build_dir],
+        capture_output=True,
     )
+    print(output)
     needs_json_path_2 = os.path.join(build_dir, "needs.json")
     assert os.path.exists(needs_json_path_2)
 
