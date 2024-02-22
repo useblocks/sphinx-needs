@@ -1,5 +1,3 @@
-from docutils.parsers.rst import directives
-
 extensions = ["sphinx_needs"]
 
 needs_types = [
@@ -33,7 +31,7 @@ needs_types = [
     },
 ]
 
-needs_extra_options = {"test_func": directives.unchanged, "hours": directives.unchanged}
+needs_extra_options = ["test_func", "hours"]
 
 
 def my_own_function(app, need, needs):
