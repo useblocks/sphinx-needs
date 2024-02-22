@@ -175,35 +175,35 @@ class NeedsInfoType(TypedDict):
     parent_need: str
     """Simply the first parent id"""
 
-    # default extra options
-    # TODO these all default to "" which I don't think is good
-    duration: str
-    completion: str
-    # options from `BaseService.options` get added to every need,
-    # via `ServiceManager.register`, which adds them to `extra_options``
-    # GithubService
+    # Fields added dynamically by services:
+    # options from ``BaseService.options`` get added to ``NEEDS_CONFIG.extra_options``,
+    # via `ServiceManager.register`,
+    # which in turn means they are added to every need via ``add_need``
+    # ``GithubService.options``
     avatar: str
     closed_at: str
     created_at: str
     max_amount: str
     service: str
     specific: str
-    # _type: str  # type is already set in create_need
+    ## type: str  # although this is already an internal field
     updated_at: str
     user: str
-    # OpenNeedsService
+    # ``OpenNeedsService.options``
     params: str
     prefix: str
     url_postfix: str
-    # shared GithubService and OpenNeedsService
+    # shared ``GithubService.options`` and ``OpenNeedsService.options``
     max_content_lines: str
     id_prefix: str
     query: str
     url: str
 
-    # Note there are also:
-    # - dynamic default options that can be set by needs_extra_options config
-    # - dynamic global options that can be set by needs_global_options config
+    # Note there are also these dynamic keys:
+    # - items in ``needs_extra_options`` + ``needs_duration_option`` + ``needs_completion_option``,
+    #   which get added to ``NEEDS_CONFIG.extra_options``,
+    #   and in turn means they are added to every need via ``add_need``
+    # - keys in ``needs_global_options`` config are added to every need via ``add_need``
 
 
 class NeedsPartsInfoType(NeedsInfoType):
