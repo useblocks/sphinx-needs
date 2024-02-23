@@ -257,9 +257,11 @@ class NeedsSphinxConfig:
     duration_option: str = field(
         default="duration", metadata={"rebuild": "html", "types": (str,)}
     )
+    """Added to options on need directives, and key on need data items, for use by ``needgantt``"""
     completion_option: str = field(
         default="completion", metadata={"rebuild": "html", "types": (str,)}
     )
+    """Added to options on need directives, and key on need data items, for use by ``needgantt``"""
     needextend_strict: bool = field(
         default=True, metadata={"rebuild": "html", "types": (bool,)}
     )
