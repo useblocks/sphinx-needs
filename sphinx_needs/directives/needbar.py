@@ -157,7 +157,10 @@ class NeedbarDirective(FilterBase):
 
         add_doc(env, env.docname)
 
-        return [targetnode, Needbar("")]
+        bar_node = Needbar("")
+        self.set_source_info(bar_node)
+
+        return [targetnode, bar_node]
 
 
 # Algorithm:
@@ -301,7 +304,9 @@ def process_needbar(
                 if element.isdigit():
                     line_number.append(float(element))
                 else:
-                    result = len(filter_needs(need_list, needs_config, element))
+                    result = len(
+                        filter_needs(need_list, needs_config, element, location=node)
+                    )
                     line_number.append(float(result))
             local_data_number.append(line_number)
 

@@ -3,13 +3,14 @@ filter_no_needs
 
 .. req:: filter_warning_req_a
    :id: FILTER_001
-   :tags: 1;
+   :tags: 1
    :status: open
    :hide:
+   :duration: 1
 
 .. req:: filter_warning_req_b
    :id: FILTER_002
-   :tags: 2;
+   :tags: 2
    :status: closed
    :hide:
 

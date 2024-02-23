@@ -166,7 +166,11 @@ def copy(
 
     if filter:
         result = filter_needs(
-            needs.values(), NeedsSphinxConfig(app.config), filter, need
+            needs.values(),
+            NeedsSphinxConfig(app.config),
+            filter,
+            need,
+            location=(need["docname"], need["lineno"]),
         )
         if result:
             need = result[0]
