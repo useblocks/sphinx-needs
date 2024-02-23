@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1708676261237,
+  "lastUpdate": 1708676675890,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7092,6 +7092,42 @@ window.BENCHMARK_DATA = {
             "value": 59.644416708999984,
             "unit": "s",
             "extra": "Commit: 3719cbd83c1cc44c2d8978f9f4c1a4e9d18d8964\nBranch: master\nTime: 2024-02-23T09:15:43+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "eb81f2ebf1f35171e2268e93ed60a078e2063da1",
+          "message": "👌 Remove hard-coding of `completion` and `duration` need fields (#1127)\n\nThese fields are used by `needgantt` but their name can be configured by `needs_duration_option` and `needs_completion_option`.\r\nSo in this commit, we remove the hard-coding and dynamically use these configuration options to set what option/key names are added.",
+          "timestamp": "2024-02-23T09:22:33+01:00",
+          "tree_id": "5a6255feee691078bdb7fcbda2186484624e7eda",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/eb81f2ebf1f35171e2268e93ed60a078e2063da1"
+        },
+        "date": 1708676669064,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.26693828899999517,
+            "unit": "s",
+            "extra": "Commit: eb81f2ebf1f35171e2268e93ed60a078e2063da1\nBranch: master\nTime: 2024-02-23T09:22:33+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.541082475999985,
+            "unit": "s",
+            "extra": "Commit: eb81f2ebf1f35171e2268e93ed60a078e2063da1\nBranch: master\nTime: 2024-02-23T09:22:33+01:00"
           }
         ]
       }
