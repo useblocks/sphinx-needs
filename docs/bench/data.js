@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1708606840616,
+  "lastUpdate": 1708676261237,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7056,6 +7056,42 @@ window.BENCHMARK_DATA = {
             "value": 61.10704998599999,
             "unit": "s",
             "extra": "Commit: 9c8c721194ae32b018b34db787124dd9ac3f7b20\nBranch: master\nTime: 2024-02-22T13:58:37+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3719cbd83c1cc44c2d8978f9f4c1a4e9d18d8964",
+          "message": "🔧 Remove use of deprecated `needs_extra_options` as `dict` (#1126)",
+          "timestamp": "2024-02-23T09:15:43+01:00",
+          "tree_id": "a44fdbbab8fd12cdf3c802d3c9e59d0ec3041459",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/3719cbd83c1cc44c2d8978f9f4c1a4e9d18d8964"
+        },
+        "date": 1708676255764,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21860272400002145,
+            "unit": "s",
+            "extra": "Commit: 3719cbd83c1cc44c2d8978f9f4c1a4e9d18d8964\nBranch: master\nTime: 2024-02-23T09:15:43+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.644416708999984,
+            "unit": "s",
+            "extra": "Commit: 3719cbd83c1cc44c2d8978f9f4c1a4e9d18d8964\nBranch: master\nTime: 2024-02-23T09:15:43+01:00"
           }
         ]
       }
