@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1708676675890,
+  "lastUpdate": 1708677207546,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7128,6 +7128,42 @@ window.BENCHMARK_DATA = {
             "value": 61.541082475999985,
             "unit": "s",
             "extra": "Commit: eb81f2ebf1f35171e2268e93ed60a078e2063da1\nBranch: master\nTime: 2024-02-23T09:22:33+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cf5598f7f026b01b706fba08d6b1d47c58c14ab9",
+          "message": "👌 Improve warnings for invalid filters (add source location and subtype) (#1128)",
+          "timestamp": "2024-02-23T09:31:27+01:00",
+          "tree_id": "28f5af14c52d1d616fc5d4c0d30a165cb74c20b5",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/cf5598f7f026b01b706fba08d6b1d47c58c14ab9"
+        },
+        "date": 1708677201404,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.20741876599998932,
+            "unit": "s",
+            "extra": "Commit: cf5598f7f026b01b706fba08d6b1d47c58c14ab9\nBranch: master\nTime: 2024-02-23T09:31:27+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.976998596000016,
+            "unit": "s",
+            "extra": "Commit: cf5598f7f026b01b706fba08d6b1d47c58c14ab9\nBranch: master\nTime: 2024-02-23T09:31:27+01:00"
           }
         ]
       }
