@@ -98,15 +98,12 @@ def extend_needs_data(
                 logger.info(error)
                 continue
         else:
-            # a filter string
-            try:
-                found_needs = filter_needs(
-                    all_needs.values(), needs_config, need_filter
-                )
-            except NeedsInvalidFilter as e:
-                raise NeedsInvalidFilter(
-                    f"Filter not valid for needextend on page {current_needextend['docname']}:\n{e}"
-                )
+            found_needs = filter_needs(
+                all_needs.values(),
+                needs_config,
+                need_filter,
+                location=(current_needextend["docname"], current_needextend["lineno"]),
+            )
 
         for found_need in found_needs:
             # Work in the stored needs, not on the search result

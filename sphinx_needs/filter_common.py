@@ -9,6 +9,7 @@ import re
 from types import CodeType
 from typing import Any, Iterable, TypedDict, TypeVar
 
+from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
@@ -180,7 +181,10 @@ def process_filters(
                     found_needs_by_options.append(need_info)
             # Get need by filter string
             found_needs_by_string = filter_needs(
-                all_needs_incl_parts, needs_config, filter_data["filter"]
+                all_needs_incl_parts,
+                needs_config,
+                filter_data["filter"],
+                location=(filter_data["docname"], filter_data["lineno"]),
             )
             # Make an intersection of both lists
             found_needs = intersection_of_need_results(
@@ -190,7 +194,10 @@ def process_filters(
             # There is no other config as the one for filter string.
             # So we only need this result.
             found_needs = filter_needs(
-                all_needs_incl_parts, needs_config, filter_data["filter"]
+                all_needs_incl_parts,
+                needs_config,
+                filter_data["filter"],
+                location=(filter_data["docname"], filter_data["lineno"]),
             )
     else:
         # Provides only a copy of needs to avoid data manipulations.
@@ -296,6 +303,9 @@ def filter_needs(
     config: NeedsSphinxConfig,
     filter_string: None | str = "",
     current_need: NeedsInfoType | None = None,
+    *,
+    location: tuple[str, int | None] | nodes.Node | None = None,
+    append_warning: str = "",
 ) -> list[V]:
     """
     Filters given needs based on a given filter string.
@@ -305,6 +315,8 @@ def filter_needs(
     :param config: NeedsSphinxConfig object
     :param filter_string: strings, which gets evaluated against each need
     :param current_need: current need, which uses the filter.
+    :param location: source location for error reporting (docname, line number)
+    :param append_warning: additional text to append to any failed filter warning
 
     :return: list of found needs
     """
@@ -328,13 +340,15 @@ def filter_needs(
             ):
                 found_needs.append(filter_need)
         except Exception as e:
-            if not error_reported:  # Let's report a filter-problem only onces
-                location = (
-                    (current_need["docname"], current_need["lineno"])
-                    if current_need
-                    else None
+            if not error_reported:  # Let's report a filter-problem only once
+                if append_warning:
+                    append_warning = f" {append_warning}"
+                log.warning(
+                    f"{e}{append_warning} [needs.filter]",
+                    type="needs",
+                    subtype="filter",
+                    location=location,
                 )
-                log.warning(str(e) + " [needs]", type="needs", location=location)
                 error_reported = True
 
     return found_needs
@@ -389,5 +403,5 @@ def filter_single_need(
                 f"Filter did not evaluate to a boolean, instead {type(result)}: {result}"
             )
     except Exception as e:
-        raise NeedsInvalidFilter(f"Filter {filter_string} not valid. Error: {e}.")
+        raise NeedsInvalidFilter(f"Filter {filter_string!r} not valid. Error: {e}.")
     return result

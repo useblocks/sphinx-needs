@@ -85,7 +85,10 @@ class NeedsBuilder(Builder):
 
         filter_string = needs_config.builder_filter
         filtered_needs: list[NeedsInfoType] = filter_needs(
-            data.get_or_create_needs().values(), needs_config, filter_string
+            data.get_or_create_needs().values(),
+            needs_config,
+            filter_string,
+            append_warning="(from need_builder_filter)",
         )
 
         for need in filtered_needs:
@@ -182,7 +185,12 @@ class NeedsIdBuilder(Builder):
         filter_string = needs_config.builder_filter
         from sphinx_needs.filter_common import filter_needs
 
-        filtered_needs = filter_needs(needs, needs_config, filter_string)
+        filtered_needs = filter_needs(
+            needs,
+            needs_config,
+            filter_string,
+            append_warning="(from need_builder_filter)",
+        )
         needs_build_json_per_id_path = needs_config.build_json_per_id_path
         needs_dir = os.path.join(self.outdir, needs_build_json_per_id_path)
         if not os.path.exists(needs_dir):

@@ -62,7 +62,10 @@ def process_warnings(app: Sphinx, exception: Exception | None) -> None:
             if isinstance(warning_filter, str):
                 # filter string used
                 result = filter_needs(
-                    checked_needs.values(), needs_config, warning_filter
+                    checked_needs.values(),
+                    needs_config,
+                    warning_filter,
+                    append_warning=f"(from warning filter {warning_name!r})",
                 )
             elif callable(warning_filter):
                 # custom defined filter code used from conf.py

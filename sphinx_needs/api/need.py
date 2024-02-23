@@ -153,8 +153,10 @@ def add_need(
     if need_type not in configured_need_types:
         logger.warning(
             f"Couldn't create need {id}. Reason: The need-type (i.e. `{need_type}`) is not set "
-            "in the project's 'need_types' configuration in conf.py. [needs]",
+            "in the project's 'need_types' configuration in conf.py. [needs.add]",
             type="needs",
+            subtype="add",
+            location=(docname, lineno) if docname else None,
         )
 
     for ntype in types:
@@ -219,9 +221,11 @@ def add_need(
         for i in range(len(tags)):
             if len(tags[i]) == 0 or tags[i].isspace():
                 logger.warning(
-                    f"Scruffy tag definition found in need {need_id}. "
-                    "Defined tag contains spaces only. [needs]",
+                    f"Scruffy tag definition found in need {need_id!r}. "
+                    "Defined tag contains spaces only. [needs.add]",
                     type="needs",
+                    subtype="add",
+                    location=(docname, lineno) if docname else None,
                 )
             else:
                 new_tags.append(tags[i])
@@ -256,9 +260,11 @@ def add_need(
         for i in range(len(constraints)):
             if len(constraints[i]) == 0 or constraints[i].isspace():
                 logger.warning(
-                    f"Scruffy tag definition found in need {need_id}. "
-                    "Defined constraint contains spaces only. [needs]",
+                    f"Scruffy constraint definition found in need {need_id!r}. "
+                    "Defined constraint contains spaces only. [needs.add]",
                     type="needs",
+                    subtype="add",
+                    location=(docname, lineno) if docname else None,
                 )
             else:
                 new_constraints.append(constraints[i])

@@ -37,11 +37,28 @@ def process_need_count(
             filters = filter.split(" ? ")
             if len(filters) == 1:
                 need_list = prepare_need_list(all_needs)  # adds parts to need_list
-                amount = str(len(filter_needs(need_list, needs_config, filters[0])))
+                amount = str(
+                    len(
+                        filter_needs(
+                            need_list,
+                            needs_config,
+                            filters[0],
+                            location=node_need_count,
+                        )
+                    )
+                )
             elif len(filters) == 2:
                 need_list = prepare_need_list(all_needs)  # adds parts to need_list
-                amount_1 = len(filter_needs(need_list, needs_config, filters[0]))
-                amount_2 = len(filter_needs(need_list, needs_config, filters[1]))
+                amount_1 = len(
+                    filter_needs(
+                        need_list, needs_config, filters[0], location=node_need_count
+                    )
+                )
+                amount_2 = len(
+                    filter_needs(
+                        need_list, needs_config, filters[1], location=node_need_count
+                    )
+                )
                 amount = f"{amount_1 / amount_2 * 100:2.1f}"
             elif len(filters) > 2:
                 raise NeedsInvalidFilter(

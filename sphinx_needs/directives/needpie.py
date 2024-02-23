@@ -102,7 +102,10 @@ class NeedpieDirective(FilterBase):
         }
         add_doc(env, env.docname)
 
-        return [targetnode, Needpie("")]
+        pie_node = Needpie("")
+        self.set_source_info(pie_node)
+
+        return [targetnode, pie_node]
 
 
 @measure_time("needpie")
@@ -162,7 +165,9 @@ def process_needpie(
                 if line.isdigit():
                     sizes.append(abs(float(line)))
                 else:
-                    result = len(filter_needs(need_list, needs_config, line))
+                    result = len(
+                        filter_needs(need_list, needs_config, line, location=node)
+                    )
                     sizes.append(result)
         elif current_needpie["filter_func"] and not content:
             try:

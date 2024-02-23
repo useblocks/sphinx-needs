@@ -1,12 +1,10 @@
-from docutils.parsers.rst import directives
-
 extensions = ["sphinx_needs"]
 
-needs_extra_options = {
-    "introduced": directives.unchanged,
-    "updated": directives.unchanged,
-    "impacts": directives.unchanged,
-}
+needs_extra_options = [
+    "introduced",
+    "updated",
+    "impacts",
+]
 
 needs_template_collapse = """
 .. _{{id}}:

@@ -219,8 +219,6 @@ NEED_DEFAULT_OPTIONS: dict[str, Any] = {
     "template": directives.unchanged_required,
     "pre_template": directives.unchanged_required,
     "post_template": directives.unchanged_required,
-    "duration": directives.unchanged_required,
-    "completion": directives.unchanged_required,
     "constraints": directives.unchanged_required,
     "constraints_passed": directives.unchanged_required,
     "constraints_results": directives.unchanged_required,
