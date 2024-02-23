@@ -307,16 +307,15 @@ The line for the ``side`` area could look like::
 
    The used layout takes the value from ``author`` and puts some image-path related information around it.
 
-Here is the complete used code::
+Here is the complete used code
+
+.. code-block:: python
 
    # conf.py
    # -------
 
-   from docutils.parsers.rst import directives
    # Make the author option valid
-   needs_extra_options = {
-         "author": directives.unchanged,
-         }
+   needs_extra_options = ["author"]
 
    # Define own layout
    needs_layouts = {
@@ -331,8 +330,10 @@ Here is the complete used code::
        }
    }
 
-   # rst-code of the above need
-   # --------------------------
+.. code-block:: restructuredtext
+
+   rst-code of the above need
+   --------------------------
 
    .. spec:: My test spec
       :author: daniel
