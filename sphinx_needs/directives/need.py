@@ -7,6 +7,7 @@ from typing import Any, Sequence
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState, RSTStateMachine
 from docutils.statemachine import StringList
+from sphinx import addnodes
 from sphinx.addnodes import desc_name, desc_signature
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
@@ -311,7 +312,8 @@ def purge_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> None:
 
 def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
     """Determine the location of each need in the doctree,
-    relative to its parent section(s) and need(s).
+    relative to its parent section(s) and need(s),
+    and also note any parent ``only`` expressions.
 
     This data is added to the need's data stored in the Sphinx environment,
     so that it can be used in tables and filters.
@@ -362,6 +364,16 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
         if parent_needs:
             need_info["parent_needs"] = parent_needs
             need_info["parent_need"] = parent_needs[0]
+
+        # find any parent only expressions, and note them on the need data item
+        expressions = []
+        parent: nodes.Element = need_node
+        while parent := getattr(parent, "parent", None):  # type: ignore
+            if isinstance(parent, addnodes.only):  # noqa: SIM102
+                if expr := parent.get("expr"):
+                    expressions.append(expr)
+        if expressions:
+            need_info["only_expressions"] = expressions[::-1]
 
         if need_node.get("hidden"):
             hidden_needs.append(need_node)
