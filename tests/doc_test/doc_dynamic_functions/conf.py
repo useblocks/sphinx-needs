@@ -1,5 +1,3 @@
-from docutils.parsers.rst import directives
-
 extensions = ["sphinx_needs"]
 
 needs_types = [
@@ -33,4 +31,4 @@ needs_types = [
     },
 ]
 
-needs_extra_options = {"test_func": directives.unchanged}
+needs_extra_options = ["test_func"]
