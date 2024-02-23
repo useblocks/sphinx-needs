@@ -165,12 +165,7 @@ And use it like:
 
    .. code-block:: python
 
-      from docutils.parsers.rst import directives
-
-      needs_extra_options = {
-         "my_extra_option": directives.unchanged,
-         "another_option": directives.unchanged,
-         }
+      needs_extra_options = ["my_extra_option",  "another_option"]
 
    **index.rst**
 

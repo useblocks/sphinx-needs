@@ -128,11 +128,9 @@ class NeedDirective(SphinxDirective):
         template = self.options.get("template")
         pre_template = self.options.get("pre_template")
         post_template = self.options.get("post_template")
-        duration = self.options.get("duration")
-        completion = self.options.get("completion")
         constraints = self.options.get("constraints", [])
 
-        need_extra_options = {"duration": duration, "completion": completion}
+        need_extra_options = {}
         for extra_link in self.needs_config.extra_links:
             need_extra_options[extra_link["option"]] = self.options.get(
                 extra_link["option"], ""

@@ -364,15 +364,19 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             "Sphinx-Needs 0.7.2 is list. Please see docs for details."
         )
 
-    extra_options = NEEDS_CONFIG.extra_options
     for option in needs_config.extra_options:
-        if option in extra_options:
+        if option in NEEDS_CONFIG.extra_options:
             LOGGER.warning(
                 f'extra_option "{option}" already registered. [needs.config]',
                 type="needs",
                 subtype="config",
             )
         NEEDS_CONFIG.extra_options[option] = directives.unchanged
+
+    # ensure options for ``needgantt`` functionality are added to the extra options
+    for option in (needs_config.duration_option, needs_config.completion_option):
+        if option not in NEEDS_CONFIG.extra_options:
+            NEEDS_CONFIG.extra_options[option] = directives.unchanged_required
 
     # Get extra links and create a dictionary of needed options.
     extra_links_raw = needs_config.extra_links
@@ -384,8 +388,8 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     title_from_content = needs_config.title_from_content
 
     # Update NeedDirective to use customized options
-    NeedDirective.option_spec.update(extra_options)
-    NeedserviceDirective.option_spec.update(extra_options)
+    NeedDirective.option_spec.update(NEEDS_CONFIG.extra_options)
+    NeedserviceDirective.option_spec.update(NEEDS_CONFIG.extra_options)
 
     # Update NeedDirective to use customized links
     NeedDirective.option_spec.update(extra_links)
@@ -426,7 +430,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             "-links_back": directives.flag,
         }
     )
-    for key, value in extra_options.items():
+    for key, value in NEEDS_CONFIG.extra_options.items():
         NeedextendDirective.option_spec.update(
             {
                 key: value,
@@ -511,15 +515,6 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
     # Register functions configured by user
     for needs_func in needs_config.functions:
         register_func(needs_func)
-
-    # Own extra options
-    for option in [
-        "duration",
-        "completion",
-    ]:
-        # Check if not already set by user
-        if option not in NEEDS_CONFIG.extra_options:
-            NEEDS_CONFIG.extra_options[option] = directives.unchanged
 
     # The default link name. Must exist in all configurations. Therefore we set it here
     # for the user.

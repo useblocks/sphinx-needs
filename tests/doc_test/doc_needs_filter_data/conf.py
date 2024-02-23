@@ -1,8 +1,6 @@
 import os
 import sys
 
-from docutils.parsers.rst import directives
-
 sys.path.insert(0, os.path.abspath("./"))
 
 extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
@@ -49,9 +47,7 @@ def custom_func():
 
 needs_filter_data = {"current_variant": "project_x", "sphinx_tag": custom_func()}
 
-needs_extra_options = {
-    "variant": directives.unchanged,
-}
+needs_extra_options = ["variant"]
 
 needs_warnings = {
     "variant_not_equal_current_variant": "variant != current_variant",
