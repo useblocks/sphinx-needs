@@ -8,6 +8,12 @@ License
 
 .. include:: ../LICENSE
 
+Unreleased
+----------
+
+* 👌 Fail and emit warning on filters that do not return a boolean result
+  (`#964 <https://github.com/useblocks/sphinx-needs/pull/964>`_)
+
 
 2.0.0
 -----
@@ -90,9 +96,6 @@ Internal
 * 🧪 Make documentation builds fail on warnings (`#1005 <https://github.com/useblocks/sphinx-needs/pull/1005>`_)
 * 🧪 Add testing of JS scripts using Cypress integrated into PyTest (`#1051 <https://github.com/useblocks/sphinx-needs/pull/1051>`_)
 * 🧪 Add code coverage to CI testing (`#1067 <https://github.com/useblocks/sphinx-needs/pull/1067>`_)
-
-* Bugfix: Check filter strings for correctness.
-  (`#964 <https://github.com/useblocks/sphinx-needs/pull/964>`_)
 
 1.3.0
 -----
