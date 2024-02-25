@@ -165,8 +165,6 @@ need structure
       'content': str: unparsed need content,
       'collapse': bool: true if meta data shall be collapsed,
       'hide': bool: true if complete need shall be hidden,
-      'hide_tags': bool: if tags shall be hidden,
-      'hide_status': bool: true if status shall be hidden,
    }
 
 Adding new keywords to need object will be treated as extra_option in need meta area.

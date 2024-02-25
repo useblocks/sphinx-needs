@@ -26,13 +26,11 @@ class NeedsList:
     JSON_KEY_EXCLUSIONS_NEEDS = {
         "links_back",
         "type_color",
-        "hide_status",
         "hide",
         "type_prefix",
         "lineno",
         "collapse",
         "type_style",
-        "hide_tags",
         "content",
         "content_node",
         # id_parent, id_parent are added on calls to `prepare_need_list`
