@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import re
-from typing import cast
+from typing import Iterable, cast
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -37,6 +37,22 @@ def process_need_part(
 
 
 part_pattern = re.compile(r"\(([\w-]+)\)(.*)")
+
+
+def iter_need_parts(need: NeedsInfoType) -> Iterable[NeedsInfoType]:
+    """Yield all parts, a.k.a sub-needs, from a need.
+
+    A sub-need is a child of a need, which has its own ID,
+    and overrides the content of the parent need.
+    """
+    for part in need["parts"].values():
+        full_part: NeedsInfoType = {**need, **part}
+        full_part["id_complete"] = f"{need['id']}.{part['id']}"
+        full_part["id_parent"] = need["id"]
+        full_part["is_need"] = False
+        full_part["is_part"] = True
+
+        yield full_part
 
 
 def update_need_with_parts(
@@ -70,11 +86,8 @@ def update_need_with_parts(
         need["parts"][inline_id] = {
             "id": inline_id,
             "content": part_content,
-            "document": need["docname"],
-            "links_back": [],
-            "is_part": True,
-            "is_need": False,
             "links": [],
+            "links_back": [],
         }
 
         part_id_ref = "{}.{}".format(need["id"], inline_id)

@@ -455,10 +455,7 @@
             'parts': dict({
               '1': dict({
                 'content': ' awesome part',
-                'document': 'index',
                 'id': '1',
-                'is_need': False,
-                'is_part': True,
                 'links': list([
                 ]),
                 'links_back': list([
@@ -470,10 +467,7 @@
               }),
               'cool': dict({
                 'content': ' a cool part',
-                'document': 'index',
                 'id': 'cool',
-                'is_need': False,
-                'is_part': True,
                 'links': list([
                 ]),
                 'links_back': list([
