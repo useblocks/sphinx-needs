@@ -12,6 +12,7 @@ import pytest
 def test_doc_dynamic_functions(test_app):
     app = test_app
     app.build()
+    print(app._warning.getvalue())
     html = Path(app.outdir, "index.html").read_text()
     assert "This is id SP_TOO_001" in html
 

@@ -16,29 +16,17 @@ from jsonschema import Draft7Validator
 from sphinx.config import Config
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsFilterType, NeedsInfoType
+from sphinx_needs.data import NeedsCoreFields, NeedsFilterType, NeedsInfoType
 from sphinx_needs.logging import get_logger
 
 log = get_logger(__name__)
 
 
 class NeedsList:
+    """Class to generate a JSON representation of all needs and filters."""
+
     JSON_KEY_EXCLUSIONS_NEEDS = {
-        "links_back",
-        "type_color",
-        "hide_status",
-        "hide",
-        "type_prefix",
-        "lineno",
-        "collapse",
-        "type_style",
-        "hide_tags",
-        "content",
-        "content_node",
-        # id_parent, id_parent are added on calls to `prepare_need_list`
-        # but are only relevant to parts
-        "id_parent",
-        "id_complete",
+        name for name, params in NeedsCoreFields.items() if params.get("exclude_json")
     }
 
     JSON_KEY_EXCLUSIONS_FILTERS = {
