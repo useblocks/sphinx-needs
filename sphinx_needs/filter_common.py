@@ -19,10 +19,10 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import (
     NeedsFilteredBaseType,
     NeedsInfoType,
-    NeedsPartsInfoType,
     SphinxNeedsData,
 )
 from sphinx_needs.debug import measure_time, measure_time_func
+from sphinx_needs.roles.need_part import iter_need_parts
 from sphinx_needs.utils import check_and_get_external_filter_func
 from sphinx_needs.utils import logger as log
 
@@ -101,7 +101,7 @@ def process_filters(
     all_needs: Iterable[NeedsInfoType],
     filter_data: NeedsFilteredBaseType,
     include_external: bool = True,
-) -> list[NeedsPartsInfoType]:
+) -> list[NeedsInfoType]:
     """
     Filters all needs with given configuration.
     Used by needlist, needtable and needflow.
@@ -114,7 +114,7 @@ def process_filters(
     :return: list of needs, which passed the filters
     """
     needs_config = NeedsSphinxConfig(app.config)
-    found_needs: list[NeedsPartsInfoType]
+    found_needs: list[NeedsInfoType]
     sort_key = filter_data["sort_by"]
     if sort_key:
         try:
@@ -135,7 +135,7 @@ def process_filters(
     else:
         checked_all_needs = all_needs
 
-    found_needs_by_options: list[NeedsPartsInfoType] = []
+    found_needs_by_options: list[NeedsInfoType] = []
 
     # Add all need_parts of given needs to the search list
     all_needs_incl_parts = prepare_need_list(checked_all_needs)
@@ -226,7 +226,7 @@ def process_filters(
             return []
 
         # The filter results may be dirty, as it may continue manipulated needs.
-        found_dirty_needs: list[NeedsPartsInfoType] = context["results"]  # type: ignore
+        found_dirty_needs: list[NeedsInfoType] = context["results"]  # type: ignore
         found_needs = []
 
         # Check if config allow unsafe filters
@@ -257,33 +257,21 @@ def process_filters(
     return found_needs
 
 
-def prepare_need_list(need_list: Iterable[NeedsInfoType]) -> list[NeedsPartsInfoType]:
+def prepare_need_list(need_list: Iterable[NeedsInfoType]) -> list[NeedsInfoType]:
     # all_needs_incl_parts = need_list.copy()
-    all_needs_incl_parts: list[NeedsPartsInfoType]
+    all_needs_incl_parts: list[NeedsInfoType]
     try:
         all_needs_incl_parts = need_list[:]  # type: ignore
     except TypeError:
         try:
             all_needs_incl_parts = need_list.copy()  # type: ignore
         except AttributeError:
-            all_needs_incl_parts = list(need_list)[:]  # type: ignore
+            all_needs_incl_parts = list(need_list)[:]
 
     for need in need_list:
-        for part in need["parts"].values():
-            id_complete = ".".join([need["id"], part["id"]])
-            filter_part: NeedsPartsInfoType = {
-                **need,
-                **part,
-                **{"id_parent": need["id"], "id_complete": id_complete},  # type: ignore[typeddict-item]
-            }
+        for filter_part in iter_need_parts(need):
             all_needs_incl_parts.append(filter_part)
 
-        # Be sure extra attributes, which makes only sense for need_parts, are also available on
-        # need level so that no KeyError gets raised, if search/filter get executed on needs with a need-part argument.
-        if "id_parent" not in need:
-            need["id_parent"] = need["id"]  # type: ignore[typeddict-unknown-key]
-        if "id_complete" not in need:
-            need["id_complete"] = need["id"]  # type: ignore[typeddict-unknown-key]
     return all_needs_incl_parts
 
 
