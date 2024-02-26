@@ -4,7 +4,9 @@ import pytest
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/parallel_doc", "parallel": 4}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/parallel_doc", "parallel": 4}],
+    indirect=True,
 )
 def test_doc_build_html(test_app):
     app = test_app
@@ -16,7 +18,9 @@ def test_doc_build_html(test_app):
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/parallel_doc", "parallel": 4}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/parallel_doc", "parallel": 4}],
+    indirect=True,
 )
 def test_doc_parallel_build_html(test_app):
     app = test_app

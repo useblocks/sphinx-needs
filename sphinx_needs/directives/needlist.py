@@ -1,8 +1,6 @@
-"""
+from __future__ import annotations
 
-
-"""
-from typing import List, Sequence
+from typing import Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -43,7 +41,9 @@ class NeedlistDirective(FilterBase):
     def run(self) -> Sequence[nodes.Node]:
         env = self.env
 
-        targetid = "needlist-{docname}-{id}".format(docname=env.docname, id=env.new_serialno("needlist"))
+        targetid = "needlist-{docname}-{id}".format(
+            docname=env.docname, id=env.new_serialno("needlist")
+        )
         targetnode = nodes.target("", "", ids=[targetid])
 
         # Add the need and all needed information
@@ -62,7 +62,12 @@ class NeedlistDirective(FilterBase):
         return [targetnode, Needlist("")]
 
 
-def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
+def process_needlist(
+    app: Sphinx,
+    doctree: nodes.document,
+    fromdocname: str,
+    found_nodes: list[nodes.Element],
+) -> None:
     """
     Replace all needlist nodes with a list of the collected needs.
     Augment each need with a backlink to the original location.
@@ -79,11 +84,11 @@ def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
 
         id = node.attributes["ids"][0]
         current_needfilter = SphinxNeedsData(env).get_or_create_lists()[id]
-        content: List[nodes.Node] = []
+        content: list[nodes.Node] = []
         all_needs = list(SphinxNeedsData(env).get_or_create_needs().values())
         found_needs = process_filters(app, all_needs, current_needfilter)
 
-        if 0 < len(found_needs):
+        if len(found_needs) > 0:
             line_block = nodes.line_block()
 
             # Add lineno to node
@@ -104,10 +109,14 @@ def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                 if need_info["hide"]:
                     para += title
                 elif need_info["is_external"]:
-                    assert need_info["external_url"] is not None, "External need without URL"
+                    assert (
+                        need_info["external_url"] is not None
+                    ), "External need without URL"
                     ref = nodes.reference("", "")
 
-                    ref["refuri"] = check_and_calc_base_url_rel_path(need_info["external_url"], fromdocname)
+                    ref["refuri"] = check_and_calc_base_url_rel_path(
+                        need_info["external_url"], fromdocname
+                    )
 
                     ref["classes"].append(need_info["external_css"])
                     ref.append(title)
@@ -116,7 +125,9 @@ def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                     target_id = need_info["target_id"]
                     ref = nodes.reference("", "")
                     ref["refdocname"] = need_info["docname"]
-                    ref["refuri"] = builder.get_relative_uri(fromdocname, need_info["docname"])
+                    ref["refuri"] = builder.get_relative_uri(
+                        fromdocname, need_info["docname"]
+                    )
                     ref["refuri"] += "#" + target_id
                     ref.append(title)
                     para += ref
@@ -124,7 +135,9 @@ def process_needlist(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
             content.append(line_block)
 
         if len(content) == 0:
-            content.append(no_needs_found_paragraph(current_needfilter.get("filter_warning")))
+            content.append(
+                no_needs_found_paragraph(current_needfilter.get("filter_warning"))
+            )
         if current_needfilter["show_filters"]:
             content.append(used_filter_paragraph(current_needfilter))
 

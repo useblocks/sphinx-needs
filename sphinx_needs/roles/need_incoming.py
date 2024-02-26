@@ -1,4 +1,4 @@
-from typing import List
+from __future__ import annotations
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -10,12 +10,15 @@ from sphinx_needs.errors import NoUri
 from sphinx_needs.utils import check_and_calc_base_url_rel_path, logger
 
 
-class NeedIncoming(nodes.Inline, nodes.Element):  # type: ignore
+class NeedIncoming(nodes.Inline, nodes.Element):
     pass
 
 
 def process_need_incoming(
-    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
+    app: Sphinx,
+    doctree: nodes.document,
+    fromdocname: str,
+    found_nodes: list[nodes.Element],
 ) -> None:
     builder = app.builder
     env = app.env
@@ -64,8 +67,12 @@ def process_need_incoming(
                             node_need_backref["reftarget"],
                         )
                     else:
-                        assert target_need["external_url"] is not None, "External URL must not be set"
-                        new_node_ref = nodes.reference(target_need["id"], target_need["id"])
+                        assert (
+                            target_need["external_url"] is not None
+                        ), "External URL must not be set"
+                        new_node_ref = nodes.reference(
+                            target_need["id"], target_need["id"]
+                        )
                         new_node_ref["refuri"] = check_and_calc_base_url_rel_path(
                             target_need["external_url"], fromdocname
                         )
@@ -82,7 +89,10 @@ def process_need_incoming(
                     pass
 
             else:
-                logger.warning(f"need {node_need_backref['reftarget']} not found [needs]", location=node_need_backref)
+                logger.warning(
+                    f"need {node_need_backref['reftarget']} not found [needs]",
+                    location=node_need_backref,
+                )
 
         if len(node_link_container.children) == 0:
             node_link_container += nodes.Text("None")

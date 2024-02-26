@@ -3,7 +3,11 @@ import pytest
 from sphinx_needs.api.need import NeedsStatusNotAllowed
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/broken_statuses"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/broken_statuses"}],
+    indirect=True,
+)
 def test_doc_build_html(test_app):
     with pytest.raises(NeedsStatusNotAllowed):
         app = test_app

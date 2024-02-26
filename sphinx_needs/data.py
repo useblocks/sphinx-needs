@@ -1,6 +1,7 @@
 """Module to control access to sphinx-needs data,
 which is stored in the Sphinx environment.
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, TypedDict
@@ -25,17 +26,6 @@ class NeedsFilterType(TypedDict):
     """If set, the filter is exported with this ID in the needs.json file."""
 
 
-class NeedsBaseDataType(TypedDict):
-    """A base type for all data."""
-
-    docname: str
-    """Name of the document where the need is defined."""
-    lineno: int
-    """Line number where the need is defined."""
-    target_id: str
-    """ID of the data."""
-
-
 class NeedsPartType(TypedDict):
     """Data for a single need part."""
 
@@ -55,11 +45,20 @@ class NeedsPartType(TypedDict):
     """List of need IDs, which are referencing this part."""
 
 
-class NeedsInfoType(NeedsBaseDataType):
+class NeedsInfoType(TypedDict):
     """Data for a single need."""
 
+    target_id: str
+    """ID of the data."""
     id: str
     """ID of the data (same as target_id)"""
+
+    # TODO docname and lineno can be None, if the need is external,
+    # but currently this raises mypy errors for other parts of the code base
+    docname: str
+    """Name of the document where the need is defined."""
+    lineno: int
+    """Line number where the need is defined."""
 
     # meta information
     full_title: str
@@ -70,7 +69,7 @@ class NeedsInfoType(NeedsBaseDataType):
     tags: list[str]
 
     # rendering information
-    collapse: bool
+    collapse: None | bool
     """hide the meta-data information of the need."""
     hide: bool
     """If true, the need is not rendered."""
@@ -137,6 +136,14 @@ class NeedsInfoType(NeedsBaseDataType):
     # these all have value type `list[str]`
     # back links are all set in process_need_nodes (-> create_back_links) transform
 
+    # these default to False and are updated in check_links post-process
+    has_dead_links: bool
+    """True if any links reference need ids that are not found in the need list."""
+    has_forbidden_dead_links: bool
+    """True if any links reference need ids that are not found in the need list,
+    and the link type does not allow dead links.
+    """
+
     # constraints information
     constraints: list[str]
     """List of constraint names, which are defined for this need."""
@@ -168,40 +175,35 @@ class NeedsInfoType(NeedsBaseDataType):
     parent_need: str
     """Simply the first parent id"""
 
-    # default extra options
-    # TODO these all default to "" which I don't think is good
-    hidden: str
-    duration: str
-    completion: str
-    # constraints: str  # this is already set in create_need
-    # these are updated in process_need_nodes (-> check_links) transform
-    has_dead_links: str | bool
-    has_forbidden_dead_links: str | bool
-    # options from `BaseService.options` get added to every need,
-    # via `ServiceManager.register`, which adds them to `extra_options``
-    # GithubService
+    # Fields added dynamically by services:
+    # options from ``BaseService.options`` get added to ``NEEDS_CONFIG.extra_options``,
+    # via `ServiceManager.register`,
+    # which in turn means they are added to every need via ``add_need``
+    # ``GithubService.options``
     avatar: str
     closed_at: str
     created_at: str
     max_amount: str
     service: str
     specific: str
-    # _type: str  # type is already set in create_need
+    ## type: str  # although this is already an internal field
     updated_at: str
     user: str
-    # OpenNeedsService
+    # ``OpenNeedsService.options``
     params: str
     prefix: str
     url_postfix: str
-    # shared GithubService and OpenNeedsService
+    # shared ``GithubService.options`` and ``OpenNeedsService.options``
     max_content_lines: str
     id_prefix: str
     query: str
     url: str
 
-    # Note there are also:
-    # - dynamic default options that can be set by needs_extra_options config
-    # - dynamic global options that can be set by needs_global_options config
+    # Note there are also these dynamic keys:
+    # - items in ``needs_extra_options`` + ``needs_duration_option`` + ``needs_completion_option``,
+    #   which get added to ``NEEDS_CONFIG.extra_options``,
+    #   and in turn means they are added to every need via ``add_need`` (as strings)
+    # - keys in ``needs_global_options`` config are added to every need via ``add_need``
 
 
 class NeedsPartsInfoType(NeedsInfoType):
@@ -211,6 +213,17 @@ class NeedsPartsInfoType(NeedsInfoType):
     """docname where the part is defined."""
     id_parent: str
     id_complete: str
+
+
+class NeedsBaseDataType(TypedDict):
+    """A base type for data items collected from directives."""
+
+    docname: str
+    """Name of the document where the need is defined."""
+    lineno: int
+    """Line number where the need is defined."""
+    target_id: str
+    """ID of the data."""
 
 
 class NeedsBarType(NeedsBaseDataType):
@@ -591,7 +604,9 @@ class SphinxNeedsData:
         return self.env.needs_all_needumls
 
 
-def merge_data(_app: Sphinx, env: BuildEnvironment, _docnames: list[str], other: BuildEnvironment) -> None:
+def merge_data(
+    _app: Sphinx, env: BuildEnvironment, _docnames: list[str], other: BuildEnvironment
+) -> None:
     """
     Performs data merge of parallel executed workers.
     Used only for parallel builds.
@@ -620,14 +635,17 @@ def merge_data(_app: Sphinx, env: BuildEnvironment, _docnames: list[str], other:
                     for other_key, other_value in other_objects.items():
                         # other_value is a list from here on!
                         if other_key in objects:
-                            objects[other_key] = list(set(objects[other_key]) | set(other_value))
+                            objects[other_key] = list(
+                                set(objects[other_key]) | set(other_value)
+                            )
                         else:
                             objects[other_key] = other_value
             elif isinstance(other_objects, list) and isinstance(objects, list):
                 objects = list(set(objects) | set(other_objects))
             else:
                 raise TypeError(
-                    f'Objects to "merge" must be dict or list, ' f"not {type(other_objects)} and {type(objects)}"
+                    f'Objects to "merge" must be dict or list, '
+                    f"not {type(other_objects)} and {type(objects)}"
                 )
 
     _merge("needs_all_docs", is_complex_dict=True)

@@ -4,7 +4,9 @@ import pytest
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/variant_doc", "tags": ["tag_a"]}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/variant_doc", "tags": ["tag_a"]}],
+    indirect=True,
 )
 def test_variant_options_html(test_app):
     app = test_app
@@ -32,12 +34,15 @@ def test_variant_options_html(test_app):
     # Check if referenced link exists in html
     assert (
         '<div class="line">links outgoing: <span class="links"><span><a class="reference '
-        'internal" href="#VA_003" title="SPEC_003">VA_003</a></span></span></div>' in html
+        'internal" href="#VA_003" title="SPEC_003">VA_003</a></span></span></div>'
+        in html
     )
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/variant_options", "tags": ["tag_a"]}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/variant_options", "tags": ["tag_a"]}],
+    indirect=True,
 )
 def test_empty_variant_options_html(test_app):
     app = test_app

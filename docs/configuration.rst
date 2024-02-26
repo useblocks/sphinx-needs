@@ -155,17 +155,6 @@ And use it like:
       :tags: important;complex;
       :impacts: really everything
 
-Default value:
-
-.. code-block:: python
-
-   {'hidden': directives.unchanged}
-
-The ``hidden`` option is a globally available option always hidden and used to easily execute :ref:`dynamic_functions`.
-
-Extra options automatically appear in needs, if a value is set.
-By using :ref:`needs_hide_options` the output of such options can be hidden.
-
 .. note:: To filter on these options in `needlist`, `needtable`, etc. you
           must use the :ref:`filter` option.
 
@@ -176,12 +165,7 @@ By using :ref:`needs_hide_options` the output of such options can be hidden.
 
    .. code-block:: python
 
-      from docutils.parsers.rst import directives
-
-      needs_extra_options = {
-         "my_extra_option": directives.unchanged,
-         "another_option": directives.unchanged,
-         }
+      needs_extra_options = ["my_extra_option",  "another_option"]
 
    **index.rst**
 
@@ -294,7 +278,13 @@ In this cases, you can provide a list of tuples.
 needs_report_dead_links
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Deactivate/activate log messages of outgoing dead links. If set to ``False``, then deactivate.
+.. deprecated:: 2.1.0
+
+    Instead add ``needs.link_outgoing`` to the `suppress_warnings <https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-suppress_warnings>`__ list::
+
+        suppress_warnings = ["needs.link_outgoing"]
+
+Deactivate/activate log messages of disallowed outgoing dead links. If set to ``False``, then deactivate.
 
 Default value is ``True``.
 

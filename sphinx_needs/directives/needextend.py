@@ -1,9 +1,7 @@
-"""
+from __future__ import annotations
 
-
-"""
 import re
-from typing import Any, Callable, Dict, Sequence
+from typing import Any, Callable, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -33,7 +31,7 @@ class NeedextendDirective(SphinxDirective):
     optional_arguments = 0
     final_argument_whitespace = True
 
-    option_spec: Dict[str, Callable[[str], Any]] = {
+    option_spec: dict[str, Callable[[str], Any]] = {
         "strict": directives.unchanged_required,
     }
 
@@ -46,9 +44,13 @@ class NeedextendDirective(SphinxDirective):
 
         extend_filter = self.arguments[0] if self.arguments else None
         if not extend_filter:
-            raise NeedsInvalidFilter(f"Filter of needextend must be set. See {env.docname}:{self.lineno}")
+            raise NeedsInvalidFilter(
+                f"Filter of needextend must be set. See {env.docname}:{self.lineno}"
+            )
 
-        strict_option = self.options.get("strict", str(NeedsSphinxConfig(self.env.app.config).needextend_strict))
+        strict_option = self.options.get(
+            "strict", str(NeedsSphinxConfig(self.env.app.config).needextend_strict)
+        )
         strict = True
         if strict_option.upper() == "TRUE":
             strict = True
@@ -71,7 +73,9 @@ class NeedextendDirective(SphinxDirective):
 
 
 def extend_needs_data(
-    all_needs: Dict[str, NeedsInfoType], extends: Dict[str, NeedsExtendType], needs_config: NeedsSphinxConfig
+    all_needs: dict[str, NeedsInfoType],
+    extends: dict[str, NeedsExtendType],
+    needs_config: NeedsSphinxConfig,
 ) -> None:
     """Use data gathered from needextend directives to modify fields of existing needs."""
 
@@ -83,7 +87,9 @@ def extend_needs_data(
         if need_filter in all_needs:
             # a single known ID
             found_needs = [all_needs[need_filter]]
-        elif need_filter is not None and re.fullmatch(needs_config.id_regex, need_filter):
+        elif need_filter is not None and re.fullmatch(
+            needs_config.id_regex, need_filter
+        ):
             # an unknown ID
             error = f"Provided id {need_filter} for needextend does not exist."
             if current_needextend["strict"]:
@@ -92,13 +98,12 @@ def extend_needs_data(
                 logger.info(error)
                 continue
         else:
-            # a filter string
-            try:
-                found_needs = filter_needs(all_needs.values(), needs_config, need_filter)
-            except NeedsInvalidFilter as e:
-                raise NeedsInvalidFilter(
-                    f"Filter not valid for needextend on page {current_needextend['docname']}:\n{e}"
-                )
+            found_needs = filter_needs(
+                all_needs.values(),
+                needs_config,
+                need_filter,
+                location=(current_needextend["docname"], current_needextend["lineno"]),
+            )
 
         for found_need in found_needs:
             # Work in the stored needs, not on the search result
@@ -110,7 +115,9 @@ def extend_needs_data(
                 if option.startswith("+"):
                     option_name = option[1:]
                     if option_name in link_names:
-                        if value.strip().startswith("[[") and value.strip().endswith("]]"):  # dynamic function
+                        if value.strip().startswith("[[") and value.strip().endswith(
+                            "]]"
+                        ):  # dynamic function
                             need[option_name].append(value)
                         else:
                             for ref_need in [i.strip() for i in re.split(";|,", value)]:
@@ -118,13 +125,18 @@ def extend_needs_data(
                                     logger.warning(
                                         f"Provided link id {ref_need} for needextend does not exist. [needs]",
                                         type="needs",
-                                        location=(current_needextend["docname"], current_needextend["lineno"]),
+                                        location=(
+                                            current_needextend["docname"],
+                                            current_needextend["lineno"],
+                                        ),
                                     )
                                     continue
                                 if ref_need not in need[option_name]:
                                     need[option_name].append(ref_need)
                     elif option_name in list_values:
-                        if value.strip().startswith("[[") and value.strip().endswith("]]"):  # dynamic function
+                        if value.strip().startswith("[[") and value.strip().endswith(
+                            "]]"
+                        ):  # dynamic function
                             need[option_name].append(value)
                         else:
                             for item in [i.strip() for i in re.split(";|,", value)]:
@@ -147,7 +159,9 @@ def extend_needs_data(
                 else:
                     if option in link_names:
                         need[option] = []
-                        if value.strip().startswith("[[") and value.strip().endswith("]]"):  # dynamic function
+                        if value.strip().startswith("[[") and value.strip().endswith(
+                            "]]"
+                        ):  # dynamic function
                             need[option].append(value)
                         else:
                             for ref_need in [i.strip() for i in re.split(";|,", value)]:
@@ -155,12 +169,17 @@ def extend_needs_data(
                                     logger.warning(
                                         f"Provided link id {ref_need} for needextend does not exist. [needs]",
                                         type="needs",
-                                        location=(current_needextend["docname"], current_needextend["lineno"]),
+                                        location=(
+                                            current_needextend["docname"],
+                                            current_needextend["lineno"],
+                                        ),
                                     )
                                     continue
                                 need[option].append(ref_need)
                     elif option in list_values:
-                        if value.strip().startswith("[[") and value.strip().endswith("]]"):  # dynamic function
+                        if value.strip().startswith("[[") and value.strip().endswith(
+                            "]]"
+                        ):  # dynamic function
                             need[option].append(value)
                         else:
                             need[option] = [i.strip() for i in re.split(";|,", value)]

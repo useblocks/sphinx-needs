@@ -8,8 +8,20 @@ extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
 needs_id_regex = "^[A-Za-z0-9_]*"
 
 needs_types = [
-    {"directive": "feature", "title": "Feature", "prefix": "FE_", "color": "#FEDCD2", "style": "node"},
-    {"directive": "usecase", "title": "Use Case", "prefix": "USE_", "color": "#DF744A", "style": "node"},
+    {
+        "directive": "feature",
+        "title": "Feature",
+        "prefix": "FE_",
+        "color": "#FEDCD2",
+        "style": "node",
+    },
+    {
+        "directive": "usecase",
+        "title": "Use Case",
+        "prefix": "USE_",
+        "color": "#DF744A",
+        "style": "node",
+    },
 ]
 
 needs_extra_options = ["ti", "tcl"]

@@ -108,7 +108,8 @@ GITHUB_ISSUE_SEARCH_ANSWER = {
 GITHUB_SPECIFIC_ISSUE_ANSWER = {
     "url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/issues/141",
     "repository_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs",
-    "labels_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/issues/" "141/labels{/name}",
+    "labels_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/issues/"
+    "141/labels{/name}",
     "comments_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/issues/141/comments",
     "events_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/issues/141/events",
     "html_url": "https://github.com/useblocks/sphinxcontrib-needs/issues/141",
@@ -140,7 +141,8 @@ GITHUB_SPECIFIC_ISSUE_ANSWER = {
         {
             "id": 491973814,
             "node_id": "MDU6TGFiZWw0OTE5NzM4MTQ=",
-            "url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs" "/labels/bug",
+            "url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs"
+            "/labels/bug",
             "name": "bug",
             "color": "ee0701",
             "default": True,
@@ -318,7 +320,8 @@ GITHUB_SPECIFIC_COMMIT_ANSWER = {
         "/collaborators{/collaborator}",
         "teams_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/teams",
         "hooks_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/hooks",
-        "issue_events_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/issues/events{" "/number}",
+        "issue_events_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/issues/events{"
+        "/number}",
         "events_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/events",
         "assignees_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/assignees{/user}",
         "branches_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/branches{/branch}",
@@ -334,17 +337,22 @@ GITHUB_SPECIFIC_COMMIT_ANSWER = {
         "subscribers_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/subscribers",
         "subscription_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/subscription",
         "commits_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/commits{/sha}",
-        "git_commits_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/git" "/commits{/sha}",
+        "git_commits_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/git"
+        "/commits{/sha}",
         "comments_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/comments{/number}",
-        "issue_comment_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/issues" "/comments{/number}",
+        "issue_comment_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/issues"
+        "/comments{/number}",
         "contents_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/contents/{+path}",
-        "compare_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/compare/{base}...{" "head}",
+        "compare_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/compare/{base}...{"
+        "head}",
         "merges_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/merges",
-        "archive_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/{archive_format}{" "/ref}",
+        "archive_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/{archive_format}{"
+        "/ref}",
         "downloads_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/downloads",
         "issues_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/issues{/number}",
         "pulls_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/pulls{/number}",
-        "milestones_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/milestones{" "/number}",
+        "milestones_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/milestones{"
+        "/number}",
         "notifications_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs"
         "/notifications{?since,all,participating}",
         "labels_url": "https://api.github.com/repos/useblocks/sphinxcontrib-needs/labels{/name}",

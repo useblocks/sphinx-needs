@@ -1,62 +1,22 @@
 import json
 import os.path
-import re
 import sys
 import tempfile
-import uuid
 from pathlib import Path
-from random import randrange
 
 import pytest
-import responses
+from sphinx import version_info
 from sphinx.application import Sphinx
+from sphinx.testing.util import SphinxTestApp
 from syrupy.filters import props
 
 from sphinx_needs.api.need import NeedsNoIdException
-from tests.data.service_github import (
-    GITHUB_ISSUE_SEARCH_ANSWER,
-    GITHUB_SEARCH_COMMIT_ANSWER,
-    GITHUB_SPECIFIC_COMMIT_ANSWER,
-    GITHUB_SPECIFIC_ISSUE_ANSWER,
+
+
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_basic"}], indirect=True
 )
-
-
-def random_data_callback(request):
-    """
-    Response data callback, which injects random ids, so that the generated needs get always a unique id and no
-    exceptions get thrown.
-    """
-    if re.match(r"/search/issues", request.path_url):
-        data = GITHUB_ISSUE_SEARCH_ANSWER
-        data["items"][0]["number"] = randrange(10000)
-    elif re.match(r"/.+/issue/.+", request.path_url) or re.match(r"/.+/pulls/.+", request.path_url):
-        data = GITHUB_SPECIFIC_ISSUE_ANSWER
-        data["number"] = randrange(10000)
-    elif re.match(r"/search/commits", request.path_url):
-        data = GITHUB_SEARCH_COMMIT_ANSWER
-        data["number"] = randrange(10000)
-    elif re.match(r"/.*/commits/*", request.path_url):
-        data = GITHUB_SPECIFIC_COMMIT_ANSWER
-        data["sha"] = uuid.uuid4().hex
-    else:
-        print(request.path_url)
-    return 200, [], json.dumps(data)
-
-
-#  OFFICIAL DOCUMENTATION BUILDS
-
-
-@responses.activate
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_basic"}], indirect=True)
 def test_build_html(test_app):
-    responses.add_callback(
-        responses.GET,
-        re.compile(r"https://api.github.com/.*"),
-        callback=random_data_callback,
-        content_type="application/json",
-    )
-    responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
-
     app = test_app
     app.builder.build_all()
 
@@ -68,17 +28,12 @@ def test_build_html(test_app):
     assert build_dir / "DataTables-1.10.16" / "js" / "jquery.dataTables.min.js" in files
 
 
-@responses.activate
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/generic_doc"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/generic_doc"}],
+    indirect=True,
+)
 def test_build_html_parallel(test_app: Sphinx, snapshot_doctree):
-    responses.add_callback(
-        responses.GET,
-        re.compile(r"https://api.github.com/.*"),
-        callback=random_data_callback,
-        content_type="application/json",
-    )
-    responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
-
     app = test_app
     app.builder.build_all()
 
@@ -92,8 +47,14 @@ def test_build_html_parallel(test_app: Sphinx, snapshot_doctree):
     assert app.env.get_doctree("index") == snapshot_doctree
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="assert fails on windows, need to fix later.")
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/generic_doc"}], indirect=True)
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="assert fails on windows, need to fix later."
+)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/generic_doc"}],
+    indirect=True,
+)
 def test_html_head_files(test_app):
     app = test_app
     app.builder.build_all()
@@ -117,77 +78,48 @@ def test_html_head_files(test_app):
         assert "\\" not in head_file
 
 
-@responses.activate
-@pytest.mark.parametrize("test_app", [{"buildername": "singlehtml", "srcdir": "doc_test/doc_basic"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "singlehtml", "srcdir": "doc_test/doc_basic"}],
+    indirect=True,
+)
 def test_build_singlehtml(test_app):
-    responses.add_callback(
-        responses.GET,
-        re.compile(r"https://api.github.com/.*"),
-        callback=random_data_callback,
-        content_type="application/json",
-    )
-    responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
-
     app = test_app
     app.builder.build_all()
 
 
-@responses.activate
-@pytest.mark.parametrize("test_app", [{"buildername": "latex", "srcdir": "doc_test/doc_basic"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "latex", "srcdir": "doc_test/doc_basic"}],
+    indirect=True,
+)
 def test_build_latex(test_app):
-    responses.add_callback(
-        responses.GET,
-        re.compile(r"https://api.github.com/.*"),
-        callback=random_data_callback,
-        content_type="application/json",
-    )
-    responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
-
     app = test_app
     app.builder.build_all()
 
 
-@responses.activate
-@pytest.mark.parametrize("test_app", [{"buildername": "epub", "srcdir": "doc_test/doc_basic"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "epub", "srcdir": "doc_test/doc_basic"}], indirect=True
+)
 def test_build_epub(test_app):
-    responses.add_callback(
-        responses.GET,
-        re.compile(r"https://api.github.com/.*"),
-        callback=random_data_callback,
-        content_type="application/json",
-    )
-    responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
-
     app = test_app
     app.builder.build_all()
 
 
-@responses.activate
-@pytest.mark.parametrize("test_app", [{"buildername": "json", "srcdir": "doc_test/doc_basic"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "json", "srcdir": "doc_test/doc_basic"}], indirect=True
+)
 def test_build_json(test_app):
-    responses.add_callback(
-        responses.GET,
-        re.compile(r"https://api.github.com/.*"),
-        callback=random_data_callback,
-        content_type="application/json",
-    )
-    responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
-
     app = test_app
     app.builder.build_all()
 
 
-@responses.activate
-@pytest.mark.parametrize("test_app", [{"buildername": "needs", "srcdir": "doc_test/doc_basic"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "needs", "srcdir": "doc_test/doc_basic"}],
+    indirect=True,
+)
 def test_build_needs(test_app, snapshot):
-    responses.add_callback(
-        responses.GET,
-        re.compile(r"https://api.github.com/.*"),
-        callback=random_data_callback,
-        content_type="application/json",
-    )
-    responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
-
     app = test_app
     app.builder.build_all()
     json_text = Path(app.outdir, "needs.json").read_text()
@@ -197,51 +129,49 @@ def test_build_needs(test_app, snapshot):
 
 
 # Test with needs_id_required=True and missing ids in docs.
-@responses.activate
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_basic", "confoverrides": {"needs_id_required": True}}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_basic",
+            "confoverrides": {"needs_id_required": True},
+        }
+    ],
     indirect=True,
 )
 def test_id_required_build_html(test_app):
     with pytest.raises(NeedsNoIdException):
-        responses.add_callback(
-            responses.GET,
-            re.compile(r"https://api.github.com/.*"),
-            callback=random_data_callback,
-            content_type="application/json",
-        )
-        responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
-
         app = test_app
         app.builder.build_all()
 
 
-@responses.activate
 def test_sphinx_api_build():
     """
     Tests a build via the Sphinx Build API.
     It looks like that there are scenarios where this specific build makes trouble but no others.
     """
-    responses.add_callback(
-        responses.GET,
-        re.compile(r"https://api.github.com/.*"),
-        callback=random_data_callback,
-        content_type="application/json",
-    )
-    responses.add(responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body="")
-
     temp_dir = tempfile.mkdtemp()
     src_dir = os.path.join(os.path.dirname(__file__), "doc_test", "doc_basic")
 
-    sphinx_app = Sphinx(
+    if version_info >= (7, 2):
+        src_dir = Path(src_dir)
+        temp_dir = Path(temp_dir)
+    else:
+        from sphinx.testing.path import path
+
+        src_dir = path(src_dir)
+        temp_dir = path(temp_dir)
+
+    sphinx_app = SphinxTestApp(
         srcdir=src_dir,
-        confdir=src_dir,
-        outdir=temp_dir,
-        doctreedir=temp_dir,
+        builddir=temp_dir,
         buildername="html",
         parallel=4,
         freshenv=True,
     )
-    sphinx_app.build()
-    assert sphinx_app.statuscode == 0
+    try:
+        sphinx_app.build()
+        assert sphinx_app.statuscode == 0
+    finally:
+        sphinx_app.cleanup()

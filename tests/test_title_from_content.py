@@ -5,7 +5,11 @@ import pytest
 from tests.util import extract_needs_from_html
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/title_from_content"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/title_from_content"}],
+    indirect=True,
+)
 def test_title_from_content_scenarios(test_app):
     app = test_app
     app.build()

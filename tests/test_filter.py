@@ -1,12 +1,29 @@
 from pathlib import Path
 
 import pytest
+from sphinx.util.console import strip_colors
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/filter_doc"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/filter_doc"}],
+    indirect=True,
+)
 def test_filter_build_html(test_app):
     app = test_app
     app.build()
+
+    warnings = strip_colors(
+        app._warning.getvalue().replace(str(app.srcdir), "srcdir")
+    ).splitlines()
+    for w in warnings:
+        print(w)
+    assert warnings == [
+        "srcdir/index.rst:51: WARNING: Filter 'xxx' not valid. Error: name 'xxx' is not defined. [needs.filter]",
+        "srcdir/index.rst:54: WARNING: Filter 'yyy' not valid. Error: name 'yyy' is not defined. [needs.filter]",
+        "srcdir/index.rst:57: WARNING: Filter 'zzz' not valid. Error: name 'zzz' is not defined. [needs.filter]",
+    ]
+
     html = Path(app.outdir, "index.html").read_text()
     assert "story_a_1" in html
     assert "story_b_1" not in html
@@ -46,11 +63,13 @@ def test_filter_build_html(test_app):
     assert "CHILD_2_STORY" in html_5
     assert (
         '<div class="line">child needs: <span class="parent_needs"><span><a class="reference internal" '
-        'href="#CHILD_1_STORY" title="STORY_PARENT">CHILD_1_STORY</a></span></span></div>' in html_5
+        'href="#CHILD_1_STORY" title="STORY_PARENT">CHILD_1_STORY</a></span></span></div>'
+        in html_5
     )
     assert (
         '<div class="line">parent needs: <span class="parent_needs"><span><a class="reference internal" '
-        'href="#CHILD_1_STORY" title="CHILD_2_STORY">CHILD_1_STORY</a></span></span></div>' in html_5
+        'href="#CHILD_1_STORY" title="CHILD_2_STORY">CHILD_1_STORY</a></span></span></div>'
+        in html_5
     )
 
     html_6 = Path(app.outdir, "filter_no_needs.html").read_text()

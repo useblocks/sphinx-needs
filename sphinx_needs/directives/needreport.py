@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 from typing import Sequence
 
@@ -47,12 +49,18 @@ class NeedReportDirective(SphinxDirective):
         report_info.update(**needs_config.render_context)
 
         if "template" in self.options:
-            need_report_template_path = Path(self.env.relfn2path(self.options["template"], self.env.docname)[1])
+            need_report_template_path = Path(
+                self.env.relfn2path(self.options["template"], self.env.docname)[1]
+            )
         elif needs_config.report_template:
             # Absolute path starts with /, based on the conf.py directory. The / need to be striped
-            need_report_template_path = Path(str(env.app.srcdir)) / needs_config.report_template.lstrip("/")
+            need_report_template_path = Path(
+                str(env.app.srcdir)
+            ) / needs_config.report_template.lstrip("/")
         else:
-            need_report_template_path = Path(__file__).parent / "needreport_template.rst"
+            need_report_template_path = (
+                Path(__file__).parent / "needreport_template.rst"
+            )
 
         if not need_report_template_path.is_file():
             LOGGER.warning(
@@ -63,11 +71,15 @@ class NeedReportDirective(SphinxDirective):
             )
             return []
 
-        needs_report_template_file_content = need_report_template_path.read_text(encoding="utf8")
+        needs_report_template_file_content = need_report_template_path.read_text(
+            encoding="utf8"
+        )
 
         template = Template(needs_report_template_file_content, autoescape=True)
         text = template.render(**report_info)
-        self.state_machine.insert_input(text.split("\n"), self.state_machine.document.attributes["source"])
+        self.state_machine.insert_input(
+            text.split("\n"), self.state_machine.document.attributes["source"]
+        )
 
         report_node = nodes.raw()
 

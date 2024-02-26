@@ -2,7 +2,8 @@
 Cares about handling and execution warnings.
 
 """
-from typing import Dict, Optional
+
+from __future__ import annotations
 
 from sphinx.application import Sphinx
 from sphinx.util import logging
@@ -15,7 +16,7 @@ from sphinx_needs.logging import get_logger
 logger = get_logger(__name__)
 
 
-def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
+def process_warnings(app: Sphinx, exception: Exception | None) -> None:
     """
     Checks the configured warnings.
 
@@ -46,7 +47,7 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
     env.needs_warnings_executed = True  # type: ignore[attr-defined]
 
     # Exclude external needs for warnings check
-    checked_needs: Dict[str, NeedsInfoType] = {}
+    checked_needs: dict[str, NeedsInfoType] = {}
     for need_id, need in needs.items():
         if not need["is_external"]:
             checked_needs[need_id] = need
@@ -60,7 +61,12 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
         for warning_name, warning_filter in NEEDS_CONFIG.warnings.items():
             if isinstance(warning_filter, str):
                 # filter string used
-                result = filter_needs(checked_needs.values(), needs_config, warning_filter)
+                result = filter_needs(
+                    checked_needs.values(),
+                    needs_config,
+                    warning_filter,
+                    append_warning=f"(from warning filter {warning_name!r})",
+                )
             elif callable(warning_filter):
                 # custom defined filter code used from conf.py
                 result = []
@@ -68,7 +74,10 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
                     if warning_filter(need, logger):
                         result.append(need)
             else:
-                logger.warning(f"Unknown needs warnings filter {warning_filter}! [needs]", type="needs")
+                logger.warning(
+                    f"Unknown needs warnings filter {warning_filter}! [needs]",
+                    type="needs",
+                )
 
             if len(result) == 0:
                 logger.info(f"{warning_name}: passed")
@@ -93,17 +102,26 @@ def process_warnings(app: Sphinx, exception: Optional[Exception]) -> None:
                 if warnings_always_warn:
                     logger.warning(
                         "{}: failed\n\t\tfailed needs: {} ({})\n\t\tused filter: {} [needs]".format(
-                            warning_name, len(need_ids), ", ".join(need_ids), warning_text
+                            warning_name,
+                            len(need_ids),
+                            ", ".join(need_ids),
+                            warning_text,
                         ),
                         type="needs",
                     )
                 else:
                     logger.info(
                         "{}: failed\n\t\tfailed needs: {} ({})\n\t\tused filter: {}".format(
-                            warning_name, len(need_ids), ", ".join(need_ids), warning_text
+                            warning_name,
+                            len(need_ids),
+                            ", ".join(need_ids),
+                            warning_text,
                         )
                     )
                     warning_raised = True
 
         if warning_raised:
-            logger.warning("warnings were raised. See console / log output for details. [needs]", type="needs")
+            logger.warning(
+                "warnings were raised. See console / log output for details. [needs]",
+                type="needs",
+            )

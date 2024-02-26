@@ -4,9 +4,11 @@ Collection of common sphinx-needs functions for dynamic values
 .. note:: The function parameters ``app``, ``need``, ``needs`` are set automatically and can not be overridden by user.
 """
 
+from __future__ import annotations
+
 import contextlib
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from sphinx.application import Sphinx
 
@@ -17,7 +19,13 @@ from sphinx_needs.filter_common import filter_needs, filter_single_need
 from sphinx_needs.utils import logger
 
 
-def test(app: Sphinx, need: NeedsInfoType, needs: Dict[str, NeedsInfoType], *args: Any, **kwargs: Any) -> str:
+def test(
+    app: Sphinx,
+    need: NeedsInfoType,
+    needs: dict[str, NeedsInfoType],
+    *args: Any,
+    **kwargs: Any,
+) -> str:
     """
     Test function for dynamic functions in sphinx needs.
 
@@ -39,7 +47,12 @@ def test(app: Sphinx, need: NeedsInfoType, needs: Dict[str, NeedsInfoType], *arg
 
 
 def echo(
-    app: Sphinx, need: NeedsInfoType, needs: Dict[str, NeedsInfoType], text: str, *args: Any, **kwargs: Any
+    app: Sphinx,
+    need: NeedsInfoType,
+    needs: dict[str, NeedsInfoType],
+    text: str,
+    *args: Any,
+    **kwargs: Any,
 ) -> str:
     """
     .. versionadded:: 0.6.3
@@ -60,12 +73,12 @@ def echo(
 def copy(
     app: Sphinx,
     need: NeedsInfoType,
-    needs: Dict[str, NeedsInfoType],
+    needs: dict[str, NeedsInfoType],
     option: str,
-    need_id: Optional[str] = None,
+    need_id: str | None = None,
     lower: bool = False,
     upper: bool = False,
-    filter: Optional[str] = None,
+    filter: str | None = None,
 ) -> Any:
     """
     Copies the value of one need option to another
@@ -152,7 +165,13 @@ def copy(
         need = needs[need_id]
 
     if filter:
-        result = filter_needs(needs.values(), NeedsSphinxConfig(app.config), filter, need)
+        result = filter_needs(
+            needs.values(),
+            NeedsSphinxConfig(app.config),
+            filter,
+            need,
+            location=(need["docname"], need["lineno"]),
+        )
         if result:
             need = result[0]
 
@@ -171,11 +190,11 @@ def copy(
 def check_linked_values(
     app: Sphinx,
     need: NeedsInfoType,
-    needs: Dict[str, NeedsInfoType],
+    needs: dict[str, NeedsInfoType],
     result: Any,
     search_option: str,
     search_value: Any,
-    filter_string: Optional[str] = None,
+    filter_string: str | None = None,
     one_hit: bool = False,
 ) -> Any:
     """
@@ -321,7 +340,10 @@ def check_linked_values(
                 if not filter_single_need(need, needs_config, filter_string):
                     continue
             except Exception as e:
-                logger.warning(f"CheckLinkedValues: Filter {filter_string} not valid: Error: {e} [needs]", type="needs")
+                logger.warning(
+                    f"CheckLinkedValues: Filter {filter_string} not valid: Error: {e} [needs]",
+                    type="needs",
+                )
 
         need_value = need[search_option]  # type: ignore[literal-required]
         if not one_hit and need_value not in search_value:
@@ -335,9 +357,9 @@ def check_linked_values(
 def calc_sum(
     app: Sphinx,
     need: NeedsInfoType,
-    needs: Dict[str, NeedsInfoType],
+    needs: dict[str, NeedsInfoType],
     option: str,
-    filter: Optional[str] = None,
+    filter: str | None = None,
     links_only: bool = False,
 ) -> float:
     """
@@ -420,7 +442,9 @@ def calc_sum(
     :return: A float number
     """
     needs_config = NeedsSphinxConfig(app.config)
-    check_needs = [needs[link] for link in need["links"]] if links_only else needs.values()
+    check_needs = (
+        [needs[link] for link in need["links"]] if links_only else needs.values()
+    )
 
     calculated_sum = 0.0
 
@@ -432,7 +456,9 @@ def calc_sum(
             except ValueError:
                 pass
             except NeedsInvalidFilter as ex:
-                logger.warning(f"Given filter is not valid. Error: {ex} [needs]", type="needs")
+                logger.warning(
+                    f"Given filter is not valid. Error: {ex} [needs]", type="needs"
+                )
 
         with contextlib.suppress(ValueError):
             calculated_sum += float(check_need[option])  # type: ignore[literal-required]
@@ -443,10 +469,10 @@ def calc_sum(
 def links_from_content(
     app: Sphinx,
     need: NeedsInfoType,
-    needs: Dict[str, NeedsInfoType],
-    need_id: Optional[str] = None,
-    filter: Optional[str] = None,
-) -> List[str]:
+    needs: dict[str, NeedsInfoType],
+    need_id: str | None = None,
+    filter: str | None = None,
+) -> list[str]:
     """
     Extracts links from content of a need.
 
@@ -512,7 +538,9 @@ def links_from_content(
         needs_config = NeedsSphinxConfig(app.config)
         filtered_links = []
         for link in raw_links:
-            if link not in filtered_links and filter_single_need(needs[link], needs_config, filter):
+            if link not in filtered_links and filter_single_need(
+                needs[link], needs_config, filter
+            ):
                 filtered_links.append(link)
         return filtered_links
 

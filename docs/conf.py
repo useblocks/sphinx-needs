@@ -45,6 +45,8 @@ intersphinx_mapping = {
 
 nitpicky = True
 nitpick_ignore = [
+    ("py:class", "docutils.nodes.Node"),
+    ("py:class", "docutils.parsers.rst.states.RSTState"),
     ("py:class", "T"),
     ("py:class", "sphinx_needs.debug.T"),
     ("py:class", "sphinx_needs.data.NeedsInfoType"),
@@ -55,7 +57,9 @@ nitpick_ignore = [
 needs_debug_measurement = True
 
 add_module_names = False  # Used to shorten function name output
-autodoc_docstring_signature = True  # Used to read spec. func-defs from docstring (e.g. get rid of self)
+autodoc_docstring_signature = (
+    True  # Used to read spec. func-defs from docstring (e.g. get rid of self)
+)
 
 NOTE_TEMPLATE = """
 .. _{{id}}:
@@ -80,9 +84,7 @@ NOTE_TEMPLATE = """
    {% endif %}
 """
 
-DEFAULT_DIAGRAM_TEMPLATE = (
-    "<size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>"
-)
+DEFAULT_DIAGRAM_TEMPLATE = "<size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>"
 
 # You can uncomment some of the following lines to override the default configuration for Sphinx-Needs.
 # needs_diagram_template = DEFAULT_DIAGRAM_TEMPLATE
@@ -90,7 +92,7 @@ DEFAULT_DIAGRAM_TEMPLATE = (
 # Absolute path to the needs_report_template_file based on the conf.py directory
 # needs_report_template = "/needs_templates/report_template.need"   # Use custom report template
 
-needs_report_dead_links = False
+suppress_warnings = ["needs.link_outgoing"]
 
 needs_types = [
     # Architecture types
@@ -110,16 +112,71 @@ needs_types = [
         "color": "#BFD8D2",
         "style": "card",
     },
-    {"directive": "sys", "title": "System", "content": "plantuml", "prefix": "S_", "color": "#BFD8D2", "style": "card"},
+    {
+        "directive": "sys",
+        "title": "System",
+        "content": "plantuml",
+        "prefix": "S_",
+        "color": "#BFD8D2",
+        "style": "card",
+    },
     # Normal types
-    {"directive": "req", "title": "Requirement", "prefix": "R_", "color": "#BFD8D2", "style": "node"},
-    {"directive": "spec", "title": "Specification", "prefix": "S_", "color": "#FEDCD2", "style": "node"},
-    {"directive": "impl", "title": "Implementation", "prefix": "I_", "color": "#DF744A", "style": "node"},
-    {"directive": "test", "title": "Test Case", "prefix": "T_", "color": "#DCB239", "style": "node"},
-    {"directive": "feature", "title": "Feature", "prefix": "F_", "color": "#FFCC00", "style": "node"},
-    {"directive": "user", "title": "User", "prefix": "U_", "color": "#777777", "style": "node"},
-    {"directive": "action", "title": "Action", "prefix": "A_", "color": "#FFCC00", "style": "node"},
-    {"directive": "milestone", "title": "Milestone", "prefix": "M_", "color": "#FF3333", "style": "node"},
+    {
+        "directive": "req",
+        "title": "Requirement",
+        "prefix": "R_",
+        "color": "#BFD8D2",
+        "style": "node",
+    },
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "S_",
+        "color": "#FEDCD2",
+        "style": "node",
+    },
+    {
+        "directive": "impl",
+        "title": "Implementation",
+        "prefix": "I_",
+        "color": "#DF744A",
+        "style": "node",
+    },
+    {
+        "directive": "test",
+        "title": "Test Case",
+        "prefix": "T_",
+        "color": "#DCB239",
+        "style": "node",
+    },
+    {
+        "directive": "feature",
+        "title": "Feature",
+        "prefix": "F_",
+        "color": "#FFCC00",
+        "style": "node",
+    },
+    {
+        "directive": "user",
+        "title": "User",
+        "prefix": "U_",
+        "color": "#777777",
+        "style": "node",
+    },
+    {
+        "directive": "action",
+        "title": "Action",
+        "prefix": "A_",
+        "color": "#FFCC00",
+        "style": "node",
+    },
+    {
+        "directive": "milestone",
+        "title": "Milestone",
+        "prefix": "M_",
+        "color": "#FF3333",
+        "style": "node",
+    },
 ]
 
 needs_extra_links = [
@@ -208,7 +265,9 @@ needs_id_regex = "^[A-Za-z0-9_]*"
 needs_id_required = False
 # needs_css = "dark.css"
 
-local_plantuml_path = os.path.join(os.path.dirname(__file__), "utils", "plantuml-1.2022.14.jar")
+local_plantuml_path = os.path.join(
+    os.path.dirname(__file__), "utils", "plantuml-1.2022.14.jar"
+)
 plantuml = f"java -Djava.awt.headless=true -jar {local_plantuml_path}"
 
 # plantuml_output_format = 'png'
@@ -246,7 +305,10 @@ needs_layouts = {
         "grid": "simple_side_right_partial",
         "layout": {
             "head": ['**<<meta("title")>>** for *<<meta("author")>>*'],
-            "meta": ['**status**: <<meta("status")>>', '**author**: <<meta("author")>>'],
+            "meta": [
+                '**status**: <<meta("status")>>',
+                '**author**: <<meta("author")>>',
+            ],
             "side": ['<<image("_images/{{author}}.png", align="center")>>'],
         },
     },
@@ -450,14 +512,22 @@ latex_elements: Dict[str, Any] = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, "needstestdocs.tex", "needs test docs Documentation", "team useblocks", "manual"),
+    (
+        master_doc,
+        "needstestdocs.tex",
+        "needs test docs Documentation",
+        "team useblocks",
+        "manual",
+    ),
 ]
 
 # -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "needstestdocs", "needs test docs Documentation", [author], 1)]
+man_pages = [
+    (master_doc, "needstestdocs", "needs test docs Documentation", [author], 1)
+]
 
 # -- Options for Texinfo output -------------------------------------------
 
@@ -478,7 +548,11 @@ texinfo_documents = [
 
 # contains different constraints
 needs_constraints = {
-    "critical": {"check_0": "'critical' in tags", "check_1": "'SECURITY_REQ' in links", "severity": "CRITICAL"},
+    "critical": {
+        "check_0": "'critical' in tags",
+        "check_1": "'SECURITY_REQ' in links",
+        "severity": "CRITICAL",
+    },
     "security": {"check_0": "'security' in tags", "severity": "HIGH"},
     "team": {"check_0": 'author == "Bob"', "severity": "LOW"},
 }

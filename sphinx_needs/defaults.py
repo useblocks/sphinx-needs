@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import os
-from typing import Any, Dict
+from typing import Any
 
 from docutils.parsers.rst import directives
 
@@ -199,10 +201,10 @@ NEEDFLOW_CONFIG_DEFAULTS = {
     """,
 }
 
-TITLE_REGEX = r'([\w]+) as "([\w ]+)"'
+TITLE_REGEX = r'([^\s]+) as "([^"]+)"'
 
 
-NEED_DEFAULT_OPTIONS: Dict[str, Any] = {
+NEED_DEFAULT_OPTIONS: dict[str, Any] = {
     "id": directives.unchanged_required,
     "status": directives.unchanged_required,
     "tags": directives.unchanged_required,
@@ -217,8 +219,6 @@ NEED_DEFAULT_OPTIONS: Dict[str, Any] = {
     "template": directives.unchanged_required,
     "pre_template": directives.unchanged_required,
     "post_template": directives.unchanged_required,
-    "duration": directives.unchanged_required,
-    "completion": directives.unchanged_required,
     "constraints": directives.unchanged_required,
     "constraints_passed": directives.unchanged_required,
     "constraints_results": directives.unchanged_required,
