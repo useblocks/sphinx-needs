@@ -5,7 +5,7 @@ from typing import Any
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
-from sphinx_needs.api.configuration import NEEDS_CONFIG
+from sphinx_needs.api.configuration import NEEDS_CONFIG, add_extra_option
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.directives.needservice import NeedserviceDirective
 from sphinx_needs.logging import get_logger
@@ -32,7 +32,9 @@ class ServiceManager:
         for option in klass.options:
             if option not in NEEDS_CONFIG.extra_options:
                 self.log.debug(f'Register option "{option}" for service "{name}"')
-                NEEDS_CONFIG.extra_options[option] = directives.unchanged
+                add_extra_option(
+                    self.app, option, description=f"Added by service {name}"
+                )
                 # Register new option directly in Service directive, as its class options got already
                 # calculated
                 NeedserviceDirective.option_spec[option] = directives.unchanged

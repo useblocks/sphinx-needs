@@ -11,6 +11,7 @@ from sphinx.environment import BuildEnvironment
 from sphinx.errors import SphinxError
 
 import sphinx_needs.debug as debug  # Need to set global var in it for timeing measurements
+from sphinx_needs.api.configuration import add_extra_option
 from sphinx_needs.builder import (
     NeedsBuilder,
     NeedsIdBuilder,
@@ -371,12 +372,17 @@ def load_config(app: Sphinx, *_args: Any) -> None:
                 type="needs",
                 subtype="config",
             )
-        NEEDS_CONFIG.extra_options[option] = directives.unchanged
+        else:
+            add_extra_option(
+                app, option, description="Extra option from needs_extra_options config"
+            )
 
     # ensure options for ``needgantt`` functionality are added to the extra options
     for option in (needs_config.duration_option, needs_config.completion_option):
         if option not in NEEDS_CONFIG.extra_options:
-            NEEDS_CONFIG.extra_options[option] = directives.unchanged_required
+            add_extra_option(
+                app, option, description="Added for needgantt functionality"
+            )
 
     # Get extra links and create a dictionary of needed options.
     extra_links_raw = needs_config.extra_links
@@ -388,8 +394,12 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     title_from_content = needs_config.title_from_content
 
     # Update NeedDirective to use customized options
-    NeedDirective.option_spec.update(NEEDS_CONFIG.extra_options)
-    NeedserviceDirective.option_spec.update(NEEDS_CONFIG.extra_options)
+    NeedDirective.option_spec.update(
+        {name: params.validator for name, params in NEEDS_CONFIG.extra_options.items()}
+    )
+    NeedserviceDirective.option_spec.update(
+        {name: params.validator for name, params in NEEDS_CONFIG.extra_options.items()}
+    )
 
     # Update NeedDirective to use customized links
     NeedDirective.option_spec.update(extra_links)
@@ -430,11 +440,11 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             "-links_back": directives.flag,
         }
     )
-    for key, value in NEEDS_CONFIG.extra_options.items():
+    for key, params in NEEDS_CONFIG.extra_options.items():
         NeedextendDirective.option_spec.update(
             {
-                key: value,
-                f"+{key}": value,
+                key: params.validator,
+                f"+{key}": params.validator,
                 f"-{key}": directives.flag,
             }
         )

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import MISSING, dataclass, field, fields
 from typing import TYPE_CHECKING, Any, Callable, Dict, Literal, TypedDict
 
+from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 from sphinx.config import Config as _SphinxConfig
 
@@ -12,6 +13,16 @@ if TYPE_CHECKING:
     from sphinx.util.logging import SphinxLoggerAdapter
 
     from sphinx_needs.data import NeedsInfoType
+
+
+@dataclass
+class ExtraOptionParams:
+    """Defines a single extra option for needs"""
+
+    description: str
+    """A description of the option."""
+    validator: Callable[[str | None], str] = directives.unchanged
+    """A function to validate the directive option value."""
 
 
 class Config:
@@ -25,7 +36,7 @@ class Config:
     """
 
     def __init__(self) -> None:
-        self._extra_options: dict[str, Callable[[str], Any]] = {}
+        self._extra_options: dict[str, ExtraOptionParams] = {}
         self._warnings: dict[
             str, str | Callable[[NeedsInfoType, SphinxLoggerAdapter], bool]
         ] = {}
@@ -35,13 +46,11 @@ class Config:
         self._warnings = {}
 
     @property
-    def extra_options(self) -> dict[str, Callable[[str], Any]]:
+    def extra_options(self) -> dict[str, ExtraOptionParams]:
         """Options that are dynamically added to `NeedDirective` & `NeedserviceDirective`,
         after the config is initialized.
 
         These fields are also added to the each needs data item.
-
-        :returns: Mapping of name to validation function
         """
         return self._extra_options
 
