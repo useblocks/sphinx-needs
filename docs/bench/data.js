@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1708677207546,
+  "lastUpdate": 1708938880236,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7164,6 +7164,42 @@ window.BENCHMARK_DATA = {
             "value": 59.976998596000016,
             "unit": "s",
             "extra": "Commit: cf5598f7f026b01b706fba08d6b1d47c58c14ab9\nBranch: master\nTime: 2024-02-23T09:31:27+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "97294334+David-Le-Nir@users.noreply.github.com",
+            "name": "David-Le-Nir",
+            "username": "David-Le-Nir"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a0373368e42f27eba55f0bb09c2a7346c42af573",
+          "message": "👌 Exclude external needs from `needs_id_regex` check (#1108)\n\nfix for [#1099](https://github.com/useblocks/sphinx-needs/issues/1099)\r\n\r\n---------\r\n\r\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2024-02-26T10:12:37+01:00",
+          "tree_id": "18570ccceb44a6267b7c4581a09297be67440436",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a0373368e42f27eba55f0bb09c2a7346c42af573"
+        },
+        "date": 1708938873967,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.25022224800000004,
+            "unit": "s",
+            "extra": "Commit: a0373368e42f27eba55f0bb09c2a7346c42af573\nBranch: master\nTime: 2024-02-26T10:12:37+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 62.49289544599999,
+            "unit": "s",
+            "extra": "Commit: a0373368e42f27eba55f0bb09c2a7346c42af573\nBranch: master\nTime: 2024-02-26T10:12:37+01:00"
           }
         ]
       }
