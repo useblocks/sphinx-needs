@@ -20,7 +20,7 @@ from sphinx_needs.builder import (
     build_needs_json,
     build_needumls_pumls,
 )
-from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
+from sphinx_needs.config import NEEDS_CONFIG, LinkOptionsType, NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData, merge_data
 from sphinx_needs.defaults import (
     LAYOUTS,
@@ -528,7 +528,7 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
 
     # The default link name. Must exist in all configurations. Therefore we set it here
     # for the user.
-    common_links = []
+    common_links: list[LinkOptionsType] = []
     link_types = needs_config.extra_links
     basic_link_type_found = False
     parent_needs_link_type_found = False

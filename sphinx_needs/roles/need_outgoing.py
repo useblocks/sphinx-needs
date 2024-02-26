@@ -122,7 +122,7 @@ def process_need_outgoing(
                 # add a CSS class for disallowed unknown links
                 # note a warning is already emitted when validating the needs list
                 # so we don't need to do it here
-                if not link_lookup.get(link_type, {}).get("allow_dead_links", False):
+                if not link_lookup.get(link_type, {}).get("allow_dead_links", False):  # type: ignore
                     dead_link_para.attributes["classes"].append("forbidden")
 
             # If we have several links, we add an empty text between them

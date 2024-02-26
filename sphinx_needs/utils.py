@@ -14,7 +14,7 @@ from docutils import nodes
 from jinja2 import Environment, Template
 from sphinx.application import BuildEnvironment, Sphinx
 
-from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.defaults import NEEDS_PROFILING
 from sphinx_needs.logging import get_logger
@@ -235,7 +235,7 @@ def rstjinja(app: Sphinx, docname: str, source: list[str]) -> None:
 
 
 def import_prefix_link_edit(
-    needs: dict[str, Any], id_prefix: str, needs_extra_links: list[dict[str, Any]]
+    needs: dict[str, Any], id_prefix: str, needs_extra_links: list[LinkOptionsType]
 ) -> None:
     """
     Changes existing links to support given prefix.

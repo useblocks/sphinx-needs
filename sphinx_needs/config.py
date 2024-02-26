@@ -11,6 +11,7 @@ from sphinx_needs.defaults import DEFAULT_DIAGRAM_TEMPLATE, NEEDS_TABLES_CLASSES
 
 if TYPE_CHECKING:
     from sphinx.util.logging import SphinxLoggerAdapter
+    from typing_extensions import Required
 
     from sphinx_needs.data import NeedsInfoType
 
@@ -122,6 +123,31 @@ Values can be:
 - a list of the tuples above
 - otherwise, always set as the given value
 """
+
+
+class LinkOptionsType(TypedDict, total=False):
+    """Options for links between needs"""
+
+    option: Required[str]
+    """The name of the link option"""
+    incoming: str
+    """The incoming link title"""
+    outgoing: str
+    """The outgoing link title"""
+    copy: bool
+    """Copy to common links data. Default: True"""
+    color: str
+    """Used for needflow. Default: #000000"""
+    style: str
+    """Used for needflow. Default: solid"""
+    style_part: str
+    """Used for needflow. Default: '[dotted]'"""
+    style_start: str
+    """Used for needflow. Default: '-'"""
+    style_end: str
+    """Used for needflow. Default: '->'"""
+    allow_dead_links: bool
+    """If True, add a 'forbidden' class to dead links"""
 
 
 @dataclass
@@ -300,17 +326,10 @@ class NeedsSphinxConfig:
         default="→\xa0", metadata={"rebuild": "html", "types": (str,)}
     )
     """Prefix for need_part output in tables"""
-    extra_links: list[dict[str, Any]] = field(
+    extra_links: list[LinkOptionsType] = field(
         default_factory=list, metadata={"rebuild": "html", "types": ()}
     )
-    """List of additional links, which can be used by setting related option
-    Values needed for each new link:
-    * option (will also be the option name)
-    * incoming
-    * copy_link (copy to common links data. Default: True)
-    * color (used for needflow. Default: #000000)
-    Example: [{"name": "blocks, "incoming": "is blocked by", "copy_link": True, "color": "#ffcc00"}]
-    """
+    """List of additional link types between needs"""
     report_dead_links: bool = field(
         default=True, metadata={"rebuild": "html", "types": (bool,)}
     )
