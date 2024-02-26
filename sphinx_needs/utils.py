@@ -215,9 +215,9 @@ def row_col_maker(
                             )
                             ref_col["classes"].append(need_info["external_css"])
                             row_col["classes"].append(need_info["external_css"])
-                        else:
+                        elif _docname := need_info["docname"]:
                             ref_col["refuri"] = builder.get_relative_uri(
-                                fromdocname, need_info["docname"]
+                                fromdocname, _docname
                             )
                             ref_col["refuri"] += "#" + datum
                     elif ref_lookup:
@@ -231,9 +231,9 @@ def row_col_maker(
                             )
                             ref_col["classes"].append(temp_need["external_css"])
                             row_col["classes"].append(temp_need["external_css"])
-                        else:
+                        elif _docname := temp_need["docname"]:
                             ref_col["refuri"] = builder.get_relative_uri(
-                                fromdocname, temp_need["docname"]
+                                fromdocname, _docname
                             )
                             ref_col["refuri"] += "#" + temp_need["id"]
                             if link_part:

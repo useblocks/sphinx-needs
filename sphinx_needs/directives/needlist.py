@@ -121,13 +121,11 @@ def process_needlist(
                     ref["classes"].append(need_info["external_css"])
                     ref.append(title)
                     para += ref
-                else:
+                elif _docname := need_info["docname"]:
                     target_id = need_info["target_id"]
                     ref = nodes.reference("", "")
-                    ref["refdocname"] = need_info["docname"]
-                    ref["refuri"] = builder.get_relative_uri(
-                        fromdocname, need_info["docname"]
-                    )
+                    ref["refdocname"] = _docname
+                    ref["refuri"] = builder.get_relative_uri(fromdocname, _docname)
                     ref["refuri"] += "#" + target_id
                     ref.append(title)
                     para += ref

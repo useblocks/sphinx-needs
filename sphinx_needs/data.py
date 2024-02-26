@@ -48,12 +48,10 @@ class NeedsInfoType(TypedDict, total=False):
     id: Required[str]
     """ID of the data (same as target_id)"""
 
-    # TODO docname and lineno can be None, if the need is external,
-    # but currently this raises mypy errors for other parts of the code base
-    docname: Required[str]
-    """Name of the document where the need is defined."""
-    lineno: Required[int]
-    """Line number where the need is defined."""
+    docname: Required[str | None]
+    """Name of the document where the need is defined (None if external)"""
+    lineno: Required[int | None]
+    """Line number where the need is defined (None if external)"""
 
     # meta information
     full_title: Required[str]
