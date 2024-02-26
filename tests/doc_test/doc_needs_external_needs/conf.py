@@ -48,3 +48,6 @@ needs_external_needs = [
         "id_prefix": "ext_rel_path_",
     },
 ]
+
+# we want to ensure only internal needs are checked against this regex, not the external ones
+needs_id_regex = "INTERNAL.*"

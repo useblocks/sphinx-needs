@@ -1,4 +1,6 @@
 .idea
+*.iml
+.DS_Store
 .venv*
 .pvenv
 .nox
