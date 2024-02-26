@@ -190,8 +190,14 @@ def add_need(
     else:
         need_id = id
 
-    if needs_config.id_regex and not is_external and not re.match(needs_config.id_regex, need_id):
-        raise NeedsInvalidException(f"Given ID '{need_id}' does not match configured regex '{needs_config.id_regex}'")
+    if (
+        needs_config.id_regex
+        and not is_external
+        and not re.match(needs_config.id_regex, need_id)
+    ):
+        raise NeedsInvalidException(
+            f"Given ID '{need_id}' does not match configured regex '{needs_config.id_regex}'"
+        )
 
     # Handle status
     # Check if status is in needs_statuses. If not raise an error.
