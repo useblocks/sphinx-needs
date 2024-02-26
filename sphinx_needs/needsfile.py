@@ -13,13 +13,59 @@ from datetime import datetime
 from typing import Any
 
 from jsonschema import Draft7Validator
+from sphinx.application import Sphinx
 from sphinx.config import Config
 
-from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, NeedsFilterType, NeedsInfoType
 from sphinx_needs.logging import get_logger
 
 log = get_logger(__name__)
+
+
+def generate_needs_schema(app: Sphinx) -> dict[str, Any]:
+    """Generate a JSON schema for all fields in each need item.
+
+    It is based on:
+    * the core fields defined in NeedsCoreFields
+    * the extra options defined dynamically
+    * the global options defined dynamically
+    * the extra links defined dynamically
+    """
+    properties: dict[str, Any] = {}
+    for name, core_params in NeedsCoreFields.items():
+        if core_params.get("exclude_json"):
+            continue
+        properties[name] = core_params["schema"]
+        properties[name]["description"] = f"Core field: {core_params['description']}"
+
+    for name, extra_params in NEEDS_CONFIG.extra_options.items():
+        properties[name] = {
+            "type": "string",
+            "description": extra_params.description,
+        }
+
+    needs_config = NeedsSphinxConfig(app.config)
+
+    for link in needs_config.extra_links:
+        properties[link["option"]] = {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Link field",
+        }
+
+    for name in needs_config.global_options:
+        if name not in properties:
+            properties[name] = {
+                "type": "string",
+                "description": "Added by needs_global_options configuration",
+            }
+
+    return {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": properties,
+    }
 
 
 class NeedsList:
