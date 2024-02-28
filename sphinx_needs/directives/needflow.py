@@ -397,10 +397,8 @@ def process_needflow(
                             else:
                                 comment = ""
 
-                            if link_type.get("style_part"):
-                                link_style = "[{style}]".format(
-                                    style=link_type["style_part"]
-                                )
+                            if _style_part := link_type.get("style_part"):
+                                link_style = f"[{_style_part}]"
                             else:
                                 link_style = "[dotted]"
                         else:
@@ -413,10 +411,8 @@ def process_needflow(
                             else:
                                 comment = ""
 
-                            if link_type.get("style"):
-                                link_style = "[{style}]".format(
-                                    style=link_type["style"]
-                                )
+                            if _style := link_type.get("style"):
+                                link_style = f"[{_style}]"
                             else:
                                 link_style = ""
 
@@ -428,13 +424,13 @@ def process_needflow(
                         ]:
                             continue
 
-                        if link_type.get("style_start"):
-                            style_start = link_type["style_start"]
+                        if _style_start := link_type.get("style_start"):
+                            style_start = _style_start
                         else:
                             style_start = "-"
 
-                        if link_type.get("style_end"):
-                            style_end = link_type["style_end"]
+                        if _style_end := link_type.get("style_end"):
+                            style_end = _style_end
                         else:
                             style_end = "->"
 

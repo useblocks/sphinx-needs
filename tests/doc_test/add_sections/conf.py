@@ -29,8 +29,8 @@ needs_template_collapse = """
 
             Details
 
-{% if status and  status|upper != "NONE" and not hide_status %}        | status: :needs_status:`{{status}}`{% endif %}
-{% if tags and not hide_tags %}        | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`{% endif %}
+{% if status and  status|upper != "NONE" %}        | status: :needs_status:`{{status}}`{% endif %}
+{% if tags %}        | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`{% endif %}
 {% if introduced %}        | introduced: `{{introduced}}` {% endif %}
 {% if updated %}        | updated: `{{updated}}` {% endif %}
 {% if impacts %}        | impacts: `{{impacts}}` {% endif %}

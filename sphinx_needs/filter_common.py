@@ -342,6 +342,10 @@ def filter_needs(
     return found_needs
 
 
+def need_search(*args: Any, **kwargs: Any) -> bool:
+    return re.search(*args, **kwargs) is not None
+
+
 @measure_time("filtering")
 def filter_single_need(
     need: NeedsInfoType,
@@ -373,15 +377,19 @@ def filter_single_need(
     # Get needs external filter data and merge to filter_context
     filter_context.update(config.filter_data)
 
-    filter_context["search"] = re.search
+    filter_context["search"] = need_search
     result = False
     try:
         # Set filter_context as globals and not only locals in eval()!
         # Otherwise, the vars not be accessed in list comprehensions.
         if filter_compiled:
-            result = bool(eval(filter_compiled, filter_context))
+            result = eval(filter_compiled, filter_context)
         else:
-            result = bool(eval(filter_string, filter_context))
+            result = eval(filter_string, filter_context)
+        if not isinstance(result, bool):
+            raise NeedsInvalidFilter(
+                f"Filter did not evaluate to a boolean, instead {type(result)}: {result}"
+            )
     except Exception as e:
         raise NeedsInvalidFilter(f"Filter {filter_string!r} not valid. Error: {e}.")
     return result
