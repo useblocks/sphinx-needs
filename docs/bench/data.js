@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1708938880236,
+  "lastUpdate": 1709100476188,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7200,6 +7200,42 @@ window.BENCHMARK_DATA = {
             "value": 62.49289544599999,
             "unit": "s",
             "extra": "Commit: a0373368e42f27eba55f0bb09c2a7346c42af573\nBranch: master\nTime: 2024-02-26T10:12:37+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "134590104+big1hc@users.noreply.github.com",
+            "name": "NGUYEN THANH BINH",
+            "username": "big1hc"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4d88ad85e5e07b8a6be343d1771e1d33d4499837",
+          "message": "👌 Fail and emit warning on filters that do not return a boolean result (#964)\n\nThis is a breaking change, as some already used (but incorrect) filter-strings may not work anymore and throw an error.\r\nHowever, that's exactly the reason why this change gets introduced, to identify and fix such filter strings.\r\n\r\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>\r\nCo-authored-by: Daniel Woste <daniel.woste@useblocks.com>\r\nCo-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>",
+          "timestamp": "2024-02-28T07:05:44+01:00",
+          "tree_id": "344c5c8579ae29a9b16b4f33954bc13a29528cdc",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/4d88ad85e5e07b8a6be343d1771e1d33d4499837"
+        },
+        "date": 1709100468583,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2352720179999892,
+            "unit": "s",
+            "extra": "Commit: 4d88ad85e5e07b8a6be343d1771e1d33d4499837\nBranch: master\nTime: 2024-02-28T07:05:44+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 66.940165256,
+            "unit": "s",
+            "extra": "Commit: 4d88ad85e5e07b8a6be343d1771e1d33d4499837\nBranch: master\nTime: 2024-02-28T07:05:44+01:00"
           }
         ]
       }
