@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1709120246105,
+  "lastUpdate": 1709136615507,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7380,6 +7380,42 @@ window.BENCHMARK_DATA = {
             "value": 66.48935133600003,
             "unit": "s",
             "extra": "Commit: ebb8f21c8e1b78ec143d1b0c8196da9a6875cf69\nBranch: master\nTime: 2024-02-28T12:35:09+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2c4541b1245c97bdcf15da25e758a58c8091f09f",
+          "message": "🐛 FIX: Image layout function (#1135)\n\nRemoves the relative path calculation from the \"image\" function in\r\nlayout.py,as it was broken.\r\nNow all set url-paths must be relative to the documentation root.",
+          "timestamp": "2024-02-28T17:08:10+01:00",
+          "tree_id": "35c9564fd71a550d030454cff9fa66e7d935fe5f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/2c4541b1245c97bdcf15da25e758a58c8091f09f"
+        },
+        "date": 1709136608594,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2622008549999748,
+            "unit": "s",
+            "extra": "Commit: 2c4541b1245c97bdcf15da25e758a58c8091f09f\nBranch: master\nTime: 2024-02-28T17:08:10+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.266390102,
+            "unit": "s",
+            "extra": "Commit: 2c4541b1245c97bdcf15da25e758a58c8091f09f\nBranch: master\nTime: 2024-02-28T17:08:10+01:00"
           }
         ]
       }
