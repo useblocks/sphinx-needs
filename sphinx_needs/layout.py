@@ -705,7 +705,7 @@ class LayoutHandler:
         ``content``, ``collapse``, ``parts``, ``id_parent``,
         ``id_complete``, ``title``, ``full_title``, ``is_part``, ``is_need``,
         ``type_prefix``, ``type_color``, ``type_style``, ``type``, ``type_name``, ``id``,
-        ``hide``, ``hide_status``, ``hide_tags``, ``sections``, ``section_name``.
+        ``hide``, ``sections``, ``section_name``.
 
         To exclude further need-data, use ``exclude``, like ``exclude=['status', 'tags']``
 

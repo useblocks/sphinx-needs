@@ -45,10 +45,10 @@ needs_template = """
 
 {% if hide == false -%}
 {{type_name}}: **{{title}}** ({{id}})
-    {%- if status and  status|upper != "NONE" and not hide_status %}
+    {%- if status and  status|upper != "NONE" %}
     | status: {{status}}
     {%- endif -%}
-    {%- if tags and not hide_tags %}
+    {%- if tags %}
     | tags: {{tags|join("; ")}}
     {%- endif %}
     | links incoming: :need_incoming:`{{id}}`
