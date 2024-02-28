@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1709100476188,
+  "lastUpdate": 1709116897068,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7236,6 +7236,42 @@ window.BENCHMARK_DATA = {
             "value": 66.940165256,
             "unit": "s",
             "extra": "Commit: 4d88ad85e5e07b8a6be343d1771e1d33d4499837\nBranch: master\nTime: 2024-02-28T07:05:44+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "63e1169d51f507a2bae4d6dcaec564badd0525ae",
+          "message": "🔧 Remove usage of `hide_status` and `hide_tags` (#1130)\n\nThese needs fields were removed in v0.5.0",
+          "timestamp": "2024-02-28T11:39:30+01:00",
+          "tree_id": "3328b3811dc1c247e3c934990086372b27dbd066",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/63e1169d51f507a2bae4d6dcaec564badd0525ae"
+        },
+        "date": 1709116891047,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.23217036500000177,
+            "unit": "s",
+            "extra": "Commit: 63e1169d51f507a2bae4d6dcaec564badd0525ae\nBranch: master\nTime: 2024-02-28T11:39:30+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 62.47628570100002,
+            "unit": "s",
+            "extra": "Commit: 63e1169d51f507a2bae4d6dcaec564badd0525ae\nBranch: master\nTime: 2024-02-28T11:39:30+01:00"
           }
         ]
       }
