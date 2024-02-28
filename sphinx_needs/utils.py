@@ -64,8 +64,6 @@ INTERNALS = (
     "type_name",
     "id",
     "hide",
-    "hide_status",
-    "hide_tags",
     "sections",
     "section_name",
     "content_node",
