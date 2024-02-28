@@ -8,6 +8,12 @@ License
 
 .. include:: ../LICENSE
 
+Unreleased
+----------
+
+* 👌 Fail and emit warning on filters that do not return a boolean result
+  (`#964 <https://github.com/useblocks/sphinx-needs/pull/964>`_)
+
 
 Unreleased
 ----------

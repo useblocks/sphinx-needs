@@ -51,6 +51,9 @@ Testing bad filters
 .. needfilter::
    :filter: xxx
 
+.. needfilter::
+   :filter: 1
+
 .. needlist::
    :filter: yyy
 
