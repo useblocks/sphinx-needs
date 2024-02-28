@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1709117459919,
+  "lastUpdate": 1709117884446,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7308,6 +7308,42 @@ window.BENCHMARK_DATA = {
             "value": 61.00494114999992,
             "unit": "s",
             "extra": "Commit: 166a0e312aebc6247207c7abf6a49e6b28066b57\nBranch: master\nTime: 2024-02-28T11:48:55+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3343ea0898d68ddad171e5f0b8e704229a3d9882",
+          "message": "🔧 Centralise need parts creation and strongly type needs (#1129)",
+          "timestamp": "2024-02-28T11:56:03+01:00",
+          "tree_id": "cd1247e77e7cee84b7ce9627be623155c731759a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/3343ea0898d68ddad171e5f0b8e704229a3d9882"
+        },
+        "date": 1709117877911,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21800056799997947,
+            "unit": "s",
+            "extra": "Commit: 3343ea0898d68ddad171e5f0b8e704229a3d9882\nBranch: master\nTime: 2024-02-28T11:56:03+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.897583131999994,
+            "unit": "s",
+            "extra": "Commit: 3343ea0898d68ddad171e5f0b8e704229a3d9882\nBranch: master\nTime: 2024-02-28T11:56:03+01:00"
           }
         ]
       }
