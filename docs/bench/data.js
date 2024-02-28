@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1709117884446,
+  "lastUpdate": 1709120246105,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7344,6 +7344,42 @@ window.BENCHMARK_DATA = {
             "value": 60.897583131999994,
             "unit": "s",
             "extra": "Commit: 3343ea0898d68ddad171e5f0b8e704229a3d9882\nBranch: master\nTime: 2024-02-28T11:56:03+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ebb8f21c8e1b78ec143d1b0c8196da9a6875cf69",
+          "message": "🔧 Fix typing of need docname/lineno (#1134)\n\nAccount for these being `None` for external needs, that have no source mapping within the project\r\n\r\nPractically, if `is_external is False` then `docname/lineno` are`str`, but if `is_external is True` then `docname/lineno` are `None`.\r\nThis internal relationship is difficult to encode in the type system though.\r\nSo here we always account for  `docname is None`, even if we have already checked for `is_external is False`",
+          "timestamp": "2024-02-28T12:35:09+01:00",
+          "tree_id": "4703821d963272d11a7d1757e297b025c8585e16",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/ebb8f21c8e1b78ec143d1b0c8196da9a6875cf69"
+        },
+        "date": 1709120238212,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2932573779999643,
+            "unit": "s",
+            "extra": "Commit: ebb8f21c8e1b78ec143d1b0c8196da9a6875cf69\nBranch: master\nTime: 2024-02-28T12:35:09+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 66.48935133600003,
+            "unit": "s",
+            "extra": "Commit: ebb8f21c8e1b78ec143d1b0c8196da9a6875cf69\nBranch: master\nTime: 2024-02-28T12:35:09+01:00"
           }
         ]
       }
