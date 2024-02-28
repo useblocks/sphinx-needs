@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1709116897068,
+  "lastUpdate": 1709117459919,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7272,6 +7272,42 @@ window.BENCHMARK_DATA = {
             "value": 62.47628570100002,
             "unit": "s",
             "extra": "Commit: 63e1169d51f507a2bae4d6dcaec564badd0525ae\nBranch: master\nTime: 2024-02-28T11:39:30+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "166a0e312aebc6247207c7abf6a49e6b28066b57",
+          "message": "🔧 Add better typing for `extra_links` config variable (#1131)\n\nTo detail all possible dict keys",
+          "timestamp": "2024-02-28T11:48:55+01:00",
+          "tree_id": "3b6eb49d0d6ae67d16c01fe6ad8ff5aeefd2c13b",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/166a0e312aebc6247207c7abf6a49e6b28066b57"
+        },
+        "date": 1709117453575,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2894910830000299,
+            "unit": "s",
+            "extra": "Commit: 166a0e312aebc6247207c7abf6a49e6b28066b57\nBranch: master\nTime: 2024-02-28T11:48:55+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.00494114999992,
+            "unit": "s",
+            "extra": "Commit: 166a0e312aebc6247207c7abf6a49e6b28066b57\nBranch: master\nTime: 2024-02-28T11:48:55+01:00"
           }
         ]
       }
