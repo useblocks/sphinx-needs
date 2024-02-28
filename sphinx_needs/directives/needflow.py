@@ -16,7 +16,6 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import (
     NeedsFlowType,
     NeedsInfoType,
-    NeedsPartsInfoType,
     SphinxNeedsData,
 )
 from sphinx_needs.debug import measure_time
@@ -125,7 +124,7 @@ def get_need_node_rep_for_plantuml(
     fromdocname: str,
     current_needflow: NeedsFlowType,
     all_needs: Iterable[NeedsInfoType],
-    need_info: NeedsPartsInfoType,
+    need_info: NeedsInfoType,
 ) -> str:
     """Calculate need node representation for plantuml."""
     needs_config = NeedsSphinxConfig(app.config)
@@ -167,8 +166,8 @@ def walk_curr_need_tree(
     fromdocname: str,
     current_needflow: NeedsFlowType,
     all_needs: Iterable[NeedsInfoType],
-    found_needs: list[NeedsPartsInfoType],
-    need: NeedsPartsInfoType,
+    found_needs: list[NeedsInfoType],
+    need: NeedsInfoType,
 ) -> str:
     """
     Walk through each need to find all its child needs and need parts recursively and wrap them together in nested structure.
@@ -239,7 +238,7 @@ def walk_curr_need_tree(
     return curr_need_tree
 
 
-def get_root_needs(found_needs: list[NeedsPartsInfoType]) -> list[NeedsPartsInfoType]:
+def get_root_needs(found_needs: list[NeedsInfoType]) -> list[NeedsInfoType]:
     return_list = []
     for current_need in found_needs:
         if current_need["is_need"]:
@@ -262,7 +261,7 @@ def cal_needs_node(
     fromdocname: str,
     current_needflow: NeedsFlowType,
     all_needs: Iterable[NeedsInfoType],
-    found_needs: list[NeedsPartsInfoType],
+    found_needs: list[NeedsInfoType],
 ) -> str:
     """Calculate and get needs node representaion for plantuml including all child needs and need parts."""
     top_needs = get_root_needs(found_needs)
@@ -398,10 +397,8 @@ def process_needflow(
                             else:
                                 comment = ""
 
-                            if link_type.get("style_part"):
-                                link_style = "[{style}]".format(
-                                    style=link_type["style_part"]
-                                )
+                            if _style_part := link_type.get("style_part"):
+                                link_style = f"[{_style_part}]"
                             else:
                                 link_style = "[dotted]"
                         else:
@@ -414,10 +411,8 @@ def process_needflow(
                             else:
                                 comment = ""
 
-                            if link_type.get("style"):
-                                link_style = "[{style}]".format(
-                                    style=link_type["style"]
-                                )
+                            if _style := link_type.get("style"):
+                                link_style = f"[{_style}]"
                             else:
                                 link_style = ""
 
@@ -429,13 +424,13 @@ def process_needflow(
                         ]:
                             continue
 
-                        if link_type.get("style_start"):
-                            style_start = link_type["style_start"]
+                        if _style_start := link_type.get("style_start"):
+                            style_start = _style_start
                         else:
                             style_start = "-"
 
-                        if link_type.get("style_end"):
-                            style_end = link_type["style_end"]
+                        if _style_end := link_type.get("style_end"):
+                            style_end = _style_end
                         else:
                             style_end = "->"
 

@@ -19,6 +19,7 @@ from sphinx_needs.directives.utils import (
 )
 from sphinx_needs.filter_common import FilterBase, process_filters
 from sphinx_needs.functions.functions import check_and_get_content
+from sphinx_needs.roles.need_part import iter_need_parts
 from sphinx_needs.utils import add_doc, profile, remove_node_from_tree, row_col_maker
 
 
@@ -303,15 +304,7 @@ def process_needtables(
 
             # Need part rows
             if current_needtable["show_parts"] and need_info["is_need"]:
-                for part in need_info["parts"].values():
-                    # update the part with all information from its parent
-                    # this is required to make ID links work
-                    # The dict has to be manipulated, so that row_col_maker() can be used
-                    temp_part: NeedsInfoType = {**need_info, **part.copy()}  # type: ignore[typeddict-unknown-key]
-                    temp_part["id_complete"] = f"{need_info['id']}.{temp_part['id']}"  # type: ignore[typeddict-unknown-key]
-                    temp_part["id_parent"] = need_info["id"]  # type: ignore[typeddict-unknown-key]
-                    temp_part["docname"] = need_info["docname"]
-
+                for temp_part in iter_need_parts(need_info):
                     row = nodes.row(classes=["need_part"])
 
                     for option, _title in current_needtable["columns"]:

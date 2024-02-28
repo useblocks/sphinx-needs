@@ -14,7 +14,7 @@ from docutils import nodes
 from jinja2 import Environment, Template
 from sphinx.application import BuildEnvironment, Sphinx
 
-from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.defaults import NEEDS_PROFILING
 from sphinx_needs.logging import get_logger
@@ -39,52 +39,6 @@ class NeedFunctionsType(TypedDict):
 
 
 NEEDS_FUNCTIONS: dict[str, NeedFunctionsType] = {}
-
-# List of internal need option names. They should not be used by or presented to user.
-INTERNALS = (
-    "docname",
-    "doctype",
-    "lineno",
-    "refid",
-    "content",
-    "pre_content",
-    "post_content",
-    "collapse",
-    "parts",
-    "id_parent",
-    "id_complete",
-    "title",
-    "full_title",
-    "is_part",
-    "is_need",
-    "type_prefix",
-    "type_color",
-    "type_style",
-    "type",
-    "type_name",
-    "id",
-    "hide",
-    "hide_status",
-    "hide_tags",
-    "sections",
-    "section_name",
-    "content_node",
-    "content_id",
-    # "parent_needs",
-    "parent_need",
-    # "child_needs",
-    "is_external",
-    "external_css",
-    "is_modified",
-    "modifications",
-    "constraints",
-    "constraints_passed",
-    "constraints_results",
-    "arch",
-    "target_id",
-    "has_dead_links",
-    "has_forbidden_dead_links",
-)
 
 MONTH_NAMES = [
     "January",
@@ -281,7 +235,7 @@ def rstjinja(app: Sphinx, docname: str, source: list[str]) -> None:
 
 
 def import_prefix_link_edit(
-    needs: dict[str, Any], id_prefix: str, needs_extra_links: list[dict[str, Any]]
+    needs: dict[str, Any], id_prefix: str, needs_extra_links: list[LinkOptionsType]
 ) -> None:
     """
     Changes existing links to support given prefix.

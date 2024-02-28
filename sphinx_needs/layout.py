@@ -26,9 +26,9 @@ from sphinx.application import Sphinx
 from sphinx.environment.collectors.asset import DownloadFileCollector, ImageCollector
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import NeedsCoreFields, NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
-from sphinx_needs.utils import INTERNALS, match_string_link
+from sphinx_needs.utils import match_string_link
 
 
 @measure_time("need")
@@ -701,11 +701,7 @@ class LayoutHandler:
         show_empty: bool = False,
     ) -> nodes.inline:
         """
-        ``meta_all()`` excludes by default the output of: ``docname``, ``lineno``, ``refid``,
-        ``content``, ``collapse``, ``parts``, ``id_parent``,
-        ``id_complete``, ``title``, ``full_title``, ``is_part``, ``is_need``,
-        ``type_prefix``, ``type_color``, ``type_style``, ``type``, ``type_name``, ``id``,
-        ``hide``, ``hide_status``, ``hide_tags``, ``sections``, ``section_name``.
+        ``meta_all()`` excludes by default specified internal fields
 
         To exclude further need-data, use ``exclude``, like ``exclude=['status', 'tags']``
 
@@ -728,7 +724,11 @@ class LayoutHandler:
         :param show_empty: If true, also need data with no value will be printed. Mostly useful for debugging.
         :return: docutils nodes
         """
-        default_excludes = list(INTERNALS)
+        default_excludes = [
+            name
+            for name, props in NeedsCoreFields.items()
+            if not props.get("show_in_layout")
+        ]
 
         if exclude is None or not isinstance(exclude, list):
             if defaults:

@@ -119,7 +119,7 @@ def add_need(
     :param tags: Tags as single string.
     :param constraints: Constraints as single, comma separated, string.
     :param constraints_passed: Contains bool describing if all constraints have passed
-    :param links_string: Links as single string.
+    :param links_string: Links as single string. (Not used)
     :param delete: boolean value (Remove the complete need).
     :param hide: boolean value.
     :param hide_tags: boolean value. (Not used with Sphinx-Needs >0.5.0)
@@ -325,14 +325,13 @@ def add_need(
         doctype = ".rst"
 
     # Add the need and all needed information
-    needs_info: NeedsInfoType = {  # type: ignore[typeddict-item]
-        "docname": docname,
+    needs_info: NeedsInfoType = {
+        "docname": docname,  # type: ignore[typeddict-item]
+        "lineno": lineno,  # type: ignore[typeddict-item]
         "doctype": doctype,
-        "lineno": lineno,
         "target_id": need_id,
-        "external_url": external_url if is_external else None,
-        "content_node": None,  # gets set after rst parsing
-        "content_id": None,  # gets set after rst parsing
+        "content_node": None,
+        "content_id": None,
         "type": need_type,
         "type_name": type_name,
         "type_prefix": type_prefix,
@@ -360,17 +359,18 @@ def add_need(
         "parts": {},
         "is_part": False,
         "is_need": True,
+        "id_parent": need_id,
+        "id_complete": need_id,
         "is_external": is_external or False,
+        "external_url": external_url if is_external else None,
         "external_css": external_css or "external_link",
-        "is_modified": False,  # needed by needextend
-        "modifications": 0,  # needed by needextend
+        "is_modified": False,
+        "modifications": 0,
         "has_dead_links": False,
         "has_forbidden_dead_links": False,
-        # these are set later in the analyse_need_locations transform
         "sections": [],
         "section_name": "",
         "signature": "",
-        "parent_needs": [],
         "parent_need": "",
     }
     needs_extra_option_names = list(NEEDS_CONFIG.extra_options)
@@ -404,12 +404,10 @@ def add_need(
             or len(str(kwargs[link_type["option"]])) == 0
         ):
             # If it is in global option, value got already set during prior handling of them
-            links_string = needs_info[link_type["option"]]
-            links = _read_in_links(links_string)
+            links = _read_in_links(needs_info[link_type["option"]])
         else:
             # if it is set in kwargs, take this value and maybe override set value from global_options
-            links_string = kwargs[link_type["option"]]
-            links = _read_in_links(links_string)
+            links = _read_in_links(kwargs[link_type["option"]])
 
         needs_info[link_type["option"]] = links
         needs_info["{}_back".format(link_type["option"])] = []

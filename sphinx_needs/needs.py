@@ -11,6 +11,7 @@ from sphinx.environment import BuildEnvironment
 from sphinx.errors import SphinxError
 
 import sphinx_needs.debug as debug  # Need to set global var in it for timeing measurements
+from sphinx_needs.api.configuration import add_extra_option
 from sphinx_needs.builder import (
     NeedsBuilder,
     NeedsIdBuilder,
@@ -19,8 +20,8 @@ from sphinx_needs.builder import (
     build_needs_json,
     build_needumls_pumls,
 )
-from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData, merge_data
+from sphinx_needs.config import NEEDS_CONFIG, LinkOptionsType, NeedsSphinxConfig
+from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData, merge_data
 from sphinx_needs.defaults import (
     LAYOUTS,
     NEED_DEFAULT_OPTIONS,
@@ -103,7 +104,7 @@ from sphinx_needs.roles.need_part import NeedPart, process_need_part
 from sphinx_needs.roles.need_ref import NeedRef, process_need_ref
 from sphinx_needs.services.github import GithubService
 from sphinx_needs.services.open_needs import OpenNeedsService
-from sphinx_needs.utils import INTERNALS, NEEDS_FUNCTIONS, node_match
+from sphinx_needs.utils import NEEDS_FUNCTIONS, node_match
 from sphinx_needs.warnings import process_warnings
 
 __version__ = VERSION = "2.0.0"
@@ -371,12 +372,17 @@ def load_config(app: Sphinx, *_args: Any) -> None:
                 type="needs",
                 subtype="config",
             )
-        NEEDS_CONFIG.extra_options[option] = directives.unchanged
+        else:
+            add_extra_option(
+                app, option, description="Extra option from needs_extra_options config"
+            )
 
     # ensure options for ``needgantt`` functionality are added to the extra options
     for option in (needs_config.duration_option, needs_config.completion_option):
         if option not in NEEDS_CONFIG.extra_options:
-            NEEDS_CONFIG.extra_options[option] = directives.unchanged_required
+            add_extra_option(
+                app, option, description="Added for needgantt functionality"
+            )
 
     # Get extra links and create a dictionary of needed options.
     extra_links_raw = needs_config.extra_links
@@ -388,8 +394,12 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     title_from_content = needs_config.title_from_content
 
     # Update NeedDirective to use customized options
-    NeedDirective.option_spec.update(NEEDS_CONFIG.extra_options)
-    NeedserviceDirective.option_spec.update(NEEDS_CONFIG.extra_options)
+    NeedDirective.option_spec.update(
+        {name: params.validator for name, params in NEEDS_CONFIG.extra_options.items()}
+    )
+    NeedserviceDirective.option_spec.update(
+        {name: params.validator for name, params in NEEDS_CONFIG.extra_options.items()}
+    )
 
     # Update NeedDirective to use customized links
     NeedDirective.option_spec.update(extra_links)
@@ -430,11 +440,11 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             "-links_back": directives.flag,
         }
     )
-    for key, value in NEEDS_CONFIG.extra_options.items():
+    for key, params in NEEDS_CONFIG.extra_options.items():
         NeedextendDirective.option_spec.update(
             {
-                key: value,
-                f"+{key}": value,
+                key: params.validator,
+                f"+{key}": params.validator,
                 f"-{key}": directives.flag,
             }
         )
@@ -518,7 +528,7 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
 
     # The default link name. Must exist in all configurations. Therefore we set it here
     # for the user.
-    common_links = []
+    common_links: list[LinkOptionsType] = []
     link_types = needs_config.extra_links
     basic_link_type_found = False
     parent_needs_link_type_found = False
@@ -585,7 +595,7 @@ def check_configuration(_app: Sphinx, config: Config) -> None:
             )
 
     # Check for usage of internal names
-    for internal in INTERNALS:
+    for internal in NeedsCoreFields:
         if internal in extra_options:
             raise NeedsConfigException(
                 f'Extra option "{internal}" already used internally. '

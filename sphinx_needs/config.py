@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import MISSING, dataclass, field, fields
 from typing import TYPE_CHECKING, Any, Callable, Dict, Literal, TypedDict
 
+from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 from sphinx.config import Config as _SphinxConfig
 
@@ -10,8 +11,19 @@ from sphinx_needs.defaults import DEFAULT_DIAGRAM_TEMPLATE, NEEDS_TABLES_CLASSES
 
 if TYPE_CHECKING:
     from sphinx.util.logging import SphinxLoggerAdapter
+    from typing_extensions import Required
 
     from sphinx_needs.data import NeedsInfoType
+
+
+@dataclass
+class ExtraOptionParams:
+    """Defines a single extra option for needs"""
+
+    description: str
+    """A description of the option."""
+    validator: Callable[[str | None], str] = directives.unchanged
+    """A function to validate the directive option value."""
 
 
 class Config:
@@ -25,7 +37,7 @@ class Config:
     """
 
     def __init__(self) -> None:
-        self._extra_options: dict[str, Callable[[str], Any]] = {}
+        self._extra_options: dict[str, ExtraOptionParams] = {}
         self._warnings: dict[
             str, str | Callable[[NeedsInfoType, SphinxLoggerAdapter], bool]
         ] = {}
@@ -35,13 +47,11 @@ class Config:
         self._warnings = {}
 
     @property
-    def extra_options(self) -> dict[str, Callable[[str], Any]]:
+    def extra_options(self) -> dict[str, ExtraOptionParams]:
         """Options that are dynamically added to `NeedDirective` & `NeedserviceDirective`,
         after the config is initialized.
 
         These fields are also added to the each needs data item.
-
-        :returns: Mapping of name to validation function
         """
         return self._extra_options
 
@@ -113,6 +123,31 @@ Values can be:
 - a list of the tuples above
 - otherwise, always set as the given value
 """
+
+
+class LinkOptionsType(TypedDict, total=False):
+    """Options for links between needs"""
+
+    option: Required[str]
+    """The name of the link option"""
+    incoming: str
+    """The incoming link title"""
+    outgoing: str
+    """The outgoing link title"""
+    copy: bool
+    """Copy to common links data. Default: True"""
+    color: str
+    """Used for needflow. Default: #000000"""
+    style: str
+    """Used for needflow. Default: solid"""
+    style_part: str
+    """Used for needflow. Default: '[dotted]'"""
+    style_start: str
+    """Used for needflow. Default: '-'"""
+    style_end: str
+    """Used for needflow. Default: '->'"""
+    allow_dead_links: bool
+    """If True, add a 'forbidden' class to dead links"""
 
 
 @dataclass
@@ -291,17 +326,10 @@ class NeedsSphinxConfig:
         default="→\xa0", metadata={"rebuild": "html", "types": (str,)}
     )
     """Prefix for need_part output in tables"""
-    extra_links: list[dict[str, Any]] = field(
+    extra_links: list[LinkOptionsType] = field(
         default_factory=list, metadata={"rebuild": "html", "types": ()}
     )
-    """List of additional links, which can be used by setting related option
-    Values needed for each new link:
-    * option (will also be the option name)
-    * incoming
-    * copy_link (copy to common links data. Default: True)
-    * color (used for needflow. Default: #000000)
-    Example: [{"name": "blocks, "incoming": "is blocked by", "copy_link": True, "color": "#ffcc00"}]
-    """
+    """List of additional link types between needs"""
     report_dead_links: bool = field(
         default=True, metadata={"rebuild": "html", "types": (bool,)}
     )
