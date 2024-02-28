@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from docutils.nodes import Element, Text
     from sphinx.application import Sphinx
     from sphinx.environment import BuildEnvironment
+    from typing_extensions import Required
 
     from sphinx_needs.services.manager import ServiceManager
 
@@ -31,139 +32,144 @@ class NeedsPartType(TypedDict):
 
     id: str
     """ID of the part"""
-
-    is_part: bool
-    is_need: bool
-
     content: str
     """Content of the part."""
-    document: str
-    """docname where the part is defined."""
     links: list[str]
     """List of need IDs, which are referenced by this part."""
     links_back: list[str]
     """List of need IDs, which are referencing this part."""
 
 
-class NeedsInfoType(TypedDict):
+class NeedsInfoType(TypedDict, total=False):
     """Data for a single need."""
 
-    target_id: str
+    target_id: Required[str]
     """ID of the data."""
-    id: str
+    id: Required[str]
     """ID of the data (same as target_id)"""
 
     # TODO docname and lineno can be None, if the need is external,
     # but currently this raises mypy errors for other parts of the code base
-    docname: str
+    docname: Required[str]
     """Name of the document where the need is defined."""
-    lineno: int
+    lineno: Required[int]
     """Line number where the need is defined."""
 
     # meta information
-    full_title: str
+    full_title: Required[str]
     """Title of the need, of unlimited length."""
-    title: str
+    title: Required[str]
     """Title of the need, trimmed to a maximum length."""
-    status: None | str
-    tags: list[str]
+    status: Required[None | str]
+    tags: Required[list[str]]
 
     # rendering information
-    collapse: None | bool
+    collapse: Required[None | bool]
     """hide the meta-data information of the need."""
-    hide: bool
+    hide: Required[bool]
     """If true, the need is not rendered."""
-    delete: bool
+    delete: Required[bool]
     """If true, the need is deleted entirely."""
-    layout: None | str
+    layout: Required[None | str]
     """Key of the layout, which is used to render the need."""
-    style: None | str
+    style: Required[None | str]
     """Comma-separated list of CSS classes (all appended by `needs_style_`)."""
 
     # TODO why is it called arch?
-    arch: dict[str, str]
+    arch: Required[dict[str, str]]
     """Mapping of uml key to uml content."""
 
     # external reference information
-    is_external: bool
+    is_external: Required[bool]
     """If true, no node is created and need is referencing external url"""
-    external_url: None | str
+    external_url: Required[None | str]
     """URL of the need, if it is an external need."""
-    external_css: str
+    external_css: Required[str]
     """CSS class name, added to the external reference."""
 
     # type information (based on needs_types config)
-    type: str
-    type_name: str
-    type_prefix: str
-    type_color: str
+    type: Required[str]
+    type_name: Required[str]
+    type_prefix: Required[str]
+    type_color: Required[str]
     """Hexadecimal color code of the type."""
-    type_style: str
+    type_style: Required[str]
 
-    is_modified: bool
+    is_modified: Required[bool]
     """Whether the need was modified by needextend."""
-    modifications: int
+    modifications: Required[int]
     """Number of modifications by needextend."""
 
-    # parts information
-    parts: dict[str, NeedsPartType]
-    is_need: bool
-    is_part: bool
+    # used to distinguish a part from a need
+    is_need: Required[bool]
+    is_part: Required[bool]
+    # Mapping of parts, a.k.a. sub-needs, IDs to data that overrides the need's data
+    parts: Required[dict[str, NeedsPartType]]
+    # additional information required for compatibility with parts
+    id_parent: Required[str]
+    """ID of the parent need, or self ID if not a part"""
+    id_complete: Required[str]
+    """ID of the parent need, followed by the part ID, 
+    delimited by a dot: ``<id_parent>.<id>``,
+    or self ID if not a part
+    """
 
     # content creation information
-    jinja_content: bool
-    template: None | str
-    pre_template: None | str
-    post_template: None | str
-    content: str
+    jinja_content: Required[bool]
+    template: Required[None | str]
+    pre_template: Required[None | str]
+    post_template: Required[None | str]
+    content: Required[str]
     pre_content: str
     post_content: str
-    content_id: None | str
-    """ID of the content node."""
-    content_node: None | Element
-    """deep copy of the content node."""
+    content_id: Required[None | str]
+    """ID of the content node (set after parsing)."""
+    content_node: Required[None | Element]
+    """deep copy of the content node (set after parsing)."""
+
+    # these default to False and are updated in check_links post-process
+    has_dead_links: Required[bool]
+    """True if any links reference need ids that are not found in the need list."""
+    has_forbidden_dead_links: Required[bool]
+    """True if any links reference need ids that are not found in the need list,
+    and the link type does not allow dead links.
+    """
+
+    # constraints information
+    constraints: Required[list[str]]
+    """List of constraint names, which are defined for this need."""
+    # set in process_need_nodes (-> process_constraints) transform
+    constraints_results: Required[dict[str, dict[str, bool]]]
+    """Mapping of constraint name, to check name, to result."""
+    constraints_passed: Required[None | bool]
+    """True if all constraints passed, False if any failed, None if not yet checked."""
+    constraints_error: str
+    """An error message set if any constraint failed, and `error_message` field is set in config."""
+
+    # additional source information
+    doctype: Required[str]
+    """Type of the document where the need is defined, e.g. '.rst'"""
+    # set in analyse_need_locations transform
+    sections: Required[list[str]]
+    section_name: Required[str]
+    """Simply the first section"""
+    signature: Required[str | Text]
+    """Derived from a docutils desc_name node"""
+    parent_need: Required[str]
+    """Simply the first parent id"""
 
     # link information
-    links: list[str]
-    """List of need IDs, which are referenced by this need."""
-    links_back: list[str]
-    """List of need IDs, which are referencing this need."""
-    # TODO there is more dynamically added link information;
+    # Note, there is more dynamically added link information;
     # for each item in needs_extra_links config
     # (and in prepare_env 'links' and 'parent_needs' are added if not present),
     # you end up with a key named by the "option" field,
     # and then another key named by the "option" field + "_back"
     # these all have value type `list[str]`
     # back links are all set in process_need_nodes (-> create_back_links) transform
-
-    # these default to False and are updated in check_links post-process
-    has_dead_links: bool
-    """True if any links reference need ids that are not found in the need list."""
-    has_forbidden_dead_links: bool
-    """True if any links reference need ids that are not found in the need list,
-    and the link type does not allow dead links.
-    """
-
-    # constraints information
-    constraints: list[str]
-    """List of constraint names, which are defined for this need."""
-    # set in process_need_nodes (-> process_constraints) transform
-    constraints_results: dict[str, dict[str, bool]]
-    """Mapping of constraint name, to check name, to result."""
-    constraints_passed: None | bool
-    """True if all constraints passed, False if any failed, None if not yet checked."""
-    constraints_error: str
-    """An error message set if any constraint failed, and `error_message` field is set in config."""
-
-    # additional source information
-    doctype: str
-    """Type of the document where the need is defined, e.g. '.rst'"""
-    # set in analyse_need_locations transform
-    sections: list[str]
-    section_name: str
-    """Simply the first section"""
-    signature: str | Text
-    """Derived from a docutils desc_name node"""
+    links: list[str]
+    """List of need IDs, which are referenced by this need."""
+    links_back: list[str]
+    """List of need IDs, which are referencing this need."""
     parent_needs: list[str]
     """List of parents of the this need (by id),
     i.e. if this need is nested in another
@@ -172,8 +178,6 @@ class NeedsInfoType(TypedDict):
     """List of children of this need (by id),
     i.e. if needs are nested within this one
     """
-    parent_need: str
-    """Simply the first parent id"""
 
     # Fields added dynamically by services:
     # options from ``BaseService.options`` get added to ``NEEDS_CONFIG.extra_options``,
@@ -204,15 +208,6 @@ class NeedsInfoType(TypedDict):
     #   which get added to ``NEEDS_CONFIG.extra_options``,
     #   and in turn means they are added to every need via ``add_need`` (as strings)
     # - keys in ``needs_global_options`` config are added to every need via ``add_need``
-
-
-class NeedsPartsInfoType(NeedsInfoType):
-    """Generated by prepare_need_list"""
-
-    document: str
-    """docname where the part is defined."""
-    id_parent: str
-    id_complete: str
 
 
 class NeedsBaseDataType(TypedDict):
