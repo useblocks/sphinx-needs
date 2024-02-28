@@ -844,7 +844,7 @@ class LayoutHandler:
         """
         See https://docutils.sourceforge.io/docs/ref/rst/directives.html#images
 
-        If url starts with ``icon:`` the following string is taken is icon-name and the related icon is shown.
+        If **url** starts with ``icon:`` the following string is taken as icon-name and the related icon is shown.
         Example: ``icon:activity`` will show:
 
         .. image:: _static/activity.png
@@ -857,7 +857,17 @@ class LayoutHandler:
             '<<image("icon:bell", height="20px", align="center")>>'
             '<<image("field:url", height="60px", align="center")>>'  # Get url from need['url']
 
-        :param url:
+        If **url** starts with ``:field`` the URL value is taken from the defined field of the current need
+        object.
+
+        .. hint:: Relative URLs
+
+           If a relative path for the URL parameter is given, it must be relative to the documentation
+           root folder and not relative to the current need location, for which it gets executed.
+
+           Example: ``<<image("_static/picture.png")>>``,
+
+        :param url: Relative path to the project folder or an absolute path
         :param height:
         :param width:
         :param align:
@@ -926,14 +936,6 @@ class LayoutHandler:
                 return []
 
             url = value
-
-            if (
-                not is_external
-                and not os.path.isabs(url)
-                and (docname := self.need["docname"])
-            ):
-                subfolder_amount = docname.count("/")
-                url = "../" * subfolder_amount + url
 
         if is_external:
             url_parsed = urlparse(url)

@@ -18,6 +18,7 @@ from sphinx import version_info
 from sphinx.application import Sphinx
 from sphinx.testing.path import path
 from sphinx.testing.util import SphinxTestApp
+from sphinx.util.console import strip_colors
 from syrupy.extensions.single_file import SingleFileSnapshotExtension, WriteMode
 from xprocess import ProcessStarter
 
@@ -283,6 +284,16 @@ def test_app(make_app, sphinx_test_tempdir, request):
         docutilsconf=builder_params.get("docutilsconf"),
         parallel=builder_params.get("parallel", 0),
     )
+    # Add the Sphinx warning as list to the app
+    # Somehow "app._warning" seems to be just a boolean, if the builder is "latex" or "singlehtml".
+    # In this case we don't catch the warnings.
+    if builder_params.get("buildername", "html") == "html":
+        app.warning_list = strip_colors(
+            app._warning.getvalue().replace(str(app.srcdir), "srcdir")
+        ).splitlines()
+    else:
+        app.warning_list = None
+
     # Add the spec_pattern as an attribute to the Sphinx app object
     app.spec_pattern = builder_params.get("spec_pattern", "*.cy.js")
     # Add the ``test_js`` function as an attribute to the Sphinx app object
