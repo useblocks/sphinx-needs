@@ -170,7 +170,7 @@ def copy(
             NeedsSphinxConfig(app.config),
             filter,
             need,
-            location=(need["docname"], need["lineno"]),
+            location=(need["docname"], need["lineno"]) if need["docname"] else None,
         )
         if result:
             need = result[0]

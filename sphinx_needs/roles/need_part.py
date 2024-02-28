@@ -16,6 +16,7 @@ from typing import Iterable, cast
 from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
+from sphinx.util.nodes import make_refnode
 
 from sphinx_needs.data import NeedsInfoType
 from sphinx_needs.logging import get_logger
@@ -59,7 +60,6 @@ def update_need_with_parts(
     env: BuildEnvironment, need: NeedsInfoType, part_nodes: list[NeedPart]
 ) -> None:
     app = env.app
-    builder = app.builder
     for part_node in part_nodes:
         content = cast(str, part_node.children[0].children[0])  # ->inline->Text
         result = part_pattern.match(content)
@@ -91,24 +91,26 @@ def update_need_with_parts(
         }
 
         part_id_ref = "{}.{}".format(need["id"], inline_id)
-        part_id_show = inline_id
+
         part_node["reftarget"] = part_id_ref
 
-        part_link_text = f" {part_id_show}"
-        part_link_node = nodes.Text(part_link_text)
         part_text_node = nodes.Text(part_content)
-
-        from sphinx.util.nodes import make_refnode
-
-        part_ref_node = make_refnode(
-            builder, need["docname"], need["docname"], part_id_ref, part_link_node
-        )
-        part_ref_node["classes"] += ["needs-id"]
 
         part_node.children = []
         node_need_part_line = nodes.inline(ids=[part_id_ref], classes=["need-part"])
         node_need_part_line.append(part_text_node)
-        node_need_part_line.append(part_ref_node)
+
+        if docname := need["docname"]:
+            part_id_show = inline_id
+            part_link_text = f" {part_id_show}"
+            part_link_node = nodes.Text(part_link_text)
+
+            part_ref_node = make_refnode(
+                app.builder, docname, docname, part_id_ref, part_link_node
+            )
+            part_ref_node["classes"] += ["needs-id"]
+            node_need_part_line.append(part_ref_node)
+
         part_node.append(node_need_part_line)
 
 

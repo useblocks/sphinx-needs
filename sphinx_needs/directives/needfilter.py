@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from contextlib import suppress
 from typing import Sequence
 from urllib.parse import urlparse
 
@@ -179,12 +180,10 @@ def process_needfilters(
                 # Create a reference
                 if need_info["hide"]:
                     line_node += title
-                else:
+                elif _docname := need_info["docname"]:
                     ref = nodes.reference("", "")
-                    ref["refdocname"] = need_info["docname"]
-                    ref["refuri"] = builder.get_relative_uri(
-                        fromdocname, need_info["docname"]
-                    )
+                    ref["refdocname"] = _docname
+                    ref["refuri"] = builder.get_relative_uri(fromdocname, _docname)
                     ref["refuri"] += "#" + target_id
                     ref.append(title)
                     line_node += ref
@@ -211,16 +210,17 @@ def process_needfilters(
                 # But the generated link in the svg will be relative to the svg-file location
                 # (e.g. server.com/docs/_images/sqwxo499cnq329439dfjne.svg)
                 # and not to current documentation. Therefore we need to add ../ to get out of the image folder.
-                try:
-                    link = (
-                        "../"
-                        + builder.get_target_uri(need_info["docname"])
-                        + "?highlight={}".format(urlparse(need_info["title"]))
-                        + "#"
-                        + target_id
-                    )  # Gets mostly called during latex generation
-                except NoUri:
-                    link = ""
+                link = ""
+                with suppress(NoUri):
+                    # Gets mostly called during latex generation
+                    if _docname := need_info["docname"]:
+                        link = (
+                            "../"
+                            + builder.get_target_uri(_docname)
+                            + "?highlight={}".format(urlparse(need_info["title"]))
+                            + "#"
+                            + target_id
+                        )
 
                 diagram_template = Template(needs_config.diagram_template)
                 node_text = diagram_template.render(

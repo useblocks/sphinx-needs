@@ -57,11 +57,13 @@ def process_need_incoming(
                     #     link_text += ", "
                     node_need_backref[0] = nodes.Text(link_text)
 
-                    if not target_need["is_external"]:
+                    if not target_need["is_external"] and (
+                        _docname := target_need["docname"]
+                    ):
                         new_node_ref = make_refnode(
                             builder,
                             fromdocname,
-                            target_need["docname"],
+                            _docname,
                             target_need["target_id"],
                             node_need_backref[0].deepcopy(),
                             node_need_backref["reftarget"],

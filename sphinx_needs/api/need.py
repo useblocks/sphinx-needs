@@ -326,8 +326,8 @@ def add_need(
 
     # Add the need and all needed information
     needs_info: NeedsInfoType = {
-        "docname": docname,  # type: ignore[typeddict-item]
-        "lineno": lineno,  # type: ignore[typeddict-item]
+        "docname": docname,
+        "lineno": lineno,
         "doctype": doctype,
         "target_id": need_id,
         "content_node": None,

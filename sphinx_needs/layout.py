@@ -12,7 +12,7 @@ import uuid
 from contextlib import suppress
 from functools import lru_cache
 from optparse import Values
-from typing import Callable
+from typing import Callable, cast
 from urllib.parse import urlparse
 
 import requests
@@ -63,7 +63,10 @@ def create_need(
     # This is done for original need content automatically.
     # But as we are working on  a copy, we have to trigger this on our own.
     if docname is None:
-        docname = needs[need_id]["docname"]  # needed to calculate relative references
+        # needed to calculate relative references
+        # TODO ideally we should not cast here:
+        # the docname can still be None, if the need is external, although practically these are not rendered
+        docname = cast(str, needs[need_id]["docname"])
 
     node_container = nodes.container()
     # node_container += needs[need_id]["need_node"].children
@@ -679,16 +682,16 @@ class LayoutHandler:
         id_container = nodes.inline(classes=["needs-id"])
 
         nodes_id_text = nodes.Text(self.need["id"])
-        id_ref = make_refnode(
-            self.app.builder,
-            # fromdocname=self.need['docname'],
-            fromdocname=self.fromdocname,
-            todocname=self.need["docname"],
-            targetid=self.need["id"],
-            child=nodes_id_text.deepcopy(),
-            title=self.need["id"],
-        )
-        id_container += id_ref
+        if self.fromdocname and (_docname := self.need["docname"]):
+            id_ref = make_refnode(
+                self.app.builder,
+                fromdocname=self.fromdocname,
+                todocname=_docname,
+                targetid=self.need["id"],
+                child=nodes_id_text.deepcopy(),
+                title=self.need["id"],
+            )
+            id_container += id_ref
         return id_container
 
     def meta_all(
@@ -924,8 +927,12 @@ class LayoutHandler:
 
             url = value
 
-            if not is_external and not os.path.isabs(url):
-                subfolder_amount = self.need["docname"].count("/")
+            if (
+                not is_external
+                and not os.path.isabs(url)
+                and (docname := self.need["docname"])
+            ):
+                subfolder_amount = docname.count("/")
                 url = "../" * subfolder_amount + url
 
         if is_external:
@@ -963,7 +970,8 @@ class LayoutHandler:
         # Sphinx voodoo needed here.
         # It is not enough to just add a doctuils nodes.image, we also have to register the imag location for sphinx
         # Otherwise the images gets not copied to the later build-output location
-        env.images.add_file(self.need["docname"], url)
+        if _docname := self.need["docname"]:
+            env.images.add_file(_docname, url)
 
         data_container.append(image_node)
         return data_container
@@ -1133,10 +1141,10 @@ class LayoutHandler:
 
         permalink = self.needs_config.permalink_file
         id = self.need["id"]
-        docname = self.need["docname"]
         permalink_url = ""
-        for _ in range(0, len(docname.split("/")) - 1):
-            permalink_url += "../"
+        if docname := self.need["docname"]:
+            for _ in range(0, len(docname.split("/")) - 1):
+                permalink_url += "../"
         permalink_url += permalink + "?id=" + id
 
         return self.link(

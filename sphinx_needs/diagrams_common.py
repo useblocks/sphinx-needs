@@ -195,12 +195,9 @@ def calculate_link(
             if not parsed_url.scheme and not os.path.isabs(need_info["external_url"]):
                 # only need to add ../ or ..\ to get out of the image folder
                 link = ".." + os.path.sep + need_info["external_url"]
-        else:
+        elif _docname := need_info["docname"]:
             link = (
-                "../"
-                + builder.get_target_uri(need_info["docname"])
-                + "#"
-                + need_info["target_id"]
+                "../" + builder.get_target_uri(_docname) + "#" + need_info["target_id"]
             )
             if need_info["is_part"]:
                 link = f"{link}.{need_info['id']}"
