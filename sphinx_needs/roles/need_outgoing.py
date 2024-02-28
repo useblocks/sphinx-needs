@@ -81,11 +81,13 @@ def process_need_outgoing(
 
                     node_need_ref[0] = nodes.Text(link_text)
 
-                    if not target_need["is_external"]:
+                    if not target_need["is_external"] and (
+                        _docname := target_need["docname"]
+                    ):
                         new_node_ref = make_refnode(
                             builder,
                             fromdocname,
-                            target_need["docname"],
+                            _docname,
                             target_id,
                             node_need_ref[0].deepcopy(),
                             node_need_ref["reftarget"],
@@ -122,7 +124,7 @@ def process_need_outgoing(
                 # add a CSS class for disallowed unknown links
                 # note a warning is already emitted when validating the needs list
                 # so we don't need to do it here
-                if not link_lookup.get(link_type, {}).get("allow_dead_links", False):
+                if not link_lookup.get(link_type, {}).get("allow_dead_links", False):  # type: ignore
                     dead_link_para.attributes["classes"].append("forbidden")
 
             # If we have several links, we add an empty text between them

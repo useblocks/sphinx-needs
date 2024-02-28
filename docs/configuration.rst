@@ -2204,10 +2204,10 @@ If nothing is set, the following default template is used:
       :class: need
 
        :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
-           {%- if status and  status|upper != "NONE" and not hide_status %}
+           {%- if status and  status|upper != "NONE" %}
            | status: :needs_status:`{{status}}`
            {%- endif -%}
-           {%- if tags and not hide_tags %}
+           {%- if tags %}
            | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`
            {%- endif %}
            | links incoming: :need_incoming:`{{id}}`
@@ -2265,10 +2265,10 @@ Default value:
 
                :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
                :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
-           {%- if status and  status|upper != "NONE" and not hide_status %}
+           {%- if status and  status|upper != "NONE" %}
            | status: :needs_status:`{{status}}`
            {%- endif -%}
-           {%- if tags and not hide_tags %}
+           {%- if tags %}
            | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`
            {%- endif %}
            | links incoming: :need_incoming:`{{id}}`

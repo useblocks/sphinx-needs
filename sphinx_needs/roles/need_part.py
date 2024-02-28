@@ -11,11 +11,12 @@ from __future__ import annotations
 
 import hashlib
 import re
-from typing import cast
+from typing import Iterable, cast
 
 from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
+from sphinx.util.nodes import make_refnode
 
 from sphinx_needs.data import NeedsInfoType
 from sphinx_needs.logging import get_logger
@@ -39,11 +40,26 @@ def process_need_part(
 part_pattern = re.compile(r"\(([\w-]+)\)(.*)")
 
 
+def iter_need_parts(need: NeedsInfoType) -> Iterable[NeedsInfoType]:
+    """Yield all parts, a.k.a sub-needs, from a need.
+
+    A sub-need is a child of a need, which has its own ID,
+    and overrides the content of the parent need.
+    """
+    for part in need["parts"].values():
+        full_part: NeedsInfoType = {**need, **part}
+        full_part["id_complete"] = f"{need['id']}.{part['id']}"
+        full_part["id_parent"] = need["id"]
+        full_part["is_need"] = False
+        full_part["is_part"] = True
+
+        yield full_part
+
+
 def update_need_with_parts(
     env: BuildEnvironment, need: NeedsInfoType, part_nodes: list[NeedPart]
 ) -> None:
     app = env.app
-    builder = app.builder
     for part_node in part_nodes:
         content = cast(str, part_node.children[0].children[0])  # ->inline->Text
         result = part_pattern.match(content)
@@ -70,32 +86,31 @@ def update_need_with_parts(
         need["parts"][inline_id] = {
             "id": inline_id,
             "content": part_content,
-            "document": need["docname"],
-            "links_back": [],
-            "is_part": True,
-            "is_need": False,
             "links": [],
+            "links_back": [],
         }
 
         part_id_ref = "{}.{}".format(need["id"], inline_id)
-        part_id_show = inline_id
+
         part_node["reftarget"] = part_id_ref
 
-        part_link_text = f" {part_id_show}"
-        part_link_node = nodes.Text(part_link_text)
         part_text_node = nodes.Text(part_content)
-
-        from sphinx.util.nodes import make_refnode
-
-        part_ref_node = make_refnode(
-            builder, need["docname"], need["docname"], part_id_ref, part_link_node
-        )
-        part_ref_node["classes"] += ["needs-id"]
 
         part_node.children = []
         node_need_part_line = nodes.inline(ids=[part_id_ref], classes=["need-part"])
         node_need_part_line.append(part_text_node)
-        node_need_part_line.append(part_ref_node)
+
+        if docname := need["docname"]:
+            part_id_show = inline_id
+            part_link_text = f" {part_id_show}"
+            part_link_node = nodes.Text(part_link_text)
+
+            part_ref_node = make_refnode(
+                app.builder, docname, docname, part_id_ref, part_link_node
+            )
+            part_ref_node["classes"] += ["needs-id"]
+            node_need_part_line.append(part_ref_node)
+
         part_node.append(node_need_part_line)
 
 

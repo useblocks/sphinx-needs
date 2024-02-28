@@ -17,7 +17,7 @@ from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsFilteredBaseType, NeedsInfoType, NeedsPartsInfoType
+from sphinx_needs.data import NeedsFilteredBaseType, NeedsInfoType
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import get_scale, split_link_types
@@ -169,7 +169,7 @@ def get_debug_container(puml_node: nodes.Element) -> nodes.container:
 
 
 def calculate_link(
-    app: Sphinx, need_info: NeedsInfoType | NeedsPartsInfoType, _fromdocname: None | str
+    app: Sphinx, need_info: NeedsInfoType, _fromdocname: None | str
 ) -> str:
     """
     Link calculation
@@ -195,12 +195,9 @@ def calculate_link(
             if not parsed_url.scheme and not os.path.isabs(need_info["external_url"]):
                 # only need to add ../ or ..\ to get out of the image folder
                 link = ".." + os.path.sep + need_info["external_url"]
-        else:
+        elif _docname := need_info["docname"]:
             link = (
-                "../"
-                + builder.get_target_uri(need_info["docname"])
-                + "#"
-                + need_info["target_id"]
+                "../" + builder.get_target_uri(_docname) + "#" + need_info["target_id"]
             )
             if need_info["is_part"]:
                 link = f"{link}.{need_info['id']}"

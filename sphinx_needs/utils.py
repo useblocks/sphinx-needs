@@ -14,7 +14,7 @@ from docutils import nodes
 from jinja2 import Environment, Template
 from sphinx.application import BuildEnvironment, Sphinx
 
-from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.defaults import NEEDS_PROFILING
 from sphinx_needs.logging import get_logger
@@ -64,8 +64,6 @@ INTERNALS = (
     "type_name",
     "id",
     "hide",
-    "hide_status",
-    "hide_tags",
     "sections",
     "section_name",
     "content_node",
@@ -217,9 +215,9 @@ def row_col_maker(
                             )
                             ref_col["classes"].append(need_info["external_css"])
                             row_col["classes"].append(need_info["external_css"])
-                        else:
+                        elif _docname := need_info["docname"]:
                             ref_col["refuri"] = builder.get_relative_uri(
-                                fromdocname, need_info["docname"]
+                                fromdocname, _docname
                             )
                             ref_col["refuri"] += "#" + datum
                     elif ref_lookup:
@@ -233,9 +231,9 @@ def row_col_maker(
                             )
                             ref_col["classes"].append(temp_need["external_css"])
                             row_col["classes"].append(temp_need["external_css"])
-                        else:
+                        elif _docname := temp_need["docname"]:
                             ref_col["refuri"] = builder.get_relative_uri(
-                                fromdocname, temp_need["docname"]
+                                fromdocname, _docname
                             )
                             ref_col["refuri"] += "#" + temp_need["id"]
                             if link_part:
@@ -281,7 +279,7 @@ def rstjinja(app: Sphinx, docname: str, source: list[str]) -> None:
 
 
 def import_prefix_link_edit(
-    needs: dict[str, Any], id_prefix: str, needs_extra_links: list[dict[str, Any]]
+    needs: dict[str, Any], id_prefix: str, needs_extra_links: list[LinkOptionsType]
 ) -> None:
     """
     Changes existing links to support given prefix.

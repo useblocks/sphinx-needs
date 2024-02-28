@@ -133,11 +133,13 @@ def process_need_ref(
             node_need_ref[0].children[0] = nodes.Text(link_text)  # type: ignore[index]
 
             with contextlib.suppress(NoUri):
-                if not target_need.get("is_external", False):
+                if not target_need.get("is_external", False) and (
+                    _docname := target_need["docname"]
+                ):
                     new_node_ref = make_refnode(
                         builder,
                         fromdocname,
-                        target_need["docname"],
+                        _docname,
                         node_need_ref["reftarget"],
                         node_need_ref[0].deepcopy(),
                         node_need_ref["reftarget"],
