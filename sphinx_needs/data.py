@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.environment import BuildEnvironment
 
+    from sphinx_needs.api.need import Undefined
     from sphinx_needs.services.manager import ServiceManager
 
 
@@ -116,8 +117,8 @@ class NeedsInfoType(TypedDict):
     pre_template: None | str
     post_template: None | str
     content: str
-    pre_content: str
-    post_content: str
+    pre_content: str  # NotRequired
+    post_content: str  # NotRequired
     content_id: None | str
     """ID of the content node."""
     content_node: None | Element
@@ -152,7 +153,7 @@ class NeedsInfoType(TypedDict):
     """Mapping of constraint name, to check name, to result."""
     constraints_passed: None | bool
     """True if all constraints passed, False if any failed, None if not yet checked."""
-    constraints_error: str
+    constraints_error: str  # NotRequired
     """An error message set if any constraint failed, and `error_message` field is set in config."""
 
     # additional source information
@@ -180,29 +181,29 @@ class NeedsInfoType(TypedDict):
     # via `ServiceManager.register`,
     # which in turn means they are added to every need via ``add_need``
     # ``GithubService.options``
-    avatar: str
-    closed_at: str
-    created_at: str
-    max_amount: str
-    service: str
-    specific: str
+    avatar: Undefined | str
+    closed_at: Undefined | str
+    created_at: Undefined | str
+    max_amount: Undefined | str
+    service: Undefined | str
+    specific: Undefined | str
     ## type: str  # although this is already an internal field
-    updated_at: str
-    user: str
+    updated_at: Undefined | str
+    user: Undefined | str
     # ``OpenNeedsService.options``
-    params: str
-    prefix: str
-    url_postfix: str
+    params: Undefined | str
+    prefix: Undefined | str
+    url_postfix: Undefined | str
     # shared ``GithubService.options`` and ``OpenNeedsService.options``
-    max_content_lines: str
-    id_prefix: str
-    query: str
-    url: str
+    max_content_lines: Undefined | str
+    id_prefix: Undefined | str
+    query: Undefined | str
+    url: Undefined | str
 
     # Note there are also these dynamic keys:
     # - items in ``needs_extra_options`` + ``needs_duration_option`` + ``needs_completion_option``,
     #   which get added to ``NEEDS_CONFIG.extra_options``,
-    #   and in turn means they are added to every need via ``add_need`` (as strings)
+    #   and in turn means they are added to every need via ``add_need`` (as Undefined | str)
     # - keys in ``needs_global_options`` config are added to every need via ``add_need``
 
 

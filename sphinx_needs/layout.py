@@ -567,7 +567,7 @@ class LayoutHandler:
             # To escape { we need to use 2 of them.
             # So {{ becomes {{{{
             replace_string = f"{{{{{item}}}}}"
-            data = data.replace(replace_string, self.need[item])  # type: ignore[literal-required]
+            data = data.replace(replace_string, str(self.need[item]))  # type: ignore[literal-required]
         return data
 
     def meta(

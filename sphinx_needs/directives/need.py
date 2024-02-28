@@ -14,6 +14,7 @@ from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api import add_need
 from sphinx_needs.api.exceptions import NeedsInvalidException
+from sphinx_needs.api.need import Undefined
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
@@ -137,7 +138,9 @@ class NeedDirective(SphinxDirective):
             )
 
         for extra_option in NEEDS_CONFIG.extra_options:
-            need_extra_options[extra_option] = self.options.get(extra_option, "")
+            need_extra_options[extra_option] = self.options.get(
+                extra_option, Undefined(extra_option)
+            )
 
         need_nodes = add_need(
             env.app,

@@ -13,6 +13,7 @@ from typing import Any
 from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
+from sphinx_needs.api.need import UndefinedError
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType
 from sphinx_needs.filter_common import filter_needs, filter_single_need
@@ -403,10 +404,10 @@ def calc_sum(
     .. code-block:: jinja
 
        .. req:: Result 2
-          :amount: [[calc_sum("hours", "hours.isdigit() and float(hours) > 10")]]
+          :amount: [[calc_sum("hours", "hours and hours.isdigit() and float(hours) > 10")]]
 
     .. req:: Result 2
-       :amount: [[calc_sum("hours", "hours.isdigit() and float(hours) > 10")]]
+       :amount: [[calc_sum("hours", "hours and hours.isdigit() and float(hours) > 10")]]
        :collapse: False
 
     **Example 3**
@@ -428,11 +429,11 @@ def calc_sum(
 
        .. req:: Result 4
           :links: sum_input_1; sum_input_3
-          :amount: [[calc_sum("hours", "hours.isdigit() and float(hours) > 10", "True")]]
+          :amount: [[calc_sum("hours", "hours and hours.isdigit() and float(hours) > 10", "True")]]
 
     .. req:: Result 4
        :links: sum_input_1; sum_input_3
-       :amount: [[calc_sum("hours", "hours.isdigit() and float(hours) > 10", "True")]]
+       :amount: [[calc_sum("hours", "hours and hours.isdigit() and float(hours) > 10", "True")]]
        :collapse: False
 
     :param option: Options, from which the numbers shall be taken
@@ -460,7 +461,7 @@ def calc_sum(
                     f"Given filter is not valid. Error: {ex} [needs]", type="needs"
                 )
 
-        with contextlib.suppress(ValueError):
+        with contextlib.suppress(ValueError, UndefinedError):
             calculated_sum += float(check_need[option])  # type: ignore[literal-required]
 
     return calculated_sum
