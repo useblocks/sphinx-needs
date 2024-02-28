@@ -31,7 +31,7 @@ needs_types = [
     },
 ]
 
-needs_extra_options = ["author"]
+needs_extra_options = ["author", "author_image"]
 
 needs_layouts = {
     "example": {
@@ -41,8 +41,21 @@ needs_layouts = {
             "meta": [
                 '**status**: <<meta("status")>>',
                 '**author**: <<meta("author")>>',
+                '**author_image**: <<meta("author_image")>>',
             ],
-            "side": ['<<image("_images/{{author}}.png", align="center")>>'],
+            "side": ['<<image("_images/smile.png", align="center")>>'],
+        },
+    },
+    "image_author": {
+        "grid": "simple_side_right_partial",
+        "layout": {
+            "head": ['**<<meta("title")>>**'],
+            "meta": [
+                '**status**: <<meta("status")>>',
+                r'<<meta("author", prefix="\*\*author\*\*: ")>>',
+                r'<<meta("author_image", prefix="\*\*author_image\*\*: ")>>',
+            ],
+            "side": ['<<image("field:author_image", align="center")>>'],
         },
     },
     "optional_author": {
