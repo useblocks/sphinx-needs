@@ -1,8 +1,10 @@
-import pytest
-from pathlib import Path
 import subprocess
+from pathlib import Path
+
+import pytest
 
 # local execution: pytest test_proper_warning.py
+
 
 @pytest.mark.parametrize(
     "test_app",
@@ -10,7 +12,6 @@ import subprocess
     indirect=True,
 )
 def test_proper_warning(test_app):
-
     app = test_app
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"
@@ -28,7 +29,6 @@ def test_proper_warning(test_app):
     assert 'href="#SP_TOO_000" title="SP_TOO_000">SP_TOO_000' in html
     assert 'href="#SP_TOO_001" title="SP_TOO_001">SP_TOO_001' in html
     assert 'href="#SP_TOO_002" title="SP_TOO_002">SP_TOO_002' in html
-
 
     # stdout warnings
     warnings = out.stderr.decode("utf-8")
