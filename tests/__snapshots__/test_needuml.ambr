@@ -1275,7 +1275,6 @@
       }),
       'is_arch': False,
       'key': None,
-      'lineno': 1,
       'save': None,
       'scale': '',
       'target_id': 'needuml-index-0',
