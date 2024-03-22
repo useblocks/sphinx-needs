@@ -659,6 +659,7 @@ def render_rst(
         return nested_parse_with_titles(state, content, node)
     else:
         from inspect import signature
+
         sig = signature(nested_parse_with_titles)
         # check if we have a doctuils version which already supports content_offset
         if "content_offset" in sig.parameters:
