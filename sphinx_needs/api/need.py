@@ -650,8 +650,11 @@ def _prepare_template(app: Sphinx, needs_info: NeedsInfoType, template_key: str)
 
 
 # here we have the same signature as nested_parse_with_titles from doctuils
-def render_StringList(state: Any, content: StringList, node: nodes.Node, content_offset: int = 0) -> str:
+def render_StringList(
+    state: Any, content: StringList, node: nodes.Node, content_offset: int = 0
+) -> str:
     from inspect import signature
+
     sig = signature(nested_parse_with_titles)
     # check if we have a doctuils version which already supports content_offset
     if "content_offset" in sig.parameters:
