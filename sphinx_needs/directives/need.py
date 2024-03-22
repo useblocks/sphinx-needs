@@ -116,7 +116,6 @@ class NeedDirective(SphinxDirective):
         hide = "hide" in self.options
 
         id = self.options.get("id")
-        content = "\n".join(self.content)
         status = self.options.get("status")
         if status:
             status = status.replace(
@@ -147,7 +146,8 @@ class NeedDirective(SphinxDirective):
             need_type=self.name,
             title=self.trimmed_title,
             id=id,
-            content=content,
+            content=self.content,
+            content_offset=self.content_offset,
             status=status,
             tags=tags,
             hide=hide,

@@ -10,7 +10,6 @@ from docutils.parsers.rst.states import RSTState
 from docutils.statemachine import StringList
 from jinja2 import Template
 from sphinx.application import Sphinx
-from sphinx.util.nodes import nested_parse_with_titles
 
 from sphinx_needs.api.configuration import NEEDS_CONFIG
 from sphinx_needs.api.exceptions import (
@@ -43,7 +42,8 @@ def add_need(
     need_type: str,
     title: str,
     id: str | None = None,
-    content: str = "",
+    content: str | StringList = "",
+    content_offset: None | int = None,
     status: str | None = None,
     tags: None | str | list[str] = None,
     constraints: None | str | list[str] = None,
@@ -110,7 +110,8 @@ def add_need(
     :param app: Sphinx application object.
     :param state: Current state object.
     :param docname: documentation name.
-    :param lineno: line number.
+    :param lineno: line number of the top of the directive.
+    :param content_offset: Offset from the lineno to the content start.
     :param need_type: Name of the need type to create.
     :param title: String as title.
     :param id: ID as string. If not given, an id will get generated.
@@ -192,7 +193,12 @@ def add_need(
         )
 
     if id is None:
-        need_id = make_hashed_id(app, need_type, title, content)
+        need_id = make_hashed_id(
+            app,
+            need_type,
+            title,
+            "\n".join(content) if isinstance(content, StringList) else content,
+        )
     else:
         need_id = id
 
@@ -319,7 +325,9 @@ def add_need(
         trimmed_title = title[: max_length - 3] + "..."
 
     # Calculate doc type, e.g. .rst or .md
-    if state and state.document and state.document.current_source:
+    if is_external:
+        doctype = ""
+    elif state and state.document and state.document.current_source:
         doctype = os.path.splitext(state.document.current_source)[1]
     else:
         doctype = ".rst"
@@ -345,7 +353,8 @@ def add_need(
         "id": need_id,
         "title": trimmed_title,
         "full_title": title,
-        "content": content,
+        "content": "\n".join(content) if isinstance(content, StringList) else content,
+        "content_offset": content_offset,
         "collapse": collapse,
         "arch": {},  # extracted later
         "style": style,
@@ -427,8 +436,7 @@ def add_need(
         need_content_context.update(**needs_config.render_context)
         new_content = jinja_parse(need_content_context, needs_info["content"])
         # Overwrite current content
-        content = new_content
-        needs_info["content"] = new_content
+        needs_info["content"] = content = new_content
 
     SphinxNeedsData(env).get_or_create_needs()[need_id] = needs_info
 
@@ -439,8 +447,7 @@ def add_need(
     if needs_info["template"]:
         new_content = _prepare_template(app, needs_info, "template")
         # Overwrite current content
-        content = new_content
-        needs_info["content"] = new_content
+        needs_info["content"] = content = new_content
 
     # pre_template
     if needs_info["pre_template"]:
@@ -479,7 +486,35 @@ def add_need(
         node_need["hidden"] = True
         return [node_need]
 
-    node_need_content = _render_template(content, docname, lineno, state)
+    node_need_content = nodes.Element()
+    node_need_content.source, node_need_content.line = docname, lineno
+    print(docname, lineno, content_offset)
+    print(content)
+    if isinstance(content, StringList):
+        state.nested_parse(content, content_offset or 0, node_need_content)
+    else:
+        line_offset = state.state_machine.line_offset
+        input_offset = state.state_machine.input_offset
+        state.state_machine.line_offset = (lineno or 1) + (content_offset or 0)
+        state.state_machine.input_offset = 0
+        state.nested_parse(
+            StringList(
+                content.splitlines(),
+                # items=[
+                #     (docname, (lineno or 1) + (content_offset or 0))
+                #     for _ in content.splitlines()
+                # ],
+            ),
+             (lineno or 1) + (content_offset or 0),
+            node_need_content,
+        )
+        state.state_machine.line_offset = line_offset
+        state.state_machine.input_offset = input_offset
+    print("---")
+
+    # node_need_content = _parse_content(
+    #     content_string, docname, lineno if content_offset is None else content_offset, state
+    # )
 
     # Extract plantuml diagrams and store needumls with keys in arch, e.g. need_info['arch']['diagram']
     node_need_needumls_without_key = []
@@ -526,11 +561,11 @@ def add_need(
         return_nodes = [target_node, node_need]
 
     if pre_content:
-        node_need_pre_content = _render_template(pre_content, docname, lineno, state)
+        node_need_pre_content = _parse_content(pre_content, docname, lineno, state)
         return_nodes = node_need_pre_content.children + return_nodes
 
     if post_content:
-        node_need_post_content = _render_template(post_content, docname, lineno, state)
+        node_need_post_content = _parse_content(post_content, docname, lineno, state)
         return_nodes = return_nodes + node_need_post_content.children
 
     return return_nodes
@@ -602,7 +637,7 @@ def add_external_need(
         lineno=None,
         need_type=need_type,
         id=id,
-        content=content,
+        content_string=content,
         # TODO a title being None is not "type compatible" with other parts of the code base,
         # however, at present changing it to an empty string breaks some existing tests.
         title=title,  # type: ignore
@@ -641,33 +676,16 @@ def _prepare_template(app: Sphinx, needs_info: NeedsInfoType, template_key: str)
     return new_content
 
 
-def _render_template(
+def _parse_content(
     content: str, docname: str | None, lineno: int | None, state: RSTState
 ) -> nodes.Element:
-    rst = StringList()
-    for line in content.split("\n"):
-        # TODO how to handle if the source mapping here, if the content is from an external need?
-        # (i.e. does not have a docname and lineno)
-        rst.append(line, docname, lineno)
-    node_need_content = nodes.Element()
-    node_need_content.document = state.document
-    nested_parse_with_titles(state, rst, node_need_content)
-    return node_need_content
-
-
-def _render_plantuml_template(
-    content: str, docname: str, lineno: int, state: RSTState
-) -> nodes.Element:
-    rst = StringList()
-    rst.append(".. needuml::", docname, lineno)
-    rst.append("", docname, lineno)  # Empty option line for needuml
-    for line in content.split("\n"):
-        line = f"   {line}"  # indent content under needuml
-        rst.append(line, docname, lineno)
-    node_need_content = nodes.Element()
-    node_need_content.document = state.document
-    nested_parse_with_titles(state, rst, node_need_content)
-    return node_need_content
+    """Generate a container element with the parsed content."""
+    node = nodes.Element()
+    node.source, node.line = docname, lineno
+    state.nested_parse(
+        StringList(content.splitlines()), 0 if lineno is None else lineno, node
+    )
+    return node
 
 
 def _read_in_links(links_string: None | str | list[str]) -> list[str]:
