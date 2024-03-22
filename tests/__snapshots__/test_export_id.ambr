@@ -126,6 +126,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'REQ_001',
+            'content_offset': 11,
             'created_at': '',
             'delete': None,
             'description': '',
@@ -201,6 +202,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'REQ_002',
+            'content_offset': 14,
             'created_at': '',
             'delete': None,
             'description': '',
@@ -273,6 +275,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'REQ_003',
+            'content_offset': 17,
             'created_at': '',
             'delete': None,
             'description': '',
@@ -345,6 +348,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'REQ_004',
+            'content_offset': 20,
             'created_at': '',
             'delete': None,
             'description': '',
@@ -418,6 +422,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'REQ_005',
+            'content_offset': 25,
             'created_at': '',
             'delete': None,
             'description': '''
@@ -519,6 +524,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'TEST_001',
+            'content_offset': 37,
             'created_at': '',
             'delete': None,
             'description': '',
@@ -593,6 +599,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'TEST_002',
+            'content_offset': 42,
             'created_at': '',
             'delete': None,
             'description': '',
@@ -667,6 +674,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'TEST_003',
+            'content_offset': 47,
             'created_at': '',
             'delete': None,
             'description': '',

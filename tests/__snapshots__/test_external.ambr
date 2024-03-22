@@ -20,6 +20,7 @@
             'constraints_results': dict({
             }),
             'content_id': None,
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': 'EXT_TEST_01',
@@ -87,6 +88,7 @@
             'constraints_results': dict({
             }),
             'content_id': None,
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': 'EXT_TEST_02',
@@ -157,6 +159,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'REQ_1',
+            'content_offset': 11,
             'created_at': '',
             'delete': None,
             'description': '',
@@ -224,6 +227,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'SPEC_1',
+            'content_offset': 15,
             'created_at': '',
             'delete': None,
             'description': '',
@@ -293,6 +297,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'SUB_002',
+            'content_offset': 6,
             'created_at': '',
             'delete': None,
             'description': '',
