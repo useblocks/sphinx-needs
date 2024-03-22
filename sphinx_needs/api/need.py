@@ -44,7 +44,7 @@ def add_need(
     title: str,
     id: str | None = None,
     content: str = "",
-    content_offset: int | None = None,
+    content_offset: None | int = None,
     status: str | None = None,
     tags: None | str | list[str] = None,
     constraints: None | str | list[str] = None,
@@ -485,7 +485,7 @@ def add_need(
     local_content_offset = 0
     if content_offset:
         local_content_offset = content_offset
-    else:
+    elif lineno:
         local_content_offset = lineno
     node_need_content = _render_template(content, docname, local_content_offset, state)
 
@@ -655,7 +655,7 @@ def render_StringList(state: Any, content: StringList, node: nodes.Node, content
     sig = signature(nested_parse_with_titles)
     # check if we have a doctuils version which already supports content_offset
     if "content_offset" in sig.parameters:
-        nested_parse_with_titles(state, content, node, content_offset)
+        return nested_parse_with_titles(state, content, node, content_offset)
     else:
         # let's reimplement a new nested_parse_with_titles
         surrounding_title_styles = state.memo.title_styles

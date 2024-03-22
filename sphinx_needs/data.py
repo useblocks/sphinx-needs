@@ -118,6 +118,7 @@ class NeedsInfoType(TypedDict, total=False):
     pre_template: Required[None | str]
     post_template: Required[None | str]
     content: Required[str]
+    content_offset: Required[int | None]
     pre_content: str
     post_content: str
     content_id: Required[None | str]
