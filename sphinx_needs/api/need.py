@@ -44,6 +44,7 @@ def add_need(
     title: str,
     id: str | None = None,
     content: str = "",
+    content_offset: int | None = None,
     status: str | None = None,
     tags: None | str | list[str] = None,
     constraints: None | str | list[str] = None,
@@ -115,6 +116,7 @@ def add_need(
     :param title: String as title.
     :param id: ID as string. If not given, an id will get generated.
     :param content: Content as single string.
+    :param content_offset: Offset of the content as line number, differs from lineno.
     :param status: Status as string.
     :param tags: Tags as single string.
     :param constraints: Constraints as single, comma separated, string.
@@ -346,6 +348,7 @@ def add_need(
         "title": trimmed_title,
         "full_title": title,
         "content": content,
+        "content_offset": content_offset,
         "collapse": collapse,
         "arch": {},  # extracted later
         "style": style,
@@ -479,7 +482,12 @@ def add_need(
         node_need["hidden"] = True
         return [node_need]
 
-    node_need_content = _render_template(content, docname, lineno, state)
+    local_content_offset = 0
+    if content_offset:
+        local_content_offset = content_offset
+    else:
+        local_content_offset = lineno
+    node_need_content = _render_template(content, docname, local_content_offset, state)
 
     # Extract plantuml diagrams and store needumls with keys in arch, e.g. need_info['arch']['diagram']
     node_need_needumls_without_key = []
@@ -641,6 +649,26 @@ def _prepare_template(app: Sphinx, needs_info: NeedsInfoType, template_key: str)
     return new_content
 
 
+# here we have the same signature as nested_parse_with_titles from doctuils
+def render_StringList(state: Any, content: StringList, node: nodes.Node, content_offset: int = 0) -> str:
+    from inspect import signature
+    sig = signature(nested_parse_with_titles)
+    # check if we have a doctuils version which already supports content_offset
+    if "content_offset" in sig.parameters:
+        nested_parse_with_titles(state, content, node, content_offset)
+    else:
+        # let's reimplement a new nested_parse_with_titles
+        surrounding_title_styles = state.memo.title_styles
+        surrounding_section_level = state.memo.section_level
+        state.memo.title_styles = []
+        state.memo.section_level = 0
+        try:
+            return state.nested_parse(content, content_offset, node, match_titles=1)
+        finally:
+            state.memo.title_styles = surrounding_title_styles
+            state.memo.section_level = surrounding_section_level
+
+
 def _render_template(
     content: str, docname: str | None, lineno: int | None, state: RSTState
 ) -> nodes.Element:
@@ -651,7 +679,7 @@ def _render_template(
         rst.append(line, docname, lineno)
     node_need_content = nodes.Element()
     node_need_content.document = state.document
-    nested_parse_with_titles(state, rst, node_need_content)
+    render_StringList(state, rst, node_need_content, lineno)
     return node_need_content
 
 
@@ -666,7 +694,7 @@ def _render_plantuml_template(
         rst.append(line, docname, lineno)
     node_need_content = nodes.Element()
     node_need_content.document = state.document
-    nested_parse_with_titles(state, rst, node_need_content)
+    render_StringList(state, rst, node_need_content, lineno)
     return node_need_content
 
 
