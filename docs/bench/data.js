@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1709136615507,
+  "lastUpdate": 1711286962349,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7416,6 +7416,42 @@ window.BENCHMARK_DATA = {
             "value": 60.266390102,
             "unit": "s",
             "extra": "Commit: 2c4541b1245c97bdcf15da25e758a58c8091f09f\nBranch: master\nTime: 2024-02-28T17:08:10+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0f71ecde47a3f7c3245c5bcf545ef5281376768c",
+          "message": "Doc Font fix (#1152)\n\nSets font=False for the documentation, to avoid usage of google fonts.\r\nSee https://jbms.github.io/sphinx-immaterial/customization.html#themeconf-font",
+          "timestamp": "2024-03-24T14:27:18+01:00",
+          "tree_id": "11c2d67b2215d90a0afa148b3ce02c5f87b8d3f8",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/0f71ecde47a3f7c3245c5bcf545ef5281376768c"
+        },
+        "date": 1711286955407,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2721548330000019,
+            "unit": "s",
+            "extra": "Commit: 0f71ecde47a3f7c3245c5bcf545ef5281376768c\nBranch: master\nTime: 2024-03-24T14:27:18+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.728690481,
+            "unit": "s",
+            "extra": "Commit: 0f71ecde47a3f7c3245c5bcf545ef5281376768c\nBranch: master\nTime: 2024-03-24T14:27:18+01:00"
           }
         ]
       }
