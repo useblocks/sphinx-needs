@@ -441,6 +441,7 @@ html_logo = "./_static/sphinx-needs-logo-white.png"
 html_favicon = "./_static/sphinx-needs-logo-favicon.png"
 # material theme options (see theme.conf for more information)
 html_theme_options = {
+    "font": False,
     "icon": {
         "repo": "fontawesome/brands/github",
     },
