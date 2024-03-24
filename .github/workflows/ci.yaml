@@ -29,8 +29,8 @@ jobs:
         sphinx-version: ["5.0", "6.0", "7.0"]
         include:
           - os: "windows-latest"
-            python-version: "3.8"
-            sphinx-version: "5.0"
+            python-version: "3.11"
+            sphinx-version: "7.0"
     steps:
       - uses: actions/checkout@v4
       - name: Set Up Python ${{ matrix.python-version }}
