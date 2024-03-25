@@ -28,7 +28,7 @@ def test_needs_dead_links_warnings(test_app):
         "srcdir/index.rst:45: WARNING: Need 'TEST_004' has unknown outgoing link 'REQ_005.invalid' in field 'tests' [needs.link_outgoing]",
     ]
 
-    if platform.system() == "windows":
+    if platform.system() == "Windows":
         for i in range(len(expected_warnings)):
             expected_warnings[i] = expected_warnings[i].replace("/", "\\", 1)
 
@@ -58,7 +58,7 @@ def test_needs_dead_links_warnings_needs_builder(test_app):
         "srcdir/index.rst:45: WARNING: Need 'TEST_004' has unknown outgoing link 'REQ_005.invalid' in field 'tests' [needs.link_outgoing]",
     ]
 
-    if platform.system() == "windows":
+    if platform.system() == "Windows":
         for i in range(len(expected_warnings)):
             expected_warnings[i] = expected_warnings[i].replace("/", "\\", 1)
 

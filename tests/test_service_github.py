@@ -93,7 +93,7 @@ def test_build(test_app, snapshot):
         "srcdir/index.rst:22: WARNING: GitHub: API rate limit exceeded (twice). Stop here. [needs.github]",
     ]
 
-    if platform.system() == "windows":
+    if platform.system() == "Windows":
         for i in range(len(expected_warnings)):
             expected_warnings[i] = expected_warnings[i].replace("/", "\\", 1)
 

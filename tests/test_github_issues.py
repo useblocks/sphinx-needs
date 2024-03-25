@@ -41,7 +41,7 @@ def test_doc_github_44(test_app):
         "srcdir/index.rst:11: WARNING: Need 'test_3' has unknown outgoing link 'test_123_broken' in field 'links' [needs.link_outgoing]"
     ]
 
-    if platform.system() == "windows":
+    if platform.system() == "Windows":
         for i in range(len(expected_warnings)):
             expected_warnings[i] = expected_warnings[i].replace("/", "\\", 1)
 

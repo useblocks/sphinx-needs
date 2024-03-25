@@ -23,7 +23,7 @@ def test_filter_build_html(test_app):
         "srcdir/index.rst:60: WARNING: Filter 'zzz' not valid. Error: name 'zzz' is not defined. [needs.filter]",
     ]
 
-    if platform.system() == "windows":
+    if platform.system() == "Windows":
         for i in range(len(expected_warnings)):
             expected_warnings[i] = expected_warnings[i].replace("/", "\\", 1)
 
