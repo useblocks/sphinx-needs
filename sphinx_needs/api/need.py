@@ -655,26 +655,22 @@ def _prepare_template(app: Sphinx, needs_info: NeedsInfoType, template_key: str)
 def render_rst(
     state: Any, content: StringList, node: nodes.Node, content_offset: int = 0
 ) -> Any:
-    if content_offset == 0:
-        return nested_parse_with_titles(state, content, node)
+    # check if we have a sphinx version which already supports content_offset 
+    # in nested_parse_with_titles
+    from sphinx import version_info
+    if version_info >= (6, 2)
+        return nested_parse_with_titles(state, content, node, content_offset)
     else:
-        from inspect import signature
-
-        sig = signature(nested_parse_with_titles)
-        # check if we have a doctuils version which already supports content_offset
-        if "content_offset" in sig.parameters:
-            return nested_parse_with_titles(state, content, node, content_offset)
-        else:
-            # let's reimplement a new nested_parse_with_titles
-            surrounding_title_styles = state.memo.title_styles
-            surrounding_section_level = state.memo.section_level
-            state.memo.title_styles = []
-            state.memo.section_level = 0
-            try:
-                return state.nested_parse(content, content_offset, node, match_titles=1)
-            finally:
-                state.memo.title_styles = surrounding_title_styles
-                state.memo.section_level = surrounding_section_level
+        # let's reimplement a new nested_parse_with_titles
+        surrounding_title_styles = state.memo.title_styles
+        surrounding_section_level = state.memo.section_level
+        state.memo.title_styles = []
+        state.memo.section_level = 0
+        try:
+            return state.nested_parse(content, content_offset, node, match_titles=1)
+        finally:
+            state.memo.title_styles = surrounding_title_styles
+            state.memo.section_level = surrounding_section_level
 
 
 def _render_template(
