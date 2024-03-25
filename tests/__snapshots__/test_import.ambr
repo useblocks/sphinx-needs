@@ -20,6 +20,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'IMPL_01',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': 'Incoming links of this spec: :need_incoming:`IMPL_01`.',
@@ -88,6 +89,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'OWN_ID_123',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': 'Outgoing links of this spec: :need_outgoing:`OWN_ID_123`.',
@@ -156,6 +158,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'REQ_001',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '''
@@ -227,6 +230,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'REQ_1',
+            'content_offset': 39,
             'created_at': '',
             'delete': None,
             'description': '',
@@ -295,6 +299,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'ROLES_REQ_1',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -362,6 +367,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'ROLES_REQ_2',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -430,6 +436,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'R_22EB2',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -499,6 +506,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'R_2A9D0',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -568,6 +576,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'R_F4722',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '''
@@ -642,6 +651,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'SPEC_1',
+            'content_offset': 42,
             'created_at': '',
             'delete': None,
             'description': '',
@@ -710,6 +720,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'S_01A67',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -779,6 +790,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'S_503A1',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '''
@@ -855,6 +867,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'S_D70B0',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -924,6 +937,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'TEST_01',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': 'TEST IMPORT TITLE',
@@ -991,6 +1005,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'T_5CCAA',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -1060,6 +1075,7 @@
             'constraints_results': dict({
             }),
             'content_id': None,
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '''
@@ -1136,6 +1152,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'collapsed_IMPL_01',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': 'Incoming links of this spec: :need_incoming:`collapsed_IMPL_01`.',
@@ -1208,6 +1225,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'collapsed_OWN_ID_123',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': 'Outgoing links of this spec: :need_outgoing:`collapsed_OWN_ID_123`.',
@@ -1280,6 +1298,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'collapsed_REQ_001',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '''
@@ -1355,6 +1374,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'collapsed_ROLES_REQ_1',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -1426,6 +1446,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'collapsed_ROLES_REQ_2',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -1498,6 +1519,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'collapsed_R_22EB2',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -1571,6 +1593,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'collapsed_R_2A9D0',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -1644,6 +1667,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'collapsed_R_F4722',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '''
@@ -1722,6 +1746,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'collapsed_S_01A67',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -1795,6 +1820,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'collapsed_S_503A1',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '''
@@ -1875,6 +1901,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'collapsed_S_D70B0',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -1948,6 +1975,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'collapsed_TEST_01',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': 'TEST IMPORT TITLE',
@@ -2019,6 +2047,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'collapsed_T_5CCAA',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -2092,6 +2121,7 @@
             'constraints_results': dict({
             }),
             'content_id': None,
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '''
@@ -2172,6 +2202,7 @@
             'constraints_results': dict({
             }),
             'content_id': None,
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': 'Incoming links of this spec: :need_incoming:`hidden_IMPL_01`.',
@@ -2243,6 +2274,7 @@
             'constraints_results': dict({
             }),
             'content_id': None,
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': 'Outgoing links of this spec: :need_outgoing:`hidden_OWN_ID_123`.',
@@ -2314,6 +2346,7 @@
             'constraints_results': dict({
             }),
             'content_id': None,
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '''
@@ -2388,6 +2421,7 @@
             'constraints_results': dict({
             }),
             'content_id': None,
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -2458,6 +2492,7 @@
             'constraints_results': dict({
             }),
             'content_id': None,
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -2529,6 +2564,7 @@
             'constraints_results': dict({
             }),
             'content_id': None,
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -2601,6 +2637,7 @@
             'constraints_results': dict({
             }),
             'content_id': None,
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -2673,6 +2710,7 @@
             'constraints_results': dict({
             }),
             'content_id': None,
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '''
@@ -2750,6 +2788,7 @@
             'constraints_results': dict({
             }),
             'content_id': None,
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -2822,6 +2861,7 @@
             'constraints_results': dict({
             }),
             'content_id': None,
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '''
@@ -2901,6 +2941,7 @@
             'constraints_results': dict({
             }),
             'content_id': None,
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -2973,6 +3014,7 @@
             'constraints_results': dict({
             }),
             'content_id': None,
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': 'TEST IMPORT TITLE',
@@ -3042,6 +3084,7 @@
             'constraints_results': dict({
             }),
             'content_id': None,
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -3114,6 +3157,7 @@
             'constraints_results': dict({
             }),
             'content_id': None,
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '''
@@ -3192,6 +3236,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'small2_TEST_03',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': 'AAA',
@@ -3259,6 +3304,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'small_TEST_02',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': 'small_TEST_02',
@@ -3328,6 +3374,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'small_abs_path_TEST_02',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': 'small_abs_path_TEST_02',
@@ -3397,6 +3444,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'small_depr_rel_path_TEST_01',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': 'small_depr_rel_path_TEST_01',
@@ -3464,6 +3512,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'small_rel_path_TEST_01',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': 'small_rel_path_TEST_01',
@@ -3531,6 +3580,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'test_IMPL_01',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': 'Incoming links of this spec: :need_incoming:`test_IMPL_01`.',
@@ -3602,6 +3652,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'test_OWN_ID_123',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': 'Outgoing links of this spec: :need_outgoing:`test_OWN_ID_123`.',
@@ -3673,6 +3724,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'test_REQ_001',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '''
@@ -3747,6 +3799,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'test_ROLES_REQ_1',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -3817,6 +3870,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'test_ROLES_REQ_2',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -3888,6 +3942,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'test_R_22EB2',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -3960,6 +4015,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'test_R_2A9D0',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -4032,6 +4088,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'test_R_F4722',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '''
@@ -4109,6 +4166,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'test_S_01A67',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -4181,6 +4239,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'test_S_503A1',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '''
@@ -4260,6 +4319,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'test_S_D70B0',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -4332,6 +4392,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'test_TEST_01',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': 'TEST IMPORT TITLE',
@@ -4402,6 +4463,7 @@
             'constraints_results': dict({
             }),
             'content_id': 'test_T_5CCAA',
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '',
@@ -4474,6 +4536,7 @@
             'constraints_results': dict({
             }),
             'content_id': None,
+            'content_offset': None,
             'created_at': '',
             'delete': False,
             'description': '''
@@ -4563,6 +4626,7 @@
       }),
       'content': 'IMP_TEST_101 DESCRIPTION',
       'content_id': 'IMP_TEST_101',
+      'content_offset': None,
       'created_at': '',
       'delete': False,
       'docname': 'index',
@@ -4643,6 +4707,7 @@
       }),
       'content': 'other.',
       'content_id': 'SPEC_1',
+      'content_offset': 11,
       'created_at': '',
       'delete': None,
       'docname': 'index',
@@ -4722,6 +4787,7 @@
       }),
       'content': 'some.',
       'content_id': 'STORY_1',
+      'content_offset': 6,
       'created_at': '',
       'delete': None,
       'docname': 'index',
