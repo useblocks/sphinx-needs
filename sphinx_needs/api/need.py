@@ -658,7 +658,7 @@ def render_rst(
     # check if we have a sphinx version which already supports content_offset 
     # in nested_parse_with_titles
     from sphinx import version_info
-    if version_info >= (6, 2)
+    if version_info >= (6, 2):
         return nested_parse_with_titles(state, content, node, content_offset)
     else:
         # let's reimplement a new nested_parse_with_titles
