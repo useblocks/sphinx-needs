@@ -1,11 +1,11 @@
 import json
+import platform
 from pathlib import Path
 
 import pytest
 import responses
 from sphinx.util.console import strip_colors
 from syrupy.filters import props
-import platform
 
 
 @responses.activate
@@ -93,9 +93,9 @@ def test_build(test_app, snapshot):
         "srcdir/index.rst:22: WARNING: GitHub: API rate limit exceeded (twice). Stop here. [needs.github]",
     ]
 
-    if platform.system() == 'windows':
+    if platform.system() == "windows":
         for i in range(len(expected_warnings)):
-            expected_warnings[i] = expected_warnings[i].replace('/', '\\', 1)
+            expected_warnings[i] = expected_warnings[i].replace("/", "\\", 1)
 
     assert warnings.splitlines() == expected_warnings
 

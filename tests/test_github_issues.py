@@ -1,9 +1,9 @@
+import platform
 import re
 import subprocess
 from pathlib import Path
 
 import pytest
-import platform
 
 
 @pytest.mark.parametrize(
@@ -41,9 +41,9 @@ def test_doc_github_44(test_app):
         "srcdir/index.rst:11: WARNING: Need 'test_3' has unknown outgoing link 'test_123_broken' in field 'links' [needs.link_outgoing]"
     ]
 
-    if platform.system() == 'windows':
+    if platform.system() == "windows":
         for i in range(len(expected_warnings)):
-            expected_warnings[i] = expected_warnings[i].replace('/', '\\', 1)
+            expected_warnings[i] = expected_warnings[i].replace("/", "\\", 1)
 
     assert stderr.splitlines() == expected_warnings
 
