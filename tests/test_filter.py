@@ -13,12 +13,8 @@ import platform
 def test_filter_build_html(test_app):
     app = test_app
     app.build()
-
-    warnings = strip_colors(
-        app._warning.getvalue().replace(str(app.srcdir), "srcdir")
-    ).splitlines()
-    for w in warnings:
-        print(w)
+    warnings = strip_colors(app._warning.getvalue().replace(str(app.srcdir), "srcdir"))
+    print(warnings)
 
     expected_warnings = [
         "srcdir/index.rst:51: WARNING: Filter 'xxx' not valid. Error: name 'xxx' is not defined. [needs.filter]",
