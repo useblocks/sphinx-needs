@@ -119,6 +119,9 @@ class NeedsInfoType(TypedDict, total=False):
     post_template: Required[None | str]
     content: Required[str]
     content_offset: Required[int | None]
+    """The offset relative to the ``lineno``,
+    where the content of the directive starts in the source.
+    """
     pre_content: str
     post_content: str
     content_id: Required[None | str]
