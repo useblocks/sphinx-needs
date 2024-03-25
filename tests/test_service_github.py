@@ -5,6 +5,7 @@ import pytest
 import responses
 from sphinx.util.console import strip_colors
 from syrupy.filters import props
+import platform
 
 
 @responses.activate
@@ -86,10 +87,17 @@ def test_build(test_app, snapshot):
     app.build()
     warnings = strip_colors(app._warning.getvalue().replace(str(app.srcdir), "srcdir"))
     print(warnings)
-    assert warnings.splitlines() == [
+
+    expected_warnings = [
         'srcdir/index.rst:4: WARNING: "query" or "specific" missing as option for github service. [needs.github]',
         "srcdir/index.rst:22: WARNING: GitHub: API rate limit exceeded (twice). Stop here. [needs.github]",
     ]
+
+    if platform.system() == 'windows':
+        for i in range(len(expected_warnings)):
+            expected_warnings[i] = expected_warnings[i].replace('/', '\\', 1)
+
+    assert warnings.splitlines() == expected_warnings
 
     needs_data = json.loads((Path(app.outdir) / "needs.json").read_text("utf8"))
     assert needs_data == snapshot(exclude=props("created", "avatar"))

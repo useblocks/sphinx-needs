@@ -3,6 +3,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+import platform
 
 
 @pytest.mark.parametrize(
@@ -35,9 +36,16 @@ def test_doc_github_44(test_app):
 
     stderr = output.stderr.decode("utf-8")
     stderr = stderr.replace(str(app.srcdir), "srcdir")
-    assert stderr.splitlines() == [
+
+    expected_warnings = [
         "srcdir/index.rst:11: WARNING: Need 'test_3' has unknown outgoing link 'test_123_broken' in field 'links' [needs.link_outgoing]"
     ]
+
+    if platform.system() == 'windows':
+        for i in range(len(expected_warnings)):
+            expected_warnings[i] = expected_warnings[i].replace('/', '\\', 1)
+
+    assert stderr.splitlines() == expected_warnings
 
 
 @pytest.mark.parametrize(
