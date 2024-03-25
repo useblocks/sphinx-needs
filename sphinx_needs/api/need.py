@@ -655,9 +655,10 @@ def _prepare_template(app: Sphinx, needs_info: NeedsInfoType, template_key: str)
 def render_rst(
     state: Any, content: StringList, node: nodes.Node, content_offset: int = 0
 ) -> Any:
-    # check if we have a sphinx version which already supports content_offset 
+    # check if we have a sphinx version which already supports content_offset
     # in nested_parse_with_titles
     from sphinx import version_info
+
     if version_info >= (6, 2):
         return nested_parse_with_titles(state, content, node, content_offset)
     else:
