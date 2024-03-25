@@ -174,9 +174,9 @@ class List2NeedDirective(SphinxDirective):
                 more_text = more_text.lstrip()
                 if more_text.startswith(":"):
                     more_text = f"   {more_text}"
-                list_needs[-1][
-                    "content"
-                ] = f"{list_needs[-1]['content']}\n   {more_text}"
+                list_needs[-1]["content"] = (
+                    f"{list_needs[-1]['content']}\n   {more_text}"
+                )
 
         # Finally creating the rst code
         overall_text = []

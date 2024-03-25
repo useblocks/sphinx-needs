@@ -227,14 +227,14 @@ def process_needfilters(
                     **need_info, **needs_config.render_context
                 )
 
-                puml_node[
-                    "uml"
-                ] += '{style} "{node_text}" as {id} [[{link}]] {color}\n'.format(
-                    id=need_info["id"],
-                    node_text=node_text,
-                    link=link,
-                    color=need_info["type_color"],
-                    style=need_info["type_style"],
+                puml_node["uml"] += (
+                    '{style} "{node_text}" as {id} [[{link}]] {color}\n'.format(
+                        id=need_info["id"],
+                        node_text=node_text,
+                        link=link,
+                        color=need_info["type_color"],
+                        style=need_info["type_style"],
+                    )
                 )
                 for link in need_info["links"]:
                     puml_connections += "{id} --> {link}\n".format(
