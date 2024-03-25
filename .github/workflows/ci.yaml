@@ -44,9 +44,9 @@ jobs:
           python -m pip install sphinx~=${{ matrix.sphinx-version }} -e .[test]
           python -m pip freeze
       - name: Run pytest
-        run: |
-          python -m pytest -v --ignore=tests/benchmarks -m "not jstest" --cov=sphinx_needs --cov-report=xml --cov-report=term-missing tests
-          coverage xml
+        run: python -m pytest -v --ignore=tests/benchmarks -m "not jstest" --cov=sphinx_needs --cov-report=xml --cov-report=term-missing tests
+      - name: Create coverage
+        run: coverage xml
       - name: Upload to Codecov
         if: github.repository == 'useblocks/sphinx-needs' && matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v3
