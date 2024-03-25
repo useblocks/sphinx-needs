@@ -1,6 +1,7 @@
+import platform
+
 import pytest
 from sphinx.util.console import strip_colors
-import platform
 
 
 @pytest.mark.parametrize(
@@ -21,8 +22,8 @@ def test_doc_build_html(test_app):
         "srcdir/index.rst:21: WARNING: linked need BROKEN_LINK not found [needs.link_ref]",
     ]
 
-    if platform.system() == 'windows':
+    if platform.system() == "windows":
         for i in range(len(expected_warnings)):
-            expected_warnings[i] = expected_warnings[i].replace('/', '\\', 1)
+            expected_warnings[i] = expected_warnings[i].replace("/", "\\", 1)
 
     assert warnings.splitlines() == expected_warnings

@@ -1,8 +1,8 @@
+import platform
 from pathlib import Path
 
 import pytest
 from sphinx.util.console import strip_colors
-import platform
 
 
 @pytest.mark.parametrize(
@@ -27,9 +27,9 @@ def test_filter_build_html(test_app):
         "srcdir/index.rst:60: WARNING: Filter 'zzz' not valid. Error: name 'zzz' is not defined. [needs.filter]",
     ]
 
-    if platform.system() == 'windows':
+    if platform.system() == "windows":
         for i in range(len(expected_warnings)):
-            expected_warnings[i] = expected_warnings[i].replace('/', '\\', 1)
+            expected_warnings[i] = expected_warnings[i].replace("/", "\\", 1)
 
     assert warnings.splitlines() == expected_warnings
 
