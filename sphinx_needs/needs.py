@@ -627,8 +627,8 @@ def check_configuration(_app: Sphinx, config: Config) -> None:
             and option not in NEED_DEFAULT_OPTIONS.keys()
         ):
             raise NeedsConfigException(
-                "Variant option `{}` is not added in either extra options or extra links. "
-                "This is not allowed.".format(option)
+                f"Variant option `{option}` is not added in either extra options or extra links. "
+                "This is not allowed."
             )
 
 

@@ -136,9 +136,9 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, _docname: str) -> No
                 cal_target_url = mem_template.render(**{"need": need})
                 need_params["external_url"] = f'{source["base_url"]}/{cal_target_url}'
             else:
-                need_params[
-                    "external_url"
-                ] = f'{source["base_url"]}/{need.get("docname", "__error__")}.html#{need["id"]}'
+                need_params["external_url"] = (
+                    f'{source["base_url"]}/{need.get("docname", "__error__")}.html#{need["id"]}'
+                )
 
             need_params["content"] = need["description"]
             need_params["links"] = need.get("links", [])

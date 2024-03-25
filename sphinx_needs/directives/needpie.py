@@ -267,10 +267,8 @@ def process_needpie(
         if legend_enforced:
             for i in range(len(sizes)):
                 if sum(sizes) > 0:
-                    labels[i] = "{label} {percent:.1f}% ({size:.0f})".format(
-                        label=labels[i],
-                        percent=100 * sizes[i] / sum(sizes),
-                        size=sizes[i],
+                    labels[i] = (
+                        f"{labels[i]} {100 * sizes[i] / sum(sizes):.1f}% ({sizes[i]:.0f})"
                     )
                 else:
                     labels[i] = f"{labels[i]} {0.0:.1f}% ({sizes[i]:.0f})"
