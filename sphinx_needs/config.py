@@ -317,6 +317,10 @@ class NeedsSphinxConfig:
         default="→\xa0", metadata={"rebuild": "html", "types": (str,)}
     )
     """Prefix for need_part output in tables"""
+    part_separator: str = field(
+        default=".", metadata={"rebuild": "html", "types": (str,)}
+    )
+    """Separator character between a need and a need_part"""
     extra_links: list[LinkOptionsType] = field(
         default_factory=list, metadata={"rebuild": "html", "types": ()}
     )

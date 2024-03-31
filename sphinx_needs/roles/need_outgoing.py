@@ -46,7 +46,7 @@ def process_need_outgoing(
         link_list = [links] if isinstance(links, str) else links
 
         for index, need_id_full in enumerate(link_list):
-            need_id_main, need_id_part = split_need_id(need_id_full)
+            need_id_main, need_id_part = split_need_id(need_id_full, needs_config.part_separator)
 
             # If the need target exists, let's create the reference
             if (need_id_main in needs_all_needs and not need_id_part) or (

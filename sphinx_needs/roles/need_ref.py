@@ -78,7 +78,7 @@ def process_need_ref(
         postfix = "]]"
 
         need_id_full = node_need_ref["reftarget"]
-        need_id_main, need_id_part = split_need_id(need_id_full)
+        need_id_main, need_id_part = split_need_id(need_id_full, needs_config.part_separator)
 
         if need_id_main in all_needs:
             target_need = all_needs[need_id_main]

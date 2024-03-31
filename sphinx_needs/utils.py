@@ -100,16 +100,16 @@ MONTH_NAMES = [
 ]
 
 
-def split_need_id(need_id_full: str) -> tuple[str, str | None]:
+def split_need_id(need_id_full: str, part_separator: str) -> tuple[str, str | None]:
     """A need id can be a combination of a main id and a part id,
-    split by a dot.
+    split by a separator, by default a dot.
     This function splits them:
-    If there is no dot, the part id is None,
-    otherwise everything before the first dot is the main id,
-    and everything after the first dot is the part id.
+    If there is no separator character, the part id is None,
+    otherwise everything before the first separator is the main id,
+    and everything after the first separator is the part id.
     """
-    if "." in need_id_full:
-        need_id, need_part_id = need_id_full.split(".", maxsplit=1)
+    if part_separator in need_id_full:
+        need_id, need_part_id = need_id_full.split(part_separator, maxsplit=1)
     else:
         need_id = need_id_full
         need_part_id = None
