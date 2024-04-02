@@ -2,8 +2,8 @@
 import os
 
 import sphinx
+from packaging.version import Version
 # from docutils import nodes
-from pkg_resources import parse_version
 from sphinx_needs.api import (add_dynamic_function, add_extra_option,
                               add_need_type)
 
@@ -23,7 +23,7 @@ from sphinxcontrib.test_reports.environment import install_styles_static_files
 from sphinxcontrib.test_reports.functions import tr_link
 
 sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
+if Version(sphinx_version) >= Version("1.6"):
     from sphinx.util import logging
 else:
     import logging

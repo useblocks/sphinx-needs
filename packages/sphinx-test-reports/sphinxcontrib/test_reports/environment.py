@@ -1,13 +1,17 @@
 import os
 
 import sphinx
-from pkg_resources import parse_version
+from packaging.version import Version
+
 from sphinx.util.console import brown
 from sphinx.util.osutil import copyfile, ensuredir
 
 sphinx_version = sphinx.__version__
-if parse_version(sphinx_version) >= parse_version("1.6"):
-    from sphinx.util import status_iterator  # NOQA Sphinx 1.5
+if Version(sphinx_version) >= Version("1.6"):
+    if Version(sphinx_version) >= Version("6.1"):
+        from sphinx.util.display import status_iterator
+    else:
+        from sphinx.util import status_iterator  # NOQA Sphinx 1.5
 
 STATICS_DIR_NAME = "_static"
 
@@ -80,7 +84,7 @@ def install_styles_static_files(app, env):
     # Be sure no "old" css layout is already set
     safe_remove_file("sphinx-test-reports/common.css", app)
 
-    if parse_version(sphinx_version) < parse_version("1.6"):
+    if Version(sphinx_version) < Version("1.6"):
         global status_iterator
         status_iterator = app.status_iterator
 
