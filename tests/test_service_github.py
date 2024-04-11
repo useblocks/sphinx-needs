@@ -1,5 +1,4 @@
 import json
-import platform
 from pathlib import Path
 
 import pytest
@@ -85,17 +84,13 @@ def test_build(test_app, snapshot):
 
     app = test_app
     app.build()
-    warnings = strip_colors(app._warning.getvalue().replace(str(app.srcdir), "srcdir"))
+    warnings = strip_colors(app._warning.getvalue())
     print(warnings)
 
     expected_warnings = [
-        'srcdir/index.rst:4: WARNING: "query" or "specific" missing as option for github service. [needs.github]',
-        "srcdir/index.rst:22: WARNING: GitHub: API rate limit exceeded (twice). Stop here. [needs.github]",
+        f'{Path(str(app.srcdir)) / "index.rst"}:4: WARNING: "query" or "specific" missing as option for github service. [needs.github]',
+        f"{Path(str(app.srcdir)) / 'index.rst'}:22: WARNING: GitHub: API rate limit exceeded (twice). Stop here. [needs.github]",
     ]
-
-    if platform.system() == "Windows":
-        for i in range(len(expected_warnings)):
-            expected_warnings[i] = expected_warnings[i].replace("/", "\\", 1)
 
     assert warnings.splitlines() == expected_warnings
 

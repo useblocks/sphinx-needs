@@ -289,7 +289,7 @@ def test_app(make_app, sphinx_test_tempdir, request):
     # In this case we don't catch the warnings.
     if builder_params.get("buildername", "html") == "html":
         app.warning_list = strip_colors(
-            app._warning.getvalue().replace(str(app.srcdir), "srcdir")
+            app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
         ).splitlines()
     else:
         app.warning_list = None
