@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1711286962349,
+  "lastUpdate": 1712849483408,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7452,6 +7452,42 @@ window.BENCHMARK_DATA = {
             "value": 67.728690481,
             "unit": "s",
             "extra": "Commit: 0f71ecde47a3f7c3245c5bcf545ef5281376768c\nBranch: master\nTime: 2024-03-24T14:27:18+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "90bae4a7664d8c7d899f034671374007a6b792f4",
+          "message": "🧪 Fix Windows pytest CI runs (#1153)\n\nDue to the way the Windows CLI works, the `coverage xml` command was overriding the exit code of `pytest` and so hiding its failures.\r\nThis commit fixes that and fixes the breaking tests\r\n\r\nCo-authored-by: PhilipPartsch <95444300+PhilipPartsch@users.noreply.github.com>",
+          "timestamp": "2024-04-11T17:29:22+02:00",
+          "tree_id": "3a93fae364d8be5cd79f7238ddaa3c885326c702",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/90bae4a7664d8c7d899f034671374007a6b792f4"
+        },
+        "date": 1712849474841,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.19302173099998754,
+            "unit": "s",
+            "extra": "Commit: 90bae4a7664d8c7d899f034671374007a6b792f4\nBranch: master\nTime: 2024-04-11T17:29:22+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.007671181999996,
+            "unit": "s",
+            "extra": "Commit: 90bae4a7664d8c7d899f034671374007a6b792f4\nBranch: master\nTime: 2024-04-11T17:29:22+02:00"
           }
         ]
       }
