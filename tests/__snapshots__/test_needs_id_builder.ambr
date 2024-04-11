@@ -21,7 +21,6 @@
               'constraints_results': dict({
               }),
               'content_id': 'TC_001',
-              'content_offset': 11,
               'created_at': '',
               'delete': None,
               'description': '',
@@ -103,7 +102,6 @@
               'constraints_results': dict({
               }),
               'content_id': 'TC_NEG_001',
-              'content_offset': 15,
               'created_at': '',
               'delete': None,
               'description': '',
@@ -185,7 +183,6 @@
               'constraints_results': dict({
               }),
               'content_id': 'US_63252',
-              'content_offset': 7,
               'created_at': '',
               'delete': None,
               'description': '',

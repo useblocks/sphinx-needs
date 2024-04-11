@@ -10,7 +10,6 @@ from docutils.parsers.rst.states import RSTState
 from docutils.statemachine import StringList
 from jinja2 import Template
 from sphinx.application import Sphinx
-from sphinx.util.nodes import nested_parse_with_titles
 
 from sphinx_needs.api.configuration import NEEDS_CONFIG
 from sphinx_needs.api.exceptions import (
@@ -321,7 +320,9 @@ def add_need(
         trimmed_title = title[: max_length - 3] + "..."
 
     # Calculate doc type, e.g. .rst or .md
-    if state and state.document and state.document.current_source:
+    if is_external:
+        doctype = ""
+    elif state and state.document and state.document.current_source:
         doctype = os.path.splitext(state.document.current_source)[1]
     else:
         doctype = ".rst"
@@ -482,12 +483,9 @@ def add_need(
         node_need["hidden"] = True
         return [node_need]
 
-    local_content_offset: int = 0
-    if content_offset:
-        local_content_offset = content_offset
-    elif lineno:
-        local_content_offset = lineno
-    node_need_content = _render_template(content, docname, local_content_offset, state)
+    node_need_content = _parse_content(
+        content, docname, lineno if content_offset is None else content_offset, state
+    )
 
     # Extract plantuml diagrams and store needumls with keys in arch, e.g. need_info['arch']['diagram']
     node_need_needumls_without_key = []
@@ -534,11 +532,11 @@ def add_need(
         return_nodes = [target_node, node_need]
 
     if pre_content:
-        node_need_pre_content = _render_template(pre_content, docname, lineno, state)
+        node_need_pre_content = _parse_content(pre_content, docname, lineno, state)
         return_nodes = node_need_pre_content.children + return_nodes
 
     if post_content:
-        node_need_post_content = _render_template(post_content, docname, lineno, state)
+        node_need_post_content = _parse_content(post_content, docname, lineno, state)
         return_nodes = return_nodes + node_need_post_content.children
 
     return return_nodes
@@ -649,63 +647,16 @@ def _prepare_template(app: Sphinx, needs_info: NeedsInfoType, template_key: str)
     return new_content
 
 
-# Here we want to have the same signature as nested_parse_with_titles from sphinx,
-# but it looks like something is strange between sphinx and docutils,
-# so we return Any instead of str.
-def render_rst(
-    state: Any, content: StringList, node: nodes.Node, content_offset: int = 0
-) -> Any:
-    # check if we have a sphinx version which already supports content_offset
-    # in nested_parse_with_titles
-    from sphinx import version_info
-
-    if version_info >= (6, 2):
-        return nested_parse_with_titles(state, content, node, content_offset)
-    else:
-        # let's reimplement a new nested_parse_with_titles
-        surrounding_title_styles = state.memo.title_styles
-        surrounding_section_level = state.memo.section_level
-        state.memo.title_styles = []
-        state.memo.section_level = 0
-        try:
-            return state.nested_parse(content, content_offset, node, match_titles=1)
-        finally:
-            state.memo.title_styles = surrounding_title_styles
-            state.memo.section_level = surrounding_section_level
-
-
-def _render_template(
+def _parse_content(
     content: str, docname: str | None, lineno: int | None, state: RSTState
 ) -> nodes.Element:
-    rst = StringList()
-    for line in content.split("\n"):
-        # TODO how to handle if the source mapping here, if the content is from an external need?
-        # (i.e. does not have a docname and lineno)
-        rst.append(line, docname, lineno)
-    node_need_content = nodes.Element()
-    node_need_content.document = state.document
-
-    local_lineno: int = 0
-    if lineno:
-        local_lineno = lineno
-
-    render_rst(state, rst, node_need_content, local_lineno)
-    return node_need_content
-
-
-def _render_plantuml_template(
-    content: str, docname: str, lineno: int, state: RSTState
-) -> nodes.Element:
-    rst = StringList()
-    rst.append(".. needuml::", docname, lineno)
-    rst.append("", docname, lineno)  # Empty option line for needuml
-    for line in content.split("\n"):
-        line = f"   {line}"  # indent content under needuml
-        rst.append(line, docname, lineno)
-    node_need_content = nodes.Element()
-    node_need_content.document = state.document
-    render_rst(state, rst, node_need_content, lineno)
-    return node_need_content
+    """Generate a container element with the parsed content."""
+    node = nodes.Element()
+    node.source, node.line = docname, lineno
+    state.nested_parse(
+        StringList(content.splitlines()), 0 if lineno is None else lineno, node
+    )
+    return node
 
 
 def _read_in_links(links_string: None | str | list[str]) -> list[str]:
