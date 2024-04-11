@@ -20,12 +20,13 @@ def test_needs_dead_links_warnings(test_app):
 
     # check there are expected warnings
     stderr = output.stderr.decode("utf-8")
-    stderr = stderr.replace(str(src_dir), "srcdir")
-    assert stderr.splitlines() == [
-        "srcdir/index.rst:17: WARNING: Need 'REQ_004' has unknown outgoing link 'ANOTHER_DEAD_LINK' in field 'links' [needs.link_outgoing]",
-        "srcdir/index.rst:45: WARNING: Need 'TEST_004' has unknown outgoing link 'REQ_005.invalid' in field 'links' [needs.link_outgoing]",
-        "srcdir/index.rst:45: WARNING: Need 'TEST_004' has unknown outgoing link 'REQ_005.invalid' in field 'tests' [needs.link_outgoing]",
+    expected_warnings = [
+        f"{Path(str(app.srcdir)) / 'index.rst'}:17: WARNING: Need 'REQ_004' has unknown outgoing link 'ANOTHER_DEAD_LINK' in field 'links' [needs.link_outgoing]",
+        f"{Path(str(app.srcdir)) / 'index.rst'}:45: WARNING: Need 'TEST_004' has unknown outgoing link 'REQ_005.invalid' in field 'links' [needs.link_outgoing]",
+        f"{Path(str(app.srcdir)) / 'index.rst'}:45: WARNING: Need 'TEST_004' has unknown outgoing link 'REQ_005.invalid' in field 'tests' [needs.link_outgoing]",
     ]
+
+    assert stderr.splitlines() == expected_warnings
 
 
 @pytest.mark.parametrize(
@@ -44,12 +45,13 @@ def test_needs_dead_links_warnings_needs_builder(test_app):
 
     # check there are expected warnings
     stderr = output.stderr.decode("utf-8")
-    stderr = stderr.replace(str(src_dir), "srcdir")
-    assert stderr.splitlines() == [
-        "srcdir/index.rst:17: WARNING: Need 'REQ_004' has unknown outgoing link 'ANOTHER_DEAD_LINK' in field 'links' [needs.link_outgoing]",
-        "srcdir/index.rst:45: WARNING: Need 'TEST_004' has unknown outgoing link 'REQ_005.invalid' in field 'links' [needs.link_outgoing]",
-        "srcdir/index.rst:45: WARNING: Need 'TEST_004' has unknown outgoing link 'REQ_005.invalid' in field 'tests' [needs.link_outgoing]",
+    expected_warnings = [
+        f"{Path(str(app.srcdir)) / 'index.rst'}:17: WARNING: Need 'REQ_004' has unknown outgoing link 'ANOTHER_DEAD_LINK' in field 'links' [needs.link_outgoing]",
+        f"{Path(str(app.srcdir)) / 'index.rst'}:45: WARNING: Need 'TEST_004' has unknown outgoing link 'REQ_005.invalid' in field 'links' [needs.link_outgoing]",
+        f"{Path(str(app.srcdir)) / 'index.rst'}:45: WARNING: Need 'TEST_004' has unknown outgoing link 'REQ_005.invalid' in field 'tests' [needs.link_outgoing]",
     ]
+
+    assert stderr.splitlines() == expected_warnings
 
 
 @pytest.mark.parametrize(
