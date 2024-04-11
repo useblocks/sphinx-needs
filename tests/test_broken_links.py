@@ -1,4 +1,5 @@
 from pathlib import Path
+
 import pytest
 from sphinx.util.console import strip_colors
 
