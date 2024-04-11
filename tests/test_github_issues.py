@@ -34,10 +34,12 @@ def test_doc_github_44(test_app):
     assert "Test 3" in html
 
     stderr = output.stderr.decode("utf-8")
-    stderr = stderr.replace(str(app.srcdir), "srcdir")
-    assert stderr.splitlines() == [
-        "srcdir/index.rst:11: WARNING: Need 'test_3' has unknown outgoing link 'test_123_broken' in field 'links' [needs.link_outgoing]"
+
+    expected_warnings = [
+        f"{Path(str(app.srcdir)) / 'index.rst'}:11: WARNING: Need 'test_3' has unknown outgoing link 'test_123_broken' in field 'links' [needs.link_outgoing]"
     ]
+
+    assert stderr.splitlines() == expected_warnings
 
 
 @pytest.mark.parametrize(
