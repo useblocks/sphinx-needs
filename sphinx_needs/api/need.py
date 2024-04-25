@@ -109,7 +109,7 @@ def add_need(
 
     If the need is within the current project, i.e. not an external need,
     the following parameters are used to help provide source mapped warnings and errors:
-                
+
     :param docname: documentation identifier, for the referencing document.
     :param lineno: line number of the top of the directive (1-indexed).
     :param content_offset: line offset from the top of the directive to the starting line of the content.
@@ -119,9 +119,9 @@ def add_need(
     :param is_external: Is true, no node is created and need is referencing external url
     :param external_url: URL as string, which is used as target if ``is_external`` is ``True``
     :param external_css: CSS class name as string, which is set for the <a> tag.
-    
+
     Additional parameters:
-    
+
     :param app: Sphinx application object.
     :param state: Current state object.
     :param need_type: Name of the need type to create.
@@ -504,7 +504,9 @@ def add_need(
         state.nested_parse(content, content_offset or 0, node_need_content)
     else:
         # otherwise we need to handle the source mapping ourselves
-        _parse_content_from_string(content, docname, lineno, content_offset, is_external, external_url, state)
+        _parse_content_from_string(
+            content, docname, lineno, content_offset, is_external, external_url, state
+        )
 
     # Extract plantuml diagrams and store needumls with keys in arch, e.g. need_info['arch']['diagram']
     node_need_needumls_without_key = []
@@ -551,11 +553,27 @@ def add_need(
         return_nodes = [target_node, node_need]
 
     if pre_content:
-        node_need_pre_content = _parse_content_from_string(pre_content, docname, lineno, content_offset, is_external, external_url, state)
+        node_need_pre_content = _parse_content_from_string(
+            pre_content,
+            docname,
+            lineno,
+            content_offset,
+            is_external,
+            external_url,
+            state,
+        )
         return_nodes = node_need_pre_content.children + return_nodes
 
     if post_content:
-        node_need_post_content = _parse_content_from_string(post_content, docname, lineno, content_offset, is_external, external_url, state)
+        node_need_post_content = _parse_content_from_string(
+            post_content,
+            docname,
+            lineno,
+            content_offset,
+            is_external,
+            external_url,
+            state,
+        )
         return_nodes = return_nodes + node_need_post_content.children
 
     return return_nodes
@@ -667,7 +685,13 @@ def _prepare_template(app: Sphinx, needs_info: NeedsInfoType, template_key: str)
 
 
 def _parse_content_from_string(
-    content: str, docname: str | None, lineno: int | None, content_offset: int | None, is_external: bool, external_url: str | None, state: RSTState
+    content: str,
+    docname: str | None,
+    lineno: int | None,
+    content_offset: int | None,
+    is_external: bool,
+    external_url: str | None,
+    state: RSTState,
 ) -> nodes.Element:
     """Parse content using the current parser."""
 
