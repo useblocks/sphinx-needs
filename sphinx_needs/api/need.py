@@ -107,15 +107,28 @@ def add_need(
 
                 return main_section
 
+    If the need is within the current project, i.e. not an external need,
+    the following parameters are used to help provide source mapped warnings and errors:
+                
+    :param docname: documentation identifier, for the referencing document.
+    :param lineno: line number of the top of the directive (1-indexed).
+    :param content_offset: line offset from the top of the directive to the starting line of the content.
+
+    Otherwise, the following parameters are used:
+
+    :param is_external: Is true, no node is created and need is referencing external url
+    :param external_url: URL as string, which is used as target if ``is_external`` is ``True``
+    :param external_css: CSS class name as string, which is set for the <a> tag.
+    
+    Additional parameters:
+    
     :param app: Sphinx application object.
     :param state: Current state object.
-    :param docname: documentation name.
-    :param lineno: line number of the top of the directive.
-    :param content_offset: Offset from the lineno to the content start.
     :param need_type: Name of the need type to create.
     :param title: String as title.
     :param id: ID as string. If not given, an id will get generated.
-    :param content: Content as single string.
+    :param content: Content of the need, either as a ``str``
+        or a ``StringList`` (a string with mapping to the source text).
     :param status: Status as string.
     :param tags: Tags as single string.
     :param constraints: Constraints as single, comma separated, string.
@@ -131,9 +144,6 @@ def add_need(
     :param template: Template name to use for the content of this need
     :param pre_template: Template name to use for content added before need
     :param post_template: Template name to use for the content added after need
-    :param is_external: Is true, no node is created and need is referencing external url
-    :param external_url: URL as string, which is used as target if ``is_external`` is ``True``
-    :param external_css: CSS class name as string, which is set for the <a> tag.
 
     :return: node
     """
@@ -488,33 +498,13 @@ def add_need(
 
     node_need_content = nodes.Element()
     node_need_content.source, node_need_content.line = docname, lineno
-    print(docname, lineno, content_offset)
-    print(content)
     if isinstance(content, StringList):
+        # if we are given a StringList then we assume that all source-mapping is already correct
+        # and so we proceed in the "standard" manner for a directive
         state.nested_parse(content, content_offset or 0, node_need_content)
     else:
-        line_offset = state.state_machine.line_offset
-        input_offset = state.state_machine.input_offset
-        state.state_machine.line_offset = (lineno or 1) + (content_offset or 0)
-        state.state_machine.input_offset = 0
-        state.nested_parse(
-            StringList(
-                content.splitlines(),
-                # items=[
-                #     (docname, (lineno or 1) + (content_offset or 0))
-                #     for _ in content.splitlines()
-                # ],
-            ),
-             (lineno or 1) + (content_offset or 0),
-            node_need_content,
-        )
-        state.state_machine.line_offset = line_offset
-        state.state_machine.input_offset = input_offset
-    print("---")
-
-    # node_need_content = _parse_content(
-    #     content_string, docname, lineno if content_offset is None else content_offset, state
-    # )
+        # otherwise we need to handle the source mapping ourselves
+        _parse_content_from_string(content, docname, lineno, content_offset, is_external, external_url, state)
 
     # Extract plantuml diagrams and store needumls with keys in arch, e.g. need_info['arch']['diagram']
     node_need_needumls_without_key = []
@@ -561,11 +551,11 @@ def add_need(
         return_nodes = [target_node, node_need]
 
     if pre_content:
-        node_need_pre_content = _parse_content(pre_content, docname, lineno, state)
+        node_need_pre_content = _parse_content_from_string(pre_content, docname, lineno, content_offset, is_external, external_url, state)
         return_nodes = node_need_pre_content.children + return_nodes
 
     if post_content:
-        node_need_post_content = _parse_content(post_content, docname, lineno, state)
+        node_need_post_content = _parse_content_from_string(post_content, docname, lineno, content_offset, is_external, external_url, state)
         return_nodes = return_nodes + node_need_post_content.children
 
     return return_nodes
@@ -676,10 +666,26 @@ def _prepare_template(app: Sphinx, needs_info: NeedsInfoType, template_key: str)
     return new_content
 
 
-def _parse_content(
-    content: str, docname: str | None, lineno: int | None, state: RSTState
+def _parse_content_from_string(
+    content: str, docname: str | None, lineno: int | None, content_offset: int | None, is_external: bool, external_url: str | None, state: RSTState
 ) -> nodes.Element:
-    """Generate a container element with the parsed content."""
+    """Parse content using the current parser."""
+
+    # line_offset = state.state_machine.line_offset
+    # input_offset = state.state_machine.input_offset
+    # state.state_machine.line_offset = (lineno or 1) + (content_offset or 0)
+    # state.state_machine.input_offset = 0
+    # state.nested_parse(
+    #     StringList(
+    #         content.splitlines(),
+    #         source=docname,
+    #     ),
+    #      (lineno or 1) + (content_offset or 0),
+    #     node_need_content,
+    # )
+    # state.state_machine.line_offset = line_offset
+    # state.state_machine.input_offset = input_offset
+
     node = nodes.Element()
     node.source, node.line = docname, lineno
     state.nested_parse(
