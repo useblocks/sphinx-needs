@@ -100,7 +100,7 @@ markers = [
 ]
 filterwarnings = [
   "ignore:.*removed in Python 3.14.*:DeprecationWarning",
-  "ignore::sphinx.deprecation.RemovedInSphinx90Warning"
+  # "ignore::sphinx.deprecation.RemovedInSphinx90Warning"
 ]
 
 
