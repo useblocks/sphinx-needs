@@ -98,6 +98,11 @@ pre-commit = "^3"
 markers = [
     "jstest: marks tests as JavaScript test (deselect with '-m \"not jstest\"')",
 ]
+filterwarnings = [
+  "ignore:.*removed in Python 3.14.*:DeprecationWarning",
+  "ignore::sphinx.deprecation.RemovedInSphinx90Warning"
+]
+
 
 [tool.ruff.lint]
 extend-select = [

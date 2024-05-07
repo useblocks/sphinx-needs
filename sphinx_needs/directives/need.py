@@ -147,7 +147,7 @@ class NeedDirective(SphinxDirective):
             title=self.trimmed_title,
             id=id,
             content=self.content,
-            content_offset=self.content_offset,
+            lineno_content=self.content_offset + 1,
             status=status,
             tags=tags,
             hide=hide,

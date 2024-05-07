@@ -1,42 +1,28 @@
-import subprocess
+from sphinx.application import Sphinx
 from pathlib import Path
 
 import pytest
 
-# local execution: pytest test_proper_warning.py
-
-
+from sphinx.util.console import strip_colors
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_warning"}],
+    [{"buildername": "html", "srcdir": "doc_test/doc_warning", "no_plantuml": True}],
     indirect=True,
 )
-def test_proper_warning(test_app):
-    app = test_app
-    srcdir = Path(app.srcdir)
-    out_dir = srcdir / "_build"
+def test_proper_warning(test_app: Sphinx):
 
-    out = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
-    )
+    test_app.build()
 
-    # Build shall be sucessful
-    assert out.returncode == 0
+    warnings = strip_colors(test_app._warning.getvalue()).splitlines()
 
-    # In html file we expect to get three needs
-    html = Path(app.outdir, "index.html").read_text(encoding="utf8")
+    assert warnings == [
+        f'{Path(str(test_app.srcdir)) / "index.rst"}:15: ERROR: Unknown interpreted text role "unknown1".',
+        f'{Path(str(test_app.srcdir)) / "index.rst"}:23: ERROR: Unknown interpreted text role "unknown2".',
+        f'{Path(str(test_app.srcdir)) / "index.rst"}:30: ERROR: Unknown interpreted text role "unknown3".',
+    ]
 
+
+    html = Path(test_app.outdir, "index.html").read_text(encoding="utf8")
     assert 'href="#SP_TOO_000" title="SP_TOO_000">SP_TOO_000' in html
     assert 'href="#SP_TOO_001" title="SP_TOO_001">SP_TOO_001' in html
     assert 'href="#SP_TOO_002" title="SP_TOO_002">SP_TOO_002' in html
-
-    # stdout warnings
-    warnings = out.stderr.decode("utf-8")
-
-    # Check Sphinx-needs raised errors amount is equal to 3
-    assert warnings.count("ERROR: ") == 3
-
-    # Check warnings contents
-    assert "index.rst:16: ERROR: Malformed table." in warnings
-    assert "index.rst:30: ERROR: Malformed table." in warnings
-    assert "index.rst:46: ERROR: Malformed table." in warnings

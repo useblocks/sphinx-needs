@@ -14,7 +14,6 @@ import pytest
         {
             "buildername": "latex",
             "srcdir": "doc_test/doc_basic_latex",
-            "warning": True,
             "parallel": 2,
         }
     ],
@@ -34,7 +33,6 @@ def test_doc_complex_latex(test_app):
         {
             "buildername": "singlehtml",
             "srcdir": "doc_test/doc_basic_latex",
-            "warning": True,
             "parallel": 2,
         }
     ],

@@ -24,7 +24,6 @@
         comp --> int
       ''',
       'content_id': 'COMP_001',
-      'content_offset': 21,
       'created_at': '',
       'delete': None,
       'docname': 'index',
@@ -47,6 +46,7 @@
       'jinja_content': None,
       'layout': '',
       'lineno': 19,
+      'lineno_content': 22,
       'links': list([
       ]),
       'links_back': list([
@@ -104,7 +104,6 @@
       }),
       'content': 'circle "Int_X" as int',
       'content_id': 'INT_001',
-      'content_offset': 16,
       'created_at': '',
       'delete': None,
       'docname': 'index',
@@ -127,6 +126,7 @@
       'jinja_content': None,
       'layout': '',
       'lineno': 14,
+      'lineno_content': 17,
       'links': list([
       ]),
       'links_back': list([
@@ -217,7 +217,6 @@
            Bob --> Alice: Hi Alice
       ''',
       'content_id': 'INT_002',
-      'content_offset': 72,
       'created_at': '',
       'delete': None,
       'docname': 'index',
@@ -240,6 +239,7 @@
       'jinja_content': None,
       'layout': '',
       'lineno': 70,
+      'lineno_content': 73,
       'links': list([
       ]),
       'links_back': list([
@@ -329,7 +329,6 @@
            Bob --> Alice: Hi Alice
       ''',
       'content_id': 'INT_003',
-      'content_offset': 97,
       'created_at': '',
       'delete': None,
       'docname': 'index',
@@ -352,6 +351,7 @@
       'jinja_content': None,
       'layout': '',
       'lineno': 95,
+      'lineno_content': 98,
       'links': list([
       ]),
       'links_back': list([
@@ -456,7 +456,6 @@
            Bob --> Alice: Hi Alice
       ''',
       'content_id': 'INT_004',
-      'content_offset': 119,
       'created_at': '',
       'delete': None,
       'docname': 'index',
@@ -479,6 +478,7 @@
       'jinja_content': None,
       'layout': '',
       'lineno': 117,
+      'lineno_content': 120,
       'links': list([
       ]),
       'links_back': list([
@@ -542,7 +542,6 @@
         sys_2 --> int
       ''',
       'content_id': 'PROD_001',
-      'content_offset': 48,
       'created_at': '',
       'delete': None,
       'docname': 'index',
@@ -565,6 +564,7 @@
       'jinja_content': None,
       'layout': '',
       'lineno': 46,
+      'lineno_content': 49,
       'links': list([
       ]),
       'links_back': list([
@@ -622,7 +622,6 @@
       }),
       'content': 'Some content',
       'content_id': 'ST_001',
-      'content_offset': 6,
       'created_at': '',
       'delete': None,
       'docname': 'index',
@@ -645,6 +644,7 @@
       'jinja_content': None,
       'layout': '',
       'lineno': 4,
+      'lineno_content': 7,
       'links': list([
       ]),
       'links_back': list([
@@ -702,7 +702,6 @@
       }),
       'content': 'Some content 2',
       'content_id': 'ST_002',
-      'content_offset': 11,
       'created_at': '',
       'delete': None,
       'docname': 'index',
@@ -725,6 +724,7 @@
       'jinja_content': None,
       'layout': '',
       'lineno': 9,
+      'lineno_content': 12,
       'links': list([
       ]),
       'links_back': list([
@@ -791,7 +791,6 @@
         comp_2 --> int
       ''',
       'content_id': 'SYS_001',
-      'content_offset': 35,
       'created_at': '',
       'delete': None,
       'docname': 'index',
@@ -814,6 +813,7 @@
       'jinja_content': None,
       'layout': '',
       'lineno': 33,
+      'lineno_content': 36,
       'links': list([
       ]),
       'links_back': list([

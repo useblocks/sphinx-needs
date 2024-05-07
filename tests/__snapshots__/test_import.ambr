@@ -4563,7 +4563,6 @@
       }),
       'content': 'IMP_TEST_101 DESCRIPTION',
       'content_id': 'IMP_TEST_101',
-      'content_offset': None,
       'created_at': '',
       'delete': False,
       'docname': 'index',
@@ -4586,6 +4585,7 @@
       'jinja_content': False,
       'layout': None,
       'lineno': 14,
+      'lineno_content': None,
       'links': list([
       ]),
       'links_back': list([
@@ -4644,7 +4644,6 @@
       }),
       'content': 'other.',
       'content_id': 'SPEC_1',
-      'content_offset': 11,
       'created_at': '',
       'delete': None,
       'docname': 'index',
@@ -4667,6 +4666,7 @@
       'jinja_content': None,
       'layout': '',
       'lineno': 9,
+      'lineno_content': 12,
       'links': list([
       ]),
       'links_back': list([
@@ -4724,7 +4724,6 @@
       }),
       'content': 'some.',
       'content_id': 'STORY_1',
-      'content_offset': 6,
       'created_at': '',
       'delete': None,
       'docname': 'index',
@@ -4747,6 +4746,7 @@
       'jinja_content': None,
       'layout': '',
       'lineno': 4,
+      'lineno_content': 7,
       'links': list([
       ]),
       'links_back': list([

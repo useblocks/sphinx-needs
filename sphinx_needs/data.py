@@ -52,6 +52,8 @@ class NeedsInfoType(TypedDict, total=False):
     """Name of the document where the need is defined (None if external)"""
     lineno: Required[int | None]
     """Line number where the need is defined (None if external)"""
+    lineno_content: Required[int | None]
+    """Line number on which the need content starts (None if external)"""
 
     # meta information
     full_title: Required[str]
@@ -118,10 +120,6 @@ class NeedsInfoType(TypedDict, total=False):
     pre_template: Required[None | str]
     post_template: Required[None | str]
     content: Required[str]
-    content_offset: Required[int | None]
-    """The offset relative to the ``lineno``,
-    where the content of the directive starts in the source.
-    """
     pre_content: str
     post_content: str
     content_id: Required[None | str]

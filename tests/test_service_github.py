@@ -89,6 +89,7 @@ def test_build(test_app, snapshot):
 
     expected_warnings = [
         f'{Path(str(app.srcdir)) / "index.rst"}:4: WARNING: "query" or "specific" missing as option for github service. [needs.github]',
+        f'{Path(str(app.srcdir)) / "index.rst"}:23: WARNING: Bullet list ends without a blank line; unexpected unindent.',
         f"{Path(str(app.srcdir)) / 'index.rst'}:22: WARNING: GitHub: API rate limit exceeded (twice). Stop here. [needs.github]",
     ]
 
