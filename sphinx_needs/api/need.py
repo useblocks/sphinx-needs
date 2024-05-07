@@ -499,7 +499,7 @@ def _create_need_node(
     """
     source = env.doc2path(data["docname"]) if data["docname"] else None
 
-    style_classes = ["need", f"need-{data["type"].lower()}"]
+    style_classes = ["need", f"need-{data['type'].lower()}"]
     if data["style"]:
         style_classes.append(data["style"])
 
