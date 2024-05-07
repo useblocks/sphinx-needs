@@ -4,7 +4,7 @@ import hashlib
 import os
 import re
 from contextlib import contextmanager
-from typing import Any, Iterator
+from typing import Any
 
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState
