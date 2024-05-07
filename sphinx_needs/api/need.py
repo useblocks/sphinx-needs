@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
 import hashlib
 import os
 import re
+from contextlib import contextmanager
 from typing import Any
 
 from docutils import nodes
@@ -516,7 +516,7 @@ def _create_need_node(
 
     if pre_content := data.get("pre_content"):
         node = nodes.Element()
-        with _reset_rst_titles(state): 
+        with _reset_rst_titles(state):
             state.nested_parse(
                 StringList(pre_content.splitlines(), source=source),
                 (data["lineno"] - 1) if data["lineno"] else 0,
