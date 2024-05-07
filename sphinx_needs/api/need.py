@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
 import hashlib
 import os
 import re
-from typing import Any
+from contextlib import contextmanager
+from typing import Any, Iterator
 
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState
@@ -465,7 +465,7 @@ def add_need(
 
 
 @contextmanager
-def _reset_rst_titles(state: RSTState):
+def _reset_rst_titles(state: RSTState) -> Iterator[None]:
     """Temporarily reset the title styles and section level in the parser state,
     so that title styles can have different levels to the surrounding document.
     """
@@ -516,7 +516,7 @@ def _create_need_node(
 
     if pre_content := data.get("pre_content"):
         node = nodes.Element()
-        with _reset_rst_titles(state): 
+        with _reset_rst_titles(state):
             state.nested_parse(
                 StringList(pre_content.splitlines(), source=source),
                 (data["lineno"] - 1) if data["lineno"] else 0,
