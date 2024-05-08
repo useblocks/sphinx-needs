@@ -71,7 +71,7 @@ def test_html_head_files(test_app):
 
     link_nodes = root_tree.xpath("/html/head/link")
     link_files = [x.attrib["href"].rsplit("?", 1)[0] for x in link_nodes]
-    assert link_files.count("_static/sphinx-needs/modern.css") == 1
+    assert link_files.count("_static/sphinx-needs/modern_colors.css") == 1
 
     # Checks if not \ (Backslash) is found as path of js/css files
     # This can happen when working on Windows (would be a bug ;) )
