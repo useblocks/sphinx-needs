@@ -23,6 +23,6 @@ def test_doc_style_blank(test_app):
     app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
-    assert "blank.css" in html
-    assert "modern.css" not in html
+    assert "blank_colors.css" in html
+    assert "modern_colors.css" not in html
     assert "UNKNOWN.css" not in html

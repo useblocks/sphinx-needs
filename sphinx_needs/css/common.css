@@ -7,6 +7,9 @@ table.need {
 
 table.need td {
     border: none;
+    /* This is needed to avoid custom settings for common tables, like the ReadTheDocs theme docs */
+    /* It reimplements the normal browser behavior of breaking/wrapping table content if too long.*/
+    white-space: normal;
 }
 table.need tr.head {
     background-color: var(--sn-color-need-bg-head);
@@ -241,12 +244,6 @@ table.needs_layout_complete td.footer {
     margin-top: 3px;
     cursor: pointer;
     outline: none;
-}
-
-/* This is needed to avoid custom settings for common tables, like the ReadTheDocs theme docs */
-/* It reimplements the normal browser behavior of breaking/wrapping table content if too long.*/
-table.need td {
-    white-space: normal;
 }
 
 table.NEEDS_TABLE, table.NEEDS_DATATABLES {

@@ -110,8 +110,7 @@ def install_styles_static_files(app: Sphinx, env: BuildEnvironment) -> None:
     files_to_copy.extend(_find_css_files())
 
     # Be sure no "old" css layout is already set
-    for theme in ["common", "modern", "dark", "blank"]:
-        path = Path("sphinx-needs") / f"{theme}.css"
+    for path in dest_dir.glob("*.css"):
         safe_remove_file(path, app)
 
     for source_file_path in status_iterator(
@@ -127,11 +126,11 @@ def install_styles_static_files(app: Sphinx, env: BuildEnvironment) -> None:
             source_file_path = css_root / source_file_path
 
         if not source_file_path.exists():
-            source_file_path = css_root / "blank" / "blank.css"
             logger.warning(
-                f"{source_file_path} not found. Copying sphinx-internal blank.css [needs]",
+                f"{source_file_path} not found. [needs]",
                 type="needs",
             )
+            continue
 
         dest_file = dest_dir / source_file_path.name
         dest_dir.mkdir(exist_ok=True)
