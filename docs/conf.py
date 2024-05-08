@@ -28,6 +28,7 @@ version = release = __version__
 
 extensions = [
     "sphinx.ext.intersphinx",
+    "sphinx.ext.extlinks",
     "sphinxcontrib.plantuml",
     "sphinx_needs",
     "sphinx.ext.autodoc",
@@ -37,6 +38,8 @@ extensions = [
     "sphinx.ext.duration",
     "sphinx_immaterial",
 ]
+
+extlinks = {"pr": ("https://github.com/useblocks/sphinx-needs/pull/%s", "PR #%s")}
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3.8", None),

@@ -8,23 +8,52 @@ License
 
 .. include:: ../LICENSE
 
-Unreleased
-----------
+2.1.0
+-----
 
-* 👌 Fail and emit warning on filters that do not return a boolean result
-  (`#964 <https://github.com/useblocks/sphinx-needs/pull/964>`_)
+:Released: 08.05.2024
+:Full Changelog: `v2.0.0...v2.1.0 <https://github.com/useblocks/sphinx-needs/compare/v2.0.0...v2.1.0>`__
 
+Improvements
+............
 
-Unreleased
-----------
+- 👌 Default to warning for missing ``needextend`` ID in :pr:`1066`
+- 👌 Make ``needtable`` titles more permissive in :pr:`1102`
+- 👌 Add ``filter_warning`` directive option, to replace default warning text in :pr:`1093`
+- 👌 Improve and test github ``needservice`` directive in :pr:`1113`
+- 👌 Improve warnings for invalid filters (add source location and subtype) in :pr:`1128`
+- 👌 Exclude external needs from ``needs_id_regex`` check in :pr:`1108`
+- 👌 Fail and emit warning on filters that do not return a boolean result in :pr:`964`
+- 👌 Improve ``Need`` node creation and content parsing in :pr:`1168`
+- 👌 Add loading message to ``permalink.html`` in :pr:`1081`
+- 👌 Remove hard-coding of ``completion`` and ``duration`` need fields in :pr:`1127`
 
-Fixed
-.....
+Bug fixes
+.........
 
-* Fix external needs identifier checked by regex (`#1099 <https://github.com/useblocks/sphinx-needs/pull/1099>`_)
-* Fix line number handling for errors and warnings
-  (PR `#1168 <https://github.com/useblocks/sphinx-needs/pull/1150>`_, Issue `#1077 <https://github.com/useblocks/sphinx-needs/issues/1077>`)
+- 🐛 Image layout function in :pr:`1135`
+- 🐛 Centralise splitting of need ID in :pr:`1101`
+- 🐛 Centralise need missing link reporting in :pr:`1104`
 
+Internal improvements
+......................
+
+- 🔧 Use future annotations in all modules in :pr:`1111`
+- 🔧 Replace black/isort/pyupgrade/flake8 with ruff in :pr:`1080`
+
+- 🔧 Add better typing for ``extra_links`` config variable in :pr:`1131`
+- 🔧 Centralise need parts creation and strongly type needs in :pr:`1129`
+- 🔧 Fix typing of need docname/lineno in :pr:`1134`
+- 🔧 Type ``ExternalSource`` config dict in :pr:`1115`
+- 🔧 Enforce type checking in ``needuml.py`` in :pr:`1116`
+- 🔧 Enforce type checking in ``api/need.py`` in :pr:`1117`
+- 🔧 Add better typing for ``global_options`` config variable in :pr:`1120`
+
+- 🔧 Move dead link need fields to internals in :pr:`1119`
+- 🔧 Remove usage of ``hide_status`` and ``hide_tags`` in :pr:`1130`
+- 🔧 Remove ``hidden`` field from ``extra_options`` in :pr:`1124`
+- 🔧 Remove ``constraints`` from ``extra_options`` in :pr:`1123`
+- 🔧 Remove use of deprecated ``needs_extra_options`` as ``dict`` in :pr:`1126`
 
 2.0.0
 -----
