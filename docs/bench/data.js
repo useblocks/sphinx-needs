@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1715171112160,
+  "lastUpdate": 1715172150113,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7632,6 +7632,42 @@ window.BENCHMARK_DATA = {
             "value": 59.17904310200001,
             "unit": "s",
             "extra": "Commit: 2e4d1561d87aee192024bf3a528e31a955981c56\nBranch: master\nTime: 2024-05-08T14:23:14+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4bc44238a15a326a9a3a49ccf63510e9de4b0c69",
+          "message": "🔧 Remove release to test-pypi (#1177)",
+          "timestamp": "2024-05-08T14:40:19+02:00",
+          "tree_id": "d0359c30d414ac03f20ff35ab0b66d09540cf28b",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/4bc44238a15a326a9a3a49ccf63510e9de4b0c69"
+        },
+        "date": 1715172143228,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22362217100001658,
+            "unit": "s",
+            "extra": "Commit: 4bc44238a15a326a9a3a49ccf63510e9de4b0c69\nBranch: master\nTime: 2024-05-08T14:40:19+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 66.83594841700003,
+            "unit": "s",
+            "extra": "Commit: 4bc44238a15a326a9a3a49ccf63510e9de4b0c69\nBranch: master\nTime: 2024-05-08T14:40:19+02:00"
           }
         ]
       }
