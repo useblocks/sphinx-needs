@@ -12,7 +12,7 @@ License
 -----
 
 :Released: 08.05.2024
-:Full Changelog: `v2.0.0...v2.1.0 <https://github.com/useblocks/sphinx-needs/compare/v2.0.0...v2.1.0>`__
+:Full Changelog: `v2.0.0...v2.1.0 <https://github.com/useblocks/sphinx-needs/compare/2.0.0...d405fd1>`__
 
 Improvements
 ............
