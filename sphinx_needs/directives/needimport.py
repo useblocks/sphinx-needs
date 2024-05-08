@@ -163,9 +163,7 @@ class NeedimportDirective(SphinxDirective):
                         needs_list_filtered[key] = need
                 except Exception as e:
                     logger.warning(
-                        "needimport: Filter {} not valid. Error: {}. {}{} [needs]".format(
-                            filter_string, e, self.docname, self.lineno
-                        ),
+                        f"needimport: Filter {filter_string} not valid. Error: {e}. {self.docname}{self.lineno} [needs]",
                         type="needs",
                         location=(self.env.docname, self.lineno),
                     )

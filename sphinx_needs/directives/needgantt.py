@@ -78,8 +78,8 @@ class NeedganttDirective(FilterBase, DiagramBase):
                 # datetime.fromisoformat(start_date) # > py3.7 only
             except Exception:
                 raise NeedGanttException(
-                    "Given start date {} is not valid. Please use YYYY-MM-DD as format. "
-                    "E.g. 2020-03-27".format(start_date)
+                    f"Given start date {start_date} is not valid. Please use YYYY-MM-DD as format. "
+                    "E.g. 2020-03-27"
                 )
         else:
             start_date = None  # If None we do not set a start date later
@@ -277,9 +277,9 @@ def process_needgantt(
             puml_node["uml"] += gantt_element
 
         puml_node["uml"] += "\n' Element links definition \n\n"
-        puml_node[
-            "uml"
-        ] += "\n' Deactivated, as currently supported by plantuml beta only"
+        puml_node["uml"] += (
+            "\n' Deactivated, as currently supported by plantuml beta only"
+        )
 
         puml_node["uml"] += "\n' Element completion definition \n\n"
         puml_node["uml"] += el_completion_string + "\n"

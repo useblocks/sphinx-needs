@@ -23,7 +23,7 @@ Fixed
 
 * Fix external needs identifier checked by regex (`#1099 <https://github.com/useblocks/sphinx-needs/pull/1099>`_)
 * Fix line number handling for errors and warnings
-  (PR `#1150 <https://github.com/useblocks/sphinx-needs/pull/1150>`_, Issue `#1077 <https://github.com/useblocks/sphinx-needs/issues/1077>`)
+  (PR `#1168 <https://github.com/useblocks/sphinx-needs/pull/1150>`_, Issue `#1077 <https://github.com/useblocks/sphinx-needs/issues/1077>`)
 
 
 2.0.0

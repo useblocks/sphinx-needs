@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-from typing import Iterable, Sequence
+from typing import Any, Iterable, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -177,7 +177,7 @@ def process_needpie(
                 )
                 # execute filter_func code
                 # Provides only a copy of needs to avoid data manipulations.
-                context = {
+                context: dict[str, Any] = {
                     "needs": need_list,
                     "results": [],
                 }
@@ -190,7 +190,7 @@ def process_needpie(
 
                 if filter_func:
                     filter_func(**context)
-                sizes = context["results"]  # type: ignore[assignment]
+                sizes = context["results"]
                 # check items in sizes
                 if not isinstance(sizes, list):
                     logger.error(
@@ -267,10 +267,8 @@ def process_needpie(
         if legend_enforced:
             for i in range(len(sizes)):
                 if sum(sizes) > 0:
-                    labels[i] = "{label} {percent:.1f}% ({size:.0f})".format(
-                        label=labels[i],
-                        percent=100 * sizes[i] / sum(sizes),
-                        size=sizes[i],
+                    labels[i] = (
+                        f"{labels[i]} {100 * sizes[i] / sum(sizes):.1f}% ({sizes[i]:.0f})"
                     )
                 else:
                     labels[i] = f"{labels[i]} {0.0:.1f}% ({sizes[i]:.0f})"
