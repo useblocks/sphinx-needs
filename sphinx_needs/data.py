@@ -52,6 +52,8 @@ class NeedsInfoType(TypedDict, total=False):
     """Name of the document where the need is defined (None if external)"""
     lineno: Required[int | None]
     """Line number where the need is defined (None if external)"""
+    lineno_content: Required[int | None]
+    """Line number on which the need content starts (None if external)"""
 
     # meta information
     full_title: Required[str]

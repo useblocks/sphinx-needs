@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import os
 import shutil
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -21,41 +22,34 @@ def test_doc_build_html(test_app):
     assert '<img alt="_images/need_pie_' in html
 
 
-def test_sphinx_api_needpie():
+def test_sphinx_api_needpie(tmp_path: Path, make_app: type[SphinxTestApp]):
     """
     Tests a build via the Sphinx Build API.
     """
-    temp_dir = Path(tempfile.mkdtemp())
-    build_dir = temp_dir / "_build"
+    build_dir = tmp_path / "_build"
     src_dir = os.path.join(os.path.dirname(__file__), "doc_test/doc_needpie")
-    shutil.copytree(src_dir, temp_dir, dirs_exist_ok=True)
+    shutil.copytree(src_dir, tmp_path, dirs_exist_ok=True)
 
     if version_info >= (7, 2):
         src_dir = Path(src_dir)
-        build_dir = Path(build_dir)
     else:
         from sphinx.testing.path import path
 
         src_dir = path(src_dir)
         build_dir = path(build_dir)
 
-    with open(os.path.join(temp_dir, "warnings.txt"), "w") as warnings:
-        sphinx_app = SphinxTestApp(
-            srcdir=src_dir,
-            builddir=build_dir,
-            buildername="html",
-            parallel=4,
-            warning=warnings,
-        )
-        try:
-            sphinx_app.build()
-            assert sphinx_app.statuscode == 0
+    sphinx_app = make_app(
+        srcdir=src_dir,
+        builddir=build_dir,
+        buildername="html",
+        parallel=4,
+    )
+    sphinx_app.build()
+    assert sphinx_app.statuscode == 0
 
-            # touch file to force sphinx to purge stuff
-            with open(temp_dir / "index.rst", "a") as f:
-                f.write("\n\nNew content to force rebuild")
+    # touch file to force sphinx to purge stuff
+    with tmp_path.joinpath("index.rst").open("a") as f:
+        f.write("\n\nNew content to force rebuild")
 
-            sphinx_app.build()
-            assert sphinx_app.statuscode == 0
-        finally:
-            sphinx_app.cleanup()
+    sphinx_app.build()
+    assert sphinx_app.statuscode == 0

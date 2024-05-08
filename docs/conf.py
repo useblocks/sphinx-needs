@@ -47,6 +47,7 @@ nitpicky = True
 nitpick_ignore = [
     ("py:class", "docutils.nodes.Node"),
     ("py:class", "docutils.parsers.rst.states.RSTState"),
+    ("py:class", "docutils.statemachine.StringList"),
     ("py:class", "T"),
     ("py:class", "sphinx_needs.debug.T"),
     ("py:class", "sphinx_needs.data.NeedsInfoType"),

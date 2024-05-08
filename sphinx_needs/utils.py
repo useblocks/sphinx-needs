@@ -47,6 +47,7 @@ INTERNALS = (
     "lineno",
     "refid",
     "content",
+    "lineno_content",
     "pre_content",
     "post_content",
     "collapse",

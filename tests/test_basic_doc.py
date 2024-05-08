@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import json
 import os.path
 import sys
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -146,32 +147,27 @@ def test_id_required_build_html(test_app):
         app.builder.build_all()
 
 
-def test_sphinx_api_build():
+def test_sphinx_api_build(tmp_path: Path, make_app: type[SphinxTestApp]):
     """
     Tests a build via the Sphinx Build API.
     It looks like that there are scenarios where this specific build makes trouble but no others.
     """
-    temp_dir = tempfile.mkdtemp()
     src_dir = os.path.join(os.path.dirname(__file__), "doc_test", "doc_basic")
 
     if version_info >= (7, 2):
         src_dir = Path(src_dir)
-        temp_dir = Path(temp_dir)
     else:
         from sphinx.testing.path import path
 
         src_dir = path(src_dir)
-        temp_dir = path(temp_dir)
+        tmp_path = path(str(tmp_path))
 
-    sphinx_app = SphinxTestApp(
+    sphinx_app = make_app(
         srcdir=src_dir,
-        builddir=temp_dir,
+        builddir=tmp_path,
         buildername="html",
         parallel=4,
         freshenv=True,
     )
-    try:
-        sphinx_app.build()
-        assert sphinx_app.statuscode == 0
-    finally:
-        sphinx_app.cleanup()
+    sphinx_app.build()
+    assert sphinx_app.statuscode == 0

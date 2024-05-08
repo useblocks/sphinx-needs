@@ -52,6 +52,7 @@ responses = { version = "^0.22.0", optional = true }
 sphinxcontrib-plantuml = { version = "^0", optional = true }
 syrupy = { version = "^3", optional = true }
 pytest-xprocess = { version = "^0.22.2", optional = true }
+defusedxml = { version = "^0.7.1", optional = true }
 
 # [project.optional-dependencies.test-parallel]
 pytest-xdist = { version = "*", optional = true }
@@ -70,6 +71,7 @@ pydantic = { version="2.4.2", optional = true }
 [tool.poetry.extras]
 plotting = ["matplotlib"]
 test = [
+  "defusedxml",
   "matplotlib",
   "pytest",
   "pytest-cov",
@@ -98,6 +100,11 @@ pre-commit = "^3"
 markers = [
     "jstest: marks tests as JavaScript test (deselect with '-m \"not jstest\"')",
 ]
+filterwarnings = [
+  "ignore:.*removed in Python 3.14.*:DeprecationWarning",
+  # "ignore::sphinx.deprecation.RemovedInSphinx90Warning"
+]
+
 
 [tool.ruff.lint]
 extend-select = [

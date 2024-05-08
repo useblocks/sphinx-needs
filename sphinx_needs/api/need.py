@@ -3,14 +3,15 @@ from __future__ import annotations
 import hashlib
 import os
 import re
-from typing import Any
+from contextlib import contextmanager
+from typing import Any, Iterator
 
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState
 from docutils.statemachine import StringList
 from jinja2 import Template
 from sphinx.application import Sphinx
-from sphinx.util.nodes import nested_parse_with_titles
+from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.api.configuration import NEEDS_CONFIG
 from sphinx_needs.api.exceptions import (
@@ -42,8 +43,10 @@ def add_need(
     lineno: None | int,
     need_type: str,
     title: str,
+    *,
     id: str | None = None,
-    content: str = "",
+    content: str | StringList = "",
+    lineno_content: None | int = None,
     status: str | None = None,
     tags: None | str | list[str] = None,
     constraints: None | str | list[str] = None,
@@ -107,14 +110,28 @@ def add_need(
 
                 return main_section
 
+    If the need is within the current project, i.e. not an external need,
+    the following parameters are used to help provide source mapped warnings and errors:
+
+    :param docname: documentation identifier, for the referencing document.
+    :param lineno: line number of the top of the directive (1-indexed).
+    :param lineno_content: line number of the content start of the directive (1-indexed).
+
+    Otherwise, the following parameters are used:
+
+    :param is_external: Is true, no node is created and need is referencing external url
+    :param external_url: URL as string, which is used as target if ``is_external`` is ``True``
+    :param external_css: CSS class name as string, which is set for the <a> tag.
+
+    Additional parameters:
+
     :param app: Sphinx application object.
     :param state: Current state object.
-    :param docname: documentation name.
-    :param lineno: line number.
     :param need_type: Name of the need type to create.
     :param title: String as title.
     :param id: ID as string. If not given, an id will get generated.
-    :param content: Content as single string.
+    :param content: Content of the need, either as a ``str``
+        or a ``StringList`` (a string with mapping to the source text).
     :param status: Status as string.
     :param tags: Tags as single string.
     :param constraints: Constraints as single, comma separated, string.
@@ -130,9 +147,6 @@ def add_need(
     :param template: Template name to use for the content of this need
     :param pre_template: Template name to use for content added before need
     :param post_template: Template name to use for the content added after need
-    :param is_external: Is true, no node is created and need is referencing external url
-    :param external_url: URL as string, which is used as target if ``is_external`` is ``True``
-    :param external_css: CSS class name as string, which is set for the <a> tag.
 
     :return: node
     """
@@ -192,7 +206,12 @@ def add_need(
         )
 
     if id is None:
-        need_id = make_hashed_id(app, need_type, title, content)
+        need_id = make_hashed_id(
+            app,
+            need_type,
+            title,
+            "\n".join(content) if isinstance(content, StringList) else content,
+        )
     else:
         need_id = id
 
@@ -319,17 +338,16 @@ def add_need(
         trimmed_title = title[: max_length - 3] + "..."
 
     # Calculate doc type, e.g. .rst or .md
-    if state and state.document and state.document.current_source:
-        doctype = os.path.splitext(state.document.current_source)[1]
-    else:
-        doctype = ".rst"
+    doctype = os.path.splitext(env.doc2path(docname))[1] if docname else ""
 
     # Add the need and all needed information
     needs_info: NeedsInfoType = {
         "docname": docname,
         "lineno": lineno,
+        "lineno_content": lineno_content,
         "doctype": doctype,
         "target_id": need_id,
+        "content": "\n".join(content) if isinstance(content, StringList) else content,
         "content_node": None,
         "content_id": None,
         "type": need_type,
@@ -345,7 +363,6 @@ def add_need(
         "id": need_id,
         "title": trimmed_title,
         "full_title": title,
-        "content": content,
         "collapse": collapse,
         "arch": {},  # extracted later
         "style": style,
@@ -420,71 +437,118 @@ def add_need(
 
     needs_info["links"] += copy_links  # Set copied links to main-links
 
-    # Jinja support for need content
     if jinja_content:
         need_content_context = {**needs_info}
         need_content_context.update(**needs_config.filter_data)
         need_content_context.update(**needs_config.render_context)
-        new_content = jinja_parse(need_content_context, needs_info["content"])
-        # Overwrite current content
-        content = new_content
-        needs_info["content"] = new_content
+        needs_info["content"] = content = jinja_parse(
+            need_content_context, needs_info["content"]
+        )
+
+    if needs_info["template"]:
+        needs_info["content"] = content = _prepare_template(app, needs_info, "template")
+
+    if needs_info["pre_template"]:
+        needs_info["pre_content"] = _prepare_template(app, needs_info, "pre_template")
+
+    if needs_info["post_template"]:
+        needs_info["post_content"] = _prepare_template(app, needs_info, "post_template")
 
     SphinxNeedsData(env).get_or_create_needs()[need_id] = needs_info
-
-    # Template builds
-    ##############################
-
-    # template
-    if needs_info["template"]:
-        new_content = _prepare_template(app, needs_info, "template")
-        # Overwrite current content
-        content = new_content
-        needs_info["content"] = new_content
-
-    # pre_template
-    if needs_info["pre_template"]:
-        pre_content = _prepare_template(app, needs_info, "pre_template")
-        needs_info["pre_content"] = pre_content
-    else:
-        pre_content = None
-
-    # post_template
-    if needs_info["post_template"]:
-        post_content = _prepare_template(app, needs_info, "post_template")
-        needs_info["post_content"] = post_content
-    else:
-        post_content = None
 
     if needs_info["is_external"]:
         return []
 
-    # Adding of basic Need node.
-    ############################
-    # Title and meta data information gets added alter during event handling via process_need_nodes()
-    # We just add a basic need node and render the rst-based content, because this can not be done later.
-    style_classes = ["need", f"need-{need_type.lower()}"]
-    if style:
-        style_classes.append(style)
+    assert state is not None, "parser state must be set if need is not external"
 
-    node_need = Need("", classes=style_classes, ids=[need_id], refid=need_id)
+    return _create_need_node(needs_info, env, state, content)
 
-    # Add lineno to node
-    node_need.line = needs_info["lineno"]
 
-    if needs_info["hide"]:
-        # still add node to doctree,
-        # so we can later compute its relative location in the document
+@contextmanager
+def _reset_rst_titles(state: RSTState) -> Iterator[None]:
+    """Temporarily reset the title styles and section level in the parser state,
+    so that title styles can have different levels to the surrounding document.
+    """
+    # this is basically a horrible hack to get the docutils parser to work correctly with generated content
+    surrounding_title_styles = state.memo.title_styles
+    surrounding_section_level = state.memo.section_level
+    state.memo.title_styles = []
+    state.memo.section_level = 0
+    yield
+    state.memo.title_styles = surrounding_title_styles
+    state.memo.section_level = surrounding_section_level
+
+
+def _create_need_node(
+    data: NeedsInfoType,
+    env: BuildEnvironment,
+    state: RSTState,
+    content: str | StringList,
+) -> list[nodes.Node]:
+    """Create a Need node (and surrounding nodes) to be added to the document.
+
+    Note, some additional data is added to the node once the whole document has been processed
+    (see ``process_need_nodes()``).
+
+    :param data: The full data entry for this node.
+    :param env: The Sphinx environment.
+    :param state: The current parser state.
+    :param content: The main content to be rendered inside the need.
+        Note, this content my be different to ``data["content"]``,
+        in that it may be a ``StringList`` type with source-mapping directly parsed from a directive.
+    """
+    source = env.doc2path(data["docname"]) if data["docname"] else None
+
+    style_classes = ["need", f"need-{data['type'].lower()}"]
+    if data["style"]:
+        style_classes.append(data["style"])
+
+    node_need = Need("", classes=style_classes, ids=[data["id"]], refid=data["id"])
+    node_need.source, node_need.line = source, data["lineno"]
+
+    if data["hide"]:
+        # still add node to doctree, so we can later compute its relative location in the document
         # (see analyse_need_locations function)
         node_need["hidden"] = True
         return [node_need]
 
-    node_need_content = _render_template(content, docname, lineno, state)
+    return_nodes: list[nodes.Node] = []
+
+    if pre_content := data.get("pre_content"):
+        node = nodes.Element()
+        with _reset_rst_titles(state):
+            state.nested_parse(
+                StringList(pre_content.splitlines(), source=source),
+                (data["lineno"] - 1) if data["lineno"] else 0,
+                node,
+                match_titles=True,
+            )
+        return_nodes.extend(node.children)
+
+    # Calculate target id, to be able to set a link back
+    return_nodes.append(
+        nodes.target("", "", ids=[data["id"]], refid=data["id"], anonymous="")
+    )
+
+    content_offset = 0
+    if data["lineno_content"]:
+        content_offset = data["lineno_content"] - 1
+    elif data["lineno"]:
+        content_offset = data["lineno"] - 1
+    if isinstance(content, StringList):
+        state.nested_parse(content, content_offset, node_need, match_titles=False)
+    else:
+        state.nested_parse(
+            StringList(content.splitlines(), source=source),
+            content_offset,
+            node_need,
+            match_titles=False,
+        )
 
     # Extract plantuml diagrams and store needumls with keys in arch, e.g. need_info['arch']['diagram']
     node_need_needumls_without_key = []
     node_need_needumls_key_names = []
-    for child in node_need_content.children:
+    for child in node_need.children:
         if isinstance(child, Needuml):
             needuml_id = child.rawsource
             if needuml := SphinxNeedsData(env).get_or_create_umls().get(needuml_id):
@@ -494,10 +558,10 @@ def add_need(
                         # check if key_name already exists in needs_info["arch"]
                         if key_name in node_need_needumls_key_names:
                             raise NeedumlException(
-                                f"Inside need: {need_id}, found duplicate Needuml option key name: {key_name}"
+                                f"Inside need: {data['id']}, found duplicate Needuml option key name: {key_name}"
                             )
                         else:
-                            needs_info["arch"][key_name] = needuml["content"]
+                            data["arch"][key_name] = needuml["content"]
                             node_need_needumls_key_names.append(key_name)
                     else:
                         node_need_needumls_without_key.append(needuml)
@@ -506,32 +570,28 @@ def add_need(
 
     # only store the first needuml-node which has no key option under diagram
     if node_need_needumls_without_key:
-        needs_info["arch"]["diagram"] = node_need_needumls_without_key[0]["content"]
+        data["arch"]["diagram"] = node_need_needumls_without_key[0]["content"]
 
-    need_parts = find_parts(node_need_content)
-    update_need_with_parts(env, needs_info, need_parts)
+    need_parts = find_parts(node_need)
+    update_need_with_parts(env, data, need_parts)
 
-    node_need += node_need_content.children
-
-    needs_info["content_id"] = node_need["ids"][0]
+    data["content_id"] = node_need["ids"][0]
 
     # Create a copy of the content
-    needs_info["content_node"] = node_need.deepcopy()
+    data["content_node"] = node_need.deepcopy()
 
-    return_nodes: list[nodes.Node] = [node_need]
-    if not is_external:
-        # Calculate target id, to be able to set a link back
-        target_node = nodes.target("", "", ids=[need_id], refid=need_id, anonymous="")
-        # TODO add to document?
-        return_nodes = [target_node, node_need]
+    return_nodes.append(node_need)
 
-    if pre_content:
-        node_need_pre_content = _render_template(pre_content, docname, lineno, state)
-        return_nodes = node_need_pre_content.children + return_nodes
-
-    if post_content:
-        node_need_post_content = _render_template(post_content, docname, lineno, state)
-        return_nodes = return_nodes + node_need_post_content.children
+    if post_content := data.get("post_content"):
+        node = nodes.Element()
+        with _reset_rst_titles(state):
+            state.nested_parse(
+                StringList(post_content.splitlines(), source=source),
+                (data["lineno"] - 1) if data["lineno"] else 0,
+                node,
+                match_titles=True,
+            )
+        return_nodes.extend(node.children)
 
     return return_nodes
 
@@ -639,35 +699,6 @@ def _prepare_template(app: Sphinx, needs_info: NeedsInfoType, template_key: str)
     new_content = template_obj.render(**needs_info, **needs_config.render_context)
 
     return new_content
-
-
-def _render_template(
-    content: str, docname: str | None, lineno: int | None, state: RSTState
-) -> nodes.Element:
-    rst = StringList()
-    for line in content.split("\n"):
-        # TODO how to handle if the source mapping here, if the content is from an external need?
-        # (i.e. does not have a docname and lineno)
-        rst.append(line, docname, lineno)
-    node_need_content = nodes.Element()
-    node_need_content.document = state.document
-    nested_parse_with_titles(state, rst, node_need_content)
-    return node_need_content
-
-
-def _render_plantuml_template(
-    content: str, docname: str, lineno: int, state: RSTState
-) -> nodes.Element:
-    rst = StringList()
-    rst.append(".. needuml::", docname, lineno)
-    rst.append("", docname, lineno)  # Empty option line for needuml
-    for line in content.split("\n"):
-        line = f"   {line}"  # indent content under needuml
-        rst.append(line, docname, lineno)
-    node_need_content = nodes.Element()
-    node_need_content.document = state.document
-    nested_parse_with_titles(state, rst, node_need_content)
-    return node_need_content
 
 
 def _read_in_links(links_string: None | str | list[str]) -> list[str]:
