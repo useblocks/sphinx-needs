@@ -128,14 +128,14 @@ def get_filter_para(node_element: NeedsFilteredBaseType) -> nodes.paragraph:
     para = nodes.paragraph()
     filter_text = "Used filter:"
     filter_text += (
-        " status(%s)" % " OR ".join(node_element["status"])
+        " status({})".format(" OR ".join(node_element["status"]))
         if len(node_element["status"]) > 0
         else ""
     )
     if len(node_element["status"]) > 0 and len(node_element["tags"]) > 0:
         filter_text += " AND "
     filter_text += (
-        " tags(%s)" % " OR ".join(node_element["tags"])
+        " tags({})".format(" OR ".join(node_element["tags"]))
         if len(node_element["tags"]) > 0
         else ""
     )
@@ -144,7 +144,7 @@ def get_filter_para(node_element: NeedsFilteredBaseType) -> nodes.paragraph:
     ) > 0:
         filter_text += " AND "
     filter_text += (
-        " types(%s)" % " OR ".join(node_element["types"])
+        " types({})".format(" OR ".join(node_element["types"]))
         if len(node_element["types"]) > 0
         else ""
     )

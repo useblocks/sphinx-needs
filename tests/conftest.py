@@ -259,8 +259,8 @@ def test_app(make_app, sphinx_test_tempdir, request):
     if not builder_params.get("no_plantuml", False):
         # Since we don't want copy the plantuml.jar file for each test function,
         # we need to override the plantuml conf variable and set it to what we have already
-        plantuml = "java -Djava.awt.headless=true -jar %s" % os.path.join(
-            sphinx_test_tempdir, "utils", "plantuml.jar"
+        plantuml = "java -Djava.awt.headless=true -jar {}".format(
+            os.path.join(sphinx_test_tempdir, "utils", "plantuml.jar")
         )
         sphinx_conf_overrides.update(plantuml=plantuml)
 

@@ -124,10 +124,7 @@ def process_need_ref(
                 try:
                     link_text = needs_config.role_need_template.format(**dict_need)
                 except KeyError as e:
-                    link_text = (
-                        '"the config parameter needs_role_need_template uses not supported placeholders: %s "'
-                        % e
-                    )
+                    link_text = f'"the config parameter needs_role_need_template uses not supported placeholders: {e} "'
                     log.warning(link_text + " [needs]", type="needs")
 
             node_need_ref[0].children[0] = nodes.Text(link_text)  # type: ignore[index]
