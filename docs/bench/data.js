@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1715165877822,
+  "lastUpdate": 1715168141322,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7560,6 +7560,42 @@ window.BENCHMARK_DATA = {
             "value": 59.4654864,
             "unit": "s",
             "extra": "Commit: 42962cc2ac004a8ea76e278cbaf05b8578f11aed\nBranch: master\nTime: 2024-05-08T12:56:04+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d405fd18b9c4489f91f5e4264f0a1b4b34f1d1e9",
+          "message": "♻️ Default to warning for missing needextend ID (#1066)\n\nRather than defaulting to \"strict\" mode for unknown IDs in the `needextend` directives, whereby the entire build is excepted,\r\nThe default is now changed to \"non-strict\" mode, and this emits a warning rather than an info log.",
+          "timestamp": "2024-05-08T13:33:43+02:00",
+          "tree_id": "cecd3751e927c8ad89858323dfb188ebc6d3849e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/d405fd18b9c4489f91f5e4264f0a1b4b34f1d1e9"
+        },
+        "date": 1715168134475,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18897383399999512,
+            "unit": "s",
+            "extra": "Commit: d405fd18b9c4489f91f5e4264f0a1b4b34f1d1e9\nBranch: master\nTime: 2024-05-08T13:33:43+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.82685070299999,
+            "unit": "s",
+            "extra": "Commit: d405fd18b9c4489f91f5e4264f0a1b4b34f1d1e9\nBranch: master\nTime: 2024-05-08T13:33:43+02:00"
           }
         ]
       }
