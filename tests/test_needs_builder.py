@@ -79,7 +79,7 @@ def test_needs_html_and_json(test_app):
     build_dir = os.path.join(app.outdir, "../needs")
     print(build_dir)
     output = subprocess.run(
-        ["python", "-m", "sphinx.cmd.build", "-b", "needs", srcdir, build_dir],
+        ["sphinx-build", "-b", "needs", srcdir, build_dir],
         capture_output=True,
     )
     print(output)
