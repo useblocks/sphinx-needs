@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1712849483408,
+  "lastUpdate": 1715162279544,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7488,6 +7488,42 @@ window.BENCHMARK_DATA = {
             "value": 59.007671181999996,
             "unit": "s",
             "extra": "Commit: 90bae4a7664d8c7d899f034671374007a6b792f4\nBranch: master\nTime: 2024-04-11T17:29:22+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0838672abe406df4d776db176f3c1bdcb03791f9",
+          "message": "Improve `Need` node creation and content parsing (#1168)\n\nThis commit improves the creation of need nodes and the `api.need.add_need()` function:\r\n\r\n- It now accepts the `content` argument as a `docutils.StringList`, which can be passed directly from a directive.\r\n- It now accepts a new `lineno_content` argument, which denotes the starting line number of the content, within the directive.\r\n-  `lineno_content` is stored within the internal need data index (although for now it is not output in the `needs.json`)\r\n- These arguments are used to improve the reporting of warnings, at the correct line number.\r\n\r\nNote, it also deals with fixing some issues in the test suite arising from sphinx v7.3\r\n\r\nCo-authored-by: Philip Partsch <philip.partsch@bosch.com>",
+          "timestamp": "2024-05-08T11:55:52+02:00",
+          "tree_id": "af597e1ea15345f71c5efe0ce2893b8fc445b429",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/0838672abe406df4d776db176f3c1bdcb03791f9"
+        },
+        "date": 1715162273245,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2416361209999991,
+            "unit": "s",
+            "extra": "Commit: 0838672abe406df4d776db176f3c1bdcb03791f9\nBranch: master\nTime: 2024-05-08T11:55:52+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 64.848383557,
+            "unit": "s",
+            "extra": "Commit: 0838672abe406df4d776db176f3c1bdcb03791f9\nBranch: master\nTime: 2024-05-08T11:55:52+02:00"
           }
         ]
       }
