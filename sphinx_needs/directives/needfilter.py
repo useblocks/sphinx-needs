@@ -170,10 +170,10 @@ def process_needfilters(
                 description = "{}: {}".format(need_info["id"], need_info["title"])
 
                 if current_needfilter["show_status"] and need_info["status"]:
-                    description += " (%s)" % need_info["status"]
+                    description += " ({})".format(need_info["status"])
 
                 if current_needfilter["show_tags"] and need_info["tags"]:
-                    description += " [%s]" % "; ".join(need_info["tags"])
+                    description += " [{}]".format("; ".join(need_info["tags"]))
 
                 title = nodes.Text(description)
 
@@ -227,14 +227,14 @@ def process_needfilters(
                     **need_info, **needs_config.render_context
                 )
 
-                puml_node[
-                    "uml"
-                ] += '{style} "{node_text}" as {id} [[{link}]] {color}\n'.format(
-                    id=need_info["id"],
-                    node_text=node_text,
-                    link=link,
-                    color=need_info["type_color"],
-                    style=need_info["type_style"],
+                puml_node["uml"] += (
+                    '{style} "{node_text}" as {id} [[{link}]] {color}\n'.format(
+                        id=need_info["id"],
+                        node_text=node_text,
+                        link=link,
+                        color=need_info["type_color"],
+                        style=need_info["type_style"],
+                    )
                 )
                 for link in need_info["links"]:
                     puml_connections += "{id} --> {link}\n".format(
@@ -266,7 +266,7 @@ def process_needfilters(
             para_node = nodes.paragraph()
             filter_text = "Used filter:"
             filter_text += (
-                " status(%s)" % " OR ".join(current_needfilter["status"])
+                " status({})".format(" OR ".join(current_needfilter["status"]))
                 if len(current_needfilter["status"]) > 0
                 else ""
             )
@@ -276,7 +276,7 @@ def process_needfilters(
             ):
                 filter_text += " AND "
             filter_text += (
-                " tags(%s)" % " OR ".join(current_needfilter["tags"])
+                " tags({})".format(" OR ".join(current_needfilter["tags"]))
                 if len(current_needfilter["tags"]) > 0
                 else ""
             )
@@ -286,7 +286,7 @@ def process_needfilters(
             ) and len(current_needfilter["types"]) > 0:
                 filter_text += " AND "
             filter_text += (
-                " types(%s)" % " OR ".join(current_needfilter["types"])
+                " types({})".format(" OR ".join(current_needfilter["types"]))
                 if len(current_needfilter["types"]) > 0
                 else ""
             )

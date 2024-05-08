@@ -201,7 +201,7 @@ def process_filters(
             )
     else:
         # Provides only a copy of needs to avoid data manipulations.
-        context = {
+        context: dict[str, Any] = {
             "needs": all_needs_incl_parts,
             "results": [],
         }
@@ -226,7 +226,7 @@ def process_filters(
             return []
 
         # The filter results may be dirty, as it may continue manipulated needs.
-        found_dirty_needs: list[NeedsInfoType] = context["results"]  # type: ignore
+        found_dirty_needs: list[NeedsInfoType] = context["results"]
         found_needs = []
 
         # Check if config allow unsafe filters

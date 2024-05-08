@@ -508,7 +508,7 @@ def process_needflow(
             para = nodes.paragraph()
             filter_text = "Used filter:"
             filter_text += (
-                " status(%s)" % " OR ".join(current_needflow["status"])
+                " status({})".format(" OR ".join(current_needflow["status"]))
                 if len(current_needflow["status"]) > 0
                 else ""
             )
@@ -518,7 +518,7 @@ def process_needflow(
             ):
                 filter_text += " AND "
             filter_text += (
-                " tags(%s)" % " OR ".join(current_needflow["tags"])
+                " tags({})".format(" OR ".join(current_needflow["tags"]))
                 if len(current_needflow["tags"]) > 0
                 else ""
             )
@@ -527,7 +527,7 @@ def process_needflow(
             ) and len(current_needflow["types"]) > 0:
                 filter_text += " AND "
             filter_text += (
-                " types(%s)" % " OR ".join(current_needflow["types"])
+                " types({})".format(" OR ".join(current_needflow["types"]))
                 if len(current_needflow["types"]) > 0
                 else ""
             )
