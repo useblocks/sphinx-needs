@@ -8,23 +8,52 @@ License
 
 .. include:: ../LICENSE
 
-Unreleased
-----------
+2.1.0
+-----
 
-* 👌 Fail and emit warning on filters that do not return a boolean result
-  (`#964 <https://github.com/useblocks/sphinx-needs/pull/964>`_)
+:Released: 08.05.2024
+:Full Changelog: `v2.0.0...v2.1.0 <https://github.com/useblocks/sphinx-needs/compare/2.0.0...d405fd1>`__
 
+Improvements
+............
 
-Unreleased
-----------
+- 👌 Default to warning for missing ``needextend`` ID in :pr:`1066`
+- 👌 Make ``needtable`` titles more permissive in :pr:`1102`
+- 👌 Add ``filter_warning`` directive option, to replace default warning text in :pr:`1093`
+- 👌 Improve and test github ``needservice`` directive in :pr:`1113`
+- 👌 Improve warnings for invalid filters (add source location and subtype) in :pr:`1128`
+- 👌 Exclude external needs from ``needs_id_regex`` check in :pr:`1108`
+- 👌 Fail and emit warning on filters that do not return a boolean result in :pr:`964`
+- 👌 Improve ``Need`` node creation and content parsing in :pr:`1168`
+- 👌 Add loading message to ``permalink.html`` in :pr:`1081`
+- 👌 Remove hard-coding of ``completion`` and ``duration`` need fields in :pr:`1127`
 
-Fixed
-.....
+Bug fixes
+.........
 
-* Fix external needs identifier checked by regex (`#1099 <https://github.com/useblocks/sphinx-needs/pull/1099>`_)
-* Fix line number handling for errors and warnings
-  (PR `#1168 <https://github.com/useblocks/sphinx-needs/pull/1150>`_, Issue `#1077 <https://github.com/useblocks/sphinx-needs/issues/1077>`)
+- 🐛 Image layout function in :pr:`1135`
+- 🐛 Centralise splitting of need ID in :pr:`1101`
+- 🐛 Centralise need missing link reporting in :pr:`1104`
 
+Internal improvements
+......................
+
+- 🔧 Use future annotations in all modules in :pr:`1111`
+- 🔧 Replace black/isort/pyupgrade/flake8 with ruff in :pr:`1080`
+
+- 🔧 Add better typing for ``extra_links`` config variable in :pr:`1131`
+- 🔧 Centralise need parts creation and strongly type needs in :pr:`1129`
+- 🔧 Fix typing of need docname/lineno in :pr:`1134`
+- 🔧 Type ``ExternalSource`` config dict in :pr:`1115`
+- 🔧 Enforce type checking in ``needuml.py`` in :pr:`1116`
+- 🔧 Enforce type checking in ``api/need.py`` in :pr:`1117`
+- 🔧 Add better typing for ``global_options`` config variable in :pr:`1120`
+
+- 🔧 Move dead link need fields to internals in :pr:`1119`
+- 🔧 Remove usage of ``hide_status`` and ``hide_tags`` in :pr:`1130`
+- 🔧 Remove ``hidden`` field from ``extra_options`` in :pr:`1124`
+- 🔧 Remove ``constraints`` from ``extra_options`` in :pr:`1123`
+- 🔧 Remove use of deprecated ``needs_extra_options`` as ``dict`` in :pr:`1126`
 
 2.0.0
 -----
@@ -37,17 +66,17 @@ This release is focussed on improving the internal code-base and its build time 
 Changed
 .......
 
-* Add Sphinx 7 support and drop Python 3.7 (`#1056 <https://github.com/useblocks/sphinx-needs/pull/1056>`_).
+* Add Sphinx 7 support and drop Python 3.7 (:pr:`1056`).
   Sphinx 5, 6, 7 and Python 3.8 to 3.11 are now fully supported and tested.
-* The ``matplotlib`` dependency (for ``needbar`` and ``needpie`` plots) is now optional, and should be installed with ``sphinx-needs[plotting]``, see :ref:`installation`  (`#1061 <https://github.com/useblocks/sphinx-needs/pull/1061>`_)
-* The ``NeedsBuilder`` format name is changed to ``needs`` (`#978 <https://github.com/useblocks/sphinx-needs/pull/978>`_)
+* The ``matplotlib`` dependency (for ``needbar`` and ``needpie`` plots) is now optional, and should be installed with ``sphinx-needs[plotting]``, see :ref:`installation`  (:pr:`1061`)
+* The ``NeedsBuilder`` format name is changed to ``needs`` (:pr:`978`)
 
 New
 ...
 
-* Added Builder :ref:`needs_id_builder` and config option :ref:`needs_build_json_per_id` in ``conf.py`` (`#960 <https://github.com/useblocks/sphinx-needs/pull/960>`_)
-* Added ``needs_reproducible_json`` config option for the needs builder, see :ref:`needs_build_json` (`#1065 <https://github.com/useblocks/sphinx-needs/pull/1065>`_)
-* Added error messages for constraint failures (`#1036 <https://github.com/useblocks/sphinx-needs/pull/1036>`_)
+* Added Builder :ref:`needs_id_builder` and config option :ref:`needs_build_json_per_id` in ``conf.py`` (:pr:`960`)
+* Added ``needs_reproducible_json`` config option for the needs builder, see :ref:`needs_build_json` (:pr:`1065`)
+* Added error messages for constraint failures (:pr:`1036`)
 
 Improved
 ........
@@ -57,56 +86,56 @@ Performance:
 * General performance improvement (up to 50%) and less memory consumption (~40%).
 * ``external_needs`` now uses cached templates to save generation time.
 * Improved performance for :ref:`needextend` with single needs.
-* Improved performance by memoizing the inline parse in ``build_need`` (`#968 <https://github.com/useblocks/sphinx-needs/pull/968>`_)
-* Remove ``deepcopy`` of needs data (`#1033 <https://github.com/useblocks/sphinx-needs/pull/1033>`_)
-* Optimize ``needextend`` filter_needs usage (`#1030 <https://github.com/useblocks/sphinx-needs/pull/1030>`_)
-* Improve performance of needs builders by skipping document post-transforms (`#1054 <https://github.com/useblocks/sphinx-needs/pull/1054>`_)
+* Improved performance by memoizing the inline parse in ``build_need`` (:pr:`968`)
+* Remove ``deepcopy`` of needs data (:pr:`1033`)
+* Optimize ``needextend`` filter_needs usage (:pr:`1030`)
+* Improve performance of needs builders by skipping document post-transforms (:pr:`1054`)
 
 Other:
 
-* Improve sphinx warnings (`#975 <https://github.com/useblocks/sphinx-needs/pull/975>`_, `#982 <https://github.com/useblocks/sphinx-needs/pull/982>`_)
+* Improve sphinx warnings (:pr:`975`, :pr:`982`)
   All warnings are now suffixed with ``[needs]``, and can be suppressed (see `suppress_warnings <https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-suppress_warnings>`_)
-* Improve logging for static file copies (`#992 <https://github.com/useblocks/sphinx-needs/pull/992>`_)
-* Improve removal of hidden need nodes (`#1013 <https://github.com/useblocks/sphinx-needs/pull/1013>`_)
-* Improve ``process_constraints`` function (`#1015 <https://github.com/useblocks/sphinx-needs/pull/1015>`_)
-* Allow ``needextend`` directive to use dynamic functions (`#1052 <https://github.com/useblocks/sphinx-needs/pull/1052>`_)
-* Remove some unnecessary keys from output ``needs.json`` (`#1053 <https://github.com/useblocks/sphinx-needs/pull/1053>`_)
+* Improve logging for static file copies (:pr:`992`)
+* Improve removal of hidden need nodes (:pr:`1013`)
+* Improve ``process_constraints`` function (:pr:`1015`)
+* Allow ``needextend`` directive to use dynamic functions (:pr:`1052`)
+* Remove some unnecessary keys from output ``needs.json`` (:pr:`1053`)
 
 Fixed
 .....
 
-* Fix gantt chart rendering (`#984 <https://github.com/useblocks/sphinx-needs/pull/984>`_)
-* Fix ``execute_func`` (`#994 <https://github.com/useblocks/sphinx-needs/pull/994>`_)
-* Fix adding sections to hidden needs (`#995 <https://github.com/useblocks/sphinx-needs/pull/995>`_)
-* Fix ``NeedImport`` logic (`#1006 <https://github.com/useblocks/sphinx-needs/pull/1006>`_)
-* Fix creation of need title nodes (`#1008 <https://github.com/useblocks/sphinx-needs/pull/1008>`_)
-* Fix logic for ``process_needextend`` function (`#1037 <https://github.com/useblocks/sphinx-needs/pull/1037>`_)
-* Fix usage of reST syntax in prefix parameter of meta (`#1046 <https://github.com/useblocks/sphinx-needs/pull/1046>`_)
+* Fix gantt chart rendering (:pr:`984`)
+* Fix ``execute_func`` (:pr:`994`)
+* Fix adding sections to hidden needs (:pr:`995`)
+* Fix ``NeedImport`` logic (:pr:`1006`)
+* Fix creation of need title nodes (:pr:`1008`)
+* Fix logic for ``process_needextend`` function (:pr:`1037`)
+* Fix usage of reST syntax in prefix parameter of meta (:pr:`1046`)
 
 Internal
 ........
 
-* 🔧 Centralise access to sphinx-needs config to ``NeedsSphinxConfig``  (`#998 <https://github.com/useblocks/sphinx-needs/pull/998>`_)
-* 🔧 Centralise sphinx ``env`` data access to ``SphinxNeedsData`` (`#987 <https://github.com/useblocks/sphinx-needs/pull/987>`_)
-* 🔧 Consolidate needs data post-processing into ``post_process_needs_data`` function  (`#1039 <https://github.com/useblocks/sphinx-needs/pull/1039>`_)
-* 🔧 Add strict type checking (`#1000 <https://github.com/useblocks/sphinx-needs/pull/1000>`_, `#1002 <https://github.com/useblocks/sphinx-needs/pull/1002>`_, `#1042 <https://github.com/useblocks/sphinx-needs/pull/1042>`_)
-* 🔧 Replace ``Directive`` with ``SphinxDirective`` (`#986 <https://github.com/useblocks/sphinx-needs/pull/986>`_)
-* 🔧 Remove ``unwrap`` function (`#1017 <https://github.com/useblocks/sphinx-needs/pull/1017>`_)
-* 🔧 Add ``remove_node_from_tree`` utility function (`#1063 <https://github.com/useblocks/sphinx-needs/pull/1063>`_)
-* ♻️ Refactor needs post-processing function signatures (`#1040 <https://github.com/useblocks/sphinx-needs/pull/1040>`_)
+* 🔧 Centralise access to sphinx-needs config to ``NeedsSphinxConfig``  (:pr:`998`)
+* 🔧 Centralise sphinx ``env`` data access to ``SphinxNeedsData`` (:pr:`987`)
+* 🔧 Consolidate needs data post-processing into ``post_process_needs_data`` function  (:pr:`1039`)
+* 🔧 Add strict type checking (:pr:`1000`, :pr:`1002`, :pr:`1042`)
+* 🔧 Replace ``Directive`` with ``SphinxDirective`` (:pr:`986`)
+* 🔧 Remove ``unwrap`` function (:pr:`1017`)
+* 🔧 Add ``remove_node_from_tree`` utility function (:pr:`1063`)
+* ♻️ Refactor needs post-processing function signatures (:pr:`1040`)
 
-* 📚 Simplify Sphinx-Needs docs builds (`#972 <https://github.com/useblocks/sphinx-needs/pull/972>`_)
-* 📚 Always use headless plantuml (`#983 <https://github.com/useblocks/sphinx-needs/pull/983>`_)
-* 📚 Add intersphinx (`#991 <https://github.com/useblocks/sphinx-needs/pull/991>`_)
-* 📚 Add outline of extension logic (`#1012 <https://github.com/useblocks/sphinx-needs/pull/1012>`_)
-* 📚 Fixed extra links example (`#1016 <https://github.com/useblocks/sphinx-needs/pull/1016>`_)
+* 📚 Simplify Sphinx-Needs docs builds (:pr:`972`)
+* 📚 Always use headless plantuml (:pr:`983`)
+* 📚 Add intersphinx (:pr:`991`)
+* 📚 Add outline of extension logic (:pr:`1012`)
+* 📚 Fixed extra links example (:pr:`1016`)
 
-* 🧪 Remove boilerplate from test build ``conf.py`` files (`#989 <https://github.com/useblocks/sphinx-needs/pull/989>`_, `#990 <https://github.com/useblocks/sphinx-needs/pull/990>`_)
-* 🧪 Add headless java to test builds (`#988 <https://github.com/useblocks/sphinx-needs/pull/988>`_)
-* 🧪 Add snapshot testing (`#1019 <https://github.com/useblocks/sphinx-needs/pull/1019>`_, `#1020 <https://github.com/useblocks/sphinx-needs/pull/1020>`_, `#1059 <https://github.com/useblocks/sphinx-needs/pull/1059>`_)
-* 🧪 Make documentation builds fail on warnings (`#1005 <https://github.com/useblocks/sphinx-needs/pull/1005>`_)
-* 🧪 Add testing of JS scripts using Cypress integrated into PyTest (`#1051 <https://github.com/useblocks/sphinx-needs/pull/1051>`_)
-* 🧪 Add code coverage to CI testing (`#1067 <https://github.com/useblocks/sphinx-needs/pull/1067>`_)
+* 🧪 Remove boilerplate from test build ``conf.py`` files (:pr:`989`, :pr:`990`)
+* 🧪 Add headless java to test builds (:pr:`988`)
+* 🧪 Add snapshot testing (:pr:`1019`, :pr:`1020`, :pr:`1059`)
+* 🧪 Make documentation builds fail on warnings (:pr:`1005`)
+* 🧪 Add testing of JS scripts using Cypress integrated into PyTest (:pr:`1051`)
+* 🧪 Add code coverage to CI testing (:pr:`1067`)
 
 1.3.0
 -----
@@ -114,13 +143,13 @@ Released: 16.08.2023
 
 * Improvement: Configuration option :ref:`needs_debug_measurement` added, which creates a runtime report
   for debugging purposes.
-  (`#917 <https://github.com/useblocks/sphinx-needs/pull/917>`_)
+  (:pr:`917`)
 * Bugfix: Replace hardcoded `index` with config value `root_doc`.
-  (`#877 <https://github.com/useblocks/sphinx-needs/pull/877>`_)
+  (:pr:`877`)
 * Bugfix: Fix unbounded memory usage in pickle environment.
-  (`#912 <https://github.com/useblocks/sphinx-needs/pull/912>`_)
+  (:pr:`912`)
 * Bugfix: Supports "None" body in Github services.
-  (`#903 <https://github.com/useblocks/sphinx-needs/issues/903>`_)
+  (:issue:`903`)
 * Removed esbonio for :ref:`ide`.
 * Removed configuration option **needs_ide_snippets_id** to support custom need ID for :ref:`ide` snippets.
 * Removed configuration **needs_ide_directive_snippets** to support custom directive snippets for IDE features.
@@ -128,34 +157,34 @@ Released: 16.08.2023
   `Sphinx-Needs-VsCode <https://marketplace.visualstudio.com/items?itemName=useblocks.sphinx-needs-vscode>`_.
 * Improvement: Added configuration option :ref:`needs_report_dead_links`, which can deactivate log messages of
   outgoing dead links.
-  (`#920 <https://github.com/useblocks/sphinx-needs/issues/920>`_)
+  (:issue:`920`)
 * Improvement: Configuration option :ref:`needs_allow_unsafe_filters` added, which allows unsafe filter for
   :ref:`filter_func`.
-  (`#831 <https://github.com/useblocks/sphinx-needs/issues/831>`_)
+  (:issue:`831`)
 
 1.2.2
 -----
 Released: 08.02.2023
 
 * Bugfix: Changed needed version of jsonschema-lib to be not so strict.
-  (`#871 <https://github.com/useblocks/sphinx-needs/pull/871>`_)
+  (:pr:`871`)
 
 1.2.1
 -----
 Released: 08.02.2023
 
 * Bugfix: Fixed pygls version compatibility.
-  (`#867 <https://github.com/useblocks/sphinx-needs/pull/867>`_,
-  `#865 <https://github.com/useblocks/sphinx-needs/pull/865>`_)
+  (:pr:`867`,
+  :pr:`865`)
 
 1.2.0
 -----
 Released: 24.01.2023
 
 * Bugfix: Allowing newer versions of jsonschema.
-  (`#848 <https://github.com/useblocks/sphinx-needs/pull/848>`_)
+  (:pr:`848`)
 * Improvement: Adds :ref:`list2need` directive, which allows to create simple needs from list.
-  (`#854 <https://github.com/useblocks/sphinx-needs/issues/854>`_)
+  (:issue:`854`)
 
 
 1.1.1
@@ -163,36 +192,36 @@ Released: 24.01.2023
 Released: 21.12.2022
 
 * Bugfix: Removed outdated JS codes that handles the collapse button.
-  (`#840 <https://github.com/useblocks/sphinx-needs/issues/840>`_)
+  (:issue:`840`)
 * Improvement: Write autogenerated images into output folder
-  (`#413 <https://github.com/useblocks/sphinx-needs/issues/413>`_)
+  (:issue:`413`)
 * Improvement: Added vector output support to need figures.
-  (`#815 <https://github.com/useblocks/sphinx-needs/issues/815>`_).
+  (:issue:`815`).
 * Improvement: Introduce the jinja function `ref` for :ref:`needuml`.
-  (`#789 <https://github.com/useblocks/sphinx-needs/issues/789>`_)
+  (:issue:`789`)
 * Bugfix: Needflow fix bug in child need handling.
-  (`#785 <https://github.com/useblocks/sphinx-needs/issues/785>`_).
+  (:issue:`785`).
 * Bugfix: Needextract handles image and download directives correctly.
-  (`#818 <https://github.com/useblocks/sphinx-needs/issues/818>`_).
+  (:issue:`818`).
 * Bugfix: Needextract handles substitutions correctly.
-  (`#835 <https://github.com/useblocks/sphinx-needs/issues/835>`_).
+  (:issue:`835`).
 
 1.1.0
 -----
 Released: 22.11.2022
 
 * Bugfix: Expand/Collapse button does not work.
-  (`#795 <https://github.com/useblocks/sphinx-needs/issues/795>`_).
+  (:issue:`795`).
 * Bugfix: `singlehtml` and `latex` related builders are working again.
-  (`#796 <https://github.com/useblocks/sphinx-needs/issues/796>`_).
+  (:issue:`796`).
 * Bugfix: Needextend throws the same information 3 times as part of a single warning.
-  (`#747 <https://github.com/useblocks/sphinx-needs/issues/747>`_).
+  (:issue:`747`).
 * Improvement: Memory consumption and runtime improvements
-  (`#790 <https://github.com/useblocks/sphinx-needs/issues/790>`_).
+  (:issue:`790`).
 * Improvement: Obfuscate HTTP authentication credentials from log output.
-  (`#759 <https://github.com/useblocks/sphinx-needs/issues/759>`_)
+  (:issue:`759`)
 * Bugfix: needflow: nested needs on same level throws PlantUML error.
-  (`#799 <https://github.com/useblocks/sphinx-needs/issues/799>`_)
+  (:issue:`799`)
 
 1.0.3
 -----
@@ -200,49 +229,49 @@ Released: 08.11.2022
 
 
 * Improvement: Fixed :ref:`needextend` error handling by adding a strict-mode option to it.
-  (`#747 <https://github.com/useblocks/sphinx-needs/issues/747>`_)
+  (:issue:`747`)
 * Improvement: Fixed issue with handling needs-variants by default.
-  (`#776 <https://github.com/useblocks/sphinx-needs/issues/776>`_)
+  (:issue:`776`)
 * Improvement: Performance fix needs processing.
-  (`#756 <https://github.com/useblocks/sphinx-needs/issues/756>`_)
+  (:issue:`756`)
 * Improvement: Performance fix for needflow.
-  (`#760 <https://github.com/useblocks/sphinx-needs/issues/760>`_)
+  (:issue:`760`)
 * Improvement: Fixed rendering issue with the debug layout.
-  (`#721 <https://github.com/useblocks/sphinx-needs/issues/721>`_)
+  (:issue:`721`)
 * Improvement: Added :ref:`needs_show_link_id`.
 * Improvement: Supported arguments as filter string for :ref:`needextract`.
-  (`#688 <https://github.com/useblocks/sphinx-needs/issues/688>`_)
+  (:issue:`688`)
 * Improvement: Added :ref:`needs_render_context` configuration option which enables you to use custom data as the
   context when rendering Jinja templates or strings.
-  (`#704 <https://github.com/useblocks/sphinx-needs/issues/704>`_)
+  (:issue:`704`)
 * Improvement: Supported ``target_url`` for :ref:`needs_external_needs`.
-  (`#701 <https://github.com/useblocks/sphinx-needs/issues/701>`_)
+  (:issue:`701`)
 * Bugfix: Fixed needuml key shown in need meta data by providing internal need option `arch`.
-  (`#687 <https://github.com/useblocks/sphinx-needs/issues/687>`_)
+  (:issue:`687`)
 * Improvement: Included child needs inside their parent need for :ref:`needflow`.
-  (`#714 <https://github.com/useblocks/sphinx-needs/issues/714>`_)
+  (:issue:`714`)
 * Improvement: Supported generate need ID from title with :ref:`needs_id_from_title`.
-  (`#692 <https://github.com/useblocks/sphinx-needs/issues/692>`_)
+  (:issue:`692`)
 * Improvement: Supported download ``needs.json`` for :ref:`needimport`.
-  (`#715 <https://github.com/useblocks/sphinx-needs/issues/715>`_)
+  (:issue:`715`)
 * Bugfix: Fixed import() be included in needarch.
-  (`#730 <https://github.com/useblocks/sphinx-needs/issues/730>`_)
+  (:issue:`730`)
 * Bugfix: Needuml: uml() call circle leads to an exception :ref:`needarch_ex_loop`.
-  (`#731 <https://github.com/useblocks/sphinx-needs/issues/731>`_)
+  (:issue:`731`)
 * Improvement: needarch provide need() function to get "need data".
-  (`#732 <https://github.com/useblocks/sphinx-needs/issues/732>`_)
+  (:issue:`732`)
 * Improvement: needuml - flow() shall return plantuml text without newline.
-  (`#737 <https://github.com/useblocks/sphinx-needs/issues/737>`_)
+  (:issue:`737`)
 * Bugfix: Needuml used but "sphinxcontrib.plantuml" not installed leads to exception
-  (`#742 <https://github.com/useblocks/sphinx-needs/issues/742>`_)
+  (:issue:`742`)
 * Improvement: better documentation of mixing orientation and coloring in needs_extra_links
-  (`#764 <https://github.com/useblocks/sphinx-needs/issues/764>`_)
+  (:issue:`764`)
 * Bugfix: Needarch: Fixed import() function to work with new implemented flow() (#737).
-  (`#752 <https://github.com/useblocks/sphinx-needs/issues/752>`_)
+  (:issue:`752`)
 * Bugfix: Needtable: generate id for nodes.table
-  (`#434 <https://github.com/useblocks/sphinx-needs/issues/434>`_)
+  (:issue:`434`)
 * Improvement: Updated pantuml in test folder to same version as in doc folder
-  (`#765 <https://github.com/useblocks/sphinx-needs/issues/765>`_)
+  (:issue:`765`)
 
 1.0.2
 -----
@@ -250,20 +279,20 @@ Released: 22.09.2022
 
 
 * Improvement: Added support for variants handling for need options.
-  (`#671 <https://github.com/useblocks/sphinx-needs/issues/671>`_)
+  (:issue:`671`)
 * Improvement: Added Jinja support for need content via the :ref:`jinja_content` option.
-  (`#678 <https://github.com/useblocks/sphinx-needs/issues/678>`_)
+  (:issue:`678`)
 * Improvement: Added checks and warnings for :ref:`needimport` and :ref:`needs_external_needs`.
-  (`#624 <https://github.com/useblocks/sphinx-needs/issues/624>`_)
+  (:issue:`624`)
 * Improvement: Support for :ref:`needs_string_links` in :ref:`needtable`.
-  (`#535 <https://github.com/useblocks/sphinx-needs/issues/535>`_)
+  (:issue:`535`)
 * Improvement: Added `key` option for :ref:`needuml`.
 * Bugfix: Removed default setting `allowmixing` for :ref:`needuml`.
-  (`#649 <https://github.com/useblocks/sphinx-needs/issues/649>`_)
+  (:issue:`649`)
 * Bugfix: Fixed the collapse button issue for needs including nested needs.
-  (`#659 <https://github.com/useblocks/sphinx-needs/issues/659>`_)
+  (:issue:`659`)
 * Bugfix: Fixed :ref:`needextract` filter options issue involved with :ref:`need_part`.
-  (`#651 <https://github.com/useblocks/sphinx-needs/issues/651>`_)
+  (:issue:`651`)
 * Improvement: Added `save` option for :ref:`needuml`.
 * Improvement: Added builder :ref:`needumls_builder` and config option :ref:`needs_build_needumls` in `conf.py`.
 * Improvement: Added `filter` function for :ref:`needuml`.
@@ -273,9 +302,9 @@ Released: 22.09.2022
 * Improvement: Provides jinja function :ref:`needarch_jinja_import` for :ref:`needarch` to execute :ref:`needuml_jinja_uml`
   automatically for all the links defined in the need :ref:`need_links` options.
 * Improvement: Added configuration **needs_ide_directive_snippets** to support custom directive snippets for IDE features.
-  (`#640 <https://github.com/useblocks/sphinx-needs/issues/640>`_)
+  (:issue:`640`)
 * Bugfix: Updated pip install URLs in Dockerfile.
-  (`#673 <https://github.com/useblocks/sphinx-needs/issues/673>`_)
+  (:issue:`673`)
 * Improvement: Providing IDE features support for **ide_myst**.
 
 1.0.1
@@ -287,23 +316,23 @@ Released: 11.07.2022
 * Improvement: Provides :ref:`needuml` for powerful, reusable Need objects.
 * Improvement: Provides :ref:`needreport` for documenting configuration used in a **Sphinx-Needs** project's **conf.py**.
 * Improvement: Provides initial support for Sphinx-Needs IDE language features.
-  (`#584 <https://github.com/useblocks/sphinx-needs/pull/584>`_)
+  (:pr:`584`)
 * Improvement: Support snippet for auto directive completion for Sphinx-Needs IDE language features.
 * Improvement: Added `show_top_sum` to :ref:`Needbar <needbar>` and make it possible to rotate the bar labels.
-  (`#516 <https://github.com/useblocks/sphinx-needs/issues/516>`_)
+  (:issue:`516`)
 * Improvement: Added `needs_constraints` option. Constraints can be set for individual needs and describe properties
   a need has to meet.
 * Improvement: Added customizable link text of :ref:`Need <needref>`.
   (`#439 <https://github.com/useblocks/sphinx-needs/discussions/439>`_)
 * Bugfix: Fixed lsp needs.json path check.
-  (`#603 <https://github.com/useblocks/sphinx-needs/issues/603>`_,
-  `#633 <https://github.com/useblocks/sphinx-needs/issues/633>`_)
+  (:issue:`603`,
+  :issue:`633`)
 * Bugfix: Support embedded needs in embedded needs.
-  (`#486 <https://github.com/useblocks/sphinx-needs/issues/486>`_)
+  (:issue:`486`)
 * Bugfix: Correct references in :ref:`needtables <needtable>` to be external or internal instead of always external.
 * Bugfix: Correct documentation and configuration in :ref:`need_tags` to *list* type.
 * Bugfix: Handle overlapping labels in :ref:`needpie`.
-  (`#498 <https://github.com/useblocks/sphinx-needs/issues/498>`_)
+  (:issue:`498`)
 * Bugfix: :ref:`needimport` uses source-folder for relative path calculation (instead of confdir).
 
 0.7.9
@@ -311,25 +340,25 @@ Released: 11.07.2022
 Released: 10.05.2022
 
 * Improvement: Add permanent link layout function.
-  (`#390 <https://github.com/useblocks/sphinx-needs/issues/390>`_)
+  (:issue:`390`)
 * Improvement: Support for **Sphinx-Needs** Docker Image.
-  (`#531 <https://github.com/useblocks/sphinx-needs/issues/531>`_)
+  (:issue:`531`)
 * Bugfix: :ref:`needextract` not correctly rendering nested :ref:`needs <need>`.
-  (`#329 <https://github.com/useblocks/sphinx-needs/issues/329>`_)
+  (:issue:`329`)
 
 0.7.8
 -----
 Released: 29.03.2022
 
 * Improvement: Provides line number info for needs node.
-  (`#499 <https://github.com/useblocks/sphinx-needs/issues/499>`_)
+  (:issue:`499`)
 * Bugfix: :ref:`needpie` causing a crash in some cases on newer matplotlib versions.
-  (`#513 <https://github.com/useblocks/sphinx-needs/issues/513>`_,
-  `#517 <https://github.com/useblocks/sphinx-needs/issues/517>`_)
+  (:issue:`513`,
+  :issue:`517`)
 * Bugfix: :ref:`needpie` takes need-parts in account for filtering.
-  (`#514 <https://github.com/useblocks/sphinx-needs/issues/514>`_)
+  (:issue:`514`)
 * Bugfix: Empty and invalid ``need.json`` files throw user-friendly exceptions.
-  (`#441 <https://github.com/useblocks/sphinx-needs/issues/441>`_)
+  (:issue:`441`)
 
 
 0.7.7
@@ -337,50 +366,50 @@ Released: 29.03.2022
 Released: 04.03.2022
 
 * Bugfix: ``need`` role supporting lower and upper IDs.
-  (`#508 <https://github.com/useblocks/sphinx-needs/issues/508>`_)
+  (:issue:`508`)
 * Bugfix: Correct image registration to support build via Sphinx API.
-  (`#505 <https://github.com/useblocks/sphinx-needs/issues/505>`_)
+  (:issue:`505`)
 * Bugfix: Correct css/js file registration on windows.
-  (`#455 <https://github.com/useblocks/sphinx-needs/issues/455>`_)
+  (:issue:`455`)
 
 0.7.6
 -----
 Released: 28.02.2022
 
 * Improvement: :ref:`filter_func` support arguments.
-  (`#429 <https://github.com/useblocks/sphinx-needs/issues/429>`_)
+  (:issue:`429`)
 * Improvement: Adds :ref:`needs_build_json` config option to build ``needs.json`` in parallel to other output formats.
-  (`#485 <https://github.com/useblocks/sphinx-needs/issues/485>`_)
+  (:issue:`485`)
 * Improvement: Migrate tests to Pytest and Sphinx internal testing structure.
-  (`#471 <https://github.com/useblocks/sphinx-needs/issues/471>`_)
+  (:issue:`471`)
 * Bugfix: :ref:`needs_builder` supports incremental build (no doctree deletion).
-  (`#481 <https://github.com/useblocks/sphinx-needs/issues/481>`_)
+  (:issue:`481`)
 * Bugfix: :ref:`needs_external_needs` working with :ref:`role_need`.
-  (`#483 <https://github.com/useblocks/sphinx-needs/issues/483>`_)
+  (:issue:`483`)
 
 0.7.5
 -----
 Released: 21.01.2022
 
 * Improvement: :ref:`needbar` is introduced
-  (`#452 <https://github.com/useblocks/sphinx-needs/issues/452>`_)
+  (:issue:`452`)
 * Improvement: :ref:`needs_external_needs` supports relative path for ``base_url``.
 * Improvement: ``needs.json`` schema gets checked during a :ref:`needimport`
-  (`#456 <https://github.com/useblocks/sphinx-needs/issues/456>`_)
+  (:issue:`456`)
 * Improvement: Supports :ref:`filter_func` for :ref:`needpie`
-  (`#400 <https://github.com/useblocks/sphinx-needs/issues/400>`_)
+  (:issue:`400`)
 * Bugfix: Changed :ref:`needgantt` strftime format string according to C89 defined value.
-  (`#445 <https://github.com/useblocks/sphinx-needs/issues/445>`_)
+  (:issue:`445`)
 * Bugfix: :ref:`needpie` option :legend: is correctls rendered
-  (`#448 <https://github.com/useblocks/sphinx-needs/issues/448>`_)
+  (:issue:`448`)
 * Bugfix: :ref:`needpie` figures are closed after creation, to free memory and suppress matplotlib warning
-  (`#450 <https://github.com/useblocks/sphinx-needs/issues/450>`_)
+  (:issue:`450`)
 * Bugfix: Added implementation for simple_footer grid in Layouts Grids
-  (`#457 <https://github.com/useblocks/sphinx-needs/issues/457>`_)
+  (:issue:`457`)
 * Bugfix: Changed :ref:`needs_external_needs` Fix issue when loading needs from URL.
-  (`#459 <https://github.com/useblocks/sphinx-needs/issues/459>`_)
+  (:issue:`459`)
 * Bugfix: Changed :ref:`needs_external_needs` getting from URL was using parameter related to local file.
-  (`#458 <https://github.com/useblocks/sphinx-needs/issues/458>`_)
+  (:issue:`458`)
 
 0.7.4
 -----
@@ -389,11 +418,11 @@ Released: 30.11.2021
 * Improvement: Adds :ref:`needservice_debug` flag for :ref:`needservice`.
 * Improvement: Better css table handling.
 * Improvement: Adds :ref:`needtable_class` to :ref:`needtable` to set own css classes for tables.
-  (`#421 <https://github.com/useblocks/sphinx-needs/issues/421>`_)
+  (:issue:`421`)
 * Improvement: Adds :ref:`needs_string_links` to support easy string2link transformations.
-  (`#404 <https://github.com/useblocks/sphinx-needs/issues/404>`_)
+  (:issue:`404`)
 * Improvement: Adds :ref:`needtable_colwidths` to :ref:`needtable` directive, to allow the definition of column widths.
-  (`#402 <https://github.com/useblocks/sphinx-needs/issues/402>`_)
+  (:issue:`402`)
 
 0.7.3
 -----
@@ -402,55 +431,55 @@ Released: 08.11.2021
 * Improvement: Schema check for ``need.json`` files implemented.
 * Improvement: New option for ``needtable`` and co: :ref:`filter_func`, which allows to reference and use python code
   as filter code from external files
-  (`#340 <https://github.com/useblocks/sphinx-needs/issues/340>`_)
+  (:issue:`340`)
 * Bugfix: Fixed :ref:`needs_builder` handling warnings about missing needs.json when :ref:`needs_file` not configured
-  (`#340 <https://github.com/useblocks/sphinx-needs/issues/340>`_)
+  (:issue:`340`)
 * Bugfix: unstable build with :ref:`needs_external_needs`
-  (`#399 <https://github.com/useblocks/sphinx-needs/issues/399>`_)
+  (:issue:`399`)
 * Bugfix: :ref:`needs_external_needs` reads external need status now and warnings gets not checked for
   :ref:`needs_external_needs`
-  (`#375 <https://github.com/useblocks/sphinx-needs/issues/375>`_)
+  (:issue:`375`)
 
 0.7.2
 -----
 Released: 08.10.2021
 
 * Improvement: New config option :ref:`needs_builder_filter` to define a filter for the needs builder.
-  (`#342 <https://github.com/useblocks/sphinx-needs/issues/342>`_)
+  (:issue:`342`)
 * Improvement: Added option ``json_path`` for :ref:`needs_external_needs` to support external needs from local ``needs.json`` files.
-  (`#339 <https://github.com/useblocks/sphinx-needs/issues/339>`_)
+  (:issue:`339`)
 * Improvement: Providing :ref:`needs_table_classes` to allow to set custom table css classes, to better support
   themes like ReadTheDocs.
-  (`#305 <https://github.com/useblocks/sphinx-needs/issues/305>`_)
+  (:issue:`305`)
 * Improvement: Supporting user defined filter code function for :ref:`needs_warnings`
-  (`#345 <https://github.com/useblocks/sphinx-needs/issues/345>`_)
+  (:issue:`345`)
 * Improvement: Supporting caption for :ref:`needtable`
-  (`#348 <https://github.com/useblocks/sphinx-needs/issues/348>`_)
+  (:issue:`348`)
 * Improvement: New config option :ref:`needs_filter_data` to allow to use custom data inside a :ref:`filter_string`
-  (`#317 <https://github.com/useblocks/sphinx-needs/issues/317>`_)
+  (:issue:`317`)
 * Improvement: API to register warnings
-  (`#343 <https://github.com/useblocks/sphinx-needs/issues/343>`_)
+  (:issue:`343`)
 * Bugfix: Scrolling tables improved and ReadTheDocs Tables fixed
-  (`#305 <https://github.com/useblocks/sphinx-needs/issues/305>`_)
+  (:issue:`305`)
 * Bugfix: :ref:`needtable` need parts 'id' column is not linked
-  (`#336 <https://github.com/useblocks/sphinx-needs/issues/336>`_)
+  (:issue:`336`)
 * Bugfix: :ref:`needtable` need parts 'incoming' column is empty
-  (`#336 <https://github.com/useblocks/sphinx-needs/issues/336>`_)
+  (:issue:`336`)
 * Bugfix: :ref:`needs_warnings` not written to error log.
-  (`#344 <https://github.com/useblocks/sphinx-needs/issues/344>`_)
+  (:issue:`344`)
 * Improvement: Providing :ref:`needs_warnings_always_warn` to raise sphinx-warnings for each not passed :ref:`needs_warnings`.
-  (`#344 <https://github.com/useblocks/sphinx-needs/issues/344>`_)
+  (:issue:`344`)
 * Bugfix: :ref:`needimport` relative path not consistent to Sphinx default directives.
-  (`#351 <https://github.com/useblocks/sphinx-needs/issues/351>`_)
+  (:issue:`351`)
 
 0.7.1
 -----
 Released: 21.07.2021
 
 * Improvement: Support for parallel sphinx-build when using ``-j`` option
-  (`#319 <https://github.com/useblocks/sphinx-needs/issues/319>`_)
+  (:issue:`319`)
 * Improvement: Better ``eval()`` handling for filter strings
-  (`#328 <https://github.com/useblocks/sphinx-needs/issues/328>`_)
+  (:issue:`328`)
 * Improvement: Internal :ref:`performance measurement <performance>` script
 * Improvement: :ref:`Profiling support <profiling>` for selected functions
 
@@ -459,56 +488,56 @@ Released: 21.07.2021
 Released: 06.07.2021
 
 * Improvement: Providing :ref:`needs_external_needs` to allow usage and referencing of external needs.
-  (`#137 <https://github.com/useblocks/sphinx-needs/issues/137>`_)
+  (:issue:`137`)
 * Improvement: New directive :ref:`needextend` to modify or extend existing needs.
-  (`#282 <https://github.com/useblocks/sphinx-needs/issues/282>`_)
+  (:issue:`282`)
 * Improvement: Allowing :ref:`needtable_custom_titles` for :ref:`needtable`.
-  (`#299 <https://github.com/useblocks/sphinx-needs/issues/299>`_)
+  (:issue:`299`)
 * Bugfix: :ref:`needextend` does not support usage of internal options.
-  (`#318 <https://github.com/useblocks/sphinx-needs/issues/318>`_)
+  (:issue:`318`)
 * Bugfix: :ref:`needtable` shows attributes with value ``False`` again.
 * Bugfix: ``:hide:`` and ``:collapse: True`` are working inside :ref:`needimport`.
-  (`#284 <https://github.com/useblocks/sphinx-needs/issues/284>`_,
-  `#294 <https://github.com/useblocks/sphinx-needs/issues/294>`_)
+  (:issue:`284`,
+  :issue:`294`)
 * Bugfix: :ref:`needpie` amount labels get calculated correctly.
-  (`#297 <https://github.com/useblocks/sphinx-needs/issues/297>`_)
+  (:issue:`297`)
 
 0.6.3
 -----
 Released: 18.06.2021
 
 * Improvement: Dead links (references to not found needs) are supported and configurable by :ref:`allow_dead_links`.
-  (`#116 <https://github.com/useblocks/sphinx-needs/issues/116>`_)
+  (:issue:`116`)
 * Improvement: Introducing :ref:`need_func` to execute :ref:`dynamic_functions` inline.
-  (`#133 <https://github.com/useblocks/sphinx-needs/issues/133>`_)
+  (:issue:`133`)
 * Improvement: Support for :ref:`multiline_option` in templates.
 * Bugfix: needflow: links  for need-parts get correctly calculated.
-  (`#205 <https://github.com/useblocks/sphinx-needs/issues/205>`_)
+  (:issue:`205`)
 * Bugfix: CSS update for ReadTheDocsTheme to show tables correctly.
-  (`#263 <https://github.com/useblocks/sphinx-needs/issues/263>`_)
+  (:issue:`263`)
 * Bugfix: CSS fix for needtable :ref:`needtable_style_row`.
-  (`#195 <https://github.com/useblocks/sphinx-needs/issues/195>`_)
+  (:issue:`195`)
 * Bugfix: ``current_need`` var is accessible in all need-filters.
-  (`#169 <https://github.com/useblocks/sphinx-needs/issues/169>`_)
+  (:issue:`169`)
 * Bugfix: Sets defaults for color and style of need type configuration, if not set by user.
-  (`#151 <https://github.com/useblocks/sphinx-needs/issues/151>`_)
+  (:issue:`151`)
 * Bugfix: :ref:`needtable` shows horizontal scrollbar for tables using datatables style.
-  (`#271 <https://github.com/useblocks/sphinx-needs/issues/271>`_)
+  (:issue:`271`)
 * Bugfix: Using ``id_complete`` instead of ``id`` in filter code handling.
-  (`#156 <https://github.com/useblocks/sphinx-needs/issues/156>`_)
+  (:issue:`156`)
 * Bugfix: Dynamic Functions registration working for external extensions.
-  (`#288 <https://github.com/useblocks/sphinx-needs/issues/288>`_)
+  (:issue:`288`)
 
 0.6.2
 -----
 Released: 30.04.2021
 
 * Improvement: Parent needs of nested needs get collected and are available in filters.
-  (`#249 <https://github.com/useblocks/sphinx-needs/issues/249>`_)
+  (:issue:`249`)
 * Bugfix: Copying static files during sphinx build is working again.
-  (`#252 <https://github.com/useblocks/sphinx-needs/issues/252>`_)
+  (:issue:`252`)
 * Bugfix: Link function for layouts setting correct text.
-  (`#251 <https://github.com/useblocks/sphinx-needs/issues/251>`_)
+  (:issue:`251`)
 
 
 0.6.1
@@ -517,21 +546,21 @@ Released: 23.04.2021
 
 * Support: Removes support for Sphinx version <3.0 (Sphinx 2.x may still work, but it gets not tested).
 * Improvement: Internal change to poetry, nox and github actions.
-  (`#216 <https://github.com/useblocks/sphinx-needs/issues/216>`_)
+  (:issue:`216`)
 * Bugfix: Need-service calls get mocked during tests, so that tests don't need reachable external services any more.
 * Bugfix: No warning is thrown any more, if :ref:`needservice` can't find a service config in **conf.py**
-  (`#168 <https://github.com/useblocks/sphinx-needs/issues/168>`_)
+  (:issue:`168`)
 * Bugfix: Needs nodes get ``ids`` set directly, to avoid empty ids given by sphinx or other extensions for need-nodes.
-  (`#193 <https://github.com/useblocks/sphinx-needs/issues/193>`_)
+  (:issue:`193`)
 * Bugfix: :ref:`needimport` supports extra options and extra fields.
-  (`#227 <https://github.com/useblocks/sphinx-needs/issues/227>`_)
+  (:issue:`227`)
 * Bugfix: Checking for ending `/` of given github api url.
-  (`#187 <https://github.com/useblocks/sphinx-needs/issues/187>`_)
+  (:issue:`187`)
 * Bugfix: Using correct indention for pre and post_template function of needs.
 * Bugfix: Certain log message don't use python internal `id` any more.
-  (`#257 <https://github.com/useblocks/sphinx-needs/issues/225>`_)
+  (:issue:`225`)
 * Bugfix: JS-code for meta area collapse is working again.
-  (`#242 <https://github.com/useblocks/sphinx-needs/issues/242>`_)
+  (:issue:`242`)
 
 
 0.6.0
@@ -539,35 +568,35 @@ Released: 23.04.2021
 
 * Improvement: Directive :ref:`needservice` added, which allow to include data from external services like Jira or github.
   See also :ref:`services`
-  (`#163 <https://github.com/useblocks/sphinx-needs/issues/163>`_)
+  (:issue:`163`)
 * Improvement: :ref:`github_service` added to fetch issues, pr or commits from GitHub or GitHub Enterprise.
 * Bugfix: Role :ref:`role_need_outgoing` shows correct link instead of *None*
-  (`#160 <https://github.com/useblocks/sphinx-needs/issues/160>`_)
+  (:issue:`160`)
 
 
 0.5.6
 -----
 
 * Bugfix: Dynamic function registration via API supports new internal function handling
-  (`#147 <https://github.com/useblocks/sphinx-needs/issues/147>`_)
+  (:issue:`147`)
 * Bugfix: Deactivated linked gantt elements in :ref:`needgantt`, as PlantUML does not support them in its
   latest version (not beta).
 
 0.5.5
 -----
-* Improvement: Added :ref:`needsequence` directive. (`#144 <https://github.com/useblocks/sphinx-needs/issues/144>`_)
-* Improvement: Added :ref:`needgantt` directive. (`#146 <https://github.com/useblocks/sphinx-needs/issues/146>`_)
+* Improvement: Added :ref:`needsequence` directive. (:issue:`144`)
+* Improvement: Added :ref:`needgantt` directive. (:issue:`146`)
 * Improvement: Added two new need-options: :ref:`need_duration` and :ref:`need_completion`
 * Improvement: Configuration option :ref:`needs_duration_option` and :ref:`needs_completion_option` added
 * Bugfix: Using of `tags.has() <https://www.sphinx-doc.org/en/master/usage/configuration.html#conf-tags>`_ in
-  **conf.py** does not raise an exception any more. (`#142 <https://github.com/useblocks/sphinx-needs/issues/142>`_)
+  **conf.py** does not raise an exception any more. (:issue:`142`)
 * Improvement: Clean up of internal configuration handling and avoiding needs_functions to get pickled by sphinx.
 
 
 0.5.4
 -----
-* Improvement: Added options :ref:`need_pre_template` and :ref:`need_post_template` for needs. (`#139 <https://github.com/useblocks/sphinx-needs/issues/139>`_)
-* Bugfix: Setting correct default value for :ref:`needs_statuses` (`#136 <https://github.com/useblocks/sphinx-needs/issues/136>`_)
+* Improvement: Added options :ref:`need_pre_template` and :ref:`need_post_template` for needs. (:issue:`139`)
+* Bugfix: Setting correct default value for :ref:`needs_statuses` (:issue:`136`)
 * Bugfix: Dynamic functions can be used in links (text and url) now.
 
 0.5.3
@@ -575,24 +604,24 @@ Released: 23.04.2021
 * Improvement: Added ``transparent`` for transparent background to needflow configurations.
 * Improvement: :ref:`needflow` uses directive argument as caption now.
 * Improvement: Added option :ref:`needflow_align` to align needflow images.
-* Improvement: Added option :ref:`needflow_scale` to scale needflow images. (`#127 <https://github.com/useblocks/sphinx-needs/issues/127>`_)
-* Improvement: Added option :ref:`needflow_highlight` to :ref:`needflow`. (`#128 <https://github.com/useblocks/sphinx-needs/issues/128>`_)
-* Improvement: :ref:`need_count` supports :ref:`ratio calculation <need_count_ratio>`. (`#131 <https://github.com/useblocks/sphinx-needs/issues/131>`_)
-* Improvement: :ref:`needlist`, :ref:`needtable` and :ref:`needflow` support :ref:`filter_code`. (`#132 <https://github.com/useblocks/sphinx-needs/issues/132>`_)
-* Improvement: :ref:`needflow` caption is a link to the original image file. (`#129 <https://github.com/useblocks/sphinx-needs/issues/129>`_)
+* Improvement: Added option :ref:`needflow_scale` to scale needflow images. (:issue:`127`)
+* Improvement: Added option :ref:`needflow_highlight` to :ref:`needflow`. (:issue:`128`)
+* Improvement: :ref:`need_count` supports :ref:`ratio calculation <need_count_ratio>`. (:issue:`131`)
+* Improvement: :ref:`needlist`, :ref:`needtable` and :ref:`needflow` support :ref:`filter_code`. (:issue:`132`)
+* Improvement: :ref:`needflow` caption is a link to the original image file. (:issue:`129`)
 * Bugfix: :ref:`need_template` can now be set via :ref:`needs_global_options`.
 * Bugfix: Setting correct urls for needs in :ref:`needflow` charts.
-* Bugfix: Setting correct image candidates (`#134 <https://github.com/useblocks/sphinx-needs/issues/134>`_)
+* Bugfix: Setting correct image candidates (:issue:`134`)
 
 0.5.2
 -----
-* Improvement: **Sphinx-Needs** configuration gets checked before build. (`#118 <https://github.com/useblocks/sphinx-needs/issues/118>`_)
+* Improvement: **Sphinx-Needs** configuration gets checked before build. (:issue:`118`)
 * Improvement: ``meta_links_all`` :ref:`layout function <layout_functions>` now supports an exclude parameter
 * Improvement: :ref:`needflow`'s :ref:`connection line and arrow type <needflow_style_start>` can be configured.
 * Improvement: Configurations added for :ref:`needflow`. Use :ref:`needs_flow_configs` to define them and :ref:`needflow_config` for activation.
 * Improvement: :ref:`needflow` option :ref:`needflow_debug` added, which prints the generated PlantUML code after the flowchart.
 * Improvement: Supporting Need-Templates by providing need option :ref:`need_template` and
-  configuration option :ref:`needs_template_folder`. (`#119 <https://github.com/useblocks/sphinx-needs/issues/119>`_)
+  configuration option :ref:`needs_template_folder`. (:issue:`119`)
 * Bugfix: :ref:`needs_global_options` handles None values correctly. ``style`` can now be set.
 * Bugfix: :ref:`needs_title_from_content` takes ``\n`` and ``.`` as delimiter.
 * Bugfix: Setting css-attribute ``white-space: normal`` for all need-tables, which is set badly in some sphinx-themes.
@@ -600,12 +629,12 @@ Released: 23.04.2021
 * Bugfix: ``meta_all`` :ref:`layout function <layout_functions>` also outputs extra links and the `no_links`
   parameter now works as expected
 * Bugfix: Added need-type as css-class back on need. Css class name is ``needs_type_(need_type attribute)``.
-  (`#124 <https://github.com/useblocks/sphinx-needs/issues/124>`_)
+  (:issue:`124`)
 * Bugfix: Need access inside list comprehensions in :ref:`filter_string` is now working.
 
 0.5.1
 -----
-* Improvement: Added :ref:`needextract` directive to mirror existing needs for special outputs. (`#66 <https://github.com/useblocks/sphinx-needs/issues/66>`_)
+* Improvement: Added :ref:`needextract` directive to mirror existing needs for special outputs. (:issue:`66`)
 * Improvement: Added new styles ``discreet`` and ``discreet_border``.
 * Bugfix: Some minor css fixes for new layout system.
 
@@ -615,11 +644,11 @@ Released: 23.04.2021
 * Improvement: Introduction of needs :ref:`layouts_styles`.
 * Improvement: Added config options :ref:`needs_layouts` and :ref:`needs_default_layout`.
 * Improvement: Added :ref:`needpie` which draws pie-charts based on :ref:`filter_string`.
-* Improvement: Added config option :ref:`needs_warnings`. (`#110 <https://github.com/useblocks/sphinx-needs/issues/110>`_)
+* Improvement: Added config option :ref:`needs_warnings`. (:issue:`110`)
 * Bugfix: Need css style name is now based on need-type and not on the longer, whitespace-containing type name.
-  Example: ``need-test`` instead of not valid ``need-test case``. (`#108 <https://github.com/useblocks/sphinx-needs/issues/108>`_)
+  Example: ``need-test`` instead of not valid ``need-test case``. (:issue:`108`)
 * Bugfix: No more exception raise if ``copy`` value not set inside :ref:`needs_extra_links`.
-* Improvement: Better log message, if required id is missing. (`#112 <https://github.com/useblocks/sphinx-needs/issues/112>`_)
+* Improvement: Better log message, if required id is missing. (:issue:`112`)
 
 * Removed: Configuration option :ref:`needs_collapse_details`. This is now realized by :ref:`layouts`.
 * Removed: Configuration option :ref:`needs_hide_options`. This is now realized by :ref:`layouts`.
@@ -636,12 +665,12 @@ custom css definitions you need to update them.
 * Improvement: Added :ref:`global_option_filters` to set values of global options only under custom circumstances.
 * Improvement: Added sorting to :ref:`needtable`. See :ref:`needtable_sort` for details.
 * Improvement: Added dynamic function :ref:`links_content` to calculated links to other needs automatically from need-content.
-  (`#98 <https://github.com/useblocks/sphinx-needs/issues/98>`_)
+  (:issue:`98`)
 * Improvement: Dynamic function :ref:`copy` supports uppercase and lowercase transformation.
 * Improvement: Dynamic function :ref:`copy` supports filter_string.
 * Bugfix: Fixed corrupted :ref:`dynamic_functions` handling for ``tags`` and other list options.
-  (`#100 <https://github.com/useblocks/sphinx-needs/issues/100>`_)
-* Bugfix: Double entries for same need in :ref:`needtable` fixed. (`#93 <https://github.com/useblocks/sphinx-needs/issues/93>`_)
+  (:issue:`100`)
+* Bugfix: Double entries for same need in :ref:`needtable` fixed. (:issue:`93`)
 
 0.4.2
 -----
@@ -666,12 +695,12 @@ custom css definitions you need to update them.
 0.3.15
 ------
 * Improvement: In filter operations, all needs can be accessed  by using keyword ``needs``.
-* Bugfix: Removed prefix from normal needs for needtable (`#97 <https://github.com/useblocks/sphinx-needs/issues/97>`_)
+* Bugfix: Removed prefix from normal needs for needtable (:issue:`97`)
 
 0.3.14
 ------
 * Improvement: Added config option :ref:`needs_role_need_max_title_length` to define the maximum title length of
-  referenced needs. (`#95 <https://github.com/useblocks/sphinx-needs/issues/95>`_)
+  referenced needs. (:issue:`95`)
 
 0.3.13
 ------
@@ -680,10 +709,10 @@ custom css definitions you need to update them.
 
 0.3.12
 ------
-* Improvement: Tables can be sorted by any alphanumeric option. (`#92 <https://github.com/useblocks/sphinx-needs/issues/92>`_)
-* Improvement: :ref:`need_part` are now embedded in their parent need, if :ref:`needflow` is used. (`#83 <https://github.com/useblocks/sphinx-needs/issues/83>`_)
-* Bugfix: Links to :ref:`need_part` are no longer rendered to parent need, instead the link goes directly to the need_part. (`#91 <https://github.com/useblocks/sphinx-needs/issues/91>`_)
-* Bugfix: Links in :ref:`needflow` get shown again by default (`#90 <https://github.com/useblocks/sphinx-needs/issues/90>`_)
+* Improvement: Tables can be sorted by any alphanumeric option. (:issue:`92`)
+* Improvement: :ref:`need_part` are now embedded in their parent need, if :ref:`needflow` is used. (:issue:`83`)
+* Bugfix: Links to :ref:`need_part` are no longer rendered to parent need, instead the link goes directly to the need_part. (:issue:`91`)
+* Bugfix: Links in :ref:`needflow` get shown again by default (:issue:`90`)
 
 
 0.3.11
@@ -693,14 +722,14 @@ custom css definitions you need to update them.
 * Improvement: Added :ref:`export_id` option for filter directives to export results of filters to ``needs.json``.
 * Improvement: Added config option :ref:`needs_flow_show_links` and related needflow option :ref:`needflow_show_link_names`.
 * Improvement: Added config option :ref:`needs_flow_link_types` and related needflow option :ref:`needflow_link_types`.
-* Bugfix: Unicode handling for Python 2.7 fixed. (`#86 <https://github.com/useblocks/sphinx-needs/issues/86>`_)
+* Bugfix: Unicode handling for Python 2.7 fixed. (:issue:`86`)
 
 0.3.10
 ------
-* Bugfix: **type** was missing in output of builder :ref:`needs_builder` (`#79 <https://github.com/useblocks/sphinx-needs/issues/79>`_)
+* Bugfix: **type** was missing in output of builder :ref:`needs_builder` (:issue:`79`)
 * Bugfix: **needs_functions** parameter in *conf.py* created a sphinx error, if
   containing python methods. Internal workaround added, so that usage of own
-  :ref:`dynamic_functions` stays the same as in prior versions (`#78 <https://github.com/useblocks/sphinx-needs/issues/78>`_)
+  :ref:`dynamic_functions` stays the same as in prior versions (:issue:`78`)
 
 
 0.3.9
@@ -719,9 +748,9 @@ custom css definitions you need to update them.
 0.3.7
 -----
 * Improvement: :ref:`filter_string` now supports the filtering of :ref:`need_part`.
-* Improvement: The ID of a need is now printed as link, which can easily be used for sharing. (`#75 <https://github.com/useblocks/sphinx-needs/issues/75>`_)
+* Improvement: The ID of a need is now printed as link, which can easily be used for sharing. (:issue:`75`)
 * Bugfix: Filter functionality in different directives are now using the same internal filter function.
-* Bugfix: Reused IDs for a :ref:`need_part` are now detected and a warning gets printed. (`#74 <https://github.com/useblocks/sphinx-needs/issues/74>`_)
+* Bugfix: Reused IDs for a :ref:`need_part` are now detected and a warning gets printed. (:issue:`74`)
 
 0.3.6
 -----
@@ -764,7 +793,7 @@ custom css definitions you need to update them.
 * Improvement: :ref:`needs_functions` can be used to register and use own dynamic functions.
 * Improvement: Added :ref:`needs_global_options` to set need values globally for all needs.
 * Improvement: Added :ref:`needs_hide_options` to hide specific options of all needs.
-* Bugfix: Removed needs are now deleted from existing needs.json (`#68 <https://github.com/useblocks/sphinx-needs/issues/68>`_)
+* Bugfix: Removed needs are now deleted from existing needs.json (:issue:`68`)
 * Removed: :ref:`needs_template` and :ref:`needs_template_collapse` are no longer supported.
 
 0.2.5
@@ -773,25 +802,25 @@ custom css definitions you need to update them.
 
 0.2.4
 -----
-* Bugfix: Fixed performance issue (`#63 <https://github.com/useblocks/sphinx-needs/issues/63>`_)
+* Bugfix: Fixed performance issue (:issue:`63`)
 
 0.2.3
 -----
-* Improvement: Titles can now be made optional.  See :ref:`needs_title_optional`. (`#49 <https://github.com/useblocks/sphinx-needs/issues/49>`_)
-* Improvement: Titles be auto-generated from the first sentence of a requirement.  See :ref:`needs_title_from_content` and :ref:`title_from_content`. (`#49 <https://github.com/useblocks/sphinx-needs/issues/49>`_)
-* Improvement: Titles can have a maximum length.  See :ref:`needs_max_title_length`. (`#49 <https://github.com/useblocks/sphinx-needs/issues/49>`_)
+* Improvement: Titles can now be made optional.  See :ref:`needs_title_optional`. (:issue:`49`)
+* Improvement: Titles be auto-generated from the first sentence of a requirement.  See :ref:`needs_title_from_content` and :ref:`title_from_content`. (:issue:`49`)
+* Improvement: Titles can have a maximum length.  See :ref:`needs_max_title_length`. (:issue:`49`)
 
 0.2.2
 -----
-* Improvement: The sections, to which a need belongs, are now stored, filterable and exported in ``needs.json``. See updated :ref:`option_filter`. (`#53 <https://github.com/useblocks/sphinx-needs/pull/53>`_ )
-* Improvement: Project specific options for needs are supported now. See :ref:`needs_extra_options`. (`#48 <https://github.com/useblocks/sphinx-needs/pull/48>`_ )
-* Bugfix: Logging fixed (`#50 <https://github.com/useblocks/sphinx-needs/issues/50>`_ )
-* Bugfix: Tests for custom styles are now working when executed with all other tests (`#47 <https://github.com/useblocks/sphinx-needs/pull/47>`_)
+* Improvement: The sections, to which a need belongs, are now stored, filterable and exported in ``needs.json``. See updated :ref:`option_filter`. (:pr:`53` )
+* Improvement: Project specific options for needs are supported now. See :ref:`needs_extra_options`. (:pr:`48` )
+* Bugfix: Logging fixed (:issue:`50` )
+* Bugfix: Tests for custom styles are now working when executed with all other tests (:pr:`47`)
 
 
 0.2.1
 -----
-* Bugfix: Sphinx warnings fixed, if need-collapse was used. (`#46 <https://github.com/useblocks/sphinx-needs/issues/46>`_)
+* Bugfix: Sphinx warnings fixed, if need-collapse was used. (:issue:`46`)
 * Bugfix: dark.css, blank.css and common.css used wrong need-container selector. Fixed.
 
 0.2.0
@@ -802,15 +831,15 @@ custom css definitions you need to update them.
 * Improvement: Added :ref:`needs_id_regex`, which takes a regular expression and which is used to validate given IDs of needs.
 * Improvement: Added meta information shields on documentation page
 * Improvement: Added more examples to documentation
-* Bugfix: Care about unneeded separator characters in tags (`#36 <https://github.com/useblocks/sphinx-needs/issues/36>`_)
+* Bugfix: Care about unneeded separator characters in tags (:issue:`36`)
 * Bugfix: Avoiding multiple registration of resource files (js, css), if sphinx gets called several times (e.g. during tests)
-* Bugfix: Needs with no status shows up on filters (`#45 <https://github.com/useblocks/sphinx-needs/issues/45>`_)
-* Bugfix: Supporting Sphinx 1.7 (`#41 <https://github.com/useblocks/sphinx-needs/issues/41>`_)
+* Bugfix: Needs with no status shows up on filters (:issue:`45`)
+* Bugfix: Supporting Sphinx 1.7 (:issue:`41`)
 
 0.1.49
 ------
-* Bugfix: Supporting plantuml >= 0.9 (`#38 <https://github.com/useblocks/sphinx-needs/issues/38>`_)
-* Bugfix: need_outgoing does not crash, if given need-id does not exist (`#32 <https://github.com/useblocks/sphinx-needs/issues/32>`_)
+* Bugfix: Supporting plantuml >= 0.9 (:issue:`38`)
+* Bugfix: need_outgoing does not crash, if given need-id does not exist (:issue:`32`)
 
 0.1.48
 ------

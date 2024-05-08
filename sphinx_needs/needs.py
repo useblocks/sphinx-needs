@@ -106,7 +106,7 @@ from sphinx_needs.services.open_needs import OpenNeedsService
 from sphinx_needs.utils import INTERNALS, NEEDS_FUNCTIONS, node_match
 from sphinx_needs.warnings import process_warnings
 
-__version__ = VERSION = "2.0.0"
+__version__ = VERSION = "2.1.0"
 NEEDS_FUNCTIONS.clear()
 
 _NODE_TYPES_T = Dict[
