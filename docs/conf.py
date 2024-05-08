@@ -39,7 +39,10 @@ extensions = [
     "sphinx_immaterial",
 ]
 
-extlinks = {"pr": ("https://github.com/useblocks/sphinx-needs/pull/%s", "PR #%s")}
+extlinks = {
+    "pr": ("https://github.com/useblocks/sphinx-needs/pull/%s", "PR #%s"),
+    "issue": ("https://github.com/useblocks/sphinx-needs/issues/%s", "issue #%s"),
+}
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3.8", None),
