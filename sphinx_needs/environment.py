@@ -18,7 +18,7 @@ def install_styles_static_files(app: Sphinx, env: BuildEnvironment) -> None:
     # Do not copy static_files for our "needs" builder
     if builder.name == "needs":
         return
-    
+
     logger.info("Copying static style files for sphinx-needs")
 
     config = NeedsSphinxConfig(app.config)
@@ -66,7 +66,7 @@ def install_lib_static_files(app: Sphinx, env: BuildEnvironment) -> None:
     # Do not copy static_files for our "needs" builder
     if builder.name == "needs":
         return
-    
+
     logger.info("Copying static files for sphinx-needs datatables support")
 
     statics_dir = Path(builder.outdir) / _STATIC_DIR_NAME
