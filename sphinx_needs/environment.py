@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from jinja2 import Environment, PackageLoader, select_autoescape
+from sphinx import version_info as sphinx_version
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util.fileutil import copy_asset, copy_asset_file
@@ -16,15 +17,23 @@ _STATIC_DIR_NAME = "_static"
 def _add_css_file(app: Sphinx, rel_path: Path) -> None:
     # note this deduplication is already done in Sphinx v7.2.1+
     # https://github.com/sphinx-doc/sphinx/commit/0c22d9c9ff4a0a6b3ce2f0aa6bc591b4525b4163
-    if (rel_path.as_posix(), {}) not in app.registry.css_files:
-        app.add_css_file(rel_path.as_posix())
+    rel_str = rel_path.as_posix()
+    if sphinx_version < (7, 2) and f"_static/{rel_str}" in getattr(
+        app.builder, "css_files", []
+    ):
+        return
+    app.add_css_file(rel_str)
 
 
 def _add_js_file(app: Sphinx, rel_path: Path) -> None:
     # note this deduplication is already done in Sphinx v7.2.1+
     # https://github.com/sphinx-doc/sphinx/commit/0c22d9c9ff4a0a6b3ce2f0aa6bc591b4525b4163
-    if (rel_path.as_posix(), {}) not in app.registry.js_files:
-        app.add_js_file(rel_path.as_posix())
+    rel_str = rel_path.as_posix()
+    if sphinx_version < (7, 2) and f"_static/{rel_str}" in getattr(
+        app.builder, "script_files", []
+    ):
+        return
+    app.add_js_file(rel_str)
 
 
 def install_styles_static_files(app: Sphinx, env: BuildEnvironment) -> None:
