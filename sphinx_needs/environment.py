@@ -13,20 +13,6 @@ from sphinx_needs.utils import logger
 _STATIC_DIR_NAME = "_static"
 
 
-def _add_css_file(app: Sphinx, rel_path: Path) -> None:
-    # note this deduplication is already done in Sphinx v7.2.1+
-    # https://github.com/sphinx-doc/sphinx/commit/0c22d9c9ff4a0a6b3ce2f0aa6bc591b4525b4163
-    if (rel_path.as_posix(), {}) not in app.registry.css_files:
-        app.add_css_file(rel_path.as_posix())
-
-
-def _add_js_file(app: Sphinx, rel_path: Path) -> None:
-    # note this deduplication is already done in Sphinx v7.2.1+
-    # https://github.com/sphinx-doc/sphinx/commit/0c22d9c9ff4a0a6b3ce2f0aa6bc591b4525b4163
-    if (rel_path.as_posix(), {}) not in app.registry.js_files:
-        app.add_js_file(rel_path.as_posix())
-
-
 def install_styles_static_files(app: Sphinx, env: BuildEnvironment) -> None:
     builder = app.builder
     # Do not copy static_files for our "needs" builder
@@ -48,16 +34,18 @@ def install_styles_static_files(app: Sphinx, env: BuildEnvironment) -> None:
         lambda path: not path.endswith(".css"),
     )
     for common_path in dest_dir.joinpath("common_css").glob("*.css"):
-        _add_css_file(app, common_path.relative_to(statics_dir))
+        app.add_css_file(common_path.relative_to(statics_dir).as_posix())
 
     # Add theme css file
     if config.css in [f.name for f in css_root.joinpath("themes").glob("*.css")]:
         copy_asset_file(str(css_root.joinpath("themes", config.css)), str(dest_dir))
-        _add_css_file(app, dest_dir.joinpath(config.css).relative_to(statics_dir))
+        app.add_css_file(
+            dest_dir.joinpath(config.css).relative_to(statics_dir).as_posix()
+        )
     elif Path(config.css).is_file():
         copy_asset_file(config.css, str(dest_dir))
-        _add_css_file(
-            app, dest_dir.joinpath(Path(config.css).name).relative_to(statics_dir)
+        app.add_css_file(
+            dest_dir.joinpath(Path(config.css).name).relative_to(statics_dir).as_posix()
         )
     else:
         logger.warning(
@@ -90,10 +78,10 @@ def install_lib_static_files(app: Sphinx, env: BuildEnvironment) -> None:
 
     # Add the needed datatables js and css file
     lib_path = Path("sphinx-needs") / "libs" / "html"
-    _add_js_file(app, lib_path.joinpath("datatables.min.js"))
-    _add_js_file(app, lib_path.joinpath("datatables_loader.js"))
-    _add_css_file(app, lib_path.joinpath("datatables.min.css"))
-    _add_js_file(app, lib_path.joinpath("sphinx_needs_collapse.js"))
+    app.add_js_file(lib_path.joinpath("datatables.min.js").as_posix())
+    app.add_js_file(lib_path.joinpath("datatables_loader.js").as_posix())
+    app.add_css_file(lib_path.joinpath("datatables.min.css").as_posix())
+    app.add_js_file(lib_path.joinpath("sphinx_needs_collapse.js").as_posix())
 
 
 def install_permalink_file(app: Sphinx, env: BuildEnvironment) -> None:
