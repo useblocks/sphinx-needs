@@ -1,14 +1,14 @@
 /* Colors based on https://flatuicolors.com/palette/se */
 
 :root {
-    --sn-color-bg-gray: #333;
-    --sn-color-bg-lightgray: rgba(255,255,255,0.1);
+    --sn-color-bg-gray: #eee;
+    --sn-color-bg-lightgray: rgba(0,0,0,0.004);
     --sn-color-bg-green: #05c46b;
     --sn-color-bg-red: #ff3f34;
     --sn-color-bg-yellow: #ffc048;
     --sn-color-bg-blue: #0fbcf9;
 
-    --sn-color-border-lightgray: rgba(255,255,255,0.2);
+    --sn-color-border-lightgray: rgba(0,0,0,0.05);
     --sn-color-border-green: #05c46b;
     --sn-color-border-red: #ff3f34;
     --sn-color-border-yellow: #ffc048;
@@ -26,4 +26,6 @@
 
     --sn-color-complete-bg-head: rgba(0,0,0,0.1);
     --sn-color-complete-bg-foot: rgba(0,0,0,0.1);
+
+    --sn-color-forbidden-dead-link: #dc3545;
 }

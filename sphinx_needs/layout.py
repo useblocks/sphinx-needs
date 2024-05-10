@@ -235,7 +235,6 @@ class LayoutHandler:
         else:
             self.fromdocname = fromdocname
 
-        # For ReadTheDocs Theme we need to add 'rtd-exclude-wy-table'.
         classes = [
             "need",
             "needs_grid_" + self.layout["grid"],

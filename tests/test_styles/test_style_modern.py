@@ -23,5 +23,5 @@ def test_doc_style_modern(test_app):
     app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
-    assert "blank_colors.css" not in html
-    assert "modern_colors.css" in html
+    assert "blank.css" not in html
+    assert "modern.css" in html

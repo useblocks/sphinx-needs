@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Literal, TypedDict
 from sphinx.application import Sphinx
 from sphinx.config import Config as _SphinxConfig
 
-from sphinx_needs.defaults import DEFAULT_DIAGRAM_TEMPLATE, NEEDS_TABLES_CLASSES
+from sphinx_needs.defaults import DEFAULT_DIAGRAM_TEMPLATE
 
 if TYPE_CHECKING:
     from sphinx.util.logging import SphinxLoggerAdapter
@@ -376,8 +376,7 @@ class NeedsSphinxConfig:
         default="is_external==False", metadata={"rebuild": "html", "types": (str,)}
     )
     table_classes: list[str] = field(
-        default_factory=lambda: NEEDS_TABLES_CLASSES,
-        metadata={"rebuild": "html", "types": (list,)},
+        default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )
     """Additional classes to set for needs and needtable."""
     string_links: dict[str, dict[str, Any]] = field(

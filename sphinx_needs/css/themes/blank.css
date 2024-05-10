@@ -1,18 +1,18 @@
-/*Colors based on https://flatuicolors.com/palette/se*/
+/* Colors based on https://flatuicolors.com/palette/se */
 
 :root {
     --sn-color-bg-gray: #333;
     --sn-color-bg-lightgray: rgba(255,255,255,0.1);
-    --sn-color-bg-green: #04723c;
-    --sn-color-bg-red: #81201b;
-    --sn-color-bg-yellow: #a97c32;
-    --sn-color-bg-blue: #096285;
+    --sn-color-bg-green: #05c46b;
+    --sn-color-bg-red: #ff3f34;
+    --sn-color-bg-yellow: #ffc048;
+    --sn-color-bg-blue: #0fbcf9;
 
     --sn-color-border-lightgray: rgba(255,255,255,0.2);
-    --sn-color-border-green: #04723c;
-    --sn-color-border-red: #81201b;
-    --sn-color-border-yellow: #a97c32;
-    --sn-color-border-blue: #096285;
+    --sn-color-border-green: #05c46b;
+    --sn-color-border-red: #ff3f34;
+    --sn-color-border-yellow: #ffc048;
+    --sn-color-border-blue: #0fbcf9;
 
     --sn-color-bar-green: #05c46b;
     --sn-color-bar-red: #ff3f34;
@@ -20,10 +20,12 @@
     --sn-color-bar-orange: #e67e22;
     --sn-color-bar-blue: #0fbcf9;
 
-    --sn-color-need-border: #888;
-    --sn-color-need-bg: #333;
+    --sn-color-need-border: #555;
+    --sn-color-need-bg: #eee;
     --sn-color-need-bg-head: rgba(0,0,0,0.1);
 
     --sn-color-complete-bg-head: rgba(0,0,0,0.1);
     --sn-color-complete-bg-foot: rgba(0,0,0,0.1);
+
+    --sn-color-forbidden-dead-link: #dc3545;
 }

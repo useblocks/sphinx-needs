@@ -227,5 +227,3 @@ NEED_DEFAULT_OPTIONS: dict[str, Any] = {
 NEEDEXTEND_NOT_ALLOWED_OPTIONS = ["id"]
 
 NEEDS_PROFILING = [x.upper() for x in os.environ.get("NEEDS_PROFILING", "").split(",")]
-
-NEEDS_TABLES_CLASSES = ["rtd-exclude-wy-table", "no-sphinx-material-strip"]
