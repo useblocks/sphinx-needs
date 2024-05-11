@@ -1,0 +1,26 @@
+/* 
+The toggle class appears to be only used in sphinx_needs/directives/needimport_template.rst,
+but it is not clear if this is ever actually used, or what JS it is supposed to be used with it.
+*/
+
+.toggle .header {
+    display: block;
+    clear: both;
+}
+
+.toggle .header p {
+    display: inline;
+}
+
+.toggle .header:after {
+    content: " ▷";
+}
+
+.toggle .header.open:after {
+    content: " ▽";
+}
+
+div.need div.toggle div.line-block {
+    margin-top: 0px;
+    margin-left: 30px;
+}

@@ -1,0 +1,65 @@
+/* These are used by the needtable directive
+to style the table representation of the needs. 
+*/
+
+table.NEEDS_TABLE,
+table.NEEDS_DATATABLES {
+    display: table;
+    overflow-x: auto;
+    white-space: normal;
+    width: 100%;
+    /* If this is set, col->width does not work any more*/
+    /*max-width: -moz-fit-content;*/
+    /*max-width: fit-content;*/
+    margin: 0 auto;
+}
+
+div.needstable_wrapper {
+    width: 100%;
+    overflow-x: auto;
+    padding: 0;
+}
+
+/* These are "overrides" for CSS added by the bundled https://datatables.net JS package */
+
+table.dataTable {
+    border-collapse: collapse;
+    border: none;
+}
+
+div.dataTables_length {
+    margin-bottom: 10px;
+}
+
+div.dataTables_wrapper{
+    overflow-x: auto;
+    padding: 0px 5px;  /*Space needed for table borders */
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    padding: 0.15em 0.75em;
+    background: none;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current, 
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    background: none;
+}
+
+div.dataTables_length select {
+    background: none;
+}
+
+div.dt-buttons button {
+    padding: 0.1em 1em;
+    border: 1px solid #999;
+    border-radius: 2px;
+    font-size: 0.88em;
+    line-height: inherit;
+    color: inherit;
+    white-space: nowrap;
+    overflow: hidden;
+    background-color: inherit;
+    background-image: none;
+}
+

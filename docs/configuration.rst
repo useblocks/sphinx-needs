@@ -1637,27 +1637,8 @@ This may be needed to avoid custom table handling of some specific Sphinx theme 
 
    needs_table_classes = ['my_custom_class', 'another_class']
 
-Default: ``['rtd-exclude-wy-table', 'no-sphinx-material-strip']``
-
-This classes are not set for needtables using the ``table`` style, which is using the normal Sphinx table layout
+These classes are not set for needtables using the ``table`` style, which is using the normal Sphinx table layout
 and therefore must be handled by themes.
-
-The following themes support the following table classes to deactivate their specific handling:
-
-.. list-table::
-
-   - * Theme
-     * Class
-   - * ReadTheDocs
-     * ``rtd-exclude-wy-table``
-   - * Sphinx-Material
-     * ``no-sphinx-material-strip``
-
-.. hint::
-
-   The deactivation of theme specific table handling is quite a new feature in most themes.
-   Please be sure to use the newest theme version or even the nightly build.
-
 
 .. _needs_builder_filter:
 
