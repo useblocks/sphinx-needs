@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1715172150113,
+  "lastUpdate": 1715446120326,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7668,6 +7668,42 @@ window.BENCHMARK_DATA = {
             "value": 66.83594841700003,
             "unit": "s",
             "extra": "Commit: 4bc44238a15a326a9a3a49ccf63510e9de4b0c69\nBranch: master\nTime: 2024-05-08T14:40:19+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "dd28cdac698c8fad3f3e0d729bfd4227701f02ef",
+          "message": "👌 Streamline internal CSS (#1178)\n\nThis commit restructures the internal CSS used by the extension, with the goal of improving compatibility sphinx theme extensions.\r\n\r\n- `common.css` is split into multiple files, relating to their purpose.\r\n- most hard-coded colors set within the CSS are replaced with CSS variables, that can be set/overridden by themes/users\r\n- most per-theme CSS is replaced with simply defining the CSS variable colors (removing a lot of duplication)\r\n- Outdated/deprecated handling of CSS/JS in `sphinx_needs/environment.py` is replaced with modern sphinx methods",
+          "timestamp": "2024-05-11T18:46:36+02:00",
+          "tree_id": "ea8814035269455d74e2a4bfc45e193a32f5e08f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/dd28cdac698c8fad3f3e0d729bfd4227701f02ef"
+        },
+        "date": 1715446113145,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2145987749999847,
+            "unit": "s",
+            "extra": "Commit: dd28cdac698c8fad3f3e0d729bfd4227701f02ef\nBranch: master\nTime: 2024-05-11T18:46:36+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 64.954632699,
+            "unit": "s",
+            "extra": "Commit: dd28cdac698c8fad3f3e0d729bfd4227701f02ef\nBranch: master\nTime: 2024-05-11T18:46:36+02:00"
           }
         ]
       }
