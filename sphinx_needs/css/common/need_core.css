@@ -51,6 +51,11 @@ table.need td div.needs_side.line-block{
 /* collapse button */
 /* *************** */
 
+span.needs_collapse svg {
+    height: 1rem;
+    float: right;
+}
+
 span.needs_collapse> :is(.collapsed, .visible) {
     cursor: pointer;
 }

@@ -12,6 +12,7 @@ import uuid
 from contextlib import suppress
 from functools import lru_cache
 from optparse import Values
+from pathlib import Path
 from typing import Callable, cast
 from urllib.parse import urlparse
 
@@ -24,11 +25,14 @@ from docutils.utils import new_document
 from jinja2 import Environment
 from sphinx.application import Sphinx
 from sphinx.environment.collectors.asset import DownloadFileCollector, ImageCollector
+from sphinx.util.logging import getLogger
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.utils import INTERNALS, match_string_link
+
+LOGGER = getLogger(__name__)
 
 
 @measure_time("need")
@@ -1056,42 +1060,7 @@ class LayoutHandler:
             # PDF/Latex output do not support collapse functions
             return None
 
-        coll_node_collapsed = nodes.inline(classes=["needs", "collapsed"])
-        coll_node_visible = nodes.inline(classes=["needs", "visible"])
-
-        if collapsed.startswith("image:") or collapsed.startswith("icon:"):
-            coll_node_collapsed.append(
-                self.image(
-                    collapsed.replace("image:", ""),
-                    width="17px",
-                    no_link=True,
-                    img_class="sn_collapse_img",
-                )
-            )
-        elif collapsed.startswith("Debug view"):
-            coll_node_collapsed.append(
-                nodes.container(classes=["debug_on_layout_btn"])
-            )  # For debug layout
-        else:
-            coll_node_collapsed.append(nodes.Text(collapsed))
-
-        if visible.startswith("image:") or visible.startswith("icon:"):
-            coll_node_visible.append(
-                self.image(
-                    visible.replace("image:", ""),
-                    width="17px",
-                    no_link=True,
-                    img_class="sn_collapse_img",
-                )
-            )
-        elif visible.startswith("Debug view"):
-            coll_node_visible.append(nodes.container(classes=["debug_off_layout_btn"]))
-        else:
-            coll_node_visible.append(nodes.Text(visible))
-
         coll_container = nodes.inline(classes=["needs", "needs_collapse"])
-        # docutils doesn't allow has to add any html-attributes beside class and id to nodes.
-        # So we misused "id" for this and use "__" (2x _) as separator for row-target names
 
         if (not self.need["collapse"]) or (
             self.need["collapse"] is None and not initial
@@ -1101,12 +1070,40 @@ class LayoutHandler:
         if (self.need["collapse"]) or (not self.need["collapse"] and initial):
             status = "hide"
 
-        target_strings = target.split(",")
-        final_targets = [x.strip() for x in target_strings]
+        # docutils doesn't allow to add any html-attributes beside class and id to nodes.
+        # So we misused "id" for this and use "__" (2x _) as separator for row-target names
+        final_targets = [x.strip() for x in target.split(",")]
         targets = ["target__" + status + "__" + "__".join(final_targets)]
         coll_container.attributes["ids"] = targets
-        coll_container.append(coll_node_collapsed)
-        coll_container.append(coll_node_visible)
+
+        for src, main_class, dbg_class in (
+            (collapsed, "collapsed", "debug_on_layout_btn"),
+            (visible, "visible", "debug_off_layout_btn"),
+        ):
+            node = nodes.inline(classes=["needs", main_class])
+            coll_container.append(node)
+
+            if src.startswith("icon:"):
+                svg = _read_icon(src[5:])
+                if svg is None:
+                    LOGGER.warning(
+                        f"Icon {src[5:]!r} not found.",
+                        type="needs",
+                        subtype="layout",
+                        location=self.node,
+                    )
+                else:
+                    node.append(nodes.raw("", svg, format="html"))
+            elif src.startswith("image:"):
+                node.append(
+                    self.image(
+                        src[6:], width="17px", no_link=True, img_class="sn_collapse_img"
+                    )
+                )
+            elif src.startswith("Debug view"):
+                node.append(nodes.container(classes=[dbg_class]))
+            else:
+                node.append(nodes.Text(src))
 
         return coll_container
 
@@ -1406,6 +1403,22 @@ class LayoutHandler:
         if footer:
             self.node_tbody += footer_row
         node_tgroup += self.node_tbody
+
+
+@lru_cache
+def _read_icon(name: str) -> str | None:
+    """Read an icon from the internal icon set.
+
+    return None if icon is not found.
+    """
+    path = Path(__file__).parent.joinpath(
+        "images",
+        "feather_svg",
+        "{}.{}".format(name, "svg"),
+    )
+    if not path.is_file():
+        return None
+    return path.read_text(encoding="utf-8")
 
 
 class SphinxNeedLayoutException(BaseException):
