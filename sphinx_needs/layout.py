@@ -1062,25 +1062,27 @@ class LayoutHandler:
 
         coll_container = nodes.inline(classes=["needs", "needs_collapse"])
 
-        if (not self.need["collapse"]) or (
-            self.need["collapse"] is None and not initial
-        ):
-            status = "show"
-
-        if (self.need["collapse"]) or (not self.need["collapse"] and initial):
-            status = "hide"
+        is_collapsed = bool(self.need["collapse"] or initial)
 
         # docutils doesn't allow to add any html-attributes beside class and id to nodes.
         # So we misused "id" for this and use "__" (2x _) as separator for row-target names
         final_targets = [x.strip() for x in target.split(",")]
-        targets = ["target__" + status + "__" + "__".join(final_targets)]
+        targets = [
+            "target__"
+            + ("hide" if is_collapsed else "show")
+            + "__"
+            + "__".join(final_targets)
+        ]
         coll_container.attributes["ids"] = targets
 
-        for src, main_class, dbg_class in (
-            (collapsed, "collapsed", "debug_on_layout_btn"),
-            (visible, "visible", "debug_off_layout_btn"),
+        for src, hidden, main_class, dbg_class in (
+            (collapsed, is_collapsed, "collapsed", "debug_on_layout_btn"),
+            (visible, not is_collapsed, "visible", "debug_off_layout_btn"),
         ):
-            node = nodes.inline(classes=["needs", main_class])
+            node = nodes.inline(
+                classes=["needs", main_class]
+                + (["collapse_is_hidden"] if hidden else [])
+            )
             coll_container.append(node)
 
             if src.startswith("icon:"):

@@ -62,11 +62,11 @@ def test_doc_github_61(test_app):
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     alt_text = re.findall("<img.*?alt=(.*?)>", html, re.MULTILINE + re.DOTALL)
-    assert len(alt_text) == 5
-    assert "A-001" in alt_text[4]
-    assert "A-002" in alt_text[4]
-    assert "A_001" in alt_text[4]
-    assert "A_002" in alt_text[4]
+    assert len(alt_text) == 1
+    assert "A-001" in alt_text[0]
+    assert "A-002" in alt_text[0]
+    assert "A_001" in alt_text[0]
+    assert "A_002" in alt_text[0]
 
 
 @pytest.mark.parametrize(
