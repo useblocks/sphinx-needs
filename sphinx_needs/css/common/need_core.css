@@ -51,11 +51,19 @@ table.need td div.needs_side.line-block{
 /* collapse button */
 /* *************** */
 
+span.needs_collapse {
+    float: right;
+}
+
+span.needs_collapse svg {
+    height: 1rem;
+}
+
 span.needs_collapse> :is(.collapsed, .visible) {
     cursor: pointer;
 }
 
-/* this class is added dynamically by sphinx_needs_collapse.js  */
+/* this class is added/removed dynamically by sphinx_needs_collapse.js  */
 .collapse_is_hidden {
     display: none !important;
 }
