@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1715446120326,
+  "lastUpdate": 1715778224384,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7704,6 +7704,42 @@ window.BENCHMARK_DATA = {
             "value": 64.954632699,
             "unit": "s",
             "extra": "Commit: dd28cdac698c8fad3f3e0d729bfd4227701f02ef\nBranch: master\nTime: 2024-05-11T18:46:36+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "229d2f89181e86951d2985a9106f42852c9e874a",
+          "message": "👌 Improve cross-theme compatibility of need collapse button (#1181)\n\nThis commit, changes the HTML representation of the icons used for toggling needs metadata visibility.\r\n\r\nPreviously, the SVG was embedded in an image `<img src=\"path/to.svg\">`,\r\nbut this is problematic because the SVG does not then inherit the surrounding CSS, such as colors,\r\nand so is difficult to correctly style, particularly for theme's that use light/dark modes.\r\n\r\nThe SVG is now embedded directly into the HTML page, and its relative size set to `1rem`\r\n\r\nAdditionally, the initial visibility of the icons is now set correctly, before any JS is run,\r\nto improve the render experience and stop both icons being initially visible (until the JS is triggered)",
+          "timestamp": "2024-05-15T15:01:40+02:00",
+          "tree_id": "2833c5d82100901687b7e488944bf84261276782",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/229d2f89181e86951d2985a9106f42852c9e874a"
+        },
+        "date": 1715778215740,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.24358200999998303,
+            "unit": "s",
+            "extra": "Commit: 229d2f89181e86951d2985a9106f42852c9e874a\nBranch: master\nTime: 2024-05-15T15:01:40+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.012494145000005,
+            "unit": "s",
+            "extra": "Commit: 229d2f89181e86951d2985a9106f42852c9e874a\nBranch: master\nTime: 2024-05-15T15:01:40+02:00"
           }
         ]
       }
