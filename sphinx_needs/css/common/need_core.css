@@ -63,7 +63,7 @@ span.needs_collapse> :is(.collapsed, .visible) {
     cursor: pointer;
 }
 
-/* this class is added dynamically by sphinx_needs_collapse.js  */
+/* this class is added/removed dynamically by sphinx_needs_collapse.js  */
 .collapse_is_hidden {
     display: none !important;
 }
