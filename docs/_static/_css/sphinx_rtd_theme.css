@@ -1,0 +1,18 @@
+/* Styling for the https://sphinx-rtd-theme.readthedocs.io theme */
+
+/* this container is added dynamically by the sphinx_rtd_theme:
+https://github.com/readthedocs/sphinx_rtd_theme/blob/28c377f99a0fb8a6a7545ceaa599b7afd082d344/src/theme.js#L103 
+
+but it collapses the tables width, which we do not want
+*/
+div.wy-table-responsive {
+    width: 100% !important;
+    overflow-x: auto !important;
+}
+
+/* a lot of components, like paragraphs and header, do not have a top margin
+so the datatable does not have a gap to the subsequent element
+*/
+div.dataTables_wrapper {
+    margin-bottom: 2em;
+}

@@ -1,0 +1,13 @@
+/* CSS shared by all themes */
+
+.underline {
+    text-decoration: underline;
+}
+
+/* Make the grid examples easier to see */
+.needs-grid-example {
+    width: 100% !important;
+}
+table.needs-grid-example {
+    border: 1px solid var(--color-table-border);
+}

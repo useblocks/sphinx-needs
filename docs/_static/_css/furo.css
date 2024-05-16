@@ -1,0 +1,98 @@
+/* Styling for the https://github.com/pradyunsg/furo theme. */
+
+/* Note, the recommended way to set colors for furo is in the `html_theme_options`
+https://pradyunsg.me/furo/customisation/#light-css-variables-dark-css-variables
+
+But here we are setting the colors directly in the CSS,
+to make it a little easier to compare to the different themes.
+*/
+body {
+    --color-code-background: #eeffcc;
+    --color-code-foreground: black;
+    --sn-color-need-border: #555;
+    --sn-color-need-row-border: hsla(232, 75%, 95%, 0.12);
+    --sn-color-need-bg: #eee;
+    --sn-color-need-bg-head: rgba(0, 0, 0, 0.1);
+    --sn-color-complete-bg-head: rgba(0, 0, 0, 0.1);
+    --sn-color-complete-bg-foot: rgba(0, 0, 0, 0.1);
+    --sn-color-bg-gray: #eee;
+    --sn-color-bg-lightgray: rgba(0, 0, 0, 0.004);
+    --sn-color-bg-green: #05c46b;
+    --sn-color-bg-red: #ff3f34;
+    --sn-color-bg-yellow: #ffc048;
+    --sn-color-bg-blue: #0fbcf9;
+    --sn-color-debug-btn-border: #333;
+    --sn-color-debug-btn-on-text: #f43333;
+    --sn-color-debug-btn-off-text: #096285;
+    --sn-color-datatable-label: var(--color-foreground-muted);
+    --sn-color-datatable-btn-border: var(--color-foreground-muted);
+    --sn-filter-logo-big: none;
+    --sd-color-card-header: var(--color-admonition-title-background--note);
+}
+
+@media not print {
+    body[data-theme="dark"] {
+        --color-code-background: #202020;
+        --color-code-foreground: #d0d0d0;
+        --sn-color-need-border: #aaaaaa;
+        --sn-color-need-row-border: hsla(52, 75%, 5%, 0.12);
+        --sn-color-need-bg: #111111;
+        --sn-color-need-bg-head: rgba(255, 255, 255, 0.1);
+        --sn-color-complete-bg-head: rgba(255, 255, 255, 0.1);
+        --sn-color-complete-bg-foot: rgba(255, 255, 255, 0.1);
+        --sn-color-bg-gray: #111111;
+        --sn-color-bg-lightgray: rgba(255, 255, 255, 0.1);
+        --sn-color-bg-green: #024e2a;
+        --sn-color-bg-red: #81201b;
+        --sn-color-bg-yellow: #a97c32;
+        --sn-color-bg-blue: #096285;
+        --sn-color-debug-btn-border: #888;
+        --sn-color-debug-btn-on-text: #ff3f34;
+        --sn-color-debug-btn-off-text: #0fbcf9;
+        --sn-filter-logo-big: invert(1);
+    }
+
+    @media (prefers-color-scheme: dark) {
+        body:not([data-theme="light"]) {
+            --color-code-background: #202020;
+            --color-code-foreground: #d0d0d0;
+            --sn-color-need-border: #aaaaaa;
+            --sn-color-need-row-border: hsla(52, 75%, 5%, 0.12);
+            --sn-color-need-bg: #111111;
+            --sn-color-need-bg-head: rgba(255, 255, 255, 0.1);
+            --sn-color-complete-bg-head: rgba(255, 255, 255, 0.1);
+            --sn-color-complete-bg-foot: rgba(255, 255, 255, 0.1);
+            --sn-color-bg-gray: #111111;
+            --sn-color-bg-lightgray: rgba(255, 255, 255, 0.1);
+            --sn-color-bg-green: #024e2a;
+            --sn-color-bg-red: #81201b;
+            --sn-color-bg-yellow: #a97c32;
+            --sn-color-bg-blue: #096285;
+            --sn-color-debug-btn-border: #888;
+            --sn-color-debug-btn-on-text: #ff3f34;
+            --sn-color-debug-btn-off-text: #0fbcf9;
+            --sn-filter-logo-big: invert(1);
+        }
+    }
+}
+
+img.sidebar-logo {
+    /* furo sets this at 100% but that makes it a bit too big */
+    max-width: 85%;
+}
+
+/* Image width fix in need-sidebars. */
+tbody div.needs_side img.needs_image {
+    max-width: 100px;
+}
+
+/* This is a hack for now, 
+to make the landing page main image work with light/dark mode.
+
+Furo actually allows a better way to do this, with only-light and only-dark classes:
+https://pradyunsg.me/furo/reference/images/#different-images-for-dark-light-mode,
+but I'm not sure how to make this work across multiple themes
+*/
+img.needs-logo-big {
+    filter: var(--sn-filter-logo-big) !important;
+}

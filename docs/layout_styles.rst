@@ -617,77 +617,101 @@ simple
 ++++++
 This is the default layout used by **Sphinx-Needs**.
 
-+---------+
-| head    |
-+---------+
-| meta    |
-+---------+
-| content |
-+---------+
+.. table::
+   :class: needs_grid_example
+
+   +---------+
+   | head    |
+   +---------+
+   | meta    |
+   +---------+
+   | content |
+   +---------+
 
 .. _grid_simple_footer:
 
 simple_footer
 +++++++++++++
-+---------+
-| head    |
-+---------+
-| meta    |
-+---------+
-| content |
-+---------+
-| footer  |
-+---------+
+
+.. table::
+   :class: needs_grid_example
+
+   +---------+
+   | head    |
+   +---------+
+   | meta    |
+   +---------+
+   | content |
+   +---------+
+   | footer  |
+   +---------+
 
 .. _grid_simple_side_left:
 
 simple_side_left
 ++++++++++++++++
-+------+---------+
-| side | head    |
-|      +---------+
-|      | meta    |
-|      +---------+
-|      | content |
-+------+---------+
+
+.. table::
+   :class: needs_grid_example
+
+   +------+---------+
+   | side | head    |
+   |      +---------+
+   |      | meta    |
+   |      +---------+
+   |      | content |
+   +------+---------+
 
 
 .. _grid_simple_side_right:
 
 simple_side_right
 +++++++++++++++++
-+---------+------+
-| head    | side |
-+---------+      |
-| meta    |      |
-+---------+      |
-| content |      |
-+---------+------+
+
+.. table::
+   :class: needs_grid_example
+
+
+   +---------+------+
+   | head    | side |
+   +---------+      |
+   | meta    |      |
+   +---------+      |
+   | content |      |
+   +---------+------+
 
 
 .. _grid_simple_side_left_partial:
 
 simple_side_left_partial
 ++++++++++++++++++++++++
-+------+------+
-| side | head |
-|      +------+
-|      | meta |
-+------+------+
-| content     |
-+-------------+
+
+.. table::
+   :class: needs_grid_example
+
+   +------+------+
+   | side | head |
+   |      +------+
+   |      | meta |
+   +------+------+
+   | content     |
+   +-------------+
 
 .. _grid_simple_side_right_partial:
 
 simple_side_right_partial
 +++++++++++++++++++++++++
-+------+------+
-| head | side |
-+------+      |
-| meta |      |
-+------+------+
-| content     |
-+-------------+
+
+.. table::
+   :class: needs_grid_example
+
+   +------+------+
+   | head | side |
+   +------+      |
+   | meta |      |
+   +------+------+
+   | content     |
+   +-------------+
 
 Complex grids
 ~~~~~~~~~~~~~
@@ -697,15 +721,18 @@ Complex grids
 complex
 +++++++
 
-+-------------+--------+--------------+
-| head_left   | head   | head_right   |
-+-------------+----+---+--------------+
-| meta_left        | meta_right       |
-+------------------+------------------+
-| content                             |
-+-------------+--------+--------------+
-| footer_left | footer | footer_right |
-+-------------+--------+--------------+
+.. table::
+   :class: needs_grid_example
+
+   +-------------+--------+--------------+
+   | head_left   | head   | head_right   |
+   +-------------+----+---+--------------+
+   | meta_left        | meta_right       |
+   +------------------+------------------+
+   | content                             |
+   +-------------+--------+--------------+
+   | footer_left | footer | footer_right |
+   +-------------+--------+--------------+
 
 Content focused grids
 ~~~~~~~~~~~~~~~~~~~~~
@@ -714,52 +741,76 @@ Content focused grids
 
 content
 +++++++
-+---------+
-| content |
-+---------+
+
+.. table::
+   :class: needs_grid_example
+
+   +---------+
+   | content |
+   +---------+
 
 .. _grid_content_footer:
 
 content_footer
 ++++++++++++++
-+---------+
-| content |
-+---------+
-| footer  |
-+---------+
+
+.. table::
+   :class: needs_grid_example
+
+   +---------+
+   | content |
+   +---------+
+   | footer  |
+   +---------+
 
 .. _grid_content_side_left:
 
 content_side_left
 +++++++++++++++++
-+------+---------+
-| side | content |
-+------+---------+
+
+.. table::
+   :class: needs_grid_example
+
+   +------+---------+
+   | side | content |
+   +------+---------+
 
 .. _grid_content_side_right:
 
 content_side_right
 ++++++++++++++++++
-+---------+------+
-| content | side |
-+---------+------+
+
+.. table::
+   :class: needs_grid_example
+
+   +---------+------+
+   | content | side |
+   +---------+------+
 
 .. _grid_content_footer_side_left:
 
 content_footer_side_left
 ++++++++++++++++++++++++
-+--------+---------+
-| side   | content |
-|        +---------+
-|        | footer  |
-+--------+---------+
+
+.. table::
+   :class: needs_grid_example
+
+   +--------+---------+
+   | side   | content |
+   |        +---------+
+   |        | footer  |
+   +--------+---------+
 
 .. _grid_content_footer_side_right:
 
 content_footer_side_right
 +++++++++++++++++++++++++
-+---------+------+
-| content | side |
-+---------+      |
-| footer  |      |
-+---------+------+
+
+.. table::
+   :class: needs_grid_example
+
+   +---------+------+
+   | content | side |
+   +---------+      |
+   | footer  |      |
+   +---------+------+

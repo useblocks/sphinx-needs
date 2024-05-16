@@ -1,48 +1,61 @@
-/* This is the core CSS to style the representation of each need */
+/* This is the core CSS to style the representation of each need 
 
-table.need {
+Note: we use `table.need.need.need` to select a need table, to increase the specificity of the selector,
+so that it should be generally higher than the specificity of the theme CSS selectors.
+This avoids having to use !important.
+*/
+
+table.need.need.need {
+    display: table ;
     margin-bottom: 10px;
     background-color: var(--sn-color-need-bg);
     border: 1px solid var(--sn-color-need-border);
     width: 100%;
 }
 
-table.need tr.head div.line-block,
-table.need tr.meta div.line-block,
-table.need tr.footer div.line-block {
+table.need.need.need > tbody > tr.head div.line-block,
+table.need.need.need > tbody > tr.meta div.line-block,
+table.need.need.need > tbody > tr.footer div.line-block {
     display: block;
     margin-top: 0;
     margin-bottom: 0;
 }
 
-table.need tr.head {
+table.need.need.need > tbody > tr {
+    display: table-row;
+}
+
+table.need.need.need > tbody > tr.head {
     background-color: var(--sn-color-need-bg-head);
     border-bottom: 1px solid var(--sn-color-need-border);
 }
 
-table.need tr.meta {
+table.need.need.need > tbody > tr.meta {
     border-bottom: 1px solid var(--sn-color-need-border);
     font-size: smaller;
 }
 
-table.need tr.footer {
+table.need.need.need > tbody > tr.footer {
     border-top: 1px solid var(--sn-color-need-border);
     font-size: small;
 }
 
-table.need a {
+table.need.need.need a {
     border-bottom: none;
 }
 
-table.need td {
+table.need.need.need > tbody > tr > td {
+    display: table-cell;
     border: none;
+    border-top: 0.05rem solid var(--sn-color-need-row-border);
+    padding: 0.9375em 1.25em;
     /* This is needed to avoid custom settings for common tables, like the ReadTheDocs theme docs */
     /* It reimplements the normal browser behavior of breaking/wrapping table content if too long.*/
     white-space: normal;
 }
 
 /* We need not line-block margin:24 px here, which is coming from sphinx theme */
-table.need td div.needs_side.line-block{
+table.need.need.need > tbody > tr > td div.needs_side.line-block {
     margin-bottom: 0;
 }
 
@@ -63,7 +76,7 @@ span.needs_collapse> :is(.collapsed, .visible) {
     cursor: pointer;
 }
 
-/* this class is added/removed dynamically by sphinx_needs_collapse.js  */
+/* this class is added/removed dynamically by sphinx_needs_collapse.js */
 .collapse_is_hidden {
     display: none !important;
 }
