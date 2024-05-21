@@ -70,6 +70,29 @@ class NeedextendDirective(SphinxDirective):
         return [targetnode, Needextend("")]
 
 
+RE_ID_FUNC = re.compile(r"\s*((?P<function>\[\[[^\]]*\]\])|(?P<id>[^;,]+))\s*([;,]|$)")
+"""Regex to find IDs or functions, delimited by one of `;|,`."""
+
+
+def _split_value(value: str) -> Sequence[tuple[str, bool]]:
+    """Split a string into a list of values.
+
+    The string is split on `;`/`,` and whitespace is removed from the start and end of each value.
+    If a value starts with `[[` and ends with `]]`, it is considered a function.
+
+    :return: A list of tuples, where the first item is the value and the second is True if the value is a function.
+    """
+    if "[[" in value:
+        # may contain dynamic functions
+        return [
+            (m.group("function"), True)
+            if m.group("function")
+            else (m.group("id").strip(), False)
+            for m in RE_ID_FUNC.finditer(value)
+        ]
+    return [(i.strip(), False) for i in re.split(";|,", value) if i.strip()]
+
+
 def extend_needs_data(
     all_needs: dict[str, NeedsInfoType],
     extends: dict[str, NeedsExtendType],
@@ -137,33 +160,23 @@ def extend_needs_data(
                 if option.startswith("+"):
                     option_name = option[1:]
                     if option_name in link_names:
-                        if value.strip().startswith("[[") and value.strip().endswith(
-                            "]]"
-                        ):  # dynamic function
-                            need[option_name].append(value)
-                        else:
-                            for ref_need in [i.strip() for i in re.split(";|,", value)]:
-                                if ref_need not in all_needs:
-                                    logger.warning(
-                                        f"Provided link id {ref_need} for needextend does not exist. [needs]",
-                                        type="needs",
-                                        location=(
-                                            current_needextend["docname"],
-                                            current_needextend["lineno"],
-                                        ),
-                                    )
-                                    continue
-                                if ref_need not in need[option_name]:
-                                    need[option_name].append(ref_need)
+                        for item, is_function in _split_value(value):
+                            if (not is_function) and (item not in all_needs):
+                                logger.warning(
+                                    f"Provided link id {item} for needextend does not exist. [needs]",
+                                    type="needs",
+                                    location=(
+                                        current_needextend["docname"],
+                                        current_needextend["lineno"],
+                                    ),
+                                )
+                                continue
+                            if item not in need[option_name]:
+                                need[option_name].append(item)
                     elif option_name in list_values:
-                        if value.strip().startswith("[[") and value.strip().endswith(
-                            "]]"
-                        ):  # dynamic function
-                            need[option_name].append(value)
-                        else:
-                            for item in [i.strip() for i in re.split(";|,", value)]:
-                                if item not in need[option_name]:
-                                    need[option_name].append(item)
+                        for item, _is_function in _split_value(value):
+                            if item not in need[option_name]:
+                                need[option_name].append(item)
                     else:
                         if need[option_name]:
                             # If content is already stored, we need to add some whitespace
@@ -181,29 +194,20 @@ def extend_needs_data(
                 else:
                     if option in link_names:
                         need[option] = []
-                        if value.strip().startswith("[[") and value.strip().endswith(
-                            "]]"
-                        ):  # dynamic function
-                            need[option].append(value)
-                        else:
-                            for ref_need in [i.strip() for i in re.split(";|,", value)]:
-                                if ref_need not in all_needs:
-                                    logger.warning(
-                                        f"Provided link id {ref_need} for needextend does not exist. [needs]",
-                                        type="needs",
-                                        location=(
-                                            current_needextend["docname"],
-                                            current_needextend["lineno"],
-                                        ),
-                                    )
-                                    continue
-                                need[option].append(ref_need)
+                        for item, is_function in _split_value(value):
+                            if (not is_function) and (item not in all_needs):
+                                logger.warning(
+                                    f"Provided link id {item} for needextend does not exist. [needs]",
+                                    type="needs",
+                                    location=(
+                                        current_needextend["docname"],
+                                        current_needextend["lineno"],
+                                    ),
+                                )
+                                continue
+                            need[option].append(item)
                     elif option in list_values:
-                        if value.strip().startswith("[[") and value.strip().endswith(
-                            "]]"
-                        ):  # dynamic function
-                            need[option].append(value)
-                        else:
-                            need[option] = [i.strip() for i in re.split(";|,", value)]
+                        for item, _is_function in _split_value(value):
+                            need[option].append(item)
                     else:
                         need[option] = value
