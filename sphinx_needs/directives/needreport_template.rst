@@ -1,7 +1,7 @@
 {# Output for needs_types #}
 {% if types|length != 0 %}
 
-.. dropdown:: Need Types
+.. {{ report_directive }}:: Need Types
 
    .. list-table::
       :widths: 40 20 20 20
@@ -23,7 +23,7 @@
 {# Output for needs_extra_links #}
 {% if links|length != 0 %}
 
-.. dropdown:: Need Extra Links
+.. {{ report_directive }}:: Need Extra Links
 
    .. list-table::
       :widths: 10 30 30 5 20
@@ -47,7 +47,7 @@
 {# Output for needs_options #}
 {% if options|length != 0 %}
 
-.. dropdown:: Need Extra Options
+.. {{ report_directive }}:: Need Extra Options
 
    {% for option in options %}
    * {{ option }}
@@ -58,7 +58,7 @@
 {# Output for needs metrics #}
 {% if usage|length != 0 %}
 
-.. dropdown:: Need Metrics
+.. {{ report_directive }}:: Need Metrics
 
    .. list-table::
       :widths: 40 40

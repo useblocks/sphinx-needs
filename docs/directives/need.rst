@@ -197,7 +197,7 @@ and stores its PlantUML code under given key from :ref:`needuml` directive under
 
 This diagram data can then be used in other :ref:`needuml` calls to combine and reuse PlantUML elements.
 
-{% raw %}
+
 
 |ex|
 
@@ -251,7 +251,7 @@ Reuse of :need:`SP_INT` inside a :ref:`needuml`:
 
    system => int_a
 
-{% endraw %}
+
 
 This simple mechanism is really powerful to design reusable and configurable SW architecture diagrams.
 For more examples and details, please read :ref:`needuml`.
@@ -267,14 +267,14 @@ are representing some kind of a diagram.
 .. code-block:: rst
 
    .. needtable::
-      :filter: arch
+      :filter: bool(arch)
       :style: table
       :columns: id, type, title
 
 |out|
 
 .. needtable::
-   :filter: arch
+   :filter: bool(arch)
    :style: table
    :columns: id, type, title
 
@@ -553,7 +553,6 @@ Default: False
 
 .. code-block:: jinja
 
-    {% raw -%}
     .. req:: First Req Need
        :id: JINJAID123
        :jinja_content: false
@@ -584,11 +583,9 @@ Default: False
        Need with ``:jinja_content:`` equal to ``true``.
        This requirement has status: **{{ status }}**.
 
-    {% endraw %}
+    
 
 |out|
-
-{% raw -%}
 
 .. req:: First Req Need
    :id: JINJAID123
@@ -620,7 +617,7 @@ Default: False
    Need with ``:jinja_content:`` equal to ``true``.
    This requirement has status: **{{ status }}**.
 
-{% endraw %}
+
 
 .. _title_from_content:
 

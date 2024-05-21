@@ -3,10 +3,12 @@ Diagrams common module, which stores all class definitions and functions, which 
 diagram related directive. E.g. needflow and needsequence.
 """
 
+from __future__ import annotations
+
 import html
 import os
 import textwrap
-from typing import Any, Dict, List, Optional, Tuple, TypedDict
+from typing import Any, TypedDict
 from urllib.parse import urlparse
 
 from docutils import nodes
@@ -15,7 +17,7 @@ from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsFilteredBaseType, NeedsPartsInfoType
+from sphinx_needs.data import NeedsFilteredBaseType, NeedsInfoType
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import get_scale, split_link_types
@@ -27,14 +29,14 @@ class DiagramAttributesType(TypedDict):
     show_legend: bool
     show_filters: bool
     show_link_names: bool
-    link_types: List[str]
+    link_types: list[str]
     config: str
     config_names: str
     scale: str
     highlight: str
-    align: Optional[str]
+    align: str | None
     debug: bool
-    caption: Optional[str]
+    caption: str | None
 
 
 class DiagramBase(SphinxDirective):
@@ -52,7 +54,7 @@ class DiagramBase(SphinxDirective):
         "debug": directives.flag,
     }
 
-    def create_target(self, target_name: str) -> Tuple[int, str, nodes.target]:
+    def create_target(self, target_name: str) -> tuple[int, str, nodes.target]:
         id = self.env.new_serialno(target_name)
         targetid = f"{target_name}-{self.env.docname}-{id}"
         targetnode = nodes.target("", "", ids=[targetid])
@@ -112,7 +114,9 @@ def add_config(config: str) -> str:
     uml = ""
     if config and len(config) >= 3:
         # Remove all empty lines
-        config = "\n".join([line.strip() for line in config.split("\n") if line.strip()])
+        config = "\n".join(
+            [line.strip() for line in config.split("\n") if line.strip()]
+        )
         uml += "\n' Config\n\n"
         uml += config
         uml += "\n\n"
@@ -123,13 +127,27 @@ def get_filter_para(node_element: NeedsFilteredBaseType) -> nodes.paragraph:
     """Return paragraph containing the used filter description"""
     para = nodes.paragraph()
     filter_text = "Used filter:"
-    filter_text += " status(%s)" % " OR ".join(node_element["status"]) if len(node_element["status"]) > 0 else ""
+    filter_text += (
+        " status({})".format(" OR ".join(node_element["status"]))
+        if len(node_element["status"]) > 0
+        else ""
+    )
     if len(node_element["status"]) > 0 and len(node_element["tags"]) > 0:
         filter_text += " AND "
-    filter_text += " tags(%s)" % " OR ".join(node_element["tags"]) if len(node_element["tags"]) > 0 else ""
-    if (len(node_element["status"]) > 0 or len(node_element["tags"]) > 0) and len(node_element["types"]) > 0:
+    filter_text += (
+        " tags({})".format(" OR ".join(node_element["tags"]))
+        if len(node_element["tags"]) > 0
+        else ""
+    )
+    if (len(node_element["status"]) > 0 or len(node_element["tags"]) > 0) and len(
+        node_element["types"]
+    ) > 0:
         filter_text += " AND "
-    filter_text += " types(%s)" % " OR ".join(node_element["types"]) if len(node_element["types"]) > 0 else ""
+    filter_text += (
+        " types({})".format(" OR ".join(node_element["types"]))
+        if len(node_element["types"]) > 0
+        else ""
+    )
 
     filter_node = nodes.emphasis(filter_text, filter_text)
     para += filter_node
@@ -140,7 +158,7 @@ def get_debug_container(puml_node: nodes.Element) -> nodes.container:
     """Return container containing the raw plantuml code"""
     debug_container = nodes.container()
     if isinstance(puml_node, nodes.figure):
-        data = puml_node.children[0]["uml"]
+        data = puml_node.children[0]["uml"]  # type: ignore
     else:
         data = puml_node["uml"]
     data = "\n".join([html.escape(line) for line in data.split("\n")])
@@ -150,7 +168,9 @@ def get_debug_container(puml_node: nodes.Element) -> nodes.container:
     return debug_container
 
 
-def calculate_link(app: Sphinx, need_info: NeedsPartsInfoType, _fromdocname: str) -> str:
+def calculate_link(
+    app: Sphinx, need_info: NeedsInfoType, _fromdocname: None | str
+) -> str:
     """
     Link calculation
     All links we can get from docutils functions will be relative.
@@ -166,15 +186,19 @@ def calculate_link(app: Sphinx, need_info: NeedsPartsInfoType, _fromdocname: str
     builder = app.builder
     try:
         if need_info["is_external"]:
-            assert need_info["external_url"] is not None, "external_url must be set for external needs"
+            assert (
+                need_info["external_url"] is not None
+            ), "external_url must be set for external needs"
             link = need_info["external_url"]
             # check if need_info["external_url"] is relative path
             parsed_url = urlparse(need_info["external_url"])
             if not parsed_url.scheme and not os.path.isabs(need_info["external_url"]):
                 # only need to add ../ or ..\ to get out of the image folder
                 link = ".." + os.path.sep + need_info["external_url"]
-        else:
-            link = "../" + builder.get_target_uri(need_info["docname"]) + "#" + need_info["target_id"]
+        elif _docname := need_info["docname"]:
+            link = (
+                "../" + builder.get_target_uri(_docname) + "#" + need_info["target_id"]
+            )
             if need_info["is_part"]:
                 link = f"{link}.{need_info['id']}"
 
@@ -184,9 +208,11 @@ def calculate_link(app: Sphinx, need_info: NeedsPartsInfoType, _fromdocname: str
     return link
 
 
-def create_legend(need_types: List[Dict[str, Any]]) -> str:
-    def create_row(need_type: Dict[str, Any]) -> str:
-        return "\n|<back:{color}> {color} </back>| {name} |".format(color=need_type["color"], name=need_type["title"])
+def create_legend(need_types: list[dict[str, Any]]) -> str:
+    def create_row(need_type: dict[str, Any]) -> str:
+        return "\n|<back:{color}> {color} </back>| {name} |".format(
+            color=need_type["color"], name=need_type["title"]
+        )
 
     rows = map(create_row, need_types)
     table = "|= Color |= Type |" + "".join(rows)

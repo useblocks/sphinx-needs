@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import os
-from typing import Iterable, List, Optional, Sequence, Set
+from typing import Iterable, Sequence
 
 from docutils import nodes
 from sphinx import version_info
@@ -48,7 +50,9 @@ class NeedsBuilder(Builder):
         if not SphinxNeedsData(self.env).has_export_filters:
             return
         LOGGER.warning(
-            "At least one use of `export_id` directive option, requires a slower build", type="needs", subtype="build"
+            "At least one use of `export_id` directive option, requires a slower build",
+            type="needs",
+            subtype="build",
         )
         return super().write(build_docnames, updated_docnames, method)
 
@@ -68,7 +72,9 @@ class NeedsBuilder(Builder):
             # check if needs.json file exists in conf.py directory
             needs_json = os.path.join(self.srcdir, "needs.json")
             if os.path.exists(needs_json):
-                LOGGER.info("needs.json found, but will not be used because needs_file not configured.")
+                LOGGER.info(
+                    "needs.json found, but will not be used because needs_file not configured."
+                )
 
         # Clean needs_list from already stored needs of the current version.
         # This is needed as needs could have been removed from documentation and if this is the case,
@@ -78,8 +84,11 @@ class NeedsBuilder(Builder):
         from sphinx_needs.filter_common import filter_needs
 
         filter_string = needs_config.builder_filter
-        filtered_needs: List[NeedsInfoType] = filter_needs(
-            data.get_or_create_needs().values(), needs_config, filter_string
+        filtered_needs: list[NeedsInfoType] = filter_needs(
+            data.get_or_create_needs().values(),
+            needs_config,
+            filter_string,
+            append_warning="(from need_builder_filter)",
         )
 
         for need in filtered_needs:
@@ -96,11 +105,11 @@ class NeedsBuilder(Builder):
         else:
             LOGGER.info("Needs successfully exported")
 
-    def get_target_uri(self, _docname: str, _typ: Optional[str] = None) -> str:
+    def get_target_uri(self, _docname: str, _typ: str | None = None) -> str:
         # only needed if the write phase is run
         return ""
 
-    def prepare_writing(self, _docnames: Set[str]) -> None:
+    def prepare_writing(self, _docnames: set[str]) -> None:
         # only needed if the write phase is run
         pass
 
@@ -168,13 +177,20 @@ class NeedsIdBuilder(Builder):
         post_process_needs_data(self.app)
 
         data = SphinxNeedsData(self.env)
-        needs = data.get_or_create_needs().values()  # We need a list of needs for later filter checks
+        needs = (
+            data.get_or_create_needs().values()
+        )  # We need a list of needs for later filter checks
         version = getattr(self.env.config, "version", "unset")
         needs_config = NeedsSphinxConfig(self.env.config)
         filter_string = needs_config.builder_filter
         from sphinx_needs.filter_common import filter_needs
 
-        filtered_needs = filter_needs(needs, needs_config, filter_string)
+        filtered_needs = filter_needs(
+            needs,
+            needs_config,
+            filter_string,
+            append_warning="(from need_builder_filter)",
+        )
         needs_build_json_per_id_path = needs_config.build_json_per_id_path
         needs_dir = os.path.join(self.outdir, needs_build_json_per_id_path)
         if not os.path.exists(needs_dir):
@@ -242,7 +258,7 @@ class NeedumlsBuilder(Builder):
     def get_outdated_docs(self) -> Iterable[str]:
         return []
 
-    def prepare_writing(self, _docnames: Set[str]) -> None:
+    def prepare_writing(self, _docnames: set[str]) -> None:
         pass
 
     def write_doc_serialized(self, _docname: str, _doctree: nodes.document) -> None:
@@ -251,7 +267,7 @@ class NeedumlsBuilder(Builder):
     def cleanup(self) -> None:
         pass
 
-    def get_target_uri(self, _docname: str, _typ: Optional[str] = None) -> str:
+    def get_target_uri(self, _docname: str, _typ: str | None = None) -> str:
         return ""
 
 

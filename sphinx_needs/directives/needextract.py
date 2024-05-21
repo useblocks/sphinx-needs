@@ -1,9 +1,7 @@
-"""
+from __future__ import annotations
 
-
-"""
 import re
-from typing import List, Sequence
+from typing import Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -45,7 +43,9 @@ class NeedextractDirective(FilterBase):
     def run(self) -> Sequence[nodes.Node]:
         env = self.env
 
-        targetid = "needextract-{docname}-{id}".format(docname=env.docname, id=env.new_serialno("needextract"))
+        targetid = "needextract-{docname}-{id}".format(
+            docname=env.docname, id=env.new_serialno("needextract")
+        )
         targetnode = nodes.target("", "", ids=[targetid])
 
         filter_arg = self.arguments[0] if self.arguments else None
@@ -69,7 +69,10 @@ class NeedextractDirective(FilterBase):
 
 
 def process_needextract(
-    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
+    app: Sphinx,
+    doctree: nodes.document,
+    fromdocname: str,
+    found_nodes: list[nodes.Element],
 ) -> None:
     """
     Replace all needextract nodes with a list of the collected needs.
@@ -85,19 +88,23 @@ def process_needextract(
         id = node.attributes["ids"][0]
         current_needextract = SphinxNeedsData(env).get_or_create_extracts()[id]
         all_needs = SphinxNeedsData(env).get_or_create_needs()
-        content: List[nodes.Element] = []
+        content: list[nodes.Element] = []
 
         # check if filter argument and option filter both exist
         need_filter_arg = current_needextract["filter_arg"]
         if need_filter_arg and current_needextract["filter"]:
-            raise NeedsInvalidFilter("Needextract can't have filter arguments and option filter at the same time.")
+            raise NeedsInvalidFilter(
+                "Needextract can't have filter arguments and option filter at the same time."
+            )
         elif need_filter_arg:
             # check if given filter argument is need-id
             if need_filter_arg in all_needs:
                 need_filter_arg = f'id == "{need_filter_arg}"'
             elif re.fullmatch(needs_config.id_regex, need_filter_arg):
                 # check if given filter argument is need-id, but not exists
-                raise NeedsInvalidFilter(f"Provided id {need_filter_arg} for needextract does not exist.")
+                raise NeedsInvalidFilter(
+                    f"Provided id {need_filter_arg} for needextract does not exist."
+                )
             current_needextract["filter"] = need_filter_arg
 
         found_needs = process_filters(app, all_needs.values(), current_needextract)
@@ -120,7 +127,9 @@ def process_needextract(
                 content.append(need_extract)
 
         if len(content) == 0:
-            content.append(no_needs_found_paragraph())
+            content.append(
+                no_needs_found_paragraph(current_needextract.get("filter_warning"))
+            )
 
         if current_needextract["show_filters"]:
             content.append(used_filter_paragraph(current_needextract))
@@ -131,4 +140,4 @@ def process_needextract(
         # Run docutils/sphinx transformers for the by needextract added nodes.
         # Transformers use the complete document (doctree), so we perform this action once per
         # needextract. No matter if one or multiple needs got copied
-        Substitutions(doctree).apply()
+        Substitutions(doctree).apply()  # type: ignore[no-untyped-call]

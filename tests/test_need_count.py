@@ -3,7 +3,11 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_need_count"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_need_count"}],
+    indirect=True,
+)
 def test_doc_need_count(test_app):
     app = test_app
     app.build()

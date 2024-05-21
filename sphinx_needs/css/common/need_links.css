@@ -1,0 +1,17 @@
+/* DEAD Links config */
+/* allowed dead links */
+span.needs_dead_link {
+    opacity: 0.8;
+}
+
+/*forbidden dead links */
+span.needs_dead_link.forbidden {
+    color: var(--sn-color-forbidden-dead-link);
+}
+
+/* Style for external need links*/
+a.external_link:after {
+    content: "🡽"
+        /* Same, but with none breaking space (&nbsp not supported in content!)*/
+        /*content: "\00a0\00a0🡽"*/
+}

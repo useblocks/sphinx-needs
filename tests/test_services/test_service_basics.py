@@ -34,7 +34,10 @@ class ServiceTest(BaseService):
                 "url": "http://dummy.company.com/my/service",
                 "user": "my_user",
             },
-            "answer": {"status_code": 200, "body": {"item_amount": 2, "items": ["item_1", "item_2"]}},
+            "answer": {
+                "status_code": 200,
+                "body": {"item_amount": 2, "items": ["item_1", "item_2"]},
+            },
         }
 
         return debug_data
@@ -50,7 +53,11 @@ class NoDebugService(BaseService):
         return []
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/service_doc"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/service_doc"}],
+    indirect=True,
+)
 def test_service_creation(test_app):
     app = test_app
     app.build()

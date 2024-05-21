@@ -6,7 +6,11 @@ import pytest
 from syrupy.filters import props
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "needs", "srcdir": "doc_test/doc_export_id"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "needs", "srcdir": "doc_test/doc_export_id"}],
+    indirect=True,
+)
 def test_export_id(test_app, snapshot):
     app = test_app
     app.build()
@@ -14,7 +18,11 @@ def test_export_id(test_app, snapshot):
     assert needs_data == snapshot(exclude=props("created"))
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_export_id"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_export_id"}],
+    indirect=True,
+)
 def test_export_id_html(test_app):
     app = test_app
     app.build()

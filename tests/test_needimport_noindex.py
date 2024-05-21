@@ -6,7 +6,9 @@ import pytest
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "latex", "srcdir": "doc_test/doc_needimport_noindex"}], indirect=True
+    "test_app",
+    [{"buildername": "latex", "srcdir": "doc_test/doc_needimport_noindex"}],
+    indirect=True,
 )
 def test_doc_needimport_noindex(test_app):
     app = test_app
@@ -17,5 +19,5 @@ def test_doc_needimport_noindex(test_app):
     print(f"in path {app.outdir}", sys.stderr)
 
     assert os.path.exists(latex_path)
-    assert 0 < len(latex)
+    assert len(latex) > 0
     assert "AAA" in latex

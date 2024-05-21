@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import os
 import re
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -19,6 +21,7 @@ from sphinx_needs.diagrams_common import (
     get_filter_para,
     no_plantuml,
 )
+from sphinx_needs.directives.utils import no_needs_found_paragraph
 from sphinx_needs.filter_common import FilterBase
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import add_doc, remove_node_from_tree
@@ -54,7 +57,8 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
         start = self.options.get("start")
         if start is None or len(start.strip()) == 0:
             raise NeedSequenceException(
-                "No valid start option given for needsequence. " "See file {}:{}".format(env.docname, self.lineno)
+                "No valid start option given for needsequence. "
+                f"See file {env.docname}:{self.lineno}"
             )
 
         # Add the needsequence and all needed information
@@ -73,7 +77,10 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
 
 
 def process_needsequence(
-    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
+    app: Sphinx,
+    doctree: nodes.document,
+    fromdocname: str,
+    found_nodes: list[nodes.Element],
 ) -> None:
     # Replace all needsequence nodes with a list of the collected needs.
     env = app.env
@@ -95,13 +102,17 @@ def process_needsequence(
         id = node.attributes["ids"][0]
         current_needsequence = needs_data.get_or_create_sequences()[id]
 
-        option_link_types = [link.upper() for link in current_needsequence["link_types"]]
+        option_link_types = [
+            link.upper() for link in current_needsequence["link_types"]
+        ]
         for lt in option_link_types:
             if lt not in link_type_names:
                 logger.warning(
                     "Unknown link type {link_type} in needsequence {flow}. Allowed values:"
                     " {link_types} [needs]".format(
-                        link_type=lt, flow=current_needsequence["target_id"], link_types=",".join(link_type_names)
+                        link_type=lt,
+                        flow=current_needsequence["target_id"],
+                        link_types=",".join(link_type_names),
                     ),
                     type="needs",
                 )
@@ -128,7 +139,9 @@ def process_needsequence(
         config = current_needsequence["config"]
         puml_node["uml"] += add_config(config)
 
-        start_needs_id = [x.strip() for x in re.split(";|,", current_needsequence["start"])]
+        start_needs_id = [
+            x.strip() for x in re.split(";|,", current_needsequence["start"])
+        ]
         if len(start_needs_id) == 0:
             # TODO this should be a warning (and not tested)
             raise NeedSequenceException(
@@ -147,9 +160,11 @@ def process_needsequence(
                 need = all_needs_dict[need_id.strip()]
             except KeyError:
                 raise NeedSequenceException(
-                    "Given {} in needsequence unknown."
-                    " File {}"
-                    ":{}".format(need_id, current_needsequence["docname"], current_needsequence["lineno"])
+                    "Given {} in needsequence unknown." " File {}" ":{}".format(
+                        need_id,
+                        current_needsequence["docname"],
+                        current_needsequence["lineno"],
+                    )
                 )
 
             # Add children of participants
@@ -174,7 +189,9 @@ def process_needsequence(
 
         puml_node["uml"] += "\n@enduml"
         puml_node["incdir"] = os.path.dirname(current_needsequence["docname"])
-        puml_node["filename"] = os.path.split(current_needsequence["docname"])[1]  # Needed for plantuml >= 0.9
+        puml_node["filename"] = os.path.split(current_needsequence["docname"])[
+            1
+        ]  # Needed for plantuml >= 0.9
 
         scale = int(current_needsequence["scale"])
         # if scale != 100:
@@ -200,8 +217,12 @@ def process_needsequence(
             gen_flow_link = generate_name(app, puml_node.children[0], file_ext)
             current_file_parts = fromdocname.split("/")
             subfolder_amount = len(current_file_parts) - 1
-            img_locaton = "../" * subfolder_amount + "_images/" + gen_flow_link[0].split("/")[-1]
-            flow_ref = nodes.reference("t", current_needsequence["caption"], refuri=img_locaton)
+            img_locaton = (
+                "../" * subfolder_amount + "_images/" + gen_flow_link[0].split("/")[-1]
+            )
+            flow_ref = nodes.reference(
+                "t", current_needsequence["caption"], refuri=img_locaton
+            )
             puml_node += nodes.caption("", "", flow_ref)
 
         # Add lineno to node
@@ -209,12 +230,12 @@ def process_needsequence(
 
         content.append(puml_node)
 
-        if len(content) == 0:
-            nothing_found = "No needs passed the filters"
-            para = nodes.paragraph()
-            nothing_found_node = nodes.Text(nothing_found)
-            para += nothing_found_node
-            content.append(para)
+        if (
+            len(c_string) == 0 and p_string.count("participant") == 1
+        ):  # no connections and just one (start) participant
+            content = [
+                (no_needs_found_paragraph(current_needsequence.get("filter_warning")))
+            ]
         if current_needsequence["show_filters"]:
             content.append(get_filter_para(current_needsequence))
 
@@ -227,22 +248,26 @@ def process_needsequence(
 def get_message_needs(
     app: Sphinx,
     sender: NeedsInfoType,
-    link_types: List[str],
-    all_needs_dict: Dict[str, NeedsInfoType],
-    tracked_receivers: Optional[List[str]] = None,
-    filter: Optional[str] = None,
-) -> Tuple[Dict[str, Dict[str, Any]], str, str]:
-    msg_needs: List[Dict[str, Any]] = []
+    link_types: list[str],
+    all_needs_dict: dict[str, NeedsInfoType],
+    tracked_receivers: list[str] | None = None,
+    filter: str | None = None,
+) -> tuple[dict[str, dict[str, Any]], str, str]:
+    msg_needs: list[dict[str, Any]] = []
     if tracked_receivers is None:
         tracked_receivers = []
     for link_type in link_types:
         msg_needs += [all_needs_dict[x] for x in sender[link_type]]  # type: ignore
 
-    messages: Dict[str, Dict[str, Any]] = {}
+    messages: dict[str, dict[str, Any]] = {}
     p_string = ""
     c_string = ""
     for msg_need in msg_needs:
-        messages[msg_need["id"]] = {"id": msg_need["id"], "title": msg_need["title"], "receivers": {}}
+        messages[msg_need["id"]] = {
+            "id": msg_need["id"],
+            "title": msg_need["title"],
+            "receivers": {},
+        }
         if sender["id"] not in tracked_receivers:
             p_string += 'participant "{}" as {}\n'.format(sender["title"], sender["id"])
             tracked_receivers.append(sender["id"])
@@ -253,17 +278,31 @@ def get_message_needs(
                     from sphinx_needs.filter_common import filter_single_need
 
                     if not filter_single_need(
-                        all_needs_dict[rec_id], NeedsSphinxConfig(app.config), filter, needs=all_needs_dict.values()
+                        all_needs_dict[rec_id],
+                        NeedsSphinxConfig(app.config),
+                        filter,
+                        needs=all_needs_dict.values(),
                     ):
                         continue
 
-                rec_data = {"id": rec_id, "title": all_needs_dict[rec_id]["title"], "messages": []}
+                rec_data = {
+                    "id": rec_id,
+                    "title": all_needs_dict[rec_id]["title"],
+                    "messages": [],
+                }
 
-                c_string += "{} -> {}: {}\n".format(sender["id"], rec_data["id"], msg_need["title"])
+                c_string += "{} -> {}: {}\n".format(
+                    sender["id"], rec_data["id"], msg_need["title"]
+                )
 
                 if rec_id not in tracked_receivers:
                     rec_messages, p_string_new, c_string_new = get_message_needs(
-                        app, all_needs_dict[rec_id], link_types, all_needs_dict, tracked_receivers, filter=filter
+                        app,
+                        all_needs_dict[rec_id],
+                        link_types,
+                        all_needs_dict,
+                        tracked_receivers,
+                        filter=filter,
                     )
                     p_string += p_string_new
                     c_string += c_string_new

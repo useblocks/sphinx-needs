@@ -5,9 +5,13 @@ from sphinx_needs.utils import clean_log
 
 class CleanLogTestCase(unittest.TestCase):
     def test_external_needs_clean_log(self):
-        self.assertEqual(clean_log("http://user:password@host.url/"), "http://****:****@host.url/")
         self.assertEqual(
-            clean_log("Downloading file from https://daniel:my_password@server.com now"),
+            clean_log("http://user:password@host.url/"), "http://****:****@host.url/"
+        )
+        self.assertEqual(
+            clean_log(
+                "Downloading file from https://daniel:my_password@server.com now"
+            ),
             "Downloading file from https://****:****@server.com now",
         )
         self.assertEqual(

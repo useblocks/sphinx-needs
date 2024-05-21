@@ -1,66 +1,72 @@
+import subprocess
 from pathlib import Path
 
 import pytest
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_report_dead_links_true"}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_report_dead_links_true"}],
+    indirect=True,
 )
-def test_needs_report_dead_links_true(test_app):
-    import subprocess
-
+def test_needs_dead_links_warnings(test_app):
     app = test_app
-
-    # Check config value of needs_report_dead_links
-    assert app.config.needs_report_dead_links
 
     src_dir = Path(app.srcdir)
     out_dir = Path(app.outdir)
-    output = subprocess.run(["sphinx-build", "-M", "html", src_dir, out_dir], capture_output=True)
+    output = subprocess.run(
+        ["sphinx-build", "-M", "html", src_dir, out_dir], capture_output=True
+    )
 
-    # Check log info msg of dead links
-    assert (
-        "outgoing linked need DEAD_LINK_ALLOWED not found (document: index, source need REQ_001 on line 7 ) [needs]"
-        in output.stdout.decode("utf-8")
-    )
-    # Check log warning msg of dead links
-    assert (
-        "WARNING: outgoing linked need ANOTHER_DEAD_LINK not found (document: index, "
-        "source need REQ_004 on line 17 ) [needs]" in output.stderr.decode("utf-8")
-    )
-    assert (
-        "WARNING: outgoing linked need REQ_005 not found (document: index, source need TEST_004 on line 45 ) [needs]"
-        in output.stderr.decode("utf-8")
-    )
+    # check there are expected warnings
+    stderr = output.stderr.decode("utf-8")
+    expected_warnings = [
+        f"{Path(str(app.srcdir)) / 'index.rst'}:17: WARNING: Need 'REQ_004' has unknown outgoing link 'ANOTHER_DEAD_LINK' in field 'links' [needs.link_outgoing]",
+        f"{Path(str(app.srcdir)) / 'index.rst'}:45: WARNING: Need 'TEST_004' has unknown outgoing link 'REQ_005.invalid' in field 'links' [needs.link_outgoing]",
+        f"{Path(str(app.srcdir)) / 'index.rst'}:45: WARNING: Need 'TEST_004' has unknown outgoing link 'REQ_005.invalid' in field 'tests' [needs.link_outgoing]",
+    ]
+
+    assert stderr.splitlines() == expected_warnings
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_report_dead_links_false"}], indirect=True
+    "test_app",
+    [{"buildername": "needs", "srcdir": "doc_test/doc_report_dead_links_true"}],
+    indirect=True,
 )
-def test_needs_report_dead_links_false(test_app):
-    import subprocess
-
+def test_needs_dead_links_warnings_needs_builder(test_app):
     app = test_app
-
-    # Check config value of needs_report_dead_links
-    assert not app.config.needs_report_dead_links
 
     src_dir = Path(app.srcdir)
     out_dir = Path(app.outdir)
-    output = subprocess.run(["sphinx-build", "-M", "html", src_dir, out_dir], capture_output=True)
+    output = subprocess.run(
+        ["sphinx-build", "-M", "needs", src_dir, out_dir], capture_output=True
+    )
 
-    # Check log info msg of dead links deactivated
-    assert (
-        "outgoing linked need DEAD_LINK_ALLOWED not found (document: index, source need REQ_001 on line 7 ) [needs]"
-        not in output.stdout.decode("utf-8")
+    # check there are expected warnings
+    stderr = output.stderr.decode("utf-8")
+    expected_warnings = [
+        f"{Path(str(app.srcdir)) / 'index.rst'}:17: WARNING: Need 'REQ_004' has unknown outgoing link 'ANOTHER_DEAD_LINK' in field 'links' [needs.link_outgoing]",
+        f"{Path(str(app.srcdir)) / 'index.rst'}:45: WARNING: Need 'TEST_004' has unknown outgoing link 'REQ_005.invalid' in field 'links' [needs.link_outgoing]",
+        f"{Path(str(app.srcdir)) / 'index.rst'}:45: WARNING: Need 'TEST_004' has unknown outgoing link 'REQ_005.invalid' in field 'tests' [needs.link_outgoing]",
+    ]
+
+    assert stderr.splitlines() == expected_warnings
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_report_dead_links_false"}],
+    indirect=True,
+)
+def test_needs_dead_links_suppress_warnings(test_app):
+    app = test_app
+
+    src_dir = Path(app.srcdir)
+    out_dir = Path(app.outdir)
+    output = subprocess.run(
+        ["sphinx-build", "-M", "html", src_dir, out_dir], capture_output=True
     )
-    # Check log warning msg of dead links deactivated
-    assert (
-        "WARNING: outgoing linked need ANOTHER_DEAD_LINK not found (document: index, "
-        "source need REQ_004 on line 17 ) [needs]" not in output.stderr.decode("utf-8")
-    )
-    assert (
-        "WARNING: outgoing linked need REQ_005 not found (document: index, source need TEST_004 on line 45 ) [needs]"
-        not in output.stderr.decode("utf-8")
-    )
+
+    # check there are no warnings
     assert not output.stderr

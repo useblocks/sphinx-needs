@@ -1,15 +1,19 @@
 import json
-import sys
 from pathlib import Path
 
 import pytest
 from sphinx.application import Sphinx
+from sphinx.util.console import strip_colors
 from syrupy.filters import props
 
 from sphinx_needs.directives.needextend import _split_value
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needextend"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needextend"}],
+    indirect=True,
+)
 def test_doc_needextend_html(test_app: Sphinx, snapshot):
     app = test_app
     app.build()
@@ -22,13 +26,15 @@ def test_doc_needextend_html(test_app: Sphinx, snapshot):
 
     assert (
         '<div class="line">links outgoing: <span class="links"><span><a class="reference internal" href="#extend_'
-        'test_004" title="extend_test_003">extend_test_004</a></span></span></div>' in index_html
+        'test_004" title="extend_test_003">extend_test_004</a></span></span></div>'
+        in index_html
     )
 
     assert (
         '<div class="line">links outgoing: <span class="links"><span><a class="reference internal" href="#extend_'
         'test_003" title="extend_test_006">extend_test_003</a>, <a class="reference internal" href="#extend_'
-        'test_004" title="extend_test_006">extend_test_004</a></span></span></div>' in index_html
+        'test_004" title="extend_test_006">extend_test_004</a></span></span></div>'
+        in index_html
     )
 
     page_1__html = Path(app.outdir, "page_1.html").read_text()
@@ -40,32 +46,24 @@ def test_doc_needextend_html(test_app: Sphinx, snapshot):
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needextend_strict"}], indirect=True
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_needextend_unknown_id",
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
 )
-def test_doc_needextend_strict(test_app):
-    import os
-    import subprocess
-
+def test_doc_needextend_unknown_id(test_app: Sphinx):
     app = test_app
+    app.build()
 
-    srcdir = Path(app.srcdir)
-    out_dir = os.path.join(srcdir, "_build")
-
-    out = subprocess.run(["sphinx-build", "-b", "html", srcdir, out_dir], capture_output=True)
-
-    # Strict option is set to false on needextend. Log info-level message
-    assert "Provided id strict_disable_extend_test for needextend does not exist." in out.stdout.decode("utf-8")
-    # Strict option is set to true on needextend. Raise Exception
-    if sys.platform == "win32":
-        assert (
-            "Sphinx error:\r\nProvided id strict_enable_extend_test for needextend does not exist."
-            in out.stderr.decode("utf-8")
-        )
-    else:
-        assert (
-            "Sphinx error:\nProvided id strict_enable_extend_test for needextend does not exist."
-            in out.stderr.decode("utf-8")
-        )
+    warnings = strip_colors(app._warning.getvalue()).splitlines()
+    assert warnings == [
+        f"{Path(str(app.srcdir)) / 'index.rst'}:19: WARNING: Provided id 'unknown_id' for needextend does not exist. [needs.extend]"
+    ]
 
 
 @pytest.mark.parametrize(
@@ -89,7 +87,9 @@ def test_split_value(value, expected):
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needextend_dynamic"}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needextend_dynamic"}],
+    indirect=True,
 )
 def test_doc_needextend_dynamic(test_app, snapshot):
     app = test_app

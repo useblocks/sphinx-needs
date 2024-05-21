@@ -4,7 +4,14 @@ import pytest
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needs_filter_func_allow_dirty_filter"}], indirect=True
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_needs_filter_func_allow_dirty_filter",
+        }
+    ],
+    indirect=True,
 )
 def test_doc_allow_unsafe_filter_for_filter_func(test_app):
     app = test_app

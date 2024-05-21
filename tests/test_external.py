@@ -5,7 +5,11 @@ import pytest
 from syrupy.filters import props
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/external_doc"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/external_doc"}],
+    indirect=True,
+)
 def test_external_html(test_app):
     app = test_app
     app.build()
@@ -17,11 +21,16 @@ def test_external_html(test_app):
 
     assert (
         '<p>Test need ref: <a class="external_link reference external"'
-        ' href="http://my_company.com/docs/v1/index.html#TEST_01">EXT_TEST_01</a></p>' in html
+        ' href="http://my_company.com/docs/v1/index.html#TEST_01">EXT_TEST_01</a></p>'
+        in html
     )
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "needs", "srcdir": "doc_test/external_doc"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "needs", "srcdir": "doc_test/external_doc"}],
+    indirect=True,
+)
 def test_external_json(test_app, snapshot):
     app = test_app
     app.build()
@@ -30,7 +39,11 @@ def test_external_json(test_app, snapshot):
     assert needs == snapshot(exclude=props("created"))
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "needs", "srcdir": "doc_test/external_doc"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "needs", "srcdir": "doc_test/external_doc"}],
+    indirect=True,
+)
 def test_external_needs_warnings(test_app):
     import os
     import subprocess
@@ -40,8 +53,11 @@ def test_external_needs_warnings(test_app):
     srcdir = Path(app.srcdir)
     out_dir = os.path.join(srcdir, "_build")
 
-    out = subprocess.run(["sphinx-build", "-b", "html", srcdir, out_dir], capture_output=True)
+    out = subprocess.run(
+        ["sphinx-build", "-b", "html", srcdir, out_dir], capture_output=True
+    )
     assert (
         "WARNING: Couldn't create need EXT_TEST_03. Reason: The need-type (i.e. `ask`) is not"
-        " set in the project's 'need_types' configuration in conf.py." in out.stderr.decode("utf-8")
+        " set in the project's 'need_types' configuration in conf.py."
+        in out.stderr.decode("utf-8")
     )

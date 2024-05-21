@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import os
 import re
 from datetime import datetime
-from typing import List, Sequence
+from typing import Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -20,7 +22,10 @@ from sphinx_needs.diagrams_common import (
     get_filter_para,
     no_plantuml,
 )
-from sphinx_needs.directives.utils import SphinxNeedsLinkTypeException
+from sphinx_needs.directives.utils import (
+    SphinxNeedsLinkTypeException,
+    no_needs_found_paragraph,
+)
 from sphinx_needs.filter_common import FilterBase, filter_single_need, process_filters
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import MONTH_NAMES, add_doc, remove_node_from_tree
@@ -73,8 +78,8 @@ class NeedganttDirective(FilterBase, DiagramBase):
                 # datetime.fromisoformat(start_date) # > py3.7 only
             except Exception:
                 raise NeedGanttException(
-                    "Given start date {} is not valid. Please use YYYY-MM-DD as format. "
-                    "E.g. 2020-03-27".format(start_date)
+                    f"Given start date {start_date} is not valid. Please use YYYY-MM-DD as format. "
+                    "E.g. 2020-03-27"
                 )
         else:
             start_date = None  # If None we do not set a start date later
@@ -83,15 +88,21 @@ class NeedganttDirective(FilterBase, DiagramBase):
         timeline_options = ["daily", "weekly", "monthly"]
         if timeline and timeline not in timeline_options:
             raise NeedGanttException(
-                "Given scale value {} is invalid. Please use: " "{}".format(timeline, ",".join(timeline_options))
+                "Given scale value {} is invalid. Please use: " "{}".format(
+                    timeline, ",".join(timeline_options)
+                )
             )
         else:
             timeline = None  # Timeline/scale not set later
 
         no_color = "no_color" in self.options
 
-        duration_option = self.options.get("duration_option", needs_config.duration_option)
-        completion_option = self.options.get("completion_option", needs_config.completion_option)
+        duration_option = self.options.get(
+            "duration_option", needs_config.duration_option
+        )
+        completion_option = self.options.get(
+            "completion_option", needs_config.completion_option
+        )
 
         # Add the needgantt and all needed information
         SphinxNeedsData(env).get_or_create_gantts()[targetid] = {
@@ -113,10 +124,15 @@ class NeedganttDirective(FilterBase, DiagramBase):
 
         add_doc(env, env.docname)
 
-        return [targetnode] + [Needgantt("")]
+        gantt_node = Needgantt("")
+        self.set_source_info(gantt_node)
 
-    def get_link_type_option(self, name: str, default: str = "") -> List[str]:
-        link_types = [x.strip() for x in re.split(";|,", self.options.get(name, default))]
+        return [targetnode, gantt_node]
+
+    def get_link_type_option(self, name: str, default: str = "") -> list[str]:
+        link_types = [
+            x.strip() for x in re.split(";|,", self.options.get(name, default))
+        ]
         conf_link_types = NeedsSphinxConfig(self.env.config).extra_links
         conf_link_types_name = [x["option"] for x in conf_link_types]
 
@@ -126,14 +142,20 @@ class NeedganttDirective(FilterBase, DiagramBase):
                 continue
             if link_type not in conf_link_types_name:
                 raise SphinxNeedsLinkTypeException(
-                    link_type + "does not exist in configuration option needs_extra_links"
+                    link_type
+                    + "does not exist in configuration option needs_extra_links"
                 )
 
             final_link_types.append(link_type)
         return final_link_types
 
 
-def process_needgantt(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
+def process_needgantt(
+    app: Sphinx,
+    doctree: nodes.document,
+    fromdocname: str,
+    found_nodes: list[nodes.Element],
+) -> None:
     # Replace all needgantt nodes with a list of the collected needs.
     env = app.env
     needs_config = NeedsSphinxConfig(app.config)
@@ -191,7 +213,9 @@ def process_needgantt(app: Sphinx, doctree: nodes.document, fromdocname: str, fo
             except Exception:
                 raise NeedGanttException(
                     'start_date "{}"for needgantt is invalid. '
-                    'File: {}:current_needgantt["lineno"]'.format(start_date_string, current_needgantt["docname"])
+                    'File: {}:current_needgantt["lineno"]'.format(
+                        start_date_string, current_needgantt["docname"]
+                    )
                 )
 
             month = MONTH_NAMES[int(start_date.strftime("%m"))]
@@ -207,36 +231,55 @@ def process_needgantt(app: Sphinx, doctree: nodes.document, fromdocname: str, fo
             complete = None
 
             if current_needgantt["milestone_filter"]:
-                is_milestone = filter_single_need(need, needs_config, current_needgantt["milestone_filter"])
+                is_milestone = filter_single_need(
+                    need, needs_config, current_needgantt["milestone_filter"]
+                )
             else:
                 is_milestone = False
 
             if current_needgantt["milestone_filter"] and is_milestone:
-                gantt_element = "[{}] as [{}] lasts 0 days\n".format(need["title"], need["id"])
+                gantt_element = "[{}] as [{}] lasts 0 days\n".format(
+                    need["title"], need["id"]
+                )
             else:  # Normal gantt element handling
                 duration_option = current_needgantt["duration_option"]
                 duration = need[duration_option]  # type: ignore[literal-required]
                 complete_option = current_needgantt["completion_option"]
                 complete = need[complete_option]  # type: ignore[literal-required]
                 if not (duration and duration.isdigit()):
+                    need_location = (
+                        f" (located: {need['docname']}:{need['lineno']})"
+                        if need["docname"]
+                        else ""
+                    )
                     logger.warning(
                         "Duration not set or invalid for needgantt chart. "
-                        "Need: {}. Duration: {} [needs]".format(need["id"], duration),
+                        f"Need: {need['id']!r}{need_location}. Duration: {duration!r} [needs.gantt]",
                         type="needs",
+                        subtype="gantt",
+                        location=node,
                     )
                     duration = 1
-                gantt_element = "[{}] as [{}] lasts {} days\n".format(need["title"], need["id"], duration)
+                gantt_element = "[{}] as [{}] lasts {} days\n".format(
+                    need["title"], need["id"], duration
+                )
 
             if complete:
                 complete = complete.replace("%", "")
-                el_completion_string += "[{}] is {}% completed\n".format(need["title"], complete)
+                el_completion_string += "[{}] is {}% completed\n".format(
+                    need["title"], complete
+                )
 
-            el_color_string += "[{}] is colored in {}\n".format(need["title"], need["type_color"])
+            el_color_string += "[{}] is colored in {}\n".format(
+                need["title"], need["type_color"]
+            )
 
             puml_node["uml"] += gantt_element
 
         puml_node["uml"] += "\n' Element links definition \n\n"
-        puml_node["uml"] += "\n' Deactivated, as currently supported by plantuml beta only"
+        puml_node["uml"] += (
+            "\n' Deactivated, as currently supported by plantuml beta only"
+        )
 
         puml_node["uml"] += "\n' Element completion definition \n\n"
         puml_node["uml"] += el_completion_string + "\n"
@@ -252,10 +295,16 @@ def process_needgantt(app: Sphinx, doctree: nodes.document, fromdocname: str, fo
         puml_node["uml"] += "\n' Constraints definition \n\n"
         for need in found_needs:
             if current_needgantt["milestone_filter"]:
-                is_milestone = filter_single_need(need, needs_config, current_needgantt["milestone_filter"])
+                is_milestone = filter_single_need(
+                    need, needs_config, current_needgantt["milestone_filter"]
+                )
             else:
                 is_milestone = False
-            for con_type in ("starts_with_links", "starts_after_links", "ends_with_links"):
+            for con_type in (
+                "starts_with_links",
+                "starts_after_links",
+                "ends_with_links",
+            ):
                 if is_milestone:
                     keyword = "happens"
                 elif con_type in ["starts_with_links", "starts_after_links"]:
@@ -283,7 +332,9 @@ def process_needgantt(app: Sphinx, doctree: nodes.document, fromdocname: str, fo
 
         puml_node["uml"] += "\n@endgantt"
         puml_node["incdir"] = os.path.dirname(current_needgantt["docname"])
-        puml_node["filename"] = os.path.split(current_needgantt["docname"])[1]  # Needed for plantuml >= 0.9
+        puml_node["filename"] = os.path.split(current_needgantt["docname"])[
+            1
+        ]  # Needed for plantuml >= 0.9
 
         scale = int(current_needgantt["scale"])
         # if scale != 100:
@@ -306,18 +357,20 @@ def process_needgantt(app: Sphinx, doctree: nodes.document, fromdocname: str, fo
             gen_flow_link = generate_name(app, puml_node.children[0], file_ext)
             current_file_parts = fromdocname.split("/")
             subfolder_amount = len(current_file_parts) - 1
-            img_location = "../" * subfolder_amount + "_images/" + gen_flow_link[0].split("/")[-1]
-            flow_ref = nodes.reference("t", current_needgantt["caption"], refuri=img_location)
+            img_location = (
+                "../" * subfolder_amount + "_images/" + gen_flow_link[0].split("/")[-1]
+            )
+            flow_ref = nodes.reference(
+                "t", current_needgantt["caption"], refuri=img_location
+            )
             puml_node += nodes.caption("", "", flow_ref)
 
         content.append(puml_node)
 
-        if len(content) == 0:
-            nothing_found = "No needs passed the filters"
-            para = nodes.paragraph()
-            nothing_found_node = nodes.Text(nothing_found)
-            para += nothing_found_node
-            content.append(para)
+        if len(found_needs) == 0:
+            content = [
+                no_needs_found_paragraph(current_needgantt.get("filter_warning"))
+            ]
         if current_needgantt["show_filters"]:
             content.append(get_filter_para(current_needgantt))
 

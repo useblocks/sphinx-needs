@@ -4,7 +4,7 @@ Provide the role ``need_count``, which output is the amount of needs found by a 
 Based on https://github.com/useblocks/sphinxcontrib-needs/issues/37
 """
 
-from typing import List
+from __future__ import annotations
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -18,12 +18,15 @@ from sphinx_needs.logging import get_logger
 log = get_logger(__name__)
 
 
-class NeedCount(nodes.Inline, nodes.Element):  # type: ignore
+class NeedCount(nodes.Inline, nodes.Element):
     pass
 
 
 def process_need_count(
-    app: Sphinx, doctree: nodes.document, _fromdocname: str, found_nodes: List[nodes.Element]
+    app: Sphinx,
+    doctree: nodes.document,
+    _fromdocname: str,
+    found_nodes: list[nodes.Element],
 ) -> None:
     needs_config = NeedsSphinxConfig(app.config)
     for node_need_count in found_nodes:
@@ -34,11 +37,28 @@ def process_need_count(
             filters = filter.split(" ? ")
             if len(filters) == 1:
                 need_list = prepare_need_list(all_needs)  # adds parts to need_list
-                amount = str(len(filter_needs(need_list, needs_config, filters[0])))
+                amount = str(
+                    len(
+                        filter_needs(
+                            need_list,
+                            needs_config,
+                            filters[0],
+                            location=node_need_count,
+                        )
+                    )
+                )
             elif len(filters) == 2:
                 need_list = prepare_need_list(all_needs)  # adds parts to need_list
-                amount_1 = len(filter_needs(need_list, needs_config, filters[0]))
-                amount_2 = len(filter_needs(need_list, needs_config, filters[1]))
+                amount_1 = len(
+                    filter_needs(
+                        need_list, needs_config, filters[0], location=node_need_count
+                    )
+                )
+                amount_2 = len(
+                    filter_needs(
+                        need_list, needs_config, filters[1], location=node_need_count
+                    )
+                )
                 amount = f"{amount_1 / amount_2 * 100:2.1f}"
             elif len(filters) > 2:
                 raise NeedsInvalidFilter(

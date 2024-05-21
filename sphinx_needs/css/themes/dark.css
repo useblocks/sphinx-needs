@@ -1,0 +1,135 @@
+/* Colors based on https://flatuicolors.com/palette/se*/
+
+:root {
+    --sn-color-bg-gray: #333;
+    --sn-color-bg-lightgray: rgba(255,255,255,0.1);
+    --sn-color-bg-green: #04723c;
+    --sn-color-bg-red: #81201b;
+    --sn-color-bg-yellow: #a97c32;
+    --sn-color-bg-blue: #096285;
+
+    --sn-color-border-lightgray: rgba(255,255,255,0.2);
+    --sn-color-border-green: #04723c;
+    --sn-color-border-red: #81201b;
+    --sn-color-border-yellow: #a97c32;
+    --sn-color-border-blue: #096285;
+
+    --sn-color-bar-green: #05c46b;
+    --sn-color-bar-red: #ff3f34;
+    --sn-color-bar-yellow: #ffc048;
+    --sn-color-bar-orange: #e67e22;
+    --sn-color-bar-blue: #0fbcf9;
+
+    --sn-color-need-border: #888;
+    --sn-color-need-bg: #333;
+    --sn-color-need-bg-head: rgba(0,0,0,0.1);
+
+    --sn-color-complete-bg-head: rgba(0,0,0,0.1);
+    --sn-color-complete-bg-foot: rgba(0,0,0,0.1);
+
+    --sn-color-forbidden-dead-link: #dc3545;
+}
+
+
+/* DataTable layout*/
+/* TODO this should not be part of the theme */
+.dataTables_wrapper .dataTables_paginate .paginate_button.current, 
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    color: inherit !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    color: inherit !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    border: none;
+    background: inherit;
+}
+
+.dataTables_wrapper .dataTables_length, 
+.dataTables_wrapper .dataTables_filter, 
+.dataTables_wrapper .dataTables_info, 
+.dataTables_wrapper .dataTables_processing, 
+.dataTables_wrapper .dataTables_paginate {
+    color: inherit;
+}
+
+table.dataTable tbody tr {
+    background-color: inherit;
+}
+
+div.dataTables_length select {
+    color: inherit;
+    border: none;
+}
+
+div.dataTables_length select option {
+    background: #333;
+    color: inherit;
+    border: none;
+}
+
+div.dataTables_filter input {
+    background: inherit;
+    color: inherit;
+    border: 1px solid #666;
+}
+
+div.dataTables_filter input:focus {
+    outline: none;
+}
+
+table.dataTable thead th, table.dataTable thead td {
+    border-bottom: inherit;
+}
+
+/*DataTables Download Buttons*/
+
+button.dt-button:hover:not(.disabled), 
+div.dt-button:hover:not(.disabled), 
+a.dt-button:hover:not(.disabled) {
+    background-color: inherit;
+    background-image: none;
+    border: inherit;
+}
+
+/*DataTables Column visibility Select list*/
+div.dt-button-collection {
+    background-color: #333;
+}
+
+/* Button active*/
+div.dt-button-collection button.dt-button:active:not(.disabled), 
+div.dt-button-collection button.dt-button.active:not(.disabled), 
+div.dt-button-collection div.dt-button:active:not(.disabled), 
+div.dt-button-collection div.dt-button.active:not(.disabled), 
+div.dt-button-collection a.dt-button:active:not(.disabled), 
+div.dt-button-collection a.dt-button.active:not(.disabled) {
+    background: #444 none;
+    box-shadow: none;
+}
+
+/* Button active hover*/
+button.dt-button:hover:not(.disabled), 
+div.dt-button:hover:not(.disabled), 
+a.dt-button:hover:not(.disabled) {
+    background: #333 none;
+    box-shadow: none;
+}
+
+/* Button deactivated hover*/
+button.dt-button:active:not(.disabled):hover:not(.disabled), 
+button.dt-button.active:not(.disabled):hover:not(.disabled), 
+div.dt-button:active:not(.disabled):hover:not(.disabled), 
+div.dt-button.active:not(.disabled):hover:not(.disabled), 
+a.dt-button:active:not(.disabled):hover:not(.disabled), 
+a.dt-button.active:not(.disabled):hover:not(.disabled) {
+    background: #555 none;
+    box-shadow: none;
+}
+
+/* DataTablesScrollWrapper*/
+div.DTS div.dataTables_scrollBody {
+    background: inherit;
+}

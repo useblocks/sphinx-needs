@@ -155,17 +155,6 @@ And use it like:
       :tags: important;complex;
       :impacts: really everything
 
-Default value:
-
-.. code-block:: python
-
-   {'hidden': directives.unchanged}
-
-The ``hidden`` option is a globally available option always hidden and used to easily execute :ref:`dynamic_functions`.
-
-Extra options automatically appear in needs, if a value is set.
-By using :ref:`needs_hide_options` the output of such options can be hidden.
-
 .. note:: To filter on these options in `needlist`, `needtable`, etc. you
           must use the :ref:`filter` option.
 
@@ -176,12 +165,7 @@ By using :ref:`needs_hide_options` the output of such options can be hidden.
 
    .. code-block:: python
 
-      from docutils.parsers.rst import directives
-
-      needs_extra_options = {
-         "my_extra_option": directives.unchanged,
-         "another_option": directives.unchanged,
-         }
+      needs_extra_options = ["my_extra_option",  "another_option"]
 
    **index.rst**
 
@@ -294,7 +278,13 @@ In this cases, you can provide a list of tuples.
 needs_report_dead_links
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Deactivate/activate log messages of outgoing dead links. If set to ``False``, then deactivate.
+.. deprecated:: 2.1.0
+
+    Instead add ``needs.link_outgoing`` to the `suppress_warnings <https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-suppress_warnings>`__ list::
+
+        suppress_warnings = ["needs.link_outgoing"]
+
+Deactivate/activate log messages of disallowed outgoing dead links. If set to ``False``, then deactivate.
 
 Default value is ``True``.
 
@@ -661,8 +651,6 @@ If you do not set ``needs_report_template``, the default template used is:
 
 .. code-block:: jinja
 
-   {% raw -%}
-
    {# Output for needs_types #}
    {% if types|length != 0 %}
    .. dropdown:: Need Types
@@ -739,7 +727,7 @@ If you do not set ``needs_report_template``, the default template used is:
    {% endif %}
    {# Output for needs metrics #}
 
-   {% endraw %}
+   
 
 The plugin provides the following variables which you can use in your custom Jinja template:
 
@@ -770,13 +758,12 @@ By default the following template is used:
 
 .. code-block:: jinja
 
-    {% raw -%}
     {%- if is_need -%}
     <size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>
     {%- else -%}
     <size:12>{{type_name}} (part)</size>\\n**{{content|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id_parent}}.**{{id}}**</size>
     {%- endif -%}
-    {% endraw %}
+    
 
 
 .. _needs_id_required:
@@ -1550,7 +1537,7 @@ Default: ``False``.
     needs_service_all_data = True
 
 
-{% raw %}
+
 
 .. _needs_external_needs:
 
@@ -1626,7 +1613,7 @@ keys:
             The related CSS class definition must be done by the user, e.g. by :ref:`own_css`.
             (*optional*) (*default*: ``external_link``)
 
-{% endraw %}
+
 
 .. _needs_needextend_strict:
 
@@ -1650,27 +1637,8 @@ This may be needed to avoid custom table handling of some specific Sphinx theme 
 
    needs_table_classes = ['my_custom_class', 'another_class']
 
-Default: ``['rtd-exclude-wy-table', 'no-sphinx-material-strip']``
-
-This classes are not set for needtables using the ``table`` style, which is using the normal Sphinx table layout
+These classes are not set for needtables using the ``table`` style, which is using the normal Sphinx table layout
 and therefore must be handled by themes.
-
-The following themes support the following table classes to deactivate their specific handling:
-
-.. list-table::
-
-   - * Theme
-     * Class
-   - * ReadTheDocs
-     * ``rtd-exclude-wy-table``
-   - * Sphinx-Material
-     * ``no-sphinx-material-strip``
-
-.. hint::
-
-   The deactivation of theme specific table handling is quite a new feature in most themes.
-   Please be sure to use the newest theme version or even the nightly build.
-
 
 .. _needs_builder_filter:
 
@@ -1718,7 +1686,7 @@ All named capture group values get injected, so that parts of the option-value c
 link name and url.
 
 **Example**:
-{% raw %}
+
 
 .. code-block:: python
 
@@ -1740,7 +1708,7 @@ link name and url.
             'options': ['github']
         }
     }
-{% endraw %}
+
 
 |ex|
 
@@ -1955,7 +1923,7 @@ constraints_results is a dictionary similar in structure to needs_constraints ab
             "critical": {
                 "check_0": "'critical' in tags",
                 "severity": "CRITICAL",
-                "error_message": "need {% raw %}{{id}}{% endraw %} does not fulfill CRITICAL constraint, because tags are {% raw %}{{tags}}{% endraw %}"
+                "error_message": "need {{id}} does not fulfill CRITICAL constraint, because tags are {{tags}}"
             }
         
         }
@@ -2137,8 +2105,6 @@ You can use the data passed via needs_render_context as shown below:
 
 .. code-block:: jinja
 
-    {% raw -%}
-
     .. req:: Need with jinja_content enabled
        :id: JINJA1D8913
        :jinja_content: true
@@ -2153,9 +2119,7 @@ You can use the data passed via needs_render_context as shown below:
             + author[1]
        {% endfor %}
 
-    {% endraw %}
-
-{% raw -%}
+    
 
 .. req:: Need with jinja_content enabled
    :id: JINJA1D8913
@@ -2168,7 +2132,7 @@ You can use the data passed via needs_render_context as shown below:
    * {{ author[0] }} --> ID-{{ author[1] }}
    {% endfor %}
 
-{% endraw %}
+
 
 
 .. _needs_debug_measurement:
@@ -2205,8 +2169,6 @@ If nothing is set, the following default template is used:
 
 .. code-block:: jinja
 
-   {% raw -%}
-
    .. _{{id}}:
 
    {% if hide == false -%}
@@ -2223,10 +2185,10 @@ If nothing is set, the following default template is used:
       :class: need
 
        :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
-           {%- if status and  status|upper != "NONE" and not hide_status %}
+           {%- if status and  status|upper != "NONE" %}
            | status: :needs_status:`{{status}}`
            {%- endif -%}
-           {%- if tags and not hide_tags %}
+           {%- if tags %}
            | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`
            {%- endif %}
            | links incoming: :need_incoming:`{{id}}`
@@ -2236,7 +2198,7 @@ If nothing is set, the following default template is used:
 
    {% endif -%}
 
-   {% endraw %}
+   
 
 Available jinja variables are:
 
@@ -2254,7 +2216,7 @@ Available jinja variables are:
 
 .. warning::
 
-   You must add a reference like `.. _{{ '{{id}}' }}:` to the template. Otherwise linking will not work!
+   You must add a reference like `.. _{{id}}:` to the template. Otherwise linking will not work!
 
 .. _needs_template_collapse:
 
@@ -2267,8 +2229,6 @@ Defines a template used for a need with active option **collapse**.
 Default value:
 
 .. code-block:: jinja
-
-    {% raw -%}
 
     .. _{{id}}:
 
@@ -2286,10 +2246,10 @@ Default value:
 
                :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
                :needs_type:`{{type_name}}`: :needs_title:`{{title}}` :needs_id:`{{id}}`
-           {%- if status and  status|upper != "NONE" and not hide_status %}
+           {%- if status and  status|upper != "NONE" %}
            | status: :needs_status:`{{status}}`
            {%- endif -%}
-           {%- if tags and not hide_tags %}
+           {%- if tags %}
            | tags: :needs_tag:`{{tags|join("` :needs_tag:`")}}`
            {%- endif %}
            | links incoming: :need_incoming:`{{id}}`
@@ -2298,7 +2258,7 @@ Default value:
        {{content|indent(4) }}
 
    {% endif -%}
-   {% endraw %}
+   
 
 For more details please see :ref:`needs_template`.
 

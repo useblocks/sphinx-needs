@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import html
 import os
-from typing import Dict, Iterable, List, Sequence
+from typing import Iterable, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -14,11 +16,11 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import (
     NeedsFlowType,
     NeedsInfoType,
-    NeedsPartsInfoType,
     SphinxNeedsData,
 )
 from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link, create_legend
+from sphinx_needs.directives.utils import no_needs_found_paragraph
 from sphinx_needs.filter_common import FilterBase, filter_single_need, process_filters
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import (
@@ -31,7 +33,7 @@ from sphinx_needs.utils import (
 logger = get_logger(__name__)
 
 
-NEEDFLOW_TEMPLATES: Dict[str, Template] = {}
+NEEDFLOW_TEMPLATES: dict[str, Template] = {}
 
 
 class Needflow(nodes.General, nodes.Element):
@@ -71,7 +73,9 @@ class NeedflowDirective(FilterBase):
         targetnode = nodes.target("", "", ids=[targetid])
 
         all_link_types = ",".join(x["option"] for x in needs_config.extra_links)
-        link_types = split_link_types(self.options.get("link_types", all_link_types), location)
+        link_types = split_link_types(
+            self.options.get("link_types", all_link_types), location
+        )
 
         config_names = self.options.get("config")
         configs = []
@@ -120,7 +124,7 @@ def get_need_node_rep_for_plantuml(
     fromdocname: str,
     current_needflow: NeedsFlowType,
     all_needs: Iterable[NeedsInfoType],
-    need_info: NeedsPartsInfoType,
+    need_info: NeedsInfoType,
 ) -> str:
     """Calculate need node representation for plantuml."""
     needs_config = NeedsSphinxConfig(app.config)
@@ -162,8 +166,8 @@ def walk_curr_need_tree(
     fromdocname: str,
     current_needflow: NeedsFlowType,
     all_needs: Iterable[NeedsInfoType],
-    found_needs: List[NeedsPartsInfoType],
-    need: NeedsPartsInfoType,
+    found_needs: list[NeedsInfoType],
+    need: NeedsInfoType,
 ) -> str:
     """
     Walk through each need to find all its child needs and need parts recursively and wrap them together in nested structure.
@@ -217,7 +221,12 @@ def walk_curr_need_tree(
                     # check curr need child has children or has parts
                     if curr_child_need["parent_needs_back"] or curr_child_need["parts"]:
                         curr_need_tree += walk_curr_need_tree(
-                            app, fromdocname, current_needflow, all_needs, found_needs, curr_child_need
+                            app,
+                            fromdocname,
+                            current_needflow,
+                            all_needs,
+                            found_needs,
+                            curr_child_need,
                         )
                     # add newline for next element
                     curr_need_tree += "\n"
@@ -229,7 +238,7 @@ def walk_curr_need_tree(
     return curr_need_tree
 
 
-def get_root_needs(found_needs: List[NeedsPartsInfoType]) -> List[NeedsPartsInfoType]:
+def get_root_needs(found_needs: list[NeedsInfoType]) -> list[NeedsInfoType]:
     return_list = []
     for current_need in found_needs:
         if current_need["is_need"]:
@@ -252,13 +261,15 @@ def cal_needs_node(
     fromdocname: str,
     current_needflow: NeedsFlowType,
     all_needs: Iterable[NeedsInfoType],
-    found_needs: List[NeedsPartsInfoType],
+    found_needs: list[NeedsInfoType],
 ) -> str:
     """Calculate and get needs node representaion for plantuml including all child needs and need parts."""
     top_needs = get_root_needs(found_needs)
     curr_need_tree = ""
     for top_need in top_needs:
-        top_need_node = get_need_node_rep_for_plantuml(app, fromdocname, current_needflow, all_needs, top_need)
+        top_need_node = get_need_node_rep_for_plantuml(
+            app, fromdocname, current_needflow, all_needs, top_need
+        )
         curr_need_tree += (
             top_need_node
             + walk_curr_need_tree(
@@ -275,7 +286,12 @@ def cal_needs_node(
 
 
 @measure_time("needflow")
-def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
+def process_needflow(
+    app: Sphinx,
+    doctree: nodes.document,
+    fromdocname: str,
+    found_nodes: list[nodes.Element],
+) -> None:
     # Replace all needflow nodes with a list of the collected needs.
     # Augment each need with a backlink to the original location.
     env = app.env
@@ -302,24 +318,27 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
             if lt not in link_type_names:
                 logger.warning(
                     "Unknown link type {link_type} in needflow {flow}. Allowed values: {link_types} [needs]".format(
-                        link_type=lt, flow=current_needflow["target_id"], link_types=",".join(link_type_names)
+                        link_type=lt,
+                        flow=current_needflow["target_id"],
+                        link_types=",".join(link_type_names),
                     ),
                     type="needs",
                 )
 
-        content = []
         try:
             if "sphinxcontrib.plantuml" not in app.config.extensions:
                 raise ImportError
             from sphinxcontrib.plantuml import plantuml
         except ImportError:
-            content = nodes.error()
+            error_node = nodes.error()
             para = nodes.paragraph()
             text = nodes.Text("PlantUML is not available!")
             para += text
-            content.append(para)
-            node.replace_self(content)
+            error_node.append(para)
+            node.replace_self(error_node)
             continue
+
+        content: list[nodes.Element] = []
 
         found_needs = process_filters(app, all_needs.values(), current_needflow)
 
@@ -338,7 +357,9 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
             config = current_needflow["config"]
             if config and len(config) >= 3:
                 # Remove all empty lines
-                config = "\n".join([line.strip() for line in config.split("\n") if line.strip()])
+                config = "\n".join(
+                    [line.strip() for line in config.split("\n") if line.strip()]
+                )
                 puml_node["uml"] += "\n' Config\n\n"
                 puml_node["uml"] += config
                 puml_node["uml"] += "\n\n"
@@ -349,9 +370,13 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                 for link_type in link_types:
                     # Skip link-type handling, if it is not part of a specified list of allowed link_types or
                     # if not part of the overall configuration of needs_flow_link_types
-                    if (current_needflow["link_types"] and link_type["option"].upper() not in option_link_types) or (
+                    if (
+                        current_needflow["link_types"]
+                        and link_type["option"].upper() not in option_link_types
+                    ) or (
                         not current_needflow["link_types"]
-                        and link_type["option"].upper() not in allowed_link_types_options
+                        and link_type["option"].upper()
+                        not in allowed_link_types_options
                     ):
                         continue
 
@@ -363,41 +388,49 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                         # If source or target of link is a need_part, a specific style is needed
                         if "." in link or "." in need_info["id_complete"]:
                             final_link = link
-                            if current_needflow["show_link_names"] or needs_config.flow_show_links:
+                            if (
+                                current_needflow["show_link_names"]
+                                or needs_config.flow_show_links
+                            ):
                                 desc = link_type["outgoing"] + "\\n"
                                 comment = f": {desc}"
                             else:
                                 comment = ""
 
-                            if "style_part" in link_type and link_type["style_part"]:
-                                link_style = "[{style}]".format(style=link_type["style_part"])
+                            if _style_part := link_type.get("style_part"):
+                                link_style = f"[{_style_part}]"
                             else:
                                 link_style = "[dotted]"
                         else:
                             final_link = link
-                            if current_needflow["show_link_names"] or needs_config.flow_show_links:
+                            if (
+                                current_needflow["show_link_names"]
+                                or needs_config.flow_show_links
+                            ):
                                 comment = ": {desc}".format(desc=link_type["outgoing"])
                             else:
                                 comment = ""
 
-                            if "style" in link_type and link_type["style"]:
-                                link_style = "[{style}]".format(style=link_type["style"])
+                            if _style := link_type.get("style"):
+                                link_style = f"[{_style}]"
                             else:
                                 link_style = ""
 
                         # Do not create an links, if the link target is not part of the search result.
-                        if final_link not in [x["id"] for x in found_needs if x["is_need"]] and final_link not in [
+                        if final_link not in [
+                            x["id"] for x in found_needs if x["is_need"]
+                        ] and final_link not in [
                             x["id_complete"] for x in found_needs if x["is_part"]
                         ]:
                             continue
 
-                        if "style_start" in link_type and link_type["style_start"]:
-                            style_start = link_type["style_start"]
+                        if _style_start := link_type.get("style_start"):
+                            style_start = _style_start
                         else:
                             style_start = "-"
 
-                        if "style_end" in link_type and link_type["style_end"]:
-                            style_end = link_type["style_end"]
+                        if _style_end := link_type.get("style_end"):
+                            style_end = _style_end
                         else:
                             style_end = "->"
 
@@ -411,7 +444,9 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                         )
 
             # calculate needs node representation for plantuml
-            puml_node["uml"] += cal_needs_node(app, fromdocname, current_needflow, all_needs.values(), found_needs)
+            puml_node["uml"] += cal_needs_node(
+                app, fromdocname, current_needflow, all_needs.values(), found_needs
+            )
 
             puml_node["uml"] += "\n' Connection definition \n\n"
             puml_node["uml"] += puml_connections
@@ -422,7 +457,9 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
 
             puml_node["uml"] += "\n@enduml"
             puml_node["incdir"] = os.path.dirname(current_needflow["docname"])
-            puml_node["filename"] = os.path.split(current_needflow["docname"])[1]  # Needed for plantuml >= 0.9
+            puml_node["filename"] = os.path.split(current_needflow["docname"])[
+                1
+            ]  # Needed for plantuml >= 0.9
 
             scale = int(current_needflow["scale"])
             # if scale != 100:
@@ -448,8 +485,14 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
                 gen_flow_link = generate_name(app, puml_node.children[0], file_ext)
                 current_file_parts = fromdocname.split("/")
                 subfolder_amount = len(current_file_parts) - 1
-                img_locaton = "../" * subfolder_amount + "_images/" + gen_flow_link[0].split("/")[-1]
-                flow_ref = nodes.reference("t", current_needflow["caption"], refuri=img_locaton)
+                img_locaton = (
+                    "../" * subfolder_amount
+                    + "_images/"
+                    + gen_flow_link[0].split("/")[-1]
+                )
+                flow_ref = nodes.reference(
+                    "t", current_needflow["caption"], refuri=img_locaton
+                )
                 puml_node += nodes.caption("", "", flow_ref)
 
             # Add lineno to node
@@ -457,29 +500,36 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
 
             content.append(puml_node)
         else:  # no needs found
-            nothing_found = "No needs passed the filters"
-            para = nodes.paragraph()
-            nothing_found_node = nodes.Text(nothing_found)
-            para += nothing_found_node
-            content.append(para)
+            content.append(
+                no_needs_found_paragraph(current_needflow.get("filter_warning"))
+            )
 
         if current_needflow["show_filters"]:
             para = nodes.paragraph()
             filter_text = "Used filter:"
             filter_text += (
-                " status(%s)" % " OR ".join(current_needflow["status"]) if len(current_needflow["status"]) > 0 else ""
+                " status({})".format(" OR ".join(current_needflow["status"]))
+                if len(current_needflow["status"]) > 0
+                else ""
             )
-            if len(current_needflow["status"]) > 0 and len(current_needflow["tags"]) > 0:
+            if (
+                len(current_needflow["status"]) > 0
+                and len(current_needflow["tags"]) > 0
+            ):
                 filter_text += " AND "
             filter_text += (
-                " tags(%s)" % " OR ".join(current_needflow["tags"]) if len(current_needflow["tags"]) > 0 else ""
+                " tags({})".format(" OR ".join(current_needflow["tags"]))
+                if len(current_needflow["tags"]) > 0
+                else ""
             )
-            if (len(current_needflow["status"]) > 0 or len(current_needflow["tags"]) > 0) and len(
-                current_needflow["types"]
-            ) > 0:
+            if (
+                len(current_needflow["status"]) > 0 or len(current_needflow["tags"]) > 0
+            ) and len(current_needflow["types"]) > 0:
                 filter_text += " AND "
             filter_text += (
-                " types(%s)" % " OR ".join(current_needflow["types"]) if len(current_needflow["types"]) > 0 else ""
+                " types({})".format(" OR ".join(current_needflow["types"]))
+                if len(current_needflow["types"]) > 0
+                else ""
             )
 
             filter_node = nodes.emphasis(filter_text, filter_text)
@@ -493,13 +543,13 @@ def process_needflow(app: Sphinx, doctree: nodes.document, fromdocname: str, fou
             # Otherwise it was not been set, or we get outdated data
             debug_container = nodes.container()
             if isinstance(puml_node, nodes.figure):
-                data = puml_node.children[0]["uml"]
+                data = puml_node.children[0]["uml"]  # type: ignore
             else:
                 data = puml_node["uml"]
             data = "\n".join([html.escape(line) for line in data.split("\n")])
             debug_para = nodes.raw("", f"<pre>{data}</pre>", format="html")
             debug_container += debug_para
-            content += debug_container
+            content.append(debug_container)
 
         node.replace_self(content)
 

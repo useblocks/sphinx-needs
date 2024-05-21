@@ -3,7 +3,11 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needarch"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needarch"}],
+    indirect=True,
+)
 def test_doc_needarch(test_app):
     app = test_app
     app.build()
@@ -12,7 +16,9 @@ def test_doc_needarch(test_app):
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needarch_negative_tests"}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needarch_negative_tests"}],
+    indirect=True,
 )
 def test_doc_needarch_negative(test_app):
     import subprocess
@@ -22,7 +28,9 @@ def test_doc_needarch_negative(test_app):
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"
 
-    out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
+    out = subprocess.run(
+        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+    )
 
     assert out.returncode == 1
     assert (
@@ -32,7 +40,9 @@ def test_doc_needarch_negative(test_app):
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needarch_jinja_func_import"}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needarch_jinja_func_import"}],
+    indirect=True,
 )
 def test_doc_needarch_jinja_import(test_app, snapshot):
     app = test_app
@@ -46,7 +56,9 @@ def test_doc_needarch_jinja_import(test_app, snapshot):
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needarch_jinja_func_need"}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needarch_jinja_func_need"}],
+    indirect=True,
 )
 def test_needarch_jinja_func_need(test_app, snapshot):
     app = test_app
@@ -63,5 +75,7 @@ def test_needarch_jinja_func_need(test_app, snapshot):
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"
 
-    out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
+    out = subprocess.run(
+        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+    )
     assert out.returncode == 0

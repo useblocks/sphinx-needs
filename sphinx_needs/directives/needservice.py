@@ -1,4 +1,6 @@
-from typing import Any, Dict, List, Sequence
+from __future__ import annotations
+
+from typing import Any, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -9,9 +11,9 @@ from sphinx_data_viewer.api import get_data_viewer_node
 
 from sphinx_needs.api import add_need
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.directives.need import NeedDirective
 from sphinx_needs.logging import get_logger
-from sphinx_needs.services.base import BaseService
 from sphinx_needs.utils import add_doc
 
 
@@ -37,8 +39,8 @@ class NeedserviceDirective(SphinxDirective):
     def __init__(
         self,
         name: str,
-        arguments: List[str],
-        options: Dict[str, Any],
+        arguments: list[str],
+        options: dict[str, Any],
         content: StringList,
         lineno: int,
         content_offset: int,
@@ -46,7 +48,17 @@ class NeedserviceDirective(SphinxDirective):
         state: RSTState,
         state_machine: RSTStateMachine,
     ):
-        super().__init__(name, arguments, options, content, lineno, content_offset, block_text, state, state_machine)
+        super().__init__(
+            name,
+            arguments,
+            options,
+            content,
+            lineno,
+            content_offset,
+            block_text,
+            state,
+            state_machine,
+        )
         self.log = get_logger(__name__)
 
     def run(self) -> Sequence[nodes.Node]:
@@ -55,7 +67,7 @@ class NeedserviceDirective(SphinxDirective):
         needs_config = NeedsSphinxConfig(self.config)
         need_types = needs_config.types
         all_data = needs_config.service_all_data
-        needs_services: Dict[str, BaseService] = getattr(app, "needs_services", {})
+        needs_services = SphinxNeedsData(self.env).get_or_create_services()
 
         service_name = self.arguments[0]
         service = needs_services.get(service_name)
@@ -63,7 +75,7 @@ class NeedserviceDirective(SphinxDirective):
         section = []
 
         if "debug" not in self.options:
-            service_data = service.request(self.options)
+            service_data = service.request_from_directive(self)
             for datum in service_data:
                 options = {}
 
@@ -92,8 +104,12 @@ class NeedserviceDirective(SphinxDirective):
                 missing_options = {}
                 for element in datum.keys():
                     defined_options = list(self.__class__.option_spec.keys())
-                    defined_options.append("content")  # Add content, so that it gets not detected as missing
-                    if element not in defined_options and element not in getattr(app.config, "needs_extra_links", []):
+                    defined_options.append(
+                        "content"
+                    )  # Add content, so that it gets not detected as missing
+                    if element not in defined_options and element not in getattr(
+                        app.config, "needs_extra_links", []
+                    ):
                         missing_options[element] = datum[element]
 
                 # Finally delete not found options
@@ -110,13 +126,25 @@ class NeedserviceDirective(SphinxDirective):
                 datum.update(options)
 
                 # ToDo: Tags and Status are not set (but exist in data)
-                section += add_need(self.env.app, self.state, docname, self.lineno, need_type, need_title, **datum)
+                section += add_need(
+                    self.env.app,
+                    self.state,
+                    docname,
+                    self.lineno,
+                    need_type,
+                    need_title,
+                    **datum,
+                )
         else:
             try:
                 service_debug_data = service.debug(self.options)
             except NotImplementedError:
-                service_debug_data = {"error": f'Service {service_name} does not support "debug" output.'}
-            viewer_node = get_data_viewer_node(title="Debug data", data=service_debug_data)
+                service_debug_data = {
+                    "error": f'Service {service_name} does not support "debug" output.'
+                }
+            viewer_node = get_data_viewer_node(
+                title="Debug data", data=service_debug_data
+            )
             section.append(viewer_node)
 
         add_doc(self.env, self.env.docname)

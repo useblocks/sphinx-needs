@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import re
-from typing import Any, Callable, List, Sequence
+from typing import Any, Callable, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -17,6 +19,7 @@ from sphinx_needs.directives.utils import (
 )
 from sphinx_needs.filter_common import FilterBase, process_filters
 from sphinx_needs.functions.functions import check_and_get_content
+from sphinx_needs.roles.need_part import iter_need_parts
 from sphinx_needs.utils import add_doc, profile, remove_node_from_tree, row_col_maker
 
 
@@ -50,7 +53,9 @@ class NeedtableDirective(FilterBase):
     def run(self) -> Sequence[nodes.Node]:
         env = self.env
 
-        targetid = "needtable-{docname}-{id}".format(docname=env.docname, id=env.new_serialno("needtable"))
+        targetid = "needtable-{docname}-{id}".format(
+            docname=env.docname, id=env.new_serialno("needtable")
+        )
         targetnode = nodes.target("", "", ids=[targetid])
 
         columns_str = str(self.options.get("columns", ""))
@@ -66,7 +71,9 @@ class NeedtableDirective(FilterBase):
         colwidths = str(self.options.get("colwidths", ""))
         colwidths_list = []
         if colwidths:
-            colwidths_list = [int(width.strip()) for width in re.split(";|,", colwidths)]
+            colwidths_list = [
+                int(width.strip()) for width in re.split(";|,", colwidths)
+            ]
             if len(columns) != len(colwidths_list):
                 raise NeedsInvalidException(
                     f"Amount of elements in colwidths and columns do not match: "
@@ -113,7 +120,10 @@ class NeedtableDirective(FilterBase):
 @measure_time("needtable")
 @profile("NEEDTABLE")
 def process_needtables(
-    app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]
+    app: Sphinx,
+    doctree: nodes.document,
+    fromdocname: str,
+    found_nodes: list[nodes.Element],
 ) -> None:
     """
     Replace all needtables nodes with a table of filtered nodes.
@@ -147,7 +157,9 @@ def process_needtables(
         id = node.attributes["ids"][0]
         current_needtable = needs_data.get_or_create_tables()[id]
 
-        if current_needtable["style"] == "" or current_needtable["style"].upper() not in ["TABLE", "DATATABLES"]:
+        if current_needtable["style"] == "" or current_needtable[
+            "style"
+        ].upper() not in ["TABLE", "DATATABLES"]:
             if needs_config.table_style == "":
                 style = "DATATABLES"
             else:
@@ -197,7 +209,9 @@ def process_needtables(
 
         # Perform filtering of needs
         try:
-            filtered_needs = process_filters(app, list(all_needs.values()), current_needtable)
+            filtered_needs = process_filters(
+                app, list(all_needs.values()), current_needtable
+            )
         except Exception as e:
             raise e
 
@@ -226,8 +240,12 @@ def process_needtables(
         filtered_needs.sort(key=get_sorter(current_needtable["sort"]))
 
         for need_info in filtered_needs:
-            style_row = check_and_get_content(current_needtable["style_row"], need_info, env)
-            style_row = style_row.replace(" ", "_")  # Replace whitespaces with _ to get valid css name
+            style_row = check_and_get_content(
+                current_needtable["style_row"], need_info, env
+            )
+            style_row = style_row.replace(
+                " ", "_"
+            )  # Replace whitespaces with _ to get valid css name
 
             temp_need = need_info.copy()
             if temp_need["is_need"]:
@@ -241,12 +259,26 @@ def process_needtables(
 
             for option, _title in current_needtable["columns"]:
                 if option == "ID":
-                    row += row_col_maker(app, fromdocname, all_needs, temp_need, "id", make_ref=True, prefix=prefix)
+                    row += row_col_maker(
+                        app,
+                        fromdocname,
+                        all_needs,
+                        temp_need,
+                        "id",
+                        make_ref=True,
+                        prefix=prefix,
+                    )
                 elif option == "TITLE":
-                    row += row_col_maker(app, fromdocname, all_needs, temp_need, "title", prefix=prefix)
+                    row += row_col_maker(
+                        app, fromdocname, all_needs, temp_need, "title", prefix=prefix
+                    )
                 elif option in link_type_list:
                     link_type = link_type_list[option]
-                    if option in ["INCOMING", link_type["option"].upper() + "_BACK", link_type["incoming"].upper()]:
+                    if option in [
+                        "INCOMING",
+                        link_type["option"].upper() + "_BACK",
+                        link_type["incoming"].upper(),
+                    ]:
                         row += row_col_maker(
                             app,
                             fromdocname,
@@ -257,23 +289,22 @@ def process_needtables(
                         )
                     else:
                         row += row_col_maker(
-                            app, fromdocname, all_needs, temp_need, link_type["option"], ref_lookup=True
+                            app,
+                            fromdocname,
+                            all_needs,
+                            temp_need,
+                            link_type["option"],
+                            ref_lookup=True,
                         )
                 else:
-                    row += row_col_maker(app, fromdocname, all_needs, temp_need, option.lower())
+                    row += row_col_maker(
+                        app, fromdocname, all_needs, temp_need, option.lower()
+                    )
             tbody += row
 
             # Need part rows
             if current_needtable["show_parts"] and need_info["is_need"]:
-                for part in need_info["parts"].values():
-                    # update the part with all information from its parent
-                    # this is required to make ID links work
-                    # The dict has to be manipulated, so that row_col_maker() can be used
-                    temp_part: NeedsInfoType = {**need_info, **part.copy()}  # type: ignore[typeddict-unknown-key]
-                    temp_part["id_complete"] = f"{need_info['id']}.{temp_part['id']}"  # type: ignore[typeddict-unknown-key]
-                    temp_part["id_parent"] = need_info["id"]  # type: ignore[typeddict-unknown-key]
-                    temp_part["docname"] = need_info["docname"]
-
+                for temp_part in iter_need_parts(need_info):
                     row = nodes.row(classes=["need_part"])
 
                     for option, _title in current_needtable["columns"]:
@@ -313,27 +344,30 @@ def process_needtables(
                                 ref_lookup=True,
                             )
                         else:
-                            row += row_col_maker(app, fromdocname, all_needs, temp_part, option.lower())
+                            row += row_col_maker(
+                                app, fromdocname, all_needs, temp_part, option.lower()
+                            )
 
                     tbody += row
 
+        content: nodes.Element
         if len(filtered_needs) == 0:
-            table_node.append(no_needs_found_paragraph())
-
+            content = no_needs_found_paragraph(current_needtable.get("filter_warning"))
+        else:
+            # Put the table in a div-wrapper, so that we can control overflow / scroll layout
+            if style == "TABLE":
+                table_wrapper = nodes.container(classes=["needstable_wrapper"])
+                table_wrapper.insert(0, table_node)
+                content = table_wrapper
+            else:
+                content = table_node
         # add filter information to output
         if current_needtable["show_filters"]:
             table_node.append(used_filter_paragraph(current_needtable))
 
         if current_needtable["caption"]:
             title_text = current_needtable["caption"]
-            title = nodes.title(title_text, "", nodes.Text(title_text))
-            table_node.insert(0, title)
+            title_node = nodes.title(title_text, "", nodes.Text(title_text))
+            table_node.insert(0, title_node)
 
-        # Put the table in a div-wrapper, so that we can control overflow / scroll layout
-        if style == "TABLE":
-            table_wrapper = nodes.container(classes=["needstable_wrapper"])
-            table_wrapper.insert(0, table_node)
-            node.replace_self(table_wrapper)
-
-        else:
-            node.replace_self(table_node)
+        node.replace_self(content)

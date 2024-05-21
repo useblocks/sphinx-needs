@@ -1,9 +1,7 @@
-"""
+from __future__ import annotations
 
-
-"""
 import re
-from typing import Any, Callable, Dict, Sequence, Tuple
+from typing import Any, Callable, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -33,7 +31,7 @@ class NeedextendDirective(SphinxDirective):
     optional_arguments = 0
     final_argument_whitespace = True
 
-    option_spec: Dict[str, Callable[[str], Any]] = {
+    option_spec: dict[str, Callable[[str], Any]] = {
         "strict": directives.unchanged_required,
     }
 
@@ -46,13 +44,15 @@ class NeedextendDirective(SphinxDirective):
 
         extend_filter = self.arguments[0] if self.arguments else None
         if not extend_filter:
-            raise NeedsInvalidFilter(f"Filter of needextend must be set. See {env.docname}:{self.lineno}")
+            raise NeedsInvalidFilter(
+                f"Filter of needextend must be set. See {env.docname}:{self.lineno}"
+            )
 
-        strict_option = self.options.get("strict", str(NeedsSphinxConfig(self.env.app.config).needextend_strict))
-        strict = True
-        if strict_option.upper() == "TRUE":
+        strict = NeedsSphinxConfig(self.env.app.config).needextend_strict
+        strict_option: str = self.options.get("strict", "").upper()
+        if strict_option == "TRUE":
             strict = True
-        elif strict_option.upper() == "FALSE":
+        elif strict_option == "FALSE":
             strict = False
 
         data = SphinxNeedsData(env).get_or_create_extends()
@@ -74,7 +74,7 @@ RE_ID_FUNC = re.compile(r"\s*((?P<function>\[\[[^\]]*\]\])|(?P<id>[^;,]+))\s*([;
 """Regex to find IDs or functions, delimited by one of `;|,`."""
 
 
-def _split_value(value: str) -> Sequence[Tuple[str, bool]]:
+def _split_value(value: str) -> Sequence[tuple[str, bool]]:
     """Split a string into a list of values.
 
     The string is split on `;`/`,` and whitespace is removed from the start and end of each value.
@@ -85,14 +85,18 @@ def _split_value(value: str) -> Sequence[Tuple[str, bool]]:
     if "[[" in value:
         # may contain dynamic functions
         return [
-            (m.group("function"), True) if m.group("function") else (m.group("id").strip(), False)
+            (m.group("function"), True)
+            if m.group("function")
+            else (m.group("id").strip(), False)
             for m in RE_ID_FUNC.finditer(value)
         ]
     return [(i.strip(), False) for i in re.split(";|,", value) if i.strip()]
 
 
 def extend_needs_data(
-    all_needs: Dict[str, NeedsInfoType], extends: Dict[str, NeedsExtendType], needs_config: NeedsSphinxConfig
+    all_needs: dict[str, NeedsInfoType],
+    extends: dict[str, NeedsExtendType],
+    needs_config: NeedsSphinxConfig,
 ) -> None:
     """Use data gathered from needextend directives to modify fields of existing needs."""
 
@@ -104,22 +108,47 @@ def extend_needs_data(
         if need_filter in all_needs:
             # a single known ID
             found_needs = [all_needs[need_filter]]
-        elif need_filter is not None and re.fullmatch(needs_config.id_regex, need_filter):
+        elif need_filter is not None and re.fullmatch(
+            needs_config.id_regex, need_filter
+        ):
             # an unknown ID
-            error = f"Provided id {need_filter} for needextend does not exist."
+            error = f"Provided id {need_filter!r} for needextend does not exist. [needs.extend]"
             if current_needextend["strict"]:
                 raise NeedsInvalidFilter(error)
             else:
-                logger.info(error)
-                continue
+                logger.warning(
+                    error,
+                    type="needs",
+                    subtype="extend",
+                    location=(
+                        current_needextend["docname"],
+                        current_needextend["lineno"],
+                    ),
+                )
+            continue
         else:
             # a filter string
             try:
-                found_needs = filter_needs(all_needs.values(), needs_config, need_filter)
-            except NeedsInvalidFilter as e:
-                raise NeedsInvalidFilter(
-                    f"Filter not valid for needextend on page {current_needextend['docname']}:\n{e}"
+                found_needs = filter_needs(
+                    all_needs.values(),
+                    needs_config,
+                    need_filter,
+                    location=(
+                        current_needextend["docname"],
+                        current_needextend["lineno"],
+                    ),
                 )
+            except NeedsInvalidFilter as e:
+                logger.warning(
+                    f"Invalid filter {need_filter!r}: {e} [needs.extend]",
+                    type="needs",
+                    subtype="extend",
+                    location=(
+                        current_needextend["docname"],
+                        current_needextend["lineno"],
+                    ),
+                )
+                continue
 
         for found_need in found_needs:
             # Work in the stored needs, not on the search result
@@ -136,7 +165,10 @@ def extend_needs_data(
                                 logger.warning(
                                     f"Provided link id {item} for needextend does not exist. [needs]",
                                     type="needs",
-                                    location=(current_needextend["docname"], current_needextend["lineno"]),
+                                    location=(
+                                        current_needextend["docname"],
+                                        current_needextend["lineno"],
+                                    ),
                                 )
                                 continue
                             if item not in need[option_name]:
@@ -167,7 +199,10 @@ def extend_needs_data(
                                 logger.warning(
                                     f"Provided link id {item} for needextend does not exist. [needs]",
                                     type="needs",
-                                    location=(current_needextend["docname"], current_needextend["lineno"]),
+                                    location=(
+                                        current_needextend["docname"],
+                                        current_needextend["lineno"],
+                                    ),
                                 )
                                 continue
                             need[option].append(item)

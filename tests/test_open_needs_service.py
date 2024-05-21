@@ -1,88 +1,94 @@
 from pathlib import Path
 
 import pytest
-import requests
+import responses
 
 from sphinx_needs.services.manager import ServiceManager
 
-
-class MockGetResponse:
-    def __init__(self):
-        self.status_code = 200
-        self.url = "http://127.0.0.1:9595/"
-        self.text = "Mocked Get Response"
-
-    @staticmethod
-    def json():
-        return [
-            {
-                "key": "NEP_001",
-                "type": "Requirement",
-                "title": "Build rocket",
-                "description": "We finally need to build our Neptune3000 rocket.",
-                "format": "txt",
-                "project_id": 1,
-                "options": {"status": "done", "priority": "high", "costs": 3500000, "approved": 1},
-                "references": {},
-            },
-            {
-                "key": "NEP_002",
-                "type": "Requirement",
-                "title": "Test rocket power",
-                "description": "Lets test the rocket on a test bench",
-                "format": "txt",
-                "project_id": 1,
-                "options": {"status": "open", "priority": "high", "costs": 500000, "approved": 0},
-                "references": {},
-            },
-            {
-                "key": "NEP_003",
-                "type": "Requirement",
-                "title": "Rocket painting",
-                "description": "Red and blue. No other colors please.",
-                "format": "txt",
-                "project_id": 1,
-                "options": {"status": "open", "priority": "low", "costs": 20000, "approved": 1},
-                "references": {"links": ["NEP_001", "NEP_002"]},
-            },
-            {
-                "key": "NEP_004",
-                "type": "Requirement",
-                "title": "Pumps from company AwesomePumps",
-                "description": "We simply reuse the pump system ABC-Pumps from AwesomePumps Inc.",
-                "format": "txt",
-                "project_id": 1,
-                "options": {"status": "open", "links": "req_1"},
-                "references": {"links": ["NEP_003"]},
-            },
-        ]
-
-
-class MockPostResponse:
-    def __init__(self):
-        self.status_code = 200
-        self.url = "http://127.0.0.1:9595/"
-        self.text = "Mocked Post Response"
-
-    @staticmethod
-    def json():
-        return {"access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9", "token_type": "bearer"}
+MOCK_NEEDS = [
+    {
+        "key": "NEP_001",
+        "type": "Requirement",
+        "title": "Build rocket",
+        "description": "We finally need to build our Neptune3000 rocket.",
+        "format": "txt",
+        "project_id": 1,
+        "options": {
+            "status": "done",
+            "priority": "high",
+            "costs": 3500000,
+            "approved": 1,
+        },
+        "references": {},
+    },
+    {
+        "key": "NEP_002",
+        "type": "Requirement",
+        "title": "Test rocket power",
+        "description": "Lets test the rocket on a test bench",
+        "format": "txt",
+        "project_id": 1,
+        "options": {
+            "status": "open",
+            "priority": "high",
+            "costs": 500000,
+            "approved": 0,
+        },
+        "references": {},
+    },
+    {
+        "key": "NEP_003",
+        "type": "Requirement",
+        "title": "Rocket painting",
+        "description": "Red and blue. No other colors please.",
+        "format": "txt",
+        "project_id": 1,
+        "options": {
+            "status": "open",
+            "priority": "low",
+            "costs": 20000,
+            "approved": 1,
+        },
+        "references": {"links": ["NEP_001", "NEP_002"]},
+    },
+    {
+        "key": "NEP_004",
+        "type": "Requirement",
+        "title": "Pumps from company AwesomePumps",
+        "description": "We simply reuse the pump system ABC-Pumps from AwesomePumps Inc.",
+        "format": "txt",
+        "project_id": 1,
+        "options": {"status": "open", "links": "req_1"},
+        "references": {"links": ["NEP_003"]},
+    },
+]
 
 
+@responses.activate
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_open_needs_service"}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_open_needs_service"}],
+    indirect=True,
 )
-def test_ons_service(test_app, monkeypatch):
-    def mock_get(*args, **kwargs):
-        return MockGetResponse()
-
-    def mock_post(*args, **kwargs):
-        return MockPostResponse()
-
-    # apply the monkeypatch for requests.get to mock_get
-    monkeypatch.setattr(requests, "get", mock_get)
-    # apply the monkeypatch for requests.post to mock_post
-    monkeypatch.setattr(requests, "post", mock_post)
+def test_ons_service(test_app):
+    responses.post(
+        "http://127.0.0.1:9595/auth/jwt/login",
+        status=200,
+        json={
+            "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9",
+            "token_type": "bearer",
+        },
+    )
+    responses.get(
+        "http://127.0.0.1:9595/api/needs/?skip=0&limit=2",
+        status=200,
+        json=MOCK_NEEDS[:2],
+    )
+    responses.get(
+        "http://127.0.0.1:9595/api/needs/?skip=0&limit=4",
+        status=200,
+        json=MOCK_NEEDS[:],
+    )
 
     test_app.build()
     assert isinstance(test_app.needs_services, ServiceManager)

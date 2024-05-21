@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import hashlib
-from typing import Iterable, List, Sequence
+from typing import Any, Iterable, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -8,6 +10,7 @@ from sphinx.application import Sphinx
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
+from sphinx_needs.directives.utils import no_needs_found_paragraph
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import (
@@ -47,6 +50,7 @@ class NeedpieDirective(FilterBase):
         "text_color": directives.unchanged_required,
         "shadow": directives.flag,
         "filter-func": FilterBase.base_option_spec["filter-func"],
+        "filter_warning": FilterBase.base_option_spec["filter_warning"],
     }
 
     # Update the options_spec only with value filter-func defined in the FilterBase class
@@ -94,14 +98,23 @@ class NeedpieDirective(FilterBase):
             "shadow": shadow,
             "text_color": text_color,
             "filter_func": self.collect_filter_attributes()["filter_func"],
+            "filter_warning": self.collect_filter_attributes()["filter_warning"],
         }
         add_doc(env, env.docname)
 
-        return [targetnode, Needpie("")]
+        pie_node = Needpie("")
+        self.set_source_info(pie_node)
+
+        return [targetnode, pie_node]
 
 
 @measure_time("needpie")
-def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, found_nodes: List[nodes.Element]) -> None:
+def process_needpie(
+    app: Sphinx,
+    doctree: nodes.document,
+    fromdocname: str,
+    found_nodes: list[nodes.Element],
+) -> None:
     env = app.env
     needs_data = SphinxNeedsData(env)
     needs_config = NeedsSphinxConfig(env.config)
@@ -144,21 +157,27 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
         content = current_needpie["content"]
 
         sizes = []
-        need_list = list(prepare_need_list(needs_data.get_or_create_needs().values()))  # adds parts to need_list
+        need_list = list(
+            prepare_need_list(needs_data.get_or_create_needs().values())
+        )  # adds parts to need_list
         if content and not current_needpie["filter_func"]:
             for line in content:
                 if line.isdigit():
                     sizes.append(abs(float(line)))
                 else:
-                    result = len(filter_needs(need_list, needs_config, line))
+                    result = len(
+                        filter_needs(need_list, needs_config, line, location=node)
+                    )
                     sizes.append(result)
         elif current_needpie["filter_func"] and not content:
             try:
                 # check and get filter_func
-                filter_func, filter_args = check_and_get_external_filter_func(current_needpie.get("filter_func"))
+                filter_func, filter_args = check_and_get_external_filter_func(
+                    current_needpie.get("filter_func")
+                )
                 # execute filter_func code
                 # Provides only a copy of needs to avoid data manipulations.
-                context = {
+                context: dict[str, Any] = {
                     "needs": need_list,
                     "results": [],
                 }
@@ -171,7 +190,7 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
 
                 if filter_func:
                     filter_func(**context)
-                sizes = context["results"]  # type: ignore[assignment]
+                sizes = context["results"]
                 # check items in sizes
                 if not isinstance(sizes, list):
                     logger.error(
@@ -187,7 +206,9 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
             except Exception as e:
                 raise e
         elif current_needpie["filter_func"] and content:
-            logger.error("filter_func and content can't be used at the same time for needpie.")
+            logger.error(
+                "filter_func and content can't be used at the same time for needpie."
+            )
         else:
             logger.error("Both filter_func and content are not used for needpie.")
 
@@ -210,7 +231,9 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
         shadow = current_needpie["shadow"]
         text_color = current_needpie["text_color"]
 
-        fig, axes = matplotlib.pyplot.subplots(figsize=(8, 4), subplot_kw={"aspect": "equal"})
+        fig, axes = matplotlib.pyplot.subplots(
+            figsize=(8, 4), subplot_kw={"aspect": "equal"}
+        )
 
         pie_kwargs = {
             "labels": labels,
@@ -224,7 +247,9 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
         if text_color:
             pie_kwargs["textprops"] = {"color": text_color}
 
-        wedges, _texts, autotexts = axes.pie(sizes, normalize=sum(float(s) for s in sizes) >= 1, **pie_kwargs)
+        wedges, _texts, autotexts = axes.pie(
+            sizes, normalize=sum(float(s) for s in sizes) >= 1, **pie_kwargs
+        )
 
         ratio = 20  # we will remove all labels with size smaller 5%
         legend_enforced = False
@@ -242,13 +267,11 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
         if legend_enforced:
             for i in range(len(sizes)):
                 if sum(sizes) > 0:
-                    labels[i] = "{label} {percent:.1f}% ({size:.0f})".format(
-                        label=labels[i], percent=100 * sizes[i] / sum(sizes), size=sizes[i]
+                    labels[i] = (
+                        f"{labels[i]} {100 * sizes[i] / sum(sizes):.1f}% ({sizes[i]:.0f})"
                     )
                 else:
-                    labels[i] = "{label} {percent:.1f}% ({size:.0f})".format(
-                        label=labels[i], percent=0.0, size=sizes[i]
-                    )
+                    labels[i] = f"{labels[i]} {0.0:.1f}% ({sizes[i]:.0f})"
 
         if text_color:
             for autotext in autotexts:
@@ -257,7 +280,13 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
 
         # Legend preparation
         if current_needpie["legend"]:
-            axes.legend(wedges, labels, title="legend", loc="center left", bbox_to_anchor=(0.8, 0, 0.5, 1))
+            axes.legend(
+                wedges,
+                labels,
+                title="legend",
+                loc="center left",
+                bbox_to_anchor=(0.8, 0, 0.5, 1),
+            )
 
         matplotlib.pyplot.setp(autotexts, size=8, weight="bold")
 
@@ -268,12 +297,19 @@ def process_needpie(app: Sphinx, doctree: nodes.document, fromdocname: str, foun
 
         # We need to calculate an unique pie-image file name
         hash_value = hashlib.sha256(id.encode()).hexdigest()[:5]
-        image_node = save_matplotlib_figure(app, fig, f"need_pie_{hash_value}", fromdocname)
+        image_node = save_matplotlib_figure(
+            app, fig, f"need_pie_{hash_value}", fromdocname
+        )
 
         # Add lineno to node
         image_node.line = current_needpie["lineno"]
 
-        node.replace_self(image_node)
+        if len(sizes) == 0 or all(s == 0 for s in sizes):
+            node.replace_self(
+                no_needs_found_paragraph(current_needpie.get("filter_warning"))
+            )
+        else:
+            node.replace_self(image_node)
 
         # Cleanup matplotlib
         # Reset the style configuration:

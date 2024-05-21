@@ -2,7 +2,7 @@
 name = "sphinx-needs"
 
 # !! Don't miss updates in sphinx_needs.__version__, changelog.rst, and .github/workflows/docker !!!
-version = "2.0.0"
+version = "2.1.0"
 
 description = "Sphinx needs extension for managing needs/requirements and specifications"
 authors = ["team useblocks <info@useblocks.com>"]
@@ -48,11 +48,11 @@ matplotlib = { version = ">=3.3.0", optional = true }
 pytest = { version = "^7", optional = true }
 pytest-cov = { version = "^4", optional = true }
 lxml = { version = "^4.6.5", optional = true }
-requests-mock = { version = ">=1.9.3", optional = true }
 responses = { version = "^0.22.0", optional = true }
 sphinxcontrib-plantuml = { version = "^0", optional = true }
 syrupy = { version = "^3", optional = true }
 pytest-xprocess = { version = "^0.22.2", optional = true }
+defusedxml = { version = "^0.7.1", optional = true }
 
 # [project.optional-dependencies.test-parallel]
 pytest-xdist = { version = "*", optional = true }
@@ -65,18 +65,17 @@ memray = { version = "^1.3.1", optional = true }
 sphinx-copybutton = { version="^0.5", optional = true }
 sphinxcontrib-programoutput = { version="^0.17", optional = true }
 sphinx-design = { version="^0.5", optional = true }
-sphinx-immaterial = { version="0.11.7", optional = true }
-pydantic = { version="2.4.2", optional = true }
+sphinx-immaterial = { version="^0.11.11", optional = true }
 
 [tool.poetry.extras]
 plotting = ["matplotlib"]
 test = [
+  "defusedxml",
   "matplotlib",
   "pytest",
   "pytest-cov",
   "syrupy",
   "sphinxcontrib-plantuml",
-  "requests-mock",
   "lxml",
   "responses",
   "pytest-xprocess"
@@ -90,7 +89,6 @@ docs = [
   "sphinxcontrib-programoutput",
   "sphinx-design",
   "sphinx-immaterial",
-  "pydantic"  # note this is only required because of https://github.com/jbms/sphinx-immaterial/issues/302
 ]
 
 [tool.poetry.dev-dependencies]
@@ -100,12 +98,25 @@ pre-commit = "^3"
 markers = [
     "jstest: marks tests as JavaScript test (deselect with '-m \"not jstest\"')",
 ]
+filterwarnings = [
+  "ignore:.*removed in Python 3.14.*:DeprecationWarning",
+  "ignore::PendingDeprecationWarning:sphinx_data_viewer.*",
+]
 
-[tool.black]
-line-length = 120
 
-[tool.isort]
-profile = "black"
+[tool.ruff.lint]
+extend-select = [
+  "B",   # flake8-bugbear  
+  "C4",  # flake8-comprehensions
+  "I",   # isort
+  "ICN", # flake8-import-conventions
+  "ISC", # flake8-implicit-str-concat
+  "N",   # pep8-naming
+  "RUF", # Ruff-specific rules
+  "SIM", # flake8-simplify
+  "UP",  # pyupgrade
+]
+extend-ignore = ["B904", "ISC001", "ICN001", "N818", "RUF005", "RUF013", "RUF012", "SIM108", "SIM118"]
 
 [tool.mypy]
 files = "sphinx_needs"
@@ -132,15 +143,9 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = [
-  'sphinx_needs.api.need',
-  'sphinx_needs.directives.needuml',
-]
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = [
   "sphinx_needs.directives.needextend",
   "sphinx_needs.functions.functions",
+  "sphinx_needs.api.need",
 ]
 # TODO dynamically overriding TypeDict keys is a bit tricky
 disable_error_code = "literal-required"
@@ -151,8 +156,38 @@ module = [
 ]
 disable_error_code = ["attr-defined", "no-any-return"]
 
-
 [build-system]
 requires = ["setuptools", "poetry_core>=1.0.8"]  # setuptools for deps like plantuml
 build-backend = "poetry.core.masonry.api"
 
+[tool.tox]
+# To use tox, see https://tox.readthedocs.io
+# $ pipx install tox
+# it is suggested to use with https://github.com/tox-dev/tox-uv or https://github.com/tox-dev/tox-conda
+# $ pipx inject tox tox-uv
+
+legacy_tox_ini = """
+[tox]
+envlist = py38
+
+[testenv]
+usedevelop = true
+
+[testenv:py{38,39,310,311,312}]
+extras =
+  test
+  test-parallel
+commands =
+  pytest --ignore tests/benchmarks {posargs:tests}
+
+[testenv:docs]
+extras = docs
+passenv =
+    BUILDER
+    CLEAN
+    TERM
+commands_pre =
+  python -c "import shutil; shutil.rmtree('docs/_build', ignore_errors=True) if '{env:CLEAN:}' else None"
+commands = 
+  sphinx-build -nW --keep-going -T -b {env:BUILDER:html} docs/ docs/_build/{env:BUILDER:html} {posargs}
+"""

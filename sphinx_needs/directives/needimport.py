@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import json
 import os
 import re
-from typing import Dict, Sequence
+from typing import Sequence
 from urllib.parse import urlparse
 
 import requests
@@ -71,19 +73,25 @@ class NeedimportDirective(SphinxDirective):
                     response.json()
                 )  # The downloaded file MUST be json. Everything else we do not handle!
             except Exception as e:
-                raise NeedimportException(f"Getting {need_import_path} didn't work. Reason: {e}.")
+                raise NeedimportException(
+                    f"Getting {need_import_path} didn't work. Reason: {e}."
+                )
         else:
             logger.info(f"Importing needs from {need_import_path}")
 
             if not os.path.isabs(need_import_path):
                 # Relative path should start from current rst file directory
                 curr_dir = os.path.dirname(self.docname)
-                new_need_import_path = os.path.join(self.env.app.srcdir, curr_dir, need_import_path)
+                new_need_import_path = os.path.join(
+                    self.env.app.srcdir, curr_dir, need_import_path
+                )
 
                 correct_need_import_path = new_need_import_path
                 if not os.path.exists(new_need_import_path):
                     # Check the old way that calculates relative path starting from conf.py directory
-                    old_need_import_path = os.path.join(self.env.app.srcdir, need_import_path)
+                    old_need_import_path = os.path.join(
+                        self.env.app.srcdir, need_import_path
+                    )
                     if os.path.exists(old_need_import_path):
                         correct_need_import_path = old_need_import_path
                         logger.warning(
@@ -95,14 +103,20 @@ class NeedimportDirective(SphinxDirective):
                         )
             else:
                 # Absolute path starts with /, based on the source directory. The / need to be striped
-                correct_need_import_path = os.path.join(self.env.app.srcdir, need_import_path[1:])
+                correct_need_import_path = os.path.join(
+                    self.env.app.srcdir, need_import_path[1:]
+                )
 
             if not os.path.exists(correct_need_import_path):
-                raise ReferenceError(f"Could not load needs import file {correct_need_import_path}")
+                raise ReferenceError(
+                    f"Could not load needs import file {correct_need_import_path}"
+                )
 
             errors = check_needs_file(correct_need_import_path)
             if errors.schema:
-                logger.info(f"Schema validation errors detected in file {correct_need_import_path}:")
+                logger.info(
+                    f"Schema validation errors detected in file {correct_need_import_path}:"
+                )
                 for error in errors.schema:
                     logger.info(f'  {error.message} -> {".".join(error.path)}')
 
@@ -119,13 +133,19 @@ class NeedimportDirective(SphinxDirective):
                 if not isinstance(version, str):
                     raise KeyError
             except KeyError:
-                raise CorruptedNeedsFile(f"Key 'current_version' missing or corrupted in {correct_need_import_path}")
+                raise CorruptedNeedsFile(
+                    f"Key 'current_version' missing or corrupted in {correct_need_import_path}"
+                )
         if version not in needs_import_list["versions"].keys():
-            raise VersionNotFound(f"Version {version} not found in needs import file {correct_need_import_path}")
+            raise VersionNotFound(
+                f"Version {version} not found in needs import file {correct_need_import_path}"
+            )
 
         needs_config = NeedsSphinxConfig(self.config)
         # TODO this is not exactly NeedsInfoType, because the export removes/adds some keys
-        needs_list: Dict[str, NeedsInfoType] = needs_import_list["versions"][version]["needs"]
+        needs_list: dict[str, NeedsInfoType] = needs_import_list["versions"][version][
+            "needs"
+        ]
 
         # Filter imported needs
         needs_list_filtered = {}
@@ -143,9 +163,7 @@ class NeedimportDirective(SphinxDirective):
                         needs_list_filtered[key] = need
                 except Exception as e:
                     logger.warning(
-                        "needimport: Filter {} not valid. Error: {}. {}{} [needs]".format(
-                            filter_string, e, self.docname, self.lineno
-                        ),
+                        f"needimport: Filter {filter_string} not valid. Error: {e}. {self.docname}{self.lineno} [needs]",
                         type="needs",
                         location=(self.env.docname, self.lineno),
                     )
@@ -159,13 +177,20 @@ class NeedimportDirective(SphinxDirective):
                 for id in needs_list:
                     # Manipulate links in all link types
                     for extra_link in extra_links:
-                        if extra_link["option"] in need and id in need[extra_link["option"]]:  # type: ignore[literal-required]
+                        if (
+                            extra_link["option"] in need
+                            and id in need[extra_link["option"]]  # type: ignore[literal-required]
+                        ):
                             for n, link in enumerate(need[extra_link["option"]]):  # type: ignore[literal-required]
                                 if id == link:
-                                    need[extra_link["option"]][n] = "".join([id_prefix, id])  # type: ignore[literal-required]
+                                    need[extra_link["option"]][n] = "".join(  # type: ignore[literal-required]
+                                        [id_prefix, id]
+                                    )
                     # Manipulate descriptions
                     # ToDo: Use regex for better matches.
-                    need["description"] = need["description"].replace(id, "".join([id_prefix, id]))  # type: ignore[typeddict-item]
+                    need["description"] = need["description"].replace(  # type: ignore[typeddict-item]
+                        id, "".join([id_prefix, id])
+                    )
 
         # tags update
         for need in needs_list.values():
@@ -185,6 +210,7 @@ class NeedimportDirective(SphinxDirective):
             "style",
             "layout",
             "need_type",
+            "constraints",
             *[x["option"] for x in extra_links],
             *NEEDS_CONFIG.extra_options,
         )
@@ -192,8 +218,12 @@ class NeedimportDirective(SphinxDirective):
         for need in needs_list.values():
             # Set some values based on given option or value from imported need.
             need["template"] = self.options.get("template", need.get("template"))
-            need["pre_template"] = self.options.get("pre_template", need.get("pre_template"))
-            need["post_template"] = self.options.get("post_template", need.get("post_template"))
+            need["pre_template"] = self.options.get(
+                "pre_template", need.get("pre_template")
+            )
+            need["post_template"] = self.options.get(
+                "post_template", need.get("post_template")
+            )
             need["layout"] = self.options.get("layout", need.get("layout"))
             need["style"] = self.options.get("style", need.get("style"))
 

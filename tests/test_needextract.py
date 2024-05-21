@@ -4,7 +4,11 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needextract"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needextract"}],
+    indirect=True,
+)
 def test_needextract_filter_options(test_app):
     import subprocess
 
@@ -13,11 +17,17 @@ def test_needextract_filter_options(test_app):
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"
 
-    out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
+    out = subprocess.run(
+        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+    )
     assert out.returncode == 0
 
 
-@pytest.mark.parametrize("test_app", [{"buildername": "html", "srcdir": "doc_test/doc_needextract"}], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needextract"}],
+    indirect=True,
+)
 def test_needextract_basic_run(test_app):
     app = test_app
     app.build()
@@ -28,9 +38,13 @@ def test_needextract_basic_run(test_app):
         html_path = str(Path(app.outdir, html_path))
         tree = html_parser.parse(html_path)
         for check in checks:
-            img_src = tree.xpath(f"//table[@id='{check[0]}']//td[@class='need content']//img/@src")[0]
+            img_src = tree.xpath(
+                f"//table[@id='{check[0]}']//td[@class='need content']//img/@src"
+            )[0]
             assert img_src == check[1]
-            assert os.path.exists(str(Path(app.outdir, os.path.dirname(html_path), img_src)))
+            assert os.path.exists(
+                str(Path(app.outdir, os.path.dirname(html_path), img_src))
+            )
 
     checks = [
         ("US_SUB_001", "_images/smile.png"),

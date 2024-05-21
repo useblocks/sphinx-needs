@@ -1,0 +1,69 @@
+/* This is the core CSS to style the representation of each need */
+
+table.need {
+    margin-bottom: 10px;
+    background-color: var(--sn-color-need-bg);
+    border: 1px solid var(--sn-color-need-border);
+    width: 100%;
+}
+
+table.need tr.head div.line-block,
+table.need tr.meta div.line-block,
+table.need tr.footer div.line-block {
+    display: block;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+table.need tr.head {
+    background-color: var(--sn-color-need-bg-head);
+    border-bottom: 1px solid var(--sn-color-need-border);
+}
+
+table.need tr.meta {
+    border-bottom: 1px solid var(--sn-color-need-border);
+    font-size: smaller;
+}
+
+table.need tr.footer {
+    border-top: 1px solid var(--sn-color-need-border);
+    font-size: small;
+}
+
+table.need a {
+    border-bottom: none;
+}
+
+table.need td {
+    border: none;
+    /* This is needed to avoid custom settings for common tables, like the ReadTheDocs theme docs */
+    /* It reimplements the normal browser behavior of breaking/wrapping table content if too long.*/
+    white-space: normal;
+}
+
+/* We need not line-block margin:24 px here, which is coming from sphinx theme */
+table.need td div.needs_side.line-block{
+    margin-bottom: 0;
+}
+
+
+/* *************** */
+/* collapse button */
+/* *************** */
+
+span.needs_collapse {
+    float: right;
+}
+
+span.needs_collapse svg {
+    height: 1rem;
+}
+
+span.needs_collapse> :is(.collapsed, .visible) {
+    cursor: pointer;
+}
+
+/* this class is added/removed dynamically by sphinx_needs_collapse.js  */
+.collapse_is_hidden {
+    display: none !important;
+}

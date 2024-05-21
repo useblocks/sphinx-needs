@@ -287,13 +287,13 @@ The head-line for the default Sphinx-Needs layout ``clean`` looks like this::
 You are free to surround a layout function with a rst role. Like ``**<<meta("title")>>**`` to get a bold printed title.
 
 Sometimes an argument for a layout function shall be based on a given need option. In this cases the option name
-can be surrounded by ``{%raw%}{{ .. }}{%endraw%}``.
+can be surrounded by ``{{ .. }}``.
 As example, there may be an ``author`` option in a bug-need and you want to show a picture of the author in the grid
 ``simple_side_right_partial``.
 
 The line for the ``side`` area could look like::
 
-   '<<image("_images/{%raw%}{{author}}{%endraw%}.png", align="center")>>'
+   '<<image("_images/{{author}}.png", align="center")>>'
 
 .. spec:: My test spec
    :author: daniel
@@ -307,16 +307,15 @@ The line for the ``side`` area could look like::
 
    The used layout takes the value from ``author`` and puts some image-path related information around it.
 
-Here is the complete used code::
+Here is the complete used code
+
+.. code-block:: python
 
    # conf.py
    # -------
 
-   from docutils.parsers.rst import directives
    # Make the author option valid
-   needs_extra_options = {
-         "author": directives.unchanged,
-         }
+   needs_extra_options = ["author"]
 
    # Define own layout
    needs_layouts = {
@@ -326,13 +325,15 @@ Here is the complete used code::
                'head': ['**<<meta("title")>>** for *<<meta("author")>>*'],
                'meta': ['**status**: <<meta("status")>>',
                         '**author**: <<meta("author")>>'],
-               'side': ['<<image("_images/{%raw%}{{author}}{%endraw%}.png", align="center")>>']
+               'side': ['<<image("_images/{{author}}.png", align="center")>>']
            }
        }
    }
 
-   # rst-code of the above need
-   # --------------------------
+.. code-block:: restructuredtext
+
+   rst-code of the above need
+   --------------------------
 
    .. spec:: My test spec
       :author: daniel
