@@ -77,7 +77,10 @@ def test_doc_needextend_unknown_id(test_app: Sphinx):
         ("a,b;c", [("a", False), ("b", False), ("c", False)]),
         ("[[a]],[[b]];[[c]]", [("[[a]]", True), ("[[b]]", True), ("[[c]]", True)]),
         (" a ,, b; c ", [("a", False), ("b", False), ("c", False)]),
-        (" [[a]] ,, [[b]] ; [[c]] ", [("[[a]]", True), ("[[b]]", True), ("[[c]]", True)]),
+        (
+            " [[a]] ,, [[b]] ; [[c]] ",
+            [("[[a]]", True), ("[[b]]", True), ("[[c]]", True)],
+        ),
         ("a,[[b]];c", [("a", False), ("[[b]]", True), ("c", False)]),
         (" a ,, [[b;]] ; c ", [("a", False), ("[[b;]]", True), ("c", False)]),
     ],
