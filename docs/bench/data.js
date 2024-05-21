@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1715778224384,
+  "lastUpdate": 1716289644699,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7740,6 +7740,42 @@ window.BENCHMARK_DATA = {
             "value": 60.012494145000005,
             "unit": "s",
             "extra": "Commit: 229d2f89181e86951d2985a9106f42852c9e874a\nBranch: master\nTime: 2024-05-15T15:01:40+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "934a3a0e0034f89e4219c994d693ebac02e97918",
+          "message": "👌 Improve need-extend; allow dynamic functions in lists (#1076)\n\nAllow for lists containing dynamic functions, for example\r\n\r\n```restructuredtext\r\n.. needextend:: REQ_1\r\n   :links: REQ_1, [[func(\"arg\")]], REQ_2\r\n```",
+          "timestamp": "2024-05-21T13:05:26+02:00",
+          "tree_id": "eb964914521cc55eb24ac964a62fe6199d29251b",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/934a3a0e0034f89e4219c994d693ebac02e97918"
+        },
+        "date": 1716289637227,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.20161349099998915,
+            "unit": "s",
+            "extra": "Commit: 934a3a0e0034f89e4219c994d693ebac02e97918\nBranch: master\nTime: 2024-05-21T13:05:26+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.06966716900001,
+            "unit": "s",
+            "extra": "Commit: 934a3a0e0034f89e4219c994d693ebac02e97918\nBranch: master\nTime: 2024-05-21T13:05:26+02:00"
           }
         ]
       }
