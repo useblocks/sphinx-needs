@@ -97,6 +97,8 @@ For examples of how to adjust the CSS, this documentation is configured to build
 
     .. literalinclude:: _static/_css/furo.css
         :language: css
+        :start-after: /* doc config start */
+        :end-before: /* doc config end */
 
 .. dropdown:: pydata-sphinx-theme
 
@@ -112,6 +114,8 @@ For examples of how to adjust the CSS, this documentation is configured to build
 
     .. literalinclude:: _static/_css/sphinx_immaterial.css
         :language: css
+        :start-after: /* doc config start */
+        :end-before: /* doc config end */
 
 .. _CSS Variables: https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties
 .. _this how-to: https://docs.readthedocs.io/en/stable/guides/adding-custom-css.html

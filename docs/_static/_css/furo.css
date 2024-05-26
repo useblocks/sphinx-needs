@@ -1,5 +1,6 @@
 /* Styling for the https://github.com/pradyunsg/furo theme. */
 
+/* doc config start */
 /* Note, the recommended way to set colors for furo is in the `html_theme_options`
 https://pradyunsg.me/furo/customisation/#light-css-variables-dark-css-variables
 
@@ -75,6 +76,7 @@ body {
         }
     }
 }
+/* doc config end */
 
 img.sidebar-logo {
     /* furo sets this at 100% but that makes it a bit too big */
@@ -95,4 +97,9 @@ but I'm not sure how to make this work across multiple themes
 */
 img.needs-logo-big {
     filter: var(--sn-filter-logo-big) !important;
+}
+
+/** sphinx-design **/
+summary.sd-summary-title {
+    padding-right: 0.6em !important;  /* note, this line can be removed in sphinx-design v0.6.1 */
 }
