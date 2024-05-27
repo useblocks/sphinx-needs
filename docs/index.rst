@@ -1,17 +1,48 @@
 :sd_hide_title:
-:hide-toc:
 
 .. role:: underline
     :class: underline
 
-.. image:: _static/sphinx-needs-logo-bg.png
-   :alt: Sphinx-Needs Logo
-   :align: center
-   :width: 100%
-   :class: needs-logo-big
-
 Introduction
 ============
+
+.. grid::
+   :gutter: 2 3 3 3
+   :margin: 4 4 1 2
+   :class-row: sd-w-100
+
+   .. grid-item::
+      :columns: 12 8 8 8
+      :child-align: justify
+      :class: sd-fs-3
+
+      .. div:: sd-font-weight-bold
+         
+         Bringing Engineering-as-Code to the Sphinx framework.
+
+      .. div:: sd-fs-5 sd-font-italic
+
+         Combine Docs-as-Code with Application Lifecycle Management,
+         to track requirements, specifications, test cases, and other engineering objects in your documentation.
+
+      .. button-ref:: installation
+         :ref-type: doc
+         :outline:
+         :color: primary
+         :class: sd-px-4 sd-fs-5
+
+         Get Started
+
+   .. grid-item::
+      :columns: 12 4 4 4
+
+      .. raw:: html
+         :file: _static/flow_chart.svg
+
+----------------
+
+Outline
+-------
 
 Sphinx-Needs is an extension for the `Python <https://python.org>`_ based documentation framework `Sphinx <https://www.sphinx-doc.org>`_,
 which you can simply extend by different extensions to fulfill nearly any requirement of a software development team.
@@ -403,14 +434,6 @@ we have created other Sphinx extensions to support the work of teams in the auto
             :expand:
 
             :octicon:`book;1em;sd-text-primary` Technical Docs
-
-
-One more thing ...
-------------------
-
-.. `j4p4n <https://openclipart.org/detail/281179/engineers>`_ designed the Sphinx-Needs logo.
-
-`j4p4n` designed the Sphinx-Needs logo.
 
 .. toctree::
    :caption: The Basics

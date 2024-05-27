@@ -3,25 +3,26 @@
 Installation
 ============
 
-.. only:: html
+.. .. only:: html
 
-   .. image:: https://img.shields.io/pypi/dm/sphinx-needs.svg
-       :target: https://pypi.python.org/pypi/sphinx-needs
-       :alt: Downloads
-   .. image:: https://img.shields.io/pypi/l/sphinx-needs.svg
-       :target: https://pypi.python.org/pypi/sphinx-needs
-       :alt: License
-   .. image:: https://img.shields.io/pypi/pyversions/sphinx-needs.svg
-       :target: https://pypi.python.org/pypi/sphinx-needs
-       :alt: Supported versions
-   .. image:: https://readthedocs.org/projects/sphinx-needs/badge/?version=latest
-       :target: https://readthedocs.org/projects/sphinx-needs/
-   .. image:: https://github.com/useblocks/sphinx-needs/actions/workflows/ci.yaml/badge.svg
-       :target: https://github.com/useblocks/sphinx-needs/actions
-       :alt: GitHub CI Action status
-   .. image:: https://img.shields.io/pypi/v/sphinx-needs.svg
-       :target: https://pypi.python.org/pypi/sphinx-needs
-       :alt: PyPI Package latest release
+..    .. image:: https://img.shields.io/pypi/dm/sphinx-needs.svg
+..        :target: https://pypi.python.org/pypi/sphinx-needs
+..        :alt: Downloads
+..    .. image:: https://img.shields.io/pypi/l/sphinx-needs.svg
+..        :target: https://pypi.python.org/pypi/sphinx-needs
+..        :alt: License
+..    .. image:: https://img.shields.io/pypi/pyversions/sphinx-needs.svg
+..        :target: https://pypi.python.org/pypi/sphinx-needs
+..        :alt: Supported versions
+..    .. image:: https://readthedocs.org/projects/sphinx-needs/badge/?version=latest
+..        :target: https://readthedocs.org/projects/sphinx-needs/
+..        :alt: ReadTheDocs
+..    .. image:: https://github.com/useblocks/sphinx-needs/actions/workflows/ci.yaml/badge.svg
+..        :target: https://github.com/useblocks/sphinx-needs/actions
+..        :alt: GitHub CI Action status
+..    .. image:: https://img.shields.io/pypi/v/sphinx-needs.svg
+..        :target: https://pypi.python.org/pypi/sphinx-needs
+..        :alt: PyPI Package latest release
 
 Using pip
 ---------
@@ -62,7 +63,7 @@ Using sources
 Activation
 ----------
 
-For final activation, please add `sphinx_needs` to the project's extension list of your **conf.py** file.
+For final activation, please add ``sphinx_needs`` to the project's extension list of your **conf.py** file.
 
 .. code-block:: python
 
@@ -84,6 +85,7 @@ In particular, `CSS Variables`_ are used to specify the coloring of most compone
 The default values are as follows (see also :ref:`needs_css`):
 
 .. dropdown:: Default CSS Variables
+    :icon: paintbrush
 
     .. literalinclude:: ../sphinx_needs/css/themes/modern.css
         :language: css
@@ -94,6 +96,7 @@ These variables can be overridden by adding your own CSS file to the Sphinx proj
 For examples of how to adjust the CSS, this documentation is configured to build against multiple themes using the following CSS:
 
 .. dropdown:: furo
+    :icon: paintbrush
 
     .. literalinclude:: _static/_css/furo.css
         :language: css
@@ -101,16 +104,19 @@ For examples of how to adjust the CSS, this documentation is configured to build
         :end-before: /* doc config end */
 
 .. dropdown:: pydata-sphinx-theme
+    :icon: paintbrush
 
     .. literalinclude:: _static/_css/pydata_sphinx_theme.css
         :language: css
 
 .. dropdown:: sphinx-rtd-theme
+    :icon: paintbrush
 
     .. literalinclude:: _static/_css/sphinx_rtd_theme.css
         :language: css
 
 .. dropdown:: sphinx-immaterial
+    :icon: paintbrush
 
     .. literalinclude:: _static/_css/sphinx_immaterial.css
         :language: css

@@ -15,6 +15,7 @@ now = datetime.datetime.now()
 copyright = f"2017-{now.year}, team useblocks"
 author = "team useblocks"
 
+master_doc = "index"
 language = "en"
 
 version = release = __version__
@@ -75,22 +76,15 @@ autodoc_docstring_signature = (
     True  # Used to read spec. func-defs from docstring (e.g. get rid of self)
 )
 
-master_doc = "index"
-
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 exclude_patterns += os.getenv("SPHINX_EXCLUDE", "").split(",")
-
-# The name of the Pygments (syntax highlighting) style to use.
-pygments_style = "sphinx"
-
-# If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = False
 
 sd_custom_directives = {
     "dropdown": {
         "inherit": "dropdown",
         "options": {
-            "icon": "quote",
+            "icon": "pencil",
+            "class-container": "sn-dropdown-default",
         },
     }
 }
@@ -121,8 +115,21 @@ elif DOCS_THEME == "furo":
         "source_repository": "https://github.com/useblocks/sphinx-needs",
         "source_branch": "master",
         "source_directory": "docs/",
-        "light_logo": "sphinx-needs-logo.png",
-        "dark_logo": "sphinx-needs-logo.png",
+        "light_logo": "sphinx-needs-logo-long-light.svg",
+        "dark_logo": "sphinx-needs-logo-long-dark.svg",
+    }
+    templates_path = ["_static/_templates/furo"]
+    html_sidebars = {
+        "**": [
+            "sidebar/brand.html",
+            "sidebar/search.html",
+            "sidebar/scroll-start.html",
+            "sidebar/navigation.html",
+            "sidebar/ethical-ads.html",
+            "sidebar/scroll-end.html",
+            "side-github.html",
+            "sidebar/variant-selector.html",
+        ]
     }
 elif DOCS_THEME == "pydata_sphinx_theme":
     # https://pydata-sphinx-theme.readthedocs.io
