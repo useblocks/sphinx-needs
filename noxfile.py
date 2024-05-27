@@ -85,6 +85,13 @@ def linkcheck(session):
 
 @session(python="3.11")
 def docs(session):
-    session.install(".[docs]")
+    session.install(".[docs,theme-im]")
     with session.chdir("docs"):
-        session.run("sphinx-build", ".", "_build", *session.posargs, external=True)
+        session.run(
+            "sphinx-build",
+            ".",
+            "_build",
+            *session.posargs,
+            external=True,
+            env={"DOCS_THEME": "sphinx_immaterial"},
+        )

@@ -1,16 +1,17 @@
 /* These are used by the needtable directive
 to style the table representation of the needs. 
+
+Note: we use `table.NEEDS_TABLE.NEEDS_TABLE` to select a needtable, to increase the specificity of the selector,
+so that it should be generally higher than the specificity of the theme CSS selectors.
+This avoids having to use !important.
 */
 
-table.NEEDS_TABLE,
-table.NEEDS_DATATABLES {
+table.NEEDS_TABLE.NEEDS_TABLE,
+table.NEEDS_DATATABLES.NEEDS_DATATABLES {
     display: table;
     overflow-x: auto;
     white-space: normal;
     width: 100%;
-    /* If this is set, col->width does not work any more*/
-    /*max-width: -moz-fit-content;*/
-    /*max-width: fit-content;*/
     margin: 0 auto;
 }
 
@@ -27,13 +28,18 @@ table.dataTable {
     border: none;
 }
 
+table.dataTable tbody tr {
+    background-color: var(--sn-color-datatable-body-bg);
+}
+
 div.dataTables_length {
     margin-bottom: 10px;
 }
 
-div.dataTables_wrapper{
+div.dataTables_wrapper {
     overflow-x: auto;
-    padding: 0px 5px;  /*Space needed for table borders */
+    padding: 0px 5px;
+    /*Space needed for table borders */
 }
 
 .dataTables_wrapper .dataTables_paginate .paginate_button {
@@ -41,25 +47,60 @@ div.dataTables_wrapper{
     background: none;
 }
 
-.dataTables_wrapper .dataTables_paginate .paginate_button.current, 
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,
 .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
     background: none;
 }
 
 div.dataTables_length select {
     background: none;
+    color: var(--sn-color-datatable-label);
+    border: 1px solid var(--sn-color-datatable-btn-border);
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+div.dt-buttons {
+    margin-left: 0.5em;
 }
 
 div.dt-buttons button {
     padding: 0.1em 1em;
-    border: 1px solid #999;
+    border: 1px solid var(--sn-color-datatable-btn-border);
     border-radius: 2px;
     font-size: 0.88em;
     line-height: inherit;
-    color: inherit;
+    color: var(--sn-color-datatable-label);
     white-space: nowrap;
     overflow: hidden;
     background-color: inherit;
     background-image: none;
 }
 
+.dataTables_wrapper .dataTables_filter input {
+    max-width: 100px;
+    border: 1px solid var(--sn-color-datatable-btn-border);
+    margin-bottom: 10px;
+    background-color: transparent;
+    border-radius: 2px;
+}
+
+.dataTables_wrapper.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper.dataTables_wrapper .dataTables_filter,
+.dataTables_wrapper.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper.dataTables_wrapper .dataTables_processing {
+    color: var(--sn-color-datatable-label);
+}
+
+.dataTables_wrapper.dataTables_wrapper .dataTables_paginate,
+.dataTables_wrapper.dataTables_wrapper .dataTables_paginate a.paginate_button,
+.dataTables_wrapper.dataTables_wrapper .dataTables_paginate a.paginate_button.current {
+    /* datatables set this as !important, so unfortunately we have to do the same */
+    color: var(--sn-color-datatable-label) !important;
+}
+
+.dataTables_wrapper.dataTables_wrapper .dataTables_paginate a.paginate_button.disabled {
+    filter: saturate(0.5);
+}
+
+/* TODO: Ideally, if there is only one page, then the paginate buttons should be hidden. */
