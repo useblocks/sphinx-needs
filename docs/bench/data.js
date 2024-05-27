@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1716839732350,
+  "lastUpdate": 1716842245107,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7812,6 +7812,42 @@ window.BENCHMARK_DATA = {
             "value": 63.35426401599997,
             "unit": "s",
             "extra": "Commit: 76d0c8d90662f04ec067913b0da5515f1c4ad3f5\nBranch: master\nTime: 2024-05-27T21:53:29+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "66853113+pre-commit-ci[bot]@users.noreply.github.com",
+            "name": "pre-commit-ci[bot]",
+            "username": "pre-commit-ci[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c394b1f7489dcda8ffdcce6d5d24e396d9808925",
+          "message": "[pre-commit.ci] pre-commit autoupdate (#1179)\n\nCo-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>\r\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2024-05-27T22:35:30+02:00",
+          "tree_id": "4b1e267c5e11a9b970ba26b7fd85344d9f483769",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c394b1f7489dcda8ffdcce6d5d24e396d9808925"
+        },
+        "date": 1716842236553,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18977486299999669,
+            "unit": "s",
+            "extra": "Commit: c394b1f7489dcda8ffdcce6d5d24e396d9808925\nBranch: master\nTime: 2024-05-27T22:35:30+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.98258434499999,
+            "unit": "s",
+            "extra": "Commit: c394b1f7489dcda8ffdcce6d5d24e396d9808925\nBranch: master\nTime: 2024-05-27T22:35:30+02:00"
           }
         ]
       }
