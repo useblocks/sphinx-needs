@@ -1,28 +1,8 @@
+:sd_hide_title:
+:hide-toc:
+
 .. role:: underline
     :class: underline
-
-.. only:: html
-
-   .. image:: https://img.shields.io/pypi/dm/sphinx-needs.svg
-       :target: https://pypi.python.org/pypi/sphinx-needs
-       :alt: Downloads
-   .. image:: https://img.shields.io/pypi/l/sphinx-needs.svg
-       :target: https://pypi.python.org/pypi/sphinx-needs
-       :alt: License
-   .. image:: https://img.shields.io/pypi/pyversions/sphinx-needs.svg
-       :target: https://pypi.python.org/pypi/sphinx-needs
-       :alt: Supported versions
-   .. image:: https://readthedocs.org/projects/sphinx-needs/badge/?version=latest
-       :target: https://readthedocs.org/projects/sphinx-needs/
-   .. image:: https://github.com/useblocks/sphinx-needs/actions/workflows/ci.yaml/badge.svg
-       :target: https://github.com/useblocks/sphinx-needs/actions
-       :alt: GitHub CI Action status
-   .. image:: https://img.shields.io/pypi/v/sphinx-needs.svg
-       :target: https://pypi.python.org/pypi/sphinx-needs
-       :alt: PyPI Package latest release
-   .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
-       :target: https://github.com/psf/black
-       :alt: black code style
 
 .. image:: _static/sphinx-needs-logo-bg.png
    :alt: Sphinx-Needs Logo
@@ -30,13 +10,8 @@
    :width: 100%
    :class: needs-logo-big
 
-.. warning::
-
-   The project was renamed from **sphinxcontrib-needs** to **sphinx-needs**.
-   This affects all URLs and package names.
-
-Requirements, Bugs, Test cases, ... inside Sphinx
-=================================================
+Introduction
+============
 
 Sphinx-Needs is an extension for the `Python <https://python.org>`_ based documentation framework `Sphinx <https://www.sphinx-doc.org>`_,
 which you can simply extend by different extensions to fulfill nearly any requirement of a software development team.
@@ -438,9 +413,11 @@ One more thing ...
 `j4p4n` designed the Sphinx-Needs logo.
 
 .. toctree::
+   :caption: The Basics
    :maxdepth: 2
    :hidden:
 
+   Introduction <self>
    installation
    directives/index
    roles
@@ -449,6 +426,7 @@ One more thing ...
    api
 
 .. toctree::
+   :caption: Advanced
    :maxdepth: 2
    :hidden:
 
@@ -461,6 +439,7 @@ One more thing ...
    utils
 
 .. toctree::
+   :caption: Development
    :maxdepth: 2
    :hidden:
 

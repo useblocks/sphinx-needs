@@ -21,11 +21,20 @@
     --sn-color-bar-blue: #0fbcf9;
 
     --sn-color-need-border: #555;
+    --sn-color-need-row-border: hsla(232,75%,95%,0.12);
     --sn-color-need-bg: #eee;
     --sn-color-need-bg-head: rgba(0,0,0,0.1);
 
     --sn-color-complete-bg-head: rgba(0,0,0,0.1);
     --sn-color-complete-bg-foot: rgba(0,0,0,0.1);
+
+    --sn-color-datatable-body-bg: transparent;
+    --sn-color-datatable-label: #333;
+    --sn-color-datatable-btn-border: #999;
+
+    --sn-color-debug-btn-border: #333;
+    --sn-color-debug-btn-on-text: #f43333;
+    --sn-color-debug-btn-off-text: #096285;
 
     --sn-color-forbidden-dead-link: #dc3545;
 }

@@ -3,12 +3,25 @@
 Installation
 ============
 
-Using poetry
-------------
+.. only:: html
 
-.. code-block:: bash
-
-    poetry add sphinx-needs
+   .. image:: https://img.shields.io/pypi/dm/sphinx-needs.svg
+       :target: https://pypi.python.org/pypi/sphinx-needs
+       :alt: Downloads
+   .. image:: https://img.shields.io/pypi/l/sphinx-needs.svg
+       :target: https://pypi.python.org/pypi/sphinx-needs
+       :alt: License
+   .. image:: https://img.shields.io/pypi/pyversions/sphinx-needs.svg
+       :target: https://pypi.python.org/pypi/sphinx-needs
+       :alt: Supported versions
+   .. image:: https://readthedocs.org/projects/sphinx-needs/badge/?version=latest
+       :target: https://readthedocs.org/projects/sphinx-needs/
+   .. image:: https://github.com/useblocks/sphinx-needs/actions/workflows/ci.yaml/badge.svg
+       :target: https://github.com/useblocks/sphinx-needs/actions
+       :alt: GitHub CI Action status
+   .. image:: https://img.shields.io/pypi/v/sphinx-needs.svg
+       :target: https://pypi.python.org/pypi/sphinx-needs
+       :alt: PyPI Package latest release
 
 Using pip
 ---------
@@ -26,6 +39,13 @@ If you wish to also use the plotting features of sphinx-needs (see :ref:`needbar
 .. note::
 
    Prior version **1.0.1** the package was named ``sphinxcontrib-needs``.
+
+Using poetry
+------------
+
+.. code-block:: bash
+
+    poetry add sphinx-needs
 
 Using sources
 -------------
@@ -50,9 +70,55 @@ For final activation, please add `sphinx_needs` to the project's extension list 
 
 For the full configuration, please read :ref:`config`.
 
-.. note::
+.. _install_theme:
 
-   Prior version **1.0.1** the extensions was called ``sphinxcontrib.needs``.
+HTML Theme support
+------------------
+
+To represent needs and data tables within HTML builds,
+``sphinx-needs`` injects some CSS styles into the pages.
+
+This CSS is designed to be generally compatible with common Sphinx themes,
+but may require some adjustments depending on the theme you use.
+In particular, `CSS Variables`_ are used to specify the coloring of most components.
+The default values are as follows (see also :ref:`needs_css`):
+
+.. dropdown:: Default CSS Variables
+
+    .. literalinclude:: ../sphinx_needs/css/themes/modern.css
+        :language: css
+
+These variables can be overridden by adding your own CSS file to the Sphinx project
+(see `this how-to`_).
+
+For examples of how to adjust the CSS, this documentation is configured to build against multiple themes using the following CSS:
+
+.. dropdown:: furo
+
+    .. literalinclude:: _static/_css/furo.css
+        :language: css
+        :start-after: /* doc config start */
+        :end-before: /* doc config end */
+
+.. dropdown:: pydata-sphinx-theme
+
+    .. literalinclude:: _static/_css/pydata_sphinx_theme.css
+        :language: css
+
+.. dropdown:: sphinx-rtd-theme
+
+    .. literalinclude:: _static/_css/sphinx_rtd_theme.css
+        :language: css
+
+.. dropdown:: sphinx-immaterial
+
+    .. literalinclude:: _static/_css/sphinx_immaterial.css
+        :language: css
+        :start-after: /* doc config start */
+        :end-before: /* doc config end */
+
+.. _CSS Variables: https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties
+.. _this how-to: https://docs.readthedocs.io/en/stable/guides/adding-custom-css.html
 
 .. _install_plantuml:
 
