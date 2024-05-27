@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1716289644699,
+  "lastUpdate": 1716839732350,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7776,6 +7776,42 @@ window.BENCHMARK_DATA = {
             "value": 61.06966716900001,
             "unit": "s",
             "extra": "Commit: 934a3a0e0034f89e4219c994d693ebac02e97918\nBranch: master\nTime: 2024-05-21T13:05:26+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "76d0c8d90662f04ec067913b0da5515f1c4ad3f5",
+          "message": "👌 Improve cross-html-theme compatibility (#1182)\n\nThis commit makes the extension's CSS less dependent on any one sphinx HTML theme.\r\n\r\nThis was achieved by adding tox dev configuration, \r\nto build the internal documentation using multiple commonly used themes,\r\nthen iterating the CSS to achieve a good result for all with minimal theme-specific changes:\r\n\r\n```bash\r\nCLEAN=true tox -p -e docs-alabaster,docs-furo,docs-pds,docs-rtd,docs-im\r\n```\r\n\r\nbuilds:\r\n\r\n- https://alabaster.readthedocs.io/\r\n- https://pradyunsg.me/furo/\r\n- https://pydata-sphinx-theme.readthedocs.io\r\n- https://sphinx-rtd-theme.readthedocs.io\r\n- https://jbms.github.io/sphinx-immaterial/",
+          "timestamp": "2024-05-27T21:53:29+02:00",
+          "tree_id": "d89387f1ac484a6d566611f1bf7e3d6e6b9da07a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/76d0c8d90662f04ec067913b0da5515f1c4ad3f5"
+        },
+        "date": 1716839723725,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.25083252799998945,
+            "unit": "s",
+            "extra": "Commit: 76d0c8d90662f04ec067913b0da5515f1c4ad3f5\nBranch: master\nTime: 2024-05-27T21:53:29+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 63.35426401599997,
+            "unit": "s",
+            "extra": "Commit: 76d0c8d90662f04ec067913b0da5515f1c4ad3f5\nBranch: master\nTime: 2024-05-27T21:53:29+02:00"
           }
         ]
       }
