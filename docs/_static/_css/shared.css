@@ -5,8 +5,8 @@
 }
 
 svg.sn-flow-chart {
-    width: 150px;
-    height: auto;
+    width: auto;
+    height: 300px;
 }
 
 @media (max-width: 576px) {
@@ -16,20 +16,104 @@ svg.sn-flow-chart {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-    svg.sn-flow-chart path.arrow {
-        animation: move 1s ease-in-out forwards;
+    svg.sn-flow-chart {
+        --time: 1.5s;
+    }
+
+    svg.sn-flow-chart .specification {
+        animation: move-spec var(--time) ease-in-out forwards;
+    }
+
+    svg.sn-flow-chart .implementation {
+        animation: move-impl var(--time) ease-in-out forwards;
+    }
+
+    svg.sn-flow-chart .testcase1,
+    svg.sn-flow-chart .testcase2 {
+        animation: move-test var(--time) ease-in-out forwards;
+    }
+
+    svg.sn-flow-chart path.arrow.req-spec {
+        animation: move-arrow-req-spec var(--time) ease-in-out forwards, show-arrow var(--time) cubic-bezier(0.6, 0, 1.0, 1.0) forwards;
+    }
+
+    svg.sn-flow-chart path.arrow.spec-impl {
+        animation: move-arrow-spec-impl var(--time) ease-in-out forwards, show-arrow var(--time) cubic-bezier(0.6, 0, 1.0, 1.0) forwards;
+    }
+
+    svg.sn-flow-chart path.arrow.impl-test1,
+    svg.sn-flow-chart path.arrow.impl-test2 {
+        animation: move-arrow-impl-test var(--time) ease-in-out forwards, show-arrow var(--time) cubic-bezier(0.6, 0, 1.0, 1.0) forwards;
     }
 }
 
-@keyframes move {
+@keyframes move-arrow-req-spec {
     from {
-        opacity: 0.5;
-        transform: translateY(-30px);
+        transform: translateY(-20px);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes move-spec {
+    from {
+        transform: translateY(-40px);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes move-arrow-spec-impl {
+    from {
+        transform: translateY(-60px);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes move-impl {
+    from {
+        transform: translateY(-80px);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes move-arrow-impl-test {
+    from {
+        transform: translateY(-100px);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes move-test {
+    from {
+        transform: translateY(-120px);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes show-arrow {
+    from {
+        opacity: 0;
     }
 
     to {
         opacity: 1;
-        transform: translateY(0);
     }
 }
 
@@ -40,4 +124,14 @@ svg.sn-flow-chart {
 
 table.needs-grid-example {
     border: 1px solid var(--color-table-border);
+}
+
+:root {
+    --sn-architecture-bg: url(../architecture_bg-light.png);
+}
+
+.architecture-bg {
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-image: var(--sn-architecture-bg);
 }

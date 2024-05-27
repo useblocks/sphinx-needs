@@ -39,14 +39,7 @@ If you wish to also use the plotting features of sphinx-needs (see :ref:`needbar
 
 .. note::
 
-   Prior version **1.0.1** the package was named ``sphinxcontrib-needs``.
-
-Using poetry
-------------
-
-.. code-block:: bash
-
-    poetry add sphinx-needs
+   Prior to version **1.0.1** the package was named ``sphinxcontrib-needs``.
 
 Using sources
 -------------
@@ -56,8 +49,6 @@ Using sources
     git clone https://github.com/useblocks/sphinx-needs
     cd sphinx-needs
     pip install .
-    # or
-    poetry install
 
 
 Activation
@@ -108,6 +99,8 @@ For examples of how to adjust the CSS, this documentation is configured to build
 
     .. literalinclude:: _static/_css/pydata_sphinx_theme.css
         :language: css
+        :start-after: /* doc config start */
+        :end-before: /* doc config end */
 
 .. dropdown:: sphinx-rtd-theme
     :icon: paintbrush
@@ -177,4 +170,12 @@ Sphinx-Needs is also available as a Docker Image.
 
 See :ref:`docker` for the documentation and hints how to use it.
 
+.. _ide:
+.. _ide_vscode:
 
+VS Code Extension
+-----------------
+
+VsCode extension `Sphinx-Needs-VsCode <https://marketplace.visualstudio.com/items?itemName=useblocks.sphinx-needs-vscode>`_ provides 
+support for Sphinx-Needs. 
+See more details in the `Documentation <https://sphinx-needs-vscode.useblocks.com/>`_.

@@ -93,14 +93,14 @@ sd_custom_directives = {
 
 html_static_path = ["_static"]
 html_css_files = ["_css/shared.css"]
-html_favicon = "./_static/sphinx-needs-logo-favicon.png"
+html_favicon = "./_static/sphinx-needs-logo-square-dark.svg"
 
 html_theme = DOCS_THEME
 
 if DOCS_THEME == "alabaster":
     # https://alabaster.readthedocs.io
     html_theme_options = {
-        "logo": "sphinx-needs-logo.png",
+        "logo": "sphinx-needs-logo-long-light.svg",
         "description": "",
         "github_type": "star",
         "github_user": "useblocks",
@@ -131,13 +131,14 @@ elif DOCS_THEME == "furo":
             "sidebar/variant-selector.html",
         ]
     }
+    html_context = {"repository": "useblocks/sphinx-needs"}
 elif DOCS_THEME == "pydata_sphinx_theme":
     # https://pydata-sphinx-theme.readthedocs.io
     html_css_files += ["_css/pydata_sphinx_theme.css"]
     html_theme_options = {
         "logo": {
-            "image_light": "_static/sphinx-needs-logo.png",
-            "image_dark": "_static/sphinx-needs-logo-white.png",
+            "image_light": "_static/sphinx-needs-logo-long-light.svg",
+            "image_dark": "_static/sphinx-needs-logo-long-dark.svg",
         },
         "use_edit_page_button": True,
         "github_url": "https://github.com/useblocks/sphinx-needs",
@@ -151,13 +152,13 @@ elif DOCS_THEME == "pydata_sphinx_theme":
 elif DOCS_THEME == "sphinx_rtd_theme":
     # https://sphinx-rtd-theme.readthedocs.io
     html_css_files += ["_css/sphinx_rtd_theme.css"]
-    html_logo = "./_static/sphinx-needs-logo-white.png"
+    html_logo = "./_static/sphinx-needs-logo-long-dark.svg"
     html_theme_options = {
         "logo_only": True,
     }
 elif DOCS_THEME == "sphinx_immaterial":
     # https://jbms.github.io/sphinx-immaterial
-    html_logo = "./_static/sphinx-needs-logo-white.png"
+    html_logo = "./_static/sphinx-needs-logo-long-dark.svg"
     templates_path = ["_templates/sphinx_immaterial"]
     html_css_files += ["_css/sphinx_immaterial.css"]
     html_sidebars = {

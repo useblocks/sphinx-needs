@@ -555,15 +555,15 @@ Sphinx-needs provides the following css styles:
 
 **blank.css**
 
-.. image:: _static/need_blank.png
+.. image:: /_images/need_blank.png
 
 **modern.css**
 
-.. image:: _static/need_modern.png
+.. image:: /_images/need_modern.png
 
 **dark.css**
 
-.. image:: _static/need_dark.png
+.. image:: /_images/need_dark.png
 
 .. _own_css:
 

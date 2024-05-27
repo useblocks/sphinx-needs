@@ -7,7 +7,6 @@
     --ub-color-primary-200: #edfc93;
     --ub-color-primary-300: #e5fa63;
     --ub-color-primary-400: #e4ff3e;
-    /* main */
     --ub-color-primary-500: #ddfb00;
     --ub-color-primary-600: #d3eb00;
     --ub-color-primary-700: #c2d300;
@@ -20,7 +19,6 @@
     --ub-color-complementary-300: #967bff;
     --ub-color-complementary-400: #7a5cff;
     --ub-color-complementary-500: #583eff;
-    /* main */
     --ub-color-complementary-600: #4839f8;
     --ub-color-complementary-700: #2c31ef;
     --ub-color-complementary-800: #002cea;
@@ -40,237 +38,216 @@
     --ub-color-neutral-1000: #000000;
 }
 
-/* furo colors */
+/* set the main brand color for light and dark modes */
 body {
-    --color-foreground-primary: black;
+    --ub-color-brand-main: var(--ub-color-complementary-500);
+    --ub-color-brand-main--opaque: rgb(88, 62, 255, 0.2);
+    --sn-architecture-bg: url(../architecture_bg-light.png);
+}
+
+@media not print {
+    body[data-theme="dark"] {
+        --ub-color-brand-main: var(--ub-color-primary-400);
+        --ub-color-brand-main--opaque: rgba(228, 255, 62, 0.15);
+        --sn-architecture-bg: url(../architecture_bg-dark.png);
+    }
+
+    @media (prefers-color-scheme: dark) {
+        body:not([data-theme="light"]) {
+            --ub-color-brand-main: var(--ub-color-primary-400);
+            --ub-color-brand-main--opaque: rgba(228, 255, 62, 0.15);
+            --sn-architecture-bg: url(../architecture_bg-dark.png);
+        }
+    }
+}
+
+/* furo light colors */
+/* everything commented out is the default furo light colors */
+body {
+    /* --color-foreground-primary: black; */
     /* for main text and headings */
-    --color-foreground-secondary: #5a5c63;
+    /* --color-foreground-secondary: #5a5c63; */
     /* for secondary text */
-    --color-foreground-muted: #6b6f76;
+    /* --color-foreground-muted: #6b6f76; */
     /* for muted text */
-    --color-foreground-border: #878787;
+    /* --color-foreground-border: #878787; */
     /* for content borders */
 
-    --color-background-primary: white;
+    /* --color-background-primary: white; */
     /* for content */
-    --color-background-secondary: #f8f9fb;
+    /* --color-background-secondary: #f8f9fb; */
     /* for navigation + ToC */
-    --color-background-hover: #efeff4ff;
+    /* --color-background-hover: #efeff4ff; */
     /* for navigation-item hover */
-    --color-background-hover--transparent: #efeff400;
-    --color-background-border: #eeebee;
+    /* --color-background-hover--transparent: #efeff400; */
+    /* --color-background-border: #eeebee; */
     /* for UI borders */
-    --color-background-item: #ccc;
+    /* --color-background-item: #ccc; */
     /* for "background" items (eg: copybutton) */
 
-    --color-brand-primary: var(--ub-color-complementary-500);
+    --color-brand-primary: var(--ub-color-brand-main);
     /** for left ToC links (and active item in right ToC) **/
-    --color-brand-content: #2757dd;
-    /* for links */
-    --color-brand-visited: #872ee0;
-    /* for visited links */
+    /* --color-brand-content: #2757dd; */
+    /* for links, but we override below */
+    /* --color-brand-visited: #872ee0; */
+    /* for visited links but we override below */
+
+    /* anchored heading title */
+    --color-highlight-on-target: var(--ub-color-brand-main--opaque);
 
     /* Left ToC */
     --color-sidebar-brand-text: var(--color-foreground-primary);
     --color-sidebar-caption-text: var(--ub-color-neutral-900);
     --color-sidebar-link-text--top-level: var(--ub-color-neutral-800);
     --color-sidebar-link-text: var(--ub-color-neutral-600);
-    --color-sidebar-link-text--current: var(--ub-color-complementary-500);
+    --color-sidebar-link-text--current: var(--ub-color-brand-main);
 
     /* Right ToC */
-    --color-toc-item-text--active: var(--ub-color-complementary-500);
+    --color-toc-item-text--active: var(--ub-color-brand-main);
 
     /* Links */
     --color-link: var(--color-content-foreground);
     --color-link--hover: var(--color-content-foreground);
     --color-link-underline: var(--ub-color-complementary-200);
-    --color-link-underline--hover: var(--ub-color-complementary-500);
+    --color-link-underline--hover: var(--ub-color-brand-main);
     --color-link--visited: var(--color-content-foreground);
     --color-link--visited--hover: var(--color-content-foreground);
     --color-link-underline--visited: var(--ub-color-complementary-200);
-    --color-link-underline--visited--hover: var(--ub-color-complementary-500);
+    --color-link-underline--visited--hover: var(--ub-color-brand-main);
 
     /* Admonitions */
-    --color-admonition-title-background--note: rgb(88, 62, 255, 0.2);
-    --color-admonition-title--note: var(--ub-color-complementary-500);
+    --color-admonition-title-background--note: var(--ub-color-brand-main--opaque);
+    --color-admonition-title--note: var(---ub-color-brand-main);
 
     /* Sphinx Design */
     --sd-fontsize-dropdown: var(--admonition-font-size);
     --sd-fontsize-dropdown-title: var(--admonition-title-font-size);
     --sd-fontweight-dropdown-title: 500;
-    --sd-color-card-header: var(--color-admonition-title-background--note);
-    --sd-color-card-border-hover: var(--color-admonition-title--note);
+    --sd-color-card-header: var(--ub-color-brand-main--opaque);
+    --sd-color-card-border-hover: var(--ub-color-brand-main--opaque);
 }
 
+/* furo dark colors */
+/* everything commented out is the default furo dark colors, or using variables already setup for dark mode */
 @media not print {
     body[data-theme="dark"] {
-        --color-foreground-primary: #cfd0d0;
+        /* --color-foreground-primary: #cfd0d0; */
         /* for main text and headings */
-        --color-foreground-secondary: #9ca0a5;
+        /* --color-foreground-secondary: #9ca0a5; */
         /* for secondary text */
-        --color-foreground-muted: #81868d;
+        /* --color-foreground-muted: #81868d; */
         /* for muted text */
-        --color-foreground-border: #666666;
+        /* --color-foreground-border: #666666; */
         /* for content borders */
 
-        --color-background-primary: #131416;
+        /* --color-background-primary: #131416; */
         /* for content */
-        --color-background-secondary: #1a1c1e;
+        /* --color-background-secondary: #1a1c1e; */
         /* for navigation + ToC */
-        --color-background-hover: #1e2124ff;
+        /* --color-background-hover: #1e2124ff; */
         /* for navigation-item hover */
-        --color-background-hover--transparent: #1e212400;
-        --color-background-border: #303335;
+        /* --color-background-hover--transparent: #1e212400; */
+        /* --color-background-border: #303335; */
         /* for UI borders */
-        --color-background-item: #444;
+        /* --color-background-item: #444; */
         /* for "background" items (eg: copybutton) */
 
-        --color-brand-primary: var(--ub-color-primary-400);
+        /* anchored heading title */
+        --color-highlight-on-target: var(--ub-color-brand-main--opaque);
+
+        --color-brand-primary: var(--ub-color-brand-main);
         /* for left ToC links (and active item in right ToC) */
-        --color-brand-content: #5ca5ff;
-        /* for links */
-        --color-brand-visited: #b27aeb;
-        /* for visited links */
+        /* --color-brand-content: #5ca5ff; */
+        /* for links, but we override below */
+        /* --color-brand-visited: #b27aeb; */
+        /* for visited links, but we override below */
 
         /* Left ToC */
         --color-sidebar-brand-text: var(--color-foreground-primary);
         --color-sidebar-caption-text: var(--ub-color-neutral-100);
         --color-sidebar-link-text--top-level: var(--ub-color-neutral-300);
         --color-sidebar-link-text: var(--ub-color-neutral-500);
-        --color-sidebar-link-text--current: var(--ub-color-primary-400);
+        --color-sidebar-link-text--current: var(--ub-color-brand-main);
 
         /* Right ToC */
-        --color-toc-item-text--active: var(--ub-color-primary-400);
+        --color-toc-item-text--active: var(--ub-color-brand-main);
 
         /* Links */
         --color-link: var(--color-content-foreground);
         --color-link--hover: var(--color-content-foreground);
         --color-link-underline: var(--ub-color-primary-800);
-        --color-link-underline--hover: var(--ub-color-primary-400);
+        --color-link-underline--hover: var(--ub-color-brand-main);
         --color-link--visited: var(--color-content-foreground);
         --color-link--visited--hover: var(--color-content-foreground);
         --color-link-underline--visited: var(--ub-color-primary-800);
-        --color-link-underline--visited--hover: var(--ub-color-primary-400);
+        --color-link-underline--visited--hover: var(--ub-color-brand-main);
 
         /* Admonitions */
-        --color-admonition-title-background--note: rgba(228, 255, 62, 0.15);
-        --color-admonition-title--note: var(--ub-color-primary-400);
+        --color-admonition-title-background--note: var(--ub-color-brand-main--opaque);
+        --color-admonition-title--note: var(--ub-color-brand-main);
     }
 
     @media (prefers-color-scheme: dark) {
         body:not([data-theme="light"]) {
-            --color-foreground-primary: #cfd0d0;
+            /* --color-foreground-primary: #cfd0d0; */
             /* for main text and headings */
-            --color-foreground-secondary: #9ca0a5;
+            /* --color-foreground-secondary: #9ca0a5; */
             /* for secondary text */
-            --color-foreground-muted: #81868d;
+            /* --color-foreground-muted: #81868d; */
             /* for muted text */
-            --color-foreground-border: #666666;
+            /* --color-foreground-border: #666666; */
             /* for content borders */
 
-            --color-background-primary: #131416;
+            /* --color-background-primary: #131416; */
             /* for content */
-            --color-background-secondary: #1a1c1e;
+            /* --color-background-secondary: #1a1c1e; */
             /* for navigation + ToC */
-            --color-background-hover: #1e2124ff;
+            /* --color-background-hover: #1e2124ff; */
             /* for navigation-item hover */
-            --color-background-hover--transparent: #1e212400;
-            --color-background-border: #303335;
+            /* --color-background-hover--transparent: #1e212400; */
+            /* --color-background-border: #303335; */
             /* for UI borders */
-            --color-background-item: #444;
+            /* --color-background-item: #444; */
             /* for "background" items (eg: copybutton) */
 
-            --color-brand-primary: var(--ub-color-primary-400);
+            /* anchored heading title */
+            --color-highlight-on-target: var(--ub-color-brand-main--opaque);
+
+            --color-brand-primary: var(--ub-color-brand-main);
             /* for left ToC links (and active item in right ToC) */
-            --color-brand-content: #5ca5ff;
-            /* for links */
-            --color-brand-visited: #b27aeb;
-            /* for visited links */
+            /* --color-brand-content: #5ca5ff; */
+            /* for links, but we override below */
+            /* --color-brand-visited: #b27aeb; */
+            /* for visited links, but we override below */
 
             /* Left ToC */
             --color-sidebar-brand-text: var(--color-foreground-primary);
             --color-sidebar-caption-text: var(--ub-color-neutral-100);
             --color-sidebar-link-text--top-level: var(--ub-color-neutral-300);
             --color-sidebar-link-text: var(--ub-color-neutral-500);
-            --color-sidebar-link-text--current: var(--ub-color-primary-400);
+            --color-sidebar-link-text--current: var(--ub-color-brand-main);
 
             /* Right ToC */
-            --color-toc-item-text--active: var(--ub-color-primary-400);
+            --color-toc-item-text--active: var(--ub-color-brand-main);
 
             /* Links */
             --color-link: var(--color-content-foreground);
             --color-link--hover: var(--color-content-foreground);
             --color-link-underline: var(--ub-color-primary-800);
-            --color-link-underline--hover: var(--ub-color-primary-400);
+            --color-link-underline--hover: var(--ub-color-brand-main);
             --color-link--visited: var(--color-content-foreground);
             --color-link--visited--hover: var(--color-content-foreground);
             --color-link-underline--visited: var(--ub-color-primary-800);
-            --color-link-underline--visited--hover: var(--ub-color-primary-400);
+            --color-link-underline--visited--hover: var(--ub-color-brand-main);
 
             /* Admonitions */
-            --color-admonition-title-background--note: rgba(228, 255, 62, 0.15);
-            --color-admonition-title--note: var(--ub-color-primary-400);
+            --color-admonition-title-background--note: var(--ub-color-brand-main--opaque);
+            --color-admonition-title--note: var(--ub-color-brand-main);
         }
     }
 }
 
-.sidebar-tree .current-page>.reference {
-    font-weight: 700;
-    color: var(--color-sidebar-link-text--current)
-}
-
-#search-results a {
-    text-decoration: none;
-}
-
-.gh-source {
-    display: flex;
-    align-items: center;
-    gap: .5em;
-    padding-left: var(--sidebar-item-spacing-horizontal);
-    padding-right: var(--sidebar-item-spacing-horizontal);
-    margin-top: 1em;
-    margin-bottom: 1em;
-    text-decoration: none;
-}
-
-.gh-source--icon {
-    height: 1.5em;
-}
-
-.gh-source:hover .gh-source--icon {
-    height: 1.6em;
-}
-
-.gh-source--version {
-    display: inline-flex;
-    align-items: center;
-    gap: .2em;
-}
-
-.gh-source--version-icon {
-    height: .8em;
-}
-
-.gh-source--version-icon,
-.gh-source--version-text {
-    font-size: .8em;
-    color: var(--color-foreground-muted);
-}
-
-svg.sn-flow-chart path.text {
-    fill: var(--color-foreground-primary);
-}
-
-svg.sn-flow-chart rect.box {
-    fill: var(--color-background-secondary);
-    stroke: var(--color-foreground-border);
-}
-
-svg.sn-flow-chart path.arrow {
-    fill: var(--color-sidebar-link-text--current);
-}
-
+/* sphinx-needs colors */
 /* doc config start */
 /* Note, the recommended way to set colors for furo is in the `html_theme_options`
 https://pradyunsg.me/furo/customisation/#light-css-variables-dark-css-variables
@@ -346,9 +323,79 @@ body {
 
 /* doc config end */
 
+/* make the left ToC use the brand color for the current page */
+.sidebar-tree .current-page>.reference {
+    font-weight: 700;
+    color: var(--ub-color-brand-main)
+}
+
+/* styling fo the icon at the top of the left ToC bar */
 img.sidebar-logo {
     /* furo sets this at 100% but that makes it a bit too big */
     max-width: 85%;
+}
+
+/* Do not underline links in the search results */
+#search-results a {
+    text-decoration: none;
+}
+
+/* styling for added the source link component in the left ToC bar */
+.gh-source {
+    display: flex;
+    align-items: center;
+    gap: .5em;
+    padding-left: var(--sidebar-item-spacing-horizontal);
+    padding-right: var(--sidebar-item-spacing-horizontal);
+    padding-top: 1em;
+    margin-bottom: 1em;
+    text-decoration: none;
+    border-top: 1px solid var(--color-background-border);
+}
+
+.gh-source--icon {
+    height: 1.5em;
+}
+
+.gh-source:hover .gh-source--info * {
+    color: var(--color-foreground-primary);
+}
+
+.gh-source--info {
+    display: inline-flex;
+    flex-direction: column;
+    gap: .1em;
+}
+
+.gh-source--version {
+    display: inline-flex;
+    align-items: center;
+    gap: .2em;
+}
+
+.gh-source--version-icon {
+    height: .8em;
+}
+
+.gh-source--version-icon,
+.gh-source--version-text,
+.gh-source--repo-text {
+    font-size: .8em;
+    color: var(--color-foreground-muted);
+}
+
+
+/** styling for the flowchart diagram on the landing page **/
+svg.sn-flow-chart path.text {
+    fill: var(--color-foreground-primary);
+}
+
+svg.sn-flow-chart rect.box {
+    stroke: var(--color-foreground-border);
+}
+
+svg.sn-flow-chart path.arrow {
+    fill: var(--ub-color-brand-main);
 }
 
 /* Image width fix in need-sidebars. */
@@ -356,10 +403,13 @@ tbody div.needs_side img.needs_image {
     max-width: 100px;
 }
 
-/** sphinx-design **/
+/** sphinx-design additional styling **/
+details.sd-dropdown {
+    margin: 1rem auto;
+}
 summary.sd-summary-title {
     padding-right: .5em !important;
-    /* note this will be in sphinx-design v0.6.1 */
+    /* note this can be removed in sphinx-design v0.6.1 */
 }
 
 .sn-dropdown-default .sd-summary-icon svg {
