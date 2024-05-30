@@ -35,6 +35,7 @@ extensions = [
     "sphinxcontrib.programoutput",
     "sphinx_design",
     "sphinx.ext.duration",
+    "sphinx.ext.todo",
 ]
 if DOCS_THEME == "sphinx_immaterial":
     extensions.append("sphinx_immaterial")
@@ -369,6 +370,35 @@ needs_types = [
         "color": "#FF3333",
         "style": "node",
     },
+    # for tutorial
+    {
+        "directive": "tutorial-project",
+        "title": "Project",
+        "prefix": "P_",
+        "color": "#BFD8D2",
+        "style": "rectangle",
+    },
+    {
+        "directive": "tutorial-req",
+        "title": "Requirement",
+        "prefix": "R_",
+        "color": "#BFD8D2",
+        "style": "rectangle",
+    },
+    {
+        "directive": "tutorial-spec",
+        "title": "Specification",
+        "prefix": "S_",
+        "color": "#FEDCD2",
+        "style": "rectangle",
+    },
+    {
+        "directive": "tutorial-test",
+        "title": "Test Case",
+        "prefix": "T_",
+        "color": "#f9e79f",
+        "style": "rectangle",
+    },
 ]
 
 needs_extra_links = [
@@ -432,6 +462,23 @@ needs_extra_links = [
         "style": "#00AA00",
         "style_part": "solid,#777777",
     },
+    # for tutorial
+    {
+        "option": "tutorial_required_by",
+        "incoming": "requires",
+        "outgoing": "required by",
+        "style": "#00AA00",
+    },
+    {
+        "option": "tutorial_specifies",
+        "incoming": "specified by",
+        "outgoing": "specifies",
+    },
+    {
+        "option": "tutorial_tests",
+        "incoming": "tested by",
+        "outgoing": "tests",
+    },
 ]
 
 needs_variant_options = ["status"]
@@ -447,6 +494,15 @@ needs_flow_configs = {
            ArrowColor SeaGreen
            BorderColor SpringGreen
        }
+   """,
+    "tutorial": """
+    skinparam backgroundcolor transparent
+    skinparam Arrow {
+      Color #57ACDC
+      FontColor #808080
+      FontStyle Bold
+    }
+    skinparam rectangleBorderThickness 2
    """,
 }
 
@@ -476,10 +532,9 @@ needs_extra_options = [
     "unit",
 ]
 
+_names = [t["directive"] for t in needs_types] + ["issue", "pr", "commit"]
 needs_warnings = {
-    "type_check": 'type not in ["int", "sys", "comp", "req", "spec", "impl", "test", "feature", "action", "user", "milestone", '
-    '"issue", "pr", "commit"'  # GitHub service types
-    "]",
+    "type_check": f"type not in {_names}",
     # 'valid_status': 'status not in ["open", "in progress", "closed", "done", "implemented"] and status is not None'
 }
 
@@ -623,6 +678,10 @@ from docutils import nodes  # noqa: E402
 from sphinx.application import Sphinx  # noqa: E402
 from sphinx.directives import SphinxDirective  # noqa: E402
 
+from sphinx_needs.api.need import add_external_need  # noqa: E402
+from sphinx_needs.data import SphinxNeedsData  # noqa: E402
+from sphinx_needs.needsfile import NeedsList  # noqa: E402
+
 
 class NeedExampleDirective(SphinxDirective):
     """Directive to add example content to the documentation.
@@ -657,5 +716,34 @@ class NeedExampleDirective(SphinxDirective):
         return [root]
 
 
+def create_tutorial_needs(app: Sphinx, _env, _docnames):
+    """Create a JSON to import in the tutorial.
+
+    We do this dynamically, to avoid having to maintain the JSON file manually.
+    """
+    all_data = SphinxNeedsData(app.env).get_or_create_needs()
+    writer = NeedsList(app.config, outdir=app.confdir, confdir=app.confdir)
+    for i in range(1, 5):
+        test_id = f"T_00{i}"
+        # TODO really here we don't want to create the data, without actually adding it to the needs
+        if test_id in all_data:
+            data = all_data[test_id]
+        else:
+            add_external_need(
+                app,
+                "tutorial-test",
+                id=test_id,
+                title=f"Unit test {i}",
+                content=f"Test case {i}",
+            )
+            data = all_data.pop(test_id)
+        writer.add_need(version, data)
+    # TODO ideally we would only write this file if it has changed (also needimport should add dependency on file)
+    writer.write_json(
+        needs_file="tutorial_needs.json", needs_path=str(Path(app.confdir, "_static"))
+    )
+
+
 def setup(app: Sphinx):
     app.add_directive("need-example", NeedExampleDirective)
+    app.connect("env-before-read-docs", create_tutorial_needs, priority=600)

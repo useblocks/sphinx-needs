@@ -814,3 +814,61 @@ content_footer_side_right
    +---------+      |
    | footer  |      |
    +---------+------+
+
+More Examples
+-------------
+
+.. need-example::
+
+   .. req:: A normal requirement
+      :id: EX_REQ_1
+      :status: open
+
+      This is how a normal requirement looks like
+
+.. need-example::
+
+   .. req:: A more complex and highlighted requirement
+      :id: EX_REQ_2
+      :status: open
+      :tags: awesome, nice, great, example
+      :links: EX_REQ_1
+      :layout: complete
+      :style: red_border
+
+      More columns for better data structure and a red border.
+
+.. need-example::
+
+   .. req:: A focused requirement
+      :id: EX_REQ_3
+      :tags: example
+      :status: open
+      :style: clean
+      :layout: focus_r
+
+      This also a requirement, but we focus on content here.
+      All meta-data is hidden, except the need-id.
+
+.. need-example::
+
+   .. req:: A custom requirement with picture
+      :author: daniel
+      :id: EX_REQ_4
+      :tags: example
+      :status: open
+      :layout: example
+      :style: yellow, blue_border
+
+      This example uses the value from **author** to reference an image.
+      See :ref:`layouts_styles` for the complete explanation.
+
+.. need-example::
+
+   .. req:: A requirement with a permalink
+      :id: EX_REQ_5
+      :tags: example
+      :status: open
+      :layout: permalink_example
+
+      This is like a normal requirement looks like but additionally a permalink icon is shown next to the ID.

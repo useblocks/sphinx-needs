@@ -1,7 +1,7 @@
 .. _need:
 
-need / req (or any other defined need type)
-===========================================
+need items
+==========
 
 Creates a **need** object with a specified type.
 You can define the type using the correct directive, like ``.. req::`` or ``.. test::``.

@@ -135,3 +135,11 @@ table.needs-grid-example {
     background-size: cover;
     background-image: var(--sn-architecture-bg);
 }
+
+.needs-example {
+  padding-left: .6em !important;
+  border-left: .2rem solid var(--sn-color-docs-example, green) !important;
+  border-radius: 3px !important;
+  margin-top: 1.5em !important;
+  margin-bottom: 1.5em !important;
+}

@@ -1,9 +1,6 @@
 :sd_hide_title:
 :hide-toc:
 
-.. role:: underline
-    :class: underline
-
 Introduction
 ============
 
@@ -191,110 +188,6 @@ For instance, you can customize the need objects to support bugs, user stories o
    safety standard.
 
 
-Example
--------
-
-For more complex examples, please visit :ref:`examples`.
-
-Input
-~~~~~
-
-.. code-block:: rst
-
-   **Some data**
-
-   .. req:: My first requirement
-      :id: req_001
-      :tags: main_example
-
-      This need is a requirement, and it includes a title, an ID, a tag and this text as a description.
-
-   .. spec:: Spec for a requirement
-      :links: req_001
-      :status: done
-      :tags: important; main_example
-      :collapse: false
-
-      We didn't set the **ID** option here, so **Sphinx-Needs** will generate one for us.
-
-      But we have set a **link** to our previous requirement and have set the **status** option.
-
-      Also, we have enabled **collapse** to false to show all meta-data directly under the title.
-
-   **Some text**
-
-   Wohooo, we have created :need:`req_001`,
-   which is linked by :need_incoming:`req_001`.
-
-   **Some filters**
-
-   Simple list:
-
-   .. needlist::
-     :tags: main_example
-
-   Simple table:
-
-   .. needtable::
-     :tags: main_example
-     :style: table
-
-   A more powerful table
-   (based on `DataTables <https://datatables.net/>`_):
-
-   .. needtable::
-     :tags: main_example
-     :style: datatables
-
-
-Result
-~~~~~~
-
-**Some data**
-
-.. req:: My first requirement
-   :id: req_001
-   :tags: main_example
-
-   This need is a requirement, and it includes a title, an ID, a tag and this text as a description.
-
-
-.. spec:: Spec for a requirement
-   :links: req_001
-   :status: done
-   :tags: important; main_example
-   :collapse: false
-
-   We didn't set the ``:id:`` option here, so **Sphinx-Needs** will generate one for us.
-
-   But we have set a **link** to our previous requirement and have set the **status** option.
-
-   Also, we have enabled **collapse** to false to show all meta-data directly under the title.
-
-**Some text**
-
-Wohooo, we have created :need:`req_001`,
-which is linked by :need_incoming:`req_001`.
-
-**Some filters**
-
-:underline:`Simple list`:
-
-.. needlist::
-  :tags: main_example
-
-:underline:`Simple table`:
-
-.. needtable::
-  :tags: main_example
-  :style: table
-
-:underline:`A more powerful table` (based on `DataTables <https://datatables.net/>`_):
-
-.. needtable::
-  :tags: main_example
-  :style: datatables
-
 Ecosystem
 ---------
 
@@ -366,6 +259,7 @@ In the last years, we have created additional information and extensions, which 
 
 Other Sphinx extensions
 ~~~~~~~~~~~~~~~~~~~~~~~
+
 During the use of Sphinx-Needs in popular companies’ internal projects,
 we have created other Sphinx extensions to support the work of teams in the automotive industry:
 
@@ -420,7 +314,7 @@ we have created other Sphinx extensions to support the work of teams in the auto
    tutorial
 
 .. toctree::
-   :caption: Reference
+   :caption: Components
    :maxdepth: 2
    :hidden:
 
@@ -428,18 +322,17 @@ we have created other Sphinx extensions to support the work of teams in the auto
    roles
    configuration
    builders
-   examples/index
 
 .. toctree::
-   :caption: Advanced
+   :caption: How-tos
    :maxdepth: 2
    :hidden:
 
-   api
    filter
    dynamic_functions
    services/index
    layout_styles
+   api
    utils
 
 .. toctree::
