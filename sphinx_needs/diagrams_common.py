@@ -8,7 +8,7 @@ from __future__ import annotations
 import html
 import os
 import textwrap
-from typing import Any, TypedDict
+from typing import TypedDict
 from urllib.parse import urlparse
 
 from docutils import nodes
@@ -16,7 +16,7 @@ from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
-from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.config import NeedsSphinxConfig, NeedType
 from sphinx_needs.data import NeedsFilteredBaseType, NeedsInfoType
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
@@ -208,8 +208,8 @@ def calculate_link(
     return link
 
 
-def create_legend(need_types: list[dict[str, Any]]) -> str:
-    def create_row(need_type: dict[str, Any]) -> str:
+def create_legend(need_types: list[NeedType]) -> str:
+    def create_row(need_type: NeedType) -> str:
         return "\n|<back:{color}> {color} </back>| {name} |".format(
             color=need_type["color"], name=need_type["title"]
         )

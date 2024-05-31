@@ -10,7 +10,7 @@ from sphinx_needs.defaults import DEFAULT_DIAGRAM_TEMPLATE
 
 if TYPE_CHECKING:
     from sphinx.util.logging import SphinxLoggerAdapter
-    from typing_extensions import Required
+    from typing_extensions import NotRequired, Required
 
     from sphinx_needs.data import NeedsInfoType
 
@@ -141,6 +141,21 @@ class LinkOptionsType(TypedDict, total=False):
     """If True, add a 'forbidden' class to dead links"""
 
 
+class NeedType(TypedDict):
+    """Defines a need type"""
+
+    directive: str
+    """The directive name."""
+    title: str
+    """A human readable title."""
+    prefix: str
+    """The prefix to use for the need ID."""
+    color: NotRequired[str]
+    """The default color to use in diagrams (default: "#000000")."""
+    style: NotRequired[str]
+    """The default node style to use in diagrams (default: "node")."""
+
+
 @dataclass
 class NeedsSphinxConfig:
     """A wrapper around the Sphinx configuration,
@@ -164,7 +179,7 @@ class NeedsSphinxConfig:
     def __setattr__(self, name: str, value: Any) -> None:
         return setattr(super().__getattribute__("_config"), f"needs_{name}", value)
 
-    types: list[dict[str, Any]] = field(
+    types: list[NeedType] = field(
         default_factory=lambda: [
             {
                 "directive": "req",
