@@ -209,7 +209,7 @@ NEED_DEFAULT_OPTIONS: dict[str, Any] = {
     "status": directives.unchanged_required,
     "tags": directives.unchanged_required,
     "links": directives.unchanged_required,
-    "collapse": directives.unchanged_required,
+    "collapse": directives.unchanged,
     "delete": directives.unchanged,
     "jinja_content": directives.unchanged,
     "hide": directives.flag,

@@ -68,7 +68,7 @@ class NeedsInfoType(TypedDict, total=False):
     """hide the meta-data information of the need."""
     hide: Required[bool]
     """If true, the need is not rendered."""
-    delete: Required[bool]
+    delete: Required[None | bool]
     """If true, the need is deleted entirely."""
     layout: Required[None | str]
     """Key of the layout, which is used to render the need."""
@@ -115,7 +115,7 @@ class NeedsInfoType(TypedDict, total=False):
     """
 
     # content creation information
-    jinja_content: Required[bool]
+    jinja_content: Required[None | bool]
     template: Required[None | str]
     pre_template: Required[None | str]
     post_template: Required[None | str]

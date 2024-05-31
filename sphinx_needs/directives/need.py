@@ -86,32 +86,29 @@ class NeedDirective(SphinxDirective):
         #############################################################################################
         env = self.env
 
-        delete_opt = self.options.get("delete")
-        if isinstance(delete_opt, str):
-            if delete_opt.upper() in ["TRUE", 1, "YES"]:
-                delete_opt = True
-            elif delete_opt.upper() in ["FALSE", 0, "NO"]:
-                delete_opt = False
-            else:
-                raise Exception("delete attribute must be true or false")
+        def _get_boolean(option_name: str) -> bool | None:
+            option_value = self.options.get(option_name)
+            if isinstance(option_value, str):
+                if option_value.upper() in ["", "TRUE", "YES"]:
+                    return True
+                if option_value.upper() in ["FALSE", "NO"]:
+                    return False
+                raise ValueError(
+                    f"{option_name!r} option must be true/false/yes/no, found: {option_value!r}"
+                )
+            return None
 
-        collapse = self.options.get("collapse")
-        if isinstance(collapse, str):
-            if collapse.upper() in ["TRUE", 1, "YES"]:
-                collapse = True
-            elif collapse.upper() in ["FALSE", 0, "NO"]:
-                collapse = False
-            else:
-                raise Exception("collapse attribute must be true or false")
-
-        jinja_content = self.options.get("jinja_content")
-        if isinstance(jinja_content, str):
-            if jinja_content.upper() in ["TRUE", 1, "YES"]:
-                jinja_content = True
-            elif jinja_content.upper() in ["FALSE", 0, "NO"]:
-                jinja_content = False
-            else:
-                raise Exception("jinja_content attribute must be true or false")
+        try:
+            delete_opt = _get_boolean("delete")
+            collapse = _get_boolean("collapse")
+            jinja_content = _get_boolean("jinja_content")
+        except ValueError as exc:
+            LOGGER.warning(
+                f"{exc} [needs.directive]",
+                type="needs",
+                subtype="directive",
+                location=(self.env.docname, self.lineno),
+            )
 
         hide = "hide" in self.options
 
