@@ -15,7 +15,10 @@ DEFAULT_DIAGRAM_TEMPLATE = """
 
 LAYOUT_COMMON_SIDE = {
     "side": ['<<image("field:image", align="center")>>'],
-    "head": ['<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>'],
+    "head": [
+        '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>> '
+        '<<collapse_button("meta", collapsed="icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=False)>> '
+    ],
     "meta": ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"],
 }
 
