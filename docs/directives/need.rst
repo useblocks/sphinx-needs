@@ -173,7 +173,7 @@ Below is an implementation of variants for need options:
       :id: VA_004
       :status: ['variants' in tags and not collapse]:enabled, disabled
       :tags: variants;support
-      :collapse: true
+      :collapse: True
 
       Variants for need options in action
 
@@ -183,7 +183,7 @@ Below is an implementation of variants for need options:
    :id: VA_004
    :status: ['variants' in tags and not collapse]:enabled, disabled
    :tags: variants;support
-   :collapse: true
+   :collapse: True
 
    Variants for need options in action
 
@@ -493,7 +493,7 @@ Default: False
 
    .. req:: Collapse is set to True
       :tags: collapse; example
-      :collapse: True
+      :collapse:
 
       Only title and content are shown
 
@@ -507,7 +507,7 @@ Default: False
 
 .. req:: Collapse is set to True
    :tags: collapse; example
-   :collapse: True
+   :collapse:
 
    Only title and content are shown
 
