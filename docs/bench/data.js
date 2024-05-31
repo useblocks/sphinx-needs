@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1717159435678,
+  "lastUpdate": 1717159514823,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7884,6 +7884,42 @@ window.BENCHMARK_DATA = {
             "value": 65.28798684199995,
             "unit": "s",
             "extra": "Commit: eee2eb405bbfcd4238444c6c17a0a4106934bac9\nBranch: master\nTime: 2024-05-31T14:41:53+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "483c98301b56465caabee32c59221e7a4904b23a",
+          "message": "👌 Add collapse button to `clean_xxx` layouts (#1187)",
+          "timestamp": "2024-05-31T14:43:19+02:00",
+          "tree_id": "db55373304c7270250005acfc13d194bb23bdfd4",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/483c98301b56465caabee32c59221e7a4904b23a"
+        },
+        "date": 1717159506521,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1976703870000165,
+            "unit": "s",
+            "extra": "Commit: 483c98301b56465caabee32c59221e7a4904b23a\nBranch: master\nTime: 2024-05-31T14:43:19+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.630743255,
+            "unit": "s",
+            "extra": "Commit: 483c98301b56465caabee32c59221e7a4904b23a\nBranch: master\nTime: 2024-05-31T14:43:19+02:00"
           }
         ]
       }
