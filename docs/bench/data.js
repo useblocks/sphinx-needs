@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1716842245107,
+  "lastUpdate": 1717159435678,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7848,6 +7848,42 @@ window.BENCHMARK_DATA = {
             "value": 59.98258434499999,
             "unit": "s",
             "extra": "Commit: c394b1f7489dcda8ffdcce6d5d24e396d9808925\nBranch: master\nTime: 2024-05-27T22:35:30+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "eee2eb405bbfcd4238444c6c17a0a4106934bac9",
+          "message": "👌 Better typing for `needs_types` and allow default style/color (#1185)\n\nAdd typing for `needs_types`  items, and allow for the `style` and `color` keys to use defaults when undefined.",
+          "timestamp": "2024-05-31T14:41:53+02:00",
+          "tree_id": "e1ed947a0f7e1816a463a31227fe79acb778e375",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/eee2eb405bbfcd4238444c6c17a0a4106934bac9"
+        },
+        "date": 1717159427772,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.20888570500000014,
+            "unit": "s",
+            "extra": "Commit: eee2eb405bbfcd4238444c6c17a0a4106934bac9\nBranch: master\nTime: 2024-05-31T14:41:53+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 65.28798684199995,
+            "unit": "s",
+            "extra": "Commit: eee2eb405bbfcd4238444c6c17a0a4106934bac9\nBranch: master\nTime: 2024-05-31T14:41:53+02:00"
           }
         ]
       }
