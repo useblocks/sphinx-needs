@@ -6,9 +6,7 @@ need / req (or any other defined need type)
 Creates a **need** object with a specified type.
 You can define the type using the correct directive, like ``.. req::`` or ``.. test::``.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
     .. req:: User needs to login
        :id: ID123
@@ -17,16 +15,6 @@ You can define the type using the correct directive, like ``.. req::`` or ``.. t
        :collapse: false
 
        Our users needs to get logged in via our login forms on **/login.php**.
-
-.. rubric:: **Output**
-
-.. req:: User needs to login
-   :id: ID123
-   :status: open
-   :tags: user;login
-   :collapse: false
-
-   Our users needs to get logged in via our login forms on **/login.php**.
 
 The code example above creates a new requirement, with a title, content, given id, a status and several tags.
 
@@ -88,9 +76,7 @@ In this example, you set the :ref:`needs_variants` configuration that comprises 
 "filter strings".
 You can then use the keys in your ``needs_variants`` as references when defining variants for a *need option*.
 
-|ex|
-
-In ``conf.py``:
+For example, in your ``conf.py``:
 
 .. code-block:: python
 
@@ -116,9 +102,7 @@ Use Case 2
 
 In this example, you can use the filter string directly in the *need option's* variant definition.
 
-|ex|
-
-In your ``.rst`` file:
+For example, in your ``.rst`` file:
 
 .. code-block:: rst
 
@@ -135,8 +119,6 @@ Use Case 3
 In this example, you can use defined tags (via the `-t <https://www.sphinx-doc.org/en/master/man/sphinx-build.html#cmdoption-sphinx-build-t>`_
 command-line option or within conf.py, see `here <https://www.sphinx-doc.org/en/master/usage/configuration.html#conf-tags>`_)
 in the *need option's* variant definition.
-
-|ex|
 
 First of all, define your Sphinx-Tags using either the ``-t`` command-line ``sphinx-build`` option:
 
@@ -165,9 +147,7 @@ If a variant definition is true, then we set the *need option* to the value of t
 
 Below is an implementation of variants for need options:
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. req:: Variant options
       :id: VA_004
@@ -176,16 +156,6 @@ Below is an implementation of variants for need options:
       :collapse: true
 
       Variants for need options in action
-
-|out|
-
-.. req:: Variant options
-   :id: VA_004
-   :status: ['variants' in tags and not collapse]:enabled, disabled
-   :tags: variants;support
-   :collapse: true
-
-   Variants for need options in action
 
 .. _need_diagram:
 
@@ -197,11 +167,7 @@ and stores its PlantUML code under given key from :ref:`needuml` directive under
 
 This diagram data can then be used in other :ref:`needuml` calls to combine and reuse PlantUML elements.
 
-
-
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. spec:: Interfaces
       :id: SP_INT
@@ -226,32 +192,6 @@ This diagram data can then be used in other :ref:`needuml` calls to combine and 
 
       system => int_a
 
-|out|
-
-.. spec:: Interfaces
-   :id: SP_INT
-   :status: open
-
-   This are the provided interfaces:
-
-   .. needuml::
-
-      circle "Int A" as int_a
-      circle "Int B" as int_b
-      circle "Int C" as int_c
-
-Reuse of :need:`SP_INT` inside a :ref:`needuml`:
-
-.. needuml::
-
-   allowmixing
-
-   {{uml("SP_INT")}}
-   node "My System" as system
-
-   system => int_a
-
-
 
 This simple mechanism is really powerful to design reusable and configurable SW architecture diagrams.
 For more examples and details, please read :ref:`needuml`.
@@ -261,22 +201,12 @@ Filter for diagrams
 The option ``arch`` can be easily used for filtering. For instance to show all need objects, which
 are representing some kind of a diagram.
 
-
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needtable::
       :filter: bool(arch)
       :style: table
       :columns: id, type, title
-
-|out|
-
-.. needtable::
-   :filter: bool(arch)
-   :style: table
-   :columns: id, type, title
 
 
 Options for Need Type
@@ -315,9 +245,7 @@ All you must specify is the ID for the need.
 
 You can easily set links to multiple needs by using **;** as a separator.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. req:: Link example Target
       :id: REQ_LINK_1
@@ -329,27 +257,12 @@ You can easily set links to multiple needs by using **;** as a separator.
 
       This sets a link to id ``REQ_LINK_1``.
 
-|out|
-
-.. req:: Link example Target
-   :id: REQ_LINK_1
-
-   This is the target for a link. Itself has no link set.
-
-.. req:: Link example Source
-   :links: REQ_LINK_1
-
-   This sets a link to id ``REQ_LINK_1``.
-
-
 .. _need_extra_links:
 
 extra links
 +++++++++++
 
 By using :ref:`needs_extra_links <needs_extra_links>`, you can use the configured link-types to set additional **need** options.
-
-|ex|
 
 .. code-block:: python
 
@@ -369,7 +282,7 @@ By using :ref:`needs_extra_links <needs_extra_links>`, you can use the configure
       }
    ]
 
-.. code-block:: rst
+.. need-example::
 
    .. req:: test me
       :id: test_req
@@ -381,21 +294,6 @@ By using :ref:`needs_extra_links <needs_extra_links>`, you can use the configure
       :tests: test_req
 
       Perform some tests
-
-|out|
-
-.. req:: test me
-   :id: test_req
-   :collapse: false
-
-   A requirement, which needs to be tested
-
-.. test:: test a requirement
-   :id: test_001
-   :tests: test_req
-   :collapse: false
-
-   Perform some tests
 
 .. _need_delete:
 
@@ -419,9 +317,7 @@ Default: False
 
    If you delete a need using the :delete: option, the need will not be part of any filter result.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. req:: First Requirement Need
       :id: DELID123
@@ -441,27 +337,6 @@ Default: False
          :tags: nested-del-need
 
          Need with ``:delete:`` option not set.
-
-|out|
-
-.. req:: First Requirement Need
-   :id: DELID123
-   :status: open
-   :delete: true
-
-   Need with ``:delete:`` equal to ``true``.
-
-.. req:: Second Requirement Need
-   :id: DELID123
-   :delete: false
-
-   Need with ``:delete:`` equal to ``false``.
-
-   .. spec:: Nested Need without delete option
-      :id: DELID124
-      :tags: nested-del-need
-
-      Need with ``:delete:`` option not set.
 
 
 .. _need_hide:
@@ -487,9 +362,7 @@ Allowed values:
 
 Default: False
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. req:: Collapse is set to True
       :tags: collapse; example
@@ -502,20 +375,6 @@ Default: False
       :collapse: False
 
       Title, tags, links and everything else is shown directly.
-
-|out|
-
-.. req:: Collapse is set to True
-   :tags: collapse; example
-   :collapse: True
-
-   Only title and content are shown
-
-.. req:: Collapse is set to False
-   :tags: collapse; example
-   :collapse: False
-
-   Title, tags, links and everything else is shown directly.
 
 .. _jinja_content:
 
@@ -549,9 +408,7 @@ Default: False
       }
 
 
-|ex|
-
-.. code-block:: jinja
+.. need-example::
 
     .. req:: First Req Need
        :id: JINJAID123
@@ -583,42 +440,6 @@ Default: False
        Need with ``:jinja_content:`` equal to ``true``.
        This requirement has status: **{{ status }}**.
 
-    
-
-|out|
-
-.. req:: First Req Need
-   :id: JINJAID123
-   :jinja_content: false
-
-   Need with ``:jinja_content:`` equal to ``false``.
-
-   .. spec:: Nested Spec Need
-      :id: JINJAID124
-      :status: open
-      :tags: user;login
-      :links: JINJAID126
-      :jinja_content: true
-
-      Nested need with ``:jinja_content:`` option set to ``true``.
-      This requirement has tags: **{{ tags | join(', ') }}**.
-
-      It links to:
-      {% for link in links %}
-      - {{ link }}
-      {% endfor %}
-
-
-.. spec:: First Spec Need
-   :id: JINJAID126
-   :status: open
-   :jinja_content: true
-
-   Need with ``:jinja_content:`` equal to ``true``.
-   This requirement has status: **{{ status }}**.
-
-
-
 .. _title_from_content:
 
 title_from_content
@@ -641,26 +462,13 @@ elided title if needed.  By default there is no limit to the title length.
 If a title is provided and the flag is present, then the provided title will
 be used and a warning will be issued.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
     .. req::
        :title_from_content:
 
-       The first sentence will be the title.  Anything after the first
-       sentence will not be part of the title.
-
-|out|
-
-The resulting requirement would have the title derived from the first
-sentence of the requirement.
-
-.. req::
-    :title_from_content:
-
-    The first sentence will be the title.  Anything after the first
-    sentence will not be part of the title.
+       The first sentence will be the title.  
+       Anything after the first sentence will not be part of the title.
 
 .. _need_layout:
 
@@ -671,9 +479,7 @@ layout
 
 ``layout`` can be used to set a specific grid and content mapping.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. req:: My layout requirement 1
       :id: LAYOUT_1
@@ -682,18 +488,7 @@ layout
 
       Some **content** of LAYOUT_1
 
-|out|
-
-.. req:: My layout requirement 1
-   :id: LAYOUT_1
-   :tags: layout_example
-   :layout: clean
-
-   Some **content** of LAYOUT_1
-
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. req:: My layout requirement 2
       :id: LAYOUT_2
@@ -702,18 +497,7 @@ layout
 
       Some **content** of LAYOUT_2
 
-|out|
-
-.. req:: My layout requirement 2
-   :id: LAYOUT_2
-   :tags: layout_example
-   :layout: complete
-
-   Some **content** of LAYOUT_2
-
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. req:: My layout requirement 3
       :id: LAYOUT_3
@@ -721,15 +505,6 @@ layout
       :layout: focus
 
       Some **content** of LAYOUT_3
-
-|out|
-
-.. req:: My layout requirement 3
-   :id: LAYOUT_3
-   :tags: layout_example
-   :layout: focus
-
-   Some **content** of LAYOUT_3
 
 Please take a look into :ref:`layouts` for more information.
 
@@ -842,15 +617,11 @@ default ``needs_templates/``, in the **conf.py** file.
 
 You can have several templates, but can set only one for a need.
 
-|ex|
+.. dropdown:: Template ``spec_template.need``
 
-*Template:* spec_template.need
+   .. literalinclude:: /needs_templates/spec_template.need
 
-.. literalinclude:: /needs_templates/spec_template.need
-
-*Need*
-
-.. code-block:: rst
+.. need-example::
 
    .. spec:: My specification
       :status: open
@@ -860,17 +631,6 @@ You can have several templates, but can set only one for a need.
       :template: spec_template
 
       This is my **specification** content.
-
-|out|
-
-.. spec:: My specification
-   :status: open
-   :links: FEATURE_1, FEATURE_2
-   :id: TEMPL_SPEC
-   :tags: example, template
-   :template: spec_template
-
-   This is my **specification** content.
 
 You can find a list of need-value names in the documentation for :ref:`filter_string` or by using
 the ``debug`` :ref:`layout <layouts>`.
@@ -886,10 +646,11 @@ In Sphinx, options support multi-line content, which you can interpret like othe
 But there is one important constraint: Don’t use empty lines, as we use them in defining the content end.
 Instead, you can use ``__`` (two underscores) to define the content end and can use ``|`` to force line breaks.
 
-|ex|
+.. dropdown:: *Template* ``content.need``
 
-*Need*
-::
+   .. literalinclude:: /needs_templates/content.need
+
+.. need-example::
 
     .. req:: A really strange example
        :id: multiline_1234
@@ -922,44 +683,7 @@ Instead, you can use ``__`` (two underscores) to define the content end and can 
          .. image:: /_images/needs_logo.png
             :width: 30%
        :template: content
-
-*Template*
-
-.. literalinclude:: /needs_templates/content.need
-
-|out|
-
-.. req:: A really strange example
-   :id: multiline_1234
-   :status:
-     | First line
-     | Second line
-     | Followed by an empty line
-     __
-     A list example:
-     __
-     * take *this*
-     * and **this**
-     __
-     __
-     __
-     3 new lines, but 1 is shown only
-     __
-     Included directives
-     __
-     .. req:: test req
-        :id: abc_432
-        __
-        This works!
-        __
-        An image: wow
-        __
-        .. image:: /_images/needs_logo.png
-           :width: 20%
-     __
-     .. image:: /_images/needs_logo.png
-        :width: 30%
-   :template: content
+       :collapse: true
 
 .. _need_pre_template:
 
@@ -971,15 +695,11 @@ pre_template
 Adds specific content from a template *before* a **need**.
 For example, you can use it to set a section name before each **need**.
 
-|ex|
+.. dropdown:: *Template:* ``spec_pre_template.need``
 
-*Template:* spec_pre_template.need
+   .. literalinclude:: /needs_templates/spec_pre_template.need
 
-.. literalinclude:: /needs_templates/spec_pre_template.need
-
-*Need*
-
-.. code-block:: rst
+.. need-example::
 
    .. spec:: My specification
       :id: TEMPL_PRE_SPEC
@@ -987,15 +707,6 @@ For example, you can use it to set a section name before each **need**.
       :pre_template: spec_pre_template
 
       This is my **specification** content.
-
-|out|
-
-.. spec:: My specification
-   :id: TEMPL_PRE_SPEC
-   :tags: example, template
-   :pre_template: spec_pre_template
-
-   This is my **specification** content.
 
 .. _need_post_template:
 
@@ -1007,15 +718,11 @@ post_template
 Adds specific content from a template *after* a **need**.
 You can use it to show some need-specific analytics, like dependency diagrams or table of linked needs.
 
-|ex|
+.. dropdown:: *Template:* ``spec_post_template.need``
 
-*Template:* spec_post_template.need
+   .. literalinclude:: /needs_templates/spec_post_template.need
 
-.. literalinclude:: /needs_templates/spec_post_template.need
-
-*Need*
-
-.. code-block:: rst
+.. need-example::
 
    .. spec:: My specification
       :id: TEMPL_POST_SPEC
@@ -1024,17 +731,6 @@ You can use it to show some need-specific analytics, like dependency diagrams or
       :post_template: spec_post_template
 
       This is my **specification** content.
-
-|out|
-
-.. spec:: My specification
-   :id: TEMPL_POST_SPEC
-   :tags: example, template
-   :links: FEATURE_1, FEATURE_2
-   :post_template: spec_post_template
-
-   This is my **specification** content.
-
 
 .. _need_duration:
 

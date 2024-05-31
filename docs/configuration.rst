@@ -343,28 +343,15 @@ Configuration example:
 
 The above example configuration allows the following usage:
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
     .. req:: My requirement
-      :id: EXTRA_REQ_001
+        :id: EXTRA_REQ_001
 
     .. test:: Test of requirements
-      :id: EXTRA_TEST_001
-      :checks: EXTRA_REQ_001, DEAD_LINK_NOT_ALLOWED
-      :triggers: DEAD_LINK
-
-
-|out|
-
-.. req:: My requirement
-  :id: EXTRA_REQ_001
-
-.. test:: Test of requirements
-  :id: EXTRA_TEST_001
-  :checks: EXTRA_REQ_001, DEAD_LINK_NOT_ALLOWED
-  :triggers: DEAD_LINK
+        :id: EXTRA_TEST_001
+        :checks: EXTRA_REQ_001, DEAD_LINK_NOT_ALLOWED
+        :triggers: DEAD_LINK
 
 
 .. attention:: The used option name can not be reused in the configuration of :ref:`needs_global_options`.
@@ -541,8 +528,6 @@ Fields can be added or existing fields can even be manipulated.
 
 If set to False, the filter results contains the original need fields and any manipulations of need fields are lost.
 
-|ex|
-
 .. code-block:: python
 
    needs_allow_unsafe_filters = True
@@ -611,21 +596,13 @@ These configs can then be selected when using :ref:`needflow`.
 
 This configurations can then be used like this:
 
-|ex|
+.. need-example::
 
-.. code-block:: rst
+    .. needflow::
+        :tags: flow_example
+        :types: spec
+        :config: my_config
 
-   .. needflow::
-      :tags: flow_example
-      :types: spec
-      :config: my_config
-
-|out|
-
-.. needflow::
-   :tags: flow_example
-   :types: spec
-   :config: my_config
 
 See :ref:`needflow config option <needflow_config>` for more details and already available configurations.
 
@@ -809,11 +786,9 @@ needs_id_from_title
 Generates needs ID from title. By default, this setting is set to **False**.
 
 When no need ID is given by the user, and `needs_id_from_title` is set to **True**, then a need ID
-will be calculated based on the current need directive prefix, title, and a hased value from title.
+will be calculated based on the current need directive prefix, title, and a hashed value from title.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
     .. req:: Group big short
     
@@ -853,26 +828,16 @@ A title can be auto-generated for a requirement by either setting
 :ref:`needs_title_from_content` to **True** or providing the flag
 `:title_from_content:` as follows:
 
-|ex|
+The resulting requirement would have the title derived from the first
+sentence of the requirement.
 
-.. code-block:: rst
+.. need-example::
 
     .. req::
         :title_from_content:
 
         This will be my title.  Anything after the first sentence will not be
         part of the title.
-
-The resulting requirement would have the title derived from the first
-sentence of the requirement.
-
-|out|
-
-.. req::
-    :title_from_content:
-
-    This will be my title.  Anything after the first sentence will not be
-    part of the title.
 
 
 .. _needs_title_from_content:
@@ -896,22 +861,12 @@ setting (which is not limited by default).
 If a title is specified for an individual requirement, then that title
 will be used over the generated title.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
     .. req::
 
-        The tool must have error logging.  All critical errors must be
-        written to the console.
-
-
-This will render the first sentence as the title
-
-.. req::
-
-    The tool must have error logging.  All critical errors must be
-    written to the console.
+        The tool must have error logging.
+        All critical errors must be written to the console.
 
 
 .. _needs_max_title_length:
@@ -1710,9 +1665,7 @@ link name and url.
     }
 
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. spec:: Use needs_string_links
       :id: EXAMPLE_STRING_LINKS
@@ -1720,15 +1673,6 @@ link name and url.
       :github: 404,652
 
       Replaces the string from ``:config:`` and ``:github:`` with a link to the related website.
-
-|out|
-
-.. spec:: Use needs_string_links
-   :id: EXAMPLE_STRING_LINKS
-   :config: needs_string_links
-   :github: 404,652
-
-   Replaces the string from ``:config:`` and ``:github:`` with a link to the related website.
 
 .. note::
 
@@ -2024,9 +1968,7 @@ needs_variants
 ``needs_variants`` configuration option must be a dictionary which has pre-defined variants assigned to
 "filter strings". The filter string defines which variant a need belongs in the current situations.
 
-|ex|
-
-In ``conf.py``:
+For example, in ``conf.py``:
 
 .. code-block:: python
 
@@ -2049,9 +1991,7 @@ needs_variant_options
 ``needs_variant_options`` must be a list which consists of the options to apply variants handling.
 You can specify the names of the options you want to check for variants.
 
-|ex|
-
-In ``conf.py``:
+for example, in ``conf.py``:
 
 .. code-block:: python
 
@@ -2082,28 +2022,24 @@ Configuration example:
     def custom_defined_func():
         return "my_tag"
 
-    def sum_example(number_1, number_2):
-        return number_1 + number_2
-
     needs_render_context = {
         "custom_data_1": "Project_X",
         "custom_data_2": custom_defined_func(),
         "custom_data_3": True,
         "custom_data_4": [("Daniel", 811982), ("Marco", 234232)],
-        "sum_example": sum_example
     }
 
 The``needs_render_context`` configuration option must be a dictionary.
 The dictionary consists of key-value pairs where the key is a string used as reference to the value.
-The value can be any data type (string, integer, list, dict, etc.) or a custom defined function, which return
-value is used or the function itself can be used (see ``sum_example``).
+The value can be any data type (string, integer, list, dict, etc.)
+
+.. warning:: The value can also be a custom defined function, 
+    however, this will deactivate the caching and incremental build feature of Sphinx.
 
 The data passed via needs_render_context will be available as variable(s) when rendering Jinja templates or strings.
 You can use the data passed via needs_render_context as shown below:
 
-|ex|
-
-.. code-block:: jinja
+.. need-example::
 
     .. req:: Need with jinja_content enabled
        :id: JINJA1D8913
@@ -2111,28 +2047,11 @@ You can use the data passed via needs_render_context as shown below:
 
        Need with alias {{ custom_data_1 }} and ``jinja_content`` option set to {{ custom_data_3 }}.
 
-       4 + 5 = {{ sum_example(4,5) }}
-
        {{ custom_data_2 }}
        {% for author in custom_data_4 %}
           * author[0]
             + author[1]
        {% endfor %}
-
-    
-
-.. req:: Need with jinja_content enabled
-   :id: JINJA1D8913
-   :jinja_content: true
-
-   Need with alias {{ custom_data_1 }} and ``jinja_content`` option set to {{ custom_data_3 }}.
-
-   {{ custom_data_2 }}
-   {% for author in custom_data_4 %}
-   * {{ author[0] }} --> ID-{{ author[1] }}
-   {% endfor %}
-
-
 
 
 .. _needs_debug_measurement:

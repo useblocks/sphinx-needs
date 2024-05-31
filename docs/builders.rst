@@ -50,9 +50,6 @@ or :ref:`needflow` gets exported, if the option :ref:`export_id` is used in the 
 
 This allows to export specified filter results only.
 
-
-|ex|:
-
 .. code-block:: rst
 
    .. needtable::

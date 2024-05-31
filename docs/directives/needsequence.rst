@@ -7,19 +7,11 @@ needsequence
 
 ``needsequence`` adds a sequence-chart to your documentation.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
     .. needsequence:: My sequence chart
        :start: USER_A, USER_D
        :link_types: links, triggers
-
-|out|
-
-.. needsequence:: My sequence chart
-   :start: USER_A, USER_D
-   :link_types: links, triggers
 
 .. dropdown:: Show the needs used in the above example
 
@@ -157,18 +149,9 @@ Default: None (no active filtering)
 You can use this function to filter out a specific participant.
 As an example, we use the same ``needsequence`` from the beginning, but without ``USER_C / Expert``:
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
     .. needsequence:: My filtered sequence chart
        :start: USER_A, USER_D
        :link_types: links, triggers
        :filter: "Expert" not in title
-
-|out|
-
-.. needsequence:: My filtered sequence chart
-   :start: USER_A, USER_D
-   :link_types: links, triggers
-   :filter: "Expert" not in title

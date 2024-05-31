@@ -52,10 +52,6 @@ nitpick_ignore = [
 
 rst_epilog = """
 
-.. |ex| replace:: **Example**
-
-.. |out| replace:: **Result**
-
 .. |br| raw:: html
 
    <br>
@@ -612,3 +608,43 @@ DEFAULT_DIAGRAM_TEMPLATE = "<size:12>{{type_name}}</size>\\n**{{title|wordwrap(1
 
 # Absolute path to the needs_report_template_file based on the conf.py directory
 # needs_report_template = "/needs_templates/report_template.need"   # Use custom report template
+
+# -- custom extensions ---------------------------------------
+
+from docutils import nodes  # noqa: E402
+from sphinx.application import Sphinx  # noqa: E402
+from sphinx.directives import SphinxDirective  # noqa: E402
+
+
+class NeedExampleDirective(SphinxDirective):
+    """Directive to add example content to the documentation.
+
+    It adds a container with a title, a code block, and a parsed content block.
+    """
+
+    optional_arguments = 1
+    final_argument_whitespace = True
+    has_content = True
+
+    def run(self):
+        count = self.env.temp_data.setdefault("needs-example-count", 0)
+        count += 1
+        self.env.temp_data["needs-example-count"] = count
+        root = nodes.container(classes=["needs-example"])
+        title = f"Example {count}"
+        if self.arguments:
+            title += f": {self.arguments[0]}"
+        root += nodes.rubric(text=title)
+        self.set_source_info(root)
+        code = nodes.literal_block(
+            "", "\n".join(self.content), language="rst", classes=["needs-example-raw"]
+        )
+        root += code
+        parsed = nodes.container(classes=["needs-example-raw"])
+        root += parsed
+        self.state.nested_parse(self.content, self.content_offset, parsed)
+        return [root]
+
+
+def setup(app: Sphinx):
+    app.add_directive("need-example", NeedExampleDirective)

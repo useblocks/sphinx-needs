@@ -7,19 +7,11 @@ needtable
 
 **needtable** generates a table, based on the result of given filters.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needtable:: Example table
       :tags: main_example
       :style: table
-
-|out|
-
-.. needtable:: Example table
-   :tags: main_example
-   :style: table
 
 We use the argument of a ``needtable`` as caption for the table.
 
@@ -45,21 +37,10 @@ For instance::
 
 This will show the columns *id*, *title* and *tags* in the order given.
 
-.. dropdown:: Show example
-
-   |ex|
-
-   .. code-block:: rst
-
-      .. needtable::
-         :columns: id;title;tags
-
-   |out|
+.. need-example::
 
    .. needtable::
-      :tags: test
       :columns: id;title;tags
-      :style: table
 
 You can set all options of a need (incl. :ref:`needs_extra_options`) as a column.
 This also includes internal options like ``docname`` (Use `:layout: debug` on a need for a complete list)
@@ -70,16 +51,20 @@ Tables with a lot of columns will get a horizontal scrollbar in HTML output.
 
 **DataTable style**
 
-.. needtable::
-  :tags: test
-  :columns: id;title;tags;status;docname;lineno,is_external,is_need;is_part;content
+.. need-example::
+
+   .. needtable::
+      :tags: test
+      :columns: id;title;tags;status;docname;lineno,is_external,is_need;is_part;content
 
 **Normal style**
 
-.. needtable::
-  :tags: test
-  :style: table
-  :columns: id;title;tags;status;docname;lineno,is_external,is_need;is_part;content
+.. need-example::
+
+   .. needtable::
+      :tags: test
+      :style: table
+      :columns: id;title;tags;status;docname;lineno,is_external,is_need;is_part;content
 
 .. _needtable_colwidths:
 
@@ -93,24 +78,13 @@ A comma separated list of lengths or percentages used to define the width of eac
 It has the same meaning as the ``width options`` of
 `listtable <https://docutils.sourceforge.io/docs/ref/rst/directives.html#list-table>`_ directive.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
   .. needtable::
      :tags: test
      :columns: id,title,status
      :colwidths: 50,40,10
      :style: table
-
-|out|
-
-.. needtable::
-     :tags: test
-     :columns: id,title,status
-     :colwidths: 50,40,10
-     :style: table
-
 
 .. _needtable_custom_titles:
 
@@ -119,24 +93,12 @@ Custom column titles
 You can customize each column title by following this syntax for its definition: ``OPTION as "My custom title"``.
 The characters ``,`` or ``;`` are not allowed.
 
-.. dropdown:: Show example
-
-   |ex|
-
-   .. code-block:: rst
-
-        .. needtable::
-          :tags: test
-          :columns: id;title as "Headline"; tags as "Labels"
-          :style: table
-
-   |out|
+.. need-example::
 
    .. needtable::
       :tags: test
       :columns: id;title as "Headline"; tags as "Labels"
       :style: table
-
 
 .. _needtable_show_filters:
 
@@ -145,26 +107,13 @@ show_filters
 
 If set, we add the used filter above the table:
 
-.. dropdown:: Show example
-
-   |ex|
-
-   .. code-block:: rst
-
-      .. needtable::
-         :tags: test
-         :columns: id;title;tags
-         :show_filters:
-         :style: table
-
-   |out|
+.. need-example::
 
    .. needtable::
       :tags: test
       :columns: id;title;tags
       :show_filters:
       :style: table
-
 
 .. _needtable_style:
 
@@ -181,29 +130,13 @@ Overrides config parameter :ref:`needs_table_style` if set.
 
 .. dropdown:: Show example
 
-   |ex|
-
-   .. code-block:: rst
+   .. need-example::
 
       .. needtable::
          :style: table
 
       .. needtable::
          :style: datatables
-
-   Table with ``:style: table``:
-
-   |out|
-
-   .. needtable::
-         :tags: awesome
-         :style: table
-
-   Table with ``:style: datatables``:
-
-   .. needtable::
-      :tags: awesome
-      :style: datatables
 
 .. _needtable_show_parts:
 
@@ -218,21 +151,18 @@ It adds the part rows directly under the related need’s row, and their id and 
 
 To change the prefix please read :ref:`needs_part_prefix`.
 
-|ex|
+.. need-example::
 
-.. needtable::
-   :tags: test_table
-   :filter: is_need
-   :show_parts:
-   :columns: id;title;outgoing;incoming
-   :style: table
-
-
+   .. needtable::
+      :tags: test_table
+      :filter: is_need
+      :show_parts:
+      :columns: id;title;outgoing;incoming
+      :style: table
 
 .. dropdown:: Show above example's configuration
 
-   .. code-block:: rst
-
+   .. need-example::
 
       .. req:: Test need with need parts
          :id: table_001
@@ -251,34 +181,6 @@ To change the prefix please read :ref:`needs_part_prefix`.
          :id: table_003
          :links: table_001.2
 
-      .. needtable::
-         :filter: is_need
-         :show_parts:
-         :columns: id;title;outgoing;incoming
-         :style: table
-
-
-   .. req:: Test need with need parts
-      :id: table_001
-      :tags: test_table
-
-      :np:`(1) Part 1 of requirement`.
-
-      :np:`(2) Part 2 of requirement`.
-
-      :np:`(3) Part 3 of requirement`.
-
-
-   .. spec:: Specifies part 1
-      :id: table_002
-      :tags: test_table
-      :links: table_001.1
-
-   .. spec:: Specifies part 2
-      :id: table_003
-      :tags: test_table
-      :links: table_001.2
-
 .. _needtable_style_row:
 
 style_row
@@ -290,19 +192,11 @@ You can use the ``style_row`` option to set a specific class-attribute for the t
 
 Also, you can set specific layout for the row.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
   .. needtable::
      :tags: ex_row_color
      :style_row: needs_blue_border
-
-|out|
-
-.. needtable::
-      :tags: ex_row_color
-      :style_row: needs_blue_border
 
 
 Row style based on specific need value
@@ -311,12 +205,12 @@ Row style based on specific need value
 You can use :ref:`dynamic_functions` to derive the value for ``style_row`` based on a specific value of the
 documented need in the row.
 
-|ex|
+.. need-example::
 
-.. needtable::
-   :tags: ex_row_color
-   :columns: id, title, status
-   :style_row: needs_[[copy("status")]]
+   .. needtable::
+      :tags: ex_row_color
+      :columns: id, title, status
+      :style_row: needs_[[copy("status")]]
 
 In this example we set ``style_row`` to ``needs_[[copy("status")]]``, so the status of each need will be
 part of the row style.
@@ -393,20 +287,22 @@ Option to sort the filtered-results based on a key.
 The sort-value must be compatible with the options supported by the :ref:`filter_string`, and the addressed need-value
 must have the type ``string``, ``float`` or ``int``.
 
-|ex|
-
 By default, we use ``id_complete`` if we don't set a sort option.
 
-.. needtable::
-   :tags: ex_row_color
-   :style: table
+.. need-example::
+
+   .. needtable::
+      :tags: ex_row_color
+      :style: table
 
 In this case, we set the sort option to ``status``. So *EX_ROW_3* is above of *EX_ROW_2*.
 
-.. needtable::
-   :tags: ex_row_color
-   :style: table
-   :sort: status
+.. need-example::
+
+   .. needtable::
+      :tags: ex_row_color
+      :style: table
+      :sort: status
 
 .. dropdown:: Show used configuration
 
@@ -436,34 +332,21 @@ class
 You can set additional class-names for a ``needtable`` using the ``class`` option. Mostly used for HTML output.
 It supports comma separated values and will add classes to the already set classes by Sphinx-Needs.
 
-|ex|
-
-.. rubric:: rst file:
-
-.. code-block:: rst
-
-  .. needtable::
-     :tags: test
-     :columns: id,title,status
-     :style: table
-     :class: class_red_border
-
-.. rubric:: custom css file:
-
 .. code-block:: css
+   :caption: custom.css
 
     table.class_red_border {
         border: 3px solid red;
     }
 
 
-|out|
+.. need-example::
 
-.. needtable::
-     :tags: test
-     :columns: id,title,status
-     :style: table
-     :class: class_red_border
+   .. needtable::
+      :tags: test
+      :columns: id,title,status
+      :style: table
+      :class: class_red_border
 
 common filters
 ~~~~~~~~~~~~~~

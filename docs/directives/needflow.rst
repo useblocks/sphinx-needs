@@ -9,23 +9,13 @@ needflow
 
 If you provide an argument, we use it as caption for the generated image.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needflow:: My first needflow
       :filter: is_need
       :tags: flow_example
       :link_types: tests, blocks
       :show_link_names:
-
-|out|
-
-.. needflow:: My first needflow
-   :filter: is_need
-   :tags: flow_example
-   :link_types: tests, blocks
-   :show_link_names:
 
 Dependencies
 ------------
@@ -66,9 +56,7 @@ If ``:root_depth:`` is set, only needs with a distance of ``root_depth`` to the 
 
 Other need filters are applied on this initial selection of connected needs.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needflow::
       :root_id: spec_flow_002
@@ -89,27 +77,6 @@ Other need filters are applied on this initial selection of connected needs.
       :link_types: tests, blocks
       :show_link_names:
 
-|out|
-
-.. needflow::
-   :root_id: spec_flow_002
-   :root_direction: incoming
-   :link_types: tests, blocks
-   :show_link_names:
-
-.. needflow::
-   :root_id: spec_flow_002
-   :root_direction: outgoing
-   :link_types: tests, blocks
-   :show_link_names:
-
-.. needflow::
-   :root_id: spec_flow_002
-   :root_direction: outgoing
-   :root_depth: 1
-   :link_types: tests, blocks
-   :show_link_names:
-
 .. _needflow_show_filters:
 
 show_filters
@@ -117,20 +84,11 @@ show_filters
 
 Adds information of used filters below generated flowchart.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needflow::
       :tags: main_example
       :show_filters:
-
-|out|
-
-.. needflow::
-   :tags: main_example
-   :show_filters:
-
 
 .. _needflow_show_legend:
 
@@ -140,19 +98,11 @@ show_legend
 Adds a legend below generated flowchart. The legends contains all defined need-types and their configured color
 for flowcharts.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needflow::
       :tags: main_example
       :show_legend:
-
-|out|
-
-.. needflow::
-   :tags: main_example
-   :show_legend:
 
 .. _needflow_show_link_names:
 
@@ -164,22 +114,13 @@ show_link_names
 Adds the link type name beside connections.
 
 You can configure it globally by setting :ref:`needs_flow_show_links` in **conf.py**.
+Setup data can be found in test case document `tests/doc_test/doc_extra_links`.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needflow::
       :tags: main_example
       :show_link_names:
-
-Setup data can be found in test case document `tests/doc_test/doc_extra_links`
-
-|out|
-
-.. needflow::
-   :tags: main_example
-   :show_link_names:
 
 .. _needflow_link_types:
 
@@ -210,9 +151,7 @@ You can set this option globally via the configuration option :ref:`needs_flow_l
 
 See also :ref:`needs_extra_links` for more details about specific link types.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. req:: A requirement
       :id: req_flow_001
@@ -248,42 +187,6 @@ See also :ref:`needs_extra_links` for more details about specific link types.
       :link_types: tests, blocks
       :show_link_names:
 
-|out|
-
-.. req:: A requirement
-   :id: req_flow_001
-   :tags: flow_example
-
-.. spec:: A specification
-   :id: spec_flow_001
-   :blocks: req_flow_001
-   :tags: flow_example
-
-   :need_part:`(subspec_1)A testable part of the specification`
-
-   :need_part:`(subspec_2)Another testable part of the specification`
-
-   .. spec:: A child specification
-      :id: spec_flow_003
-      :blocks: req_flow_001
-      :tags: flow_example
-
-.. spec:: Another specification
-   :id: spec_flow_002
-   :links: req_flow_001
-   :blocks: spec_flow_001
-   :tags: flow_example
-
-.. test:: A test case
-   :id: test_flow_001
-   :tests: spec_flow_002, spec_flow_001.subspec_1, spec_flow_001.subspec_2
-   :tags: flow_example
-
-.. needflow::
-   :tags: flow_example
-   :link_types: tests, blocks
-   :show_link_names:
-
 .. _needflow_config:
 
 config
@@ -294,9 +197,7 @@ config
 You can specify a configuration using the ``:config:`` option but you should
 set the :ref:`needs_flow_configs` configuration parameter in **conf.py**.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needflow::
       :filter: is_need
@@ -306,21 +207,9 @@ set the :ref:`needs_flow_configs` configuration parameter in **conf.py**.
       :show_link_names:
       :config: monochrome
 
-|out|
-
-.. needflow::
-   :filter: is_need
-   :tags: flow_example
-   :types: spec
-   :link_types: tests, blocks
-   :show_link_names:
-   :config: monochrome
-
 You can apply multiple configurations together by separating them via ``,`` symbol.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needflow::
       :filter: is_need
@@ -329,16 +218,6 @@ You can apply multiple configurations together by separating them via ``,`` symb
       :link_types: tests, blocks
       :show_link_names:
       :config: monochrome,lefttoright,handwritten
-
-|out|
-
-.. needflow::
-   :filter: is_need
-   :tags: flow_example
-   :types: spec
-   :link_types: tests, blocks
-   :show_link_names:
-   :config: monochrome,lefttoright,handwritten
 
 **Sphinx-Needs** provides some necessary configurations already. They are:
 
@@ -378,23 +257,13 @@ You can set a scale factor for the final flow chart using the ``scale`` option.
 
 We also support the numbers between ``1`` and ``300``.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needflow::
       :filter: is_need
       :tags: flow_example
       :link_types: tests, blocks
       :scale: 50
-
-|out|
-
-.. needflow::
-   :filter: is_need
-   :tags: flow_example
-   :link_types: tests, blocks
-   :scale: 50
 
 .. _needflow_highlight:
 
@@ -406,21 +275,12 @@ highlight
 The ``:highlight:`` option takes a single :ref:`filter_string` as a value and
 sets the border for each need of the needflow to **red** if the need also passes the filter string.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needflow::
       :tags: flow_example
       :link_types: tests, blocks
       :highlight: id in ['spec_flow_002', 'subspec_2'] or type == 'req'
-
-|out|
-
-.. needflow::
-   :tags: flow_example
-   :link_types: tests, blocks
-   :highlight: id in ['spec_flow_002', 'subspec_2'] or type == 'req'
 
 .. _needflow_align:
 
@@ -430,21 +290,12 @@ align
 You can set the alignment for the PlantUML image using the ``align`` option.
 Allowed values are: ``left``, ``center``, ``right``
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needflow::
-      :filter: is_need
+      :filter: is_need and type == 'spec'
       :tags: flow_example
       :align: center
-
-|out|
-
-.. needflow::
-   :filter: is_need and type == 'spec'
-   :tags: flow_example
-   :align: center
 
 .. _needflow_debug:
 
@@ -457,9 +308,7 @@ If you set the ``:debug:``, we add a debug-output of the generated PlantUML code
 
 Helpful to identify reasons why a PlantUML build may have thrown errors.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needflow::
       :filter: is_need
@@ -467,16 +316,6 @@ Helpful to identify reasons why a PlantUML build may have thrown errors.
       :link_types: tests, blocks
       :config:  lefttoright, handwritten
       :debug:
-
-|out|
-
-.. needflow::
-   :filter: is_need
-   :tags: flow_example
-   :link_types: tests, blocks
-   :config:  lefttoright, handwritten
-   :debug:
-
 
 common filters
 ~~~~~~~~~~~~~~
