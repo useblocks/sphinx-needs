@@ -96,7 +96,7 @@ class NeedDirective(SphinxDirective):
                 raise ValueError(
                     f"{option_name!r} option must be true/false/yes/no, found: {option_value!r}"
                 )
-            return option_value
+            return option_value  # type: ignore[no-any-return]
 
         try:
             delete_opt = _get_boolean("delete")
