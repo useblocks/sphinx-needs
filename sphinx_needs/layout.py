@@ -692,7 +692,7 @@ class LayoutHandler:
                 todocname=_docname,
                 targetid=self.need["id"],
                 child=nodes_id_text.deepcopy(),
-                title=self.need["id"],
+                title=None,
             )
             id_container += id_ref
         return id_container
