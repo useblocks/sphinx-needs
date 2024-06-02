@@ -636,7 +636,7 @@ class NeedExampleDirective(SphinxDirective):
         title_nodes, _ = (
             self.state.inline_text(f"{title}: {self.arguments[0]}", self.lineno)
             if self.arguments
-            else (nodes.Text(title), [])
+            else ([nodes.Text(title)], [])
         )
         root += nodes.rubric("", "", *title_nodes)
         code = nodes.literal_block(
