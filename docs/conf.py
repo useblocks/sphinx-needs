@@ -631,11 +631,14 @@ class NeedExampleDirective(SphinxDirective):
         count += 1
         self.env.temp_data["needs-example-count"] = count
         root = nodes.container(classes=["needs-example"])
-        title = f"Example {count}"
-        if self.arguments:
-            title += f": {self.arguments[0]}"
-        root += nodes.rubric(text=title)
         self.set_source_info(root)
+        title = f"Example {count}"
+        title_nodes, _ = (
+            self.state.inline_text(f"{title}: {self.arguments[0]}", self.lineno)
+            if self.arguments
+            else (nodes.Text(title), [])
+        )
+        root += nodes.rubric("", "", *title_nodes)
         code = nodes.literal_block(
             "", "\n".join(self.content), language="rst", classes=["needs-example-raw"]
         )
