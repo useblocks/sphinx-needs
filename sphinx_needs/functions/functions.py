@@ -298,19 +298,23 @@ def resolve_variants_options(
             **needs_config.filter_data
         )  # Add needs_filter_data to filter context
         need_context.update(**tags)  # Add sphinx tags to filter context
+        location = (need["docname"], need["lineno"]) if need.get("docname") else None
 
         for var_option in variants_options:
-            if var_option in need and need[var_option] not in (None, "", []):
-                if not isinstance(need[var_option], (list, set, tuple)):
-                    option_value: str = need[var_option]
-                    need[var_option] = match_variants(
-                        option_value, need_context, needs_config.variants
+            if (
+                var_option in need
+                and isinstance(need[var_option], (str, list, tuple, set))
+                and (
+                    result := match_variants(
+                        need[var_option],
+                        need_context,
+                        needs_config.variants,
+                        location=location,
                     )
-                else:
-                    option_value = need[var_option]
-                    need[var_option] = match_variants(
-                        option_value, need_context, needs_config.variants
-                    )
+                )
+                is not None
+            ):
+                need[var_option] = result
 
 
 def check_and_get_content(
