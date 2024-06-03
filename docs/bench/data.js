@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1717397213588,
+  "lastUpdate": 1717397287261,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7992,6 +7992,42 @@ window.BENCHMARK_DATA = {
             "value": 65.544459695,
             "unit": "s",
             "extra": "Commit: 6d9793f8d2e205ee9dee6b89e1b0f29801e01804\nBranch: master\nTime: 2024-06-03T08:44:55+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6e0d0eb6f2e6840b576010a5f55992300782a4ac",
+          "message": "🔧 Improve `match_variants` function (#1191)\n\nSimplify the logic, add better docstring, and add unit tests, to make it clearer how it works.\r\n\r\nChange the signature, to return value of `None` when no match, rather than just returning the original value.\r\nThis makes it clearer if the function actually matched anything.\r\n\r\nAllow the source location to be passed to the function, to improve reporting warnings.",
+          "timestamp": "2024-06-03T08:46:11+02:00",
+          "tree_id": "4b937ee3eec585765b2dbca780321c12c2bc9db2",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6e0d0eb6f2e6840b576010a5f55992300782a4ac"
+        },
+        "date": 1717397279287,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.24130162899999164,
+            "unit": "s",
+            "extra": "Commit: 6e0d0eb6f2e6840b576010a5f55992300782a4ac\nBranch: master\nTime: 2024-06-03T08:46:11+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.658699692,
+            "unit": "s",
+            "extra": "Commit: 6e0d0eb6f2e6840b576010a5f55992300782a4ac\nBranch: master\nTime: 2024-06-03T08:46:11+02:00"
           }
         ]
       }
