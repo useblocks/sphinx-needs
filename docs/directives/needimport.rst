@@ -17,7 +17,7 @@ You can generate a valid file using the builder :ref:`needs_builder`.
       :version: 1.0
       :tags: imported;external
       :hide:
-      :collapse: True
+      :collapse:
       :filter: "test" in tags
       :template: template.rst
       :pre_template: pre_template.rst

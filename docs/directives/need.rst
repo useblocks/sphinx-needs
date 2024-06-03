@@ -173,7 +173,7 @@ Below is an implementation of variants for need options:
       :id: VA_004
       :status: ['variants' in tags and not collapse]:enabled, disabled
       :tags: variants;support
-      :collapse: true
+      :collapse:
 
       Variants for need options in action
 
@@ -183,7 +183,7 @@ Below is an implementation of variants for need options:
    :id: VA_004
    :status: ['variants' in tags and not collapse]:enabled, disabled
    :tags: variants;support
-   :collapse: true
+   :collapse:
 
    Variants for need options in action
 
@@ -532,8 +532,8 @@ If you set the option to **False**, you deactivate jinja-parsing for the need's 
 
 Allowed values:
 
-* ``true`` or ``yes`` or ``1``
-* ``false`` or ``no`` or ``0``
+* empty, ``true`` or ``yes``
+* ``false`` or ``no``
 
 Default: False
 
@@ -564,7 +564,7 @@ Default: False
           :status: open
           :tags: user;login
           :links: JINJAID126
-          :jinja_content: true
+          :jinja_content:
 
           Nested need with ``:jinja_content:`` option set to ``true``.
           This requirement has tags: **{{ tags | join(', ') }}**.
@@ -578,7 +578,7 @@ Default: False
     .. spec:: First Spec Need
        :id: JINJAID126
        :status: open
-       :jinja_content: true
+       :jinja_content:
 
        Need with ``:jinja_content:`` equal to ``true``.
        This requirement has status: **{{ status }}**.
@@ -598,7 +598,7 @@ Default: False
       :status: open
       :tags: user;login
       :links: JINJAID126
-      :jinja_content: true
+      :jinja_content:
 
       Nested need with ``:jinja_content:`` option set to ``true``.
       This requirement has tags: **{{ tags | join(', ') }}**.
@@ -612,7 +612,7 @@ Default: False
 .. spec:: First Spec Need
    :id: JINJAID126
    :status: open
-   :jinja_content: true
+   :jinja_content:
 
    Need with ``:jinja_content:`` equal to ``true``.
    This requirement has status: **{{ status }}**.

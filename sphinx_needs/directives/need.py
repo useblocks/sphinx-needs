@@ -29,7 +29,12 @@ from sphinx_needs.layout import build_need
 from sphinx_needs.logging import get_logger
 from sphinx_needs.need_constraints import process_constraints
 from sphinx_needs.nodes import Need
-from sphinx_needs.utils import add_doc, profile, remove_node_from_tree, split_need_id
+from sphinx_needs.utils import (
+    add_doc,
+    profile,
+    remove_node_from_tree,
+    split_need_id,
+)
 
 LOGGER = get_logger(__name__)
 
@@ -86,30 +91,9 @@ class NeedDirective(SphinxDirective):
         #############################################################################################
         env = self.env
 
-        def _get_boolean(option_name: str) -> bool | None:
-            option_value = self.options.get(option_name)
-            if isinstance(option_value, str):
-                if option_value.upper() in ["", "TRUE", "YES"]:
-                    return True
-                if option_value.upper() in ["FALSE", "NO"]:
-                    return False
-                raise ValueError(
-                    f"{option_name!r} option must be true/false/yes/no, found: {option_value!r}"
-                )
-            return option_value  # type: ignore[no-any-return]
-
-        try:
-            delete_opt = _get_boolean("delete")
-            collapse = _get_boolean("collapse")
-            jinja_content = _get_boolean("jinja_content")
-        except ValueError as exc:
-            LOGGER.warning(
-                f"{exc} [needs.directive]",
-                type="needs",
-                subtype="directive",
-                location=(self.env.docname, self.lineno),
-            )
-
+        delete_opt = self.options.get("delete")
+        collapse = self.options.get("collapse")
+        jinja_content = self.options.get("jinja_content")
         hide = "hide" in self.options
 
         id = self.options.get("id")

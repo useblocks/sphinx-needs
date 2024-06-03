@@ -264,21 +264,6 @@ def row_col_maker(
     return row_col
 
 
-def rstjinja(app: Sphinx, docname: str, source: list[str]) -> None:
-    """
-    Render our pages as a jinja template for fancy templating goodness.
-    """
-    builder = app.builder
-    # Make sure we're outputting HTML
-    if builder.format != "html":
-        return
-    src = source[0]
-    rendered = builder.templates.render_string(
-        src, app.config.html_context, **NeedsSphinxConfig(app.config).render_context
-    )
-    source[0] = rendered
-
-
 def import_prefix_link_edit(
     needs: dict[str, Any], id_prefix: str, needs_extra_links: list[LinkOptionsType]
 ) -> None:
