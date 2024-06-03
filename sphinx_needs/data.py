@@ -319,6 +319,15 @@ class _NeedsFilterType(NeedsFilteredBaseType):
 class NeedsFlowType(NeedsFilteredDiagramBaseType):
     """Data for a single (filtered) flow chart."""
 
+    root_id: str | None
+    """need ID to use as a root node."""
+
+    root_direction: Literal["both", "incoming", "outgoing"]
+    """Which link directions to include from the root node (if set)."""
+
+    root_depth: int | None
+    """How many levels to include from the root node (if set)."""
+
 
 class NeedsGanttType(NeedsFilteredDiagramBaseType):
     """Data for a single (filtered) gantt chart."""

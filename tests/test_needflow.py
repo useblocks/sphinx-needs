@@ -10,11 +10,6 @@ from docutils import __version__ as doc_ver
     indirect=True,
 )
 def test_doc_build_html(test_app):
-    import sphinx
-
-    if sphinx.__version__.startswith("3.5"):
-        return
-
     app = test_app
     app.build()
 
@@ -50,6 +45,12 @@ def test_doc_build_html(test_app):
     assert "STORY_1.subspec [[../index.html#STORY_1.subspec]]" in page_html
     assert "STORY_2 [[../index.html#STORY_2]]" in page_html
     assert "STORY_2.another_one [[../index.html#STORY_2.another_one]]" in page_html
+
+    with_rootid = Path(app.outdir, "needflow_with_root_id.html").read_text()
+    assert "SPEC_1" in with_rootid
+    assert "STORY_1" in with_rootid
+    assert "STORY_2" in with_rootid
+    assert "SPEC_2" not in with_rootid
 
     empty_needflow_with_debug = Path(
         app.outdir, "empty_needflow_with_debug.html"
