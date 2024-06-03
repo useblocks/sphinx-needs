@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1717393909382,
+  "lastUpdate": 1717397213588,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7956,6 +7956,42 @@ window.BENCHMARK_DATA = {
             "value": 61.48514402000001,
             "unit": "s",
             "extra": "Commit: 0c5e4e8cd8737b84981eddcce9e63eb1261e1d8f\nBranch: master\nTime: 2024-06-03T07:49:57+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6d9793f8d2e205ee9dee6b89e1b0f29801e01804",
+          "message": "👌 Allow collapse/delete/jinja_content directive options to be flags (#1188)\n\nThis commit moves the directive option validation of these fields to the directive's `option_spec`,\r\nand also allow the option to be a flag (i.e. have no value, which is then considered to be `True`)",
+          "timestamp": "2024-06-03T08:44:55+02:00",
+          "tree_id": "b840032e535f86b95cee92073b1f3818d934cabf",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6d9793f8d2e205ee9dee6b89e1b0f29801e01804"
+        },
+        "date": 1717397206497,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.20561471499999584,
+            "unit": "s",
+            "extra": "Commit: 6d9793f8d2e205ee9dee6b89e1b0f29801e01804\nBranch: master\nTime: 2024-06-03T08:44:55+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 65.544459695,
+            "unit": "s",
+            "extra": "Commit: 6d9793f8d2e205ee9dee6b89e1b0f29801e01804\nBranch: master\nTime: 2024-06-03T08:44:55+02:00"
           }
         ]
       }
