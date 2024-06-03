@@ -63,7 +63,7 @@ Rules for specifying variant definitions
   `Sphinx-Tags <https://www.sphinx-doc.org/en/master/man/sphinx-build.html#cmdoption-sphinx-build-t>`_,
   and :ref:`needs_filter_data` as the context for filtering.
 * You can set a *need option* to multiple variant definitions by separating each definition with either
-  the ``,`` or ``;`` symbol, like ``var_a:open; ['name' in tags]:assigned``.|br|
+  the ``,`` or ``;`` symbol, like ``var_a:open; ['name' in tags]:assigned``. |br|
   With multiple variant definitions, we set the first matching variant as the *need option's* value.
 * When you set a *need option* to multiple variant definitions, you can specify the last definition as
   a default "variant-free" option which we can use if no variant definition matches. |br|

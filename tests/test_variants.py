@@ -1,6 +1,29 @@
 from pathlib import Path
 
 import pytest
+from sphinx.util.console import strip_colors
+
+from sphinx_needs.utils import match_variants
+
+
+@pytest.mark.parametrize(
+    "option,context,variants,expected",
+    [
+        ("", {}, {}, None),
+        ("a", {}, {}, None),
+        ("a:yes", {}, {}, None),
+        ("a:yes", {"a": False}, {}, None),
+        ("a:yes", {"a": True}, {}, "yes"),
+        ("a:yes, no", {"a": False}, {}, "no"),
+        ("a:yes; no", {"a": False}, {}, "no"),
+        ("[a and b]:yes, no", {"a": True, "b": True}, {}, "yes"),
+        ("a:yes, no", {}, {"a": "True"}, "yes"),
+        ("a:yes, no", {"b": 1}, {"a": "b == 1"}, "yes"),
+        ("a:yes, no", {"b": 2}, {"a": "b == 1"}, "no"),
+    ],
+)
+def test_match_variants(option, context, variants, expected):
+    assert match_variants(option, context, variants) == expected
 
 
 @pytest.mark.parametrize(
@@ -11,6 +34,12 @@ import pytest
 def test_variant_options_html(test_app):
     app = test_app
     app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).splitlines()
+    assert warnings == [
+        f"{Path(str(app.srcdir)) / 'index.rst'}:25: WARNING: Error in filter 'tag_c': name 'tag_c' is not defined [needs.variant]"
+    ]
+
     html = Path(app.outdir, "index.html").read_text()
     assert "Tags Example" in html
     assert "tags_implemented" in html
