@@ -31,17 +31,10 @@ You can use the template file to customise the content generated  by ``needrepor
          "report_directive": "admonition",
       }
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needreport::
       :types:
-
-|out|
-
-.. needreport::
-   :types:
 
 
 Options
@@ -55,17 +48,10 @@ types
 Flag for adding information about the :ref:`needs_types` configuration parameter.
 The flag does not require any values.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needreport::
       :types:
-
-|out|
-
-.. needreport::
-   :types:
 
 
 .. _links:
@@ -76,17 +62,10 @@ links
 Flag for adding information about the :ref:`needs_extra_links` configuration parameter.
 The flag does not require any values.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needreport::
       :links:
-
-|out|
-
-.. needreport::
-   :links:
 
 
 .. _options:
@@ -97,31 +76,17 @@ options
 Flag for adding information about the :ref:`needs_extra_options` configuration parameter.
 The flag does not require any values.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needreport::
       :options:
-
-|out|
-
-.. needreport::
-   :options:
 
 usage
 ~~~~~
 Flag for adding information about all the ``need`` objects in the current project.
 The flag does not require any values.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needreport::
       :usage:
-
-|out|
-
-.. needreport::
-   :usage:

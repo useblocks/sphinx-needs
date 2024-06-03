@@ -12,9 +12,7 @@ So it allows to define PlantUML diagrams.
 But gives you access to need object data by supporting `Jinja <https://jinja.palletsprojects.com/>`_ statements,
 which allows you to use loops, if-clauses, and it injects data from need-objects.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needuml::
 
@@ -42,36 +40,6 @@ which allows you to use loops, if-clauses, and it injects data from need-objects
          card {{needs['COMP_NEEDUML2'].status}}
          }
 
-
-|out|
-
-.. needuml::
-
-   {{uml('FEATURE_NEEDUML1')}}
-   {{uml('COMP_NEEDUML2')}}
-
-.. feature:: NeedUml example need
-   :id: FEATURE_NEEDUML1
-   :tags: needuml
-   :status: draft
-
-   Example Need for NeedUml.
-
-.. comp:: NeedUml example need 2
-   :id: COMP_NEEDUML2
-   :tags: needuml
-   :status: draft
-
-   Second example Need for NeedUml.
-
-   .. needuml::
-
-      {{flow('COMP_NEEDUML2')}} {
-      card implement
-      card {{needs['COMP_NEEDUML2'].status}}
-      }
-
-
 .. _needuml_options:
 
 Options
@@ -85,9 +53,7 @@ extra
 Allows to inject additional key-value pairs into the ``needuml`` rendering.
 ``:extra:`` must be a comma-separated list, containing *key:value* pairs.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needuml::
       :extra: name:Roberto,work:RocketLab
@@ -95,15 +61,6 @@ Allows to inject additional key-value pairs into the ``needuml`` rendering.
       card "{{name}}" as a
       card "{{work}}" as b
       a -> b
-
-|out|
-
-.. needuml::
-   :extra: name:Roberto,work:RocketLab
-
-   card "{{name}}" as a
-   card "{{work}}" as b
-   a -> b
 
 .. note::
 
@@ -133,9 +90,7 @@ If ``:debug:`` is set, a debug-output of the generated PlantUML code gets added 
 
 Helpful to identify reasons why a PlantUML build may have thrown errors.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needuml::
       :debug:
@@ -143,16 +98,6 @@ Helpful to identify reasons why a PlantUML build may have thrown errors.
       node "RocketLab" {
          card "Peter"
       }
-
-|out|
-
-.. needuml::
-   :debug:
-
-   node "RocketLab" {
-      card "Peter"
-   }
-
 
 .. _needuml_key:
 
@@ -163,9 +108,7 @@ Allows to store multiple ``needuml`` inside a need under ``arch`` under the give
 If no option key given, then the first ``needuml`` will be stored in the need under ``arch`` under ``diagram``, ``need["arch"]["diagram"]``.
 Option ``:key:`` value can't be empty, and can't be ``diagram``.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. comp:: Component Y
       :id: COMP_002
@@ -179,37 +122,12 @@ Option ``:key:`` value can't be empty, and can't be ``diagram``.
       .. needuml::
          :key: class
 
-         class System_A as A {
-            todo
-            open
-         }
+         class Foo
 
       .. needuml::
 
          B -> C: Hi
          C -> B: Hi there
-
-|out|
-
-.. comp:: Component Y
-   :id: COMP_002
-
-   .. needuml::
-      :key: sequence
-
-      Alice -> Bob: Hi Bob
-      Bob --> Alice: Hi Alice
-
-   .. needuml::
-      :key: class
-
-      class Foo
-
-   .. needuml::
-
-      B -> C: Hi
-      C -> B: Hi there
-
 
 .. _needuml_save:
 
@@ -224,9 +142,7 @@ using builder :ref:`needumls_builder` or other builder like `html` with configur
 
 If given file path already exists, it will be overwritten.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. int:: Test needuml save
       :id: INT_001
@@ -239,17 +155,6 @@ If given file path already exists, it will be overwritten.
 
 In this example, if builder :ref:`needumls_builder` is used, the plantuml-code will be exported to file at `outdir` of current builder,
 e.g. `_build/needumls/needuml_group_A/my_needuml.puml`.
-
-|out|
-
-.. int:: Test needuml save
-   :id: INT_001
-
-   .. needuml::
-      :save: needuml_group_A/my_needuml.puml
-
-      Alice -> Bob: Hi Bob
-      Bob --> Alice: Hi Alice
 
 
 .. _needuml_jinja:
@@ -265,17 +170,9 @@ needs
 ~~~~~
 A Python dictionary containing all Needs. The ``need_id`` is used as key.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needuml::
-
-      node "{{needs["FEATURE_NEEDUML1"].title}}"
-
-|out|
-
-.. needuml::
 
       node "{{needs["FEATURE_NEEDUML1"].title}}"
 
@@ -298,9 +195,7 @@ This functions represents each Need the same way.
    E.g. see even the following example, with text following 
    `{{flow("COMP_001")}}`.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needuml::
 
@@ -310,35 +205,15 @@ This functions represents each Need the same way.
       }
 
 
-|out|
-
-.. needuml::
-
-   {{flow("FEATURE_NEEDUML1")}}
-   {{flow("COMP_001")}} {
-   card manuall_written
-   }
-
-
 .. _needuml_jinja_filter:
 
 filter(filter_string)
 ~~~~~~~~~~~~~~~~~~~~~
 Finds a list of Sphinx-Need objects that pass the given filter string.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needuml::
-
-      {% for need in filter("type == 'int' and status != 'open'") %}
-      node "{{need.title}}"
-      {% endfor %}
-
-|out|
-
-.. needuml::
 
       {% for need in filter("type == 'int' and status != 'open'") %}
       node "{{need.title}}"
@@ -355,21 +230,12 @@ text associated to the hyperlink is either defined by `option` (in this case,
 Sphinx-Need picks the text of the field specified by `option`), or by the free text `text`.
 
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needuml::
 
       Alice -> Bob: {{ref("FEATURE_1", option="title")}}
       Bob -> Alice: {{ref("FEATURE_2", text="A completely free text")}}
-
-|out|
-
-.. needuml::
-
-   Alice -> Bob: {{ref("FEATURE_1", option="title")}}
-   Bob -> Alice: {{ref("FEATURE_2", text="A completely free text")}}
 
 .. _needuml_jinja_uml:
 
@@ -382,9 +248,7 @@ If diagram code is available in the need data under ``arch``, the stored PlantUM
 Please read :ref:`need_diagram` for details.
 
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needuml::
 
@@ -392,15 +256,6 @@ Please read :ref:`need_diagram` for details.
 
       {{uml("COMP_001")}}
       {{uml("FEATURE_NEEDUML1")}}
-
-|out|
-
-.. needuml::
-
-   allowmixing
-
-   {{uml("COMP_001")}}
-   {{uml("FEATURE_NEEDUML1")}}
 
 
 .. _needuml_jinja_uml_key:
@@ -412,9 +267,7 @@ Key argument
 ``key`` value by default is ``diagram``. If no key argument given, then the PlantUML code is loaded from ``diagram`` under ``arch``
 inside the need object.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. comp:: Z
       :id: COMP_Z
@@ -422,15 +275,6 @@ inside the need object.
       .. needuml::
 
          {{uml('COMP_002', 'sequence')}}
-
-|out|
-
-.. comp:: Z
-   :id: COMP_Z
-
-   .. needuml::
-
-      {{uml('COMP_002', 'sequence')}}
 
 
 .. _needuml_jinja_uml_args:
@@ -440,9 +284,7 @@ Additional keyword arguments
 
 :ref:`uml() <needuml_jinja_uml>` supports additional keyword parameters which are then available in the loaded PlantUML code.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. comp:: Variant A or B
       :id: COMP_A_B
@@ -462,62 +304,24 @@ Additional keyword arguments
 
       By default **Unknown** is shown, as no variant was set.
 
-|out|
-
-.. comp:: Variant A or B
-   :id: COMP_A_B
-
-   .. needuml::
-
-      {% if variant == "A" %}
-       class "A" as cl
-      {% elif variant == "B" %}
-       class "B" as cl {
-           attribute_x
-           function_x()
-       }
-      {% else %}
-       class "Unknown" as cl
-      {% endif %}
-
-   By default **Unknown** is shown, as no variant was set.
-
 
 Passing ``variant="A"`` parameter to the :ref:`uml() <needuml_jinja_uml>` function, we get the following:
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needuml::
       :debug:
 
       {{uml("COMP_A_B", variant="A")}}
 
-|out|
-
-.. needuml::
-   :debug:
-
-   {{uml("COMP_A_B", variant="A")}}
-
 Passing ``variant="B"`` parameter to the :ref:`uml() <needuml_jinja_uml>` function, we get the following:
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needuml::
       :debug:
 
       {{uml("COMP_A_B", variant="B")}}
-
-|out|
-
-.. needuml::
-   :debug:
-
-   {{uml("COMP_A_B", variant="B")}}
 
 
 .. _needuml_jinja_uml_chain:
@@ -639,65 +443,35 @@ All features are available and ``uml()`` can be used multiple time on different 
 NeedUml Examples
 ----------------
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needuml::
+      :scale: 50%
+      :align: right
 
       allowmixing
 
       class "Sphinx-Needs" as sn {
-        requirements
-        specifications
-        test_cases
-        customize()
-        automate()
-        export()
+      requirements
+      specifications
+      test_cases
+      customize()
+      automate()
+      export()
       }
 
       {% set ids = ["FEATURE_1", "FEATURE_5", "FEATURE_7"]%}
       {% for need in needs.values() %}
-          {% if need.id in ids %}
-              card "{{need['title']}}" as need_{{loop.index}} #ffcc00
-              need_{{loop.index}} --> sn
-          {% endif %}
+         {% if need.id in ids %}
+            card "{{need['title']}}" as need_{{loop.index}} #ffcc00
+            need_{{loop.index}} --> sn
+         {% endif %}
       {% endfor %}
 
       card "and much more..." as much #ffcc00
       much -> sn
 
-|out|
-
-.. needuml::
-   :scale: 50%
-   :align: right
-
-   allowmixing
-
-   class "Sphinx-Needs" as sn {
-     requirements
-     specifications
-     test_cases
-     customize()
-     automate()
-     export()
-   }
-
-   {% set ids = ["FEATURE_1", "FEATURE_5", "FEATURE_7"]%}
-   {% for need in needs.values() %}
-       {% if need.id in ids %}
-           card "{{need['title']}}" as need_{{loop.index}} #ffcc00
-           need_{{loop.index}} --> sn
-       {% endif %}
-   {% endfor %}
-
-   card "and much more..." as much #ffcc00
-   much -> sn
-
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
     .. comp:: Component X
        :id: COMP_001
@@ -718,27 +492,3 @@ NeedUml Examples
            }
 
            class_x o-- class_y
-
-|out|
-
-.. comp:: Component X
-   :id: COMP_001
-
-   .. needuml::
-
-      class "Class X" as class_x {
-        attribute_1
-        attribute_2
-        function_1()
-        function_2()
-        function_3()
-      }
-
-      class "Class Y" as class_y {
-        attribute_1
-        function_1()
-      }
-
-      class_x o-- class_y
-
-

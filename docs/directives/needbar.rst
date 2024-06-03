@@ -7,9 +7,7 @@ needbar
 
 ``needbar`` adds a bar-chart to your documentation:
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needbar::
 
@@ -17,15 +15,6 @@ needbar
       10,15,10
       15,10,20
       20,15,10
-
-|out|
-
-.. needbar::
-
-    5,20,15
-   10,15,10
-   15,10,20
-   20,15,10
 
 Each content value gets interpreted either as static float/int value or as a :ref:`filter_string`.
 The amount of found needs by the filter string is then used as value.
@@ -40,32 +29,7 @@ Options
 
 Example with all options used:
 
-.. needbar:: Full bar chart
-   :legend:
-   :colors: #ffcc88, #ffcc00, #444444
-   :text_color: crimson
-   :style: dark_background
-   :x_axis_title: x_axis_title
-   :xlabels_rotation: 90
-   :xlabels: a, b, c
-   :y_axis_title: y_axis_title
-   :ylabels: FROM_DATA
-   :ylabels_rotation: 45
-   :separator: ;
-   :stacked:
-   :show_top_sum:
-   :show_sum:
-   :sum_rotation: 90
-   :transpose:
-   :horizontal:
-
-   Z; 5;20;15
-   Y;10;15;10
-   X;15;10;20
-   W;20;15;10
-
-
-.. code-block:: rst
+.. need-example::
 
    .. needbar:: Full bar chart
       :legend:
@@ -91,15 +55,12 @@ Example with all options used:
       X;15;10;20
       W;20;15;10
 
-
 title
 ~~~~~
 
 You can specify the headline of the bar chart using the ``title`` argument.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needbar:: Title example
 
@@ -108,21 +69,9 @@ You can specify the headline of the bar chart using the ``title`` argument.
       15,10,20
       20,15,10
 
-|out|
-
-.. needbar:: Title example
-
-   5,20,15
-   10,15,10
-   15,10,20
-   20,15,10
-
-
 It is possible to create bar charts without title.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needbar::
 
@@ -130,16 +79,6 @@ It is possible to create bar charts without title.
       10,15,10
       15,10,20
       20,15,10
-
-|out|
-
-.. needbar::
-
-   5,20,15
-   10,15,10
-   15,10,20
-   20,15,10
-
 
 content
 ~~~~~~~
@@ -152,9 +91,7 @@ We get the bar chart's data (values) from the amount of **need** objects found b
 
 Below is a more realistic example with data fetched from filters, together with hardcoded data:
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needbar:: A more real bar chart
       :legend:
@@ -166,19 +103,6 @@ Below is a more realistic example with data fetched from filters, together with 
                Test, type=='test' and status=='open', type=='test' and status=='in progress', type=='test' and status=='closed', type=='test' and status=='done', type=='test' and status=='implemented', 7
       Specification, type=='spec' and status=='open', type=='spec' and status=='in progress', type=='spec' and status=='closed', type=='spec' and status=='done', type=='spec' and status=='implemented', 9
 
-|out|
-
-.. needbar:: A more real bar chart
-   :legend:
-   :xlabels: FROM_DATA
-   :ylabels: FROM_DATA
-
-                   ,                           open ,                          in progress ,                          closed ,                          done ,                          implemented , number
-        Requirement, type=='req' and status=='open', type=='req' and status=='in progress', type=='req' and status=='closed', type=='req' and status=='done', type=='req' and status=='implemented', 5
-               Test, type=='test' and status=='open', type=='test' and status=='in progress', type=='test' and status=='closed', type=='test' and status=='done', type=='test' and status=='implemented', 7
-      Specification, type=='spec' and status=='open', type=='spec' and status=='in progress', type=='spec' and status=='closed', type=='spec' and status=='done', type=='spec' and status=='implemented', 9
-
-
 legend
 ~~~~~~
 
@@ -186,9 +110,7 @@ You can place a legend on the barchart by setting the ``:legend:`` flag.
 
 The ``:legend:`` flag does not support any values.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needbar:: Legend example
       :legend:
@@ -197,16 +119,6 @@ The ``:legend:`` flag does not support any values.
       10,15,10
       15,10,20
       20,15,10
-
-|out|
-
-.. needbar:: Legend example
-   :legend:
-
-   5,20,15
-   10,15,10
-   15,10,20
-   20,15,10
 
 axis title
 ~~~~~~~~~~
@@ -217,9 +129,7 @@ You can enable axis titles on the barchart by setting the ``:x_axis_title:`` or 
    If you use `horizontal`_ or `transpose`_, the meaning of ``:x_axis_title:`` and ``:y_axis_title:`` must be understandable.
    So you have to change the description accordingly.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needbar:: Axis title example
       :x_axis_title: types
@@ -229,18 +139,6 @@ You can enable axis titles on the barchart by setting the ``:x_axis_title:`` or 
       10,15,10
       15,10,20
       20,15,10
-
-|out|
-
-.. needbar:: Axis title example
-   :x_axis_title: types
-   :y_axis_title: numbers
-
-   5,20,15
-   10,15,10
-   15,10,20
-   20,15,10
-
 
 labels
 ~~~~~~
@@ -257,9 +155,7 @@ Also, you can set the ``:xlabels:`` and/or ``:ylabels:`` value to ``FROM_DATA`` 
 
    But if you use `horizontal`_ or `transpose`_, the meaning of ``:x_axis_title:`` and ``:y_axis_title:`` will change automatically.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needbar:: Labels example 1
       :legend:
@@ -270,9 +166,6 @@ Also, you can set the ``:xlabels:`` and/or ``:ylabels:`` value to ``FROM_DATA`` 
       10,15,10
       15,10,20
       20,15,10
-
-
-.. code-block:: rst
 
    .. needbar:: Labels example 2
       :legend:
@@ -286,30 +179,6 @@ Also, you can set the ``:xlabels:`` and/or ``:ylabels:`` value to ``FROM_DATA`` 
       W,20,15,10
 
 
-|out|
-
-.. needbar:: Labels example 1
-   :legend:
-   :xlabels: a, b, c
-   :ylabels: Z, Y, X, W
-
-    5,20,15
-   10,15,10
-   15,10,20
-   20,15,10
-
-.. needbar:: Labels example 2
-   :legend:
-   :xlabels: FROM_DATA
-   :ylabels: FROM_DATA
-
-    , a, b, c
-   Z, 5,20,15
-   Y,10,15,10
-   X,15,10,20
-   W,20,15,10
-
-
 stacked
 ~~~~~~~
 
@@ -317,9 +186,7 @@ You can render the barchart in a stacked design by setting ``:stacked:`` flag.
 
 The ``:stacked:`` flag does not support any values.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needbar:: stacked example
       :stacked:
@@ -329,16 +196,6 @@ The ``:stacked:`` flag does not support any values.
       15,10,20
       20,15,10
 
-|out|
-
-.. needbar:: stacked example
-   :stacked:
-
-   5,20,15
-   10,15,10
-   15,10,20
-   20,15,10
-
 show_sum
 ~~~~~~~~
 
@@ -346,9 +203,7 @@ You can render the barchart with detailed information of the height of each bar 
 
 The ``:show_sum:`` flag does not support any values and it's useful with the ``stacked`` option  enabled.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needbar:: show_sum example 1
       :show_sum:
@@ -357,8 +212,6 @@ The ``:show_sum:`` flag does not support any values and it's useful with the ``s
       10,15,10
       15,10,20
       20,15,10
-
-.. code-block:: rst
 
    .. needbar:: show_sum example 2
       :stacked:
@@ -369,25 +222,6 @@ The ``:show_sum:`` flag does not support any values and it's useful with the ``s
       15,10,20
       20,15,10
 
-|out|
-
-.. needbar:: show_sum example 1
-   :show_sum:
-
-   5,20,15
-   10,15,10
-   15,10,20
-   20,15,10
-
-.. needbar:: show_sum example 2
-   :stacked:
-   :show_sum:
-
-   5,20,15
-   10,15,10
-   15,10,20
-   20,15,10
-
 
 show_top_sum
 ~~~~~~~~~~~~
@@ -396,9 +230,7 @@ You can render the barchart with detailed information of the height of each bar 
 
 The ``:show_sum:`` flag does not support any values and it's useful with the ``stacked`` option  enabled.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needbar:: show_top_sum example 1
       :show_top_sum:
@@ -407,8 +239,6 @@ The ``:show_sum:`` flag does not support any values and it's useful with the ``s
       10,15,10
       15,10,20
       20,15,10
-
-.. code-block:: rst
 
    .. needbar:: show_top_sum example 2
       :stacked:
@@ -419,27 +249,6 @@ The ``:show_sum:`` flag does not support any values and it's useful with the ``s
       10,15,10
       15,10,20
       20,15,10
-
-|out|
-
-.. needbar:: show_top_sum example 1
-   :show_top_sum:
-
-   5,20,15
-   10,15,10
-   15,10,20
-   20,15,10
-
-.. needbar:: show_top_sum example 2
-   :stacked:
-   :show_sum:
-   :show_top_sum:
-
-   5,20,15
-   10,15,10
-   15,10,20
-   20,15,10
-
 
 horizontal
 ~~~~~~~~~~
@@ -452,9 +261,7 @@ The ``:horizontal:`` flag does not support any values and it's useful with the `
    The meaning of `labels`_ will change automatically with the usage of ``:horizontal:``. We will use the
    ``:x_axis_title:`` as labels for the y-axis and use the ``:y_axis_title:`` as the values in the `legend`_.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needbar:: horizontal example 1
       :horizontal:
@@ -463,8 +270,6 @@ The ``:horizontal:`` flag does not support any values and it's useful with the `
       10,15,10
       15,10,20
       20,15,10
-
-.. code-block:: rst
 
    .. needbar:: horizontal example 2
       :stacked:
@@ -480,31 +285,6 @@ The ``:horizontal:`` flag does not support any values and it's useful with the `
       X,15,10,20
       W,20,15,10
 
-|out|
-
-.. needbar:: horizontal example 1
-   :horizontal:
-
-   5,20,15
-   10,15,10
-   15,10,20
-   20,15,10
-
-.. needbar:: horizontal example 2
-   :stacked:
-   :legend:
-   :show_sum:
-   :horizontal:
-   :xlabels: FROM_DATA
-   :ylabels: FROM_DATA
-
-    , a, b, c
-   Z, 5,20,15
-   Y,10,15,10
-   X,15,10,20
-   W,20,15,10
-
-
 transpose
 ~~~~~~~~~
 
@@ -517,9 +297,7 @@ The ``:transpose:`` flag does not support any values and it's useful with big co
    * Using the ``:transpose:`` flag, transposes the ``:x_axis_title:`` and ``:y_axis_title:`` fetched from the content data or specified with `labels`_ but does not transpose the extra `axis title`_.
    * Remember that with the ``:transpose:`` flag, the length and height of the content data changes, not to think about the width of matching elements, like `colors`_. Please review the impact of ``:transpose:`` before using it.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needbar:: transpose example 1
       :transpose:
@@ -528,8 +306,6 @@ The ``:transpose:`` flag does not support any values and it's useful with big co
       10,15,10
       15,10,20
       20,15,10
-
-.. code-block:: rst
 
    .. needbar:: transpose example 2
       :legend:
@@ -545,30 +321,6 @@ The ``:transpose:`` flag does not support any values and it's useful with big co
       X,15,10,20
       W,20,15,10
 
-|out|
-
-.. needbar:: transpose example 1
-   :transpose:
-
-   5,20,15
-   10,15,10
-   15,10,20
-   20,15,10
-
-.. needbar:: transpose example 2
-   :legend:
-   :stacked:
-   :show_sum:
-   :transpose:
-   :xlabels: FROM_DATA
-   :ylabels: FROM_DATA
-
-    , a, b, c
-   Z, 5,20,15
-   Y,10,15,10
-   X,15,10,20
-   W,20,15,10
-
 
 rotation
 ~~~~~~~~
@@ -578,9 +330,7 @@ rotation
 | Use ``:sum_rotation:`` to set rotation of labels for bars on the diagram.
 
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needbar:: rotation example
       :legend:
@@ -597,24 +347,6 @@ rotation
       15,10,20
       20,15,10
 
-|out|
-
-.. needbar:: rotation example
-   :legend:
-   :xlabels: a, b, c
-   :xlabels_rotation: 90
-   :ylabels: Z, Y, X, W
-   :ylabels_rotation: 40
-   :show_top_sum:
-   :show_sum:
-   :sum_rotation: 90
-
-    5,20,15
-   10,15,10
-   15,10,20
-   20,15,10
-
-
 separator
 ~~~~~~~~~
 
@@ -623,9 +355,7 @@ This ensures the use of ``,`` (the default separator) in a filter rule. Other op
 
 The ``:separator:`` is a string that supports any symbols.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needbar:: separator example
       :separator: -
@@ -634,17 +364,6 @@ The ``:separator:`` is a string that supports any symbols.
       10-15-10
       15-10-20
       20-15-10
-
-|out|
-
-.. needbar:: separator example
-   :separator: -
-
-   5-20-15
-   10-15-10
-   15-10-20
-   20-15-10
-
 
 colors
 ~~~~~~
@@ -661,9 +380,7 @@ But besides names, ``:colors:`` options also supports hex-values like ``#ffcc00`
    When you use `horizontal`_ or `transpose`_, the bar's length must be equal to ``:xlabels:`` or ``:ylabels:``.
    If the length does not fit, it will fill the bar with the colors again and you will get a warning.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needbar:: colors example
       :legend:
@@ -677,33 +394,16 @@ But besides names, ``:colors:`` options also supports hex-values like ``#ffcc00`
       X,15,10,20
       W,20,15,10
 
-|out|
-
-.. needbar:: colors example
-   :legend:
-   :colors: lightcoral, gold, #555555, #888888
-   :xlabels: FROM_DATA
-   :ylabels: FROM_DATA
-
-    , a, b, c
-   Z, 5,20,15
-   Y,10,15,10
-   X,15,10,20
-   W,20,15,10
-
-
 text_color
 ~~~~~~~~~~
 
 ``:text_color:`` defines the color for text inside the bar chart and the labels.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needbar:: text_color example
       :legend:
-      text_color: green
+      :text_color: green
       :xlabels: FROM_DATA
       :ylabels: FROM_DATA
 
@@ -712,21 +412,6 @@ text_color
       Y,10,15,10
       X,15,10,20
       W,20,15,10
-
-|out|
-
-.. needbar:: text_color example
-   :legend:
-   :text_color: green
-   :xlabels: FROM_DATA
-   :ylabels: FROM_DATA
-
-    , a, b, c
-   Z, 5,20,15
-   Y,10,15,10
-   X,15,10,20
-   W,20,15,10
-
 
 style
 ~~~~~
@@ -743,9 +428,7 @@ Useful styles are for example:
 * dark_background
 * grayscale
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needbar:: style example
       :legend:
@@ -758,17 +441,3 @@ Useful styles are for example:
       Y,10,15,10
       X,15,10,20
       W,20,15,10
-
-|out|
-
-.. needbar:: style example
-   :legend:
-   :style: Solarize_Light2
-   :xlabels: FROM_DATA
-   :ylabels: FROM_DATA
-
-    , a, b, c
-   Z, 5,20,15
-   Y,10,15,10
-   X,15,10,20
-   W,20,15,10

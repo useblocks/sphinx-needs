@@ -7,23 +7,13 @@ needpie
 
 ``needpie`` adds a pie-chart to your documentation.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needpie:: My pie chart
 
       type == 'req'
       type == 'spec'
       10
-
-|out|
-
-.. needpie:: My pie chart
-
-   type == 'req'
-   type == 'spec'
-   10
 
 If you provide an argument for the ``needpie``, we use it as the title.
 
@@ -42,7 +32,7 @@ Options
 
 **Example with all options used:**
 
-.. code-block:: rst
+.. need-example::
 
    .. needpie:: Requirement status
       :labels: Open, In progress, Closed
@@ -57,21 +47,6 @@ Options
       type == 'req' and status == 'in progress'
       type == 'req' and status == 'closed'
 
-|out|
-
-.. needpie:: Requirement status
-   :labels: Open, In progress, Closed
-   :legend:
-   :shadow:
-   :explode: 0, 0.3, 0
-   :colors: #ffcc00, #444444, limegreen
-   :text_color: crimson
-   :style: dark_background
-
-   type == 'req' and status == 'open'
-   type == 'req' and status == 'in progress'
-   type == 'req' and status == 'closed'
-
 
 labels
 ~~~~~~
@@ -81,9 +56,7 @@ Use ``:labels:`` to set labels for each value.
 ``:labels:`` must get a comma separated string and the amount of labels must match the amount of
 values/lines from content.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needpie:: Requirement status
       :labels: Open, In progress, Closed
@@ -91,15 +64,6 @@ values/lines from content.
       type == 'req' and status == 'open'
       type == 'req' and status == 'in progress'
       type == 'req' and status == 'closed'
-
-|out|
-
-.. needpie:: Requirement status
-   :labels: Open, In progress, Closed
-
-   type == 'req' and status == 'open'
-   type == 'req' and status == 'in progress'
-   type == 'req' and status == 'closed'
 
 
 legend
@@ -109,9 +73,7 @@ You can place a legend on the right side of the pie chart by setting the ``:lege
 
 The ``:legend:`` flag does not support any values.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needpie:: Requirement status
       :labels: Open, In progress, Closed
@@ -120,16 +82,6 @@ The ``:legend:`` flag does not support any values.
       type == 'req' and status == 'open'
       type == 'req' and status == 'in progress'
       type == 'req' and status == 'closed'
-
-|out|
-
-.. needpie:: Requirement status
-   :labels: Open, In progress, Closed
-   :legend:
-
-   type == 'req' and status == 'open'
-   type == 'req' and status == 'in progress'
-   type == 'req' and status == 'closed'
 
 
 explode
@@ -142,9 +94,7 @@ The amount of values for ``:explode:`` must match the amount of values / content
 
 Useful values for ``:explode:`` are between ``0`` and ``0.3``
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needpie:: Requirement status
       :explode: 0,0.2,0
@@ -153,24 +103,13 @@ Useful values for ``:explode:`` are between ``0`` and ``0.3``
       type == 'req' and status == 'in progress'
       type == 'req' and status == 'closed'
 
-|out|
-
-.. needpie:: Requirement status
-   :explode: 0,0.2,0
-
-   type == 'req' and status == 'open'
-   type == 'req' and status == 'in progress'
-   type == 'req' and status == 'closed'
-
 
 shadow
 ~~~~~~
 
 ``:shadow:`` activates a shadow in the pie chart. It does not support any further values.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needpie:: Requirement status
       :explode: 0,0.2,0
@@ -179,16 +118,6 @@ shadow
       type == 'req' and status == 'open'
       type == 'req' and status == 'in progress'
       type == 'req' and status == 'closed'
-
-|out|
-
-.. needpie:: Requirement status
-   :explode: 0,0.2,0
-   :shadow:
-
-   type == 'req' and status == 'open'
-   type == 'req' and status == 'in progress'
-   type == 'req' and status == 'closed'
 
 colors
 ~~~~~~
@@ -200,9 +129,7 @@ for a complete list of color names.
 
 But besides names, the ``:colors:`` option also supports hex-values like ``#ffcc00``.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needpie:: Requirement status
       :colors: lightcoral, gold, #555555
@@ -211,16 +138,6 @@ But besides names, the ``:colors:`` option also supports hex-values like ``#ffcc
       type == 'req' and status == 'in progress'
       type == 'req' and status == 'closed'
 
-
-|out|
-
-.. needpie:: Requirement status
-   :colors: lightcoral, gold, #555555
-
-   type == 'req' and status == 'open'
-   type == 'req' and status == 'in progress'
-   type == 'req' and status == 'closed'
-
 text_color
 ~~~~~~~~~~
 
@@ -228,9 +145,7 @@ text_color
 
 .. note:: Setting the ``:text_color:`` option does not change the legend and title color.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needpie:: Requirement status
       :text_color: w
@@ -238,15 +153,6 @@ text_color
       type == 'req' and status == 'open'
       type == 'req' and status == 'in progress'
       type == 'req' and status == 'closed'
-
-|out|
-
-.. needpie:: Requirement status
-   :text_color: w
-
-   type == 'req' and status == 'open'
-   type == 'req' and status == 'in progress'
-   type == 'req' and status == 'closed'
 
 style
 ~~~~~
@@ -263,9 +169,7 @@ Useful styles are for example:
 * dark_background
 * grayscale
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needpie:: Requirement status
       :style: Solarize_Light2
@@ -273,16 +177,6 @@ Useful styles are for example:
       type == 'req' and status == 'open'
       type == 'req' and status == 'in progress'
       type == 'req' and status == 'closed'
-
-|out|
-
-
-.. needpie:: Requirement status
-   :style: Solarize_Light2
-
-   type == 'req' and status == 'open'
-   type == 'req' and status == 'in progress'
-   type == 'req' and status == 'closed'
 
 
 overlapping labels
@@ -295,9 +189,7 @@ In the past we had overlapping labels. See following diagram.
 
 Now overlapping labels are removed, and we automatically add a legend with removed information.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needpie:: Requirement status
       :labels: New, Open, In progress, Closed, Outdated, Removed
@@ -308,18 +200,3 @@ Now overlapping labels are removed, and we automatically add a legend with remov
       5
       0
       0
-
-
-|out|
-
-.. needpie:: Requirement status
-   :labels: New, Open, In progress, Closed, Outdated, Removed
-   
-   90
-   7
-   6
-   5
-   0
-   0
-
-

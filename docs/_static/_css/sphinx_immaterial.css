@@ -180,3 +180,10 @@ body {
     width: 100%;
     padding-right: 0.6em !important;  /* note, this line can be removed in sphinx-design v0.6.1 */
 }
+
+.needs-example {
+    border: .05rem solid rgb(72,138,87);
+    padding-left: .5rem;
+    padding-right: .5rem;
+    padding-bottom: .5rem;
+}

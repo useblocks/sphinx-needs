@@ -10,8 +10,6 @@ needextract
 It supports custom creation of extracts from existing needs.
 For instance, a supplier could get a copy of requirements but would not see all the internal meta-data.
 
-|ex|
-
 .. code-block:: rst
 
    .. needextract::
@@ -25,8 +23,6 @@ For instance, a supplier could get a copy of requirements but would not see all 
 
 ``needextract`` supports also arguments as filter string. It works like the option `filter`, but also
 supports need ID as filter argument.
-
-|ex|
 
 .. code-block:: rst
 
@@ -49,19 +45,11 @@ The original need provides the style information, if not overwritten by :ref:`ne
 
 See :ref:`layouts` for a list of available layouts.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needextract::
       :filter: id in ['FEATURE_3', 'FEATURE_4']
       :layout: focus_r
-
-|out|
-
-.. needextract::
-   :filter: id in ['FEATURE_3', 'FEATURE_4']
-   :layout: focus_r
 
 .. _needextract_style:
 
@@ -73,16 +61,8 @@ The original need provides the layout information , if not overwritten by :ref:`
 
 See :ref:`styles` for a list of available styles.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needextract::
       :filter: id in ['FEATURE_3', 'FEATURE_4']
       :style: blue_border
-
-|out|
-
-.. needextract::
-   :filter: id in ['FEATURE_3', 'FEATURE_4']
-   :style: blue_border

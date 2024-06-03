@@ -4,9 +4,7 @@ needservice
 ===========
 .. versionadded:: 0.6.0
 
-``needservice`` allows the import of data from external services like GitHub.
-
-|ex|
+``needservice`` allows the import of data from external services like GitHub, for example:
 
 .. code-block:: rst
 
@@ -47,9 +45,7 @@ debug
 ~~~~~
 Set ``debug`` to get debug-output of the ``needservice`` only. No needs will be created.
 
-Useful to understand the return values of services or to figure out, why a connection can not be established.
-
-|ex|
+Useful to understand the return values of services or to figure out, why a connection can not be established, for example:
 
 .. code-block:: rst
 
@@ -74,24 +70,11 @@ For details, please take a look into its specific documentation under :ref:`gith
 The service queries ``GitHub`` for issues in the **Sphinx-Needs** repository that have *node* and *latexpdf* in
 their content.
 
-|ex|
+.. tip:: Click the small arrow under the need id to see all meta data.
 
-.. code-block:: rst
+.. need-example::
 
     .. needservice:: github-issues
        :query: repo:useblocks/sphinx-needs node latexpdf
        :max_content_lines: 4
        :id_prefix: EXAMPLE_
-
-
-Click the small arrow under the need id to see all meta data.
-
-|out|
-
-.. needservice:: github-issues
-   :query: repo:useblocks/sphinx-needs node latexpdf
-   :max_amount: 1
-   :id_prefix: EXAMPLE_
-   :max_content_lines: 4
-
-

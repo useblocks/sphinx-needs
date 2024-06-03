@@ -7,19 +7,11 @@ needgantt
 
 ``needgantt`` adds a gantt-chart to your documentation.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
     .. needgantt:: Bug handling gantt
        :tags: gantt_example
        :milestone_filter: type == 'milestone'
-
-|out|
-
-.. needgantt:: Bug handling gantt
-   :tags: gantt_example
-   :milestone_filter: type == 'milestone'
 
 .. dropdown:: Show used needs for above example
 
@@ -121,19 +113,11 @@ List of link names used to define task relationship, ``starts_with``.
 
 Default: None
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needgantt:: Starts_with example
       :tags: gantt_ex_starts_with
       :starts_with_links: starts_with
-
-|out|
-
-.. needgantt:: Starts_with example
-   :tags: gantt_ex_starts_with
-   :starts_with_links: starts_with
 
 .. dropdown:: Show used needs for above example
 
@@ -163,19 +147,11 @@ List of link names used to define task relationship, ``starts_after``.
 
 Default: links
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needgantt:: Starts_after example
       :tags: gantt_ex_starts_after
       :starts_after_links: starts_after
-
-|out|
-
-.. needgantt:: Starts_with example
-   :tags: gantt_ex_starts_after
-   :starts_after_links: starts_after
 
 .. dropdown:: Show the needs used in the above example
 
@@ -199,19 +175,11 @@ List of link names used to define task relationship, ``ends_with``.
 
 Default: None
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needgantt:: Ends_with example
       :tags: gantt_ex_ends_with
       :ends_with_links: ends_with
-
-|out|
-
-.. needgantt:: Ends_with example
-   :tags: gantt_ex_ends_with
-   :ends_with_links: ends_with
 
 .. dropdown:: Show the needs used in the above example
 
@@ -236,22 +204,12 @@ We calculate all tasks and milestones dates based on the ``:start_date:`` option
 
 Date format must be ``YYYY-MM-DD``. Example: 2020-03-25
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needgantt:: Bug handling gantt
       :tags: gantt_example
       :milestone_filter: type == 'milestone'
       :start_date: 2020-03-25
-
-|out|
-
-.. needgantt:: Bug handling gantt
-   :tags: gantt_example
-   :milestone_filter: type == 'milestone'
-   :start_date: 2020-03-25
-
 
 .. _needgantt_timeline:
 
@@ -266,23 +224,13 @@ Default: ``daily``
 
 Works only, if you set :ref:`needgantt_start_date` option.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needgantt:: Bug handling gantt
       :tags: gantt_example
       :milestone_filter: type == 'milestone'
       :start_date: 2020-03-25
       :timeline: weekly
-
-|out|
-
-.. needgantt:: Bug handling gantt
-   :tags: gantt_example
-   :milestone_filter: type == 'milestone'
-   :start_date: 2020-03-25
-   :timeline: weekly
 
 .. _needgantt_no_color:
 
@@ -309,19 +257,11 @@ You can set the duration option globally by using :ref:`needs_duration_option` i
 
 Default: :ref:`need_duration`
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needgantt:: Duration example
       :tags: gantt_ex_duration
       :duration_option: hours
-
-|out|
-
-.. needgantt:: Duration example
-   :tags: gantt_ex_duration
-   :duration_option: hours
 
 .. dropdown:: Show the needs used in the above example
 
@@ -353,19 +293,11 @@ You can set the completion option globally by using :ref:`needs_completion_optio
 
 Default: :ref:`need_completion`
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needgantt:: Completion example
       :tags: gantt_ex_completion
       :completion_option: amount
-
-|out|
-
-.. needgantt:: Completion example
-   :tags: gantt_ex_completion
-   :completion_option: amount
 
 .. dropdown:: Show the needs used in the above example
 

@@ -7,17 +7,10 @@ needlist
 
 **needlist** creates a list of elements based on the result of given filters.
 
-|ex|
-
-.. code-block:: rst
+.. need-example::
 
    .. needlist::
       :tags: main_example
-
-|out|
-
-.. needlist::
-   :tags: main_example
 
 Options
 -------
@@ -36,17 +29,7 @@ Flag for adding status information to the needs list results filtered.
 
 If a filtered need has no status information, we write no status output for the need.
 
-.. dropdown:: Show example
-
-   |ex|
-
-   .. code-block:: rst
-
-      .. needlist::
-         :show_status:
-         :status: done; implemented
-
-   |out|
+.. need-example::
 
    .. needlist::
       :show_status:
@@ -60,22 +43,12 @@ Flag for adding tag information to the needs list results filtered.
 
 If a filtered need has no tag information, we write no tag output for the need.
 
-.. dropdown:: Show example
 
-   |ex|
-
-   .. code-block:: rst
-
-      .. needlist::
-         :show_tags:
-         :status: done; implemented
-
-   |out|
+.. need-example::
 
    .. needlist::
       :show_tags:
       :status: done; implemented
-
 
 .. _needlist_show_filters:
 
@@ -84,17 +57,8 @@ show_filters
 
 If set, we add the used filter below the needlist results:
 
-.. dropdown:: Show example
 
-   |ex|
-
-   .. code-block:: rst
-
-      .. needlist::
-         :show_filters:
-         :status: done; implemented
-
-   |out|
+.. need-example::
 
    .. needlist::
       :show_filters:
