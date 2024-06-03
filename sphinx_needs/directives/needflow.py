@@ -26,6 +26,7 @@ from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import (
     add_doc,
     get_scale,
+    match_variants,
     remove_node_from_tree,
     split_link_types,
 )
@@ -60,6 +61,7 @@ class NeedflowDirective(FilterBase):
         "config": directives.unchanged_required,
         "scale": directives.unchanged_required,
         "highlight": directives.unchanged_required,
+        "border_color": directives.unchanged_required,
         "align": directives.unchanged_required,
         "debug": directives.flag,
     }
@@ -108,6 +110,7 @@ class NeedflowDirective(FilterBase):
             "config_names": config_names,
             "scale": get_scale(self.options, location),
             "highlight": self.options.get("highlight", ""),
+            "border_color": self.options.get("border_color", None),
             "align": self.options.get("align"),
             "debug": "debug" in self.options,
             "caption": self.arguments[0] if self.arguments else None,
@@ -151,6 +154,16 @@ def get_need_node_rep_for_plantuml(
         need_info, needs_config, current_needflow["highlight"], all_needs
     ):
         node_colors.append("line:FF0000")
+
+    elif current_needflow["border_color"]:
+        color = match_variants(
+            current_needflow["border_color"],
+            {**need_info},
+            needs_config.variants,
+            location=(current_needflow["docname"], current_needflow["lineno"]),
+        )
+        if color:
+            node_colors.append(f"line:{color}")
 
     # need parts style use default "rectangle"
     if need_info["is_need"]:
