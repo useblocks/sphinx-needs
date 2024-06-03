@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1717397287261,
+  "lastUpdate": 1717398420248,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -8028,6 +8028,42 @@ window.BENCHMARK_DATA = {
             "value": 61.658699692,
             "unit": "s",
             "extra": "Commit: 6e0d0eb6f2e6840b576010a5f55992300782a4ac\nBranch: master\nTime: 2024-06-03T08:46:11+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "14fffc5b61834185bea6cdde70b05b92093d8e70",
+          "message": "📚 Use new need-example directive for all examples (#1190)\n\nThis commit removes the duplication of examples (as literal and rendered), by adding a `need-example` directive that handles both from the same source content.\r\n\r\nThis removes issues with inconsistencies, and also allows for consistent/centralised formatting of the examples.",
+          "timestamp": "2024-06-03T09:04:57+02:00",
+          "tree_id": "57f66db8590558bc69a678133da69f7542b7e05d",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/14fffc5b61834185bea6cdde70b05b92093d8e70"
+        },
+        "date": 1717398411496,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18976810099999852,
+            "unit": "s",
+            "extra": "Commit: 14fffc5b61834185bea6cdde70b05b92093d8e70\nBranch: master\nTime: 2024-06-03T09:04:57+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.208328053,
+            "unit": "s",
+            "extra": "Commit: 14fffc5b61834185bea6cdde70b05b92093d8e70\nBranch: master\nTime: 2024-06-03T09:04:57+02:00"
           }
         ]
       }
