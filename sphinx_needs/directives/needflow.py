@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import html
 import os
-from typing import Iterable, Sequence
+from typing import Iterable, Literal, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -12,7 +12,7 @@ from sphinxcontrib.plantuml import (
     generate_name,  # Need for plantuml filename calculation
 )
 
-from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
 from sphinx_needs.data import (
     NeedsFlowType,
     NeedsInfoType,
@@ -48,6 +48,11 @@ class NeedflowDirective(FilterBase):
     optional_arguments = 1
     final_argument_whitespace = True
     option_spec = {
+        "root_id": directives.unchanged_required,
+        "root_direction": lambda c: directives.choice(
+            c, ("both", "incoming", "outgoing")
+        ),
+        "root_depth": directives.nonnegative_int,
         "show_legend": directives.flag,
         "show_filters": directives.flag,
         "show_link_names": directives.flag,
@@ -91,6 +96,9 @@ class NeedflowDirective(FilterBase):
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
+            "root_id": self.options.get("root_id"),
+            "root_direction": self.options.get("root_direction", "all"),
+            "root_depth": self.options.get("root_depth", None),
             # note these are the same as DiagramBase.collect_diagram_attributes
             "show_legend": "show_legend" in self.options,
             "show_filters": "show_filters" in self.options,
@@ -285,6 +293,48 @@ def cal_needs_node(
     return curr_need_tree
 
 
+def filter_by_tree(
+    all_needs: dict[str, NeedsInfoType],
+    root_id: str,
+    link_types: list[LinkOptionsType],
+    direction: Literal["both", "incoming", "outgoing"],
+    depth: int | None,
+) -> dict[str, NeedsInfoType]:
+    """Filter all needs by the given ``root_id``,
+    and all needs that are connected to the root need by the given ``link_types``, in the given ``direction``."""
+    need_items: dict[str, NeedsInfoType] = {}
+    if root_id not in all_needs:
+        return need_items
+    roots = {root_id: (0, all_needs[root_id])}
+    link_prefixes = (
+        ("_back",)
+        if direction == "incoming"
+        else ("",)
+        if direction == "outgoing"
+        else ("", "_back")
+    )
+    links_to_process = [
+        link["option"] + d for link in link_types for d in link_prefixes
+    ]
+    while roots:
+        root_id, (root_depth, root) = roots.popitem()
+        if root_id in need_items:
+            continue
+        if depth is not None and root_depth > depth:
+            continue
+        need_items[root_id] = root
+        for link_type_name in links_to_process:
+            roots.update(
+                {
+                    i: (root_depth + 1, all_needs[i])
+                    for i in root.get(link_type_name, [])  # type: ignore[attr-defined]
+                    if i in all_needs
+                }
+            )
+
+    return need_items
+
+
 @measure_time("needflow")
 def process_needflow(
     app: Sphinx,
@@ -299,8 +349,7 @@ def process_needflow(
     env_data = SphinxNeedsData(env)
     all_needs = env_data.get_or_create_needs()
 
-    link_types = needs_config.extra_links
-    link_type_names = [link["option"].upper() for link in link_types]
+    link_type_names = [link["option"].upper() for link in needs_config.extra_links]
     allowed_link_types_options = [link.upper() for link in needs_config.flow_link_types]
 
     # NEEDFLOW
@@ -325,6 +374,24 @@ def process_needflow(
                     type="needs",
                 )
 
+        # compute the allowed link names
+        allowed_link_types: list[LinkOptionsType] = []
+        for link_type in needs_config.extra_links:
+            # Skip link-type handling, if it is not part of a specified list of allowed link_types or
+            # if not part of the overall configuration of needs_flow_link_types
+            if (
+                current_needflow["link_types"]
+                and link_type["option"].upper() not in option_link_types
+            ) or (
+                not current_needflow["link_types"]
+                and link_type["option"].upper() not in allowed_link_types_options
+            ):
+                continue
+            # skip creating links from child needs to their own parent need
+            if link_type["option"] == "parent_needs":
+                continue
+            allowed_link_types.append(link_type)
+
         try:
             if "sphinxcontrib.plantuml" not in app.config.extensions:
                 raise ImportError
@@ -340,7 +407,19 @@ def process_needflow(
 
         content: list[nodes.Element] = []
 
-        found_needs = process_filters(app, all_needs.values(), current_needflow)
+        need_values = (
+            filter_by_tree(
+                all_needs,
+                root_id,
+                allowed_link_types,
+                current_needflow["root_direction"],
+                current_needflow["root_depth"],
+            ).values()
+            if (root_id := current_needflow.get("root_id"))
+            else all_needs.values()
+        )
+
+        found_needs = process_filters(app, need_values, current_needflow)
 
         if found_needs:
             plantuml_block_text = ".. plantuml::\n" "\n" "   @startuml" "   @enduml"
@@ -367,23 +446,7 @@ def process_needflow(
             puml_node["uml"] += "\n' Nodes definition \n\n"
 
             for need_info in found_needs:
-                for link_type in link_types:
-                    # Skip link-type handling, if it is not part of a specified list of allowed link_types or
-                    # if not part of the overall configuration of needs_flow_link_types
-                    if (
-                        current_needflow["link_types"]
-                        and link_type["option"].upper() not in option_link_types
-                    ) or (
-                        not current_needflow["link_types"]
-                        and link_type["option"].upper()
-                        not in allowed_link_types_options
-                    ):
-                        continue
-
-                    # skip creating links from child needs to their own parent need
-                    if link_type["option"] == "parent_needs":
-                        continue
-
+                for link_type in allowed_link_types:
                     for link in need_info[link_type["option"]]:  # type: ignore[literal-required]
                         # If source or target of link is a need_part, a specific style is needed
                         if "." in link or "." in need_info["id_complete"]:

@@ -4,7 +4,8 @@ TEST DOCUMENT NEEDFLOW
 .. toctree::
 
    page
-   empty_needflow_with_debug.rst
+   empty_needflow_with_debug
+   needflow_with_root_id
 
 
 .. spec:: Command line interface
