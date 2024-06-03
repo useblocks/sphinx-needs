@@ -207,14 +207,31 @@ NEEDFLOW_CONFIG_DEFAULTS = {
 TITLE_REGEX = r'([^\s]+) as "([^"]+)"'
 
 
+def string_to_boolean(argument: str | None) -> bool | None:
+    """Convert a string (from a directive option) to a boolean.
+
+    The value can be one of case-insensitive "true"/"false" or "yes"/"no",
+    or the empty string also evaluates to True.
+
+    :raises ValueError: If the value is not a valid flag or case-insensitive true/false/yes/no.
+    """
+    if argument is None:
+        return True
+    if argument.upper() in ["", "TRUE", "YES"]:
+        return True
+    if argument.upper() in ["FALSE", "NO"]:
+        return False
+    raise ValueError("not a flag or case-insensitive true/false/yes/no")
+
+
 NEED_DEFAULT_OPTIONS: dict[str, Any] = {
     "id": directives.unchanged_required,
     "status": directives.unchanged_required,
     "tags": directives.unchanged_required,
     "links": directives.unchanged_required,
-    "collapse": directives.unchanged_required,
-    "delete": directives.unchanged,
-    "jinja_content": directives.unchanged,
+    "collapse": string_to_boolean,
+    "delete": string_to_boolean,
+    "jinja_content": string_to_boolean,
     "hide": directives.flag,
     "title_from_content": directives.flag,
     "style": directives.unchanged_required,

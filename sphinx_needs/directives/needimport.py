@@ -16,6 +16,7 @@ from sphinx_needs.api import add_need
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType
 from sphinx_needs.debug import measure_time
+from sphinx_needs.defaults import string_to_boolean
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.needsfile import check_needs_file
 from sphinx_needs.utils import add_doc, logger
@@ -34,7 +35,7 @@ class NeedimportDirective(SphinxDirective):
     option_spec = {
         "version": directives.unchanged_required,
         "hide": directives.flag,
-        "collapse": directives.unchanged_required,
+        "collapse": string_to_boolean,
         "filter": directives.unchanged_required,
         "id_prefix": directives.unchanged_required,
         "tags": directives.unchanged_required,

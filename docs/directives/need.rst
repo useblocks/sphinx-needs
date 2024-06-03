@@ -51,7 +51,7 @@ Rules for specifying variant definitions
   `Sphinx-Tags <https://www.sphinx-doc.org/en/master/man/sphinx-build.html#cmdoption-sphinx-build-t>`_,
   and :ref:`needs_filter_data` as the context for filtering.
 * You can set a *need option* to multiple variant definitions by separating each definition with either
-  the ``,`` or ``;`` symbol, like ``var_a:open; ['name' in tags]:assigned``.|br|
+  the ``,`` or ``;`` symbol, like ``var_a:open; ['name' in tags]:assigned``. |br|
   With multiple variant definitions, we set the first matching variant as the *need option's* value.
 * When you set a *need option* to multiple variant definitions, you can specify the last definition as
   a default "variant-free" option which we can use if no variant definition matches. |br|
@@ -153,7 +153,7 @@ Below is an implementation of variants for need options:
       :id: VA_004
       :status: ['variants' in tags and not collapse]:enabled, disabled
       :tags: variants;support
-      :collapse: true
+      :collapse:
 
       Variants for need options in action
 
@@ -366,7 +366,7 @@ Default: False
 
    .. req:: Collapse is set to True
       :tags: collapse; example
-      :collapse: True
+      :collapse:
 
       Only title and content are shown
 
@@ -391,8 +391,8 @@ If you set the option to **False**, you deactivate jinja-parsing for the need's 
 
 Allowed values:
 
-* ``true`` or ``yes`` or ``1``
-* ``false`` or ``no`` or ``0``
+* empty, ``true`` or ``yes``
+* ``false`` or ``no``
 
 Default: False
 
@@ -421,7 +421,7 @@ Default: False
           :status: open
           :tags: user;login
           :links: JINJAID126
-          :jinja_content: true
+          :jinja_content:
 
           Nested need with ``:jinja_content:`` option set to ``true``.
           This requirement has tags: **{{ tags | join(', ') }}**.
@@ -435,7 +435,7 @@ Default: False
     .. spec:: First Spec Need
        :id: JINJAID126
        :status: open
-       :jinja_content: true
+       :jinja_content:
 
        Need with ``:jinja_content:`` equal to ``true``.
        This requirement has status: **{{ status }}**.
