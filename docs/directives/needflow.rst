@@ -45,6 +45,71 @@ Options
    **needflow** supports the full filtering possibilities of **Sphinx-Needs**.
    Please see :ref:`filter` for more information.
 
+.. _needflow_root_id:
+.. _needflow_root_direction:
+.. _needflow_root_depth:
+
+root_id
+~~~~~~~
+
+.. versionadded:: 2.2.0
+
+To select a root need for the flowchart and its connected needs, you can use the ``:root_id:`` option.
+This takes the id of the need you want to use as the root,
+and then traverses the tree of connected needs, to create an initial selection of needs to show in the flowchart.
+
+Connections are limited by the link types you have defined in the ``:link_types:`` option, or all link types if not defined.
+The direction of connections can be set with the ``:root_direction:`` option:
+``both`` (default), ``incoming`` or ``outgoing``.
+
+If ``:root_depth:`` is set, only needs with a distance of ``root_depth`` to the root need are shown.
+
+Other need filters are applied on this initial selection of connected needs.
+
+|ex|
+
+.. code-block:: rst
+
+   .. needflow::
+      :root_id: spec_flow_002
+      :root_direction: incoming
+      :link_types: tests, blocks
+      :show_link_names:
+
+   .. needflow::
+      :root_id: spec_flow_002
+      :root_direction: outgoing
+      :link_types: tests, blocks
+      :show_link_names:
+
+   .. needflow::
+      :root_id: spec_flow_002
+      :root_direction: outgoing
+      :root_depth: 1
+      :link_types: tests, blocks
+      :show_link_names:
+
+|out|
+
+.. needflow::
+   :root_id: spec_flow_002
+   :root_direction: incoming
+   :link_types: tests, blocks
+   :show_link_names:
+
+.. needflow::
+   :root_id: spec_flow_002
+   :root_direction: outgoing
+   :link_types: tests, blocks
+   :show_link_names:
+
+.. needflow::
+   :root_id: spec_flow_002
+   :root_direction: outgoing
+   :root_depth: 1
+   :link_types: tests, blocks
+   :show_link_names:
+
 .. _needflow_show_filters:
 
 show_filters
