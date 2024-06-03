@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1717159514823,
+  "lastUpdate": 1717393909382,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -7920,6 +7920,42 @@ window.BENCHMARK_DATA = {
             "value": 58.630743255,
             "unit": "s",
             "extra": "Commit: 483c98301b56465caabee32c59221e7a4904b23a\nBranch: master\nTime: 2024-05-31T14:43:19+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0c5e4e8cd8737b84981eddcce9e63eb1261e1d8f",
+          "message": "✨ Allow creating a `needflow` from a `root_id` (#1186)\n\nA common use-case for visualising a graph, is to select a root node and visualise the sub-tree of all ancestor / descendant nodes.\r\nHere we add the capability to the `needflow` directive, via new `root_id`, `root_direction` and `root_depth` options",
+          "timestamp": "2024-06-03T07:49:57+02:00",
+          "tree_id": "48d3521b33a5ae1a103b34b58ee9b7f84b24bf71",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/0c5e4e8cd8737b84981eddcce9e63eb1261e1d8f"
+        },
+        "date": 1717393902239,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.19144081199999619,
+            "unit": "s",
+            "extra": "Commit: 0c5e4e8cd8737b84981eddcce9e63eb1261e1d8f\nBranch: master\nTime: 2024-06-03T07:49:57+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.48514402000001,
+            "unit": "s",
+            "extra": "Commit: 0c5e4e8cd8737b84981eddcce9e63eb1261e1d8f\nBranch: master\nTime: 2024-06-03T07:49:57+02:00"
           }
         ]
       }
