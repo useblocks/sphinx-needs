@@ -33,6 +33,8 @@ Each item must have at least:
 - a title, and
 - a description.
 
+A need item is a generic object which can become anything you you require for your project: a requirement, a test case, a user story, a bug, an employee, a product...
+
 sphinx-needs comes with some default types: ``req``, ``spec``, ``impl``, and ``test``, which can be used as directives:
 
 .. need-example:: A basic need item
@@ -80,6 +82,17 @@ that can be used to add additional data to the item or further style its represe
 
     To add additional fields to the directive,
     see the :ref:`needs_extra_options` and :ref:`needs_global_options`.
+
+Enforcing valid need items
+..........................
+
+To enforce the usage of specifically defined need ID formats, you can configure :ref:`needs_id_required` and :ref:`needs_id_regex`.
+
+To enforce specific values for need item options,
+you can configure :ref:`needs_statuses`, :ref:`needs_tags` or :ref:`needs_warnings` to check for disallowed values.
+
+These will emit warnings when building the documentation if the values are not as expected.
+
 
 Referring to a need item
 ------------------------
@@ -277,7 +290,19 @@ Finally, we can display a flow diagram of the need items, to also show the relat
 Analysing Metrics
 -----------------
 
-TODO more explanation ...
+As well as summarising needs, sphinx-needs provides some built-in roles and directives to analyse metrics of need items, such as the number of items in a certain status:
+
+- :ref:`need_count role <need_count>` - to display the count of need items
+- :ref:`needpie directive <needpie>` - to display a pie chart of need items
+- :ref:`needbar directive <needbar>` - to display a bar chart of need items
+
+In the following examples we will display metrics of the test cases we imported earlier, grouped by status:
+
+.. need-example:: Count of need items
+
+    - Open: :need_count:`'tutorial_tests' in tags and status == 'open'`
+    - In Progress: :need_count:`'tutorial_tests' in tags and status == 'in progress'`
+    - Closed: :need_count:`'tutorial_tests' in tags and status == 'closed'`
 
 .. need-example:: Pie chart of metric
 
@@ -306,3 +331,5 @@ Tracking progress
 -----------------
 
 TODO needgantt ...
+
+TODO finally link to the "enterprise tools" like ubtrace etc
