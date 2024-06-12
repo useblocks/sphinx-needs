@@ -282,6 +282,26 @@ sets the border for each need of the needflow to **red** if the need also passes
       :link_types: tests, blocks
       :highlight: id in ['spec_flow_002', 'subspec_2'] or type == 'req'
 
+.. _needflow_border_color:
+
+border_color
+~~~~~~~~~~~~
+
+.. versionadded:: 3.0.0
+
+The ``:border_color:`` allows for setting per need border colors, based on the need data.
+The value should be written with the :ref:`variant syntax <needs_variant_support>`, and each return value should be a hex (RGB) color.
+
+.. need-example::
+
+   .. needflow:: Engineering plan to develop a car
+      :tags: flow_example
+      :link_types: tests, blocks
+      :border_color:
+         [type == 'req']:FF0000,
+         [type == 'spec']:0000FF,
+         [type == 'test']:00FF00
+
 .. _needflow_align:
 
 align
