@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1717398420248,
+  "lastUpdate": 1718193335217,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -8064,6 +8064,42 @@ window.BENCHMARK_DATA = {
             "value": 67.208328053,
             "unit": "s",
             "extra": "Commit: 14fffc5b61834185bea6cdde70b05b92093d8e70\nBranch: master\nTime: 2024-06-03T09:04:57+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ac2d3e69357ae12d3bbc5e63cb5b0d2e8311669e",
+          "message": "✨ Add `border_color` option for `needflow` (#1194)\n\nThe :border_color: option allows for setting per need border colors, based on the need data.\r\nThe value should be written with the variant syntax, and each return value should be a hex (RGB) color.",
+          "timestamp": "2024-06-12T13:53:12+02:00",
+          "tree_id": "83a27a0a1d6e7673e6c6639cb90879c6b38dd0c5",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/ac2d3e69357ae12d3bbc5e63cb5b0d2e8311669e"
+        },
+        "date": 1718193327731,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.351153920999991,
+            "unit": "s",
+            "extra": "Commit: ac2d3e69357ae12d3bbc5e63cb5b0d2e8311669e\nBranch: master\nTime: 2024-06-12T13:53:12+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 75.40560695099998,
+            "unit": "s",
+            "extra": "Commit: ac2d3e69357ae12d3bbc5e63cb5b0d2e8311669e\nBranch: master\nTime: 2024-06-12T13:53:12+02:00"
           }
         ]
       }
