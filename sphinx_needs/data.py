@@ -328,6 +328,9 @@ class NeedsFlowType(NeedsFilteredDiagramBaseType):
     root_depth: int | None
     """How many levels to include from the root node (if set)."""
 
+    border_color: str | None
+    """Color of the outline of the needs, specified using the variant syntax."""
+
 
 class NeedsGanttType(NeedsFilteredDiagramBaseType):
     """Data for a single (filtered) gantt chart."""
