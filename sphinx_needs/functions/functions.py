@@ -199,8 +199,7 @@ def resolve_dynamic_values(needs: dict[str, NeedsInfoType], app: Sphinx) -> None
                 "docname",
                 "lineno",
                 "content",
-                "content_node",
-                "content_id",
+                "node_copy",
             ]:
                 # dynamic values in this data are not allowed.
                 continue

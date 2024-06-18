@@ -19,7 +19,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'ST_001',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -86,7 +85,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'US_38823',
             'created_at': '',
             'delete': None,
             'description': '',
