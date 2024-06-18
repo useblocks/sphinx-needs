@@ -21,7 +21,7 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time_func
 from sphinx_needs.logging import get_logger
-from sphinx_needs.utils import NEEDS_FUNCTIONS, match_variants  # noqa: F401
+from sphinx_needs.utils import NEEDS_FUNCTIONS, match_variants
 
 logger = get_logger(__name__)
 unicode = str
