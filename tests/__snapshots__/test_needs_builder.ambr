@@ -19,7 +19,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'TC_001',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -86,7 +85,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'TC_NEG_001',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -153,7 +151,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'US_63252',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -403,7 +400,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'TC_001',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -470,7 +466,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'TC_NEG_001',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -537,7 +532,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'US_63252',
             'created_at': '',
             'delete': None,
             'description': '',

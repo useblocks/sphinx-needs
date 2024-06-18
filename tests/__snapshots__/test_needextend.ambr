@@ -19,7 +19,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'REQ_1',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -89,7 +88,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'REQ_A_1',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -156,7 +154,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'REQ_B_1',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -223,7 +220,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'REQ_C_1',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -290,7 +286,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'REQ_D_1',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -373,7 +368,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'extend_test_003',
             'created_at': '',
             'delete': None,
             'description': '''
@@ -444,7 +438,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'extend_test_004',
             'created_at': '',
             'delete': None,
             'description': '''
@@ -514,7 +507,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'extend_test_005',
             'created_at': '',
             'delete': None,
             'description': '''
@@ -584,7 +576,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'extend_test_006',
             'created_at': '',
             'delete': None,
             'description': 'Had the link ``extend_test_003``, got another one ``extend_test_004``.',
@@ -653,7 +644,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'extend_test_007',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -723,7 +713,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'extend_test_page',
             'created_at': '',
             'delete': None,
             'description': '',

@@ -7,11 +7,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal, TypedDict
 
 if TYPE_CHECKING:
-    from docutils.nodes import Element, Text
+    from docutils.nodes import Text
     from sphinx.application import Sphinx
     from sphinx.environment import BuildEnvironment
     from typing_extensions import Required
 
+    from sphinx_needs.nodes import Need
     from sphinx_needs.services.manager import ServiceManager
 
 
@@ -122,10 +123,8 @@ class NeedsInfoType(TypedDict, total=False):
     content: Required[str]
     pre_content: str
     post_content: str
-    content_id: Required[None | str]
-    """ID of the content node (set after parsing)."""
-    content_node: Required[None | Element]
-    """deep copy of the content node (set after parsing)."""
+    node_copy: Required[None | Need]
+    """deep copy of the node (set after parsing)."""
 
     # these default to False and are updated in check_links post-process
     has_dead_links: Required[bool]

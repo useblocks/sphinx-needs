@@ -33,7 +33,7 @@ class NeedsList:
         "collapse",
         "type_style",
         "content",
-        "content_node",
+        "node_copy",
         # id_parent, id_parent are added on calls to `prepare_need_list`
         # but are only relevant to parts
         "id_parent",
@@ -52,7 +52,7 @@ class NeedsList:
         "type_style",
         "hide_tags",
         "content",
-        "content_node",
+        "node_copy",
     }
 
     def __init__(self, config: Config, outdir: str, confdir: str) -> None:
