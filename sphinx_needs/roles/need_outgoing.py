@@ -90,7 +90,7 @@ def process_need_outgoing(
                             _docname,
                             target_id,
                             node_need_ref[0].deepcopy(),
-                            node_need_ref["reftarget"],
+                            target_need["title"],
                         )
                     else:
                         assert (
