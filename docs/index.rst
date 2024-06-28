@@ -78,6 +78,8 @@ Introduction
 
 ----------------
 
+.. _other-extensions:
+
 In the last years, we have created additional information and extensions, which are based on or related to Sphinx-Needs:
 
 .. grid:: 1 1 2 2

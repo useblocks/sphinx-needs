@@ -335,6 +335,8 @@ you can explore the full range of options available in sphinx-needs by reading t
 
 For a more complex project example, check out the `sphinx-needs-demo <https://sphinx-needs-demo.readthedocs.io>`_ site.
 
+Also, see :ref:`other extensions <other-extensions>` offered by UseBlocks which integrate with sphinx-needs to provide additional functionality.
+
 .. todo::
 
     - Tracking progress
