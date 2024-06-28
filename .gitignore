@@ -23,9 +23,6 @@ coverage.xml
 .doctrees
 docs/github_images/
 .eggs/
-docs/_images/need_pie_*.*
-
-docs/_images/need_bar_*.*
 
 
 .devcontainer/
@@ -36,8 +33,6 @@ docs/_images/need_bar_*.*
 tests/cypress/
 cypress/
 
-need_bar_*.png
-need_pie_*.png
 output.json
 mem_out.*
 

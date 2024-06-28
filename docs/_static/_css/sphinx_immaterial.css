@@ -75,6 +75,11 @@ h3 {
 
 [data-md-color-scheme=slate] {
     --img-filter: brightness(0) invert(1);
+    --sn-architecture-bg: url(../architecture_bg-dark.png);
+}
+
+svg.sn-flow-chart path.arrow {
+    fill: var(--md-typeset-color);
 }
 
 img.needs-logo-big {

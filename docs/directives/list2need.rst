@@ -237,7 +237,7 @@ rst-directives in lists
       * Level 1 need and more
         * And a complex sub-need on level 2 with an image-directive.
 
-        .. image:: /_static/sphinx-needs-logo.png
+        .. image:: /_images/logos/sphinx-needs-logo.png
            :align: center
            :width: 20%
 
@@ -248,7 +248,7 @@ rst-directives in lists
    * Level 1 need and more
      * And a complex sub-need on level 2 with an image-directive.
 
-     .. image:: /_static/sphinx-needs-logo.png
+     .. image:: /_images/logos/sphinx-needs-logo-old.png
         :align: center
         :width: 20%
 

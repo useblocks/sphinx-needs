@@ -1,5 +1,6 @@
 /* Styling for the https://pydata-sphinx-theme.readthedocs.io theme */
 
+/* doc config start */
 body {
     --sn-color-datatable-label: var(--pst-color-text-muted);
     --sn-color-datatable-btn-border: var(--pst-color-text-muted);
@@ -83,3 +84,26 @@ html[data-theme="dark"] {
 table.need.need.need> :not(caption)>*>* {
     color: var(--pst-color-text-base)
 }
+/* doc config end */
+
+html[data-theme="light"] {
+    --sn-architecture-bg: url(../architecture_bg-light.png);
+}
+
+html[data-theme="dark"] {
+    --sn-architecture-bg: url(../architecture_bg-dark.png);
+}
+
+/** styling for the flowchart diagram on the landing page **/
+svg.sn-flow-chart path.text {
+    fill: var(--pst-color-text-base);
+}
+
+svg.sn-flow-chart rect.box {
+    stroke: var(--pst-color-text-muted);
+}
+
+svg.sn-flow-chart path.arrow {
+    fill: var(--pst-color-text-base);
+}
+

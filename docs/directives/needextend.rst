@@ -32,7 +32,6 @@ Also, you can add links or delete tags.
       :status: open
       :author: Foo
       :tags: tag_1, tag_2
-      :links: FEATURE_1
 
       This requirement got modified.
 
@@ -45,7 +44,6 @@ Also, you can add links or delete tags.
       :status: closed
       :+author: and me
       :+tags: new_tag
-      :+links: FEATURE_2, FEATURE_3
 
 Options
 -------

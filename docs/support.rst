@@ -17,7 +17,7 @@ companies around the world.
 
 Fastest way of reaching us is via e-mail: mail@useblocks.com.
 
-.. image:: _static/useblocks_logo.png
+.. image:: /_images/logos/useblocks_logo.png
    :align: center
    :width: 100px
    :target: http://useblocks.com

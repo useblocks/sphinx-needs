@@ -10,23 +10,30 @@ needextract
 It supports custom creation of extracts from existing needs.
 For instance, a supplier could get a copy of requirements but would not see all the internal meta-data.
 
-.. code-block:: rst
+.. need-example::
+
+   .. feature:: A feature
+      :id: EXTRACT_FEATURE_1
+
+      This is a feature that should be extracted.
 
    .. needextract::
-      :filter: type == 'feature'
+      :filter: id == 'EXTRACT_FEATURE_1'
       :layout: clean
       :style: green_border
 
 
-.. note:: **needextract** supports the full filtering possibilities of **Sphinx-Needs**.
-          Please read :ref:`filter` for more information.
+.. note:: 
+   
+   **needextract** supports the full filtering possibilities of **Sphinx-Needs**.
+   Please read :ref:`filter` for more information.
 
 ``needextract`` supports also arguments as filter string. It works like the option `filter`, but also
 supports need ID as filter argument.
 
-.. code-block:: rst
+.. need-example::
 
-   .. needextract:: FEATURE_3
+   .. needextract:: EXTRACT_FEATURE_1
       :layout: clean
       :style: green_border
 
@@ -47,8 +54,7 @@ See :ref:`layouts` for a list of available layouts.
 
 .. need-example::
 
-   .. needextract::
-      :filter: id in ['FEATURE_3', 'FEATURE_4']
+   .. needextract:: EXTRACT_FEATURE_1
       :layout: focus_r
 
 .. _needextract_style:
@@ -63,6 +69,5 @@ See :ref:`styles` for a list of available styles.
 
 .. need-example::
 
-   .. needextract::
-      :filter: id in ['FEATURE_3', 'FEATURE_4']
+   .. needextract:: EXTRACT_FEATURE_1
       :style: blue_border

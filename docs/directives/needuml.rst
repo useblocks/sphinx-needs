@@ -234,8 +234,8 @@ Sphinx-Need picks the text of the field specified by `option`), or by the free t
 
    .. needuml::
 
-      Alice -> Bob: {{ref("FEATURE_1", option="title")}}
-      Bob -> Alice: {{ref("FEATURE_2", text="A completely free text")}}
+      Alice -> Bob: {{ref("FEATURE_NEEDUML1", option="title")}}
+      Bob -> Alice: {{ref("COMP_NEEDUML2", text="A completely free text")}}
 
 .. _needuml_jinja_uml:
 
@@ -460,7 +460,7 @@ NeedUml Examples
       export()
       }
 
-      {% set ids = ["FEATURE_1", "FEATURE_5", "FEATURE_7"]%}
+      {% set ids = ["FEATURE_NEEDUML1", "COMP_NEEDUML2"]%}
       {% for need in needs.values() %}
          {% if need.id in ids %}
             card "{{need['title']}}" as need_{{loop.index}} #ffcc00

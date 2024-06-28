@@ -1,7 +1,7 @@
 describe('Test Sphinx Needs Collapse', () => {
-  it('Visit Sphinx Needs Homepage', () => {
-    // 1. Given a user visits http://localhost:8000/
-    cy.visit('/')
+  it('Visit Sphinx Needs Tutorial page', () => {
+    // 1. Given a user visits http://localhost:8000/tutorial.html
+    cy.visit('/tutorial.html')
 
     cy.get('table.need span.needs.needs_collapse').each(($el, index, $list) => {
     // 2. When page loads, select all elements that matches the selector `table.need span.needs.needs_collapse`

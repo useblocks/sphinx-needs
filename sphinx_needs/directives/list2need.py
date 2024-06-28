@@ -38,11 +38,8 @@ class List2Need(nodes.General, nodes.Element):
 
 
 class List2NeedDirective(SphinxDirective):
-    """
-    Directive to filter needs and present them inside a list, table or diagram.
-
-    .. deprecated:: 0.2.0
-       Use needlist, needtable or needdiagram instead
+    """Create need objects out ouf a given list,
+    where each list entry is used to create a single need.
     """
 
     has_content = True

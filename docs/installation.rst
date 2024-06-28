@@ -3,25 +3,26 @@
 Installation
 ============
 
-.. only:: html
+.. .. only:: html
 
-   .. image:: https://img.shields.io/pypi/dm/sphinx-needs.svg
-       :target: https://pypi.python.org/pypi/sphinx-needs
-       :alt: Downloads
-   .. image:: https://img.shields.io/pypi/l/sphinx-needs.svg
-       :target: https://pypi.python.org/pypi/sphinx-needs
-       :alt: License
-   .. image:: https://img.shields.io/pypi/pyversions/sphinx-needs.svg
-       :target: https://pypi.python.org/pypi/sphinx-needs
-       :alt: Supported versions
-   .. image:: https://readthedocs.org/projects/sphinx-needs/badge/?version=latest
-       :target: https://readthedocs.org/projects/sphinx-needs/
-   .. image:: https://github.com/useblocks/sphinx-needs/actions/workflows/ci.yaml/badge.svg
-       :target: https://github.com/useblocks/sphinx-needs/actions
-       :alt: GitHub CI Action status
-   .. image:: https://img.shields.io/pypi/v/sphinx-needs.svg
-       :target: https://pypi.python.org/pypi/sphinx-needs
-       :alt: PyPI Package latest release
+..    .. image:: https://img.shields.io/pypi/dm/sphinx-needs.svg
+..        :target: https://pypi.python.org/pypi/sphinx-needs
+..        :alt: Downloads
+..    .. image:: https://img.shields.io/pypi/l/sphinx-needs.svg
+..        :target: https://pypi.python.org/pypi/sphinx-needs
+..        :alt: License
+..    .. image:: https://img.shields.io/pypi/pyversions/sphinx-needs.svg
+..        :target: https://pypi.python.org/pypi/sphinx-needs
+..        :alt: Supported versions
+..    .. image:: https://readthedocs.org/projects/sphinx-needs/badge/?version=latest
+..        :target: https://readthedocs.org/projects/sphinx-needs/
+..        :alt: ReadTheDocs
+..    .. image:: https://github.com/useblocks/sphinx-needs/actions/workflows/ci.yaml/badge.svg
+..        :target: https://github.com/useblocks/sphinx-needs/actions
+..        :alt: GitHub CI Action status
+..    .. image:: https://img.shields.io/pypi/v/sphinx-needs.svg
+..        :target: https://pypi.python.org/pypi/sphinx-needs
+..        :alt: PyPI Package latest release
 
 Using pip
 ---------
@@ -38,14 +39,7 @@ If you wish to also use the plotting features of sphinx-needs (see :ref:`needbar
 
 .. note::
 
-   Prior version **1.0.1** the package was named ``sphinxcontrib-needs``.
-
-Using poetry
-------------
-
-.. code-block:: bash
-
-    poetry add sphinx-needs
+   Prior to version **1.0.1** the package was named ``sphinxcontrib-needs``.
 
 Using sources
 -------------
@@ -55,14 +49,12 @@ Using sources
     git clone https://github.com/useblocks/sphinx-needs
     cd sphinx-needs
     pip install .
-    # or
-    poetry install
 
 
 Activation
 ----------
 
-For final activation, please add `sphinx_needs` to the project's extension list of your **conf.py** file.
+For final activation, please add ``sphinx_needs`` to the project's extension list of your **conf.py** file.
 
 .. code-block:: python
 
@@ -84,6 +76,7 @@ In particular, `CSS Variables`_ are used to specify the coloring of most compone
 The default values are as follows (see also :ref:`needs_css`):
 
 .. dropdown:: Default CSS Variables
+    :icon: paintbrush
 
     .. literalinclude:: ../sphinx_needs/css/themes/modern.css
         :language: css
@@ -94,6 +87,7 @@ These variables can be overridden by adding your own CSS file to the Sphinx proj
 For examples of how to adjust the CSS, this documentation is configured to build against multiple themes using the following CSS:
 
 .. dropdown:: furo
+    :icon: paintbrush
 
     .. literalinclude:: _static/_css/furo.css
         :language: css
@@ -101,16 +95,21 @@ For examples of how to adjust the CSS, this documentation is configured to build
         :end-before: /* doc config end */
 
 .. dropdown:: pydata-sphinx-theme
+    :icon: paintbrush
 
     .. literalinclude:: _static/_css/pydata_sphinx_theme.css
         :language: css
+        :start-after: /* doc config start */
+        :end-before: /* doc config end */
 
 .. dropdown:: sphinx-rtd-theme
+    :icon: paintbrush
 
     .. literalinclude:: _static/_css/sphinx_rtd_theme.css
         :language: css
 
 .. dropdown:: sphinx-immaterial
+    :icon: paintbrush
 
     .. literalinclude:: _static/_css/sphinx_immaterial.css
         :language: css
@@ -171,4 +170,12 @@ Sphinx-Needs is also available as a Docker Image.
 
 See :ref:`docker` for the documentation and hints how to use it.
 
+.. _ide:
+.. _ide_vscode:
 
+VS Code Extension
+-----------------
+
+VsCode extension `Sphinx-Needs-VsCode <https://marketplace.visualstudio.com/items?itemName=useblocks.sphinx-needs-vscode>`_ provides 
+support for Sphinx-Needs. 
+See more details in the `Documentation <https://sphinx-needs-vscode.useblocks.com/>`_.

@@ -850,7 +850,7 @@ class LayoutHandler:
         If **url** starts with ``icon:`` the following string is taken as icon-name and the related icon is shown.
         Example: ``icon:activity`` will show:
 
-        .. image:: _static/activity.png
+        .. image:: /_images/activity.png
 
         For all icons, see https://feathericons.com/.
 
