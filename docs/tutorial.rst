@@ -340,7 +340,7 @@ Also, see :ref:`other extensions <other-extensions>` offered by UseBlocks which 
 .. todo::
 
     - Tracking progress
-        - needgantt ...
+        - mainly to introduce needgantt
 
     - finally link to the new "core" useblocks site and
       the "enterprise tools" like ubtrace etc
