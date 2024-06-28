@@ -327,9 +327,18 @@ In the following examples we will display metrics of the test cases we imported 
       In Progress, 'tutorial_tests' in tags and status == 'in progress'
       Closed,      'tutorial_tests' in tags and status == 'closed'
 
-Tracking progress
------------------
+Next Steps
+----------
 
-TODO needgantt ...
+Now that you have seen how to create need items, link them together, and analyse metrics,
+you can explore the full range of options available in sphinx-needs by reading the rest of the documentation.
 
-TODO finally link to the "enterprise tools" like ubtrace etc
+For a more complex project example, check out the `sphinx-needs-demo <https://sphinx-needs-demo.readthedocs.io>`_ site.
+
+.. todo::
+
+    - Tracking progress
+        - needgantt ...
+
+    - finally link to the new "core" useblocks site and
+      the "enterprise tools" like ubtrace etc
