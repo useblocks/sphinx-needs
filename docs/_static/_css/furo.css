@@ -1,29 +1,6 @@
 /* Styling for the https://github.com/pradyunsg/furo theme. */
 
-/* useblock theme colors */
 :root {
-    --ub-color-primary-50: #fcffe6;
-    --ub-color-primary-100: #f6fec0;
-    --ub-color-primary-200: #edfc93;
-    --ub-color-primary-300: #e5fa63;
-    --ub-color-primary-400: #e4ff3e;
-    --ub-color-primary-500: #ddfb00;
-    --ub-color-primary-600: #d3eb00;
-    --ub-color-primary-700: #c2d300;
-    --ub-color-primary-800: #b3bb00;
-    --ub-color-primary-900: #9a9200;
-
-    --ub-color-complementary-50: #efe8ff;
-    --ub-color-complementary-100: #d4c8fe;
-    --ub-color-complementary-200: #b7a3ff;
-    --ub-color-complementary-300: #967bff;
-    --ub-color-complementary-400: #7a5cff;
-    --ub-color-complementary-500: #583eff;
-    --ub-color-complementary-600: #4839f8;
-    --ub-color-complementary-700: #2c31ef;
-    --ub-color-complementary-800: #002cea;
-    --ub-color-complementary-900: #001ee3;
-
     --ub-color-neutral-0: #FFFFFF;
     --ub-color-neutral-50: #FAFAFA;
     --ub-color-neutral-100: #F5F5F5;
@@ -38,62 +15,17 @@
     --ub-color-neutral-1000: #000000;
 }
 
-/* set the main brand color for light and dark modes */
-body {
-    --ub-color-brand-main: var(--ub-color-complementary-500);
-    --ub-color-brand-main--opaque: rgb(88, 62, 255, 0.2);
-    --sn-architecture-bg: url(../architecture_bg-light.png);
-}
-
-@media not print {
-    body[data-theme="dark"] {
-        --ub-color-brand-main: var(--ub-color-primary-400);
-        --ub-color-brand-main--opaque: rgba(228, 255, 62, 0.15);
-        --sn-architecture-bg: url(../architecture_bg-dark.png);
-    }
-
-    @media (prefers-color-scheme: dark) {
-        body:not([data-theme="light"]) {
-            --ub-color-brand-main: var(--ub-color-primary-400);
-            --ub-color-brand-main--opaque: rgba(228, 255, 62, 0.15);
-            --sn-architecture-bg: url(../architecture_bg-dark.png);
-        }
-    }
-}
-
 /* furo light colors */
-/* everything commented out is the default furo light colors */
 body {
-    /* --color-foreground-primary: black; */
-    /* for main text and headings */
-    /* --color-foreground-secondary: #5a5c63; */
-    /* for secondary text */
-    /* --color-foreground-muted: #6b6f76; */
-    /* for muted text */
-    /* --color-foreground-border: #878787; */
-    /* for content borders */
-
-    /* --color-background-primary: white; */
-    /* for content */
-    /* --color-background-secondary: #f8f9fb; */
-    /* for navigation + ToC */
-    /* --color-background-hover: #efeff4ff; */
-    /* for navigation-item hover */
-    /* --color-background-hover--transparent: #efeff400; */
-    /* --color-background-border: #eeebee; */
-    /* for UI borders */
-    /* --color-background-item: #ccc; */
-    /* for "background" items (eg: copybutton) */
+    --ub-color-brand-main: #583eff;
+    --ub-color-brand-muted: #b7a3ff;
+    --ub-color-brand-opaque: rgb(88, 62, 255, 0.2);
+    --sn-architecture-bg: url(../architecture_bg-light.png);
 
     --color-brand-primary: var(--ub-color-brand-main);
-    /** for left ToC links (and active item in right ToC) **/
-    /* --color-brand-content: #2757dd; */
-    /* for links, but we override below */
-    /* --color-brand-visited: #872ee0; */
-    /* for visited links but we override below */
 
     /* anchored heading title */
-    --color-highlight-on-target: var(--ub-color-brand-main--opaque);
+    --color-highlight-on-target: var(--ub-color-brand-opaque);
 
     /* Left ToC */
     --color-sidebar-brand-text: var(--color-foreground-primary);
@@ -101,6 +33,7 @@ body {
     --color-sidebar-link-text--top-level: var(--ub-color-neutral-800);
     --color-sidebar-link-text: var(--ub-color-neutral-600);
     --color-sidebar-link-text--current: var(--ub-color-brand-main);
+    --color-sidebar-item-background--hover: var(--ub-color-brand-opaque);
 
     /* Right ToC */
     --color-toc-item-text--active: var(--ub-color-brand-main);
@@ -108,59 +41,38 @@ body {
     /* Links */
     --color-link: var(--color-content-foreground);
     --color-link--hover: var(--color-content-foreground);
-    --color-link-underline: var(--ub-color-complementary-200);
+    --color-link-underline: var(--ub-color-brand-muted);
     --color-link-underline--hover: var(--ub-color-brand-main);
     --color-link--visited: var(--color-content-foreground);
     --color-link--visited--hover: var(--color-content-foreground);
-    --color-link-underline--visited: var(--ub-color-complementary-200);
+    --color-link-underline--visited: var(--ub-color-brand-muted);
     --color-link-underline--visited--hover: var(--ub-color-brand-main);
 
     /* Admonitions */
-    --color-admonition-title-background--note: var(--ub-color-brand-main--opaque);
+    --color-admonition-title-background--note: var(--ub-color-brand-opaque);
     --color-admonition-title--note: var(---ub-color-brand-main);
 
     /* Sphinx Design */
     --sd-fontsize-dropdown: var(--admonition-font-size);
     --sd-fontsize-dropdown-title: var(--admonition-title-font-size);
     --sd-fontweight-dropdown-title: 500;
-    --sd-color-card-header: var(--ub-color-brand-main--opaque);
-    --sd-color-card-border-hover: var(--ub-color-brand-main--opaque);
+    --sd-color-card-header: var(--ub-color-brand-opaque);
+    --sd-color-card-border-hover: var(--ub-color-brand-opaque);
 }
 
 /* furo dark colors */
-/* everything commented out is the default furo dark colors, or using variables already setup for dark mode */
 @media not print {
     body[data-theme="dark"] {
-        /* --color-foreground-primary: #cfd0d0; */
-        /* for main text and headings */
-        /* --color-foreground-secondary: #9ca0a5; */
-        /* for secondary text */
-        /* --color-foreground-muted: #81868d; */
-        /* for muted text */
-        /* --color-foreground-border: #666666; */
-        /* for content borders */
 
-        /* --color-background-primary: #131416; */
-        /* for content */
-        /* --color-background-secondary: #1a1c1e; */
-        /* for navigation + ToC */
-        /* --color-background-hover: #1e2124ff; */
-        /* for navigation-item hover */
-        /* --color-background-hover--transparent: #1e212400; */
-        /* --color-background-border: #303335; */
-        /* for UI borders */
-        /* --color-background-item: #444; */
-        /* for "background" items (eg: copybutton) */
-
-        /* anchored heading title */
-        --color-highlight-on-target: var(--ub-color-brand-main--opaque);
+        --ub-color-brand-main: #e4ff3e;
+        --ub-color-brand-muted: #b3bb00;
+        --ub-color-brand-opaque: rgba(228, 255, 62, 0.15);
+        --sn-architecture-bg: url(../architecture_bg-dark.png);
 
         --color-brand-primary: var(--ub-color-brand-main);
-        /* for left ToC links (and active item in right ToC) */
-        /* --color-brand-content: #5ca5ff; */
-        /* for links, but we override below */
-        /* --color-brand-visited: #b27aeb; */
-        /* for visited links, but we override below */
+
+        /* anchored heading title */
+        --color-highlight-on-target: var(--ub-color-brand-opaque);
 
         /* Left ToC */
         --color-sidebar-brand-text: var(--color-foreground-primary);
@@ -168,6 +80,7 @@ body {
         --color-sidebar-link-text--top-level: var(--ub-color-neutral-300);
         --color-sidebar-link-text: var(--ub-color-neutral-500);
         --color-sidebar-link-text--current: var(--ub-color-brand-main);
+        --color-sidebar-item-background--hover: var(--ub-color-brand-opaque);
 
         /* Right ToC */
         --color-toc-item-text--active: var(--ub-color-brand-main);
@@ -175,50 +88,30 @@ body {
         /* Links */
         --color-link: var(--color-content-foreground);
         --color-link--hover: var(--color-content-foreground);
-        --color-link-underline: var(--ub-color-primary-800);
+        --color-link-underline: var(--ub-color-brand-muted);
         --color-link-underline--hover: var(--ub-color-brand-main);
         --color-link--visited: var(--color-content-foreground);
         --color-link--visited--hover: var(--color-content-foreground);
-        --color-link-underline--visited: var(--ub-color-primary-800);
+        --color-link-underline--visited: var(--ub-color-brand-muted);
         --color-link-underline--visited--hover: var(--ub-color-brand-main);
 
         /* Admonitions */
-        --color-admonition-title-background--note: var(--ub-color-brand-main--opaque);
+        --color-admonition-title-background--note: var(--ub-color-brand-opaque);
         --color-admonition-title--note: var(--ub-color-brand-main);
     }
 
     @media (prefers-color-scheme: dark) {
         body:not([data-theme="light"]) {
-            /* --color-foreground-primary: #cfd0d0; */
-            /* for main text and headings */
-            /* --color-foreground-secondary: #9ca0a5; */
-            /* for secondary text */
-            /* --color-foreground-muted: #81868d; */
-            /* for muted text */
-            /* --color-foreground-border: #666666; */
-            /* for content borders */
 
-            /* --color-background-primary: #131416; */
-            /* for content */
-            /* --color-background-secondary: #1a1c1e; */
-            /* for navigation + ToC */
-            /* --color-background-hover: #1e2124ff; */
-            /* for navigation-item hover */
-            /* --color-background-hover--transparent: #1e212400; */
-            /* --color-background-border: #303335; */
-            /* for UI borders */
-            /* --color-background-item: #444; */
-            /* for "background" items (eg: copybutton) */
-
-            /* anchored heading title */
-            --color-highlight-on-target: var(--ub-color-brand-main--opaque);
+            --ub-color-brand-main: #e4ff3e;
+            --ub-color-brand-muted: #b3bb00;
+            --ub-color-brand-opaque: rgba(228, 255, 62, 0.15);
+            --sn-architecture-bg: url(../architecture_bg-dark.png);
 
             --color-brand-primary: var(--ub-color-brand-main);
-            /* for left ToC links (and active item in right ToC) */
-            /* --color-brand-content: #5ca5ff; */
-            /* for links, but we override below */
-            /* --color-brand-visited: #b27aeb; */
-            /* for visited links, but we override below */
+
+            /* anchored heading title */
+            --color-highlight-on-target: var(--ub-color-brand-opaque);
 
             /* Left ToC */
             --color-sidebar-brand-text: var(--color-foreground-primary);
@@ -226,6 +119,7 @@ body {
             --color-sidebar-link-text--top-level: var(--ub-color-neutral-300);
             --color-sidebar-link-text: var(--ub-color-neutral-500);
             --color-sidebar-link-text--current: var(--ub-color-brand-main);
+            --color-sidebar-item-background--hover: var(--ub-color-brand-opaque);
 
             /* Right ToC */
             --color-toc-item-text--active: var(--ub-color-brand-main);
@@ -233,15 +127,15 @@ body {
             /* Links */
             --color-link: var(--color-content-foreground);
             --color-link--hover: var(--color-content-foreground);
-            --color-link-underline: var(--ub-color-primary-800);
+            --color-link-underline: var(--ub-color-brand-muted);
             --color-link-underline--hover: var(--ub-color-brand-main);
             --color-link--visited: var(--color-content-foreground);
             --color-link--visited--hover: var(--color-content-foreground);
-            --color-link-underline--visited: var(--ub-color-primary-800);
+            --color-link-underline--visited: var(--ub-color-brand-muted);
             --color-link-underline--visited--hover: var(--ub-color-brand-main);
 
             /* Admonitions */
-            --color-admonition-title-background--note: var(--ub-color-brand-main--opaque);
+            --color-admonition-title-background--note: var(--ub-color-brand-opaque);
             --color-admonition-title--note: var(--ub-color-brand-main);
         }
     }
@@ -408,9 +302,11 @@ tbody div.needs_side img.needs_image {
 svg.fill-primary {
     fill: var(--sd-color-primary);
 }
+
 details.sd-dropdown {
     margin: 1rem auto;
 }
+
 summary.sd-summary-title {
     padding-right: .5em !important;
     /* note this can be removed in sphinx-design v0.6.1 */
