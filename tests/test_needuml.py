@@ -270,8 +270,8 @@ def test_needuml_jinja_func_ref(test_app, snapshot):
     assert all_needumls == snapshot
 
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
-    assert "Marvel:  [[../index.html#ST_001 Test story]]" in html
-    assert "DC:  [[../index.html#ST_002 Different text to explain the story]]" in html
+    assert "Marvel: [[../index.html#ST_001 Test story]]" in html
+    assert "DC: [[../index.html#ST_002 Different text to explain the story]]" in html
 
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"
