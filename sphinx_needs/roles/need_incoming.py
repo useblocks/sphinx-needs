@@ -86,7 +86,9 @@ def process_need_incoming(
                     # If the given need id can not be found,
                     # we make an emphasis to still show the need id
                     # This allows to show traceability in cross documents cases.
-                    node_link_container += nodes.emphasis(target_need["id"],target_need["id"])
+                    node_link_container += nodes.emphasis(
+                        target_need["id"], target_need["id"]
+                    )
 
                 # If we have several links, we add an empty text between them
                 if index + 1 < len(links_back):

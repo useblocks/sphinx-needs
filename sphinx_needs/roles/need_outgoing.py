@@ -110,7 +110,9 @@ def process_need_outgoing(
                     # If the given need id can not be found,
                     # we make an emphasis to still show the need id
                     # This allows to show traceability in cross documents cases.
-                    node_link_container += nodes.emphasis(target_need["id"],target_need["id"])
+                    node_link_container += nodes.emphasis(
+                        target_need["id"], target_need["id"]
+                    )
 
             else:
                 # Let's add a normal text here instead of a link.
