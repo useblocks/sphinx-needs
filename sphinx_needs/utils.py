@@ -12,12 +12,12 @@ from urllib.parse import urlparse
 from docutils import nodes
 from jinja2 import Environment, Template
 from sphinx.application import BuildEnvironment, Sphinx
-from sphinx.errors import NoUri
 
 from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.defaults import NEEDS_PROFILING
 from sphinx_needs.logging import get_logger
+from sphinx_needs.errors import NoUri
 
 try:
     from typing import TypedDict
