@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 from docutils import nodes
 from jinja2 import Environment, Template
 from sphinx.application import BuildEnvironment, Sphinx
+from sphinx.errors import NoUri
 
 from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
@@ -239,7 +240,7 @@ def row_col_maker(
                             if link_part:
                                 ref_col["refuri"] += "." + link_part
 
-                except KeyError:
+                except (KeyError, NoUri):
                     para_col += text_col
                 else:
                     ref_col.append(text_col)
