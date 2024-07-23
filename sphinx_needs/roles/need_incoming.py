@@ -40,8 +40,8 @@ def process_need_incoming(
         for index, back_link in enumerate(links_back):
             # If need back_link target exists, let's create the reference
             if back_link in all_needs:
+                target_need = all_needs[back_link]
                 try:
-                    target_need = all_needs[back_link]
                     if needs_config.show_link_title:
                         link_text = f'{target_need["title"]}'
 
@@ -82,13 +82,15 @@ def process_need_incoming(
 
                     node_link_container += new_node_ref
 
-                    # If we have several links, we add an empty text between them
-                    if index + 1 < len(links_back):
-                        node_link_container += nodes.Text(", ")
-
                 except NoUri:
-                    # If the given need id can not be found, we must pass here....
-                    pass
+                    # If the given need id can not be found,
+                    # we make an emphasis to still show the need id
+                    # This allows to show traceability in cross documents cases.
+                    node_link_container += nodes.emphasis(target_need["id"],target_need["id"])
+
+                # If we have several links, we add an empty text between them
+                if index + 1 < len(links_back):
+                    node_link_container += nodes.Text(", ")
 
             else:
                 logger.warning(
