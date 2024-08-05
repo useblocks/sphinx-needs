@@ -24,13 +24,31 @@ Introduction
          Combine Docs-as-Code with Application Lifecycle Management,
          to track requirements, specifications, test cases, and other engineering objects in your documentation.
 
-      .. button-ref:: installation
-         :ref-type: doc
-         :outline:
-         :color: primary
-         :class: sd-rounded-pill sd-px-4 sd-fs-5 sd-mr-3
+      .. grid:: 1 1 2 2
+         :gutter: 2 2 3 3
+         :margin: 0
+         :padding: 0
 
-         Get Started
+         .. grid-item::
+            :columns: auto
+
+            .. button-ref:: installation
+               :ref-type: doc
+               :outline:
+               :color: primary
+               :class: sd-rounded-pill sd-px-4 sd-fs-5
+
+               Get Started
+
+         .. grid-item::
+            :columns: auto
+
+            .. button-link:: https://useblocks.com/
+               :outline:
+               :color: primary
+               :class: sd-rounded-pill sd-px-4 sd-fs-5
+
+               About UseBlocks
 
    .. grid-item::
       :columns: 12 4 4 4
@@ -80,42 +98,59 @@ Introduction
 
 .. _other-extensions:
 
-In the last years, we have created additional information and extensions, which are based on or related to Sphinx-Needs:
+See more from `Useblocks <https://useblocks.com>`__ to enhance your sphinx-needs experience:
 
 .. grid:: 1 1 2 2
     :gutter: 2
 
     .. grid-item-card::
-        :link: https://sphinx-needs.com
-        :img-top: /_images/logos/sphinx-needs-logo-old.png
-        :img-alt: Sphinx-Needs.com
+        :link: https://useblocks.com
+        :img-top: /_static/useblocks-logo-long-dark.svg
+        :img-alt: https://useblocks.com
+        :class-img-top: sd-p-3 sd-bg-dark
         :class-card: border
 
-        The website presents the essential Sphinx-Needs functions and related extensions.
-
-        Also, it is a good entry point to understand the benefits and get an idea about the complete ecosystem of Sphinx-Needs.
+        Provides an oversight of the UseBlocks ecosystem, and its goal to bring Engineering-as-Code to the software development process.
         +++
 
-        .. button-link:: https://sphinx-needs.com
+        .. button-link:: https://useblocks.com
             :color: primary
             :outline:
             :align: center
             :expand:
 
-            :octicon:`globe;1em;sd-text-primary` Sphinx-Needs.com
+            :octicon:`globe;1em;sd-text-primary` useblocks.com
 
     .. grid-item-card::
-        :link: https://useblocks.com/sphinx-needs-enterprise/
-        :img-top: /_images/logos/sphinx-needs-enterprise-card.png
-        :img-alt: Sphinx-Needs Enterprise
+        :link: https://sphinx-bazel.readthedocs.io/en/latest/
+        :img-top: /_images/logos/sphinx_bazel_logo.png
+        :img-alt: Sphinx-Bazel
         :class-card: border
 
-        Synchronize Sphinx-Needs data with external, company internal systems like CodeBeamer, Jira or Azure Boards.
-
-        Provides scripts to baseline data and makes CI usage easier.
+        Provides a Bazel domain in Sphinx documentation and allows the automated import of Bazel files and their documentation.
         +++
 
-        .. button-link:: http://useblocks.com/sphinx-needs-enterprise/
+        .. button-link:: https://sphinx-bazel.readthedocs.io/en/latest/
+            :color: primary
+            :outline:
+            :align: center
+            :expand:
+
+            :octicon:`book;1em;sd-text-primary` Technical Docs
+
+    .. grid-item-card::
+        :link: https://sphinx-collections.readthedocs.io/en/latest/
+        :img-top: /_images/logos/sphinx_collections_logo.png
+        :img-alt: Sphinx-Collections
+        :class-img-top: sd-p-2 sd-bg-white
+        :class-card: border
+
+        Extension to collect or generate files from different sources and include them in the Sphinx source folder.
+
+        It supports sources like Git repositories, Jinja based files or symlinks.
+        +++
+
+        .. button-link:: https://sphinx-collections.readthedocs.io/en/latest/
             :color: primary
             :outline:
             :align: center
@@ -135,42 +170,6 @@ In the last years, we have created additional information and extensions, which 
         +++
 
         .. button-link:: https://sphinx-test-reports.readthedocs.io/en/latest/
-            :color: primary
-            :outline:
-            :align: center
-            :expand:
-
-            :octicon:`book;1em;sd-text-primary` Technical Docs
-
-    .. grid-item-card::
-        :link: https://sphinx-collections.readthedocs.io/en/latest/
-        :img-top: /_images/logos/sphinx_collections_logo.png
-        :img-alt: Sphinx-Collections
-        :class-card: border
-
-        Extension to collect or generate files from different sources and include them in the Sphinx source folder.
-
-        It supports sources like Git repositories, Jinja based files or symlinks.
-        +++
-
-        .. button-link:: https://sphinx-collections.readthedocs.io/en/latest/
-            :color: primary
-            :outline:
-            :align: center
-            :expand:
-
-            :octicon:`book;1em;sd-text-primary` Technical Docs
-
-    .. grid-item-card::
-        :link: https://sphinx-bazel.readthedocs.io/en/latest/
-        :img-top: /_images/logos/sphinx_bazel_logo.png
-        :img-alt: Sphinx-Bazel
-        :class-card: border
-
-        Provides a Bazel domain in Sphinx documentation and allows the automated import of Bazel files and their documentation.
-        +++
-
-        .. button-link:: https://sphinx-bazel.readthedocs.io/en/latest/
             :color: primary
             :outline:
             :align: center
