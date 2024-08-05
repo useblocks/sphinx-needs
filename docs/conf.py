@@ -263,7 +263,7 @@ linkcheck_ignore = [
     r"http://localhost:\d+",
     r"http://127.0.0.1:\d+",
     r"../.*",
-    r"https://useblocks.com/sphinx-needs/bench/index.html",
+    r"https?://useblocks.com/sphinx-needs/bench/index.html",
 ]
 
 linkcheck_request_headers = {

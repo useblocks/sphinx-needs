@@ -19,7 +19,7 @@ def test_need_constraints(test_app, snapshot):
 
     json_text = Path(app.outdir, "needs.json").read_text()
     needs_data = json.loads(json_text)
-    assert needs_data == snapshot(exclude=props("created"))
+    assert needs_data == snapshot(exclude=props("created", "project"))
 
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"

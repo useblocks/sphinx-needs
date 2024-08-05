@@ -2,7 +2,6 @@
   dict({
     'TC_001.json': dict({
       'current_version': '1.0',
-      'project': 'Python',
       'versions': dict({
         '1.0': dict({
           'filters': dict({
@@ -83,7 +82,6 @@
     }),
     'TC_NEG_001.json': dict({
       'current_version': '1.0',
-      'project': 'Python',
       'versions': dict({
         '1.0': dict({
           'filters': dict({
@@ -164,7 +162,6 @@
     }),
     'US_63252.json': dict({
       'current_version': '1.0',
-      'project': 'Python',
       'versions': dict({
         '1.0': dict({
           'filters': dict({
