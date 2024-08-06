@@ -263,7 +263,7 @@ Similarly, we can display the same items in a table format:
         :columns: id,type,title,status
         :style: table
 
-The default style for the table is a simple HTML table, but we can also use the ``datatables`` style to add dynamic pagination, filtering and sorting,
+There are currently two styles for the table; a simple HTML ``table``, or the default ``datatables`` style to add dynamic pagination, filtering and sorting,
 using the `DataTables <https://datatables.net/>`__ JS package:
 
 .. need-example:: Table with dynamic features
