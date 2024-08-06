@@ -508,7 +508,7 @@ More Examples
          Python 2.7 environment.
 
 
-.. need-example:: Filter result as table*
+.. need-example:: Filter result as table
 
    .. needtable::
       :tags: test
