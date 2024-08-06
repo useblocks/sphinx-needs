@@ -50,7 +50,7 @@ body {
 
     /* Admonitions */
     --color-admonition-title-background--note: var(--ub-color-brand-opaque);
-    --color-admonition-title--note: var(---ub-color-brand-main);
+    --color-admonition-title--note: var(--ub-color-brand-main);
 
     /* Sphinx Design */
     --sd-fontsize-dropdown: var(--admonition-font-size);
