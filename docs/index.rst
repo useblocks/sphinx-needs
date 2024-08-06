@@ -48,7 +48,7 @@ Introduction
                :color: primary
                :class: sd-rounded-pill sd-px-4 sd-fs-5
 
-               About UseBlocks
+               About useblocks
 
    .. grid-item::
       :columns: 12 4 4 4
@@ -98,7 +98,7 @@ Introduction
 
 .. _other-extensions:
 
-See more from `Useblocks <https://useblocks.com>`__ to enhance your sphinx-needs experience:
+See more from `useblocks <https://useblocks.com>`__ to enhance your sphinx-needs experience:
 
 .. grid:: 1 1 2 2
     :gutter: 2
@@ -110,7 +110,7 @@ See more from `Useblocks <https://useblocks.com>`__ to enhance your sphinx-needs
         :class-img-top: sd-p-3 sd-bg-dark
         :class-card: border
 
-        Provides an oversight of the UseBlocks ecosystem, and its goal to bring Engineering-as-Code to the software development process.
+        Provides an oversight of the useblocks ecosystem, and its goal to bring Engineering-as-Code to the software development process.
         +++
 
         .. button-link:: https://useblocks.com
