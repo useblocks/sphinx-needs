@@ -5,11 +5,16 @@ so that it should be generally higher than the specificity of the theme CSS sele
 This avoids having to use !important.
 */
 
+:root {
+    --sn-width-need-border: 1px;
+    --sn-width-need-border-row: 0px;
+}
+
 table.need.need.need {
     display: table ;
     margin-bottom: 10px;
     background-color: var(--sn-color-need-bg);
-    border: 1px solid var(--sn-color-need-border);
+    border: var(--sn-width-need-border) solid var(--sn-color-need-border);
     width: 100%;
 }
 
@@ -27,16 +32,16 @@ table.need.need.need > tbody > tr {
 
 table.need.need.need > tbody > tr.head {
     background-color: var(--sn-color-need-bg-head);
-    border-bottom: 1px solid var(--sn-color-need-border);
+    border-bottom: var(--sn-width-need-border) solid var(--sn-color-need-border);
 }
 
 table.need.need.need > tbody > tr.meta {
-    border-bottom: 1px solid var(--sn-color-need-border);
+    border-bottom: var(--sn-width-need-border) solid var(--sn-color-need-border);
     font-size: smaller;
 }
 
 table.need.need.need > tbody > tr.footer {
-    border-top: 1px solid var(--sn-color-need-border);
+    border-top: var(--sn-width-need-border) solid var(--sn-color-need-border);
     font-size: small;
 }
 
@@ -47,7 +52,7 @@ table.need.need.need a {
 table.need.need.need > tbody > tr > td {
     display: table-cell;
     border: none;
-    border-top: 0.05rem solid var(--sn-color-need-row-border);
+    border-top: var(--sn-width-need-border-row) solid var(--sn-color-need-row-border);
     padding: 0.9375em 1.25em;
     /* This is needed to avoid custom settings for common tables, like the ReadTheDocs theme docs */
     /* It reimplements the normal browser behavior of breaking/wrapping table content if too long.*/
