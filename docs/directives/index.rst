@@ -4,7 +4,6 @@ Directives
 Directives for creating and modifying needs:
 
 .. toctree::
-   :caption: Need creation
    :maxdepth: 1
 
    need
@@ -17,7 +16,6 @@ Directives for creating and modifying needs:
 Directives for visualizing and analyzing needs:
 
 .. toctree::
-   :caption: Need analysis
    :maxdepth: 1
 
    needarch
