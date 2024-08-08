@@ -45,7 +45,7 @@ For instance, you can customize the need objects to support bugs, user stories o
    Each need contains:
 
    * a **title** (required)
-   * an **unique id** (optional) - gets generated based on the title if not given
+   * a **unique id** (optional) - gets generated based on the title if not given
    * a **description** (optional) - supports rst and sphinx extensions fully
    * a **status** (optional)
    * several **tags** (optional)
