@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1718696782861,
+  "lastUpdate": 1723640989999,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -8136,6 +8136,42 @@ window.BENCHMARK_DATA = {
             "value": 68.649281817,
             "unit": "s",
             "extra": "Commit: 1de1a7a047bfc7912ea0aa779ffb187def7a5254\nBranch: master\nTime: 2024-06-18T09:44:20+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "20451216479b46272121d8ddd7c43a78824aba72",
+          "message": "🎨 Update docs theme and add tutorial (#1184)\n\n- Update the theme to furo and style colors to match new branding\r\n  - branding coloring loosely based on https://mintlify.com/docs/quickstart \r\n- Restructure toc-trees, to make the documentation easier to navigate\r\n- Improve landing page\r\n   - Improve top \"hero\" section\r\n   - Add feature section\r\n   - move examples to tutorial\r\n- Add tutorial page, with worked example covering most directives\r\n  - took some things from https://sphinx-needs-demo.readthedocs.io",
+          "timestamp": "2024-08-14T15:07:48+02:00",
+          "tree_id": "91ae3d93f725e19c826a0b3f15a322a297561d8f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/20451216479b46272121d8ddd7c43a78824aba72"
+        },
+        "date": 1723640982006,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.23941913199996634,
+            "unit": "s",
+            "extra": "Commit: 20451216479b46272121d8ddd7c43a78824aba72\nBranch: master\nTime: 2024-08-14T15:07:48+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.21688359999996,
+            "unit": "s",
+            "extra": "Commit: 20451216479b46272121d8ddd7c43a78824aba72\nBranch: master\nTime: 2024-08-14T15:07:48+02:00"
           }
         ]
       }
