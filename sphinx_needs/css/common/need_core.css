@@ -7,23 +7,19 @@ This avoids having to use !important.
 
 :root {
     --sn-width-need-border: 1px;
-    --sn-width-need-border-row: 0px;
+    --sn-width-need-border-row: 1px;
+    --sn-width-need-border-radius: 3px;
 }
 
 table.need.need.need {
-    display: table ;
+    display: table;
     margin-bottom: 10px;
     background-color: var(--sn-color-need-bg);
-    border: var(--sn-width-need-border) solid var(--sn-color-need-border);
     width: 100%;
-}
-
-table.need.need.need > tbody > tr.head div.line-block,
-table.need.need.need > tbody > tr.meta div.line-block,
-table.need.need.need > tbody > tr.footer div.line-block {
-    display: block;
-    margin-top: 0;
-    margin-bottom: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: var(--sn-width-need-border) solid var(--sn-color-need-border);
+    border-radius: var(--sn-width-need-border-radius);
 }
 
 table.need.need.need > tbody > tr {
@@ -32,16 +28,13 @@ table.need.need.need > tbody > tr {
 
 table.need.need.need > tbody > tr.head {
     background-color: var(--sn-color-need-bg-head);
-    border-bottom: var(--sn-width-need-border) solid var(--sn-color-need-border);
 }
 
 table.need.need.need > tbody > tr.meta {
-    border-bottom: var(--sn-width-need-border) solid var(--sn-color-need-border);
     font-size: smaller;
 }
 
 table.need.need.need > tbody > tr.footer {
-    border-top: var(--sn-width-need-border) solid var(--sn-color-need-border);
     font-size: small;
 }
 
@@ -52,11 +45,33 @@ table.need.need.need a {
 table.need.need.need > tbody > tr > td {
     display: table-cell;
     border: none;
-    border-top: var(--sn-width-need-border-row) solid var(--sn-color-need-row-border);
     padding: 0.9375em 1.25em;
     /* This is needed to avoid custom settings for common tables, like the ReadTheDocs theme docs */
     /* It reimplements the normal browser behavior of breaking/wrapping table content if too long.*/
     white-space: normal;
+}
+
+table.need.need.need > tbody > tr.head > td:not([rowspan]) {
+    /* note we don't add the border for heads with rowspans,
+       because if they span to the bottom of the table, the border would be doubled
+    */
+    border-bottom: var(--sn-width-need-border-row) solid var(--sn-color-need-border);
+}
+
+table.need.need.need > tbody > tr.meta > td:not([rowspan]) {
+    border-bottom: var(--sn-width-need-border-row) solid var(--sn-color-need-border);
+}
+
+table.need.need.need > tbody > tr.footer > td {
+    border-top: var(--sn-width-need-border-row) solid var(--sn-color-need-border);
+}
+
+table.need.need.need > tbody > tr.head div.line-block,
+table.need.need.need > tbody > tr.meta div.line-block,
+table.need.need.need > tbody > tr.footer div.line-block {
+    display: block;
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
 /* We need not line-block margin:24 px here, which is coming from sphinx theme */
