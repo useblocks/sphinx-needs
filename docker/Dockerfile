@@ -2,7 +2,7 @@
 # syntax = docker/dockerfile:1.2
 ARG BASE_IMAGE=sphinxdoc/sphinx:latest
 FROM $BASE_IMAGE
-LABEL maintainer="Useblocks <https://useblocks.com/>"
+LABEL maintainer="useblocks <https://useblocks.com/>"
 
 ARG DOCKER_USERNAME=dockeruser
 ARG DOCKER_USER_ID=1000

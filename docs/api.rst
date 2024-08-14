@@ -1,7 +1,7 @@
 .. _api:
 
-API
-===
+Python API
+==========
 
 **Sphinx-Needs** provides an open API for other Sphinx-extensions to provide specific need-types, create needs or
 make usage of the filter possibilities.

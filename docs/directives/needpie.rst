@@ -184,7 +184,7 @@ overlapping labels
 
 In the past we had overlapping labels. See following diagram.
 
-.. image:: ../_static/need_pie_overlapping_labels.png
+.. image:: /_images/need_pie_overlapping_labels.png
   :alt: Example of a needpie with overlapping labels
 
 Now overlapping labels are removed, and we automatically add a legend with removed information.
