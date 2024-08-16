@@ -1251,12 +1251,22 @@
       'content': '''
         DC -> Marvel: {{ref("ST_001", option="title")}}
         Marvel --> DC: {{ref("ST_002", text="Different text to explain the story")}}
+        
+        DC -> Marvel: {{ref("ST_001.np_id", option="id")}}
+        Marvel --> DC: {{ref("ST_001.np_id", option="title")}}
+        
+        DC -> Marvel: {{ref("ST_001.np_id", text="Different text to explain the story 2")}}
       ''',
       'content_calculated': '''
         @startuml
         
         DC -> Marvel: [[../index.html#ST_001 Test story]]
         Marvel --> DC: [[../index.html#ST_002 Different text to explain the story]]
+        
+        DC -> Marvel: [[../index.html#ST_001.np_id np_id]]
+        Marvel --> DC: [[../index.html#ST_001.np_id np_content]]
+        
+        DC -> Marvel: [[../index.html#ST_001.np_id Different text to explain the story 2]]
         @enduml
   
       ''',
@@ -1266,7 +1276,7 @@
       }),
       'is_arch': False,
       'key': None,
-      'lineno': 17,
+      'lineno': 19,
       'save': None,
       'scale': '',
       'target_id': 'needuml-index-0',
