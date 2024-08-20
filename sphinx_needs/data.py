@@ -652,7 +652,7 @@ def merge_data(
 
     # update other data
 
-    def _merge(name: str) -> None:
+    def _merge(name: str, is_complex_dict: bool = False) -> None:
         # Update global needs dict
         if not hasattr(env, name):
             setattr(env, name, {})
@@ -660,14 +660,17 @@ def merge_data(
         if hasattr(other, name):
             other_objects = getattr(other, name)
             if isinstance(other_objects, dict) and isinstance(objects, dict):
-                for other_key, other_value in other_objects.items():
-                    # other_value is a list from here on!
-                    if other_key in objects:
-                        objects[other_key] = list(
-                            set(objects[other_key]) | set(other_value)
-                        )
-                    else:
-                        objects[other_key] = other_value
+                if not is_complex_dict:
+                    objects.update(other_objects)
+                else:
+                    for other_key, other_value in other_objects.items():
+                        # other_value is a list from here on!
+                        if other_key in objects:
+                            objects[other_key] = list(
+                                set(objects[other_key]) | set(other_value)
+                            )
+                        else:
+                            objects[other_key] = other_value
             elif isinstance(other_objects, list) and isinstance(objects, list):
                 objects = list(set(objects) | set(other_objects))
             else:
@@ -676,7 +679,7 @@ def merge_data(
                     f"not {type(other_objects)} and {type(objects)}"
                 )
 
-    _merge("needs_all_docs")
+    _merge("needs_all_docs", is_complex_dict=True)
     _merge("need_all_needbar")
     _merge("need_all_needextend")
     _merge("need_all_needextracts")
