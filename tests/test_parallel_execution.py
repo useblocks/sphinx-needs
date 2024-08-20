@@ -1,31 +1,38 @@
+import os
 from pathlib import Path
 
 import pytest
+from sphinx.util.console import strip_colors
 
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/parallel_doc", "parallel": 4}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/parallel_doc",
+            "parallel": 4,
+            "no_plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_doc_build_html(test_app):
     app = test_app
     app.build()
-    html = Path(app.outdir, "index.html").read_text()
-    assert app.statuscode == 0
-    assert "<h1>PARALLEL TEST DOCUMENT" in html
-    assert "SP_TOO_001" in html
+    warnings = (
+        strip_colors(app._warning.getvalue())
+        .replace(str(app.srcdir) + os.path.sep, "<srcdir>/")
+        .strip()
+    )
+    assert (
+        warnings
+        == "<srcdir>/page_5.rst:4: WARNING: A need with ID STORY_PAGE_1 already exists, title: 'duplicate'. [needs.duplicate_id]"
+    )
 
-
-@pytest.mark.parametrize(
-    "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/parallel_doc", "parallel": 4}],
-    indirect=True,
-)
-def test_doc_parallel_build_html(test_app):
-    app = test_app
-    app.build()
-    assert app.statuscode == 0
+    index_html = Path(app.outdir, "index.html").read_text()
+    assert "<h1>PARALLEL TEST DOCUMENT" in index_html
+    assert "SP_TOO_001" in index_html
 
     page3_html = Path(app.outdir, "page_3.html").read_text()
     assert "Page 3" in page3_html

@@ -11,7 +11,6 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.api import add_external_need, del_need
-from sphinx_needs.api.exceptions import NeedsDuplicatedId
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import get_logger
@@ -30,7 +29,7 @@ def get_target_template(target_url: str) -> Template:
     return mem_template
 
 
-def load_external_needs(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
+def load_external_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> None:
     """Load needs from configured external sources."""
     needs_config = NeedsSphinxConfig(app.config)
     for source in needs_config.external_needs:
@@ -159,10 +158,14 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, _docname: str) -> No
                     # delete the already existing external need from api need
                     del_need(app, ext_need_id)
                 else:
-                    raise NeedsDuplicatedId(
-                        f'During external needs handling, an identical ID was detected: {ext_need_id} \
-                            from needs_external_needs url: {source["base_url"]}'
+                    log.warning(
+                        f'During external needs handling, an identical ID was detected: {ext_need_id} '
+                        f'from needs_external_needs url: {source["base_url"]} [needs.duplicate_id]',
+                        type="needs",
+                        subtype="duplicate_id",
+                        location=docname if docname else None,
                     )
+                    return None
 
             add_external_need(app, **need_params)
 

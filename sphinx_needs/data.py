@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, TypedDict
 
+from sphinx.util.logging import getLogger
+
 if TYPE_CHECKING:
     from docutils.nodes import Element, Text
     from sphinx.application import Sphinx
@@ -13,6 +15,9 @@ if TYPE_CHECKING:
     from typing_extensions import Required
 
     from sphinx_needs.services.manager import ServiceManager
+
+
+LOGGER = getLogger(__name__)
 
 
 class NeedsFilterType(TypedDict):
@@ -612,7 +617,7 @@ class SphinxNeedsData:
 
 
 def merge_data(
-    _app: Sphinx, env: BuildEnvironment, _docnames: list[str], other: BuildEnvironment
+    _app: Sphinx, env: BuildEnvironment, docnames: list[str], other: BuildEnvironment
 ) -> None:
     """
     Performs data merge of parallel executed workers.
@@ -621,14 +626,33 @@ def merge_data(
     Needs to update env manually for all data Sphinx-Needs collect during read phase
     """
 
-    # Update global needs dict
-    needs = SphinxNeedsData(env).get_or_create_needs()
-    other_needs = SphinxNeedsData(other).get_or_create_needs()
-    needs.update(other_needs)
     if SphinxNeedsData(other).has_export_filters:
         SphinxNeedsData(env).has_export_filters = True
 
-    def _merge(name: str, is_complex_dict: bool = False) -> None:
+    # Update needs
+    needs = SphinxNeedsData(env).get_or_create_needs()
+    other_needs = SphinxNeedsData(other).get_or_create_needs()
+    for other_id, other_need in other_needs.items():
+        if other_id in needs:
+            # we only want to warn if the need comes from one of the docs parsed in this worker
+            _docname = other_need["docname"]
+            if _docname in docnames:
+                message = (
+                    f"A need with ID {other_id} already exists, "
+                    f"title: {other_need['title']!r}."
+                )
+                LOGGER.warning(
+                    message + " [needs.duplicate_id]",
+                    type="needs",
+                    subtype="duplicate_id",
+                    location=(_docname, other_need["lineno"]) if _docname else None,
+                )
+        else:
+            needs[other_id] = other_need
+
+    # update other data
+
+    def _merge(name: str) -> None:
         # Update global needs dict
         if not hasattr(env, name):
             setattr(env, name, {})
@@ -636,17 +660,14 @@ def merge_data(
         if hasattr(other, name):
             other_objects = getattr(other, name)
             if isinstance(other_objects, dict) and isinstance(objects, dict):
-                if not is_complex_dict:
-                    objects.update(other_objects)
-                else:
-                    for other_key, other_value in other_objects.items():
-                        # other_value is a list from here on!
-                        if other_key in objects:
-                            objects[other_key] = list(
-                                set(objects[other_key]) | set(other_value)
-                            )
-                        else:
-                            objects[other_key] = other_value
+                for other_key, other_value in other_objects.items():
+                    # other_value is a list from here on!
+                    if other_key in objects:
+                        objects[other_key] = list(
+                            set(objects[other_key]) | set(other_value)
+                        )
+                    else:
+                        objects[other_key] = other_value
             elif isinstance(other_objects, list) and isinstance(objects, list):
                 objects = list(set(objects) | set(other_objects))
             else:
@@ -655,7 +676,8 @@ def merge_data(
                     f"not {type(other_objects)} and {type(objects)}"
                 )
 
-    _merge("needs_all_docs", is_complex_dict=True)
+    _merge("needs_all_docs")
+    _merge("need_all_needbar")
     _merge("need_all_needbar")
     _merge("need_all_needextend")
     _merge("need_all_needextracts")
