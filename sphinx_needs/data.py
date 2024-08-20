@@ -678,7 +678,6 @@ def merge_data(
 
     _merge("needs_all_docs")
     _merge("need_all_needbar")
-    _merge("need_all_needbar")
     _merge("need_all_needextend")
     _merge("need_all_needextracts")
     _merge("need_all_needfilters")
