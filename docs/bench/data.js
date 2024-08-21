@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724222504372,
+  "lastUpdate": 1724223396960,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -8244,6 +8244,42 @@ window.BENCHMARK_DATA = {
             "value": 69.80494368999999,
             "unit": "s",
             "extra": "Commit: 87d51d5cf190167d7cf3c1ab11a6560ba6a862c0\nBranch: master\nTime: 2024-08-21T08:39:44+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8ede7caf4ac2a26eeb856328eb6f9578ebb6b9a9",
+          "message": "🔧 Store description for each extra need option (#1225)\n\nThis allows their \"origin\" to be tracked, and thus to be output as part of a `needs.json` in a later PR",
+          "timestamp": "2024-08-21T08:54:47+02:00",
+          "tree_id": "5362d7386519bef6e465cf2631bb02d25c73a1c0",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8ede7caf4ac2a26eeb856328eb6f9578ebb6b9a9"
+        },
+        "date": 1724223388956,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18310758299998042,
+            "unit": "s",
+            "extra": "Commit: 8ede7caf4ac2a26eeb856328eb6f9578ebb6b9a9\nBranch: master\nTime: 2024-08-21T08:54:47+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 64.16151171200002,
+            "unit": "s",
+            "extra": "Commit: 8ede7caf4ac2a26eeb856328eb6f9578ebb6b9a9\nBranch: master\nTime: 2024-08-21T08:54:47+02:00"
           }
         ]
       }
