@@ -106,14 +106,14 @@ class NeedsList:
         self.needs_config = NeedsSphinxConfig(config)
         self.outdir = outdir
         self.confdir = confdir
-        self._schema = generate_needs_schema(config) if add_schema else {}
+        self._schema = generate_needs_schema(config) if add_schema else None
         self._need_defaults = (
             {
                 name: value["default"]
                 for name, value in self._schema["properties"].items()
                 if "default" in value
             }
-            if add_schema
+            if self._schema
             else {}
         )
         self.current_version = config.version
@@ -139,7 +139,7 @@ class NeedsList:
                 "filters_amount": 0,
                 "filters": {},
             }
-            if self._schema is not None:
+            if self._schema:
                 self.needs_list["versions"][version]["needs_schema"] = self._schema
             if not self.needs_config.reproducible_json:
                 self.needs_list["versions"][version]["created"] = ""
