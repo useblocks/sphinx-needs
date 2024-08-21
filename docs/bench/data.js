@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1723640989999,
+  "lastUpdate": 1724222004184,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -8172,6 +8172,42 @@ window.BENCHMARK_DATA = {
             "value": 67.21688359999996,
             "unit": "s",
             "extra": "Commit: 20451216479b46272121d8ddd7c43a78824aba72\nBranch: master\nTime: 2024-08-14T15:07:48+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ff4ae90378952c673945c7a6a8eb3b4eb0070183",
+          "message": "🐛 fix warnings for duplicate needs in parallel builds (#1223)\n\nChange duplicate need feedback from raising exceptions to emitting Sphinx warnings, e.g.\r\n\r\n```\r\npath/to/page.rst:4: WARNING: A need with ID STORY_PAGE_1 already exists, title: 'duplicate'. [needs.duplicate_id]\r\n```\r\n\r\nand ensure warning is also emitted during parallel builds\r\n\r\nNote, although there was already a parallel build test in the test suite, \r\nactually it was not running parallel because there were not enough documents in the test project\r\n(see https://github.com/sphinx-doc/sphinx/pull/12796), so one more document is added.",
+          "timestamp": "2024-08-21T08:31:19+02:00",
+          "tree_id": "65d672b4fd5ddd94f651a04b5e640dfec6986884",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/ff4ae90378952c673945c7a6a8eb3b4eb0070183"
+        },
+        "date": 1724221994593,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.23314877799998612,
+            "unit": "s",
+            "extra": "Commit: ff4ae90378952c673945c7a6a8eb3b4eb0070183\nBranch: master\nTime: 2024-08-21T08:31:19+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 68.52153372100003,
+            "unit": "s",
+            "extra": "Commit: ff4ae90378952c673945c7a6a8eb3b4eb0070183\nBranch: master\nTime: 2024-08-21T08:31:19+02:00"
           }
         ]
       }
