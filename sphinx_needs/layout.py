@@ -28,9 +28,9 @@ from sphinx.environment.collectors.asset import DownloadFileCollector, ImageColl
 from sphinx.util.logging import getLogger
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import NeedsCoreFields, NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
-from sphinx_needs.utils import INTERNALS, match_string_link
+from sphinx_needs.utils import match_string_link
 
 LOGGER = getLogger(__name__)
 
@@ -734,7 +734,11 @@ class LayoutHandler:
         :param show_empty: If true, also need data with no value will be printed. Mostly useful for debugging.
         :return: docutils nodes
         """
-        default_excludes = list(INTERNALS)
+        default_excludes = [
+            name
+            for name, props in NeedsCoreFields.items()
+            if not props.get("show_in_layout")
+        ]
 
         if exclude is None or not isinstance(exclude, list):
             if defaults:

@@ -4,13 +4,13 @@ which is stored in the Sphinx environment.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, TypedDict
+from typing import TYPE_CHECKING, Any, Final, Literal, Mapping, TypedDict
 
 if TYPE_CHECKING:
     from docutils.nodes import Element, Text
     from sphinx.application import Sphinx
     from sphinx.environment import BuildEnvironment
-    from typing_extensions import Required
+    from typing_extensions import NotRequired, Required
 
     from sphinx_needs.services.manager import ServiceManager
 
@@ -40,20 +40,249 @@ class NeedsPartType(TypedDict):
     """List of need IDs, which are referencing this part."""
 
 
+class CoreFieldParameters(TypedDict):
+    """Parameters for core fields."""
+
+    description: str
+    """Description of the field."""
+    schema: dict[str, Any]
+    """JSON schema for the field."""
+    show_in_layout: NotRequired[bool]
+    """Whether to show the field in the rendered layout of the need by default (False if not present)."""
+    exclude_json: NotRequired[bool]
+    """Whether to exclude the field from the JSON representation (False if not present)."""
+
+
+NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
+    "target_id": {"description": "ID of the data.", "schema": {"type": "string"}},
+    "id": {"description": "ID of the data.", "schema": {"type": "string"}},
+    "docname": {
+        "description": "Name of the document where the need is defined (None if external).",
+        "schema": {"type": ["string", "null"]},
+    },
+    "lineno": {
+        "description": "Line number where the need is defined (None if external).",
+        "schema": {"type": ["integer", "null"]},
+        "exclude_json": True,
+    },
+    "lineno_content": {
+        "description": "Line number on which the need content starts (None if external).",
+        "schema": {"type": ["integer", "null"]},
+        "exclude_json": True,
+    },
+    "full_title": {
+        "description": "Title of the need, of unlimited length.",
+        "schema": {"type": "string"},
+    },
+    "title": {
+        "description": "Title of the need, trimmed to a maximum length.",
+        "schema": {"type": "string"},
+    },
+    "status": {
+        "description": "Status of the need.",
+        "schema": {"type": ["string", "null"]},
+        "show_in_layout": True,
+    },
+    "tags": {
+        "description": "List of tags.",
+        "schema": {"type": "array", "items": {"type": "string"}},
+        "show_in_layout": True,
+    },
+    "collapse": {
+        "description": "Hide the meta-data information of the need.",
+        "schema": {"type": ["boolean", "null"]},
+        "exclude_json": True,
+    },
+    "hide": {
+        "description": "If true, the need is not rendered.",
+        "schema": {"type": "boolean"},
+        "exclude_json": True,
+    },
+    "delete": {
+        "description": "If true, the need is deleted entirely.",
+        "schema": {"type": "boolean"},
+        "show_in_layout": True,
+    },
+    "layout": {
+        "description": "Key of the layout, which is used to render the need.",
+        "schema": {"type": ["string", "null"]},
+        "show_in_layout": True,
+    },
+    "style": {
+        "description": "Comma-separated list of CSS classes (all appended by `needs_style_`).",
+        "schema": {"type": ["string", "null"]},
+        "show_in_layout": True,
+    },
+    "arch": {
+        "description": "Mapping of uml key to uml content.",
+        "schema": {"type": "object", "additionalProperties": {"type": "string"}},
+    },
+    "is_external": {
+        "description": "If true, no node is created and need is referencing external url.",
+        "schema": {"type": "boolean"},
+    },
+    "external_url": {
+        "description": "URL of the need, if it is an external need.",
+        "schema": {"type": ["string", "null"]},
+        "show_in_layout": True,
+    },
+    "external_css": {
+        "description": "CSS class name, added to the external reference.",
+        "schema": {"type": "string"},
+    },
+    "type": {"description": "Type of the need.", "schema": {"type": "string"}},
+    "type_name": {"description": "Name of the type.", "schema": {"type": "string"}},
+    "type_prefix": {
+        "description": "Prefix of the type.",
+        "schema": {"type": "string"},
+        "exclude_json": True,
+    },
+    "type_color": {
+        "description": "Hexadecimal color code of the type.",
+        "schema": {"type": "string"},
+        "exclude_json": True,
+    },
+    "type_style": {
+        "description": "Style of the type.",
+        "schema": {"type": "string"},
+        "exclude_json": True,
+    },
+    "is_modified": {
+        "description": "Whether the need was modified by needextend.",
+        "schema": {"type": "boolean"},
+    },
+    "modifications": {
+        "description": "Number of modifications by needextend.",
+        "schema": {"type": "integer"},
+    },
+    "is_need": {
+        "description": "Whether the need is a need.",
+        "schema": {"type": "boolean"},
+    },
+    "is_part": {
+        "description": "Whether the need is a part.",
+        "schema": {"type": "boolean"},
+    },
+    "parts": {
+        "description": "Mapping of parts, a.k.a. sub-needs, IDs to data that overrides the need's data",
+        "schema": {"type": "object", "additionalProperties": {"type": "object"}},
+    },
+    "id_parent": {
+        "description": "<parent ID>, or <self ID> if not a part.",
+        "exclude_json": True,
+        "schema": {"type": "string"},
+    },
+    "id_complete": {
+        "description": "<parent ID>.<self ID>, or <self ID> if not a part.",
+        "exclude_json": True,
+        "schema": {"type": "string"},
+    },
+    "jinja_content": {
+        "description": "Whether the content should be pre-processed by jinja.",
+        "schema": {"type": "boolean"},
+        "show_in_layout": True,
+    },
+    "template": {
+        "description": "Template of the need.",
+        "schema": {"type": ["string", "null"]},
+        "show_in_layout": True,
+    },
+    "pre_template": {
+        "description": "Pre-template of the need.",
+        "schema": {"type": ["string", "null"]},
+        "show_in_layout": True,
+    },
+    "post_template": {
+        "description": "Post-template of the need.",
+        "schema": {"type": ["string", "null"]},
+        "show_in_layout": True,
+    },
+    "content": {
+        "description": "Content of the need.",
+        "schema": {"type": "string"},
+        "exclude_json": True,
+    },
+    "pre_content": {
+        "description": "Pre-content of the need.",
+        "schema": {"type": "string"},
+    },
+    "post_content": {
+        "description": "Post-content of the need.",
+        "schema": {"type": "string"},
+    },
+    "content_id": {
+        "description": "ID of the content node.",
+        "schema": {"type": ["string", "null"]},
+    },
+    "content_node": {
+        "description": "Deep copy of the content node.",
+        "schema": {},
+        "exclude_json": True,
+    },
+    "has_dead_links": {
+        "description": "True if any links reference need ids that are not found in the need list.",
+        "schema": {"type": "boolean"},
+    },
+    "has_forbidden_dead_links": {
+        "description": "True if any links reference need ids that are not found in the need list, and the link type does not allow dead links.",
+        "schema": {"type": "boolean"},
+    },
+    "constraints": {
+        "description": "List of constraint names, which are defined for this need.",
+        "schema": {"type": "array", "items": {"type": "string"}},
+    },
+    "constraints_results": {
+        "description": "Mapping of constraint name, to check name, to result.",
+        "schema": {"type": "object", "additionalProperties": {"type": "object"}},
+    },
+    "constraints_passed": {
+        "description": "True if all constraints passed, False if any failed, None if not yet checked.",
+        "schema": {"type": ["boolean", "null"]},
+    },
+    "constraints_error": {
+        "description": "An error message set if any constraint failed, and `error_message` field is set in config.",
+        "schema": {"type": "string"},
+        "show_in_layout": True,
+    },
+    "doctype": {
+        "description": "Type of the document where the need is defined, e.g. '.rst'.",
+        "schema": {"type": "string"},
+    },
+    "sections": {
+        "description": "Sections of the need.",
+        "schema": {"type": "array", "items": {"type": "string"}},
+    },
+    "section_name": {
+        "description": "Simply the first section.",
+        "schema": {"type": ["string", "null"]},
+    },
+    "signature": {
+        "description": "Derived from a docutils desc_name node.",
+        "schema": {"type": "string"},
+        "show_in_layout": True,
+    },
+    "parent_need": {
+        "description": "Simply the first parent id.",
+        "schema": {"type": "string"},
+    },
+}
+
+
 class NeedsInfoType(TypedDict, total=False):
     """Data for a single need."""
 
+    # TODO remove duplication target_id/id
     target_id: Required[str]
     """ID of the data."""
     id: Required[str]
-    """ID of the data (same as target_id)"""
+    """ID of the data."""
 
     docname: Required[str | None]
-    """Name of the document where the need is defined (None if external)"""
+    """Name of the document where the need is defined (None if external)."""
     lineno: Required[int | None]
-    """Line number where the need is defined (None if external)"""
+    """Line number where the need is defined (None if external)."""
     lineno_content: Required[int | None]
-    """Line number on which the need content starts (None if external)"""
+    """Line number on which the need content starts (None if external)."""
 
     # meta information
     full_title: Required[str]
@@ -65,7 +294,7 @@ class NeedsInfoType(TypedDict, total=False):
 
     # rendering information
     collapse: Required[None | bool]
-    """hide the meta-data information of the need."""
+    """Hide the meta-data information of the need."""
     hide: Required[bool]
     """If true, the need is not rendered."""
     delete: Required[None | bool]
@@ -81,7 +310,7 @@ class NeedsInfoType(TypedDict, total=False):
 
     # external reference information
     is_external: Required[bool]
-    """If true, no node is created and need is referencing external url"""
+    """If true, no node is created and need is referencing external url."""
     external_url: Required[None | str]
     """URL of the need, if it is an external need."""
     external_css: Required[str]
@@ -107,12 +336,9 @@ class NeedsInfoType(TypedDict, total=False):
     parts: Required[dict[str, NeedsPartType]]
     # additional information required for compatibility with parts
     id_parent: Required[str]
-    """ID of the parent need, or self ID if not a part"""
+    """<parent ID>, or <self ID> if not a part."""
     id_complete: Required[str]
-    """ID of the parent need, followed by the part ID, 
-    delimited by a dot: ``<id_parent>.<id>``,
-    or self ID if not a part
-    """
+    """<parent ID>.<self ID>, or <self ID> if not a part."""
 
     # content creation information
     jinja_content: Required[None | bool]
@@ -123,9 +349,9 @@ class NeedsInfoType(TypedDict, total=False):
     pre_content: str
     post_content: str
     content_id: Required[None | str]
-    """ID of the content node (set after parsing)."""
+    """ID of the content node."""
     content_node: Required[None | Element]
-    """deep copy of the content node (set after parsing)."""
+    """Deep copy of the content node."""
 
     # these default to False and are updated in check_links post-process
     has_dead_links: Required[bool]
@@ -148,15 +374,15 @@ class NeedsInfoType(TypedDict, total=False):
 
     # additional source information
     doctype: Required[str]
-    """Type of the document where the need is defined, e.g. '.rst'"""
+    """Type of the document where the need is defined, e.g. '.rst'."""
     # set in analyse_need_locations transform
     sections: Required[list[str]]
     section_name: Required[str]
-    """Simply the first section"""
+    """Simply the first section."""
     signature: Required[str | Text]
-    """Derived from a docutils desc_name node"""
+    """Derived from a docutils desc_name node."""
     parent_need: Required[str]
-    """Simply the first parent id"""
+    """Simply the first parent id."""
 
     # link information
     # Note, there is more dynamically added link information;

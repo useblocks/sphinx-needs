@@ -20,7 +20,7 @@ from sphinx_needs.builder import (
     build_needumls_pumls,
 )
 from sphinx_needs.config import NEEDS_CONFIG, LinkOptionsType, NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData, merge_data
+from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData, merge_data
 from sphinx_needs.defaults import (
     LAYOUTS,
     NEED_DEFAULT_OPTIONS,
@@ -103,7 +103,7 @@ from sphinx_needs.roles.need_part import NeedPart, process_need_part
 from sphinx_needs.roles.need_ref import NeedRef, process_need_ref
 from sphinx_needs.services.github import GithubService
 from sphinx_needs.services.open_needs import OpenNeedsService
-from sphinx_needs.utils import INTERNALS, NEEDS_FUNCTIONS, node_match
+from sphinx_needs.utils import NEEDS_FUNCTIONS, node_match
 from sphinx_needs.warnings import process_warnings
 
 __version__ = VERSION = "2.1.0"
@@ -585,7 +585,7 @@ def check_configuration(_app: Sphinx, config: Config) -> None:
             )
 
     # Check for usage of internal names
-    for internal in INTERNALS:
+    for internal in NeedsCoreFields:
         if internal in extra_options:
             raise NeedsConfigException(
                 f'Extra option "{internal}" already used internally. '
