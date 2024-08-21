@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724223556422,
+  "lastUpdate": 1724223614861,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -8316,6 +8316,42 @@ window.BENCHMARK_DATA = {
             "value": 72.95959169499997,
             "unit": "s",
             "extra": "Commit: 2ea8a7bd351427d87088d996f9695f293aebdd93\nBranch: master\nTime: 2024-08-21T08:57:11+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "46bd6dddf6fc24e3ddf8f9bf4d274b93917dd741",
+          "message": "🔧 Add dependabot for python dependencies (#1227)",
+          "timestamp": "2024-08-21T08:58:13+02:00",
+          "tree_id": "92d106c6b2353a178951f52d1b63332c4c43e93a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/46bd6dddf6fc24e3ddf8f9bf4d274b93917dd741"
+        },
+        "date": 1724223606518,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.32240810299998657,
+            "unit": "s",
+            "extra": "Commit: 46bd6dddf6fc24e3ddf8f9bf4d274b93917dd741\nBranch: master\nTime: 2024-08-21T08:58:13+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.59258992899998,
+            "unit": "s",
+            "extra": "Commit: 46bd6dddf6fc24e3ddf8f9bf4d274b93917dd741\nBranch: master\nTime: 2024-08-21T08:58:13+02:00"
           }
         ]
       }
