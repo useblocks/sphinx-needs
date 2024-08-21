@@ -371,12 +371,18 @@ def load_config(app: Sphinx, *_args: Any) -> None:
                 type="needs",
                 subtype="config",
             )
-        NEEDS_CONFIG.extra_options[option] = directives.unchanged
+        NEEDS_CONFIG.add_extra_option(
+            option, "Added by needs_extra_options config", override=True
+        )
 
     # ensure options for ``needgantt`` functionality are added to the extra options
     for option in (needs_config.duration_option, needs_config.completion_option):
         if option not in NEEDS_CONFIG.extra_options:
-            NEEDS_CONFIG.extra_options[option] = directives.unchanged_required
+            NEEDS_CONFIG.add_extra_option(
+                option,
+                "Added for needgantt functionality",
+                validator=directives.unchanged_required,
+            )
 
     # Get extra links and create a dictionary of needed options.
     extra_links_raw = needs_config.extra_links
@@ -388,8 +394,12 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     title_from_content = needs_config.title_from_content
 
     # Update NeedDirective to use customized options
-    NeedDirective.option_spec.update(NEEDS_CONFIG.extra_options)
-    NeedserviceDirective.option_spec.update(NEEDS_CONFIG.extra_options)
+    NeedDirective.option_spec.update(
+        {k: v.validator for k, v in NEEDS_CONFIG.extra_options.items()}
+    )
+    NeedserviceDirective.option_spec.update(
+        {k: v.validator for k, v in NEEDS_CONFIG.extra_options.items()}
+    )
 
     # Update NeedDirective to use customized links
     NeedDirective.option_spec.update(extra_links)
@@ -433,8 +443,8 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     for key, value in NEEDS_CONFIG.extra_options.items():
         NeedextendDirective.option_spec.update(
             {
-                key: value,
-                f"+{key}": value,
+                key: value.validator,
+                f"+{key}": value.validator,
                 f"-{key}": directives.flag,
             }
         )

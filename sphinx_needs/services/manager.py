@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
 from sphinx_needs.api.configuration import NEEDS_CONFIG
@@ -32,10 +31,12 @@ class ServiceManager:
         for option in klass.options:
             if option not in NEEDS_CONFIG.extra_options:
                 self.log.debug(f'Register option "{option}" for service "{name}"')
-                NEEDS_CONFIG.extra_options[option] = directives.unchanged
+                NEEDS_CONFIG.add_extra_option(option, f"Added by service {name}")
                 # Register new option directly in Service directive, as its class options got already
                 # calculated
-                NeedserviceDirective.option_spec[option] = directives.unchanged
+                NeedserviceDirective.option_spec[option] = NEEDS_CONFIG.extra_options[
+                    option
+                ].validator
 
         # Init service with custom config
         self.services[name] = klass(self.app, name, config, **kwargs)
