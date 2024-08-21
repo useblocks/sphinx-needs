@@ -1,7 +1,6 @@
 # name: test_build_needs[test_app0]
   dict({
     'current_version': '',
-    'project': 'Python',
     'versions': dict({
       '': dict({
         'filters': dict({

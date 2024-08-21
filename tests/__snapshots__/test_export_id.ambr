@@ -1,7 +1,6 @@
 # name: test_export_id[test_app0]
   dict({
     'current_version': '1.0',
-    'project': 'Python',
     'versions': dict({
       '1.0': dict({
         'filters': dict({

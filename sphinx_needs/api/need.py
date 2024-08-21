@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import os
 import re
+import warnings
 from contextlib import contextmanager
 from typing import Any, Iterator
 
@@ -16,7 +17,6 @@ from sphinx.environment import BuildEnvironment
 from sphinx_needs.api.configuration import NEEDS_CONFIG
 from sphinx_needs.api.exceptions import (
     NeedsConstraintNotAllowed,
-    NeedsDuplicatedId,
     NeedsInvalidException,
     NeedsInvalidOption,
     NeedsNoIdException,
@@ -35,6 +35,8 @@ from sphinx_needs.utils import jinja_parse
 
 logger = get_logger(__name__)
 
+_deprecated_kwargs = {"constraints_passed", "links_string", "hide_tags", "hide_status"}
+
 
 def add_need(
     app: Sphinx,
@@ -50,13 +52,9 @@ def add_need(
     status: str | None = None,
     tags: None | str | list[str] = None,
     constraints: None | str | list[str] = None,
-    constraints_passed: None | bool = None,
-    links_string: None | str | list[str] = None,
     delete: None | bool = False,
     jinja_content: None | bool = False,
     hide: bool = False,
-    hide_tags: bool = False,
-    hide_status: bool = False,
     collapse: None | bool = None,
     style: None | str = None,
     layout: None | str = None,
@@ -136,11 +134,8 @@ def add_need(
     :param tags: Tags as single string.
     :param constraints: Constraints as single, comma separated, string.
     :param constraints_passed: Contains bool describing if all constraints have passed
-    :param links_string: Links as single string. (Not used)
     :param delete: boolean value (Remove the complete need).
     :param hide: boolean value.
-    :param hide_tags: boolean value. (Not used with Sphinx-Needs >0.5.0)
-    :param hide_status: boolean value. (Not used with Sphinx-Needs >0.5.0)
     :param collapse: boolean value.
     :param style: String value of class attribute of node.
     :param layout: String value of layout definition to use
@@ -150,6 +145,13 @@ def add_need(
 
     :return: node
     """
+
+    if kwargs.keys() & _deprecated_kwargs:
+        warnings.warn(
+            "deprecated key found in kwargs", DeprecationWarning, stacklevel=1
+        )
+        kwargs = {k: v for k, v in kwargs.items() if k not in _deprecated_kwargs}
+
     #############################################################################################
     # Get environment
     #############################################################################################
@@ -312,19 +314,24 @@ def add_need(
 
     if need_id in SphinxNeedsData(env).get_or_create_needs():
         if id:
-            raise NeedsDuplicatedId(
-                f"A need with ID {need_id} already exists! "
-                f"This is not allowed. Document {docname}[{lineno}] Title: {title}."
-            )
+            message = f"A need with ID {need_id} already exists, " f"title: {title!r}."
         else:  # this is a generated ID
-            raise NeedsDuplicatedId(
+            _title = " ".join(title)
+            message = (
                 "Needs could not generate a unique ID for a need with "
-                "the title '{}' because another need had the same title. "
+                f"the title {_title!r} because another need had the same title. "
                 "Either supply IDs for the requirements or ensure the "
                 "titles are different.  NOTE: If title is being generated "
                 "from the content, then ensure the first sentence of the "
-                "requirements are different.".format(" ".join(title))
+                "requirements are different."
             )
+        logger.warning(
+            message + " [needs.duplicate_id]",
+            type="needs",
+            subtype="duplicate_id",
+            location=(docname, lineno) if docname else None,
+        )
+        return []
 
     # Trim title if it is too long
     max_length = needs_config.max_title_length
@@ -620,7 +627,6 @@ def add_external_need(
     status: str | None = None,
     tags: str | None = None,
     constraints: str | None = None,
-    links_string: str | None = None,
     **kwargs: Any,
 ) -> list[nodes.Node]:
     """
@@ -640,7 +646,6 @@ def add_external_need(
     :param status: Status as string.
     :param tags: Tags as single string.
     :param constraints: constraints as single, comma separated string.
-    :param links_string: Links as single string.
     :param external_css: CSS class name as string, which is set for the <a> tag.
 
     """
@@ -667,7 +672,6 @@ def add_external_need(
         status=status,
         tags=tags,
         constraints=constraints,
-        links_string=links_string,
         is_external=True,
         external_url=external_url,
         external_css=external_css,
