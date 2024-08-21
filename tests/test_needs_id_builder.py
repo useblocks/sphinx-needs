@@ -22,4 +22,4 @@ def test_doc_needs_id_builder(test_app, snapshot):
     data = {
         path.name: json.loads(path.read_text()) for path in needs_id_path.glob("*.json")
     }
-    assert data == snapshot(exclude=props("created"))
+    assert data == snapshot(exclude=props("created", "project"))

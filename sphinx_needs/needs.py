@@ -20,7 +20,7 @@ from sphinx_needs.builder import (
     build_needumls_pumls,
 )
 from sphinx_needs.config import NEEDS_CONFIG, LinkOptionsType, NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData, merge_data
+from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData, merge_data
 from sphinx_needs.defaults import (
     LAYOUTS,
     NEED_DEFAULT_OPTIONS,
@@ -103,7 +103,7 @@ from sphinx_needs.roles.need_part import NeedPart, process_need_part
 from sphinx_needs.roles.need_ref import NeedRef, process_need_ref
 from sphinx_needs.services.github import GithubService
 from sphinx_needs.services.open_needs import OpenNeedsService
-from sphinx_needs.utils import INTERNALS, NEEDS_FUNCTIONS, node_match
+from sphinx_needs.utils import NEEDS_FUNCTIONS, node_match
 from sphinx_needs.warnings import process_warnings
 
 __version__ = VERSION = "2.1.0"
@@ -371,12 +371,18 @@ def load_config(app: Sphinx, *_args: Any) -> None:
                 type="needs",
                 subtype="config",
             )
-        NEEDS_CONFIG.extra_options[option] = directives.unchanged
+        NEEDS_CONFIG.add_extra_option(
+            option, "Added by needs_extra_options config", override=True
+        )
 
     # ensure options for ``needgantt`` functionality are added to the extra options
     for option in (needs_config.duration_option, needs_config.completion_option):
         if option not in NEEDS_CONFIG.extra_options:
-            NEEDS_CONFIG.extra_options[option] = directives.unchanged_required
+            NEEDS_CONFIG.add_extra_option(
+                option,
+                "Added for needgantt functionality",
+                validator=directives.unchanged_required,
+            )
 
     # Get extra links and create a dictionary of needed options.
     extra_links_raw = needs_config.extra_links
@@ -388,8 +394,12 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     title_from_content = needs_config.title_from_content
 
     # Update NeedDirective to use customized options
-    NeedDirective.option_spec.update(NEEDS_CONFIG.extra_options)
-    NeedserviceDirective.option_spec.update(NEEDS_CONFIG.extra_options)
+    NeedDirective.option_spec.update(
+        {k: v.validator for k, v in NEEDS_CONFIG.extra_options.items()}
+    )
+    NeedserviceDirective.option_spec.update(
+        {k: v.validator for k, v in NEEDS_CONFIG.extra_options.items()}
+    )
 
     # Update NeedDirective to use customized links
     NeedDirective.option_spec.update(extra_links)
@@ -433,8 +443,8 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     for key, value in NEEDS_CONFIG.extra_options.items():
         NeedextendDirective.option_spec.update(
             {
-                key: value,
-                f"+{key}": value,
+                key: value.validator,
+                f"+{key}": value.validator,
                 f"-{key}": directives.flag,
             }
         )
@@ -585,7 +595,7 @@ def check_configuration(_app: Sphinx, config: Config) -> None:
             )
 
     # Check for usage of internal names
-    for internal in INTERNALS:
+    for internal in NeedsCoreFields:
         if internal in extra_options:
             raise NeedsConfigException(
                 f'Extra option "{internal}" already used internally. '

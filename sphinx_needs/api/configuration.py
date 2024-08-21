@@ -8,11 +8,10 @@ from __future__ import annotations
 
 from typing import Callable
 
-from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 from sphinx.util.logging import SphinxLoggerAdapter
 
-from sphinx_needs.api.exceptions import NeedsApiConfigException, NeedsApiConfigWarning
+from sphinx_needs.api.exceptions import NeedsApiConfigException
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType
 from sphinx_needs.functions import register_func
@@ -85,7 +84,9 @@ def add_need_type(
     app.add_directive(directive, sphinx_needs.directives.need.NeedDirective)
 
 
-def add_extra_option(app: Sphinx, name: str) -> None:
+def add_extra_option(
+    app: Sphinx, name: str, *, description: str = "Added by add_extra_option API"
+) -> None:
     """
     Adds an extra option to the configuration. This option can then later be used inside needs or ``add_need``.
 
@@ -101,9 +102,7 @@ def add_extra_option(app: Sphinx, name: str) -> None:
     :param name: Name as string of the extra option
     :return: None
     """
-    if name in NEEDS_CONFIG.extra_options:
-        raise NeedsApiConfigWarning(f"Option {name} already registered.")
-    NEEDS_CONFIG.extra_options[name] = directives.unchanged
+    NEEDS_CONFIG.add_extra_option(name, description)
 
 
 def add_dynamic_function(

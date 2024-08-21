@@ -1,22 +1,30 @@
 Directives
 ==========
 
+Directives for creating and modifying needs:
+
 .. toctree::
    :maxdepth: 1
 
    need
-   needarch
-   needbar
-   needlist
-   needtable
-   needflow
-   needsequence
-   needgantt
+   list2need
+   needextend
    needextract
-   needpie
    needimport
    needservice
-   needextend
+
+Directives for visualizing and analyzing needs:
+
+.. toctree::
+   :maxdepth: 1
+
+   needarch
+   needbar
+   needflow
+   needgantt
+   needlist
+   needpie
    needreport
+   needsequence
+   needtable
    needuml
-   list2need

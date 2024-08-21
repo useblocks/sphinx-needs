@@ -48,7 +48,7 @@ jobs:
       - name: Create coverage
         run: coverage xml
       - name: Upload to Codecov
-        if: github.repository == 'useblocks/sphinx-needs' && matrix.os == 'ubuntu-latest'
+        if: github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

@@ -407,7 +407,7 @@ class JinjaFunctions:
         need_info = self.needs[need_id]
         link = calculate_link(self.app, need_info, self.fromdocname)
 
-        need_uml = " [[{link} {content}]]".format(
+        need_uml = "[[{link} {content}]]".format(
             link=link,
             content=need_info.get(option, "") if option else text,
         )
