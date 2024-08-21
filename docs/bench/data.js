@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724227293284,
+  "lastUpdate": 1724248117177,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -8460,6 +8460,42 @@ window.BENCHMARK_DATA = {
             "value": 64.38802714100001,
             "unit": "s",
             "extra": "Commit: aa4b068ce216c6c8b85468520167e45677d60e14\nBranch: master\nTime: 2024-08-21T09:59:37+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4641f8853df0ec1ba26feb6ca6a783effec5278b",
+          "message": "✨ Add `needs_schema` to `needs.json` (#1230)\n\nThis PR builds and adds a schema for needs in the `needs.json`, under the `needs_schema` key (one per version).\r\nThis will allow for people/tools to understand what each need field actually is, and also for a follow up PR to remove defaults.",
+          "timestamp": "2024-08-21T15:46:13+02:00",
+          "tree_id": "72fac67503f95c94d327011c74f13147e8d49969",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/4641f8853df0ec1ba26feb6ca6a783effec5278b"
+        },
+        "date": 1724248107635,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2809586039999772,
+            "unit": "s",
+            "extra": "Commit: 4641f8853df0ec1ba26feb6ca6a783effec5278b\nBranch: master\nTime: 2024-08-21T15:46:13+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 81.242438975,
+            "unit": "s",
+            "extra": "Commit: 4641f8853df0ec1ba26feb6ca6a783effec5278b\nBranch: master\nTime: 2024-08-21T15:46:13+02:00"
           }
         ]
       }
