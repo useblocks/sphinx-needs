@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724222004184,
+  "lastUpdate": 1724222504372,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -8208,6 +8208,42 @@ window.BENCHMARK_DATA = {
             "value": 68.52153372100003,
             "unit": "s",
             "extra": "Commit: ff4ae90378952c673945c7a6a8eb3b4eb0070183\nBranch: master\nTime: 2024-08-21T08:31:19+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "87d51d5cf190167d7cf3c1ab11a6560ba6a862c0",
+          "message": "🔧 Deprecate unused `add_need` kwargs (#1224)\n\nPreviously they were silently ignored,\r\nso this commit specifically checks for them and provides a warning.\r\nThis can then be removed in a future version of sphinx-needs.",
+          "timestamp": "2024-08-21T08:39:44+02:00",
+          "tree_id": "4d6298a0e395bde72202a494c654c9548aec862e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/87d51d5cf190167d7cf3c1ab11a6560ba6a862c0"
+        },
+        "date": 1724222496064,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22453735100000927,
+            "unit": "s",
+            "extra": "Commit: 87d51d5cf190167d7cf3c1ab11a6560ba6a862c0\nBranch: master\nTime: 2024-08-21T08:39:44+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 69.80494368999999,
+            "unit": "s",
+            "extra": "Commit: 87d51d5cf190167d7cf3c1ab11a6560ba6a862c0\nBranch: master\nTime: 2024-08-21T08:39:44+02:00"
           }
         ]
       }
