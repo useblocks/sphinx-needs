@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724224122074,
+  "lastUpdate": 1724225617386,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -8388,6 +8388,42 @@ window.BENCHMARK_DATA = {
             "value": 65.267482924,
             "unit": "s",
             "extra": "Commit: 4e10030581c03c59764e517ab750d3ddbb2695d8\nBranch: master\nTime: 2024-08-21T09:06:46+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "daniel.woste@useblocks.com",
+            "name": "Daniel Woste",
+            "username": "danwos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1caf65d0e547b7c9fc62c1ebb258535c5d1437fd",
+          "message": "Deactivates codecov service usage for forks (#1229)",
+          "timestamp": "2024-08-21T09:31:31+02:00",
+          "tree_id": "7c5882a83a57b5d12cf0327a0312f901597fb855",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/1caf65d0e547b7c9fc62c1ebb258535c5d1437fd"
+        },
+        "date": 1724225608209,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.26682125599998585,
+            "unit": "s",
+            "extra": "Commit: 1caf65d0e547b7c9fc62c1ebb258535c5d1437fd\nBranch: master\nTime: 2024-08-21T09:31:31+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 71.859706133,
+            "unit": "s",
+            "extra": "Commit: 1caf65d0e547b7c9fc62c1ebb258535c5d1437fd\nBranch: master\nTime: 2024-08-21T09:31:31+02:00"
           }
         ]
       }
