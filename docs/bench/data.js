@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724225617386,
+  "lastUpdate": 1724227293284,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -8424,6 +8424,42 @@ window.BENCHMARK_DATA = {
             "value": 71.859706133,
             "unit": "s",
             "extra": "Commit: 1caf65d0e547b7c9fc62c1ebb258535c5d1437fd\nBranch: master\nTime: 2024-08-21T09:31:31+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "95444300+PhilipPartsch@users.noreply.github.com",
+            "name": "PhilipPartsch",
+            "username": "PhilipPartsch"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "aa4b068ce216c6c8b85468520167e45677d60e14",
+          "message": "removed leading space in ref function in needuml.py (#1205)\n\nTry to solve #1204\r\n\r\n---------\r\n\r\nCo-authored-by: Daniel Woste <daniel.woste@useblocks.com>",
+          "timestamp": "2024-08-21T09:59:37+02:00",
+          "tree_id": "3171b6aea4388719d61714218c8104c86db5a1cd",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/aa4b068ce216c6c8b85468520167e45677d60e14"
+        },
+        "date": 1724227284116,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2108723990000101,
+            "unit": "s",
+            "extra": "Commit: aa4b068ce216c6c8b85468520167e45677d60e14\nBranch: master\nTime: 2024-08-21T09:59:37+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 64.38802714100001,
+            "unit": "s",
+            "extra": "Commit: aa4b068ce216c6c8b85468520167e45677d60e14\nBranch: master\nTime: 2024-08-21T09:59:37+02:00"
           }
         ]
       }
