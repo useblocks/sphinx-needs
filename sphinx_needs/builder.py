@@ -196,7 +196,9 @@ class NeedsIdBuilder(Builder):
         if not os.path.exists(needs_dir):
             os.makedirs(needs_dir, exist_ok=True)
         for need in filtered_needs:
-            needs_list = NeedsList(self.env.config, self.outdir, self.srcdir)
+            needs_list = NeedsList(
+                self.env.config, self.outdir, self.srcdir, add_schema=False
+            )
             needs_list.wipe_version(version)
             needs_list.add_need(version, need)
             id = need["id"]
