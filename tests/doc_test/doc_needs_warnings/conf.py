@@ -56,9 +56,7 @@ needs_warnings = {
 
 
 def custom_warning_func(need, log):
-    if need["status"] == "example_3":
-        return True
-    return False
+    return need["status"] == "example_3"
 
 
 def setup(app):
