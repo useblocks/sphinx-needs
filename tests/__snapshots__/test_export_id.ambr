@@ -1066,8 +1066,8 @@
               'type': 'string',
             }),
             'type': dict({
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
+              'description': 'Type of the need.',
+              'field_type': 'core',
               'type': 'string',
             }),
             'type_name': dict({

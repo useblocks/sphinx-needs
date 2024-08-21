@@ -32,12 +32,6 @@ def generate_needs_schema(config: Config) -> dict[str, Any]:
     * the extra links defined dynamically
     """
     properties: dict[str, Any] = {}
-    for name, core_params in NeedsCoreFields.items():
-        if core_params.get("exclude_json"):
-            continue
-        properties[name] = core_params["schema"]
-        properties[name]["description"] = f"{core_params['description']}"
-        properties[name]["field_type"] = "core"
 
     for name, extra_params in NEEDS_CONFIG.extra_options.items():
         properties[name] = {
@@ -45,6 +39,17 @@ def generate_needs_schema(config: Config) -> dict[str, Any]:
             "description": extra_params.description,
             "field_type": "extra",
         }
+
+    # TODO currently extra options can overlap with core fields,
+    # in which case they are ignored,
+    # (this is the case for `type` added by the github service)
+    # hence this is why we add the core options after the extra options
+    for name, core_params in NeedsCoreFields.items():
+        if core_params.get("exclude_json"):
+            continue
+        properties[name] = core_params["schema"]
+        properties[name]["description"] = f"{core_params['description']}"
+        properties[name]["field_type"] = "core"
 
     needs_config = NeedsSphinxConfig(config)
 
