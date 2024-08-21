@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724223396960,
+  "lastUpdate": 1724223556422,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -8280,6 +8280,42 @@ window.BENCHMARK_DATA = {
             "value": 64.16151171200002,
             "unit": "s",
             "extra": "Commit: 8ede7caf4ac2a26eeb856328eb6f9578ebb6b9a9\nBranch: master\nTime: 2024-08-21T08:54:47+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2ea8a7bd351427d87088d996f9695f293aebdd93",
+          "message": "🔧 Replace INTERNALS & JSON_KEY_EXCLUSIONS_NEEDS with NeedsCoreFields (#1226)\n\nThis provides a consistent, centralised place to declare all data about core need fields.",
+          "timestamp": "2024-08-21T08:57:11+02:00",
+          "tree_id": "941aae9e7a1255479aabc938f38eeae8a8a8d326",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/2ea8a7bd351427d87088d996f9695f293aebdd93"
+        },
+        "date": 1724223546778,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22277585899999508,
+            "unit": "s",
+            "extra": "Commit: 2ea8a7bd351427d87088d996f9695f293aebdd93\nBranch: master\nTime: 2024-08-21T08:57:11+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 72.95959169499997,
+            "unit": "s",
+            "extra": "Commit: 2ea8a7bd351427d87088d996f9695f293aebdd93\nBranch: master\nTime: 2024-08-21T08:57:11+02:00"
           }
         ]
       }
