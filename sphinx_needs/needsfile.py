@@ -15,11 +15,65 @@ from typing import Any
 from jsonschema import Draft7Validator
 from sphinx.config import Config
 
-from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, NeedsFilterType, NeedsInfoType
 from sphinx_needs.logging import get_logger
 
 log = get_logger(__name__)
+
+
+def generate_needs_schema(config: Config) -> dict[str, Any]:
+    """Generate a JSON schema for all fields in each need item.
+
+    It is based on:
+    * the core fields defined in NeedsCoreFields
+    * the extra options defined dynamically
+    * the global options defined dynamically
+    * the extra links defined dynamically
+    """
+    properties: dict[str, Any] = {}
+
+    for name, extra_params in NEEDS_CONFIG.extra_options.items():
+        properties[name] = {
+            "type": "string",
+            "description": extra_params.description,
+            "field_type": "extra",
+        }
+
+    # TODO currently extra options can overlap with core fields,
+    # in which case they are ignored,
+    # (this is the case for `type` added by the github service)
+    # hence this is why we add the core options after the extra options
+    for name, core_params in NeedsCoreFields.items():
+        if core_params.get("exclude_json"):
+            continue
+        properties[name] = core_params["schema"]
+        properties[name]["description"] = f"{core_params['description']}"
+        properties[name]["field_type"] = "core"
+
+    needs_config = NeedsSphinxConfig(config)
+
+    for link in needs_config.extra_links:
+        properties[link["option"]] = {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Link field",
+            "field_type": "links",
+        }
+
+    for name in needs_config.global_options:
+        if name not in properties:
+            properties[name] = {
+                "type": "string",
+                "description": "Added by needs_global_options configuration",
+                "field_type": "global",
+            }
+
+    return {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": properties,
+    }
 
 
 class NeedsList:
@@ -42,11 +96,14 @@ class NeedsList:
         "content_node",
     }
 
-    def __init__(self, config: Config, outdir: str, confdir: str) -> None:
+    def __init__(
+        self, config: Config, outdir: str, confdir: str, add_schema: bool = True
+    ) -> None:
         self.config = config
         self.needs_config = NeedsSphinxConfig(config)
         self.outdir = outdir
         self.confdir = confdir
+        self._add_schema = add_schema
         self.current_version = config.version
         self.project = config.project
         self.needs_list = {
@@ -70,6 +127,10 @@ class NeedsList:
                 "filters_amount": 0,
                 "filters": {},
             }
+            if self._add_schema:
+                self.needs_list["versions"][version]["needs_schema"] = (
+                    generate_needs_schema(self.config)
+                )
             if not self.needs_config.reproducible_json:
                 self.needs_list["versions"][version]["created"] = ""
 
