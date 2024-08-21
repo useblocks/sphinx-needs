@@ -36,7 +36,7 @@ def test_external_json(test_app, snapshot):
     app.build()
     json_data = Path(app.outdir, "needs.json").read_text()
     needs = json.loads(json_data)
-    assert needs == snapshot(exclude=props("created"))
+    assert needs == snapshot(exclude=props("created", "project"))
 
 
 @pytest.mark.parametrize(

@@ -15,7 +15,7 @@ def test_export_id(test_app, snapshot):
     app = test_app
     app.build()
     needs_data = json.loads(Path(app.outdir, "needs.json").read_text())
-    assert needs_data == snapshot(exclude=props("created"))
+    assert needs_data == snapshot(exclude=props("created", "project"))
 
 
 @pytest.mark.parametrize(

@@ -19,10 +19,6 @@ class NeedsNoIdException(SphinxError):
     pass
 
 
-class NeedsDuplicatedId(SphinxError):
-    pass
-
-
 class NeedsStatusNotAllowed(SphinxError):
     pass
 

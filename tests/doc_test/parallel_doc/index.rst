@@ -7,6 +7,7 @@ PARALLEL TEST DOCUMENT
    page_2
    page_3
    page_4
+   page_5
 
 .. spec:: Command line interface
     :id: SP_TOO_001

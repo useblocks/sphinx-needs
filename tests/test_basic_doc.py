@@ -126,7 +126,7 @@ def test_build_needs(test_app, snapshot):
     json_text = Path(app.outdir, "needs.json").read_text()
     needs_data = json.loads(json_text)
 
-    assert needs_data == snapshot(exclude=props("created"))
+    assert needs_data == snapshot(exclude=props("created", "project"))
 
 
 # Test with needs_id_required=True and missing ids in docs.

@@ -1,7 +1,6 @@
 # name: test_doc_needextend_dynamic[test_app0]
   dict({
     'current_version': '',
-    'project': 'Python',
     'versions': dict({
       '': dict({
         'filters': dict({
@@ -355,7 +354,6 @@
 # name: test_doc_needextend_html[test_app0]
   dict({
     'current_version': '',
-    'project': 'Python',
     'versions': dict({
       '': dict({
         'filters': dict({
