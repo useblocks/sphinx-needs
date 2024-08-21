@@ -16,7 +16,6 @@ from sphinx.environment import BuildEnvironment
 from sphinx_needs.api.configuration import NEEDS_CONFIG
 from sphinx_needs.api.exceptions import (
     NeedsConstraintNotAllowed,
-    NeedsDuplicatedId,
     NeedsInvalidException,
     NeedsInvalidOption,
     NeedsNoIdException,
@@ -312,19 +311,24 @@ def add_need(
 
     if need_id in SphinxNeedsData(env).get_or_create_needs():
         if id:
-            raise NeedsDuplicatedId(
-                f"A need with ID {need_id} already exists! "
-                f"This is not allowed. Document {docname}[{lineno}] Title: {title}."
-            )
+            message = f"A need with ID {need_id} already exists, " f"title: {title!r}."
         else:  # this is a generated ID
-            raise NeedsDuplicatedId(
+            _title = " ".join(title)
+            message = (
                 "Needs could not generate a unique ID for a need with "
-                "the title '{}' because another need had the same title. "
+                f"the title {_title!r} because another need had the same title. "
                 "Either supply IDs for the requirements or ensure the "
                 "titles are different.  NOTE: If title is being generated "
                 "from the content, then ensure the first sentence of the "
-                "requirements are different.".format(" ".join(title))
+                "requirements are different."
             )
+        logger.warning(
+            message + " [needs.duplicate_id]",
+            type="needs",
+            subtype="duplicate_id",
+            location=(docname, lineno) if docname else None,
+        )
+        return []
 
     # Trim title if it is too long
     max_length = needs_config.max_title_length
