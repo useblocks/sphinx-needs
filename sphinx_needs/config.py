@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import MISSING, dataclass, field, fields
-from typing import TYPE_CHECKING, Any, Callable, Dict, Literal, TypedDict
+from typing import TYPE_CHECKING, Any, Callable, Dict, Literal, Mapping, TypedDict
 
+from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 from sphinx.config import Config as _SphinxConfig
 
@@ -13,6 +14,16 @@ if TYPE_CHECKING:
     from typing_extensions import NotRequired, Required
 
     from sphinx_needs.data import NeedsInfoType
+
+
+@dataclass
+class ExtraOptionParams:
+    """Defines a single extra option for needs"""
+
+    description: str
+    """A description of the option."""
+    validator: Callable[[str | None], str]
+    """A function to validate the directive option value."""
 
 
 class Config:
@@ -26,7 +37,7 @@ class Config:
     """
 
     def __init__(self) -> None:
-        self._extra_options: dict[str, Callable[[str], Any]] = {}
+        self._extra_options: dict[str, ExtraOptionParams] = {}
         self._warnings: dict[
             str, str | Callable[[NeedsInfoType, SphinxLoggerAdapter], bool]
         ] = {}
@@ -36,7 +47,7 @@ class Config:
         self._warnings = {}
 
     @property
-    def extra_options(self) -> dict[str, Callable[[str], Any]]:
+    def extra_options(self) -> Mapping[str, ExtraOptionParams]:
         """Options that are dynamically added to `NeedDirective` & `NeedserviceDirective`,
         after the config is initialized.
 
@@ -45,6 +56,25 @@ class Config:
         :returns: Mapping of name to validation function
         """
         return self._extra_options
+
+    def add_extra_option(
+        self,
+        name: str,
+        description: str,
+        *,
+        validator: Callable[[str | None], str] | None = None,
+        override: bool = False,
+    ) -> None:
+        """Adds an extra option to the configuration."""
+        if not override and name in self._extra_options:
+            from sphinx_needs.api.exceptions import (
+                NeedsApiConfigWarning,  # avoid circular import
+            )
+
+            raise NeedsApiConfigWarning(f"Option {name} already registered.")
+        self._extra_options[name] = ExtraOptionParams(
+            description, directives.unchanged if validator is None else validator
+        )
 
     @property
     def warnings(
