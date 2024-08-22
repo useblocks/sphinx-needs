@@ -143,10 +143,19 @@ class NeedimportDirective(SphinxDirective):
             )
 
         needs_config = NeedsSphinxConfig(self.config)
+        data = needs_import_list["versions"][version]
         # TODO this is not exactly NeedsInfoType, because the export removes/adds some keys
-        needs_list: dict[str, NeedsInfoType] = needs_import_list["versions"][version][
-            "needs"
-        ]
+        needs_list: dict[str, NeedsInfoType] = data["needs"]
+        if schema := data.get("needs_schema"):
+            # Set defaults from schema
+            defaults = {
+                name: value["default"]
+                for name, value in schema["properties"].items()
+                if "default" in value
+            }
+            needs_list = {
+                key: {**defaults, **value} for key, value in needs_list.items()
+            }
 
         # Filter imported needs
         needs_list_filtered = {}

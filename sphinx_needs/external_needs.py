@@ -95,9 +95,10 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> Non
             data = needs_json["versions"][version]
             needs = data["needs"]
         except KeyError:
+            uri = source.get("json_url", source.get("json_path", "unknown"))
             raise NeedsExternalException(
                 clean_log(
-                    f"Version {version} not found in json file from {source['json_url']}"
+                    f"Version {version} not found in json file from {uri}: {list(needs_json.get('versions'))}"
                 )
             )
 
