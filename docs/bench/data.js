@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724248117177,
+  "lastUpdate": 1724338030446,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -8496,6 +8496,42 @@ window.BENCHMARK_DATA = {
             "value": 81.242438975,
             "unit": "s",
             "extra": "Commit: 4641f8853df0ec1ba26feb6ca6a783effec5278b\nBranch: master\nTime: 2024-08-21T15:46:13+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "01ca3ffaae4cc120ada3e87c75205ecee6905c8a",
+          "message": "👌 Add `needs_json_remove_defaults` configuration (#1232)\n\nSetting `needs_json_remove_defaults=True`,\r\nwill now create a `needs.json` with all need fields that have default values removed, and the defaults are specified in the `needs_schema` (recently added in #1230)\r\n\r\nIn the external/import needs loaders, these are then restored from the `needs_schema`.\r\n\r\nThis can greatly reduce the generated `needs.json`size",
+          "timestamp": "2024-08-22T16:45:13+02:00",
+          "tree_id": "5ac1cd0a12fb6e9a41a1b148ea6dec73942d33c1",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/01ca3ffaae4cc120ada3e87c75205ecee6905c8a"
+        },
+        "date": 1724338020769,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.19089808900000094,
+            "unit": "s",
+            "extra": "Commit: 01ca3ffaae4cc120ada3e87c75205ecee6905c8a\nBranch: master\nTime: 2024-08-22T16:45:13+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 64.564835671,
+            "unit": "s",
+            "extra": "Commit: 01ca3ffaae4cc120ada3e87c75205ecee6905c8a\nBranch: master\nTime: 2024-08-22T16:45:13+02:00"
           }
         ]
       }
