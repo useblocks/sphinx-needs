@@ -579,6 +579,359 @@
           }),
         }),
         'needs_amount': 8,
+        'needs_schema': dict({
+          '$schema': 'http://json-schema.org/draft-07/schema#',
+          'properties': dict({
+            'arch': dict({
+              'additionalProperties': dict({
+                'type': 'string',
+              }),
+              'description': 'Mapping of uml key to uml content.',
+              'field_type': 'core',
+              'type': 'object',
+            }),
+            'avatar': dict({
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'closed_at': dict({
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'completion': dict({
+              'description': 'Added for needgantt functionality',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'constraints': dict({
+              'description': 'List of constraint names, which are defined for this need.',
+              'field_type': 'core',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'constraints_error': dict({
+              'description': 'An error message set if any constraint failed, and `error_message` field is set in config.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'constraints_passed': dict({
+              'description': 'True if all constraints passed, False if any failed, None if not yet checked.',
+              'field_type': 'core',
+              'type': list([
+                'boolean',
+                'null',
+              ]),
+            }),
+            'constraints_results': dict({
+              'additionalProperties': dict({
+                'type': 'object',
+              }),
+              'description': 'Mapping of constraint name, to check name, to result.',
+              'field_type': 'core',
+              'type': 'object',
+            }),
+            'content_id': dict({
+              'description': 'ID of the content node.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'created_at': dict({
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'delete': dict({
+              'description': 'If true, the need is deleted entirely.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'docname': dict({
+              'description': 'Name of the document where the need is defined (None if external).',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'doctype': dict({
+              'description': "Type of the document where the need is defined, e.g. '.rst'.",
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'duration': dict({
+              'description': 'Added for needgantt functionality',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'external_css': dict({
+              'description': 'CSS class name, added to the external reference.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'external_url': dict({
+              'description': 'URL of the need, if it is an external need.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'full_title': dict({
+              'description': 'Title of the need, of unlimited length.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'has_dead_links': dict({
+              'description': 'True if any links reference need ids that are not found in the need list.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'has_forbidden_dead_links': dict({
+              'description': 'True if any links reference need ids that are not found in the need list, and the link type does not allow dead links.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'id': dict({
+              'description': 'ID of the data.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'id_prefix': dict({
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'is_external': dict({
+              'description': 'If true, no node is created and need is referencing external url.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'is_modified': dict({
+              'description': 'Whether the need was modified by needextend.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'is_need': dict({
+              'description': 'Whether the need is a need.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'is_part': dict({
+              'description': 'Whether the need is a part.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'jinja_content': dict({
+              'description': 'Whether the content should be pre-processed by jinja.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'layout': dict({
+              'description': 'Key of the layout, which is used to render the need.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'links': dict({
+              'description': 'Link field',
+              'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'max_amount': dict({
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'max_content_lines': dict({
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'modifications': dict({
+              'description': 'Number of modifications by needextend.',
+              'field_type': 'core',
+              'type': 'integer',
+            }),
+            'params': dict({
+              'description': 'Added by service open-needs',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'parent_need': dict({
+              'description': 'Simply the first parent id.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'parent_needs': dict({
+              'description': 'Link field',
+              'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'parts': dict({
+              'additionalProperties': dict({
+                'type': 'object',
+              }),
+              'description': "Mapping of parts, a.k.a. sub-needs, IDs to data that overrides the need's data",
+              'field_type': 'core',
+              'type': 'object',
+            }),
+            'post_content': dict({
+              'description': 'Post-content of the need.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'post_template': dict({
+              'description': 'Post-template of the need.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'pre_content': dict({
+              'description': 'Pre-content of the need.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'pre_template': dict({
+              'description': 'Pre-template of the need.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'prefix': dict({
+              'description': 'Added by service open-needs',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'query': dict({
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'section_name': dict({
+              'description': 'Simply the first section.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'sections': dict({
+              'description': 'Sections of the need.',
+              'field_type': 'core',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'service': dict({
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'signature': dict({
+              'description': 'Derived from a docutils desc_name node.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'specific': dict({
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'status': dict({
+              'description': 'Status of the need.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'style': dict({
+              'description': 'Comma-separated list of CSS classes (all appended by `needs_style_`).',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'tags': dict({
+              'description': 'List of tags.',
+              'field_type': 'core',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'target_id': dict({
+              'description': 'ID of the data.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'template': dict({
+              'description': 'Template of the need.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'title': dict({
+              'description': 'Title of the need, trimmed to a maximum length.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'type': dict({
+              'description': 'Type of the need.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'type_name': dict({
+              'description': 'Name of the type.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'updated_at': dict({
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'url': dict({
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'url_postfix': dict({
+              'description': 'Added by service open-needs',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'user': dict({
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+          }),
+          'type': 'object',
+        }),
       }),
     }),
   })
