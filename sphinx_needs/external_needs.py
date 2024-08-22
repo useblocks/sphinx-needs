@@ -92,20 +92,32 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> Non
             )
 
         try:
-            needs = needs_json["versions"][version]["needs"]
+            data = needs_json["versions"][version]
+            needs = data["needs"]
         except KeyError:
+            uri = source.get("json_url", source.get("json_path", "unknown"))
             raise NeedsExternalException(
                 clean_log(
-                    f"Version {version} not found in json file from {source['json_url']}"
+                    f"Version {version} not found in json file from {uri}: {list(needs_json.get('versions'))}"
                 )
             )
 
         log.debug(f"Loading {len(needs)} needs.")
 
+        defaults = (
+            {
+                name: value["default"]
+                for name, value in schema["properties"].items()
+                if "default" in value
+            }
+            if (schema := data.get("needs_schema"))
+            else {}
+        )
+
         prefix = source.get("id_prefix", "").upper()
         import_prefix_link_edit(needs, prefix, needs_config.extra_links)
         for need in needs.values():
-            need_params = {**need}
+            need_params = {**defaults, **need}
 
             extra_links = [x["option"] for x in needs_config.extra_links]
             for key in list(need_params.keys()):

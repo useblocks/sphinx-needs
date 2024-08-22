@@ -1689,7 +1689,9 @@ Builds a ``needs.json`` file during other builds, like ``html``.
 
 This allows to have one single Sphinx-Build for two output formats, which may save some time.
 
-All other ``needs.json`` related configuration values, like :ref:`needs_file`, are taken into account.
+All other ``needs.json`` related configuration values, like :ref:`needs_file`,
+:ref:`needs_build_json_per_id` and :ref:`needs_json_remove_defaults` 
+are taken into account.
 
 Default: False
 
@@ -1704,11 +1706,27 @@ Example:
    The created ``needs.json`` file gets stored in the ``outdir`` of the current builder.
    So if ``html`` is used as builder, the final location is e.g. ``_build/html/needs.json``.
 
+   See :ref:`this section <needs_builder_format>`, for an explanation of the output format.
+
+.. _needs_reproducible_json:
+
+needs_reproducible_json 
+~~~~~~~~~~~~~~~~~~~~~~~
+
 .. versionadded:: 2.0.0
 
-    Setting ``needs_reproducible_json = True`` will ensure the JSON output is reproducible,
-    e.g. by removing timestamps from the output.
+Setting ``needs_reproducible_json = True`` will ensure the ``needs.json`` output is reproducible,
+e.g. by removing timestamps from the output.
 
+.. _needs_json_remove_defaults:
+
+needs_json_remove_defaults 
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 2.1.0
+
+Setting ``needs_json_remove_defaults = True`` will remove all need fields with default from ``needs.json``, greatly reducing its size.
+The defaults can be retrieved from the ``needs_schema`` now also output in the JSON file (see :ref:`this section <needs_builder_format>` for the format).
 
 .. _needs_build_json_per_id:
 
