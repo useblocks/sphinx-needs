@@ -58,6 +58,8 @@ This allows to export specified filter results only.
       :export_id: filter_01
 
 
+.. _needs_builder_format:
+
 Format
 ++++++
 
@@ -65,6 +67,8 @@ As well as the ``filters`` and ``needs`` data, the **needs.json** file also cont
 This is a JSON schema of for the data structure of a single need,
 and also includes a ``field_type`` for each field, to denote the source of the field,
 and can be one of: ``core``, ``links``, ``extra``, ``global`` ``bool``.
+
+See also :ref:`needs_build_json_per_id` and :ref:`needs_json_remove_defaults` for more options on modifying the content of the ``needs.json`` file.
 
 .. code-block:: python
 
