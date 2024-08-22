@@ -1725,8 +1725,8 @@ needs_json_remove_defaults
 
 .. versionadded:: 2.1.0
 
-Setting ``needs_json_remove_defaults = True`` will remove all need fields with default values, greatly reducing the size of the JSON file.
-The defaults are can be retrieved from the ``needs_schema`` now also output in the JSON file.
+Setting ``needs_json_remove_defaults = True`` will remove all need fields with default from ``needs.json``, greatly reducing its size.
+The defaults can be retrieved from the ``needs_schema`` now also output in the JSON file (see :ref:`this section <needs_builder_format>` for the format).
 
 .. _needs_build_json_per_id:
 
