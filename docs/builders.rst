@@ -108,7 +108,8 @@ See also :ref:`needs_build_json_per_id` and :ref:`needs_json_remove_defaults` fo
                         "items": {
                             "type": "string"
                         },
-                        "type": "array"
+                        "type": "array",
+                        "default": []
                     },
                     "status": {
                         "description": "Status of the need.",
@@ -116,7 +117,8 @@ See also :ref:`needs_build_json_per_id` and :ref:`needs_json_remove_defaults` fo
                         "type": [
                             "string",
                             "null"
-                        ]
+                        ],
+                        "default": null
                     },
                     ...
                 }
@@ -161,7 +163,8 @@ See also :ref:`needs_build_json_per_id` and :ref:`needs_json_remove_defaults` fo
                     "items": {
                         "type": "string"
                     },
-                    "type": "array"
+                    "type": "array",
+                    "default": []
                 },
                 "status": {
                     "description": "Status of the need.",
@@ -169,7 +172,8 @@ See also :ref:`needs_build_json_per_id` and :ref:`needs_json_remove_defaults` fo
                     "type": [
                         "string",
                         "null"
-                    ]
+                    ],
+                    "default": null
                 },
                 ...
             },
