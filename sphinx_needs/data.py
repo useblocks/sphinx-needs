@@ -63,21 +63,21 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "id": {"description": "ID of the data.", "schema": {"type": "string"}},
     "docname": {
         "description": "Name of the document where the need is defined (None if external).",
-        "schema": {"type": ["string", "null"]},
+        "schema": {"type": ["string", "null"], "default": None},
     },
     "lineno": {
         "description": "Line number where the need is defined (None if external).",
-        "schema": {"type": ["integer", "null"]},
+        "schema": {"type": ["integer", "null"], "default": None},
         "exclude_json": True,
     },
     "lineno_content": {
         "description": "Line number on which the need content starts (None if external).",
-        "schema": {"type": ["integer", "null"]},
+        "schema": {"type": ["integer", "null"], "default": None},
         "exclude_json": True,
     },
     "full_title": {
         "description": "Title of the need, of unlimited length.",
-        "schema": {"type": "string"},
+        "schema": {"type": "string", "default": ""},
     },
     "title": {
         "description": "Title of the need, trimmed to a maximum length.",
@@ -85,139 +85,153 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     },
     "status": {
         "description": "Status of the need.",
-        "schema": {"type": ["string", "null"]},
+        "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
     },
     "tags": {
         "description": "List of tags.",
-        "schema": {"type": "array", "items": {"type": "string"}},
+        "schema": {"type": "array", "items": {"type": "string"}, "default": []},
         "show_in_layout": True,
     },
     "collapse": {
         "description": "Hide the meta-data information of the need.",
-        "schema": {"type": ["boolean", "null"]},
+        "schema": {"type": ["boolean", "null"], "default": None},
         "exclude_json": True,
     },
     "hide": {
         "description": "If true, the need is not rendered.",
-        "schema": {"type": "boolean"},
+        "schema": {"type": "boolean", "default": False},
         "exclude_json": True,
     },
     "delete": {
         "description": "If true, the need is deleted entirely.",
-        "schema": {"type": "boolean"},
+        "schema": {"type": ["boolean", "null"], "default": None},
         "show_in_layout": True,
     },
     "layout": {
         "description": "Key of the layout, which is used to render the need.",
-        "schema": {"type": ["string", "null"]},
+        "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
     },
     "style": {
         "description": "Comma-separated list of CSS classes (all appended by `needs_style_`).",
-        "schema": {"type": ["string", "null"]},
+        "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
     },
     "arch": {
         "description": "Mapping of uml key to uml content.",
-        "schema": {"type": "object", "additionalProperties": {"type": "string"}},
+        "schema": {
+            "type": "object",
+            "additionalProperties": {"type": "string"},
+            "default": {},
+        },
     },
     "is_external": {
         "description": "If true, no node is created and need is referencing external url.",
-        "schema": {"type": "boolean"},
+        "schema": {"type": "boolean", "default": False},
     },
     "external_url": {
         "description": "URL of the need, if it is an external need.",
-        "schema": {"type": ["string", "null"]},
+        "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
     },
     "external_css": {
         "description": "CSS class name, added to the external reference.",
-        "schema": {"type": "string"},
+        "schema": {"type": "string", "default": ""},
     },
-    "type": {"description": "Type of the need.", "schema": {"type": "string"}},
-    "type_name": {"description": "Name of the type.", "schema": {"type": "string"}},
+    "type": {
+        "description": "Type of the need.",
+        "schema": {"type": "string", "default": ""},
+    },
+    "type_name": {
+        "description": "Name of the type.",
+        "schema": {"type": "string", "default": ""},
+    },
     "type_prefix": {
         "description": "Prefix of the type.",
-        "schema": {"type": "string"},
+        "schema": {"type": "string", "default": ""},
         "exclude_json": True,
     },
     "type_color": {
         "description": "Hexadecimal color code of the type.",
-        "schema": {"type": "string"},
+        "schema": {"type": "string", "default": ""},
         "exclude_json": True,
     },
     "type_style": {
         "description": "Style of the type.",
-        "schema": {"type": "string"},
+        "schema": {"type": "string", "default": ""},
         "exclude_json": True,
     },
     "is_modified": {
         "description": "Whether the need was modified by needextend.",
-        "schema": {"type": "boolean"},
+        "schema": {"type": "boolean", "default": False},
     },
     "modifications": {
         "description": "Number of modifications by needextend.",
-        "schema": {"type": "integer"},
+        "schema": {"type": "integer", "default": 0},
     },
     "is_need": {
         "description": "Whether the need is a need.",
-        "schema": {"type": "boolean"},
+        "schema": {"type": "boolean", "default": True},
     },
     "is_part": {
         "description": "Whether the need is a part.",
-        "schema": {"type": "boolean"},
+        "schema": {"type": "boolean", "default": False},
     },
     "parts": {
         "description": "Mapping of parts, a.k.a. sub-needs, IDs to data that overrides the need's data",
-        "schema": {"type": "object", "additionalProperties": {"type": "object"}},
+        "schema": {
+            "type": "object",
+            "additionalProperties": {"type": "object"},
+            "default": {},
+        },
     },
     "id_parent": {
         "description": "<parent ID>, or <self ID> if not a part.",
         "exclude_json": True,
-        "schema": {"type": "string"},
+        "schema": {"type": "string", "default": ""},
     },
     "id_complete": {
         "description": "<parent ID>.<self ID>, or <self ID> if not a part.",
         "exclude_json": True,
-        "schema": {"type": "string"},
+        "schema": {"type": "string", "default": ""},
     },
     "jinja_content": {
         "description": "Whether the content should be pre-processed by jinja.",
-        "schema": {"type": "boolean"},
+        "schema": {"type": ["boolean", "null"], "default": None},
         "show_in_layout": True,
     },
     "template": {
         "description": "Template of the need.",
-        "schema": {"type": ["string", "null"]},
+        "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
     },
     "pre_template": {
         "description": "Pre-template of the need.",
-        "schema": {"type": ["string", "null"]},
+        "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
     },
     "post_template": {
         "description": "Post-template of the need.",
-        "schema": {"type": ["string", "null"]},
+        "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
     },
     "content": {
         "description": "Content of the need.",
-        "schema": {"type": "string"},
+        "schema": {"type": "string", "default": ""},
         "exclude_json": True,
     },
     "pre_content": {
         "description": "Pre-content of the need.",
-        "schema": {"type": "string"},
+        "schema": {"type": "string", "default": ""},
     },
     "post_content": {
         "description": "Post-content of the need.",
-        "schema": {"type": "string"},
+        "schema": {"type": "string", "default": ""},
     },
     "content_id": {
         "description": "ID of the content node.",
-        "schema": {"type": ["string", "null"]},
+        "schema": {"type": ["string", "null"], "default": None},
     },
     "content_node": {
         "description": "Deep copy of the content node.",
@@ -226,49 +240,53 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     },
     "has_dead_links": {
         "description": "True if any links reference need ids that are not found in the need list.",
-        "schema": {"type": "boolean"},
+        "schema": {"type": "boolean", "default": False},
     },
     "has_forbidden_dead_links": {
         "description": "True if any links reference need ids that are not found in the need list, and the link type does not allow dead links.",
-        "schema": {"type": "boolean"},
+        "schema": {"type": "boolean", "default": False},
     },
     "constraints": {
         "description": "List of constraint names, which are defined for this need.",
-        "schema": {"type": "array", "items": {"type": "string"}},
+        "schema": {"type": "array", "items": {"type": "string"}, "default": []},
     },
     "constraints_results": {
         "description": "Mapping of constraint name, to check name, to result.",
-        "schema": {"type": "object", "additionalProperties": {"type": "object"}},
+        "schema": {
+            "type": "object",
+            "additionalProperties": {"type": "object"},
+            "default": {},
+        },
     },
     "constraints_passed": {
         "description": "True if all constraints passed, False if any failed, None if not yet checked.",
-        "schema": {"type": ["boolean", "null"]},
+        "schema": {"type": ["boolean", "null"], "default": True},
     },
     "constraints_error": {
         "description": "An error message set if any constraint failed, and `error_message` field is set in config.",
-        "schema": {"type": "string"},
+        "schema": {"type": "string", "default": ""},
         "show_in_layout": True,
     },
     "doctype": {
         "description": "Type of the document where the need is defined, e.g. '.rst'.",
-        "schema": {"type": "string"},
+        "schema": {"type": "string", "default": ".rst"},
     },
     "sections": {
         "description": "Sections of the need.",
-        "schema": {"type": "array", "items": {"type": "string"}},
+        "schema": {"type": "array", "items": {"type": "string"}, "default": []},
     },
     "section_name": {
         "description": "Simply the first section.",
-        "schema": {"type": ["string", "null"]},
+        "schema": {"type": ["string", "null"], "default": ""},
     },
     "signature": {
         "description": "Derived from a docutils desc_name node.",
-        "schema": {"type": "string"},
+        "schema": {"type": "string", "default": ""},
         "show_in_layout": True,
     },
     "parent_need": {
         "description": "Simply the first parent id.",
-        "schema": {"type": "string"},
+        "schema": {"type": "string", "default": ""},
     },
 }
 

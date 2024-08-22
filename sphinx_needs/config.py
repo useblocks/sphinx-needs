@@ -435,6 +435,10 @@ class NeedsSphinxConfig:
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
     """If True, the JSON needs file should be idempotent for multiple builds fo the same documentation."""
+    json_remove_defaults: bool = field(
+        default=False, metadata={"rebuild": "html", "types": (bool,)}
+    )
+    """If True, remove need fields with default values from the JSON needs file."""
     build_needumls: str = field(
         default="", metadata={"rebuild": "html", "types": (str,)}
     )

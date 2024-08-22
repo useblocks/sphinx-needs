@@ -38,6 +38,7 @@ def generate_needs_schema(config: Config) -> dict[str, Any]:
             "type": "string",
             "description": extra_params.description,
             "field_type": "extra",
+            "default": "",
         }
 
     # TODO currently extra options can overlap with core fields,
@@ -59,6 +60,7 @@ def generate_needs_schema(config: Config) -> dict[str, Any]:
             "items": {"type": "string"},
             "description": "Link field",
             "field_type": "links",
+            "default": [],
         }
 
     for name in needs_config.global_options:
@@ -67,6 +69,7 @@ def generate_needs_schema(config: Config) -> dict[str, Any]:
                 "type": "string",
                 "description": "Added by needs_global_options configuration",
                 "field_type": "global",
+                "default": "",
             }
 
     return {
@@ -103,7 +106,16 @@ class NeedsList:
         self.needs_config = NeedsSphinxConfig(config)
         self.outdir = outdir
         self.confdir = confdir
-        self._add_schema = add_schema
+        self._schema = generate_needs_schema(config) if add_schema else None
+        self._need_defaults = (
+            {
+                name: value["default"]
+                for name, value in self._schema["properties"].items()
+                if "default" in value
+            }
+            if self._schema
+            else {}
+        )
         self.current_version = config.version
         self.project = config.project
         self.needs_list = {
@@ -127,10 +139,8 @@ class NeedsList:
                 "filters_amount": 0,
                 "filters": {},
             }
-            if self._add_schema:
-                self.needs_list["versions"][version]["needs_schema"] = (
-                    generate_needs_schema(self.config)
-                )
+            if self._schema:
+                self.needs_list["versions"][version]["needs_schema"] = self._schema
             if not self.needs_config.reproducible_json:
                 self.needs_list["versions"][version]["created"] = ""
 
@@ -143,11 +153,19 @@ class NeedsList:
     def add_need(self, version: str, need_info: NeedsInfoType) -> None:
         self.update_or_add_version(version)
         writable_needs = {
-            key: need_info[key]  # type: ignore[literal-required]
-            for key in need_info
+            key: value
+            for key, value in need_info.items()
             if key not in self._exclude_need_keys
         }
-        writable_needs["description"] = need_info["content"]
+        if self.needs_config.json_remove_defaults:
+            writable_needs = {
+                key: value
+                for key, value in writable_needs.items()
+                if not (
+                    key in self._need_defaults and value == self._need_defaults[key]
+                )
+            }
+        writable_needs["description"] = need_info["content"]  # TODO why this?
         self.needs_list["versions"][version]["needs"][need_info["id"]] = writable_needs
         self.needs_list["versions"][version]["needs_amount"] = len(
             self.needs_list["versions"][version]["needs"]
