@@ -21,7 +21,6 @@ from sphinx.ext.graphviz import (
     render_dot,
 )
 from sphinx.util.logging import getLogger
-from sphinx.writers.html import HTML5Translator
 
 from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
 from sphinx_needs.data import NeedsFilteredBaseType, NeedsInfoType, SphinxNeedsData
@@ -41,6 +40,11 @@ from sphinx_needs.utils import (
     remove_node_from_tree,
     split_link_types,
 )
+
+try:
+    from sphinx.writers.html5 import HTML5Translator
+except ImportError:
+    from sphinx.writers.html import HTML5Translator
 
 LOGGER = getLogger(__name__)
 
