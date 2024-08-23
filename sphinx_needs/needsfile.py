@@ -203,7 +203,7 @@ class NeedsList:
             needs_dir = self.outdir
 
         with open(os.path.join(needs_dir, needs_file), "w") as f:
-            json.dump(self.needs_list, f, indent=4, sort_keys=True)
+            json.dump(self.needs_list, f, sort_keys=True)
 
     def load_json(self, file: str) -> None:
         if not os.path.isabs(file):
