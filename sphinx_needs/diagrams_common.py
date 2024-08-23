@@ -196,11 +196,11 @@ def calculate_link(
             # check if need_info["external_url"] is relative path
             parsed_url = urlparse(need_info["external_url"])
             if not parsed_url.scheme and not os.path.isabs(need_info["external_url"]):
-                link = relative + os.path.sep + need_info["external_url"]
+                link = relative + "/" + need_info["external_url"]
         elif _docname := need_info["docname"]:
             link = (
                 relative
-                + os.path.sep
+                + "/"
                 + builder.get_target_uri(_docname)
                 + "#"
                 + need_info["target_id"]
