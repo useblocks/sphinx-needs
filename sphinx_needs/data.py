@@ -277,7 +277,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     },
     "section_name": {
         "description": "Simply the first section.",
-        "schema": {"type": ["string", "null"], "default": ""},
+        "schema": {"type": "string", "default": ""},
     },
     "signature": {
         "description": "Derived from a docutils desc_name node.",
@@ -523,7 +523,7 @@ class NeedsFilteredBaseType(NeedsBaseDataType):
     filter_code: list[str]
     filter_func: None | str
     export_id: str
-    filter_warning: str
+    filter_warning: str | None
     """If set, the filter is exported with this ID in the needs.json file."""
 
 
@@ -616,7 +616,7 @@ class NeedsPieType(NeedsBaseDataType):
     text_color: None | str
     shadow: bool
     filter_func: None | str
-    filter_warning: str
+    filter_warning: str | None
 
 
 class NeedsSequenceType(NeedsFilteredDiagramBaseType):

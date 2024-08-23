@@ -169,7 +169,10 @@ def get_debug_container(puml_node: nodes.Element) -> nodes.container:
 
 
 def calculate_link(
-    app: Sphinx, need_info: NeedsInfoType, _fromdocname: None | str
+    app: Sphinx,
+    need_info: NeedsInfoType,
+    _fromdocname: None | str,
+    relative: str = "..",
 ) -> str:
     """
     Link calculation
@@ -193,11 +196,14 @@ def calculate_link(
             # check if need_info["external_url"] is relative path
             parsed_url = urlparse(need_info["external_url"])
             if not parsed_url.scheme and not os.path.isabs(need_info["external_url"]):
-                # only need to add ../ or ..\ to get out of the image folder
-                link = ".." + os.path.sep + need_info["external_url"]
+                link = relative + os.path.sep + need_info["external_url"]
         elif _docname := need_info["docname"]:
             link = (
-                "../" + builder.get_target_uri(_docname) + "#" + need_info["target_id"]
+                relative
+                + os.path.sep
+                + builder.get_target_uri(_docname)
+                + "#"
+                + need_info["target_id"]
             )
             if need_info["is_part"]:
                 link = f"{link}.{need_info['id']}"

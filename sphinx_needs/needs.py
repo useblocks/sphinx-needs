@@ -61,6 +61,12 @@ from sphinx_needs.directives.needgantt import (
     NeedganttDirective,
     process_needgantt,
 )
+from sphinx_needs.directives.needgraph import (
+    NeedGraph,
+    NeedGraphDirective,
+    html_visit_needgraph,
+    process_needgraph,
+)
 from sphinx_needs.directives.needimport import Needimport, NeedimportDirective
 from sphinx_needs.directives.needlist import (
     Needlist,
@@ -129,6 +135,7 @@ NODE_TYPES: _NODE_TYPES_T = {
     Needsequence: process_needsequence,
     Needgantt: process_needgantt,
     Needuml: process_needuml,
+    NeedGraph: process_needgraph,
     NeedPart: process_need_part,
     NeedRef: process_need_ref,
     NeedIncoming: process_need_incoming,
@@ -145,6 +152,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
     LOGGER.debug("Load Sphinx-Data-Viewer for Sphinx-Needs")
     app.setup_extension("sphinx_data_viewer")
     app.setup_extension("sphinxcontrib.jquery")
+    app.setup_extension("sphinx.ext.graphviz")
 
     app.add_builder(NeedsBuilder)
     app.add_builder(NeedumlsBuilder)
@@ -171,6 +179,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_node(Needservice)
     app.add_node(Needextend)
     app.add_node(Needuml)
+    app.add_node(NeedGraph, html=(html_visit_needgraph, None))
     app.add_node(List2Need)
     app.add_node(
         NeedPart,
@@ -198,6 +207,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_directive("needreport", NeedReportDirective)
     app.add_directive("needuml", NeedumlDirective)
     app.add_directive("needarch", NeedarchDirective)
+    app.add_directive("needgraph", NeedGraphDirective)
     app.add_directive("list2need", List2NeedDirective)
 
     ########################################################################

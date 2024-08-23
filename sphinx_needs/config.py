@@ -401,6 +401,9 @@ class NeedsSphinxConfig:
     flow_configs: dict[str, str] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": ()}
     )
+    graph_configs: dict[str, str] = field(
+        default_factory=dict, metadata={"rebuild": "html", "types": ()}
+    )
     template_folder: str = field(
         default="needs_templates/", metadata={"rebuild": "html", "types": (str,)}
     )

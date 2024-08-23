@@ -40,7 +40,7 @@ extensions = [
 if DOCS_THEME == "sphinx_immaterial":
     extensions.append("sphinx_immaterial")
 
-suppress_warnings = ["needs.link_outgoing"]
+suppress_warnings = ["needs.link_outgoing", "needs.experimental"]
 
 nitpicky = True
 nitpick_ignore = [
@@ -89,6 +89,8 @@ sd_custom_directives = {
         },
     }
 }
+
+graphviz_output_format = "svg"
 
 # -- Options for html builder ----------------------------------------------
 
@@ -497,6 +499,7 @@ needs_flow_configs = {
        }
    """,
     "tutorial": """
+    left to right direction
     skinparam backgroundcolor transparent
     skinparam Arrow {
       Color #57ACDC
@@ -504,6 +507,26 @@ needs_flow_configs = {
       FontStyle Bold
     }
     skinparam rectangleBorderThickness 2
+   """,
+}
+
+needs_graph_configs = {
+    "tutorial": """
+graph [
+    rankdir=LR;
+    bgcolor="transparent";
+];
+node [
+    fontname="sans-serif";
+    fontsize=12;
+    penwidth=2;
+    margin="0.11,0.11";
+];
+edge [
+    color="#57ACDC";
+    fontsize=10;
+    fontcolor="#808080";
+];
    """,
 }
 

@@ -49,21 +49,22 @@ class NeedflowDirective(FilterBase):
     optional_arguments = 1
     final_argument_whitespace = True
     option_spec = {
-        "root_id": directives.unchanged_required,
-        "root_direction": lambda c: directives.choice(
-            c, ("both", "incoming", "outgoing")
-        ),
-        "root_depth": directives.nonnegative_int,
         "show_legend": directives.flag,
         "show_filters": directives.flag,
         "show_link_names": directives.flag,
-        "link_types": directives.unchanged_required,
         "config": directives.unchanged_required,
         "scale": directives.unchanged_required,
         "highlight": directives.unchanged_required,
         "border_color": directives.unchanged_required,
         "align": directives.unchanged_required,
         "debug": directives.flag,
+        # initial filtering
+        "root_id": directives.unchanged_required,
+        "root_direction": lambda c: directives.choice(
+            c, ("both", "incoming", "outgoing")
+        ),
+        "root_depth": directives.nonnegative_int,
+        "link_types": directives.unchanged_required,
     }
 
     # Update the options_spec with values defined in the FilterBase class
@@ -443,7 +444,6 @@ def process_needflow(
             puml_node.source = env.doc2path(current_needflow["docname"])
 
             puml_node["uml"] = "@startuml\n"
-            puml_connections = ""
 
             # Adding config
             config = current_needflow["config"]
@@ -457,75 +457,16 @@ def process_needflow(
                 puml_node["uml"] += "\n\n"
 
             puml_node["uml"] += "\n' Nodes definition \n\n"
-
-            for need_info in found_needs:
-                for link_type in allowed_link_types:
-                    for link in need_info[link_type["option"]]:  # type: ignore[literal-required]
-                        # If source or target of link is a need_part, a specific style is needed
-                        if "." in link or "." in need_info["id_complete"]:
-                            final_link = link
-                            if (
-                                current_needflow["show_link_names"]
-                                or needs_config.flow_show_links
-                            ):
-                                desc = link_type["outgoing"] + "\\n"
-                                comment = f": {desc}"
-                            else:
-                                comment = ""
-
-                            if _style_part := link_type.get("style_part"):
-                                link_style = f"[{_style_part}]"
-                            else:
-                                link_style = "[dotted]"
-                        else:
-                            final_link = link
-                            if (
-                                current_needflow["show_link_names"]
-                                or needs_config.flow_show_links
-                            ):
-                                comment = ": {desc}".format(desc=link_type["outgoing"])
-                            else:
-                                comment = ""
-
-                            if _style := link_type.get("style"):
-                                link_style = f"[{_style}]"
-                            else:
-                                link_style = ""
-
-                        # Do not create an links, if the link target is not part of the search result.
-                        if final_link not in [
-                            x["id"] for x in found_needs if x["is_need"]
-                        ] and final_link not in [
-                            x["id_complete"] for x in found_needs if x["is_part"]
-                        ]:
-                            continue
-
-                        if _style_start := link_type.get("style_start"):
-                            style_start = _style_start
-                        else:
-                            style_start = "-"
-
-                        if _style_end := link_type.get("style_end"):
-                            style_end = _style_end
-                        else:
-                            style_end = "->"
-
-                        puml_connections += "{id} {style_start}{link_style}{style_end} {link}{comment}\n".format(
-                            id=make_entity_name(need_info["id_complete"]),
-                            link=make_entity_name(final_link),
-                            comment=comment,
-                            link_style=link_style,
-                            style_start=style_start,
-                            style_end=style_end,
-                        )
-
-            # calculate needs node representation for plantuml
             puml_node["uml"] += cal_needs_node(
                 app, fromdocname, current_needflow, all_needs.values(), found_needs
             )
 
             puml_node["uml"] += "\n' Connection definition \n\n"
-            puml_node["uml"] += puml_connections
+            puml_node["uml"] += render_connections(
+                found_needs,
+                allowed_link_types,
+                current_needflow["show_link_names"] or needs_config.flow_show_links,
+            )
 
             # Create a legend
             if current_needflow["show_legend"]:
@@ -628,6 +569,65 @@ def process_needflow(
             content.append(debug_container)
 
         node.replace_self(content)
+
+
+def render_connections(
+    found_needs: list[NeedsInfoType],
+    allowed_link_types: list[LinkOptionsType],
+    show_links: bool,
+) -> str:
+    """
+    Render the connections between the needs.
+    """
+    puml_connections = ""
+    for need_info in found_needs:
+        for link_type in allowed_link_types:
+            for link in need_info[link_type["option"]]:  # type: ignore[literal-required]
+                # Do not create an links, if the link target is not part of the search result.
+                if link not in [
+                    x["id"] for x in found_needs if x["is_need"]
+                ] and link not in [
+                    x["id_complete"] for x in found_needs if x["is_part"]
+                ]:
+                    continue
+
+                if show_links:
+                    desc = link_type["outgoing"] + "\\n"
+                    comment = f": {desc}"
+                else:
+                    comment = ""
+
+                # If source or target of link is a need_part, a specific style is needed
+                if "." in link or "." in need_info["id_complete"]:
+                    if _style_part := link_type.get("style_part"):
+                        link_style = f"[{_style_part}]"
+                    else:
+                        link_style = "[dotted]"
+                else:
+                    if _style := link_type.get("style"):
+                        link_style = f"[{_style}]"
+                    else:
+                        link_style = ""
+
+                if _style_start := link_type.get("style_start"):
+                    style_start = _style_start
+                else:
+                    style_start = "-"
+
+                if _style_end := link_type.get("style_end"):
+                    style_end = _style_end
+                else:
+                    style_end = "->"
+
+                puml_connections += "{id} {style_start}{link_style}{style_end} {link}{comment}\n".format(
+                    id=make_entity_name(need_info["id_complete"]),
+                    link=make_entity_name(link),
+                    comment=comment,
+                    link_style=link_style,
+                    style_start=style_start,
+                    style_end=style_end,
+                )
+    return puml_connections
 
 
 def get_template(template_name: str) -> Template:

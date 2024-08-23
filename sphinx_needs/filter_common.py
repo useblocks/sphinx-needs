@@ -34,9 +34,9 @@ class FilterAttributesType(TypedDict):
     filter: str
     sort_by: str
     filter_code: list[str]
-    filter_func: str
+    filter_func: str | None
     export_id: str
-    filter_warning: str
+    filter_warning: str | None
     """If set, the filter is exported with this ID in the needs.json file."""
 
 

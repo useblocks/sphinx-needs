@@ -6,14 +6,29 @@ Tutorial
 In this tutorial, we will demonstrate the use of sphinx-needs to build up a simplified engineering plan for a car.
 We will create need items, link them together, visualize the relationships between them, and generate traceability reports.
 
-.. needflow:: Engineering plan to develop a car
-    :root_id: T_CAR
-    :config: lefttoright,tutorial
-    :show_link_names:
-    :border_color: 
-        [status == 'open']:FF0000, 
-        [status == 'in progress']:0000FF, 
-        [status == 'closed']:00FF00
+.. need-example:: Example using needflow
+
+    .. needflow:: Engineering plan to develop a car
+        :debug:
+        :root_id: T_CAR
+        :config: tutorial
+        :show_link_names:
+        :border_color:
+            [status == 'open']:FF0000, 
+            [status == 'in progress']:0000FF, 
+            [status == 'closed']:00FF00
+
+.. need-example:: Example using needgraph
+
+    .. needgraph:: Engineering plan to develop a car
+        :debug:
+        :root_id: T_CAR
+        :config: tutorial
+        :show_link_names:
+        :border_color:
+            [status == 'open']:FF0000, 
+            [status == 'in progress']:0000FF, 
+            [status == 'closed']:00FF00
 
 .. admonition:: Prerequisites
 
