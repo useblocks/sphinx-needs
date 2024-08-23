@@ -277,7 +277,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     },
     "section_name": {
         "description": "Simply the first section.",
-        "schema": {"type": "string", "default": ""},
+        "schema": {"type": ["string", "null"], "default": ""},
     },
     "signature": {
         "description": "Derived from a docutils desc_name node.",
