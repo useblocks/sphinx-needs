@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724338030446,
+  "lastUpdate": 1724392360761,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -8532,6 +8532,42 @@ window.BENCHMARK_DATA = {
             "value": 64.564835671,
             "unit": "s",
             "extra": "Commit: 01ca3ffaae4cc120ada3e87c75205ecee6905c8a\nBranch: master\nTime: 2024-08-22T16:45:13+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3fe2dd4de0240e6e60dc2444c8bf2c407822a2cc",
+          "message": "👌 Minify output of `needs.json` (#1233)\n\nRemoving the indent of `json.dump` means it will now be output on a single line; reducing the size of the stored JSON.",
+          "timestamp": "2024-08-23T07:50:43+02:00",
+          "tree_id": "625968fe72466e5d61d678f6d58dfa135d547819",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/3fe2dd4de0240e6e60dc2444c8bf2c407822a2cc"
+        },
+        "date": 1724392351893,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.20027340200002186,
+            "unit": "s",
+            "extra": "Commit: 3fe2dd4de0240e6e60dc2444c8bf2c407822a2cc\nBranch: master\nTime: 2024-08-23T07:50:43+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 66.95921099500003,
+            "unit": "s",
+            "extra": "Commit: 3fe2dd4de0240e6e60dc2444c8bf2c407822a2cc\nBranch: master\nTime: 2024-08-23T07:50:43+02:00"
           }
         ]
       }
