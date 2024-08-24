@@ -376,6 +376,9 @@ class NeedsSphinxConfig:
     allow_unsafe_filters: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
+    flow_engine: Literal["plantuml", "graphviz"] = field(
+        default="plantuml", metadata={"rebuild": "env", "types": (str,)}
+    )
     flow_show_links: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
@@ -401,7 +404,7 @@ class NeedsSphinxConfig:
     flow_configs: dict[str, str] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": ()}
     )
-    graph_configs: dict[str, str] = field(
+    graphviz_configs: dict[str, str] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": ()}
     )
     template_folder: str = field(

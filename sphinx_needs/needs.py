@@ -52,20 +52,17 @@ from sphinx_needs.directives.needfilter import (
     process_needfilters,
 )
 from sphinx_needs.directives.needflow import (
-    Needflow,
     NeedflowDirective,
-    process_needflow,
+    NeedflowGraphiz,
+    NeedflowPlantuml,
+    html_visit_needflow_graphviz,
+    process_needflow_graphviz,
+    process_needflow_plantuml,
 )
 from sphinx_needs.directives.needgantt import (
     Needgantt,
     NeedganttDirective,
     process_needgantt,
-)
-from sphinx_needs.directives.needgraph import (
-    NeedGraph,
-    NeedGraphDirective,
-    html_visit_needgraph,
-    process_needgraph,
 )
 from sphinx_needs.directives.needimport import Needimport, NeedimportDirective
 from sphinx_needs.directives.needlist import (
@@ -130,12 +127,12 @@ NODE_TYPES: _NODE_TYPES_T = {
     Needfilter: process_needfilters,
     Needlist: process_needlist,
     Needtable: process_needtables,
-    Needflow: process_needflow,
+    NeedflowPlantuml: process_needflow_plantuml,
+    NeedflowGraphiz: process_needflow_graphviz,
     Needpie: process_needpie,
     Needsequence: process_needsequence,
     Needgantt: process_needgantt,
     Needuml: process_needuml,
-    NeedGraph: process_needgraph,
     NeedPart: process_need_part,
     NeedRef: process_need_ref,
     NeedIncoming: process_need_incoming,
@@ -171,7 +168,8 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_node(Needimport)
     app.add_node(Needlist)
     app.add_node(Needtable)
-    app.add_node(Needflow)
+    app.add_node(NeedflowPlantuml)
+    app.add_node(NeedflowGraphiz, html=(html_visit_needflow_graphviz, None))
     app.add_node(Needpie)
     app.add_node(Needsequence)
     app.add_node(Needgantt)
@@ -179,7 +177,6 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_node(Needservice)
     app.add_node(Needextend)
     app.add_node(Needuml)
-    app.add_node(NeedGraph, html=(html_visit_needgraph, None))
     app.add_node(List2Need)
     app.add_node(
         NeedPart,
@@ -207,7 +204,6 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_directive("needreport", NeedReportDirective)
     app.add_directive("needuml", NeedumlDirective)
     app.add_directive("needarch", NeedarchDirective)
-    app.add_directive("needgraph", NeedGraphDirective)
     app.add_directive("list2need", List2NeedDirective)
 
     ########################################################################

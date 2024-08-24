@@ -6,10 +6,12 @@ Tutorial
 In this tutorial, we will demonstrate the use of sphinx-needs to build up a simplified engineering plan for a car.
 We will create need items, link them together, visualize the relationships between them, and generate traceability reports.
 
-.. need-example:: Example using needflow
+.. need-example:: Example using needflow with plantuml
 
     .. needflow:: Engineering plan to develop a car
+        :engine: plantuml
         :debug:
+        :alt: Engineering plan to develop a car
         :root_id: T_CAR
         :config: tutorial
         :show_link_names:
@@ -18,10 +20,12 @@ We will create need items, link them together, visualize the relationships betwe
             [status == 'in progress']:0000FF, 
             [status == 'closed']:00FF00
 
-.. need-example:: Example using needgraph
+.. need-example:: Example using needflow with graphviz
 
-    .. needgraph:: Engineering plan to develop a car
+    .. needflow:: Engineering plan to develop a car
+        :engine: graphviz
         :debug:
+        :alt: Engineering plan to develop a car
         :root_id: T_CAR
         :config: tutorial
         :show_link_names:

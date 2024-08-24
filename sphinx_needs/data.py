@@ -568,6 +568,12 @@ class _NeedsFilterType(NeedsFilteredBaseType):
 class NeedsFlowType(NeedsFilteredDiagramBaseType):
     """Data for a single (filtered) flow chart."""
 
+    classes: list[str]
+    """List of CSS classes."""
+
+    alt: str
+    """Alternative text for the diagram in HTML output."""
+
     root_id: str | None
     """need ID to use as a root node."""
 
@@ -782,17 +788,6 @@ class SphinxNeedsData:
             self.env.need_all_needfilters = {}
         return self.env.need_all_needfilters
 
-    def get_or_create_flows(self) -> dict[str, NeedsFlowType]:
-        """Get all need flow charts, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needflows
-        except AttributeError:
-            self.env.need_all_needflows = {}
-        return self.env.need_all_needflows
-
     def get_or_create_gantts(self) -> dict[str, NeedsGanttType]:
         """Get all need gantt charts, mapped by ID.
 
@@ -928,7 +923,6 @@ def merge_data(
     _merge("need_all_needextend")
     _merge("need_all_needextracts")
     _merge("need_all_needfilters")
-    _merge("need_all_needflows")
     _merge("need_all_needgantts")
     _merge("need_all_needlists")
     _merge("need_all_needpie")

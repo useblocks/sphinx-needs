@@ -2,44 +2,32 @@ from __future__ import annotations
 
 import html
 import textwrap
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    Sequence,
-    overload,
-)
 
 from docutils import nodes
-from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 from sphinx.ext.graphviz import (
     ClickableMapDefinition,
     GraphvizError,
-    align_spec,
-    figure_wrapper,
     render_dot,
 )
 from sphinx.util.logging import getLogger
 
 from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
-from sphinx_needs.data import NeedsFilteredBaseType, NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link
-from sphinx_needs.directives.needflow import filter_by_tree, get_root_needs
+from sphinx_needs.directives.needflow._directive import NeedflowGraphiz
 from sphinx_needs.directives.utils import no_needs_found_paragraph
 from sphinx_needs.filter_common import (
-    FilterAttributesType,
-    FilterBase,
     filter_single_need,
     process_filters,
 )
 from sphinx_needs.utils import (
-    add_doc,
     match_variants,
     remove_node_from_tree,
-    split_link_types,
 )
+
+from ._shared import filter_by_tree, get_root_needs
 
 try:
     from sphinx.writers.html5 import HTML5Translator
@@ -49,187 +37,8 @@ except ImportError:
 LOGGER = getLogger(__name__)
 
 
-class NeedGraph(nodes.General, nodes.Element):
-    if TYPE_CHECKING:
-
-        def __init__(
-            self,
-            rawsource: str,
-            /,
-            *,
-            docname: str,
-            target_id: str,
-            resolved_content: str | None,
-            alt: str,
-            align: str,
-            debug: bool,
-            root_id: str | None,
-            root_direction: str,
-            root_depth: int | None,
-            link_types: list[str],
-            highlight: str,
-            border_color: str | None,
-            show_link_names: bool,
-            config: str,
-            **attributes: Any,
-        ) -> None: ...
-
-        @overload  # type: ignore[override]
-        def __getitem__(self, index: Literal["docname"]) -> str: ...
-
-        @overload
-        def __getitem__(self, index: Literal["target_id"]) -> str: ...
-
-        @overload
-        def __getitem__(self, index: Literal["resolved_content"]) -> str | None: ...
-
-        @overload
-        def __getitem__(self, index: Literal["alt"]) -> str: ...
-
-        @overload
-        def __getitem__(self, index: Literal["align"]) -> str: ...
-
-        @overload
-        def __getitem__(self, index: Literal["debug"]) -> bool: ...
-
-        @overload
-        def __getitem__(self, index: Literal["root_id"]) -> str | None: ...
-
-        @overload
-        def __getitem__(self, index: Literal["config"]) -> str: ...
-
-        @overload
-        def __getitem__(
-            self, index: Literal["root_direction"]
-        ) -> Literal["both", "incoming", "outgoing"]: ...
-
-        @overload
-        def __getitem__(self, index: Literal["root_depth"]) -> int | None: ...
-
-        @overload
-        def __getitem__(self, index: Literal["link_types"]) -> list[str]: ...
-
-        @overload
-        def __getitem__(self, index: Literal["highlight"]) -> str: ...
-
-        @overload
-        def __getitem__(self, index: Literal["border_color"]) -> str | None: ...
-
-        @overload
-        def __getitem__(self, index: Literal["show_link_names"]) -> bool: ...
-
-        def __getitem__(self, index: str) -> Any: ...
-
-    def get_filter_attributes(self) -> NeedsFilteredBaseType:
-        data: FilterAttributesType = {
-            "status": self["status"],  # type: ignore[call-overload]
-            "tags": self["tags"],  # type: ignore[call-overload]
-            "types": self["types"],  # type: ignore[call-overload]
-            "sort_by": self["sort_by"],  # type: ignore[call-overload]
-            "filter": self["filter"],  # type: ignore[call-overload]
-            "filter_code": self["filter_code"],  # type: ignore[call-overload]
-            "filter_func": self["filter_func"],  # type: ignore[call-overload]
-            "export_id": self["export_id"],  # type: ignore[call-overload]
-            "filter_warning": self["filter_warning"],  # type: ignore[call-overload]
-        }
-        return {
-            **data,
-            "docname": self["docname"],
-            "lineno": self.line or 0,
-            "target_id": self["target_id"],
-        }
-
-
-class NeedGraphDirective(FilterBase):
-    """
-    Directive to create need flow charts using graphviz
-    """
-
-    optional_arguments = 1  # the caption
-    final_argument_whitespace = True
-    option_spec = {
-        "alt": directives.unchanged,
-        "align": align_spec,
-        "class": directives.class_option,
-        "name": directives.unchanged,
-        "debug": directives.flag,
-        # initial filter options
-        "root_id": directives.unchanged_required,
-        "root_direction": lambda c: directives.choice(
-            c, ("both", "incoming", "outgoing")
-        ),
-        "root_depth": directives.nonnegative_int,
-        # formatting
-        "highlight": directives.unchanged_required,
-        "border_color": directives.unchanged_required,
-        "show_link_names": directives.flag,
-        "config": directives.unchanged_required,
-    }
-
-    # Update the options_spec with values defined in the FilterBase class
-    option_spec.update(FilterBase.base_option_spec)
-
-    def run(self) -> Sequence[nodes.Node]:
-        LOGGER.warning(
-            f"{self.name!r} is an experimental feature [needs.experimental]",
-            location=self.get_location(),
-            type="needs",
-            subtype="experimental",
-        )
-
-        add_doc(self.env, self.env.docname)
-
-        id = self.env.new_serialno("needgraph")
-        targetid = f"needgraph-{self.env.docname}-{id}"
-        targetnode = nodes.target("", "", ids=[targetid])
-
-        needs_config = NeedsSphinxConfig(self.env.config)
-        all_link_types = ",".join(x["option"] for x in needs_config.extra_links)
-        link_types = split_link_types(
-            self.options.get("link_types", all_link_types),
-            (self.env.docname, self.lineno),
-        )
-
-        configs = []
-        if config_names := self.options.get("config"):
-            for config_name in config_names.split(","):
-                config_name = config_name.strip()
-                if config_name and config_name in needs_config.graph_configs:
-                    configs.append(needs_config.graph_configs[config_name])
-
-        node = NeedGraph(
-            "",
-            docname=self.env.docname,
-            target_id=targetid,
-            resolved_content=None,
-            alt=self.options.get("alt", "needgraph"),
-            align=self.options.get("align", "center"),
-            debug="debug" in self.options,
-            link_types=link_types,
-            root_id=self.options.get("root_id"),
-            root_direction=self.options.get("root_direction", "all"),
-            root_depth=self.options.get("root_depth", None),
-            highlight=self.options.get("highlight", ""),
-            border_color=self.options.get("border_color", None),
-            show_link_names="show_link_names" in self.options,
-            config="\n".join(configs),
-            **self.collect_filter_attributes(),
-        )
-        self.set_source_info(node)
-        if "class" in self.options:
-            node["classes"] = self.options["class"]
-
-        if not self.arguments:
-            self.add_name(node)
-            return [targetnode, node]
-        else:
-            figure = figure_wrapper(self, node, self.arguments[0])  # type: ignore[arg-type]
-            self.add_name(figure)
-            return [targetnode, figure]
-
-
-@measure_time("needgraph")
-def process_needgraph(
+@measure_time("needflow_graphviz")
+def process_needflow_graphviz(
     app: Sphinx,
     doctree: nodes.document,
     fromdocname: str,
@@ -242,15 +51,17 @@ def process_needgraph(
     link_type_names = [link["option"].upper() for link in needs_config.extra_links]
     allowed_link_types_options = [link.upper() for link in needs_config.flow_link_types]
 
-    node: NeedGraph
+    node: NeedflowGraphiz
     for node in found_nodes:  # type: ignore[assignment]
+        attributes = node.attributes
+
         if not needs_config.include_needs:
             remove_node_from_tree(node)
             continue
 
         if app.builder.format != "html":
             LOGGER.warning(
-                "NeedGraph is only supported for HTML output. [needs.needgraph]",
+                "NeedflowGraphiz is only supported for HTML output. [needs.needgraph]",
                 location=node,
                 type="needs",
                 subtype="needgraph",
@@ -258,13 +69,13 @@ def process_needgraph(
             remove_node_from_tree(node)
             continue
 
-        option_link_types = [link.upper() for link in node["link_types"]]
+        option_link_types = [link.upper() for link in attributes["link_types"]]
         for lt in option_link_types:
             if lt not in link_type_names:
                 LOGGER.warning(
                     "Unknown link type {link_type} in needflow {flow}. Allowed values: {link_types} [needs.needgraph]".format(
                         link_type=lt,
-                        flow=node["target_id"],
+                        flow=attributes["target_id"],
                         link_types=",".join(link_type_names),
                     ),
                     type="needs",
@@ -277,10 +88,10 @@ def process_needgraph(
             # Skip link-type handling, if it is not part of a specified list of allowed link_types or
             # if not part of the overall configuration of needs_flow_link_types
             if (
-                node["link_types"]
+                attributes["link_types"]
                 and link_type["option"].upper() not in option_link_types
             ) or (
-                not node["link_types"]
+                not attributes["link_types"]
                 and link_type["option"].upper() not in allowed_link_types_options
             ):
                 continue
@@ -294,25 +105,24 @@ def process_needgraph(
                 all_needs,
                 root_id,
                 allowed_link_types,
-                node["root_direction"],
-                node["root_depth"],
+                attributes["root_direction"],
+                attributes["root_depth"],
             ).values()
-            if (root_id := node["root_id"])
+            if (root_id := attributes["root_id"])
             else all_needs.values()
         )
-        filtered_needs = process_filters(
-            app, init_filtered_needs, node.get_filter_attributes()
-        )
+        filtered_needs = process_filters(app, init_filtered_needs, node.attributes)
 
         # TODO show_filters option
 
         if not filtered_needs:
-            node.replace_self(no_needs_found_paragraph(node.get("filter_warning")))
+            node.replace_self(no_needs_found_paragraph(attributes["filter_warning"]))
+            continue
 
         content = "digraph needgraph {\n\n"
 
         # global settings
-        content += node["config"] + "\n\n"
+        content += attributes["config"] + "\n\n"
 
         # calculate node definitions
         content += "// node definitions\n"
@@ -343,17 +153,17 @@ def process_needgraph(
 
         node["resolved_content"] = content
 
-        if node["debug"]:
+        if attributes["debug"]:
             code = nodes.literal_block(
                 content, content, language="dot", linenos=True, force=True
             )
-            code.source, code.line = code.source, node.line
+            code.source, code.line = node.source, node.line
             if node.parent is not None and isinstance(node.parent, nodes.figure):
                 node.parent.parent.insert(
                     node.parent.parent.index(node.parent) + 1, code
                 )
-            else:
-                node.replace_self([node, code])
+            elif node.parent is not None:
+                node.parent.insert(node.parent.index(node) + 1, code)
 
 
 def _quote(text: str) -> str:
@@ -362,7 +172,7 @@ def _quote(text: str) -> str:
 
 
 def _render_node(
-    need: NeedsInfoType, node: NeedGraph, config: NeedsSphinxConfig, link: str
+    need: NeedsInfoType, node: NeedflowGraphiz, config: NeedsSphinxConfig, link: str
 ) -> str:
     """Render a node in the graphviz format."""
     params: list[tuple[str, str]] = []
@@ -420,7 +230,7 @@ def _render_node(
             node["border_color"],
             {**need},
             config.variants,
-            location=(node["docname"], node.line),
+            location=node,
         )
         if color:
             params.append(("color", _quote("#" + color)))
@@ -434,7 +244,7 @@ def _render_edge(
     need: NeedsInfoType,
     link: str,
     link_type: LinkOptionsType,
-    node: NeedGraph,
+    node: NeedflowGraphiz,
     config: NeedsSphinxConfig,
 ) -> str:
     """Render an edge in the graphviz format."""
@@ -473,7 +283,7 @@ def _render_edge(
     return f"{start_id} -> {end_id} [style={link_style}, label={label}];"
 
 
-def html_visit_needgraph(self: HTML5Translator, node: NeedGraph) -> None:
+def html_visit_needflow_graphviz(self: HTML5Translator, node: NeedflowGraphiz) -> None:
     """This visitor closely mimics ``sphinx.ext.graphviz.html_visit_graphviz``,
     however, that is not used directly due to these current key differences:
 
@@ -481,7 +291,7 @@ def html_visit_needgraph(self: HTML5Translator, node: NeedGraph) -> None:
     - svg's are output as ``<img>`` tags, not ``<object>`` tags (allows e.g. for transparency)
     - svg's are wrapped in an `<a>` tag, to allow for linking to the svg file
     """
-    code = node["resolved_content"]
+    code = node.get("resolved_content")
     if code is None:
         LOGGER.warning(
             "Content has not been resolved [needs.needgraph]",
@@ -490,38 +300,39 @@ def html_visit_needgraph(self: HTML5Translator, node: NeedGraph) -> None:
             subtype="needgraph",
         )
         raise nodes.SkipNode
+    attrributes = node.attributes
     format = self.builder.config.graphviz_output_format
     if format not in ("png", "svg"):
         LOGGER.warning(
-            f"graphviz_output_format must be one of 'png', 'svg', but is {format!r} [needs.needgraph]",
+            f"graphviz_output_format must be one of 'png', 'svg', but is {format!r} [needs.needflow]",
             location=node,
             type="needs",
-            subtype="needgraph",
+            subtype="needflow",
         )
         raise nodes.SkipNode
     try:
         fname, outfn = render_dot(
-            self, code, {"docname": node["docname"]}, format, "needgraph"
+            self, code, {"docname": attrributes["docname"]}, format, "needflow"
         )
     except GraphvizError as exc:
         LOGGER.warning(
-            f"graphviz code failed to render (run with :debug: to see code): {exc} [needs.needgraph]",
+            f"graphviz code failed to render (run with :debug: to see code): {exc} [needs.needflow]",
             location=node,
             type="needs",
-            subtype="needgraph",
+            subtype="needflow",
         )
         raise nodes.SkipNode from exc
 
-    classes = ["graphviz", *node.get("classes", [])]
+    classes = ["graphviz", *attrributes.get("classes", [])]
     imgcls = " ".join(filter(None, classes))
 
     if fname is None:
         self.body.append(self.encode(code))
     else:
-        alt = node.get("alt", "graphviz diagram")
-        if "align" in node:
+        alt = attrributes.get("alt", "needflow graphviz diagram")
+        if "align" in attrributes:
             self.body.append(
-                f'<div align="{node["align"]}" class="align-{node["align"]}">'
+                f'<div align="{attrributes["align"]}" class="align-{attrributes["align"]}">'
             )
         if format == "svg":
             self.body.append('<div class="graphviz">\n')
@@ -552,7 +363,7 @@ def html_visit_needgraph(self: HTML5Translator, node: NeedGraph) -> None:
                         f'<img src="{fname}" alt="{alt}" class="{imgcls}" />'
                     )
                     self.body.append("</div>\n")
-        if "align" in node:
+        if "align" in attrributes:
             self.body.append("</div>\n")
 
     raise nodes.SkipNode

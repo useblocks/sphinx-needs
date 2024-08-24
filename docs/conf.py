@@ -40,7 +40,7 @@ extensions = [
 if DOCS_THEME == "sphinx_immaterial":
     extensions.append("sphinx_immaterial")
 
-suppress_warnings = ["needs.link_outgoing", "needs.experimental"]
+suppress_warnings = ["needs.link_outgoing"]
 
 nitpicky = True
 nitpick_ignore = [
@@ -510,7 +510,7 @@ needs_flow_configs = {
    """,
 }
 
-needs_graph_configs = {
+needs_graphviz_configs = {
     "tutorial": """
 graph [
     rankdir=LR;

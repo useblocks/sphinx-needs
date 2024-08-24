@@ -486,7 +486,7 @@ def match_variants(
     context: dict[str, Any],
     variants: dict[str, str],
     *,
-    location: str | tuple[str | None, int | None] | None = None,
+    location: str | tuple[str | None, int | None] | nodes.Node | None = None,
 ) -> str | None:
     """Evaluate an options list and return the first matching variant.
 

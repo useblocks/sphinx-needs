@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import html
 import os
-from typing import Iterable, Literal, Sequence
+from functools import lru_cache
+from typing import Iterable
 
 from docutils import nodes
-from docutils.parsers.rst import directives
 from jinja2 import Template
 from sphinx.application import Sphinx
 from sphinxcontrib.plantuml import (
@@ -20,107 +20,18 @@ from sphinx_needs.data import (
 )
 from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link, create_legend
+from sphinx_needs.directives.needflow._directive import NeedflowPlantuml
 from sphinx_needs.directives.utils import no_needs_found_paragraph
-from sphinx_needs.filter_common import FilterBase, filter_single_need, process_filters
+from sphinx_needs.filter_common import filter_single_need, process_filters
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import (
-    add_doc,
-    get_scale,
     match_variants,
     remove_node_from_tree,
-    split_link_types,
 )
 
+from ._shared import filter_by_tree, get_root_needs
+
 logger = get_logger(__name__)
-
-
-NEEDFLOW_TEMPLATES: dict[str, Template] = {}
-
-
-class Needflow(nodes.General, nodes.Element):
-    pass
-
-
-class NeedflowDirective(FilterBase):
-    """
-    Directive to get flow charts.
-    """
-
-    optional_arguments = 1
-    final_argument_whitespace = True
-    option_spec = {
-        "show_legend": directives.flag,
-        "show_filters": directives.flag,
-        "show_link_names": directives.flag,
-        "config": directives.unchanged_required,
-        "scale": directives.unchanged_required,
-        "highlight": directives.unchanged_required,
-        "border_color": directives.unchanged_required,
-        "align": directives.unchanged_required,
-        "debug": directives.flag,
-        # initial filtering
-        "root_id": directives.unchanged_required,
-        "root_direction": lambda c: directives.choice(
-            c, ("both", "incoming", "outgoing")
-        ),
-        "root_depth": directives.nonnegative_int,
-        "link_types": directives.unchanged_required,
-    }
-
-    # Update the options_spec with values defined in the FilterBase class
-    option_spec.update(FilterBase.base_option_spec)
-
-    @measure_time("needflow")
-    def run(self) -> Sequence[nodes.Node]:
-        env = self.env
-        needs_config = NeedsSphinxConfig(env.config)
-        location = (env.docname, self.lineno)
-
-        id = env.new_serialno("needflow")
-        targetid = f"needflow-{env.docname}-{id}"
-        targetnode = nodes.target("", "", ids=[targetid])
-
-        all_link_types = ",".join(x["option"] for x in needs_config.extra_links)
-        link_types = split_link_types(
-            self.options.get("link_types", all_link_types), location
-        )
-
-        config_names = self.options.get("config")
-        configs = []
-        if config_names:
-            for config_name in config_names.split(","):
-                config_name = config_name.strip()
-                if config_name and config_name in needs_config.flow_configs:
-                    configs.append(needs_config.flow_configs[config_name])
-
-        # Add the need and all needed information
-        data = SphinxNeedsData(env).get_or_create_flows()
-        data[targetid] = {
-            "docname": env.docname,
-            "lineno": self.lineno,
-            "target_id": targetid,
-            "root_id": self.options.get("root_id"),
-            "root_direction": self.options.get("root_direction", "all"),
-            "root_depth": self.options.get("root_depth", None),
-            # note these are the same as DiagramBase.collect_diagram_attributes
-            "show_legend": "show_legend" in self.options,
-            "show_filters": "show_filters" in self.options,
-            "show_link_names": "show_link_names" in self.options,
-            "link_types": link_types,
-            "config": "\n".join(configs),
-            "config_names": config_names,
-            "scale": get_scale(self.options, location),
-            "highlight": self.options.get("highlight", ""),
-            "border_color": self.options.get("border_color", None),
-            "align": self.options.get("align"),
-            "debug": "debug" in self.options,
-            "caption": self.arguments[0] if self.arguments else None,
-            **self.collect_filter_attributes(),
-        }
-
-        add_doc(env, env.docname)
-
-        return [targetnode, Needflow("")]
 
 
 def make_entity_name(name: str) -> str:
@@ -260,24 +171,6 @@ def walk_curr_need_tree(
     return curr_need_tree
 
 
-def get_root_needs(found_needs: list[NeedsInfoType]) -> list[NeedsInfoType]:
-    return_list = []
-    for current_need in found_needs:
-        if current_need["is_need"]:
-            if "parent_need" not in current_need or current_need["parent_need"] == "":
-                # need has no parent, we have to add the need to the root needs
-                return_list.append(current_need)
-            else:
-                parent_found: bool = False
-                for elements in found_needs:
-                    if elements["id"] == current_need["parent_need"]:
-                        parent_found = True
-                        break
-                if not parent_found:
-                    return_list.append(current_need)
-    return return_list
-
-
 def cal_needs_node(
     app: Sphinx,
     fromdocname: str,
@@ -307,50 +200,8 @@ def cal_needs_node(
     return curr_need_tree
 
 
-def filter_by_tree(
-    all_needs: dict[str, NeedsInfoType],
-    root_id: str,
-    link_types: list[LinkOptionsType],
-    direction: Literal["both", "incoming", "outgoing"],
-    depth: int | None,
-) -> dict[str, NeedsInfoType]:
-    """Filter all needs by the given ``root_id``,
-    and all needs that are connected to the root need by the given ``link_types``, in the given ``direction``."""
-    need_items: dict[str, NeedsInfoType] = {}
-    if root_id not in all_needs:
-        return need_items
-    roots = {root_id: (0, all_needs[root_id])}
-    link_prefixes = (
-        ("_back",)
-        if direction == "incoming"
-        else ("",)
-        if direction == "outgoing"
-        else ("", "_back")
-    )
-    links_to_process = [
-        link["option"] + d for link in link_types for d in link_prefixes
-    ]
-    while roots:
-        root_id, (root_depth, root) = roots.popitem()
-        if root_id in need_items:
-            continue
-        if depth is not None and root_depth > depth:
-            continue
-        need_items[root_id] = root
-        for link_type_name in links_to_process:
-            roots.update(
-                {
-                    i: (root_depth + 1, all_needs[i])
-                    for i in root.get(link_type_name, [])  # type: ignore[attr-defined]
-                    if i in all_needs
-                }
-            )
-
-    return need_items
-
-
-@measure_time("needflow")
-def process_needflow(
+@measure_time("needflow_plantuml")
+def process_needflow_plantuml(
     app: Sphinx,
     doctree: nodes.document,
     fromdocname: str,
@@ -366,15 +217,13 @@ def process_needflow(
     link_type_names = [link["option"].upper() for link in needs_config.extra_links]
     allowed_link_types_options = [link.upper() for link in needs_config.flow_link_types]
 
-    # NEEDFLOW
-    # for node in doctree.findall(Needflow):
-    for node in found_nodes:
+    node: NeedflowPlantuml
+    for node in found_nodes:  # type: ignore[assignment]
         if not needs_config.include_needs:
             remove_node_from_tree(node)
             continue
 
-        id = node.attributes["ids"][0]
-        current_needflow = env_data.get_or_create_flows()[id]
+        current_needflow: NeedsFlowType = node.attributes
 
         option_link_types = [link.upper() for link in current_needflow["link_types"]]
         for lt in option_link_types:
@@ -438,6 +287,10 @@ def process_needflow(
         if found_needs:
             plantuml_block_text = ".. plantuml::\n" "\n" "   @startuml" "   @enduml"
             puml_node = plantuml(plantuml_block_text)
+            # TODO if an alt is not set then sphinxcontrib.plantuml uses the plantuml source code as alt text.
+            # I think this is not great, but currently setting a more sensible default breaks some tests
+            if current_needflow["alt"]:
+                puml_node["alt"] = current_needflow["alt"]
 
             # Add source origin
             puml_node.line = current_needflow["lineno"]
@@ -630,10 +483,7 @@ def render_connections(
     return puml_connections
 
 
+@lru_cache
 def get_template(template_name: str) -> Template:
     """Checks if a template got already rendered, if it's the case, return it"""
-
-    if template_name not in NEEDFLOW_TEMPLATES:
-        NEEDFLOW_TEMPLATES[template_name] = Template(template_name)
-
-    return NEEDFLOW_TEMPLATES[template_name]
+    return Template(template_name)
