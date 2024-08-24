@@ -9,4 +9,4 @@
         <target anonymous="" ids="US_63252" refid="US_63252">
         <Need classes="need need-story" ids="US_63252" refid="US_63252">
         <target refid="needfilter-index-0">
-        <Needfilter ids="needfilter-index-0">
+        <Needfilter docname="index" export_id="" filter="True" filter_code="[]" filter_func="True" filter_warning="True" ids="needfilter-index-0" layout="list" lineno="14" show_filters="False" show_legend="False" show_status="False" show_tags="False" sort_by="True" status="" tags="test my_test" target_id="needfilter-index-0" types="">

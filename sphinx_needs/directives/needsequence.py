@@ -12,7 +12,7 @@ from sphinxcontrib.plantuml import (
 )
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType, NeedsSequenceType, SphinxNeedsData
 from sphinx_needs.diagrams_common import (
     DiagramBase,
     add_config,
@@ -61,8 +61,7 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
                 f"See file {env.docname}:{self.lineno}"
             )
 
-        # Add the needsequence and all needed information
-        SphinxNeedsData(env).get_or_create_sequences()[targetid] = {
+        attributes: NeedsSequenceType = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
@@ -70,10 +69,12 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
             **self.collect_filter_attributes(),
             **self.collect_diagram_attributes(),
         }
+        node = Needsequence("", **attributes)
+        self.set_source_info(node)
 
         add_doc(env, env.docname)
 
-        return [targetnode] + [Needsequence("")]
+        return [targetnode, node]
 
 
 def process_needsequence(
@@ -99,8 +100,7 @@ def process_needsequence(
             remove_node_from_tree(node)
             continue
 
-        id = node.attributes["ids"][0]
-        current_needsequence = needs_data.get_or_create_sequences()[id]
+        current_needsequence: NeedsSequenceType = node.attributes
 
         option_link_types = [
             link.upper() for link in current_needsequence["link_types"]

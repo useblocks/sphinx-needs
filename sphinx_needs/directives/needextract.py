@@ -10,7 +10,7 @@ from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.data import NeedsExtractType, SphinxNeedsData
 from sphinx_needs.directives.utils import (
     no_needs_found_paragraph,
     used_filter_paragraph,
@@ -50,9 +50,7 @@ class NeedextractDirective(FilterBase):
 
         filter_arg = self.arguments[0] if self.arguments else None
 
-        # Add the need and all needed information
-        data = SphinxNeedsData(env).get_or_create_extracts()
-        data[targetid] = {
+        attributes: NeedsExtractType = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
@@ -62,10 +60,12 @@ class NeedextractDirective(FilterBase):
             "filter_arg": filter_arg,
             **self.collect_filter_attributes(),
         }
+        node = Needextract("", **attributes)
+        self.set_source_info(node)
 
         add_doc(env, env.docname, "needextract")
 
-        return [targetnode, Needextract("")]
+        return [targetnode, node]
 
 
 def process_needextract(
@@ -85,8 +85,7 @@ def process_needextract(
             remove_node_from_tree(node)
             continue
 
-        id = node.attributes["ids"][0]
-        current_needextract = SphinxNeedsData(env).get_or_create_extracts()[id]
+        current_needextract: NeedsExtractType = node.attributes
         all_needs = SphinxNeedsData(env).get_or_create_needs()
         content: list[nodes.Element] = []
 
