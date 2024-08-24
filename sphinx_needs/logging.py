@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from docutils.nodes import Node
+from sphinx import version_info
 from sphinx.util import logging
 from sphinx.util.logging import SphinxLoggerAdapter
 
@@ -19,9 +20,16 @@ def log_warning(
     color: str | None = None,
     once: bool = False,
 ) -> None:
-    # TODO respect show_warning_types
+    # Since sphinx in v7.3, sphinx will show warning types if `show_warning_types=True` is set,
+    # and in v8.0 this was made the default.
+    if version_info < (8,):
+        if subtype:
+            message += f" [needs.{subtype}]"
+        else:
+            message += " [needs]"
+
     logger.warning(
-        message + f" [needs.{subtype}]",
+        message,
         type="needs",
         subtype=subtype,
         location=location,

@@ -34,7 +34,7 @@ class NeedReportDirective(SphinxDirective):
         if not set(self.options).intersection({"types", "links", "options", "usage"}):
             log_warning(
                 LOGGER,
-                "No options specified to generate need report.",
+                "No options specified to generate need report",
                 "report",
                 location=self.get_location(),
             )
