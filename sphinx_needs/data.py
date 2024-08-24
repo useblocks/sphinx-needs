@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING, Any, Final, Literal, Mapping, TypedDict
 
 from sphinx.util.logging import getLogger
 
+from sphinx_needs.logging import log_warning
+
 if TYPE_CHECKING:
     from docutils.nodes import Element, Text
     from sphinx.application import Sphinx
@@ -885,10 +887,10 @@ def merge_data(
                     f"A need with ID {other_id} already exists, "
                     f"title: {other_need['title']!r}."
                 )
-                LOGGER.warning(
-                    message + " [needs.duplicate_id]",
-                    type="needs",
-                    subtype="duplicate_id",
+                log_warning(
+                    LOGGER,
+                    message,
+                    "duplicate_id",
                     location=(_docname, other_need["lineno"]) if _docname else None,
                 )
         else:

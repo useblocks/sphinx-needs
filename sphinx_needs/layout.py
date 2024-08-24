@@ -30,6 +30,7 @@ from sphinx.util.logging import getLogger
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
+from sphinx_needs.logging import log_warning
 from sphinx_needs.utils import match_string_link
 
 LOGGER = getLogger(__name__)
@@ -1092,10 +1093,10 @@ class LayoutHandler:
             if src.startswith("icon:"):
                 svg = _read_icon(src[5:])
                 if svg is None:
-                    LOGGER.warning(
+                    log_warning(
+                        LOGGER,
                         f"Icon {src[5:]!r} not found.",
-                        type="needs",
-                        subtype="layout",
+                        "layout",
                         location=self.node,
                     )
                 else:

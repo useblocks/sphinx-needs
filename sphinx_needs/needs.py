@@ -93,7 +93,7 @@ from sphinx_needs.environment import (
 )
 from sphinx_needs.external_needs import load_external_needs
 from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS, register_func
-from sphinx_needs.logging import get_logger
+from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.roles import NeedsXRefRole
 from sphinx_needs.roles.need_count import NeedCount, process_need_count
 from sphinx_needs.roles.need_func import NeedFunc, process_need_func
@@ -366,10 +366,11 @@ def load_config(app: Sphinx, *_args: Any) -> None:
 
     for option in needs_config.extra_options:
         if option in NEEDS_CONFIG.extra_options:
-            LOGGER.warning(
-                f'extra_option "{option}" already registered. [needs.config]',
-                type="needs",
-                subtype="config",
+            log_warning(
+                LOGGER,
+                f'extra_option "{option}" already registered.',
+                "config",
+                None,
             )
         NEEDS_CONFIG.add_extra_option(
             option, "Added by needs_extra_options config", override=True
@@ -461,24 +462,27 @@ def load_config(app: Sphinx, *_args: Any) -> None:
         if name not in NEEDS_CONFIG.warnings:
             NEEDS_CONFIG.warnings[name] = check
         else:
-            LOGGER.warning(
-                f"{name!r} in 'needs_warnings' is already registered. [needs.config]",
-                type="needs",
-                subtype="config",
+            log_warning(
+                LOGGER,
+                f"{name!r} in 'needs_warnings' is already registered.",
+                "config",
+                None,
             )
 
     if needs_config.constraints_failed_color:
-        LOGGER.warning(
-            'Config option "needs_constraints_failed_color" is deprecated. Please use "needs_constraint_failed_options" styles instead. [needs.config]',
-            type="needs",
-            subtype="config",
+        log_warning(
+            LOGGER,
+            'Config option "needs_constraints_failed_color" is deprecated. Please use "needs_constraint_failed_options" styles instead.',
+            "config",
+            None,
         )
 
     if needs_config.report_dead_links is not True:
-        LOGGER.warning(
-            'Config option "needs_constraints_failed_color" is deprecated. Please use `suppress_warnings = ["needs.link_outgoing"]` instead. [needs.config]',
-            type="needs",
-            subtype="config",
+        log_warning(
+            LOGGER,
+            'Config option "needs_constraints_failed_color" is deprecated. Please use `suppress_warnings = ["needs.link_outgoing"]` instead.',
+            "config",
+            None,
         )
 
 

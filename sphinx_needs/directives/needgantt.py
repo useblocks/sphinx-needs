@@ -27,7 +27,7 @@ from sphinx_needs.directives.utils import (
     no_needs_found_paragraph,
 )
 from sphinx_needs.filter_common import FilterBase, filter_single_need, process_filters
-from sphinx_needs.logging import get_logger
+from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import MONTH_NAMES, add_doc, remove_node_from_tree
 
 logger = get_logger(__name__)
@@ -252,11 +252,11 @@ def process_needgantt(
                         if need["docname"]
                         else ""
                     )
-                    logger.warning(
+                    log_warning(
+                        logger,
                         "Duration not set or invalid for needgantt chart. "
-                        f"Need: {need['id']!r}{need_location}. Duration: {duration!r} [needs.gantt]",
-                        type="needs",
-                        subtype="gantt",
+                        f"Need: {need['id']!r}{need_location}. Duration: {duration!r}",
+                        "gantt",
                         location=node,
                     )
                     duration = 1

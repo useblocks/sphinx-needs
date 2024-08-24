@@ -9,6 +9,7 @@ from sphinx.environment import BuildEnvironment
 from sphinx.util.fileutil import copy_asset, copy_asset_file
 
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.logging import log_warning
 from sphinx_needs.utils import logger
 
 _STATIC_DIR_NAME = "_static"
@@ -69,10 +70,11 @@ def install_styles_static_files(app: Sphinx, env: BuildEnvironment) -> None:
             app, dest_dir.joinpath(Path(config.css).name).relative_to(statics_dir)
         )
     else:
-        logger.warning(
-            f"needs_css not an existing file: {config.css} [needs.config]",
-            type="needs",
-            subtype="config",
+        log_warning(
+            logger,
+            f"needs_css not an existing file: {config.css}",
+            "config",
+            None,
         )
 
 

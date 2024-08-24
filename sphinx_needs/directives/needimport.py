@@ -18,6 +18,7 @@ from sphinx_needs.data import NeedsInfoType
 from sphinx_needs.debug import measure_time
 from sphinx_needs.defaults import string_to_boolean
 from sphinx_needs.filter_common import filter_single_need
+from sphinx_needs.logging import log_warning
 from sphinx_needs.needsfile import check_needs_file
 from sphinx_needs.utils import add_doc, logger
 
@@ -95,11 +96,12 @@ class NeedimportDirective(SphinxDirective):
                     )
                     if os.path.exists(old_need_import_path):
                         correct_need_import_path = old_need_import_path
-                        logger.warning(
+                        log_warning(
+                            logger,
                             "Deprecation warning: Relative path must be relative to the current document in future, "
                             "not to the conf.py location. Use a starting '/', like '/needs.json', to make the path "
-                            "relative to conf.py. [needs]",
-                            type="needs",
+                            "relative to conf.py.",
+                            None,
                             location=(self.env.docname, self.lineno),
                         )
             else:
@@ -172,9 +174,10 @@ class NeedimportDirective(SphinxDirective):
                     if filter_single_need(filter_context, needs_config, filter_string):
                         needs_list_filtered[key] = need
                 except Exception as e:
-                    logger.warning(
-                        f"needimport: Filter {filter_string} not valid. Error: {e}. {self.docname}{self.lineno} [needs]",
-                        type="needs",
+                    log_warning(
+                        logger,
+                        f"needimport: Filter {filter_string} not valid. Error: {e}. {self.docname}{self.lineno}",
+                        None,
                         location=(self.env.docname, self.lineno),
                     )
 

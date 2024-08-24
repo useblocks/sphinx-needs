@@ -13,7 +13,7 @@ from sphinx.environment import BuildEnvironment
 from sphinx_needs.api import add_external_need, del_need
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
-from sphinx_needs.logging import get_logger
+from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import clean_log, import_prefix_link_edit
 
 log = get_logger(__name__)
@@ -170,11 +170,11 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> Non
                     # delete the already existing external need from api need
                     del_need(app, ext_need_id)
                 else:
-                    log.warning(
+                    log_warning(
+                        log,
                         f'During external needs handling, an identical ID was detected: {ext_need_id} '
-                        f'from needs_external_needs url: {source["base_url"]} [needs.duplicate_id]',
-                        type="needs",
-                        subtype="duplicate_id",
+                        f'from needs_external_needs url: {source["base_url"]}',
+                        "duplicate_id",
                         location=docname if docname else None,
                     )
                     return None

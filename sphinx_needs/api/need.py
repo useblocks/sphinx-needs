@@ -28,7 +28,7 @@ from sphinx_needs.config import GlobalOptionsType, NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.directives.needuml import Needuml, NeedumlException
 from sphinx_needs.filter_common import filter_single_need
-from sphinx_needs.logging import get_logger
+from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
 from sphinx_needs.utils import jinja_parse
@@ -167,11 +167,11 @@ def add_need(
     # Log messages for need elements that could not be imported.
     configured_need_types = [ntype["directive"] for ntype in types]
     if need_type not in configured_need_types:
-        logger.warning(
+        log_warning(
+            logger,
             f"Couldn't create need {id}. Reason: The need-type (i.e. `{need_type}`) is not set "
-            "in the project's 'need_types' configuration in conf.py. [needs.add]",
-            type="needs",
-            subtype="add",
+            "in the project's 'need_types' configuration in conf.py.",
+            "add",
             location=(docname, lineno) if docname else None,
         )
 
@@ -243,11 +243,11 @@ def add_need(
         new_tags = []  # Shall contain only valid tags
         for i in range(len(tags)):
             if len(tags[i]) == 0 or tags[i].isspace():
-                logger.warning(
+                log_warning(
+                    logger,
                     f"Scruffy tag definition found in need {need_id!r}. "
-                    "Defined tag contains spaces only. [needs.add]",
-                    type="needs",
-                    subtype="add",
+                    "Defined tag contains spaces only.",
+                    "add",
                     location=(docname, lineno) if docname else None,
                 )
             else:
@@ -282,11 +282,11 @@ def add_need(
         new_constraints = []  # Shall contain only valid constraints
         for i in range(len(constraints)):
             if len(constraints[i]) == 0 or constraints[i].isspace():
-                logger.warning(
+                log_warning(
+                    logger,
                     f"Scruffy constraint definition found in need {need_id!r}. "
-                    "Defined constraint contains spaces only. [needs.add]",
-                    type="needs",
-                    subtype="add",
+                    "Defined constraint contains spaces only.",
+                    "add",
                     location=(docname, lineno) if docname else None,
                 )
             else:
@@ -325,10 +325,10 @@ def add_need(
                 "from the content, then ensure the first sentence of the "
                 "requirements are different."
             )
-        logger.warning(
-            message + " [needs.duplicate_id]",
-            type="needs",
-            subtype="duplicate_id",
+        log_warning(
+            logger,
+            message,
+            "duplicate_id",
             location=(docname, lineno) if docname else None,
         )
         return []
@@ -613,7 +613,7 @@ def del_need(app: Sphinx, need_id: str) -> None:
     if need_id in needs:
         del needs[need_id]
     else:
-        logger.warning(f"Given need id {need_id} not exists! [needs]", type="needs")
+        log_warning(logger, f"Given need id {need_id} not exists!", None, None)
 
 
 def add_external_need(
@@ -715,10 +715,12 @@ def _read_in_links(links_string: None | str | list[str]) -> list[str]:
             link_list = links_string
         for link in link_list:
             if link.isspace():
-                logger.warning(
+                log_warning(
+                    logger,
                     f"Grubby link definition found in need {id}. "
-                    "Defined link contains spaces only. [needs]",
-                    type="needs",
+                    "Defined link contains spaces only.",
+                    None,
+                    None,
                 )
             else:
                 links.append(link.strip())

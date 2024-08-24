@@ -11,6 +11,7 @@ from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.directives.utils import analyse_needs_metrics
+from sphinx_needs.logging import log_warning
 from sphinx_needs.utils import add_doc
 
 LOGGER = logging.getLogger(__name__)
@@ -31,11 +32,11 @@ class NeedReportDirective(SphinxDirective):
         needs_config = NeedsSphinxConfig(env.config)
 
         if not set(self.options).intersection({"types", "links", "options", "usage"}):
-            LOGGER.warning(
-                "No options specified to generate need report [needs.report]",
+            log_warning(
+                LOGGER,
+                "No options specified to generate need report.",
+                "report",
                 location=self.get_location(),
-                type="needs",
-                subtype="report",
             )
             return []
 
@@ -63,11 +64,11 @@ class NeedReportDirective(SphinxDirective):
             )
 
         if not need_report_template_path.is_file():
-            LOGGER.warning(
-                f"Could not load needs report template file {need_report_template_path} [needs.report]",
+            log_warning(
+                LOGGER,
+                f"Could not load needs report template file {need_report_template_path}",
+                "report",
                 location=self.get_location(),
-                type="needs",
-                subtype="report",
             )
             return []
 
