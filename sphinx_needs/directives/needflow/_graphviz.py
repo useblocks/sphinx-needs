@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import html
 import textwrap
+from typing import Callable, Literal
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -124,6 +125,8 @@ def process_needflow_graphviz(
             )
             continue
 
+        id_comp_to_need = {need["id_complete"]: need for need in filtered_needs}
+
         content = "digraph needflow {\ncompound=true;\n"
 
         # global settings
@@ -138,25 +141,24 @@ def process_needflow_graphviz(
 
         # calculate node definitions
         content += "\n// node definitions\n"
+        rendered_nodes: dict[str, str | None] = {}
         for root_need in get_root_needs(filtered_needs):
-            # TODO handle child needs
-            node_link = calculate_link(app, root_need, fromdocname, relative=".")
-            content += _render_node(root_need, node, needs_config, node_link) + "\n"
+            content += _render_node(
+                root_need,
+                node,
+                needs_config,
+                lambda n: calculate_link(app, n, fromdocname, relative="."),
+                id_comp_to_need,
+                rendered_nodes,
+            )
 
         # calculate edge definitions
-        content += "// edge definitions\n"
+        content += "\n// edge definitions\n"
         for need in filtered_needs:
             for link_type in allowed_link_types:
                 for link in need[link_type["option"]]:  # type: ignore[literal-required]
-                    # Do not create links, if the link target is not part of the search result.
-                    if link not in [
-                        x["id"] for x in filtered_needs if x["is_need"]
-                    ] and link not in [
-                        x["id_complete"] for x in filtered_needs if x["is_part"]
-                    ]:
-                        continue
-                    content += (
-                        _render_edge(need, link, link_type, node, needs_config) + "\n"
+                    content += _render_edge(
+                        need, link, link_type, node, needs_config, rendered_nodes
                     )
 
         if attributes["show_legend"]:
@@ -187,44 +189,39 @@ def _quote(text: str) -> str:
 
 
 def _render_node(
-    need: NeedsInfoType, node: NeedflowGraphiz, config: NeedsSphinxConfig, link: str
+    need: NeedsInfoType,
+    node: NeedflowGraphiz,
+    config: NeedsSphinxConfig,
+    calc_link: Callable[[NeedsInfoType], str],
+    id_comp_to_need: dict[str, NeedsInfoType],
+    rendered_nodes: dict[str, str | None],
+    subgraph: bool = True,
 ) -> str:
     """Render a node in the graphviz format."""
+
+    if subgraph and (
+        (
+            need["is_need"]
+            and any(f"{need['id']}.{i}" in id_comp_to_need for i in need["parts"])
+        )
+        or any(i in id_comp_to_need for i in need["parent_needs_back"])
+    ):
+        # graphviz cannot nest nodes,
+        # so we have to create a subgraph to represent a need with parts/children
+        return _render_subgraph(
+            need, node, config, calc_link, id_comp_to_need, rendered_nodes
+        )
+
+    rendered_nodes[need["id_complete"]] = None
+
     params: list[tuple[str, str]] = []
 
     # label
-    br = '<br align="left"/>'
-    # note this text wrapping mimics the jinja wordwrap filter
-    title = br.join(
-        br.join(
-            textwrap.wrap(
-                html.escape(line),
-                15,
-                expand_tabs=False,
-                replace_whitespace=False,
-                break_long_words=True,
-                break_on_hyphens=True,
-            )
-        )
-        for line in need["title"].splitlines()
-    )
-    name = html.escape(need["type_name"])
-    if need["is_need"]:
-        _id = html.escape(need["id"])
-    else:
-        _id = f"{html.escape(need['id_parent'])}.<b>{html.escape(need['id'])}</b>"
-    font_10 = '<font point-size="10">'
-    font_12 = '<font point-size="12">'
-    params.append(
-        (
-            "label",
-            f"<{font_12}{name}</font>{br}<b>{title}</b>{br}{font_10}{_id}</font>{br}>",
-        )
-    )
+    params.append(("label", _label(need, "left")))
 
     # link
-    if link:
-        params.append(("href", _quote(link)))
+    if _link := calc_link(need):
+        params.append(("href", _quote(_link)))
 
     # shape
     if need["is_need"]:
@@ -255,28 +252,152 @@ def _render_node(
     return f"{id} [{param_str}];\n"
 
 
+def _render_subgraph(
+    need: NeedsInfoType,
+    node: NeedflowGraphiz,
+    config: NeedsSphinxConfig,
+    calc_link: Callable[[NeedsInfoType], str],
+    id_comp_to_need: dict[str, NeedsInfoType],
+    rendered_nodes: dict[str, str | None],
+) -> str:
+    """Render a subgraph in the graphviz format."""
+    params: list[tuple[str, str]] = []
+
+    # label
+    params.append(("label", _label(need, "center")))
+
+    # link
+    if _link := calc_link(need):
+        params.append(("href", _quote(_link)))
+
+    # shape
+    if need["is_need"]:
+        params.append(("shape", _quote(need["type_style"])))
+    else:
+        params.append(("shape", "rectangle"))
+
+    # fill color
+    params.append(("style", "filled"))
+    if need["type_color"]:
+        params.append(("fillcolor", _quote(need["type_color"])))
+
+    # outline color
+    if node["highlight"] and filter_single_need(need, config, node["highlight"]):
+        params.append(("color", "red"))
+    elif node["border_color"]:
+        color = match_variants(
+            node["border_color"],
+            {**need},
+            config.variants,
+            location=node,
+        )
+        if color:
+            params.append(("color", _quote("#" + color)))
+
+    # we need to create an invisible node to allow links to the subgraph
+    id = _quote(need["id_complete"])
+    ghost_node = f'{id} [style=invis, width=0, height=0, label=""];'
+
+    cluster_id = _quote("cluster_" + need["id_complete"])
+    param_str = "\n".join(f"  {key}={value};" for key, value in params)
+
+    rendered_nodes[need["id_complete"]] = "cluster_" + need["id_complete"]
+
+    children = ""
+    if need["is_need"] and need["parts"]:
+        children += "  // parts:\n"
+        for need_part_id in need["parts"]:
+            need_part_id = need["id"] + "." + need_part_id
+            if need_part_id in id_comp_to_need:
+                children += textwrap.indent(
+                    _render_node(
+                        id_comp_to_need[need_part_id],
+                        node,
+                        config,
+                        calc_link,
+                        id_comp_to_need,
+                        rendered_nodes,
+                        False,
+                    ),
+                    "  ",
+                )
+    if need["parent_needs_back"]:
+        children += "  // child needs:\n"
+        for child_need_id in need["parent_needs_back"]:
+            if child_need_id in id_comp_to_need:
+                children += textwrap.indent(
+                    _render_node(
+                        id_comp_to_need[child_need_id],
+                        node,
+                        config,
+                        calc_link,
+                        id_comp_to_need,
+                        rendered_nodes,
+                    ),
+                    "  ",
+                )
+
+    return f"subgraph {cluster_id} {{\n{param_str}\n\n  {ghost_node}\n{children}\n}};\n"
+
+
+def _label(need: NeedsInfoType, align: Literal["left", "right", "center"]) -> str:
+    """Create the graphviz label for a need."""
+    br = f'<br align="{align}"/>'
+    # note this text wrapping mimics the jinja wordwrap filter
+    title = br.join(
+        br.join(
+            textwrap.wrap(
+                html.escape(line),
+                15,
+                expand_tabs=False,
+                replace_whitespace=False,
+                break_long_words=True,
+                break_on_hyphens=True,
+            )
+        )
+        for line in need["title"].splitlines()
+    )
+    name = html.escape(need["type_name"])
+    if need["is_need"]:
+        _id = html.escape(need["id"])
+    else:
+        _id = f"{html.escape(need['id_parent'])}.<b>{html.escape(need['id'])}</b>"
+    font_10 = '<font point-size="10">'
+    font_12 = '<font point-size="12">'
+    return f"<{font_12}{name}</font>{br}<b>{title}</b>{br}{font_10}{_id}</font>{br}>"
+
+
 def _render_edge(
     need: NeedsInfoType,
     link: str,
     link_type: LinkOptionsType,
     node: NeedflowGraphiz,
     config: NeedsSphinxConfig,
+    rendered_nodes: dict[str, str | None],
 ) -> str:
     """Render an edge in the graphviz format."""
+    if need["id_complete"] not in rendered_nodes or link not in rendered_nodes:
+        # if the start or end node is not rendered, we should not create a link
+        return ""
+
     show_links = node["show_link_names"] or config.flow_show_links
 
-    label = _quote(link_type["outgoing"]) if show_links else '""'
+    params: list[tuple[str, str]] = []
+
+    if show_links:
+        params.append(("label", _quote(link_type["outgoing"])))
 
     # If source or target of link is a need_part, a specific style is needed
     # TODO custom for styles for edges (mapping from plantuml to graphviz)
     if "." in link or "." in need["id_complete"]:
-        link_style = "dotted"
+        params.append(("link_style", "dotted"))
         # if _style_part := link_type.get("style_part"):
         #     link_style = f"[{_style_part}]"
         # else:
         #     link_style = "[dotted]"
     else:
-        link_style = "solid"
+        pass
+        # params.append(("link_style", "solid"))
         # if _style := link_type.get("style"):
         #     link_style = f"[{_style}]"
         # else:
@@ -294,8 +415,17 @@ def _render_edge(
     #     style_end = "->"
 
     start_id = _quote(need["id_complete"])
+    if (ltail := rendered_nodes[need["id_complete"]]) is not None:
+        # the need has been created as a subgraph and so we also need to create a logical link to the cluster
+        params.append(("ltail", _quote(ltail)))
+
     end_id = _quote(link)
-    return f"{start_id} -> {end_id} [style={link_style}, label={label}];"
+    if (lhead := rendered_nodes[link]) is not None:
+        # the end need has been created as a subgraph and so we also need to create a logical link to the cluster
+        params.append(("lhead", _quote(lhead)))
+
+    param_str = ", ".join(f"{key}={value}" for key, value in params)
+    return f"{start_id} -> {end_id} [{param_str}];\n"
 
 
 def html_visit_needflow_graphviz(self: HTML5Translator, node: NeedflowGraphiz) -> None:

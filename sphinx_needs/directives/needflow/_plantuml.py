@@ -117,40 +117,31 @@ def walk_curr_need_tree(
     if need["is_need"] and need["parts"]:
         # add comment for easy debugging
         curr_need_tree += "'parts:\n"
-        for need_part_id in need["parts"].keys():
+        for need_part_id in need["parts"]:
             # cal need part node
             need_part_id = need["id"] + "." + need_part_id
             # get need part from need part id
             for found_need in found_needs:
                 if need_part_id == found_need["id_complete"]:
-                    need_part = found_need
-                    # get need part node
-                    need_part_node = get_need_node_rep_for_plantuml(
-                        app, fromdocname, current_needflow, all_needs, need_part
+                    curr_need_tree += (
+                        get_need_node_rep_for_plantuml(
+                            app, fromdocname, current_needflow, all_needs, found_need
+                        )
+                        + "\n"
                     )
-                    curr_need_tree += need_part_node + "\n"
+                    break
 
     # check if curr need has children
     if need["parent_needs_back"]:
         # add comment for easy debugging
         curr_need_tree += "'child needs:\n"
-
-        # walk throgh all child needs one by one
-        child_needs_ids = need["parent_needs_back"]
-
-        idx = 0
-        while idx < len(child_needs_ids):
-            # start from one child
-            curr_child_need_id = child_needs_ids[idx]
-            # get need from id
-            for need in found_needs:
-                if need["id_complete"] == curr_child_need_id:
-                    curr_child_need = need
-                    # get child need node
-                    child_need_node = get_need_node_rep_for_plantuml(
+        # walk through all child needs one by one
+        for curr_child_need_id in need["parent_needs_back"]:
+            for curr_child_need in found_needs:
+                if curr_child_need["id_complete"] == curr_child_need_id:
+                    curr_need_tree += get_need_node_rep_for_plantuml(
                         app, fromdocname, current_needflow, all_needs, curr_child_need
                     )
-                    curr_need_tree += child_need_node
                     # check curr need child has children or has parts
                     if curr_child_need["parent_needs_back"] or curr_child_need["parts"]:
                         curr_need_tree += walk_curr_need_tree(
@@ -163,7 +154,7 @@ def walk_curr_need_tree(
                         )
                     # add newline for next element
                     curr_need_tree += "\n"
-            idx += 1
+                    break
 
     # We processed embedded needs or need parts, so we will close with "}"
     curr_need_tree += "}"

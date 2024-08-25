@@ -17,6 +17,15 @@ If you provide an argument, we use it as caption for the generated image.
       :link_types: tests, blocks
       :show_link_names:
 
+.. dropdown:: with Graphviz engine
+
+   .. needflow:: My first needflow
+      :engine: graphviz
+      :filter: is_need
+      :tags: flow_example
+      :link_types: tests, blocks
+      :show_link_names:
+
 Dependencies
 ------------
 
@@ -77,6 +86,30 @@ Other need filters are applied on this initial selection of connected needs.
       :link_types: tests, blocks
       :show_link_names:
 
+.. dropdown:: with Graphviz engine
+
+   .. needflow::
+      :engine: graphviz
+      :root_id: spec_flow_002
+      :root_direction: incoming
+      :link_types: tests, blocks
+      :show_link_names:
+
+   .. needflow::
+      :engine: graphviz
+      :root_id: spec_flow_002
+      :root_direction: outgoing
+      :link_types: tests, blocks
+      :show_link_names:
+
+   .. needflow::
+      :engine: graphviz
+      :root_id: spec_flow_002
+      :root_direction: outgoing
+      :root_depth: 1
+      :link_types: tests, blocks
+      :show_link_names:
+
 .. _needflow_show_filters:
 
 show_filters
@@ -87,7 +120,14 @@ Adds information of used filters below generated flowchart.
 .. need-example::
 
    .. needflow::
-      :tags: main_example
+      :tags: flow_example
+      :show_filters:
+
+.. dropdown:: with Graphviz engine
+
+   .. needflow::
+      :engine: graphviz
+      :tags: flow_example
       :show_filters:
 
 .. _needflow_show_legend:
@@ -101,7 +141,7 @@ for flowcharts.
 .. need-example::
 
    .. needflow::
-      :tags: main_example
+      :tags: flow_example
       :show_legend:
 
 .. _needflow_show_link_names:
@@ -119,7 +159,14 @@ Setup data can be found in test case document `tests/doc_test/doc_extra_links`.
 .. need-example::
 
    .. needflow::
-      :tags: main_example
+      :tags: flow_example
+      :show_link_names:
+
+.. dropdown:: with Graphviz engine
+
+   .. needflow::
+      :engine: graphviz
+      :tags: flow_example
       :show_link_names:
 
 .. _needflow_link_types:
@@ -183,6 +230,14 @@ See also :ref:`needs_extra_links` for more details about specific link types.
       :tags: flow_example
 
    .. needflow::
+      :tags: flow_example
+      :link_types: tests, blocks
+      :show_link_names:
+
+.. dropdown:: with Graphviz engine
+
+   .. needflow::
+      :engine: graphviz
       :tags: flow_example
       :link_types: tests, blocks
       :show_link_names:
@@ -282,6 +337,14 @@ sets the border for each need of the needflow to **red** if the need also passes
       :link_types: tests, blocks
       :highlight: id in ['spec_flow_002', 'subspec_2'] or type == 'req'
 
+.. dropdown:: with Graphviz engine
+
+   .. needflow::
+      :engine: graphviz
+      :tags: flow_example
+      :link_types: tests, blocks
+      :highlight: id in ['spec_flow_002', 'subspec_2'] or type == 'req'
+
 .. _needflow_border_color:
 
 border_color
@@ -295,6 +358,17 @@ The value should be written with the :ref:`variant syntax <needs_variant_support
 .. need-example::
 
    .. needflow:: Engineering plan to develop a car
+      :tags: flow_example
+      :link_types: tests, blocks
+      :border_color:
+         [type == 'req']:FF0000,
+         [type == 'spec']:0000FF,
+         [type == 'test']:00FF00
+
+.. dropdown:: with Graphviz engine
+
+   .. needflow:: Engineering plan to develop a car
+      :engine: graphviz
       :tags: flow_example
       :link_types: tests, blocks
       :border_color:
@@ -317,6 +391,14 @@ Allowed values are: ``left``, ``center``, ``right``
       :tags: flow_example
       :align: center
 
+.. dropdown:: with Graphviz engine
+
+   .. needflow::
+      :engine: graphviz
+      :filter: is_need and type == 'spec'
+      :tags: flow_example
+      :align: center
+
 .. _needflow_debug:
 
 debug
@@ -335,6 +417,15 @@ Helpful to identify reasons why a PlantUML build may have thrown errors.
       :tags: flow_example
       :link_types: tests, blocks
       :config:  lefttoright, handwritten
+      :debug:
+
+.. dropdown:: with Graphviz engine
+
+   .. needflow::
+      :engine: graphviz
+      :filter: is_need
+      :tags: flow_example
+      :link_types: tests, blocks
       :debug:
 
 common filters
