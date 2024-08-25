@@ -221,10 +221,11 @@ def _render_node(
 
     # label
     params.append(("label", _label(need, "left")))
+    params.append(("tooltip", _quote(need["id_complete"])))
 
     # link
     if _link := calc_link(need):
-        params.append(("href", _quote(_link)))
+        params.extend([("href", _quote(_link)), ("target", _quote("_top"))])
 
     # shape
     if need["is_need"]:
@@ -278,10 +279,11 @@ def _render_subgraph(
 
     # label
     params.append(("label", _label(need, "center")))
+    params.append(("tooltip", _quote(need["id_complete"])))
 
     # link
     if _link := calc_link(need):
-        params.append(("href", _quote(_link)))
+        params.extend([("href", _quote(_link)), ("target", _quote("_top"))])
 
     # shape
     if need["is_need"]:
