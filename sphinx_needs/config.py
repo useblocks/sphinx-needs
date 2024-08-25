@@ -7,6 +7,7 @@ from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 from sphinx.config import Config as _SphinxConfig
 
+from sphinx_needs.data import GraphvizStyleType
 from sphinx_needs.defaults import DEFAULT_DIAGRAM_TEMPLATE
 
 if TYPE_CHECKING:
@@ -404,7 +405,7 @@ class NeedsSphinxConfig:
     flow_configs: dict[str, str] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": ()}
     )
-    graphviz_configs: dict[str, str] = field(
+    graphviz_styles: dict[str, GraphvizStyleType] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": ()}
     )
     template_folder: str = field(

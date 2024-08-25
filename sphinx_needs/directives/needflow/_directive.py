@@ -10,6 +10,7 @@ from sphinx.ext.graphviz import (
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import (
+    GraphvizStyleType,
     NeedsFlowType,
 )
 from sphinx_needs.debug import measure_time
@@ -79,26 +80,50 @@ class NeedflowDirective(FilterBase):
         engine = self.options.get("engine", needs_config.flow_engine)
         assert engine in ["graphviz", "plantuml"], f"Unknown needflow engine '{engine}'"
 
+        config_names: str = self.options.get("config", "")
+        config = ""
+        graphviz_style: GraphvizStyleType = {}
         if engine == "plantuml":
-            style_configs_name = "needs_flow_configs"
-            style_configs = needs_config.flow_configs
-        else:
-            style_configs_name = "needs_graphviz_configs"
-            style_configs = needs_config.graphviz_configs
-
-        configs = []
-        if config_names := self.options.get("config"):
+            _configs = []
             for config_name in config_names.split(","):
                 config_name = config_name.strip()
-                if config_name and config_name in style_configs:
-                    configs.append(style_configs[config_name])
+                if config_name and config_name in needs_config.flow_configs:
+                    _configs.append(needs_config.flow_configs[config_name])
                 elif config_name:
                     logger.warning(
-                        f"config key {config_name!r} not in {style_configs_name!r} [needs.needflow]",
+                        f"config key {config_name!r} not in 'need_flows_configs' [needs.needflow]",
                         type="needs",
                         subtype="needflow",
                         location=self.get_location(),
                     )
+            config = "\n".join(_configs)
+        else:
+            for config_name in config_names.split(","):
+                config_name = config_name.strip()
+                try:
+                    if config_name and config_name in needs_config.graphviz_styles:
+                        for key, value in needs_config.graphviz_styles[
+                            config_name
+                        ].items():
+                            if key in graphviz_style:
+                                graphviz_style[key].update(value)  # type: ignore[literal-required]
+                            else:
+                                graphviz_style[key] = value  # type: ignore[literal-required]
+                    elif config_name:
+                        logger.warning(
+                            f"config key {config_name!r} not in 'needs_graphviz_styles' [needs.needflow]",
+                            type="needs",
+                            subtype="needflow",
+                            location=self.get_location(),
+                        )
+                except Exception as err:
+                    if config_name:
+                        logger.warning(
+                            f"malformed config {config_name!r} in 'needs_graphviz_styles': {err} [needs.needflow]",
+                            type="needs",
+                            subtype="needflow",
+                            location=self.get_location(),
+                        )
 
         add_doc(self.env, self.env.docname)
 
@@ -113,8 +138,9 @@ class NeedflowDirective(FilterBase):
             "show_filters": "show_filters" in self.options,
             "show_link_names": "show_link_names" in self.options,
             "link_types": link_types,
-            "config": "\n".join(configs),
             "config_names": config_names,
+            "config": config,
+            "graphviz_style": graphviz_style,
             "scale": get_scale(self.options, self.get_location()),
             "highlight": self.options.get("highlight", ""),
             "border_color": self.options.get("border_color", None),

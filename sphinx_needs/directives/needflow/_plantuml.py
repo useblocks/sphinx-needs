@@ -29,7 +29,7 @@ from sphinx_needs.utils import (
     remove_node_from_tree,
 )
 
-from ._shared import filter_by_tree, get_root_needs
+from ._shared import create_filter_paragraph, filter_by_tree, get_root_needs
 
 logger = get_logger(__name__)
 
@@ -375,35 +375,7 @@ def process_needflow_plantuml(
             )
 
         if current_needflow["show_filters"]:
-            para = nodes.paragraph()
-            filter_text = "Used filter:"
-            filter_text += (
-                " status({})".format(" OR ".join(current_needflow["status"]))
-                if len(current_needflow["status"]) > 0
-                else ""
-            )
-            if (
-                len(current_needflow["status"]) > 0
-                and len(current_needflow["tags"]) > 0
-            ):
-                filter_text += " AND "
-            filter_text += (
-                " tags({})".format(" OR ".join(current_needflow["tags"]))
-                if len(current_needflow["tags"]) > 0
-                else ""
-            )
-            if (
-                len(current_needflow["status"]) > 0 or len(current_needflow["tags"]) > 0
-            ) and len(current_needflow["types"]) > 0:
-                filter_text += " AND "
-            filter_text += (
-                " types({})".format(" OR ".join(current_needflow["types"]))
-                if len(current_needflow["types"]) > 0
-                else ""
-            )
-
-            filter_node = nodes.emphasis(filter_text, filter_text)
-            para += filter_node
+            para = create_filter_paragraph(current_needflow)
             content.append(para)
 
         # We have to restrustructer the needflow

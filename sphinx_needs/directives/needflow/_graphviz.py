@@ -27,7 +27,7 @@ from sphinx_needs.utils import (
     remove_node_from_tree,
 )
 
-from ._shared import filter_by_tree, get_root_needs
+from ._shared import create_filter_paragraph, filter_by_tree, get_root_needs
 
 try:
     from sphinx.writers.html5 import HTML5Translator
@@ -61,25 +61,30 @@ def process_needflow_graphviz(
 
         if app.builder.format != "html":
             LOGGER.warning(
-                "NeedflowGraphiz is only supported for HTML output. [needs.needgraph]",
+                "NeedflowGraphiz is only supported for HTML output. [needs.needflow]",
                 location=node,
                 type="needs",
-                subtype="needgraph",
+                subtype="needflow",
             )
             remove_node_from_tree(node)
             continue
+
+        if attributes["show_filters"]:
+            para = create_filter_paragraph(attributes)
+            # add the paragraph to after the surrounding figure
+            node.parent.parent.insert(node.parent.parent.index(node.parent) + 1, para)
 
         option_link_types = [link.upper() for link in attributes["link_types"]]
         for lt in option_link_types:
             if lt not in link_type_names:
                 LOGGER.warning(
-                    "Unknown link type {link_type} in needflow {flow}. Allowed values: {link_types} [needs.needgraph]".format(
+                    "Unknown link type {link_type} in needflow {flow}. Allowed values: {link_types} [needs.needflow]".format(
                         link_type=lt,
                         flow=attributes["target_id"],
                         link_types=",".join(link_type_names),
                     ),
                     type="needs",
-                    subtype="needgraph",
+                    subtype="needflow",
                 )
 
         # compute the allowed link names
@@ -113,19 +118,26 @@ def process_needflow_graphviz(
         )
         filtered_needs = process_filters(app, init_filtered_needs, node.attributes)
 
-        # TODO show_filters option
-
         if not filtered_needs:
-            node.replace_self(no_needs_found_paragraph(attributes["filter_warning"]))
+            node.replace_self(
+                no_needs_found_paragraph(attributes.get("filter_warning"))
+            )
             continue
 
-        content = "digraph needgraph {\n\n"
+        content = "digraph needflow {\ncompound=true;\n"
 
         # global settings
-        content += attributes["config"] + "\n\n"
+        for key, value in attributes["graphviz_style"].get("root", {}).items():
+            content += f"{key}={_quote(str(value))};\n"
+        for etype in ("graph", "node", "edge"):
+            if etype in attributes["graphviz_style"]:
+                content += f"{etype} [\n"
+                for key, value in attributes["graphviz_style"][etype].items():  # type: ignore[literal-required]
+                    content += f"  {key}={_quote(str(value))};\n"
+                content += "]\n"
 
         # calculate node definitions
-        content += "// node definitions\n"
+        content += "\n// node definitions\n"
         for root_need in get_root_needs(filtered_needs):
             # TODO handle child needs
             node_link = calculate_link(app, root_need, fromdocname, relative=".")
@@ -147,7 +159,14 @@ def process_needflow_graphviz(
                         _render_edge(need, link, link_type, node, needs_config) + "\n"
                     )
 
-        # TODO show_legend
+        if attributes["show_legend"]:
+            # TODO implement show_legend
+            LOGGER.warning(
+                "show_legend for the graphviz engine is not yet implemented [needs.needflow]",
+                type="needs",
+                subtype="needflow",
+                location=node,
+            )
 
         content += "}"
 
@@ -158,12 +177,8 @@ def process_needflow_graphviz(
                 content, content, language="dot", linenos=True, force=True
             )
             code.source, code.line = node.source, node.line
-            if node.parent is not None and isinstance(node.parent, nodes.figure):
-                node.parent.parent.insert(
-                    node.parent.parent.index(node.parent) + 1, code
-                )
-            elif node.parent is not None:
-                node.parent.insert(node.parent.index(node) + 1, code)
+            # add the debug code to after the surrounding figure
+            node.parent.parent.insert(node.parent.parent.index(node.parent) + 1, code)
 
 
 def _quote(text: str) -> str:
@@ -294,10 +309,10 @@ def html_visit_needflow_graphviz(self: HTML5Translator, node: NeedflowGraphiz) -
     code = node.get("resolved_content")
     if code is None:
         LOGGER.warning(
-            "Content has not been resolved [needs.needgraph]",
+            "Content has not been resolved [needs.needflow]",
             location=node,
             type="needs",
-            subtype="needgraph",
+            subtype="needflow",
         )
         raise nodes.SkipNode
     attrributes = node.attributes

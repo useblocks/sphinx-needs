@@ -510,24 +510,24 @@ needs_flow_configs = {
    """,
 }
 
-needs_graphviz_configs = {
-    "tutorial": """
-graph [
-    rankdir=LR;
-    bgcolor="transparent";
-];
-node [
-    fontname="sans-serif";
-    fontsize=12;
-    penwidth=2;
-    margin="0.11,0.11";
-];
-edge [
-    color="#57ACDC";
-    fontsize=10;
-    fontcolor="#808080";
-];
-   """,
+needs_graphviz_styles = {
+    "tutorial": {
+        "graph": {
+            "rankdir": "LR",
+            "bgcolor": "transparent",
+        },
+        "node": {
+            "fontname": "sans-serif",
+            "fontsize": 12,
+            "penwidth": 2,
+            "margin": "0.11,0.11",
+        },
+        "edge": {
+            "color": "#57ACDC",
+            "fontsize": 10,
+            "fontcolor": "#808080",
+        },
+    }
 }
 
 needs_show_link_type = False

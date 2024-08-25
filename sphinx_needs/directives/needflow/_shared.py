@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from typing import Literal
 
+from docutils import nodes
+
 from sphinx_needs.config import LinkOptionsType
 from sphinx_needs.data import (
+    NeedsFlowType,
     NeedsInfoType,
 )
 from sphinx_needs.logging import get_logger
@@ -69,3 +72,30 @@ def get_root_needs(found_needs: list[NeedsInfoType]) -> list[NeedsInfoType]:
                 if not parent_found:
                     return_list.append(current_need)
     return return_list
+
+
+def create_filter_paragraph(data: NeedsFlowType) -> nodes.paragraph:
+    para = nodes.paragraph()
+    filter_text = "Used filter:"
+    filter_text += (
+        " status({})".format(" OR ".join(data["status"]))
+        if len(data["status"]) > 0
+        else ""
+    )
+    if len(data["status"]) > 0 and len(data["tags"]) > 0:
+        filter_text += " AND "
+    filter_text += (
+        " tags({})".format(" OR ".join(data["tags"])) if len(data["tags"]) > 0 else ""
+    )
+    if (len(data["status"]) > 0 or len(data["tags"]) > 0) and len(data["types"]) > 0:
+        filter_text += " AND "
+    filter_text += (
+        " types({})".format(" OR ".join(data["types"]))
+        if len(data["types"]) > 0
+        else ""
+    )
+
+    filter_node = nodes.emphasis(filter_text, filter_text)
+    para += filter_node
+
+    return para

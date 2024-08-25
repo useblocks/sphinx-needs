@@ -565,6 +565,19 @@ class _NeedsFilterType(NeedsFilteredBaseType):
     layout: Literal["list", "table", "diagram"]
 
 
+class GraphvizStyleType(TypedDict, total=False):
+    """Defines a graphviz style"""
+
+    root: dict[str, str]
+    """Root attributes"""
+    graph: dict[str, str]
+    """Graph attributes"""
+    node: dict[str, str]
+    """Node attributes"""
+    edge: dict[str, str]
+    """Edge attributes"""
+
+
 class NeedsFlowType(NeedsFilteredDiagramBaseType):
     """Data for a single (filtered) flow chart."""
 
@@ -585,6 +598,9 @@ class NeedsFlowType(NeedsFilteredDiagramBaseType):
 
     border_color: str | None
     """Color of the outline of the needs, specified using the variant syntax."""
+
+    graphviz_style: GraphvizStyleType
+    """Graphviz style configuration."""
 
 
 class NeedsGanttType(NeedsFilteredDiagramBaseType):

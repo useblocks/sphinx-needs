@@ -15,6 +15,7 @@ We will create need items, link them together, visualize the relationships betwe
         :root_id: T_CAR
         :config: tutorial
         :show_link_names:
+        :show_filters:
         :border_color:
             [status == 'open']:FF0000, 
             [status == 'in progress']:0000FF, 
@@ -29,6 +30,7 @@ We will create need items, link them together, visualize the relationships betwe
         :root_id: T_CAR
         :config: tutorial
         :show_link_names:
+        :show_filters:
         :border_color:
             [status == 'open']:FF0000, 
             [status == 'in progress']:0000FF, 
