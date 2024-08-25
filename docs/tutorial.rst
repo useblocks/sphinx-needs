@@ -6,35 +6,16 @@ Tutorial
 In this tutorial, we will demonstrate the use of sphinx-needs to build up a simplified engineering plan for a car.
 We will create need items, link them together, visualize the relationships between them, and generate traceability reports.
 
-.. need-example:: Example using needflow with plantuml
-
-    .. needflow:: Engineering plan to develop a car
-        :engine: plantuml
-        :debug:
-        :alt: Engineering plan to develop a car
-        :root_id: T_CAR
-        :config: tutorial
-        :show_link_names:
-        :show_filters:
-        :border_color:
-            [status == 'open']:FF0000, 
-            [status == 'in progress']:0000FF, 
-            [status == 'closed']:00FF00
-
-.. need-example:: Example using needflow with graphviz
-
-    .. needflow:: Engineering plan to develop a car
-        :engine: graphviz
-        :debug:
-        :alt: Engineering plan to develop a car
-        :root_id: T_CAR
-        :config: tutorial
-        :show_link_names:
-        :show_filters:
-        :border_color:
-            [status == 'open']:FF0000, 
-            [status == 'in progress']:0000FF, 
-            [status == 'closed']:00FF00
+.. needflow:: Engineering plan to develop a car
+    :alt: Engineering plan to develop a car
+    :root_id: T_CAR
+    :config: tutorial
+    :show_link_names:
+    :show_filters:
+    :border_color:
+        [status == 'open']:FF0000, 
+        [status == 'in progress']:0000FF, 
+        [status == 'closed']:00FF00
 
 .. admonition:: Prerequisites
 
@@ -295,11 +276,12 @@ using the `DataTables <https://datatables.net/>`__ JS package:
         :columns: id,type,title,status
         :style: datatable
 
-Finally, we can display a flow diagram of the need items, to also show the relationships between them:
+Finally, we can display a :ref:`flow diagram <needflow>` of the need items, to also show the relationships between them:
  
 .. need-example:: Flow diagram
 
     .. needflow:: Engineering plan to develop a car
+        :alt: Engineering plan to develop a car
         :root_id: T_CAR
         :config: lefttoright,tutorial
         :show_link_names:
@@ -307,6 +289,23 @@ Finally, we can display a flow diagram of the need items, to also show the relat
             [status == 'open']:FF0000, 
             [status == 'in progress']:0000FF, 
             [status == 'closed']:00FF00
+
+.. dropdown:: Aternative use of Graphviz engine
+
+    You can also use the Graphviz engine to render the flow diagram, by setting the ``engine`` option to ``graphviz``:
+
+    .. need-example:: Flow diagram with Graphviz
+
+        .. needflow:: Engineering plan to develop a car
+            :engine: graphviz
+            :alt: Engineering plan to develop a car
+            :root_id: T_CAR
+            :config: lefttoright,tutorial
+            :show_link_names:
+            :border_color: 
+                [status == 'open']:FF0000, 
+                [status == 'in progress']:0000FF, 
+                [status == 'closed']:00FF00
 
 Analysing Metrics
 -----------------

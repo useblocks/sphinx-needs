@@ -98,6 +98,7 @@ class NeedflowDirective(FilterBase):
                     )
             config = "\n".join(_configs)
         else:
+            config_names = config_names if config_names else "default"
             for config_name in config_names.split(","):
                 config_name = config_name.strip()
                 try:

@@ -22,6 +22,7 @@ from sphinx_needs.builder import (
 from sphinx_needs.config import NEEDS_CONFIG, LinkOptionsType, NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData, merge_data
 from sphinx_needs.defaults import (
+    GRAPHVIZ_STYLE_DEFAULTS,
     LAYOUTS,
     NEED_DEFAULT_OPTIONS,
     NEEDEXTEND_NOT_ALLOWED_OPTIONS,
@@ -569,7 +570,14 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
     needs_config.extra_links = common_links + needs_config.extra_links
     needs_config.layouts = {**LAYOUTS, **needs_config.layouts}
 
-    needs_config.flow_configs.update(NEEDFLOW_CONFIG_DEFAULTS)
+    needs_config.flow_configs = {
+        **NEEDFLOW_CONFIG_DEFAULTS,
+        **needs_config.flow_configs,
+    }
+    needs_config.graphviz_styles = {
+        **GRAPHVIZ_STYLE_DEFAULTS,
+        **needs_config.graphviz_styles,
+    }
 
     # Set time measurement flag
     if needs_config.debug_measurement:

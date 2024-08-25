@@ -521,6 +521,7 @@ needs_graphviz_styles = {
             "fontsize": 12,
             "penwidth": 2,
             "margin": "0.11,0.11",
+            "style": "rounded",
         },
         "edge": {
             "color": "#57ACDC",

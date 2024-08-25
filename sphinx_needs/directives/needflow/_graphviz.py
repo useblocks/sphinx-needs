@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import html
 import textwrap
-from typing import Callable, Literal
+from functools import lru_cache
+from typing import Callable, Literal, TypedDict
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -141,7 +142,8 @@ def process_needflow_graphviz(
 
         # calculate node definitions
         content += "\n// node definitions\n"
-        rendered_nodes: dict[str, str | None] = {}
+        rendered_nodes: dict[str, _RenderedNode] = {}
+        """A mapping of node id_complete to the cluster id if the node is a subgraph, else None."""
         for root_need in get_root_needs(filtered_needs):
             content += _render_node(
                 root_need,
@@ -162,12 +164,8 @@ def process_needflow_graphviz(
                     )
 
         if attributes["show_legend"]:
-            # TODO implement show_legend
-            LOGGER.warning(
-                "show_legend for the graphviz engine is not yet implemented [needs.needflow]",
-                type="needs",
-                subtype="needflow",
-                location=node,
+            content += _create_legend(
+                [r["need"] for r in rendered_nodes.values()], needs_config
             )
 
         content += "}"
@@ -183,6 +181,11 @@ def process_needflow_graphviz(
             node.parent.parent.insert(node.parent.parent.index(node.parent) + 1, code)
 
 
+class _RenderedNode(TypedDict):
+    cluster_id: str | None
+    need: NeedsInfoType
+
+
 def _quote(text: str) -> str:
     """Quote a string for use in a graphviz file."""
     return '"' + text.replace('"', '\\"') + '"'
@@ -194,7 +197,7 @@ def _render_node(
     config: NeedsSphinxConfig,
     calc_link: Callable[[NeedsInfoType], str],
     id_comp_to_need: dict[str, NeedsInfoType],
-    rendered_nodes: dict[str, str | None],
+    rendered_nodes: dict[str, _RenderedNode],
     subgraph: bool = True,
 ) -> str:
     """Render a node in the graphviz format."""
@@ -212,7 +215,7 @@ def _render_node(
             need, node, config, calc_link, id_comp_to_need, rendered_nodes
         )
 
-    rendered_nodes[need["id_complete"]] = None
+    rendered_nodes[need["id_complete"]] = {"need": need, "cluster_id": None}
 
     params: list[tuple[str, str]] = []
 
@@ -225,13 +228,23 @@ def _render_node(
 
     # shape
     if need["is_need"]:
-        params.append(("shape", _quote(need["type_style"])))
+        if need["type_style"] not in _plantuml_shapes:
+            LOGGER.warning(
+                f"Unknown node style {need['type_style']!r} for graphviz engine [needs.needflow]",
+                type="needs",
+                subtype="needflow",
+                once=True,
+            )
+        shape = _plantuml_shapes.get(need["type_style"], need["type_style"])
+        params.append(("shape", _quote(shape)))
     else:
         params.append(("shape", "rectangle"))
 
     # fill color
-    params.append(("style", "filled"))
     if need["type_color"]:
+        style = node.attributes["graphviz_style"].get("node", {}).get("style", "")
+        new_style = style + ",filled" if style else "filled"
+        params.append(("style", _quote(new_style)))
         params.append(("fillcolor", _quote(need["type_color"])))
 
     # outline color
@@ -258,7 +271,7 @@ def _render_subgraph(
     config: NeedsSphinxConfig,
     calc_link: Callable[[NeedsInfoType], str],
     id_comp_to_need: dict[str, NeedsInfoType],
-    rendered_nodes: dict[str, str | None],
+    rendered_nodes: dict[str, _RenderedNode],
 ) -> str:
     """Render a subgraph in the graphviz format."""
     params: list[tuple[str, str]] = []
@@ -301,7 +314,10 @@ def _render_subgraph(
     cluster_id = _quote("cluster_" + need["id_complete"])
     param_str = "\n".join(f"  {key}={value};" for key, value in params)
 
-    rendered_nodes[need["id_complete"]] = "cluster_" + need["id_complete"]
+    rendered_nodes[need["id_complete"]] = {
+        "need": need,
+        "cluster_id": "cluster_" + need["id_complete"],
+    }
 
     children = ""
     if need["is_need"] and need["parts"]:
@@ -373,7 +389,7 @@ def _render_edge(
     link_type: LinkOptionsType,
     node: NeedflowGraphiz,
     config: NeedsSphinxConfig,
-    rendered_nodes: dict[str, str | None],
+    rendered_nodes: dict[str, _RenderedNode],
 ) -> str:
     """Render an edge in the graphviz format."""
     if need["id_complete"] not in rendered_nodes or link not in rendered_nodes:
@@ -387,45 +403,170 @@ def _render_edge(
     if show_links:
         params.append(("label", _quote(link_type["outgoing"])))
 
-    # If source or target of link is a need_part, a specific style is needed
-    # TODO custom for styles for edges (mapping from plantuml to graphviz)
-    if "." in link or "." in need["id_complete"]:
-        params.append(("link_style", "dotted"))
-        # if _style_part := link_type.get("style_part"):
-        #     link_style = f"[{_style_part}]"
-        # else:
-        #     link_style = "[dotted]"
-    else:
-        pass
-        # params.append(("link_style", "solid"))
-        # if _style := link_type.get("style"):
-        #     link_style = f"[{_style}]"
-        # else:
-        #     link_style = ""
-
-    # TODO custom for styles for edges (mapping from plantuml to graphviz)
-    # if _style_start := link_type.get("style_start"):
-    #     style_start = _style_start
-    # else:
-    #     style_start = "-"
-
-    # if _style_end := link_type.get("style_end"):
-    #     style_end = _style_end
-    # else:
-    #     style_end = "->"
+    is_part = "." in link or "." in need["id_complete"]
+    params.extend(
+        _style_params_from_link_type(
+            link_type.get("style_part", "dotted")
+            if is_part
+            else link_type.get("style", ""),
+            link_type.get("style_start", "-"),
+            link_type.get("style_end", "->"),
+        )
+    )
 
     start_id = _quote(need["id_complete"])
-    if (ltail := rendered_nodes[need["id_complete"]]) is not None:
+    if (ltail := rendered_nodes[need["id_complete"]]["cluster_id"]) is not None:
         # the need has been created as a subgraph and so we also need to create a logical link to the cluster
         params.append(("ltail", _quote(ltail)))
 
     end_id = _quote(link)
-    if (lhead := rendered_nodes[link]) is not None:
+    if (lhead := rendered_nodes[link]["cluster_id"]) is not None:
         # the end need has been created as a subgraph and so we also need to create a logical link to the cluster
         params.append(("lhead", _quote(lhead)))
 
     param_str = ", ".join(f"{key}={value}" for key, value in params)
     return f"{start_id} -> {end_id} [{param_str}];\n"
+
+
+@lru_cache(maxsize=None)
+def _style_params_from_link_type(
+    styles: str, style_start: str, style_end: str
+) -> list[tuple[str, str]]:
+    params: list[tuple[str, str]] = []
+
+    for style in styles.split(","):
+        if not (style := style.strip()):
+            continue
+        if style.startswith("#"):
+            # assume this is a color
+            params.append(("color", _quote(style)))
+        elif style in ("dotted", "dashed", "solid", "bold"):
+            params.append(("style", _quote(style)))
+        else:
+            LOGGER.warning(
+                f"Unknown link style {style!r} for graphviz engine [needs.needflow]",
+                type="needs",
+                subtype="needflow",
+                once=True,
+            )
+
+    # convert plantuml arrow start/end style to graphviz style.
+    plantuml_arrow_ends = style_start + style_end
+    # we are going to cheat a bit here and only look at the start and end characters
+    # this means we ignore things like the direction of the arrow, e.g. `-up->`
+    plantuml_arrow_ends = plantuml_arrow_ends[0] + plantuml_arrow_ends[-1]
+    if (arrow_style := _plantuml_arrow_style.get(plantuml_arrow_ends)) is None:
+        LOGGER.warning(
+            f"Unknown link start/end style {plantuml_arrow_ends!r} for graphviz engine [needs.needflow]",
+            type="needs",
+            subtype="needflow",
+            once=True,
+        )
+    else:
+        params.extend(arrow_style)
+
+    return params
+
+
+# in plantuml guide, see: 8.7 "Nestable elements"
+# we try to match most to https://graphviz.org/doc/info/shapes.html
+_plantuml_shapes = {
+    "agent": "box",
+    "artifact": "note",
+    "card": "box",
+    "component": "component",
+    "database": "cylinder",
+    "file": "note",
+    "folder": "folder",
+    "frame": "tab",
+    "hexagon": "hexagon",
+    "node": "box3d",
+    "package": "folder",
+    "queue": "cylinder",
+    "rectangle": "rectangle",
+    "stack": "rectangle",
+    "storage": "ellipse",
+    "usecase": "oval",
+}
+
+# in plantuml guide, see: "8.13.1 Type of arrow head"
+# we try to match most to https://graphviz.org/doc/info/arrows.html
+# note -->> would actually be the normal style in graphviz
+_plantuml_arrow_style = {
+    # neither
+    "--": (("arrowhead", "none"),),
+    # head only
+    "->": (("arrowhead", "vee"),),
+    "-*": (("arrowhead", "diamond"),),
+    "-o": (("arrowhead", "odiamond"),),
+    "-O": (("arrowhead", "odot"),),
+    "-@": (("arrowhead", "dot"),),
+    # tail only
+    "<-": (("dir", "back"), ("arrowtail", "vee")),
+    "*-": (("dir", "back"), ("arrowtail", "diamond")),
+    "o-": (("dir", "back"), ("arrowtail", "odiamond")),
+    "O-": (("dir", "back"), ("arrowtail", "odot")),
+    "@-": (("dir", "back"), ("arrowtail", "dot")),
+    # both same
+    "<>": (("dir", "both"), ("arrowtail", "vee"), ("arrowhead", "vee")),
+    "**": (("dir", "both"), ("arrowtail", "diamond"), ("arrowhead", "diamond")),
+    "oo": (("dir", "both"), ("arrowtail", "odiamond"), ("arrowhead", "odiamond")),
+    "OO": (("dir", "both"), ("arrowtail", "odot"), ("arrowhead", "odot")),
+    "@@": (("dir", "both"), ("arrowtail", "dot"), ("arrowhead", "dot")),
+    # both different
+    "*>": (("dir", "both"), ("arrowtail", "diamond"), ("arrowhead", "vee")),
+    "o>": (("dir", "both"), ("arrowtail", "odiamond"), ("arrowhead", "vee")),
+    "O>": (("dir", "both"), ("arrowtail", "odot"), ("arrowhead", "vee")),
+    "@>": (("dir", "both"), ("arrowtail", "dot"), ("arrowhead", "vee")),
+    "<*": (("dir", "both"), ("arrowtail", "vee"), ("arrowhead", "diamond")),
+    "<o": (("dir", "both"), ("arrowtail", "vee"), ("arrowhead", "odiamond")),
+    "<O": (("dir", "both"), ("arrowtail", "vee"), ("arrowhead", "odot")),
+    "<@": (("dir", "both"), ("arrowtail", "vee"), ("arrowhead", "dot")),
+    "o*": (("dir", "both"), ("arrowtail", "odiamond"), ("arrowhead", "diamond")),
+    "O*": (("dir", "both"), ("arrowtail", "odot"), ("arrowhead", "diamond")),
+    "@*": (("dir", "both"), ("arrowtail", "dot"), ("arrowhead", "diamond")),
+    "*o": (("dir", "both"), ("arrowtail", "diamond"), ("arrowhead", "odiamond")),
+    "Oo": (("dir", "both"), ("arrowtail", "odot"), ("arrowhead", "odiamond")),
+    "@o": (("dir", "both"), ("arrowtail", "dot"), ("arrowhead", "odiamond")),
+    "*O": (("dir", "both"), ("arrowtail", "diamond"), ("arrowhead", "odot")),
+    "oO": (("dir", "both"), ("arrowtail", "odiamond"), ("arrowhead", "odot")),
+    "@O": (("dir", "both"), ("arrowtail", "dot"), ("arrowhead", "odot")),
+    "*@": (("dir", "both"), ("arrowtail", "diamond"), ("arrowhead", "dot")),
+    "o@": (("dir", "both"), ("arrowtail", "odiamond"), ("arrowhead", "dot")),
+    "O@": (("dir", "both"), ("arrowtail", "odot"), ("arrowhead", "dot")),
+}
+
+
+def _create_legend(needs: list[NeedsInfoType], config: NeedsSphinxConfig) -> str:
+    """Create a legend for the graph."""
+
+    # TODO also show links in legend
+
+    # filter types by ones that are actually used
+    types = {need["type"] for need in needs}
+    need_types = [ntype for ntype in config.types if ntype["directive"] in types]
+
+    label = '<<TABLE border="0">'
+    label += '\n<TR><TD align="center"><B>Legend</B></TD></TR>'
+
+    for need_type in need_types:
+        title = html.escape(need_type["title"])
+        color = _quote(need_type["color"])
+        label += f'\n<TR><TD align="left" bgcolor={color}>{title}</TD></TR>'
+
+    label += "\n</TABLE>>"
+
+    legend = f"""
+{{
+    rank = sink;
+    legend [
+        shape=box,
+        style=rounded,
+        label={label}
+    ];
+}}
+"""
+    return legend
 
 
 def html_visit_needflow_graphviz(self: HTML5Translator, node: NeedflowGraphiz) -> None:
@@ -450,9 +591,9 @@ def html_visit_needflow_graphviz(self: HTML5Translator, node: NeedflowGraphiz) -
     if format not in ("png", "svg"):
         LOGGER.warning(
             f"graphviz_output_format must be one of 'png', 'svg', but is {format!r} [needs.needflow]",
-            location=node,
             type="needs",
             subtype="needflow",
+            once=True,
         )
         raise nodes.SkipNode
     try:
