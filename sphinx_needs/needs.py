@@ -599,12 +599,12 @@ def check_configuration(_app: Sphinx, config: Config) -> None:
         if internal in extra_options:
             raise NeedsConfigException(
                 f'Extra option "{internal}" already used internally. '
-                " Please use another name."
+                " Please use another name in your config (needs_extra_options)."
             )
         if internal in link_types:
             raise NeedsConfigException(
                 f'Link type name "{internal}" already used internally. '
-                " Please use another name."
+                " Please use another name in your config (needs_extra_links)."
             )
 
     # Check if option and link are using the same name
