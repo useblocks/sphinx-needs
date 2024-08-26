@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from docutils.parsers.rst import directives
+
+if TYPE_CHECKING:
+    from sphinx_needs.data import GraphvizStyleType
 
 DEFAULT_DIAGRAM_TEMPLATE = """
 {%- if is_need -%}
@@ -202,6 +205,32 @@ NEEDFLOW_CONFIG_DEFAULTS = {
       BorderColor BLACK
     }
     """,
+}
+
+GRAPHVIZ_STYLE_DEFAULTS: dict[str, GraphvizStyleType] = {
+    "default": {
+        "node": {
+            "margin": "0.21,0.11",
+        },
+        "edge": {
+            "minlen": "2",
+        },
+    },
+    "lefttoright": {
+        "graph": {
+            "rankdir": "LR",
+        }
+    },
+    "toptobottom": {
+        "graph": {
+            "rankdir": "TB",
+        }
+    },
+    "transparent": {
+        "graph": {
+            "bgcolor": "transparent",
+        }
+    },
 }
 
 TITLE_REGEX = r'([^\s]+) as "([^"]+)"'

@@ -16,16 +16,46 @@ If you provide an argument, we use it as caption for the generated image.
       :tags: flow_example
       :link_types: tests, blocks
       :show_link_names:
+      :config: lefttoright
+
+.. versionadded:: 2.2.0
+
+   You can now also set all or individual ``needflow`` directives to use the Graphviz engine for rendering the graph, which can speed up the rendering process for large amount of graphs.
+
+   See the :ref:`needs_flow_engine` configuration option and the :ref:`directive engine option <needflow_engine>` for more information.
+
+   .. dropdown:: Using Graphviz engine
+
+      .. needflow:: My first needflow
+         :engine: graphviz
+         :filter: is_need
+         :tags: flow_example
+         :link_types: tests, blocks
+         :show_link_names:
+         :config: default,lefttoright
 
 Dependencies
 ------------
 
-``needflow`` uses `PlantUML <http://plantuml.com>`_ and the
+plantuml
+~~~~~~~~
+
+``needflow``, with the default ``plantuml`` engine, uses `PlantUML <http://plantuml.com>`_ and the
 Sphinx-extension `sphinxcontrib-plantuml <https://pypi.org/project/sphinxcontrib-plantuml/>`_ for generating the flows.
 
 Both must be available and correctly configured to work.
 
 Please read :ref:`install plantuml <install_plantuml>` for a step-by-step installation explanation.
+
+graphviz
+~~~~~~~~
+
+``needflow``, with the ``graphviz`` engine uses the `Graphviz dot <https://graphviz.org/>`_ executable for rendering the flowchart,
+and the built-in :any:`sphinx.ext.graphviz` extension from Sphinx.
+
+See https://graphviz.org/download/ for how to install Graphviz,
+and :any:`sphinx.ext.graphviz` for configuration options.
+In particular, you may want to set the ``graphviz_output_format`` configuration option in your ``conf.py``.
 
 Options
 -------
@@ -35,9 +65,28 @@ Options
    **needflow** supports the full filtering possibilities of **Sphinx-Needs**.
    Please see :ref:`filter` for more information.
 
+.. _needflow_engine:
+
+engine
+~~~~~~
+
+.. versionadded:: 2.3.0
+
+You can set the engine to use for rendering the flowchart,
+to either ``plantuml`` (default) or ``graphviz``.
+
 .. _needflow_root_id:
 .. _needflow_root_direction:
 .. _needflow_root_depth:
+
+.. _needflow_alt:
+
+alt
+~~~
+
+.. versionadded:: 2.3.0
+
+Set the ``alt`` option to a string to add an alternative text to the generated image.
 
 root_id
 ~~~~~~~
@@ -77,6 +126,30 @@ Other need filters are applied on this initial selection of connected needs.
       :link_types: tests, blocks
       :show_link_names:
 
+.. dropdown:: Using Graphviz engine
+
+   .. needflow::
+      :engine: graphviz
+      :root_id: spec_flow_002
+      :root_direction: incoming
+      :link_types: tests, blocks
+      :show_link_names:
+
+   .. needflow::
+      :engine: graphviz
+      :root_id: spec_flow_002
+      :root_direction: outgoing
+      :link_types: tests, blocks
+      :show_link_names:
+
+   .. needflow::
+      :engine: graphviz
+      :root_id: spec_flow_002
+      :root_direction: outgoing
+      :root_depth: 1
+      :link_types: tests, blocks
+      :show_link_names:
+
 .. _needflow_show_filters:
 
 show_filters
@@ -87,7 +160,14 @@ Adds information of used filters below generated flowchart.
 .. need-example::
 
    .. needflow::
-      :tags: main_example
+      :tags: flow_example
+      :show_filters:
+
+.. dropdown:: Using Graphviz engine
+
+   .. needflow::
+      :engine: graphviz
+      :tags: flow_example
       :show_filters:
 
 .. _needflow_show_legend:
@@ -101,7 +181,14 @@ for flowcharts.
 .. need-example::
 
    .. needflow::
-      :tags: main_example
+      :tags: flow_example
+      :show_legend:
+
+.. dropdown:: Using Graphviz engine
+
+   .. needflow::
+      :engine: graphviz
+      :tags: flow_example
       :show_legend:
 
 .. _needflow_show_link_names:
@@ -119,7 +206,14 @@ Setup data can be found in test case document `tests/doc_test/doc_extra_links`.
 .. need-example::
 
    .. needflow::
-      :tags: main_example
+      :tags: flow_example
+      :show_link_names:
+
+.. dropdown:: Using Graphviz engine
+
+   .. needflow::
+      :engine: graphviz
+      :tags: flow_example
       :show_link_names:
 
 .. _needflow_link_types:
@@ -187,6 +281,14 @@ See also :ref:`needs_extra_links` for more details about specific link types.
       :link_types: tests, blocks
       :show_link_names:
 
+.. dropdown:: Using Graphviz engine
+
+   .. needflow::
+      :engine: graphviz
+      :tags: flow_example
+      :link_types: tests, blocks
+      :show_link_names:
+
 .. _needflow_config:
 
 config
@@ -195,7 +297,10 @@ config
 .. versionadded:: 0.5.2
 
 You can specify a configuration using the ``:config:`` option but you should
-set the :ref:`needs_flow_configs` configuration parameter in **conf.py**.
+set the :ref:`needs_flow_configs` configuration parameter in **conf.py**,
+when using the ``plantuml`` engine,
+or the :ref:`needs_graphviz_styles` configuration,
+when using the ``graphviz`` engine.
 
 .. need-example::
 
@@ -219,7 +324,20 @@ You can apply multiple configurations together by separating them via ``,`` symb
       :show_link_names:
       :config: monochrome,lefttoright,handwritten
 
-**Sphinx-Needs** provides some necessary configurations already. They are:
+.. dropdown:: Using Graphviz engine
+
+   .. needflow::
+      :engine: graphviz
+      :filter: is_need
+      :tags: flow_example
+      :types: spec
+      :link_types: tests, blocks
+      :show_link_names:
+      :config: default,lefttoright
+
+**Sphinx-Needs** provides some necessary configurations already.
+
+For ``needs_flow_configs`` they are:
 
 .. list-table::
    :header-rows: 1
@@ -243,6 +361,23 @@ You can apply multiple configurations together by separating them via ``,`` symb
      * Tomorrow night eighties theme. Look `here <https://github.com/gabrieljoelc/plantuml-themes>`_ for example.
    - * cplant
      * Cplant theme. Read `this <https://github.com/aoki/cplant>`_ for example.
+
+For ``needs_graphviz_styles`` they are:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30,70
+
+   - * config name
+     * description
+   - * default
+     * Default style used when ``config`` is not set
+   - * lefttoright
+     * Direction of boxes is left to right
+   - * toptobottom
+     * Direction of boxes is top to bottom (default value)
+   - * transparent
+     * Transparent background
 
 .. _needflow_scale:
 
@@ -282,6 +417,14 @@ sets the border for each need of the needflow to **red** if the need also passes
       :link_types: tests, blocks
       :highlight: id in ['spec_flow_002', 'subspec_2'] or type == 'req'
 
+.. dropdown:: Using Graphviz engine
+
+   .. needflow::
+      :engine: graphviz
+      :tags: flow_example
+      :link_types: tests, blocks
+      :highlight: id in ['spec_flow_002', 'subspec_2'] or type == 'req'
+
 .. _needflow_border_color:
 
 border_color
@@ -295,6 +438,17 @@ The value should be written with the :ref:`variant syntax <needs_variant_support
 .. need-example::
 
    .. needflow:: Engineering plan to develop a car
+      :tags: flow_example
+      :link_types: tests, blocks
+      :border_color:
+         [type == 'req']:FF0000,
+         [type == 'spec']:0000FF,
+         [type == 'test']:00FF00
+
+.. dropdown:: Using Graphviz engine
+
+   .. needflow:: Engineering plan to develop a car
+      :engine: graphviz
       :tags: flow_example
       :link_types: tests, blocks
       :border_color:
@@ -317,6 +471,14 @@ Allowed values are: ``left``, ``center``, ``right``
       :tags: flow_example
       :align: center
 
+.. dropdown:: Using Graphviz engine
+
+   .. needflow::
+      :engine: graphviz
+      :filter: is_need and type == 'spec'
+      :tags: flow_example
+      :align: center
+
 .. _needflow_debug:
 
 debug
@@ -334,7 +496,17 @@ Helpful to identify reasons why a PlantUML build may have thrown errors.
       :filter: is_need
       :tags: flow_example
       :link_types: tests, blocks
-      :config:  lefttoright, handwritten
+      :config: lefttoright, handwritten
+      :debug:
+
+.. dropdown:: Using Graphviz engine
+
+   .. needflow::
+      :engine: graphviz
+      :filter: is_need
+      :tags: flow_example
+      :link_types: tests, blocks
+      :config: default,lefttoright
       :debug:
 
 common filters

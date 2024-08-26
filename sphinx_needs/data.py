@@ -525,7 +525,7 @@ class NeedsFilteredBaseType(NeedsBaseDataType):
     filter_code: list[str]
     filter_func: None | str
     export_id: str
-    filter_warning: str
+    filter_warning: str | None
     """If set, the filter is exported with this ID in the needs.json file."""
 
 
@@ -567,8 +567,27 @@ class _NeedsFilterType(NeedsFilteredBaseType):
     layout: Literal["list", "table", "diagram"]
 
 
+class GraphvizStyleType(TypedDict, total=False):
+    """Defines a graphviz style"""
+
+    root: dict[str, str]
+    """Root attributes"""
+    graph: dict[str, str]
+    """Graph attributes"""
+    node: dict[str, str]
+    """Node attributes"""
+    edge: dict[str, str]
+    """Edge attributes"""
+
+
 class NeedsFlowType(NeedsFilteredDiagramBaseType):
     """Data for a single (filtered) flow chart."""
+
+    classes: list[str]
+    """List of CSS classes."""
+
+    alt: str
+    """Alternative text for the diagram in HTML output."""
 
     root_id: str | None
     """need ID to use as a root node."""
@@ -581,6 +600,9 @@ class NeedsFlowType(NeedsFilteredDiagramBaseType):
 
     border_color: str | None
     """Color of the outline of the needs, specified using the variant syntax."""
+
+    graphviz_style: GraphvizStyleType
+    """Graphviz style configuration."""
 
 
 class NeedsGanttType(NeedsFilteredDiagramBaseType):
@@ -618,7 +640,7 @@ class NeedsPieType(NeedsBaseDataType):
     text_color: None | str
     shadow: bool
     filter_func: None | str
-    filter_warning: str
+    filter_warning: str | None
 
 
 class NeedsSequenceType(NeedsFilteredDiagramBaseType):
