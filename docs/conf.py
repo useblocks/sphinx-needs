@@ -288,7 +288,7 @@ plantuml_output_format = "svg_img"
 
 # -- Options for Needs extension ---------------------------------------
 
-needs_debug_measurement = False
+needs_debug_measurement = "READTHEDOCS" in os.environ  # run on CI
 
 needs_types = [
     # Architecture types

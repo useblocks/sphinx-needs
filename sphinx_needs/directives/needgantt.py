@@ -195,7 +195,13 @@ def process_needgantt(
         puml_node["uml"] += add_config(config)
 
         all_needs = list(all_needs_dict.values())
-        found_needs = process_filters(app, all_needs, current_needgantt)
+        found_needs = process_filters(
+            app,
+            all_needs,
+            current_needgantt,
+            origin="needgantt",
+            location=f"{node.source}:{node.line}",
+        )
 
         # Scale/timeline handling
         if current_needgantt["timeline"]:

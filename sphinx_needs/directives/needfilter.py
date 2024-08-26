@@ -158,7 +158,13 @@ def process_needfilters(
             tgroup += tbody
             content += tgroup
 
-        found_needs = process_filters(app, all_needs.values(), current_needfilter)
+        found_needs = process_filters(
+            app,
+            all_needs.values(),
+            current_needfilter,
+            origin="needfilter",
+            location=f"{node.source}:{node.line}",
+        )
 
         line_block = nodes.line_block()
         for need_info in found_needs:

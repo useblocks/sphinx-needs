@@ -120,7 +120,13 @@ def process_needflow_graphviz(
             if (root_id := attributes["root_id"])
             else all_needs.values()
         )
-        filtered_needs = process_filters(app, init_filtered_needs, node.attributes)
+        filtered_needs = process_filters(
+            app,
+            init_filtered_needs,
+            node.attributes,
+            origin="needflow",
+            location=f"{node.source}:{node.line}",
+        )
 
         if not filtered_needs:
             node.replace_self(
