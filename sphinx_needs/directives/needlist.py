@@ -86,7 +86,13 @@ def process_needlist(
         current_needfilter: NeedsListType = node.attributes
         content: list[nodes.Node] = []
         all_needs = list(SphinxNeedsData(env).get_or_create_needs().values())
-        found_needs = process_filters(app, all_needs, current_needfilter)
+        found_needs = process_filters(
+            app,
+            all_needs,
+            current_needfilter,
+            origin="needlist",
+            location=f"{node.source}:{node.line}",
+        )
 
         if len(found_needs) > 0:
             line_block = nodes.line_block()

@@ -210,12 +210,13 @@ def process_needtables(
         table_node.line = current_needtable["lineno"]
 
         # Perform filtering of needs
-        try:
-            filtered_needs = process_filters(
-                app, list(all_needs.values()), current_needtable
-            )
-        except Exception as e:
-            raise e
+        filtered_needs = process_filters(
+            app,
+            list(all_needs.values()),
+            current_needtable,
+            origin="needtable",
+            location=f"{node.source}:{node.line}",
+        )
 
         def get_sorter(key: str) -> Callable[[NeedsInfoType], Any]:
             """
