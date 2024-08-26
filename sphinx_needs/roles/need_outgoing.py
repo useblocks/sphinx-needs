@@ -54,8 +54,8 @@ def process_need_outgoing(
                 and need_id_main in needs_all_needs
                 and need_id_part in needs_all_needs[need_id_main]["parts"]
             ):
+                target_need = needs_all_needs[need_id_main]
                 try:
-                    target_need = needs_all_needs[need_id_main]
                     if need_id_part and need_id_part in target_need["parts"]:
                         part_content = target_need["parts"][need_id_part]["content"]
                         target_title = (
@@ -107,8 +107,12 @@ def process_need_outgoing(
                     node_link_container += new_node_ref
 
                 except NoUri:
-                    # If the given need id can not be found, we must pass here....
-                    pass
+                    # If the given need id can not be found,
+                    # we make an emphasis to still show the need id
+                    # This allows to show traceability in cross documents cases.
+                    node_link_container += nodes.emphasis(
+                        target_need["id"], target_need["id"]
+                    )
 
             else:
                 # Let's add a normal text here instead of a link.
