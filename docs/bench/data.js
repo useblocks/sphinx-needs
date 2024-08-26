@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724664922736,
+  "lastUpdate": 1724665105995,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -8640,6 +8640,42 @@ window.BENCHMARK_DATA = {
             "value": 62.807874906999984,
             "unit": "s",
             "extra": "Commit: 005d393eee45cc74c00ffcf7db32895aa58896ae\nBranch: master\nTime: 2024-08-26T11:33:39+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "alex@lanin.de",
+            "name": "Alexander Lanin",
+            "username": "AlexanderLanin"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "28dc088859bef69e608a5920a184038673b73b53",
+          "message": "🔧 Improve `NeedsConfigException` messages (hint how to fix) (#1239)",
+          "timestamp": "2024-08-26T11:36:39+02:00",
+          "tree_id": "dd43750fce69ece7d50a69f235c5c5544b78ecab",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/28dc088859bef69e608a5920a184038673b73b53"
+        },
+        "date": 1724665100883,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18221792299999606,
+            "unit": "s",
+            "extra": "Commit: 28dc088859bef69e608a5920a184038673b73b53\nBranch: master\nTime: 2024-08-26T11:36:39+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 63.45595546299998,
+            "unit": "s",
+            "extra": "Commit: 28dc088859bef69e608a5920a184038673b73b53\nBranch: master\nTime: 2024-08-26T11:36:39+02:00"
           }
         ]
       }
