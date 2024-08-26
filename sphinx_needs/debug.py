@@ -180,6 +180,16 @@ def _store_timing_results_json(app: Sphinx, build_data: dict[str, Any]) -> None:
     print(f"Timing measurement results (JSON) stored under {json_result_path}")
 
 
+def _store_filter_results_json(app: Sphinx) -> None:
+    json_result_path = os.path.join(str(app.outdir), "debug_filters.json")
+
+    data = SphinxNeedsData(app.env).get_or_create_filters()
+
+    with open(json_result_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4)
+    print(f"Filter results (JSON) stored under {json_result_path}")
+
+
 def _store_timing_results_html(app: Sphinx, build_data: dict[str, Any]) -> None:
     jinja_env = Environment(
         loader=PackageLoader("sphinx_needs"), autoescape=select_autoescape()
@@ -203,4 +213,5 @@ def process_timing(app: Sphinx, _exception: Exception | None) -> None:
 
         _print_timing_results(app)
         _store_timing_results_json(app, build_data)
+        _store_filter_results_json(app)
         _store_timing_results_html(app, build_data)
