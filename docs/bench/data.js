@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724670933215,
+  "lastUpdate": 1724682871409,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -8712,6 +8712,42 @@ window.BENCHMARK_DATA = {
             "value": 65.21276829000001,
             "unit": "s",
             "extra": "Commit: c04dc4ea8e6bd0a285bda5631adbea94cd0e1236\nBranch: master\nTime: 2024-08-26T13:13:40+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "295c254fba693c4b726bac94bb5d64677e416422",
+          "message": "✨ Allow for use of graphviz as the \"engine\" for `needflow` (#1235)\n\nThis commit allows for the use of [`graphviz`](https://graphviz.org) as the underlying engine for `needflow` diagrams, in addition to the default [`plantuml`](https://plantuml.com).\r\nThe intention being to simplify and improve performance of graph builds, since plantuml has issues with JVM initialisation times and reliance on a third-party sphinx extension.\r\n\r\nIt introduces a new configuration option; `needs_flow_engine`, which can be set to either `plantuml` or `graphviz`, and defaults to `plantuml`,\r\nand a new directive option; `engine`, which can be set to either `plantuml` or `graphviz`, and defaults to `plantuml`.\r\nThus, the `graphivz` engine can be activated on a per-diagram basis, or globally.\r\n\r\nThe `graphviz` engine supports all the existing `needflow` options,\r\nalthough one key complication is the translation of existing \"style related\" configurations, which are hard-coded to plantuml syntax:\r\n\r\n- fields in `needs_extra_links`: `style`, `style_part`, `style_start`, `style_end`\r\n- `needs_flow_configs`\r\n- `needs_diagram_template`\r\n\r\nThe `needs_extra_links` fields are translated to graphviz syntax, where possible, and warnings emitted for those that could not be. Two issues that probably cannot be resolved (it is unclear exactly how plantuml achieves them):\r\n1. Link styles with a direction, such as `-up->`\r\n2. Applying correct shapes for needs that contain children/parts; in graphviz nodes cannot contain other nodes, and instead we must use \"subgraph clusters\" for such nodes, which do not allow a `shape` attribute\r\n\r\nA separate `needs_graphviz_styles` configuration is introduced, which is similar to `needs_flow_configs`, except allowing graphviz attributes to be set (and used by the `needflow` directive's `config` option).\r\n\r\n`needs_diagram_template` is not used; currently the graphviz engine hard-codes the format of node labels, but this could potentially be added in the future.\r\n\r\nAdditionally, an `alt` option is added to the `needflow` directive, and supported by both engines.\r\n\r\nNote, currently the rendering with the `graphviz` engine is restricted to HTML output only, this could fairly easily be extended to latex/man/text/texinfo, which `sphinx.ext.graphviz` already supports, the main reason it is not already, is that we override the visitor node currently, to make some improvements.",
+          "timestamp": "2024-08-26T16:32:20+02:00",
+          "tree_id": "54173f2a74ea676bd3d2b0efbe1f6757403d1eba",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/295c254fba693c4b726bac94bb5d64677e416422"
+        },
+        "date": 1724682861591,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.17900066699999684,
+            "unit": "s",
+            "extra": "Commit: 295c254fba693c4b726bac94bb5d64677e416422\nBranch: master\nTime: 2024-08-26T16:32:20+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.293614039,
+            "unit": "s",
+            "extra": "Commit: 295c254fba693c4b726bac94bb5d64677e416422\nBranch: master\nTime: 2024-08-26T16:32:20+02:00"
           }
         ]
       }
