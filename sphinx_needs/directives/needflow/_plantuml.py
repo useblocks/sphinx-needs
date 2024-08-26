@@ -23,7 +23,7 @@ from sphinx_needs.diagrams_common import calculate_link, create_legend
 from sphinx_needs.directives.needflow._directive import NeedflowPlantuml
 from sphinx_needs.directives.utils import no_needs_found_paragraph
 from sphinx_needs.filter_common import filter_single_need, process_filters
-from sphinx_needs.logging import get_logger
+from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import (
     match_variants,
     remove_node_from_tree,
@@ -219,13 +219,15 @@ def process_needflow_plantuml(
         option_link_types = [link.upper() for link in current_needflow["link_types"]]
         for lt in option_link_types:
             if lt not in link_type_names:
-                logger.warning(
-                    "Unknown link type {link_type} in needflow {flow}. Allowed values: {link_types} [needs]".format(
+                log_warning(
+                    logger,
+                    "Unknown link type {link_type} in needflow {flow}. Allowed values: {link_types}".format(
                         link_type=lt,
                         flow=current_needflow["target_id"],
                         link_types=",".join(link_type_names),
                     ),
-                    type="needs",
+                    None,
+                    None,
                 )
 
         # compute the allowed link names

@@ -11,7 +11,7 @@ from sphinx.builders import Builder
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.directives.need import post_process_needs_data
-from sphinx_needs.logging import get_logger
+from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.needsfile import NeedsList
 
 LOGGER = get_logger(__name__)
@@ -49,10 +49,11 @@ class NeedsBuilder(Builder):
     ) -> None:
         if not SphinxNeedsData(self.env).has_export_filters:
             return
-        LOGGER.warning(
+        log_warning(
+            LOGGER,
             "At least one use of `export_id` directive option, requires a slower build",
-            type="needs",
-            subtype="build",
+            "build",
+            None,
         )
         return super().write(build_docnames, updated_docnames, method)
 

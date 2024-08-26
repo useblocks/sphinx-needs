@@ -7,7 +7,7 @@ from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.data import NeedsListType, SphinxNeedsData
 from sphinx_needs.directives.utils import (
     no_needs_found_paragraph,
     used_filter_paragraph,
@@ -46,8 +46,7 @@ class NeedlistDirective(FilterBase):
         )
         targetnode = nodes.target("", "", ids=[targetid])
 
-        # Add the need and all needed information
-        SphinxNeedsData(env).get_or_create_lists()[targetid] = {
+        attributes: NeedsListType = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
@@ -56,10 +55,12 @@ class NeedlistDirective(FilterBase):
             "show_filters": "show_filters" in self.options,
             **self.collect_filter_attributes(),
         }
+        list_node = Needlist("", **attributes)
+        self.set_source_info(list_node)
 
         add_doc(env, env.docname)
 
-        return [targetnode, Needlist("")]
+        return [targetnode, list_node]
 
 
 def process_needlist(
@@ -82,8 +83,7 @@ def process_needlist(
             remove_node_from_tree(node)
             continue
 
-        id = node.attributes["ids"][0]
-        current_needfilter = SphinxNeedsData(env).get_or_create_lists()[id]
+        current_needfilter: NeedsListType = node.attributes
         content: list[nodes.Node] = []
         all_needs = list(SphinxNeedsData(env).get_or_create_needs().values())
         found_needs = process_filters(app, all_needs, current_needfilter)

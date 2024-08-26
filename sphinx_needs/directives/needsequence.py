@@ -12,7 +12,7 @@ from sphinxcontrib.plantuml import (
 )
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType, NeedsSequenceType, SphinxNeedsData
 from sphinx_needs.diagrams_common import (
     DiagramBase,
     add_config,
@@ -23,7 +23,7 @@ from sphinx_needs.diagrams_common import (
 )
 from sphinx_needs.directives.utils import no_needs_found_paragraph
 from sphinx_needs.filter_common import FilterBase
-from sphinx_needs.logging import get_logger
+from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import add_doc, remove_node_from_tree
 
 logger = get_logger(__name__)
@@ -61,8 +61,7 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
                 f"See file {env.docname}:{self.lineno}"
             )
 
-        # Add the needsequence and all needed information
-        SphinxNeedsData(env).get_or_create_sequences()[targetid] = {
+        attributes: NeedsSequenceType = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
@@ -70,10 +69,12 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
             **self.collect_filter_attributes(),
             **self.collect_diagram_attributes(),
         }
+        node = Needsequence("", **attributes)
+        self.set_source_info(node)
 
         add_doc(env, env.docname)
 
-        return [targetnode] + [Needsequence("")]
+        return [targetnode, node]
 
 
 def process_needsequence(
@@ -99,22 +100,23 @@ def process_needsequence(
             remove_node_from_tree(node)
             continue
 
-        id = node.attributes["ids"][0]
-        current_needsequence = needs_data.get_or_create_sequences()[id]
+        current_needsequence: NeedsSequenceType = node.attributes
 
         option_link_types = [
             link.upper() for link in current_needsequence["link_types"]
         ]
         for lt in option_link_types:
             if lt not in link_type_names:
-                logger.warning(
+                log_warning(
+                    logger,
                     "Unknown link type {link_type} in needsequence {flow}. Allowed values:"
-                    " {link_types} [needs]".format(
+                    " {link_types}".format(
                         link_type=lt,
                         flow=current_needsequence["target_id"],
                         link_types=",".join(link_type_names),
                     ),
-                    type="needs",
+                    None,
+                    None,
                 )
 
         content = []

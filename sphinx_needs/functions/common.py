@@ -16,6 +16,7 @@ from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType
 from sphinx_needs.filter_common import filter_needs, filter_single_need
+from sphinx_needs.logging import log_warning
 from sphinx_needs.utils import logger
 
 
@@ -340,9 +341,11 @@ def check_linked_values(
                 if not filter_single_need(need, needs_config, filter_string):
                     continue
             except Exception as e:
-                logger.warning(
-                    f"CheckLinkedValues: Filter {filter_string} not valid: Error: {e} [needs]",
-                    type="needs",
+                log_warning(
+                    logger,
+                    f"CheckLinkedValues: Filter {filter_string} not valid: Error: {e}",
+                    None,
+                    None,
                 )
 
         need_value = need[search_option]  # type: ignore[literal-required]
@@ -456,8 +459,8 @@ def calc_sum(
             except ValueError:
                 pass
             except NeedsInvalidFilter as ex:
-                logger.warning(
-                    f"Given filter is not valid. Error: {ex} [needs]", type="needs"
+                log_warning(
+                    logger, f"Given filter is not valid. Error: {ex}", None, None
                 )
 
         with contextlib.suppress(ValueError):

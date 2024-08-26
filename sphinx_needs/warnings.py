@@ -11,7 +11,7 @@ from sphinx.util import logging
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.filter_common import filter_needs
-from sphinx_needs.logging import get_logger
+from sphinx_needs.logging import get_logger, log_warning
 
 logger = get_logger(__name__)
 
@@ -74,10 +74,7 @@ def process_warnings(app: Sphinx, exception: Exception | None) -> None:
                     if warning_filter(need, logger):
                         result.append(need)
             else:
-                logger.warning(
-                    f"Unknown needs warnings filter {warning_filter}! [needs]",
-                    type="needs",
-                )
+                log_warning(logger, f"Unknown needs warnings filter {warning_filter}!")
 
             if len(result) == 0:
                 logger.info(f"{warning_name}: passed")
@@ -100,14 +97,16 @@ def process_warnings(app: Sphinx, exception: Exception | None) -> None:
                     warning_text = warning_filter
 
                 if warnings_always_warn:
-                    logger.warning(
-                        "{}: failed\n\t\tfailed needs: {} ({})\n\t\tused filter: {} [needs]".format(
+                    log_warning(
+                        logger,
+                        "{}: failed\n\t\tfailed needs: {} ({})\n\t\tused filter: {}".format(
                             warning_name,
                             len(need_ids),
                             ", ".join(need_ids),
                             warning_text,
                         ),
-                        type="needs",
+                        None,
+                        None,
                     )
                 else:
                     logger.info(
@@ -121,7 +120,9 @@ def process_warnings(app: Sphinx, exception: Exception | None) -> None:
                     warning_raised = True
 
         if warning_raised:
-            logger.warning(
-                "warnings were raised. See console / log output for details. [needs]",
-                type="needs",
+            log_warning(
+                logger,
+                "warnings were raised. See console / log output for details.",
+                None,
+                None,
             )

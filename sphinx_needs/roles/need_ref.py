@@ -10,7 +10,7 @@ from sphinx.util.nodes import make_refnode
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.errors import NoUri
-from sphinx_needs.logging import get_logger
+from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import check_and_calc_base_url_rel_path, split_need_id
 
 log = get_logger(__name__)
@@ -112,9 +112,10 @@ def process_need_ref(
                 try:
                     link_text = ref_name.format(**dict_need)
                 except KeyError as e:
-                    log.warning(
-                        f"option placeholder {e} for need {node_need_ref['reftarget']} not found [needs]",
-                        type="needs",
+                    log_warning(
+                        log,
+                        f"option placeholder {e} for need {node_need_ref['reftarget']} not found",
+                        None,
                         location=node_need_ref,
                     )
             else:
@@ -125,7 +126,7 @@ def process_need_ref(
                     link_text = needs_config.role_need_template.format(**dict_need)
                 except KeyError as e:
                     link_text = f'"the config parameter needs_role_need_template uses not supported placeholders: {e} "'
-                    log.warning(link_text + " [needs]", type="needs")
+                    log_warning(log, link_text, None, None)
 
             node_need_ref[0].children[0] = nodes.Text(link_text)  # type: ignore[index]
 
@@ -152,10 +153,10 @@ def process_need_ref(
                     new_node_ref["classes"].append(target_need["external_css"])
 
         else:
-            log.warning(
-                f"linked need {node_need_ref['reftarget']} not found [needs.link_ref]",
-                type="needs",
-                subtype="link_ref",
+            log_warning(
+                log,
+                f"linked need {node_need_ref['reftarget']} not found",
+                "link_ref",
                 location=node_need_ref,
             )
 

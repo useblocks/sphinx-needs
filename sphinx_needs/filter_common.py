@@ -22,6 +22,7 @@ from sphinx_needs.data import (
     SphinxNeedsData,
 )
 from sphinx_needs.debug import measure_time, measure_time_func
+from sphinx_needs.logging import log_warning
 from sphinx_needs.roles.need_part import iter_need_parts
 from sphinx_needs.utils import check_and_get_external_filter_func
 from sphinx_needs.utils import logger as log
@@ -120,9 +121,8 @@ def process_filters(
         try:
             all_needs = sorted(all_needs, key=lambda node: node[sort_key] or "")  # type: ignore[literal-required]
         except KeyError as e:
-            log.warning(
-                f"Sorting parameter {sort_key} not valid: Error: {e} [needs]",
-                type="needs",
+            log_warning(
+                log, f"Sorting parameter {sort_key} not valid: Error: {e}", None, None
             )
 
     # check if include external needs
@@ -222,7 +222,7 @@ def process_filters(
             )
             filter_func(**context)
         else:
-            log.warning("Something went wrong running filter [needs]", type="needs")
+            log_warning(log, "Something went wrong running filter", None, None)
             return []
 
         # The filter results may be dirty, as it may continue manipulated needs.
@@ -331,10 +331,10 @@ def filter_needs(
             if not error_reported:  # Let's report a filter-problem only once
                 if append_warning:
                     append_warning = f" {append_warning}"
-                log.warning(
-                    f"{e}{append_warning} [needs.filter]",
-                    type="needs",
-                    subtype="filter",
+                log_warning(
+                    log,
+                    f"{e}{append_warning}",
+                    "filter",
                     location=location,
                 )
                 error_reported = True

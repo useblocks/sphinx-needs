@@ -19,7 +19,7 @@ from sphinx.environment import BuildEnvironment
 from sphinx.util.nodes import make_refnode
 
 from sphinx_needs.data import NeedsInfoType
-from sphinx_needs.logging import get_logger
+from sphinx_needs.logging import get_logger, log_warning
 
 log = get_logger(__name__)
 
@@ -76,11 +76,13 @@ def update_need_with_parts(
             need["parts"] = {}
 
         if inline_id in need["parts"]:
-            log.warning(
-                "part_need id {} in need {} is already taken. need_part may get overridden. [needs]".format(
+            log_warning(
+                log,
+                "part_need id {} in need {} is already taken. need_part may get overridden.".format(
                     inline_id, need["id"]
                 ),
-                type="needs",
+                None,
+                None,
             )
 
         need["parts"][inline_id] = {

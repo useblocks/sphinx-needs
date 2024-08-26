@@ -15,6 +15,7 @@ from sphinx.util.logging import getLogger
 from sphinx_needs.api import add_need_type
 from sphinx_needs.api.exceptions import NeedsApiConfigException
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.logging import log_warning
 from sphinx_needs.services.base import BaseService
 from sphinx_needs.services.config.github import (
     CONFIG_OPTIONS,
@@ -395,9 +396,9 @@ class _SendException(Exception):
 
 
 def create_warning(directive: SphinxDirective, message: str) -> None:
-    LOGGER.warning(
-        message + " [needs.github]",
-        type="needs",
-        subtype="github",
+    log_warning(
+        LOGGER,
+        message,
+        "github",
         location=directive.get_location(),
     )

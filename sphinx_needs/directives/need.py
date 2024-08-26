@@ -26,7 +26,7 @@ from sphinx_needs.functions import (
 )
 from sphinx_needs.functions.functions import check_and_get_content
 from sphinx_needs.layout import build_need
-from sphinx_needs.logging import get_logger
+from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_constraints import process_constraints
 from sphinx_needs.nodes import Need
 from sphinx_needs.utils import (
@@ -153,10 +153,11 @@ class NeedDirective(SphinxDirective):
         if links_string:
             for link in re.split(r";|,", links_string):
                 if link.isspace():
-                    LOGGER.warning(
+                    log_warning(
+                        LOGGER,
                         f"Grubby link definition found in need '{self.trimmed_title}'. "
-                        "Defined link contains spaces only. [needs]",
-                        type="needs",
+                        "Defined link contains spaces only.",
+                        None,
                         location=(self.env.docname, self.lineno),
                     )
                 else:
@@ -210,10 +211,11 @@ class NeedDirective(SphinxDirective):
         `:title_from_content:` was set, and '' if no title is to be derived)."""
         if len(self.arguments) > 0:  # a title was passed
             if "title_from_content" in self.options:
-                self.log.warning(
+                log_warning(
+                    self.log,
                     f'need "{self.arguments[0]}" has :title_from_content: set, '
-                    f"but a title was provided. (see file {self.docname}) [needs]",
-                    type="needs",
+                    f"but a title was provided. (see file {self.docname})",
+                    None,
                     location=(self.env.docname, self.lineno),
                 )
             return self.arguments[0]  # type: ignore[no-any-return]
@@ -471,17 +473,18 @@ def check_links(needs: dict[str, NeedsInfoType], config: NeedsSphinxConfig) -> N
                             # we want to provide that URL as the location of the warning,
                             # otherwise we use the location of the need in the source file
                             if need.get("is_external", False):
-                                LOGGER.warning(
-                                    f"{need['external_url']}: {message} [needs.external_link_outgoing]",
-                                    type="needs",
-                                    subtype="external_link_outgoing",
+                                log_warning(
+                                    LOGGER,
+                                    f"{need['external_url']}: {message}",
+                                    "external_link_outgoing",
+                                    None,
                                 )
                             else:
-                                LOGGER.warning(
-                                    f"{message} [needs.link_outgoing]",
+                                log_warning(
+                                    LOGGER,
+                                    message,
+                                    "link_outgoing",
                                     location=(need["docname"], need["lineno"]),
-                                    type="needs",
-                                    subtype="link_outgoing",
                                 )
 
 
