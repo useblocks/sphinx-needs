@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724665105995,
+  "lastUpdate": 1724670933215,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -8676,6 +8676,42 @@ window.BENCHMARK_DATA = {
             "value": 63.45595546299998,
             "unit": "s",
             "extra": "Commit: 28dc088859bef69e608a5920a184038673b73b53\nBranch: master\nTime: 2024-08-26T11:36:39+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c04dc4ea8e6bd0a285bda5631adbea94cd0e1236",
+          "message": "🔧 Centralise warning logging (sphinx 8 compat) (#1236)\n\nCurrently, we prepend the warning type/subtype to the end of each warning message,\r\nbut in sphinx 7.3 I added this capability directly in sphinx core (under the `show_warning_types` config),\r\nand in sphinx 8.0 I changed the default to `show_warning_types=True` (https://github.com/sphinx-doc/sphinx/pull/12597)\r\n\r\nTherefore, for newer versions of sphinx, we no longer need to do this,\r\nand thus centralising the warning logging allows for us to add a check for this and prepend only if necessary.\r\nAdditionally, it is also a good way to ensure all warnings are given the `needs` type",
+          "timestamp": "2024-08-26T13:13:40+02:00",
+          "tree_id": "ea200f2e2612d1d1759033d70f912eb899e8ec7c",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c04dc4ea8e6bd0a285bda5631adbea94cd0e1236"
+        },
+        "date": 1724670928425,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2338181709999958,
+            "unit": "s",
+            "extra": "Commit: c04dc4ea8e6bd0a285bda5631adbea94cd0e1236\nBranch: master\nTime: 2024-08-26T13:13:40+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 65.21276829000001,
+            "unit": "s",
+            "extra": "Commit: c04dc4ea8e6bd0a285bda5631adbea94cd0e1236\nBranch: master\nTime: 2024-08-26T13:13:40+02:00"
           }
         ]
       }
