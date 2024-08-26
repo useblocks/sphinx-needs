@@ -17,7 +17,7 @@ from sphinx.config import Config
 
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, NeedsFilterType, NeedsInfoType
-from sphinx_needs.logging import get_logger
+from sphinx_needs.logging import get_logger, log_warning
 
 log = get_logger(__name__)
 
@@ -210,9 +210,7 @@ class NeedsList:
             file = os.path.join(self.confdir, file)
 
         if not os.path.exists(file):
-            self.log.warning(
-                f"Could not load needs json file {file} [needs]", type="needs"
-            )
+            log_warning(self.log, f"Could not load needs json file {file}", None, None)
         else:
             errors = check_needs_file(file)
             # We only care for schema errors here, all other possible errors
@@ -226,8 +224,8 @@ class NeedsList:
                 try:
                     needs_list = json.load(needs_file)
                 except json.JSONDecodeError:
-                    self.log.warning(
-                        f"Could not decode json file {file} [needs]", type="needs"
+                    log_warning(
+                        self.log, f"Could not decode json file {file}", None, None
                     )
                 else:
                     self.needs_list = needs_list

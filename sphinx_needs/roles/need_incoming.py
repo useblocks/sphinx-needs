@@ -7,6 +7,7 @@ from sphinx.util.nodes import make_refnode
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.errors import NoUri
+from sphinx_needs.logging import log_warning
 from sphinx_needs.utils import check_and_calc_base_url_rel_path, logger
 
 
@@ -91,8 +92,10 @@ def process_need_incoming(
                     pass
 
             else:
-                logger.warning(
-                    f"need {node_need_backref['reftarget']} not found [needs]",
+                log_warning(
+                    logger,
+                    f"need {node_need_backref['reftarget']} not found",
+                    None,
                     location=node_need_backref,
                 )
 

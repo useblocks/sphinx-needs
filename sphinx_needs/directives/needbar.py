@@ -11,7 +11,7 @@ from sphinx.application import Sphinx
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsBarType, SphinxNeedsData
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
-from sphinx_needs.logging import get_logger
+from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import (
     add_doc,
     import_matplotlib,
@@ -185,12 +185,13 @@ def process_needbar(
     matplotlib = import_matplotlib()
 
     if matplotlib is None and found_nodes and needs_config.include_needs:
-        logger.warning(
+        log_warning(
+            logger,
             "Matplotlib is not installed and required by needbar. "
-            "Install with `sphinx-needs[plotting]` to use. [needs.mpl]",
+            "Install with `sphinx-needs[plotting]` to use.",
+            "mpl",
+            None,
             once=True,
-            type="needs",
-            subtype="mpl",
         )
 
     # NEEDFLOW
