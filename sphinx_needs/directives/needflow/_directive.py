@@ -15,14 +15,14 @@ from sphinx_needs.data import (
 )
 from sphinx_needs.debug import measure_time
 from sphinx_needs.filter_common import FilterBase
-from sphinx_needs.logging import get_logger
+from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import (
     add_doc,
     get_scale,
     split_link_types,
 )
 
-logger = get_logger(__name__)
+LOGGER = get_logger(__name__)
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -90,10 +90,10 @@ class NeedflowDirective(FilterBase):
                 if config_name and config_name in needs_config.flow_configs:
                     _configs.append(needs_config.flow_configs[config_name])
                 elif config_name:
-                    logger.warning(
-                        f"config key {config_name!r} not in 'need_flows_configs' [needs.needflow]",
-                        type="needs",
-                        subtype="needflow",
+                    log_warning(
+                        LOGGER,
+                        f"config key {config_name!r} not in 'need_flows_configs'",
+                        "needflow",
                         location=self.get_location(),
                     )
             config = "\n".join(_configs)
@@ -111,18 +111,18 @@ class NeedflowDirective(FilterBase):
                             else:
                                 graphviz_style[key] = value  # type: ignore[literal-required]
                     elif config_name:
-                        logger.warning(
-                            f"config key {config_name!r} not in 'needs_graphviz_styles' [needs.needflow]",
-                            type="needs",
-                            subtype="needflow",
+                        log_warning(
+                            LOGGER,
+                            f"config key {config_name!r} not in 'needs_graphviz_styles'",
+                            "needflow",
                             location=self.get_location(),
                         )
                 except Exception as err:
                     if config_name:
-                        logger.warning(
-                            f"malformed config {config_name!r} in 'needs_graphviz_styles': {err} [needs.needflow]",
-                            type="needs",
-                            subtype="needflow",
+                        log_warning(
+                            LOGGER,
+                            f"malformed config {config_name!r} in 'needs_graphviz_styles': {err}",
+                            "needflow",
                             location=self.get_location(),
                         )
 

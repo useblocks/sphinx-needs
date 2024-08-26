@@ -24,6 +24,7 @@ from sphinx_needs.filter_common import (
     filter_single_need,
     process_filters,
 )
+from sphinx_needs.logging import log_warning
 from sphinx_needs.utils import (
     match_variants,
     remove_node_from_tree,
@@ -62,11 +63,11 @@ def process_needflow_graphviz(
             continue
 
         if app.builder.format != "html":
-            LOGGER.warning(
-                "NeedflowGraphiz is only supported for HTML output. [needs.needflow]",
+            log_warning(
+                LOGGER,
+                "NeedflowGraphiz is only supported for HTML output.",
+                "needflow",
                 location=node,
-                type="needs",
-                subtype="needflow",
             )
             remove_node_from_tree(node)
             continue
@@ -79,14 +80,15 @@ def process_needflow_graphviz(
         option_link_types = [link.upper() for link in attributes["link_types"]]
         for lt in option_link_types:
             if lt not in link_type_names:
-                LOGGER.warning(
-                    "Unknown link type {link_type} in needflow {flow}. Allowed values: {link_types} [needs.needflow]".format(
+                log_warning(
+                    LOGGER,
+                    "Unknown link type {link_type} in needflow {flow}. Allowed values: {link_types}".format(
                         link_type=lt,
                         flow=attributes["target_id"],
                         link_types=",".join(link_type_names),
                     ),
-                    type="needs",
-                    subtype="needflow",
+                    "needflow",
+                    None,
                 )
 
         # compute the allowed link names
@@ -230,10 +232,11 @@ def _render_node(
     # shape
     if need["is_need"]:
         if need["type_style"] not in _plantuml_shapes:
-            LOGGER.warning(
-                f"Unknown node style {need['type_style']!r} for graphviz engine [needs.needflow]",
-                type="needs",
-                subtype="needflow",
+            log_warning(
+                LOGGER,
+                f"Unknown node style {need['type_style']!r} for graphviz engine",
+                "needflow",
+                None,
                 once=True,
             )
         shape = _plantuml_shapes.get(need["type_style"], need["type_style"])
@@ -445,10 +448,11 @@ def _style_params_from_link_type(
         elif style in ("dotted", "dashed", "solid", "bold"):
             params.append(("style", _quote(style)))
         else:
-            LOGGER.warning(
-                f"Unknown link style {style!r} for graphviz engine [needs.needflow]",
-                type="needs",
-                subtype="needflow",
+            log_warning(
+                LOGGER,
+                f"Unknown link style {style!r} for graphviz engine",
+                "needflow",
+                None,
                 once=True,
             )
 
@@ -458,10 +462,11 @@ def _style_params_from_link_type(
     # this means we ignore things like the direction of the arrow, e.g. `-up->`
     plantuml_arrow_ends = plantuml_arrow_ends[0] + plantuml_arrow_ends[-1]
     if (arrow_style := _plantuml_arrow_style.get(plantuml_arrow_ends)) is None:
-        LOGGER.warning(
-            f"Unknown link start/end style {plantuml_arrow_ends!r} for graphviz engine [needs.needflow]",
-            type="needs",
-            subtype="needflow",
+        log_warning(
+            LOGGER,
+            f"Unknown link start/end style {plantuml_arrow_ends!r} for graphviz engine",
+            "needflow",
+            None,
             once=True,
         )
     else:
@@ -581,20 +586,16 @@ def html_visit_needflow_graphviz(self: HTML5Translator, node: NeedflowGraphiz) -
     """
     code = node.get("resolved_content")
     if code is None:
-        LOGGER.warning(
-            "Content has not been resolved [needs.needflow]",
-            location=node,
-            type="needs",
-            subtype="needflow",
-        )
+        log_warning(LOGGER, "Content has not been resolved", "needflow", location=node)
         raise nodes.SkipNode
     attrributes = node.attributes
     format = self.builder.config.graphviz_output_format
     if format not in ("png", "svg"):
-        LOGGER.warning(
-            f"graphviz_output_format must be one of 'png', 'svg', but is {format!r} [needs.needflow]",
-            type="needs",
-            subtype="needflow",
+        log_warning(
+            LOGGER,
+            f"graphviz_output_format must be one of 'png', 'svg', but is {format!r}",
+            "needflow",
+            None,
             once=True,
         )
         raise nodes.SkipNode
@@ -603,11 +604,11 @@ def html_visit_needflow_graphviz(self: HTML5Translator, node: NeedflowGraphiz) -
             self, code, {"docname": attrributes["docname"]}, format, "needflow"
         )
     except GraphvizError as exc:
-        LOGGER.warning(
-            f"graphviz code failed to render (run with :debug: to see code): {exc} [needs.needflow]",
+        log_warning(
+            LOGGER,
+            f"graphviz code failed to render (run with :debug: to see code): {exc}",
+            "needflow",
             location=node,
-            type="needs",
-            subtype="needflow",
         )
         raise nodes.SkipNode from exc
 
