@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724392360761,
+  "lastUpdate": 1724664415210,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -8568,6 +8568,42 @@ window.BENCHMARK_DATA = {
             "value": 66.95921099500003,
             "unit": "s",
             "extra": "Commit: 3fe2dd4de0240e6e60dc2444c8bf2c407822a2cc\nBranch: master\nTime: 2024-08-23T07:50:43+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0e210b86c9d804b0057228efedebbada01690203",
+          "message": "🔧 Move data from global env to individual nodes (#1237)\n\nThis PR changes logic for nearly all directives that require post-processing, so that all information coming from the directive is stored directly on the node in the doctree, rather than centrally in the `BuildEnvironment`.\r\n\r\nIt is unnecessary to store this data centrally and it increases complexity (having to keep it in-sync) and the size of the `BuildEnvironment`.\r\n\r\nThe only node I have not done this for is `needuml`, since there is some additional interplay between the `arch` need field, which I do not fully understand yet.",
+          "timestamp": "2024-08-26T11:25:07+02:00",
+          "tree_id": "35e39e444a190bc761821d06dfe05071f269d7c5",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/0e210b86c9d804b0057228efedebbada01690203"
+        },
+        "date": 1724664410686,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18491539900000475,
+            "unit": "s",
+            "extra": "Commit: 0e210b86c9d804b0057228efedebbada01690203\nBranch: master\nTime: 2024-08-26T11:25:07+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 62.92705295800002,
+            "unit": "s",
+            "extra": "Commit: 0e210b86c9d804b0057228efedebbada01690203\nBranch: master\nTime: 2024-08-26T11:25:07+02:00"
           }
         ]
       }
