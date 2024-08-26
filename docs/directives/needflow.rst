@@ -53,9 +53,9 @@ graphviz
 ``needflow``, with the ``graphviz`` engine uses the `Graphviz dot <https://graphviz.org/>`_ executable for rendering the flowchart,
 and the built-in :any:`sphinx.ext.graphviz` extension from Sphinx.
 
-See and https://graphviz.org/download/ for how to install Graphviz,
+See https://graphviz.org/download/ for how to install Graphviz,
 and :any:`sphinx.ext.graphviz` for configuration options.
-In particular, you may need to set the ``graphviz_output_format`` configuration option in your ``conf.py``.
+In particular, you may want to set the ``graphviz_output_format`` configuration option in your ``conf.py``.
 
 Options
 -------
