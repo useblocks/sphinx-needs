@@ -96,7 +96,6 @@ class NeedsList:
         "type_style",
         "hide_tags",
         "content",
-        "content_node",
     }
 
     def __init__(

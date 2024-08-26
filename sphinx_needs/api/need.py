@@ -353,7 +353,6 @@ def add_need(
         "doctype": doctype,
         "target_id": need_id,
         "content": "\n".join(content) if isinstance(content, StringList) else content,
-        "content_node": None,
         "content_id": None,
         "type": need_type,
         "type_name": type_name,
@@ -582,8 +581,7 @@ def _create_need_node(
 
     data["content_id"] = node_need["ids"][0]
 
-    # Create a copy of the content
-    data["content_node"] = node_need.deepcopy()
+    SphinxNeedsData(env).set_need_node(data["id"], node_need)
 
     return_nodes.append(node_need)
 
@@ -608,10 +606,11 @@ def del_need(app: Sphinx, need_id: str) -> None:
     :param app: Sphinx application object.
     :param need_id: Sphinx need id.
     """
-    env = app.env
-    needs = SphinxNeedsData(env).get_or_create_needs()
+    data = SphinxNeedsData(app.env)
+    needs = data.get_or_create_needs()
     if need_id in needs:
         del needs[need_id]
+        data.remove_need_node(need_id)
     else:
         log_warning(logger, f"Given need id {need_id} not exists!", None, None)
 
