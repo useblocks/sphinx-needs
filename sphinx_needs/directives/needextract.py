@@ -106,7 +106,13 @@ def process_needextract(
                 )
             current_needextract["filter"] = need_filter_arg
 
-        found_needs = process_filters(app, all_needs.values(), current_needextract)
+        found_needs = process_filters(
+            app,
+            all_needs.values(),
+            current_needextract,
+            origin="needextract",
+            location=f"{node.source}:{node.line}",
+        )
 
         for need_info in found_needs:
             # filter out need_part from found_needs, in order to generate

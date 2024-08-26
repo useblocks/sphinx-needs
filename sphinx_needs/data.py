@@ -29,10 +29,15 @@ class NeedsFilterType(TypedDict):
     status: list[str]
     tags: list[str]
     types: list[str]
-    result: list[str]
     amount: int
     export_id: str
     """If set, the filter is exported with this ID in the needs.json file."""
+    origin: str
+    """Origin of the request (e.g. needlist, needtable, needflow)."""
+    location: str
+    """Location of the request (e.g. "docname:lineno")"""
+    runtime: float
+    """Time take to run filter (seconds)."""
 
 
 class NeedsPartType(TypedDict):
@@ -812,13 +817,19 @@ def merge_data(
 
     Needs to update env manually for all data Sphinx-Needs collect during read phase
     """
+    this_data = SphinxNeedsData(env)
+    other_data = SphinxNeedsData(other)
 
-    if SphinxNeedsData(other).has_export_filters:
-        SphinxNeedsData(env).has_export_filters = True
+    # update filters
+    if other_data.has_export_filters:
+        this_data.has_export_filters = True
+    # merge these just to be safe,
+    # although actually all should be added in the write phase
+    this_data.get_or_create_filters().update(other_data.get_or_create_filters())
 
     # Update needs
-    needs = SphinxNeedsData(env).get_or_create_needs()
-    other_needs = SphinxNeedsData(other).get_or_create_needs()
+    needs = this_data.get_or_create_needs()
+    other_needs = other_data.get_or_create_needs()
     for other_id, other_need in other_needs.items():
         if other_id in needs:
             # we only want to warn if the need comes from one of the docs parsed in this worker

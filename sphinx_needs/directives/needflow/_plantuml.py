@@ -275,7 +275,13 @@ def process_needflow_plantuml(
             else all_needs.values()
         )
 
-        found_needs = process_filters(app, need_values, current_needflow)
+        found_needs = process_filters(
+            app,
+            need_values,
+            current_needflow,
+            origin="needflow",
+            location=f"{node.source}:{node.line}",
+        )
 
         if found_needs:
             plantuml_block_text = ".. plantuml::\n" "\n" "   @startuml" "   @enduml"

@@ -6,6 +6,7 @@ like needtable, needlist and needflow.
 from __future__ import annotations
 
 import re
+from timeit import default_timer as timer
 from types import CodeType
 from typing import Any, Iterable, TypedDict, TypeVar
 
@@ -101,6 +102,8 @@ def process_filters(
     app: Sphinx,
     all_needs: Iterable[NeedsInfoType],
     filter_data: NeedsFilteredBaseType,
+    origin: str,
+    location: str,
     include_external: bool = True,
 ) -> list[NeedsInfoType]:
     """
@@ -110,10 +113,13 @@ def process_filters(
     :param app: Sphinx application object
     :param filter_data: Filter configuration
     :param all_needs: List of all needs inside document
+    :param origin: Origin of the request (e.g. needlist, needtable, needflow)
+    :param location: Location of the request (e.g. "docname:lineno")
     :param include_external: Boolean, which decides to include external needs or not
 
     :return: list of needs, which passed the filters
     """
+    start = timer()
     needs_config = NeedsSphinxConfig(app.config)
     found_needs: list[NeedsInfoType]
     sort_key = filter_data["sort_by"]
@@ -242,16 +248,17 @@ def process_filters(
     # Store basic filter configuration and result global list.
     # Needed mainly for exporting the result to needs.json (if builder "needs" is used).
     filter_list = SphinxNeedsData(app.env).get_or_create_filters()
-    found_needs_ids = [need["id_complete"] for need in found_needs]
 
     filter_list[filter_data["target_id"]] = {
+        "origin": origin,
+        "location": location,
         "filter": filter_data["filter"] or "",
         "status": filter_data["status"],
         "tags": filter_data["tags"],
         "types": filter_data["types"],
         "export_id": filter_data["export_id"].upper(),
-        "result": found_needs_ids,
-        "amount": len(found_needs_ids),
+        "amount": len(found_needs),
+        "runtime": timer() - start,
     }
 
     return found_needs
