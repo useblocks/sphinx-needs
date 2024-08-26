@@ -496,7 +496,7 @@ Helpful to identify reasons why a PlantUML build may have thrown errors.
       :filter: is_need
       :tags: flow_example
       :link_types: tests, blocks
-      :config:  lefttoright, handwritten
+      :config: lefttoright, handwritten
       :debug:
 
 .. dropdown:: Using Graphviz engine
@@ -506,6 +506,7 @@ Helpful to identify reasons why a PlantUML build may have thrown errors.
       :filter: is_need
       :tags: flow_example
       :link_types: tests, blocks
+      :config: default,lefttoright
       :debug:
 
 common filters
