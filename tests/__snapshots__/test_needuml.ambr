@@ -23,7 +23,6 @@
         
         comp --> int
       ''',
-      'content_id': 'COMP_001',
       'created_at': '',
       'delete': None,
       'docname': 'index',
@@ -103,7 +102,6 @@
       'constraints_results': dict({
       }),
       'content': 'circle "Int_X" as int',
-      'content_id': 'INT_001',
       'created_at': '',
       'delete': None,
       'docname': 'index',
@@ -216,7 +214,6 @@
            Alice -> Bob: Hi Bob
            Bob --> Alice: Hi Alice
       ''',
-      'content_id': 'INT_002',
       'created_at': '',
       'delete': None,
       'docname': 'index',
@@ -328,7 +325,6 @@
            Alice -> Bob: Hi Bob
            Bob --> Alice: Hi Alice
       ''',
-      'content_id': 'INT_003',
       'created_at': '',
       'delete': None,
       'docname': 'index',
@@ -455,7 +451,6 @@
            Alice -> Bob: Hi Bob
            Bob --> Alice: Hi Alice
       ''',
-      'content_id': 'INT_004',
       'created_at': '',
       'delete': None,
       'docname': 'index',
@@ -541,7 +536,6 @@
         node "System A" as sys_2
         sys_2 --> int
       ''',
-      'content_id': 'PROD_001',
       'created_at': '',
       'delete': None,
       'docname': 'index',
@@ -621,7 +615,6 @@
       'constraints_results': dict({
       }),
       'content': 'Some content',
-      'content_id': 'ST_001',
       'created_at': '',
       'delete': None,
       'docname': 'index',
@@ -701,7 +694,6 @@
       'constraints_results': dict({
       }),
       'content': 'Some content 2',
-      'content_id': 'ST_002',
       'created_at': '',
       'delete': None,
       'docname': 'index',
@@ -790,7 +782,6 @@
         
         comp_2 --> int
       ''',
-      'content_id': 'SYS_001',
       'created_at': '',
       'delete': None,
       'docname': 'index',

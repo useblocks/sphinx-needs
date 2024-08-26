@@ -354,7 +354,6 @@ def add_need(
         "target_id": need_id,
         "content": "\n".join(content) if isinstance(content, StringList) else content,
         "content_node": None,
-        "content_id": None,
         "type": need_type,
         "type_name": type_name,
         "type_prefix": type_prefix,
@@ -579,8 +578,6 @@ def _create_need_node(
 
     need_parts = find_parts(node_need)
     update_need_with_parts(env, data, need_parts)
-
-    data["content_id"] = node_need["ids"][0]
 
     # Create a copy of the content
     data["content_node"] = node_need.deepcopy()

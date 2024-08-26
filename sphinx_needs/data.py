@@ -236,10 +236,6 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "description": "Post-content of the need.",
         "schema": {"type": "string", "default": ""},
     },
-    "content_id": {
-        "description": "ID of the content node.",
-        "schema": {"type": ["string", "null"], "default": None},
-    },
     "content_node": {
         "description": "Deep copy of the content node.",
         "schema": {},
@@ -378,8 +374,6 @@ class NeedsInfoType(TypedDict, total=False):
     content: Required[str]
     pre_content: str
     post_content: str
-    content_id: Required[None | str]
-    """ID of the content node."""
     content_node: Required[None | Element]
     """Deep copy of the content node."""
 
