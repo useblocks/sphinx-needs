@@ -279,7 +279,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     },
     "section_name": {
         "description": "Simply the first section.",
-        "schema": {"type": ["string", "null"], "default": ""},
+        "schema": {"type": "string", "default": ""},
     },
     "signature": {
         "description": "Derived from a docutils desc_name node.",
@@ -738,17 +738,6 @@ class SphinxNeedsData:
             self.env.app.needs_services = ServiceManager(self.env.app)
         return self.env.app.needs_services
 
-    def get_or_create_bars(self) -> dict[str, NeedsBarType]:
-        """Get all bar charts, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needbar
-        except AttributeError:
-            self.env.need_all_needbar = {}
-        return self.env.need_all_needbar
-
     def get_or_create_extends(self) -> dict[str, NeedsExtendType]:
         """Get all need modifications, mapped by ID.
 
@@ -759,96 +748,6 @@ class SphinxNeedsData:
         except AttributeError:
             self.env.need_all_needextend = {}
         return self.env.need_all_needextend
-
-    def get_or_create_extracts(self) -> dict[str, NeedsExtractType]:
-        """Get all need extractions, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needextracts
-        except AttributeError:
-            self.env.need_all_needextracts = {}
-        return self.env.need_all_needextracts
-
-    def _get_or_create_filters(self) -> dict[str, _NeedsFilterType]:
-        """Get all need filters, mapped by ID.
-
-        .. deprecated:: 0.2.0
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needfilters
-        except AttributeError:
-            self.env.need_all_needfilters = {}
-        return self.env.need_all_needfilters
-
-    def get_or_create_flows(self) -> dict[str, NeedsFlowType]:
-        """Get all need flow charts, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needflows
-        except AttributeError:
-            self.env.need_all_needflows = {}
-        return self.env.need_all_needflows
-
-    def get_or_create_gantts(self) -> dict[str, NeedsGanttType]:
-        """Get all need gantt charts, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needgantts
-        except AttributeError:
-            self.env.need_all_needgantts = {}
-        return self.env.need_all_needgantts
-
-    def get_or_create_lists(self) -> dict[str, NeedsListType]:
-        """Get all need gantt charts, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needlists
-        except AttributeError:
-            self.env.need_all_needlists = {}
-        return self.env.need_all_needlists
-
-    def get_or_create_pies(self) -> dict[str, NeedsPieType]:
-        """Get all need gantt charts, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needpie
-        except AttributeError:
-            self.env.need_all_needpie = {}
-        return self.env.need_all_needpie
-
-    def get_or_create_sequences(self) -> dict[str, NeedsSequenceType]:
-        """Get all need sequence diagrams, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needsequences
-        except AttributeError:
-            self.env.need_all_needsequences = {}
-        return self.env.need_all_needsequences
-
-    def get_or_create_tables(self) -> dict[str, NeedsTableType]:
-        """Get all need tables, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needtables
-        except AttributeError:
-            self.env.need_all_needtables = {}
-        return self.env.need_all_needtables
 
     def get_or_create_umls(self) -> dict[str, NeedsUmlType]:
         """Get all need uml diagrams, mapped by ID.
@@ -926,14 +825,5 @@ def merge_data(
                 )
 
     _merge("needs_all_docs", is_complex_dict=True)
-    _merge("need_all_needbar")
     _merge("need_all_needextend")
-    _merge("need_all_needextracts")
-    _merge("need_all_needfilters")
-    _merge("need_all_needflows")
-    _merge("need_all_needgantts")
-    _merge("need_all_needlists")
-    _merge("need_all_needpie")
-    _merge("need_all_needsequences")
-    _merge("need_all_needtables")
     _merge("needs_all_needumls")

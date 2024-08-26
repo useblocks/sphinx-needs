@@ -4845,10 +4845,7 @@
               'default': '',
               'description': 'Simply the first section.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
+              'type': 'string',
             }),
             'sections': dict({
               'default': list([

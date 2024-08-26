@@ -129,7 +129,10 @@ class NeedumlDirective(SphinxDirective):
 
         add_doc(env, env.docname)
 
-        return [targetnode] + [Needuml(targetid)]
+        node = Needuml(targetid)
+        self.set_source_info(node)
+
+        return [targetnode, node]
 
 
 class NeedarchDirective(NeedumlDirective):

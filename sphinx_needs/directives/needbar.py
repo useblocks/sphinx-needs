@@ -9,7 +9,7 @@ from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.data import NeedsBarType, SphinxNeedsData
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import (
@@ -127,9 +127,7 @@ class NeedbarDirective(FilterBase):
         transpose = "transpose" in self.options
         horizontal = "horizontal" in self.options
 
-        # 2. Stores infos for needbar
-        data = SphinxNeedsData(self.env).get_or_create_bars()
-        data[targetid] = {
+        data_attributes: NeedsBarType = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
@@ -155,10 +153,10 @@ class NeedbarDirective(FilterBase):
             "text_color": text_color,
         }
 
-        add_doc(env, env.docname)
-
-        bar_node = Needbar("")
+        bar_node = Needbar("", **data_attributes)
         self.set_source_info(bar_node)
+
+        add_doc(env, env.docname)
 
         return [targetnode, bar_node]
 
@@ -203,8 +201,7 @@ def process_needbar(
             remove_node_from_tree(node)
             continue
 
-        id = node.attributes["ids"][0]
-        current_needbar = needs_data.get_or_create_bars()[id]
+        current_needbar: NeedsBarType = node.attributes
 
         if matplotlib is None:
             message = "Matplotlib missing for needbar plot"
@@ -474,7 +471,7 @@ def process_needbar(
         # 9. final storage
 
         # We need to calculate an unique bar-image file name
-        hash_value = hashlib.sha256(id.encode()).hexdigest()[:5]
+        hash_value = hashlib.sha256(node.attributes["ids"][0].encode()).hexdigest()[:5]
         image_node = save_matplotlib_figure(
             app, figure, f"need_bar_{hash_value}", fromdocname
         )

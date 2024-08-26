@@ -92,9 +92,7 @@ class NeedflowDirective(FilterBase):
                 if config_name and config_name in needs_config.flow_configs:
                     configs.append(needs_config.flow_configs[config_name])
 
-        # Add the need and all needed information
-        data = SphinxNeedsData(env).get_or_create_flows()
-        data[targetid] = {
+        attributes: NeedsFlowType = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
@@ -116,10 +114,12 @@ class NeedflowDirective(FilterBase):
             "caption": self.arguments[0] if self.arguments else None,
             **self.collect_filter_attributes(),
         }
+        node = Needflow("", **attributes)
+        self.set_source_info(node)
 
         add_doc(env, env.docname)
 
-        return [targetnode, Needflow("")]
+        return [targetnode, node]
 
 
 def make_entity_name(name: str) -> str:
@@ -372,8 +372,7 @@ def process_needflow(
             remove_node_from_tree(node)
             continue
 
-        id = node.attributes["ids"][0]
-        current_needflow = env_data.get_or_create_flows()[id]
+        current_needflow: NeedsFlowType = node.attributes
 
         option_link_types = [link.upper() for link in current_needflow["link_types"]]
         for lt in option_link_types:
