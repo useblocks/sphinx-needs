@@ -13,7 +13,7 @@ from sphinxcontrib.plantuml import (
 )
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.data import NeedsGanttType, SphinxNeedsData
 from sphinx_needs.diagrams_common import (
     DiagramBase,
     add_config,
@@ -104,8 +104,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
             "completion_option", needs_config.completion_option
         )
 
-        # Add the needgantt and all needed information
-        SphinxNeedsData(env).get_or_create_gantts()[targetid] = {
+        attributes: NeedsGanttType = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
@@ -122,10 +121,10 @@ class NeedganttDirective(FilterBase, DiagramBase):
             **self.collect_diagram_attributes(),
         }
 
-        add_doc(env, env.docname)
-
-        gantt_node = Needgantt("")
+        gantt_node = Needgantt("", **attributes)
         self.set_source_info(gantt_node)
+
+        add_doc(env, env.docname)
 
         return [targetnode, gantt_node]
 
@@ -170,8 +169,7 @@ def process_needgantt(
             remove_node_from_tree(node)
             continue
 
-        id = node.attributes["ids"][0]
-        current_needgantt = SphinxNeedsData(env).get_or_create_gantts()[id]
+        current_needgantt: NeedsGanttType = node.attributes
         all_needs_dict = SphinxNeedsData(env).get_or_create_needs()
 
         content = []
