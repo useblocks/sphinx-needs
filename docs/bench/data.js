@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724682871409,
+  "lastUpdate": 1724697829049,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -8748,6 +8748,42 @@ window.BENCHMARK_DATA = {
             "value": 67.293614039,
             "unit": "s",
             "extra": "Commit: 295c254fba693c4b726bac94bb5d64677e416422\nBranch: master\nTime: 2024-08-26T16:32:20+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cd77ec7892decdf7bd663e9f43dcd16d2cf7bc6d",
+          "message": "✨ Capture filter processing times (#1240)\n\nThis commit adds capturing of origin location and runtimes of each call to `process_filters`.\r\n\r\nFor `needs_debug_measurement=True` it also outputs this data to `<outdir>/debug_filters.json`, and\r\nprints the 10 longest running filters to stdout",
+          "timestamp": "2024-08-26T20:41:50+02:00",
+          "tree_id": "b31e9914d82e875d10d4d8ef7f345a92de1e3d9d",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/cd77ec7892decdf7bd663e9f43dcd16d2cf7bc6d"
+        },
+        "date": 1724697823091,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22050484700000084,
+            "unit": "s",
+            "extra": "Commit: cd77ec7892decdf7bd663e9f43dcd16d2cf7bc6d\nBranch: master\nTime: 2024-08-26T20:41:50+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 69.393112038,
+            "unit": "s",
+            "extra": "Commit: cd77ec7892decdf7bd663e9f43dcd16d2cf7bc6d\nBranch: master\nTime: 2024-08-26T20:41:50+02:00"
           }
         ]
       }
