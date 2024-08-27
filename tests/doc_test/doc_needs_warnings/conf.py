@@ -63,14 +63,18 @@ def custom_warning_multi_needs(need, log, needs):
     # need is closed, but linked need is still open.
     # This is not allowed by this rule.
     return_code: bool = False
-    if need.status in ['closed', 'done',]:
+    if need.status in [
+        "closed",
+        "done",
+    ]:
         if len(links) > 0:
             for linked_need in links:
-                if needs[linked_need].status in ['open',]:
+                if needs[linked_need].status in [
+                    "open",
+                ]:
                     return_code = True
-    
-    return return_code
 
+    return return_code
 
     return need["status"] == "example_3"
 
