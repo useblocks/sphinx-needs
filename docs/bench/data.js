@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724760460049,
+  "lastUpdate": 1724763250536,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -8928,6 +8928,42 @@ window.BENCHMARK_DATA = {
             "value": 66.43384456400001,
             "unit": "s",
             "extra": "Commit: 5dac61d7ada675f856273853acfe3072e9bbc1a7\nBranch: master\nTime: 2024-08-27T14:05:48+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "efa0394ccf444fae3bfc9b48819f3ab0aca3d97d",
+          "message": "🔧 Move `layout.create_need` to `needextract._build_needextract` (#1243)\n\nThe `create_need` function name/location was misleading, in that its only use is actually for building `needextract` representations. Therefore, we move it into the `needextract` module.",
+          "timestamp": "2024-08-27T14:52:06+02:00",
+          "tree_id": "64d864452cc1572b53b08371fdb862f5b05b8aa3",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/efa0394ccf444fae3bfc9b48819f3ab0aca3d97d"
+        },
+        "date": 1724763243275,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21084844500001054,
+            "unit": "s",
+            "extra": "Commit: efa0394ccf444fae3bfc9b48819f3ab0aca3d97d\nBranch: master\nTime: 2024-08-27T14:52:06+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 73.24014100300002,
+            "unit": "s",
+            "extra": "Commit: efa0394ccf444fae3bfc9b48819f3ab0aca3d97d\nBranch: master\nTime: 2024-08-27T14:52:06+02:00"
           }
         ]
       }
