@@ -42,8 +42,8 @@ def test_needs_warnings(test_app):
     assert "EXT_TEST_01" not in warnings
 
     # Check Needs warning with use of all needs
-    assert "WARNING: custom_warning_multi_needs: failed" in warnings
-    assert "failed needs: 1 (TC_MULTI)" in warnings
+    assert "WARNING: depend_need_not_closed: failed" in warnings
+    assert "failed needs: 1 (TC_MULTI2)" in warnings
 
 
 @pytest.mark.parametrize(
