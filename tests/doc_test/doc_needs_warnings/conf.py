@@ -75,8 +75,8 @@ def custom_warning_multi_needs(need, log, needs):
         "closed",
         "done",
     ]:
-        if len(need['depend']) > 0:
-            for linked_need in need['depend']:
+        if len(need["depend"]) > 0:
+            for linked_need in need["depend"]:
                 if needs[linked_need]["status"] not in [
                     "closed",
                     "done",
