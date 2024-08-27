@@ -16,6 +16,7 @@ from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.errors import SphinxError
+from sphinx.util.tags import Tags
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
@@ -272,7 +273,7 @@ def resolve_dynamic_values(needs: dict[str, NeedsInfoType], app: Sphinx) -> None
 def resolve_variants_options(
     needs: dict[str, NeedsInfoType],
     needs_config: NeedsSphinxConfig,
-    tags: dict[str, bool],
+    tags: Tags,
 ) -> None:
     """
     Resolve variants options inside need data.
@@ -297,7 +298,9 @@ def resolve_variants_options(
         need_context.update(
             **needs_config.filter_data
         )  # Add needs_filter_data to filter context
-        need_context.update(**tags)  # Add sphinx tags to filter context
+        need_context.update(
+            **{tag: True for tag in tags}
+        )  # Add sphinx tags to filter context
         location = (need["docname"], need["lineno"]) if need.get("docname") else None
 
         for var_option in variants_options:

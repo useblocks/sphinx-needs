@@ -33,7 +33,7 @@ packages = [
 # [project.dependencies]
 [tool.poetry.dependencies]
 python = ">=3.8,<4"
-sphinx = ">=5.0,<8"
+sphinx = ">=6.0,<9"
 requests-file = "^1.5.1"  # external links
 requests = "^2.25.1"  # external_links
 jsonschema = ">=3.2.0"  # needsimport schema validation
