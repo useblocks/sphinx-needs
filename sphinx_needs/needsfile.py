@@ -84,21 +84,6 @@ class NeedsList:
         name for name, params in NeedsCoreFields.items() if params.get("exclude_json")
     }
 
-    JSON_KEY_EXCLUSIONS_FILTERS = {
-        "links_back",
-        "type_color",
-        "hide_status",
-        "hide",
-        "type_prefix",
-        "lineno",
-        "lineno_content",
-        "collapse",
-        "type_style",
-        "hide_tags",
-        "content",
-        "content_node",
-    }
-
     def __init__(
         self, config: Config, outdir: str, confdir: str, add_schema: bool = True
     ) -> None:
@@ -129,7 +114,6 @@ class NeedsList:
         # also exclude back links for link types dynamically set by the user
         back_link_keys = {x["option"] + "_back" for x in self.needs_config.extra_links}
         self._exclude_need_keys = self.JSON_KEY_EXCLUSIONS_NEEDS | back_link_keys
-        self._exclude_filter_keys = self.JSON_KEY_EXCLUSIONS_FILTERS | back_link_keys
 
     def update_or_add_version(self, version: str) -> None:
         if version not in self.needs_list["versions"].keys():
@@ -173,11 +157,7 @@ class NeedsList:
 
     def add_filter(self, version: str, need_filter: NeedsFilterType) -> None:
         self.update_or_add_version(version)
-        writable_filters = {
-            key: need_filter[key]  # type: ignore[literal-required]
-            for key in need_filter
-            if key not in self._exclude_filter_keys
-        }
+        writable_filters = {**need_filter}
         self.needs_list["versions"][version]["filters"][
             need_filter["export_id"].upper()
         ] = writable_filters
