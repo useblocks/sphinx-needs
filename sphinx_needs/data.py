@@ -237,10 +237,6 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "description": "Post-content of the need.",
         "schema": {"type": "string", "default": ""},
     },
-    "content_id": {
-        "description": "ID of the content node.",
-        "schema": {"type": ["string", "null"], "default": None},
-    },
     "has_dead_links": {
         "description": "True if any links reference need ids that are not found in the need list.",
         "schema": {"type": "boolean", "default": False},
@@ -374,8 +370,6 @@ class NeedsInfoType(TypedDict, total=False):
     content: Required[str]
     pre_content: str
     post_content: str
-    content_id: Required[None | str]
-    """ID of the content node."""
 
     # these default to False and are updated in check_links post-process
     has_dead_links: Required[bool]

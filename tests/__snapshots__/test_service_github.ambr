@@ -17,7 +17,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'GITHUB_050bec',
             'created_at': '2024-02-15T14:04:06Z',
             'delete': False,
             'description': '''
@@ -87,7 +86,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'GITHUB_1110',
             'created_at': '2024-02-15T12:19:11Z',
             'delete': False,
             'description': '''
@@ -162,7 +160,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'GITHUB_1112',
             'created_at': '2024-02-15T20:45:12Z',
             'delete': False,
             'description': '''
@@ -258,7 +255,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'GITHUB_6abd38',
             'created_at': '2024-02-12T08:36:07.000Z',
             'delete': False,
             'description': '''
@@ -390,15 +386,6 @@
               'description': 'Mapping of constraint name, to check name, to result.',
               'field_type': 'core',
               'type': 'object',
-            }),
-            'content_id': dict({
-              'default': None,
-              'description': 'ID of the content node.',
-              'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'created_at': dict({
               'default': '',
