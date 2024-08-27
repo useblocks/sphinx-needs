@@ -8,11 +8,11 @@ from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.data import NeedsPieType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.directives.utils import no_needs_found_paragraph
 from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
-from sphinx_needs.logging import get_logger
+from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import (
     add_doc,
     check_and_get_external_filter_func,
@@ -83,8 +83,7 @@ class NeedpieDirective(FilterBase):
 
         shadow = "shadow" in self.options
 
-        # Stores infos for needpie
-        SphinxNeedsData(env).get_or_create_pies()[targetid] = {
+        attributes: NeedsPieType = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
@@ -100,10 +99,10 @@ class NeedpieDirective(FilterBase):
             "filter_func": self.collect_filter_attributes()["filter_func"],
             "filter_warning": self.collect_filter_attributes()["filter_warning"],
         }
-        add_doc(env, env.docname)
-
-        pie_node = Needpie("")
+        pie_node = Needpie("", **attributes)
         self.set_source_info(pie_node)
+
+        add_doc(env, env.docname)
 
         return [targetnode, pie_node]
 
@@ -122,12 +121,13 @@ def process_needpie(
     matplotlib = import_matplotlib()
 
     if matplotlib is None and found_nodes and needs_config.include_needs:
-        logger.warning(
+        log_warning(
+            logger,
             "Matplotlib is not installed and required by needpie. "
-            "Install with `sphinx-needs[plotting]` to use. [needs.mpl]",
+            "Install with `sphinx-needs[plotting]` to use.",
+            "mpl",
+            None,
             once=True,
-            type="needs",
-            subtype="mpl",
         )
 
     # NEEDFLOW
@@ -137,8 +137,7 @@ def process_needpie(
             remove_node_from_tree(node)
             continue
 
-        id = node.attributes["ids"][0]
-        current_needpie = needs_data.get_or_create_pies()[id]
+        current_needpie: NeedsPieType = node.attributes
 
         if matplotlib is None:
             message = "Matplotlib missing for needpie plot"
@@ -296,7 +295,7 @@ def process_needpie(
         # Final storage
 
         # We need to calculate an unique pie-image file name
-        hash_value = hashlib.sha256(id.encode()).hexdigest()[:5]
+        hash_value = hashlib.sha256(node.attributes["ids"][0].encode()).hexdigest()[:5]
         image_node = save_matplotlib_figure(
             app, fig, f"need_pie_{hash_value}", fromdocname
         )

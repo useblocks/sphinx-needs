@@ -11,7 +11,7 @@ from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsExtendType, NeedsInfoType, SphinxNeedsData
 from sphinx_needs.filter_common import filter_needs
-from sphinx_needs.logging import get_logger
+from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import add_doc
 
 logger = get_logger(__name__)
@@ -112,14 +112,14 @@ def extend_needs_data(
             needs_config.id_regex, need_filter
         ):
             # an unknown ID
-            error = f"Provided id {need_filter!r} for needextend does not exist. [needs.extend]"
+            error = f"Provided id {need_filter!r} for needextend does not exist."
             if current_needextend["strict"]:
                 raise NeedsInvalidFilter(error)
             else:
-                logger.warning(
+                log_warning(
+                    logger,
                     error,
-                    type="needs",
-                    subtype="extend",
+                    "extend",
                     location=(
                         current_needextend["docname"],
                         current_needextend["lineno"],
@@ -139,10 +139,10 @@ def extend_needs_data(
                     ),
                 )
             except NeedsInvalidFilter as e:
-                logger.warning(
-                    f"Invalid filter {need_filter!r}: {e} [needs.extend]",
-                    type="needs",
-                    subtype="extend",
+                log_warning(
+                    logger,
+                    f"Invalid filter {need_filter!r}: {e}",
+                    "extend",
                     location=(
                         current_needextend["docname"],
                         current_needextend["lineno"],
@@ -162,9 +162,10 @@ def extend_needs_data(
                     if option_name in link_names:
                         for item, is_function in _split_value(value):
                             if (not is_function) and (item not in all_needs):
-                                logger.warning(
-                                    f"Provided link id {item} for needextend does not exist. [needs]",
-                                    type="needs",
+                                log_warning(
+                                    logger,
+                                    f"Provided link id {item} for needextend does not exist.",
+                                    None,
                                     location=(
                                         current_needextend["docname"],
                                         current_needextend["lineno"],
@@ -196,9 +197,10 @@ def extend_needs_data(
                         need[option] = []
                         for item, is_function in _split_value(value):
                             if (not is_function) and (item not in all_needs):
-                                logger.warning(
-                                    f"Provided link id {item} for needextend does not exist. [needs]",
-                                    type="needs",
+                                log_warning(
+                                    logger,
+                                    f"Provided link id {item} for needextend does not exist.",
+                                    None,
                                     location=(
                                         current_needextend["docname"],
                                         current_needextend["lineno"],

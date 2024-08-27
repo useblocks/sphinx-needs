@@ -8,18 +8,7 @@
             'amount': 10,
             'export_id': 'FLOW_1',
             'filter': '',
-            'result': list([
-              'REQ_001',
-              'REQ_002',
-              'REQ_003',
-              'REQ_004',
-              'REQ_005',
-              'TEST_001',
-              'TEST_002',
-              'TEST_003',
-              'REQ_005.1',
-              'REQ_005.cool',
-            ]),
+            'origin': 'needflow',
             'status': list([
             ]),
             'tags': list([
@@ -31,13 +20,7 @@
             'amount': 5,
             'export_id': 'FLOW_2',
             'filter': 'is_need is False or type != "story"',
-            'result': list([
-              'TEST_001',
-              'TEST_002',
-              'TEST_003',
-              'REQ_005.1',
-              'REQ_005.cool',
-            ]),
+            'origin': 'needflow',
             'status': list([
             ]),
             'tags': list([
@@ -49,18 +32,7 @@
             'amount': 10,
             'export_id': 'LIST_1',
             'filter': '',
-            'result': list([
-              'REQ_001',
-              'REQ_002',
-              'REQ_003',
-              'REQ_004',
-              'REQ_005',
-              'TEST_001',
-              'TEST_002',
-              'TEST_003',
-              'REQ_005.1',
-              'REQ_005.cool',
-            ]),
+            'origin': 'needlist',
             'status': list([
             ]),
             'tags': list([
@@ -72,18 +44,7 @@
             'amount': 10,
             'export_id': 'TABLE_1',
             'filter': '',
-            'result': list([
-              'REQ_001',
-              'REQ_002',
-              'REQ_003',
-              'REQ_004',
-              'REQ_005',
-              'TEST_001',
-              'TEST_002',
-              'TEST_003',
-              'REQ_005.1',
-              'REQ_005.cool',
-            ]),
+            'origin': 'needtable',
             'status': list([
             ]),
             'tags': list([
@@ -95,11 +56,7 @@
             'amount': 3,
             'export_id': 'TABLE_2',
             'filter': '"test" in type',
-            'result': list([
-              'TEST_001',
-              'TEST_002',
-              'TEST_003',
-            ]),
+            'origin': 'needtable',
             'status': list([
             ]),
             'tags': list([
@@ -1042,10 +999,7 @@
               'default': '',
               'description': 'Simply the first section.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
+              'type': 'string',
             }),
             'sections': dict({
               'default': list([

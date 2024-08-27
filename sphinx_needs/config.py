@@ -7,6 +7,7 @@ from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 from sphinx.config import Config as _SphinxConfig
 
+from sphinx_needs.data import GraphvizStyleType
 from sphinx_needs.defaults import DEFAULT_DIAGRAM_TEMPLATE
 
 if TYPE_CHECKING:
@@ -376,6 +377,9 @@ class NeedsSphinxConfig:
     allow_unsafe_filters: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
+    flow_engine: Literal["plantuml", "graphviz"] = field(
+        default="plantuml", metadata={"rebuild": "env", "types": (str,)}
+    )
     flow_show_links: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
@@ -399,6 +403,9 @@ class NeedsSphinxConfig:
         default=None, metadata={"rebuild": "html", "types": ()}
     )
     flow_configs: dict[str, str] = field(
+        default_factory=dict, metadata={"rebuild": "html", "types": ()}
+    )
+    graphviz_styles: dict[str, GraphvizStyleType] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": ()}
     )
     template_folder: str = field(

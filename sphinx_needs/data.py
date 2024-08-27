@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING, Any, Final, Literal, Mapping, TypedDict
 
 from sphinx.util.logging import getLogger
 
+from sphinx_needs.logging import log_warning
+
 if TYPE_CHECKING:
     from docutils.nodes import Element, Text
     from sphinx.application import Sphinx
@@ -26,10 +28,15 @@ class NeedsFilterType(TypedDict):
     status: list[str]
     tags: list[str]
     types: list[str]
-    result: list[str]
     amount: int
     export_id: str
     """If set, the filter is exported with this ID in the needs.json file."""
+    origin: str
+    """Origin of the request (e.g. needlist, needtable, needflow)."""
+    location: str
+    """Location of the request (e.g. "docname:lineno")"""
+    runtime: float
+    """Time take to run filter (seconds)."""
 
 
 class NeedsPartType(TypedDict):
@@ -277,7 +284,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     },
     "section_name": {
         "description": "Simply the first section.",
-        "schema": {"type": ["string", "null"], "default": ""},
+        "schema": {"type": "string", "default": ""},
     },
     "signature": {
         "description": "Derived from a docutils desc_name node.",
@@ -523,7 +530,7 @@ class NeedsFilteredBaseType(NeedsBaseDataType):
     filter_code: list[str]
     filter_func: None | str
     export_id: str
-    filter_warning: str
+    filter_warning: str | None
     """If set, the filter is exported with this ID in the needs.json file."""
 
 
@@ -565,8 +572,27 @@ class _NeedsFilterType(NeedsFilteredBaseType):
     layout: Literal["list", "table", "diagram"]
 
 
+class GraphvizStyleType(TypedDict, total=False):
+    """Defines a graphviz style"""
+
+    root: dict[str, str]
+    """Root attributes"""
+    graph: dict[str, str]
+    """Graph attributes"""
+    node: dict[str, str]
+    """Node attributes"""
+    edge: dict[str, str]
+    """Edge attributes"""
+
+
 class NeedsFlowType(NeedsFilteredDiagramBaseType):
     """Data for a single (filtered) flow chart."""
+
+    classes: list[str]
+    """List of CSS classes."""
+
+    alt: str
+    """Alternative text for the diagram in HTML output."""
 
     root_id: str | None
     """need ID to use as a root node."""
@@ -579,6 +605,9 @@ class NeedsFlowType(NeedsFilteredDiagramBaseType):
 
     border_color: str | None
     """Color of the outline of the needs, specified using the variant syntax."""
+
+    graphviz_style: GraphvizStyleType
+    """Graphviz style configuration."""
 
 
 class NeedsGanttType(NeedsFilteredDiagramBaseType):
@@ -616,7 +645,7 @@ class NeedsPieType(NeedsBaseDataType):
     text_color: None | str
     shadow: bool
     filter_func: None | str
-    filter_warning: str
+    filter_warning: str | None
 
 
 class NeedsSequenceType(NeedsFilteredDiagramBaseType):
@@ -736,17 +765,6 @@ class SphinxNeedsData:
             self.env.app.needs_services = ServiceManager(self.env.app)
         return self.env.app.needs_services
 
-    def get_or_create_bars(self) -> dict[str, NeedsBarType]:
-        """Get all bar charts, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needbar
-        except AttributeError:
-            self.env.need_all_needbar = {}
-        return self.env.need_all_needbar
-
     def get_or_create_extends(self) -> dict[str, NeedsExtendType]:
         """Get all need modifications, mapped by ID.
 
@@ -757,96 +775,6 @@ class SphinxNeedsData:
         except AttributeError:
             self.env.need_all_needextend = {}
         return self.env.need_all_needextend
-
-    def get_or_create_extracts(self) -> dict[str, NeedsExtractType]:
-        """Get all need extractions, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needextracts
-        except AttributeError:
-            self.env.need_all_needextracts = {}
-        return self.env.need_all_needextracts
-
-    def _get_or_create_filters(self) -> dict[str, _NeedsFilterType]:
-        """Get all need filters, mapped by ID.
-
-        .. deprecated:: 0.2.0
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needfilters
-        except AttributeError:
-            self.env.need_all_needfilters = {}
-        return self.env.need_all_needfilters
-
-    def get_or_create_flows(self) -> dict[str, NeedsFlowType]:
-        """Get all need flow charts, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needflows
-        except AttributeError:
-            self.env.need_all_needflows = {}
-        return self.env.need_all_needflows
-
-    def get_or_create_gantts(self) -> dict[str, NeedsGanttType]:
-        """Get all need gantt charts, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needgantts
-        except AttributeError:
-            self.env.need_all_needgantts = {}
-        return self.env.need_all_needgantts
-
-    def get_or_create_lists(self) -> dict[str, NeedsListType]:
-        """Get all need gantt charts, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needlists
-        except AttributeError:
-            self.env.need_all_needlists = {}
-        return self.env.need_all_needlists
-
-    def get_or_create_pies(self) -> dict[str, NeedsPieType]:
-        """Get all need gantt charts, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needpie
-        except AttributeError:
-            self.env.need_all_needpie = {}
-        return self.env.need_all_needpie
-
-    def get_or_create_sequences(self) -> dict[str, NeedsSequenceType]:
-        """Get all need sequence diagrams, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needsequences
-        except AttributeError:
-            self.env.need_all_needsequences = {}
-        return self.env.need_all_needsequences
-
-    def get_or_create_tables(self) -> dict[str, NeedsTableType]:
-        """Get all need tables, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needtables
-        except AttributeError:
-            self.env.need_all_needtables = {}
-        return self.env.need_all_needtables
 
     def get_or_create_umls(self) -> dict[str, NeedsUmlType]:
         """Get all need uml diagrams, mapped by ID.
@@ -869,13 +797,19 @@ def merge_data(
 
     Needs to update env manually for all data Sphinx-Needs collect during read phase
     """
+    this_data = SphinxNeedsData(env)
+    other_data = SphinxNeedsData(other)
 
-    if SphinxNeedsData(other).has_export_filters:
-        SphinxNeedsData(env).has_export_filters = True
+    # update filters
+    if other_data.has_export_filters:
+        this_data.has_export_filters = True
+    # merge these just to be safe,
+    # although actually all should be added in the write phase
+    this_data.get_or_create_filters().update(other_data.get_or_create_filters())
 
     # Update needs
-    needs = SphinxNeedsData(env).get_or_create_needs()
-    other_needs = SphinxNeedsData(other).get_or_create_needs()
+    needs = this_data.get_or_create_needs()
+    other_needs = other_data.get_or_create_needs()
     for other_id, other_need in other_needs.items():
         if other_id in needs:
             # we only want to warn if the need comes from one of the docs parsed in this worker
@@ -885,10 +819,10 @@ def merge_data(
                     f"A need with ID {other_id} already exists, "
                     f"title: {other_need['title']!r}."
                 )
-                LOGGER.warning(
-                    message + " [needs.duplicate_id]",
-                    type="needs",
-                    subtype="duplicate_id",
+                log_warning(
+                    LOGGER,
+                    message,
+                    "duplicate_id",
                     location=(_docname, other_need["lineno"]) if _docname else None,
                 )
         else:
@@ -924,14 +858,5 @@ def merge_data(
                 )
 
     _merge("needs_all_docs", is_complex_dict=True)
-    _merge("need_all_needbar")
     _merge("need_all_needextend")
-    _merge("need_all_needextracts")
-    _merge("need_all_needfilters")
-    _merge("need_all_needflows")
-    _merge("need_all_needgantts")
-    _merge("need_all_needlists")
-    _merge("need_all_needpie")
-    _merge("need_all_needsequences")
-    _merge("need_all_needtables")
     _merge("needs_all_needumls")

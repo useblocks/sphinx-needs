@@ -90,6 +90,8 @@ sd_custom_directives = {
     }
 }
 
+graphviz_output_format = "svg"
+
 # -- Options for html builder ----------------------------------------------
 
 html_static_path = ["_static"]
@@ -286,7 +288,7 @@ plantuml_output_format = "svg_img"
 
 # -- Options for Needs extension ---------------------------------------
 
-needs_debug_measurement = False
+needs_debug_measurement = "READTHEDOCS" in os.environ  # run on CI
 
 needs_types = [
     # Architecture types
@@ -497,6 +499,7 @@ needs_flow_configs = {
        }
    """,
     "tutorial": """
+    left to right direction
     skinparam backgroundcolor transparent
     skinparam Arrow {
       Color #57ACDC
@@ -505,6 +508,27 @@ needs_flow_configs = {
     }
     skinparam rectangleBorderThickness 2
    """,
+}
+
+needs_graphviz_styles = {
+    "tutorial": {
+        "graph": {
+            "rankdir": "LR",
+            "bgcolor": "transparent",
+        },
+        "node": {
+            "fontname": "sans-serif",
+            "fontsize": 12,
+            "penwidth": 2,
+            "margin": "0.11,0.11",
+            "style": "rounded",
+        },
+        "edge": {
+            "color": "#57ACDC",
+            "fontsize": 10,
+            "fontcolor": "#808080",
+        },
+    }
 }
 
 needs_show_link_type = False

@@ -6,6 +6,7 @@ like needtable, needlist and needflow.
 from __future__ import annotations
 
 import re
+from timeit import default_timer as timer
 from types import CodeType
 from typing import Any, Iterable, TypedDict, TypeVar
 
@@ -22,6 +23,7 @@ from sphinx_needs.data import (
     SphinxNeedsData,
 )
 from sphinx_needs.debug import measure_time, measure_time_func
+from sphinx_needs.logging import log_warning
 from sphinx_needs.roles.need_part import iter_need_parts
 from sphinx_needs.utils import check_and_get_external_filter_func
 from sphinx_needs.utils import logger as log
@@ -34,9 +36,9 @@ class FilterAttributesType(TypedDict):
     filter: str
     sort_by: str
     filter_code: list[str]
-    filter_func: str
+    filter_func: str | None
     export_id: str
-    filter_warning: str
+    filter_warning: str | None
     """If set, the filter is exported with this ID in the needs.json file."""
 
 
@@ -100,6 +102,8 @@ def process_filters(
     app: Sphinx,
     all_needs: Iterable[NeedsInfoType],
     filter_data: NeedsFilteredBaseType,
+    origin: str,
+    location: str,
     include_external: bool = True,
 ) -> list[NeedsInfoType]:
     """
@@ -109,10 +113,13 @@ def process_filters(
     :param app: Sphinx application object
     :param filter_data: Filter configuration
     :param all_needs: List of all needs inside document
+    :param origin: Origin of the request (e.g. needlist, needtable, needflow)
+    :param location: Location of the request (e.g. "docname:lineno")
     :param include_external: Boolean, which decides to include external needs or not
 
     :return: list of needs, which passed the filters
     """
+    start = timer()
     needs_config = NeedsSphinxConfig(app.config)
     found_needs: list[NeedsInfoType]
     sort_key = filter_data["sort_by"]
@@ -120,9 +127,8 @@ def process_filters(
         try:
             all_needs = sorted(all_needs, key=lambda node: node[sort_key] or "")  # type: ignore[literal-required]
         except KeyError as e:
-            log.warning(
-                f"Sorting parameter {sort_key} not valid: Error: {e} [needs]",
-                type="needs",
+            log_warning(
+                log, f"Sorting parameter {sort_key} not valid: Error: {e}", None, None
             )
 
     # check if include external needs
@@ -222,7 +228,7 @@ def process_filters(
             )
             filter_func(**context)
         else:
-            log.warning("Something went wrong running filter [needs]", type="needs")
+            log_warning(log, "Something went wrong running filter", None, None)
             return []
 
         # The filter results may be dirty, as it may continue manipulated needs.
@@ -242,16 +248,17 @@ def process_filters(
     # Store basic filter configuration and result global list.
     # Needed mainly for exporting the result to needs.json (if builder "needs" is used).
     filter_list = SphinxNeedsData(app.env).get_or_create_filters()
-    found_needs_ids = [need["id_complete"] for need in found_needs]
 
     filter_list[filter_data["target_id"]] = {
+        "origin": origin,
+        "location": location,
         "filter": filter_data["filter"] or "",
         "status": filter_data["status"],
         "tags": filter_data["tags"],
         "types": filter_data["types"],
         "export_id": filter_data["export_id"].upper(),
-        "result": found_needs_ids,
-        "amount": len(found_needs_ids),
+        "amount": len(found_needs),
+        "runtime": timer() - start,
     }
 
     return found_needs
@@ -331,10 +338,10 @@ def filter_needs(
             if not error_reported:  # Let's report a filter-problem only once
                 if append_warning:
                     append_warning = f" {append_warning}"
-                log.warning(
-                    f"{e}{append_warning} [needs.filter]",
-                    type="needs",
-                    subtype="filter",
+                log_warning(
+                    log,
+                    f"{e}{append_warning}",
+                    "filter",
                     location=location,
                 )
                 error_reported = True

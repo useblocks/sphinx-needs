@@ -12,7 +12,7 @@ from sphinx.application import Sphinx
 from sphinx.errors import NoUri
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.data import SphinxNeedsData, _NeedsFilterType
 from sphinx_needs.diagrams_common import create_legend
 from sphinx_needs.directives.utils import no_needs_found_paragraph
 from sphinx_needs.filter_common import FilterBase, process_filters
@@ -55,9 +55,7 @@ class NeedfilterDirective(FilterBase):
         )
         targetnode = nodes.target("", "", ids=[targetid])
 
-        # Add the need and all needed information
-        data = SphinxNeedsData(env)._get_or_create_filters()
-        data[targetid] = {
+        attributes: _NeedsFilterType = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
@@ -68,10 +66,12 @@ class NeedfilterDirective(FilterBase):
             "layout": self.options.get("layout", "list"),
             **self.collect_filter_attributes(),
         }
+        node = Needfilter("", **attributes)
+        self.set_source_info(node)
 
         add_doc(env, env.docname)
 
-        return [targetnode, Needfilter("")]
+        return [targetnode, node]
 
 
 def process_needfilters(
@@ -94,8 +94,7 @@ def process_needfilters(
             remove_node_from_tree(node)
             continue
 
-        id = node.attributes["ids"][0]
-        current_needfilter = SphinxNeedsData(env)._get_or_create_filters()[id]
+        current_needfilter: _NeedsFilterType = node.attributes
 
         content: nodes.Element | list[nodes.Element]
         if current_needfilter["layout"] == "list":
@@ -159,7 +158,13 @@ def process_needfilters(
             tgroup += tbody
             content += tgroup
 
-        found_needs = process_filters(app, all_needs.values(), current_needfilter)
+        found_needs = process_filters(
+            app,
+            all_needs.values(),
+            current_needfilter,
+            origin="needfilter",
+            location=f"{node.source}:{node.line}",
+        )
 
         line_block = nodes.line_block()
         for need_info in found_needs:

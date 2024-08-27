@@ -16,7 +16,7 @@ from sphinx.application import BuildEnvironment, Sphinx
 from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.defaults import NEEDS_PROFILING
-from sphinx_needs.logging import get_logger
+from sphinx_needs.logging import get_logger, log_warning
 
 try:
     from typing import TypedDict
@@ -318,9 +318,11 @@ def check_and_get_external_filter_func(filter_func_ref: str | None) -> tuple[Any
         try:
             filter_module, filter_function = filter_func_ref.rsplit(".")
         except ValueError:
-            logger.warning(
-                f'Filter function not valid "{filter_func_ref}". Example: my_module:my_func [needs]',
-                type="needs",
+            log_warning(
+                logger,
+                f'Filter function not valid "{filter_func_ref}". Example: my_module:my_func',
+                None,
+                None,
             )
             return filter_func, filter_args
 
@@ -334,9 +336,11 @@ def check_and_get_external_filter_func(filter_func_ref: str | None) -> tuple[Any
             final_module = importlib.import_module(filter_module)
             filter_func = getattr(final_module, filter_function)
         except Exception:
-            logger.warning(
-                f"Could not import filter function: {filter_func_ref} [needs]",
-                type="needs",
+            log_warning(
+                logger,
+                f"Could not import filter function: {filter_func_ref}",
+                None,
+                None,
             )
             return filter_func, filter_args
 
@@ -472,10 +476,12 @@ def match_string_link(
         )
 
     except Exception as e:
-        logger.warning(
+        log_warning(
+            logger,
             f'Problems dealing with string to link transformation for value "{data}" of '
-            f'option "{need_key}". Error: {e} [needs]',
-            type="needs",
+            f'option "{need_key}". Error: {e}',
+            None,
+            None,
         )
     else:
         return ref_item
@@ -486,7 +492,7 @@ def match_variants(
     context: dict[str, Any],
     variants: dict[str, str],
     *,
-    location: str | tuple[str | None, int | None] | None = None,
+    location: str | tuple[str | None, int | None] | nodes.Node | None = None,
 ) -> str | None:
     """Evaluate an options list and return the first matching variant.
 
@@ -545,10 +551,10 @@ def match_variants(
             if bool(eval(filter_string, context.copy())):
                 return result.group(2).lstrip(":")
         except Exception as e:
-            logger.warning(
-                f"Error in filter {filter_string!r}: {e} [needs.variant]",
-                type="needs",
-                subtype="variant",
+            log_warning(
+                logger,
+                f"Error in filter {filter_string!r}: {e}",
+                "variant",
                 location=location,
             )
 
@@ -630,9 +636,10 @@ def split_link_types(link_types: str, location: Any) -> list[str]:
 
     def _is_valid(link_type: str) -> bool:
         if len(link_type) == 0 or link_type.isspace():
-            logger.warning(
-                "Scruffy link_type definition found. Defined link_type contains spaces only. [needs]",
-                type="needs",
+            log_warning(
+                logger,
+                "Scruffy link_type definition found. Defined link_type contains spaces only.",
+                None,
                 location=location,
             )
             return False
@@ -650,16 +657,18 @@ def get_scale(options: dict[str, Any], location: Any) -> str:
     """Get scale for diagram, from directive option."""
     scale: str = options.get("scale", "100").replace("%", "")
     if not scale.isdigit():
-        logger.warning(
-            f'scale value must be a number. "{scale}" found [needs]',
-            type="needs",
+        log_warning(
+            logger,
+            f'scale value must be a number. "{scale}" found',
+            None,
             location=location,
         )
         return "100"
     if int(scale) < 1 or int(scale) > 300:
-        logger.warning(
-            f'scale value must be between 1 and 300. "{scale}" found [needs]',
-            type="needs",
+        log_warning(
+            logger,
+            f'scale value must be between 1 and 300. "{scale}" found',
+            None,
             location=location,
         )
         return "100"

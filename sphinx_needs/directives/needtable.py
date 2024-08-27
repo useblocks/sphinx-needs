@@ -9,7 +9,7 @@ from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsInvalidException
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType, NeedsTableType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.directives.utils import (
     get_option_list,
@@ -92,8 +92,7 @@ class NeedtableDirective(FilterBase):
         if self.arguments:
             title = self.arguments[0]
 
-        # Add the need and all needed information
-        SphinxNeedsData(env).get_or_create_tables()[targetid] = {
+        attributes: NeedsTableType = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
@@ -111,10 +110,12 @@ class NeedtableDirective(FilterBase):
             "show_parts": self.options.get("show_parts", False) is None,
             **self.collect_filter_attributes(),
         }
+        node = Needtable("", **attributes)
+        self.set_source_info(node)
 
         add_doc(env, env.docname)
 
-        return [targetnode] + [Needtable("")]
+        return [targetnode, node]
 
 
 @measure_time("needtable")
@@ -154,8 +155,7 @@ def process_needtables(
             remove_node_from_tree(node)
             continue
 
-        id = node.attributes["ids"][0]
-        current_needtable = needs_data.get_or_create_tables()[id]
+        current_needtable: NeedsTableType = node.attributes
 
         if current_needtable["style"] == "" or current_needtable[
             "style"
@@ -179,7 +179,9 @@ def process_needtables(
         if style != "TABLE":
             classes.extend(needs_config.table_classes)
 
-        table_node = nodes.table(classes=classes, ids=[id + "-table_node"])
+        table_node = nodes.table(
+            classes=classes, ids=[node.attributes["ids"][0] + "-table_node"]
+        )
         tgroup = nodes.tgroup(cols=len(current_needtable["columns"]))
 
         # Define Table column width
@@ -208,12 +210,13 @@ def process_needtables(
         table_node.line = current_needtable["lineno"]
 
         # Perform filtering of needs
-        try:
-            filtered_needs = process_filters(
-                app, list(all_needs.values()), current_needtable
-            )
-        except Exception as e:
-            raise e
+        filtered_needs = process_filters(
+            app,
+            list(all_needs.values()),
+            current_needtable,
+            origin="needtable",
+            location=f"{node.source}:{node.line}",
+        )
 
         def get_sorter(key: str) -> Callable[[NeedsInfoType], Any]:
             """
