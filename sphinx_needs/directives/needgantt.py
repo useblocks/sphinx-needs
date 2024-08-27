@@ -13,7 +13,7 @@ from sphinxcontrib.plantuml import (
 )
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.data import NeedsGanttType, SphinxNeedsData
 from sphinx_needs.diagrams_common import (
     DiagramBase,
     add_config,
@@ -27,7 +27,7 @@ from sphinx_needs.directives.utils import (
     no_needs_found_paragraph,
 )
 from sphinx_needs.filter_common import FilterBase, filter_single_need, process_filters
-from sphinx_needs.logging import get_logger
+from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import MONTH_NAMES, add_doc, remove_node_from_tree
 
 logger = get_logger(__name__)
@@ -104,8 +104,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
             "completion_option", needs_config.completion_option
         )
 
-        # Add the needgantt and all needed information
-        SphinxNeedsData(env).get_or_create_gantts()[targetid] = {
+        attributes: NeedsGanttType = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
@@ -122,10 +121,10 @@ class NeedganttDirective(FilterBase, DiagramBase):
             **self.collect_diagram_attributes(),
         }
 
-        add_doc(env, env.docname)
-
-        gantt_node = Needgantt("")
+        gantt_node = Needgantt("", **attributes)
         self.set_source_info(gantt_node)
+
+        add_doc(env, env.docname)
 
         return [targetnode, gantt_node]
 
@@ -170,8 +169,7 @@ def process_needgantt(
             remove_node_from_tree(node)
             continue
 
-        id = node.attributes["ids"][0]
-        current_needgantt = SphinxNeedsData(env).get_or_create_gantts()[id]
+        current_needgantt: NeedsGanttType = node.attributes
         all_needs_dict = SphinxNeedsData(env).get_or_create_needs()
 
         content = []
@@ -197,7 +195,13 @@ def process_needgantt(
         puml_node["uml"] += add_config(config)
 
         all_needs = list(all_needs_dict.values())
-        found_needs = process_filters(app, all_needs, current_needgantt)
+        found_needs = process_filters(
+            app,
+            all_needs,
+            current_needgantt,
+            origin="needgantt",
+            location=f"{node.source}:{node.line}",
+        )
 
         # Scale/timeline handling
         if current_needgantt["timeline"]:
@@ -252,11 +256,11 @@ def process_needgantt(
                         if need["docname"]
                         else ""
                     )
-                    logger.warning(
+                    log_warning(
+                        logger,
                         "Duration not set or invalid for needgantt chart. "
-                        f"Need: {need['id']!r}{need_location}. Duration: {duration!r} [needs.gantt]",
-                        type="needs",
-                        subtype="gantt",
+                        f"Need: {need['id']!r}{need_location}. Duration: {duration!r}",
+                        "gantt",
                         location=node,
                     )
                     duration = 1

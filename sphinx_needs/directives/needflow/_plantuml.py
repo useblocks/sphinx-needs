@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import html
 import os
-from typing import Iterable, Literal, Sequence
+from functools import lru_cache
+from typing import Iterable
 
 from docutils import nodes
-from docutils.parsers.rst import directives
 from jinja2 import Template
 from sphinx.application import Sphinx
 from sphinxcontrib.plantuml import (
@@ -20,106 +20,18 @@ from sphinx_needs.data import (
 )
 from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link, create_legend
+from sphinx_needs.directives.needflow._directive import NeedflowPlantuml
 from sphinx_needs.directives.utils import no_needs_found_paragraph
-from sphinx_needs.filter_common import FilterBase, filter_single_need, process_filters
-from sphinx_needs.logging import get_logger
+from sphinx_needs.filter_common import filter_single_need, process_filters
+from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import (
-    add_doc,
-    get_scale,
     match_variants,
     remove_node_from_tree,
-    split_link_types,
 )
 
+from ._shared import create_filter_paragraph, filter_by_tree, get_root_needs
+
 logger = get_logger(__name__)
-
-
-NEEDFLOW_TEMPLATES: dict[str, Template] = {}
-
-
-class Needflow(nodes.General, nodes.Element):
-    pass
-
-
-class NeedflowDirective(FilterBase):
-    """
-    Directive to get flow charts.
-    """
-
-    optional_arguments = 1
-    final_argument_whitespace = True
-    option_spec = {
-        "root_id": directives.unchanged_required,
-        "root_direction": lambda c: directives.choice(
-            c, ("both", "incoming", "outgoing")
-        ),
-        "root_depth": directives.nonnegative_int,
-        "show_legend": directives.flag,
-        "show_filters": directives.flag,
-        "show_link_names": directives.flag,
-        "link_types": directives.unchanged_required,
-        "config": directives.unchanged_required,
-        "scale": directives.unchanged_required,
-        "highlight": directives.unchanged_required,
-        "border_color": directives.unchanged_required,
-        "align": directives.unchanged_required,
-        "debug": directives.flag,
-    }
-
-    # Update the options_spec with values defined in the FilterBase class
-    option_spec.update(FilterBase.base_option_spec)
-
-    @measure_time("needflow")
-    def run(self) -> Sequence[nodes.Node]:
-        env = self.env
-        needs_config = NeedsSphinxConfig(env.config)
-        location = (env.docname, self.lineno)
-
-        id = env.new_serialno("needflow")
-        targetid = f"needflow-{env.docname}-{id}"
-        targetnode = nodes.target("", "", ids=[targetid])
-
-        all_link_types = ",".join(x["option"] for x in needs_config.extra_links)
-        link_types = split_link_types(
-            self.options.get("link_types", all_link_types), location
-        )
-
-        config_names = self.options.get("config")
-        configs = []
-        if config_names:
-            for config_name in config_names.split(","):
-                config_name = config_name.strip()
-                if config_name and config_name in needs_config.flow_configs:
-                    configs.append(needs_config.flow_configs[config_name])
-
-        # Add the need and all needed information
-        data = SphinxNeedsData(env).get_or_create_flows()
-        data[targetid] = {
-            "docname": env.docname,
-            "lineno": self.lineno,
-            "target_id": targetid,
-            "root_id": self.options.get("root_id"),
-            "root_direction": self.options.get("root_direction", "all"),
-            "root_depth": self.options.get("root_depth", None),
-            # note these are the same as DiagramBase.collect_diagram_attributes
-            "show_legend": "show_legend" in self.options,
-            "show_filters": "show_filters" in self.options,
-            "show_link_names": "show_link_names" in self.options,
-            "link_types": link_types,
-            "config": "\n".join(configs),
-            "config_names": config_names,
-            "scale": get_scale(self.options, location),
-            "highlight": self.options.get("highlight", ""),
-            "border_color": self.options.get("border_color", None),
-            "align": self.options.get("align"),
-            "debug": "debug" in self.options,
-            "caption": self.arguments[0] if self.arguments else None,
-            **self.collect_filter_attributes(),
-        }
-
-        add_doc(env, env.docname)
-
-        return [targetnode, Needflow("")]
 
 
 def make_entity_name(name: str) -> str:
@@ -205,40 +117,31 @@ def walk_curr_need_tree(
     if need["is_need"] and need["parts"]:
         # add comment for easy debugging
         curr_need_tree += "'parts:\n"
-        for need_part_id in need["parts"].keys():
+        for need_part_id in need["parts"]:
             # cal need part node
             need_part_id = need["id"] + "." + need_part_id
             # get need part from need part id
             for found_need in found_needs:
                 if need_part_id == found_need["id_complete"]:
-                    need_part = found_need
-                    # get need part node
-                    need_part_node = get_need_node_rep_for_plantuml(
-                        app, fromdocname, current_needflow, all_needs, need_part
+                    curr_need_tree += (
+                        get_need_node_rep_for_plantuml(
+                            app, fromdocname, current_needflow, all_needs, found_need
+                        )
+                        + "\n"
                     )
-                    curr_need_tree += need_part_node + "\n"
+                    break
 
     # check if curr need has children
     if need["parent_needs_back"]:
         # add comment for easy debugging
         curr_need_tree += "'child needs:\n"
-
-        # walk throgh all child needs one by one
-        child_needs_ids = need["parent_needs_back"]
-
-        idx = 0
-        while idx < len(child_needs_ids):
-            # start from one child
-            curr_child_need_id = child_needs_ids[idx]
-            # get need from id
-            for need in found_needs:
-                if need["id_complete"] == curr_child_need_id:
-                    curr_child_need = need
-                    # get child need node
-                    child_need_node = get_need_node_rep_for_plantuml(
+        # walk through all child needs one by one
+        for curr_child_need_id in need["parent_needs_back"]:
+            for curr_child_need in found_needs:
+                if curr_child_need["id_complete"] == curr_child_need_id:
+                    curr_need_tree += get_need_node_rep_for_plantuml(
                         app, fromdocname, current_needflow, all_needs, curr_child_need
                     )
-                    curr_need_tree += child_need_node
                     # check curr need child has children or has parts
                     if curr_child_need["parent_needs_back"] or curr_child_need["parts"]:
                         curr_need_tree += walk_curr_need_tree(
@@ -251,30 +154,12 @@ def walk_curr_need_tree(
                         )
                     # add newline for next element
                     curr_need_tree += "\n"
-            idx += 1
+                    break
 
     # We processed embedded needs or need parts, so we will close with "}"
     curr_need_tree += "}"
 
     return curr_need_tree
-
-
-def get_root_needs(found_needs: list[NeedsInfoType]) -> list[NeedsInfoType]:
-    return_list = []
-    for current_need in found_needs:
-        if current_need["is_need"]:
-            if "parent_need" not in current_need or current_need["parent_need"] == "":
-                # need has no parent, we have to add the need to the root needs
-                return_list.append(current_need)
-            else:
-                parent_found: bool = False
-                for elements in found_needs:
-                    if elements["id"] == current_need["parent_need"]:
-                        parent_found = True
-                        break
-                if not parent_found:
-                    return_list.append(current_need)
-    return return_list
 
 
 def cal_needs_node(
@@ -306,50 +191,8 @@ def cal_needs_node(
     return curr_need_tree
 
 
-def filter_by_tree(
-    all_needs: dict[str, NeedsInfoType],
-    root_id: str,
-    link_types: list[LinkOptionsType],
-    direction: Literal["both", "incoming", "outgoing"],
-    depth: int | None,
-) -> dict[str, NeedsInfoType]:
-    """Filter all needs by the given ``root_id``,
-    and all needs that are connected to the root need by the given ``link_types``, in the given ``direction``."""
-    need_items: dict[str, NeedsInfoType] = {}
-    if root_id not in all_needs:
-        return need_items
-    roots = {root_id: (0, all_needs[root_id])}
-    link_prefixes = (
-        ("_back",)
-        if direction == "incoming"
-        else ("",)
-        if direction == "outgoing"
-        else ("", "_back")
-    )
-    links_to_process = [
-        link["option"] + d for link in link_types for d in link_prefixes
-    ]
-    while roots:
-        root_id, (root_depth, root) = roots.popitem()
-        if root_id in need_items:
-            continue
-        if depth is not None and root_depth > depth:
-            continue
-        need_items[root_id] = root
-        for link_type_name in links_to_process:
-            roots.update(
-                {
-                    i: (root_depth + 1, all_needs[i])
-                    for i in root.get(link_type_name, [])  # type: ignore[attr-defined]
-                    if i in all_needs
-                }
-            )
-
-    return need_items
-
-
-@measure_time("needflow")
-def process_needflow(
+@measure_time("needflow_plantuml")
+def process_needflow_plantuml(
     app: Sphinx,
     doctree: nodes.document,
     fromdocname: str,
@@ -365,26 +208,26 @@ def process_needflow(
     link_type_names = [link["option"].upper() for link in needs_config.extra_links]
     allowed_link_types_options = [link.upper() for link in needs_config.flow_link_types]
 
-    # NEEDFLOW
-    # for node in doctree.findall(Needflow):
-    for node in found_nodes:
+    node: NeedflowPlantuml
+    for node in found_nodes:  # type: ignore[assignment]
         if not needs_config.include_needs:
             remove_node_from_tree(node)
             continue
 
-        id = node.attributes["ids"][0]
-        current_needflow = env_data.get_or_create_flows()[id]
+        current_needflow: NeedsFlowType = node.attributes
 
         option_link_types = [link.upper() for link in current_needflow["link_types"]]
         for lt in option_link_types:
             if lt not in link_type_names:
-                logger.warning(
-                    "Unknown link type {link_type} in needflow {flow}. Allowed values: {link_types} [needs]".format(
+                log_warning(
+                    logger,
+                    "Unknown link type {link_type} in needflow {flow}. Allowed values: {link_types}".format(
                         link_type=lt,
                         flow=current_needflow["target_id"],
                         link_types=",".join(link_type_names),
                     ),
-                    type="needs",
+                    None,
+                    None,
                 )
 
         # compute the allowed link names
@@ -432,18 +275,27 @@ def process_needflow(
             else all_needs.values()
         )
 
-        found_needs = process_filters(app, need_values, current_needflow)
+        found_needs = process_filters(
+            app,
+            need_values,
+            current_needflow,
+            origin="needflow",
+            location=f"{node.source}:{node.line}",
+        )
 
         if found_needs:
             plantuml_block_text = ".. plantuml::\n" "\n" "   @startuml" "   @enduml"
             puml_node = plantuml(plantuml_block_text)
+            # TODO if an alt is not set then sphinxcontrib.plantuml uses the plantuml source code as alt text.
+            # I think this is not great, but currently setting a more sensible default breaks some tests
+            if current_needflow["alt"]:
+                puml_node["alt"] = current_needflow["alt"]
 
             # Add source origin
             puml_node.line = current_needflow["lineno"]
             puml_node.source = env.doc2path(current_needflow["docname"])
 
             puml_node["uml"] = "@startuml\n"
-            puml_connections = ""
 
             # Adding config
             config = current_needflow["config"]
@@ -457,75 +309,16 @@ def process_needflow(
                 puml_node["uml"] += "\n\n"
 
             puml_node["uml"] += "\n' Nodes definition \n\n"
-
-            for need_info in found_needs:
-                for link_type in allowed_link_types:
-                    for link in need_info[link_type["option"]]:  # type: ignore[literal-required]
-                        # If source or target of link is a need_part, a specific style is needed
-                        if "." in link or "." in need_info["id_complete"]:
-                            final_link = link
-                            if (
-                                current_needflow["show_link_names"]
-                                or needs_config.flow_show_links
-                            ):
-                                desc = link_type["outgoing"] + "\\n"
-                                comment = f": {desc}"
-                            else:
-                                comment = ""
-
-                            if _style_part := link_type.get("style_part"):
-                                link_style = f"[{_style_part}]"
-                            else:
-                                link_style = "[dotted]"
-                        else:
-                            final_link = link
-                            if (
-                                current_needflow["show_link_names"]
-                                or needs_config.flow_show_links
-                            ):
-                                comment = ": {desc}".format(desc=link_type["outgoing"])
-                            else:
-                                comment = ""
-
-                            if _style := link_type.get("style"):
-                                link_style = f"[{_style}]"
-                            else:
-                                link_style = ""
-
-                        # Do not create an links, if the link target is not part of the search result.
-                        if final_link not in [
-                            x["id"] for x in found_needs if x["is_need"]
-                        ] and final_link not in [
-                            x["id_complete"] for x in found_needs if x["is_part"]
-                        ]:
-                            continue
-
-                        if _style_start := link_type.get("style_start"):
-                            style_start = _style_start
-                        else:
-                            style_start = "-"
-
-                        if _style_end := link_type.get("style_end"):
-                            style_end = _style_end
-                        else:
-                            style_end = "->"
-
-                        puml_connections += "{id} {style_start}{link_style}{style_end} {link}{comment}\n".format(
-                            id=make_entity_name(need_info["id_complete"]),
-                            link=make_entity_name(final_link),
-                            comment=comment,
-                            link_style=link_style,
-                            style_start=style_start,
-                            style_end=style_end,
-                        )
-
-            # calculate needs node representation for plantuml
             puml_node["uml"] += cal_needs_node(
                 app, fromdocname, current_needflow, all_needs.values(), found_needs
             )
 
             puml_node["uml"] += "\n' Connection definition \n\n"
-            puml_node["uml"] += puml_connections
+            puml_node["uml"] += render_connections(
+                found_needs,
+                allowed_link_types,
+                current_needflow["show_link_names"] or needs_config.flow_show_links,
+            )
 
             # Create a legend
             if current_needflow["show_legend"]:
@@ -581,35 +374,7 @@ def process_needflow(
             )
 
         if current_needflow["show_filters"]:
-            para = nodes.paragraph()
-            filter_text = "Used filter:"
-            filter_text += (
-                " status({})".format(" OR ".join(current_needflow["status"]))
-                if len(current_needflow["status"]) > 0
-                else ""
-            )
-            if (
-                len(current_needflow["status"]) > 0
-                and len(current_needflow["tags"]) > 0
-            ):
-                filter_text += " AND "
-            filter_text += (
-                " tags({})".format(" OR ".join(current_needflow["tags"]))
-                if len(current_needflow["tags"]) > 0
-                else ""
-            )
-            if (
-                len(current_needflow["status"]) > 0 or len(current_needflow["tags"]) > 0
-            ) and len(current_needflow["types"]) > 0:
-                filter_text += " AND "
-            filter_text += (
-                " types({})".format(" OR ".join(current_needflow["types"]))
-                if len(current_needflow["types"]) > 0
-                else ""
-            )
-
-            filter_node = nodes.emphasis(filter_text, filter_text)
-            para += filter_node
+            para = create_filter_paragraph(current_needflow)
             content.append(para)
 
         # We have to restrustructer the needflow
@@ -630,10 +395,66 @@ def process_needflow(
         node.replace_self(content)
 
 
+def render_connections(
+    found_needs: list[NeedsInfoType],
+    allowed_link_types: list[LinkOptionsType],
+    show_links: bool,
+) -> str:
+    """
+    Render the connections between the needs.
+    """
+    puml_connections = ""
+    for need_info in found_needs:
+        for link_type in allowed_link_types:
+            for link in need_info[link_type["option"]]:  # type: ignore[literal-required]
+                # Do not create an links, if the link target is not part of the search result.
+                if link not in [
+                    x["id"] for x in found_needs if x["is_need"]
+                ] and link not in [
+                    x["id_complete"] for x in found_needs if x["is_part"]
+                ]:
+                    continue
+
+                if show_links:
+                    desc = link_type["outgoing"] + "\\n"
+                    comment = f": {desc}"
+                else:
+                    comment = ""
+
+                # If source or target of link is a need_part, a specific style is needed
+                if "." in link or "." in need_info["id_complete"]:
+                    if _style_part := link_type.get("style_part"):
+                        link_style = f"[{_style_part}]"
+                    else:
+                        link_style = "[dotted]"
+                else:
+                    if _style := link_type.get("style"):
+                        link_style = f"[{_style}]"
+                    else:
+                        link_style = ""
+
+                if _style_start := link_type.get("style_start"):
+                    style_start = _style_start
+                else:
+                    style_start = "-"
+
+                if _style_end := link_type.get("style_end"):
+                    style_end = _style_end
+                else:
+                    style_end = "->"
+
+                puml_connections += "{id} {style_start}{link_style}{style_end} {link}{comment}\n".format(
+                    id=make_entity_name(need_info["id_complete"]),
+                    link=make_entity_name(link),
+                    comment=comment,
+                    link_style=link_style,
+                    style_start=style_start,
+                    style_end=style_end,
+                )
+    return puml_connections
+
+
+@lru_cache
 def get_template(template_name: str) -> Template:
     """Checks if a template got already rendered, if it's the case, return it"""
-
-    if template_name not in NEEDFLOW_TEMPLATES:
-        NEEDFLOW_TEMPLATES[template_name] = Template(template_name)
-
-    return NEEDFLOW_TEMPLATES[template_name]
+    return Template(template_name)

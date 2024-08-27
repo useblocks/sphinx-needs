@@ -4,15 +4,22 @@ which is stored in the Sphinx environment.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, TypedDict
+from typing import TYPE_CHECKING, Any, Final, Literal, Mapping, TypedDict
+
+from sphinx.util.logging import getLogger
+
+from sphinx_needs.logging import log_warning
 
 if TYPE_CHECKING:
     from docutils.nodes import Element, Text
     from sphinx.application import Sphinx
     from sphinx.environment import BuildEnvironment
-    from typing_extensions import Required
+    from typing_extensions import NotRequired, Required
 
     from sphinx_needs.services.manager import ServiceManager
+
+
+LOGGER = getLogger(__name__)
 
 
 class NeedsFilterType(TypedDict):
@@ -21,10 +28,15 @@ class NeedsFilterType(TypedDict):
     status: list[str]
     tags: list[str]
     types: list[str]
-    result: list[str]
     amount: int
     export_id: str
     """If set, the filter is exported with this ID in the needs.json file."""
+    origin: str
+    """Origin of the request (e.g. needlist, needtable, needflow)."""
+    location: str
+    """Location of the request (e.g. "docname:lineno")"""
+    runtime: float
+    """Time take to run filter (seconds)."""
 
 
 class NeedsPartType(TypedDict):
@@ -40,20 +52,267 @@ class NeedsPartType(TypedDict):
     """List of need IDs, which are referencing this part."""
 
 
+class CoreFieldParameters(TypedDict):
+    """Parameters for core fields."""
+
+    description: str
+    """Description of the field."""
+    schema: dict[str, Any]
+    """JSON schema for the field."""
+    show_in_layout: NotRequired[bool]
+    """Whether to show the field in the rendered layout of the need by default (False if not present)."""
+    exclude_json: NotRequired[bool]
+    """Whether to exclude the field from the JSON representation (False if not present)."""
+
+
+NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
+    "target_id": {"description": "ID of the data.", "schema": {"type": "string"}},
+    "id": {"description": "ID of the data.", "schema": {"type": "string"}},
+    "docname": {
+        "description": "Name of the document where the need is defined (None if external).",
+        "schema": {"type": ["string", "null"], "default": None},
+    },
+    "lineno": {
+        "description": "Line number where the need is defined (None if external).",
+        "schema": {"type": ["integer", "null"], "default": None},
+        "exclude_json": True,
+    },
+    "lineno_content": {
+        "description": "Line number on which the need content starts (None if external).",
+        "schema": {"type": ["integer", "null"], "default": None},
+        "exclude_json": True,
+    },
+    "full_title": {
+        "description": "Title of the need, of unlimited length.",
+        "schema": {"type": "string", "default": ""},
+    },
+    "title": {
+        "description": "Title of the need, trimmed to a maximum length.",
+        "schema": {"type": "string"},
+    },
+    "status": {
+        "description": "Status of the need.",
+        "schema": {"type": ["string", "null"], "default": None},
+        "show_in_layout": True,
+    },
+    "tags": {
+        "description": "List of tags.",
+        "schema": {"type": "array", "items": {"type": "string"}, "default": []},
+        "show_in_layout": True,
+    },
+    "collapse": {
+        "description": "Hide the meta-data information of the need.",
+        "schema": {"type": ["boolean", "null"], "default": None},
+        "exclude_json": True,
+    },
+    "hide": {
+        "description": "If true, the need is not rendered.",
+        "schema": {"type": "boolean", "default": False},
+        "exclude_json": True,
+    },
+    "delete": {
+        "description": "If true, the need is deleted entirely.",
+        "schema": {"type": ["boolean", "null"], "default": None},
+        "show_in_layout": True,
+    },
+    "layout": {
+        "description": "Key of the layout, which is used to render the need.",
+        "schema": {"type": ["string", "null"], "default": None},
+        "show_in_layout": True,
+    },
+    "style": {
+        "description": "Comma-separated list of CSS classes (all appended by `needs_style_`).",
+        "schema": {"type": ["string", "null"], "default": None},
+        "show_in_layout": True,
+    },
+    "arch": {
+        "description": "Mapping of uml key to uml content.",
+        "schema": {
+            "type": "object",
+            "additionalProperties": {"type": "string"},
+            "default": {},
+        },
+    },
+    "is_external": {
+        "description": "If true, no node is created and need is referencing external url.",
+        "schema": {"type": "boolean", "default": False},
+    },
+    "external_url": {
+        "description": "URL of the need, if it is an external need.",
+        "schema": {"type": ["string", "null"], "default": None},
+        "show_in_layout": True,
+    },
+    "external_css": {
+        "description": "CSS class name, added to the external reference.",
+        "schema": {"type": "string", "default": ""},
+    },
+    "type": {
+        "description": "Type of the need.",
+        "schema": {"type": "string", "default": ""},
+    },
+    "type_name": {
+        "description": "Name of the type.",
+        "schema": {"type": "string", "default": ""},
+    },
+    "type_prefix": {
+        "description": "Prefix of the type.",
+        "schema": {"type": "string", "default": ""},
+        "exclude_json": True,
+    },
+    "type_color": {
+        "description": "Hexadecimal color code of the type.",
+        "schema": {"type": "string", "default": ""},
+        "exclude_json": True,
+    },
+    "type_style": {
+        "description": "Style of the type.",
+        "schema": {"type": "string", "default": ""},
+        "exclude_json": True,
+    },
+    "is_modified": {
+        "description": "Whether the need was modified by needextend.",
+        "schema": {"type": "boolean", "default": False},
+    },
+    "modifications": {
+        "description": "Number of modifications by needextend.",
+        "schema": {"type": "integer", "default": 0},
+    },
+    "is_need": {
+        "description": "Whether the need is a need.",
+        "schema": {"type": "boolean", "default": True},
+    },
+    "is_part": {
+        "description": "Whether the need is a part.",
+        "schema": {"type": "boolean", "default": False},
+    },
+    "parts": {
+        "description": "Mapping of parts, a.k.a. sub-needs, IDs to data that overrides the need's data",
+        "schema": {
+            "type": "object",
+            "additionalProperties": {"type": "object"},
+            "default": {},
+        },
+    },
+    "id_parent": {
+        "description": "<parent ID>, or <self ID> if not a part.",
+        "exclude_json": True,
+        "schema": {"type": "string", "default": ""},
+    },
+    "id_complete": {
+        "description": "<parent ID>.<self ID>, or <self ID> if not a part.",
+        "exclude_json": True,
+        "schema": {"type": "string", "default": ""},
+    },
+    "jinja_content": {
+        "description": "Whether the content should be pre-processed by jinja.",
+        "schema": {"type": ["boolean", "null"], "default": None},
+        "show_in_layout": True,
+    },
+    "template": {
+        "description": "Template of the need.",
+        "schema": {"type": ["string", "null"], "default": None},
+        "show_in_layout": True,
+    },
+    "pre_template": {
+        "description": "Pre-template of the need.",
+        "schema": {"type": ["string", "null"], "default": None},
+        "show_in_layout": True,
+    },
+    "post_template": {
+        "description": "Post-template of the need.",
+        "schema": {"type": ["string", "null"], "default": None},
+        "show_in_layout": True,
+    },
+    "content": {
+        "description": "Content of the need.",
+        "schema": {"type": "string", "default": ""},
+        "exclude_json": True,
+    },
+    "pre_content": {
+        "description": "Pre-content of the need.",
+        "schema": {"type": "string", "default": ""},
+    },
+    "post_content": {
+        "description": "Post-content of the need.",
+        "schema": {"type": "string", "default": ""},
+    },
+    "content_id": {
+        "description": "ID of the content node.",
+        "schema": {"type": ["string", "null"], "default": None},
+    },
+    "content_node": {
+        "description": "Deep copy of the content node.",
+        "schema": {},
+        "exclude_json": True,
+    },
+    "has_dead_links": {
+        "description": "True if any links reference need ids that are not found in the need list.",
+        "schema": {"type": "boolean", "default": False},
+    },
+    "has_forbidden_dead_links": {
+        "description": "True if any links reference need ids that are not found in the need list, and the link type does not allow dead links.",
+        "schema": {"type": "boolean", "default": False},
+    },
+    "constraints": {
+        "description": "List of constraint names, which are defined for this need.",
+        "schema": {"type": "array", "items": {"type": "string"}, "default": []},
+    },
+    "constraints_results": {
+        "description": "Mapping of constraint name, to check name, to result.",
+        "schema": {
+            "type": "object",
+            "additionalProperties": {"type": "object"},
+            "default": {},
+        },
+    },
+    "constraints_passed": {
+        "description": "True if all constraints passed, False if any failed, None if not yet checked.",
+        "schema": {"type": ["boolean", "null"], "default": True},
+    },
+    "constraints_error": {
+        "description": "An error message set if any constraint failed, and `error_message` field is set in config.",
+        "schema": {"type": "string", "default": ""},
+        "show_in_layout": True,
+    },
+    "doctype": {
+        "description": "Type of the document where the need is defined, e.g. '.rst'.",
+        "schema": {"type": "string", "default": ".rst"},
+    },
+    "sections": {
+        "description": "Sections of the need.",
+        "schema": {"type": "array", "items": {"type": "string"}, "default": []},
+    },
+    "section_name": {
+        "description": "Simply the first section.",
+        "schema": {"type": "string", "default": ""},
+    },
+    "signature": {
+        "description": "Derived from a docutils desc_name node.",
+        "schema": {"type": "string", "default": ""},
+        "show_in_layout": True,
+    },
+    "parent_need": {
+        "description": "Simply the first parent id.",
+        "schema": {"type": "string", "default": ""},
+    },
+}
+
+
 class NeedsInfoType(TypedDict, total=False):
     """Data for a single need."""
 
+    # TODO remove duplication target_id/id
     target_id: Required[str]
     """ID of the data."""
     id: Required[str]
-    """ID of the data (same as target_id)"""
+    """ID of the data."""
 
     docname: Required[str | None]
-    """Name of the document where the need is defined (None if external)"""
+    """Name of the document where the need is defined (None if external)."""
     lineno: Required[int | None]
-    """Line number where the need is defined (None if external)"""
+    """Line number where the need is defined (None if external)."""
     lineno_content: Required[int | None]
-    """Line number on which the need content starts (None if external)"""
+    """Line number on which the need content starts (None if external)."""
 
     # meta information
     full_title: Required[str]
@@ -65,7 +324,7 @@ class NeedsInfoType(TypedDict, total=False):
 
     # rendering information
     collapse: Required[None | bool]
-    """hide the meta-data information of the need."""
+    """Hide the meta-data information of the need."""
     hide: Required[bool]
     """If true, the need is not rendered."""
     delete: Required[None | bool]
@@ -81,7 +340,7 @@ class NeedsInfoType(TypedDict, total=False):
 
     # external reference information
     is_external: Required[bool]
-    """If true, no node is created and need is referencing external url"""
+    """If true, no node is created and need is referencing external url."""
     external_url: Required[None | str]
     """URL of the need, if it is an external need."""
     external_css: Required[str]
@@ -107,12 +366,9 @@ class NeedsInfoType(TypedDict, total=False):
     parts: Required[dict[str, NeedsPartType]]
     # additional information required for compatibility with parts
     id_parent: Required[str]
-    """ID of the parent need, or self ID if not a part"""
+    """<parent ID>, or <self ID> if not a part."""
     id_complete: Required[str]
-    """ID of the parent need, followed by the part ID, 
-    delimited by a dot: ``<id_parent>.<id>``,
-    or self ID if not a part
-    """
+    """<parent ID>.<self ID>, or <self ID> if not a part."""
 
     # content creation information
     jinja_content: Required[None | bool]
@@ -123,9 +379,9 @@ class NeedsInfoType(TypedDict, total=False):
     pre_content: str
     post_content: str
     content_id: Required[None | str]
-    """ID of the content node (set after parsing)."""
+    """ID of the content node."""
     content_node: Required[None | Element]
-    """deep copy of the content node (set after parsing)."""
+    """Deep copy of the content node."""
 
     # these default to False and are updated in check_links post-process
     has_dead_links: Required[bool]
@@ -148,15 +404,15 @@ class NeedsInfoType(TypedDict, total=False):
 
     # additional source information
     doctype: Required[str]
-    """Type of the document where the need is defined, e.g. '.rst'"""
+    """Type of the document where the need is defined, e.g. '.rst'."""
     # set in analyse_need_locations transform
     sections: Required[list[str]]
     section_name: Required[str]
-    """Simply the first section"""
+    """Simply the first section."""
     signature: Required[str | Text]
-    """Derived from a docutils desc_name node"""
+    """Derived from a docutils desc_name node."""
     parent_need: Required[str]
-    """Simply the first parent id"""
+    """Simply the first parent id."""
 
     # link information
     # Note, there is more dynamically added link information;
@@ -274,7 +530,7 @@ class NeedsFilteredBaseType(NeedsBaseDataType):
     filter_code: list[str]
     filter_func: None | str
     export_id: str
-    filter_warning: str
+    filter_warning: str | None
     """If set, the filter is exported with this ID in the needs.json file."""
 
 
@@ -316,8 +572,27 @@ class _NeedsFilterType(NeedsFilteredBaseType):
     layout: Literal["list", "table", "diagram"]
 
 
+class GraphvizStyleType(TypedDict, total=False):
+    """Defines a graphviz style"""
+
+    root: dict[str, str]
+    """Root attributes"""
+    graph: dict[str, str]
+    """Graph attributes"""
+    node: dict[str, str]
+    """Node attributes"""
+    edge: dict[str, str]
+    """Edge attributes"""
+
+
 class NeedsFlowType(NeedsFilteredDiagramBaseType):
     """Data for a single (filtered) flow chart."""
+
+    classes: list[str]
+    """List of CSS classes."""
+
+    alt: str
+    """Alternative text for the diagram in HTML output."""
 
     root_id: str | None
     """need ID to use as a root node."""
@@ -330,6 +605,9 @@ class NeedsFlowType(NeedsFilteredDiagramBaseType):
 
     border_color: str | None
     """Color of the outline of the needs, specified using the variant syntax."""
+
+    graphviz_style: GraphvizStyleType
+    """Graphviz style configuration."""
 
 
 class NeedsGanttType(NeedsFilteredDiagramBaseType):
@@ -367,7 +645,7 @@ class NeedsPieType(NeedsBaseDataType):
     text_color: None | str
     shadow: bool
     filter_func: None | str
-    filter_warning: str
+    filter_warning: str | None
 
 
 class NeedsSequenceType(NeedsFilteredDiagramBaseType):
@@ -487,17 +765,6 @@ class SphinxNeedsData:
             self.env.app.needs_services = ServiceManager(self.env.app)
         return self.env.app.needs_services
 
-    def get_or_create_bars(self) -> dict[str, NeedsBarType]:
-        """Get all bar charts, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needbar
-        except AttributeError:
-            self.env.need_all_needbar = {}
-        return self.env.need_all_needbar
-
     def get_or_create_extends(self) -> dict[str, NeedsExtendType]:
         """Get all need modifications, mapped by ID.
 
@@ -508,96 +775,6 @@ class SphinxNeedsData:
         except AttributeError:
             self.env.need_all_needextend = {}
         return self.env.need_all_needextend
-
-    def get_or_create_extracts(self) -> dict[str, NeedsExtractType]:
-        """Get all need extractions, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needextracts
-        except AttributeError:
-            self.env.need_all_needextracts = {}
-        return self.env.need_all_needextracts
-
-    def _get_or_create_filters(self) -> dict[str, _NeedsFilterType]:
-        """Get all need filters, mapped by ID.
-
-        .. deprecated:: 0.2.0
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needfilters
-        except AttributeError:
-            self.env.need_all_needfilters = {}
-        return self.env.need_all_needfilters
-
-    def get_or_create_flows(self) -> dict[str, NeedsFlowType]:
-        """Get all need flow charts, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needflows
-        except AttributeError:
-            self.env.need_all_needflows = {}
-        return self.env.need_all_needflows
-
-    def get_or_create_gantts(self) -> dict[str, NeedsGanttType]:
-        """Get all need gantt charts, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needgantts
-        except AttributeError:
-            self.env.need_all_needgantts = {}
-        return self.env.need_all_needgantts
-
-    def get_or_create_lists(self) -> dict[str, NeedsListType]:
-        """Get all need gantt charts, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needlists
-        except AttributeError:
-            self.env.need_all_needlists = {}
-        return self.env.need_all_needlists
-
-    def get_or_create_pies(self) -> dict[str, NeedsPieType]:
-        """Get all need gantt charts, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needpie
-        except AttributeError:
-            self.env.need_all_needpie = {}
-        return self.env.need_all_needpie
-
-    def get_or_create_sequences(self) -> dict[str, NeedsSequenceType]:
-        """Get all need sequence diagrams, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needsequences
-        except AttributeError:
-            self.env.need_all_needsequences = {}
-        return self.env.need_all_needsequences
-
-    def get_or_create_tables(self) -> dict[str, NeedsTableType]:
-        """Get all need tables, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.need_all_needtables
-        except AttributeError:
-            self.env.need_all_needtables = {}
-        return self.env.need_all_needtables
 
     def get_or_create_umls(self) -> dict[str, NeedsUmlType]:
         """Get all need uml diagrams, mapped by ID.
@@ -612,7 +789,7 @@ class SphinxNeedsData:
 
 
 def merge_data(
-    _app: Sphinx, env: BuildEnvironment, _docnames: list[str], other: BuildEnvironment
+    _app: Sphinx, env: BuildEnvironment, docnames: list[str], other: BuildEnvironment
 ) -> None:
     """
     Performs data merge of parallel executed workers.
@@ -620,13 +797,38 @@ def merge_data(
 
     Needs to update env manually for all data Sphinx-Needs collect during read phase
     """
+    this_data = SphinxNeedsData(env)
+    other_data = SphinxNeedsData(other)
 
-    # Update global needs dict
-    needs = SphinxNeedsData(env).get_or_create_needs()
-    other_needs = SphinxNeedsData(other).get_or_create_needs()
-    needs.update(other_needs)
-    if SphinxNeedsData(other).has_export_filters:
-        SphinxNeedsData(env).has_export_filters = True
+    # update filters
+    if other_data.has_export_filters:
+        this_data.has_export_filters = True
+    # merge these just to be safe,
+    # although actually all should be added in the write phase
+    this_data.get_or_create_filters().update(other_data.get_or_create_filters())
+
+    # Update needs
+    needs = this_data.get_or_create_needs()
+    other_needs = other_data.get_or_create_needs()
+    for other_id, other_need in other_needs.items():
+        if other_id in needs:
+            # we only want to warn if the need comes from one of the docs parsed in this worker
+            _docname = other_need["docname"]
+            if _docname in docnames:
+                message = (
+                    f"A need with ID {other_id} already exists, "
+                    f"title: {other_need['title']!r}."
+                )
+                log_warning(
+                    LOGGER,
+                    message,
+                    "duplicate_id",
+                    location=(_docname, other_need["lineno"]) if _docname else None,
+                )
+        else:
+            needs[other_id] = other_need
+
+    # update other data
 
     def _merge(name: str, is_complex_dict: bool = False) -> None:
         # Update global needs dict
@@ -656,14 +858,5 @@ def merge_data(
                 )
 
     _merge("needs_all_docs", is_complex_dict=True)
-    _merge("need_all_needbar")
     _merge("need_all_needextend")
-    _merge("need_all_needextracts")
-    _merge("need_all_needfilters")
-    _merge("need_all_needflows")
-    _merge("need_all_needgantts")
-    _merge("need_all_needlists")
-    _merge("need_all_needpie")
-    _merge("need_all_needsequences")
-    _merge("need_all_needtables")
     _merge("needs_all_needumls")

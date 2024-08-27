@@ -58,8 +58,17 @@ This allows to export specified filter results only.
       :export_id: filter_01
 
 
+.. _needs_builder_format:
+
 Format
 ++++++
+
+As well as the ``filters`` and ``needs`` data, the **needs.json** file also contains the ``needs_schema``.
+This is a JSON schema of for the data structure of a single need,
+and also includes a ``field_type`` for each field, to denote the source of the field,
+that can be one of: ``core``, ``links``, ``extra``, ``global``.
+
+See also :ref:`needs_build_json_per_id` and :ref:`needs_json_remove_defaults` for more options on modifying the content of the ``needs.json`` file.
 
 .. code-block:: python
 
@@ -71,65 +80,112 @@ Format
         "1.0": {
             "created": "2017-07-03T11:54:42.433868",
             "filters": {
-               "FILTER_1": {
-                 "amount": 1,
-                 "export_id": "FILTER_1",
-                 "filter": "",
-                 "result": [
-                     "IMPL_01",
-                 ],
-                 "status": [],
-                 "tags": "",
-                 "types": []
+                "FILTER_1": {
+                    "amount": 1,
+                    "export_id": "FILTER_1",
+                    "filter": "",
+                    "result": ["IMPL_01"],
+                    "status": [],
+                    "tags": "",
+                    "types": []
+            },
+            "needs_schema": {
+                "$schema": "http://json-schema.org/draft-07/schema#",
+                "properties": {
+                    "id": {
+                        "description": "ID of the data.",
+                        "field_type": "core",
+                        "type": "string"
+                    },
+                    "type": {
+                        "description": "Type of the need.",
+                        "field_type": "core",
+                        "type": "string"
+                    },
+                    "links": {
+                        "description": "Link field",
+                        "field_type": "links",
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "default": []
+                    },
+                    "status": {
+                        "description": "Status of the need.",
+                        "field_type": "core",
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "default": null
+                    },
+                    ...
+                }
             },
             "needs": {
                 "IMPL_01": {
-                    "description": "Incoming links of this spec: :need_incoming:`IMPL_01`.",
                     "id": "IMPL_01",
-                    "links": [
-                        "OWN_ID_123"
-                    ],
-                    "sections": [
-                        "Examples"
-                    ],
-                    "status": null,
-                    "tags": [],
-                    "title": "Implementation for specification",
                     "type": "impl",
-                    "type_name": "Implementation"
-                }
+                    "links": ["OWN_ID_123"],
+                    "status": null,
+                    ...
+                },
+                ...
             }
         },
         "1.5": {
             "created": "2017-07-03T16:10:31.633425",
             "filters": {
-               "FILTER_1": {
-                 "amount": 1,
-                 "export_id": "FILTER_1",
-                 "filter": "",
-                 "result": [
-                     "IMPL_01",
-                 ],
-                 "status": [],
-                 "tags": "",
-                 "types": []
+                "FILTER_1": {
+                    "amount": 1,
+                    "export_id": "FILTER_1",
+                    "filter": "",
+                    "result": ["IMPL_01"],
+                    "status": [],
+                    "tags": "",
+                    "types": []
+            },
+            "needs_schema": {
+                "id": {
+                    "description": "ID of the data.",
+                    "field_type": "core",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type of the need.",
+                    "field_type": "core",
+                    "type": "string"
+                },
+                "links": {
+                    "description": "Link field",
+                    "field_type": "links",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "default": []
+                },
+                "status": {
+                    "description": "Status of the need.",
+                    "field_type": "core",
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "default": null
+                },
+                ...
             },
             "needs": {
                 "IMPL_01": {
-                    "description": "Incoming links",
                     "id": "IMPL_01",
-                    "links": [
-                        "OWN_ID_123"
-                    ],
-                    "sections": [
-                        "Examples"
-                    ],
-                    "status": "closed",
-                    "tags": ["links","update"],
-                    "title": "Implementation for specification",
                     "type": "impl",
-                    "type_name": "Implementation"
-                }
+                    "links": ["OWN_ID_123"],
+                    "status": "closed",
+                    ...
+                },
+                ...
             }
         }
     }

@@ -28,9 +28,10 @@ from sphinx.environment.collectors.asset import DownloadFileCollector, ImageColl
 from sphinx.util.logging import getLogger
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import NeedsCoreFields, NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
-from sphinx_needs.utils import INTERNALS, match_string_link
+from sphinx_needs.logging import log_warning
+from sphinx_needs.utils import match_string_link
 
 LOGGER = getLogger(__name__)
 
@@ -734,7 +735,11 @@ class LayoutHandler:
         :param show_empty: If true, also need data with no value will be printed. Mostly useful for debugging.
         :return: docutils nodes
         """
-        default_excludes = list(INTERNALS)
+        default_excludes = [
+            name
+            for name, props in NeedsCoreFields.items()
+            if not props.get("show_in_layout")
+        ]
 
         if exclude is None or not isinstance(exclude, list):
             if defaults:
@@ -850,7 +855,7 @@ class LayoutHandler:
         If **url** starts with ``icon:`` the following string is taken as icon-name and the related icon is shown.
         Example: ``icon:activity`` will show:
 
-        .. image:: _static/activity.png
+        .. image:: /_images/activity.png
 
         For all icons, see https://feathericons.com/.
 
@@ -1088,10 +1093,10 @@ class LayoutHandler:
             if src.startswith("icon:"):
                 svg = _read_icon(src[5:])
                 if svg is None:
-                    LOGGER.warning(
+                    log_warning(
+                        LOGGER,
                         f"Icon {src[5:]!r} not found.",
-                        type="needs",
-                        subtype="layout",
+                        "layout",
                         location=self.node,
                     )
                 else:

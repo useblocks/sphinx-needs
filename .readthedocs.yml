@@ -11,7 +11,7 @@ python:
       path: .
       extra_requirements:
         - docs
-        - theme-im
+        - theme-furo
 
 build:
   os: ubuntu-22.04
@@ -27,4 +27,4 @@ build:
     pre_build:
       # ideally we would just set the DOCS_THEME environment variable
       # but I couldn't see an easy way to do that for the build job
-      - 'echo "sphinx_immaterial" > docs/DOCS_THEME'
+      - 'echo "furo" > docs/DOCS_THEME'

@@ -201,6 +201,7 @@ extras =
 passenv =
     BUILDER
     CLEAN
+    READTHEDOCS
     TERM
 setenv =
     alabaster: DOCS_THEME=alabaster

@@ -1273,8 +1273,8 @@
       'content_calculated': '''
         @startuml
         
-        DC -> Marvel:  [[../index.html#ST_001 Test story]]
-        Marvel --> DC:  [[../index.html#ST_002 Different text to explain the story]]
+        DC -> Marvel: [[../index.html#ST_001 Test story]]
+        Marvel --> DC: [[../index.html#ST_002 Different text to explain the story]]
         @enduml
   
       ''',

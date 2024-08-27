@@ -11,10 +11,9 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.api import add_external_need, del_need
-from sphinx_needs.api.exceptions import NeedsDuplicatedId
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
-from sphinx_needs.logging import get_logger
+from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import clean_log, import_prefix_link_edit
 
 log = get_logger(__name__)
@@ -30,7 +29,7 @@ def get_target_template(target_url: str) -> Template:
     return mem_template
 
 
-def load_external_needs(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
+def load_external_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> None:
     """Load needs from configured external sources."""
     needs_config = NeedsSphinxConfig(app.config)
     for source in needs_config.external_needs:
@@ -93,20 +92,32 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, _docname: str) -> No
             )
 
         try:
-            needs = needs_json["versions"][version]["needs"]
+            data = needs_json["versions"][version]
+            needs = data["needs"]
         except KeyError:
+            uri = source.get("json_url", source.get("json_path", "unknown"))
             raise NeedsExternalException(
                 clean_log(
-                    f"Version {version} not found in json file from {source['json_url']}"
+                    f"Version {version} not found in json file from {uri}: {list(needs_json.get('versions'))}"
                 )
             )
 
         log.debug(f"Loading {len(needs)} needs.")
 
+        defaults = (
+            {
+                name: value["default"]
+                for name, value in schema["properties"].items()
+                if "default" in value
+            }
+            if (schema := data.get("needs_schema"))
+            else {}
+        )
+
         prefix = source.get("id_prefix", "").upper()
         import_prefix_link_edit(needs, prefix, needs_config.extra_links)
         for need in needs.values():
-            need_params = {**need}
+            need_params = {**defaults, **need}
 
             extra_links = [x["option"] for x in needs_config.extra_links]
             for key in list(need_params.keys()):
@@ -159,10 +170,14 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, _docname: str) -> No
                     # delete the already existing external need from api need
                     del_need(app, ext_need_id)
                 else:
-                    raise NeedsDuplicatedId(
-                        f'During external needs handling, an identical ID was detected: {ext_need_id} \
-                            from needs_external_needs url: {source["base_url"]}'
+                    log_warning(
+                        log,
+                        f'During external needs handling, an identical ID was detected: {ext_need_id} '
+                        f'from needs_external_needs url: {source["base_url"]}',
+                        "duplicate_id",
+                        location=docname if docname else None,
                     )
+                    return None
 
             add_external_need(app, **need_params)
 

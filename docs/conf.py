@@ -15,6 +15,7 @@ now = datetime.datetime.now()
 copyright = f"2017-{now.year}, team useblocks"
 author = "team useblocks"
 
+master_doc = "index"
 language = "en"
 
 version = release = __version__
@@ -34,6 +35,7 @@ extensions = [
     "sphinxcontrib.programoutput",
     "sphinx_design",
     "sphinx.ext.duration",
+    "sphinx.ext.todo",
 ]
 if DOCS_THEME == "sphinx_immaterial":
     extensions.append("sphinx_immaterial")
@@ -75,38 +77,33 @@ autodoc_docstring_signature = (
     True  # Used to read spec. func-defs from docstring (e.g. get rid of self)
 )
 
-master_doc = "index"
-
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 exclude_patterns += os.getenv("SPHINX_EXCLUDE", "").split(",")
-
-# The name of the Pygments (syntax highlighting) style to use.
-pygments_style = "sphinx"
-
-# If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = False
 
 sd_custom_directives = {
     "dropdown": {
         "inherit": "dropdown",
         "options": {
-            "icon": "quote",
+            "icon": "pencil",
+            "class-container": "sn-dropdown-default",
         },
     }
 }
+
+graphviz_output_format = "svg"
 
 # -- Options for html builder ----------------------------------------------
 
 html_static_path = ["_static"]
 html_css_files = ["_css/shared.css"]
-html_favicon = "./_static/sphinx-needs-logo-favicon.png"
+html_favicon = "./_static/sphinx-needs-logo-square-dark.svg"
 
 html_theme = DOCS_THEME
 
 if DOCS_THEME == "alabaster":
     # https://alabaster.readthedocs.io
     html_theme_options = {
-        "logo": "sphinx-needs-logo.png",
+        "logo": "sphinx-needs-logo-long-light.svg",
         "description": "",
         "github_type": "star",
         "github_user": "useblocks",
@@ -121,16 +118,30 @@ elif DOCS_THEME == "furo":
         "source_repository": "https://github.com/useblocks/sphinx-needs",
         "source_branch": "master",
         "source_directory": "docs/",
-        "light_logo": "sphinx-needs-logo.png",
-        "dark_logo": "sphinx-needs-logo.png",
+        "light_logo": "sphinx-needs-logo-long-light.svg",
+        "dark_logo": "sphinx-needs-logo-long-dark.svg",
     }
+    templates_path = ["_static/_templates/furo"]
+    html_sidebars = {
+        "**": [
+            "sidebar/brand.html",
+            "sidebar/search.html",
+            "sidebar/scroll-start.html",
+            "sidebar/navigation.html",
+            "sidebar/ethical-ads.html",
+            "sidebar/scroll-end.html",
+            "side-github.html",
+            "sidebar/variant-selector.html",
+        ]
+    }
+    html_context = {"repository": "useblocks/sphinx-needs"}
 elif DOCS_THEME == "pydata_sphinx_theme":
     # https://pydata-sphinx-theme.readthedocs.io
     html_css_files += ["_css/pydata_sphinx_theme.css"]
     html_theme_options = {
         "logo": {
-            "image_light": "_static/sphinx-needs-logo.png",
-            "image_dark": "_static/sphinx-needs-logo-white.png",
+            "image_light": "_static/sphinx-needs-logo-long-light.svg",
+            "image_dark": "_static/sphinx-needs-logo-long-dark.svg",
         },
         "use_edit_page_button": True,
         "github_url": "https://github.com/useblocks/sphinx-needs",
@@ -144,13 +155,13 @@ elif DOCS_THEME == "pydata_sphinx_theme":
 elif DOCS_THEME == "sphinx_rtd_theme":
     # https://sphinx-rtd-theme.readthedocs.io
     html_css_files += ["_css/sphinx_rtd_theme.css"]
-    html_logo = "./_static/sphinx-needs-logo-white.png"
+    html_logo = "./_static/sphinx-needs-logo-long-dark.svg"
     html_theme_options = {
         "logo_only": True,
     }
 elif DOCS_THEME == "sphinx_immaterial":
     # https://jbms.github.io/sphinx-immaterial
-    html_logo = "./_static/sphinx-needs-logo-white.png"
+    html_logo = "./_static/sphinx-needs-logo-long-dark.svg"
     templates_path = ["_templates/sphinx_immaterial"]
     html_css_files += ["_css/sphinx_immaterial.css"]
     html_sidebars = {
@@ -254,6 +265,7 @@ linkcheck_ignore = [
     r"http://localhost:\d+",
     r"http://127.0.0.1:\d+",
     r"../.*",
+    r"https?://useblocks.com/sphinx-needs/bench/index.html",
 ]
 
 linkcheck_request_headers = {
@@ -276,7 +288,7 @@ plantuml_output_format = "svg_img"
 
 # -- Options for Needs extension ---------------------------------------
 
-needs_debug_measurement = False
+needs_debug_measurement = "READTHEDOCS" in os.environ  # run on CI
 
 needs_types = [
     # Architecture types
@@ -361,6 +373,35 @@ needs_types = [
         "color": "#FF3333",
         "style": "node",
     },
+    # for tutorial
+    {
+        "directive": "tutorial-project",
+        "title": "Project",
+        "prefix": "P_",
+        "color": "#BFD8D2",
+        "style": "rectangle",
+    },
+    {
+        "directive": "tutorial-req",
+        "title": "Requirement",
+        "prefix": "R_",
+        "color": "#BFD8D2",
+        "style": "rectangle",
+    },
+    {
+        "directive": "tutorial-spec",
+        "title": "Specification",
+        "prefix": "S_",
+        "color": "#FEDCD2",
+        "style": "rectangle",
+    },
+    {
+        "directive": "tutorial-test",
+        "title": "Test Case",
+        "prefix": "T_",
+        "color": "#f9e79f",
+        "style": "rectangle",
+    },
 ]
 
 needs_extra_links = [
@@ -424,6 +465,23 @@ needs_extra_links = [
         "style": "#00AA00",
         "style_part": "solid,#777777",
     },
+    # for tutorial
+    {
+        "option": "tutorial_required_by",
+        "incoming": "requires",
+        "outgoing": "required by",
+        "style": "#00AA00",
+    },
+    {
+        "option": "tutorial_specifies",
+        "incoming": "specified by",
+        "outgoing": "specifies",
+    },
+    {
+        "option": "tutorial_tests",
+        "incoming": "tested by",
+        "outgoing": "tests",
+    },
 ]
 
 needs_variant_options = ["status"]
@@ -440,6 +498,37 @@ needs_flow_configs = {
            BorderColor SpringGreen
        }
    """,
+    "tutorial": """
+    left to right direction
+    skinparam backgroundcolor transparent
+    skinparam Arrow {
+      Color #57ACDC
+      FontColor #808080
+      FontStyle Bold
+    }
+    skinparam rectangleBorderThickness 2
+   """,
+}
+
+needs_graphviz_styles = {
+    "tutorial": {
+        "graph": {
+            "rankdir": "LR",
+            "bgcolor": "transparent",
+        },
+        "node": {
+            "fontname": "sans-serif",
+            "fontsize": 12,
+            "penwidth": 2,
+            "margin": "0.11,0.11",
+            "style": "rounded",
+        },
+        "edge": {
+            "color": "#57ACDC",
+            "fontsize": 10,
+            "fontcolor": "#808080",
+        },
+    }
 }
 
 needs_show_link_type = False
@@ -468,10 +557,9 @@ needs_extra_options = [
     "unit",
 ]
 
+_names = [t["directive"] for t in needs_types] + ["issue", "pr", "commit"]
 needs_warnings = {
-    "type_check": 'type not in ["int", "sys", "comp", "req", "spec", "impl", "test", "feature", "action", "user", "milestone", '
-    '"issue", "pr", "commit"'  # GitHub service types
-    "]",
+    "type_check": f"type not in {_names}",
     # 'valid_status': 'status not in ["open", "in progress", "closed", "done", "implemented"] and status is not None'
 }
 
@@ -615,6 +703,10 @@ from docutils import nodes  # noqa: E402
 from sphinx.application import Sphinx  # noqa: E402
 from sphinx.directives import SphinxDirective  # noqa: E402
 
+from sphinx_needs.api.need import add_external_need  # noqa: E402
+from sphinx_needs.data import SphinxNeedsData  # noqa: E402
+from sphinx_needs.needsfile import NeedsList  # noqa: E402
+
 
 class NeedExampleDirective(SphinxDirective):
     """Directive to add example content to the documentation.
@@ -649,5 +741,34 @@ class NeedExampleDirective(SphinxDirective):
         return [root]
 
 
+def create_tutorial_needs(app: Sphinx, _env, _docnames):
+    """Create a JSON to import in the tutorial.
+
+    We do this dynamically, to avoid having to maintain the JSON file manually.
+    """
+    all_data = SphinxNeedsData(app.env).get_or_create_needs()
+    writer = NeedsList(app.config, outdir=app.confdir, confdir=app.confdir)
+    for i in range(1, 5):
+        test_id = f"T_00{i}"
+        # TODO really here we don't want to create the data, without actually adding it to the needs
+        if test_id in all_data:
+            data = all_data[test_id]
+        else:
+            add_external_need(
+                app,
+                "tutorial-test",
+                id=test_id,
+                title=f"Unit test {i}",
+                content=f"Test case {i}",
+            )
+            data = all_data.pop(test_id)
+        writer.add_need(version, data)
+    # TODO ideally we would only write this file if it has changed (also needimport should add dependency on file)
+    writer.write_json(
+        needs_file="tutorial_needs.json", needs_path=str(Path(app.confdir, "_static"))
+    )
+
+
 def setup(app: Sphinx):
     app.add_directive("need-example", NeedExampleDirective)
+    app.connect("env-before-read-docs", create_tutorial_needs, priority=600)

@@ -1,7 +1,7 @@
 .. _need:
 
-need / req (or any other defined need type)
-===========================================
+need items
+==========
 
 Creates a **need** object with a specified type.
 You can define the type using the correct directive, like ``.. req::`` or ``.. test::``.
@@ -520,28 +520,7 @@ style
 
 The class-attribute can then be selected with **CSS** to specify the layout of the need.
 
-**Examples**
-
-.. req:: My styled requirement
-   :id: STYLE_001
-   :tags: style_example
-   :style: red
-
-.. req:: Another styled requirement
-   :id: STYLE_002
-   :tags: style_example
-   :style: blue
-
-.. req:: Green is my color
-   :id: STYLE_003
-   :tags: style_example
-   :style: green
-
-.. req:: Yellow and blue border
-   :id: STYLE_004
-   :style: yellow, blue_border
-
-.. code-block:: rst
+.. need-example::
 
    .. req:: My styled requirement
       :id: STYLE_001
@@ -568,33 +547,19 @@ derived from the values of other need options.
 Here ``style`` is set to ``[[copy('status')]]``,
 which leads to the CSS class ``needs_style_open`` if the ``status`` option is set to ``open``.
 
-**Examples**
-
-.. req:: My automatically styled requirement
-   :id: STYLE_005
-   :status: implemented
-   :tags: style_example
-   :style: [[copy("status")]]
-
-.. req:: My automatically styled requirement
-   :id: STYLE_006
-   :status: open
-   :tags: style_example
-   :style: [[copy("status")]]
-
-.. code-block:: rst
+.. need-example::
 
    .. req:: My automatically styled requirement
       :id: STYLE_005
       :status: implemented
       :tags: style_example
-      :style: [[copy(status)]]
+      :style: [[copy("status")]]
 
    .. req:: My automatically styled requirement
       :id: STYLE_006
       :status: open
       :tags: style_example
-      :style: [[copy(status)]]
+      :style: [[copy("status")]]
 
 .. _need_template:
 
@@ -625,7 +590,7 @@ You can have several templates, but can set only one for a need.
 
    .. spec:: My specification
       :status: open
-      :links: FEATURE_1, FEATURE_2
+      :links: STYLE_001, STYLE_002
       :id: TEMPL_SPEC
       :tags: example, template
       :template: spec_template
@@ -727,7 +692,7 @@ You can use it to show some need-specific analytics, like dependency diagrams or
    .. spec:: My specification
       :id: TEMPL_POST_SPEC
       :tags: example, template
-      :links: FEATURE_1, FEATURE_2
+      :links: STYLE_001, STYLE_002
       :post_template: spec_post_template
 
       This is my **specification** content.

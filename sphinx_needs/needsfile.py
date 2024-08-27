@@ -15,29 +15,73 @@ from typing import Any
 from jsonschema import Draft7Validator
 from sphinx.config import Config
 
-from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsFilterType, NeedsInfoType
-from sphinx_needs.logging import get_logger
+from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
+from sphinx_needs.data import NeedsCoreFields, NeedsFilterType, NeedsInfoType
+from sphinx_needs.logging import get_logger, log_warning
 
 log = get_logger(__name__)
 
 
+def generate_needs_schema(config: Config) -> dict[str, Any]:
+    """Generate a JSON schema for all fields in each need item.
+
+    It is based on:
+    * the core fields defined in NeedsCoreFields
+    * the extra options defined dynamically
+    * the global options defined dynamically
+    * the extra links defined dynamically
+    """
+    properties: dict[str, Any] = {}
+
+    for name, extra_params in NEEDS_CONFIG.extra_options.items():
+        properties[name] = {
+            "type": "string",
+            "description": extra_params.description,
+            "field_type": "extra",
+            "default": "",
+        }
+
+    # TODO currently extra options can overlap with core fields,
+    # in which case they are ignored,
+    # (this is the case for `type` added by the github service)
+    # hence this is why we add the core options after the extra options
+    for name, core_params in NeedsCoreFields.items():
+        if core_params.get("exclude_json"):
+            continue
+        properties[name] = core_params["schema"]
+        properties[name]["description"] = f"{core_params['description']}"
+        properties[name]["field_type"] = "core"
+
+    needs_config = NeedsSphinxConfig(config)
+
+    for link in needs_config.extra_links:
+        properties[link["option"]] = {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Link field",
+            "field_type": "links",
+            "default": [],
+        }
+
+    for name in needs_config.global_options:
+        if name not in properties:
+            properties[name] = {
+                "type": "string",
+                "description": "Added by needs_global_options configuration",
+                "field_type": "global",
+                "default": "",
+            }
+
+    return {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": properties,
+    }
+
+
 class NeedsList:
     JSON_KEY_EXCLUSIONS_NEEDS = {
-        "links_back",
-        "type_color",
-        "hide",
-        "type_prefix",
-        "lineno",
-        "lineno_content",
-        "collapse",
-        "type_style",
-        "content",
-        "content_node",
-        # id_parent, id_parent are added on calls to `prepare_need_list`
-        # but are only relevant to parts
-        "id_parent",
-        "id_complete",
+        name for name, params in NeedsCoreFields.items() if params.get("exclude_json")
     }
 
     JSON_KEY_EXCLUSIONS_FILTERS = {
@@ -55,11 +99,23 @@ class NeedsList:
         "content_node",
     }
 
-    def __init__(self, config: Config, outdir: str, confdir: str) -> None:
+    def __init__(
+        self, config: Config, outdir: str, confdir: str, add_schema: bool = True
+    ) -> None:
         self.config = config
         self.needs_config = NeedsSphinxConfig(config)
         self.outdir = outdir
         self.confdir = confdir
+        self._schema = generate_needs_schema(config) if add_schema else None
+        self._need_defaults = (
+            {
+                name: value["default"]
+                for name, value in self._schema["properties"].items()
+                if "default" in value
+            }
+            if self._schema
+            else {}
+        )
         self.current_version = config.version
         self.project = config.project
         self.needs_list = {
@@ -83,6 +139,8 @@ class NeedsList:
                 "filters_amount": 0,
                 "filters": {},
             }
+            if self._schema:
+                self.needs_list["versions"][version]["needs_schema"] = self._schema
             if not self.needs_config.reproducible_json:
                 self.needs_list["versions"][version]["created"] = ""
 
@@ -95,11 +153,19 @@ class NeedsList:
     def add_need(self, version: str, need_info: NeedsInfoType) -> None:
         self.update_or_add_version(version)
         writable_needs = {
-            key: need_info[key]  # type: ignore[literal-required]
-            for key in need_info
+            key: value
+            for key, value in need_info.items()
             if key not in self._exclude_need_keys
         }
-        writable_needs["description"] = need_info["content"]
+        if self.needs_config.json_remove_defaults:
+            writable_needs = {
+                key: value
+                for key, value in writable_needs.items()
+                if not (
+                    key in self._need_defaults and value == self._need_defaults[key]
+                )
+            }
+        writable_needs["description"] = need_info["content"]  # TODO why this?
         self.needs_list["versions"][version]["needs"][need_info["id"]] = writable_needs
         self.needs_list["versions"][version]["needs_amount"] = len(
             self.needs_list["versions"][version]["needs"]
@@ -137,16 +203,14 @@ class NeedsList:
             needs_dir = self.outdir
 
         with open(os.path.join(needs_dir, needs_file), "w") as f:
-            json.dump(self.needs_list, f, indent=4, sort_keys=True)
+            json.dump(self.needs_list, f, sort_keys=True)
 
     def load_json(self, file: str) -> None:
         if not os.path.isabs(file):
             file = os.path.join(self.confdir, file)
 
         if not os.path.exists(file):
-            self.log.warning(
-                f"Could not load needs json file {file} [needs]", type="needs"
-            )
+            log_warning(self.log, f"Could not load needs json file {file}", None, None)
         else:
             errors = check_needs_file(file)
             # We only care for schema errors here, all other possible errors
@@ -160,8 +224,8 @@ class NeedsList:
                 try:
                     needs_list = json.load(needs_file)
                 except json.JSONDecodeError:
-                    self.log.warning(
-                        f"Could not decode json file {file} [needs]", type="needs"
+                    log_warning(
+                        self.log, f"Could not decode json file {file}", None, None
                     )
                 else:
                     self.needs_list = needs_list

@@ -1,7 +1,14 @@
+from __future__ import annotations
+
 import json
+import shutil
 from pathlib import Path
+from textwrap import dedent
 
 import pytest
+from sphinx import version_info
+from sphinx.testing.util import SphinxTestApp
+from sphinx.util.console import strip_colors
 from syrupy.filters import props
 
 
@@ -10,9 +17,13 @@ from syrupy.filters import props
     [{"buildername": "html", "srcdir": "doc_test/external_doc"}],
     indirect=True,
 )
-def test_external_html(test_app):
+def test_external_html(test_app: SphinxTestApp):
     app = test_app
     app.build()
+    assert strip_colors(app._warning.getvalue()).strip() == (
+        "WARNING: Couldn't create need EXT_TEST_03. "
+        "Reason: The need-type (i.e. `ask`) is not set in the project's 'need_types' configuration in conf.py. [needs.add]"
+    )
     html = Path(app.outdir, "index.html").read_text()
     assert (
         '<a class="external_link reference external" href="http://my_company.com/docs/v1/index.html#TEST_02">'
@@ -31,33 +42,98 @@ def test_external_html(test_app):
     [{"buildername": "needs", "srcdir": "doc_test/external_doc"}],
     indirect=True,
 )
-def test_external_json(test_app, snapshot):
+def test_external_json(test_app: SphinxTestApp, snapshot):
     app = test_app
     app.build()
     json_data = Path(app.outdir, "needs.json").read_text()
     needs = json.loads(json_data)
-    assert needs == snapshot(exclude=props("created"))
+    assert needs == snapshot(exclude=props("created", "project"))
 
 
-@pytest.mark.parametrize(
-    "test_app",
-    [{"buildername": "needs", "srcdir": "doc_test/external_doc"}],
-    indirect=True,
-)
-def test_external_needs_warnings(test_app):
-    import os
-    import subprocess
+def test_export_import_round_trip(tmp_path: Path, snapshot):
+    """Test generating needs in one project and importing them in another."""
+    project_path = tmp_path / "project"
+    project_path.mkdir()
 
-    app = test_app
+    srcdir = project_path
+    builddir = project_path / "_build"
+    if version_info < (7, 2):
+        from sphinx.testing.path import path
 
-    srcdir = Path(app.srcdir)
-    out_dir = os.path.join(srcdir, "_build")
+        srcdir = path(str(srcdir))
+        builddir = path(str(builddir))
 
-    out = subprocess.run(
-        ["sphinx-build", "-b", "html", srcdir, out_dir], capture_output=True
+    # run a build that generates needs
+    project_path.joinpath("conf.py").write_text(
+        dedent("""\
+        version = "1.3"
+        extensions = ["sphinx_needs"]
+        needs_json_remove_defaults = True
+        """),
+        "utf8",
     )
-    assert (
-        "WARNING: Couldn't create need EXT_TEST_03. Reason: The need-type (i.e. `ask`) is not"
-        " set in the project's 'need_types' configuration in conf.py."
-        in out.stderr.decode("utf-8")
+    project_path.joinpath("index.rst").write_text(
+        dedent("""\
+        Title
+        =====
+               
+        .. req:: REQ_01
+           :id: REQ_01
+        """),
+        "utf8",
     )
+    app = SphinxTestApp(buildername="needs", srcdir=srcdir, builddir=builddir)
+    try:
+        app.build()
+    finally:
+        app.cleanup()
+    assert app._warning.getvalue() == ""
+
+    json_data = Path(str(app.outdir), "needs.json").read_bytes()
+
+    # remove previous project
+    app.cleanup()
+    shutil.rmtree(project_path)
+    project_path.mkdir(parents=True, exist_ok=True)
+    Path(str(app.outdir)).mkdir(parents=True, exist_ok=True)
+
+    Path(str(app.srcdir), "exported_needs.json").write_bytes(json_data)
+
+    # run a build that exports the generated needs
+    project_path.joinpath("conf.py").write_text(
+        dedent("""\
+        version = "1.3"
+        extensions = ["sphinx_needs"]
+        needs_id_regex = "^[A-Za-z0-9_]*"
+        needs_external_needs = [{
+            'json_path':  'exported_needs.json',
+            'base_url': 'http://my_company.com/docs/v1/',
+            'version': '1.3',
+            'id_prefix': 'EXT_',
+        }]
+        needs_builder_filter = ""
+        needs_json_remove_defaults = True
+        """),
+        "utf8",
+    )
+    project_path.joinpath("index.rst").write_text(
+        dedent("""\
+        Title
+        =====
+  
+        .. needimport:: exported_needs.json
+            :id_prefix: IMP_
+
+        """),
+        "utf8",
+    )
+    app = SphinxTestApp(buildername="needs", srcdir=srcdir, builddir=builddir)
+    try:
+        app.build()
+    finally:
+        app.cleanup()
+    assert app._warning.getvalue() == ""
+
+    json_data = json.loads(Path(str(app.outdir), "needs.json").read_text("utf8"))
+
+    assert json_data == snapshot(exclude=props("created", "project"))

@@ -33,6 +33,12 @@ jobs:
             sphinx-version: "5.0"
     steps:
       - uses: actions/checkout@v4
+      - name: Install graphviz (linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get install graphviz
+      - name: Install graphviz (windows)
+        if: matrix.os == 'windows-latest'
+        run: choco install --no-progress graphviz
       - name: Set Up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -48,7 +54,7 @@ jobs:
       - name: Create coverage
         run: coverage xml
       - name: Upload to Codecov
-        if: github.repository == 'useblocks/sphinx-needs' && matrix.os == 'ubuntu-latest'
+        if: github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

@@ -20,8 +20,9 @@ from sphinx_needs.builder import (
     build_needumls_pumls,
 )
 from sphinx_needs.config import NEEDS_CONFIG, LinkOptionsType, NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData, merge_data
+from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData, merge_data
 from sphinx_needs.defaults import (
+    GRAPHVIZ_STYLE_DEFAULTS,
     LAYOUTS,
     NEED_DEFAULT_OPTIONS,
     NEEDEXTEND_NOT_ALLOWED_OPTIONS,
@@ -52,9 +53,12 @@ from sphinx_needs.directives.needfilter import (
     process_needfilters,
 )
 from sphinx_needs.directives.needflow import (
-    Needflow,
     NeedflowDirective,
-    process_needflow,
+    NeedflowGraphiz,
+    NeedflowPlantuml,
+    html_visit_needflow_graphviz,
+    process_needflow_graphviz,
+    process_needflow_plantuml,
 )
 from sphinx_needs.directives.needgantt import (
     Needgantt,
@@ -93,7 +97,7 @@ from sphinx_needs.environment import (
 )
 from sphinx_needs.external_needs import load_external_needs
 from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS, register_func
-from sphinx_needs.logging import get_logger
+from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.roles import NeedsXRefRole
 from sphinx_needs.roles.need_count import NeedCount, process_need_count
 from sphinx_needs.roles.need_func import NeedFunc, process_need_func
@@ -103,7 +107,7 @@ from sphinx_needs.roles.need_part import NeedPart, process_need_part
 from sphinx_needs.roles.need_ref import NeedRef, process_need_ref
 from sphinx_needs.services.github import GithubService
 from sphinx_needs.services.open_needs import OpenNeedsService
-from sphinx_needs.utils import INTERNALS, NEEDS_FUNCTIONS, node_match
+from sphinx_needs.utils import NEEDS_FUNCTIONS, node_match
 from sphinx_needs.warnings import process_warnings
 
 __version__ = VERSION = "2.1.0"
@@ -124,7 +128,8 @@ NODE_TYPES: _NODE_TYPES_T = {
     Needfilter: process_needfilters,
     Needlist: process_needlist,
     Needtable: process_needtables,
-    Needflow: process_needflow,
+    NeedflowPlantuml: process_needflow_plantuml,
+    NeedflowGraphiz: process_needflow_graphviz,
     Needpie: process_needpie,
     Needsequence: process_needsequence,
     Needgantt: process_needgantt,
@@ -145,6 +150,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
     LOGGER.debug("Load Sphinx-Data-Viewer for Sphinx-Needs")
     app.setup_extension("sphinx_data_viewer")
     app.setup_extension("sphinxcontrib.jquery")
+    app.setup_extension("sphinx.ext.graphviz")
 
     app.add_builder(NeedsBuilder)
     app.add_builder(NeedumlsBuilder)
@@ -163,7 +169,8 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_node(Needimport)
     app.add_node(Needlist)
     app.add_node(Needtable)
-    app.add_node(Needflow)
+    app.add_node(NeedflowPlantuml)
+    app.add_node(NeedflowGraphiz, html=(html_visit_needflow_graphviz, None))
     app.add_node(Needpie)
     app.add_node(Needsequence)
     app.add_node(Needgantt)
@@ -366,17 +373,24 @@ def load_config(app: Sphinx, *_args: Any) -> None:
 
     for option in needs_config.extra_options:
         if option in NEEDS_CONFIG.extra_options:
-            LOGGER.warning(
-                f'extra_option "{option}" already registered. [needs.config]',
-                type="needs",
-                subtype="config",
+            log_warning(
+                LOGGER,
+                f'extra_option "{option}" already registered.',
+                "config",
+                None,
             )
-        NEEDS_CONFIG.extra_options[option] = directives.unchanged
+        NEEDS_CONFIG.add_extra_option(
+            option, "Added by needs_extra_options config", override=True
+        )
 
     # ensure options for ``needgantt`` functionality are added to the extra options
     for option in (needs_config.duration_option, needs_config.completion_option):
         if option not in NEEDS_CONFIG.extra_options:
-            NEEDS_CONFIG.extra_options[option] = directives.unchanged_required
+            NEEDS_CONFIG.add_extra_option(
+                option,
+                "Added for needgantt functionality",
+                validator=directives.unchanged_required,
+            )
 
     # Get extra links and create a dictionary of needed options.
     extra_links_raw = needs_config.extra_links
@@ -388,8 +402,12 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     title_from_content = needs_config.title_from_content
 
     # Update NeedDirective to use customized options
-    NeedDirective.option_spec.update(NEEDS_CONFIG.extra_options)
-    NeedserviceDirective.option_spec.update(NEEDS_CONFIG.extra_options)
+    NeedDirective.option_spec.update(
+        {k: v.validator for k, v in NEEDS_CONFIG.extra_options.items()}
+    )
+    NeedserviceDirective.option_spec.update(
+        {k: v.validator for k, v in NEEDS_CONFIG.extra_options.items()}
+    )
 
     # Update NeedDirective to use customized links
     NeedDirective.option_spec.update(extra_links)
@@ -433,8 +451,8 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     for key, value in NEEDS_CONFIG.extra_options.items():
         NeedextendDirective.option_spec.update(
             {
-                key: value,
-                f"+{key}": value,
+                key: value.validator,
+                f"+{key}": value.validator,
                 f"-{key}": directives.flag,
             }
         )
@@ -451,24 +469,27 @@ def load_config(app: Sphinx, *_args: Any) -> None:
         if name not in NEEDS_CONFIG.warnings:
             NEEDS_CONFIG.warnings[name] = check
         else:
-            LOGGER.warning(
-                f"{name!r} in 'needs_warnings' is already registered. [needs.config]",
-                type="needs",
-                subtype="config",
+            log_warning(
+                LOGGER,
+                f"{name!r} in 'needs_warnings' is already registered.",
+                "config",
+                None,
             )
 
     if needs_config.constraints_failed_color:
-        LOGGER.warning(
-            'Config option "needs_constraints_failed_color" is deprecated. Please use "needs_constraint_failed_options" styles instead. [needs.config]',
-            type="needs",
-            subtype="config",
+        log_warning(
+            LOGGER,
+            'Config option "needs_constraints_failed_color" is deprecated. Please use "needs_constraint_failed_options" styles instead.',
+            "config",
+            None,
         )
 
     if needs_config.report_dead_links is not True:
-        LOGGER.warning(
-            'Config option "needs_constraints_failed_color" is deprecated. Please use `suppress_warnings = ["needs.link_outgoing"]` instead. [needs.config]',
-            type="needs",
-            subtype="config",
+        log_warning(
+            LOGGER,
+            'Config option "needs_constraints_failed_color" is deprecated. Please use `suppress_warnings = ["needs.link_outgoing"]` instead.',
+            "config",
+            None,
         )
 
 
@@ -553,7 +574,14 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
     needs_config.extra_links = common_links + needs_config.extra_links
     needs_config.layouts = {**LAYOUTS, **needs_config.layouts}
 
-    needs_config.flow_configs.update(NEEDFLOW_CONFIG_DEFAULTS)
+    needs_config.flow_configs = {
+        **NEEDFLOW_CONFIG_DEFAULTS,
+        **needs_config.flow_configs,
+    }
+    needs_config.graphviz_styles = {
+        **GRAPHVIZ_STYLE_DEFAULTS,
+        **needs_config.graphviz_styles,
+    }
 
     # Set time measurement flag
     if needs_config.debug_measurement:
@@ -585,16 +613,16 @@ def check_configuration(_app: Sphinx, config: Config) -> None:
             )
 
     # Check for usage of internal names
-    for internal in INTERNALS:
+    for internal in NeedsCoreFields:
         if internal in extra_options:
             raise NeedsConfigException(
                 f'Extra option "{internal}" already used internally. '
-                " Please use another name."
+                " Please use another name in your config (needs_extra_options)."
             )
         if internal in link_types:
             raise NeedsConfigException(
                 f'Link type name "{internal}" already used internally. '
-                " Please use another name."
+                " Please use another name in your config (needs_extra_links)."
             )
 
     # Check if option and link are using the same name
