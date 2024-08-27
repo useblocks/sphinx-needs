@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724697829049,
+  "lastUpdate": 1724758018846,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -8784,6 +8784,42 @@ window.BENCHMARK_DATA = {
             "value": 69.393112038,
             "unit": "s",
             "extra": "Commit: cd77ec7892decdf7bd663e9f43dcd16d2cf7bc6d\nBranch: master\nTime: 2024-08-26T20:41:50+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5f706dc683f52355ed490e29348a81d26046f47d",
+          "message": "🔧 Remove `NeedList.JSON_KEY_EXCLUSIONS_FILTERS` (#1245)\n\nThis mistakenly contains a set of keys related to `NeedsInfoType`, not `NeedsFilterType`, and there should be no reason to exclude any keys from `NeedsFilterType`",
+          "timestamp": "2024-08-27T13:24:55+02:00",
+          "tree_id": "d9051ed3deae6eb8a50836ff3d7c0ad27c971571",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/5f706dc683f52355ed490e29348a81d26046f47d"
+        },
+        "date": 1724758013380,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18064190100000133,
+            "unit": "s",
+            "extra": "Commit: 5f706dc683f52355ed490e29348a81d26046f47d\nBranch: master\nTime: 2024-08-27T13:24:55+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 66.071228658,
+            "unit": "s",
+            "extra": "Commit: 5f706dc683f52355ed490e29348a81d26046f47d\nBranch: master\nTime: 2024-08-27T13:24:55+02:00"
           }
         ]
       }
