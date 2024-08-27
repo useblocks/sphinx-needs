@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724758018846,
+  "lastUpdate": 1724758527378,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -8820,6 +8820,42 @@ window.BENCHMARK_DATA = {
             "value": 66.071228658,
             "unit": "s",
             "extra": "Commit: 5f706dc683f52355ed490e29348a81d26046f47d\nBranch: master\nTime: 2024-08-27T13:24:55+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bb49a01eb18cb10772a1ae60538e62c0f347848e",
+          "message": "🔧 Remove `content_id` need data field (#1242)\n\nThe `content_id` field is unnecessary, since it is always the same as\r\nthe need's `id`.",
+          "timestamp": "2024-08-27T13:33:32+02:00",
+          "tree_id": "4a5e2ae36a3cf41045d210f88fc94b7f32499a7e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/bb49a01eb18cb10772a1ae60538e62c0f347848e"
+        },
+        "date": 1724758521422,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2047392030000026,
+            "unit": "s",
+            "extra": "Commit: bb49a01eb18cb10772a1ae60538e62c0f347848e\nBranch: master\nTime: 2024-08-27T13:33:32+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 68.07517955899999,
+            "unit": "s",
+            "extra": "Commit: bb49a01eb18cb10772a1ae60538e62c0f347848e\nBranch: master\nTime: 2024-08-27T13:33:32+02:00"
           }
         ]
       }
