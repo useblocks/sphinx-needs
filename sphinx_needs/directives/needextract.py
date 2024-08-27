@@ -190,12 +190,8 @@ def _build_needextract(
     node_container = nodes.container()
     # node_container += needs[need_id]["need_node"].children
 
-    # We must create a standalone copy of the content_node, as it may be reused several time
-    # (multiple needextract for the same need) and the Sphinx ImageTransformator add location specific
-    # uri to some nodes, which are not valid for all locations.
-    content_node = needs[need_id]["content_node"]
-    assert content_node is not None, f"Need {need_id} has no content node."
-    node_inner = content_node.deepcopy()
+    node_inner = SphinxNeedsData(env).get_need_node(need_id)
+    assert node_inner is not None, f"Need {need_id} has no content node."
 
     # Rerun some important Sphinx collectors for need-content coming from "needsexternal".
     # This is needed, as Sphinx needs to know images and download paths.
