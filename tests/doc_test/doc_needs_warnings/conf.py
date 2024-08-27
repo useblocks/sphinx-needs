@@ -34,11 +34,11 @@ needs_types = [
 ]
 
 needs_extra_links = [
-   {
-      "option": "depend",
-      "incoming": "depended",
-      "outgoing": "depends on",
-   },
+    {
+        "option": "depend",
+        "incoming": "depended",
+        "outgoing": "depends on",
+    },
 ]
 
 needs_external_needs = [
