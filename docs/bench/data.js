@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724759818445,
+  "lastUpdate": 1724760460049,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -8892,6 +8892,42 @@ window.BENCHMARK_DATA = {
             "value": 65.72516741599998,
             "unit": "s",
             "extra": "Commit: bc3d5c83e24aad15807140b711ad918affb95daa\nBranch: master\nTime: 2024-08-27T13:55:05+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5dac61d7ada675f856273853acfe3072e9bbc1a7",
+          "message": "✨ Add `needs_json_exclude_fields` configuration (#1246)\n\nThis PR replaces the hardcoded `NeedsList. JSON_KEY_EXCLUSIONS_NEEDS` with the `needs_json_exclude_fields` configuration, such that users can override what fields are excluded.\r\n\r\nAdditionally, back links have been re-instated as being output as default\r\n(the size increase of the `needs.json` can now be mitigated by `needs_json_remove_defaults` and/or `needs_json_exclude_fields`)\r\n\r\nFinally, `\"needs_defaults_removed\": true` is now output in the `needs.json`, if defaults have been removed. This will allow tools reading the file to identify this.",
+          "timestamp": "2024-08-27T14:05:48+02:00",
+          "tree_id": "1bb61f745d683e9e3ad87e2c7b8633ce692472f7",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/5dac61d7ada675f856273853acfe3072e9bbc1a7"
+        },
+        "date": 1724760453301,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21703190699999197,
+            "unit": "s",
+            "extra": "Commit: 5dac61d7ada675f856273853acfe3072e9bbc1a7\nBranch: master\nTime: 2024-08-27T14:05:48+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 66.43384456400001,
+            "unit": "s",
+            "extra": "Commit: 5dac61d7ada675f856273853acfe3072e9bbc1a7\nBranch: master\nTime: 2024-08-27T14:05:48+02:00"
           }
         ]
       }
