@@ -4,6 +4,7 @@ Cares about handling and execution warnings.
 """
 
 from __future__ import annotations
+
 from inspect import signature
 
 from sphinx.application import Sphinx
@@ -73,7 +74,7 @@ def process_warnings(app: Sphinx, exception: Exception | None) -> None:
                 result = []
                 for need in checked_needs.values():
                     sig = signature(warning_filter)
-                    if 3 <= len(sig.parameters):
+                    if len(sig.parameters) >= 3:
                         if warning_filter(need, logger, needs):
                             result.append(need)
                     else:
