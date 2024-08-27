@@ -33,6 +33,14 @@ needs_types = [
     },
 ]
 
+needs_extra_links = [
+   {
+      "option": "depend",
+      "incoming": "depended",
+      "outgoing": "depends on",
+   },
+]
+
 needs_external_needs = [
     {
         "base_url": "http://my_company.com/docs/v1/",
@@ -67,10 +75,11 @@ def custom_warning_multi_needs(need, log, needs):
         "closed",
         "done",
     ]:
-        if len(links) > 0:
-            for linked_need in links:
-                if needs[linked_need].status in [
-                    "open",
+        if len(depend) > 0:
+            for linked_need in depend:
+                if needs[linked_need].status not in [
+                    "closed",
+                    "done",
                 ]:
                     return_code = True
 

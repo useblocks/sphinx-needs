@@ -35,4 +35,4 @@ TEST DOCUMENT NEEDS WARNINGS
 .. test:: Multi needs 2
    :id: TC_MULTI2
    :status: closed
-   :link: TC_MULTI1
+   :depend: TC_MULTI1
