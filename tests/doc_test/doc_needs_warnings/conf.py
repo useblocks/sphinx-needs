@@ -71,21 +71,19 @@ def custom_warning_multi_needs(need, log, needs):
     # need is closed, but linked need is still open.
     # This is not allowed by this rule.
     return_code: bool = False
-    if need.status in [
+    if need["status"] in [
         "closed",
         "done",
     ]:
-        if len(depend) > 0:
-            for linked_need in depend:
-                if needs[linked_need].status not in [
+        if len(need['depend']) > 0:
+            for linked_need in need['depend']:
+                if needs[linked_need]["status"] not in [
                     "closed",
                     "done",
                 ]:
                     return_code = True
 
     return return_code
-
-    return need["status"] == "example_3"
 
 
 def setup(app):
@@ -98,6 +96,7 @@ def setup(app):
         "invalid_status",
         "status not in ['open', 'closed', 'done', 'example_2', 'example_3']",
     )
+    add_warning(app, "custom_warning_multi_needs", custom_warning_multi_needs)
 
 
 # Needs option to set True or False to raise sphinx-warning for each not passed warning check
