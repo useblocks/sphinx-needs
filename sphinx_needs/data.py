@@ -63,7 +63,7 @@ class CoreFieldParameters(TypedDict):
     show_in_layout: NotRequired[bool]
     """Whether to show the field in the rendered layout of the need by default (False if not present)."""
     exclude_json: NotRequired[bool]
-    """Whether to exclude the field from the JSON representation (False if not present)."""
+    """Whether field should be part of the default exclusions from the JSON representation (False if not present)."""
 
 
 NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {

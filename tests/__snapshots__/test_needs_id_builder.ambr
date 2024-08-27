@@ -40,12 +40,16 @@
               'layout': '',
               'links': list([
               ]),
+              'links_back': list([
+              ]),
               'max_amount': '',
               'max_content_lines': '',
               'modifications': 0,
               'params': '',
               'parent_need': '',
               'parent_needs': list([
+              ]),
+              'parent_needs_back': list([
               ]),
               'parts': dict({
               }),
@@ -119,12 +123,16 @@
               'layout': '',
               'links': list([
               ]),
+              'links_back': list([
+              ]),
               'max_amount': '',
               'max_content_lines': '',
               'modifications': 0,
               'params': '',
               'parent_need': '',
               'parent_needs': list([
+              ]),
+              'parent_needs_back': list([
               ]),
               'parts': dict({
               }),
@@ -198,12 +206,16 @@
               'layout': '',
               'links': list([
               ]),
+              'links_back': list([
+              ]),
               'max_amount': '',
               'max_content_lines': '',
               'modifications': 0,
               'params': '',
               'parent_need': '',
               'parent_needs': list([
+              ]),
+              'parent_needs_back': list([
               ]),
               'parts': dict({
               }),

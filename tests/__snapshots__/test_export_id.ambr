@@ -74,6 +74,9 @@
             'blocks': list([
               'REQ_003',
             ]),
+            'blocks_back': list([
+              'REQ_005',
+            ]),
             'closed_at': '',
             'completion': '',
             'constraints': list([
@@ -105,12 +108,17 @@
               'REQ_004',
               'REQ_003',
             ]),
+            'links_back': list([
+              'REQ_005',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -134,6 +142,10 @@
             'template': None,
             'tests': list([
             ]),
+            'tests_back': list([
+              'TEST_001',
+              'TEST_002',
+            ]),
             'title': 'My requirement',
             'type': 'story',
             'type_name': 'User Story',
@@ -147,6 +159,8 @@
             }),
             'avatar': '',
             'blocks': list([
+            ]),
+            'blocks_back': list([
             ]),
             'closed_at': '',
             'completion': '',
@@ -176,12 +190,17 @@
             'layout': '',
             'links': list([
             ]),
+            'links_back': list([
+              'REQ_001',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -205,6 +224,8 @@
             'template': None,
             'tests': list([
             ]),
+            'tests_back': list([
+            ]),
             'title': 'My requirement 2',
             'type': 'story',
             'type_name': 'User Story',
@@ -218,6 +239,9 @@
             }),
             'avatar': '',
             'blocks': list([
+            ]),
+            'blocks_back': list([
+              'REQ_001',
             ]),
             'closed_at': '',
             'completion': '',
@@ -247,12 +271,17 @@
             'layout': '',
             'links': list([
             ]),
+            'links_back': list([
+              'REQ_001',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -276,6 +305,9 @@
             'template': None,
             'tests': list([
             ]),
+            'tests_back': list([
+              'TEST_001',
+            ]),
             'title': 'My requirement 3',
             'type': 'story',
             'type_name': 'User Story',
@@ -289,6 +321,8 @@
             }),
             'avatar': '',
             'blocks': list([
+            ]),
+            'blocks_back': list([
             ]),
             'closed_at': '',
             'completion': '',
@@ -318,12 +352,17 @@
             'layout': '',
             'links': list([
             ]),
+            'links_back': list([
+              'REQ_001',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -347,6 +386,8 @@
             'template': None,
             'tests': list([
             ]),
+            'tests_back': list([
+            ]),
             'title': 'My requirement 4',
             'type': 'story',
             'type_name': 'User Story',
@@ -361,6 +402,8 @@
             'avatar': '',
             'blocks': list([
               'REQ_001',
+            ]),
+            'blocks_back': list([
             ]),
             'closed_at': '',
             'completion': '',
@@ -396,12 +439,17 @@
               'REQ_001',
               'REQ_001',
             ]),
+            'links_back': list([
+              'TEST_003',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
               '1': dict({
@@ -448,6 +496,9 @@
             'template': None,
             'tests': list([
             ]),
+            'tests_back': list([
+              'TEST_003',
+            ]),
             'title': 'Req 5',
             'type': 'story',
             'type_name': 'User Story',
@@ -461,6 +512,8 @@
             }),
             'avatar': '',
             'blocks': list([
+            ]),
+            'blocks_back': list([
             ]),
             'closed_at': '',
             'completion': '',
@@ -490,12 +543,17 @@
             'layout': '',
             'links': list([
             ]),
+            'links_back': list([
+              'TEST_002',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -521,6 +579,8 @@
               'REQ_001',
               'REQ_003',
             ]),
+            'tests_back': list([
+            ]),
             'title': 'Test of requirements',
             'type': 'test',
             'type_name': 'Test Case',
@@ -534,6 +594,8 @@
             }),
             'avatar': '',
             'blocks': list([
+            ]),
+            'blocks_back': list([
             ]),
             'closed_at': '',
             'completion': '',
@@ -564,12 +626,16 @@
             'links': list([
               'TEST_001',
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -594,6 +660,8 @@
             'tests': list([
               'REQ_001',
             ]),
+            'tests_back': list([
+            ]),
             'title': 'Test of requirements2',
             'type': 'test',
             'type_name': 'Test Case',
@@ -607,6 +675,8 @@
             }),
             'avatar': '',
             'blocks': list([
+            ]),
+            'blocks_back': list([
             ]),
             'closed_at': '',
             'completion': '',
@@ -637,12 +707,16 @@
             'links': list([
               'REQ_005.1',
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -667,6 +741,8 @@
             'tests': list([
               'REQ_005.1',
               'REQ_005.cool',
+            ]),
+            'tests_back': list([
             ]),
             'title': 'Test of requirements 5',
             'type': 'test',
@@ -702,6 +778,16 @@
               ]),
               'description': 'Link field',
               'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'blocks_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
               'items': dict({
                 'type': 'string',
               }),
@@ -886,6 +972,16 @@
               }),
               'type': 'array',
             }),
+            'links_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
             'max_amount': dict({
               'default': '',
               'description': 'Added by service github-issues',
@@ -921,6 +1017,16 @@
               ]),
               'description': 'Link field',
               'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'parent_needs_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
               'items': dict({
                 'type': 'string',
               }),
@@ -1059,6 +1165,16 @@
               ]),
               'description': 'Link field',
               'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'tests_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
               'items': dict({
                 'type': 'string',
               }),

@@ -40,12 +40,17 @@
             'links': list([
               'OWN_ID_123',
             ]),
+            'links_back': list([
+              'T_C3893',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -107,12 +112,18 @@
             'links': list([
               'R_F4722',
             ]),
+            'links_back': list([
+              'IMPL_01',
+              'T_C3893',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -176,12 +187,17 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+              'S_503A1',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -243,12 +259,16 @@
             'layout': '',
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -310,12 +330,17 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+              'ROLES_REQ_2',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -377,12 +402,16 @@
             'links': list([
               'ROLES_REQ_1',
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -443,12 +472,16 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -511,12 +544,16 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -583,12 +620,17 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+              'OWN_ID_123',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -652,12 +694,16 @@
             'layout': '',
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -719,12 +765,16 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -794,12 +844,16 @@
             'links': list([
               'REQ_001',
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -862,12 +916,16 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -930,12 +988,16 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -996,12 +1058,17 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
+              'T_C3893',
             ]),
             'parts': dict({
             }),
@@ -1069,6 +1136,8 @@
               'OWN_ID_123',
               'IMPL_01',
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
@@ -1076,6 +1145,8 @@
             'parent_need': 'T_5CCAA',
             'parent_needs': list([
               'T_5CCAA',
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -1140,12 +1211,17 @@
             'links': list([
               'collapsed_OWN_ID_123',
             ]),
+            'links_back': list([
+              'collapsed_T_C3893',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -1211,12 +1287,18 @@
             'links': list([
               'collapsed_R_F4722',
             ]),
+            'links_back': list([
+              'collapsed_IMPL_01',
+              'collapsed_T_C3893',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -1284,12 +1366,17 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+              'collapsed_S_503A1',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -1355,12 +1442,17 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+              'collapsed_ROLES_REQ_2',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -1426,12 +1518,16 @@
             'links': list([
               'collapsed_ROLES_REQ_1',
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -1496,12 +1592,16 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -1568,12 +1668,16 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -1644,12 +1748,17 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+              'collapsed_OWN_ID_123',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -1717,12 +1826,16 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -1796,12 +1909,16 @@
             'links': list([
               'collapsed_REQ_001',
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -1868,12 +1985,16 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -1940,12 +2061,16 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -2010,12 +2135,17 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
+              'collapsed_T_C3893',
             ]),
             'parts': dict({
             }),
@@ -2087,6 +2217,8 @@
               'collapsed_OWN_ID_123',
               'collapsed_IMPL_01',
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
@@ -2094,6 +2226,8 @@
             'parent_need': 'collapsed_T_5CCAA',
             'parent_needs': list([
               'collapsed_T_5CCAA',
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -2162,6 +2296,9 @@
             'links': list([
               'hidden_OWN_ID_123',
             ]),
+            'links_back': list([
+              'hidden_T_C3893',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
@@ -2169,6 +2306,9 @@
             'parent_need': 'hidden_TEST_01',
             'parent_needs': list([
               'hidden_TEST_01',
+            ]),
+            'parent_needs_back': list([
+              'hidden_OWN_ID_123',
             ]),
             'parts': dict({
             }),
@@ -2232,6 +2372,10 @@
             'links': list([
               'hidden_R_F4722',
             ]),
+            'links_back': list([
+              'hidden_IMPL_01',
+              'hidden_T_C3893',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
@@ -2239,6 +2383,9 @@
             'parent_need': 'hidden_IMPL_01',
             'parent_needs': list([
               'hidden_IMPL_01',
+            ]),
+            'parent_needs_back': list([
+              'hidden_REQ_001',
             ]),
             'parts': dict({
             }),
@@ -2304,6 +2451,9 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+              'hidden_S_503A1',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
@@ -2311,6 +2461,9 @@
             'parent_need': 'hidden_OWN_ID_123',
             'parent_needs': list([
               'hidden_OWN_ID_123',
+            ]),
+            'parent_needs_back': list([
+              'hidden_ROLES_REQ_1',
             ]),
             'parts': dict({
             }),
@@ -2374,6 +2527,9 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+              'hidden_ROLES_REQ_2',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
@@ -2381,6 +2537,9 @@
             'parent_need': 'hidden_REQ_001',
             'parent_needs': list([
               'hidden_REQ_001',
+            ]),
+            'parent_needs_back': list([
+              'hidden_ROLES_REQ_2',
             ]),
             'parts': dict({
             }),
@@ -2444,6 +2603,8 @@
             'links': list([
               'hidden_ROLES_REQ_1',
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
@@ -2451,6 +2612,9 @@
             'parent_need': 'hidden_ROLES_REQ_1',
             'parent_needs': list([
               'hidden_ROLES_REQ_1',
+            ]),
+            'parent_needs_back': list([
+              'hidden_R_22EB2',
             ]),
             'parts': dict({
             }),
@@ -2513,6 +2677,8 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
@@ -2520,6 +2686,9 @@
             'parent_need': 'hidden_ROLES_REQ_2',
             'parent_needs': list([
               'hidden_ROLES_REQ_2',
+            ]),
+            'parent_needs_back': list([
+              'hidden_R_2A9D0',
             ]),
             'parts': dict({
             }),
@@ -2584,6 +2753,8 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
@@ -2591,6 +2762,9 @@
             'parent_need': 'hidden_R_22EB2',
             'parent_needs': list([
               'hidden_R_22EB2',
+            ]),
+            'parent_needs_back': list([
+              'hidden_R_F4722',
             ]),
             'parts': dict({
             }),
@@ -2659,6 +2833,9 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+              'hidden_OWN_ID_123',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
@@ -2666,6 +2843,9 @@
             'parent_need': 'hidden_R_2A9D0',
             'parent_needs': list([
               'hidden_R_2A9D0',
+            ]),
+            'parent_needs_back': list([
+              'hidden_S_01A67',
             ]),
             'parts': dict({
             }),
@@ -2731,6 +2911,8 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
@@ -2738,6 +2920,9 @@
             'parent_need': 'hidden_R_F4722',
             'parent_needs': list([
               'hidden_R_F4722',
+            ]),
+            'parent_needs_back': list([
+              'hidden_S_503A1',
             ]),
             'parts': dict({
             }),
@@ -2809,6 +2994,8 @@
             'links': list([
               'hidden_REQ_001',
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
@@ -2816,6 +3003,9 @@
             'parent_need': 'hidden_S_01A67',
             'parent_needs': list([
               'hidden_S_01A67',
+            ]),
+            'parent_needs_back': list([
+              'hidden_S_D70B0',
             ]),
             'parts': dict({
             }),
@@ -2880,6 +3070,8 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
@@ -2887,6 +3079,9 @@
             'parent_need': 'hidden_S_503A1',
             'parent_needs': list([
               'hidden_S_503A1',
+            ]),
+            'parent_needs_back': list([
+              'hidden_T_5CCAA',
             ]),
             'parts': dict({
             }),
@@ -2951,12 +3146,17 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
+              'hidden_IMPL_01',
             ]),
             'parts': dict({
             }),
@@ -3019,6 +3219,8 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
@@ -3026,6 +3228,9 @@
             'parent_need': 'hidden_S_D70B0',
             'parent_needs': list([
               'hidden_S_D70B0',
+            ]),
+            'parent_needs_back': list([
+              'hidden_T_C3893',
             ]),
             'parts': dict({
             }),
@@ -3095,6 +3300,8 @@
               'hidden_OWN_ID_123',
               'hidden_IMPL_01',
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
@@ -3102,6 +3309,8 @@
             'parent_need': 'hidden_T_5CCAA',
             'parent_needs': list([
               'hidden_T_5CCAA',
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -3167,12 +3376,16 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -3233,12 +3446,16 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -3301,12 +3518,16 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -3369,12 +3590,16 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -3435,12 +3660,16 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -3502,12 +3731,17 @@
             'links': list([
               'test_OWN_ID_123',
             ]),
+            'links_back': list([
+              'test_T_C3893',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -3572,12 +3806,18 @@
             'links': list([
               'test_R_F4722',
             ]),
+            'links_back': list([
+              'test_IMPL_01',
+              'test_T_C3893',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -3644,12 +3884,17 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+              'test_S_503A1',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -3714,12 +3959,17 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+              'test_ROLES_REQ_2',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -3784,12 +4034,16 @@
             'links': list([
               'test_ROLES_REQ_1',
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -3853,12 +4107,16 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -3924,12 +4182,16 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -3999,12 +4261,17 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+              'test_OWN_ID_123',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -4071,12 +4338,16 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -4149,12 +4420,16 @@
             'links': list([
               'test_REQ_001',
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -4220,12 +4495,16 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -4291,12 +4570,16 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -4360,12 +4643,17 @@
             'layout': None,
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
+              'test_T_C3893',
             ]),
             'parts': dict({
             }),
@@ -4436,6 +4724,8 @@
               'test_OWN_ID_123',
               'test_IMPL_01',
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
@@ -4443,6 +4733,8 @@
             'parent_need': 'test_T_5CCAA',
             'parent_needs': list([
               'test_T_5CCAA',
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -4677,6 +4969,16 @@
               }),
               'type': 'array',
             }),
+            'links_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
             'max_amount': dict({
               'default': '',
               'description': 'Added by service github-issues',
@@ -4712,6 +5014,16 @@
               ]),
               'description': 'Link field',
               'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'parent_needs_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
               'items': dict({
                 'type': 'string',
               }),
