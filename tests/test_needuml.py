@@ -2,7 +2,6 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from syrupy.filters import props
 
 
 @pytest.mark.parametrize(
@@ -17,7 +16,7 @@ def test_doc_build_html(test_app, snapshot):
     assert Path(app.outdir, "index.html").read_text(encoding="utf8")
 
     all_needs = app.env.needs_all_needs
-    assert all_needs == snapshot(exclude=props("content_node"))
+    assert all_needs == snapshot()
 
     all_needumls = app.env.needs_all_needumls
     assert all_needumls == snapshot

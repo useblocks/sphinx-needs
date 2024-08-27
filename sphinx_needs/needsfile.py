@@ -92,21 +92,6 @@ def generate_needs_schema(
 
 
 class NeedsList:
-    JSON_KEY_EXCLUSIONS_FILTERS = {
-        "links_back",
-        "type_color",
-        "hide_status",
-        "hide",
-        "type_prefix",
-        "lineno",
-        "lineno_content",
-        "collapse",
-        "type_style",
-        "hide_tags",
-        "content",
-        "content_node",
-    }
-
     def __init__(
         self, config: Config, outdir: str, confdir: str, add_schema: bool = True
     ) -> None:
@@ -126,7 +111,6 @@ class NeedsList:
         self.log = log
 
         self._exclude_need_keys = set(self.needs_config.json_exclude_fields)
-        self._exclude_filter_keys = self.JSON_KEY_EXCLUSIONS_FILTERS
 
         self._schema = (
             generate_needs_schema(config, exclude_properties=self._exclude_need_keys)
@@ -187,11 +171,7 @@ class NeedsList:
 
     def add_filter(self, version: str, need_filter: NeedsFilterType) -> None:
         self.update_or_add_version(version)
-        writable_filters = {
-            key: need_filter[key]  # type: ignore[literal-required]
-            for key in need_filter
-            if key not in self._exclude_filter_keys
-        }
+        writable_filters = {**need_filter}
         self.needs_list["versions"][version]["filters"][
             need_filter["export_id"].upper()
         ] = writable_filters

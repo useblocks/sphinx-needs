@@ -284,10 +284,12 @@ def purge_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> None:
     Gets executed, if a doc file needs to be purged/ read in again.
     So this code delete all found needs for the given docname.
     """
-    needs = SphinxNeedsData(env).get_or_create_needs()
+    data = SphinxNeedsData(env)
+    needs = data.get_or_create_needs()
     for need_id in list(needs):
         if needs[need_id]["docname"] == docname:
             del needs[need_id]
+            data.remove_need_node(need_id)
 
 
 def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:

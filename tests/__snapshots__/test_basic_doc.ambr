@@ -18,7 +18,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'ST_001',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -89,7 +88,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'US_38823',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -216,15 +214,6 @@
               'description': 'Mapping of constraint name, to check name, to result.',
               'field_type': 'core',
               'type': 'object',
-            }),
-            'content_id': dict({
-              'default': None,
-              'description': 'ID of the content node.',
-              'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'created_at': dict({
               'default': '',

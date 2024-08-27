@@ -23,7 +23,6 @@
             'type_name': 'Requirement',
           }),
           'IMP_REQ_01': dict({
-            'content_id': 'IMP_REQ_01',
             'delete': False,
             'description': '',
             'docname': 'index',
@@ -109,15 +108,6 @@
               'description': 'Mapping of constraint name, to check name, to result.',
               'field_type': 'core',
               'type': 'object',
-            }),
-            'content_id': dict({
-              'default': None,
-              'description': 'ID of the content node.',
-              'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'created_at': dict({
               'default': '',
@@ -507,7 +497,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': None,
             'created_at': '',
             'delete': False,
             'description': 'EXT_TEST_01',
@@ -580,7 +569,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': None,
             'created_at': '',
             'delete': False,
             'description': 'EXT_TEST_02',
@@ -654,7 +642,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'REQ_1',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -727,7 +714,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'SPEC_1',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -801,7 +787,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'SUB_002',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -928,15 +913,6 @@
               'description': 'Mapping of constraint name, to check name, to result.',
               'field_type': 'core',
               'type': 'object',
-            }),
-            'content_id': dict({
-              'default': None,
-              'description': 'ID of the content node.',
-              'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'created_at': dict({
               'default': '',

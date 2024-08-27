@@ -11,11 +11,12 @@ from sphinx.util.logging import getLogger
 from sphinx_needs.logging import log_warning
 
 if TYPE_CHECKING:
-    from docutils.nodes import Element, Text
+    from docutils.nodes import Text
     from sphinx.application import Sphinx
     from sphinx.environment import BuildEnvironment
     from typing_extensions import NotRequired, Required
 
+    from sphinx_needs.nodes import Need
     from sphinx_needs.services.manager import ServiceManager
 
 
@@ -236,15 +237,6 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "description": "Post-content of the need.",
         "schema": {"type": "string", "default": ""},
     },
-    "content_id": {
-        "description": "ID of the content node.",
-        "schema": {"type": ["string", "null"], "default": None},
-    },
-    "content_node": {
-        "description": "Deep copy of the content node.",
-        "schema": {},
-        "exclude_json": True,
-    },
     "has_dead_links": {
         "description": "True if any links reference need ids that are not found in the need list.",
         "schema": {"type": "boolean", "default": False},
@@ -378,10 +370,6 @@ class NeedsInfoType(TypedDict, total=False):
     content: Required[str]
     pre_content: str
     post_content: str
-    content_id: Required[None | str]
-    """ID of the content node."""
-    content_node: Required[None | Element]
-    """Deep copy of the content node."""
 
     # these default to False and are updated in check_links post-process
     has_dead_links: Required[bool]
@@ -787,6 +775,32 @@ class SphinxNeedsData:
             self.env.needs_all_needumls = {}
         return self.env.needs_all_needumls
 
+    @property
+    def _needs_all_nodes(self) -> dict[str, Need]:
+        try:
+            return self.env.needs_all_nodes
+        except AttributeError:
+            self.env.needs_all_nodes = {}
+        return self.env.needs_all_nodes
+
+    def set_need_node(self, need_id: str, node: Need) -> None:
+        """Set a need node in the cache."""
+        self._needs_all_nodes[need_id] = node.deepcopy()
+
+    def remove_need_node(self, need_id: str) -> None:
+        """Remove a need node from the cache, if it exists."""
+        if need_id in self._needs_all_nodes:
+            del self._needs_all_nodes[need_id]
+
+    def get_need_node(self, need_id: str) -> Need | None:
+        """Get a need node from the cache, if it exists."""
+        if need_id in self._needs_all_nodes:
+            # We must create a copy of the node, as it may be reused several time
+            # (multiple needextract for the same need) and the Sphinx ImageTransformator add location specific
+            # uri to some nodes, which are not valid for all locations.
+            return self._needs_all_nodes[need_id].deepcopy()
+        return None
+
 
 def merge_data(
     _app: Sphinx, env: BuildEnvironment, docnames: list[str], other: BuildEnvironment
@@ -858,5 +872,6 @@ def merge_data(
                 )
 
     _merge("needs_all_docs", is_complex_dict=True)
+    _merge("needs_all_nodes")
     _merge("need_all_needextend")
     _merge("needs_all_needumls")

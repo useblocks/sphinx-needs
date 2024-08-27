@@ -18,7 +18,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'TC_001',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -89,7 +88,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'TC_NEG_001',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -160,7 +158,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'US_63252',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -288,15 +285,6 @@
               'description': 'Mapping of constraint name, to check name, to result.',
               'field_type': 'core',
               'type': 'object',
-            }),
-            'content_id': dict({
-              'default': None,
-              'description': 'ID of the content node.',
-              'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'created_at': dict({
               'default': '',
@@ -842,7 +830,6 @@
         'filters_amount': 0,
         'needs': dict({
           'TC_001': dict({
-            'content_id': 'TC_001',
             'description': '',
             'docname': 'index',
             'external_css': 'external_link',
@@ -860,7 +847,6 @@
             'type_name': 'Test Case',
           }),
           'TC_NEG_001': dict({
-            'content_id': 'TC_NEG_001',
             'description': '',
             'docname': 'index',
             'external_css': 'external_link',
@@ -878,7 +864,6 @@
             'type_name': 'Test Case',
           }),
           'US_63252': dict({
-            'content_id': 'US_63252',
             'description': '',
             'docname': 'index',
             'external_css': 'external_link',
@@ -966,15 +951,6 @@
               'description': 'Mapping of constraint name, to check name, to result.',
               'field_type': 'core',
               'type': 'object',
-            }),
-            'content_id': dict({
-              'default': None,
-              'description': 'ID of the content node.',
-              'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'created_at': dict({
               'default': '',
@@ -1530,7 +1506,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'TC_001',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -1601,7 +1576,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'TC_NEG_001',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -1672,7 +1646,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'US_63252',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -1800,15 +1773,6 @@
               'description': 'Mapping of constraint name, to check name, to result.',
               'field_type': 'core',
               'type': 'object',
-            }),
-            'content_id': dict({
-              'default': None,
-              'description': 'ID of the content node.',
-              'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'created_at': dict({
               'default': '',
