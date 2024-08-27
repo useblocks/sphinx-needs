@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724758527378,
+  "lastUpdate": 1724759818445,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -8856,6 +8856,42 @@ window.BENCHMARK_DATA = {
             "value": 68.07517955899999,
             "unit": "s",
             "extra": "Commit: bb49a01eb18cb10772a1ae60538e62c0f347848e\nBranch: master\nTime: 2024-08-27T13:33:32+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bc3d5c83e24aad15807140b711ad918affb95daa",
+          "message": "🔧 Remove `content_node` field from need items (#1241)\n\n`content_node` is different to other need fields,\r\nin that it is a non-jsonable type, and is not expected to be used by\r\nusers in need filters.\r\nIts only use is for `needextract` directives.\r\n\r\nTherefore, we move it to its own separate \"storage solution\". For now,\r\nthey are still stored on the `BuildEnvironment`, but ultimately we may\r\nwant to pickle them to disk (similar to doctrees), since they can add a\r\nsignificant memory size to the `BuildEnvironment` that can have effects\r\non performance.",
+          "timestamp": "2024-08-27T13:55:05+02:00",
+          "tree_id": "d3572ebdd7fa85f4a601fe2c8d9330ddac064569",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/bc3d5c83e24aad15807140b711ad918affb95daa"
+        },
+        "date": 1724759812569,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18014345099999218,
+            "unit": "s",
+            "extra": "Commit: bc3d5c83e24aad15807140b711ad918affb95daa\nBranch: master\nTime: 2024-08-27T13:55:05+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 65.72516741599998,
+            "unit": "s",
+            "extra": "Commit: bc3d5c83e24aad15807140b711ad918affb95daa\nBranch: master\nTime: 2024-08-27T13:55:05+02:00"
           }
         ]
       }
