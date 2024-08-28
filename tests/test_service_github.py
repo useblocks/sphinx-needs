@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 import responses
+from sphinx import version_info
 from sphinx.util.console import strip_colors
 from syrupy.filters import props
 
@@ -85,11 +86,11 @@ def test_build(test_app, snapshot):
     app = test_app
     app.build()
     warnings = strip_colors(app._warning.getvalue())
-    print(warnings)
-
+    # print(warnings)
+    prefix = " [docutils]" if version_info >= (8, 0) else ""
     expected_warnings = [
         f'{Path(str(app.srcdir)) / "index.rst"}:4: WARNING: "query" or "specific" missing as option for github service. [needs.github]',
-        f'{Path(str(app.srcdir)) / "index.rst"}:23: WARNING: Bullet list ends without a blank line; unexpected unindent.',
+        f'{Path(str(app.srcdir)) / "index.rst"}:23: WARNING: Bullet list ends without a blank line; unexpected unindent.{prefix}',
         f"{Path(str(app.srcdir)) / 'index.rst'}:22: WARNING: GitHub: API rate limit exceeded (twice). Stop here. [needs.github]",
     ]
 
