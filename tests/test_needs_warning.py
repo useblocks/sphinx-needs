@@ -42,7 +42,12 @@ def test_needs_warnings(test_app):
         "\t\tused filter: my_custom_warning_check [needs.warnings]",
     ]
 
-    if version_info >= (7, 3):
+    if version_info >= (8, 0):
+        expected.insert(
+            1,
+            "WARNING: cannot cache unpickable configuration value: 'needs_warnings' (because it contains a function, class, or module object) [config.cache]",
+        )
+    elif version_info >= (7, 3):
         expected.insert(
             1,
             "WARNING: cannot cache unpickable configuration value: 'needs_warnings' (because it contains a function, class, or module object)",
