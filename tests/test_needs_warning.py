@@ -28,7 +28,7 @@ def test_needs_warnings(test_app):
     )
 
     # check needs warning from custom defined filter code
-    assert "failed needs: 1 (TC_001)" in warnings
+    assert "failed needs: 2 (TC_001, TC_MULTI1)" in warnings
     assert "used filter: my_custom_warning_check" in warnings
 
     # negative test to check needs warning if need passed the warnings-check
@@ -40,6 +40,10 @@ def test_needs_warnings(test_app):
 
     # Check warnings not including external needs
     assert "EXT_TEST_01" not in warnings
+
+    # Check Needs warning with use of all needs
+    assert "WARNING: depend_need_not_closed: failed" in warnings
+    assert "failed needs: 1 (TC_MULTI2)" in warnings
 
 
 @pytest.mark.parametrize(
