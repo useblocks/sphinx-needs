@@ -1,11 +1,19 @@
+import os
 from pathlib import Path
 
 import pytest
+from sphinx.util.console import strip_colors
 
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_needs_warnings"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_needs_warnings",
+            "no_plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_needs_warnings(test_app):
@@ -13,33 +21,25 @@ def test_needs_warnings(test_app):
     app.build()
 
     # stdout warnings
-    warning = app._warning
-    warnings = warning.getvalue()
+    warnings = strip_colors(
+        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
+    ).splitlines()
 
-    # check multiple warning registration
-    assert "'invalid_status' in 'needs_warnings' is already registered." in warnings
-
-    # check warnings contents
-    assert "WARNING: invalid_status: failed" in warnings
-    assert "failed needs: 2 (SP_TOO_001, US_63252)" in warnings
-    assert (
-        "used filter: status not in ['open', 'closed', 'done', 'example_2', 'example_3']"
-        in warnings
-    )
-
-    # check needs warning from custom defined filter code
-    assert "failed needs: 1 (TC_001)" in warnings
-    assert "used filter: my_custom_warning_check" in warnings
-
-    # negative test to check needs warning if need passed the warnings-check
-    assert "TC_NEG_001" not in warnings
-
-    # Check for warning registered via config api
-    assert "WARNING: api_warning_filter: failed" in warnings
-    assert "WARNING: api_warning_func: failed" in warnings
-
-    # Check warnings not including external needs
-    assert "EXT_TEST_01" not in warnings
+    assert warnings == [
+        "WARNING: 'invalid_status' in 'needs_warnings' is already registered. [needs.config]",
+        "WARNING: api_warning_filter: failed",
+        "\t\tfailed needs: 1 (TC_002)",
+        "\t\tused filter: status == 'example_2' [needs.warnings]",
+        "WARNING: api_warning_func: failed",
+        "\t\tfailed needs: 1 (TC_003)",
+        "\t\tused filter: custom_warning_func [needs.warnings]",
+        "WARNING: invalid_status: failed",
+        "\t\tfailed needs: 2 (SP_TOO_001, US_63252)",
+        "\t\tused filter: status not in ['open', 'closed', 'done', 'example_2', 'example_3'] [needs.warnings]",
+        "WARNING: type_match: failed",
+        "\t\tfailed needs: 1 (TC_001)",
+        "\t\tused filter: my_custom_warning_check [needs.warnings]",
+    ]
 
 
 @pytest.mark.parametrize(
