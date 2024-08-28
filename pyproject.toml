@@ -37,7 +37,7 @@ sphinx = ">=6.0,<9"
 requests-file = "^1.5.1"  # external links
 requests = "^2.25.1"  # external_links
 jsonschema = ">=3.2.0"  # needsimport schema validation
-sphinx-data-viewer = "^0.1.1"  # needservice debug output
+sphinx-data-viewer = "^0.1.5"  # needservice debug output
 sphinxcontrib-jquery = "^4"  # needed for datatables in sphinx>=6
 
 # [project.optional-dependencies.plotting]
