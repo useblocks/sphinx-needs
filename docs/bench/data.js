@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724841333223,
+  "lastUpdate": 1724844199041,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -9072,6 +9072,42 @@ window.BENCHMARK_DATA = {
             "value": 67.14661768399998,
             "unit": "s",
             "extra": "Commit: 648e007ab5e6e05db648b832e2a1f10249b33ead\nBranch: master\nTime: 2024-08-28T12:33:44+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a0e08079470a66adf9e3ebc6674bc44b72c74309",
+          "message": "⬆️ Drop sphinx 5, support sphinx 8 (#1247)\n\nAlso update dependencies:\r\n\r\n- requests: `^2.25.1` -> `^2.32`\r\n- requests-file: `^1.5.1` -> `^2.1`\r\n- sphinx-data-viewer: `^0.1.1` -> `^0.1.5`",
+          "timestamp": "2024-08-28T13:21:26+02:00",
+          "tree_id": "3b8ca1d1837dc5ead5504fa70fe6e1bd23925024",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a0e08079470a66adf9e3ebc6674bc44b72c74309"
+        },
+        "date": 1724844193327,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.20046151299999337,
+            "unit": "s",
+            "extra": "Commit: a0e08079470a66adf9e3ebc6674bc44b72c74309\nBranch: master\nTime: 2024-08-28T13:21:26+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.71081462500001,
+            "unit": "s",
+            "extra": "Commit: a0e08079470a66adf9e3ebc6674bc44b72c74309\nBranch: master\nTime: 2024-08-28T13:21:26+02:00"
           }
         ]
       }
