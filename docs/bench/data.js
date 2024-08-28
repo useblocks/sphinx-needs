@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724763250536,
+  "lastUpdate": 1724823193033,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -8964,6 +8964,42 @@ window.BENCHMARK_DATA = {
             "value": 73.24014100300002,
             "unit": "s",
             "extra": "Commit: efa0394ccf444fae3bfc9b48819f3ab0aca3d97d\nBranch: master\nTime: 2024-08-27T14:52:06+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "58fee42172bc48dd536bf6d6411e0f091f144513",
+          "message": "🐛 Fix rendering of `needextract` needs (#1249)\n\nThis commit fixes two key issues of `needextract` nodes:\r\n\r\n1. The call to `BuildEnvironment.resolve_references` was already converting the need node to its final representation (since the calls `process_need_nodes`), and so the later call to `build_need` didn't do anything.\r\n   This is why the requested layout was not being created.\r\n\r\n2. A `needextract` can generate multiple need representation, but all of them were being given the same `id` of the original `NeedExtract` node.\r\n   All nodes are now wrapped in a containing node, that is set with this `id`\r\n\r\nAdditionally, warnings are now emitted for unfound needs, rather than raise exceptions\r\n\r\nAlso, `build_need` is renamed to `build_need_repr`, to better describe its purpose, and its signature is slightly changed, to allow for the new logic.",
+          "timestamp": "2024-08-28T07:31:20+02:00",
+          "tree_id": "cf806b0c32eaad9df59965c3cb2a6e5635de2245",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/58fee42172bc48dd536bf6d6411e0f091f144513"
+        },
+        "date": 1724823185954,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1808682230000045,
+            "unit": "s",
+            "extra": "Commit: 58fee42172bc48dd536bf6d6411e0f091f144513\nBranch: master\nTime: 2024-08-28T07:31:20+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.56849643700002,
+            "unit": "s",
+            "extra": "Commit: 58fee42172bc48dd536bf6d6411e0f091f144513\nBranch: master\nTime: 2024-08-28T07:31:20+02:00"
           }
         ]
       }
