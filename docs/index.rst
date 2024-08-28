@@ -214,6 +214,7 @@ Contents
    :caption: Development
    :maxdepth: 1
 
+   changelog
    support
    contributing
-   changelog
+   license
