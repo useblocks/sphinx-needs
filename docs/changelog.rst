@@ -1,18 +1,87 @@
 .. _changelog:
 
-Changelog & License
-===================
+Changelog
+=========
 
-License
--------
+3.0.0
+-----
 
-.. include:: ../LICENSE
+:Released: 28.08.2024
+:Full Changelog: `v2.1.0...v3.0.0 <https://github.com/useblocks/sphinx-needs/compare/2.1.0...59cc6bf>`__
+
+This release includes a number of new features and improvements, as well as some bug fixes.
+
+Updated dependencies
+....................
+
+- sphinx: ``>=5.0,<8`` to ``>=6.0,<9``
+- requests: ``^2.25.1`` to ``^2.32``
+- requests-file: ``^1.5.1`` to ``^2.1``
+- sphinx-data-viewer: ``^0.1.1`` to ``^0.1.5``
+
+Documentation and CSS styling
+..............................
+
+The documentation theme has been completely updated, and a tutorial added.
+
+To improve ``sphinx-needs`` compatibility across different Sphinx HTML themes,
+the CSS for needs etc has been modified substantially, and so,
+if you have custom CSS for your needs, you may need to update it.
+
+See :ref:`install_theme` for more information on how to setup CSS for different themes,
+and :pr:`1178`, :pr:`1181`, :pr:`1182` and :pr:`1184` for the changes.
+
+``needflow`` improvements
+..........................
+
+The use of `Graphviz <https://graphviz.org/>`__ as the underlying engine for `needflow` diagrams, in addition to the default `PlantUML <http://plantuml.com>`__,
+is now allowed via the global :ref:`needs_flow_engine` configuration option, or the per-diagram :ref:`engine <needflow_engine>` option.
+
+The intention being to simplify and improve performance of graph builds, since ``plantuml`` has issues with JVM initialisation times and reliance on a third-party sphinx extension.
+
+See :ref:`needflow` for more information,
+and :pr:`1235` for the changes.
+
+additional improvements:
+
+- ✨ Allow setting an ``alt`` text for ``needflow`` images
+- ✨ Allow creating a ``needflow`` from a ``root_id`` in :pr:`1186`
+- ✨ Add ``border_color`` option for ``needflow`` in :pr:`1194`
+
+``needs.json`` improvements
+............................
+
+A ``needs_schema`` is now included in the ``needs.json`` file (per version), which is a JSON schema for the data structure of a single need.
+
+This includes defaults for each field, and can be used in combination with the :ref:`needs_json_remove_defaults` configuration option to remove these defaults from each individual need.
+
+Together with the new automatic minifying of the ``needs.json`` file, this can reduce the file size by down to 1/8th of its previous size.
+
+The :ref:`needs_json_exclude_fields` configuration option can also be used to modify the excluded need fields from the ``needs.json`` file,
+and backlinks are now included in the ``needs.json`` file by default.
+
+See :ref:`needs_builder_format` for more information,
+and :pr:`1230`, :pr:`1232`, :pr:`1233` for the changes.
+
+Additionally, the ``content_node``, ``content_id`` fields are removed from the internal need data structure (see :pr:`1241` and :pr:`1242`).
+
+Additional improvements
+.......................
+
+- 👌 Capture filter processing times when using ``needs_debug_measurement=True`` in :pr:`1240`
+- 👌 Allow ``style`` and ``color`` fields to be omitted for ``needs_types`` items and a default used in :pr:`1185`
+- 👌 Allow ``collapse`` / ``delete`` / ``jinja_content`` directive options to be flags in :pr:`1188`
+- 👌 Improve ``need-extend``; allow dynamic functions in lists in :pr:`1076`
+- 👌 Add collapse button to ``clean_xxx`` layouts in :pr:`1187`
+
+- 🐛 fix warnings for duplicate needs in parallel builds in :pr:`1223`
+- 🐛 Fix rendering of ``needextract`` needs and use warnings instead of exceptions in :pr:`1243` and :pr:`1249`
 
 2.1.0
 -----
 
 :Released: 08.05.2024
-:Full Changelog: `v2.0.0...v2.1.0 <https://github.com/useblocks/sphinx-needs/compare/2.0.0...d405fd1>`__
+:Full Changelog: `v2.0.0...v2.1.0 <https://github.com/useblocks/sphinx-needs/compare/2.0.0...2.1.0>`__
 
 Improvements
 ............
