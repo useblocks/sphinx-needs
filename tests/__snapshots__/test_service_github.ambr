@@ -17,7 +17,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'GITHUB_050bec',
             'created_at': '2024-02-15T14:04:06Z',
             'delete': False,
             'description': '''
@@ -43,12 +42,16 @@
             'layout': 'github',
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -87,7 +90,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'GITHUB_1110',
             'created_at': '2024-02-15T12:19:11Z',
             'delete': False,
             'description': '''
@@ -117,12 +119,16 @@
             'layout': 'github',
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '1',
             'max_content_lines': '2',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -162,7 +168,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'GITHUB_1112',
             'created_at': '2024-02-15T20:45:12Z',
             'delete': False,
             'description': '''
@@ -214,12 +219,16 @@
             'layout': 'github',
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '1',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -258,7 +267,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'GITHUB_6abd38',
             'created_at': '2024-02-12T08:36:07.000Z',
             'delete': False,
             'description': '''
@@ -295,12 +303,16 @@
             'layout': 'github',
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '1',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -390,15 +402,6 @@
               'description': 'Mapping of constraint name, to check name, to result.',
               'field_type': 'core',
               'type': 'object',
-            }),
-            'content_id': dict({
-              'default': None,
-              'description': 'ID of the content node.',
-              'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'created_at': dict({
               'default': '',
@@ -532,6 +535,16 @@
               }),
               'type': 'array',
             }),
+            'links_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
             'max_amount': dict({
               'default': '',
               'description': 'Added by service github-issues',
@@ -567,6 +580,16 @@
               ]),
               'description': 'Link field',
               'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'parent_needs_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
               'items': dict({
                 'type': 'string',
               }),

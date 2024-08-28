@@ -1795,6 +1795,17 @@ needs_reproducible_json
 Setting ``needs_reproducible_json = True`` will ensure the ``needs.json`` output is reproducible,
 e.g. by removing timestamps from the output.
 
+.. _needs_json_exclude_fields:
+
+needs_json_exclude_fields
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 2.2.0
+
+Setting ``needs_json_exclude_fields = ["key1", "key2"]`` will exclude the given fields from all needs in the ``needs.json`` output.
+
+Default: :need_config_default:`json_exclude_fields`
+
 .. _needs_json_remove_defaults:
 
 needs_json_remove_defaults 
@@ -1803,7 +1814,10 @@ needs_json_remove_defaults
 .. versionadded:: 2.1.0
 
 Setting ``needs_json_remove_defaults = True`` will remove all need fields with default from ``needs.json``, greatly reducing its size.
+
 The defaults can be retrieved from the ``needs_schema`` now also output in the JSON file (see :ref:`this section <needs_builder_format>` for the format).
+
+Default: :need_config_default:`json_remove_defaults`
 
 .. _needs_build_json_per_id:
 

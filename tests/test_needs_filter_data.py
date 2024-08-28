@@ -14,11 +14,6 @@ def test_doc_needs_filter_data_html(test_app):
     app.build()
     index_html = Path(app.outdir, "index.html").read_text()
 
-    import sphinx
-
-    if sphinx.__version__.startswith("3.5"):
-        return
-
     # Check need_count works
     assert "The amount of needs that belong to current variants: 6" in index_html
 

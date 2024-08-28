@@ -7,7 +7,7 @@ from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 from sphinx.config import Config as _SphinxConfig
 
-from sphinx_needs.data import GraphvizStyleType
+from sphinx_needs.data import GraphvizStyleType, NeedsCoreFields
 from sphinx_needs.defaults import DEFAULT_DIAGRAM_TEMPLATE
 
 if TYPE_CHECKING:
@@ -442,6 +442,15 @@ class NeedsSphinxConfig:
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
     """If True, the JSON needs file should be idempotent for multiple builds fo the same documentation."""
+    json_exclude_fields: list[str] = field(
+        default_factory=lambda: [
+            name
+            for name, params in NeedsCoreFields.items()
+            if params.get("exclude_json")
+        ],
+        metadata={"rebuild": "html", "types": (list,)},
+    )
+    """List of keys to exclude from the JSON needs file."""
     json_remove_defaults: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
@@ -525,3 +534,11 @@ class NeedsSphinxConfig:
                 item.metadata["rebuild"],
                 types=item.metadata["types"],
             )
+
+    @classmethod
+    def get_default(cls, name: str) -> Any:
+        """Get the default value for a config item."""
+        _field = next(field for field in fields(cls) if field.name == name)
+        if _field.default_factory is not MISSING:
+            return _field.default_factory()
+        return _field.default

@@ -18,7 +18,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'SECURITY_REQ',
             'created_at': '',
             'delete': None,
             'description': 'This is a requirement describing OPSEC processes.',
@@ -40,12 +39,18 @@
             'layout': '',
             'links': list([
             ]),
+            'links_back': list([
+              'SP_109F4',
+              'SP_3EBFA',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -89,7 +94,6 @@
                 'check_0': True,
               }),
             }),
-            'content_id': 'SP_109F4',
             'created_at': '',
             'delete': None,
             'description': 'Example of a successful constraint.',
@@ -112,12 +116,16 @@
             'links': list([
               'SECURITY_REQ',
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -163,7 +171,6 @@
                 'check_0': False,
               }),
             }),
-            'content_id': 'SP_3EBFA',
             'created_at': '',
             'delete': None,
             'description': 'Example of a failed constraint.',
@@ -186,12 +193,16 @@
             'links': list([
               'SECURITY_REQ',
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -235,7 +246,6 @@
                 'check_0': False,
               }),
             }),
-            'content_id': 'SP_CA3FB',
             'created_at': '',
             'delete': None,
             'description': 'Example of a failed constraint with medium severity. Note the style from :ref:`needs_constraint_failed_options`',
@@ -257,12 +267,16 @@
             'layout': '',
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -302,7 +316,6 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'SP_TOO_001',
             'created_at': '',
             'delete': None,
             'description': 'The Tool awesome shall have a command line interface.',
@@ -324,12 +337,16 @@
             'layout': '',
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -376,7 +393,6 @@
                 'check_0': False,
               }),
             }),
-            'content_id': 'SP_TOO_002',
             'created_at': '',
             'delete': None,
             'description': 'asdf',
@@ -398,12 +414,16 @@
             'layout': '',
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -450,7 +470,6 @@
                 'check_0': False,
               }),
             }),
-            'content_id': 'TEST_STYLE',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -472,12 +491,16 @@
             'layout': '',
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -521,7 +544,6 @@
                 'check_0': False,
               }),
             }),
-            'content_id': 'TEST_STYLE2',
             'created_at': '',
             'delete': None,
             'description': '',
@@ -543,12 +565,16 @@
             'layout': '',
             'links': list([
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -644,15 +670,6 @@
               'description': 'Mapping of constraint name, to check name, to result.',
               'field_type': 'core',
               'type': 'object',
-            }),
-            'content_id': dict({
-              'default': None,
-              'description': 'ID of the content node.',
-              'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'created_at': dict({
               'default': '',
@@ -786,6 +803,16 @@
               }),
               'type': 'array',
             }),
+            'links_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
             'max_amount': dict({
               'default': '',
               'description': 'Added by service github-issues',
@@ -821,6 +848,16 @@
               ]),
               'description': 'Link field',
               'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'parent_needs_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
               'items': dict({
                 'type': 'string',
               }),
