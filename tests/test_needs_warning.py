@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import pytest
+from sphinx import version_info
 from sphinx.util.console import strip_colors
 
 
@@ -25,7 +26,7 @@ def test_needs_warnings(test_app):
         app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
     ).splitlines()
 
-    assert warnings == [
+    expected = [
         "WARNING: 'invalid_status' in 'needs_warnings' is already registered. [needs.config]",
         "WARNING: api_warning_filter: failed",
         "\t\tfailed needs: 1 (TC_002)",
@@ -40,6 +41,14 @@ def test_needs_warnings(test_app):
         "\t\tfailed needs: 1 (TC_001)",
         "\t\tused filter: my_custom_warning_check [needs.warnings]",
     ]
+
+    if version_info >= (7, 3):
+        expected.insert(
+            1,
+            "WARNING: cannot cache unpickable configuration value: 'needs_warnings' (because it contains a function, class, or module object)",
+        )
+
+    assert warnings == expected
 
 
 @pytest.mark.parametrize(
