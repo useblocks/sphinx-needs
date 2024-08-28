@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724848556218,
+  "lastUpdate": 1724850001043,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -9180,6 +9180,42 @@ window.BENCHMARK_DATA = {
             "value": 67.100133367,
             "unit": "s",
             "extra": "Commit: c9976499b0e02306b7ebc5c9dffce02963a100d4\nBranch: master\nTime: 2024-08-28T14:33:59+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3665b04ced7ce9e771b0b9e8acdb268505c47b9e",
+          "message": "🔧 Fix release job (#1253)\n\nbuild and publish in one go, rather than having to use upload/download between two jobs",
+          "timestamp": "2024-08-28T14:57:59+02:00",
+          "tree_id": "9d548d649237d493bab91a35a6f92b4915777d13",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/3665b04ced7ce9e771b0b9e8acdb268505c47b9e"
+        },
+        "date": 1724849993167,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.20442737199999783,
+            "unit": "s",
+            "extra": "Commit: 3665b04ced7ce9e771b0b9e8acdb268505c47b9e\nBranch: master\nTime: 2024-08-28T14:57:59+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 71.682202096,
+            "unit": "s",
+            "extra": "Commit: 3665b04ced7ce9e771b0b9e8acdb268505c47b9e\nBranch: master\nTime: 2024-08-28T14:57:59+02:00"
           }
         ]
       }
