@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724844199041,
+  "lastUpdate": 1724844612065,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -9108,6 +9108,42 @@ window.BENCHMARK_DATA = {
             "value": 67.71081462500001,
             "unit": "s",
             "extra": "Commit: a0e08079470a66adf9e3ebc6674bc44b72c74309\nBranch: master\nTime: 2024-08-28T13:21:26+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "66853113+pre-commit-ci[bot]@users.noreply.github.com",
+            "name": "pre-commit-ci[bot]",
+            "username": "pre-commit-ci[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "59cc6bf213105aa7a50984ee4124984803d67c92",
+          "message": "[pre-commit.ci] pre-commit autoupdate (#1244)\n\nCo-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>\r\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2024-08-28T13:28:13+02:00",
+          "tree_id": "64c8057cf07d1c358879c25b52f96eef07d3acb2",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/59cc6bf213105aa7a50984ee4124984803d67c92"
+        },
+        "date": 1724844605744,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18531906100000128,
+            "unit": "s",
+            "extra": "Commit: 59cc6bf213105aa7a50984ee4124984803d67c92\nBranch: master\nTime: 2024-08-28T13:28:13+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 66.19707284399999,
+            "unit": "s",
+            "extra": "Commit: 59cc6bf213105aa7a50984ee4124984803d67c92\nBranch: master\nTime: 2024-08-28T13:28:13+02:00"
           }
         ]
       }
