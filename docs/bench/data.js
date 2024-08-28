@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724841315676,
+  "lastUpdate": 1724841333223,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -9036,6 +9036,42 @@ window.BENCHMARK_DATA = {
             "value": 67.15536824700001,
             "unit": "s",
             "extra": "Commit: 0ddb5e761ea0e635e17718b62a5d749f5ad7ca36\nBranch: master\nTime: 2024-08-28T12:33:21+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "648e007ab5e6e05db648b832e2a1f10249b33ead",
+          "message": "👌 Improve need warnings (#1250)\n\n- remove \"fix\" that is now fixed in sphinx (https://github.com/sphinx-doc/sphinx/commit/6065ab676c08fe37b84bfd0a0146ab08754c8b92)\r\n- add subtype to to warnings\r\n- improve test to check entire warning string",
+          "timestamp": "2024-08-28T12:33:44+02:00",
+          "tree_id": "921584796653a66f8685ec614abf245e66862296",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/648e007ab5e6e05db648b832e2a1f10249b33ead"
+        },
+        "date": 1724841326927,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22222286900000654,
+            "unit": "s",
+            "extra": "Commit: 648e007ab5e6e05db648b832e2a1f10249b33ead\nBranch: master\nTime: 2024-08-28T12:33:44+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.14661768399998,
+            "unit": "s",
+            "extra": "Commit: 648e007ab5e6e05db648b832e2a1f10249b33ead\nBranch: master\nTime: 2024-08-28T12:33:44+02:00"
           }
         ]
       }
