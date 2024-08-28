@@ -69,8 +69,6 @@ def test_doc_build_html(test_app):
     indirect=True,
 )
 def test_doc_needtable_options(test_app):
-    import sphinx
-
     app = test_app
     app.build()
     html = Path(app.outdir, "test_options.html").read_text()
@@ -78,16 +76,7 @@ def test_doc_needtable_options(test_app):
     assert 'id="needtable-test_options-0"' in html
     assert 'id="needtable-test_options-1"' in html
 
-    if sphinx.version_info[0] < 2:
-        column_order = """
-<tr class="row-odd"><th class="head">Incoming</th>
-<th class="head">ID</th>
-<th class="head">Tags</th>
-<th class="head">Status</th>
-<th class="head">Title</th>
-"""
-    else:
-        column_order = """
+    column_order = """
 <tr class="row-odd"><th class="head"><p>Incoming</p></th>
 <th class="head"><p>ID</p></th>
 <th class="head"><p>Tags</p></th>
@@ -110,15 +99,7 @@ def test_doc_needtable_options(test_app):
     )
     assert "Sphinx-Needs docs for needs-string-links" in html
 
-    if sphinx.version_info[0] < 2:
-        string_column_order = """
-<tr class="row-odd"><th class="head">ID</th>
-<th class="head">Title</th>
-<th class="head">Config</th>
-<th class="head">Github</th>
-"""
-    else:
-        string_column_order = """
+    string_column_order = """
 <tr class="row-odd"><th class="head"><p>ID</p></th>
 <th class="head"><p>Title</p></th>
 <th class="head"><p>Config</p></th>
