@@ -27,26 +27,32 @@ from sphinx.application import Sphinx
 from sphinx.util.logging import getLogger
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsCoreFields, NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import NeedsCoreFields, NeedsInfoType
 from sphinx_needs.debug import measure_time
 from sphinx_needs.logging import log_warning
+from sphinx_needs.nodes import Need
 from sphinx_needs.utils import match_string_link
 
 LOGGER = getLogger(__name__)
 
 
-@measure_time("need")
-def build_need(
-    layout: str,
-    node: nodes.Element,
+@measure_time("build_need_repr")
+def build_need_repr(
+    node: Need,
+    data: NeedsInfoType,
     app: Sphinx,
+    *,
+    layout: str | None = None,
     style: str | None = None,
-    fromdocname: str | None = None,
-) -> None:
-    """
-    Builds a need based on a given layout for a given need-node.
+    docname: str | None = None,
+) -> nodes.container:
+    """Create an output representation for a need.
 
-    The created table must have the following docutils structure::
+    :param layout: Override layout from need data / config
+    :param style: Override style from need data / config
+    :param docname: Override docname from need data / config
+
+    The created table will have the following docutils structure::
 
         - table
         -- tgroup
@@ -59,23 +65,9 @@ def build_need(
 
     The level structure must be kept, otherwise docutils can not handle it!
     """
-
-    env = app.env
-    needs = SphinxNeedsData(env).get_or_create_needs()
     node_container = nodes.container()
 
-    need_id = node.attributes["ids"][0]
-    need_data = needs[need_id]
-
-    if need_data["hide"]:
-        if node.parent:
-            node.parent.replace(node, [])
-        return
-
-    if fromdocname is None:
-        fromdocname = need_data["docname"]
-
-    lh = LayoutHandler(app, need_data, layout, node, style, fromdocname)
+    lh = LayoutHandler(app, data, node, layout=layout, style=style, docname=docname)
     new_need_node = lh.get_need_table()
     node_container.append(new_need_node)
 
@@ -83,9 +75,7 @@ def build_need(
     node_container.attributes["ids"] = [container_id]
     node_container.attributes["classes"] = ["need_container"]
 
-    # We need to replace the current need-node (containing content only) with our new table need node.
-    # node.parent.replace(node, node_container)
-    node.parent.replace(node, node_container)
+    return node_container
 
 
 @lru_cache(1)
@@ -105,16 +95,25 @@ class LayoutHandler:
         self,
         app: Sphinx,
         need: NeedsInfoType,
-        layout: str,
-        node: nodes.Element,
+        node: Need,
+        *,
+        layout: str | None = None,
         style: str | None = None,
-        fromdocname: str | None = None,
+        docname: str | None = None,
     ) -> None:
+        """
+
+        :param layout: Override layout from need data / config
+        :param style: Override style from need data / config
+        :param docname: Override docname from need data / config
+        """
         self.app = app
         self.need = need
         self.needs_config = NeedsSphinxConfig(app.config)
 
-        self.layout_name = layout
+        self.layout_name = (
+            layout or self.need["layout"] or self.needs_config.default_layout
+        )
         available_layouts = self.needs_config.layouts
         if self.layout_name not in available_layouts:
             raise SphinxNeedLayoutException(
@@ -127,10 +126,7 @@ class LayoutHandler:
         self.node = node
 
         # Used, if you need is referenced from another page
-        if fromdocname is None:
-            self.fromdocname = need["docname"]
-        else:
-            self.fromdocname = fromdocname
+        self.fromdocname = need["docname"] if docname is None else docname
 
         classes = [
             "need",
