@@ -13,7 +13,7 @@ from contextlib import suppress
 from functools import lru_cache
 from optparse import Values
 from pathlib import Path
-from typing import Callable, cast
+from typing import Callable
 from urllib.parse import urlparse
 
 import requests
@@ -24,137 +24,35 @@ from docutils.parsers.rst.states import Inliner, Struct
 from docutils.utils import new_document
 from jinja2 import Environment
 from sphinx.application import Sphinx
-from sphinx.environment.collectors.asset import DownloadFileCollector, ImageCollector
 from sphinx.util.logging import getLogger
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsCoreFields, NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import NeedsCoreFields, NeedsInfoType
 from sphinx_needs.debug import measure_time
 from sphinx_needs.logging import log_warning
+from sphinx_needs.nodes import Need
 from sphinx_needs.utils import match_string_link
 
 LOGGER = getLogger(__name__)
 
 
-@measure_time("need")
-def create_need(
-    need_id: str,
+@measure_time("build_need_repr")
+def build_need_repr(
+    node: Need,
+    data: NeedsInfoType,
     app: Sphinx,
+    *,
     layout: str | None = None,
     style: str | None = None,
     docname: str | None = None,
 ) -> nodes.container:
-    """
-    Creates a new need-node for a given layout.
+    """Create an output representation for a need.
 
-    Need must already exist in internal dictionary.
-    This creates a new representation only.
-    :param need_id: need id
-    :param app: sphinx application
-    :param layout: layout to use, overrides layout set by need itself
-    :param style: style to use, overrides styles set by need itself
-    :param docname: Needed for calculating references
-    :return:
-    """
-    env = app.env
-    needs = SphinxNeedsData(env).get_or_create_needs()
+    :param layout: Override layout from need data / config
+    :param style: Override style from need data / config
+    :param docname: Override docname from need data / config
 
-    if need_id not in needs.keys():
-        raise SphinxNeedLayoutException(f"Given need id {need_id} does not exist.")
-
-    need_data = needs[need_id]
-
-    # Resolve internal references.
-    # This is done for original need content automatically.
-    # But as we are working on  a copy, we have to trigger this on our own.
-    if docname is None:
-        # needed to calculate relative references
-        # TODO ideally we should not cast here:
-        # the docname can still be None, if the need is external, although practically these are not rendered
-        docname = cast(str, needs[need_id]["docname"])
-
-    node_container = nodes.container()
-    # node_container += needs[need_id]["need_node"].children
-
-    # We must create a standalone copy of the content_node, as it may be reused several time
-    # (multiple needextract for the same need) and the Sphinx ImageTransformator add location specific
-    # uri to some nodes, which are not valid for all locations.
-    content_node = needs[need_id]["content_node"]
-    assert content_node is not None, f"Need {need_id} has no content node."
-    node_inner = content_node.deepcopy()
-
-    # Rerun some important Sphinx collectors for need-content coming from "needsexternal".
-    # This is needed, as Sphinx needs to know images and download paths.
-    # Normally this gets done much earlier in the process, so that for the copied need-content this
-    # handling was and will not be done by Sphinx itself anymore.
-
-    # Overwrite the docname, which must be the original one from the reused need, as all used paths are relative
-    # to the original location, not to the current document.
-    env.temp_data["docname"] = need_data[
-        "docname"
-    ]  # Dirty, as in this phase normally no docname is set anymore in env
-    ImageCollector().process_doc(app, node_inner)  # type: ignore[arg-type]
-    DownloadFileCollector().process_doc(app, node_inner)  # type: ignore[arg-type]
-
-    del env.temp_data["docname"]  # Be sure our env is as it was before
-
-    node_container.append(node_inner)
-
-    # resolve_references() ignores the given docname and takes the docname from the pending_xref node.
-    # Therefore, we need to manipulate this first, before we can ask Sphinx to perform the normal
-    # reference handling for us.
-    replace_pending_xref_refdoc(node_container, docname)
-    env.resolve_references(node_container, docname, env.app.builder)  # type: ignore[arg-type]
-
-    node_container.attributes["ids"].append(need_id)
-
-    needs_config = NeedsSphinxConfig(app.config)
-    layout = layout or need_data["layout"] or needs_config.default_layout
-    style = style or need_data["style"] or needs_config.default_style
-
-    build_need(layout, node_container, app, style, docname)
-
-    # set the layout and style for the new need
-    node_container[0].attributes = node_container.parent.children[0].attributes  # type: ignore
-    node_container[0].children[0].attributes = (  # type: ignore
-        node_container.parent.children[0].children[0].attributes  # type: ignore
-    )
-
-    node_container.attributes["ids"] = []
-
-    return node_container
-
-
-def replace_pending_xref_refdoc(node: nodes.Element, new_refdoc: str) -> None:
-    """
-    Overwrites the refdoc attribute of all pending_xref nodes.
-    This is needed, if a doctree with references gets copied used somewhereelse in the documentation.
-    What is the normal case when using needextract.
-    :param node: doctree
-    :param new_refdoc: string, should be an existing docname
-    :return: None
-    """
-    from sphinx.addnodes import pending_xref
-
-    if isinstance(node, pending_xref):
-        node.attributes["refdoc"] = new_refdoc
-    else:
-        for child in node.children:
-            replace_pending_xref_refdoc(child, new_refdoc)  # type: ignore[arg-type]
-
-
-@measure_time("need")
-def build_need(
-    layout: str,
-    node: nodes.Element,
-    app: Sphinx,
-    style: str | None = None,
-    fromdocname: str | None = None,
-) -> None:
-    """
-    Builds a need based on a given layout for a given need-node.
-
-    The created table must have the following docutils structure::
+    The created table will have the following docutils structure::
 
         - table
         -- tgroup
@@ -167,23 +65,9 @@ def build_need(
 
     The level structure must be kept, otherwise docutils can not handle it!
     """
-
-    env = app.env
-    needs = SphinxNeedsData(env).get_or_create_needs()
     node_container = nodes.container()
 
-    need_id = node.attributes["ids"][0]
-    need_data = needs[need_id]
-
-    if need_data["hide"]:
-        if node.parent:
-            node.parent.replace(node, [])
-        return
-
-    if fromdocname is None:
-        fromdocname = need_data["docname"]
-
-    lh = LayoutHandler(app, need_data, layout, node, style, fromdocname)
+    lh = LayoutHandler(app, data, node, layout=layout, style=style, docname=docname)
     new_need_node = lh.get_need_table()
     node_container.append(new_need_node)
 
@@ -191,9 +75,7 @@ def build_need(
     node_container.attributes["ids"] = [container_id]
     node_container.attributes["classes"] = ["need_container"]
 
-    # We need to replace the current need-node (containing content only) with our new table need node.
-    # node.parent.replace(node, node_container)
-    node.parent.replace(node, node_container)
+    return node_container
 
 
 @lru_cache(1)
@@ -213,16 +95,25 @@ class LayoutHandler:
         self,
         app: Sphinx,
         need: NeedsInfoType,
-        layout: str,
-        node: nodes.Element,
+        node: Need,
+        *,
+        layout: str | None = None,
         style: str | None = None,
-        fromdocname: str | None = None,
+        docname: str | None = None,
     ) -> None:
+        """
+
+        :param layout: Override layout from need data / config
+        :param style: Override style from need data / config
+        :param docname: Override docname from need data / config
+        """
         self.app = app
         self.need = need
         self.needs_config = NeedsSphinxConfig(app.config)
 
-        self.layout_name = layout
+        self.layout_name = (
+            layout or self.need["layout"] or self.needs_config.default_layout
+        )
         available_layouts = self.needs_config.layouts
         if self.layout_name not in available_layouts:
             raise SphinxNeedLayoutException(
@@ -235,10 +126,7 @@ class LayoutHandler:
         self.node = node
 
         # Used, if you need is referenced from another page
-        if fromdocname is None:
-            self.fromdocname = need["docname"]
-        else:
-            self.fromdocname = fromdocname
+        self.fromdocname = need["docname"] if docname is None else docname
 
         classes = [
             "need",

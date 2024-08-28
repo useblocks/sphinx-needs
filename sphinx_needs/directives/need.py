@@ -25,7 +25,7 @@ from sphinx_needs.functions import (
     resolve_variants_options,
 )
 from sphinx_needs.functions.functions import check_and_get_content
-from sphinx_needs.layout import build_need
+from sphinx_needs.layout import build_need_repr
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_constraints import process_constraints
 from sphinx_needs.nodes import Need
@@ -284,10 +284,12 @@ def purge_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> None:
     Gets executed, if a doc file needs to be purged/ read in again.
     So this code delete all found needs for the given docname.
     """
-    needs = SphinxNeedsData(env).get_or_create_needs()
+    data = SphinxNeedsData(env)
+    needs = data.get_or_create_needs()
     for need_id in list(needs):
         if needs[need_id]["docname"] == docname:
             del needs[need_id]
+            data.remove_need_node(need_id)
 
 
 def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
@@ -432,15 +434,18 @@ def format_need_nodes(
         need_id = node_need.attributes["ids"][0]
         need_data = needs[need_id]
 
+        if need_data["hide"]:
+            remove_node_from_tree(node_need)
+            continue
+
         find_and_replace_node_content(node_need, env, need_data)
         for index, attribute in enumerate(node_need.attributes["classes"]):
             node_need.attributes["classes"][index] = check_and_get_content(
                 attribute, need_data, env
             )
 
-        layout = need_data["layout"] or NeedsSphinxConfig(app.config).default_layout
-
-        build_need(layout, node_need, app, fromdocname=fromdocname)
+        rendered_node = build_need_repr(node_need, need_data, app, docname=fromdocname)
+        node_need.parent.replace(node_need, rendered_node)
 
 
 def check_links(needs: dict[str, NeedsInfoType], config: NeedsSphinxConfig) -> None:

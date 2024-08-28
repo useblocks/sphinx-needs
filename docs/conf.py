@@ -643,6 +643,7 @@ needs_render_context = {
 
 # build needs.json to make permalinks work
 needs_build_json = True
+needs_json_remove_defaults = True
 
 # build needs_json for every needs-id to make detail panel
 needs_build_json_per_id = False
@@ -702,8 +703,10 @@ DEFAULT_DIAGRAM_TEMPLATE = "<size:12>{{type_name}}</size>\\n**{{title|wordwrap(1
 from docutils import nodes  # noqa: E402
 from sphinx.application import Sphinx  # noqa: E402
 from sphinx.directives import SphinxDirective  # noqa: E402
+from sphinx.roles import SphinxRole  # noqa: E402
 
 from sphinx_needs.api.need import add_external_need  # noqa: E402
+from sphinx_needs.config import NeedsSphinxConfig  # noqa: E402
 from sphinx_needs.data import SphinxNeedsData  # noqa: E402
 from sphinx_needs.needsfile import NeedsList  # noqa: E402
 
@@ -741,6 +744,14 @@ class NeedExampleDirective(SphinxDirective):
         return [root]
 
 
+class NeedConfigDefaultRole(SphinxRole):
+    """Role to add a default configuration value to the documentation."""
+
+    def run(self):
+        default = NeedsSphinxConfig.get_default(self.text)
+        return [[nodes.literal("", repr(default), language="python")], []]
+
+
 def create_tutorial_needs(app: Sphinx, _env, _docnames):
     """Create a JSON to import in the tutorial.
 
@@ -771,4 +782,5 @@ def create_tutorial_needs(app: Sphinx, _env, _docnames):
 
 def setup(app: Sphinx):
     app.add_directive("need-example", NeedExampleDirective)
+    app.add_role("need_config_default", NeedConfigDefaultRole())
     app.connect("env-before-read-docs", create_tutorial_needs, priority=600)

@@ -9,8 +9,9 @@ from __future__ import annotations
 import json
 import os
 import sys
+from copy import deepcopy
 from datetime import datetime
-from typing import Any
+from typing import Any, Iterable
 
 from jsonschema import Draft7Validator
 from sphinx.config import Config
@@ -22,7 +23,9 @@ from sphinx_needs.logging import get_logger, log_warning
 log = get_logger(__name__)
 
 
-def generate_needs_schema(config: Config) -> dict[str, Any]:
+def generate_needs_schema(
+    config: Config, exclude_properties: Iterable[str] = ()
+) -> dict[str, Any]:
     """Generate a JSON schema for all fields in each need item.
 
     It is based on:
@@ -46,9 +49,7 @@ def generate_needs_schema(config: Config) -> dict[str, Any]:
     # (this is the case for `type` added by the github service)
     # hence this is why we add the core options after the extra options
     for name, core_params in NeedsCoreFields.items():
-        if core_params.get("exclude_json"):
-            continue
-        properties[name] = core_params["schema"]
+        properties[name] = deepcopy(core_params["schema"])
         properties[name]["description"] = f"{core_params['description']}"
         properties[name]["field_type"] = "core"
 
@@ -62,6 +63,13 @@ def generate_needs_schema(config: Config) -> dict[str, Any]:
             "field_type": "links",
             "default": [],
         }
+        properties[link["option"] + "_back"] = {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Backlink field",
+            "field_type": "backlinks",
+            "default": [],
+        }
 
     for name in needs_config.global_options:
         if name not in properties:
@@ -72,6 +80,10 @@ def generate_needs_schema(config: Config) -> dict[str, Any]:
                 "default": "",
             }
 
+    for name in exclude_properties:
+        if name in properties:
+            del properties[name]
+
     return {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "object",
@@ -80,25 +92,6 @@ def generate_needs_schema(config: Config) -> dict[str, Any]:
 
 
 class NeedsList:
-    JSON_KEY_EXCLUSIONS_NEEDS = {
-        name for name, params in NeedsCoreFields.items() if params.get("exclude_json")
-    }
-
-    JSON_KEY_EXCLUSIONS_FILTERS = {
-        "links_back",
-        "type_color",
-        "hide_status",
-        "hide",
-        "type_prefix",
-        "lineno",
-        "lineno_content",
-        "collapse",
-        "type_style",
-        "hide_tags",
-        "content",
-        "content_node",
-    }
-
     def __init__(
         self, config: Config, outdir: str, confdir: str, add_schema: bool = True
     ) -> None:
@@ -106,16 +99,6 @@ class NeedsList:
         self.needs_config = NeedsSphinxConfig(config)
         self.outdir = outdir
         self.confdir = confdir
-        self._schema = generate_needs_schema(config) if add_schema else None
-        self._need_defaults = (
-            {
-                name: value["default"]
-                for name, value in self._schema["properties"].items()
-                if "default" in value
-            }
-            if self._schema
-            else {}
-        )
         self.current_version = config.version
         self.project = config.project
         self.needs_list = {
@@ -126,10 +109,23 @@ class NeedsList:
         if not self.needs_config.reproducible_json:
             self.needs_list["created"] = ""
         self.log = log
-        # also exclude back links for link types dynamically set by the user
-        back_link_keys = {x["option"] + "_back" for x in self.needs_config.extra_links}
-        self._exclude_need_keys = self.JSON_KEY_EXCLUSIONS_NEEDS | back_link_keys
-        self._exclude_filter_keys = self.JSON_KEY_EXCLUSIONS_FILTERS | back_link_keys
+
+        self._exclude_need_keys = set(self.needs_config.json_exclude_fields)
+
+        self._schema = (
+            generate_needs_schema(config, exclude_properties=self._exclude_need_keys)
+            if add_schema
+            else None
+        )
+        self._need_defaults = (
+            {
+                name: value["default"]
+                for name, value in self._schema["properties"].items()
+                if "default" in value
+            }
+            if self._schema
+            else {}
+        )
 
     def update_or_add_version(self, version: str) -> None:
         if version not in self.needs_list["versions"].keys():
@@ -141,6 +137,8 @@ class NeedsList:
             }
             if self._schema:
                 self.needs_list["versions"][version]["needs_schema"] = self._schema
+            if self.needs_config.json_remove_defaults:
+                self.needs_list["versions"][version]["needs_defaults_removed"] = True
             if not self.needs_config.reproducible_json:
                 self.needs_list["versions"][version]["created"] = ""
 
@@ -173,11 +171,7 @@ class NeedsList:
 
     def add_filter(self, version: str, need_filter: NeedsFilterType) -> None:
         self.update_or_add_version(version)
-        writable_filters = {
-            key: need_filter[key]  # type: ignore[literal-required]
-            for key in need_filter
-            if key not in self._exclude_filter_keys
-        }
+        writable_filters = {**need_filter}
         self.needs_list["versions"][version]["filters"][
             need_filter["export_id"].upper()
         ] = writable_filters

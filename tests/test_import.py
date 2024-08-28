@@ -199,7 +199,7 @@ def test_needimport_needs_json_download(test_app, snapshot):
         app.build()
 
     needs_all_needs = app.env.needs_all_needs
-    assert needs_all_needs == snapshot(exclude=props("content_node"))
+    assert needs_all_needs == snapshot()
 
 
 @pytest.mark.parametrize(

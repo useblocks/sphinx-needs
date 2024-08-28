@@ -23,12 +23,17 @@ For instance, a supplier could get a copy of requirements but would not see all 
       :style: green_border
 
 
-.. note:: 
-   
-   **needextract** supports the full filtering possibilities of **Sphinx-Needs**.
-   Please read :ref:`filter` for more information.
+.. caution::
 
-``needextract`` supports also arguments as filter string. It works like the option `filter`, but also
+   ``needextract`` supports correct rendering of most, but not all, content coming from the original need.
+   Be careful when using complex content in the original need, like custom roles or directives
+   that require any sphinx transforms.
+   
+``needextract`` supports the full filtering possibilities of sphinx-needs.
+Please read :ref:`filter` for more information.
+
+It also supports arguments as filter string,
+which works like the option `filter`, but also
 supports need ID as filter argument.
 
 .. need-example::
