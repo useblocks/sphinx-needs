@@ -6,6 +6,8 @@ import pytest
 import responses
 from syrupy.filters import props
 
+from sphinx_needs.data import SphinxNeedsData
+
 
 @pytest.mark.parametrize(
     "test_app",
@@ -198,7 +200,7 @@ def test_needimport_needs_json_download(test_app, snapshot):
         m.get("http://my_company.com/docs/v1/remote-needs.json", json=remote_json)
         app.build()
 
-    needs_all_needs = app.env._needs_all_needs
+    needs_all_needs = SphinxNeedsData(app.env).get_needs_view()
     assert needs_all_needs == snapshot()
 
 
