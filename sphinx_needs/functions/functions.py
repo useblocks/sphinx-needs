@@ -19,7 +19,7 @@ from sphinx.errors import SphinxError
 from sphinx.util.tags import Tags
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, NeedsView, SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType, NeedsMutable, NeedsView, SphinxNeedsData
 from sphinx_needs.debug import measure_time_func
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import NEEDS_FUNCTIONS, match_variants
@@ -175,7 +175,7 @@ def find_and_replace_node_content(
     return node
 
 
-def resolve_dynamic_values(needs: dict[str, NeedsInfoType], app: Sphinx) -> None:
+def resolve_dynamic_values(needs: NeedsMutable, app: Sphinx) -> None:
     """
     Resolve dynamic values inside need data.
 
@@ -269,7 +269,7 @@ def resolve_dynamic_values(needs: dict[str, NeedsInfoType], app: Sphinx) -> None
 
 
 def resolve_variants_options(
-    needs: dict[str, NeedsInfoType],
+    needs: NeedsMutable,
     needs_config: NeedsSphinxConfig,
     tags: Tags,
 ) -> None:

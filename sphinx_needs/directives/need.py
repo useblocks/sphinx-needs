@@ -15,7 +15,7 @@ from sphinx.util.docutils import SphinxDirective
 from sphinx_needs.api import add_need
 from sphinx_needs.api.exceptions import NeedsInvalidException
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import NeedsMutable, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.defaults import NEED_DEFAULT_OPTIONS
 from sphinx_needs.directives.needextend import Needextend, extend_needs_data
@@ -300,7 +300,7 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
     """
     env = app.env
 
-    needs = SphinxNeedsData(env).get_needs_view()
+    needs = SphinxNeedsData(env).mutable_needs
 
     hidden_needs: list[Need] = []
     for need_node in doctree.findall(Need):
@@ -375,7 +375,7 @@ def post_process_needs_data(app: Sphinx) -> None:
     """
     needs_config = NeedsSphinxConfig(app.config)
     needs_data = SphinxNeedsData(app.env)
-    needs = needs_data._needs_all_needs
+    needs = needs_data.mutable_needs
     if needs and not needs_data.needs_is_post_processed:
         extend_needs_data(needs, needs_data.get_or_create_extends(), needs_config)
         resolve_dynamic_values(needs, app)
@@ -443,7 +443,7 @@ def format_need_nodes(
         node_need.parent.replace(node_need, rendered_node)
 
 
-def check_links(needs: dict[str, NeedsInfoType], config: NeedsSphinxConfig) -> None:
+def check_links(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
     """Checks if set links are valid or are dead (referenced need does not exist.)
 
     For needs with dead links, an extra ``has_dead_links`` field is added and,
@@ -488,9 +488,7 @@ def check_links(needs: dict[str, NeedsInfoType], config: NeedsSphinxConfig) -> N
                                 )
 
 
-def create_back_links(
-    needs: dict[str, NeedsInfoType], config: NeedsSphinxConfig
-) -> None:
+def create_back_links(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
     """Create back-links in all found needs.
 
     These are fields for each link type, ``<link_name>_back``,

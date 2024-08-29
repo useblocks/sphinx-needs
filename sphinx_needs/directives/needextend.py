@@ -9,7 +9,11 @@ from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsExtendType, NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import (
+    NeedsExtendType,
+    NeedsMutable,
+    SphinxNeedsData,
+)
 from sphinx_needs.filter_common import filter_needs
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import add_doc
@@ -94,7 +98,7 @@ def _split_value(value: str) -> Sequence[tuple[str, bool]]:
 
 
 def extend_needs_data(
-    all_needs: dict[str, NeedsInfoType],
+    all_needs: NeedsMutable,
     extends: dict[str, NeedsExtendType],
     needs_config: NeedsSphinxConfig,
 ) -> None:
@@ -105,7 +109,7 @@ def extend_needs_data(
 
     for current_needextend in extends.values():
         need_filter = current_needextend["filter"]
-        if need_filter in all_needs:
+        if need_filter and need_filter in all_needs:
             # a single known ID
             found_needs = [all_needs[need_filter]]
         elif need_filter is not None and re.fullmatch(

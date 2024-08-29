@@ -4,7 +4,7 @@ which is stored in the Sphinx environment.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Final, Literal, Mapping, NewType, TypedDict
+from typing import TYPE_CHECKING, Any, Dict, Final, Literal, Mapping, NewType, TypedDict
 
 from sphinx.util.logging import getLogger
 
@@ -676,6 +676,10 @@ class NeedsUmlType(NeedsBaseDataType):
     content_calculated: str
 
 
+NeedsMutable = NewType("NeedsMutable", Dict[str, NeedsInfoType])
+"""A mutable view of the needs, before resolution
+"""
+
 NeedsView = NewType("NeedsView", Mapping[str, NeedsInfoType])
 """A read-only view of the needs, after resolution
 (e.g. back links have been computed etc)
@@ -689,16 +693,21 @@ class SphinxNeedsData:
         self.env = env
 
     @property
-    def _needs_all_needs(self) -> dict[str, NeedsInfoType]:
+    def mutable_needs(self) -> NeedsMutable:
+        """Get all needs, mapped by ID.
+
+        .. important:: this should only be called within the read phase,
+            before the needs have been fully collected and resolved.
+        """
         try:
             return self.env._needs_all_needs
         except AttributeError:
-            self.env._needs_all_needs = {}
+            self.env._needs_all_needs = NeedsMutable({})
         return self.env._needs_all_needs
 
     def has_need(self, need_id: str) -> bool:
         """Check if a need with the given ID exists."""
-        return need_id in self._needs_all_needs
+        return need_id in self.mutable_needs
 
     def add_need(self, need: NeedsInfoType) -> None:
         """Add an unprocessed need to the cache.
@@ -708,7 +717,7 @@ class SphinxNeedsData:
         .. important:: this should only be called within the read phase,
             before the needs have been fully collected and resolved.
         """
-        self._needs_all_needs[need["id"]] = need
+        self.mutable_needs[need["id"]] = need
 
     def remove_need(self, need_id: str) -> None:
         """Remove a single need from the cache, if it exists.
@@ -716,8 +725,8 @@ class SphinxNeedsData:
         .. important:: this should only be called within the read phase,
             before the needs have been fully collected and resolved.
         """
-        if need_id in self._needs_all_needs:
-            del self._needs_all_needs[need_id]
+        if need_id in self.mutable_needs:
+            del self.mutable_needs[need_id]
         self.remove_need_node(need_id)
 
     def remove_doc(self, docname: str) -> None:
@@ -726,9 +735,9 @@ class SphinxNeedsData:
         .. important:: this should only be called within the read phase,
             before the needs have been fully collected and resolved.
         """
-        for need_id in list(self._needs_all_needs):
-            if self._needs_all_needs[need_id]["docname"] == docname:
-                del self._needs_all_needs[need_id]
+        for need_id in list(self.mutable_needs):
+            if self.mutable_needs[need_id]["docname"] == docname:
+                del self.mutable_needs[need_id]
                 self.remove_need_node(need_id)
         docs = self.get_or_create_docs()
         for key, value in docs.items():
@@ -741,7 +750,7 @@ class SphinxNeedsData:
             after the needs have been fully collected
             and resolved (e.g. back links have been computed etc)
         """
-        return self._needs_all_needs  # type: ignore[return-value]
+        return self.mutable_needs  # type: ignore[return-value]
 
     @property
     def has_export_filters(self) -> bool:
@@ -872,8 +881,8 @@ def merge_data(
     this_data.get_or_create_filters().update(other_data.get_or_create_filters())
 
     # Update needs
-    needs = this_data._needs_all_needs
-    other_needs = other_data._needs_all_needs
+    needs = this_data.mutable_needs
+    other_needs = other_data.mutable_needs
     for other_id, other_need in other_needs.items():
         if other_id in needs:
             # we only want to warn if the need comes from one of the docs parsed in this worker

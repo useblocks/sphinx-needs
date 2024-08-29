@@ -30,3 +30,9 @@ Exceptions
 ----------
 .. automodule:: sphinx_needs.api.exceptions
    :members:
+
+Data
+----
+
+.. automodule:: sphinx_needs.data
+   :members: NeedsInfoType, NeedsView

@@ -49,7 +49,6 @@ nitpick_ignore = [
     ("py:class", "docutils.statemachine.StringList"),
     ("py:class", "T"),
     ("py:class", "sphinx_needs.debug.T"),
-    ("py:class", "sphinx_needs.data.NeedsInfoType"),
 ]
 
 rst_epilog = """
