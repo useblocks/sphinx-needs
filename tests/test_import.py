@@ -198,7 +198,7 @@ def test_needimport_needs_json_download(test_app, snapshot):
         m.get("http://my_company.com/docs/v1/remote-needs.json", json=remote_json)
         app.build()
 
-    needs_all_needs = app.env.needs_all_needs
+    needs_all_needs = app.env._needs_all_needs
     assert needs_all_needs == snapshot()
 
 

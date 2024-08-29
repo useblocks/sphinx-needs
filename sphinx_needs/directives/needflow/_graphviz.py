@@ -49,7 +49,7 @@ def process_needflow_graphviz(
 ) -> None:
     needs_config = NeedsSphinxConfig(app.config)
     env_data = SphinxNeedsData(app.env)
-    all_needs = env_data.get_or_create_needs()
+    all_needs = env_data.get_needs_view()
 
     link_type_names = [link["option"].upper() for link in needs_config.extra_links]
     allowed_link_types_options = [link.upper() for link in needs_config.flow_link_types]

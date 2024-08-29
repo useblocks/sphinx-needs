@@ -162,7 +162,7 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> Non
             # check if external needs already exist
             ext_need_id = need_params["id"]
 
-            need = SphinxNeedsData(env).get_or_create_needs().get(ext_need_id)
+            need = SphinxNeedsData(env).get_needs_view().get(ext_need_id)
 
             if need is not None:
                 # check need_params for more detail

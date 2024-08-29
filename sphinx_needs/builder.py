@@ -85,7 +85,7 @@ class NeedsBuilder(Builder):
 
         filter_string = needs_config.builder_filter
         filtered_needs: list[NeedsInfoType] = filter_needs(
-            data.get_or_create_needs().values(),
+            data.get_needs_view().values(),
             needs_config,
             filter_string,
             append_warning="(from need_builder_filter)",
@@ -178,7 +178,7 @@ class NeedsIdBuilder(Builder):
 
         data = SphinxNeedsData(self.env)
         needs = (
-            data.get_or_create_needs().values()
+            data.get_needs_view().values()
         )  # We need a list of needs for later filter checks
         version = getattr(self.env.config, "version", "unset")
         needs_config = NeedsSphinxConfig(self.env.config)

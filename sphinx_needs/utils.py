@@ -14,7 +14,7 @@ from jinja2 import Environment, Template
 from sphinx.application import BuildEnvironment, Sphinx
 
 from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType, NeedsView, SphinxNeedsData
 from sphinx_needs.defaults import NEEDS_PROFILING
 from sphinx_needs.logging import get_logger, log_warning
 
@@ -75,7 +75,7 @@ def split_need_id(need_id_full: str) -> tuple[str, str | None]:
 def row_col_maker(
     app: Sphinx,
     fromdocname: str,
-    all_needs: dict[str, NeedsInfoType],
+    all_needs: NeedsView,
     need_info: NeedsInfoType,
     need_key: str,
     make_ref: bool = False,

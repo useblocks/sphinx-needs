@@ -292,7 +292,7 @@ def process_needbar(
         # 5. process content
         local_data_number = []
         need_list = list(
-            prepare_need_list(needs_data.get_or_create_needs().values())
+            prepare_need_list(needs_data.get_needs_view().values())
         )  # adds parts to need_list
 
         for line in local_data:

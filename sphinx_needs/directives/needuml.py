@@ -271,7 +271,7 @@ class JinjaFunctions:
         parent_need_id: None | str,
         processed_need_ids: ProcessedNeedsType,
     ) -> None:
-        self.needs = SphinxNeedsData(app.env).get_or_create_needs()
+        self.needs = SphinxNeedsData(app.env).get_needs_view()
         self.app = app
         self.fromdocname = fromdocname
         self.parent_need_id = parent_need_id

@@ -91,7 +91,7 @@ def analyse_needs_metrics(env: BuildEnvironment) -> dict[str, Any]:
     :param env: Sphinx build environment
     :return: Dictionary consisting of needs metrics.
     """
-    needs = SphinxNeedsData(env).get_or_create_needs()
+    needs = SphinxNeedsData(env).get_needs_view()
     metric_data: dict[str, Any] = {"needs_amount": len(needs)}
     needs_types = {i["directive"]: 0 for i in NeedsSphinxConfig(env.config).types}
 

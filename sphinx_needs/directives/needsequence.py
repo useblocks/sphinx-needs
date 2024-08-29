@@ -12,7 +12,12 @@ from sphinxcontrib.plantuml import (
 )
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, NeedsSequenceType, SphinxNeedsData
+from sphinx_needs.data import (
+    NeedsInfoType,
+    NeedsSequenceType,
+    NeedsView,
+    SphinxNeedsData,
+)
 from sphinx_needs.diagrams_common import (
     DiagramBase,
     add_config,
@@ -86,7 +91,7 @@ def process_needsequence(
     # Replace all needsequence nodes with a list of the collected needs.
     env = app.env
     needs_data = SphinxNeedsData(env)
-    all_needs_dict = needs_data.get_or_create_needs()
+    all_needs_dict = needs_data.get_needs_view()
 
     needs_config = NeedsSphinxConfig(env.config)
     include_needs = needs_config.include_needs
@@ -251,7 +256,7 @@ def get_message_needs(
     app: Sphinx,
     sender: NeedsInfoType,
     link_types: list[str],
-    all_needs_dict: dict[str, NeedsInfoType],
+    all_needs_dict: NeedsView,
     tracked_receivers: list[str] | None = None,
     filter: str | None = None,
 ) -> tuple[dict[str, dict[str, Any]], str, str]:

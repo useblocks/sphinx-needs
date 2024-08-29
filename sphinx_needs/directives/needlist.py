@@ -85,7 +85,7 @@ def process_needlist(
 
         current_needfilter: NeedsListType = node.attributes
         content: list[nodes.Node] = []
-        all_needs = list(SphinxNeedsData(env).get_or_create_needs().values())
+        all_needs = list(SphinxNeedsData(env).get_needs_view().values())
         found_needs = process_filters(
             app,
             all_needs,

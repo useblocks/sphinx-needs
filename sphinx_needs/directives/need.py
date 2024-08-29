@@ -284,12 +284,7 @@ def purge_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> None:
     Gets executed, if a doc file needs to be purged/ read in again.
     So this code delete all found needs for the given docname.
     """
-    data = SphinxNeedsData(env)
-    needs = data.get_or_create_needs()
-    for need_id in list(needs):
-        if needs[need_id]["docname"] == docname:
-            del needs[need_id]
-            data.remove_need_node(need_id)
+    SphinxNeedsData(env).remove_doc(docname)
 
 
 def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
@@ -305,7 +300,7 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
     """
     env = app.env
 
-    needs = SphinxNeedsData(env).get_or_create_needs()
+    needs = SphinxNeedsData(env).get_needs_view()
 
     hidden_needs: list[Need] = []
     for need_node in doctree.findall(Need):
@@ -380,7 +375,7 @@ def post_process_needs_data(app: Sphinx) -> None:
     """
     needs_config = NeedsSphinxConfig(app.config)
     needs_data = SphinxNeedsData(app.env)
-    needs = needs_data.get_or_create_needs()
+    needs = needs_data._needs_all_needs
     if needs and not needs_data.needs_is_post_processed:
         extend_needs_data(needs, needs_data.get_or_create_extends(), needs_config)
         resolve_dynamic_values(needs, app)
@@ -406,7 +401,7 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     needs_data = SphinxNeedsData(app.env)
 
     # If no needs were defined, we do not need to do anything
-    if not needs_data.get_or_create_needs():
+    if not needs_data.get_needs_view():
         return
 
     post_process_needs_data(app)
@@ -426,7 +421,7 @@ def format_need_nodes(
 ) -> None:
     """Replace need nodes in the document with node trees suitable for output"""
     env = app.env
-    needs = SphinxNeedsData(env).get_or_create_needs()
+    needs = SphinxNeedsData(env).get_needs_view()
 
     # We try to avoid findall as much as possibles. so we reuse the already found need nodes in the current document.
     # for node_need in doctree.findall(Need):
