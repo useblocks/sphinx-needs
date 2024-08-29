@@ -300,7 +300,7 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
     """
     env = app.env
 
-    needs = SphinxNeedsData(env).mutable_needs
+    needs = SphinxNeedsData(env).get_needs_mutable()
 
     hidden_needs: list[Need] = []
     for need_node in doctree.findall(Need):
@@ -375,7 +375,7 @@ def post_process_needs_data(app: Sphinx) -> None:
     """
     needs_config = NeedsSphinxConfig(app.config)
     needs_data = SphinxNeedsData(app.env)
-    needs = needs_data.mutable_needs
+    needs = needs_data.get_needs_mutable()
     if needs and not needs_data.needs_is_post_processed:
         extend_needs_data(needs, needs_data.get_or_create_extends(), needs_config)
         resolve_dynamic_values(needs, app)
