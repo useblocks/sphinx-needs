@@ -695,10 +695,10 @@ class SphinxNeedsData:
     @property
     def _env_needs(self) -> dict[str, NeedsInfoType]:
         try:
-            return self.env._needs_all_needs
+            return self.env.needs_all_needs
         except AttributeError:
-            self.env._needs_all_needs = {}
-        return self.env._needs_all_needs
+            self.env.needs_all_needs = {}
+        return self.env.needs_all_needs
 
     def has_need(self, need_id: str) -> bool:
         """Check if a need with the given ID exists."""
