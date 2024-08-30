@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pytest
@@ -12,14 +13,17 @@ from sphinx.util.console import strip_colors
 def test_filter_build_html(test_app):
     app = test_app
     app.build()
-    warnings = strip_colors(app._warning.getvalue())
-    print(warnings)
+    warnings = strip_colors(app._warning.getvalue()).replace(
+        str(app.srcdir) + os.path.sep, "<srcdir>/"
+    )
+    # print(warnings.splitlines())
 
     expected_warnings = [
-        f"{Path(str(app.srcdir)) / 'index.rst'}:51: WARNING: Filter 'xxx' not valid. Error: name 'xxx' is not defined. [needs.filter]",
-        f"{Path(str(app.srcdir)) / 'index.rst'}:54: WARNING: Filter '1' not valid. Error: Filter did not evaluate to a boolean, instead <class 'int'>: 1. [needs.filter]",
-        f"{Path(str(app.srcdir)) / 'index.rst'}:57: WARNING: Filter 'yyy' not valid. Error: name 'yyy' is not defined. [needs.filter]",
-        f"{Path(str(app.srcdir)) / 'index.rst'}:60: WARNING: Filter 'zzz' not valid. Error: name 'zzz' is not defined. [needs.filter]",
+        "<srcdir>/index.rst:51: WARNING: Filter 'xxx' not valid. Error: name 'xxx' is not defined. [needs.filter]",
+        "<srcdir>/index.rst:54: WARNING: Filter '1' not valid. Error: Filter did not evaluate to a boolean, instead <class 'int'>: 1. [needs.filter]",
+        "<srcdir>/index.rst:57: WARNING: Filter 'yyy' not valid. Error: name 'yyy' is not defined. [needs.filter]",
+        "<srcdir>/index.rst:60: WARNING: Sorting parameter yyy not valid: Error: 'yyy' [needs]",
+        "<srcdir>/index.rst:63: WARNING: Filter 'zzz' not valid. Error: name 'zzz' is not defined. [needs.filter]",
     ]
 
     assert warnings.splitlines() == expected_warnings
