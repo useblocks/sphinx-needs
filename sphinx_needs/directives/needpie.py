@@ -12,7 +12,7 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsPieType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.directives.utils import no_needs_found_paragraph
-from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
+from sphinx_needs.filter_common import FilterBase, expand_needs_view, filter_needs
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import (
     add_doc,
@@ -157,9 +157,8 @@ def process_needpie(
         content = current_needpie["content"]
 
         sizes = []
-        need_list = list(
-            prepare_need_list(needs_data.get_needs_view().values())
-        )  # adds parts to need_list
+        # adds parts to need_list
+        need_list = expand_needs_view(needs_data.get_needs_view())
         if content and not current_needpie["filter_func"]:
             for line in content:
                 if line.isdigit():

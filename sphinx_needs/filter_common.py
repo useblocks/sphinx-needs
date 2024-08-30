@@ -124,14 +124,13 @@ def process_filters(
     found_needs: list[NeedsInfoType]
 
     # check if include external needs
-    all_needs: Iterable[NeedsInfoType] = needs_view.values()
     if not include_external:
-        all_needs = [need for need in all_needs if not need["is_external"]]
-
-    found_needs_by_options: list[NeedsInfoType] = []
+        needs_view = NeedsView(
+            {id: need for id, need in needs_view.items() if not need["is_external"]}
+        )
 
     # Add all need_parts of given needs to the search list
-    all_needs_incl_parts = prepare_need_list(all_needs)
+    all_needs_incl_parts = expand_needs_view(needs_view)
 
     # Check if external filter code is defined
     try:
@@ -154,6 +153,7 @@ def process_filters(
 
     if (not filter_code or filter_code.isspace()) and not filter_func_sig:
         if bool(filter_data["status"] or filter_data["tags"] or filter_data["types"]):
+            found_needs_by_options: list[NeedsInfoType] = []
             for need_info in all_needs_incl_parts:
                 status_filter_passed = False
                 if (
@@ -277,20 +277,13 @@ def process_filters(
     return found_needs
 
 
-def prepare_need_list(need_list: Iterable[NeedsInfoType]) -> list[NeedsInfoType]:
-    # all_needs_incl_parts = need_list.copy()
-    all_needs_incl_parts: list[NeedsInfoType]
-    try:
-        all_needs_incl_parts = need_list[:]  # type: ignore
-    except TypeError:
-        try:
-            all_needs_incl_parts = need_list.copy()  # type: ignore
-        except AttributeError:
-            all_needs_incl_parts = list(need_list)[:]
-
-    for need in need_list:
-        for filter_part in iter_need_parts(need):
-            all_needs_incl_parts.append(filter_part)
+def expand_needs_view(needs_view: NeedsView) -> list[NeedsInfoType]:
+    """Turns a needs view into a list of needs, expanding all need["parts"] to be items of the list."""
+    all_needs_incl_parts: list[NeedsInfoType] = []
+    for need in needs_view.values():
+        all_needs_incl_parts.append(need)
+        for need_part in iter_need_parts(need):
+            all_needs_incl_parts.append(need_part)
 
     return all_needs_incl_parts
 
