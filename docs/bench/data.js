@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1725004935768,
+  "lastUpdate": 1725015733390,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -9252,6 +9252,42 @@ window.BENCHMARK_DATA = {
             "value": 70.767593705,
             "unit": "s",
             "extra": "Commit: e668a05cea252065d19f63cddca8db72220f00a1\nBranch: master\nTime: 2024-08-30T10:00:12+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0141666ef20adb86b07101339956990594ebc09b",
+          "message": "🔧 Improve internal API for needs access (#1255)\n\nThis PR makes it clearer when we are accessing the (mutable) unprocessed needs, during the read/collection phase,\r\nor when we are accessing the (immutable) processed needs, during the write/analysis phase.\r\nIt does not affect the user facing API.\r\n\r\nIt also adds the abstracted `NeedsView` type for the processed needs.\r\nThis is not changed from the simple dict (`id -> need dict`), but\r\nit provides the groundwork for potential future changes to make this more performant for large amounts of needs.",
+          "timestamp": "2024-08-30T13:00:17+02:00",
+          "tree_id": "208425cfdfe351ef619da0bdbfed987cc08439b4",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/0141666ef20adb86b07101339956990594ebc09b"
+        },
+        "date": 1725015726417,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.20334787300001267,
+            "unit": "s",
+            "extra": "Commit: 0141666ef20adb86b07101339956990594ebc09b\nBranch: master\nTime: 2024-08-30T13:00:17+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 69.08444645999998,
+            "unit": "s",
+            "extra": "Commit: 0141666ef20adb86b07101339956990594ebc09b\nBranch: master\nTime: 2024-08-30T13:00:17+02:00"
           }
         ]
       }
