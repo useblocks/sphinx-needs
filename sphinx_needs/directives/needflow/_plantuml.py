@@ -270,9 +270,9 @@ def process_needflow_plantuml(
                 allowed_link_types,
                 current_needflow["root_direction"],
                 current_needflow["root_depth"],
-            ).values()
+            )
             if (root_id := current_needflow.get("root_id"))
-            else all_needs.values()
+            else all_needs
         )
 
         found_needs = process_filters(
@@ -280,7 +280,7 @@ def process_needflow_plantuml(
             need_values,
             current_needflow,
             origin="needflow",
-            location=f"{node.source}:{node.line}",
+            location=node,
         )
 
         if found_needs:

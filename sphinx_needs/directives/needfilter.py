@@ -160,10 +160,10 @@ def process_needfilters(
 
         found_needs = process_filters(
             app,
-            all_needs.values(),
+            all_needs,
             current_needfilter,
             origin="needfilter",
-            location=f"{node.source}:{node.line}",
+            location=node,
         )
 
         line_block = nodes.line_block()
