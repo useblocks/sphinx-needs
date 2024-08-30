@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724850001043,
+  "lastUpdate": 1725004935768,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -9216,6 +9216,42 @@ window.BENCHMARK_DATA = {
             "value": 71.682202096,
             "unit": "s",
             "extra": "Commit: 3665b04ced7ce9e771b0b9e8acdb268505c47b9e\nBranch: master\nTime: 2024-08-28T14:57:59+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e668a05cea252065d19f63cddca8db72220f00a1",
+          "message": "🐛 Handle malformed `filter-func` option value (#1254)\n\nThis commit provides a warning for all malformed `filter-func` values, and also returns the result as an empty list of needs,\r\nso we do not wasted time processing them.",
+          "timestamp": "2024-08-30T10:00:12+02:00",
+          "tree_id": "b25628380e779ee4a582cc1d35d9d92bb3db1739",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e668a05cea252065d19f63cddca8db72220f00a1"
+        },
+        "date": 1725004928981,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21174579600000243,
+            "unit": "s",
+            "extra": "Commit: e668a05cea252065d19f63cddca8db72220f00a1\nBranch: master\nTime: 2024-08-30T10:00:12+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 70.767593705,
+            "unit": "s",
+            "extra": "Commit: e668a05cea252065d19f63cddca8db72220f00a1\nBranch: master\nTime: 2024-08-30T10:00:12+02:00"
           }
         ]
       }
