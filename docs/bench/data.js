@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1725015733390,
+  "lastUpdate": 1725017026773,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -9288,6 +9288,42 @@ window.BENCHMARK_DATA = {
             "value": 69.08444645999998,
             "unit": "s",
             "extra": "Commit: 0141666ef20adb86b07101339956990594ebc09b\nBranch: master\nTime: 2024-08-30T13:00:17+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7431335811ec926a8ab89d26a01c35a8dc343030",
+          "message": "🔧 Improve `process_filters` function (#1256)\n\nThis PR changes `process_filters`, so that we pass it the `NeedsView` rather than prematurely converting this to a list of needs.\r\nIn the future, this will allow us to improve filter performance.\r\n\r\nWe also parse it the \"origin\" node, rather than prematurely converting this to a location string.",
+          "timestamp": "2024-08-30T13:21:36+02:00",
+          "tree_id": "1eda2dd5c8026fca0ce195cc9ce3cbe8b179a6ab",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/7431335811ec926a8ab89d26a01c35a8dc343030"
+        },
+        "date": 1725017018094,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.27297656200002507,
+            "unit": "s",
+            "extra": "Commit: 7431335811ec926a8ab89d26a01c35a8dc343030\nBranch: master\nTime: 2024-08-30T13:21:36+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 71.661365295,
+            "unit": "s",
+            "extra": "Commit: 7431335811ec926a8ab89d26a01c35a8dc343030\nBranch: master\nTime: 2024-08-30T13:21:36+02:00"
           }
         ]
       }
