@@ -147,16 +147,25 @@ def process_filters(
     all_needs_incl_parts = prepare_need_list(checked_all_needs)
 
     # Check if external filter code is defined
-    filter_func, filter_args = check_and_get_external_filter_func(
-        filter_data.get("filter_func")
-    )
+    try:
+        filter_func_sig = check_and_get_external_filter_func(
+            filter_data.get("filter_func")
+        )
+    except NeedsInvalidFilter as e:
+        log_warning(
+            log,
+            str(e),
+            "filter_func",
+            location=location,
+        )
+        return []
 
     filter_code = None
     # Get filter_code from
     if not filter_code and filter_data["filter_code"]:
         filter_code = "\n".join(filter_data["filter_code"])
 
-    if (not filter_code or filter_code.isspace()) and not filter_func:
+    if (not filter_code or filter_code.isspace()) and not filter_func_sig:
         if bool(filter_data["status"] or filter_data["tags"] or filter_data["types"]):
             for need_info in all_needs_incl_parts:
                 status_filter_passed = False
@@ -214,17 +223,17 @@ def process_filters(
 
         if filter_code:  # code from content
             exec(filter_code, context)
-        elif filter_func:  # code from external file
+        elif filter_func_sig:  # code from external file
             args = []
-            if filter_args:
-                args = filter_args.split(",")
+            if filter_func_sig.args:
+                args = filter_func_sig.args.split(",")
             for index, arg in enumerate(args):
                 # All args are strings, but we must transform them to requested type, e.g. 1 -> int, "1" -> str
                 context[f"arg{index+1}"] = arg
 
             # Decorate function to allow time measurments
             filter_func = measure_time_func(
-                filter_func, category="filter_func", source="user"
+                filter_func_sig.func, category="filter_func", source="user"
             )
             filter_func(**context)
         else:
