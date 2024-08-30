@@ -256,6 +256,7 @@ def process_filters(
                 None,
                 location=location,
             )
+            return []
 
     # Store basic filter configuration and result global list.
     # Needed mainly for exporting the result to needs.json (if builder "needs" is used).
