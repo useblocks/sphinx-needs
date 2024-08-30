@@ -7,6 +7,7 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
+from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsPieType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
@@ -169,41 +170,49 @@ def process_needpie(
                     )
                     sizes.append(result)
         elif current_needpie["filter_func"] and not content:
+            # check and get filter_func
             try:
-                # check and get filter_func
-                filter_func, filter_args = check_and_get_external_filter_func(
+                filter_func_sig = check_and_get_external_filter_func(
                     current_needpie.get("filter_func")
                 )
-                # execute filter_func code
+            except NeedsInvalidFilter as e:
+                log_warning(
+                    logger,
+                    str(e),
+                    "filter_func",
+                    location=node,
+                )
+                remove_node_from_tree(node)
+                continue
+
+            # execute filter_func code
+            if filter_func_sig:
                 # Provides only a copy of needs to avoid data manipulations.
                 context: dict[str, Any] = {
                     "needs": need_list,
                     "results": [],
                 }
-                args = []
-                if filter_args:
-                    args = filter_args.split(",")
+                args = filter_func_sig.args.split(",") if filter_func_sig.args else []
                 for index, arg in enumerate(args):
                     # All rgs are strings, but we must transform them to requested type, e.g. 1 -> int, "1" -> str
                     context[f"arg{index + 1}"] = arg
 
-                if filter_func:
-                    filter_func(**context)
+                filter_func_sig.func(**context)
+
                 sizes = context["results"]
                 # check items in sizes
                 if not isinstance(sizes, list):
                     logger.error(
-                        f"The returned values from the given filter_func {filter_func.__name__} is not valid."
+                        f"The returned values from the given filter_func {filter_func_sig.sig!r} is not valid."
                         " It must be a list."
                     )
                 for item in sizes:
                     if not isinstance(item, int) and not isinstance(item, float):
                         logger.error(
-                            f"The returned values from the given filter_func {filter_func.__name__} is not valid. "
+                            f"The returned values from the given filter_func {filter_func_sig.sig!r} is not valid. "
                             "It must be a list with items of type int/float."
                         )
-            except Exception as e:
-                raise e
+
         elif current_needpie["filter_func"] and content:
             logger.error(
                 "filter_func and content can't be used at the same time for needpie."

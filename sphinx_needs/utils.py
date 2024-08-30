@@ -5,6 +5,7 @@ import importlib
 import operator
 import os
 import re
+from dataclasses import dataclass
 from functools import lru_cache, reduce, wraps
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 from urllib.parse import urlparse
@@ -13,6 +14,7 @@ from docutils import nodes
 from jinja2 import Environment, Template
 from sphinx.application import BuildEnvironment, Sphinx
 
+from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.defaults import NEEDS_PROFILING
@@ -308,43 +310,45 @@ def check_and_calc_base_url_rel_path(external_url: str, fromdocname: str) -> str
     return ref_uri
 
 
-def check_and_get_external_filter_func(filter_func_ref: str | None) -> tuple[Any, str]:
+@dataclass
+class FilterFunc:
+    """Dataclass for filter function."""
+
+    sig: str
+    func: Callable[..., Any]
+    args: str
+
+
+@lru_cache(maxsize=32)
+def check_and_get_external_filter_func(
+    filter_func_ref: str | None,
+) -> FilterFunc | None:
     """Check and import filter function from external python file."""
-    # Check if external filter code is defined
-    filter_func = None
-    filter_args = ""
+    if not filter_func_ref:
+        return None
 
-    if filter_func_ref:
-        try:
-            filter_module, filter_function = filter_func_ref.rsplit(".")
-        except ValueError:
-            log_warning(
-                logger,
-                f'Filter function not valid "{filter_func_ref}". Example: my_module:my_func',
-                None,
-                None,
-            )
-            return filter_func, filter_args
+    try:
+        filter_module, filter_function = filter_func_ref.rsplit(".")
+    except ValueError:
+        raise NeedsInvalidFilter("does not contain a dot")
 
-        result = re.search(r"^(\w+)(?:\((.*)\))*$", filter_function)
-        if not result:
-            return filter_func, filter_args
-        filter_function = result.group(1)
-        filter_args = result.group(2) or ""
+    result = re.search(r"^(\w+)(?:\((.*)\))*$", filter_function)
+    if not result:
+        raise NeedsInvalidFilter(f"malformed function signature: {filter_function!r}")
+    filter_function = result.group(1)
+    filter_args = result.group(2) or ""
 
-        try:
-            final_module = importlib.import_module(filter_module)
-            filter_func = getattr(final_module, filter_function)
-        except Exception:
-            log_warning(
-                logger,
-                f"Could not import filter function: {filter_func_ref}",
-                None,
-                None,
-            )
-            return filter_func, filter_args
+    try:
+        final_module = importlib.import_module(filter_module)
+    except Exception:
+        raise NeedsInvalidFilter(f"cannot import module: {filter_module}")
 
-    return filter_func, filter_args
+    try:
+        filter_func = getattr(final_module, filter_function)
+    except Exception:
+        raise NeedsInvalidFilter(f"module does not have function: {filter_function}")
+
+    return FilterFunc(filter_func_ref, filter_func, filter_args)
 
 
 def jinja_parse(context: dict[str, Any], jinja_string: str) -> str:
