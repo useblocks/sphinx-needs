@@ -116,16 +116,16 @@ def process_needflow_graphviz(
                 allowed_link_types,
                 attributes["root_direction"],
                 attributes["root_depth"],
-            ).values()
+            )
             if (root_id := attributes["root_id"])
-            else all_needs.values()
+            else all_needs
         )
         filtered_needs = process_filters(
             app,
             init_filtered_needs,
             node.attributes,
             origin="needflow",
-            location=f"{node.source}:{node.line}",
+            location=node,
         )
 
         if not filtered_needs:

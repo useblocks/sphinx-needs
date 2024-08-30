@@ -20,6 +20,7 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import (
     NeedsFilteredBaseType,
     NeedsInfoType,
+    NeedsView,
     SphinxNeedsData,
 )
 from sphinx_needs.debug import measure_time, measure_time_func
@@ -100,10 +101,10 @@ class FilterBase(SphinxDirective):
 
 def process_filters(
     app: Sphinx,
-    all_needs: Iterable[NeedsInfoType],
+    needs_view: NeedsView,
     filter_data: NeedsFilteredBaseType,
     origin: str,
-    location: str,
+    location: nodes.Element,
     include_external: bool = True,
 ) -> list[NeedsInfoType]:
     """
@@ -112,39 +113,42 @@ def process_filters(
 
     :param app: Sphinx application object
     :param filter_data: Filter configuration
-    :param all_needs: List of all needs inside document
     :param origin: Origin of the request (e.g. needlist, needtable, needflow)
-    :param location: Location of the request (e.g. "docname:lineno")
+    :param location: Origin node of the request
     :param include_external: Boolean, which decides to include external needs or not
 
     :return: list of needs, which passed the filters
     """
     start = timer()
     needs_config = NeedsSphinxConfig(app.config)
+    all_needs: Iterable[NeedsInfoType]
     found_needs: list[NeedsInfoType]
     sort_key = filter_data["sort_by"]
     if sort_key:
         try:
-            all_needs = sorted(all_needs, key=lambda node: node[sort_key] or "")  # type: ignore[literal-required]
+            all_needs = sorted(
+                needs_view.values(),
+                key=lambda node: node[sort_key] or "",  # type: ignore[literal-required]
+            )
         except KeyError as e:
             log_warning(
-                log, f"Sorting parameter {sort_key} not valid: Error: {e}", None, None
+                log,
+                f"Sorting parameter {sort_key} not valid: Error: {e}",
+                None,
+                location=location,
             )
+            return []
+    else:
+        all_needs = needs_view.values()
 
     # check if include external needs
-    checked_all_needs: Iterable[NeedsInfoType]
     if not include_external:
-        checked_all_needs = []
-        for need in all_needs:
-            if not need["is_external"]:
-                checked_all_needs.append(need)
-    else:
-        checked_all_needs = all_needs
+        all_needs = [need for need in all_needs if not need["is_external"]]
 
     found_needs_by_options: list[NeedsInfoType] = []
 
     # Add all need_parts of given needs to the search list
-    all_needs_incl_parts = prepare_need_list(checked_all_needs)
+    all_needs_incl_parts = prepare_need_list(all_needs)
 
     # Check if external filter code is defined
     try:
@@ -199,7 +203,7 @@ def process_filters(
                 all_needs_incl_parts,
                 needs_config,
                 filter_data["filter"],
-                location=(filter_data["docname"], filter_data["lineno"]),
+                location=location,
             )
             # Make an intersection of both lists
             found_needs = intersection_of_need_results(
@@ -212,7 +216,7 @@ def process_filters(
                 all_needs_incl_parts,
                 needs_config,
                 filter_data["filter"],
-                location=(filter_data["docname"], filter_data["lineno"]),
+                location=location,
             )
     else:
         # Provides only a copy of needs to avoid data manipulations.
@@ -237,7 +241,9 @@ def process_filters(
             )
             filter_func(**context)
         else:
-            log_warning(log, "Something went wrong running filter", None, None)
+            log_warning(
+                log, "Something went wrong running filter", None, location=location
+            )
             return []
 
         # The filter results may be dirty, as it may continue manipulated needs.
@@ -260,7 +266,7 @@ def process_filters(
 
     filter_list[filter_data["target_id"]] = {
         "origin": origin,
-        "location": location,
+        "location": f"{location.source}:{location.line}",
         "filter": filter_data["filter"] or "",
         "status": filter_data["status"],
         "tags": filter_data["tags"],

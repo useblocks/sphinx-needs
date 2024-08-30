@@ -57,4 +57,7 @@ Testing bad filters
 .. needlist::
    :filter: yyy
 
+.. needlist::
+   :sort_by: yyy
+
 :need_count:`zzz`

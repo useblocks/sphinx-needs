@@ -212,10 +212,10 @@ def process_needtables(
         # Perform filtering of needs
         filtered_needs = process_filters(
             app,
-            list(all_needs.values()),
+            all_needs,
             current_needtable,
             origin="needtable",
-            location=f"{node.source}:{node.line}",
+            location=node,
         )
 
         def get_sorter(key: str) -> Callable[[NeedsInfoType], Any]:

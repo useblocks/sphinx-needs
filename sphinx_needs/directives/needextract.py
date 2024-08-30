@@ -125,10 +125,10 @@ def process_needextract(
 
         found_needs = process_filters(
             app,
-            all_needs.values(),
+            all_needs,
             current_needextract,
             origin="needextract",
-            location=f"{node.source}:{node.line}",
+            location=node,
         )
 
         for need_info in found_needs:
