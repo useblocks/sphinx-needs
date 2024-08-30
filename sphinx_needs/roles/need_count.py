@@ -12,7 +12,7 @@ from sphinx.application import Sphinx
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
-from sphinx_needs.filter_common import filter_needs, prepare_need_list
+from sphinx_needs.filter_common import expand_needs_view, filter_needs
 from sphinx_needs.logging import get_logger
 
 log = get_logger(__name__)
@@ -30,13 +30,13 @@ def process_need_count(
 ) -> None:
     needs_config = NeedsSphinxConfig(app.config)
     for node_need_count in found_nodes:
-        all_needs = list(SphinxNeedsData(app.env).get_needs_view().values())
+        needs_view = SphinxNeedsData(app.env).get_needs_view()
         filter = node_need_count["reftarget"]
 
         if filter:
             filters = filter.split(" ? ")
             if len(filters) == 1:
-                need_list = prepare_need_list(all_needs)  # adds parts to need_list
+                need_list = expand_needs_view(needs_view)  # adds parts to need_list
                 amount = str(
                     len(
                         filter_needs(
@@ -48,7 +48,7 @@ def process_need_count(
                     )
                 )
             elif len(filters) == 2:
-                need_list = prepare_need_list(all_needs)  # adds parts to need_list
+                need_list = expand_needs_view(needs_view)  # adds parts to need_list
                 amount_1 = len(
                     filter_needs(
                         need_list, needs_config, filters[0], location=node_need_count
@@ -66,7 +66,7 @@ def process_need_count(
                     'Use " ? " only once to separate filters.'
                 )
         else:
-            amount = str(len(all_needs))
+            amount = str(len(needs_view))
 
         new_node_count = nodes.Text(amount)
         node_need_count.replace_self(new_node_count)
