@@ -155,7 +155,10 @@ def find_and_replace_node_content(
             if isinstance(func_return, list):
                 func_return = ", ".join([str(v) for v in func_return])
 
-            new_text = new_text.replace(f"[[{func_string_org}]]", str(func_return))
+            new_text = new_text.replace(
+                f"[[{func_string_org}]]",
+                "" if func_return is None else str(func_return),
+            )
 
         if isinstance(node, nodes.reference):
             node.attributes["refuri"] = new_text
@@ -347,7 +350,9 @@ def check_and_get_content(
     )  # Execute function call and get return value
 
     # Replace the function_call with the calculated value
-    content = content.replace(f"[[{func_call}]]", str(func_return))
+    content = content.replace(
+        f"[[{func_call}]]", "" if func_return is None else str(func_return)
+    )
     return content
 
 
