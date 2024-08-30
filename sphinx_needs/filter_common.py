@@ -121,27 +121,10 @@ def process_filters(
     """
     start = timer()
     needs_config = NeedsSphinxConfig(app.config)
-    all_needs: Iterable[NeedsInfoType]
     found_needs: list[NeedsInfoType]
-    sort_key = filter_data["sort_by"]
-    if sort_key:
-        try:
-            all_needs = sorted(
-                needs_view.values(),
-                key=lambda node: node[sort_key] or "",  # type: ignore[literal-required]
-            )
-        except KeyError as e:
-            log_warning(
-                log,
-                f"Sorting parameter {sort_key} not valid: Error: {e}",
-                None,
-                location=location,
-            )
-            return []
-    else:
-        all_needs = needs_view.values()
 
     # check if include external needs
+    all_needs: Iterable[NeedsInfoType] = needs_view.values()
     if not include_external:
         all_needs = [need for need in all_needs if not need["is_external"]]
 
@@ -259,6 +242,20 @@ def process_filters(
             for need in all_needs_incl_parts:
                 if need["id_complete"] in found_need_ids:
                     found_needs.append(need)
+
+    if sort_key := filter_data["sort_by"]:
+        try:
+            found_needs = sorted(
+                found_needs,
+                key=lambda node: node[sort_key] or "",  # type: ignore[literal-required]
+            )
+        except KeyError as e:
+            log_warning(
+                log,
+                f"Sorting parameter {sort_key} not valid: Error: {e}",
+                None,
+                location=location,
+            )
 
     # Store basic filter configuration and result global list.
     # Needed mainly for exporting the result to needs.json (if builder "needs" is used).
