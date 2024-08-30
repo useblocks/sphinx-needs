@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1725018418231,
+  "lastUpdate": 1725033830832,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -9360,6 +9360,42 @@ window.BENCHMARK_DATA = {
             "value": 70.22647469200001,
             "unit": "s",
             "extra": "Commit: 26bcdc4ab5c1f9e6e270e00cbd5947a11cdead2c\nBranch: master\nTime: 2024-08-30T13:44:53+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "32fd0b51e22d06604eaaea77eae2825676dd73f5",
+          "message": "🔧 change `prepare_need_list` to `expand_needs_view` function (#1258)\n\nRename `prepare_need_list` to `expand_needs_view`, to make its purpose clearer,\r\nand change its input argument to a `NeedsView`, so we can do the expansion more performantly.",
+          "timestamp": "2024-08-30T18:01:55+02:00",
+          "tree_id": "a2c7cf7b3fc97575a191267ba373e5803e92858b",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/32fd0b51e22d06604eaaea77eae2825676dd73f5"
+        },
+        "date": 1725033822650,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1909185889999776,
+            "unit": "s",
+            "extra": "Commit: 32fd0b51e22d06604eaaea77eae2825676dd73f5\nBranch: master\nTime: 2024-08-30T18:01:55+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.67237287499998,
+            "unit": "s",
+            "extra": "Commit: 32fd0b51e22d06604eaaea77eae2825676dd73f5\nBranch: master\nTime: 2024-08-30T18:01:55+02:00"
           }
         ]
       }
