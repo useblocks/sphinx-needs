@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1725017026773,
+  "lastUpdate": 1725018418231,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -9324,6 +9324,42 @@ window.BENCHMARK_DATA = {
             "value": 71.661365295,
             "unit": "s",
             "extra": "Commit: 7431335811ec926a8ab89d26a01c35a8dc343030\nBranch: master\nTime: 2024-08-30T13:21:36+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "26bcdc4ab5c1f9e6e270e00cbd5947a11cdead2c",
+          "message": "👌 Move sorting to end of `process_filters` (#1257)\n\nWe only need to perform the sorting (which could be slow for large amounts of needs) on the filtered needs, rather than all the needs.",
+          "timestamp": "2024-08-30T13:44:53+02:00",
+          "tree_id": "0b0de49ee3d402d7b0111512fcc3e8b8f9defc21",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/26bcdc4ab5c1f9e6e270e00cbd5947a11cdead2c"
+        },
+        "date": 1725018409485,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21438985700001467,
+            "unit": "s",
+            "extra": "Commit: 26bcdc4ab5c1f9e6e270e00cbd5947a11cdead2c\nBranch: master\nTime: 2024-08-30T13:44:53+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 70.22647469200001,
+            "unit": "s",
+            "extra": "Commit: 26bcdc4ab5c1f9e6e270e00cbd5947a11cdead2c\nBranch: master\nTime: 2024-08-30T13:44:53+02:00"
           }
         ]
       }
