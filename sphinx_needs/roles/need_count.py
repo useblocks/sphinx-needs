@@ -30,7 +30,7 @@ def process_need_count(
 ) -> None:
     needs_config = NeedsSphinxConfig(app.config)
     for node_need_count in found_nodes:
-        all_needs = list(SphinxNeedsData(app.env).get_or_create_needs().values())
+        all_needs = list(SphinxNeedsData(app.env).get_needs_view().values())
         filter = node_need_count["reftarget"]
 
         if filter:

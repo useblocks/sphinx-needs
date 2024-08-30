@@ -60,7 +60,7 @@ def process_need_ref(
     builder = app.builder
     env = app.env
     needs_config = NeedsSphinxConfig(env.config)
-    all_needs = SphinxNeedsData(env).get_or_create_needs()
+    all_needs = SphinxNeedsData(env).get_needs_view()
     # for node_need_ref in doctree.findall(NeedRef):
     for node_need_ref in found_nodes:
         # Let's create a dummy node, for the case we will not be able to create a real reference

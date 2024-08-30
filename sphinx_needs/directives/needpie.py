@@ -158,7 +158,7 @@ def process_needpie(
 
         sizes = []
         need_list = list(
-            prepare_need_list(needs_data.get_or_create_needs().values())
+            prepare_need_list(needs_data.get_needs_view().values())
         )  # adds parts to need_list
         if content and not current_needpie["filter_func"]:
             for line in content:

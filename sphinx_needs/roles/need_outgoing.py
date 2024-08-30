@@ -31,7 +31,7 @@ def process_need_outgoing(
     # for node_need_ref in doctree.findall(NeedOutgoing):
     for node_need_ref in found_nodes:
         node_link_container = nodes.inline()
-        needs_all_needs = SphinxNeedsData(env).get_or_create_needs()
+        needs_all_needs = SphinxNeedsData(env).get_needs_view()
         ref_need = needs_all_needs[node_need_ref["reftarget"]]
 
         # Let's check if NeedIncoming shall follow a specific link type

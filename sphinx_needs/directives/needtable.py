@@ -147,7 +147,7 @@ def process_needtables(
             link_type_list["OUTGOING"] = link_type
             link_type_list["INCOMING"] = link_type
 
-    all_needs = needs_data.get_or_create_needs()
+    all_needs = needs_data.get_needs_view()
 
     # for node in doctree.findall(Needtable):
     for node in found_nodes:

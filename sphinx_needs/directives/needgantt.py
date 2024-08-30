@@ -170,7 +170,7 @@ def process_needgantt(
             continue
 
         current_needgantt: NeedsGanttType = node.attributes
-        all_needs_dict = SphinxNeedsData(env).get_or_create_needs()
+        all_needs_dict = SphinxNeedsData(env).get_needs_view()
 
         content = []
         try:

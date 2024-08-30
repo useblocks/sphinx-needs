@@ -506,7 +506,7 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
     """
     needs_config = NeedsSphinxConfig(app.config)
     data = SphinxNeedsData(env)
-    data.get_or_create_needs()
+    data.get_needs_view()
     data.get_or_create_filters()
     data.get_or_create_docs()
     services = data.get_or_create_services()

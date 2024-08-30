@@ -85,7 +85,7 @@ def process_needfilters(
     builder = app.builder
     env = app.env
     needs_config = NeedsSphinxConfig(env.config)
-    all_needs = SphinxNeedsData(env).get_or_create_needs()
+    all_needs = SphinxNeedsData(env).get_needs_view()
 
     # NEEDFILTER
     # for node in doctree.findall(Needfilter):

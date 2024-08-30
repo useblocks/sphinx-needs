@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import ast
 import re
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, List, Union
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -19,7 +19,7 @@ from sphinx.errors import SphinxError
 from sphinx.util.tags import Tags
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType, NeedsMutable, NeedsView, SphinxNeedsData
 from sphinx_needs.debug import measure_time_func
 from sphinx_needs.logging import get_logger
 from sphinx_needs.utils import NEEDS_FUNCTIONS, match_variants
@@ -30,7 +30,7 @@ ast_boolean = ast.NameConstant
 
 # TODO these functions also take optional *args and **kwargs
 DynamicFunction = Callable[
-    [Sphinx, NeedsInfoType, Dict[str, NeedsInfoType]],
+    [Sphinx, NeedsInfoType, NeedsView],
     Union[str, int, float, List[Union[str, int, float]]],
 ]
 
@@ -88,7 +88,7 @@ def execute_func(app: Sphinx, need: NeedsInfoType, func_string: str) -> Any:
     func_return = func(
         app,
         need,
-        SphinxNeedsData(app.env).get_or_create_needs(),
+        SphinxNeedsData(app.env).get_needs_view(),
         *func_args,
         **func_kwargs,
     )
@@ -175,7 +175,7 @@ def find_and_replace_node_content(
     return node
 
 
-def resolve_dynamic_values(needs: dict[str, NeedsInfoType], app: Sphinx) -> None:
+def resolve_dynamic_values(needs: NeedsMutable, app: Sphinx) -> None:
     """
     Resolve dynamic values inside need data.
 
@@ -269,7 +269,7 @@ def resolve_dynamic_values(needs: dict[str, NeedsInfoType], app: Sphinx) -> None
 
 
 def resolve_variants_options(
-    needs: dict[str, NeedsInfoType],
+    needs: NeedsMutable,
     needs_config: NeedsSphinxConfig,
     tags: Tags,
 ) -> None:

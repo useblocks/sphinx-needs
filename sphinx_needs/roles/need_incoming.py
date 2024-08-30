@@ -24,7 +24,7 @@ def process_need_incoming(
     builder = app.builder
     env = app.env
     needs_config = NeedsSphinxConfig(env.config)
-    all_needs = SphinxNeedsData(env).get_or_create_needs()
+    all_needs = SphinxNeedsData(env).get_needs_view()
 
     # for node_need_backref in doctree.findall(NeedIncoming):
     for node_need_backref in found_nodes:

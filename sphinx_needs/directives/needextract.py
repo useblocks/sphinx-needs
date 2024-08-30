@@ -92,7 +92,7 @@ def process_needextract(
             continue
 
         current_needextract: NeedsExtractType = node.attributes
-        all_needs = SphinxNeedsData(env).get_or_create_needs()
+        all_needs = SphinxNeedsData(env).get_needs_view()
         content = nodes.container()
         content.attributes["ids"] = [current_needextract["target_id"]]
 

@@ -4,7 +4,7 @@ which is stored in the Sphinx environment.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Final, Literal, Mapping, TypedDict
+from typing import TYPE_CHECKING, Any, Dict, Final, Literal, Mapping, NewType, TypedDict
 
 from sphinx.util.logging import getLogger
 
@@ -676,22 +676,84 @@ class NeedsUmlType(NeedsBaseDataType):
     content_calculated: str
 
 
+NeedsMutable = NewType("NeedsMutable", Dict[str, NeedsInfoType])
+"""A mutable view of the needs, before resolution
+"""
+
+NeedsView = NewType("NeedsView", Mapping[str, NeedsInfoType])
+"""A read-only view of the needs, after resolution
+(e.g. back links have been computed etc)
+"""
+
+
 class SphinxNeedsData:
     """Centralised access to sphinx-needs data, stored within the Sphinx environment."""
 
     def __init__(self, env: BuildEnvironment) -> None:
         self.env = env
 
-    def get_or_create_needs(self) -> dict[str, NeedsInfoType]:
-        """Get all needs, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
+    @property
+    def _env_needs(self) -> dict[str, NeedsInfoType]:
         try:
             return self.env.needs_all_needs
         except AttributeError:
             self.env.needs_all_needs = {}
         return self.env.needs_all_needs
+
+    def has_need(self, need_id: str) -> bool:
+        """Check if a need with the given ID exists."""
+        return need_id in self._env_needs
+
+    def add_need(self, need: NeedsInfoType) -> None:
+        """Add an unprocessed need to the cache.
+
+        This will overwrite any existing need with the same ID.
+
+        .. important:: this should only be called within the read phase,
+            before the needs have been fully collected and resolved.
+        """
+        self._env_needs[need["id"]] = need
+
+    def remove_need(self, need_id: str) -> None:
+        """Remove a single need from the cache, if it exists.
+
+        .. important:: this should only be called within the read phase,
+            before the needs have been fully collected and resolved.
+        """
+        if need_id in self._env_needs:
+            del self._env_needs[need_id]
+        self.remove_need_node(need_id)
+
+    def remove_doc(self, docname: str) -> None:
+        """Remove all data related to a document from the cache.
+
+        .. important:: this should only be called within the read phase,
+            before the needs have been fully collected and resolved.
+        """
+        for need_id in list(self._env_needs):
+            if self._env_needs[need_id]["docname"] == docname:
+                del self._env_needs[need_id]
+                self.remove_need_node(need_id)
+        docs = self.get_or_create_docs()
+        for key, value in docs.items():
+            docs[key] = [doc for doc in value if doc != docname]
+
+    def get_needs_mutable(self) -> NeedsMutable:
+        """Get all needs, mapped by ID.
+
+        .. important:: this should only be called within the read phase,
+            before the needs have been fully collected and resolved.
+        """
+        return self._env_needs  # type: ignore[return-value]
+
+    def get_needs_view(self) -> NeedsView:
+        """Return a read-only view of all needs, after resolution.
+
+        .. important:: this should only be called within the write phase,
+            after the needs have been fully collected
+            and resolved (e.g. back links have been computed etc)
+        """
+        return self._env_needs  # type: ignore[return-value]
 
     @property
     def has_export_filters(self) -> bool:
@@ -793,7 +855,7 @@ class SphinxNeedsData:
             del self._needs_all_nodes[need_id]
 
     def get_need_node(self, need_id: str) -> Need | None:
-        """Get a need node from the cache, if it exists."""
+        """Get a copy of a need node from the cache, if it exists."""
         if need_id in self._needs_all_nodes:
             # We must create a copy of the node, as it may be reused several time
             # (multiple needextract for the same need) and the Sphinx ImageTransformator add location specific
@@ -822,8 +884,8 @@ def merge_data(
     this_data.get_or_create_filters().update(other_data.get_or_create_filters())
 
     # Update needs
-    needs = this_data.get_or_create_needs()
-    other_needs = other_data.get_or_create_needs()
+    needs = this_data._env_needs
+    other_needs = other_data._env_needs
     for other_id, other_need in other_needs.items():
         if other_id in needs:
             # we only want to warn if the need comes from one of the docs parsed in this worker

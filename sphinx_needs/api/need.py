@@ -312,7 +312,7 @@ def add_need(
     # Add need to global need list
     #############################################################################################
 
-    if need_id in SphinxNeedsData(env).get_or_create_needs():
+    if SphinxNeedsData(env).has_need(need_id):
         if id:
             message = f"A need with ID {need_id} already exists, " f"title: {title!r}."
         else:  # this is a generated ID
@@ -457,7 +457,7 @@ def add_need(
     if needs_info["post_template"]:
         needs_info["post_content"] = _prepare_template(app, needs_info, "post_template")
 
-    SphinxNeedsData(env).get_or_create_needs()[need_id] = needs_info
+    SphinxNeedsData(env).add_need(needs_info)
 
     if needs_info["is_external"]:
         return []
@@ -604,12 +604,10 @@ def del_need(app: Sphinx, need_id: str) -> None:
     :param need_id: Sphinx need id.
     """
     data = SphinxNeedsData(app.env)
-    needs = data.get_or_create_needs()
-    if need_id in needs:
-        del needs[need_id]
-        data.remove_need_node(need_id)
-    else:
+    if not data.has_need(need_id):
         log_warning(logger, f"Given need id {need_id} not exists!", None, None)
+    else:
+        data.remove_need(need_id)
 
 
 def add_external_need(

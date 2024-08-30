@@ -49,7 +49,6 @@ nitpick_ignore = [
     ("py:class", "docutils.statemachine.StringList"),
     ("py:class", "T"),
     ("py:class", "sphinx_needs.debug.T"),
-    ("py:class", "sphinx_needs.data.NeedsInfoType"),
 ]
 
 rst_epilog = """
@@ -757,7 +756,7 @@ def create_tutorial_needs(app: Sphinx, _env, _docnames):
 
     We do this dynamically, to avoid having to maintain the JSON file manually.
     """
-    all_data = SphinxNeedsData(app.env).get_or_create_needs()
+    all_data = SphinxNeedsData(app.env).get_needs_view()
     writer = NeedsList(app.config, outdir=app.confdir, confdir=app.confdir)
     for i in range(1, 5):
         test_id = f"T_00{i}"
