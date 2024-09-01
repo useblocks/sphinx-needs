@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import ast
 import re
-from typing import Any, Callable, List, Union
+from typing import Any, Protocol
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -21,18 +21,27 @@ from sphinx.util.tags import Tags
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, NeedsMutable, NeedsView, SphinxNeedsData
 from sphinx_needs.debug import measure_time_func
-from sphinx_needs.logging import get_logger
+from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import NEEDS_FUNCTIONS, match_variants
 
 logger = get_logger(__name__)
 unicode = str
 ast_boolean = ast.NameConstant
 
-# TODO these functions also take optional *args and **kwargs
-DynamicFunction = Callable[
-    [Sphinx, NeedsInfoType, NeedsView],
-    Union[str, int, float, List[Union[str, int, float]]],
-]
+
+class DynamicFunction(Protocol):
+    """A protocol for a sphinx-needs dynamic function."""
+
+    __name__: str
+
+    def __call__(
+        self,
+        app: Sphinx,
+        need: NeedsInfoType,
+        needs: NeedsView,
+        *args: Any,
+        **kwargs: Any,
+    ) -> str | int | float | list[str] | list[int] | list[float] | None: ...
 
 
 def register_func(need_function: DynamicFunction, name: str | None = None) -> None:
@@ -64,23 +73,40 @@ def register_func(need_function: DynamicFunction, name: str | None = None) -> No
     NEEDS_FUNCTIONS[func_name] = {"name": func_name, "function": need_function}
 
 
-def execute_func(app: Sphinx, need: NeedsInfoType, func_string: str) -> Any:
+def execute_func(
+    app: Sphinx,
+    need: NeedsInfoType,
+    func_string: str,
+    location: str | tuple[str | None, int | None] | nodes.Node | None,
+) -> str | int | float | list[str] | list[int] | list[float] | None:
     """Executes a given function string.
 
     :param env: Sphinx environment
     :param need: Actual need, which contains the found function string
     :param func_string: string of the found function. Without ``[[ ]]``
+    :param location: source location of the function call
     :return: return value of executed function
     """
     global NEEDS_FUNCTIONS
-    func_name, func_args, func_kwargs = _analyze_func_string(func_string, need)
+    try:
+        func_name, func_args, func_kwargs = _analyze_func_string(func_string, need)
+    except FunctionParsingException as err:
+        log_warning(
+            logger,
+            f"Function string {func_string!r} could not be parsed: {err}",
+            "dynamic_function",
+            location=location,
+        )
+        return "??"
 
     if func_name not in NEEDS_FUNCTIONS:
-        raise SphinxError(
-            "Unknown dynamic sphinx-needs function: {}. Found in need: {}".format(
-                func_name, need["id"]
-            )
+        log_warning(
+            logger,
+            f"Unknown function {func_name!r}",
+            "dynamic_function",
+            location=location,
         )
+        return "??"
 
     func = measure_time_func(
         NEEDS_FUNCTIONS[func_name]["function"], category="dyn_func", source="user"
@@ -93,18 +119,24 @@ def execute_func(app: Sphinx, need: NeedsInfoType, func_string: str) -> Any:
         **func_kwargs,
     )
 
-    if not isinstance(func_return, (str, int, float, list, unicode)) and func_return:
-        raise SphinxError(
-            f"Return value of function {func_name} is of type {type(func_return)}. Allowed are str, int, float"
+    if func_return is not None and not isinstance(func_return, (str, int, float, list)):
+        log_warning(
+            logger,
+            f"Return value of function {func_name!r} is of type {type(func_return)}. Allowed are str, int, float, list",
+            "dynamic_function",
+            location=location,
         )
-
+        return "??"
     if isinstance(func_return, list):
         for element in func_return:
-            if not isinstance(element, (str, int, float, unicode)):
-                raise SphinxError(
-                    f"Element of return list of function {func_name} is of type {type(func_return)}. "
-                    "Allowed are str, int, float"
+            if not isinstance(element, (str, int, float)):
+                log_warning(
+                    logger,
+                    f"Return value of function {func_name!r} is of type {type(func_return)}. Allowed are str, int, float, list",
+                    "dynamic_function",
+                    location=location,
                 )
+                return "??"
     return func_return
 
 
@@ -149,13 +181,15 @@ def find_and_replace_node_content(
 
             func_string = func_string.replace("‘", "'")  # noqa: RUF001
             func_string = func_string.replace("’", "'")  # noqa: RUF001
-            func_return = execute_func(env.app, need, func_string)
+            func_return = execute_func(env.app, need, func_string, node)
 
-            # This should never happen, but we can not be sure.
             if isinstance(func_return, list):
-                func_return = ", ".join(func_return)
+                func_return = ", ".join(str(el) for el in func_return)
 
-            new_text = new_text.replace(f"[[{func_string_org}]]", func_return)
+            new_text = new_text.replace(
+                f"[[{func_string_org}]]",
+                "" if func_return is None else str(func_return),
+            )
 
         if isinstance(node, nodes.reference):
             node.attributes["refuri"] = new_text
@@ -207,7 +241,7 @@ def resolve_dynamic_values(needs: NeedsMutable, app: Sphinx) -> None:
                 func_call: str | None = "init"
                 while func_call:
                     try:
-                        func_call, func_return = _detect_and_execute(
+                        func_call, func_return = _detect_and_execute_field(
                             need[need_option], need, app
                         )
                     except FunctionParsingException:
@@ -239,7 +273,9 @@ def resolve_dynamic_values(needs: NeedsMutable, app: Sphinx) -> None:
                 new_values = []
                 for element in need[need_option]:
                     try:
-                        func_call, func_return = _detect_and_execute(element, need, app)
+                        func_call, func_return = _detect_and_execute_field(
+                            element, need, app
+                        )
                     except FunctionParsingException:
                         raise SphinxError(
                             "Function definition of {option} in file {file}:{line} has "
@@ -319,7 +355,7 @@ def resolve_variants_options(
 
 
 def check_and_get_content(
-    content: str, need: NeedsInfoType, env: BuildEnvironment
+    content: str, need: NeedsInfoType, env: BuildEnvironment, location: nodes.Node
 ) -> str:
     """
     Checks if the given content is a function call.
@@ -329,6 +365,7 @@ def check_and_get_content(
     :param content: option content string
     :param need: need
     :param env: Sphinx environment object
+    :param location: source location of the function call
     :return: string
     """
 
@@ -343,18 +380,23 @@ def check_and_get_content(
 
     func_call = func_match.group(1)  # Extract function call
     func_return = execute_func(
-        env.app, need, func_call
+        env.app, need, func_call, location
     )  # Execute function call and get return value
 
+    if isinstance(func_return, list):
+        func_return = ", ".join(str(el) for el in func_return)
+
     # Replace the function_call with the calculated value
-    content = content.replace(f"[[{func_call}]]", func_return)
+    content = content.replace(
+        f"[[{func_call}]]", "" if func_return is None else str(func_return)
+    )
     return content
 
 
-def _detect_and_execute(
+def _detect_and_execute_field(
     content: Any, need: NeedsInfoType, app: Sphinx
-) -> tuple[str | None, Any]:
-    """Detects if given content is a function call and executes it."""
+) -> tuple[str | None, str | int | float | list[str] | list[int] | list[float] | None]:
+    """Detects if given need field value is a function call and executes it."""
     try:
         content = str(content)
     except UnicodeEncodeError:
@@ -366,7 +408,10 @@ def _detect_and_execute(
 
     func_call = func_match.group(1)  # Extract function call
     func_return = execute_func(
-        app, need, func_call
+        app,
+        need,
+        func_call,
+        (need["docname"], need["lineno"]) if need["docname"] else None,
     )  # Execute function call and get return value
 
     return func_call, func_return
@@ -391,14 +436,14 @@ def _analyze_func_string(
         func = ast.parse(func_string)
     except SyntaxError as e:
         need_id = need["id"] if need else "UNKNOWN"
-        raise SphinxError(
+        raise FunctionParsingException(
             f"Parsing function string failed for need {need_id}: {func_string}. {e}"
         )
     try:
         func_call = func.body[0].value  # type: ignore
         func_name = func_call.func.id
     except AttributeError:
-        raise SphinxError(
+        raise FunctionParsingException(
             f"Given dynamic function string is not a valid python call. Got: {func_string}"
         )
 

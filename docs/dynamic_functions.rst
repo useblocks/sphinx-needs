@@ -18,22 +18,13 @@ dynamic function execution. In this case, the function gets executed with the fo
 This allows you to set row and column specific styles such as, set a row background to red, if a need-status is *failed*.
 
 
-Example
--------
-
-.. code-block:: rst
+.. need-example:: Dynamic function example
 
    .. req:: my test requirement
       :id: df_1
       :status: open
 
-      This need has the id **[[copy("id")]]** and status **[[copy("status")]]**.
-
-.. req:: my test requirement
-   :id: df_1
-   :status: open
-
-   This need has id **[[copy("id")]]** and status **[[copy("status")]]**.
+      This need has id **[[copy("id")]]** and status **[[copy("status")]]**.
 
 Built-in functions
 -------------------
@@ -87,8 +78,8 @@ Develop own functions
 Registration
 ~~~~~~~~~~~~
 
-You must register every dynamic function by using the :ref:`needs_functions` configuration parameter
-inside your **conf.py** file:
+You must register every dynamic function by using the :ref:`needs_functions` configuration parameter,
+inside your **conf.py** file, to add a :py:class:`.DynamicFunction`:
 
 .. code-block:: python
 
@@ -114,61 +105,6 @@ inside your **conf.py** file:
 
             def setup(app):
                   add_dynamic_function(app, my_function)
-
-Reference function
-~~~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-   def test(app, need, needs, *args, **kwargs):
-       """
-       :param app: sphinx app
-       :param need: current need
-       :param needs: dictionary of all needs. Key is the need id
-       :return: str,int,float or list of elements of type str,int,float
-       """
-       # where the magic happens
-       return "awesome"
-
-You can call the defined function via:
-
-.. code-block:: rst
-
-   .. req:: test requirement
-      :status: [[test()]]
-
-The parameters ``app``, ``need`` and ``needs`` are set automatically. You are free to add other parameters, which
-must be of type str, int, float and list.
-
-
-need structure
-~~~~~~~~~~~~~~
-
-.. code-block:: text
-
-   need = {
-      'docname': str: document name,
-      'lineno': int: linenumber,
-      'links_back': list: list of incoming links (see restrictions),
-      'target_node': node: sphinx target node for internal references,
-      'type': str: short name of type,
-      'type_name': str: long name of type,
-      'type_prefix': str: name of type prefix,
-      'type_color': str: type color,
-      'type_style': str: type style,
-      'status': str: status,
-      'tags': list: list of tags,
-      'id': str: id,
-      'links': list: list of outgoing links,
-      'title': str: trimmed title of need,
-      'full_title': str: full title of string,
-      'content': str: unparsed need content,
-      'collapse': bool: true if meta data shall be collapsed,
-      'hide': bool: true if complete need shall be hidden,
-   }
-
-Adding new keywords to need object will be treated as extra_option in need meta area.
-
 
 Restrictions
 ~~~~~~~~~~~~
