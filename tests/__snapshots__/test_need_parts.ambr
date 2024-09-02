@@ -1,0 +1,115 @@
+# name: test_doc_need_parts[test_app0]
+  dict({
+    'SP_TOO_001': dict({
+      'description': '''
+        The Tool awesome shall have a command line interface with following commands:
+        
+        * :need_part:`(1)exit()`
+        * :need_part:`(2)start()`
+        * :need_part:`(awesome_id)blub()`
+        
+        
+        * :np:`unknown_id_1`
+        * :np:`unknown_id_2`
+        
+        .. spec:: TEST_2
+            :id: TEST_2
+        
+            Part in nested need: :need_part:`(nested_id)something`
+      ''',
+      'docname': 'index',
+      'external_css': 'external_link',
+      'full_title': 'Command line interface',
+      'id': 'SP_TOO_001',
+      'layout': '',
+      'parent_needs_back': list([
+        'TEST_2',
+      ]),
+      'parts': dict({
+        '1': dict({
+          'content': 'exit()',
+          'id': '1',
+          'links': list([
+          ]),
+          'links_back': list([
+          ]),
+        }),
+        '2': dict({
+          'content': 'start()',
+          'id': '2',
+          'links': list([
+          ]),
+          'links_back': list([
+          ]),
+        }),
+        '5DA': dict({
+          'content': 'unknown_id_1',
+          'id': '5DA',
+          'links': list([
+          ]),
+          'links_back': list([
+          ]),
+        }),
+        '7FF': dict({
+          'content': 'unknown_id_2',
+          'id': '7FF',
+          'links': list([
+          ]),
+          'links_back': list([
+          ]),
+        }),
+        'awesome_id': dict({
+          'content': 'blub()',
+          'id': 'awesome_id',
+          'links': list([
+          ]),
+          'links_back': list([
+          ]),
+        }),
+      }),
+      'section_name': 'NEED PARTS',
+      'sections': list([
+        'NEED PARTS',
+      ]),
+      'status': 'implemented',
+      'tags': list([
+        'test',
+        'test2',
+      ]),
+      'target_id': 'SP_TOO_001',
+      'title': 'Command line interface',
+      'type': 'spec',
+      'type_name': 'Specification',
+    }),
+    'TEST_2': dict({
+      'description': 'Part in nested need: :need_part:`(nested_id)something`',
+      'docname': 'index',
+      'external_css': 'external_link',
+      'full_title': 'TEST_2',
+      'id': 'TEST_2',
+      'layout': '',
+      'parent_need': 'SP_TOO_001',
+      'parent_needs': list([
+        'SP_TOO_001',
+      ]),
+      'parts': dict({
+        'nested_id': dict({
+          'content': 'something',
+          'id': 'nested_id',
+          'links': list([
+          ]),
+          'links_back': list([
+          ]),
+        }),
+      }),
+      'section_name': 'NEED PARTS',
+      'sections': list([
+        'NEED PARTS',
+      ]),
+      'target_id': 'TEST_2',
+      'title': 'TEST_2',
+      'type': 'spec',
+      'type_name': 'Specification',
+    }),
+  })
+# ---

@@ -16,6 +16,11 @@ NEED PARTS
     * :np:`unknown_id_1`
     * :np:`unknown_id_2`
 
+    .. spec:: TEST_2
+        :id: TEST_2
+
+        Part in nested need: :need_part:`(nested_id)something`
+
 
 :need:`SP_TOO_001.1`
 
