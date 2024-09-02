@@ -21,7 +21,7 @@ def test_doc_global_option(test_app):
 
     assert "test_global" in html
     assert "1.27" in html
-    assert "Test output of need GLOBAL_ID" in html
+    assert "Test output of need_func; need: GLOBAL_ID" in html
 
     assert "STATUS_IMPL" in html
     assert "STATUS_UNKNOWN" in html

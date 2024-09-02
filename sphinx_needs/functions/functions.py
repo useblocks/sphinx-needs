@@ -23,6 +23,7 @@ from sphinx_needs.data import NeedsInfoType, NeedsMutable, NeedsView, SphinxNeed
 from sphinx_needs.debug import measure_time_func
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.nodes import Need
+from sphinx_needs.roles.need_func import NeedFunc
 from sphinx_needs.utils import NEEDS_FUNCTIONS, match_variants
 
 logger = get_logger(__name__)
@@ -38,7 +39,7 @@ class DynamicFunction(Protocol):
     def __call__(
         self,
         app: Sphinx,
-        need: NeedsInfoType,
+        need: NeedsInfoType | None,
         needs: NeedsView,
         *args: Any,
         **kwargs: Any,
@@ -76,7 +77,7 @@ def register_func(need_function: DynamicFunction, name: str | None = None) -> No
 
 def execute_func(
     app: Sphinx,
-    need: NeedsInfoType,
+    need: NeedsInfoType | None,
     func_string: str,
     location: str | tuple[str | None, int | None] | nodes.Node | None,
 ) -> str | int | float | list[str] | list[int] | list[float] | None:
@@ -112,13 +113,23 @@ def execute_func(
     func = measure_time_func(
         NEEDS_FUNCTIONS[func_name]["function"], category="dyn_func", source="user"
     )
-    func_return = func(
-        app,
-        need,
-        SphinxNeedsData(app.env).get_needs_view(),
-        *func_args,
-        **func_kwargs,
-    )
+
+    try:
+        func_return = func(
+            app,
+            need,
+            SphinxNeedsData(app.env).get_needs_view(),
+            *func_args,
+            **func_kwargs,
+        )
+    except Exception as e:
+        log_warning(
+            logger,
+            f"Error while executing function {func_name!r}: {e}",
+            "dynamic_function",
+            location=location,
+        )
+        return "??"
 
     if func_return is not None and not isinstance(func_return, (str, int, float, list)):
         log_warning(
@@ -152,10 +163,11 @@ def find_and_replace_node_content(
     if found, check if it contains a function string and run/replace it.
 
     :param node: Node to analyse
-    :return: None
     """
     new_children = []
-    if (
+    if isinstance(node, NeedFunc):
+        return node.get_text(env, need)
+    elif (
         not node.children
         and isinstance(node, nodes.Text)
         or isinstance(node, nodes.reference)
@@ -360,7 +372,10 @@ def resolve_variants_options(
 
 
 def check_and_get_content(
-    content: str, need: NeedsInfoType, env: BuildEnvironment, location: nodes.Node
+    content: str,
+    need: NeedsInfoType | None,
+    env: BuildEnvironment,
+    location: nodes.Node,
 ) -> str:
     """
     Checks if the given content is a function call.
@@ -373,12 +388,6 @@ def check_and_get_content(
     :param location: source location of the function call
     :return: string
     """
-
-    try:
-        content = str(content)
-    except UnicodeEncodeError:
-        content = content.encode("utf-8")  # type: ignore
-
     func_match = func_pattern.search(content)
     if func_match is None:
         return content

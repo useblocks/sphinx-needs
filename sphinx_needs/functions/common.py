@@ -22,7 +22,7 @@ from sphinx_needs.utils import logger
 
 def test(
     app: Sphinx,
-    need: NeedsInfoType,
+    need: NeedsInfoType | None,
     needs: NeedsView,
     *args: Any,
     **kwargs: Any,
@@ -44,12 +44,13 @@ def test(
 
     :return: single test string
     """
-    return f"Test output of need {need['id']}. args: {args}. kwargs: {kwargs}"
+    need_id = "none" if need is None else need["id"]
+    return f"Test output of need_func; need: {need_id}; args: {args}; kwargs: {kwargs}"
 
 
 def echo(
     app: Sphinx,
-    need: NeedsInfoType,
+    need: NeedsInfoType | None,
     needs: NeedsView,
     text: str,
     *args: Any,
@@ -73,7 +74,7 @@ def echo(
 
 def copy(
     app: Sphinx,
-    need: NeedsInfoType,
+    need: NeedsInfoType | None,
     needs: NeedsView,
     option: str,
     need_id: str | None = None,
@@ -171,26 +172,32 @@ def copy(
             NeedsSphinxConfig(app.config),
             filter,
             need,
-            location=(need["docname"], need["lineno"]) if need["docname"] else None,
+            location=(need["docname"], need["lineno"])
+            if need and need["docname"]
+            else None,
         )
         if result:
             need = result[0]
 
+    if need is None:
+        raise ValueError("Need not found")
+
+    if option not in need:
+        raise ValueError(f"Option {option} not found in need {need['id']}")
+
     value = need[option]  # type: ignore[literal-required]
 
-    # TODO check if str?
-
     if lower:
-        return value.lower()
+        return str(value).lower()
     if upper:
-        return value.upper()
+        return str(value).upper()
 
     return value
 
 
 def check_linked_values(
     app: Sphinx,
-    need: NeedsInfoType,
+    need: NeedsInfoType | None,
     needs: NeedsView,
     result: Any,
     search_option: str,
@@ -329,6 +336,9 @@ def check_linked_values(
     :param one_hit: If True, only one linked need must have a positive check
     :return: result, if all checks are positive
     """
+    if need is None:
+        raise ValueError("No need given for check_linked_values")
+
     needs_config = NeedsSphinxConfig(app.config)
     links = need["links"]
     if not isinstance(search_value, list):
@@ -359,7 +369,7 @@ def check_linked_values(
 
 def calc_sum(
     app: Sphinx,
-    need: NeedsInfoType,
+    need: NeedsInfoType | None,
     needs: NeedsView,
     option: str,
     filter: str | None = None,
@@ -444,6 +454,9 @@ def calc_sum(
 
     :return: A float number
     """
+    if need is None:
+        raise ValueError("No need given for check_linked_values")
+
     needs_config = NeedsSphinxConfig(app.config)
     check_needs = (
         [needs[link] for link in need["links"]] if links_only else needs.values()
@@ -471,7 +484,7 @@ def calc_sum(
 
 def links_from_content(
     app: Sphinx,
-    need: NeedsInfoType,
+    need: NeedsInfoType | None,
     needs: NeedsView,
     need_id: str | None = None,
     filter: str | None = None,
@@ -528,6 +541,9 @@ def links_from_content(
     :return: List of linked need-ids in content
     """
     source_need = needs[need_id] if need_id else need
+
+    if source_need is None:
+        raise ValueError("No need found for links_from_content")
 
     links = re.findall(r":need:`(\w+)`|:need:`.+\<(.+)\>`", source_need["content"])
     raw_links = []
