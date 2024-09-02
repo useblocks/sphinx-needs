@@ -22,6 +22,7 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, NeedsMutable, NeedsView, SphinxNeedsData
 from sphinx_needs.debug import measure_time_func
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.nodes import Need
 from sphinx_needs.utils import NEEDS_FUNCTIONS, match_variants
 
 logger = get_logger(__name__)
@@ -203,6 +204,10 @@ def find_and_replace_node_content(
         return node
     else:
         for child in node.children:
+            if isinstance(child, (nodes.literal_block, nodes.literal, Need)):
+                # Do not parse literal blocks or nested needs
+                new_children.append(child)
+                continue
             new_child = find_and_replace_node_content(child, env, need)
             new_children.append(new_child)
         node.children = new_children
