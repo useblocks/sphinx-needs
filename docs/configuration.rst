@@ -1261,7 +1261,7 @@ needs_functions
 
 Used to register own dynamic functions.
 
-Must be a list of python functions.
+Must be a list of :py:class:`.DynamicFunction`.
 
 Default value: ``[]``
 

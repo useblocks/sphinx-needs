@@ -436,7 +436,7 @@ def format_need_nodes(
         find_and_replace_node_content(node_need, env, need_data)
         for index, attribute in enumerate(node_need.attributes["classes"]):
             node_need.attributes["classes"][index] = check_and_get_content(
-                attribute, need_data, env
+                attribute, need_data, env, node_need
             )
 
         rendered_node = build_need_repr(node_need, need_data, app, docname=fromdocname)

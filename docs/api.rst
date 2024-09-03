@@ -20,6 +20,9 @@ Configuration
 .. automodule:: sphinx_needs.api.configuration
    :members:
 
+.. autoclass:: sphinx_needs.functions.functions.DynamicFunction
+   :members: __name__,__call__
+
 Need
 ----
 .. automodule:: sphinx_needs.api.need

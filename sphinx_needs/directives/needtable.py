@@ -244,7 +244,7 @@ def process_needtables(
 
         for need_info in filtered_needs:
             style_row = check_and_get_content(
-                current_needtable["style_row"], need_info, env
+                current_needtable["style_row"], need_info, env, node
             )
             style_row = style_row.replace(
                 " ", "_"

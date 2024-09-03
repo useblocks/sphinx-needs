@@ -1,7 +1,10 @@
+import os
 import re
 from pathlib import Path
 
 import pytest
+from sphinx import version_info
+from sphinx.util.console import strip_colors
 
 
 @pytest.mark.parametrize(
@@ -76,11 +79,35 @@ def test_doc_df_linked_values(test_app):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_df_user_functions"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_df_user_functions",
+            "no_plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_doc_df_user_functions(test_app):
     app = test_app
     app.build()
+
+    warnings = strip_colors(
+        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
+    ).splitlines()
+    # print(warnings)
+    expected = [
+        "srcdir/index.rst:10: WARNING: Return value of function 'bad_function' is of type <class 'object'>. Allowed are str, int, float, list [needs.dynamic_function]",
+        "srcdir/index.rst:14: WARNING: Return value of function 'bad_function' is of type <class 'object'>. Allowed are str, int, float, list [needs.dynamic_function]",
+        "srcdir/index.rst:16: WARNING: Function string 'invalid' could not be parsed: Given dynamic function string is not a valid python call. Got: invalid [needs.dynamic_function]",
+        "srcdir/index.rst:18: WARNING: Unknown function 'unknown' [needs.dynamic_function]",
+    ]
+    if version_info >= (7, 3):
+        warn = "WARNING: cannot cache unpickable configuration value: 'needs_functions' (because it contains a function, class, or module object)"
+        if version_info >= (8, 0):
+            warn += " [config.cache]"
+        expected.insert(0, warn)
+    assert warnings == expected
+
     html = Path(app.outdir, "index.html").read_text()
     assert "Awesome" in html
