@@ -164,6 +164,9 @@ def add_need(
     type_style = ""
     found = False
 
+    # location is used to provide source mapped warnings
+    location = (docname, lineno) if docname else None
+
     # Log messages for need elements that could not be imported.
     configured_need_types = [ntype["directive"] for ntype in types]
     if need_type not in configured_need_types:
@@ -172,7 +175,7 @@ def add_need(
             f"Couldn't create need {id}. Reason: The need-type (i.e. `{need_type}`) is not set "
             "in the project's 'need_types' configuration in conf.py.",
             "add",
-            location=(docname, lineno) if docname else None,
+            location=location,
         )
 
     for ntype in types:
@@ -234,79 +237,26 @@ def add_need(
             "by config value 'needs_statuses'."
         )
 
-    if tags is None:
-        tags = []
-    if len(tags) > 0:
-        # tags should be a string, but it can also be already a list, which can be used.
-        if isinstance(tags, str):
-            tags = [tag.strip() for tag in re.split("[;,]", tags)]
-        new_tags = []  # Shall contain only valid tags
-        for i in range(len(tags)):
-            if len(tags[i]) == 0 or tags[i].isspace():
-                log_warning(
-                    logger,
-                    f"Scruffy tag definition found in need {need_id!r}. "
-                    "Defined tag contains spaces only.",
-                    "add",
-                    location=(docname, lineno) if docname else None,
+    tags = _split_list_with_dyn_funcs(tags, location)
+    # Check if tag is in needs_tags. If not raise an error.
+    if needs_config.tags:
+        for tag in tags:
+            needs_tags = [tag["name"] for tag in needs_config.tags]
+            if tag not in needs_tags:
+                raise NeedsTagNotAllowed(
+                    f"Tag {tag} of need id {need_id} is not allowed "
+                    "by config value 'needs_tags'."
                 )
-            else:
-                new_tags.append(tags[i])
 
-        tags = new_tags
-        # Check if tag is in needs_tags. If not raise an error.
-        if needs_config.tags:
-            for tag in tags:
-                needs_tags = [tag["name"] for tag in needs_config.tags]
-                if tag not in needs_tags:
-                    raise NeedsTagNotAllowed(
-                        f"Tag {tag} of need id {need_id} is not allowed "
-                        "by config value 'needs_tags'."
-                    )
-        # This may have cut also dynamic function strings, as they can contain , as well.
-        # So let put them together again
-        # ToDo: There may be a smart regex for the splitting. This would avoid this mess of code...
-    else:
-        tags = []
-    tags = _fix_list_dyn_func(tags)
-
-    if constraints is None:
-        constraints = []
-    if len(constraints) > 0:
-        # tags should be a string, but it can also be already a list,which can be used.
-        if isinstance(constraints, str):
-            constraints = [
-                constraint.strip() for constraint in re.split("[;,]", constraints)
-            ]
-
-        new_constraints = []  # Shall contain only valid constraints
-        for i in range(len(constraints)):
-            if len(constraints[i]) == 0 or constraints[i].isspace():
-                log_warning(
-                    logger,
-                    f"Scruffy constraint definition found in need {need_id!r}. "
-                    "Defined constraint contains spaces only.",
-                    "add",
-                    location=(docname, lineno) if docname else None,
+    constraints = _split_list_with_dyn_funcs(constraints, location)
+    # Check if constraint is in needs_constraints. If not raise an error.
+    if needs_config.constraints:
+        for constraint in constraints:
+            if constraint not in needs_config.constraints:
+                raise NeedsConstraintNotAllowed(
+                    f"Constraint {constraint} of need id {need_id} is not allowed "
+                    "by config value 'needs_constraints'."
                 )
-            else:
-                new_constraints.append(constraints[i])
-
-        constraints = new_constraints
-        # Check if constraint is in needs_constraints. If not raise an error.
-        if needs_config.constraints:
-            for constraint in constraints:
-                if constraint not in needs_config.constraints.keys():
-                    raise NeedsConstraintNotAllowed(
-                        f"Constraint {constraint} of need id {need_id} is not allowed "
-                        "by config value 'needs_constraints'."
-                    )
-        # This may have cut also dynamic function strings, as they can contain , as well.
-        # So let put them together again
-        # ToDo: There may be a smart regex for the splitting. This would avoid this mess of code...
-    else:
-        constraints = []
-    constraints = _fix_list_dyn_func(constraints)
 
     #############################################################################################
     # Add need to global need list
@@ -325,12 +275,7 @@ def add_need(
                 "from the content, then ensure the first sentence of the "
                 "requirements are different."
             )
-        log_warning(
-            logger,
-            message,
-            "duplicate_id",
-            location=(docname, lineno) if docname else None,
-        )
+        log_warning(logger, message, "duplicate_id", location=location)
         return []
 
     # Trim title if it is too long
@@ -424,10 +369,12 @@ def add_need(
             or len(str(kwargs[link_type["option"]])) == 0
         ):
             # If it is in global option, value got already set during prior handling of them
-            links = _read_in_links(needs_info[link_type["option"]])
+            links = _split_list_with_dyn_funcs(
+                needs_info[link_type["option"]], location
+            )
         else:
             # if it is set in kwargs, take this value and maybe override set value from global_options
-            links = _read_in_links(kwargs[link_type["option"]])
+            links = _split_list_with_dyn_funcs(kwargs[link_type["option"]], location)
 
         needs_info[link_type["option"]] = links
         needs_info["{}_back".format(link_type["option"])] = []
@@ -697,34 +644,6 @@ def _prepare_template(app: Sphinx, needs_info: NeedsInfoType, template_key: str)
     return new_content
 
 
-def _read_in_links(links_string: None | str | list[str]) -> list[str]:
-    # Get links
-    links = []
-    if links_string:
-        # Check if links_string is really a string, otherwise it will be a list, which can be used
-        # without modifications
-        if isinstance(links_string, str):
-            link_list = re.split(";|,", links_string)
-        else:
-            link_list = links_string
-        for link in link_list:
-            if link.isspace():
-                log_warning(
-                    logger,
-                    f"Grubby link definition found in need {id}. "
-                    "Defined link contains spaces only.",
-                    None,
-                    None,
-                )
-            else:
-                links.append(link.strip())
-
-        # This may have cut also dynamic function strings, as they can contain , as well.
-        # So let put them together again
-        # ToDo: There may be a smart regex for the splitting. This would avoid this mess of code...
-    return _fix_list_dyn_func(links)
-
-
 def make_hashed_id(
     app: Sphinx,
     need_type: str,
@@ -770,48 +689,56 @@ def make_hashed_id(
     return f"{type_prefix}{cal_hashed_id[:id_length]}"
 
 
-def _fix_list_dyn_func(list: list[str]) -> list[str]:
+def _split_list_with_dyn_funcs(
+    text: None | str | list[str], location: tuple[str, int | None] | None
+) -> list[str]:
+    """Split a ``;|,`` delimited string that may contain ``[[...]]`` dynamic functions.
+
+    Remove any empty strings from the result.
+
+    If the input is a list of strings, return the list unchanged,
+    or if the input is None, return an empty list.
     """
-    This searches a list for dynamic function fragments, which may have been cut by generic searches for ",|;".
+    if text is None:
+        return []
 
-    Example:
-    `link_a, [[copy('links', need_id)]]` this will be splitted in list of 3 parts:
+    if not isinstance(text, str):
+        assert isinstance(text, list) and all(
+            isinstance(x, str) for x in text
+        ), "text must be a string or a list of strings"
+        return text
 
-    #. link_a
-    #. [[copy('links'
-    #. need_id)]]
-
-    This function fixes the above list to the following:
-
-    #. link_a
-    #. [[copy('links', need_id)]]
-
-    :param list: list which may contain splitted function calls
-    :return: list of fixed elements
-    """
-    open_func_string = False
-    new_list = []
-    for element in list:
-        # If dyn_func got not cut, just add it
-        if "[[" in element and "]]" in element:
-            new_list.append(element)
-        # Other check if this is the starting element of dyn function
-        elif "[[" in element:
-            open_func_string = True
-            new_link = [element]
-        # Check if this is the ending element if dyn function
-        elif "]]" in element:
-            new_link.append(element)
-            open_func_string = False
-            element = ",".join(new_link)
-            new_list.append(element)
-        # Check it is a "middle" part of the dyn function
-        elif open_func_string:
-            new_link.append(element)
-        # Looks like it isn't a cut dyn_func, just add.
+    result: list[str] = []
+    _current_element = ""
+    while text:
+        if text.startswith("[["):
+            _current_element += text[:2]
+            text = text[2:]
+            while text and not text.startswith("]]"):
+                _current_element += text[0]
+                text = text[1:]
+            if _current_element.endswith("]"):
+                _current_element += "]"
+            else:
+                _current_element += "]]"
+            if not text.startswith("]]"):
+                log_warning(
+                    logger,
+                    f"Dynamic function not closed correctly: {text}",
+                    None,
+                    location=location,
+                )
+            text = text[2:]
+        elif text[0] in ";|,":
+            result.append(_current_element)
+            _current_element = ""
+            text = text[1:]
         else:
-            new_list.append(element)
-    return new_list
+            _current_element += text[0]
+            text = text[1:]
+    result.append(_current_element)
+    result = [element.strip() for element in result if element.strip()]
+    return result
 
 
 def _merge_extra_options(
