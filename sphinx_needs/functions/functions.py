@@ -128,11 +128,11 @@ def execute_func(
         )
         return "??"
     if isinstance(func_return, list):
-        for element in func_return:
+        for i, element in enumerate(func_return):
             if not isinstance(element, (str, int, float)):
                 log_warning(
                     logger,
-                    f"Return value of function {func_name!r} is of type {type(func_return)}. Allowed are str, int, float, list",
+                    f"Return value item {i} of function {func_name!r} is of type {type(element)}. Allowed are str, int, float",
                     "dynamic_function",
                     location=location,
                 )
