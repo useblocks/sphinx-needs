@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1725033830832,
+  "lastUpdate": 1725361835797,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -9396,6 +9396,42 @@ window.BENCHMARK_DATA = {
             "value": 67.67237287499998,
             "unit": "s",
             "extra": "Commit: 32fd0b51e22d06604eaaea77eae2825676dd73f5\nBranch: master\nTime: 2024-08-30T18:01:55+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3916cb7678b59f643c093bc7a134bf2a55a9d2c7",
+          "message": "🔧 Improve typing/docs of `DynamicFunction` (#1262)",
+          "timestamp": "2024-09-03T13:08:34+02:00",
+          "tree_id": "86cf54ff46b4c22039eb38138fc95addba24a146",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/3916cb7678b59f643c093bc7a134bf2a55a9d2c7"
+        },
+        "date": 1725361826829,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18938606500000787,
+            "unit": "s",
+            "extra": "Commit: 3916cb7678b59f643c093bc7a134bf2a55a9d2c7\nBranch: master\nTime: 2024-09-03T13:08:34+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.11636615700002,
+            "unit": "s",
+            "extra": "Commit: 3916cb7678b59f643c093bc7a134bf2a55a9d2c7\nBranch: master\nTime: 2024-09-03T13:08:34+02:00"
           }
         ]
       }
