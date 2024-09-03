@@ -255,6 +255,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
     )
 
     app.add_role("need_func", NeedFuncRole())
+    app.add_role("ndf", NeedFuncRole(no_braces=True))
 
     ########################################################################
     # EVENTS

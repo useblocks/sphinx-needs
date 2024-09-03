@@ -26,12 +26,14 @@ def test_doc_dynamic_functions(test_app):
         app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
     ).splitlines()
     assert warnings == [
-        "srcdir/index.rst:40: WARNING: Error while executing function 'copy': Need not found [needs.dynamic_function]"
+        "srcdir/index.rst:44: WARNING: Error while executing function 'copy': Need not found [needs.dynamic_function]",
+        "srcdir/index.rst:44: WARNING: Error while executing function 'copy': Need not found [needs.dynamic_function]",
     ]
 
     html = Path(app.outdir, "index.html").read_text()
     assert "This is id SP_TOO_001" in html
     assert "This is also id SP_TOO_001" in html
+    assert "This is the best id SP_TOO_001" in html
 
     assert (
         sum(1 for _ in re.finditer('<span class="needs_data">test2</span>', html)) == 2
@@ -67,6 +69,7 @@ def test_doc_dynamic_functions(test_app):
 
     assert "nested id TEST_6" in html
     assert "nested id also TEST_6" in html
+    assert "nested id best TEST_6" in html
 
 
 @pytest.mark.parametrize(

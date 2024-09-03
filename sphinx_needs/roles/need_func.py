@@ -19,10 +19,21 @@ log = get_logger(__name__)
 class NeedFuncRole(SphinxRole):
     """Role for creating ``NeedFunc`` node."""
 
+    def __init__(self, no_braces: bool = False) -> None:
+        """Initialize the role.
+
+        :param no_braces: If True, the function should not be wrapped ``[[]]``.
+        """
+        self.no_braces = no_braces
+        super().__init__()
+
     def run(self) -> tuple[list[nodes.Node], list[nodes.system_message]]:
         add_doc(self.env, self.env.docname)
         node = NeedFunc(
-            self.rawtext, nodes.literal(self.rawtext, self.text), **self.options
+            self.rawtext,
+            nodes.literal(self.rawtext, self.text),
+            no_braces=self.no_braces,
+            **self.options,
         )
         self.set_source_info(node)
         return [node], []
@@ -31,7 +42,14 @@ class NeedFuncRole(SphinxRole):
 class NeedFunc(nodes.Inline, nodes.Element):
     def get_text(self, env: BuildEnvironment, need: NeedsInfoType | None) -> nodes.Text:
         """Execute function and return result."""
-        from sphinx_needs.functions.functions import check_and_get_content
+        from sphinx_needs.functions.functions import check_and_get_content, execute_func
+
+        if self.get("no_braces"):
+            func_return = execute_func(env.app, need, self.astext(), self)
+            if isinstance(func_return, list):
+                func_return = ", ".join(str(el) for el in func_return)
+
+            return nodes.Text("" if func_return is None else str(func_return))
 
         result = check_and_get_content(self.astext(), need, env, self)
         return nodes.Text(str(result))
