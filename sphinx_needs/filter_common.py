@@ -20,6 +20,7 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import (
     NeedsFilteredBaseType,
     NeedsInfoType,
+    NeedsPartsView,
     NeedsView,
     SphinxNeedsData,
 )
@@ -134,9 +135,7 @@ def process_filters(
 
     # Check if external filter code is defined
     try:
-        filter_func_sig = check_and_get_external_filter_func(
-            filter_data.get("filter_func")
-        )
+        ff_result = check_and_get_external_filter_func(filter_data.get("filter_func"))
     except NeedsInvalidFilter as e:
         log_warning(
             log,
@@ -151,7 +150,7 @@ def process_filters(
     if not filter_code and filter_data["filter_code"]:
         filter_code = "\n".join(filter_data["filter_code"])
 
-    if (not filter_code or filter_code.isspace()) and not filter_func_sig:
+    if (not filter_code or filter_code.isspace()) and not ff_result:
         if bool(filter_data["status"] or filter_data["tags"] or filter_data["types"]):
             found_needs_by_options: list[NeedsInfoType] = []
             for need_info in all_needs_incl_parts:
@@ -202,35 +201,36 @@ def process_filters(
                 location=location,
             )
     else:
-        # Provides only a copy of needs to avoid data manipulations.
-        context: dict[str, Any] = {
-            "needs": all_needs_incl_parts,
-            "results": [],
-        }
+        # The filter results may be dirty, as it may continue manipulated needs.
+        found_dirty_needs: list[NeedsInfoType] = []
 
         if filter_code:  # code from content
+            # TODO better context type
+            context: dict[str, list[NeedsInfoType]] = {
+                "needs": all_needs_incl_parts,  # type: ignore[dict-item]
+                "results": [],
+            }
             exec(filter_code, context)
-        elif filter_func_sig:  # code from external file
+            found_dirty_needs = context["results"]
+        elif ff_result:  # code from external file
             args = []
-            if filter_func_sig.args:
-                args = filter_func_sig.args.split(",")
-            for index, arg in enumerate(args):
-                # All args are strings, but we must transform them to requested type, e.g. 1 -> int, "1" -> str
-                context[f"arg{index+1}"] = arg
+            if ff_result.args:
+                args = ff_result.args.split(",")
+            args_context = {f"arg{index+1}": arg for index, arg in enumerate(args)}
 
             # Decorate function to allow time measurments
             filter_func = measure_time_func(
-                filter_func_sig.func, category="filter_func", source="user"
+                ff_result.func, category="filter_func", source="user"
             )
-            filter_func(**context)
+            filter_func(
+                needs=all_needs_incl_parts, results=found_dirty_needs, **args_context
+            )
         else:
             log_warning(
                 log, "Something went wrong running filter", None, location=location
             )
             return []
 
-        # The filter results may be dirty, as it may continue manipulated needs.
-        found_dirty_needs: list[NeedsInfoType] = context["results"]
         found_needs = []
 
         # Check if config allow unsafe filters
@@ -277,15 +277,17 @@ def process_filters(
     return found_needs
 
 
-def expand_needs_view(needs_view: NeedsView) -> list[NeedsInfoType]:
-    """Turns a needs view into a list of needs, expanding all need["parts"] to be items of the list."""
-    all_needs_incl_parts: list[NeedsInfoType] = []
+def expand_needs_view(needs_view: NeedsView) -> NeedsPartsView:
+    """Turns a needs view into a sequence of needs,
+    expanding all ``need["parts"]`` to be items of the list.
+    """
+    all_needs_incl_parts = []
     for need in needs_view.values():
         all_needs_incl_parts.append(need)
         for need_part in iter_need_parts(need):
             all_needs_incl_parts.append(need_part)
 
-    return all_needs_incl_parts
+    return NeedsPartsView(all_needs_incl_parts)
 
 
 T = TypeVar("T")
@@ -295,19 +297,16 @@ def intersection_of_need_results(list_a: list[T], list_b: list[T]) -> list[T]:
     return [a for a in list_a if a in list_b]
 
 
-V = TypeVar("V", bound=NeedsInfoType)
-
-
 @measure_time("filtering")
 def filter_needs(
-    needs: Iterable[V],
+    needs: Iterable[NeedsInfoType],
     config: NeedsSphinxConfig,
     filter_string: None | str = "",
     current_need: NeedsInfoType | None = None,
     *,
     location: tuple[str, int | None] | nodes.Node | None = None,
     append_warning: str = "",
-) -> list[V]:
+) -> list[NeedsInfoType]:
     """
     Filters given needs based on a given filter string.
     Returns all needs, which pass the given filter.
