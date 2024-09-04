@@ -20,6 +20,7 @@ from sphinx.util.nodes import make_refnode
 
 from sphinx_needs.data import NeedsInfoType
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.nodes import Need
 
 log = get_logger(__name__)
 
@@ -121,6 +122,6 @@ def find_parts(node: nodes.Node) -> list[NeedPart]:
     for child in node.children:
         if isinstance(child, NeedPart):
             found_nodes.append(child)
-        else:
+        elif not isinstance(child, Need):  # parts in nested needs should be ignored
             found_nodes += find_parts(child)
     return found_nodes

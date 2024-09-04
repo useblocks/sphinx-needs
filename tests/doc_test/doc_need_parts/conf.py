@@ -30,3 +30,6 @@ needs_types = [
         "style": "node",
     },
 ]
+
+needs_build_json = True
+needs_json_remove_defaults = True
