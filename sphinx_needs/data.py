@@ -4,7 +4,17 @@ which is stored in the Sphinx environment.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Final, Literal, Mapping, NewType, TypedDict
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Final,
+    Literal,
+    Mapping,
+    NewType,
+    Sequence,
+    TypedDict,
+)
 
 from sphinx.util.logging import getLogger
 
@@ -683,6 +693,14 @@ NeedsMutable = NewType("NeedsMutable", Dict[str, NeedsInfoType])
 NeedsView = NewType("NeedsView", Mapping[str, NeedsInfoType])
 """A read-only view of the needs, after resolution
 (e.g. back links have been computed etc)
+"""
+
+NeedsPartsView = NewType("NeedsPartsView", Sequence[NeedsInfoType])
+"""A read-only view of a sequence of needs and parts,
+after resolution (e.g. back links have been computed etc)
+
+The parts are created by creating a copy of the need for each item in ``parts``,
+and then overwriting a subset of fields with the values from the part.
 """
 
 

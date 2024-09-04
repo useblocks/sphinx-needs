@@ -7,7 +7,7 @@ import os
 import re
 from dataclasses import dataclass
 from functools import lru_cache, reduce, wraps
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Protocol, TypeVar
 from urllib.parse import urlparse
 
 from docutils import nodes
@@ -16,7 +16,7 @@ from sphinx.application import BuildEnvironment, Sphinx
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, NeedsView, SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType, NeedsPartsView, NeedsView, SphinxNeedsData
 from sphinx_needs.defaults import NEEDS_PROFILING
 from sphinx_needs.logging import get_logger, log_warning
 
@@ -310,19 +310,29 @@ def check_and_calc_base_url_rel_path(external_url: str, fromdocname: str) -> str
     return ref_uri
 
 
+class FilterFunc(Protocol):
+    def __call__(
+        self,
+        *,
+        needs: NeedsPartsView,
+        results: list[Any],
+        **kwargs: str,
+    ) -> None: ...
+
+
 @dataclass
-class FilterFunc:
+class FilterFuncResult:
     """Dataclass for filter function."""
 
     sig: str
-    func: Callable[..., Any]
+    func: FilterFunc
     args: str
 
 
 @lru_cache(maxsize=32)
 def check_and_get_external_filter_func(
     filter_func_ref: str | None,
-) -> FilterFunc | None:
+) -> FilterFuncResult | None:
     """Check and import filter function from external python file."""
     if not filter_func_ref:
         return None
@@ -348,7 +358,7 @@ def check_and_get_external_filter_func(
     except Exception:
         raise NeedsInvalidFilter(f"module does not have function: {filter_function}")
 
-    return FilterFunc(filter_func_ref, filter_func, filter_args)
+    return FilterFuncResult(filter_func_ref, filter_func, filter_args)
 
 
 def jinja_parse(context: dict[str, Any], jinja_string: str) -> str:
