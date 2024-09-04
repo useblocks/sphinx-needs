@@ -15,7 +15,7 @@ from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link
 from sphinx_needs.directives.needflow._plantuml import make_entity_name
-from sphinx_needs.filter_common import filter_needs
+from sphinx_needs.filter_common import filter_needs_view
 from sphinx_needs.utils import add_doc
 
 if TYPE_CHECKING:
@@ -423,9 +423,7 @@ class JinjaFunctions:
         """
         needs_config = NeedsSphinxConfig(self.app.config)
 
-        return filter_needs(
-            list(self.needs.values()), needs_config, filter_string=filter_string
-        )
+        return filter_needs_view(self.needs, needs_config, filter_string=filter_string)
 
     def imports(self, *args: str) -> str:
         if not self.parent_need_id:

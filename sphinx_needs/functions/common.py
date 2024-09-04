@@ -15,7 +15,10 @@ from sphinx.application import Sphinx
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, NeedsView
-from sphinx_needs.filter_common import filter_needs, filter_single_need
+from sphinx_needs.filter_common import (
+    filter_needs_view,
+    filter_single_need,
+)
 from sphinx_needs.logging import log_warning
 from sphinx_needs.utils import logger
 
@@ -167,8 +170,8 @@ def copy(
         need = needs[need_id]
 
     if filter:
-        result = filter_needs(
-            needs.values(),
+        result = filter_needs_view(
+            needs,
             NeedsSphinxConfig(app.config),
             filter,
             need,

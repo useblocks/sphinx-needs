@@ -9,8 +9,8 @@ from sphinx.application import Sphinx
 from sphinx.util import logging
 
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
-from sphinx_needs.filter_common import filter_needs
+from sphinx_needs.data import NeedsView, SphinxNeedsData
+from sphinx_needs.filter_common import filter_needs_view
 from sphinx_needs.logging import get_logger, log_warning
 
 logger = get_logger(__name__)
@@ -33,9 +33,9 @@ def process_warnings(app: Sphinx, exception: Exception | None) -> None:
         return
 
     env = app.env
-    needs = SphinxNeedsData(env).get_needs_view()
+    needs_view = SphinxNeedsData(env).get_needs_view()
     # If no needs were defined, we do not need to do anything
-    if not needs:
+    if not needs_view:
         return
 
     # Check if warnings already got executed.
@@ -47,10 +47,9 @@ def process_warnings(app: Sphinx, exception: Exception | None) -> None:
     env.needs_warnings_executed = True  # type: ignore[attr-defined]
 
     # Exclude external needs for warnings check
-    checked_needs: dict[str, NeedsInfoType] = {}
-    for need_id, need in needs.items():
-        if not need["is_external"]:
-            checked_needs[need_id] = need
+    needs_view = NeedsView(
+        {id: need for id, need in needs_view.items() if not need["is_external"]}
+    )
 
     needs_config = NeedsSphinxConfig(app.config)
     warnings_always_warn = needs_config.warnings_always_warn
@@ -61,8 +60,8 @@ def process_warnings(app: Sphinx, exception: Exception | None) -> None:
         for warning_name, warning_filter in NEEDS_CONFIG.warnings.items():
             if isinstance(warning_filter, str):
                 # filter string used
-                result = filter_needs(
-                    checked_needs.values(),
+                result = filter_needs_view(
+                    needs_view,
                     needs_config,
                     warning_filter,
                     append_warning=f"(from warning filter {warning_name!r})",
@@ -70,7 +69,7 @@ def process_warnings(app: Sphinx, exception: Exception | None) -> None:
             elif callable(warning_filter):
                 # custom defined filter code used from conf.py
                 result = []
-                for need in checked_needs.values():
+                for need in needs_view.values():
                     if warning_filter(need, logger):
                         result.append(need)
             else:
