@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1725453464863,
+  "lastUpdate": 1725453577669,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -9468,6 +9468,42 @@ window.BENCHMARK_DATA = {
             "value": 69.35386429700003,
             "unit": "s",
             "extra": "Commit: b0d8e6c753fe4ebb20d3b0cf9007e7173ee9bdb0\nBranch: master\nTime: 2024-09-04T14:35:43+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7966453b963ff1a189892a4877d66da4aa6d0e02",
+          "message": "🐛 FIX disallow dynamic functions `[[..]]` in literal content (#1263)\n\nThis commit addresses issues with (unescapable) dynamic functions in code blocks,\r\nand scoping of dynamic functions in nested needs, by skipping these child nodes",
+          "timestamp": "2024-09-04T14:37:23+02:00",
+          "tree_id": "849fd87915ae5737817017490b7edc1330f1f32d",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/7966453b963ff1a189892a4877d66da4aa6d0e02"
+        },
+        "date": 1725453569578,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.35314582400002337,
+            "unit": "s",
+            "extra": "Commit: 7966453b963ff1a189892a4877d66da4aa6d0e02\nBranch: master\nTime: 2024-09-04T14:37:23+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 75.64539169800003,
+            "unit": "s",
+            "extra": "Commit: 7966453b963ff1a189892a4877d66da4aa6d0e02\nBranch: master\nTime: 2024-09-04T14:37:23+02:00"
           }
         ]
       }
