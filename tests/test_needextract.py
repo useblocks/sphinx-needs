@@ -2,37 +2,24 @@ import os.path
 from pathlib import Path
 
 import pytest
+from lxml import html as html_parser
 
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_needextract"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_needextract",
+            "no_plantuml": True,
+        }
+    ],
     indirect=True,
 )
-def test_needextract_filter_options(test_app):
-    import subprocess
-
-    app = test_app
-
-    srcdir = Path(app.srcdir)
-    out_dir = srcdir / "_build"
-
-    out = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
-    )
-    assert out.returncode == 0
-
-
-@pytest.mark.parametrize(
-    "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_needextract"}],
-    indirect=True,
-)
-def test_needextract_basic_run(test_app):
+def test_needextract_basic(test_app):
     app = test_app
     app.build()
-
-    from lxml import html as html_parser
+    assert not app._warning.getvalue()
 
     def run_checks(checks, html_path):
         html_path = str(Path(app.outdir, html_path))
@@ -66,3 +53,45 @@ def test_needextract_basic_run(test_app):
 
     index_html = Path(app.outdir, "check_need_refs.html").read_text()
     assert "Awesome Sphinx-Needs" in index_html
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/needextract_with_nested_needs",
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+def test_needextract_with_nested_needs(test_app):
+    app = test_app
+    app.build()
+    assert not app._warning.getvalue()
+
+    needextract_html = Path(app.outdir, "needextract.html").read_text()
+
+    # ensure that the needs exist and that their hrefs point to the correct location
+    assert (
+        '<span class="needs-id"><a class="reference internal" href="index.html#SPEC_1" title="SPEC_1">SPEC_1</a>'
+        in needextract_html
+    )
+    assert (
+        '<span class="needs-id"><a class="reference internal" href="index.html#SPEC_1_1" title="SPEC_1_1">SPEC_1_1</a>'
+        in needextract_html
+    )
+    assert (
+        '<span class="needs-id"><a class="reference internal" '
+        'href="index.html#SPEC_1_1_1" title="SPEC_1_1_1">SPEC_1_1_1</a>'
+        in needextract_html
+    )
+    assert (
+        '<span class="needs-id"><a class="reference internal" '
+        'href="index.html#SPEC_1_1_2" title="SPEC_1_1_2">SPEC_1_1_2</a>'
+        in needextract_html
+    )
+
+    assert "This is id SPEC_1" in needextract_html
+    assert "This is grandchild id SPEC_1_1_2" in needextract_html
