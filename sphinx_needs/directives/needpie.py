@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-from typing import Any, Iterable, Sequence
+from typing import Iterable, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -171,7 +171,7 @@ def process_needpie(
         elif current_needpie["filter_func"] and not content:
             # check and get filter_func
             try:
-                filter_func_sig = check_and_get_external_filter_func(
+                ff_result = check_and_get_external_filter_func(
                     current_needpie.get("filter_func")
                 )
             except NeedsInvalidFilter as e:
@@ -185,30 +185,23 @@ def process_needpie(
                 continue
 
             # execute filter_func code
-            if filter_func_sig:
-                # Provides only a copy of needs to avoid data manipulations.
-                context: dict[str, Any] = {
-                    "needs": need_list,
-                    "results": [],
-                }
-                args = filter_func_sig.args.split(",") if filter_func_sig.args else []
-                for index, arg in enumerate(args):
-                    # All rgs are strings, but we must transform them to requested type, e.g. 1 -> int, "1" -> str
-                    context[f"arg{index + 1}"] = arg
+            if ff_result:
+                args = ff_result.args.split(",") if ff_result.args else []
+                args_context = {f"arg{index+1}": arg for index, arg in enumerate(args)}
 
-                filter_func_sig.func(**context)
+                sizes = []
+                ff_result.func(needs=need_list, results=sizes, **args_context)
 
-                sizes = context["results"]
                 # check items in sizes
                 if not isinstance(sizes, list):
                     logger.error(
-                        f"The returned values from the given filter_func {filter_func_sig.sig!r} is not valid."
+                        f"The returned values from the given filter_func {ff_result.sig!r} is not valid."
                         " It must be a list."
                     )
                 for item in sizes:
                     if not isinstance(item, int) and not isinstance(item, float):
                         logger.error(
-                            f"The returned values from the given filter_func {filter_func_sig.sig!r} is not valid. "
+                            f"The returned values from the given filter_func {ff_result.sig!r} is not valid. "
                             "It must be a list with items of type int/float."
                         )
 
