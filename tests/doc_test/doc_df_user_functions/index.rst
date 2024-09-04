@@ -16,3 +16,8 @@ DYNAMIC FUNCTIONS
     [[invalid]]
 
     [[unknown()]]
+
+    .. code-block:: toml
+
+        # this should not be a func 
+        [[something]]

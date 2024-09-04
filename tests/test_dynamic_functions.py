@@ -9,12 +9,24 @@ from sphinx.util.console import strip_colors
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_dynamic_functions"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_dynamic_functions",
+            "no_plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_doc_dynamic_functions(test_app):
     app = test_app
     app.build()
+
+    warnings = strip_colors(
+        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
+    ).splitlines()
+    assert warnings == []
+
     html = Path(app.outdir, "index.html").read_text()
     assert "This is id SP_TOO_001" in html
 
@@ -47,6 +59,8 @@ def test_doc_dynamic_functions(test_app):
     assert "Test output of need TEST_3. args:" in html
 
     assert '<a class="reference external" href="http://www.TEST_5">link</a>' in html
+
+    assert "nested id TEST_6" in html
 
 
 @pytest.mark.parametrize(

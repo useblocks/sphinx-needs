@@ -25,3 +25,8 @@ DYNAMIC FUNCTIONS
     :tags: [[copy('id')]]
 
     Test a `link <http://www.[[copy('id')]]>`_
+
+    .. spec:: TEST_6
+        :id: TEST_6
+
+        nested id [[copy('id')]]
