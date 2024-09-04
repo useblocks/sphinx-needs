@@ -125,7 +125,7 @@ The filter string must be a valid Python expression:
 
 A filter string gets evaluated on needs and need_parts!
 A need_part inherits all options from its parent need, if the need_part has no own content for this option.
-E.g. the need_part *title* is kept, but the *status* attribute is taken from its parent need.
+E.g. the need_part *content* is kept, but the *status* attribute is taken from its parent need.
 
 .. note::
 
@@ -172,11 +172,10 @@ Additional variables for :ref:`need_part`:
 .. note:: If extra options were specified using :ref:`needs_extra_options` then
           those will be available for use in filter expressions as well.
 
-
 Finally, the following are available:
 
 * :ref:`re_search`, as Python function for performing searches with a regular expression
-* **needs** as :class:`.NeedsPartsView` object, which contains all needs and need_parts.
+* **needs** as :class:`.NeedsAndPartsListView` object, which contains all needs and need_parts.
 
 If your expression is valid and it's True, the related need is added to the filter result list.
 If it is invalid or returns False, the related need is not taken into account for the current filter.
@@ -265,6 +264,8 @@ with the help of Python.
 
 The used code must define a variable ``results``, which must be a list and contains the filtered needs.
 
+The code also has access to a variable called ``needs``, which is a :class:`.NeedsAndPartsListView` instance.
+
 .. need-example::
 
    .. needtable::
@@ -275,18 +276,15 @@ The used code must define a variable ``results``, which must be a list and conta
       # which are linked to each other.
 
       results = []
-      # Lets create a needs_dict to address needs by ids more easily.
-      needs_dict = {x['id']: x for x in needs}
 
-      for need in needs:
-         if need['type'] == 'req':
-            for links_id in need['links']:
-               if needs_dict[links_id]['type'] == 'spec':
-                  results.append(need)
-                  results.append(needs_dict[links_id])
-
-The code has access to a variable called ``needs``, which contains a copy of all needs.
-So manipulations on the values in ``needs`` do not have any affects.
+      # Lets create a map view to address needs by ids more easily
+      needs_view = needs.to_map_view()
+      
+      for need in needs_view.filter_types(["req"]).to_list_with_parts():
+         for links_id in need['links']:
+            if needs_view[links_id]['type'] == 'spec':
+               results.append(need)
+               results.append(needs_view[links_id])
 
 This mechanism can also be a good alternative for complex filter strings to save performance.
 For example if a filter string is using list comprehensions to get access to linked needs.

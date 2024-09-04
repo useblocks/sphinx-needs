@@ -38,4 +38,12 @@ Data
 ----
 
 .. automodule:: sphinx_needs.data
-   :members: NeedsInfoType, NeedsView, NeedsPartsView
+   :members: NeedsInfoType
+
+Views
+-----
+
+.. automodule:: sphinx_needs.views
+   :members:
+   :undoc-members:
+   :special-members: __iter__, __getitem__, __len__

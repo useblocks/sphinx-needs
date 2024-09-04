@@ -19,12 +19,13 @@ from sphinx.errors import SphinxError
 from sphinx.util.tags import Tags
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, NeedsMutable, NeedsView, SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType, NeedsMutable, SphinxNeedsData
 from sphinx_needs.debug import measure_time_func
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_func import NeedFunc
 from sphinx_needs.utils import NEEDS_FUNCTIONS, match_variants
+from sphinx_needs.views import NeedsView
 
 logger = get_logger(__name__)
 unicode = str

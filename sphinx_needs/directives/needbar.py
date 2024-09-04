@@ -10,11 +10,7 @@ from sphinx.application import Sphinx
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsBarType, SphinxNeedsData
-from sphinx_needs.filter_common import (
-    FilterBase,
-    expand_needs_view,
-    filter_needs_parts,
-)
+from sphinx_needs.filter_common import FilterBase, filter_needs_parts
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import (
     add_doc,
@@ -296,7 +292,7 @@ def process_needbar(
         # 5. process content
         local_data_number = []
         # adds parts to need_list
-        need_list = expand_needs_view(needs_data.get_needs_view())
+        need_list = needs_data.get_needs_view().to_list_with_parts()
 
         for line in local_data:
             line_number = []

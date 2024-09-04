@@ -12,13 +12,13 @@ from typing import (
     Literal,
     Mapping,
     NewType,
-    Sequence,
     TypedDict,
 )
 
 from sphinx.util.logging import getLogger
 
 from sphinx_needs.logging import log_warning
+from sphinx_needs.views import NeedsView
 
 if TYPE_CHECKING:
     from docutils.nodes import Text
@@ -690,19 +690,6 @@ NeedsMutable = NewType("NeedsMutable", Dict[str, NeedsInfoType])
 """A mutable view of the needs, before resolution
 """
 
-NeedsView = NewType("NeedsView", Mapping[str, NeedsInfoType])
-"""A read-only view of the needs, after resolution
-(e.g. back links have been computed etc)
-"""
-
-NeedsPartsView = NewType("NeedsPartsView", Sequence[NeedsInfoType])
-"""A read-only view of a sequence of needs and parts,
-after resolution (e.g. back links have been computed etc)
-
-The parts are created by creating a copy of the need for each item in ``parts``,
-and then overwriting a subset of fields with the values from the part.
-"""
-
 
 class SphinxNeedsData:
     """Centralised access to sphinx-needs data, stored within the Sphinx environment."""
@@ -771,7 +758,11 @@ class SphinxNeedsData:
             after the needs have been fully collected
             and resolved (e.g. back links have been computed etc)
         """
-        return self._env_needs  # type: ignore[return-value]
+        try:
+            return self.env._needs_view
+        except AttributeError:
+            self.env._needs_view = NeedsView(_needs=self._env_needs)
+        return self.env._needs_view
 
     @property
     def has_export_filters(self) -> bool:

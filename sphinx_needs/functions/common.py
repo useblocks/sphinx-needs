@@ -14,13 +14,14 @@ from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, NeedsView
+from sphinx_needs.data import NeedsInfoType
 from sphinx_needs.filter_common import (
     filter_needs_view,
     filter_single_need,
 )
 from sphinx_needs.logging import log_warning
 from sphinx_needs.utils import logger
+from sphinx_needs.views import NeedsView
 
 
 def test(

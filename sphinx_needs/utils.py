@@ -17,9 +17,10 @@ from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, NeedsPartsView, NeedsView, SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.defaults import NEEDS_PROFILING
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.views import NeedsAndPartsListView, NeedsView
 
 try:
     from typing import TypedDict
@@ -315,7 +316,7 @@ class FilterFunc(Protocol):
     def __call__(
         self,
         *,
-        needs: NeedsPartsView,
+        needs: NeedsAndPartsListView,
         results: list[Any],
         **kwargs: str,
     ) -> None: ...
