@@ -9,8 +9,6 @@ from sphinx.builders import Builder
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
-from sphinx_needs.directives.need import post_process_needs_data
-from sphinx_needs.filter_common import filter_needs_view
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.needsfile import NeedsList
 
@@ -58,9 +56,10 @@ class NeedsBuilder(Builder):
         return super().write(build_docnames, updated_docnames, method)
 
     def finish(self) -> None:
-        post_process_needs_data(self.app)
+        from sphinx_needs.filter_common import filter_needs_view
 
         data = SphinxNeedsData(self.env)
+        needs = data.get_needs_view()
         needs_config = NeedsSphinxConfig(self.env.config)
         filters = data.get_or_create_filters()
         version = getattr(self.env.config, "version", "unset")
@@ -84,7 +83,7 @@ class NeedsBuilder(Builder):
 
         filter_string = needs_config.builder_filter
         filtered_needs = filter_needs_view(
-            data.get_needs_view(),
+            needs,
             needs_config,
             filter_string,
             append_warning="(from need_builder_filter)",
@@ -173,7 +172,7 @@ class NeedsIdBuilder(Builder):
         pass
 
     def finish(self) -> None:
-        post_process_needs_data(self.app)
+        from sphinx_needs.filter_common import filter_needs_view
 
         data = SphinxNeedsData(self.env)
         version = getattr(self.env.config, "version", "unset")

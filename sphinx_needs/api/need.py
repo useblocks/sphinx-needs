@@ -24,7 +24,7 @@ from sphinx_needs.api.exceptions import (
     NeedsTemplateException,
 )
 from sphinx_needs.config import NEEDS_CONFIG, GlobalOptionsType, NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType, NeedsView, SphinxNeedsData
 from sphinx_needs.directives.needuml import Needuml, NeedumlException
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import get_logger, log_warning
@@ -805,3 +805,15 @@ def _merge_global_options(
                 # has at least the key.
                 if key not in needs_info.keys():
                     needs_info[key] = ""
+
+
+def get_needs_view(app: Sphinx) -> NeedsView:
+    """Return a read-only view of all resolved needs.
+
+    .. important:: this should only be called within the write phase,
+        after the needs have been fully collected.
+        If not already done, this will ensure all needs are resolved
+        (e.g. back links have been computed etc),
+        and then lock the data to prevent further modification.
+    """
+    return SphinxNeedsData(app.env).get_needs_view()
