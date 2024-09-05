@@ -18,6 +18,7 @@ from sphinx_needs.directives.utils import (
     used_filter_paragraph,
 )
 from sphinx_needs.filter_common import FilterBase, process_filters
+from sphinx_needs.functions.functions import find_and_replace_node_content
 from sphinx_needs.layout import build_need_repr
 from sphinx_needs.logging import log_warning
 from sphinx_needs.utils import add_doc, remove_node_from_tree
@@ -202,6 +203,7 @@ def _build_needextract(
     env.resolve_references(dummy_need, extract_data["docname"], app.builder)  # type: ignore[arg-type]
 
     dummy_need.attributes["ids"].append(need_data["id"])
+    find_and_replace_node_content(dummy_need, env, need_data)
     rendered_node = build_need_repr(
         dummy_need,  # type: ignore[arg-type]
         need_data,
