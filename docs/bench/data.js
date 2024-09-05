@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1725453577669,
+  "lastUpdate": 1725526822448,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -9504,6 +9504,42 @@ window.BENCHMARK_DATA = {
             "value": 75.64539169800003,
             "unit": "s",
             "extra": "Commit: 7966453b963ff1a189892a4877d66da4aa6d0e02\nBranch: master\nTime: 2024-09-04T14:37:23+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e5e370eb6047cbd8c23b3377a806a60c33f40b9d",
+          "message": "🐛 Fix dynamic functions in `needextract` need (#1273)",
+          "timestamp": "2024-09-05T10:58:22+02:00",
+          "tree_id": "fefa3a7ad79acc34cb601b6be84fb0b255148a38",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e5e370eb6047cbd8c23b3377a806a60c33f40b9d"
+        },
+        "date": 1725526814535,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.19205436999999392,
+            "unit": "s",
+            "extra": "Commit: e5e370eb6047cbd8c23b3377a806a60c33f40b9d\nBranch: master\nTime: 2024-09-05T10:58:22+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 68.986016409,
+            "unit": "s",
+            "extra": "Commit: e5e370eb6047cbd8c23b3377a806a60c33f40b9d\nBranch: master\nTime: 2024-09-05T10:58:22+02:00"
           }
         ]
       }
