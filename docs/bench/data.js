@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1725526822448,
+  "lastUpdate": 1725547965877,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -9540,6 +9540,42 @@ window.BENCHMARK_DATA = {
             "value": 68.986016409,
             "unit": "s",
             "extra": "Commit: e5e370eb6047cbd8c23b3377a806a60c33f40b9d\nBranch: master\nTime: 2024-09-05T10:58:22+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c862e9d199bd1594f3495b85cc793e93ed76c5de",
+          "message": "👌 Improve parsing of need option lists with dynamic functions (#1272)\n\nFor need directive options of the format e.g. `:tags: a,[[func()]],b`,\r\nthis commit consolidates parsing into a single conversion function and adds unit tests",
+          "timestamp": "2024-09-05T16:50:46+02:00",
+          "tree_id": "640a2764532ace77847ecef072806ee073922bc2",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c862e9d199bd1594f3495b85cc793e93ed76c5de"
+        },
+        "date": 1725547956848,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18569166000000337,
+            "unit": "s",
+            "extra": "Commit: c862e9d199bd1594f3495b85cc793e93ed76c5de\nBranch: master\nTime: 2024-09-05T16:50:46+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 66.79776125100001,
+            "unit": "s",
+            "extra": "Commit: c862e9d199bd1594f3495b85cc793e93ed76c5de\nBranch: master\nTime: 2024-09-05T16:50:46+02:00"
           }
         ]
       }
