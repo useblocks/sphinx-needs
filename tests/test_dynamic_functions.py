@@ -25,9 +25,8 @@ def test_doc_dynamic_functions(test_app):
     warnings = strip_colors(
         app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
     ).splitlines()
-    # print(warnings)
     assert warnings == [
-        "srcdir/index.rst:38: WARNING: Error while executing function 'copy': Need not found [needs.dynamic_function]"
+        "srcdir/index.rst:40: WARNING: Error while executing function 'copy': Need not found [needs.dynamic_function]"
     ]
 
     html = Path(app.outdir, "index.html").read_text()
@@ -61,6 +60,8 @@ def test_doc_dynamic_functions(test_app):
     )
 
     assert "Test output of need_func; need: TEST_3" in html
+
+    assert "Test dynamic func in tags: test_4a, test_4b, TEST_4" in html
 
     assert '<a class="reference external" href="http://www.TEST_5">link</a>' in html
 

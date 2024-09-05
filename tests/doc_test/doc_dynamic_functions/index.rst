@@ -22,6 +22,8 @@ DYNAMIC FUNCTIONS
     :id: TEST_4
     :tags: test_4a;test_4b;[[copy('title')]]
 
+    Test dynamic func in tags: [[copy("tags")]]
+
 .. spec:: TEST_5
     :id: TEST_5
     :tags: [[copy('id')]]
