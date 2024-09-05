@@ -14,9 +14,9 @@ from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType
+from sphinx_needs.data import NeedsInfoType, NeedsMutable
 from sphinx_needs.filter_common import (
-    filter_needs_view,
+    filter_needs,
     filter_single_need,
 )
 from sphinx_needs.logging import log_warning
@@ -27,7 +27,7 @@ from sphinx_needs.views import NeedsView
 def test(
     app: Sphinx,
     need: NeedsInfoType | None,
-    needs: NeedsView,
+    needs: NeedsMutable | NeedsView,
     *args: Any,
     **kwargs: Any,
 ) -> str:
@@ -51,7 +51,7 @@ def test(
 def echo(
     app: Sphinx,
     need: NeedsInfoType | None,
-    needs: NeedsView,
+    needs: NeedsMutable | NeedsView,
     text: str,
     *args: Any,
     **kwargs: Any,
@@ -73,7 +73,7 @@ def echo(
 def copy(
     app: Sphinx,
     need: NeedsInfoType | None,
-    needs: NeedsView,
+    needs: NeedsMutable | NeedsView,
     option: str,
     need_id: str | None = None,
     lower: bool = False,
@@ -142,14 +142,15 @@ def copy(
         need = needs[need_id]
 
     if filter:
-        result = filter_needs_view(
-            needs,
+        location = (
+            (need["docname"], need["lineno"]) if need and need["docname"] else None
+        )
+        result = filter_needs(
+            needs.values(),
             NeedsSphinxConfig(app.config),
             filter,
             need,
-            location=(need["docname"], need["lineno"])
-            if need and need["docname"]
-            else None,
+            location=location,
         )
         if result:
             need = result[0]
@@ -173,7 +174,7 @@ def copy(
 def check_linked_values(
     app: Sphinx,
     need: NeedsInfoType | None,
-    needs: NeedsView,
+    needs: NeedsMutable | NeedsView,
     result: Any,
     search_option: str,
     search_value: Any,
@@ -302,7 +303,7 @@ def check_linked_values(
 def calc_sum(
     app: Sphinx,
     need: NeedsInfoType | None,
-    needs: NeedsView,
+    needs: NeedsMutable | NeedsView,
     option: str,
     filter: str | None = None,
     links_only: bool = False,
@@ -403,7 +404,7 @@ def calc_sum(
 def links_from_content(
     app: Sphinx,
     need: NeedsInfoType | None,
-    needs: NeedsView,
+    needs: NeedsMutable | NeedsView,
     need_id: str | None = None,
     filter: str | None = None,
 ) -> list[str]:

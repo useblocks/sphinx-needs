@@ -278,6 +278,10 @@ def setup(app: Sphinx) -> dict[str, Any]:
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect("env-updated", install_styles_static_files)
 
+    # emitted during post_process_needs_data, both are passed the mutable needs dict
+    app.add_event("needs-before-post-processing")
+    app.add_event("needs-before-sealing")
+
     # There is also the event doctree-read.
     # But it looks like in this event no references are already solved, which
     # makes trouble in our code.
@@ -503,7 +507,6 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
     """
     needs_config = NeedsSphinxConfig(app.config)
     data = SphinxNeedsData(env)
-    data.get_needs_view()
     data.get_or_create_filters()
     data.get_or_create_docs()
     services = data.get_or_create_services()

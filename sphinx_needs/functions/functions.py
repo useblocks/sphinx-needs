@@ -41,7 +41,7 @@ class DynamicFunction(Protocol):
         self,
         app: Sphinx,
         need: NeedsInfoType | None,
-        needs: NeedsView,
+        needs: NeedsView | NeedsMutable,
         *args: Any,
         **kwargs: Any,
     ) -> str | int | float | list[str] | list[int] | list[float] | None: ...
@@ -79,6 +79,7 @@ def register_func(need_function: DynamicFunction, name: str | None = None) -> No
 def execute_func(
     app: Sphinx,
     need: NeedsInfoType | None,
+    needs: NeedsView | NeedsMutable,
     func_string: str,
     location: str | tuple[str | None, int | None] | nodes.Node | None,
 ) -> str | int | float | list[str] | list[int] | list[float] | None:
@@ -119,7 +120,7 @@ def execute_func(
         func_return = func(
             app,
             need,
-            SphinxNeedsData(app.env).get_needs_view(),
+            needs,
             *func_args,
             **func_kwargs,
         )
@@ -202,7 +203,9 @@ def find_and_replace_node_content(
             msg = f"The [[{func_string}]] syntax in need content is deprecated. Replace with :ndf:`{func_string}` instead."
             log_warning(logger, msg, "deprecation", location=node)
 
-            func_return = execute_func(env.app, need, func_string, node)
+            func_return = execute_func(
+                env.app, need, SphinxNeedsData(env).get_needs_view(), func_string, node
+            )
 
             if isinstance(func_return, list):
                 func_return = ", ".join(str(el) for el in func_return)
@@ -267,7 +270,7 @@ def resolve_dynamic_values(needs: NeedsMutable, app: Sphinx) -> None:
                 while func_call:
                     try:
                         func_call, func_return = _detect_and_execute_field(
-                            need[need_option], need, app
+                            need[need_option], need, needs, app
                         )
                     except FunctionParsingException:
                         raise SphinxError(
@@ -299,7 +302,7 @@ def resolve_dynamic_values(needs: NeedsMutable, app: Sphinx) -> None:
                 for element in need[need_option]:
                     try:
                         func_call, func_return = _detect_and_execute_field(
-                            element, need, app
+                            element, need, needs, app
                         )
                     except FunctionParsingException:
                         raise SphinxError(
@@ -402,7 +405,7 @@ def check_and_get_content(
 
     func_call = func_match.group(1)  # Extract function call
     func_return = execute_func(
-        env.app, need, func_call, location
+        env.app, need, SphinxNeedsData(env).get_needs_view(), func_call, location
     )  # Execute function call and get return value
 
     if isinstance(func_return, list):
@@ -416,13 +419,10 @@ def check_and_get_content(
 
 
 def _detect_and_execute_field(
-    content: Any, need: NeedsInfoType, app: Sphinx
+    content: Any, need: NeedsInfoType, needs: NeedsMutable, app: Sphinx
 ) -> tuple[str | None, str | int | float | list[str] | list[int] | list[float] | None]:
     """Detects if given need field value is a function call and executes it."""
-    try:
-        content = str(content)
-    except UnicodeEncodeError:
-        content = content.encode("utf-8")
+    content = str(content)
 
     func_match = FUNC_RE.search(content)
     if func_match is None:
@@ -432,6 +432,7 @@ def _detect_and_execute_field(
     func_return = execute_func(
         app,
         need,
+        needs,
         func_call,
         (need["docname"], need["lineno"]) if need["docname"] else None,
     )  # Execute function call and get return value
