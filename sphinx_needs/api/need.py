@@ -240,8 +240,8 @@ def add_need(
     tags = _split_list_with_dyn_funcs(tags, location)
     # Check if tag is in needs_tags. If not raise an error.
     if needs_config.tags:
+        needs_tags = [t["name"] for t in needs_config.tags]
         for tag in tags:
-            needs_tags = [tag["name"] for tag in needs_config.tags]
             if tag not in needs_tags:
                 raise NeedsTagNotAllowed(
                     f"Tag {tag} of need id {need_id} is not allowed "
