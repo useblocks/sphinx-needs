@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1725625480323,
+  "lastUpdate": 1725625559381,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -9648,6 +9648,42 @@ window.BENCHMARK_DATA = {
             "value": 67.91997104999999,
             "unit": "s",
             "extra": "Commit: 03b4892dbbf9d24d853b35f4cb1fd1b410d83943\nBranch: master\nTime: 2024-09-06T14:22:44+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "73f1e1b947c85ebc074768b0e7a5e7864066d83e",
+          "message": "🐛 Pass `needs` to `highlight` filter of `graphviz` `needflow` (#1274)\n\nIn a minor oversight from #1235, the `needs` list was not passed to the `highlight` filter, as is the case for the `plantuml` engine.\r\n\r\nThe opportunity was also taken to improve `_plantuml`, by passing the `NeedsView` to the sub-functions, rather than just the dict values.",
+          "timestamp": "2024-09-06T14:23:55+02:00",
+          "tree_id": "f6725aac07dd50dd31e2324d5e22fb3ea9c1379d",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/73f1e1b947c85ebc074768b0e7a5e7864066d83e"
+        },
+        "date": 1725625550593,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2108880099999908,
+            "unit": "s",
+            "extra": "Commit: 73f1e1b947c85ebc074768b0e7a5e7864066d83e\nBranch: master\nTime: 2024-09-06T14:23:55+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 71.07849111100003,
+            "unit": "s",
+            "extra": "Commit: 73f1e1b947c85ebc074768b0e7a5e7864066d83e\nBranch: master\nTime: 2024-09-06T14:23:55+02:00"
           }
         ]
       }
