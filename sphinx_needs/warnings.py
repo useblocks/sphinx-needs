@@ -32,6 +32,10 @@ def process_warnings(app: Sphinx, exception: Exception | None) -> None:
     if exception:
         return
 
+    # If no warnings were defined, we do not need to do anything
+    if not NEEDS_CONFIG.warnings:
+        return
+
     env = app.env
     needs = SphinxNeedsData(env).get_needs_view()
     # If no needs were defined, we do not need to do anything
