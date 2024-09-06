@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1725547965877,
+  "lastUpdate": 1725606478761,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -9576,6 +9576,42 @@ window.BENCHMARK_DATA = {
             "value": 66.79776125100001,
             "unit": "s",
             "extra": "Commit: c862e9d199bd1594f3495b85cc793e93ed76c5de\nBranch: master\nTime: 2024-09-05T16:50:46+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f3745ffd8ab9d3c3ed079554b746d0d53162fe18",
+          "message": "👌 pass parent need to `need_func` (#1266)\n\nCurrently, the `need_func` role passes a \"dummy need\" to dynamic functions, which would except for most dynamic functions. So:\r\n\r\n1. we replace the dummy need with `None` and ensure dynamic functions account for this input.\r\n2. when a `need_func` is used within a need directive, it uses that need as input for the dynamic function, rather than `None`",
+          "timestamp": "2024-09-06T09:06:02+02:00",
+          "tree_id": "e4f0b3704b55476c203e95a42db625d4db118142",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f3745ffd8ab9d3c3ed079554b746d0d53162fe18"
+        },
+        "date": 1725606469781,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2444145810000009,
+            "unit": "s",
+            "extra": "Commit: f3745ffd8ab9d3c3ed079554b746d0d53162fe18\nBranch: master\nTime: 2024-09-06T09:06:02+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 68.337657775,
+            "unit": "s",
+            "extra": "Commit: f3745ffd8ab9d3c3ed079554b746d0d53162fe18\nBranch: master\nTime: 2024-09-06T09:06:02+02:00"
           }
         ]
       }
