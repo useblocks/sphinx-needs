@@ -369,8 +369,11 @@ def _render_subgraph(
 
 def _label(need: NeedsInfoType, align: Literal["left", "right", "center"]) -> str:
     """Create the graphviz label for a need."""
+    # note this is based on the plantuml template DEFAULT_DIAGRAM_TEMPLATE
+
     br = f'<br align="{align}"/>'
     # note this text wrapping mimics the jinja wordwrap filter
+    need_title = need["title"] if need["is_need"] else need["content"]
     title = br.join(
         br.join(
             textwrap.wrap(
@@ -382,13 +385,13 @@ def _label(need: NeedsInfoType, align: Literal["left", "right", "center"]) -> st
                 break_on_hyphens=True,
             )
         )
-        for line in need["title"].splitlines()
+        for line in need_title.splitlines()
     )
-    name = html.escape(need["type_name"])
+    name = html.escape(need["type_name"] + (" (part)" if need["is_part"] else ""))
     if need["is_need"]:
         _id = html.escape(need["id"])
     else:
-        _id = f"{html.escape(need['id_parent'])}.<b>{html.escape(need['id'])}</b>"
+        _id = f'{html.escape(need["id_parent"])}.<b align="{align}">{html.escape(need["id"])}</b>'
     font_10 = '<font point-size="10">'
     font_12 = '<font point-size="12">'
     return f"<{font_12}{name}</font>{br}<b>{title}</b>{br}{font_10}{_id}</font>{br}>"
