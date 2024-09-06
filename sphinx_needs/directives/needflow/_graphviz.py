@@ -391,7 +391,7 @@ def _label(need: NeedsInfoType, align: Literal["left", "right", "center"]) -> st
     if need["is_need"]:
         _id = html.escape(need["id"])
     else:
-        _id = f"{html.escape(need['id_parent'])}.<b align=\"{align}\">{html.escape(need['id'])}</b>"
+        _id = f'{html.escape(need["id_parent"])}.<b align="{align}">{html.escape(need["id"])}</b>'
     font_10 = '<font point-size="10">'
     font_12 = '<font point-size="12">'
     return f"<{font_12}{name}</font>{br}<b>{title}</b>{br}{font_10}{_id}</font>{br}>"
