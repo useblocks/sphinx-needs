@@ -8,6 +8,8 @@ DYNAMIC FUNCTIONS
 
     This is id [[copy("id")]]
 
+    This is also id :need_func:`[[copy("id")]]`
+
 .. spec:: TEST_2
    :id: TEST_2
    :tags: my_tag; [[copy("tags", "SP_TOO_001")]]
@@ -20,6 +22,8 @@ DYNAMIC FUNCTIONS
     :id: TEST_4
     :tags: test_4a;test_4b;[[copy('title')]]
 
+    Test dynamic func in tags: [[copy("tags")]]
+
 .. spec:: TEST_5
     :id: TEST_5
     :tags: [[copy('id')]]
@@ -30,3 +34,7 @@ DYNAMIC FUNCTIONS
         :id: TEST_6
 
         nested id [[copy('id')]]
+
+        nested id also :need_func:`[[copy("id")]]`
+
+This should warn since it has no associated need: :need_func:`[[copy("id")]]`

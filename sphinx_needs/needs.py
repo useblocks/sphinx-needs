@@ -100,7 +100,7 @@ from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS, register_func
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.roles import NeedsXRefRole
 from sphinx_needs.roles.need_count import NeedCount, process_need_count
-from sphinx_needs.roles.need_func import NeedFunc, process_need_func
+from sphinx_needs.roles.need_func import NeedFunc, NeedFuncRole, process_need_func
 from sphinx_needs.roles.need_incoming import NeedIncoming, process_need_incoming
 from sphinx_needs.roles.need_outgoing import NeedOutgoing, process_need_outgoing
 from sphinx_needs.roles.need_part import NeedPart, process_need_part
@@ -253,12 +253,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
         ),
     )
 
-    app.add_role(
-        "need_func",
-        NeedsXRefRole(
-            nodeclass=NeedFunc, innernodeclass=nodes.inline, warn_dangling=True
-        ),
-    )
+    app.add_role("need_func", NeedFuncRole())
 
     ########################################################################
     # EVENTS
