@@ -11,6 +11,8 @@ NEED PARTS
     * :need_part:`(1)exit()`
     * :need_part:`(2)start()`
     * :need_part:`(awesome_id)blub()`
+    * :need_part:`(multiline_id)
+      has multi-lines`
 
 
     * :np:`unknown_id_1`
