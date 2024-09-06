@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1725606478761,
+  "lastUpdate": 1725625480323,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -9612,6 +9612,42 @@ window.BENCHMARK_DATA = {
             "value": 68.337657775,
             "unit": "s",
             "extra": "Commit: f3745ffd8ab9d3c3ed079554b746d0d53162fe18\nBranch: master\nTime: 2024-09-06T09:06:02+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "03b4892dbbf9d24d853b35f4cb1fd1b410d83943",
+          "message": "🐛 Fix `needflow` `graphviz` title for parts (#1280)\n\nThe title for parts is actually taken from their `content` field, not `title`",
+          "timestamp": "2024-09-06T14:22:44+02:00",
+          "tree_id": "774fcdb54bb406ecd9f6f446d891656b2ce1b482",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/03b4892dbbf9d24d853b35f4cb1fd1b410d83943"
+        },
+        "date": 1725625472076,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21267661400000293,
+            "unit": "s",
+            "extra": "Commit: 03b4892dbbf9d24d853b35f4cb1fd1b410d83943\nBranch: master\nTime: 2024-09-06T14:22:44+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.91997104999999,
+            "unit": "s",
+            "extra": "Commit: 03b4892dbbf9d24d853b35f4cb1fd1b410d83943\nBranch: master\nTime: 2024-09-06T14:22:44+02:00"
           }
         ]
       }
