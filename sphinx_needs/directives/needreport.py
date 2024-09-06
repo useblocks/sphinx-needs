@@ -10,7 +10,6 @@ from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.directives.utils import analyse_needs_metrics
 from sphinx_needs.logging import log_warning
 from sphinx_needs.utils import add_doc
 
@@ -44,7 +43,14 @@ class NeedReportDirective(SphinxDirective):
             "types": needs_config.types if "types" in self.options else [],
             "options": needs_config.extra_options if "options" in self.options else [],
             "links": needs_config.extra_links if "links" in self.options else [],
-            "usage": analyse_needs_metrics(env) if "usage" in self.options else {},
+            # note the usage dict format here is just to keep backwards compatibility,
+            # but actually this is now post-processed so we only really need the need types
+            "usage": {
+                "needs_amount": 0,
+                "needs_types": {t["directive"]: 0 for t in needs_config.types},
+            }
+            if "usage" in self.options
+            else {},
             "report_directive": "dropdown",
         }
         report_info.update(**needs_config.render_context)
