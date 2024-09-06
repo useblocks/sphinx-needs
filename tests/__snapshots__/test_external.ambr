@@ -531,6 +531,7 @@
             'parent_needs': list([
             ]),
             'parent_needs_back': list([
+              'EXT_TEST_02',
             ]),
             'parts': dict({
             }),
@@ -598,8 +599,9 @@
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
-            'parent_need': '',
+            'parent_need': 'EXT_TEST_01',
             'parent_needs': list([
+              'EXT_TEST_01',
             ]),
             'parent_needs_back': list([
             ]),

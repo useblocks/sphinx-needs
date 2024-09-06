@@ -387,6 +387,10 @@ def add_need(
 
     needs_info["links"] += copy_links  # Set copied links to main-links
 
+    if parent_needs := needs_info.get("parent_needs"):
+        # ensure parent_need is consistent with parent_needs
+        needs_info["parent_need"] = parent_needs[0]
+
     if jinja_content:
         need_content_context = {**needs_info}
         need_content_context.update(**needs_config.filter_data)
