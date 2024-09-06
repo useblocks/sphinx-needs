@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1725625559381,
+  "lastUpdate": 1725654560497,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -9684,6 +9684,42 @@ window.BENCHMARK_DATA = {
             "value": 71.07849111100003,
             "unit": "s",
             "extra": "Commit: 73f1e1b947c85ebc074768b0e7a5e7864066d83e\nBranch: master\nTime: 2024-09-06T14:23:55+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "distinct": true,
+          "id": "cc7f9a6a96203b7655afb8e54ff8006b5226784a",
+          "message": "🔧 Introduce `NeedsPartsView` type\n\nMake it clearer where we are using an list of the \"expanded\" needs+parts.\n\nAs discussed in #1264, there are a number of different representations of the needs,\nand so this makes it clearer which one a variable is.",
+          "timestamp": "2024-09-06T22:27:21+02:00",
+          "tree_id": "2484faf8d3f5cd2d3b200a5364a316dc5a037f5e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/cc7f9a6a96203b7655afb8e54ff8006b5226784a"
+        },
+        "date": 1725654551360,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.19406639600001085,
+            "unit": "s",
+            "extra": "Commit: cc7f9a6a96203b7655afb8e54ff8006b5226784a\nBranch: master\nTime: 2024-09-06T22:27:21+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 68.65637918499999,
+            "unit": "s",
+            "extra": "Commit: cc7f9a6a96203b7655afb8e54ff8006b5226784a\nBranch: master\nTime: 2024-09-06T22:27:21+02:00"
           }
         ]
       }
