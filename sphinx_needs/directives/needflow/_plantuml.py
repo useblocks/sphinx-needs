@@ -3,7 +3,6 @@ from __future__ import annotations
 import html
 import os
 from functools import lru_cache
-from typing import Iterable
 
 from docutils import nodes
 from jinja2 import Template
@@ -16,6 +15,7 @@ from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
 from sphinx_needs.data import (
     NeedsFlowType,
     NeedsInfoType,
+    NeedsView,
     SphinxNeedsData,
 )
 from sphinx_needs.debug import measure_time
@@ -46,7 +46,7 @@ def get_need_node_rep_for_plantuml(
     app: Sphinx,
     fromdocname: str,
     current_needflow: NeedsFlowType,
-    all_needs: Iterable[NeedsInfoType],
+    needs_view: NeedsView,
     need_info: NeedsInfoType,
 ) -> str:
     """Calculate need node representation for plantuml."""
@@ -63,7 +63,7 @@ def get_need_node_rep_for_plantuml(
         node_colors.append(need_info["type_color"].replace("#", ""))
 
     if current_needflow["highlight"] and filter_single_need(
-        need_info, needs_config, current_needflow["highlight"], all_needs
+        need_info, needs_config, current_needflow["highlight"], needs_view.values()
     ):
         node_colors.append("line:FF0000")
 
@@ -98,7 +98,7 @@ def walk_curr_need_tree(
     app: Sphinx,
     fromdocname: str,
     current_needflow: NeedsFlowType,
-    all_needs: Iterable[NeedsInfoType],
+    needs_view: NeedsView,
     found_needs: list[NeedsInfoType],
     need: NeedsInfoType,
 ) -> str:
@@ -125,7 +125,7 @@ def walk_curr_need_tree(
                 if need_part_id == found_need["id_complete"]:
                     curr_need_tree += (
                         get_need_node_rep_for_plantuml(
-                            app, fromdocname, current_needflow, all_needs, found_need
+                            app, fromdocname, current_needflow, needs_view, found_need
                         )
                         + "\n"
                     )
@@ -140,7 +140,7 @@ def walk_curr_need_tree(
             for curr_child_need in found_needs:
                 if curr_child_need["id_complete"] == curr_child_need_id:
                     curr_need_tree += get_need_node_rep_for_plantuml(
-                        app, fromdocname, current_needflow, all_needs, curr_child_need
+                        app, fromdocname, current_needflow, needs_view, curr_child_need
                     )
                     # check curr need child has children or has parts
                     if curr_child_need["parent_needs_back"] or curr_child_need["parts"]:
@@ -148,7 +148,7 @@ def walk_curr_need_tree(
                             app,
                             fromdocname,
                             current_needflow,
-                            all_needs,
+                            needs_view,
                             found_needs,
                             curr_child_need,
                         )
@@ -166,7 +166,7 @@ def cal_needs_node(
     app: Sphinx,
     fromdocname: str,
     current_needflow: NeedsFlowType,
-    all_needs: Iterable[NeedsInfoType],
+    needs_view: NeedsView,
     found_needs: list[NeedsInfoType],
 ) -> str:
     """Calculate and get needs node representaion for plantuml including all child needs and need parts."""
@@ -174,7 +174,7 @@ def cal_needs_node(
     curr_need_tree = ""
     for top_need in top_needs:
         top_need_node = get_need_node_rep_for_plantuml(
-            app, fromdocname, current_needflow, all_needs, top_need
+            app, fromdocname, current_needflow, needs_view, top_need
         )
         curr_need_tree += (
             top_need_node
@@ -182,7 +182,7 @@ def cal_needs_node(
                 app,
                 fromdocname,
                 current_needflow,
-                all_needs,
+                needs_view,
                 found_needs,
                 top_need,
             )
@@ -203,7 +203,7 @@ def process_needflow_plantuml(
     env = app.env
     needs_config = NeedsSphinxConfig(app.config)
     env_data = SphinxNeedsData(env)
-    all_needs = env_data.get_needs_view()
+    needs_view = env_data.get_needs_view()
 
     link_type_names = [link["option"].upper() for link in needs_config.extra_links]
     allowed_link_types_options = [link.upper() for link in needs_config.flow_link_types]
@@ -265,14 +265,14 @@ def process_needflow_plantuml(
 
         need_values = (
             filter_by_tree(
-                all_needs,
+                needs_view,
                 root_id,
                 allowed_link_types,
                 current_needflow["root_direction"],
                 current_needflow["root_depth"],
             )
             if (root_id := current_needflow.get("root_id"))
-            else all_needs
+            else needs_view
         )
 
         found_needs = process_filters(
@@ -310,7 +310,7 @@ def process_needflow_plantuml(
 
             puml_node["uml"] += "\n' Nodes definition \n\n"
             puml_node["uml"] += cal_needs_node(
-                app, fromdocname, current_needflow, all_needs.values(), found_needs
+                app, fromdocname, current_needflow, needs_view, found_needs
             )
 
             puml_node["uml"] += "\n' Connection definition \n\n"

@@ -15,7 +15,7 @@ from sphinx.ext.graphviz import (
 from sphinx.util.logging import getLogger
 
 from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType, NeedsView, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link
 from sphinx_needs.directives.needflow._directive import NeedflowGraphiz
@@ -49,7 +49,7 @@ def process_needflow_graphviz(
 ) -> None:
     needs_config = NeedsSphinxConfig(app.config)
     env_data = SphinxNeedsData(app.env)
-    all_needs = env_data.get_needs_view()
+    needs_view = env_data.get_needs_view()
 
     link_type_names = [link["option"].upper() for link in needs_config.extra_links]
     allowed_link_types_options = [link.upper() for link in needs_config.flow_link_types]
@@ -111,14 +111,14 @@ def process_needflow_graphviz(
 
         init_filtered_needs = (
             filter_by_tree(
-                all_needs,
+                needs_view,
                 root_id,
                 allowed_link_types,
                 attributes["root_direction"],
                 attributes["root_depth"],
             )
             if (root_id := attributes["root_id"])
-            else all_needs
+            else needs_view
         )
         filtered_needs = process_filters(
             app,
@@ -156,6 +156,7 @@ def process_needflow_graphviz(
             content += _render_node(
                 root_need,
                 node,
+                needs_view,
                 needs_config,
                 lambda n: calculate_link(app, n, fromdocname, relative="."),
                 id_comp_to_need,
@@ -202,6 +203,7 @@ def _quote(text: str) -> str:
 def _render_node(
     need: NeedsInfoType,
     node: NeedflowGraphiz,
+    needs_view: NeedsView,
     config: NeedsSphinxConfig,
     calc_link: Callable[[NeedsInfoType], str],
     id_comp_to_need: dict[str, NeedsInfoType],
@@ -220,7 +222,7 @@ def _render_node(
         # graphviz cannot nest nodes,
         # so we have to create a subgraph to represent a need with parts/children
         return _render_subgraph(
-            need, node, config, calc_link, id_comp_to_need, rendered_nodes
+            need, node, needs_view, config, calc_link, id_comp_to_need, rendered_nodes
         )
 
     rendered_nodes[need["id_complete"]] = {"need": need, "cluster_id": None}
@@ -258,7 +260,9 @@ def _render_node(
         params.append(("fillcolor", _quote(need["type_color"])))
 
     # outline color
-    if node["highlight"] and filter_single_need(need, config, node["highlight"]):
+    if node["highlight"] and filter_single_need(
+        need, config, node["highlight"], needs_view.values()
+    ):
         params.append(("color", "red"))
     elif node["border_color"]:
         color = match_variants(
@@ -278,6 +282,7 @@ def _render_node(
 def _render_subgraph(
     need: NeedsInfoType,
     node: NeedflowGraphiz,
+    needs_view: NeedsView,
     config: NeedsSphinxConfig,
     calc_link: Callable[[NeedsInfoType], str],
     id_comp_to_need: dict[str, NeedsInfoType],
@@ -340,6 +345,7 @@ def _render_subgraph(
                     _render_node(
                         id_comp_to_need[need_part_id],
                         node,
+                        needs_view,
                         config,
                         calc_link,
                         id_comp_to_need,
@@ -356,6 +362,7 @@ def _render_subgraph(
                     _render_node(
                         id_comp_to_need[child_need_id],
                         node,
+                        needs_view,
                         config,
                         calc_link,
                         id_comp_to_need,
