@@ -1,22 +1,34 @@
 import json
-import subprocess
+import os
 from pathlib import Path
 
 import pytest
 import responses
+from sphinx.util.console import strip_colors
 from syrupy.filters import props
 
 from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.directives.needimport import NeedimportException
+from sphinx_needs.needsfile import SphinxNeedsFileException
 
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/import_doc"}],
+    [{"buildername": "html", "srcdir": "doc_test/import_doc", "no_plantuml": True}],
     indirect=True,
 )
 def test_import_json(test_app):
     app = test_app
     app.build()
+    warnings = strip_colors(
+        app._warning.getvalue().replace(
+            str(app.srcdir) + os.sep + "subdoc" + os.sep, "srcdir/subdoc/"
+        )
+    ).splitlines()
+    assert warnings == [
+        "srcdir/subdoc/deprecated_rel_path_import.rst:6: WARNING: Deprecation warning: Relative path must be relative to the current document in future, not to the conf.py location. Use a starting '/', like '/needs.json', to make the path relative to conf.py. [needs]"
+    ]
+
     html = Path(app.outdir, "index.html").read_text()
     assert "TEST IMPORT TITLE" in html
     assert "TEST_01" in html
@@ -59,35 +71,21 @@ def test_import_json(test_app):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/import_doc_invalid"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/import_doc_invalid",
+            "no_plantuml": True,
+        }
+    ],
     indirect=True,
 )
-def test_json_schema_console_check(test_app):
-    """Checks the console output for hints about json schema validation errors"""
-    import os
-    import subprocess
-
-    app = test_app
-
-    srcdir = Path(app.srcdir)
-    out_dir = os.path.join(srcdir, "_build")
-    out = subprocess.run(
-        ["sphinx-build", "-b", "html", srcdir, out_dir], capture_output=True
-    )
-
-    assert "Schema validation errors detected" in str(out.stdout)
-
-
-@pytest.mark.parametrize(
-    "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/import_doc_invalid"}],
-    indirect=True,
-)
-def test_json_schema_file_check(test_app):
+def test_json_schema_check(test_app):
     """Checks that an invalid json-file gets normally still imported and is used as normal (if possible)"""
-    app = test_app
-    app.build()
-    html = Path(app.outdir, "index.html").read_text()
+    test_app.build()
+    assert test_app._warning.getvalue() == ""
+    assert "Schema validation errors detected" in test_app._status.getvalue()
+    html = Path(test_app.outdir, "index.html").read_text()
     assert "TEST_01" in html
     assert "test_TEST_01" in html
     assert "new_tag" in html
@@ -95,13 +93,18 @@ def test_json_schema_file_check(test_app):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/import_doc_empty"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/import_doc_empty",
+            "no_plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_empty_file_check(test_app):
     """Checks that an empty needs.json throws an exception"""
     app = test_app
-    from sphinx_needs.needsfile import SphinxNeedsFileException
 
     with pytest.raises(SphinxNeedsFileException):
         app.build()
@@ -109,22 +112,28 @@ def test_empty_file_check(test_app):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/non_exists_file_import"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/non_exists_file_import",
+            "no_plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_import_non_exists_json(test_app):
     # Check non exists file import
-    try:
-        app = test_app
+    app = test_app
+    with pytest.raises(ReferenceError) as err:
         app.build()
-    except ReferenceError as err:
-        assert err.args[0].startswith("Could not load needs import file")
-        assert "non_exists_file_import" in err.args[0]
+
+    assert err.value.args[0].startswith("Could not load needs import file")
+    assert "non_exists_file_import" in err.value.args[0]
 
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "needs", "srcdir": "doc_test/import_doc"}],
+    [{"buildername": "needs", "srcdir": "doc_test/import_doc", "no_plantuml": True}],
     indirect=True,
 )
 def test_import_builder(test_app, snapshot):
@@ -137,7 +146,13 @@ def test_import_builder(test_app, snapshot):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "needs", "srcdir": "doc_test/doc_needimport_download_needs_json"}],
+    [
+        {
+            "buildername": "needs",
+            "srcdir": "doc_test/doc_needimport_download_needs_json",
+            "no_plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_needimport_needs_json_download(test_app, snapshot):
@@ -210,18 +225,44 @@ def test_needimport_needs_json_download(test_app, snapshot):
         {
             "buildername": "needs",
             "srcdir": "doc_test/doc_needimport_download_needs_json_negative",
+            "no_plantuml": True,
         }
     ],
     indirect=True,
 )
 def test_needimport_needs_json_download_negative(test_app):
-    app = test_app
-    src_dir = Path(app.srcdir)
-    out_dir = Path(app.outdir)
-    output = subprocess.run(
-        ["sphinx-build", "-M", "html", src_dir, out_dir], capture_output=True
-    )
+    with pytest.raises(NeedimportException) as err:
+        test_app.build()
     assert (
-        "NeedimportException: Getting http://my_wrong_name_company.com/docs/v1/remote-needs.json didn't work."
-        in output.stderr.decode("utf-8")
+        "Getting http://my_wrong_name_company.com/docs/v1/remote-needs.json didn't work."
+        in err.value.args[0]
     )
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "latex",
+            "srcdir": "doc_test/doc_needimport_noindex",
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+def test_doc_needimport_noindex(test_app):
+    app = test_app
+    app.build()
+    warnings = strip_colors(
+        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
+    ).splitlines()
+    assert warnings == [
+        "srcdir/needimport.rst:6: WARNING: Need 'TEST_01' has unknown outgoing link 'SPEC_1' in field 'links' [needs.link_outgoing]"
+    ]
+
+    latex_path = str(Path(app.outdir, "needstestdocs.tex"))
+    latex = Path(latex_path).read_text()
+
+    assert Path(latex_path).exists()
+    assert len(latex) > 0
+    assert "AAA" in latex

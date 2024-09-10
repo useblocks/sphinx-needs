@@ -19,7 +19,7 @@ from sphinx_needs.debug import measure_time
 from sphinx_needs.defaults import string_to_boolean
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import log_warning
-from sphinx_needs.needsfile import check_needs_file
+from sphinx_needs.needsfile import SphinxNeedsFileException, check_needs_data
 from sphinx_needs.utils import add_doc, import_prefix_link_edit, logger
 
 
@@ -37,6 +37,7 @@ class NeedimportDirective(SphinxDirective):
         "version": directives.unchanged_required,
         "hide": directives.flag,
         "collapse": string_to_boolean,
+        "ids": directives.unchanged_required,
         "filter": directives.unchanged_required,
         "id_prefix": directives.unchanged_required,
         "tags": directives.unchanged_required,
@@ -55,10 +56,6 @@ class NeedimportDirective(SphinxDirective):
         version = self.options.get("version")
         filter_string = self.options.get("filter")
         id_prefix = self.options.get("id_prefix", "")
-
-        tags = self.options.get("tags", [])
-        if len(tags) > 0:
-            tags = [tag.strip() for tag in re.split("[;,]", tags)]
 
         need_import_path = self.arguments[0]
 
@@ -115,20 +112,20 @@ class NeedimportDirective(SphinxDirective):
                     f"Could not load needs import file {correct_need_import_path}"
                 )
 
-            errors = check_needs_file(correct_need_import_path)
+            try:
+                with open(correct_need_import_path) as needs_file:
+                    needs_import_list = json.load(needs_file)
+            except json.JSONDecodeError as e:
+                # TODO: Add exception handling
+                raise SphinxNeedsFileException(correct_need_import_path) from e
+
+            errors = check_needs_data(needs_import_list)
             if errors.schema:
                 logger.info(
                     f"Schema validation errors detected in file {correct_need_import_path}:"
                 )
                 for error in errors.schema:
                     logger.info(f'  {error.message} -> {".".join(error.path)}')
-
-            try:
-                with open(correct_need_import_path) as needs_file:
-                    needs_import_list = json.load(needs_file)
-            except json.JSONDecodeError as e:
-                # TODO: Add exception handling
-                raise e
 
         if version is None:
             try:
@@ -146,6 +143,13 @@ class NeedimportDirective(SphinxDirective):
 
         needs_config = NeedsSphinxConfig(self.config)
         data = needs_import_list["versions"][version]
+
+        if ids := self.options.get("ids"):
+            id_list = [i.strip() for i in ids.split(",") if i.strip()]
+            data["needs"] = {
+                key: data["needs"][key] for key in id_list if key in data["needs"]
+            }
+
         # TODO this is not exactly NeedsInfoType, because the export removes/adds some keys
         needs_list: dict[str, NeedsInfoType] = data["needs"]
         if schema := data.get("needs_schema"):
@@ -184,8 +188,13 @@ class NeedimportDirective(SphinxDirective):
         needs_list = needs_list_filtered
 
         # tags update
-        for need in needs_list.values():
-            need["tags"] = need["tags"] + tags
+        if tags := [
+            tag.strip()
+            for tag in re.split("[;,]", self.options.get("tags", ""))
+            if tag.strip()
+        ]:
+            for need in needs_list.values():
+                need["tags"] = need["tags"] + tags
 
         import_prefix_link_edit(needs_list, id_prefix, needs_config.extra_links)
 

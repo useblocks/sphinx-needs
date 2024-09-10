@@ -11,6 +11,7 @@ import os
 import sys
 from copy import deepcopy
 from datetime import datetime
+from functools import lru_cache
 from typing import Any, Iterable
 
 from jsonschema import Draft7Validator
@@ -242,21 +243,38 @@ def check_needs_file(path: str) -> Errors:
     :param path: File path to a needs.json file
     :return: Dict, with error reports
     """
-    schema_path = os.path.join(os.path.dirname(__file__), "needsfile.json")
-    with open(schema_path) as schema_file:
-        needs_schema = json.load(schema_file)
-
     with open(path) as needs_file:
         try:
-            needs_data = json.load(needs_file)
+            data = json.load(needs_file)
         except json.JSONDecodeError as e:
             raise SphinxNeedsFileException(
                 f'Problems loading json file "{path}". '
                 f"Maybe it is empty or has an invalid json format. Original exception: {e}"
             )
+    return check_needs_data(data)
+
+
+@lru_cache
+def _load_schema() -> dict[str, Any]:
+    schema_path = os.path.join(os.path.dirname(__file__), "needsfile.json")
+    with open(schema_path) as schema_file:
+        return json.load(schema_file)  # type: ignore[no-any-return]
+
+
+def check_needs_data(data: Any) -> Errors:
+    """
+    Checks a given json-file, if it passes our needs.json structure tests.
+
+    Current checks:
+    * Schema validation
+
+    :param data: Loaded needs.json file
+    :return: Dict, with error reports
+    """
+    needs_schema = _load_schema()
 
     validator = Draft7Validator(needs_schema)
-    schema_errors = list(validator.iter_errors(needs_data))
+    schema_errors = list(validator.iter_errors(data))
 
     # In future there may be additional types of validations.
     # So lets already use a class for all errors
