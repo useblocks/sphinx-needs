@@ -20,7 +20,7 @@
               'constraints_results': dict({
               }),
               'created_at': '',
-              'delete': None,
+              'delete': False,
               'description': '',
               'docname': 'index',
               'doctype': '.rst',
@@ -36,7 +36,7 @@
               'is_modified': False,
               'is_need': True,
               'is_part': False,
-              'jinja_content': None,
+              'jinja_content': False,
               'layout': '',
               'links': list([
               ]),
@@ -103,7 +103,7 @@
               'constraints_results': dict({
               }),
               'created_at': '',
-              'delete': None,
+              'delete': False,
               'description': '',
               'docname': 'index',
               'doctype': '.rst',
@@ -119,7 +119,7 @@
               'is_modified': False,
               'is_need': True,
               'is_part': False,
-              'jinja_content': None,
+              'jinja_content': False,
               'layout': '',
               'links': list([
               ]),
@@ -186,7 +186,7 @@
               'constraints_results': dict({
               }),
               'created_at': '',
-              'delete': None,
+              'delete': False,
               'description': '',
               'docname': 'index',
               'doctype': '.rst',
@@ -202,7 +202,7 @@
               'is_modified': False,
               'is_need': True,
               'is_part': False,
-              'jinja_content': None,
+              'jinja_content': False,
               'layout': '',
               'links': list([
               ]),
