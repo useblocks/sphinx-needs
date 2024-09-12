@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726175264506,
+  "lastUpdate": 1726177283847,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -9900,6 +9900,42 @@ window.BENCHMARK_DATA = {
             "value": 67.54703035899999,
             "unit": "s",
             "extra": "Commit: d0e92399a343dd3fb524255c96d4acbe9fbfed0d\nBranch: master\nTime: 2024-09-12T23:05:45+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "affe6be44cff390415e40c4c8a23999349d9d732",
+          "message": "🔧 split `filter_needs` func by needs type (#1276)\n\nThis makes it clearer what representation of needs we are trying to filter,\r\nand may later allow for optimisations of the filtering",
+          "timestamp": "2024-09-12T23:39:26+02:00",
+          "tree_id": "7526b41e8506d90b7ec756fe2ecfda42ffef43da",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/affe6be44cff390415e40c4c8a23999349d9d732"
+        },
+        "date": 1726177273228,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.17463534499998445,
+            "unit": "s",
+            "extra": "Commit: affe6be44cff390415e40c4c8a23999349d9d732\nBranch: master\nTime: 2024-09-12T23:39:26+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 63.558577536,
+            "unit": "s",
+            "extra": "Commit: affe6be44cff390415e40c4c8a23999349d9d732\nBranch: master\nTime: 2024-09-12T23:39:26+02:00"
           }
         ]
       }
