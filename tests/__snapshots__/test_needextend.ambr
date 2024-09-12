@@ -19,7 +19,7 @@
             'constraints_results': dict({
             }),
             'created_at': '',
-            'delete': None,
+            'delete': False,
             'description': '',
             'docname': 'index',
             'doctype': '.rst',
@@ -35,7 +35,7 @@
             'is_modified': True,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
             'links': list([
               'REQ_A_1',
@@ -92,7 +92,7 @@
             'constraints_results': dict({
             }),
             'created_at': '',
-            'delete': None,
+            'delete': False,
             'description': '',
             'docname': 'index',
             'doctype': '.rst',
@@ -108,7 +108,7 @@
             'is_modified': False,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
             'links': list([
             ]),
@@ -163,7 +163,7 @@
             'constraints_results': dict({
             }),
             'created_at': '',
-            'delete': None,
+            'delete': False,
             'description': '',
             'docname': 'index',
             'doctype': '.rst',
@@ -179,7 +179,7 @@
             'is_modified': False,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
             'links': list([
             ]),
@@ -234,7 +234,7 @@
             'constraints_results': dict({
             }),
             'created_at': '',
-            'delete': None,
+            'delete': False,
             'description': '',
             'docname': 'index',
             'doctype': '.rst',
@@ -250,7 +250,7 @@
             'is_modified': False,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
             'links': list([
             ]),
@@ -304,7 +304,7 @@
             'constraints_results': dict({
             }),
             'created_at': '',
-            'delete': None,
+            'delete': False,
             'description': '',
             'docname': 'index',
             'doctype': '.rst',
@@ -320,7 +320,7 @@
             'is_modified': False,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
             'links': list([
             ]),
@@ -416,10 +416,7 @@
               'default': True,
               'description': 'True if all constraints passed, False if any failed, None if not yet checked.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'constraints_results': dict({
               'additionalProperties': dict({
@@ -438,13 +435,10 @@
               'type': 'string',
             }),
             'delete': dict({
-              'default': None,
+              'default': False,
               'description': 'If true, the need is deleted entirely.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'docname': dict({
               'default': None,
@@ -536,13 +530,10 @@
               'type': 'boolean',
             }),
             'jinja_content': dict({
-              'default': None,
+              'default': False,
               'description': 'Whether the content should be pre-processed by jinja.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'layout': dict({
               'default': None,
@@ -820,7 +811,7 @@
             'constraints_results': dict({
             }),
             'created_at': '',
-            'delete': None,
+            'delete': False,
             'description': '''
               Had no outgoing links.
               Got an outgoing link ``extend_test_004``.
@@ -839,7 +830,7 @@
             'is_modified': True,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
             'links': list([
               'extend_test_004',
@@ -896,7 +887,7 @@
             'constraints_results': dict({
             }),
             'created_at': '',
-            'delete': None,
+            'delete': False,
             'description': '''
               Had no links.
               Got an incoming links ``extend_test_003`` and ``extend_test_006``.
@@ -915,7 +906,7 @@
             'is_modified': False,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
             'links': list([
             ]),
@@ -972,7 +963,7 @@
             'constraints_results': dict({
             }),
             'created_at': '',
-            'delete': None,
+            'delete': False,
             'description': '''
               Had the two links: ``extend_test_003`` and ``extend_test_004``.
               Both got deleted.
@@ -991,7 +982,7 @@
             'is_modified': True,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
             'links': list([
             ]),
@@ -1046,7 +1037,7 @@
             'constraints_results': dict({
             }),
             'created_at': '',
-            'delete': None,
+            'delete': False,
             'description': 'Had the link ``extend_test_003``, got another one ``extend_test_004``.',
             'docname': 'index',
             'doctype': '.rst',
@@ -1062,7 +1053,7 @@
             'is_modified': True,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
             'links': list([
               'extend_test_003',
@@ -1118,7 +1109,7 @@
             'constraints_results': dict({
             }),
             'created_at': '',
-            'delete': None,
+            'delete': False,
             'description': '',
             'docname': 'index',
             'doctype': '.rst',
@@ -1134,7 +1125,7 @@
             'is_modified': True,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
             'links': list([
               'extend_test_003',
@@ -1191,7 +1182,7 @@
             'constraints_results': dict({
             }),
             'created_at': '',
-            'delete': None,
+            'delete': False,
             'description': '',
             'docname': 'page_1',
             'doctype': '.rst',
@@ -1207,7 +1198,7 @@
             'is_modified': True,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
             'links': list([
             ]),
@@ -1305,10 +1296,7 @@
               'default': True,
               'description': 'True if all constraints passed, False if any failed, None if not yet checked.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'constraints_results': dict({
               'additionalProperties': dict({
@@ -1327,13 +1315,10 @@
               'type': 'string',
             }),
             'delete': dict({
-              'default': None,
+              'default': False,
               'description': 'If true, the need is deleted entirely.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'docname': dict({
               'default': None,
@@ -1425,13 +1410,10 @@
               'type': 'boolean',
             }),
             'jinja_content': dict({
-              'default': None,
+              'default': False,
               'description': 'Whether the content should be pre-processed by jinja.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'layout': dict({
               'default': None,

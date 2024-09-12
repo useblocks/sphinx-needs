@@ -113,7 +113,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     },
     "collapse": {
         "description": "Hide the meta-data information of the need.",
-        "schema": {"type": ["boolean", "null"], "default": None},
+        "schema": {"type": "boolean", "default": False},
         "exclude_json": True,
     },
     "hide": {
@@ -123,7 +123,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     },
     "delete": {
         "description": "If true, the need is deleted entirely.",
-        "schema": {"type": ["boolean", "null"], "default": None},
+        "schema": {"type": "boolean", "default": False},
         "show_in_layout": True,
     },
     "layout": {
@@ -216,7 +216,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     },
     "jinja_content": {
         "description": "Whether the content should be pre-processed by jinja.",
-        "schema": {"type": ["boolean", "null"], "default": None},
+        "schema": {"type": "boolean", "default": False},
         "show_in_layout": True,
     },
     "template": {
@@ -269,7 +269,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     },
     "constraints_passed": {
         "description": "True if all constraints passed, False if any failed, None if not yet checked.",
-        "schema": {"type": ["boolean", "null"], "default": True},
+        "schema": {"type": "boolean", "default": True},
     },
     "constraints_error": {
         "description": "An error message set if any constraint failed, and `error_message` field is set in config.",
@@ -325,11 +325,11 @@ class NeedsInfoType(TypedDict, total=False):
     tags: Required[list[str]]
 
     # rendering information
-    collapse: Required[None | bool]
+    collapse: Required[bool]
     """Hide the meta-data information of the need."""
     hide: Required[bool]
     """If true, the need is not rendered."""
-    delete: Required[None | bool]
+    delete: Required[bool]
     """If true, the need is deleted entirely."""
     layout: Required[None | str]
     """Key of the layout, which is used to render the need."""
@@ -373,7 +373,7 @@ class NeedsInfoType(TypedDict, total=False):
     """<parent ID>.<self ID>, or <self ID> if not a part."""
 
     # content creation information
-    jinja_content: Required[None | bool]
+    jinja_content: Required[bool]
     template: Required[None | str]
     pre_template: Required[None | str]
     post_template: Required[None | str]
@@ -395,7 +395,7 @@ class NeedsInfoType(TypedDict, total=False):
     # set in process_need_nodes (-> process_constraints) transform
     constraints_results: Required[dict[str, dict[str, bool]]]
     """Mapping of constraint name, to check name, to result."""
-    constraints_passed: Required[None | bool]
+    constraints_passed: Required[bool]
     """True if all constraints passed, False if any failed, None if not yet checked."""
     constraints_error: str
     """An error message set if any constraint failed, and `error_message` field is set in config."""
