@@ -38,7 +38,7 @@ def process_need_part(
     pass
 
 
-part_pattern = re.compile(r"\(([\w-]+)\)(.*)")
+part_pattern = re.compile(r"\(([\w-]+)\)(.*)", re.DOTALL)
 
 
 def iter_need_parts(need: NeedsInfoType) -> Iterable[NeedsInfoType]:
