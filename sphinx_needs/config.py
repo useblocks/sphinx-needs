@@ -440,6 +440,10 @@ class NeedsSphinxConfig:
         default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )
     """List of external sources to load needs from."""
+    import_cache_size: int = field(
+        default=100, metadata={"rebuild": "", "types": (int,)}
+    )
+    """Maximum number of imported needs to cache."""
     builder_filter: str = field(
         default="is_external==False", metadata={"rebuild": "html", "types": (str,)}
     )

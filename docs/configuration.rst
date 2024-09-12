@@ -1645,7 +1645,18 @@ keys:
             The related CSS class definition must be done by the user, e.g. by :ref:`own_css`.
             (*optional*) (*default*: ``external_link``)
 
+.. _needs_import_cache_size:
 
+needs_import_cache_size
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 3.1.0
+
+Sets the maximum number of needs cached by the :ref:`needimport` directive,
+which is used to avoid multiple reads of the same file.
+Note, setting this value too high may lead to high memory usage during the sphinx build.
+
+Default: :need_config_default:`import_cache_size`
 
 .. _needs_needextend_strict:
 
