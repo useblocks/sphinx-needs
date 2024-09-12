@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726148062220,
+  "lastUpdate": 1726148273203,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -9792,6 +9792,42 @@ window.BENCHMARK_DATA = {
             "value": 67.43368116399998,
             "unit": "s",
             "extra": "Commit: b3d65c8367c3a548805cb8404523673823e8f37e\nBranch: master\nTime: 2024-09-12T15:32:23+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a0d7abd5c92003f5c4fef1a04496913310afb591",
+          "message": "🐛 Fix `parent_need` propagation from external/import (#1286)",
+          "timestamp": "2024-09-12T15:35:56+02:00",
+          "tree_id": "36ebe68d5871734fdc4692a2ac98e1e10b94cef5",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a0d7abd5c92003f5c4fef1a04496913310afb591"
+        },
+        "date": 1726148263227,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2034337689999859,
+            "unit": "s",
+            "extra": "Commit: a0d7abd5c92003f5c4fef1a04496913310afb591\nBranch: master\nTime: 2024-09-12T15:35:56+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 69.132643457,
+            "unit": "s",
+            "extra": "Commit: a0d7abd5c92003f5c4fef1a04496913310afb591\nBranch: master\nTime: 2024-09-12T15:35:56+02:00"
           }
         ]
       }
