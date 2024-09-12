@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726148273203,
+  "lastUpdate": 1726149955290,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -9828,6 +9828,42 @@ window.BENCHMARK_DATA = {
             "value": 69.132643457,
             "unit": "s",
             "extra": "Commit: a0d7abd5c92003f5c4fef1a04496913310afb591\nBranch: master\nTime: 2024-09-12T15:35:56+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5cf181c9be06742ce7e16d820e1cac14ed5af463",
+          "message": "🐛 Fix `needreport` `usage` numbers (#1285)\n\nthese need to be post-processed",
+          "timestamp": "2024-09-12T16:03:45+02:00",
+          "tree_id": "d85ab896fa9c3fb5e10923a62ce6115e29feef89",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/5cf181c9be06742ce7e16d820e1cac14ed5af463"
+        },
+        "date": 1726149945849,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2710759610000082,
+            "unit": "s",
+            "extra": "Commit: 5cf181c9be06742ce7e16d820e1cac14ed5af463\nBranch: master\nTime: 2024-09-12T16:03:45+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 76.06156702500002,
+            "unit": "s",
+            "extra": "Commit: 5cf181c9be06742ce7e16d820e1cac14ed5af463\nBranch: master\nTime: 2024-09-12T16:03:45+02:00"
           }
         ]
       }
