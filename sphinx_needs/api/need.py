@@ -306,7 +306,7 @@ def add_need(
         "status": status,
         "tags": tags,
         "constraints": constraints,
-        "constraints_passed": False,
+        "constraints_passed": True,
         "constraints_results": {},
         "id": need_id,
         "title": trimmed_title,
