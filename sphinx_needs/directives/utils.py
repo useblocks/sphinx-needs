@@ -4,10 +4,8 @@ import re
 from typing import Any
 
 from docutils import nodes
-from sphinx.environment import BuildEnvironment
 
-from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsFilteredBaseType, SphinxNeedsData
+from sphinx_needs.data import NeedsFilteredBaseType
 from sphinx_needs.defaults import TITLE_REGEX
 
 
@@ -82,27 +80,6 @@ def get_option_list(options: dict[str, Any], name: str) -> list[str]:
         values_list = [value.strip() for value in re.split("[;,]", values)]
 
     return values_list
-
-
-def analyse_needs_metrics(env: BuildEnvironment) -> dict[str, Any]:
-    """
-    Function to generate metrics about need objects.
-
-    :param env: Sphinx build environment
-    :return: Dictionary consisting of needs metrics.
-    """
-    needs = SphinxNeedsData(env).get_needs_view()
-    metric_data: dict[str, Any] = {"needs_amount": len(needs)}
-    needs_types = {i["directive"]: 0 for i in NeedsSphinxConfig(env.config).types}
-
-    for i in needs.values():
-        if i["type"] in needs_types:
-            needs_types[i["type"]] += 1
-
-    metric_data["needs_types"] = {
-        i[0]: i[1] for i in sorted(needs_types.items(), key=lambda x: x[0])
-    }
-    return metric_data
 
 
 class SphinxNeedsLinkTypeException(BaseException):
