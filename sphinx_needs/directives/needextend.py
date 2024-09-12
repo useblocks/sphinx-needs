@@ -14,7 +14,7 @@ from sphinx_needs.data import (
     NeedsMutable,
     SphinxNeedsData,
 )
-from sphinx_needs.filter_common import filter_needs
+from sphinx_needs.filter_common import filter_needs_mutable
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import add_doc
 
@@ -133,8 +133,8 @@ def extend_needs_data(
         else:
             # a filter string
             try:
-                found_needs = filter_needs(
-                    all_needs.values(),
+                found_needs = filter_needs_mutable(
+                    all_needs,
                     needs_config,
                     need_filter,
                     location=(

@@ -20,6 +20,7 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import (
     NeedsFilteredBaseType,
     NeedsInfoType,
+    NeedsMutable,
     NeedsPartsView,
     NeedsView,
     SphinxNeedsData,
@@ -181,7 +182,7 @@ def process_filters(
                 if status_filter_passed and tags_filter_passed and type_filter_passed:
                     found_needs_by_options.append(need_info)
             # Get need by filter string
-            found_needs_by_string = filter_needs(
+            found_needs_by_string = filter_needs_parts(
                 all_needs_incl_parts,
                 needs_config,
                 filter_data["filter"],
@@ -194,7 +195,7 @@ def process_filters(
         else:
             # There is no other config as the one for filter string.
             # So we only need this result.
-            found_needs = filter_needs(
+            found_needs = filter_needs_parts(
                 all_needs_incl_parts,
                 needs_config,
                 filter_data["filter"],
@@ -297,8 +298,65 @@ def intersection_of_need_results(list_a: list[T], list_b: list[T]) -> list[T]:
     return [a for a in list_a if a in list_b]
 
 
+def filter_needs_mutable(
+    needs: NeedsMutable,
+    config: NeedsSphinxConfig,
+    filter_string: None | str = "",
+    current_need: NeedsInfoType | None = None,
+    *,
+    location: tuple[str, int | None] | nodes.Node | None = None,
+    append_warning: str = "",
+) -> list[NeedsInfoType]:
+    return _filter_needs(
+        needs.values(),
+        config,
+        filter_string,
+        current_need,
+        location=location,
+        append_warning=append_warning,
+    )
+
+
+def filter_needs_view(
+    needs: NeedsView,
+    config: NeedsSphinxConfig,
+    filter_string: None | str = "",
+    current_need: NeedsInfoType | None = None,
+    *,
+    location: tuple[str, int | None] | nodes.Node | None = None,
+    append_warning: str = "",
+) -> list[NeedsInfoType]:
+    return _filter_needs(
+        needs.values(),
+        config,
+        filter_string,
+        current_need,
+        location=location,
+        append_warning=append_warning,
+    )
+
+
+def filter_needs_parts(
+    needs: NeedsPartsView,
+    config: NeedsSphinxConfig,
+    filter_string: None | str = "",
+    current_need: NeedsInfoType | None = None,
+    *,
+    location: tuple[str, int | None] | nodes.Node | None = None,
+    append_warning: str = "",
+) -> list[NeedsInfoType]:
+    return _filter_needs(
+        needs,
+        config,
+        filter_string,
+        current_need,
+        location=location,
+        append_warning=append_warning,
+    )
+
+
 @measure_time("filtering")
-def filter_needs(
+def _filter_needs(
     needs: Iterable[NeedsInfoType],
     config: NeedsSphinxConfig,
     filter_string: None | str = "",

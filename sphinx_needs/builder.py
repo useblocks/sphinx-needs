@@ -8,8 +8,9 @@ from sphinx.application import Sphinx
 from sphinx.builders import Builder
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.directives.need import post_process_needs_data
+from sphinx_needs.filter_common import filter_needs_view
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.needsfile import NeedsList
 
@@ -80,12 +81,10 @@ class NeedsBuilder(Builder):
         # This is needed as needs could have been removed from documentation and if this is the case,
         # removed needs would stay in needs_list, if list gets not cleaned.
         needs_list.wipe_version(version)
-        #
-        from sphinx_needs.filter_common import filter_needs
 
         filter_string = needs_config.builder_filter
-        filtered_needs: list[NeedsInfoType] = filter_needs(
-            data.get_needs_view().values(),
+        filtered_needs = filter_needs_view(
+            data.get_needs_view(),
             needs_config,
             filter_string,
             append_warning="(from need_builder_filter)",
@@ -177,16 +176,12 @@ class NeedsIdBuilder(Builder):
         post_process_needs_data(self.app)
 
         data = SphinxNeedsData(self.env)
-        needs = (
-            data.get_needs_view().values()
-        )  # We need a list of needs for later filter checks
         version = getattr(self.env.config, "version", "unset")
         needs_config = NeedsSphinxConfig(self.env.config)
         filter_string = needs_config.builder_filter
-        from sphinx_needs.filter_common import filter_needs
 
-        filtered_needs = filter_needs(
-            needs,
+        filtered_needs = filter_needs_view(
+            data.get_needs_view(),
             needs_config,
             filter_string,
             append_warning="(from need_builder_filter)",

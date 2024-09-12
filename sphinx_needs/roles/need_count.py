@@ -12,7 +12,10 @@ from sphinx.application import Sphinx
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
-from sphinx_needs.filter_common import expand_needs_view, filter_needs
+from sphinx_needs.filter_common import (
+    expand_needs_view,
+    filter_needs_parts,
+)
 from sphinx_needs.logging import get_logger
 
 log = get_logger(__name__)
@@ -39,7 +42,7 @@ def process_need_count(
                 need_list = expand_needs_view(needs_view)  # adds parts to need_list
                 amount = str(
                     len(
-                        filter_needs(
+                        filter_needs_parts(
                             need_list,
                             needs_config,
                             filters[0],
@@ -50,12 +53,12 @@ def process_need_count(
             elif len(filters) == 2:
                 need_list = expand_needs_view(needs_view)  # adds parts to need_list
                 amount_1 = len(
-                    filter_needs(
+                    filter_needs_parts(
                         need_list, needs_config, filters[0], location=node_need_count
                     )
                 )
                 amount_2 = len(
-                    filter_needs(
+                    filter_needs_parts(
                         need_list, needs_config, filters[1], location=node_need_count
                     )
                 )
