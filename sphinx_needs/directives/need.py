@@ -406,7 +406,7 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
 
     post_process_needs_data(app)
 
-    for extend_node in doctree.findall(Needextend):
+    for extend_node in list(doctree.findall(Needextend)):
         remove_node_from_tree(extend_node)
 
     format_need_nodes(app, doctree, fromdocname, list(doctree.findall(Need)))
