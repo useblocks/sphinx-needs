@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726149955290,
+  "lastUpdate": 1726175264506,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -9864,6 +9864,42 @@ window.BENCHMARK_DATA = {
             "value": 76.06156702500002,
             "unit": "s",
             "extra": "Commit: 5cf181c9be06742ce7e16d820e1cac14ed5af463\nBranch: master\nTime: 2024-09-12T16:03:45+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d0e92399a343dd3fb524255c96d4acbe9fbfed0d",
+          "message": "🔧  change type of need fields with `bool | None` to just `bool` (#1293)\n\nIt is unnecessary for these field to be nullable,\r\nand this further reduces the size of `needs.json`, when `needs_json_remove_defaults = True`, since the default is clearer.",
+          "timestamp": "2024-09-12T23:05:45+02:00",
+          "tree_id": "0b04e2f68c127b2e9213265e2fc626638a13ac37",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/d0e92399a343dd3fb524255c96d4acbe9fbfed0d"
+        },
+        "date": 1726175254585,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.19041348500002186,
+            "unit": "s",
+            "extra": "Commit: d0e92399a343dd3fb524255c96d4acbe9fbfed0d\nBranch: master\nTime: 2024-09-12T23:05:45+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.54703035899999,
+            "unit": "s",
+            "extra": "Commit: d0e92399a343dd3fb524255c96d4acbe9fbfed0d\nBranch: master\nTime: 2024-09-12T23:05:45+02:00"
           }
         ]
       }
