@@ -133,7 +133,7 @@ def add_need(
     :param content: Content of the need, either as a ``str``
         or a ``StringList`` (a string with mapping to the source text).
     :param status: Status as string.
-    :param tags: Tags as single string.
+    :param tags: A list of tags, or a comma separated string.
     :param constraints: Constraints as single, comma separated, string.
     :param constraints_passed: Contains bool describing if all constraints have passed
     :param delete: boolean value (Remove the complete need).
@@ -591,7 +591,7 @@ def add_external_need(
     :param external_url: URL as string, which shall be used as link to the original need source
     :param content: Content as single string.
     :param status: Status as string.
-    :param tags: Tags as single string.
+    :param tags: A list of tags, or a comma separated string.
     :param constraints: constraints as single, comma separated string.
     :param external_css: CSS class name as string, which is set for the <a> tag.
 
