@@ -1,5 +1,5 @@
-Welcome to basic test's documentation!
-======================================
+TEST DOCUMENT
+=============
 
 .. story:: Test story
    :id: ST_001

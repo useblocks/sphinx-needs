@@ -6,8 +6,8 @@ import sys
 from pathlib import Path
 
 import pytest
+from lxml import html as html_parser
 from sphinx import version_info
-from sphinx.application import Sphinx
 from sphinx.testing.util import SphinxTestApp
 from syrupy.filters import props
 
@@ -15,28 +15,22 @@ from sphinx_needs.api.need import NeedsNoIdException
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_basic"}], indirect=True
-)
-def test_build_html(test_app):
-    app = test_app
-    app.builder.build_all()
-
-    # Check if static files got copied correctly.
-    build_dir = Path(app.outdir) / "_static" / "sphinx-needs" / "libs" / "html"
-    files = [f for f in build_dir.glob("**/*") if f.is_file()]
-    assert build_dir / "sphinx_needs_collapse.js" in files
-    assert build_dir / "datatables_loader.js" in files
-    assert build_dir / "DataTables-1.10.16" / "js" / "jquery.dataTables.min.js" in files
-
-
-@pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/generic_doc"}],
+    [{"buildername": "html", "srcdir": "doc_test/doc_basic", "no_plantuml": True}],
     indirect=True,
 )
-def test_build_html_parallel(test_app: Sphinx, snapshot_doctree):
+def test_build_html(test_app: SphinxTestApp, snapshot_doctree):
     app = test_app
-    app.builder.build_all()
+    app.build()
+    assert app._warning.getvalue() == ""
+
+    # Check if doctree is correct.
+    assert app.env.get_doctree("index") == snapshot_doctree
+
+    # Basic checks for the generated html.
+    html = Path(app.outdir, "index.html").read_text()
+    assert "<h1>TEST DOCUMENT" in html
+    assert "ST_001" in html
 
     # Check if static files got copied correctly.
     build_dir = Path(app.outdir) / "_static" / "sphinx-needs" / "libs" / "html"
@@ -44,8 +38,6 @@ def test_build_html_parallel(test_app: Sphinx, snapshot_doctree):
     assert build_dir / "sphinx_needs_collapse.js" in files
     assert build_dir / "datatables_loader.js" in files
     assert build_dir / "DataTables-1.10.16" / "js" / "jquery.dataTables.min.js" in files
-
-    assert app.env.get_doctree("index") == snapshot_doctree
 
 
 @pytest.mark.skipif(
@@ -53,14 +45,13 @@ def test_build_html_parallel(test_app: Sphinx, snapshot_doctree):
 )
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/generic_doc"}],
+    [{"buildername": "html", "srcdir": "doc_test/doc_basic", "no_plantuml": True}],
     indirect=True,
 )
-def test_html_head_files(test_app):
+def test_html_head_files(test_app: SphinxTestApp):
     app = test_app
-    app.builder.build_all()
-
-    from lxml import html as html_parser
+    app.build()
+    assert app._warning.getvalue() == ""
 
     # check usage in project root level
     html_path = str(Path(app.outdir, "index.html"))
@@ -81,48 +72,64 @@ def test_html_head_files(test_app):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "singlehtml", "srcdir": "doc_test/doc_basic"}],
+    [
+        {
+            "buildername": "singlehtml",
+            "srcdir": "doc_test/doc_basic",
+            "no_plantuml": True,
+        }
+    ],
     indirect=True,
 )
-def test_build_singlehtml(test_app):
+def test_build_singlehtml(test_app: SphinxTestApp):
     app = test_app
-    app.builder.build_all()
+    app.build()
+    assert app._warning.getvalue() == ""
 
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "latex", "srcdir": "doc_test/doc_basic"}],
+    [{"buildername": "latex", "srcdir": "doc_test/doc_basic", "no_plantuml": True}],
     indirect=True,
 )
-def test_build_latex(test_app):
+def test_build_latex(test_app: SphinxTestApp):
     app = test_app
-    app.builder.build_all()
-
-
-@pytest.mark.parametrize(
-    "test_app", [{"buildername": "epub", "srcdir": "doc_test/doc_basic"}], indirect=True
-)
-def test_build_epub(test_app):
-    app = test_app
-    app.builder.build_all()
-
-
-@pytest.mark.parametrize(
-    "test_app", [{"buildername": "json", "srcdir": "doc_test/doc_basic"}], indirect=True
-)
-def test_build_json(test_app):
-    app = test_app
-    app.builder.build_all()
+    app.build()
+    assert app._warning.getvalue() == ""
 
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "needs", "srcdir": "doc_test/doc_basic"}],
+    [{"buildername": "epub", "srcdir": "doc_test/doc_basic", "no_plantuml": True}],
     indirect=True,
 )
-def test_build_needs(test_app, snapshot):
+def test_build_epub(test_app: SphinxTestApp):
     app = test_app
-    app.builder.build_all()
+    app.build()
+    assert app._warning.getvalue() == ""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "json", "srcdir": "doc_test/doc_basic", "no_plantuml": True}],
+    indirect=True,
+)
+def test_build_json(test_app: SphinxTestApp):
+    app = test_app
+    app.build()
+    assert app._warning.getvalue() == ""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "needs", "srcdir": "doc_test/doc_basic", "no_plantuml": True}],
+    indirect=True,
+)
+def test_build_needs(test_app: SphinxTestApp, snapshot):
+    app = test_app
+    app.build()
+    assert app._warning.getvalue() == ""
+
     json_text = Path(app.outdir, "needs.json").read_text()
     needs_data = json.loads(json_text)
 
@@ -137,14 +144,15 @@ def test_build_needs(test_app, snapshot):
             "buildername": "html",
             "srcdir": "doc_test/doc_basic",
             "confoverrides": {"needs_id_required": True},
+            "no_plantuml": True,
         }
     ],
     indirect=True,
 )
-def test_id_required_build_html(test_app):
+def test_id_required_build_html(test_app: SphinxTestApp):
     with pytest.raises(NeedsNoIdException):
         app = test_app
-        app.builder.build_all()
+        app.build()
 
 
 def test_sphinx_api_build(tmp_path: Path, make_app: type[SphinxTestApp]):
