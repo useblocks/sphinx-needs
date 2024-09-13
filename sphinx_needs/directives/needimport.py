@@ -20,7 +20,7 @@ from sphinx_needs.defaults import string_to_boolean
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import log_warning
 from sphinx_needs.needsfile import check_needs_file
-from sphinx_needs.utils import add_doc, logger
+from sphinx_needs.utils import add_doc, import_prefix_link_edit, logger
 
 
 class Needimport(nodes.General, nodes.Element):
@@ -183,86 +183,68 @@ class NeedimportDirective(SphinxDirective):
 
         needs_list = needs_list_filtered
 
-        # If we need to set an id prefix, we also need to manipulate all used ids in the imported data.
-        extra_links = needs_config.extra_links
-        if id_prefix:
-            for need in needs_list.values():
-                for id in needs_list:
-                    # Manipulate links in all link types
-                    for extra_link in extra_links:
-                        if (
-                            extra_link["option"] in need
-                            and id in need[extra_link["option"]]  # type: ignore[literal-required]
-                        ):
-                            for n, link in enumerate(need[extra_link["option"]]):  # type: ignore[literal-required]
-                                if id == link:
-                                    need[extra_link["option"]][n] = "".join(  # type: ignore[literal-required]
-                                        [id_prefix, id]
-                                    )
-                    # Manipulate descriptions
-                    # ToDo: Use regex for better matches.
-                    need["description"] = need["description"].replace(  # type: ignore[typeddict-item]
-                        id, "".join([id_prefix, id])
-                    )
-
         # tags update
         for need in needs_list.values():
             need["tags"] = need["tags"] + tags
 
-        known_options = (
-            "title",
-            "status",
-            "content",
-            "id",
-            "tags",
-            "hide",
-            "template",
-            "pre_template",
-            "post_template",
+        import_prefix_link_edit(needs_list, id_prefix, needs_config.extra_links)
+
+        override_options = (
             "collapse",
             "style",
             "layout",
+            "template",
+            "pre_template",
+            "post_template",
+        )
+        known_options = (
+            # need general parameters
             "need_type",
+            "title",
+            "id",
+            "content",
+            "status",
+            "tags",
             "constraints",
-            *[x["option"] for x in extra_links],
+            # need render parameters
+            "jinja_content",
+            "hide",
+            "collapse",
+            "style",
+            "layout",
+            "template",
+            "pre_template",
+            "post_template",
+            # note we omit locational parameters, such as signature and sections
+            # since these will be computed again for the new location
+            *[x["option"] for x in needs_config.extra_links],
             *NEEDS_CONFIG.extra_options,
         )
         need_nodes = []
-        for need in needs_list.values():
-            # Set some values based on given option or value from imported need.
-            need["template"] = self.options.get("template", need.get("template"))
-            need["pre_template"] = self.options.get(
-                "pre_template", need.get("pre_template")
-            )
-            need["post_template"] = self.options.get(
-                "post_template", need.get("post_template")
-            )
-            need["layout"] = self.options.get("layout", need.get("layout"))
-            need["style"] = self.options.get("style", need.get("style"))
-
+        for need_params in needs_list.values():
+            for override_option in override_options:
+                if override_option in self.options:
+                    need_params[override_option] = self.options[override_option]  # type: ignore[literal-required]
             if "hide" in self.options:
-                need["hide"] = True
-            else:
-                need["hide"] = need.get("hide", False)
-            need["collapse"] = self.options.get("collapse", need.get("collapse"))
+                need_params["hide"] = True
 
             # The key needs to be different for add_need() api call.
-            need["need_type"] = need["type"]  # type: ignore[typeddict-unknown-key]
+            need_params["need_type"] = need_params["type"]  # type: ignore[typeddict-unknown-key]
 
             # Replace id, to get unique ids
-            need["id"] = id_prefix + need["id"]
+            need_params["id"] = id_prefix + need_params["id"]
 
-            need["content"] = need["description"]  # type: ignore[typeddict-item]
+            need_params["content"] = need_params["description"]  # type: ignore[typeddict-item]
 
             # Remove unknown options, as they may be defined in source system, but not in this sphinx project
-            for option in list(need):
+            for option in list(need_params):
                 if option not in known_options:
-                    del need[option]  # type: ignore
+                    del need_params[option]  # type: ignore
 
-            need["docname"] = self.docname
-            need["lineno"] = self.lineno
+            need_params["docname"] = self.docname
+            need_params["lineno"] = self.lineno
 
-            nodes = add_need(self.env.app, self.state, **need)  # type: ignore[call-arg]
+            nodes = add_need(self.env.app, self.state, **need_params)  # type: ignore[call-arg]
             need_nodes.extend(nodes)
 
         add_doc(self.env, self.env.docname)
