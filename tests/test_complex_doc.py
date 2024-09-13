@@ -10,13 +10,7 @@ import pytest
 
 @pytest.mark.parametrize(
     "test_app",
-    [
-        {
-            "buildername": "latex",
-            "srcdir": "doc_test/doc_basic_latex",
-            "parallel": 2,
-        }
-    ],
+    [{"buildername": "latex", "srcdir": "doc_test/doc_complex"}],
     indirect=True,
 )
 def test_doc_complex_latex(test_app):
@@ -29,13 +23,7 @@ def test_doc_complex_latex(test_app):
 
 @pytest.mark.parametrize(
     "test_app",
-    [
-        {
-            "buildername": "singlehtml",
-            "srcdir": "doc_test/doc_basic_latex",
-            "parallel": 2,
-        }
-    ],
+    [{"buildername": "singlehtml", "srcdir": "doc_test/doc_complex"}],
     indirect=True,
 )
 def test_doc_complex_singlehtml(test_app):
