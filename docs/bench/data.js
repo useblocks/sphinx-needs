@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726226941626,
+  "lastUpdate": 1726232505540,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -10008,6 +10008,42 @@ window.BENCHMARK_DATA = {
             "value": 67.392649135,
             "unit": "s",
             "extra": "Commit: 44d7db9e1a26acf089442db57b8430785173a446\nBranch: master\nTime: 2024-09-13T13:27:05+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2ff14e758ecf4cd907fbc150ca0e9824f7032270",
+          "message": "✨ Add `ids` option for `needimport` (#1292)\n\nA more performant alternative to the `filter` option.\r\n\r\nThis PR also adds some other performance optimisations;\r\ncaching the schema load and not reading the import file twice (during validation)\r\n\r\nAlso, add to and improve the `needimport` tests",
+          "timestamp": "2024-09-13T14:59:38+02:00",
+          "tree_id": "6f7fe74f483247bea97f03c478e4e96aa540b9db",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/2ff14e758ecf4cd907fbc150ca0e9824f7032270"
+        },
+        "date": 1726232495491,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21106486799999402,
+            "unit": "s",
+            "extra": "Commit: 2ff14e758ecf4cd907fbc150ca0e9824f7032270\nBranch: master\nTime: 2024-09-13T14:59:38+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 72.32062781299999,
+            "unit": "s",
+            "extra": "Commit: 2ff14e758ecf4cd907fbc150ca0e9824f7032270\nBranch: master\nTime: 2024-09-13T14:59:38+02:00"
           }
         ]
       }
