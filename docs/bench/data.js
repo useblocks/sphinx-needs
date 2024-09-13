@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726219993667,
+  "lastUpdate": 1726226941626,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -9972,6 +9972,42 @@ window.BENCHMARK_DATA = {
             "value": 67.60597102800003,
             "unit": "s",
             "extra": "Commit: db66f57dabf51ed943d2396feb3afc56675c8b07\nBranch: master\nTime: 2024-09-13T11:31:10+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "44d7db9e1a26acf089442db57b8430785173a446",
+          "message": "👌 synchronise external/import need code (#1299)\n\nSynchronise the code for preparing needs parameters, in both `needimport` and `external_needs`.\r\n\r\nAdditionally, allow propagation of `signature`/`sections` fields for external needs.",
+          "timestamp": "2024-09-13T13:27:05+02:00",
+          "tree_id": "1aeb48c7895c56955c4af71ab8f392f5371698d5",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/44d7db9e1a26acf089442db57b8430785173a446"
+        },
+        "date": 1726226932171,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1877288539999995,
+            "unit": "s",
+            "extra": "Commit: 44d7db9e1a26acf089442db57b8430785173a446\nBranch: master\nTime: 2024-09-13T13:27:05+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.392649135,
+            "unit": "s",
+            "extra": "Commit: 44d7db9e1a26acf089442db57b8430785173a446\nBranch: master\nTime: 2024-09-13T13:27:05+02:00"
           }
         ]
       }
