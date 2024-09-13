@@ -52,6 +52,8 @@ def add_need(
     status: str | None = None,
     tags: None | str | list[str] = None,
     constraints: None | str | list[str] = None,
+    signature: str = "",
+    sections: list[str] | None = None,
     delete: None | bool = False,
     jinja_content: None | bool = False,
     hide: bool = False,
@@ -333,9 +335,9 @@ def add_need(
         "modifications": 0,
         "has_dead_links": False,
         "has_forbidden_dead_links": False,
-        "sections": [],
-        "section_name": "",
-        "signature": "",
+        "sections": sections or [],
+        "section_name": sections[0] if sections else "",
+        "signature": signature,
         "parent_need": "",
     }
     needs_extra_option_names = list(NEEDS_CONFIG.extra_options)
@@ -570,7 +572,7 @@ def add_external_need(
     external_css: str = "external_link",
     content: str = "",
     status: str | None = None,
-    tags: str | None = None,
+    tags: str | list[str] | None = None,
     constraints: str | None = None,
     **kwargs: Any,
 ) -> list[nodes.Node]:

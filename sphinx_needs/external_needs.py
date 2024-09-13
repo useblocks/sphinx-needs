@@ -114,31 +114,37 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> Non
             else {}
         )
 
-        prefix = source.get("id_prefix", "").upper()
-        import_prefix_link_edit(needs, prefix, needs_config.extra_links)
+        id_prefix = source.get("id_prefix", "").upper()
+        import_prefix_link_edit(needs, id_prefix, needs_config.extra_links)
+
+        known_options = (
+            # need general parameters
+            "need_type",
+            "title",
+            "id",
+            "content",
+            "status",
+            "tags",
+            "constraints",
+            # need locational parameters
+            "signature",
+            "sections",
+            # note we omit render parameters, such as style and layout
+            "external_css",
+            "external_url",
+            *[x["option"] for x in needs_config.extra_links],
+            *needs_config.extra_options,  # TODO should this be NEEDS_CONFIG.extra_options?
+        )
+
         for need in needs.values():
             need_params = {**defaults, **need}
 
-            extra_links = [x["option"] for x in needs_config.extra_links]
-            for key in list(need_params.keys()):
-                if (
-                    key not in needs_config.extra_options
-                    and key not in extra_links
-                    and key
-                    not in [
-                        "title",
-                        "type",
-                        "id",
-                        "description",
-                        "tags",
-                        "docname",
-                        "status",
-                    ]
-                ):
-                    del need_params[key]
-
+            # The key needs to be different for add_need() api call.
             need_params["need_type"] = need["type"]
-            need_params["id"] = f'{prefix}{need["id"]}'
+
+            # Replace id, to get unique ids
+            need_params["id"] = id_prefix + need["id"]
+
             need_params["external_css"] = source.get("css_class")
 
             if target_url:
@@ -152,12 +158,11 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> Non
                 )
 
             need_params["content"] = need["description"]
-            need_params["links"] = need.get("links", [])
-            need_params["tags"] = ",".join(need.get("tags", []))
-            need_params["status"] = need.get("status")
-            need_params["constraints"] = need.get("constraints", [])
 
-            del need_params["description"]
+            # Remove unknown options, as they may be defined in source system, but not in this sphinx project
+            for option in list(need_params):
+                if option not in known_options:
+                    del need_params[option]
 
             # check if external needs already exist
             ext_need_id = need_params["id"]
