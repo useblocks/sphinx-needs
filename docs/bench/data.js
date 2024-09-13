@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726177283847,
+  "lastUpdate": 1726219993667,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -9936,6 +9936,42 @@ window.BENCHMARK_DATA = {
             "value": 63.558577536,
             "unit": "s",
             "extra": "Commit: affe6be44cff390415e40c4c8a23999349d9d732\nBranch: master\nTime: 2024-09-12T23:39:26+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "db66f57dabf51ed943d2396feb3afc56675c8b07",
+          "message": "🐛 Fix removal of `Needextend` nodes (#1298)\n\nWe need to exhaust the entire `findall` iterator, before performing mutations on the doctree, otherwise this can lead to unexpected results",
+          "timestamp": "2024-09-13T11:31:10+02:00",
+          "tree_id": "36c23e32690f25e1631275f8bb473b88ff4990f9",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/db66f57dabf51ed943d2396feb3afc56675c8b07"
+        },
+        "date": 1726219983175,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18977525100001458,
+            "unit": "s",
+            "extra": "Commit: db66f57dabf51ed943d2396feb3afc56675c8b07\nBranch: master\nTime: 2024-09-13T11:31:10+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.60597102800003,
+            "unit": "s",
+            "extra": "Commit: db66f57dabf51ed943d2396feb3afc56675c8b07\nBranch: master\nTime: 2024-09-13T11:31:10+02:00"
           }
         ]
       }
