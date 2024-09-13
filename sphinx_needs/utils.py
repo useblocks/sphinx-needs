@@ -12,7 +12,8 @@ from urllib.parse import urlparse
 
 from docutils import nodes
 from jinja2 import Environment, Template
-from sphinx.application import BuildEnvironment, Sphinx
+from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig

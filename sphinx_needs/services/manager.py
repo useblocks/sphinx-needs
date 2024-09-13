@@ -4,8 +4,7 @@ from typing import Any
 
 from sphinx.application import Sphinx
 
-from sphinx_needs.api.configuration import NEEDS_CONFIG
-from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.directives.needservice import NeedserviceDirective
 from sphinx_needs.logging import get_logger
 from sphinx_needs.services.base import BaseService

@@ -19,12 +19,12 @@ from sphinx_needs.data import NeedsMutable, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.defaults import NEED_DEFAULT_OPTIONS
 from sphinx_needs.directives.needextend import Needextend, extend_needs_data
-from sphinx_needs.functions import (
+from sphinx_needs.functions.functions import (
+    check_and_get_content,
     find_and_replace_node_content,
     resolve_dynamic_values,
     resolve_variants_options,
 )
-from sphinx_needs.functions.functions import check_and_get_content
 from sphinx_needs.layout import build_need_repr
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_constraints import process_constraints
