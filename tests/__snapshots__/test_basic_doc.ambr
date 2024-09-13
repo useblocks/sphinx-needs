@@ -1,8 +1,8 @@
 # name: test_build_needs[test_app0]
   dict({
-    'current_version': '',
+    'current_version': '0.1.0',
     'versions': dict({
-      '': dict({
+      '0.1.0': dict({
         'filters': dict({
         }),
         'filters_amount': 0,
@@ -56,9 +56,9 @@
             'pre_template': None,
             'prefix': '',
             'query': '',
-            'section_name': 'Welcome to basic test’s documentation!',
+            'section_name': 'TEST DOCUMENT',
             'sections': list([
-              'Welcome to basic test’s documentation!',
+              'TEST DOCUMENT',
             ]),
             'service': '',
             'signature': '',
@@ -126,9 +126,9 @@
             'pre_template': None,
             'prefix': '',
             'query': '',
-            'section_name': 'Welcome to basic test’s documentation!',
+            'section_name': 'TEST DOCUMENT',
             'sections': list([
-              'Welcome to basic test’s documentation!',
+              'TEST DOCUMENT',
             ]),
             'service': '',
             'signature': '',
