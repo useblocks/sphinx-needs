@@ -115,7 +115,7 @@ class NeedimportDirective(SphinxDirective):
             try:
                 with open(correct_need_import_path) as needs_file:
                     needs_import_list = json.load(needs_file)
-            except json.JSONDecodeError as e:
+            except (OSError, json.JSONDecodeError) as e:
                 # TODO: Add exception handling
                 raise SphinxNeedsFileException(correct_need_import_path) from e
 
