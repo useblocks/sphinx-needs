@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726232505540,
+  "lastUpdate": 1726232771685,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -10044,6 +10044,42 @@ window.BENCHMARK_DATA = {
             "value": 72.32062781299999,
             "unit": "s",
             "extra": "Commit: 2ff14e758ecf4cd907fbc150ca0e9824f7032270\nBranch: master\nTime: 2024-09-13T14:59:38+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "dc3242a52f94a44bb3d41e1582acd42b008c3f89",
+          "message": "🧪 Improve `tests/test_basic_doc.py` (#1300)\n\nAll tests are now checked for build warnings.\r\n\r\nAdditionally, the `generic_doc` test build was removed, since it was basically the same as `doc_basic`",
+          "timestamp": "2024-09-13T15:04:12+02:00",
+          "tree_id": "4c401fefaca76fbb0bad617141182f24f3c7c5a3",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/dc3242a52f94a44bb3d41e1582acd42b008c3f89"
+        },
+        "date": 1726232761825,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21128838600000677,
+            "unit": "s",
+            "extra": "Commit: dc3242a52f94a44bb3d41e1582acd42b008c3f89\nBranch: master\nTime: 2024-09-13T15:04:12+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 68.555734357,
+            "unit": "s",
+            "extra": "Commit: dc3242a52f94a44bb3d41e1582acd42b008c3f89\nBranch: master\nTime: 2024-09-13T15:04:12+02:00"
           }
         ]
       }
