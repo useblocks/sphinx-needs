@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726232771685,
+  "lastUpdate": 1726513159153,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -10080,6 +10080,42 @@ window.BENCHMARK_DATA = {
             "value": 68.555734357,
             "unit": "s",
             "extra": "Commit: dc3242a52f94a44bb3d41e1582acd42b008c3f89\nBranch: master\nTime: 2024-09-13T15:04:12+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e6eea3162e93b3856c3d9b190f17b8c1ea1f7597",
+          "message": "🧪 improve some tests (#1301)\n\n- condense broken doc tests into single module\r\n- condense api tests into single module\r\n- remove unnecessary test projects when `doc_basic` can be used\r\n- add testing of `signature` capture to `add_sections_sigs` test project",
+          "timestamp": "2024-09-16T20:57:13+02:00",
+          "tree_id": "b29c40a39ae61fae6cec5fecb74b3c0f82580771",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e6eea3162e93b3856c3d9b190f17b8c1ea1f7597"
+        },
+        "date": 1726513148735,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.29910897300001693,
+            "unit": "s",
+            "extra": "Commit: e6eea3162e93b3856c3d9b190f17b8c1ea1f7597\nBranch: master\nTime: 2024-09-16T20:57:13+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 69.80341704299997,
+            "unit": "s",
+            "extra": "Commit: e6eea3162e93b3856c3d9b190f17b8c1ea1f7597\nBranch: master\nTime: 2024-09-16T20:57:13+02:00"
           }
         ]
       }
