@@ -9,5 +9,5 @@ TEST DOCUMENT
    :status: open
 
 
-.. needtable::
+.. needtable:: Table from sphinx-needs 'needtable' directive
    :filter: status == "open"

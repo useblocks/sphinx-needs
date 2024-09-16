@@ -1,3 +1,4 @@
+project = "needs"
 version = "0.1.0"
 copyright = "2024"
 
