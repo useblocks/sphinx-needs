@@ -14,7 +14,6 @@ from jinja2 import Template
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
-from sphinx_needs.api.configuration import NEEDS_CONFIG
 from sphinx_needs.api.exceptions import (
     NeedsConstraintNotAllowed,
     NeedsInvalidException,
@@ -24,7 +23,7 @@ from sphinx_needs.api.exceptions import (
     NeedsTagNotAllowed,
     NeedsTemplateException,
 )
-from sphinx_needs.config import GlobalOptionsType, NeedsSphinxConfig
+from sphinx_needs.config import NEEDS_CONFIG, GlobalOptionsType, NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.directives.needuml import Needuml, NeedumlException
 from sphinx_needs.filter_common import filter_single_need

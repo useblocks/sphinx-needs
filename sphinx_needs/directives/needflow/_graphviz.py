@@ -35,7 +35,7 @@ from ._shared import create_filter_paragraph, filter_by_tree, get_root_needs
 try:
     from sphinx.writers.html5 import HTML5Translator
 except ImportError:
-    from sphinx.writers.html import HTML5Translator
+    from sphinx.writers.html import HTML5Translator  # type: ignore[attr-defined]
 
 LOGGER = getLogger(__name__)
 

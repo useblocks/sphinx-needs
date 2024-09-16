@@ -30,7 +30,6 @@ from sphinx_needs.defaults import (
 )
 from sphinx_needs.directives.list2need import List2Need, List2NeedDirective
 from sphinx_needs.directives.need import (
-    Need,
     NeedDirective,
     analyse_need_locations,
     html_depart,
@@ -96,8 +95,10 @@ from sphinx_needs.environment import (
     install_styles_static_files,
 )
 from sphinx_needs.external_needs import load_external_needs
-from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS, register_func
+from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS
+from sphinx_needs.functions.functions import register_func
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.nodes import Need
 from sphinx_needs.roles import NeedsXRefRole
 from sphinx_needs.roles.need_count import NeedCount, process_need_count
 from sphinx_needs.roles.need_func import NeedFunc, NeedFuncRole, process_need_func
