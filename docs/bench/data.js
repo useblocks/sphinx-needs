@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726513693249,
+  "lastUpdate": 1726513736565,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -10152,6 +10152,42 @@ window.BENCHMARK_DATA = {
             "value": 67.89725407100002,
             "unit": "s",
             "extra": "Commit: d48e8e4b71bf03b76fb39d789d1f881d8b57f979\nBranch: master\nTime: 2024-09-16T21:06:11+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d25bd331a48634cc1fce7f65ced133e30ba0f680",
+          "message": "🔧 Remove unused configuration variables (#1303)\n\nRemove defined configuration variables that are not used anywhere in the codebase.\r\nThey are likely legacy configurations that were used once but no more.",
+          "timestamp": "2024-09-16T21:06:56+02:00",
+          "tree_id": "878e92092ecd3a0fd919c5801c5f6d83a946d351",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/d25bd331a48634cc1fce7f65ced133e30ba0f680"
+        },
+        "date": 1726513725891,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21351333300000874,
+            "unit": "s",
+            "extra": "Commit: d25bd331a48634cc1fce7f65ced133e30ba0f680\nBranch: master\nTime: 2024-09-16T21:06:56+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 70.12432554299998,
+            "unit": "s",
+            "extra": "Commit: d25bd331a48634cc1fce7f65ced133e30ba0f680\nBranch: master\nTime: 2024-09-16T21:06:56+02:00"
           }
         ]
       }
