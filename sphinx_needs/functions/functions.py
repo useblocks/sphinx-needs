@@ -152,7 +152,7 @@ def execute_func(
     return func_return
 
 
-func_pattern = re.compile(r"\[\[(.*?)\]\]")  # RegEx to detect function strings
+FUNC_RE = re.compile(r"\[\[(.*?)\]\]")  # RegEx to detect function strings
 
 
 def find_and_replace_node_content(
@@ -163,6 +163,9 @@ def find_and_replace_node_content(
     if found, check if it contains a function string and run/replace it.
 
     :param node: Node to analyse
+    :param env: Sphinx environment
+    :param need: Need data
+    :param extract: If True, the function has been called from a needextract node
     """
     new_children = []
     if isinstance(node, NeedFunc):
@@ -181,7 +184,7 @@ def find_and_replace_node_content(
                 return node
         else:
             new_text = node
-        func_match = func_pattern.findall(new_text)
+        func_match = FUNC_RE.findall(new_text)
         for func_string in func_match:
             # sphinx is replacing ' and " with language specific quotation marks (up and down), which makes
             # it impossible for the later used AST render engine to detect a python function call in the given
@@ -194,6 +197,10 @@ def find_and_replace_node_content(
 
             func_string = func_string.replace("‘", "'")  # noqa: RUF001
             func_string = func_string.replace("’", "'")  # noqa: RUF001
+
+            msg = f"The [[{func_string}]] syntax in need content is deprecated. Replace with :ndf:`{func_string}` instead."
+            log_warning(logger, msg, "deprecation", location=node)
+
             func_return = execute_func(env.app, need, func_string, node)
 
             if isinstance(func_return, list):
@@ -388,7 +395,7 @@ def check_and_get_content(
     :param location: source location of the function call
     :return: string
     """
-    func_match = func_pattern.search(content)
+    func_match = FUNC_RE.search(content)
     if func_match is None:
         return content
 
@@ -416,7 +423,7 @@ def _detect_and_execute_field(
     except UnicodeEncodeError:
         content = content.encode("utf-8")
 
-    func_match = func_pattern.search(content)
+    func_match = FUNC_RE.search(content)
     if func_match is None:
         return None, None
 

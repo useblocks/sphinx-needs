@@ -10,7 +10,7 @@ Test
 
    Another, child spec
 
-   This is id [[copy("id")]]
+   This is id [[copy("id")]] :ndf:`copy("id")`
 
    .. spec:: Child spec
      :id: SPEC_1_1
@@ -30,6 +30,6 @@ Test
    
          awesome grandchild spec number 2.
 
-         This is grandchild id [[copy("id")]]
+         This is grandchild id [[copy("id")]] :ndf:`copy("id")`
    
    Some parent text

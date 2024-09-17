@@ -1,5 +1,5 @@
 """
-Provide the role ``need_func``, which executes a dynamic function.
+Provide a role which executes a dynamic function.
 """
 
 from __future__ import annotations
@@ -10,21 +10,21 @@ from sphinx.environment import BuildEnvironment
 from sphinx.util.docutils import SphinxRole
 
 from sphinx_needs.data import NeedsInfoType
-from sphinx_needs.logging import get_logger
+from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import add_doc
 
-log = get_logger(__name__)
+LOGGER = get_logger(__name__)
 
 
 class NeedFuncRole(SphinxRole):
     """Role for creating ``NeedFunc`` node."""
 
-    def __init__(self, no_braces: bool = False) -> None:
+    def __init__(self, *, with_brackets: bool = False) -> None:
         """Initialize the role.
 
-        :param no_braces: If True, the function should not be wrapped ``[[]]``.
+        :param with_brackets: If True, the function is expected to be wrapped in brackets ``[[]]``.
         """
-        self.no_braces = no_braces
+        self.with_brackets = with_brackets
         super().__init__()
 
     def run(self) -> tuple[list[nodes.Node], list[nodes.system_message]]:
@@ -32,19 +32,34 @@ class NeedFuncRole(SphinxRole):
         node = NeedFunc(
             self.rawtext,
             nodes.literal(self.rawtext, self.text),
-            no_braces=self.no_braces,
+            with_brackets=self.with_brackets,
             **self.options,
         )
         self.set_source_info(node)
+        if self.with_brackets:
+            from sphinx_needs.functions.functions import FUNC_RE
+
+            msg = "The `need_func` role is deprecated. "
+            if func_match := FUNC_RE.search(node.astext()):
+                func_call = func_match.group(1)
+                msg += f"Replace with :ndf:`{func_call}` instead."
+            else:
+                msg += "Replace with ndf role instead."
+            log_warning(LOGGER, msg, "deprecation", location=node)
         return [node], []
 
 
 class NeedFunc(nodes.Inline, nodes.Element):
+    @property
+    def with_brackets(self) -> bool:
+        """Return the function with brackets."""
+        return self.get("with_brackets", False)  # type: ignore[no-any-return]
+
     def get_text(self, env: BuildEnvironment, need: NeedsInfoType | None) -> nodes.Text:
         """Execute function and return result."""
         from sphinx_needs.functions.functions import check_and_get_content, execute_func
 
-        if self.get("no_braces"):
+        if not self.with_brackets:
             func_return = execute_func(env.app, need, self.astext(), self)
             if isinstance(func_return, list):
                 func_return = ", ".join(str(el) for el in func_return)
@@ -52,6 +67,7 @@ class NeedFunc(nodes.Inline, nodes.Element):
             return nodes.Text("" if func_return is None else str(func_return))
 
         result = check_and_get_content(self.astext(), need, env, self)
+
         return nodes.Text(str(result))
 
 

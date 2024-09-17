@@ -71,7 +71,10 @@ class NeedextendDirective(SphinxDirective):
 
         add_doc(env, env.docname)
 
-        return [targetnode, Needextend("")]
+        node = Needextend("")
+        self.set_source_info(node)
+
+        return [targetnode, node]
 
 
 RE_ID_FUNC = re.compile(r"\s*((?P<function>\[\[[^\]]*\]\])|(?P<id>[^;,]+))\s*([;,]|$)")

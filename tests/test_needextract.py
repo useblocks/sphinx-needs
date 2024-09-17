@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 from lxml import html as html_parser
+from sphinx.util.console import strip_colors
 
 
 @pytest.mark.parametrize(
@@ -69,7 +70,17 @@ def test_needextract_basic(test_app):
 def test_needextract_with_nested_needs(test_app):
     app = test_app
     app.build()
-    assert not app._warning.getvalue()
+    warnings = strip_colors(
+        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
+    ).splitlines()
+    # print(warnings)
+    # note these warnings are emitted twice because they are resolved twice: once when first specified and once when copied with needextract
+    assert warnings == [
+        'srcdir/index.rst:13: WARNING: The [[copy("id")]] syntax in need content is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecation]',
+        'srcdir/index.rst:33: WARNING: The [[copy("id")]] syntax in need content is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecation]',
+        'srcdir/index.rst:13: WARNING: The [[copy("id")]] syntax in need content is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecation]',
+        'srcdir/index.rst:33: WARNING: The [[copy("id")]] syntax in need content is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecation]',
+    ]
 
     needextract_html = Path(app.outdir, "needextract.html").read_text()
 
@@ -93,5 +104,6 @@ def test_needextract_with_nested_needs(test_app):
         in needextract_html
     )
 
-    assert "This is id SPEC_1" in needextract_html
-    assert "This is grandchild id SPEC_1_1_2" in needextract_html
+    # dynamic functions should be executed
+    assert "This is id SPEC_1 SPEC_1" in needextract_html
+    assert "This is grandchild id SPEC_1_1_2 SPEC_1_1_2" in needextract_html
