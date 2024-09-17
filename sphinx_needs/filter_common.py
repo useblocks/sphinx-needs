@@ -307,7 +307,7 @@ def filter_needs_mutable(
     location: tuple[str, int | None] | nodes.Node | None = None,
     append_warning: str = "",
 ) -> list[NeedsInfoType]:
-    return _filter_needs(
+    return filter_needs(
         needs.values(),
         config,
         filter_string,
@@ -326,7 +326,7 @@ def filter_needs_view(
     location: tuple[str, int | None] | nodes.Node | None = None,
     append_warning: str = "",
 ) -> list[NeedsInfoType]:
-    return _filter_needs(
+    return filter_needs(
         needs.values(),
         config,
         filter_string,
@@ -345,7 +345,7 @@ def filter_needs_parts(
     location: tuple[str, int | None] | nodes.Node | None = None,
     append_warning: str = "",
 ) -> list[NeedsInfoType]:
-    return _filter_needs(
+    return filter_needs(
         needs,
         config,
         filter_string,
@@ -356,7 +356,7 @@ def filter_needs_parts(
 
 
 @measure_time("filtering")
-def _filter_needs(
+def filter_needs(
     needs: Iterable[NeedsInfoType],
     config: NeedsSphinxConfig,
     filter_string: None | str = "",
