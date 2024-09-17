@@ -356,7 +356,7 @@ def filter_needs_parts(
 
 
 @measure_time("filtering")
-def _filter_needs(
+def filter_needs(
     needs: Iterable[NeedsInfoType],
     config: NeedsSphinxConfig,
     filter_string: None | str = "",
