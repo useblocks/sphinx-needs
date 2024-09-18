@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726616507949,
+  "lastUpdate": 1726646543933,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -10224,6 +10224,42 @@ window.BENCHMARK_DATA = {
             "value": 66.87571972500001,
             "unit": "s",
             "extra": "Commit: 72138fd99c8abfa1f5d3e8e397d5b042f7133b08\nBranch: master\nTime: 2024-09-18T01:39:51+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "976dcd52130d7edcca6b1b073f665fca5cf823da",
+          "message": "✨ Add `ndf` role, deprecate `need_func` & `[[...]]` in need content (#1269)\n\nThere were previously two methods to use dynamic functions within need directive's content:\r\n\r\n1. ``[[copy(\"id\")]]``; is problematic, because it does not adhere to the rst / myst syntax specification, and has already shown to cause parsing issues and be surprising to users\r\n\r\n2. `` :need_func:`[[copy(\"id\")]]` ``; is better but overly verbose\r\n\r\nIn this commit, these are replaced by the role: `` :ndf:`copy(\"id\")` ``\r\nHere we take the entire content to be the function, as so do not require the `[[]]`, reducing verbosity and processing\r\n\r\nThe other two methods now emit a deprecation warning, showing how to convert them to the new role.",
+          "timestamp": "2024-09-18T10:00:26+02:00",
+          "tree_id": "8e9e7198a2bbdea3b53e4eeecc9fcf013d1cc93d",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/976dcd52130d7edcca6b1b073f665fca5cf823da"
+        },
+        "date": 1726646534488,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18162319300000718,
+            "unit": "s",
+            "extra": "Commit: 976dcd52130d7edcca6b1b073f665fca5cf823da\nBranch: master\nTime: 2024-09-18T10:00:26+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 66.84443248199997,
+            "unit": "s",
+            "extra": "Commit: 976dcd52130d7edcca6b1b073f665fca5cf823da\nBranch: master\nTime: 2024-09-18T10:00:26+02:00"
           }
         ]
       }
