@@ -196,6 +196,8 @@ def _build_needextract(
 
     dummy_need.extend(need_node.children)
 
+    find_and_replace_node_content(dummy_need, env, need_data)
+
     # resolve_references() ignores the given docname and takes the docname from the pending_xref node.
     # Therefore, we need to manipulate this first, before we can ask Sphinx to perform the normal
     # reference handling for us.
@@ -203,7 +205,6 @@ def _build_needextract(
     env.resolve_references(dummy_need, extract_data["docname"], app.builder)  # type: ignore[arg-type]
 
     dummy_need.attributes["ids"].append(need_data["id"])
-    find_and_replace_node_content(dummy_need, env, need_data)
     rendered_node = build_need_repr(
         dummy_need,  # type: ignore[arg-type]
         need_data,

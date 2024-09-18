@@ -39,16 +39,16 @@ def test(
 
         .. req:: test requirement
 
-            [[test('arg_1', [1,2,3], my_keyword='awesome')]]
+            :ndf:`test('arg_1', [1,2,3], my_keyword='awesome')`
 
     .. req:: test requirement
 
-        [[test('arg_1', [1,2,3], my_keyword='awesome')]]
+        :ndf:`test('arg_1', [1,2,3], my_keyword='awesome')`
 
     :return: single test string
     """
     need_id = "none" if need is None else need["id"]
-    return f"Test output of need_func; need: {need_id}; args: {args}; kwargs: {kwargs}"
+    return f"Test output of dynamic function; need: {need_id}; args: {args}; kwargs: {kwargs}"
 
 
 def echo(
@@ -67,9 +67,9 @@ def echo(
 
     .. code-block:: jinja
 
-       A nice :need_func:`[[echo("first")]] test` for need_func.
+       A nice :ndf:`echo("first test")` for a dynamic function.
 
-    **Result**: A nice :need_func:`[[echo("first")]] test` for need_func.
+    **Result**: A nice :ndf:`echo("first test")` for a dynamic function.
 
     """
     return text
@@ -146,7 +146,7 @@ def copy(
            The following copy command copies the title of the first need found under the same  highest
            section (headline):
 
-           [[copy('title', filter='current_need["sections"][-1]==sections[-1]')]]
+           :ndf:`copy('title', filter='current_need["sections"][-1]==sections[-1]')`
 
     .. test:: test of current_need value
        :id: copy_4
@@ -154,7 +154,7 @@ def copy(
        The following copy command copies the title of the first need found under the same  highest
        section (headline):
 
-       [[copy('title', filter='current_need["sections"][-1]==sections[-1]')]]
+       :ndf:`copy('title', filter='current_need["sections"][-1]==sections[-1]')`
 
     This filter possibilities get really powerful in combination with :ref:`needs_global_options`.
 

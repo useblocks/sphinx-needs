@@ -35,8 +35,8 @@ Also, you can add links or delete tags.
 
       This requirement got modified.
 
-      | Status was **open**, now it is **[[copy('status')]]**.
-      | Also author got changed from **Foo** to **[[copy('author')]]**.
+      | Status was **open**, now it is :ndf:`copy('status')`.
+      | Also author got changed from **Foo** to :ndf:`copy('author')`.
       | And a tag was added.
       | Finally all links got removed.
 

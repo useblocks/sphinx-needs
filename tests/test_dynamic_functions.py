@@ -26,12 +26,21 @@ def test_doc_dynamic_functions(test_app):
         app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
     ).splitlines()
     assert warnings == [
-        "srcdir/index.rst:40: WARNING: Error while executing function 'copy': Need not found [needs.dynamic_function]"
+        'srcdir/index.rst:11: WARNING: The `need_func` role is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecation]',
+        'srcdir/index.rst:40: WARNING: The `need_func` role is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecation]',
+        'srcdir/index.rst:44: WARNING: The `need_func` role is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecation]',
+        'srcdir/index.rst:9: WARNING: The [[copy("id")]] syntax in need content is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecation]',
+        'srcdir/index.rst:27: WARNING: The [[copy("tags")]] syntax in need content is deprecated. Replace with :ndf:`copy("tags")` instead. [needs.deprecation]',
+        "srcdir/index.rst:33: WARNING: The [[copy('id')]] syntax in need content is deprecated. Replace with :ndf:`copy('id')` instead. [needs.deprecation]",
+        "srcdir/index.rst:38: WARNING: The [[copy('id')]] syntax in need content is deprecated. Replace with :ndf:`copy('id')` instead. [needs.deprecation]",
+        "srcdir/index.rst:44: WARNING: Error while executing function 'copy': Need not found [needs.dynamic_function]",
+        "srcdir/index.rst:44: WARNING: Error while executing function 'copy': Need not found [needs.dynamic_function]",
     ]
 
     html = Path(app.outdir, "index.html").read_text()
     assert "This is id SP_TOO_001" in html
     assert "This is also id SP_TOO_001" in html
+    assert "This is the best id SP_TOO_001" in html
 
     assert (
         sum(1 for _ in re.finditer('<span class="needs_data">test2</span>', html)) == 2
@@ -59,7 +68,7 @@ def test_doc_dynamic_functions(test_app):
         sum(1 for _ in re.finditer('<span class="needs_data">TEST_5</span>', html)) == 2
     )
 
-    assert "Test output of need_func; need: TEST_3" in html
+    assert "Test output of dynamic function; need: TEST_3" in html
 
     assert "Test dynamic func in tags: test_4a, test_4b, TEST_4" in html
 
@@ -67,6 +76,7 @@ def test_doc_dynamic_functions(test_app):
 
     assert "nested id TEST_6" in html
     assert "nested id also TEST_6" in html
+    assert "nested id best TEST_6" in html
 
 
 @pytest.mark.parametrize(
@@ -118,8 +128,12 @@ def test_doc_df_user_functions(test_app):
     # print(warnings)
     expected = [
         "srcdir/index.rst:10: WARNING: Return value of function 'bad_function' is of type <class 'object'>. Allowed are str, int, float, list [needs.dynamic_function]",
+        "srcdir/index.rst:8: WARNING: The [[my_own_function()]] syntax in need content is deprecated. Replace with :ndf:`my_own_function()` instead. [needs.deprecation]",
+        "srcdir/index.rst:14: WARNING: The [[bad_function()]] syntax in need content is deprecated. Replace with :ndf:`bad_function()` instead. [needs.deprecation]",
         "srcdir/index.rst:14: WARNING: Return value of function 'bad_function' is of type <class 'object'>. Allowed are str, int, float, list [needs.dynamic_function]",
+        "srcdir/index.rst:16: WARNING: The [[invalid]] syntax in need content is deprecated. Replace with :ndf:`invalid` instead. [needs.deprecation]",
         "srcdir/index.rst:16: WARNING: Function string 'invalid' could not be parsed: Given dynamic function string is not a valid python call. Got: invalid [needs.dynamic_function]",
+        "srcdir/index.rst:18: WARNING: The [[unknown()]] syntax in need content is deprecated. Replace with :ndf:`unknown()` instead. [needs.deprecation]",
         "srcdir/index.rst:18: WARNING: Unknown function 'unknown' [needs.dynamic_function]",
     ]
     if version_info >= (7, 3):

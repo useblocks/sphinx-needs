@@ -10,6 +10,8 @@ DYNAMIC FUNCTIONS
 
     This is also id :need_func:`[[copy("id")]]`
 
+    This is the best id :ndf:`copy("id")`
+
 .. spec:: TEST_2
    :id: TEST_2
    :tags: my_tag; [[copy("tags", "SP_TOO_001")]]
@@ -37,4 +39,6 @@ DYNAMIC FUNCTIONS
 
         nested id also :need_func:`[[copy("id")]]`
 
-This should warn since it has no associated need: :need_func:`[[copy("id")]]`
+        nested id best :ndf:`copy("id")`
+
+These should warn since they have no associated need: :need_func:`[[copy("id")]]`, :ndf:`copy("id")`

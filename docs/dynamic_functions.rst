@@ -3,32 +3,35 @@
 Dynamic functions
 =================
 
-**Sphinx-Needs** provides a mechanism to set dynamic data for need-options during generation.
-We do this by giving an author the possibility to set a function call to a predefined function, which calculates
-the final result/value for the option.
+Dynamic functions provide a mechanism to specify need fields or content that are calculated at build time, based on other fields or needs.
+
+We do this by giving an author the possibility to set a function call to a predefined function, which calculates the final value **after all needs have been collected**.
 
 For instance, you can use the feature if the status of a requirement depends on linked test cases and their status.
 Or if you will request specific data from an external server like JIRA.
 
-**needtable**
+To refer to a dynamic function, you can use the following syntax:
 
-The options :ref:`needtable_style_row` of :ref:`needtable` also support
-dynamic function execution. In this case, the function gets executed with the found need for each row.
-
-This allows you to set row and column specific styles such as, set a row background to red, if a need-status is *failed*.
-
+- In a need directive option, wrap the function call in double square brackets: ``function_name(arg)``
+- In a need content, use the :ref:`ndf` role: ``:ndf:\`function_name(arg)\```
 
 .. need-example:: Dynamic function example
 
    .. req:: my test requirement
       :id: df_1
       :status: open
+      :tags: test;[[copy("status")]]
 
-      This need has id **[[copy("id")]]** and status **[[copy("status")]]**.
+      This need has id :ndf:`copy("id")` and status :ndf:`copy("status")`.
+
+.. deprecated:: 3.1.0
+
+   The :ref:`ndf` role replaces the use of the ``[[...]]`` syntax in need content.
 
 Built-in functions
 -------------------
-The following functions are available in all **Sphinx-Needs** installations.
+
+The following functions are available by default.
 
 .. note::
 
