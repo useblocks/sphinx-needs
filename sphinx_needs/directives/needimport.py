@@ -288,7 +288,7 @@ class NeedimportDirective(SphinxDirective):
 class _ImportCache:
     """A simple cache for imported needs,
     mapping a (path, mtime) to a dictionary of needs.
-    that is thread safe,
+    It's thread safe,
     and has a maximum size when adding new items.
     """
 
