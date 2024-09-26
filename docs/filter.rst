@@ -44,13 +44,9 @@ You can easily filter for multiple statuses by separating them by ";". Example: 
 
 .. dropdown:: Show example
 
-   .. code-block:: rst
+   .. need-example::
 
       .. needlist::
-         :status: open
-         :show_status:
-
-   .. needlist::
          :status: open
          :show_status:
 
@@ -65,16 +61,11 @@ To search for multiple tags, simply separate them by using ";".
 
 .. dropdown:: Show example
 
-   .. code-block:: rst
+   .. need-example::
 
       .. needlist::
          :tags: main_example
          :show_tags:
-
-   .. needlist::
-         :tags: main_example
-         :show_tags:
-
 
 .. _option_types:
 
@@ -84,15 +75,10 @@ For **:types:** the type itself or the human-readable type-title can be used as 
 
 .. dropdown:: Show example
 
-   .. code-block:: rst
+   .. need-example::
 
       .. needtable::
          :types: test
-
-   .. needtable::
-      :types: test
-      :style: table
-
 
 .. _option_sort_by:
 
@@ -102,19 +88,11 @@ Sorts the result list. Allowed values are ``status`` or any alphanumerical prope
 
 .. dropdown:: Show example
 
-   .. code-block:: rst
+   .. need-example::
 
       .. needtable::
          :sort_by: id
          :status: open
-
-
-   .. needtable::
-      :sort_by: id
-      :status: open
-      :style: table
-
-
 
 .. _option_filter:
 
@@ -141,9 +119,9 @@ The usage of a filter string is supported/required by:
 
 The filter string must be a valid Python expression:
 
-.. code-block:: rst
+.. need-example::
 
-   :need_count:`type=='spec' and status.upper()!='OPEN'`
+   :need_count:`type=='spec' and status != 'open'`
 
 A filter string gets evaluated on needs and need_parts!
 A need_part inherits all options from its parent need, if the need_part has no own content for this option.
@@ -157,11 +135,11 @@ This allows to perform searches for need_parts, where search options are based o
 
 The following filter will find all need_parts, which are part of a need, which has a tag called *important*.
 
-.. code-block:: rst
+.. need-example::
 
-   :need_count:`is_part and 'important' in tags`
+   :need_count:`is_part and 'car' in tags`
 
-Inside a filter string the following variables/functions can be used:
+Inside a filter string all the fields of :py:class:`.NeedsInfoType` can be used, including:
 
 * **tags** as Python list (compare like ``"B" in tags``)
 * **type** as Python string (compare like ``"story" == type``)
@@ -176,8 +154,6 @@ Inside a filter string the following variables/functions can be used:
 * **is_need** as Python boolean. (compare like ``is_need``)
 * **is_part** as Python boolean. (compare like ``is_part``)
 * **parts** as Python list with :ref:`need_part` of the current need. (compare like ``len(parts)>0``)
-* :ref:`re_search`, as Python function for performing searches with a regular expression
-* **needs** as Python dict. Contains all needs. Helpful to perform complex filters on links (added 0.3.15).
 * **sections** as list of sections names, th which the need belongs to.
 * **section_name** as string, which defines the last/lowest section a need belongs to.
 * **docname** as string, which defines the name of the document in which a need is defined, without the extension (similar to Sphinx' ``:doc:`` role)
@@ -193,67 +169,50 @@ Additional variables for :ref:`need_part`:
 * **id_complete** as Python string. Contains the concatenated ids of parent need and need_part.
   (compare like ``id_complete != 'ABC_01.03'``)
 
-
 .. note:: If extra options were specified using :ref:`needs_extra_options` then
           those will be available for use in filter expressions as well.
+
+
+Finally, the following are available:
+
+* :ref:`re_search`, as Python function for performing searches with a regular expression
+* **needs** as :class:`.NeedsPartsView` object, which contains all needs and need_parts.
 
 If your expression is valid and it's True, the related need is added to the filter result list.
 If it is invalid or returns False, the related need is not taken into account for the current filter.
 
 .. dropdown:: Show example
 
-   .. code-block:: rst
+   .. need-example:: ``filter`` option
 
-       .. req:: Requirement A
-          :tags: A; filter_example
-          :status: open
+      needs:
 
-       .. req:: Requirement B
-          :tags: B; filter_example
-          :status: closed
+      .. req:: Requirement A
+         :tags: A; filter_example
+         :status: open
+         :hide:
 
-       .. spec:: Specification A
-          :tags: A; filter_example
-          :status: closed
+      .. req:: Requirement B
+         :tags: B; filter_example
+         :status: closed
+         :hide:
 
-       .. spec:: Specification B
-          :tags: B; filter_example
-          :status: open
+      .. spec:: Specification A
+         :tags: A; filter_example
+         :status: closed
+         :hide:
 
-       .. test:: Test 1
-          :tags: filter_example
+      .. spec:: Specification B
+         :tags: B; filter_example
+         :status: open
+         :hide:
 
-       .. needtable::
-          :filter: "filter_example" in tags and ("B" in tags or ("spec" == type and "closed" == status)) or "test" == type
+      .. test:: Test 1
+         :tags: filter_example
+         :hide:
 
-   This will have the following result:
-
-   .. req:: Requirement A
-      :tags: A; filter_example
-      :status: open
-      :hide:
-
-   .. req:: Requirement B
-      :tags: B; filter_example
-      :status: closed
-      :hide:
-
-   .. spec:: Specification A
-      :tags: A; filter_example
-      :status: closed
-      :hide:
-
-   .. spec:: Specification B
-      :tags: B; filter_example
-      :status: open
-      :hide:
-
-   .. test:: Test 1
-      :tags: filter_example
-      :hide:
-
-   .. needfilter::
-      :filter: "filter_example" in tags and (("B" in tags or ("spec" == type and "closed" == status)) or "test" == type)
+      .. needfilter::
+         :filter: "filter_example" in tags and (("B" in tags or ("spec" == type and "closed" == status)) or "test" == type)
 
 .. _re_search:
 
@@ -270,17 +229,12 @@ The second parameter should be one of the above variables(status, id, content, .
 
    This example uses a regular expressions to find all needs with an e-mail address in title.
 
-   .. code-block:: rst
+   .. need-example::
 
       .. req:: Set admin e-mail to admin@mycompany.com
 
       .. needlist::
          :filter: search("([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", title)
-
-   .. req:: Set admin e-mail to admin@mycompany.com
-
-   .. needlist::
-      :filter: search("([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", title)
 
 .. _export_id:
 
@@ -311,7 +265,7 @@ with the help of Python.
 
 The used code must define a variable ``results``, which must be a list and contains the filtered needs.
 
-.. code-block:: rst
+.. need-example::
 
    .. needtable::
       :columns: id, title, type, links, links_back
@@ -330,24 +284,6 @@ The used code must define a variable ``results``, which must be a list and conta
                if needs_dict[links_id]['type'] == 'spec':
                   results.append(need)
                   results.append(needs_dict[links_id])
-
-.. needtable::
-   :columns: id, title, type, links, links_back
-   :style: table
-
-   # Collect all requirements and specs,
-   # which are linked to each other.
-
-   results = []
-   # Lets create a needs_dict to address needs by ids more easily.
-   needs_dict = {x['id']: x for x in needs}
-
-   for need in needs:
-      if need['type'] == 'req':
-         for links_id in need['links']:
-            if needs_dict[links_id]['type'] == 'spec':
-               results.append(need)
-               results.append(needs_dict[links_id])
 
 The code has access to a variable called ``needs``, which contains a copy of all needs.
 So manipulations on the values in ``needs`` do not have any affects.

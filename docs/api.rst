@@ -38,4 +38,4 @@ Data
 ----
 
 .. automodule:: sphinx_needs.data
-   :members: NeedsInfoType, NeedsView
+   :members: NeedsInfoType, NeedsView, NeedsPartsView
