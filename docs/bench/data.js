@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1726646543933,
+  "lastUpdate": 1727379725617,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -10260,6 +10260,42 @@ window.BENCHMARK_DATA = {
             "value": 66.84443248199997,
             "unit": "s",
             "extra": "Commit: 976dcd52130d7edcca6b1b073f665fca5cf823da\nBranch: master\nTime: 2024-09-18T10:00:26+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "66853113+pre-commit-ci[bot]@users.noreply.github.com",
+            "name": "pre-commit-ci[bot]",
+            "username": "pre-commit-ci[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4904141e90108f94fac0b71f17a0cfeee01fcef4",
+          "message": "[pre-commit.ci] pre-commit autoupdate (#1306)\n\nCo-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>\r\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2024-09-26T21:40:00+02:00",
+          "tree_id": "df21300204d9a6e6f45888d73dedd3c3bdfdcf09",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/4904141e90108f94fac0b71f17a0cfeee01fcef4"
+        },
+        "date": 1727379716335,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1923820719999867,
+            "unit": "s",
+            "extra": "Commit: 4904141e90108f94fac0b71f17a0cfeee01fcef4\nBranch: master\nTime: 2024-09-26T21:40:00+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 70.46388039299998,
+            "unit": "s",
+            "extra": "Commit: 4904141e90108f94fac0b71f17a0cfeee01fcef4\nBranch: master\nTime: 2024-09-26T21:40:00+02:00"
           }
         ]
       }
