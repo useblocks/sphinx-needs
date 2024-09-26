@@ -35,15 +35,11 @@ def test(
 
     Collects every given args and kwargs and returns a single string, which contains their values/keys.
 
-    .. code-block:: jinja
+    .. need-example::
 
         .. req:: test requirement
 
             :ndf:`test('arg_1', [1,2,3], my_keyword='awesome')`
-
-    .. req:: test requirement
-
-        :ndf:`test('arg_1', [1,2,3], my_keyword='awesome')`
 
     :return: single test string
     """
@@ -65,11 +61,9 @@ def echo(
     Just returns the given string back.
     Mostly useful for tests.
 
-    .. code-block:: jinja
+    .. need-example::
 
        A nice :ndf:`echo("first test")` for a dynamic function.
-
-    **Result**: A nice :ndf:`echo("first test")` for a dynamic function.
 
     """
     return text
@@ -88,7 +82,7 @@ def copy(
     """
     Copies the value of one need option to another
 
-    .. code-block:: jinja
+    .. need-example::
 
         .. req:: copy-example
            :id: copy_1
@@ -112,29 +106,6 @@ def copy(
            Set own link to ``copy_2`` and also copies all links from it.
 
            Also copies all tags from copy_1.
-
-    .. req:: copy-example
-       :id: copy_1
-       :tags: tag_1, tag_2, tag_3
-       :status: open
-
-    .. spec:: copy-example implementation
-       :id: copy_2
-       :status: [[copy("status", "copy_1")]]
-       :links: copy_1
-       :comment: [[copy("id")]]
-
-       Copies status of ``copy_1`` to own status.
-       Sets also a comment, which copies the id of own need.
-
-    .. test:: test of specification and requirement
-       :id: copy_3
-       :links: copy_2; [[copy('links', 'copy_2')]]
-       :tags: [[copy('tags', 'copy_1')]]
-
-       Set own link to ``copy_2`` and also copies all links from it.
-
-       Also copies all tags from copy_1.
 
     If the filter_string needs to compare a value from the current need and the value is unknown yet,
     you can reference the valued field by using ``current_need["my_field"]`` inside the filter string.
@@ -219,7 +190,7 @@ def check_linked_values(
 
     **Needs used as input data**
 
-    .. code-block:: jinja
+    .. need-example::
 
         .. req:: Input A
            :id: clv_A
@@ -233,71 +204,38 @@ def check_linked_values(
            :id: clv_C
            :status: closed
 
-    .. req:: Input A
-       :id: clv_A
-       :status: in progress
-       :collapse: False
-
-    .. req:: Input B
-       :id: clv_B
-       :status: in progress
-       :collapse: False
-
-    .. spec:: Input C
-       :id: clv_C
-       :status: closed
-       :collapse: False
-
-
     **Example 1: Positive check**
 
     Status gets set to *progress*.
 
-    .. code-block:: jinja
+    .. need-example::
 
         .. spec:: result 1: Positive check
            :links: clv_A, clv_B
            :status: [[check_linked_values('progress', 'status', 'in progress' )]]
-
-    .. spec:: result 1: Positive check
-       :id: clv_1
-       :links: clv_A, clv_B
-       :status: [[check_linked_values('progress', 'status', 'in progress' )]]
-       :collapse: False
-
+           :collapse: False
 
     **Example 2: Negative check**
 
     Status gets not set to *progress*, because status of linked need *clv_C* does not match *"in progress"*.
 
-    .. code-block:: jinja
+    .. need-example::
 
         .. spec:: result 2: Negative check
            :links: clv_A, clv_B, clv_C
            :status: [[check_linked_values('progress', 'status', 'in progress' )]]
-
-    .. spec:: result 2: Negative check
-       :id: clv_2
-       :links: clv_A, clv_B, clv_C
-       :status: [[check_linked_values('progress', 'status', 'in progress' )]]
-       :collapse: False
-
+           :collapse: False
 
     **Example 3: Positive check thanks of used filter**
 
     status gets set to *progress*, because linked need *clv_C* is not part of the filter.
 
-    .. code-block:: jinja
+    .. need-example::
 
         .. spec:: result 3: Positive check thanks of used filter
            :links: clv_A, clv_B, clv_C
            :status: [[check_linked_values('progress', 'status', 'in progress', 'type == "req" ' )]]
-
-    .. spec:: result 3: Positive check thanks of used filter
-       :id: clv_3
-       :links: clv_A, clv_B, clv_C
-       :status: [[check_linked_values('progress', 'status', 'in progress', 'type == "req" ' )]]
-       :collapse: False
+           :collapse: False
 
     **Example 4: Positive check thanks of one_hit option**
 
@@ -305,32 +243,22 @@ def check_linked_values(
     That's because ``one_hit`` is used so that only one linked need must have the searched
     value.
 
-    .. code-block:: jinja
+    .. need-example::
 
         .. spec:: result 4: Positive check thanks of one_hit option
            :links: clv_A, clv_B, clv_C
            :status: [[check_linked_values('progress', 'status', 'in progress', one_hit=True )]]
-
-    .. spec:: result 4: Positive check thanks of one_hit option
-       :id: clv_4
-       :links: clv_A, clv_B, clv_C
-       :status: [[check_linked_values('progress', 'status', 'in progress', one_hit=True )]]
-       :collapse: False
+           :collapse: False
 
     **Result 5: Two checks and a joint status**
     Two checks are performed and both are positive. So their results get joined.
 
-    .. code-block:: jinja
+    .. need-example::
 
         .. spec:: result 5: Two checks and a joint status
            :links: clv_A, clv_B, clv_C
            :status: [[check_linked_values('progress', 'status', 'in progress', one_hit=True )]] [[check_linked_values('closed', 'status', 'closed', one_hit=True )]]
-
-    .. spec:: result 5: Two checks and a joint status
-       :id: clv_5
-       :links: clv_A, clv_B, clv_C
-       :status: [[check_linked_values('progress', 'status', 'in progress', one_hit=True )]] [[check_linked_values('closed', 'status', 'closed', one_hit=True )]]
-       :collapse: False
+           :collapse: False
 
     :param result: value, which gets returned if all linked needs have parsed the checks
     :param search_option: option name, which is used n linked needs for the search
@@ -404,52 +332,38 @@ def calc_sum(
 
     **Example 2**
 
-    .. code-block:: jinja
+    .. need-example::
 
        .. req:: Result 1
           :amount: [[calc_sum("hours")]]
-
-    .. req:: Result 1
-       :amount: [[calc_sum("hours")]]
-       :collapse: False
+          :collapse: False
 
 
     **Example 2**
 
-    .. code-block:: jinja
+    .. need-example::
 
        .. req:: Result 2
           :amount: [[calc_sum("hours", "hours.isdigit() and float(hours) > 10")]]
-
-    .. req:: Result 2
-       :amount: [[calc_sum("hours", "hours.isdigit() and float(hours) > 10")]]
-       :collapse: False
+          :collapse: False
 
     **Example 3**
 
-    .. code-block:: jinja
+    .. need-example::
 
        .. req:: Result 3
           :links: sum_input_1; sum_input_3
           :amount: [[calc_sum("hours", links_only="True")]]
-
-    .. req:: Result 3
-       :links: sum_input_1; sum_input_3
-       :amount: [[calc_sum("hours", links_only="True")]]
-       :collapse: False
+          :collapse: False
 
     **Example 4**
 
-    .. code-block:: jinja
+    .. need-example::
 
        .. req:: Result 4
           :links: sum_input_1; sum_input_3
           :amount: [[calc_sum("hours", "hours.isdigit() and float(hours) > 10", "True")]]
-
-    .. req:: Result 4
-       :links: sum_input_1; sum_input_3
-       :amount: [[calc_sum("hours", "hours.isdigit() and float(hours) > 10", "True")]]
-       :collapse: False
+          :collapse: False
 
     :param option: Options, from which the numbers shall be taken
     :param filter: Filter string, which all needs must passed to get their value added.
