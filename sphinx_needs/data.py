@@ -62,6 +62,8 @@ class NeedsPartType(TypedDict):
     links_back: list[str]
     """List of need IDs, which are referencing this part."""
 
+    # note back links for each type are also set dynamically in post_process_needs_data (-> create_back_links)
+
 
 class CoreFieldParameters(TypedDict):
     """Parameters for core fields."""

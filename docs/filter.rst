@@ -276,15 +276,13 @@ The code also has access to a variable called ``needs``, which is a :class:`.Nee
       # which are linked to each other.
 
       results = []
-
-      # Lets create a map view to address needs by ids more easily
-      needs_view = needs.to_map_view()
       
-      for need in needs_view.filter_types(["req"]).to_list_with_parts():
+      for need in needs.filter_types(["req"]):
          for links_id in need['links']:
-            if needs_view[links_id]['type'] == 'spec':
+            linked_need = needs.get_need(links_id)
+            if linked_need and linked_need['type'] == 'spec':
                results.append(need)
-               results.append(needs_view[links_id])
+               results.append(linked_need)
 
 This mechanism can also be a good alternative for complex filter strings to save performance.
 For example if a filter string is using list comprehensions to get access to linked needs.

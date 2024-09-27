@@ -5,10 +5,11 @@ like needtable, needlist and needflow.
 
 from __future__ import annotations
 
+import ast
 import re
 from timeit import default_timer as timer
 from types import CodeType
-from typing import Any, Iterable, TypedDict
+from typing import Any, Iterable, TypedDict, overload
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -145,15 +146,17 @@ def process_filters(
     found_needs: list[NeedsInfoType] = []
 
     if (not filter_code or filter_code.isspace()) and not ff_result:
+        # TODO these may not be correct for parts
         filtered_needs = needs_view
         if filter_data["status"]:
             filtered_needs = filtered_needs.filter_statuses(filter_data["status"])
         if filter_data["tags"]:
-            filtered_needs = filtered_needs.filter_tags(filter_data["tags"])
+            filtered_needs = filtered_needs.filter_has_tag(filter_data["tags"])
         if filter_data["types"]:
             filtered_needs = filtered_needs.filter_types(
                 filter_data["types"], or_type_names=True
             )
+
         # Get need by filter string
         found_needs = filter_needs_parts(
             filtered_needs.to_list_with_parts(),
@@ -257,6 +260,106 @@ def filter_needs_mutable(
     )
 
 
+@overload
+def _analyze_and_apply_expr(
+    needs: NeedsView, expr: ast.expr
+) -> tuple[NeedsView, bool]: ...
+
+
+@overload
+def _analyze_and_apply_expr(
+    needs: NeedsAndPartsListView, expr: ast.expr
+) -> tuple[NeedsAndPartsListView, bool]: ...
+
+
+def _analyze_and_apply_expr(
+    needs: NeedsView | NeedsAndPartsListView, expr: ast.expr
+) -> tuple[NeedsView | NeedsAndPartsListView, bool]:
+    """Analyze the expr for known filter patterns,
+    and apply them to the given needs.
+
+    :returns: the needs (potentially filtered),
+        and a boolean denoting if it still requires python eval filtering
+    """
+    if isinstance((name := expr), ast.Name):
+        # x
+        if name.id == "is_external":
+            return needs.filter_is_external(True), False
+
+    elif isinstance((compare := expr), ast.Compare):
+        # <expr1> <comp> <expr2>
+        if len(compare.ops) == 1 and isinstance(compare.ops[0], ast.Eq):
+            # x == y
+            if (
+                isinstance(compare.left, ast.Name)
+                and len(compare.comparators) == 1
+                and isinstance(compare.comparators[0], (ast.Str, ast.Constant))
+            ):
+                # x == "value"
+                field = compare.left.id
+                value = compare.comparators[0].s
+            elif (
+                isinstance(compare.left, (ast.Str, ast.Constant))
+                and len(compare.comparators) == 1
+                and isinstance(compare.comparators[0], ast.Name)
+            ):
+                # "value" == x
+                field = compare.comparators[0].id
+                value = compare.left.s
+            else:
+                return needs, True
+
+            if field == "id":
+                # id == "value"
+                return needs.filter_ids([value]), False
+            elif field == "type":
+                # type == "value"
+                return needs.filter_types([value]), False
+            elif field == "status":
+                # status == "value"
+                return needs.filter_statuses([value]), False
+
+        elif len(compare.ops) == 1 and isinstance(compare.ops[0], ast.In):
+            # <expr1> in <expr2>
+            if (
+                isinstance(compare.left, ast.Name)
+                and len(compare.comparators) == 1
+                and isinstance(compare.comparators[0], (ast.List, ast.Tuple, ast.Set))
+                and all(
+                    isinstance(elt, (ast.Str, ast.Constant))
+                    for elt in compare.comparators[0].elts
+                )
+            ):
+                values = [elt.s for elt in compare.comparators[0].elts]  # type: ignore[attr-defined]
+                if compare.left.id == "id":
+                    # id in ["a", "b", ...]
+                    return needs.filter_ids(values), False
+                if compare.left.id == "status":
+                    # status in ["a", "b", ...]
+                    return needs.filter_statuses(values), False
+                elif compare.left.id == "type":
+                    # type in ["a", "b", ...]
+                    return needs.filter_types(values), False
+            elif (
+                isinstance(compare.left, (ast.Str, ast.Constant))
+                and len(compare.comparators) == 1
+                and isinstance(compare.comparators[0], ast.Name)
+                and compare.comparators[0].id == "tags"
+            ):
+                # "value" in tags
+                return needs.filter_has_tag([compare.left.s]), False
+
+    elif isinstance((and_op := expr), ast.BoolOp) and isinstance(and_op.op, ast.And):
+        # x and y and ...
+        requires_eval = False
+        for operand in and_op.values:
+            needs, _requires_eval = _analyze_and_apply_expr(needs, operand)
+            requires_eval |= _requires_eval
+        return needs, requires_eval
+
+    return needs, True
+
+
 def filter_needs_view(
     needs: NeedsView,
     config: NeedsSphinxConfig,
@@ -266,8 +369,21 @@ def filter_needs_view(
     location: tuple[str, int | None] | nodes.Node | None = None,
     append_warning: str = "",
 ) -> list[NeedsInfoType]:
+    if not filter_string:
+        return list(needs.values())
+
+    try:
+        body = ast.parse(filter_string).body
+    except Exception:
+        pass  # warning already emitted in filter_needs
+    else:
+        if len(body) == 1 and isinstance((expr := body[0]), ast.Expr):
+            needs, requires_eval = _analyze_and_apply_expr(needs, expr.value)
+            if not requires_eval:
+                return list(needs.values())
+
     return filter_needs(
-        needs.to_list(),
+        needs.values(),
         config,
         filter_string,
         current_need,
@@ -285,6 +401,19 @@ def filter_needs_parts(
     location: tuple[str, int | None] | nodes.Node | None = None,
     append_warning: str = "",
 ) -> list[NeedsInfoType]:
+    if not filter_string:
+        return list(needs)
+
+    try:
+        body = ast.parse(filter_string).body
+    except Exception:
+        pass  # warning already emitted in filter_needs
+    else:
+        if len(body) == 1 and isinstance((expr := body[0]), ast.Expr):
+            needs, requires_eval = _analyze_and_apply_expr(needs, expr.value)
+            if not requires_eval:
+                return list(needs)
+
     return filter_needs(
         needs,
         config,

@@ -1,8 +1,12 @@
 import os
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 from sphinx.util.console import strip_colors
+
+from sphinx_needs.filter_common import filter_needs_parts, filter_needs_view
+from sphinx_needs.views import NeedsView
 
 
 @pytest.mark.parametrize(
@@ -104,3 +108,143 @@ def test_filter_build_html(test_app):
     assert '<img alt="_images/need_pie_' in html_6
 
     assert html_6.count('<p class="needs_filter_warning"') == 18
+
+
+def create_needs_view():
+    needs = [
+        {
+            "id": "req_a_1",
+            "type": "requirement",
+            "type_name": "Req",
+            "tags": ["a", "b"],
+            "status": "",
+            "is_external": False,
+            "parts": {},
+        },
+        {
+            "id": "req_b_1",
+            "type": "requirement",
+            "type_name": "Req",
+            "tags": ["b", "c"],
+            "status": "",
+            "is_external": False,
+            "parts": {},
+        },
+        {
+            "id": "req_c_1",
+            "type": "requirement",
+            "type_name": "Req",
+            "tags": ["c", "d"],
+            "status": "",
+            "is_external": False,
+            "parts": {},
+        },
+        {
+            "id": "story_a_1",
+            "type": "story",
+            "type_name": "Story",
+            "tags": ["a", "b"],
+            "status": "",
+            "is_external": False,
+            "parts": {},
+        },
+        {
+            "id": "story_b_1",
+            "type": "story",
+            "type_name": "Story",
+            "tags": ["b", "c"],
+            "status": "ongoing",
+            "is_external": False,
+            "parts": {},
+        },
+        {
+            "id": "story_a_b_1",
+            "type": "story",
+            "type_name": "Story",
+            "tags": ["a", "b", "c"],
+            "status": "done",
+            "is_external": False,
+            "parts": {
+                "part_a": {
+                    "id": "part_a",
+                },
+            },
+        },
+    ]
+
+    return NeedsView(_needs={n["id"]: n for n in needs})
+
+
+std_test_params = (
+    ("", list(create_needs_view().keys())),
+    ("True", list(create_needs_view().keys())),
+    ("xxx", list(create_needs_view().keys())),
+    ("not xxx", []),
+    ("False", []),
+    ("False and False", []),
+    ("False and True", []),
+    ("True and True", list(create_needs_view().keys())),
+    ("True or False", list(create_needs_view().keys())),
+    ("id == 'req_a_1'", ["req_a_1"]),
+    ("id == 'unknown'", []),
+    ("type == 'requirement'", ["req_a_1", "req_b_1", "req_c_1"]),
+    ("type == 'unknown'", []),
+    ("type == 'requirement' and True", ["req_a_1", "req_b_1", "req_c_1"]),
+    ("type == 'requirement' and False", []),
+    ("type == 'story' and status == 'done'", ["story_a_b_1"]),
+    ("status in ['ongoing', 'done']", ["story_b_1", "story_a_b_1"]),
+    ("status in ('ongoing', 'done')", ["story_b_1", "story_a_b_1"]),
+    ("status in {'ongoing', 'done'}", ["story_b_1", "story_a_b_1"]),
+    ("'d' in tags", ["req_c_1"]),
+)
+
+
+@pytest.mark.parametrize(
+    "filter_string, expected_ids", std_test_params, ids=[s for s, _ in std_test_params]
+)
+def test_filter_needs_view(filter_string, expected_ids):
+    mock_config = Mock()
+    mock_config.filter_data = {"xxx": True}
+    result = filter_needs_view(create_needs_view(), mock_config, filter_string)
+    assert {n["id"] for n in result} == set(expected_ids)
+
+
+part_test_params = (
+    ("", list(create_needs_view().keys()) + ["part_a"]),
+    ("True", list(create_needs_view().keys()) + ["part_a"]),
+    ("xxx", list(create_needs_view().keys()) + ["part_a"]),
+    ("not xxx", []),
+    ("False", []),
+    ("False and False", []),
+    ("False and True", []),
+    ("True and True", list(create_needs_view().keys()) + ["part_a"]),
+    ("True or False", list(create_needs_view().keys()) + ["part_a"]),
+    ("id == 'req_a_1'", ["req_a_1"]),
+    ("id == 'unknown'", []),
+    ("type == 'requirement'", ["req_a_1", "req_b_1", "req_c_1"]),
+    ("type == 'unknown'", []),
+    ("type == 'requirement' and True", ["req_a_1", "req_b_1", "req_c_1"]),
+    ("type == 'requirement' and False", []),
+    ("type == 'story' and status == 'done'", ["story_a_b_1", "part_a"]),
+    ("status in ['ongoing', 'done']", ["story_b_1", "story_a_b_1", "part_a"]),
+    ("status in ('ongoing', 'done')", ["story_b_1", "story_a_b_1", "part_a"]),
+    ("status in {'ongoing', 'done'}", ["story_b_1", "story_a_b_1", "part_a"]),
+    ("'d' in tags", ["req_c_1"]),
+    ("id == 'part_a'", ["part_a"]),
+    ("id in ['part_a', 'req_a_1']", ["part_a", "req_a_1"]),
+    ("id in ['part_a', 'story_a_b_1']", ["story_a_b_1", "part_a"]),
+)
+
+
+@pytest.mark.parametrize(
+    "filter_string, expected_ids",
+    part_test_params,
+    ids=[s for s, _ in part_test_params],
+)
+def test_filter_needs_parts(filter_string, expected_ids):
+    mock_config = Mock()
+    mock_config.filter_data = {"xxx": True}
+    result = filter_needs_parts(
+        create_needs_view().to_list_with_parts(), mock_config, filter_string
+    )
+    assert {n["id"] for n in result} == set(expected_ids)

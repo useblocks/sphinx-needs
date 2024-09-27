@@ -18,7 +18,7 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util.nodes import make_refnode
 
-from sphinx_needs.data import NeedsInfoType
+from sphinx_needs.data import NeedsInfoType, NeedsPartType
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.nodes import Need
 
@@ -41,6 +41,16 @@ def process_need_part(
 part_pattern = re.compile(r"\(([\w-]+)\)(.*)", re.DOTALL)
 
 
+def create_need_from_part(need: NeedsInfoType, part: NeedsPartType) -> NeedsInfoType:
+    """Create a full need from a part and its parent need."""
+    full_part: NeedsInfoType = {**need, **part}
+    full_part["id_complete"] = f"{need['id']}.{part['id']}"
+    full_part["id_parent"] = need["id"]
+    full_part["is_need"] = False
+    full_part["is_part"] = True
+    return full_part
+
+
 def iter_need_parts(need: NeedsInfoType) -> Iterable[NeedsInfoType]:
     """Yield all parts, a.k.a sub-needs, from a need.
 
@@ -48,13 +58,7 @@ def iter_need_parts(need: NeedsInfoType) -> Iterable[NeedsInfoType]:
     and overrides the content of the parent need.
     """
     for part in need["parts"].values():
-        full_part: NeedsInfoType = {**need, **part}
-        full_part["id_complete"] = f"{need['id']}.{part['id']}"
-        full_part["id_parent"] = need["id"]
-        full_part["is_need"] = False
-        full_part["is_part"] = True
-
-        yield full_part
+        yield create_need_from_part(need, part)
 
 
 def update_need_with_parts(
