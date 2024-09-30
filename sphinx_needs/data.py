@@ -786,7 +786,7 @@ class SphinxNeedsData:
         try:
             return self.env._needs_view
         except AttributeError:
-            self.env._needs_view = NeedsView(_needs=self._env_needs)
+            self.env._needs_view = NeedsView._from_needs(self._env_needs)
         return self.env._needs_view
 
     @property

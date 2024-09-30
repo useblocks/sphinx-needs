@@ -48,7 +48,7 @@ nitpick_ignore = [
     ("py:class", "docutils.parsers.rst.states.RSTState"),
     ("py:class", "docutils.statemachine.StringList"),
     ("py:class", "sphinx_needs.debug.T"),
-    ("py:class", "_Indexes"),
+    ("py:class", "sphinx_needs.views._LazyIndexes"),
 ]
 
 rst_epilog = """

@@ -281,73 +281,81 @@ def _analyze_and_apply_expr(
     :returns: the needs (potentially filtered),
         and a boolean denoting if it still requires python eval filtering
     """
-    if isinstance((name := expr), ast.Name):
+    if isinstance(expr, (ast.Str, ast.Constant)):
+        if isinstance(expr.s, (str, bool)):
+            # "value" / True / False
+            return needs if expr.s else needs.filter_ids([]), False
+
+    elif isinstance(expr, ast.Name):
         # x
-        if name.id == "is_external":
+        if expr.id == "is_external":
             return needs.filter_is_external(True), False
 
-    elif isinstance((compare := expr), ast.Compare):
+    elif isinstance(expr, ast.Compare):
         # <expr1> <comp> <expr2>
-        if len(compare.ops) == 1 and isinstance(compare.ops[0], ast.Eq):
+        if len(expr.ops) == 1 and isinstance(expr.ops[0], ast.Eq):
             # x == y
             if (
-                isinstance(compare.left, ast.Name)
-                and len(compare.comparators) == 1
-                and isinstance(compare.comparators[0], (ast.Str, ast.Constant))
+                isinstance(expr.left, ast.Name)
+                and len(expr.comparators) == 1
+                and isinstance(expr.comparators[0], (ast.Str, ast.Constant))
             ):
                 # x == "value"
-                field = compare.left.id
-                value = compare.comparators[0].s
+                field = expr.left.id
+                value = expr.comparators[0].s
             elif (
-                isinstance(compare.left, (ast.Str, ast.Constant))
-                and len(compare.comparators) == 1
-                and isinstance(compare.comparators[0], ast.Name)
+                isinstance(expr.left, (ast.Str, ast.Constant))
+                and len(expr.comparators) == 1
+                and isinstance(expr.comparators[0], ast.Name)
             ):
                 # "value" == x
-                field = compare.comparators[0].id
-                value = compare.left.s
+                field = expr.comparators[0].id
+                value = expr.left.s
             else:
                 return needs, True
 
             if field == "id":
-                # id == "value"
+                # id == value
                 return needs.filter_ids([value]), False
             elif field == "type":
-                # type == "value"
+                # type == value
                 return needs.filter_types([value]), False
             elif field == "status":
-                # status == "value"
+                # status == value
                 return needs.filter_statuses([value]), False
+            elif field == "is_external":
+                # is_external == value
+                return needs.filter_is_external(value), False
 
-        elif len(compare.ops) == 1 and isinstance(compare.ops[0], ast.In):
+        elif len(expr.ops) == 1 and isinstance(expr.ops[0], ast.In):
             # <expr1> in <expr2>
             if (
-                isinstance(compare.left, ast.Name)
-                and len(compare.comparators) == 1
-                and isinstance(compare.comparators[0], (ast.List, ast.Tuple, ast.Set))
+                isinstance(expr.left, ast.Name)
+                and len(expr.comparators) == 1
+                and isinstance(expr.comparators[0], (ast.List, ast.Tuple, ast.Set))
                 and all(
                     isinstance(elt, (ast.Str, ast.Constant))
-                    for elt in compare.comparators[0].elts
+                    for elt in expr.comparators[0].elts
                 )
             ):
-                values = [elt.s for elt in compare.comparators[0].elts]  # type: ignore[attr-defined]
-                if compare.left.id == "id":
+                values = [elt.s for elt in expr.comparators[0].elts]  # type: ignore[attr-defined]
+                if expr.left.id == "id":
                     # id in ["a", "b", ...]
                     return needs.filter_ids(values), False
-                if compare.left.id == "status":
+                if expr.left.id == "status":
                     # status in ["a", "b", ...]
                     return needs.filter_statuses(values), False
-                elif compare.left.id == "type":
+                elif expr.left.id == "type":
                     # type in ["a", "b", ...]
                     return needs.filter_types(values), False
             elif (
-                isinstance(compare.left, (ast.Str, ast.Constant))
-                and len(compare.comparators) == 1
-                and isinstance(compare.comparators[0], ast.Name)
-                and compare.comparators[0].id == "tags"
+                isinstance(expr.left, (ast.Str, ast.Constant))
+                and len(expr.comparators) == 1
+                and isinstance(expr.comparators[0], ast.Name)
+                and expr.comparators[0].id == "tags"
             ):
                 # "value" in tags
-                return needs.filter_has_tag([compare.left.s]), False
+                return needs.filter_has_tag([expr.left.s]), False
 
     elif isinstance((and_op := expr), ast.BoolOp) and isinstance(and_op.op, ast.And):
         # x and y and ...
@@ -368,6 +376,7 @@ def filter_needs_view(
     *,
     location: tuple[str, int | None] | nodes.Node | None = None,
     append_warning: str = "",
+    strict_eval: bool = False,
 ) -> list[NeedsInfoType]:
     if not filter_string:
         return list(needs.values())
@@ -381,6 +390,12 @@ def filter_needs_view(
             needs, requires_eval = _analyze_and_apply_expr(needs, expr.value)
             if not requires_eval:
                 return list(needs.values())
+
+    if strict_eval:
+        # this is mainly used for testing purposes, to check if expression analysis is working
+        raise RuntimeError(
+            f"Strict eval mode, but no simple filter found: {filter_string!r}"
+        )
 
     return filter_needs(
         needs.values(),
@@ -400,6 +415,7 @@ def filter_needs_parts(
     *,
     location: tuple[str, int | None] | nodes.Node | None = None,
     append_warning: str = "",
+    strict_eval: bool = False,
 ) -> list[NeedsInfoType]:
     if not filter_string:
         return list(needs)
@@ -413,6 +429,12 @@ def filter_needs_parts(
             needs, requires_eval = _analyze_and_apply_expr(needs, expr.value)
             if not requires_eval:
                 return list(needs)
+
+    if strict_eval:
+        # this is mainly used for testing purposes, to check if expression analysis is working
+        raise RuntimeError(
+            f"Strict eval mode, but no simple filter found: {filter_string!r}"
+        )
 
     return filter_needs(
         needs,

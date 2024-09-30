@@ -145,7 +145,7 @@ def create_needs_view():
             "type_name": "Story",
             "tags": ["a", "b"],
             "status": "",
-            "is_external": False,
+            "is_external": True,
             "parts": {},
         },
         {
@@ -172,79 +172,108 @@ def create_needs_view():
         },
     ]
 
-    return NeedsView(_needs={n["id"]: n for n in needs})
+    return NeedsView._from_needs({n["id"]: n for n in needs})
 
 
 std_test_params = (
-    ("", list(create_needs_view().keys())),
-    ("True", list(create_needs_view().keys())),
-    ("xxx", list(create_needs_view().keys())),
-    ("not xxx", []),
-    ("False", []),
-    ("False and False", []),
-    ("False and True", []),
-    ("True and True", list(create_needs_view().keys())),
-    ("True or False", list(create_needs_view().keys())),
-    ("id == 'req_a_1'", ["req_a_1"]),
-    ("id == 'unknown'", []),
-    ("type == 'requirement'", ["req_a_1", "req_b_1", "req_c_1"]),
-    ("type == 'unknown'", []),
-    ("type == 'requirement' and True", ["req_a_1", "req_b_1", "req_c_1"]),
-    ("type == 'requirement' and False", []),
-    ("type == 'story' and status == 'done'", ["story_a_b_1"]),
-    ("status in ['ongoing', 'done']", ["story_b_1", "story_a_b_1"]),
-    ("status in ('ongoing', 'done')", ["story_b_1", "story_a_b_1"]),
-    ("status in {'ongoing', 'done'}", ["story_b_1", "story_a_b_1"]),
-    ("'d' in tags", ["req_c_1"]),
+    ("", list(create_needs_view()), True),
+    ("True", list(create_needs_view()), True),
+    ("xxx", list(create_needs_view()), False),
+    ("not xxx", [], False),
+    ("False", [], True),
+    ("False and False", [], True),
+    ("False and True", [], True),
+    ("True and True", list(create_needs_view()), True),
+    ("True or False", list(create_needs_view()), False),
+    ("id == 'req_a_1'", ["req_a_1"], True),
+    ("id == 'unknown'", [], True),
+    ("is_external", ["story_a_1"], True),
+    ("is_external==True", ["story_a_1"], True),
+    ("type == 'requirement'", ["req_a_1", "req_b_1", "req_c_1"], True),
+    ("type == 'unknown'", [], True),
+    ("type == 'requirement' and True", ["req_a_1", "req_b_1", "req_c_1"], True),
+    ("type == 'requirement' and False", [], True),
+    ("type == 'story' and status == 'done'", ["story_a_b_1"], True),
+    ("status in ['ongoing', 'done']", ["story_b_1", "story_a_b_1"], True),
+    ("status in ('ongoing', 'done')", ["story_b_1", "story_a_b_1"], True),
+    ("status in {'ongoing', 'done'}", ["story_b_1", "story_a_b_1"], True),
+    ("'d' in tags", ["req_c_1"], True),
+    ("'a' in tags", ["story_a_1", "req_a_1", "story_a_b_1"], True),
 )
 
 
 @pytest.mark.parametrize(
-    "filter_string, expected_ids", std_test_params, ids=[s for s, _ in std_test_params]
+    "filter_string, expected_ids, strict_eval",
+    std_test_params,
+    ids=[s for s, _, _ in std_test_params],
 )
-def test_filter_needs_view(filter_string, expected_ids):
+def test_filter_needs_view(filter_string, expected_ids, strict_eval):
     mock_config = Mock()
     mock_config.filter_data = {"xxx": True}
-    result = filter_needs_view(create_needs_view(), mock_config, filter_string)
+    result = filter_needs_view(
+        create_needs_view(), mock_config, filter_string, strict_eval=strict_eval
+    )
     assert {n["id"] for n in result} == set(expected_ids)
 
 
+_all_need_part_ids = []
+for need in create_needs_view().values():
+    _all_need_part_ids.append(need["id"])
+    _all_need_part_ids.extend(need["parts"])
+
 part_test_params = (
-    ("", list(create_needs_view().keys()) + ["part_a"]),
-    ("True", list(create_needs_view().keys()) + ["part_a"]),
-    ("xxx", list(create_needs_view().keys()) + ["part_a"]),
-    ("not xxx", []),
-    ("False", []),
-    ("False and False", []),
-    ("False and True", []),
-    ("True and True", list(create_needs_view().keys()) + ["part_a"]),
-    ("True or False", list(create_needs_view().keys()) + ["part_a"]),
-    ("id == 'req_a_1'", ["req_a_1"]),
-    ("id == 'unknown'", []),
-    ("type == 'requirement'", ["req_a_1", "req_b_1", "req_c_1"]),
-    ("type == 'unknown'", []),
-    ("type == 'requirement' and True", ["req_a_1", "req_b_1", "req_c_1"]),
-    ("type == 'requirement' and False", []),
-    ("type == 'story' and status == 'done'", ["story_a_b_1", "part_a"]),
-    ("status in ['ongoing', 'done']", ["story_b_1", "story_a_b_1", "part_a"]),
-    ("status in ('ongoing', 'done')", ["story_b_1", "story_a_b_1", "part_a"]),
-    ("status in {'ongoing', 'done'}", ["story_b_1", "story_a_b_1", "part_a"]),
-    ("'d' in tags", ["req_c_1"]),
-    ("id == 'part_a'", ["part_a"]),
-    ("id in ['part_a', 'req_a_1']", ["part_a", "req_a_1"]),
-    ("id in ['part_a', 'story_a_b_1']", ["story_a_b_1", "part_a"]),
+    ("", _all_need_part_ids, True),
+    ("True", _all_need_part_ids, True),
+    ("xxx", _all_need_part_ids, False),
+    ("not xxx", [], False),
+    ("False", [], True),
+    ("False and False", [], True),
+    ("False and True", [], True),
+    ("True and True", _all_need_part_ids, True),
+    ("True or False", _all_need_part_ids, False),
+    ("id == 'req_a_1'", ["req_a_1"], True),
+    ("id == 'unknown'", [], True),
+    ("is_external", ["story_a_1"], True),
+    ("is_external==True", ["story_a_1"], True),
+    ("type == 'requirement'", ["req_a_1", "req_b_1", "req_c_1"], True),
+    ("type == 'unknown'", [], True),
+    ("type == 'requirement' and True", ["req_a_1", "req_b_1", "req_c_1"], True),
+    ("type == 'requirement' and False", [], True),
+    ("type == 'story' and status == 'done'", ["story_a_b_1", "part_a"], True),
+    ("status in ['ongoing', 'done']", ["story_b_1", "story_a_b_1", "part_a"], True),
+    ("status in ('ongoing', 'done')", ["story_b_1", "story_a_b_1", "part_a"], True),
+    ("status in {'ongoing', 'done'}", ["story_b_1", "story_a_b_1", "part_a"], True),
+    ("'d' in tags", ["req_c_1"], True),
+    ("'a' in tags", ["story_a_1", "req_a_1", "story_a_b_1", "part_a"], True),
+    ("id == 'part_a'", ["part_a"], True),
+    ("id in ['part_a', 'req_a_1']", ["part_a", "req_a_1"], True),
+    ("id in ['part_a', 'story_a_b_1']", ["story_a_b_1", "part_a"], True),
 )
 
 
 @pytest.mark.parametrize(
-    "filter_string, expected_ids",
+    "filter_string, expected_ids, strict_eval",
     part_test_params,
-    ids=[s for s, _ in part_test_params],
+    ids=[s for s, _, _ in part_test_params],
 )
-def test_filter_needs_parts(filter_string, expected_ids):
+def test_filter_needs_parts(filter_string, expected_ids, strict_eval):
     mock_config = Mock()
     mock_config.filter_data = {"xxx": True}
     result = filter_needs_parts(
-        create_needs_view().to_list_with_parts(), mock_config, filter_string
+        create_needs_view().to_list_with_parts(),
+        mock_config,
+        filter_string,
+        str,
+        strict_eval=strict_eval,
     )
     assert {n["id"] for n in result} == set(expected_ids)
+
+
+def test_filter_needs_then_parts():
+    npl = (
+        create_needs_view()
+        .filter_ids(["story_b_1", "story_a_b_1"])
+        .to_list_with_parts()
+        .filter_has_tag(["a"])
+    )
+    assert {n["id"] for n in npl} == {"story_a_b_1", "part_a"}
