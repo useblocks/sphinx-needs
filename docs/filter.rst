@@ -3,10 +3,8 @@
 Filtering needs
 ===============
 
-**Sphinx-Needs** supports the filtering of need and need_parts by using easy to use options or powerful filter string.
-
-Available options are specific to the used directive, whereas the filter string is supported by all directives and
-roles, which provide filter capabilities.
+The filtering of needs and need parts is supported consistently across numerous directives and roles,
+either by using filter options or by using a filter string.
 
 .. _filter_options:
 
@@ -19,9 +17,7 @@ The following filter options are supported by directives:
  * :ref:`needtable`
  * :ref:`needflow`
  * :ref:`needpie`
- * ``needfilter`` (deprecated!)
  * :ref:`needextend`
-
 
 Related to the used directive and its representation, the filter options create a list of needs, which match the
 filters for status, tags, types and filter.
@@ -115,6 +111,7 @@ The usage of a filter string is supported/required by:
 * :ref:`needflow`
 * :ref:`needpie`
 * :ref:`needbar`
+* :ref:`needuml` / :ref:`needarch`
 
 
 The filter string must be a valid Python expression:
@@ -129,7 +126,7 @@ E.g. the need_part *content* is kept, but the *status* attribute is taken from i
 
 .. note::
 
-   Following attributes are kept inside a need_part: id, title, links_back
+   The following attributes are kept inside a need_part: id, title, links_back
 
 This allows to perform searches for need_parts, where search options are based on parent attributes.
 
@@ -139,29 +136,7 @@ The following filter will find all need_parts, which are part of a need, which h
 
    :need_count:`is_part and 'car' in tags`
 
-Inside a filter string all the fields of :py:class:`.NeedsInfoType` can be used, including:
-
-* **tags** as Python list (compare like ``"B" in tags``)
-* **type** as Python string (compare like ``"story" == type``)
-* **status** as Python string (compare like ``"opened" != status``)
-* **sections** as Python list with the hierarchy of sections with lowest-level
-  section first.  (compare like ``"Section Header" in sections``)
-* **id** as Python string (compare like ``"MY_ID_" in id``)
-* **title** as Python string (compare like ``len(title.split(" ")) > 5``)
-* **links** as Python list (compare like ``"ID_123" not in links``)
-* **links_back** as Python list (compare like ``"ID_123" not in links_back``)
-* **content** as Python string (compare like ``len(content) == 0``)
-* **is_need** as Python boolean. (compare like ``is_need``)
-* **is_part** as Python boolean. (compare like ``is_part``)
-* **parts** as Python list with :ref:`need_part` of the current need. (compare like ``len(parts)>0``)
-* **sections** as list of sections names, th which the need belongs to.
-* **section_name** as string, which defines the last/lowest section a need belongs to.
-* **docname** as string, which defines the name of the document in which a need is defined, without the extension (similar to Sphinx' ``:doc:`` role)
-* **signature** as string, which contains a function-name, possible set by
-  `sphinx-autodoc <https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html>`_ above the need.
-* **parent_need** as string, which is an id of the need, which has the current need defined in its content
-  (added 0.6.2).
-* **parent_needs** as string, which is a list of need ids (added 0.6.2).
+Inside a filter string all the fields of :py:class:`.NeedsInfoType` can be used, including.
 
 Additional variables for :ref:`need_part`:
 
@@ -212,6 +187,30 @@ If it is invalid or returns False, the related need is not taken into account fo
 
       .. needfilter::
          :filter: "filter_example" in tags and (("B" in tags or ("spec" == type and "closed" == status)) or "test" == type)
+
+.. _filter_string_performance:
+
+Filter string performance
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 4.0.0
+
+The filter string is evaluated by default for each need and need part
+and, therefore, can be become a performance bottleneck for projects with large numbers of needs.
+
+To improve performance, certain common patterns are identified and optimized by the filter engine, and so using such patterns is recommended:
+
+- ``is_external`` / ``is_external == True`` / ``is_external == False``
+- ``id == 'value'`` / ``id == "value"`` / ``'value' == id`` / ``"value" == id``
+- ``id in ['value1', 'value2', ...]`` / ``id in ("value1", "value2", ...)``
+- ``type == 'value'`` / ``type == "value"`` / ``'value' == type`` / ``"value" == type``
+- ``type in ['value1', 'value2', ...]`` / ``type in ("value1", "value2", ...)``
+- ``status == 'value'`` / ``status == "value"`` / ``'value' == status`` / ``"value" == status``
+- ``status in ['value1', 'value2', ...]`` / ``status in ("value1", "value2", ...)``
+- ``'value' in tags`` / ``"value" in tags``
+
+Also filters containing ``and`` will be split into multiple filters and evaluated separately for the above patterns.
+For example, ``type == 'spec' and other == 'value'`` will first be filtered performantly by ``type == 'spec'`` and then the remaining needs will be filtered by ``other == 'value'``.
 
 .. _re_search:
 
