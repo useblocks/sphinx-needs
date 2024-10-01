@@ -9,7 +9,7 @@ from sphinx.application import Sphinx
 from sphinx.util import logging
 
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
-from sphinx_needs.data import NeedsView, SphinxNeedsData
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.filter_common import filter_needs_view
 from sphinx_needs.logging import get_logger, log_warning
 
@@ -51,9 +51,7 @@ def process_warnings(app: Sphinx, exception: Exception | None) -> None:
     env.needs_warnings_executed = True  # type: ignore[attr-defined]
 
     # Exclude external needs for warnings check
-    needs_view = NeedsView(
-        {id: need for id, need in needs_view.items() if not need["is_external"]}
-    )
+    needs_view = needs_view.filter_is_external(False)
 
     needs_config = NeedsSphinxConfig(app.config)
     warnings_always_warn = needs_config.warnings_always_warn

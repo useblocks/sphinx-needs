@@ -31,6 +31,7 @@ from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
 from sphinx_needs.utils import jinja_parse
+from sphinx_needs.views import NeedsView
 
 logger = get_logger(__name__)
 
@@ -805,3 +806,15 @@ def _merge_global_options(
                 # has at least the key.
                 if key not in needs_info.keys():
                     needs_info[key] = ""
+
+
+def get_needs_view(app: Sphinx) -> NeedsView:
+    """Return a read-only view of all resolved needs.
+
+    .. important:: this should only be called within the write phase,
+        after the needs have been fully collected.
+        If not already done, this will ensure all needs are resolved
+        (e.g. back links have been computed etc),
+        and then lock the data to prevent further modification.
+    """
+    return SphinxNeedsData(app.env).get_needs_view()

@@ -15,7 +15,7 @@ from sphinx.ext.graphviz import (
 from sphinx.util.logging import getLogger
 
 from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, NeedsView, SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link
 from sphinx_needs.directives.needflow._directive import NeedflowGraphiz
@@ -29,6 +29,7 @@ from sphinx_needs.utils import (
     match_variants,
     remove_node_from_tree,
 )
+from sphinx_needs.views import NeedsView
 
 from ._shared import create_filter_paragraph, filter_by_tree, get_root_needs
 

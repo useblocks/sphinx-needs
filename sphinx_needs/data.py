@@ -12,13 +12,13 @@ from typing import (
     Literal,
     Mapping,
     NewType,
-    Sequence,
     TypedDict,
 )
 
 from sphinx.util.logging import getLogger
 
 from sphinx_needs.logging import log_warning
+from sphinx_needs.views import NeedsView
 
 if TYPE_CHECKING:
     from docutils.nodes import Text
@@ -61,6 +61,8 @@ class NeedsPartType(TypedDict):
     """List of need IDs, which are referenced by this part."""
     links_back: list[str]
     """List of need IDs, which are referencing this part."""
+
+    # note back links for each type are also set dynamically in post_process_needs_data (-> create_back_links)
 
 
 class CoreFieldParameters(TypedDict):
@@ -690,19 +692,6 @@ NeedsMutable = NewType("NeedsMutable", Dict[str, NeedsInfoType])
 """A mutable view of the needs, before resolution
 """
 
-NeedsView = NewType("NeedsView", Mapping[str, NeedsInfoType])
-"""A read-only view of the needs, after resolution
-(e.g. back links have been computed etc)
-"""
-
-NeedsPartsView = NewType("NeedsPartsView", Sequence[NeedsInfoType])
-"""A read-only view of a sequence of needs and parts,
-after resolution (e.g. back links have been computed etc)
-
-The parts are created by creating a copy of the need for each item in ``parts``,
-and then overwriting a subset of fields with the values from the part.
-"""
-
 
 class SphinxNeedsData:
     """Centralised access to sphinx-needs data, stored within the Sphinx environment."""
@@ -713,10 +702,10 @@ class SphinxNeedsData:
     @property
     def _env_needs(self) -> dict[str, NeedsInfoType]:
         try:
-            return self.env.needs_all_needs
+            return self.env._needs_all_needs
         except AttributeError:
-            self.env.needs_all_needs = {}
-        return self.env.needs_all_needs
+            self.env._needs_all_needs = {}
+        return self.env._needs_all_needs
 
     def has_need(self, need_id: str) -> bool:
         """Check if a need with the given ID exists."""
@@ -730,6 +719,8 @@ class SphinxNeedsData:
         .. important:: this should only be called within the read phase,
             before the needs have been fully collected and resolved.
         """
+        if self.needs_is_post_processed:
+            raise RuntimeError("Needs have already been post-processed and frozen.")
         self._env_needs[need["id"]] = need
 
     def remove_need(self, need_id: str) -> None:
@@ -738,6 +729,8 @@ class SphinxNeedsData:
         .. important:: this should only be called within the read phase,
             before the needs have been fully collected and resolved.
         """
+        if self.needs_is_post_processed:
+            raise RuntimeError("Needs have already been post-processed and frozen.")
         if need_id in self._env_needs:
             del self._env_needs[need_id]
         self.remove_need_node(need_id)
@@ -748,6 +741,8 @@ class SphinxNeedsData:
         .. important:: this should only be called within the read phase,
             before the needs have been fully collected and resolved.
         """
+        if self.needs_is_post_processed:
+            raise RuntimeError("Needs have already been post-processed and frozen.")
         for need_id in list(self._env_needs):
             if self._env_needs[need_id]["docname"] == docname:
                 del self._env_needs[need_id]
@@ -762,16 +757,37 @@ class SphinxNeedsData:
         .. important:: this should only be called within the read phase,
             before the needs have been fully collected and resolved.
         """
+        if self.needs_is_post_processed:
+            raise RuntimeError("Needs have already been post-processed and frozen.")
         return self._env_needs  # type: ignore[return-value]
 
     def get_needs_view(self) -> NeedsView:
-        """Return a read-only view of all needs, after resolution.
+        """Return a read-only view of all resolved needs.
 
         .. important:: this should only be called within the write phase,
-            after the needs have been fully collected
-            and resolved (e.g. back links have been computed etc)
+            after the needs have been fully collected.
+            If not already done, this will ensure all needs are resolved
+            (e.g. back links have been computed etc),
+            and then lock the data to prevent further modification.
         """
-        return self._env_needs  # type: ignore[return-value]
+        if not self.needs_is_post_processed:
+            from sphinx_needs.directives.need import post_process_needs_data
+
+            # TODO the following code may be good to make access stricter, however,
+            # it fails on rebuilds, where e.g. `build-finished` events can be called without the phase having been updated
+            # from sphinx.util.build_phase import BuildPhase
+            # if self.env.app.phase in (BuildPhase.INITIALIZATION, BuildPhase.READING):
+            #     raise RuntimeError(
+            #         "Trying to retrieve needs view incorrectly in init/read phase."
+            #     )
+
+            post_process_needs_data(self.env.app)
+
+        try:
+            return self.env._needs_view
+        except AttributeError:
+            self.env._needs_view = NeedsView._from_needs(self._env_needs)
+        return self.env._needs_view
 
     @property
     def has_export_filters(self) -> bool:
