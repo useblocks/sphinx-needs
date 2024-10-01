@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727379725617,
+  "lastUpdate": 1727806333281,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -10296,6 +10296,42 @@ window.BENCHMARK_DATA = {
             "value": 70.46388039299998,
             "unit": "s",
             "extra": "Commit: 4904141e90108f94fac0b71f17a0cfeee01fcef4\nBranch: master\nTime: 2024-09-26T21:40:00+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cb03029298835c1b3b11fbd4d2a2e4c34b06dd5b",
+          "message": "♻️ Replace need dicts/lists with views (with fast filtering) (#1281)\n\nThis commit addresses issues in performance scalability of needs filtering:\r\n\r\n- In a known user project, with ~40,000 needs, there are 5316 individual filter calls, across directives such as `needarch`, `needtable`, `needpie`, etc. Each takes on average 0.33 seconds, cumulative totalling **1751 seconds**\r\n- Applying this PR reduces the average time to 0.033 seconds, cumulatively totalling **181 seconds**\r\n\r\n----\r\n\r\nThe main issue with filtering (a.k.a. querying) needs, is that it requires looping over every need and executing a Python evaluation of the filter string (e.g. `id == \"xxx\"`), which scales with `O(N)` time.\r\n\r\nTo reduce this to `O(1)` time, for common patterns, we look to do two things:\r\n\r\n1. More tightly control access to needs data across its lifecycle (see #1264): \r\n   By making needs data strictly immutable/read-only during the write/analysis phase (after it has been fully collected and post-processed), and moving access behind an abstract interface (as opposed to a standard dictionary),\r\n   we can perform indexing on standard need fields, making value lookups `O(1)`\r\n\r\n2. Analysing the filter string for common patterns (by parsing/analysing the Python AST), we can then utilise *index lookups* rather than *row scans* in these cases (akin to [SQL query plans](https://sqlite.org/eqp.html)).\r\n\r\n---\r\n\r\nOne complication in creating the indexes and abstract interfaces, is that within the code base there are essentially two ways of accessing needs data:\r\n\r\n- As a mapping of need ID to need data (now `NeedsView`)\r\n- As a list of both needs and \"expanded\" parts (now `NeedsAndPartsListView`)\r\n\r\nParticularly when it comes to e.g. `id == \"xxx\"`, this then has different meanings, as the former is only filtering for need IDs and the latter is filtering for both Need IDs and part IDs\r\n\r\n---\r\n\r\nIt is of note that this will be breaking for any projects that currently attempts to mutate needs data within the write phase.\r\nThis has been mitigated by the addition of two sphinx events, which give more *precise* control for this use case:\r\n\r\n- `needs-before-post-processing`: callbacks `func(app, needs)` are called just before the needs are post-processed (e.g. processing dynamic functions and back links)\r\n- `needs-before-sealing`: callbacks `func(app, needs)` just after post-processing, before the needs are changed to read-only\r\n\r\nAdditionally, `env.needs_all_needs` has been replaced with `env._needs_all_needs`, since this \"raw\" data-structure should not be accessed directly.\r\n\r\nThe `get_needs_view` function has been added to the `sphinx_needs.api` to mitigate this, and it should perhaps be made clearer that users should NOT be accessing any `sphinx_needs` API outside this module.",
+          "timestamp": "2024-10-01T20:10:03+02:00",
+          "tree_id": "f47386557ec1c5780555d1c9510cbaa2cfbaacb5",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/cb03029298835c1b3b11fbd4d2a2e4c34b06dd5b"
+        },
+        "date": 1727806324061,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.23115609000001314,
+            "unit": "s",
+            "extra": "Commit: cb03029298835c1b3b11fbd4d2a2e4c34b06dd5b\nBranch: master\nTime: 2024-10-01T20:10:03+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 72.25278689599998,
+            "unit": "s",
+            "extra": "Commit: cb03029298835c1b3b11fbd4d2a2e4c34b06dd5b\nBranch: master\nTime: 2024-10-01T20:10:03+02:00"
           }
         ]
       }
