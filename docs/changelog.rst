@@ -719,10 +719,10 @@ Released: 23.04.2021
 * Bugfix: No more exception raise if ``copy`` value not set inside :ref:`needs_extra_links`.
 * Improvement: Better log message, if required id is missing. (:issue:`112`)
 
-* Removed: Configuration option :ref:`needs_collapse_details`. This is now realized by :ref:`layouts`.
-* Removed: Configuration option :ref:`needs_hide_options`. This is now realized by :ref:`layouts`.
-* Removed: Need option :ref:`need_hide_status`. This is now realized by :ref:`layouts`.
-* Removed: Need option :ref:`need_hide_tags`. This is now realized by :ref:`layouts`.
+* Removed: Configuration option :ref:`!needs_collapse_details`. This is now realized by :ref:`layouts`.
+* Removed: Configuration option :ref:`!needs_hide_options`. This is now realized by :ref:`layouts`.
+* Removed: Need option :ref:`!need_hide_status`. This is now realized by :ref:`layouts`.
+* Removed: Need option :ref:`!need_hide_tags`. This is now realized by :ref:`layouts`.
 
 **WARNING**: This version changes a lot the html output and therefore the needed css selectors. So if you are using
 custom css definitions you need to update them.
@@ -861,9 +861,9 @@ custom css definitions you need to update them.
 * Improvement: :ref:`dynamic_functions` are now available to support calculation of need values.
 * Improvement: :ref:`needs_functions` can be used to register and use own dynamic functions.
 * Improvement: Added :ref:`needs_global_options` to set need values globally for all needs.
-* Improvement: Added :ref:`needs_hide_options` to hide specific options of all needs.
+* Improvement: Added :ref:`!needs_hide_options` to hide specific options of all needs.
 * Bugfix: Removed needs are now deleted from existing needs.json (:issue:`68`)
-* Removed: :ref:`needs_template` and :ref:`needs_template_collapse` are no longer supported.
+* Removed: :ref:`!needs_template` and :ref:`!needs_template_collapse` are no longer supported.
 
 0.2.5
 -----
