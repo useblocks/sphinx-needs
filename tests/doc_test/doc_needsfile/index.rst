@@ -11,5 +11,5 @@ TEST DOCUMENT
 .. story:: A story
    :tags: 1
 
-.. needfilter::
+.. needlist::
    :tags: test;my_test
