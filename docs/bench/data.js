@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727867049331,
+  "lastUpdate": 1727867344339,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -10404,6 +10404,42 @@ window.BENCHMARK_DATA = {
             "value": 69.62341975499999,
             "unit": "s",
             "extra": "Commit: ac4165c84011414d3e14b4224e51ed8a50d88581\nBranch: master\nTime: 2024-10-02T13:02:07+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ec2869fc7b91ee6c8cba23feecd9d683fa641589",
+          "message": "♻️ Add `needs_filter_max_time`/`needs_debug_filters`, deprecate `export_id` (#1309)\n\nAdd configuration options to debug and guard against long-running need filters:\r\n\r\n- `needs_filter_max_time` warns if any call takes longer than the given time in seconds\r\n- `needs_debug_filters` logs all calls and their run times to `debug_filters.jsonl`\r\n\r\nThis also deprecates the use of the `export_id` directive option and the writing of filters to the `needs.json`; this information should not be part of a need index and also was not compatible with running the `needs` builder (which skips the write phase)",
+          "timestamp": "2024-10-02T13:07:03+02:00",
+          "tree_id": "1b706b531800e16c1e987aae9a1455082ce87feb",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/ec2869fc7b91ee6c8cba23feecd9d683fa641589"
+        },
+        "date": 1727867333839,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.19154569099998753,
+            "unit": "s",
+            "extra": "Commit: ec2869fc7b91ee6c8cba23feecd9d683fa641589\nBranch: master\nTime: 2024-10-02T13:07:03+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 70.162502222,
+            "unit": "s",
+            "extra": "Commit: ec2869fc7b91ee6c8cba23feecd9d683fa641589\nBranch: master\nTime: 2024-10-02T13:07:03+02:00"
           }
         ]
       }
