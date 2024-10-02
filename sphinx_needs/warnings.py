@@ -45,10 +45,10 @@ def process_warnings(app: Sphinx, exception: Exception | None) -> None:
     # Check if warnings already got executed.
     # Needed because the used event gets executed multiple times, but warnings need to be checked only
     # on first execution
-    if hasattr(env, "needs_warnings_executed") and env.needs_warnings_executed:
+    if hasattr(env, "_needs_warnings_executed") and env._needs_warnings_executed:
         return
 
-    env.needs_warnings_executed = True  # type: ignore[attr-defined]
+    env._needs_warnings_executed = True  # type: ignore[attr-defined]
 
     # Exclude external needs for warnings check
     needs_view = needs_view.filter_is_external(False)

@@ -20,7 +20,7 @@ def test_doc_build_html(test_app, snapshot):
     all_needs = dict(SphinxNeedsData(app.env).get_needs_view())
     assert all_needs == snapshot()
 
-    all_needumls = app.env.needs_all_needumls
+    all_needumls = app.env._needs_all_needumls
     assert all_needumls == snapshot
 
 
@@ -169,7 +169,7 @@ def test_needuml_filter(test_app, snapshot):
     app = test_app
     app.build()
 
-    all_needumls = app.env.needs_all_needumls
+    all_needumls = app.env._needs_all_needumls
     assert all_needumls == snapshot
 
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
@@ -193,7 +193,7 @@ def test_needuml_jinja_func_flow(test_app, snapshot):
     app = test_app
     app.build()
 
-    all_needumls = app.env.needs_all_needumls
+    all_needumls = app.env._needs_all_needumls
     assert all_needumls == snapshot
 
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
@@ -267,7 +267,7 @@ def test_needuml_jinja_func_ref(test_app, snapshot):
     app = test_app
     app.build()
 
-    all_needumls = app.env.needs_all_needumls
+    all_needumls = app.env._needs_all_needumls
     assert all_needumls == snapshot
 
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")

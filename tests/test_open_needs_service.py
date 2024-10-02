@@ -91,9 +91,9 @@ def test_ons_service(test_app):
     )
 
     test_app.build()
-    assert isinstance(test_app.needs_services, ServiceManager)
+    assert isinstance(test_app._needs_services, ServiceManager)
 
-    manager = test_app.needs_services
+    manager = test_app._needs_services
     service = manager.get("open-needs")
     assert hasattr(service, "content")
 
