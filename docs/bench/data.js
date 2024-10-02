@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727867344339,
+  "lastUpdate": 1727885966507,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -10440,6 +10440,42 @@ window.BENCHMARK_DATA = {
             "value": 70.162502222,
             "unit": "s",
             "extra": "Commit: ec2869fc7b91ee6c8cba23feecd9d683fa641589\nBranch: master\nTime: 2024-10-02T13:07:03+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "83e4c58e4f918d516555aabb94955ab957669ee8",
+          "message": "🔧 Make direct access to `env` attributes private (#1310)\n\nThese attributes should always be accessed via the API interface,\r\nadding `_` to them makes this contract more explicit.",
+          "timestamp": "2024-10-02T18:17:22+02:00",
+          "tree_id": "0dc8c0e6ebb3aba01c63180ab627b981ea391aed",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/83e4c58e4f918d516555aabb94955ab957669ee8"
+        },
+        "date": 1727885956222,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.19496096900002158,
+            "unit": "s",
+            "extra": "Commit: 83e4c58e4f918d516555aabb94955ab957669ee8\nBranch: master\nTime: 2024-10-02T18:17:22+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 68.38964092300003,
+            "unit": "s",
+            "extra": "Commit: 83e4c58e4f918d516555aabb94955ab957669ee8\nBranch: master\nTime: 2024-10-02T18:17:22+02:00"
           }
         ]
       }
