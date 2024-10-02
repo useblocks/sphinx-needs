@@ -61,9 +61,9 @@ class NoDebugService(BaseService):
 def test_service_creation(test_app):
     app = test_app
     app.build()
-    assert isinstance(app.needs_services, ServiceManager)
+    assert isinstance(app._needs_services, ServiceManager)
 
-    manager = app.needs_services
+    manager = app._needs_services
     service = manager.get("testservice")
     assert hasattr(service, "custom_option")
 

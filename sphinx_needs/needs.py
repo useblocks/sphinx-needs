@@ -499,10 +499,9 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
     """
     needs_config = NeedsSphinxConfig(app.config)
     data = SphinxNeedsData(env)
-    data.get_or_create_docs()
-    services = data.get_or_create_services()
 
     # Register embedded services
+    services = data.get_or_create_services()
     services.register("github-issues", GithubService, gh_type="issue")
     services.register("github-prs", GithubService, gh_type="pr")
     services.register("github-commits", GithubService, gh_type="commit")
