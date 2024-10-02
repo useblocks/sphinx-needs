@@ -17,7 +17,7 @@ def test_doc_build_html(test_app, snapshot):
 
     assert Path(app.outdir, "index.html").read_text(encoding="utf8")
 
-    all_needs = SphinxNeedsData(app.env).get_needs_view()
+    all_needs = dict(SphinxNeedsData(app.env).get_needs_view())
     assert all_needs == snapshot()
 
     all_needumls = app.env.needs_all_needumls

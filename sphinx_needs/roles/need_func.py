@@ -9,7 +9,7 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util.docutils import SphinxRole
 
-from sphinx_needs.data import NeedsInfoType
+from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import add_doc
 
@@ -60,7 +60,13 @@ class NeedFunc(nodes.Inline, nodes.Element):
         from sphinx_needs.functions.functions import check_and_get_content, execute_func
 
         if not self.with_brackets:
-            func_return = execute_func(env.app, need, self.astext(), self)
+            func_return = execute_func(
+                env.app,
+                need,
+                SphinxNeedsData(env).get_needs_view(),
+                self.astext(),
+                self,
+            )
             if isinstance(func_return, list):
                 func_return = ", ".join(str(el) for el in func_return)
 

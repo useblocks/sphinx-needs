@@ -12,12 +12,7 @@ from sphinxcontrib.plantuml import (
 )
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import (
-    NeedsInfoType,
-    NeedsSequenceType,
-    NeedsView,
-    SphinxNeedsData,
-)
+from sphinx_needs.data import NeedsInfoType, NeedsSequenceType, SphinxNeedsData
 from sphinx_needs.diagrams_common import (
     DiagramBase,
     add_config,
@@ -30,6 +25,7 @@ from sphinx_needs.directives.utils import no_needs_found_paragraph
 from sphinx_needs.filter_common import FilterBase
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import add_doc, remove_node_from_tree
+from sphinx_needs.views import NeedsView
 
 logger = get_logger(__name__)
 

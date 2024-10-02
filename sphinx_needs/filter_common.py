@@ -5,10 +5,11 @@ like needtable, needlist and needflow.
 
 from __future__ import annotations
 
+import ast
 import re
 from timeit import default_timer as timer
 from types import CodeType
-from typing import Any, Iterable, TypedDict, TypeVar
+from typing import Any, Iterable, TypedDict, overload
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -21,15 +22,13 @@ from sphinx_needs.data import (
     NeedsFilteredBaseType,
     NeedsInfoType,
     NeedsMutable,
-    NeedsPartsView,
-    NeedsView,
     SphinxNeedsData,
 )
 from sphinx_needs.debug import measure_time, measure_time_func
 from sphinx_needs.logging import log_warning
-from sphinx_needs.roles.need_part import iter_need_parts
 from sphinx_needs.utils import check_and_get_external_filter_func
 from sphinx_needs.utils import logger as log
+from sphinx_needs.views import NeedsAndPartsListView, NeedsView
 
 
 class FilterAttributesType(TypedDict):
@@ -123,16 +122,10 @@ def process_filters(
     """
     start = timer()
     needs_config = NeedsSphinxConfig(app.config)
-    found_needs: list[NeedsInfoType]
 
     # check if include external needs
     if not include_external:
-        needs_view = NeedsView(
-            {id: need for id, need in needs_view.items() if not need["is_external"]}
-        )
-
-    # Add all need_parts of given needs to the search list
-    all_needs_incl_parts = expand_needs_view(needs_view)
+        needs_view = needs_view.filter_is_external(False)
 
     # Check if external filter code is defined
     try:
@@ -146,73 +139,43 @@ def process_filters(
         )
         return []
 
-    filter_code = None
-    # Get filter_code from
-    if not filter_code and filter_data["filter_code"]:
-        filter_code = "\n".join(filter_data["filter_code"])
+    filter_code = (
+        "\n".join(filter_data["filter_code"]) if filter_data["filter_code"] else None
+    )
+
+    found_needs: list[NeedsInfoType] = []
 
     if (not filter_code or filter_code.isspace()) and not ff_result:
-        if bool(filter_data["status"] or filter_data["tags"] or filter_data["types"]):
-            found_needs_by_options: list[NeedsInfoType] = []
-            for need_info in all_needs_incl_parts:
-                status_filter_passed = False
-                if (
-                    not filter_data["status"]
-                    or need_info["status"]
-                    and need_info["status"] in filter_data["status"]
-                ):
-                    # Filtering for status was not requested or match was found
-                    status_filter_passed = True
-
-                tags_filter_passed = False
-                if (
-                    len(set(need_info["tags"]) & set(filter_data["tags"])) > 0
-                    or len(filter_data["tags"]) == 0
-                ):
-                    tags_filter_passed = True
-
-                type_filter_passed = False
-                if (
-                    need_info["type"] in filter_data["types"]
-                    or need_info["type_name"] in filter_data["types"]
-                    or len(filter_data["types"]) == 0
-                ):
-                    type_filter_passed = True
-
-                if status_filter_passed and tags_filter_passed and type_filter_passed:
-                    found_needs_by_options.append(need_info)
-            # Get need by filter string
-            found_needs_by_string = filter_needs_parts(
-                all_needs_incl_parts,
-                needs_config,
-                filter_data["filter"],
-                location=location,
+        # TODO these may not be correct for parts
+        filtered_needs = needs_view
+        if filter_data["status"]:
+            filtered_needs = filtered_needs.filter_statuses(filter_data["status"])
+        if filter_data["tags"]:
+            filtered_needs = filtered_needs.filter_has_tag(filter_data["tags"])
+        if filter_data["types"]:
+            filtered_needs = filtered_needs.filter_types(
+                filter_data["types"], or_type_names=True
             )
-            # Make an intersection of both lists
-            found_needs = intersection_of_need_results(
-                found_needs_by_options, found_needs_by_string
-            )
-        else:
-            # There is no other config as the one for filter string.
-            # So we only need this result.
-            found_needs = filter_needs_parts(
-                all_needs_incl_parts,
-                needs_config,
-                filter_data["filter"],
-                location=location,
-            )
+
+        # Get need by filter string
+        found_needs = filter_needs_parts(
+            filtered_needs.to_list_with_parts(),
+            needs_config,
+            filter_data["filter"],
+            location=location,
+        )
     else:
         # The filter results may be dirty, as it may continue manipulated needs.
         found_dirty_needs: list[NeedsInfoType] = []
 
         if filter_code:  # code from content
             # TODO better context type
-            context: dict[str, list[NeedsInfoType]] = {
-                "needs": all_needs_incl_parts,  # type: ignore[dict-item]
-                "results": [],
+            context: dict[str, NeedsAndPartsListView] = {
+                "needs": needs_view.to_list_with_parts(),
+                "results": [],  # type: ignore[dict-item]
             }
             exec(filter_code, context)
-            found_dirty_needs = context["results"]
+            found_dirty_needs = context["results"]  # type: ignore[assignment]
         elif ff_result:  # code from external file
             args = []
             if ff_result.args:
@@ -224,7 +187,9 @@ def process_filters(
                 ff_result.func, category="filter_func", source="user"
             )
             filter_func(
-                needs=all_needs_incl_parts, results=found_dirty_needs, **args_context
+                needs=needs_view.to_list_with_parts(),
+                results=found_dirty_needs,
+                **args_context,
             )
         else:
             log_warning(
@@ -232,15 +197,13 @@ def process_filters(
             )
             return []
 
-        found_needs = []
-
         # Check if config allow unsafe filters
         if needs_config.allow_unsafe_filters:
             found_needs = found_dirty_needs
         else:
             # Just take the ids from search result and use the related, but original need
             found_need_ids = [x["id_complete"] for x in found_dirty_needs]
-            for need in all_needs_incl_parts:
+            for need in needs_view.to_list_with_parts():
                 if need["id_complete"] in found_need_ids:
                     found_needs.append(need)
 
@@ -278,26 +241,6 @@ def process_filters(
     return found_needs
 
 
-def expand_needs_view(needs_view: NeedsView) -> NeedsPartsView:
-    """Turns a needs view into a sequence of needs,
-    expanding all ``need["parts"]`` to be items of the list.
-    """
-    all_needs_incl_parts = []
-    for need in needs_view.values():
-        all_needs_incl_parts.append(need)
-        for need_part in iter_need_parts(need):
-            all_needs_incl_parts.append(need_part)
-
-    return NeedsPartsView(all_needs_incl_parts)
-
-
-T = TypeVar("T")
-
-
-def intersection_of_need_results(list_a: list[T], list_b: list[T]) -> list[T]:
-    return [a for a in list_a if a in list_b]
-
-
 def filter_needs_mutable(
     needs: NeedsMutable,
     config: NeedsSphinxConfig,
@@ -317,6 +260,114 @@ def filter_needs_mutable(
     )
 
 
+@overload
+def _analyze_and_apply_expr(
+    needs: NeedsView, expr: ast.expr
+) -> tuple[NeedsView, bool]: ...
+
+
+@overload
+def _analyze_and_apply_expr(
+    needs: NeedsAndPartsListView, expr: ast.expr
+) -> tuple[NeedsAndPartsListView, bool]: ...
+
+
+def _analyze_and_apply_expr(
+    needs: NeedsView | NeedsAndPartsListView, expr: ast.expr
+) -> tuple[NeedsView | NeedsAndPartsListView, bool]:
+    """Analyze the expr for known filter patterns,
+    and apply them to the given needs.
+
+    :returns: the needs (potentially filtered),
+        and a boolean denoting if it still requires python eval filtering
+    """
+    if isinstance(expr, (ast.Str, ast.Constant)):
+        if isinstance(expr.s, (str, bool)):
+            # "value" / True / False
+            return needs if expr.s else needs.filter_ids([]), False
+
+    elif isinstance(expr, ast.Name):
+        # x
+        if expr.id == "is_external":
+            return needs.filter_is_external(True), False
+
+    elif isinstance(expr, ast.Compare):
+        # <expr1> <comp> <expr2>
+        if len(expr.ops) == 1 and isinstance(expr.ops[0], ast.Eq):
+            # x == y
+            if (
+                isinstance(expr.left, ast.Name)
+                and len(expr.comparators) == 1
+                and isinstance(expr.comparators[0], (ast.Str, ast.Constant))
+            ):
+                # x == "value"
+                field = expr.left.id
+                value = expr.comparators[0].s
+            elif (
+                isinstance(expr.left, (ast.Str, ast.Constant))
+                and len(expr.comparators) == 1
+                and isinstance(expr.comparators[0], ast.Name)
+            ):
+                # "value" == x
+                field = expr.comparators[0].id
+                value = expr.left.s
+            else:
+                return needs, True
+
+            if field == "id":
+                # id == value
+                return needs.filter_ids([value]), False
+            elif field == "type":
+                # type == value
+                return needs.filter_types([value]), False
+            elif field == "status":
+                # status == value
+                return needs.filter_statuses([value]), False
+            elif field == "is_external":
+                # is_external == value
+                return needs.filter_is_external(value), False
+
+        elif len(expr.ops) == 1 and isinstance(expr.ops[0], ast.In):
+            # <expr1> in <expr2>
+            if (
+                isinstance(expr.left, ast.Name)
+                and len(expr.comparators) == 1
+                and isinstance(expr.comparators[0], (ast.List, ast.Tuple, ast.Set))
+                and all(
+                    isinstance(elt, (ast.Str, ast.Constant))
+                    for elt in expr.comparators[0].elts
+                )
+            ):
+                values = [elt.s for elt in expr.comparators[0].elts]  # type: ignore[attr-defined]
+                if expr.left.id == "id":
+                    # id in ["a", "b", ...]
+                    return needs.filter_ids(values), False
+                if expr.left.id == "status":
+                    # status in ["a", "b", ...]
+                    return needs.filter_statuses(values), False
+                elif expr.left.id == "type":
+                    # type in ["a", "b", ...]
+                    return needs.filter_types(values), False
+            elif (
+                isinstance(expr.left, (ast.Str, ast.Constant))
+                and len(expr.comparators) == 1
+                and isinstance(expr.comparators[0], ast.Name)
+                and expr.comparators[0].id == "tags"
+            ):
+                # "value" in tags
+                return needs.filter_has_tag([expr.left.s]), False
+
+    elif isinstance((and_op := expr), ast.BoolOp) and isinstance(and_op.op, ast.And):
+        # x and y and ...
+        requires_eval = False
+        for operand in and_op.values:
+            needs, _requires_eval = _analyze_and_apply_expr(needs, operand)
+            requires_eval |= _requires_eval
+        return needs, requires_eval
+
+    return needs, True
+
+
 def filter_needs_view(
     needs: NeedsView,
     config: NeedsSphinxConfig,
@@ -325,7 +376,27 @@ def filter_needs_view(
     *,
     location: tuple[str, int | None] | nodes.Node | None = None,
     append_warning: str = "",
+    strict_eval: bool = False,
 ) -> list[NeedsInfoType]:
+    if not filter_string:
+        return list(needs.values())
+
+    try:
+        body = ast.parse(filter_string).body
+    except Exception:
+        pass  # warning already emitted in filter_needs
+    else:
+        if len(body) == 1 and isinstance((expr := body[0]), ast.Expr):
+            needs, requires_eval = _analyze_and_apply_expr(needs, expr.value)
+            if not requires_eval:
+                return list(needs.values())
+
+    if strict_eval:
+        # this is mainly used for testing purposes, to check if expression analysis is working
+        raise RuntimeError(
+            f"Strict eval mode, but no simple filter found: {filter_string!r}"
+        )
+
     return filter_needs(
         needs.values(),
         config,
@@ -337,14 +408,34 @@ def filter_needs_view(
 
 
 def filter_needs_parts(
-    needs: NeedsPartsView,
+    needs: NeedsAndPartsListView,
     config: NeedsSphinxConfig,
     filter_string: None | str = "",
     current_need: NeedsInfoType | None = None,
     *,
     location: tuple[str, int | None] | nodes.Node | None = None,
     append_warning: str = "",
+    strict_eval: bool = False,
 ) -> list[NeedsInfoType]:
+    if not filter_string:
+        return list(needs)
+
+    try:
+        body = ast.parse(filter_string).body
+    except Exception:
+        pass  # warning already emitted in filter_needs
+    else:
+        if len(body) == 1 and isinstance((expr := body[0]), ast.Expr):
+            needs, requires_eval = _analyze_and_apply_expr(needs, expr.value)
+            if not requires_eval:
+                return list(needs)
+
+    if strict_eval:
+        # this is mainly used for testing purposes, to check if expression analysis is working
+        raise RuntimeError(
+            f"Strict eval mode, but no simple filter found: {filter_string!r}"
+        )
+
     return filter_needs(
         needs,
         config,

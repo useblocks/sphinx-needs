@@ -373,16 +373,18 @@ def post_process_needs_data(app: Sphinx) -> None:
     After this function has been run, one should assume that the needs data is finalised,
     and so in principle should be treated as read-only.
     """
-    needs_config = NeedsSphinxConfig(app.config)
     needs_data = SphinxNeedsData(app.env)
-    needs = needs_data.get_needs_mutable()
-    if needs and not needs_data.needs_is_post_processed:
+    if not needs_data.needs_is_post_processed:
+        needs_config = NeedsSphinxConfig(app.config)
+        needs = needs_data.get_needs_mutable()
+        app.emit("needs-before-post-processing", needs)
         extend_needs_data(needs, needs_data.get_or_create_extends(), needs_config)
         resolve_dynamic_values(needs, app)
         resolve_variants_options(needs, needs_config, app.builder.tags)
         check_links(needs, needs_config)
         create_back_links(needs, needs_config)
         process_constraints(needs, needs_config)
+        app.emit("needs-before-sealing", needs)
         needs_data.needs_is_post_processed = True
 
 
@@ -403,8 +405,6 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     # If no needs were defined, we do not need to do anything
     if not needs_data.get_needs_view():
         return
-
-    post_process_needs_data(app)
 
     for extend_node in list(doctree.findall(Needextend)):
         remove_node_from_tree(extend_node)
