@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727806333281,
+  "lastUpdate": 1727846806501,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -10332,6 +10332,42 @@ window.BENCHMARK_DATA = {
             "value": 72.25278689599998,
             "unit": "s",
             "extra": "Commit: cb03029298835c1b3b11fbd4d2a2e4c34b06dd5b\nBranch: master\nTime: 2024-10-01T20:10:03+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "66853113+pre-commit-ci[bot]@users.noreply.github.com",
+            "name": "pre-commit-ci[bot]",
+            "username": "pre-commit-ci[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bfdd5754b2e7276c2c775bf14079e955ef10fc8a",
+          "message": "[pre-commit.ci] pre-commit autoupdate (#1307)\n\nCo-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>\r\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2024-10-02T07:24:51+02:00",
+          "tree_id": "e02a30715ec7d235e49ee1489cc89d8070bee71d",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/bfdd5754b2e7276c2c775bf14079e955ef10fc8a"
+        },
+        "date": 1727846797132,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1957425829999977,
+            "unit": "s",
+            "extra": "Commit: bfdd5754b2e7276c2c775bf14079e955ef10fc8a\nBranch: master\nTime: 2024-10-02T07:24:51+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 66.98242319600001,
+            "unit": "s",
+            "extra": "Commit: bfdd5754b2e7276c2c775bf14079e955ef10fc8a\nBranch: master\nTime: 2024-10-02T07:24:51+02:00"
           }
         ]
       }
