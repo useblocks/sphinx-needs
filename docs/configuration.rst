@@ -533,6 +533,15 @@ If set to False, the filter results contains the original need fields and any ma
    needs_allow_unsafe_filters = True
 
 
+.. _needs_filter_max_time:
+
+needs_filter_max_time
+~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 4.0.0
+
+If set, warn if any :ref:`filter processing <filter>` call takes longer than the given time in seconds.
+
 .. _needs_flow_engine:
 
 needs_flow_engine
@@ -2177,3 +2186,13 @@ See :ref:`runtime_debugging` for details.
 To activate it, set it to ``True``::
 
    needs_debug_measurement = True
+
+.. _needs_debug_filters:
+
+needs_debug_filters
+~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 4.0.0
+
+If set to ``True``, all calls to :ref:`filter processing <filter>` will be logged to a ``debug_filters.jsonl`` file in the build output directory,
+appending a single-line JSON for each filter call.

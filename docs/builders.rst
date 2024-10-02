@@ -38,26 +38,6 @@ version(s) inside the **needs.json**.
    If you generate and store/archive (e.g. in git) the **needs.json** file
    every time you raise your documentation version, you will get a nice history data.
 
-.. _filter_export:
-
-Exporting filters
-+++++++++++++++++
-
-.. versionadded:: 0.3.11
-
-The results and filter configuration of a filter based directive, like :ref:`needlist`, :ref:`needtable`
-or :ref:`needflow` gets exported, if the option :ref:`export_id` is used in the related directive.
-
-This allows to export specified filter results only.
-
-.. code-block:: rst
-
-   .. needtable::
-      :status: open
-      :filter: "test" in tags
-      :export_id: filter_01
-
-
 .. _needs_builder_format:
 
 Format
@@ -81,16 +61,6 @@ See also :ref:`needs_json_exclude_fields`, :ref:`needs_json_remove_defaults`, an
     "versions": {
         "1.0": {
             "created": "2017-07-03T11:54:42.433868",
-            "filters": {
-                "FILTER_1": {
-                    "amount": 1,
-                    "export_id": "FILTER_1",
-                    "filter": "",
-                    "result": ["IMPL_01"],
-                    "status": [],
-                    "tags": "",
-                    "types": []
-            },
             "needs_schema": {
                 "$schema": "http://json-schema.org/draft-07/schema#",
                 "properties": {
@@ -138,16 +108,6 @@ See also :ref:`needs_json_exclude_fields`, :ref:`needs_json_remove_defaults`, an
         },
         "1.5": {
             "created": "2017-07-03T16:10:31.633425",
-            "filters": {
-                "FILTER_1": {
-                    "amount": 1,
-                    "export_id": "FILTER_1",
-                    "filter": "",
-                    "result": ["IMPL_01"],
-                    "status": [],
-                    "tags": "",
-                    "types": []
-            },
             "needs_schema": {
                 "id": {
                     "description": "ID of the data.",

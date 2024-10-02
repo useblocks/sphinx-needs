@@ -33,23 +33,6 @@ if TYPE_CHECKING:
 LOGGER = getLogger(__name__)
 
 
-class NeedsFilterType(TypedDict):
-    filter: str
-    """Filter string."""
-    status: list[str]
-    tags: list[str]
-    types: list[str]
-    amount: int
-    export_id: str
-    """If set, the filter is exported with this ID in the needs.json file."""
-    origin: str
-    """Origin of the request (e.g. needlist, needtable, needflow)."""
-    location: str
-    """Location of the request (e.g. "docname:lineno")"""
-    runtime: float
-    """Time take to run filter (seconds)."""
-
-
 class NeedsPartType(TypedDict):
     """Data for a single need part."""
 
@@ -529,7 +512,6 @@ class NeedsFilteredBaseType(NeedsBaseDataType):
     sort_by: None | str
     filter_code: list[str]
     filter_func: None | str
-    export_id: str
     filter_warning: str | None
     """If set, the filter is exported with this ID in the needs.json file."""
 
@@ -776,29 +758,6 @@ class SphinxNeedsData:
             self.env._needs_view = NeedsView._from_needs(self._env_needs)
         return self.env._needs_view
 
-    @property
-    def has_export_filters(self) -> bool:
-        """Whether any filters have export IDs."""
-        try:
-            return self.env.needs_filters_export_id
-        except AttributeError:
-            return False
-
-    @has_export_filters.setter
-    def has_export_filters(self, value: bool) -> None:
-        self.env.needs_filters_export_id = value
-
-    def get_or_create_filters(self) -> dict[str, NeedsFilterType]:
-        """Get all filters, mapped by ID.
-
-        This is lazily created and cached in the environment.
-        """
-        try:
-            return self.env.needs_all_filters
-        except AttributeError:
-            self.env.needs_all_filters = {}
-        return self.env.needs_all_filters
-
     def get_or_create_docs(self) -> dict[str, list[str]]:
         """Get mapping of need category to docnames containing the need.
 
@@ -896,13 +855,6 @@ def merge_data(
     """
     this_data = SphinxNeedsData(env)
     other_data = SphinxNeedsData(other)
-
-    # update filters
-    if other_data.has_export_filters:
-        this_data.has_export_filters = True
-    # merge these just to be safe,
-    # although actually all should be added in the write phase
-    this_data.get_or_create_filters().update(other_data.get_or_create_filters())
 
     # Update needs
     needs = this_data._env_needs

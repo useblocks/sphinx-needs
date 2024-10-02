@@ -6,7 +6,9 @@ like needtable, needlist and needflow.
 from __future__ import annotations
 
 import ast
+import json
 import re
+from pathlib import Path
 from timeit import default_timer as timer
 from types import CodeType
 from typing import Any, Iterable, TypedDict, overload
@@ -22,7 +24,6 @@ from sphinx_needs.data import (
     NeedsFilteredBaseType,
     NeedsInfoType,
     NeedsMutable,
-    SphinxNeedsData,
 )
 from sphinx_needs.debug import measure_time, measure_time_func
 from sphinx_needs.logging import log_warning
@@ -39,7 +40,6 @@ class FilterAttributesType(TypedDict):
     sort_by: str
     filter_code: list[str]
     filter_func: str | None
-    export_id: str
     filter_warning: str | None
     """If set, the filter is exported with this ID in the needs.json file."""
 
@@ -81,9 +81,13 @@ class FilterBase(SphinxDirective):
         if isinstance(types, str):
             types = [typ.strip() for typ in re.split(";|,", types)]
 
-        if self.options.get("export_id", ""):
-            # this is used by needs builders
-            SphinxNeedsData(self.env).has_export_filters = True
+        if "export_id" in self.options:
+            log_warning(
+                log,
+                "The 'export_id' option is deprecated, instead use the `needs_debug_filters` configuration.",
+                "deprecated",
+                location=self.get_location(),
+            )
 
         # Add the need and all needed information
         collected_filter_options: FilterAttributesType = {
@@ -94,7 +98,6 @@ class FilterBase(SphinxDirective):
             "sort_by": self.options.get("sort_by"),
             "filter_code": self.content,
             "filter_func": self.options.get("filter-func"),
-            "export_id": self.options.get("export_id", ""),
             "filter_warning": self.options.get("filter_warning"),
         }
         return collected_filter_options
@@ -123,8 +126,12 @@ def process_filters(
     start = timer()
     needs_config = NeedsSphinxConfig(app.config)
 
+    # filter string to record (will be joined by 'and')
+    full_filter: list[str] = []
+
     # check if include external needs
     if not include_external:
+        full_filter.append("is_external == False")
         needs_view = needs_view.filter_is_external(False)
 
     # Check if external filter code is defined
@@ -149,13 +156,22 @@ def process_filters(
         # TODO these may not be correct for parts
         filtered_needs = needs_view
         if filter_data["status"]:
+            full_filter.append(f"status in {filter_data['status']!r}")
             filtered_needs = filtered_needs.filter_statuses(filter_data["status"])
         if filter_data["tags"]:
+            full_filter.append(
+                " or ".join(f"{tag!r} in tags" for tag in filter_data["tags"])
+            )
             filtered_needs = filtered_needs.filter_has_tag(filter_data["tags"])
         if filter_data["types"]:
+            full_filter.append(
+                f"type in {filter_data['types']!r} or type_name in {filter_data['types']!r}"
+            )
             filtered_needs = filtered_needs.filter_types(
                 filter_data["types"], or_type_names=True
             )
+        if filter_data["filter"]:
+            full_filter.append(filter_data["filter"])
 
         # Get need by filter string
         found_needs = filter_needs_parts(
@@ -169,6 +185,7 @@ def process_filters(
         found_dirty_needs: list[NeedsInfoType] = []
 
         if filter_code:  # code from content
+            full_filter.append(filter_code)
             # TODO better context type
             context: dict[str, NeedsAndPartsListView] = {
                 "needs": needs_view.to_list_with_parts(),
@@ -177,6 +194,7 @@ def process_filters(
             exec(filter_code, context)
             found_dirty_needs = context["results"]  # type: ignore[assignment]
         elif ff_result:  # code from external file
+            full_filter.append(ff_result.sig)
             args = []
             if ff_result.args:
                 args = ff_result.args.split(",")
@@ -222,21 +240,36 @@ def process_filters(
             )
             return []
 
-    # Store basic filter configuration and result global list.
-    # Needed mainly for exporting the result to needs.json (if builder "needs" is used).
-    filter_list = SphinxNeedsData(app.env).get_or_create_filters()
+    duration = timer() - start
 
-    filter_list[filter_data["target_id"]] = {
-        "origin": origin,
-        "location": f"{location.source}:{location.line}",
-        "filter": filter_data["filter"] or "",
-        "status": filter_data["status"],
-        "tags": filter_data["tags"],
-        "types": filter_data["types"],
-        "export_id": filter_data["export_id"].upper(),
-        "amount": len(found_needs),
-        "runtime": timer() - start,
-    }
+    if (
+        needs_config.filter_max_time is not None
+        and duration > needs_config.filter_max_time
+    ):
+        log_warning(
+            log,
+            f"Filtering took {duration:.3f}s, which is longer than the configured maximum of {needs_config.filter_max_time}s.",
+            "filter",
+            location=location,
+        )
+
+    if needs_config.debug_filters and full_filter:
+        # Store basic filter configuration and result global list.
+        # Needed mainly for exporting the result to needs.json (if builder "needs" is used).
+        json_line = json.dumps(
+            {
+                "origin": origin,
+                "source": str(location.source) if location.source else None,
+                "line": location.line,
+                "filter": full_filter[0]
+                if len(full_filter) == 1
+                else " and ".join(f"({f})" for f in full_filter),
+                "needs_count": len(found_needs),
+                "runtime": duration,
+            }
+        )
+        with Path(str(app.outdir), "debug_filters.jsonl").open("a") as f:
+            f.write(json_line + "\n")
 
     return found_needs
 

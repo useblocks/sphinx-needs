@@ -13,6 +13,7 @@ extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
 plantuml_output_format = "svg"
 
 needs_debug_measurement = True
+needs_debug_filters = True
 
 needs_id_regex = "^[A-Za-z0-9_]"
 
