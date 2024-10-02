@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727846806501,
+  "lastUpdate": 1727867049331,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -10368,6 +10368,42 @@ window.BENCHMARK_DATA = {
             "value": 66.98242319600001,
             "unit": "s",
             "extra": "Commit: bfdd5754b2e7276c2c775bf14079e955ef10fc8a\nBranch: master\nTime: 2024-10-02T07:24:51+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ac4165c84011414d3e14b4224e51ed8a50d88581",
+          "message": "🔧 Remove deprecated `needfilter` directive (#1308)\n\nThis has been deprecated since v0.2.0, so high time to remove the code",
+          "timestamp": "2024-10-02T13:02:07+02:00",
+          "tree_id": "002f79106aeb165eb3f2ad29f063ba4beaae1399",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/ac4165c84011414d3e14b4224e51ed8a50d88581"
+        },
+        "date": 1727867039053,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.20245504100000744,
+            "unit": "s",
+            "extra": "Commit: ac4165c84011414d3e14b4224e51ed8a50d88581\nBranch: master\nTime: 2024-10-02T13:02:07+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 69.62341975499999,
+            "unit": "s",
+            "extra": "Commit: ac4165c84011414d3e14b4224e51ed8a50d88581\nBranch: master\nTime: 2024-10-02T13:02:07+02:00"
           }
         ]
       }
