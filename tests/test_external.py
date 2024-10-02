@@ -47,7 +47,7 @@ def test_external_json(test_app: SphinxTestApp, snapshot):
     app.build()
     json_data = Path(app.outdir, "needs.json").read_text()
     needs = json.loads(json_data)
-    assert needs == snapshot(exclude=props("created", "project"))
+    assert needs == snapshot(exclude=props("created", "project", "creator"))
 
 
 def test_export_import_round_trip(tmp_path: Path, snapshot):
@@ -136,4 +136,4 @@ def test_export_import_round_trip(tmp_path: Path, snapshot):
 
     json_data = json.loads(Path(str(app.outdir), "needs.json").read_text("utf8"))
 
-    assert json_data == snapshot(exclude=props("created", "project"))
+    assert json_data == snapshot(exclude=props("created", "project", "creator"))

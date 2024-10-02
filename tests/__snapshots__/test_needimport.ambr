@@ -3,9 +3,6 @@
     'current_version': '1.0',
     'versions': dict({
       '1.0': dict({
-        'filters': dict({
-        }),
-        'filters_amount': 0,
         'needs': dict({
           'IMPL_01': dict({
             'description': 'Incoming links of this spec: :need_incoming:`IMPL_01`.',

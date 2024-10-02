@@ -97,7 +97,9 @@ def test_build(test_app, snapshot):
     assert warnings.splitlines() == expected_warnings
 
     needs_data = json.loads((Path(app.outdir) / "needs.json").read_text("utf8"))
-    assert needs_data == snapshot(exclude=props("created", "project", "avatar"))
+    assert needs_data == snapshot(
+        exclude=props("created", "project", "avatar", "creator")
+    )
 
 
 ISSUE_RESPONSE = {
