@@ -32,6 +32,12 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
+ENV_DATA_VERSION: Final = 2
+"""Version of the data stored in the environment.
+
+See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
+"""
+
 
 class NeedsPartType(TypedDict):
     """Data for a single need part."""
