@@ -82,7 +82,7 @@ hide
 ~~~~
 
 You can use the ``:hide:`` option to set the **hide** tag for all imported needs.
-So they do not show up but are available in ``needfilter``.
+So they are not rendered on the page.
 
 collapse
 ~~~~~~~~
