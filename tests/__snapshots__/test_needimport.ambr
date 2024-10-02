@@ -5,7 +5,7 @@
       '1.0': dict({
         'needs': dict({
           'IMPL_01': dict({
-            'description': 'Incoming links of this spec: :need_incoming:`IMPL_01`.',
+            'content': 'Incoming links of this spec: :need_incoming:`IMPL_01`.',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Implementation for specification',
@@ -26,7 +26,7 @@
             'type_name': 'Implementation',
           }),
           'OWN_ID_123': dict({
-            'description': 'Outgoing links of this spec: :need_outgoing:`OWN_ID_123`.',
+            'content': 'Outgoing links of this spec: :need_outgoing:`OWN_ID_123`.',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Specification of a requirement',
@@ -49,7 +49,7 @@
             'type_name': 'Specification',
           }),
           'REQ_001': dict({
-            'description': '''
+            'content': '''
               This is an awesome requirement and it includes a nice title,
               a given id, a tag and this text as description.
             ''',
@@ -73,7 +73,6 @@
             'type_name': 'Requirement',
           }),
           'REQ_1': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Test requirement 1',
@@ -90,7 +89,6 @@
             'type_name': 'Requirement',
           }),
           'ROLES_REQ_1': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Sliced Bread',
@@ -108,7 +106,6 @@
             'type_name': 'Requirement',
           }),
           'ROLES_REQ_2': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Butter on Bread',
@@ -126,7 +123,6 @@
             'type_name': 'Requirement',
           }),
           'R_22EB2': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Requirement B',
@@ -146,7 +142,6 @@
             'type_name': 'Requirement',
           }),
           'R_2A9D0': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Requirement A',
@@ -166,7 +161,7 @@
             'type_name': 'Requirement',
           }),
           'R_F4722': dict({
-            'description': '''
+            'content': '''
               This is my **first** requirement!!
               
               .. note:: You can use any rst code inside it :)
@@ -194,7 +189,6 @@
             'type_name': 'Requirement',
           }),
           'SPEC_1': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Test specification 1',
@@ -211,7 +205,6 @@
             'type_name': 'Specification',
           }),
           'S_01A67': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Specification B',
@@ -231,7 +224,7 @@
             'type_name': 'Specification',
           }),
           'S_503A1': dict({
-            'description': '''
+            'content': '''
               We haven't set an **ID** here, so sphinxcontrib-needs
               will generated one for us.
               
@@ -260,7 +253,6 @@
             'type_name': 'Specification',
           }),
           'S_D70B0': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Specification A',
@@ -280,7 +272,7 @@
             'type_name': 'Specification',
           }),
           'TEST_01': dict({
-            'description': 'TEST IMPORT TITLE',
+            'content': 'TEST IMPORT TITLE',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'TEST IMPORT DESCRIPTION',
@@ -295,7 +287,6 @@
             'type_name': 'Implementation',
           }),
           'T_5CCAA': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Test 1',
@@ -317,7 +308,7 @@
             'type_name': 'Test Case',
           }),
           'T_C3893': dict({
-            'description': '''
+            'content': '''
               This test checks :need:`impl_01` for :need:`OWN_ID_123` inside a
               Python 2.7 environment.
             ''',
@@ -349,7 +340,7 @@
             'type_name': 'Test Case',
           }),
           'collapsed_IMPL_01': dict({
-            'description': 'Incoming links of this spec: :need_incoming:`collapsed_IMPL_01`.',
+            'content': 'Incoming links of this spec: :need_incoming:`collapsed_IMPL_01`.',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Implementation for specification',
@@ -376,7 +367,7 @@
             'type_name': 'Implementation',
           }),
           'collapsed_OWN_ID_123': dict({
-            'description': 'Outgoing links of this spec: :need_outgoing:`collapsed_OWN_ID_123`.',
+            'content': 'Outgoing links of this spec: :need_outgoing:`collapsed_OWN_ID_123`.',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Specification of a requirement',
@@ -404,7 +395,7 @@
             'type_name': 'Specification',
           }),
           'collapsed_REQ_001': dict({
-            'description': '''
+            'content': '''
               This is an awesome requirement and it includes a nice title,
               a given id, a tag and this text as description.
             ''',
@@ -432,7 +423,6 @@
             'type_name': 'Requirement',
           }),
           'collapsed_ROLES_REQ_1': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Sliced Bread',
@@ -456,7 +446,6 @@
             'type_name': 'Requirement',
           }),
           'collapsed_ROLES_REQ_2': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Butter on Bread',
@@ -480,7 +469,6 @@
             'type_name': 'Requirement',
           }),
           'collapsed_R_22EB2': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Requirement B',
@@ -504,7 +492,6 @@
             'type_name': 'Requirement',
           }),
           'collapsed_R_2A9D0': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Requirement A',
@@ -528,7 +515,7 @@
             'type_name': 'Requirement',
           }),
           'collapsed_R_F4722': dict({
-            'description': '''
+            'content': '''
               This is my **first** requirement!!
               
               .. note:: You can use any rst code inside it :)
@@ -560,7 +547,6 @@
             'type_name': 'Requirement',
           }),
           'collapsed_S_01A67': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Specification B',
@@ -584,7 +570,7 @@
             'type_name': 'Specification',
           }),
           'collapsed_S_503A1': dict({
-            'description': '''
+            'content': '''
               We haven't set an **ID** here, so sphinxcontrib-needs
               will generated one for us.
               
@@ -617,7 +603,6 @@
             'type_name': 'Specification',
           }),
           'collapsed_S_D70B0': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Specification A',
@@ -641,7 +626,7 @@
             'type_name': 'Specification',
           }),
           'collapsed_TEST_01': dict({
-            'description': 'TEST IMPORT TITLE',
+            'content': 'TEST IMPORT TITLE',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'TEST IMPORT DESCRIPTION',
@@ -662,7 +647,6 @@
             'type_name': 'Implementation',
           }),
           'collapsed_T_5CCAA': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Test 1',
@@ -688,7 +672,7 @@
             'type_name': 'Test Case',
           }),
           'collapsed_T_C3893': dict({
-            'description': '''
+            'content': '''
               This test checks :need:`impl_01` for :need:`collapsed_OWN_ID_123` inside a
               Python 2.7 environment.
             ''',
@@ -724,7 +708,7 @@
             'type_name': 'Test Case',
           }),
           'filter_IMPL_01': dict({
-            'description': 'Incoming links of this spec: :need_incoming:`filter_IMPL_01`.',
+            'content': 'Incoming links of this spec: :need_incoming:`filter_IMPL_01`.',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Implementation for specification',
@@ -746,7 +730,7 @@
             'type_name': 'Implementation',
           }),
           'hidden_IMPL_01': dict({
-            'description': 'Incoming links of this spec: :need_incoming:`hidden_IMPL_01`.',
+            'content': 'Incoming links of this spec: :need_incoming:`hidden_IMPL_01`.',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Implementation for specification',
@@ -778,7 +762,7 @@
             'type_name': 'Implementation',
           }),
           'hidden_OWN_ID_123': dict({
-            'description': 'Outgoing links of this spec: :need_outgoing:`hidden_OWN_ID_123`.',
+            'content': 'Outgoing links of this spec: :need_outgoing:`hidden_OWN_ID_123`.',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Specification of a requirement',
@@ -811,7 +795,7 @@
             'type_name': 'Specification',
           }),
           'hidden_REQ_001': dict({
-            'description': '''
+            'content': '''
               This is an awesome requirement and it includes a nice title,
               a given id, a tag and this text as description.
             ''',
@@ -844,7 +828,6 @@
             'type_name': 'Requirement',
           }),
           'hidden_ROLES_REQ_1': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Sliced Bread',
@@ -873,7 +856,6 @@
             'type_name': 'Requirement',
           }),
           'hidden_ROLES_REQ_2': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Butter on Bread',
@@ -902,7 +884,6 @@
             'type_name': 'Requirement',
           }),
           'hidden_R_22EB2': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Requirement B',
@@ -931,7 +912,6 @@
             'type_name': 'Requirement',
           }),
           'hidden_R_2A9D0': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Requirement A',
@@ -960,7 +940,7 @@
             'type_name': 'Requirement',
           }),
           'hidden_R_F4722': dict({
-            'description': '''
+            'content': '''
               This is my **first** requirement!!
               
               .. note:: You can use any rst code inside it :)
@@ -997,7 +977,6 @@
             'type_name': 'Requirement',
           }),
           'hidden_S_01A67': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Specification B',
@@ -1026,7 +1005,7 @@
             'type_name': 'Specification',
           }),
           'hidden_S_503A1': dict({
-            'description': '''
+            'content': '''
               We haven't set an **ID** here, so sphinxcontrib-needs
               will generated one for us.
               
@@ -1064,7 +1043,6 @@
             'type_name': 'Specification',
           }),
           'hidden_S_D70B0': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Specification A',
@@ -1093,7 +1071,7 @@
             'type_name': 'Specification',
           }),
           'hidden_TEST_01': dict({
-            'description': 'TEST IMPORT TITLE',
+            'content': 'TEST IMPORT TITLE',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'TEST IMPORT DESCRIPTION',
@@ -1115,7 +1093,6 @@
             'type_name': 'Implementation',
           }),
           'hidden_T_5CCAA': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Test 1',
@@ -1143,7 +1120,7 @@
             'type_name': 'Test Case',
           }),
           'hidden_T_C3893': dict({
-            'description': '''
+            'content': '''
               This test checks :need:`impl_01` for :need:`hidden_OWN_ID_123` inside a
               Python 2.7 environment.
             ''',
@@ -1177,7 +1154,6 @@
             'type_name': 'Test Case',
           }),
           'ids_ROLES_REQ_1': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Sliced Bread',
@@ -1199,7 +1175,6 @@
             'type_name': 'Requirement',
           }),
           'ids_ROLES_REQ_2': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Butter on Bread',
@@ -1221,7 +1196,7 @@
             'type_name': 'Requirement',
           }),
           'small2_TEST_03': dict({
-            'description': 'AAA',
+            'content': 'AAA',
             'docname': 'subdoc/filter',
             'external_css': 'external_link',
             'full_title': 'AAA',
@@ -1237,7 +1212,7 @@
             'type_name': 'Requirement',
           }),
           'small_TEST_02': dict({
-            'description': 'small_TEST_02',
+            'content': 'small_TEST_02',
             'docname': 'subdoc/filter',
             'external_css': 'external_link',
             'full_title': 'TEST_02 DESCRIPTION',
@@ -1257,7 +1232,7 @@
             'type_name': 'Requirement',
           }),
           'small_abs_path_TEST_02': dict({
-            'description': 'small_abs_path_TEST_02',
+            'content': 'small_abs_path_TEST_02',
             'docname': 'subdoc/abs_path_import',
             'external_css': 'external_link',
             'full_title': 'TEST_02 DESCRIPTION',
@@ -1277,7 +1252,7 @@
             'type_name': 'Requirement',
           }),
           'small_depr_rel_path_TEST_01': dict({
-            'description': 'small_depr_rel_path_TEST_01',
+            'content': 'small_depr_rel_path_TEST_01',
             'docname': 'subdoc/deprecated_rel_path_import',
             'external_css': 'external_link',
             'full_title': 'TEST_01 DESCRIPTION',
@@ -1292,7 +1267,7 @@
             'type_name': 'Implementation',
           }),
           'small_rel_path_TEST_01': dict({
-            'description': 'small_rel_path_TEST_01',
+            'content': 'small_rel_path_TEST_01',
             'docname': 'subdoc/rel_path_import',
             'external_css': 'external_link',
             'full_title': 'TEST_01 DESCRIPTION',
@@ -1307,7 +1282,7 @@
             'type_name': 'Implementation',
           }),
           'test_IMPL_01': dict({
-            'description': 'Incoming links of this spec: :need_incoming:`test_IMPL_01`.',
+            'content': 'Incoming links of this spec: :need_incoming:`test_IMPL_01`.',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Implementation for specification',
@@ -1333,7 +1308,7 @@
             'type_name': 'Implementation',
           }),
           'test_OWN_ID_123': dict({
-            'description': 'Outgoing links of this spec: :need_outgoing:`test_OWN_ID_123`.',
+            'content': 'Outgoing links of this spec: :need_outgoing:`test_OWN_ID_123`.',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Specification of a requirement',
@@ -1360,7 +1335,7 @@
             'type_name': 'Specification',
           }),
           'test_REQ_001': dict({
-            'description': '''
+            'content': '''
               This is an awesome requirement and it includes a nice title,
               a given id, a tag and this text as description.
             ''',
@@ -1387,7 +1362,6 @@
             'type_name': 'Requirement',
           }),
           'test_ROLES_REQ_1': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Sliced Bread',
@@ -1410,7 +1384,6 @@
             'type_name': 'Requirement',
           }),
           'test_ROLES_REQ_2': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Butter on Bread',
@@ -1433,7 +1406,6 @@
             'type_name': 'Requirement',
           }),
           'test_R_22EB2': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Requirement B',
@@ -1456,7 +1428,6 @@
             'type_name': 'Requirement',
           }),
           'test_R_2A9D0': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Requirement A',
@@ -1479,7 +1450,7 @@
             'type_name': 'Requirement',
           }),
           'test_R_F4722': dict({
-            'description': '''
+            'content': '''
               This is my **first** requirement!!
               
               .. note:: You can use any rst code inside it :)
@@ -1510,7 +1481,6 @@
             'type_name': 'Requirement',
           }),
           'test_S_01A67': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Specification B',
@@ -1533,7 +1503,7 @@
             'type_name': 'Specification',
           }),
           'test_S_503A1': dict({
-            'description': '''
+            'content': '''
               We haven't set an **ID** here, so sphinxcontrib-needs
               will generated one for us.
               
@@ -1565,7 +1535,6 @@
             'type_name': 'Specification',
           }),
           'test_S_D70B0': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Specification A',
@@ -1588,7 +1557,7 @@
             'type_name': 'Specification',
           }),
           'test_TEST_01': dict({
-            'description': 'TEST IMPORT TITLE',
+            'content': 'TEST IMPORT TITLE',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'TEST IMPORT DESCRIPTION',
@@ -1608,7 +1577,6 @@
             'type_name': 'Implementation',
           }),
           'test_T_5CCAA': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Test 1',
@@ -1633,7 +1601,7 @@
             'type_name': 'Test Case',
           }),
           'test_T_C3893': dict({
-            'description': '''
+            'content': '''
               This test checks :need:`impl_01` for :need:`test_OWN_ID_123` inside a
               Python 2.7 environment.
             ''',
@@ -1732,6 +1700,12 @@
               'description': 'Mapping of constraint name, to check name, to result.',
               'field_type': 'core',
               'type': 'object',
+            }),
+            'content': dict({
+              'default': '',
+              'description': 'Content of the need.',
+              'field_type': 'core',
+              'type': 'string',
             }),
             'created_at': dict({
               'default': '',

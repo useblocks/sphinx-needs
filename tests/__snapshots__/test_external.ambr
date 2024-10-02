@@ -5,7 +5,6 @@
       '1.3': dict({
         'needs': dict({
           'EXT_REQ_01': dict({
-            'description': '',
             'doctype': '',
             'external_css': 'external_link',
             'external_url': 'http://my_company.com/docs/v1/index.html#REQ_01',
@@ -22,7 +21,6 @@
             'type_name': 'Requirement',
           }),
           'IMP_REQ_01': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'REQ_01',
@@ -102,6 +100,12 @@
               'description': 'Mapping of constraint name, to check name, to result.',
               'field_type': 'core',
               'type': 'object',
+            }),
+            'content': dict({
+              'default': '',
+              'description': 'Content of the need.',
+              'field_type': 'core',
+              'type': 'string',
             }),
             'created_at': dict({
               'default': '',
@@ -482,9 +486,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
+            'content': 'EXT_TEST_01',
             'created_at': '',
             'delete': False,
-            'description': 'EXT_TEST_01',
             'docname': None,
             'doctype': '',
             'duration': '',
@@ -555,9 +559,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
+            'content': 'EXT_TEST_02',
             'created_at': '',
             'delete': False,
-            'description': 'EXT_TEST_02',
             'docname': None,
             'doctype': '',
             'duration': '',
@@ -631,9 +635,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
+            'content': '',
             'created_at': '',
             'delete': False,
-            'description': '',
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -703,9 +707,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
+            'content': '',
             'created_at': '',
             'delete': False,
-            'description': '',
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -776,9 +780,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
+            'content': '',
             'created_at': '',
             'delete': False,
-            'description': '',
             'docname': 'subfolder_a/subfolder_b/subpage',
             'doctype': '.rst',
             'duration': '',
@@ -899,6 +903,12 @@
               'description': 'Mapping of constraint name, to check name, to result.',
               'field_type': 'core',
               'type': 'object',
+            }),
+            'content': dict({
+              'default': '',
+              'description': 'Content of the need.',
+              'field_type': 'core',
+              'type': 'string',
             }),
             'created_at': dict({
               'default': '',

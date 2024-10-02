@@ -252,9 +252,9 @@ def import_prefix_link_edit(
                             need[extra_link["option"]][n] = f"{id_prefix}{id}"
             # Manipulate descriptions
             # ToDo: Use regex for better matches.
-            need["description"] = need["description"].replace(
-                id, "".join([id_prefix, id])
-            )
+            for key in ("content", "description"):
+                if key in need:
+                    need[key] = need[key].replace(id, "".join([id_prefix, id]))
 
 
 FuncT = TypeVar("FuncT")

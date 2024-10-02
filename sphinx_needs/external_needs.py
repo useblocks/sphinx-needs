@@ -157,7 +157,10 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> Non
                     f'{source["base_url"]}/{need.get("docname", "__error__")}.html#{need["id"]}'
                 )
 
-            need_params["content"] = need["description"]
+            if "description" in need_params and not need_params.get("content"):
+                # legacy versions of sphinx-needs changed "description" to "content" when outputting to json
+                need_params["content"] = need_params["description"]
+                del need_params["description"]
 
             # Remove unknown options, as they may be defined in source system, but not in this sphinx project
             for option in list(need_params):

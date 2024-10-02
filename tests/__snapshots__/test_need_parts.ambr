@@ -1,7 +1,7 @@
 # name: test_doc_need_parts[test_app0]
   dict({
     'SP_TOO_001': dict({
-      'description': '''
+      'content': '''
         The Tool awesome shall have a command line interface with following commands:
         
         * :need_part:`(1)exit()`
@@ -95,7 +95,7 @@
       'type_name': 'Specification',
     }),
     'TEST_2': dict({
-      'description': 'Part in nested need: :need_part:`(nested_id)something`',
+      'content': 'Part in nested need: :need_part:`(nested_id)something`',
       'docname': 'index',
       'external_css': 'external_link',
       'full_title': 'TEST_2',

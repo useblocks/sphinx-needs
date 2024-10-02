@@ -14,13 +14,13 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'created_at': '2024-02-15T14:04:06Z',
-            'delete': False,
-            'description': '''
+            'content': '''
               Bump actions/cache from 3 to 4 (#1092)
               
               Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
             ''',
+            'created_at': '2024-02-15T14:04:06Z',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -87,9 +87,7 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'created_at': '2024-02-15T12:19:11Z',
-            'delete': False,
-            'description': '''
+            'content': '''
               .. code-block:: text
               
                  I've also just realised there is a bug in this directive:
@@ -98,6 +96,8 @@
                  [...]
   
             ''',
+            'created_at': '2024-02-15T12:19:11Z',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -165,9 +165,7 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'created_at': '2024-02-15T20:45:12Z',
-            'delete': False,
-            'description': '''
+            'content': '''
               .. code-block:: text
               
                  @David-Le-Nir and @danwos, as I explained in
@@ -198,6 +196,8 @@
               
                  closes #1103
             ''',
+            'created_at': '2024-02-15T20:45:12Z',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -264,9 +264,7 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'created_at': '2024-02-12T08:36:07.000Z',
-            'delete': False,
-            'description': '''
+            'content': '''
               🧪 Add test for `needreport` directive (#1105)
               
               Currently there is no test for this directive, this PR adds one.
@@ -282,6 +280,8 @@
               `needs_render_context = {"report_directive": "admonition"}` (I left the
               default as `dropdown`, so as not to introduce a breaking change)
             ''',
+            'created_at': '2024-02-12T08:36:07.000Z',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -396,6 +396,12 @@
               'description': 'Mapping of constraint name, to check name, to result.',
               'field_type': 'core',
               'type': 'object',
+            }),
+            'content': dict({
+              'default': '',
+              'description': 'Content of the need.',
+              'field_type': 'core',
+              'type': 'string',
             }),
             'created_at': dict({
               'default': '',

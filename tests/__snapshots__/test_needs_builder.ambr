@@ -15,9 +15,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
+            'content': '',
             'created_at': '',
             'delete': False,
-            'description': '',
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -85,9 +85,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
+            'content': '',
             'created_at': '',
             'delete': False,
-            'description': '',
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -155,9 +155,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
+            'content': '',
             'created_at': '',
             'delete': False,
-            'description': '',
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -279,6 +279,12 @@
               'description': 'Mapping of constraint name, to check name, to result.',
               'field_type': 'core',
               'type': 'object',
+            }),
+            'content': dict({
+              'default': '',
+              'description': 'Content of the need.',
+              'field_type': 'core',
+              'type': 'string',
             }),
             'created_at': dict({
               'default': '',
@@ -815,7 +821,6 @@
       '1.0': dict({
         'needs': dict({
           'TC_001': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Test example',
@@ -832,7 +837,6 @@
             'type_name': 'Test Case',
           }),
           'TC_NEG_001': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Negative test example',
@@ -849,7 +853,6 @@
             'type_name': 'Test Case',
           }),
           'US_63252': dict({
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'A story',
@@ -933,6 +936,12 @@
               'description': 'Mapping of constraint name, to check name, to result.',
               'field_type': 'core',
               'type': 'object',
+            }),
+            'content': dict({
+              'default': '',
+              'description': 'Content of the need.',
+              'field_type': 'core',
+              'type': 'string',
             }),
             'created_at': dict({
               'default': '',
@@ -1479,9 +1488,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
+            'content': '',
             'created_at': '',
             'delete': False,
-            'description': '',
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -1549,9 +1558,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
+            'content': '',
             'created_at': '',
             'delete': False,
-            'description': '',
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -1619,9 +1628,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
+            'content': '',
             'created_at': '',
             'delete': False,
-            'description': '',
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -1743,6 +1752,12 @@
               'description': 'Mapping of constraint name, to check name, to result.',
               'field_type': 'core',
               'type': 'object',
+            }),
+            'content': dict({
+              'default': '',
+              'description': 'Content of the need.',
+              'field_type': 'core',
+              'type': 'string',
             }),
             'created_at': dict({
               'default': '',

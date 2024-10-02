@@ -228,7 +228,6 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "content": {
         "description": "Content of the need.",
         "schema": {"type": "string", "default": ""},
-        "exclude_json": True,
     },
     "pre_content": {
         "description": "Pre-content of the need.",
