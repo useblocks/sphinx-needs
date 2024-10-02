@@ -727,28 +727,3 @@ Customized Options
 Sphinx-Needs supports the definition and filtering of customized options for needs.
 
 You can read :ref:`needs_extra_options` for detailed information and examples.
-
-
-Removed Options
----------------
-
-.. note::
-
-    To remove options from the **Sphinx-Needs** output in ``versions >= 0.5.0``, you must provide your own layout,
-    which does not include these options. See :ref:`layouts_styles` for more information.
-
-.. _need_hide_status:
-
-hide_status
-~~~~~~~~~~~
-*removed: 0.5.0*
-
-Hide the status information of a need.
-
-.. _need_hide_tags:
-
-hide_tags
-~~~~~~~~~
-*removed: 0.5.0*
-
-Hide the tags of a need.
