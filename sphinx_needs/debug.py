@@ -17,8 +17,6 @@ from typing import Any, Callable, TypeVar
 from jinja2 import Environment, PackageLoader, select_autoescape
 from sphinx.application import Sphinx
 
-from sphinx_needs.data import SphinxNeedsData
-
 TIME_MEASUREMENTS: dict[str, Any] = {}  # Stores the timing results
 EXECUTE_TIME_MEASUREMENTS = (
     False  # Will be used to de/activate measurements. Set during a Sphinx Event
@@ -157,18 +155,6 @@ def _print_timing_results(app: Sphinx) -> None:
         print(f' max:     {value["max"]:2f}')
         print(f' min:     {value["min"]:2f} \n')
 
-    # print 10 slowest filters
-    filters = sorted(
-        SphinxNeedsData(app.env).get_or_create_filters().values(),
-        key=lambda x: x["runtime"],
-        reverse=True,
-    )
-    if filters:
-        print("Slowest need filters:")
-        for filter in filters[:10]:
-            print(f'{filter["location"]}: {filter["runtime"]:2f}s ({filter["origin"]})')
-        print("")
-
 
 def _store_timing_results_json(app: Sphinx, build_data: dict[str, Any]) -> None:
     json_result_path = os.path.join(str(app.outdir), "debug_measurement.json")
@@ -178,16 +164,6 @@ def _store_timing_results_json(app: Sphinx, build_data: dict[str, Any]) -> None:
     with open(json_result_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4)
     print(f"Timing measurement results (JSON) stored under {json_result_path}")
-
-
-def _store_filter_results_json(app: Sphinx) -> None:
-    json_result_path = os.path.join(str(app.outdir), "debug_filters.json")
-
-    data = SphinxNeedsData(app.env).get_or_create_filters()
-
-    with open(json_result_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4)
-    print(f"Filter results (JSON) stored under {json_result_path}")
 
 
 def _store_timing_results_html(app: Sphinx, build_data: dict[str, Any]) -> None:
@@ -213,5 +189,4 @@ def process_timing(app: Sphinx, _exception: Exception | None) -> None:
 
         _print_timing_results(app)
         _store_timing_results_json(app, build_data)
-        _store_filter_results_json(app)
         _store_timing_results_html(app, build_data)

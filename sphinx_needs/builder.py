@@ -9,7 +9,7 @@ from sphinx.builders import Builder
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
-from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.logging import get_logger
 from sphinx_needs.needsfile import NeedsList
 
 LOGGER = get_logger(__name__)
@@ -25,10 +25,6 @@ class NeedsBuilder(Builder):
     where all documents are post-transformed, to improve performance.
     It is assumed all need data is already read in the read phase,
     and the post-processing of the data is done in the finish phase.
-
-    However, if the ``export_id`` option is set for any directives,
-    the write phase is still run, since this filter data is currently only added there.
-    A warning is issued in this case.
     """
 
     name = "needs"
@@ -45,15 +41,7 @@ class NeedsBuilder(Builder):
         updated_docnames: Sequence[str],
         method: str = "update",
     ) -> None:
-        if not SphinxNeedsData(self.env).has_export_filters:
-            return
-        log_warning(
-            LOGGER,
-            "At least one use of `export_id` directive option, requires a slower build",
-            "build",
-            None,
-        )
-        return super().write(build_docnames, updated_docnames, method)
+        return
 
     def finish(self) -> None:
         from sphinx_needs.filter_common import filter_needs_view
@@ -61,7 +49,6 @@ class NeedsBuilder(Builder):
         data = SphinxNeedsData(self.env)
         needs = data.get_needs_view()
         needs_config = NeedsSphinxConfig(self.env.config)
-        filters = data.get_or_create_filters()
         version = getattr(self.env.config, "version", "unset")
         needs_list = NeedsList(self.env.config, self.outdir, self.srcdir)
 
@@ -91,10 +78,6 @@ class NeedsBuilder(Builder):
 
         for need in filtered_needs:
             needs_list.add_need(version, need)
-
-        for need_filter in filters.values():
-            if need_filter["export_id"]:
-                needs_list.add_filter(version, need_filter)
 
         try:
             needs_list.write_json()

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import contextlib
+from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
 from typing import Any, Callable, Dict, List, Type
 
@@ -507,7 +509,6 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
     """
     needs_config = NeedsSphinxConfig(app.config)
     data = SphinxNeedsData(env)
-    data.get_or_create_filters()
     data.get_or_create_docs()
     services = data.get_or_create_services()
 
@@ -587,6 +588,10 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
     if needs_config.debug_measurement:
         debug.START_TIME = timer()  # Store the rough start time of Sphinx build
         debug.EXECUTE_TIME_MEASUREMENTS = True
+
+    if needs_config.debug_filters:
+        with contextlib.suppress(FileNotFoundError):
+            Path(str(app.outdir), "debug_filters.jsonl").unlink()
 
 
 def check_configuration(_app: Sphinx, config: Config) -> None:

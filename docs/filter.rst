@@ -212,6 +212,17 @@ To improve performance, certain common patterns are identified and optimized by 
 Also filters containing ``and`` will be split into multiple filters and evaluated separately for the above patterns.
 For example, ``type == 'spec' and other == 'value'`` will first be filtered performantly by ``type == 'spec'`` and then the remaining needs will be filtered by ``other == 'value'``.
 
+To guard against long running filters, the :ref:`needs_filter_max_time` configuration option can be used to set a maximum time limit for filter evaluation.
+
+To debug which filters are being used across your project and their run times, you can enable the :ref:`needs_debug_filters` configuration option.
+
+.. _export_id:
+.. deprecated:: 4.0.0
+
+   The directive option ``export_id`` was previously used to export filter information in the ``needs.json`` file.
+   This is deprecated and will be removed in a future version.
+   Instead use the above :ref:`needs_debug_filters` configuration option.
+
 .. _re_search:
 
 search
@@ -233,23 +244,6 @@ The second parameter should be one of the above variables(status, id, content, .
 
       .. needlist::
          :filter: search("([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", title)
-
-.. _export_id:
-
-export_id
-~~~~~~~~~
-
-.. versionadded:: 0.3.11
-
-If set, the filter results get exported to needs.json, if the builder :ref:`needs_builder` is used::
-
-   .. needtable::
-      :status: open
-      :filter: "test" in tags
-      :export_id: filter_01
-
-See :ref:`filter_export` for more details.
-
 
 .. _filter_code:
 

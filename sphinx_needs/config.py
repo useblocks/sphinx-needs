@@ -384,6 +384,10 @@ class NeedsSphinxConfig:
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
     """Allow filters to change the need data."""
+    filter_max_time: int | float | None = field(
+        default=None, metadata={"rebuild": "html", "types": (type(None), int, float)}
+    )
+    """Warn if a filter runs for longer than this time (in seconds)."""
     flow_engine: Literal["plantuml", "graphviz"] = field(
         default="plantuml", metadata={"rebuild": "env", "types": (str,)}
     )
@@ -525,9 +529,6 @@ class NeedsSphinxConfig:
     )
     """Jinja context for rendering templates"""
 
-    debug_measurement: bool = field(
-        default=False, metadata={"rebuild": "html", "types": (bool,)}
-    )
     # add config for needs_id_builder
     build_json_per_id: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
@@ -535,6 +536,15 @@ class NeedsSphinxConfig:
     build_json_per_id_path: str = field(
         default="needs_id", metadata={"rebuild": "html", "types": (str,)}
     )
+
+    debug_measurement: bool = field(
+        default=False, metadata={"rebuild": "html", "types": (bool,)}
+    )
+    """If True, log runtime information for various functions."""
+    debug_filters: bool = field(
+        default=False, metadata={"rebuild": "html", "types": (bool,)}
+    )
+    """If True, log filter processing runtime information."""
 
     @classmethod
     def add_config_values(cls, app: Sphinx) -> None:

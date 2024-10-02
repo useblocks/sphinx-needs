@@ -18,7 +18,7 @@ from jsonschema import Draft7Validator
 from sphinx.config import Config
 
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
-from sphinx_needs.data import NeedsCoreFields, NeedsFilterType, NeedsInfoType
+from sphinx_needs.data import NeedsCoreFields, NeedsInfoType
 from sphinx_needs.logging import get_logger, log_warning
 
 log = get_logger(__name__)
@@ -168,16 +168,6 @@ class NeedsList:
         self.needs_list["versions"][version]["needs"][need_info["id"]] = writable_needs
         self.needs_list["versions"][version]["needs_amount"] = len(
             self.needs_list["versions"][version]["needs"]
-        )
-
-    def add_filter(self, version: str, need_filter: NeedsFilterType) -> None:
-        self.update_or_add_version(version)
-        writable_filters = {**need_filter}
-        self.needs_list["versions"][version]["filters"][
-            need_filter["export_id"].upper()
-        ] = writable_filters
-        self.needs_list["versions"][version]["filters_amount"] = len(
-            self.needs_list["versions"][version]["filters"]
         )
 
     def wipe_version(self, version: str) -> None:
