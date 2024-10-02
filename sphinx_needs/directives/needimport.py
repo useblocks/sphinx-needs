@@ -171,9 +171,9 @@ class NeedimportDirective(SphinxDirective):
             else:
                 filter_context = need.copy()
 
-                # Support both ways of addressing the description, as "description" is used in json file, but
-                # "content" is the sphinx internal name for this kind of information
-                filter_context["content"] = need["description"]  # type: ignore[typeddict-item]
+                if "description" in need and not need.get("content"):
+                    # legacy versions of sphinx-needs changed "description" to "content" when outputting to json
+                    filter_context["content"] = need["description"]  # type: ignore[typeddict-item]
                 try:
                     if filter_single_need(filter_context, needs_config, filter_string):
                         needs_list_filtered[key] = need
@@ -243,7 +243,10 @@ class NeedimportDirective(SphinxDirective):
             # Replace id, to get unique ids
             need_params["id"] = id_prefix + need_params["id"]
 
-            need_params["content"] = need_params["description"]  # type: ignore[typeddict-item]
+            if "description" in need_params and not need_params.get("content"):
+                # legacy versions of sphinx-needs changed "description" to "content" when outputting to json
+                need_params["content"] = need_params["description"]  # type: ignore[typeddict-item]
+                del need_params["description"]  # type: ignore[typeddict-item]
 
             # Remove unknown options, as they may be defined in source system, but not in this sphinx project
             for option in list(need_params):

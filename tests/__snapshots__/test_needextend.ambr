@@ -18,9 +18,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
+            'content': '',
             'created_at': '',
             'delete': False,
-            'description': '',
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -91,9 +91,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
+            'content': '',
             'created_at': '',
             'delete': False,
-            'description': '',
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -162,9 +162,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
+            'content': '',
             'created_at': '',
             'delete': False,
-            'description': '',
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -233,9 +233,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
+            'content': '',
             'created_at': '',
             'delete': False,
-            'description': '',
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -303,9 +303,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
+            'content': '',
             'created_at': '',
             'delete': False,
-            'description': '',
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -427,6 +427,12 @@
               'description': 'Mapping of constraint name, to check name, to result.',
               'field_type': 'core',
               'type': 'object',
+            }),
+            'content': dict({
+              'default': '',
+              'description': 'Content of the need.',
+              'field_type': 'core',
+              'type': 'string',
             }),
             'created_at': dict({
               'default': '',
@@ -810,12 +816,12 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'created_at': '',
-            'delete': False,
-            'description': '''
+            'content': '''
               Had no outgoing links.
               Got an outgoing link ``extend_test_004``.
             ''',
+            'created_at': '',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -886,12 +892,12 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'created_at': '',
-            'delete': False,
-            'description': '''
+            'content': '''
               Had no links.
               Got an incoming links ``extend_test_003`` and ``extend_test_006``.
             ''',
+            'created_at': '',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -962,12 +968,12 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'created_at': '',
-            'delete': False,
-            'description': '''
+            'content': '''
               Had the two links: ``extend_test_003`` and ``extend_test_004``.
               Both got deleted.
             ''',
+            'created_at': '',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -1036,9 +1042,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
+            'content': 'Had the link ``extend_test_003``, got another one ``extend_test_004``.',
             'created_at': '',
             'delete': False,
-            'description': 'Had the link ``extend_test_003``, got another one ``extend_test_004``.',
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -1108,9 +1114,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
+            'content': '',
             'created_at': '',
             'delete': False,
-            'description': '',
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -1181,9 +1187,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
+            'content': '',
             'created_at': '',
             'delete': False,
-            'description': '',
             'docname': 'page_1',
             'doctype': '.rst',
             'duration': '',
@@ -1307,6 +1313,12 @@
               'description': 'Mapping of constraint name, to check name, to result.',
               'field_type': 'core',
               'type': 'object',
+            }),
+            'content': dict({
+              'default': '',
+              'description': 'Content of the need.',
+              'field_type': 'core',
+              'type': 'string',
             }),
             'created_at': dict({
               'default': '',

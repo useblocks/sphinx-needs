@@ -23,7 +23,7 @@
                                      "properties": {
                                          "title": {"type": "string"},
                                          "id": {"type": "string"},
-                                         "description": {"type": "string"}
+                                         "content": {"type": "string"}
                                      }
                                  }
                              }

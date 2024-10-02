@@ -164,7 +164,6 @@ class NeedsList:
                     key in self._need_defaults and value == self._need_defaults[key]
                 )
             }
-        writable_needs["description"] = need_info["content"]  # TODO why this?
         self.needs_list["versions"][version]["needs"][need_info["id"]] = writable_needs
         self.needs_list["versions"][version]["needs_amount"] = len(
             self.needs_list["versions"][version]["needs"]

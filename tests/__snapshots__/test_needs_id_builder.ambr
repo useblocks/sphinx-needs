@@ -19,9 +19,9 @@
               'constraints_passed': True,
               'constraints_results': dict({
               }),
+              'content': '',
               'created_at': '',
               'delete': False,
-              'description': '',
               'docname': 'index',
               'doctype': '.rst',
               'duration': '',
@@ -102,9 +102,9 @@
               'constraints_passed': True,
               'constraints_results': dict({
               }),
+              'content': '',
               'created_at': '',
               'delete': False,
-              'description': '',
               'docname': 'index',
               'doctype': '.rst',
               'duration': '',
@@ -185,9 +185,9 @@
               'constraints_passed': True,
               'constraints_results': dict({
               }),
+              'content': '',
               'created_at': '',
               'delete': False,
-              'description': '',
               'docname': 'index',
               'doctype': '.rst',
               'duration': '',

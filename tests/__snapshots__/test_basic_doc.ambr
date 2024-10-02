@@ -18,9 +18,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
+            'content': '',
             'created_at': '',
             'delete': False,
-            'description': '',
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -88,9 +88,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
+            'content': '',
             'created_at': '',
             'delete': False,
-            'description': '',
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -211,6 +211,12 @@
               'description': 'Mapping of constraint name, to check name, to result.',
               'field_type': 'core',
               'type': 'object',
+            }),
+            'content': dict({
+              'default': '',
+              'description': 'Content of the need.',
+              'field_type': 'core',
+              'type': 'string',
             }),
             'created_at': dict({
               'default': '',

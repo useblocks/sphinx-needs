@@ -1,7 +1,7 @@
 # name: test_section_is_usable_in_filters[test_app0]
   dict({
     'R_12345': dict({
-      'description': 'The Tool **shall** have a command line interface.',
+      'content': 'The Tool **shall** have a command line interface.',
       'docname': 'index',
       'external_css': 'external_link',
       'full_title': 'Command line interface',
@@ -25,7 +25,7 @@
       'updated': '1.5.1',
     }),
     'R_12346': dict({
-      'description': 'The Tool **shall** have a command line interface.',
+      'content': 'The Tool **shall** have a command line interface.',
       'docname': 'index',
       'external_css': 'external_link',
       'full_title': 'Another Requirement',
@@ -49,7 +49,6 @@
       'updated': '1.4.0',
     }),
     'T_001': dict({
-      'description': '',
       'docname': 'index',
       'external_css': 'external_link',
       'full_title': 'test method',
