@@ -129,12 +129,16 @@ class NeedsList:
         )
 
     def update_or_add_version(self, version: str) -> None:
+        from sphinx_needs.needs import __version__
+
         if version not in self.needs_list["versions"].keys():
             self.needs_list["versions"][version] = {
                 "needs_amount": 0,
                 "needs": {},
-                "filters_amount": 0,
-                "filters": {},
+                "creator": {
+                    "program": "sphinx_needs",
+                    "version": __version__,
+                },
             }
             if self._schema:
                 self.needs_list["versions"][version]["needs_schema"] = self._schema

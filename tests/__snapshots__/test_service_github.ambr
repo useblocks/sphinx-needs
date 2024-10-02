@@ -3,9 +3,6 @@
     'current_version': '1',
     'versions': dict({
       '1': dict({
-        'filters': dict({
-        }),
-        'filters_amount': 0,
         'needs': dict({
           'GITHUB_050bec': dict({
             'arch': dict({

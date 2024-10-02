@@ -3,9 +3,6 @@
     'current_version': '',
     'versions': dict({
       '': dict({
-        'filters': dict({
-        }),
-        'filters_amount': 0,
         'needs': dict({
           'SECURITY_REQ': dict({
             'arch': dict({

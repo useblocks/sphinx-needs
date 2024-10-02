@@ -149,7 +149,7 @@ def test_build_needs(test_app: SphinxTestApp, snapshot):
     json_text = Path(app.outdir, "needs.json").read_text()
     needs_data = json.loads(json_text)
 
-    assert needs_data == snapshot(exclude=props("created", "project"))
+    assert needs_data == snapshot(exclude=props("created", "project", "creator"))
 
 
 # Test with needs_id_required=True and missing ids in docs.
