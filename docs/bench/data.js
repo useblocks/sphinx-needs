@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727885992268,
+  "lastUpdate": 1727886019292,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -10512,6 +10512,42 @@ window.BENCHMARK_DATA = {
             "value": 68.157447623,
             "unit": "s",
             "extra": "Commit: aa34901ffeab54d91397d40ff8bc215313338e32\nBranch: master\nTime: 2024-10-02T18:17:51+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ede3b068b4be36e56c6e58d004537a9ddcbbdfab",
+          "message": "🔧 Set `env_version` for sphinx extension (#1313)\n\nSee https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata",
+          "timestamp": "2024-10-02T18:18:24+02:00",
+          "tree_id": "dd15596cb95d2e9e30c4f046f994d8c4ff491b8e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/ede3b068b4be36e56c6e58d004537a9ddcbbdfab"
+        },
+        "date": 1727886009429,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18680635400002643,
+            "unit": "s",
+            "extra": "Commit: ede3b068b4be36e56c6e58d004537a9ddcbbdfab\nBranch: master\nTime: 2024-10-02T18:18:24+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.61286662100002,
+            "unit": "s",
+            "extra": "Commit: ede3b068b4be36e56c6e58d004537a9ddcbbdfab\nBranch: master\nTime: 2024-10-02T18:18:24+02:00"
           }
         ]
       }
