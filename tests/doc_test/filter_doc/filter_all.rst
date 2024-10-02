@@ -38,8 +38,8 @@ filter_all
 
    My test content
 
-.. needfilter::
+.. needlist::
    :filter: ("1" in tags or "2" in tags) and ("story" == type or "closed" == status)
 
-.. needfilter::
+.. needlist::
    :filter: "test" in title and "test" in status and "test" in content and "TEST" in id

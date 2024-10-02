@@ -185,7 +185,7 @@ If it is invalid or returns False, the related need is not taken into account fo
          :tags: filter_example
          :hide:
 
-      .. needfilter::
+      .. needlist::
          :filter: "filter_example" in tags and (("B" in tags or ("spec" == type and "closed" == status)) or "test" == type)
 
 .. _filter_string_performance:

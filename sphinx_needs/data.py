@@ -559,19 +559,6 @@ class NeedsExtractType(NeedsFilteredBaseType):
     filter_arg: None | str
 
 
-class _NeedsFilterType(NeedsFilteredBaseType):
-    """Data to present (filtered) needs inside a list, table or diagram
-
-    .. deprecated:: 0.2.0
-    """
-
-    show_tags: bool
-    show_status: bool
-    show_filters: bool
-    show_legend: bool
-    layout: Literal["list", "table", "diagram"]
-
-
 class GraphvizStyleType(TypedDict, total=False):
     """Defines a graphviz style"""
 

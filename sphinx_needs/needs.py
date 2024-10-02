@@ -46,11 +46,6 @@ from sphinx_needs.directives.needextract import (
     NeedextractDirective,
     process_needextract,
 )
-from sphinx_needs.directives.needfilter import (
-    Needfilter,
-    NeedfilterDirective,
-    process_needfilters,
-)
 from sphinx_needs.directives.needflow import (
     NeedflowDirective,
     NeedflowGraphiz,
@@ -126,7 +121,6 @@ NODE_TYPES_PRIO: _NODE_TYPES_T = {  # Node types to be checked before most other
 NODE_TYPES: _NODE_TYPES_T = {
     Needbar: process_needbar,
     # Needextract: process_needextract,
-    Needfilter: process_needfilters,
     Needlist: process_needlist,
     Needtable: process_needtables,
     NeedflowPlantuml: process_needflow_plantuml,
@@ -163,9 +157,6 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_node(
         Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart)
     )
-    app.add_node(
-        Needfilter,
-    )
     app.add_node(Needbar)
     app.add_node(Needimport)
     app.add_node(Needlist)
@@ -192,7 +183,6 @@ def setup(app: Sphinx) -> dict[str, Any]:
 
     # Define directives
     app.add_directive("needbar", NeedbarDirective)
-    app.add_directive("needfilter", NeedfilterDirective)
     app.add_directive("needlist", NeedlistDirective)
     app.add_directive("needtable", NeedtableDirective)
     app.add_directive("needflow", NeedflowDirective)

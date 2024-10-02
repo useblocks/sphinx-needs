@@ -41,8 +41,8 @@ filter_search
 
    me@myemail.com
 
-.. needfilter::
+.. needlist::
    :filter: search("A", id) and "filter_search" in tags
 
-.. needfilter::
+.. needlist::
     :filter: search(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", content) and type=="test"

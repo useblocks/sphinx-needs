@@ -179,7 +179,7 @@ And use it like:
 
          Some content
 
-      .. needfilter::
+      .. needlist::
          :filter: "filter_me" in another_option
 
    **Result**
@@ -192,7 +192,7 @@ And use it like:
 
       Some content
 
-   .. needfilter::
+   .. needlist::
       :filter: "filter_me" in another_option
 
 .. _needs_global_options:
