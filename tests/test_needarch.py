@@ -51,7 +51,7 @@ def test_doc_needarch_jinja_import(test_app, snapshot):
     assert html
 
     # check needarch
-    all_needumls = app.env.needs_all_needumls
+    all_needumls = app.env._needs_all_needumls
     assert all_needumls == snapshot
 
 
@@ -64,7 +64,7 @@ def test_needarch_jinja_func_need(test_app, snapshot):
     app = test_app
     app.build()
 
-    all_needumls = app.env.needs_all_needumls
+    all_needumls = app.env._needs_all_needumls
     assert all_needumls == snapshot
 
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")

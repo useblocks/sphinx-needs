@@ -22,7 +22,12 @@ from sphinx_needs.builder import (
     build_needumls_pumls,
 )
 from sphinx_needs.config import NEEDS_CONFIG, LinkOptionsType, NeedsSphinxConfig
-from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData, merge_data
+from sphinx_needs.data import (
+    ENV_DATA_VERSION,
+    NeedsCoreFields,
+    SphinxNeedsData,
+    merge_data,
+)
 from sphinx_needs.defaults import (
     GRAPHVIZ_STYLE_DEFAULTS,
     LAYOUTS,
@@ -303,6 +308,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
         "version": VERSION,
         "parallel_read_safe": True,
         "parallel_write_safe": True,
+        "env_version": ENV_DATA_VERSION,
     }
 
 
@@ -499,10 +505,9 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
     """
     needs_config = NeedsSphinxConfig(app.config)
     data = SphinxNeedsData(env)
-    data.get_or_create_docs()
-    services = data.get_or_create_services()
 
     # Register embedded services
+    services = data.get_or_create_services()
     services.register("github-issues", GithubService, gh_type="issue")
     services.register("github-prs", GithubService, gh_type="pr")
     services.register("github-commits", GithubService, gh_type="commit")

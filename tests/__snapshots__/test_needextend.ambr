@@ -3,9 +3,6 @@
     'current_version': '',
     'versions': dict({
       '': dict({
-        'filters': dict({
-        }),
-        'filters_amount': 0,
         'needs': dict({
           'REQ_1': dict({
             'arch': dict({
@@ -801,9 +798,6 @@
     'current_version': '',
     'versions': dict({
       '': dict({
-        'filters': dict({
-        }),
-        'filters_amount': 0,
         'needs': dict({
           'extend_test_003': dict({
             'arch': dict({

@@ -32,6 +32,12 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
+ENV_DATA_VERSION: Final = 2
+"""Version of the data stored in the environment.
+
+See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
+"""
+
 
 class NeedsPartType(TypedDict):
     """Data for a single need part."""
@@ -763,23 +769,23 @@ class SphinxNeedsData:
         This is lazily created and cached in the environment.
         """
         try:
-            return self.env.needs_all_docs
+            return self.env._needs_all_docs
         except AttributeError:
-            self.env.needs_all_docs = {"all": []}
-        return self.env.needs_all_docs
+            self.env._needs_all_docs = {"all": []}
+        return self.env._needs_all_docs
 
     @property
     def needs_is_post_processed(self) -> bool:
         """Whether needs have been post-processed."""
         try:
-            return self.env.needs_is_post_processed
+            return self.env._needs_is_post_processed
         except AttributeError:
-            self.env.needs_is_post_processed = False
-        return self.env.needs_is_post_processed
+            self.env._needs_is_post_processed = False
+        return self.env._needs_is_post_processed
 
     @needs_is_post_processed.setter
     def needs_is_post_processed(self, value: bool) -> None:
-        self.env.needs_is_post_processed = value
+        self.env._needs_is_post_processed = value
 
     def get_or_create_services(self) -> ServiceManager:
         """Get information about services.
@@ -789,10 +795,10 @@ class SphinxNeedsData:
         from sphinx_needs.services.manager import ServiceManager
 
         try:
-            return self.env.app.needs_services
+            return self.env.app._needs_services
         except AttributeError:
-            self.env.app.needs_services = ServiceManager(self.env.app)
-        return self.env.app.needs_services
+            self.env.app._needs_services = ServiceManager(self.env.app)
+        return self.env.app._needs_services
 
     def get_or_create_extends(self) -> dict[str, NeedsExtendType]:
         """Get all need modifications, mapped by ID.
@@ -800,10 +806,10 @@ class SphinxNeedsData:
         This is lazily created and cached in the environment.
         """
         try:
-            return self.env.need_all_needextend
+            return self.env._need_all_needextend
         except AttributeError:
-            self.env.need_all_needextend = {}
-        return self.env.need_all_needextend
+            self.env._need_all_needextend = {}
+        return self.env._need_all_needextend
 
     def get_or_create_umls(self) -> dict[str, NeedsUmlType]:
         """Get all need uml diagrams, mapped by ID.
@@ -811,18 +817,18 @@ class SphinxNeedsData:
         This is lazily created and cached in the environment.
         """
         try:
-            return self.env.needs_all_needumls
+            return self.env._needs_all_needumls
         except AttributeError:
-            self.env.needs_all_needumls = {}
-        return self.env.needs_all_needumls
+            self.env._needs_all_needumls = {}
+        return self.env._needs_all_needumls
 
     @property
     def _needs_all_nodes(self) -> dict[str, Need]:
         try:
-            return self.env.needs_all_nodes
+            return self.env._needs_all_nodes
         except AttributeError:
-            self.env.needs_all_nodes = {}
-        return self.env.needs_all_nodes
+            self.env._needs_all_nodes = {}
+        return self.env._needs_all_nodes
 
     def set_need_node(self, need_id: str, node: Need) -> None:
         """Set a need node in the cache."""
@@ -905,7 +911,7 @@ def merge_data(
                     f"not {type(other_objects)} and {type(objects)}"
                 )
 
-    _merge("needs_all_docs", is_complex_dict=True)
-    _merge("needs_all_nodes")
-    _merge("need_all_needextend")
-    _merge("needs_all_needumls")
+    _merge("_needs_all_docs", is_complex_dict=True)
+    _merge("_needs_all_nodes")
+    _merge("_need_all_needextend")
+    _merge("_needs_all_needumls")

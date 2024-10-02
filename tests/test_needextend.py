@@ -19,7 +19,7 @@ def test_doc_needextend_html(test_app: Sphinx, snapshot):
     app.build()
 
     needs_data = json.loads(Path(app.outdir, "needs.json").read_text())
-    assert needs_data == snapshot(exclude=props("created", "project"))
+    assert needs_data == snapshot(exclude=props("created", "project", "creator"))
 
     index_html = Path(app.outdir, "index.html").read_text()
     assert "extend_test_003" in index_html
@@ -102,4 +102,4 @@ def test_doc_needextend_dynamic(test_app, snapshot):
     # assert app._warning.getvalue() == ""
 
     needs_data = json.loads(Path(app.outdir, "needs.json").read_text())
-    assert needs_data == snapshot(exclude=props("created", "project"))
+    assert needs_data == snapshot(exclude=props("created", "project", "creator"))

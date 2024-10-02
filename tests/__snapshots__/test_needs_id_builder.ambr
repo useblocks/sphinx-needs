@@ -4,9 +4,6 @@
       'current_version': '1.0',
       'versions': dict({
         '1.0': dict({
-          'filters': dict({
-          }),
-          'filters_amount': 0,
           'needs': dict({
             'TC_001': dict({
               'arch': dict({
@@ -87,9 +84,6 @@
       'current_version': '1.0',
       'versions': dict({
         '1.0': dict({
-          'filters': dict({
-          }),
-          'filters_amount': 0,
           'needs': dict({
             'TC_NEG_001': dict({
               'arch': dict({
@@ -170,9 +164,6 @@
       'current_version': '1.0',
       'versions': dict({
         '1.0': dict({
-          'filters': dict({
-          }),
-          'filters_amount': 0,
           'needs': dict({
             'US_63252': dict({
               'arch': dict({

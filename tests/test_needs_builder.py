@@ -17,7 +17,7 @@ def test_doc_needs_builder(test_app, snapshot):
     app.build()
 
     needs_list = json.loads(Path(app.outdir, "needs.json").read_text())
-    assert needs_list == snapshot(exclude=props("created", "project"))
+    assert needs_list == snapshot(exclude=props("created", "project", "creator"))
 
 
 @pytest.mark.parametrize(
@@ -36,7 +36,7 @@ def test_doc_needs_builder_reproducible(test_app, snapshot):
     app.build()
 
     needs_list = json.loads(Path(app.outdir, "needs.json").read_text())
-    assert needs_list == snapshot(exclude=props("project"))
+    assert needs_list == snapshot(exclude=props("project", "creator"))
 
 
 @pytest.mark.parametrize(
@@ -55,7 +55,7 @@ def test_doc_needs_builder_remove_defaults(test_app, snapshot):
     app.build()
 
     needs_list = json.loads(Path(app.outdir, "needs.json").read_text())
-    assert needs_list == snapshot(exclude=props("created", "project"))
+    assert needs_list == snapshot(exclude=props("created", "project", "creator"))
 
 
 @pytest.mark.parametrize(

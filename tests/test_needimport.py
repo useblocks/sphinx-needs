@@ -141,7 +141,7 @@ def test_import_builder(test_app, snapshot):
     app.build()
     needs_text = Path(app.outdir, "needs.json").read_text()
     needs = json.loads(needs_text)
-    assert needs == snapshot(exclude=props("created", "project"))
+    assert needs == snapshot(exclude=props("created", "project", "creator"))
 
 
 @pytest.mark.parametrize(

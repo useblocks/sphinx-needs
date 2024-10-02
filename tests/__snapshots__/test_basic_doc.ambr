@@ -3,9 +3,6 @@
     'current_version': '0.1.0',
     'versions': dict({
       '0.1.0': dict({
-        'filters': dict({
-        }),
-        'filters_amount': 0,
         'needs': dict({
           'ST_001': dict({
             'arch': dict({
