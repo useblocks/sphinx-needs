@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727886019292,
+  "lastUpdate": 1727886494037,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -10548,6 +10548,42 @@ window.BENCHMARK_DATA = {
             "value": 67.61286662100002,
             "unit": "s",
             "extra": "Commit: ede3b068b4be36e56c6e58d004537a9ddcbbdfab\nBranch: master\nTime: 2024-10-02T18:18:24+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "02b24940427bd5ffed6b4e33c731432b67101cc2",
+          "message": "♻️ Output `content` in `needs.json` not `description` (#1312)\n\nI'm not sure if there was a legacy reason for this, but it is an unnecessary complication/confusion,\r\nto convert between `content` and `description` and breaks the `needs_schema` and defaults.\r\n\r\nNote, `needs.json` importing logic has been adapted to handle reading of both new and legacy formats",
+          "timestamp": "2024-10-02T18:26:01+02:00",
+          "tree_id": "317c712eb82093d1d22461df562f94f3d5e1d263",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/02b24940427bd5ffed6b4e33c731432b67101cc2"
+        },
+        "date": 1727886482850,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2503723579999928,
+            "unit": "s",
+            "extra": "Commit: 02b24940427bd5ffed6b4e33c731432b67101cc2\nBranch: master\nTime: 2024-10-02T18:26:01+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 71.88262838899999,
+            "unit": "s",
+            "extra": "Commit: 02b24940427bd5ffed6b4e33c731432b67101cc2\nBranch: master\nTime: 2024-10-02T18:26:01+02:00"
           }
         ]
       }
