@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727885966507,
+  "lastUpdate": 1727885992268,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -10476,6 +10476,42 @@ window.BENCHMARK_DATA = {
             "value": 68.38964092300003,
             "unit": "s",
             "extra": "Commit: 83e4c58e4f918d516555aabb94955ab957669ee8\nBranch: master\nTime: 2024-10-02T18:17:22+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "aa34901ffeab54d91397d40ff8bc215313338e32",
+          "message": "👌 Add `creator` key to `needs.json` (#1311)\n\nTo record that the `needs.json` was created by `sphinx_needs` and also the version that created it.",
+          "timestamp": "2024-10-02T18:17:51+02:00",
+          "tree_id": "ba77ef943dfad03734edaa81c67bfb67886d34ba",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/aa34901ffeab54d91397d40ff8bc215313338e32"
+        },
+        "date": 1727885981391,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18116613899999834,
+            "unit": "s",
+            "extra": "Commit: aa34901ffeab54d91397d40ff8bc215313338e32\nBranch: master\nTime: 2024-10-02T18:17:51+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 68.157447623,
+            "unit": "s",
+            "extra": "Commit: aa34901ffeab54d91397d40ff8bc215313338e32\nBranch: master\nTime: 2024-10-02T18:17:51+02:00"
           }
         ]
       }
