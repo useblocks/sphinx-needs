@@ -542,6 +542,15 @@ needs_filter_max_time
 
 If set, warn if any :ref:`filter processing <filter>` call takes longer than the given time in seconds.
 
+.. _needs_uml_process_max_time:
+
+needs_uml_process_max_time
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 4.0.0
+
+If set, warn if any :ref:`needuml` or :ref:`needarch` jinja content rendering takes longer than the given time in seconds.
+
 .. _needs_flow_engine:
 
 needs_flow_engine

@@ -387,7 +387,11 @@ class NeedsSphinxConfig:
     filter_max_time: int | float | None = field(
         default=None, metadata={"rebuild": "html", "types": (type(None), int, float)}
     )
-    """Warn if a filter runs for longer than this time (in seconds)."""
+    """Warn if process_filter runs for longer than this time (in seconds)."""
+    uml_process_max_time: int | float | None = field(
+        default=None, metadata={"rebuild": "html", "types": (type(None), int, float)}
+    )
+    """Warn if process_needuml runs for longer than this time (in seconds)."""
     flow_engine: Literal["plantuml", "graphviz"] = field(
         default="plantuml", metadata={"rebuild": "env", "types": (str,)}
     )
