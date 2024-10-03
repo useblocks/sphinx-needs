@@ -64,7 +64,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'ST_001',
             'template': None,
             'title': 'Test story',
             'type': 'story',
@@ -134,7 +133,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'US_38823',
             'template': None,
             'title': 'No ID',
             'type': 'story',
@@ -514,11 +512,6 @@
                 'type': 'string',
               }),
               'type': 'array',
-            }),
-            'target_id': dict({
-              'description': 'ID of the data.',
-              'field_type': 'core',
-              'type': 'string',
             }),
             'template': dict({
               'default': None,

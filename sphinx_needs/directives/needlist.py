@@ -127,7 +127,7 @@ def process_needlist(
                     ref.append(title)
                     para += ref
                 elif _docname := need_info["docname"]:
-                    target_id = need_info["target_id"]
+                    target_id = need_info["id_parent"]
                     ref = nodes.reference("", "")
                     ref["refdocname"] = _docname
                     ref["refuri"] = builder.get_relative_uri(fromdocname, _docname)

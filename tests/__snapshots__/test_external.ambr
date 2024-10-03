@@ -15,7 +15,6 @@
             'sections': list([
               'Title',
             ]),
-            'target_id': 'EXT_REQ_01',
             'title': 'REQ_01',
             'type': 'req',
             'type_name': 'Requirement',
@@ -30,7 +29,6 @@
             'sections': list([
               'Title',
             ]),
-            'target_id': 'IMP_REQ_01',
             'title': 'REQ_01',
             'type': 'req',
             'type_name': 'Requirement',
@@ -407,11 +405,6 @@
               }),
               'type': 'array',
             }),
-            'target_id': dict({
-              'description': 'ID of the data.',
-              'field_type': 'core',
-              'type': 'string',
-            }),
             'template': dict({
               'default': None,
               'description': 'Template of the need.',
@@ -538,7 +531,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'EXT_TEST_01',
             'template': None,
             'title': 'TEST_01 DESCRIPTION',
             'type': 'impl',
@@ -614,7 +606,6 @@
               'test_02',
               'test',
             ]),
-            'target_id': 'EXT_TEST_02',
             'template': None,
             'title': 'TEST_02 DESCRIPTION',
             'type': 'req',
@@ -686,7 +677,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'REQ_1',
             'template': None,
             'title': 'Test requirement 1',
             'type': 'req',
@@ -759,7 +749,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'SPEC_1',
             'template': None,
             'title': 'Test specification 1',
             'type': 'spec',
@@ -829,7 +818,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'SUB_002',
             'template': None,
             'title': 'Sub-Req',
             'type': 'req',
@@ -1209,11 +1197,6 @@
                 'type': 'string',
               }),
               'type': 'array',
-            }),
-            'target_id': dict({
-              'description': 'ID of the data.',
-              'field_type': 'core',
-              'type': 'string',
             }),
             'template': dict({
               'default': None,

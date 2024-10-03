@@ -65,7 +65,6 @@
               'style': None,
               'tags': list([
               ]),
-              'target_id': 'TC_001',
               'template': None,
               'title': 'Test example',
               'type': 'test',
@@ -145,7 +144,6 @@
               'style': None,
               'tags': list([
               ]),
-              'target_id': 'TC_NEG_001',
               'template': None,
               'title': 'Negative test example',
               'type': 'test',
@@ -226,7 +224,6 @@
               'tags': list([
                 '1',
               ]),
-              'target_id': 'US_63252',
               'template': None,
               'title': 'A story',
               'type': 'story',

@@ -68,7 +68,6 @@ class CoreFieldParameters(TypedDict):
 
 
 NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
-    "target_id": {"description": "ID of the data.", "schema": {"type": "string"}},
     "id": {"description": "ID of the data.", "schema": {"type": "string"}},
     "docname": {
         "description": "Name of the document where the need is defined (None if external).",
@@ -293,9 +292,6 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
 class NeedsInfoType(TypedDict, total=False):
     """Data for a single need."""
 
-    # TODO remove duplication target_id/id
-    target_id: Required[str]
-    """ID of the data."""
     id: Required[str]
     """ID of the data."""
 

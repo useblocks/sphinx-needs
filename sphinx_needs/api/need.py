@@ -298,7 +298,6 @@ def add_need(
         "lineno": lineno,
         "lineno_content": lineno_content,
         "doctype": doctype,
-        "target_id": need_id,
         "content": "\n".join(content) if isinstance(content, StringList) else content,
         "type": need_type,
         "type_name": type_name,

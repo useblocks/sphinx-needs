@@ -67,7 +67,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'GITHUB_050bec',
             'template': None,
             'title': 'Bump actions/cache from 3 to 4 (#1092)',
             'type': 'commit',
@@ -145,7 +144,6 @@
             'tags': list([
               'bug',
             ]),
-            'target_id': 'GITHUB_1110',
             'template': None,
             'title': 'needreport usage should count needs in post-process',
             'type': 'issue',
@@ -244,7 +242,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'GITHUB_1112',
             'template': None,
             'title': '👌 Capture `only` expressions for each need',
             'type': 'pr',
@@ -328,7 +325,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'GITHUB_6abd38',
             'template': None,
             'title': '🧪 Add test for `needreport` directive (#1105)',
             'type': 'commit',
@@ -702,11 +698,6 @@
                 'type': 'string',
               }),
               'type': 'array',
-            }),
-            'target_id': dict({
-              'description': 'ID of the data.',
-              'field_type': 'core',
-              'type': 'string',
             }),
             'template': dict({
               'default': None,

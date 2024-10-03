@@ -66,7 +66,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'SECURITY_REQ',
             'template': None,
             'title': 'test1',
             'type': 'spec',
@@ -142,7 +141,6 @@
             'tags': list([
               'critical',
             ]),
-            'target_id': 'SP_109F4',
             'template': None,
             'title': 'test2',
             'type': 'spec',
@@ -218,7 +216,6 @@
             'style': 'red_bar',
             'tags': list([
             ]),
-            'target_id': 'SP_3EBFA',
             'template': None,
             'title': 'test3',
             'type': 'spec',
@@ -292,7 +289,6 @@
             'style': 'yellow_bar,',
             'tags': list([
             ]),
-            'target_id': 'SP_CA3FB',
             'template': None,
             'title': 'FAIL_01',
             'type': 'spec',
@@ -364,7 +360,6 @@
               'test',
               'test2',
             ]),
-            'target_id': 'SP_TOO_001',
             'template': None,
             'title': 'Command line interface',
             'type': 'spec',
@@ -441,7 +436,6 @@
               'hello',
               'there',
             ]),
-            'target_id': 'SP_TOO_002',
             'template': None,
             'title': 'CLI',
             'type': 'spec',
@@ -516,7 +510,6 @@
             'style': 'red_bar',
             'tags': list([
             ]),
-            'target_id': 'TEST_STYLE',
             'template': None,
             'title': 'CLI',
             'type': 'spec',
@@ -590,7 +583,6 @@
             'style': 'blue_border, yellow_bar',
             'tags': list([
             ]),
-            'target_id': 'TEST_STYLE2',
             'template': None,
             'title': 'CLI2',
             'type': 'spec',
@@ -970,11 +962,6 @@
                 'type': 'string',
               }),
               'type': 'array',
-            }),
-            'target_id': dict({
-              'description': 'ID of the data.',
-              'field_type': 'core',
-              'type': 'string',
             }),
             'template': dict({
               'default': None,
