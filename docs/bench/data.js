@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728047997115,
+  "lastUpdate": 1728048099509,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -10692,6 +10692,42 @@ window.BENCHMARK_DATA = {
             "value": 69.26528749100001,
             "unit": "s",
             "extra": "Commit: 9387231e01c3d18ecbf8c53db9a8518e92fea486\nBranch: master\nTime: 2024-10-04T15:17:56+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "353413112d133646a05e7c6738d0877963cb686e",
+          "message": "🔧 Simplify need directive (#1317)\n\n`NeedDirective` has a lot of unused/unnecessary code, that appears to be legacy from before the `add_need` API was added. This is now removed.\r\n\r\nNote, the trimming of the title, is already done in `add_need`, so not needed here.\r\n\r\nAlso, the replacement of `__` in `status` has been removed as has the documentation on \"Multiline options\" (added in https://github.com/useblocks/sphinx-needs/pull/283). I see no justification why you would want to use `status` this way, plus the documentation does not even make it clear that this is only for `status`",
+          "timestamp": "2024-10-04T15:19:40+02:00",
+          "tree_id": "bf848c74f7441f1cf0ef032dc4733abfcee3f645",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/353413112d133646a05e7c6738d0877963cb686e"
+        },
+        "date": 1728048088930,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18422273199999495,
+            "unit": "s",
+            "extra": "Commit: 353413112d133646a05e7c6738d0877963cb686e\nBranch: master\nTime: 2024-10-04T15:19:40+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 69.384336128,
+            "unit": "s",
+            "extra": "Commit: 353413112d133646a05e7c6738d0877963cb686e\nBranch: master\nTime: 2024-10-04T15:19:40+02:00"
           }
         ]
       }
