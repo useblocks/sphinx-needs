@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728028804298,
+  "lastUpdate": 1728028832608,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -10620,6 +10620,42 @@ window.BENCHMARK_DATA = {
             "value": 73.77283050899999,
             "unit": "s",
             "extra": "Commit: 250c58f3693f15b413602ec1f3781eccdaef778c\nBranch: master\nTime: 2024-10-04T09:57:50+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "47cc6e1367a3b31955671656f4834ecc422315d5",
+          "message": "👌 Add `needs_uml_process_max_time` configuration (#1314)\n\nTo guard against long-running `needuml` / `needarch` processing times. In particular, these can occur if the jinja template contains many calls to the filter function.",
+          "timestamp": "2024-10-04T09:58:27+02:00",
+          "tree_id": "7bee18dd7fc8ac7ed42b8582c8b5bf66ce5589f2",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/47cc6e1367a3b31955671656f4834ecc422315d5"
+        },
+        "date": 1728028822091,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.23140270800001872,
+            "unit": "s",
+            "extra": "Commit: 47cc6e1367a3b31955671656f4834ecc422315d5\nBranch: master\nTime: 2024-10-04T09:58:27+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 71.972211958,
+            "unit": "s",
+            "extra": "Commit: 47cc6e1367a3b31955671656f4834ecc422315d5\nBranch: master\nTime: 2024-10-04T09:58:27+02:00"
           }
         ]
       }
