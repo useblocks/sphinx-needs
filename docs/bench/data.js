@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728028832608,
+  "lastUpdate": 1728047997115,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -10656,6 +10656,42 @@ window.BENCHMARK_DATA = {
             "value": 71.972211958,
             "unit": "s",
             "extra": "Commit: 47cc6e1367a3b31955671656f4834ecc422315d5\nBranch: master\nTime: 2024-10-04T09:58:27+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9387231e01c3d18ecbf8c53db9a8518e92fea486",
+          "message": "👌 Warn on unknown need keys in external/import sources (#1316)\n\nThis commit centralises the declaration of what need keys to omit from external/import sources, onto the `NeedsCoreFields` spec.\r\nIt then also uses `NeedsCoreFields` to identify unknown keys, and emits a warning if any are found.\r\n\r\nNote, this could be breaking for existing builds, in that a warning may now be emitted,\r\nbut I decided not to put this under a \"configuration flag\", since users can simply choose to ignore it with `suppress_warnings`",
+          "timestamp": "2024-10-04T15:17:56+02:00",
+          "tree_id": "cb7ce7f7f564339296cb11d54935f3903e7a4c9d",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/9387231e01c3d18ecbf8c53db9a8518e92fea486"
+        },
+        "date": 1728047986966,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.19625428400001965,
+            "unit": "s",
+            "extra": "Commit: 9387231e01c3d18ecbf8c53db9a8518e92fea486\nBranch: master\nTime: 2024-10-04T15:17:56+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 69.26528749100001,
+            "unit": "s",
+            "extra": "Commit: 9387231e01c3d18ecbf8c53db9a8518e92fea486\nBranch: master\nTime: 2024-10-04T15:17:56+02:00"
           }
         ]
       }
