@@ -14,7 +14,7 @@ from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api import add_need
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType
+from sphinx_needs.data import NeedsCoreFields, NeedsInfoType
 from sphinx_needs.debug import measure_time
 from sphinx_needs.defaults import string_to_boolean
 from sphinx_needs.filter_common import filter_single_need
@@ -198,6 +198,23 @@ class NeedimportDirective(SphinxDirective):
 
         import_prefix_link_edit(needs_list, id_prefix, needs_config.extra_links)
 
+        # all known need fields in the project
+        known_keys = {
+            *NeedsCoreFields,
+            *(x["option"] for x in needs_config.extra_links),
+            *(x["option"] + "_back" for x in needs_config.extra_links),
+            *NEEDS_CONFIG.extra_options,
+        }
+        # all keys that should not be imported from external needs
+        omitted_keys = {
+            *(k for k, v in NeedsCoreFields.items() if v.get("exclude_import")),
+            *(x["option"] + "_back" for x in needs_config.extra_links),
+        }
+
+        # collect unknown keys to log them
+        unknown_keys: set[str] = set()
+
+        # directive options that can be override need fields
         override_options = (
             "collapse",
             "style",
@@ -206,43 +223,9 @@ class NeedimportDirective(SphinxDirective):
             "pre_template",
             "post_template",
         )
-        known_options = (
-            # need general parameters
-            "need_type",
-            "title",
-            "id",
-            "content",
-            "status",
-            "tags",
-            "constraints",
-            # need render parameters
-            "jinja_content",
-            "hide",
-            "collapse",
-            "style",
-            "layout",
-            "template",
-            "pre_template",
-            "post_template",
-            # note we omit locational parameters, such as signature and sections
-            # since these will be computed again for the new location
-            *[x["option"] for x in needs_config.extra_links],
-            *NEEDS_CONFIG.extra_options,
-        )
+
         need_nodes = []
         for need_params in needs_list.values():
-            for override_option in override_options:
-                if override_option in self.options:
-                    need_params[override_option] = self.options[override_option]  # type: ignore[literal-required]
-            if "hide" in self.options:
-                need_params["hide"] = True
-
-            # The key needs to be different for add_need() api call.
-            need_params["need_type"] = need_params["type"]  # type: ignore[typeddict-unknown-key]
-
-            # Replace id, to get unique ids
-            need_params["id"] = id_prefix + need_params["id"]
-
             if "description" in need_params and not need_params.get("content"):
                 # legacy versions of sphinx-needs changed "description" to "content" when outputting to json
                 need_params["content"] = need_params["description"]  # type: ignore[typeddict-item]
@@ -250,14 +233,41 @@ class NeedimportDirective(SphinxDirective):
 
             # Remove unknown options, as they may be defined in source system, but not in this sphinx project
             for option in list(need_params):
-                if option not in known_options:
-                    del need_params[option]  # type: ignore
+                if option not in known_keys:
+                    unknown_keys.add(option)
+                    del need_params[option]  # type: ignore[misc]
+                elif option in omitted_keys:
+                    del need_params[option]  # type: ignore[misc]
 
+            for override_option in override_options:
+                if override_option in self.options:
+                    need_params[override_option] = self.options[override_option]  # type: ignore[literal-required]
+            if "hide" in self.options:
+                need_params["hide"] = True
+
+            # These keys need to be different for add_need() api call.
+            need_params["need_type"] = need_params.pop("type", "")  # type: ignore[misc,typeddict-unknown-key]
+            need_params["title"] = need_params.pop(
+                "full_title", need_params.get("title", "")
+            )  # type: ignore[misc]
+
+            # Replace id, to get unique ids
+            need_params["id"] = id_prefix + need_params["id"]
+
+            # override location
             need_params["docname"] = self.docname
             need_params["lineno"] = self.lineno
 
             nodes = add_need(self.env.app, self.state, **need_params)  # type: ignore[call-arg]
             need_nodes.extend(nodes)
+
+        if unknown_keys:
+            log_warning(
+                logger,
+                f"Unknown keys in import need source: {sorted(unknown_keys)!r}",
+                "unknown_import_keys",
+                location=self.get_location(),
+            )
 
         add_doc(self.env, self.env.docname)
 

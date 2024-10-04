@@ -49,6 +49,7 @@ def add_need(
     id: str | None = None,
     content: str | StringList = "",
     lineno_content: None | int = None,
+    doctype: None | str = None,
     status: str | None = None,
     tags: None | str | list[str] = None,
     constraints: None | str | list[str] = None,
@@ -290,7 +291,8 @@ def add_need(
         trimmed_title = title[: max_length - 3] + "..."
 
     # Calculate doc type, e.g. .rst or .md
-    doctype = os.path.splitext(env.doc2path(docname))[1] if docname else ""
+    if doctype is None:
+        doctype = os.path.splitext(env.doc2path(docname))[1] if docname else ""
 
     # Add the need and all needed information
     needs_info: NeedsInfoType = {

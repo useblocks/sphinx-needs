@@ -63,6 +63,10 @@ class CoreFieldParameters(TypedDict):
     """JSON schema for the field."""
     show_in_layout: NotRequired[bool]
     """Whether to show the field in the rendered layout of the need by default (False if not present)."""
+    exclude_external: NotRequired[bool]
+    """Whether field should be excluded when loading external needs (False if not present)."""
+    exclude_import: NotRequired[bool]
+    """Whether field should be excluded when importing needs (False if not present)."""
     exclude_json: NotRequired[bool]
     """Whether field should be part of the default exclusions from the JSON representation (False if not present)."""
 
@@ -72,16 +76,22 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "docname": {
         "description": "Name of the document where the need is defined (None if external).",
         "schema": {"type": ["string", "null"], "default": None},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "lineno": {
         "description": "Line number where the need is defined (None if external).",
         "schema": {"type": ["integer", "null"], "default": None},
         "exclude_json": True,
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "lineno_content": {
         "description": "Line number on which the need content starts (None if external).",
         "schema": {"type": ["integer", "null"], "default": None},
         "exclude_json": True,
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "full_title": {
         "description": "Title of the need, of unlimited length.",
@@ -105,26 +115,32 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "description": "Hide the meta-data information of the need.",
         "schema": {"type": "boolean", "default": False},
         "exclude_json": True,
+        "exclude_external": True,
     },
     "hide": {
         "description": "If true, the need is not rendered.",
         "schema": {"type": "boolean", "default": False},
         "exclude_json": True,
+        "exclude_external": True,
     },
     "delete": {
         "description": "If true, the need is deleted entirely.",
         "schema": {"type": "boolean", "default": False},
         "show_in_layout": True,
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "layout": {
         "description": "Key of the layout, which is used to render the need.",
         "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
+        "exclude_external": True,
     },
     "style": {
         "description": "Comma-separated list of CSS classes (all appended by `needs_style_`).",
         "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
+        "exclude_external": True,
     },
     "arch": {
         "description": "Mapping of uml key to uml content.",
@@ -133,19 +149,25 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
             "additionalProperties": {"type": "string"},
             "default": {},
         },
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "is_external": {
         "description": "If true, no node is created and need is referencing external url.",
         "schema": {"type": "boolean", "default": False},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "external_url": {
         "description": "URL of the need, if it is an external need.",
         "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
+        "exclude_import": True,
     },
     "external_css": {
         "description": "CSS class name, added to the external reference.",
         "schema": {"type": "string", "default": ""},
+        "exclude_import": True,
     },
     "type": {
         "description": "Type of the need.",
@@ -154,37 +176,53 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "type_name": {
         "description": "Name of the type.",
         "schema": {"type": "string", "default": ""},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "type_prefix": {
         "description": "Prefix of the type.",
         "schema": {"type": "string", "default": ""},
         "exclude_json": True,
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "type_color": {
         "description": "Hexadecimal color code of the type.",
         "schema": {"type": "string", "default": ""},
         "exclude_json": True,
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "type_style": {
         "description": "Style of the type.",
         "schema": {"type": "string", "default": ""},
         "exclude_json": True,
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "is_modified": {
         "description": "Whether the need was modified by needextend.",
         "schema": {"type": "boolean", "default": False},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "modifications": {
         "description": "Number of modifications by needextend.",
         "schema": {"type": "integer", "default": 0},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "is_need": {
         "description": "Whether the need is a need.",
         "schema": {"type": "boolean", "default": True},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "is_part": {
         "description": "Whether the need is a part.",
         "schema": {"type": "boolean", "default": False},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "parts": {
         "description": "Mapping of parts, a.k.a. sub-needs, IDs to data that overrides the need's data",
@@ -193,36 +231,46 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
             "additionalProperties": {"type": "object"},
             "default": {},
         },
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "id_parent": {
         "description": "<parent ID>, or <self ID> if not a part.",
         "exclude_json": True,
         "schema": {"type": "string", "default": ""},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "id_complete": {
         "description": "<parent ID>.<self ID>, or <self ID> if not a part.",
         "exclude_json": True,
         "schema": {"type": "string", "default": ""},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "jinja_content": {
         "description": "Whether the content should be pre-processed by jinja.",
         "schema": {"type": "boolean", "default": False},
         "show_in_layout": True,
+        "exclude_external": True,
     },
     "template": {
         "description": "Template of the need.",
         "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
+        "exclude_external": True,
     },
     "pre_template": {
         "description": "Pre-template of the need.",
         "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
+        "exclude_external": True,
     },
     "post_template": {
         "description": "Post-template of the need.",
         "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
+        "exclude_external": True,
     },
     "content": {
         "description": "Content of the need.",
@@ -231,18 +279,26 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "pre_content": {
         "description": "Pre-content of the need.",
         "schema": {"type": "string", "default": ""},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "post_content": {
         "description": "Post-content of the need.",
         "schema": {"type": "string", "default": ""},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "has_dead_links": {
         "description": "True if any links reference need ids that are not found in the need list.",
         "schema": {"type": "boolean", "default": False},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "has_forbidden_dead_links": {
         "description": "True if any links reference need ids that are not found in the need list, and the link type does not allow dead links.",
         "schema": {"type": "boolean", "default": False},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "constraints": {
         "description": "List of constraint names, which are defined for this need.",
@@ -255,15 +311,21 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
             "additionalProperties": {"type": "object"},
             "default": {},
         },
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "constraints_passed": {
         "description": "True if all constraints passed, False if any failed, None if not yet checked.",
         "schema": {"type": "boolean", "default": True},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "constraints_error": {
         "description": "An error message set if any constraint failed, and `error_message` field is set in config.",
         "schema": {"type": "string", "default": ""},
         "show_in_layout": True,
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "doctype": {
         "description": "Type of the document where the need is defined, e.g. '.rst'.",
@@ -272,19 +334,25 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "sections": {
         "description": "Sections of the need.",
         "schema": {"type": "array", "items": {"type": "string"}, "default": []},
+        "exclude_import": True,
     },
     "section_name": {
         "description": "Simply the first section.",
         "schema": {"type": "string", "default": ""},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "signature": {
         "description": "Derived from a docutils desc_name node.",
         "schema": {"type": "string", "default": ""},
         "show_in_layout": True,
+        "exclude_import": True,
     },
     "parent_need": {
         "description": "Simply the first parent id.",
         "schema": {"type": "string", "default": ""},
+        "exclude_external": True,
+        "exclude_import": True,
     },
 }
 
