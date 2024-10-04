@@ -656,6 +656,8 @@ class NeedsUmlType(NeedsBaseDataType):
     is_arch: bool
     # set in process_needuml
     content_calculated: str
+    process_time: float
+    """Time taken to process the diagram."""
 
 
 NeedsMutable = NewType("NeedsMutable", Dict[str, NeedsInfoType])

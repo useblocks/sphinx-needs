@@ -213,6 +213,7 @@ Also filters containing ``and`` will be split into multiple filters and evaluate
 For example, ``type == 'spec' and other == 'value'`` will first be filtered performantly by ``type == 'spec'`` and then the remaining needs will be filtered by ``other == 'value'``.
 
 To guard against long running filters, the :ref:`needs_filter_max_time` configuration option can be used to set a maximum time limit for filter evaluation.
+Also see :ref:`needs_uml_process_max_time`, to guard against long running ``needuml`` / ``needarch`` processes containing :ref:`filters <needuml_jinja_filter>`.
 
 To debug which filters are being used across your project and their run times, you can enable the :ref:`needs_debug_filters` configuration option.
 

@@ -2,6 +2,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from syrupy.filters import props
 
 from sphinx_needs.data import SphinxNeedsData
 
@@ -17,11 +18,13 @@ def test_doc_build_html(test_app, snapshot):
 
     assert Path(app.outdir, "index.html").read_text(encoding="utf8")
 
-    all_needs = dict(SphinxNeedsData(app.env).get_needs_view())
+    data = SphinxNeedsData(app.env)
+
+    all_needs = dict(data.get_needs_view())
     assert all_needs == snapshot()
 
-    all_needumls = app.env._needs_all_needumls
-    assert all_needumls == snapshot
+    all_needumls = data.get_or_create_umls()
+    assert all_needumls == snapshot(exclude=props("process_time"))
 
 
 @pytest.mark.parametrize(
@@ -170,7 +173,7 @@ def test_needuml_filter(test_app, snapshot):
     app.build()
 
     all_needumls = app.env._needs_all_needumls
-    assert all_needumls == snapshot
+    assert all_needumls == snapshot(exclude=props("process_time"))
 
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     assert "as ST_002 [[../index.html#ST_002]]" in html
@@ -194,7 +197,7 @@ def test_needuml_jinja_func_flow(test_app, snapshot):
     app.build()
 
     all_needumls = app.env._needs_all_needumls
-    assert all_needumls == snapshot
+    assert all_needumls == snapshot(exclude=props("process_time"))
 
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     assert "as ST_001 [[../index.html#ST_001]]" in html
@@ -268,7 +271,7 @@ def test_needuml_jinja_func_ref(test_app, snapshot):
     app.build()
 
     all_needumls = app.env._needs_all_needumls
-    assert all_needumls == snapshot
+    assert all_needumls == snapshot(exclude=props("process_time"))
 
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     assert "Marvel: [[../index.html#ST_001 Test story]]" in html

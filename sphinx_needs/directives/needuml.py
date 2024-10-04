@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import html
 import os
+import time
 from typing import TYPE_CHECKING, Any, Dict, List, Sequence, TypedDict
 
 from docutils import nodes
@@ -16,7 +17,8 @@ from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link
 from sphinx_needs.directives.needflow._plantuml import make_entity_name
 from sphinx_needs.filter_common import filter_needs_view
-from sphinx_needs.utils import add_doc
+from sphinx_needs.logging import log_warning
+from sphinx_needs.utils import add_doc, logger
 
 if TYPE_CHECKING:
     from sphinxcontrib.plantuml import plantuml
@@ -125,6 +127,7 @@ class NeedumlDirective(SphinxDirective):
             "save": plantuml_code_out_path,
             "is_arch": is_arch,
             "content_calculated": "",
+            "process_time": 0,
         }
 
         add_doc(env, env.docname)
@@ -493,11 +496,13 @@ def process_needuml(
     found_nodes: list[nodes.Element],
 ) -> None:
     env = app.env
+    needs_config = NeedsSphinxConfig(app.config)
+    uml_data = SphinxNeedsData(env).get_or_create_umls()
 
     # for node in doctree.findall(Needuml):
     for node in found_nodes:
         id = node.attributes["ids"][0]
-        current_needuml = SphinxNeedsData(env).get_or_create_umls()[id]
+        current_needuml = uml_data[id]
 
         parent_need_id = None
         # Check if current needuml is needarch
@@ -518,6 +523,7 @@ def process_needuml(
                 [line.strip() for line in config.split("\n") if line.strip()]
             )
 
+        start = time.perf_counter()
         puml_node = transform_uml_to_plantuml_node(
             app=app,
             uml_content=current_needuml["content"],
@@ -526,6 +532,18 @@ def process_needuml(
             kwargs=current_needuml["extra"],
             config=config,
         )
+        duration = time.perf_counter() - start
+
+        if (
+            needs_config.uml_process_max_time is not None
+            and duration > needs_config.uml_process_max_time
+        ):
+            log_warning(
+                logger,
+                f"Uml processing took {duration:.3f}s, which is longer than the configured maximum of {needs_config.uml_process_max_time}s.",
+                "uml",
+                location=node,
+            )
 
         # Add source origin
         puml_node.line = current_needuml["lineno"]
@@ -533,6 +551,7 @@ def process_needuml(
 
         # Add calculated needuml content
         current_needuml["content_calculated"] = puml_node["uml"]
+        current_needuml["process_time"] = duration
 
         try:
             scale = int(current_needuml["scale"])
