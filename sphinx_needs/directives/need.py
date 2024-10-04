@@ -1,19 +1,15 @@
 from __future__ import annotations
 
-import hashlib
 import re
 from typing import Any, Sequence
 
 from docutils import nodes
-from docutils.parsers.rst.states import RSTState, RSTStateMachine
-from docutils.statemachine import StringList
 from sphinx.addnodes import desc_name, desc_signature
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api import add_need
-from sphinx_needs.api.exceptions import NeedsInvalidException
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
 from sphinx_needs.debug import measure_time
@@ -57,39 +53,9 @@ class NeedDirective(SphinxDirective):
 
     final_argument_whitespace = True
 
-    def __init__(
-        self,
-        name: str,
-        arguments: list[str],
-        options: dict[str, Any],
-        content: StringList,
-        lineno: int,
-        content_offset: int,
-        block_text: str,
-        state: RSTState,
-        state_machine: RSTStateMachine,
-    ):
-        super().__init__(
-            name,
-            arguments,
-            options,
-            content,
-            lineno,
-            content_offset,
-            block_text,
-            state,
-            state_machine,
-        )
-        self.needs_config = NeedsSphinxConfig(self.env.config)
-        self.log = get_logger(__name__)
-        self.full_title = self._get_full_title()
-
     @measure_time("need")
     def run(self) -> Sequence[nodes.Node]:
-        #############################################################################################
-        # Get environment
-        #############################################################################################
-        env = self.env
+        needs_config = NeedsSphinxConfig(self.env.config)
 
         delete_opt = self.options.get("delete")
         collapse = self.options.get("collapse")
@@ -98,10 +64,6 @@ class NeedDirective(SphinxDirective):
 
         id = self.options.get("id")
         status = self.options.get("status")
-        if status:
-            status = status.replace(
-                "__", ""
-            )  # Support for multiline options, which must use __ for empty lines
         tags = self.options.get("tags", "")
         style = self.options.get("style")
         layout = self.options.get("layout", "")
@@ -110,8 +72,10 @@ class NeedDirective(SphinxDirective):
         post_template = self.options.get("post_template")
         constraints = self.options.get("constraints", [])
 
+        title = self._get_title(needs_config)
+
         need_extra_options = {}
-        for extra_link in self.needs_config.extra_links:
+        for extra_link in needs_config.extra_links:
             need_extra_options[extra_link["option"]] = self.options.get(
                 extra_link["option"], ""
             )
@@ -120,12 +84,12 @@ class NeedDirective(SphinxDirective):
             need_extra_options[extra_option] = self.options.get(extra_option, "")
 
         need_nodes = add_need(
-            env.app,
+            self.env.app,
             self.state,
-            self.docname,
+            self.env.docname,
             self.lineno,
             need_type=self.name,
-            title=self.trimmed_title,
+            title=title,
             id=id,
             content=self.content,
             lineno_content=self.content_offset + 1,
@@ -143,91 +107,33 @@ class NeedDirective(SphinxDirective):
             constraints=constraints,
             **need_extra_options,
         )
-        add_doc(env, self.docname)
+        add_doc(self.env, self.env.docname)
         return need_nodes
 
-    def read_in_links(self, name: str) -> list[str]:
-        # Get links
-        links_string = self.options.get(name)
-        links = []
-        if links_string:
-            for link in re.split(r";|,", links_string):
-                if link.isspace():
-                    log_warning(
-                        LOGGER,
-                        f"Grubby link definition found in need '{self.trimmed_title}'. "
-                        "Defined link contains spaces only.",
-                        None,
-                        location=(self.env.docname, self.lineno),
-                    )
-                else:
-                    links.append(link.strip())
-
-            # This may have cut also dynamic function strings, as they can contain , as well.
-            # So let put them together again
-            # ToDo: There may be a smart regex for the splitting. This would avoid this mess of code...
-        return _fix_list_dyn_func(links)
-
-    def make_hashed_id(self, type_prefix: str, id_length: int) -> str:
-        hashable_content = self.full_title or "\n".join(self.content)
-        return "{}{}".format(
-            type_prefix,
-            hashlib.sha1(hashable_content.encode("UTF-8"))
-            .hexdigest()
-            .upper()[:id_length],
-        )
-
-    @property
-    def title_from_content(self) -> bool:
-        return (
-            "title_from_content" in self.options or self.needs_config.title_from_content
-        )
-
-    @property
-    def docname(self) -> str:
-        return self.env.docname
-
-    @property
-    def trimmed_title(self) -> str:
-        title = self.full_title
-        max_length = self.max_title_length
-        if max_length == -1 or len(title) <= max_length:
-            return title
-        elif max_length <= 3:
-            return title[: self.max_title_length]
-        else:
-            return title[: self.max_title_length - 3] + "..."
-
-    @property
-    def max_title_length(self) -> int:
-        max_title_length: int = self.needs_config.max_title_length
-        return max_title_length
-
-    # ToDo. Keep this in directive
-    def _get_full_title(self) -> str:
+    def _get_title(self, config: NeedsSphinxConfig) -> str:
+        """Determines the title for the need in order of precedence:
+        directive argument, first sentence of requirement
+        (if `:title_from_content:` was set, and '' if no title is to be derived).
         """
-        Determines the title for the need in order of precedence:
-        directive argument, first sentence of requirement (if
-        `:title_from_content:` was set, and '' if no title is to be derived)."""
         if len(self.arguments) > 0:  # a title was passed
             if "title_from_content" in self.options:
                 log_warning(
-                    self.log,
-                    f'need "{self.arguments[0]}" has :title_from_content: set, '
-                    f"but a title was provided. (see file {self.docname})",
-                    None,
-                    location=(self.env.docname, self.lineno),
+                    LOGGER,
+                    "need directive has :title_from_content: set, but a title was provided.",
+                    "title",
+                    location=self.get_location(),
                 )
             return self.arguments[0]  # type: ignore[no-any-return]
-        elif self.title_from_content:
+        elif "title_from_content" in self.options or config.title_from_content:
             first_sentence = re.split(r"[.\n]", "\n".join(self.content))[0]
             if not first_sentence:
-                raise NeedsInvalidException(
-                    ":title_from_content: set, but "
-                    "no content provided. "
-                    f"(Line {self.lineno} of file {self.docname}"
+                log_warning(
+                    LOGGER,
+                    ":title_from_content: set, but no content provided.",
+                    "title",
+                    location=self.get_location(),
                 )
-            return first_sentence
+            return first_sentence or ""
         else:
             return ""
 

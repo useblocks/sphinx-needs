@@ -579,7 +579,7 @@ Released: 18.06.2021
   (:issue:`116`)
 * Improvement: Introducing :ref:`need_func` to execute :ref:`dynamic_functions` inline.
   (:issue:`133`)
-* Improvement: Support for :ref:`multiline_option` in templates.
+* Improvement: Support for :ref:`!multiline_option` in templates.
 * Bugfix: needflow: links  for need-parts get correctly calculated.
   (:issue:`205`)
 * Bugfix: CSS update for ReadTheDocsTheme to show tables correctly.
