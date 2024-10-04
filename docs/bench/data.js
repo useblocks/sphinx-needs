@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1727886494037,
+  "lastUpdate": 1728028804298,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -10584,6 +10584,42 @@ window.BENCHMARK_DATA = {
             "value": 71.88262838899999,
             "unit": "s",
             "extra": "Commit: 02b24940427bd5ffed6b4e33c731432b67101cc2\nBranch: master\nTime: 2024-10-02T18:26:01+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "250c58f3693f15b413602ec1f3781eccdaef778c",
+          "message": "♻️ Remove `target_id` core need field (#1315)\n\nThis is a duplicate of `id_parent` (since it is not modified when creating a part from a need)",
+          "timestamp": "2024-10-04T09:57:50+02:00",
+          "tree_id": "2bb4736c1eb8350174b157e8d6d99006b936d6fb",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/250c58f3693f15b413602ec1f3781eccdaef778c"
+        },
+        "date": 1728028793657,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22356981699999778,
+            "unit": "s",
+            "extra": "Commit: 250c58f3693f15b413602ec1f3781eccdaef778c\nBranch: master\nTime: 2024-10-04T09:57:50+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 73.77283050899999,
+            "unit": "s",
+            "extra": "Commit: 250c58f3693f15b413602ec1f3781eccdaef778c\nBranch: master\nTime: 2024-10-04T09:57:50+02:00"
           }
         ]
       }
