@@ -64,7 +64,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'TC_001',
             'template': None,
             'title': 'Test example',
             'type': 'test',
@@ -134,7 +133,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'TC_NEG_001',
             'template': None,
             'title': 'Negative test example',
             'type': 'test',
@@ -205,7 +203,6 @@
             'tags': list([
               '1',
             ]),
-            'target_id': 'US_63252',
             'template': None,
             'title': 'A story',
             'type': 'story',
@@ -586,11 +583,6 @@
               }),
               'type': 'array',
             }),
-            'target_id': dict({
-              'description': 'ID of the data.',
-              'field_type': 'core',
-              'type': 'string',
-            }),
             'template': dict({
               'default': None,
               'description': 'Template of the need.',
@@ -831,7 +823,6 @@
               'TEST DOCUMENT NEEDS Builder',
             ]),
             'status': 'open',
-            'target_id': 'TC_001',
             'title': 'Test example',
             'type': 'test',
             'type_name': 'Test Case',
@@ -847,7 +838,6 @@
               'TEST DOCUMENT NEEDS Builder',
             ]),
             'status': 'closed',
-            'target_id': 'TC_NEG_001',
             'title': 'Negative test example',
             'type': 'test',
             'type_name': 'Test Case',
@@ -866,7 +856,6 @@
             'tags': list([
               '1',
             ]),
-            'target_id': 'US_63252',
             'title': 'A story',
             'type': 'story',
             'type_name': 'User Story',
@@ -1243,11 +1232,6 @@
               }),
               'type': 'array',
             }),
-            'target_id': dict({
-              'description': 'ID of the data.',
-              'field_type': 'core',
-              'type': 'string',
-            }),
             'template': dict({
               'default': None,
               'description': 'Template of the need.',
@@ -1537,7 +1521,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'TC_001',
             'template': None,
             'title': 'Test example',
             'type': 'test',
@@ -1607,7 +1590,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'TC_NEG_001',
             'template': None,
             'title': 'Negative test example',
             'type': 'test',
@@ -1678,7 +1660,6 @@
             'tags': list([
               '1',
             ]),
-            'target_id': 'US_63252',
             'template': None,
             'title': 'A story',
             'type': 'story',
@@ -2058,11 +2039,6 @@
                 'type': 'string',
               }),
               'type': 'array',
-            }),
-            'target_id': dict({
-              'description': 'ID of the data.',
-              'field_type': 'core',
-              'type': 'string',
             }),
             'template': dict({
               'default': None,

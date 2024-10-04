@@ -203,7 +203,7 @@ def calculate_link(
                 + "/"
                 + builder.get_target_uri(_docname)
                 + "#"
-                + need_info["target_id"]
+                + need_info["id_parent"]
             )
             if need_info["is_part"]:
                 link = f"{link}.{need_info['id']}"

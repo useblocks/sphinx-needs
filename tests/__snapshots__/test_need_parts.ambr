@@ -89,7 +89,6 @@
         'test',
         'test2',
       ]),
-      'target_id': 'SP_TOO_001',
       'title': 'Command line interface',
       'type': 'spec',
       'type_name': 'Specification',
@@ -119,7 +118,6 @@
       'sections': list([
         'NEED PARTS',
       ]),
-      'target_id': 'TEST_2',
       'title': 'TEST_2',
       'type': 'spec',
       'type_name': 'Specification',

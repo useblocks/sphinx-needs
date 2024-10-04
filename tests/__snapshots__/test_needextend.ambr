@@ -67,7 +67,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'REQ_1',
             'template': None,
             'title': 'Requirement 1',
             'type': 'req',
@@ -138,7 +137,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'REQ_A_1',
             'template': None,
             'title': 'Requirement A 1',
             'type': 'req',
@@ -209,7 +207,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'REQ_B_1',
             'template': None,
             'title': 'Requirement B 1',
             'type': 'req',
@@ -279,7 +276,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'REQ_C_1',
             'template': None,
             'title': 'Requirement C 1',
             'type': 'req',
@@ -350,7 +346,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'REQ_D_1',
             'template': None,
             'title': 'Requirement D 1',
             'type': 'req',
@@ -731,11 +726,6 @@
               }),
               'type': 'array',
             }),
-            'target_id': dict({
-              'description': 'ID of the data.',
-              'field_type': 'core',
-              'type': 'string',
-            }),
             'template': dict({
               'default': None,
               'description': 'Template of the need.',
@@ -865,7 +855,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'extend_test_003',
             'template': None,
             'title': 'needextend Example 3',
             'type': 'story',
@@ -941,7 +930,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'extend_test_004',
             'template': None,
             'title': 'needextend Example 4',
             'type': 'story',
@@ -1015,7 +1003,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'extend_test_005',
             'template': None,
             'title': 'needextend Example 5',
             'type': 'story',
@@ -1087,7 +1074,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'extend_test_006',
             'template': None,
             'title': 'needextend Example 6',
             'type': 'story',
@@ -1160,7 +1146,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'extend_test_007',
             'template': None,
             'title': 'needextend Example 7',
             'type': 'story',
@@ -1233,7 +1218,6 @@
               'new_tag',
               'another_tag',
             ]),
-            'target_id': 'extend_test_page',
             'template': None,
             'title': 'needextend different pages test',
             'type': 'story',
@@ -1613,11 +1597,6 @@
                 'type': 'string',
               }),
               'type': 'array',
-            }),
-            'target_id': dict({
-              'description': 'ID of the data.',
-              'field_type': 'core',
-              'type': 'string',
             }),
             'template': dict({
               'default': None,

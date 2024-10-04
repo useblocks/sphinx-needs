@@ -65,7 +65,7 @@ def process_need_incoming(
                             builder,
                             fromdocname,
                             _docname,
-                            target_need["target_id"],
+                            target_need["id_parent"],
                             node_need_backref[0].deepcopy(),
                             node_need_backref["reftarget"],
                         )
