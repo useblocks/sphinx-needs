@@ -2,15 +2,22 @@ from pathlib import Path
 
 import pytest
 
+from sphinx_needs.api import get_needs_view
+
 
 @pytest.mark.parametrize(
     "test_app",
     [{"buildername": "html", "srcdir": "doc_test/doc_list2need"}],
     indirect=True,
 )
-def test_doc_list2need_html(test_app):
+def test_doc_list2need_html(test_app, snapshot):
     app = test_app
     app.build()
+    assert app._warning.getvalue() == ""
+
+    view = get_needs_view(app)
+    assert dict(view) == snapshot
+
     index_html = Path(app.outdir, "index.html").read_text()
     assert "NEED-002" in index_html
     assert "Sub-Need on level 3" in index_html

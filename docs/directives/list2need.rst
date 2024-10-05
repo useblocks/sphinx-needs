@@ -149,6 +149,26 @@ The amount of given link-types must be the amount of used levels minus 1.
        * (NEED-D)Recalculate hash and compare
 
 
+tags
+~~~~
+
+``tags`` sets tags globally to all items in the list.
+
+.. code-block:: rst
+
+   .. list2need::
+      :types: req, spec
+      :tags: A, B
+
+      * (NEED-A)Login user
+        * (NEED-B)Provide login screen
+        * (NEED-C)Create password hash
+          * (NEED-D)Recalculate hash and compare
+
+
+The tags ``A`` and ``B`` are attached to all ``NEED-A``, ``NEED-B``, ``NEED-C`` and ``NEED-D``.
+
+
 List examples
 -------------
 
