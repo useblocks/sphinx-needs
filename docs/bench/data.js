@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728048099509,
+  "lastUpdate": 1728114473838,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -10728,6 +10728,42 @@ window.BENCHMARK_DATA = {
             "value": 69.384336128,
             "unit": "s",
             "extra": "Commit: 353413112d133646a05e7c6738d0877963cb686e\nBranch: master\nTime: 2024-10-04T15:19:40+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "54145894+christopheseyler@users.noreply.github.com",
+            "name": "christopheseyler",
+            "username": "christopheseyler"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1e473e7bd1ca4acabe0c3e13121fccdd716d4d24",
+          "message": "✨ add `tags` option for `list2need` directive (#1296)\n\nThe `tags` option sets these tags on all generated needs\r\n\r\nCo-authored-by: OFFICE\\cs <c.seyler@deltatec.be>",
+          "timestamp": "2024-10-05T09:45:58+02:00",
+          "tree_id": "846f10033f7bbd6038765b4dc4735b793132f676",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/1e473e7bd1ca4acabe0c3e13121fccdd716d4d24"
+        },
+        "date": 1728114463286,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1825882349999972,
+            "unit": "s",
+            "extra": "Commit: 1e473e7bd1ca4acabe0c3e13121fccdd716d4d24\nBranch: master\nTime: 2024-10-05T09:45:58+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.02759199099998,
+            "unit": "s",
+            "extra": "Commit: 1e473e7bd1ca4acabe0c3e13121fccdd716d4d24\nBranch: master\nTime: 2024-10-05T09:45:58+02:00"
           }
         ]
       }
