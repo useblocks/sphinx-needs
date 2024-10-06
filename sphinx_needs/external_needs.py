@@ -10,7 +10,7 @@ from requests_file import FileAdapter
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
-from sphinx_needs.api import add_external_need, del_need
+from sphinx_needs.api import InvalidNeedException, add_external_need, del_need
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
@@ -29,7 +29,9 @@ def get_target_template(target_url: str) -> Template:
     return mem_template
 
 
-def load_external_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> None:
+def load_external_needs(
+    app: Sphinx, env: BuildEnvironment, _docnames: list[str]
+) -> None:
     """Load needs from configured external sources."""
     needs_config = NeedsSphinxConfig(app.config)
     for source in needs_config.external_needs:
@@ -175,30 +177,32 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> Non
 
             need = SphinxNeedsData(env).get_needs_mutable().get(ext_need_id)
 
-            if need is not None:
-                # check need_params for more detail
-                if need["is_external"] and source["base_url"] in need["external_url"]:
-                    # delete the already existing external need from api need
-                    del_need(app, ext_need_id)
-                else:
-                    log_warning(
-                        log,
-                        f'During external needs handling, an identical ID was detected: {ext_need_id} '
-                        f'from needs_external_needs url: {source["base_url"]}',
-                        "duplicate_id",
-                        location=docname if docname else None,
-                    )
-                    return None
+            if (
+                need is not None
+                and need["is_external"]
+                and source["base_url"] in need["external_url"]
+            ):
+                # delete the already existing external need from api need
+                del_need(app, ext_need_id)
 
-            add_external_need(app, **need_params)
+            try:
+                add_external_need(app, **need_params)
+            except InvalidNeedException as err:
+                location = source.get("json_url", "") or source.get("json_path", "")
+                log_warning(
+                    log,
+                    f"External need {ext_need_id!r} in {location!r} could not be added: {err.message}",
+                    "load_external_need",
+                    location=None,
+                )
 
         if unknown_keys:
             location = source.get("json_url", "") or source.get("json_path", "")
             log_warning(
                 log,
-                f"Unknown keys in external need source: {sorted(unknown_keys)!r}",
+                f"Unknown keys in external need source {location!r}: {sorted(unknown_keys)!r}",
                 "unknown_external_keys",
-                location=location,
+                location=None,
             )
 
 

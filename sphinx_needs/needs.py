@@ -499,7 +499,7 @@ def visitor_dummy(*_args: Any, **_kwargs: Any) -> None:
     pass
 
 
-def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
+def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> None:
     """
     Prepares the sphinx environment to store sphinx-needs internal data.
     """

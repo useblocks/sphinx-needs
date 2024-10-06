@@ -201,7 +201,7 @@ def find_and_replace_node_content(
             func_string = func_string.replace("’", "'")  # noqa: RUF001
 
             msg = f"The [[{func_string}]] syntax in need content is deprecated. Replace with :ndf:`{func_string}` instead."
-            log_warning(logger, msg, "deprecation", location=node)
+            log_warning(logger, msg, "deprecated", location=node)
 
             func_return = execute_func(
                 env.app, need, SphinxNeedsData(env).get_needs_view(), func_string, node

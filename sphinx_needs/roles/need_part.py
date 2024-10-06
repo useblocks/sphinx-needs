@@ -86,8 +86,8 @@ def update_need_with_parts(
                 "part_need id {} in need {} is already taken. need_part may get overridden.".format(
                     inline_id, need["id"]
                 ),
-                None,
-                None,
+                "duplicate_part_id",
+                part_node,
             )
 
         need["parts"][inline_id] = {

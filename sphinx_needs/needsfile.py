@@ -198,7 +198,9 @@ class NeedsList:
             file = os.path.join(self.confdir, file)
 
         if not os.path.exists(file):
-            log_warning(self.log, f"Could not load needs json file {file}", None, None)
+            log_warning(
+                self.log, f"Could not load needs json file {file}", "json_load", None
+            )
         else:
             errors = check_needs_file(file)
             # We only care for schema errors here, all other possible errors
@@ -213,7 +215,10 @@ class NeedsList:
                     needs_list = json.load(needs_file)
                 except json.JSONDecodeError:
                     log_warning(
-                        self.log, f"Could not decode json file {file}", None, None
+                        self.log,
+                        f"Could not decode json file {file}",
+                        "json_load",
+                        None,
                     )
                 else:
                     self.needs_list = needs_list

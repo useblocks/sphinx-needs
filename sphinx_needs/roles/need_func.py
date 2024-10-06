@@ -45,7 +45,7 @@ class NeedFuncRole(SphinxRole):
                 msg += f"Replace with :ndf:`{func_call}` instead."
             else:
                 msg += "Replace with ndf role instead."
-            log_warning(LOGGER, msg, "deprecation", location=node)
+            log_warning(LOGGER, msg, "deprecated", location=node)
         return [node], []
 
 

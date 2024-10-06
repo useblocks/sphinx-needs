@@ -496,7 +496,7 @@ def match_string_link(
             logger,
             f'Problems dealing with string to link transformation for value "{data}" of '
             f'option "{need_key}". Error: {e}',
-            None,
+            "layout",
             None,
         )
     else:
@@ -649,24 +649,7 @@ def add_doc(env: BuildEnvironment, docname: str, category: str | None = None) ->
 
 def split_link_types(link_types: str, location: Any) -> list[str]:
     """Split link_types string into list of link_types."""
-
-    def _is_valid(link_type: str) -> bool:
-        if len(link_type) == 0 or link_type.isspace():
-            log_warning(
-                logger,
-                "Scruffy link_type definition found. Defined link_type contains spaces only.",
-                None,
-                location=location,
-            )
-            return False
-        return True
-
-    return list(
-        filter(
-            _is_valid,
-            (x.strip() for x in re.split(";|,", link_types)),
-        )
-    )
+    return [x.strip() for x in re.split(";|,", link_types) if x.strip()]
 
 
 def get_scale(options: dict[str, Any], location: Any) -> str:
@@ -676,7 +659,7 @@ def get_scale(options: dict[str, Any], location: Any) -> str:
         log_warning(
             logger,
             f'scale value must be a number. "{scale}" found',
-            None,
+            "diagram_scale",
             location=location,
         )
         return "100"
@@ -684,7 +667,7 @@ def get_scale(options: dict[str, Any], location: Any) -> str:
         log_warning(
             logger,
             f'scale value must be between 1 and 300. "{scale}" found',
-            None,
+            "diagram_scale",
             location=location,
         )
         return "100"

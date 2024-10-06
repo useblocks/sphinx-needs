@@ -20,8 +20,8 @@ def test_doc_needarch(test_app):
         .strip()
     ).splitlines()
     assert warnings == [
-        "<srcdir>/index.rst:6: WARNING: No options specified to generate need report [needs.report]",
-        "<srcdir>/index.rst:8: WARNING: Could not load needs report template file <srcdir>/unknown.rst [needs.report]",
+        "<srcdir>/index.rst:6: WARNING: No options specified to generate need report [needs.needreport]",
+        "<srcdir>/index.rst:8: WARNING: Could not load needs report template file <srcdir>/unknown.rst [needs.needreport]",
     ]
 
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")

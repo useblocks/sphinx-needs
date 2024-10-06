@@ -287,7 +287,7 @@ def check_linked_values(
                 log_warning(
                     logger,
                     f"CheckLinkedValues: Filter {filter_string} not valid: Error: {e}",
-                    None,
+                    "filter",
                     None,
                 )
 
@@ -392,7 +392,10 @@ def calc_sum(
                 pass
             except NeedsInvalidFilter as ex:
                 log_warning(
-                    logger, f"Given filter is not valid. Error: {ex}", None, None
+                    logger,
+                    f"Given filter is not valid. Error: {ex}",
+                    "filter",
+                    None,
                 )
 
         with contextlib.suppress(ValueError):

@@ -21,8 +21,7 @@ def test_external_html(test_app: SphinxTestApp):
     app = test_app
     app.build()
     assert strip_colors(app._warning.getvalue()).strip() == (
-        "WARNING: Couldn't create need EXT_TEST_03. "
-        "Reason: The need-type (i.e. `ask`) is not set in the project's 'need_types' configuration in conf.py. [needs.add]"
+        "WARNING: External need 'EXT_TEST_03' in 'needs_test_small.json' could not be added: Unknown need type 'ask'. [needs.load_external_need]"
     )
     html = Path(app.outdir, "index.html").read_text()
     assert (
