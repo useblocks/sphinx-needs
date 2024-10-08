@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728383078044,
+  "lastUpdate": 1728409178455,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -10836,6 +10836,42 @@ window.BENCHMARK_DATA = {
             "value": 69.86914613899995,
             "unit": "s",
             "extra": "Commit: 4120c18edd9bc63ac071250fa9b6ae22d9f4b25a\nBranch: master\nTime: 2024-10-08T12:22:36+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "95444300+PhilipPartsch@users.noreply.github.com",
+            "name": "PhilipPartsch",
+            "username": "PhilipPartsch"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fa937f23abf42266255d0146192835c9b2009ca4",
+          "message": "👌 Allow `ref` in `neeuml` to handle need parts (#1222)\n\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2024-10-08T19:37:38+02:00",
+          "tree_id": "b81c7181407b5516c97a32d33e00a4c74214c36a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/fa937f23abf42266255d0146192835c9b2009ca4"
+        },
+        "date": 1728409167131,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.20242626900000005,
+            "unit": "s",
+            "extra": "Commit: fa937f23abf42266255d0146192835c9b2009ca4\nBranch: master\nTime: 2024-10-08T19:37:38+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.824418353,
+            "unit": "s",
+            "extra": "Commit: fa937f23abf42266255d0146192835c9b2009ca4\nBranch: master\nTime: 2024-10-08T19:37:38+02:00"
           }
         ]
       }
