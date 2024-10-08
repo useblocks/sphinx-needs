@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728114473838,
+  "lastUpdate": 1728380624022,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -10764,6 +10764,42 @@ window.BENCHMARK_DATA = {
             "value": 67.02759199099998,
             "unit": "s",
             "extra": "Commit: 1e473e7bd1ca4acabe0c3e13121fccdd716d4d24\nBranch: master\nTime: 2024-10-05T09:45:58+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0d5d316c2ceffa8bbbac279ff515e5e582e69793",
+          "message": "♻️  Extract `generate_need` from `add_need` & consolidate warnings (#1318)\n\nThis commit makes the code cleaner and easier to understand, when creating needs and handling invalid needs and other build issues, by:\r\n\r\n- Extracting `generate_need`: This generates a validated single need dictionary, without adding the need to the build or parsing the content, and then `add_need` calls this.\r\n  Invalid input data results in a `InvalidNeedException`, which replaces/consolidates all the exception/warnings previously raised/emitted.\r\n   Unused exceptions are removed: `NeedsNoIdException`, `NeedsStatusNotAllowed`, `NeedsTagNotAllowed`, `NeedsConstraintNotAllowed`, `NeedsInvalidOption`, `NeedsTemplateException`\r\n- Catch `InvalidNeedException` exceptions in the need/needimport directives and external need loading code, and emit specific warnings, with correct location mapping\r\n- Ensure all warnings have subtypes with certain names and list these in the documentation, explaining how to fail fast and suppress warnings\r\n\r\nA bug was also identified, whereby\r\nif the content is not parsed, then `parts` and `arch` need fields will not be populated.\r\n- For importing and loading of external needs, this has been fixed by no longer dropping these keys and allowing them to be passed to `add_need`\r\n- For needs from directives which have been set to `hide`, this is still an open issue",
+          "timestamp": "2024-10-08T11:41:37+02:00",
+          "tree_id": "2c070a313be304cf1870289ad7ce2e061092df3f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/0d5d316c2ceffa8bbbac279ff515e5e582e69793"
+        },
+        "date": 1728380612995,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.20928984799996897,
+            "unit": "s",
+            "extra": "Commit: 0d5d316c2ceffa8bbbac279ff515e5e582e69793\nBranch: master\nTime: 2024-10-08T11:41:37+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 73.09922308900002,
+            "unit": "s",
+            "extra": "Commit: 0d5d316c2ceffa8bbbac279ff515e5e582e69793\nBranch: master\nTime: 2024-10-08T11:41:37+02:00"
           }
         ]
       }
