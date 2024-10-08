@@ -644,6 +644,7 @@ needs_render_context = {
 
 # build needs.json to make permalinks work
 needs_build_json = True
+needs_reproducible_json = True
 needs_json_remove_defaults = True
 
 # build needs_json for every needs-id to make detail panel
@@ -787,10 +788,11 @@ def create_tutorial_needs(app: Sphinx, _env, _docnames):
             content=f"Test case {i}",
         )
         writer.add_need(version, need_item)
-    # TODO ideally we would only write this file if it has changed
-    writer.write_json(
-        needs_file="tutorial_needs.json", needs_path=str(Path(app.confdir, "_static"))
-    )
+    json_str = writer.dump_json()
+    outpath = Path(app.confdir, "_static", "tutorial_needs.json")
+    if outpath.is_file() and outpath.read_text() == json_str:
+        return  # only write this file if it has changed
+    outpath.write_text(json_str)
 
 
 def setup(app: Sphinx):
