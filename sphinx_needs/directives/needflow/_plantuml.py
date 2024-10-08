@@ -74,10 +74,7 @@ def get_need_node_rep_for_plantuml(
             node_colors.append(f"line:{color}")
 
     # need parts style use default "rectangle"
-    if need_info["is_need"]:
-        node_style = need_info["type_style"]
-    else:
-        node_style = "rectangle"
+    node_style = need_info["type_style"] if need_info["is_need"] else "rectangle"
 
     # node representation for plantuml
     need_node_code = '{style} "{node_text}" as {id} [[{link}]] #{color}'.format(

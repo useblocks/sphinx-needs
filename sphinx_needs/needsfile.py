@@ -131,7 +131,7 @@ class NeedsList:
     def update_or_add_version(self, version: str) -> None:
         from sphinx_needs.needs import __version__
 
-        if version not in self.needs_list["versions"].keys():
+        if version not in self.needs_list["versions"]:
             self.needs_list["versions"][version] = {
                 "needs_amount": 0,
                 "needs": {},
@@ -147,7 +147,7 @@ class NeedsList:
             if not self.needs_config.reproducible_json:
                 self.needs_list["versions"][version]["created"] = ""
 
-        if "needs" not in self.needs_list["versions"][version].keys():
+        if "needs" not in self.needs_list["versions"][version]:
             self.needs_list["versions"][version]["needs"] = {}
 
         if not self.needs_config.reproducible_json:

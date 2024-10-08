@@ -136,7 +136,7 @@ class NeedimportDirective(SphinxDirective):
                 raise CorruptedNeedsFile(
                     f"Key 'current_version' missing or corrupted in {correct_need_import_path}"
                 )
-        if version not in needs_import_list["versions"].keys():
+        if version not in needs_import_list["versions"]:
             raise VersionNotFound(
                 f"Version {version} not found in needs import file {correct_need_import_path}"
             )

@@ -127,7 +127,7 @@ extend-select = [
   "SIM", # flake8-simplify
   "UP",  # pyupgrade
 ]
-extend-ignore = ["B904", "ISC001", "ICN001", "N818", "RUF005", "RUF013", "RUF012", "SIM108", "SIM118"]
+extend-ignore = ["B904", "ISC001", "ICN001", "N818", "RUF012"]
 
 [tool.mypy]
 files = "sphinx_needs"

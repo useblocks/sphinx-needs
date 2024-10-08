@@ -60,10 +60,7 @@ def register_func(need_function: DynamicFunction, name: str | None = None) -> No
     if NEEDS_FUNCTIONS is None:
         NEEDS_FUNCTIONS = {}
 
-    if name is None:
-        func_name = need_function.__name__
-    else:
-        func_name = name
+    func_name = need_function.__name__ if name is None else name
 
     if func_name in NEEDS_FUNCTIONS:
         # We can not throw an exception here, as using sphinx-needs in different sphinx-projects with the

@@ -428,7 +428,7 @@ def create_back_links(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
                     if need_id_part and need_id_part in needs[need_id_main]["parts"]:
                         if (
                             option_back
-                            not in needs[need_id_main]["parts"][need_id_part].keys()
+                            not in needs[need_id_main]["parts"][need_id_part]
                         ):
                             needs[need_id_main]["parts"][need_id_part][option_back] = []  # type: ignore[literal-required]
                         needs[need_id_main]["parts"][need_id_part][option_back].append(  # type: ignore[literal-required]
