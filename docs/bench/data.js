@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728380624022,
+  "lastUpdate": 1728383078044,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -10800,6 +10800,42 @@ window.BENCHMARK_DATA = {
             "value": 73.09922308900002,
             "unit": "s",
             "extra": "Commit: 0d5d316c2ceffa8bbbac279ff515e5e582e69793\nBranch: master\nTime: 2024-10-08T11:41:37+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "66853113+pre-commit-ci[bot]@users.noreply.github.com",
+            "name": "pre-commit-ci[bot]",
+            "username": "pre-commit-ci[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4120c18edd9bc63ac071250fa9b6ae22d9f4b25a",
+          "message": "[pre-commit.ci] pre-commit autoupdate (#1319)\n\nCo-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>\r\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2024-10-08T12:22:36+02:00",
+          "tree_id": "a7ccc306ced52f4ebcd376f7834abc89b1e9e89a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/4120c18edd9bc63ac071250fa9b6ae22d9f4b25a"
+        },
+        "date": 1728383066838,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.19570802499998763,
+            "unit": "s",
+            "extra": "Commit: 4120c18edd9bc63ac071250fa9b6ae22d9f4b25a\nBranch: master\nTime: 2024-10-08T12:22:36+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 69.86914613899995,
+            "unit": "s",
+            "extra": "Commit: 4120c18edd9bc63ac071250fa9b6ae22d9f4b25a\nBranch: master\nTime: 2024-10-08T12:22:36+02:00"
           }
         ]
       }
