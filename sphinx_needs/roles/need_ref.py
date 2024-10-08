@@ -106,6 +106,7 @@ def process_need_ref(
             if str(need_id_full) == str(ref_name):
                 ref_name = None
 
+            link_text = ""
             if ref_name and prefix in ref_name and postfix in ref_name:
                 # if ref_name is set and has prefix to process, we will do so.
                 ref_name = ref_name.replace(prefix, "{").replace(postfix, "}")
@@ -115,7 +116,7 @@ def process_need_ref(
                     log_warning(
                         log,
                         f"option placeholder {e} for need {node_need_ref['reftarget']} not found",
-                        None,
+                        "link_text",
                         location=node_need_ref,
                     )
             else:
@@ -125,8 +126,12 @@ def process_need_ref(
                 try:
                     link_text = needs_config.role_need_template.format(**dict_need)
                 except KeyError as e:
-                    link_text = f'"the config parameter needs_role_need_template uses not supported placeholders: {e} "'
-                    log_warning(log, link_text, None, None)
+                    log_warning(
+                        log,
+                        f"the config parameter needs_role_need_template uses unsupported placeholders: {e} ",
+                        "link_text",
+                        location=node_need_ref,
+                    )
 
             node_need_ref[0].children[0] = nodes.Text(link_text)  # type: ignore[index]
 

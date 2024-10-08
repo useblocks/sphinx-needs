@@ -9,7 +9,7 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util.docutils import SphinxDirective
 
-from sphinx_needs.api import add_need
+from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
 from sphinx_needs.debug import measure_time
@@ -83,30 +83,39 @@ class NeedDirective(SphinxDirective):
         for extra_option in NEEDS_CONFIG.extra_options:
             need_extra_options[extra_option] = self.options.get(extra_option, "")
 
-        need_nodes = add_need(
-            self.env.app,
-            self.state,
-            self.env.docname,
-            self.lineno,
-            need_type=self.name,
-            title=title,
-            id=id,
-            content=self.content,
-            lineno_content=self.content_offset + 1,
-            status=status,
-            tags=tags,
-            hide=hide,
-            template=template,
-            pre_template=pre_template,
-            post_template=post_template,
-            collapse=collapse,
-            style=style,
-            layout=layout,
-            delete=delete_opt,
-            jinja_content=jinja_content,
-            constraints=constraints,
-            **need_extra_options,
-        )
+        try:
+            need_nodes = add_need(
+                self.env.app,
+                self.state,
+                self.env.docname,
+                self.lineno,
+                need_type=self.name,
+                title=title,
+                id=id,
+                content=self.content,
+                lineno_content=self.content_offset + 1,
+                status=status,
+                tags=tags,
+                hide=hide,
+                template=template,
+                pre_template=pre_template,
+                post_template=post_template,
+                collapse=collapse,
+                style=style,
+                layout=layout,
+                delete=delete_opt,
+                jinja_content=jinja_content,
+                constraints=constraints,
+                **need_extra_options,
+            )
+        except InvalidNeedException as err:
+            log_warning(
+                LOGGER,
+                f"Need could not be created: {err.message}",
+                "create_need",
+                location=self.get_location(),
+            )
+            return []
         add_doc(self.env, self.env.docname)
         return need_nodes
 

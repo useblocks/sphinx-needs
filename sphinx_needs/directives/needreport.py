@@ -34,7 +34,7 @@ class NeedReportDirective(SphinxDirective):
             log_warning(
                 LOGGER,
                 "No options specified to generate need report",
-                "report",
+                "needreport",
                 location=self.get_location(),
             )
             return []
@@ -73,7 +73,7 @@ class NeedReportDirective(SphinxDirective):
             log_warning(
                 LOGGER,
                 f"Could not load needs report template file {need_report_template_path}",
-                "report",
+                "needreport",
                 location=self.get_location(),
             )
             return []

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import jinja2
 
-from sphinx_needs.api.exceptions import NeedsConstraintFailed, NeedsConstraintNotAllowed
+from sphinx_needs.api.exceptions import NeedsConstraintFailed
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable
 from sphinx_needs.filter_common import filter_single_need
@@ -35,9 +35,7 @@ def process_constraints(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
                 executable_constraints = config_constraints[constraint]
             except KeyError:
                 # Note, this is already checked for in add_need
-                raise NeedsConstraintNotAllowed(
-                    f"Constraint {constraint} of need id {need_id} is not allowed by config value 'needs_constraints'."
-                )
+                continue
 
             # name is check_0, check_1, ...
             for name, cmd in executable_constraints.items():

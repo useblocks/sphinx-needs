@@ -95,7 +95,7 @@ def process_need_incoming(
                 log_warning(
                     logger,
                     f"need {node_need_backref['reftarget']} not found",
-                    None,
+                    "link_ref",
                     location=node_need_backref,
                 )
 

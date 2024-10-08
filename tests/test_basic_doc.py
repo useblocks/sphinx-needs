@@ -11,8 +11,6 @@ from sphinx import version_info
 from sphinx.testing.util import SphinxTestApp
 from syrupy.filters import props
 
-from sphinx_needs.api.need import NeedsNoIdException
-
 
 @pytest.mark.parametrize(
     "test_app",
@@ -150,25 +148,6 @@ def test_build_needs(test_app: SphinxTestApp, snapshot):
     needs_data = json.loads(json_text)
 
     assert needs_data == snapshot(exclude=props("created", "project", "creator"))
-
-
-# Test with needs_id_required=True and missing ids in docs.
-@pytest.mark.parametrize(
-    "test_app",
-    [
-        {
-            "buildername": "html",
-            "srcdir": "doc_test/doc_basic",
-            "confoverrides": {"needs_id_required": True},
-            "no_plantuml": True,
-        }
-    ],
-    indirect=True,
-)
-def test_id_required_build_html(test_app: SphinxTestApp):
-    with pytest.raises(NeedsNoIdException):
-        app = test_app
-        app.build()
 
 
 def test_sphinx_api_build(tmp_path: Path, make_app: type[SphinxTestApp]):
