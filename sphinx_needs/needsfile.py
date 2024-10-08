@@ -131,7 +131,7 @@ class NeedsList:
     def update_or_add_version(self, version: str) -> None:
         from sphinx_needs.needs import __version__
 
-        if version not in self.needs_list["versions"].keys():
+        if version not in self.needs_list["versions"]:
             self.needs_list["versions"][version] = {
                 "needs_amount": 0,
                 "needs": {},
@@ -147,7 +147,7 @@ class NeedsList:
             if not self.needs_config.reproducible_json:
                 self.needs_list["versions"][version]["created"] = ""
 
-        if "needs" not in self.needs_list["versions"][version].keys():
+        if "needs" not in self.needs_list["versions"][version]:
             self.needs_list["versions"][version]["needs"] = {}
 
         if not self.needs_config.reproducible_json:
@@ -185,10 +185,7 @@ class NeedsList:
             self.needs_list.pop("created", None)
         self.needs_list["current_version"] = self.current_version
         self.needs_list["project"] = self.project
-        if needs_path:
-            needs_dir = needs_path
-        else:
-            needs_dir = self.outdir
+        needs_dir = needs_path if needs_path else self.outdir
 
         with open(os.path.join(needs_dir, needs_file), "w") as f:
             json.dump(self.needs_list, f, sort_keys=True)

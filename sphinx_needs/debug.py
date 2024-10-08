@@ -76,10 +76,7 @@ def measure_time(
 
             runtime = end - start
 
-            if name is None:
-                mt_name = func.__name__
-            else:
-                mt_name = name
+            mt_name = func.__name__ if name is None else name
 
             mt_id = f"{category}_{func.__name__}"
 

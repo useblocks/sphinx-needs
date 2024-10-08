@@ -307,7 +307,7 @@ class LayoutHandler:
             }
 
     def get_need_table(self) -> nodes.table:
-        if self.layout["grid"] not in self.grids.keys():
+        if self.layout["grid"] not in self.grids:
             raise SphinxNeedLayoutException(
                 "Unknown layout-grid: {}. Supported are {}".format(
                     self.layout["grid"], ", ".join(self.grids.keys())
@@ -630,10 +630,7 @@ class LayoutHandler:
         ]
 
         if exclude is None or not isinstance(exclude, list):
-            if defaults:
-                exclude = default_excludes
-            else:
-                exclude = []
+            exclude = default_excludes if defaults else []
         elif defaults:
             exclude += default_excludes
 
@@ -642,7 +639,7 @@ class LayoutHandler:
             link_names += [x["option"] + "_back" for x in self.needs_config.extra_links]
             exclude += link_names
         data_container = nodes.inline()
-        for data in self.need.keys():
+        for data in self.need:
             if data in exclude:
                 continue
 

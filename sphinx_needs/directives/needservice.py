@@ -86,14 +86,14 @@ class NeedserviceDirective(SphinxDirective):
 
                 content.extend(self.content)
 
-                if "type" not in datum.keys():
+                if "type" not in datum:
                     # Use the first defined type, if nothing got defined by service (should not be the case)
                     need_type = need_types[0]["directive"]
                 else:
                     need_type = datum["type"]
                     del datum["type"]
 
-                if "title" not in datum.keys():
+                if "title" not in datum:
                     need_title = ""
                 else:
                     need_title = datum["title"]
@@ -102,7 +102,7 @@ class NeedserviceDirective(SphinxDirective):
                 # We need to check if all given options from services are really available as configured
                 # extra_option or extra_link
                 missing_options = {}
-                for element in datum.keys():
+                for element in datum:
                     defined_options = list(self.__class__.option_spec.keys())
                     defined_options.append(
                         "content"

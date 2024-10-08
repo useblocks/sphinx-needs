@@ -80,7 +80,7 @@ class GithubService(BaseService):
         if "gh_type" in kwargs:
             self.gh_type = kwargs["gh_type"]
 
-        if self.gh_type not in self.gh_type_config.keys():
+        if self.gh_type not in self.gh_type_config:
             raise KeyError(
                 'github type "{}" not supported. Use: {}'.format(
                     self.gh_type, ", ".join(self.gh_type_config.keys())
@@ -131,11 +131,8 @@ class GithubService(BaseService):
         self.log.info(f"Service {self.name} requesting data for query: {query}")
 
         auth: tuple[str, str] | None
-        if self.username:
-            # TODO token can be None
-            auth = (self.username, self.token)  # type: ignore
-        else:
-            auth = None
+        # TODO token can be None
+        auth = (self.username, self.token) if self.username else None  # type: ignore
 
         resp = requests.get(url, params=params, auth=auth, headers=headers)
 
@@ -387,7 +384,7 @@ class GithubService(BaseService):
         """
         for key, value in options.items():
             # Check if given option is not already handled and is not part of the service internal options
-            if key not in element_data.keys() and key not in GITHUB_DATA:
+            if key not in element_data and key not in GITHUB_DATA:
                 element_data[key] = value
 
 

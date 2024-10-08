@@ -759,7 +759,7 @@ def _merge_extra_options(
     for key in needs_extra_options:
         if key in extra_keys:
             needs_info[key] = str(needs_kwargs[key])
-        elif key not in needs_info.keys():
+        elif key not in needs_info:
             # Finally add all not used extra options with empty value to need_info.
             # Needed for filters, which need to access these empty/not used options.
             needs_info[key] = ""
@@ -798,14 +798,14 @@ def _merge_global_options(
                 # Set value, if filter has matched
                 needs_info[key] = single_value[0]
             elif len(single_value) == 3 and (
-                key not in needs_info.keys() or len(str(needs_info[key])) > 0
+                key not in needs_info or len(str(needs_info[key])) > 0
             ):
                 # Otherwise set default, but only if no value was set before or value is "" and a default is defined
                 needs_info[key] = single_value[2]
             else:
                 # If not value was set until now, we have to set an empty value, so that we are sure that each need
                 # has at least the key.
-                if key not in needs_info.keys():
+                if key not in needs_info:
                     needs_info[key] = ""
 
 
