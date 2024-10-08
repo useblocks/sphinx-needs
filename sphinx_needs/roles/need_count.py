@@ -59,7 +59,7 @@ def process_need_count(
                         need_list, needs_config, filters[1], location=node_need_count
                     )
                 )
-                amount = f"{amount_1 / amount_2 * 100:2.1f}"
+                amount = "inf" if amount_2 == 0 else f"{amount_1 / amount_2 * 100:2.1f}"
             elif len(filters) > 2:
                 raise NeedsInvalidFilter(
                     "Filter not valid. Got too many filter elements. Allowed are 1 or 2. "
