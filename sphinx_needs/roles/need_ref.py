@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 from collections.abc import Iterable
+from typing import Any
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -38,17 +39,21 @@ def transform_need_to_dict(need: NeedsInfoType) -> dict[str, str]:
     dict_need = {}
 
     for element, value in need.items():
-        if isinstance(value, str):
-            # As string are iterable, we have to handle strings first.
-            dict_need[element] = value
-        elif isinstance(value, dict):
-            dict_need[element] = ";".join([str(i) for i in value.items()])
-        elif isinstance(value, (Iterable, list, tuple)):
-            dict_need[element] = ";".join([str(i) for i in value])
-        else:
-            dict_need[element] = str(value)
+        dict_need[element] = value_to_string(value)
 
     return dict_need
+
+
+def value_to_string(value: Any) -> str:
+    if isinstance(value, str):
+        # As string are iterable, we have to handle strings first.
+        return value
+    elif isinstance(value, dict):
+        return ";".join([str(i) for i in value.items()])
+    elif isinstance(value, (Iterable, list, tuple)):
+        return ";".join([str(i) for i in value])
+
+    return str(value)
 
 
 def process_need_ref(

@@ -18,7 +18,9 @@ from sphinx_needs.diagrams_common import calculate_link
 from sphinx_needs.directives.needflow._plantuml import make_entity_name
 from sphinx_needs.filter_common import filter_needs_view
 from sphinx_needs.logging import log_warning
-from sphinx_needs.utils import add_doc, logger
+from sphinx_needs.roles.need_part import create_need_from_part
+from sphinx_needs.roles.need_ref import value_to_string
+from sphinx_needs.utils import add_doc, logger, split_need_id
 
 if TYPE_CHECKING:
     from sphinxcontrib.plantuml import plantuml
@@ -401,24 +403,34 @@ class JinjaFunctions:
     def ref(
         self, need_id: str, option: None | str = None, text: None | str = None
     ) -> str:
-        if need_id not in self.needs:
+        need_id_main, need_id_part = split_need_id(need_id)
+
+        if need_id_main not in self.needs:
             raise NeedumlException(
-                f"Jinja function ref is called with undefined need_id: '{need_id}'."
+                f"Jinja function ref is called with undefined need_id: '{need_id_main}'."
             )
         if (option and text) and (not option and not text):
             raise NeedumlException(
                 "Jinja function ref requires exactly one entry 'option' or 'text'"
             )
 
-        need_info = self.needs[need_id]
+        need_info = self.needs[need_id_main]
+
+        if need_id_part:
+            if need_id_part not in need_info["parts"]:
+                raise NeedumlException(
+                    f"Jinja function ref is called with undefined need_id part: '{need_id}'."
+                )
+            need_info = create_need_from_part(
+                need_info, need_info["parts"][need_id_part]
+            )
+
         link = calculate_link(self.app, need_info, self.fromdocname)
+        link_text = (
+            value_to_string(need_info.get(option, "")) if option else str(text or "")
+        ).strip()
 
-        need_uml = "[[{link} {content}]]".format(
-            link=link,
-            content=need_info.get(option, "") if option else text,
-        )
-
-        return need_uml
+        return f"[[{link}{' ' if link_text else ''}{link_text}]]"
 
     def filter(self, filter_string: str) -> list[NeedsInfoType]:
         """
