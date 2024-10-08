@@ -222,8 +222,8 @@ def process_needflow_plantuml(
                         flow=current_needflow["target_id"],
                         link_types=",".join(link_type_names),
                     ),
-                    None,
-                    None,
+                    "needflow",
+                    location=node,
                 )
 
         # compute the allowed link names

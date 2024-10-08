@@ -149,8 +149,6 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
             "additionalProperties": {"type": "string"},
             "default": {},
         },
-        "exclude_external": True,
-        "exclude_import": True,
     },
     "is_external": {
         "description": "If true, no node is created and need is referencing external url.",
@@ -231,8 +229,6 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
             "additionalProperties": {"type": "object"},
             "default": {},
         },
-        "exclude_external": True,
-        "exclude_import": True,
     },
     "id_parent": {
         "description": "<parent ID>, or <self ID> if not a part.",

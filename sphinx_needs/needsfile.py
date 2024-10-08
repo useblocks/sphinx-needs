@@ -177,28 +177,33 @@ class NeedsList:
         if version in self.needs_list["versions"]:
             del self.needs_list["versions"][version]
 
-    def write_json(self, needs_file: str = "needs.json", needs_path: str = "") -> None:
-        # We need to rewrite some data, because this kind of data gets overwritten during needs.json import.
+    def _finalise(self) -> None:
+        # We need to rewrite some data, because this kind of data gets overwritten during needs.json import
         if not self.needs_config.reproducible_json:
             self.needs_list["created"] = datetime.now().isoformat()
         else:
             self.needs_list.pop("created", None)
         self.needs_list["current_version"] = self.current_version
         self.needs_list["project"] = self.project
-        if needs_path:
-            needs_dir = needs_path
-        else:
-            needs_dir = self.outdir
 
+    def write_json(self, needs_file: str = "needs.json", needs_path: str = "") -> None:
+        self._finalise()
+        needs_dir = needs_path if needs_path else self.outdir
         with open(os.path.join(needs_dir, needs_file), "w") as f:
             json.dump(self.needs_list, f, sort_keys=True)
+
+    def dump_json(self) -> str:
+        self._finalise()
+        return json.dumps(self.needs_list, sort_keys=True)
 
     def load_json(self, file: str) -> None:
         if not os.path.isabs(file):
             file = os.path.join(self.confdir, file)
 
         if not os.path.exists(file):
-            log_warning(self.log, f"Could not load needs json file {file}", None, None)
+            log_warning(
+                self.log, f"Could not load needs json file {file}", "json_load", None
+            )
         else:
             errors = check_needs_file(file)
             # We only care for schema errors here, all other possible errors
@@ -213,7 +218,10 @@ class NeedsList:
                     needs_list = json.load(needs_file)
                 except json.JSONDecodeError:
                     log_warning(
-                        self.log, f"Could not decode json file {file}", None, None
+                        self.log,
+                        f"Could not decode json file {file}",
+                        "json_load",
+                        None,
                     )
                 else:
                     self.needs_list = needs_list

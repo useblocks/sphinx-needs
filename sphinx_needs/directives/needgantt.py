@@ -259,7 +259,7 @@ def process_needgantt(
                         logger,
                         "Duration not set or invalid for needgantt chart. "
                         f"Need: {need['id']!r}{need_location}. Duration: {duration!r}",
-                        "gantt",
+                        "needgantt",
                         location=node,
                     )
                     duration = 1

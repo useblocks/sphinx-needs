@@ -116,8 +116,8 @@ def process_needsequence(
                         flow=current_needsequence["target_id"],
                         link_types=",".join(link_type_names),
                     ),
-                    None,
-                    None,
+                    "needsequence",
+                    location=node,
                 )
 
         content = []

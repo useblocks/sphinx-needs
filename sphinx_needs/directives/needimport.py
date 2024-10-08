@@ -12,7 +12,7 @@ from docutils.parsers.rst import directives
 from requests_file import FileAdapter
 from sphinx.util.docutils import SphinxDirective
 
-from sphinx_needs.api import add_need
+from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, NeedsInfoType
 from sphinx_needs.debug import measure_time
@@ -98,7 +98,7 @@ class NeedimportDirective(SphinxDirective):
                             "Deprecation warning: Relative path must be relative to the current document in future, "
                             "not to the conf.py location. Use a starting '/', like '/needs.json', to make the path "
                             "relative to conf.py.",
-                            None,
+                            "deprecated",
                             location=(self.env.docname, self.lineno),
                         )
             else:
@@ -181,7 +181,7 @@ class NeedimportDirective(SphinxDirective):
                     log_warning(
                         logger,
                         f"needimport: Filter {filter_string} not valid. Error: {e}. {self.docname}{self.lineno}",
-                        None,
+                        "needimport",
                         location=(self.env.docname, self.lineno),
                     )
 
@@ -252,14 +252,23 @@ class NeedimportDirective(SphinxDirective):
             )  # type: ignore[misc]
 
             # Replace id, to get unique ids
-            need_params["id"] = id_prefix + need_params["id"]
+            need_id = need_params["id"] = id_prefix + need_params["id"]
 
             # override location
             need_params["docname"] = self.docname
             need_params["lineno"] = self.lineno
 
-            nodes = add_need(self.env.app, self.state, **need_params)  # type: ignore[call-arg]
-            need_nodes.extend(nodes)
+            try:
+                nodes = add_need(self.env.app, self.state, **need_params)  # type: ignore[call-arg]
+            except InvalidNeedException as err:
+                log_warning(
+                    logger,
+                    f"Need {need_id!r} could not be imported: {err.message}",
+                    "import_need",
+                    location=self.get_location(),
+                )
+            else:
+                need_nodes.extend(nodes)
 
         if unknown_keys:
             log_warning(

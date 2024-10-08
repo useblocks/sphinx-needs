@@ -158,7 +158,7 @@ class LinkOptionsType(TypedDict, total=False):
     outgoing: str
     """The outgoing link title"""
     copy: bool
-    """Copy to common links data. Default: True"""
+    """Copy to common links data. Default: False"""
     color: str
     """Used for needflow. Default: #000000"""
     style: str

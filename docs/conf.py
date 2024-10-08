@@ -49,6 +49,7 @@ nitpick_ignore = [
     ("py:class", "docutils.statemachine.StringList"),
     ("py:class", "sphinx_needs.debug.T"),
     ("py:class", "sphinx_needs.views._LazyIndexes"),
+    ("py:class", "sphinx_needs.config.NeedsSphinxConfig"),
 ]
 
 rst_epilog = """
@@ -643,6 +644,7 @@ needs_render_context = {
 
 # build needs.json to make permalinks work
 needs_build_json = True
+needs_reproducible_json = True
 needs_json_remove_defaults = True
 
 # build needs_json for every needs-id to make detail panel
@@ -699,16 +701,34 @@ DEFAULT_DIAGRAM_TEMPLATE = "<size:12>{{type_name}}</size>\\n**{{title|wordwrap(1
 # needs_report_template = "/needs_templates/report_template.need"   # Use custom report template
 
 # -- custom extensions ---------------------------------------
+from typing import get_args  # noqa: E402
 
 from docutils import nodes  # noqa: E402
+from docutils.statemachine import StringList  # noqa: E402
 from sphinx.application import Sphinx  # noqa: E402
 from sphinx.directives import SphinxDirective  # noqa: E402
 from sphinx.roles import SphinxRole  # noqa: E402
 
-from sphinx_needs.api.need import add_external_need  # noqa: E402
+from sphinx_needs.api import generate_need  # noqa: E402
 from sphinx_needs.config import NeedsSphinxConfig  # noqa: E402
-from sphinx_needs.data import SphinxNeedsData  # noqa: E402
+from sphinx_needs.logging import (  # noqa: E402
+    WarningSubTypeDescription,
+    WarningSubTypes,
+)
 from sphinx_needs.needsfile import NeedsList  # noqa: E402
+
+
+class NeedsWarningsDirective(SphinxDirective):
+    """Directive to list all extension warning subtypes."""
+
+    def run(self):
+        parsed = nodes.container(classes=["needs-warnings"])
+        content = [
+            f"- ``needs.{name}`` {WarningSubTypeDescription.get(name, '')}"
+            for name in get_args(WarningSubTypes)
+        ]
+        self.state.nested_parse(StringList(content), self.content_offset, parsed)
+        return [parsed]
 
 
 class NeedExampleDirective(SphinxDirective):
@@ -757,30 +777,26 @@ def create_tutorial_needs(app: Sphinx, _env, _docnames):
 
     We do this dynamically, to avoid having to maintain the JSON file manually.
     """
-    all_data = SphinxNeedsData(app.env).get_needs_mutable()
+    needs_config = NeedsSphinxConfig(app.config)
     writer = NeedsList(app.config, outdir=app.confdir, confdir=app.confdir)
     for i in range(1, 5):
-        test_id = f"T_00{i}"
-        # TODO really here we don't want to create the data, without actually adding it to the needs
-        if test_id in all_data:
-            data = all_data[test_id]
-        else:
-            add_external_need(
-                app,
-                "tutorial-test",
-                id=test_id,
-                title=f"Unit test {i}",
-                content=f"Test case {i}",
-            )
-            data = all_data.pop(test_id)
-        writer.add_need(version, data)
-    # TODO ideally we would only write this file if it has changed (also needimport should add dependency on file)
-    writer.write_json(
-        needs_file="tutorial_needs.json", needs_path=str(Path(app.confdir, "_static"))
-    )
+        need_item = generate_need(
+            needs_config,
+            need_type="tutorial-test",
+            id=f"T_00{i}",
+            title=f"Unit test {i}",
+            content=f"Test case {i}",
+        )
+        writer.add_need(version, need_item)
+    json_str = writer.dump_json()
+    outpath = Path(app.confdir, "_static", "tutorial_needs.json")
+    if outpath.is_file() and outpath.read_text() == json_str:
+        return  # only write this file if it has changed
+    outpath.write_text(json_str)
 
 
 def setup(app: Sphinx):
     app.add_directive("need-example", NeedExampleDirective)
+    app.add_directive("need-warnings", NeedsWarningsDirective)
     app.add_role("need_config_default", NeedConfigDefaultRole())
     app.connect("env-before-read-docs", create_tutorial_needs, priority=600)

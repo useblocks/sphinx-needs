@@ -211,7 +211,7 @@ def process_filters(
             )
         else:
             log_warning(
-                log, "Something went wrong running filter", None, location=location
+                log, "Something went wrong running filter", "filter", location=location
             )
             return []
 
@@ -235,7 +235,7 @@ def process_filters(
             log_warning(
                 log,
                 f"Sorting parameter {sort_key} not valid: Error: {e}",
-                None,
+                "filter",
                 location=location,
             )
             return []

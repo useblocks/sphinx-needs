@@ -126,7 +126,7 @@ def extend_needs_data(
                 log_warning(
                     logger,
                     error,
-                    "extend",
+                    "needextend",
                     location=(
                         current_needextend["docname"],
                         current_needextend["lineno"],
@@ -149,7 +149,7 @@ def extend_needs_data(
                 log_warning(
                     logger,
                     f"Invalid filter {need_filter!r}: {e}",
-                    "extend",
+                    "needextend",
                     location=(
                         current_needextend["docname"],
                         current_needextend["lineno"],
@@ -172,7 +172,7 @@ def extend_needs_data(
                                 log_warning(
                                     logger,
                                     f"Provided link id {item} for needextend does not exist.",
-                                    None,
+                                    "needextend",
                                     location=(
                                         current_needextend["docname"],
                                         current_needextend["lineno"],
@@ -207,7 +207,7 @@ def extend_needs_data(
                                 log_warning(
                                     logger,
                                     f"Provided link id {item} for needextend does not exist.",
-                                    None,
+                                    "needextend",
                                     location=(
                                         current_needextend["docname"],
                                         current_needextend["lineno"],

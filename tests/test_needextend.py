@@ -62,7 +62,7 @@ def test_doc_needextend_unknown_id(test_app: Sphinx):
 
     warnings = strip_colors(app._warning.getvalue()).splitlines()
     assert warnings == [
-        f"{Path(str(app.srcdir)) / 'index.rst'}:19: WARNING: Provided id 'unknown_id' for needextend does not exist. [needs.extend]"
+        f"{Path(str(app.srcdir)) / 'index.rst'}:19: WARNING: Provided id 'unknown_id' for needextend does not exist. [needs.needextend]"
     ]
 
 
