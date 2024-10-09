@@ -52,7 +52,8 @@ Improved warnings
 
 sphinx-needs is designed to be durable and only except when absolutely necessary.
 Any non-fatal issues during the build are logged as Sphinx warnings.
-The warnings types have been improved and consolidated to provide more information and context, see :ref:`config-warnings` for more information.
+The warnings types have been improved and stabilised to provide more information and context, see :ref:`config-warnings` for more information.
+
 Additionally, the :func:`.add_need` function will now only raise the singular exception :class:`.InvalidNeedException` for all need creation issues.
 
 Key changes were made in:
