@@ -69,7 +69,7 @@ sphinx-design = { version="^0.6", optional = true }
 # [project.optional-dependencies.theme-im]
 sphinx-immaterial = { version="^0.11.11", optional = true }
 # [project.optional-dependencies.theme-furo]
-furo = { version="^2024.5.4", optional = true }
+furo = { version="^2024.8.6", optional = true }
 # [project.optional-dependencies.theme-pds]
 pydata-sphinx-theme = { version="^0.15.2", optional = true }
 # [project.optional-dependencies.theme-rtd]
