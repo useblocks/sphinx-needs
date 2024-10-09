@@ -82,30 +82,30 @@ See :pr:`1269` and :pr:`1266` for more information.
 Removed deprecation
 ~~~~~~~~~~~~~~~~~~~
 
-The deprecated `needfilter` directive is now removed (:pr:`1308`)
+The deprecated ``needfilter`` directive is now removed (:pr:`1308`)
 
 New and improved features
 .........................
 
-- ✨ add `tags` option for `list2need` directive in :pr:`1296`
-- ✨ Add `ids` option for `needimport` in :pr:`1292`
-- 👌 Allow `ref` in `neeuml` to handle need parts in :pr:`1222`
+- ✨ add ``tags`` option for ``list2need`` directive in :pr:`1296`
+- ✨ Add ``ids`` option for ``needimport`` in :pr:`1292`
+- 👌 Allow ``ref`` in ``neeuml`` to handle need parts in :pr:`1222`
 - 👌 Improve parsing of need option lists with dynamic functions in :pr:`1272`
-- 🔧 Set `env_version` for sphinx extension in :pr:`1313`
+- 🔧 Set ``env_version`` for sphinx extension in :pr:`1313`
 
 Bug Fixes
 .........
 
-- 🐛 Fix removal of `Needextend` nodes in :pr:`1298`
-- 🐛 Fix `usage` numbers  in `needreport` in :pr:`1285`
-- 🐛 Fix `parent_need` propagation from external/imported needs in :pr:`1286`
-- 🐛 Fix `need_part` with multi-line content in :pr:`1284`
-- 🐛 Fix dynamic functions in `needextract` need in :pr:`1273`
-- 🐛 Disallow dynamic functions `[[..]]` in literal content in :pr:`1263`
+- 🐛 Fix removal of ``Needextend`` nodes in :pr:`1298`
+- 🐛 Fix ``usage`` numbers  in ``needreport`` in :pr:`1285`
+- 🐛 Fix ``parent_need`` propagation from external/imported needs in :pr:`1286`
+- 🐛 Fix ``need_part`` with multi-line content in :pr:`1284`
+- 🐛 Fix dynamic functions in ``needextract`` need in :pr:`1273`
+- 🐛 Disallow dynamic functions ``[[..]]`` in literal content in :pr:`1263`
 - 🐛 fix parts defined in nested needs in :pr:`1265`
-- 🐛 Handle malformed `filter-func` option value in :pr:`1254`
-- 🐛 Pass `needs` to `highlight` filter of `graphviz` `needflow` in :pr:`1274`
-- 🐛 Fix parts title for `needflow` with `graphviz` engine in :pr:`1280`
+- 🐛 Handle malformed ``filter-func`` option value in :pr:`1254`
+- 🐛 Pass ``needs`` to ``highlight`` filter of ``graphviz`` `needflow` in :pr:`1274`
+- 🐛 Fix parts title for ``needflow`` with ``graphviz`` engine in :pr:`1280`
 
 3.0.0
 -----
