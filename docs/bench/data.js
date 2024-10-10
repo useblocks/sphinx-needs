@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728568401544,
+  "lastUpdate": 1728574513087,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -11016,6 +11016,42 @@ window.BENCHMARK_DATA = {
             "value": 69.70232307,
             "unit": "s",
             "extra": "Commit: 2c5fbffadaeb0e9630a756923685ff9e5c0630dc\nBranch: master\nTime: 2024-10-10T15:51:17+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f59bcd66271d7f904d2dd1de664d54837df83251",
+          "message": "🐛 Fix plantuml top-level import (#1328)\n\n`sphinxcontrib.plantuml` is optional, should not be a top-level import",
+          "timestamp": "2024-10-10T17:33:14+02:00",
+          "tree_id": "aaed35c2611d0e700cd281f4a53fa2ac86be365f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f59bcd66271d7f904d2dd1de664d54837df83251"
+        },
+        "date": 1728574501273,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21054740099998526,
+            "unit": "s",
+            "extra": "Commit: f59bcd66271d7f904d2dd1de664d54837df83251\nBranch: master\nTime: 2024-10-10T17:33:14+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 68.50708065799998,
+            "unit": "s",
+            "extra": "Commit: f59bcd66271d7f904d2dd1de664d54837df83251\nBranch: master\nTime: 2024-10-10T17:33:14+02:00"
           }
         ]
       }
