@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728564238104,
+  "lastUpdate": 1728568401544,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -10980,6 +10980,42 @@ window.BENCHMARK_DATA = {
             "value": 70.52536948899998,
             "unit": "s",
             "extra": "Commit: 6c97c47002a09c197da1a4969bded6028a5fb337\nBranch: master\nTime: 2024-10-10T14:41:45+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2c5fbffadaeb0e9630a756923685ff9e5c0630dc",
+          "message": "📚 Docs: Fix API package (#1327)",
+          "timestamp": "2024-10-10T15:51:17+02:00",
+          "tree_id": "743fb37955edd3c21621ce3cb9352220429b016b",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/2c5fbffadaeb0e9630a756923685ff9e5c0630dc"
+        },
+        "date": 1728568388052,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.19958240699999408,
+            "unit": "s",
+            "extra": "Commit: 2c5fbffadaeb0e9630a756923685ff9e5c0630dc\nBranch: master\nTime: 2024-10-10T15:51:17+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 69.70232307,
+            "unit": "s",
+            "extra": "Commit: 2c5fbffadaeb0e9630a756923685ff9e5c0630dc\nBranch: master\nTime: 2024-10-10T15:51:17+02:00"
           }
         ]
       }
