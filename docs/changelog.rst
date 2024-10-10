@@ -7,7 +7,7 @@ Changelog
 -----
 
 :Released: 09.10.2024
-:Full Changelog: `v3.0.0...v4.0.0 <https://github.com/useblocks/sphinx-needs/compare/3.0.0...fa937f23>`__
+:Full Changelog: `v3.0.0...v4.0.0 <https://github.com/useblocks/sphinx-needs/compare/3.0.0...067009e3b424216b2d172dfe6b94ba2e13e829ff>`__
 
 Breaking Changes
 ................
@@ -92,6 +92,7 @@ New and improved features
 - ✨ Add ``ids`` option for ``needimport`` in :pr:`1292`
 - 👌 Allow ``ref`` in ``needuml`` to handle need parts in :pr:`1222`
 - 👌 Improve parsing of need option lists with dynamic functions in :pr:`1272`
+- 👌 Improve warning for needextract incompatibility with external needs in :pr:`1325`
 - 🔧 Set ``env_version`` for sphinx extension in :pr:`1313`
 
 Bug Fixes
@@ -107,6 +108,7 @@ Bug Fixes
 - 🐛 Handle malformed ``filter-func`` option value in :pr:`1254`
 - 🐛 Pass ``needs`` to ``highlight`` filter of ``graphviz`` `needflow` in :pr:`1274`
 - 🐛 Fix parts title for ``needflow`` with ``graphviz`` engine in :pr:`1280`
+- 🐛 Fix ``need_count`` division by 0 in :pr:`1324`
 
 3.0.0
 -----
