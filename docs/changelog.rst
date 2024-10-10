@@ -3,6 +3,113 @@
 Changelog
 =========
 
+4.0.0
+-----
+
+:Released: 09.10.2024
+:Full Changelog: `v3.0.0...v4.0.0 <https://github.com/useblocks/sphinx-needs/compare/3.0.0...067009e3b424216b2d172dfe6b94ba2e13e829ff>`__
+
+Breaking Changes
+................
+
+This commit contains a number of breaking changes:
+
+Improvements to filtering at scale
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For large projects, the filtering of needs in analytical directives such as :ref:`needtable`, :ref:`needuml`, etc, can be slow due to
+requiring an ``O(N)`` scan of all needs to determine which to include.
+
+To address this, the storage of needs has been refactored to allow for pre-indexing of common need keys, such as ``id``, ``status``, ``tags``, etc, after the read/collection phase.
+Filter strings such as ``id == "my_id"`` are then pre-processed to take advantage of these indexes and allow for ``O(1)`` filtering of needs, see the :ref:`filter_string_performance` section for more information.
+
+This change has required changes to the internal API and stricter control on the access to and modification of need data, which may affect custom extensions that modified needs data directly:
+
+- Access to internal data from the Sphinx `env` object has been made private
+- Needs data during the write phase is exposed with either the read-only :class:`.NeedsView` or :class:`.NeedsAndPartsListView`, depending on the context.
+- Access to needs data, during the write phase, can now be achieved via :func:`.get_needs_view`
+- Access to mutable needs should generally be avoided outside of the formal means, but for back-compatibility the following :external+sphinx:ref:`Sphinx event callbacks <events>` are now available:
+
+  - ``needs-before-post-processing``: callbacks ``func(app, needs)`` are called just before the needs are post-processed (e.g. processing dynamic functions and back links)
+  - ``needs-before-sealing``: callbacks ``func(app, needs)`` just after post-processing, and before the needs are changed to read-only
+
+Additionally, to identify any long running filters,
+the :ref:`needs_uml_process_max_time`, :ref:`needs_filter_max_time` and :ref:`needs_debug_filters` configuration options have been added.
+
+Key changes were made in: 
+
+- ♻️ Replace need dicts/lists with views (with fast filtering) in :pr:`1281`
+- 🔧 split ``filter_needs`` func by needs type in :pr:`1276`
+- 🔧 Make direct access to ``env`` attributes private in :pr:`1310`
+- 👌 Move sorting to end of ``process_filters`` in :pr:`1257`
+- 🔧 Improve ``process_filters`` function in :pr:`1256`
+- 🔧 Improve internal API for needs access in :pr:`1255`
+- 👌 Add ``needs_uml_process_max_time`` configuration in :pr:`1314`
+- ♻️ Add ``needs_filter_max_time`` / ``needs_debug_filters``, deprecate ``export_id`` in :pr:`1309`
+
+Improved warnings
+~~~~~~~~~~~~~~~~~
+
+sphinx-needs is designed to be durable and only except when absolutely necessary.
+Any non-fatal issues during the build are logged as Sphinx warnings.
+The warnings types have been improved and stabilised to provide more information and context, see :ref:`config-warnings` for more information.
+
+Additionally, the :func:`.add_need` function will now only raise the singular exception :class:`.InvalidNeedException` for all need creation issues.
+
+Key changes were made in:
+
+- 👌 Warn on unknown need keys in external/import sources in :pr:`1316`
+- ♻️  Extract ``generate_need`` from ``add_need`` & consolidate warnings in :pr:`1318`
+
+Improved ``needs.json``
+~~~~~~~~~~~~~~~~~~~~~~~
+
+A  number of output need fields have been changed, to simplify the output.
+Key changes were made in:
+
+- 🔧  change type of need fields with ``bool | None`` to just ``bool`` in :pr:`1293`
+- ♻️ Remove ``target_id`` core need field in :pr:`1315`
+- ♻️ Output ``content`` in ``needs.json`` not ``description`` in :pr:`1312`
+- 👌 Add ``creator`` key to ``needs.json`` in :pr:`1311`
+
+Replacement of ``[[...]]`` and ``need_func`` in need content
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The parsing of the ``[[...]]`` dynamic function syntax in need content could cause confusion and unexpected behaviour.
+This has been deprecated in favour of the new, more explicit :ref:`ndf role <ndf>`, which also deprecates the ``need_func`` role.
+
+See :pr:`1269` and :pr:`1266` for more information.
+
+Removed deprecation
+~~~~~~~~~~~~~~~~~~~
+
+The deprecated ``needfilter`` directive is now removed (:pr:`1308`)
+
+New and improved features
+.........................
+
+- ✨ add ``tags`` option for ``list2need`` directive in :pr:`1296`
+- ✨ Add ``ids`` option for ``needimport`` in :pr:`1292`
+- 👌 Allow ``ref`` in ``needuml`` to handle need parts in :pr:`1222`
+- 👌 Improve parsing of need option lists with dynamic functions in :pr:`1272`
+- 👌 Improve warning for needextract incompatibility with external needs in :pr:`1325`
+- 🔧 Set ``env_version`` for sphinx extension in :pr:`1313`
+
+Bug Fixes
+.........
+
+- 🐛 Fix removal of ``Needextend`` nodes in :pr:`1298`
+- 🐛 Fix ``usage`` numbers  in ``needreport`` in :pr:`1285`
+- 🐛 Fix ``parent_need`` propagation from external/imported needs in :pr:`1286`
+- 🐛 Fix ``need_part`` with multi-line content in :pr:`1284`
+- 🐛 Fix dynamic functions in ``needextract`` need in :pr:`1273`
+- 🐛 Disallow dynamic functions ``[[..]]`` in literal content in :pr:`1263`
+- 🐛 fix parts defined in nested needs in :pr:`1265`
+- 🐛 Handle malformed ``filter-func`` option value in :pr:`1254`
+- 🐛 Pass ``needs`` to ``highlight`` filter of ``graphviz`` `needflow` in :pr:`1274`
+- 🐛 Fix parts title for ``needflow`` with ``graphviz`` engine in :pr:`1280`
+- 🐛 Fix ``need_count`` division by 0 in :pr:`1324`
+
 3.0.0
 -----
 

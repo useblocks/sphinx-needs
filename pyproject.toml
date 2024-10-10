@@ -2,7 +2,7 @@
 name = "sphinx-needs"
 
 # !! Don't miss updates in sphinx_needs.__version__, changelog.rst, and .github/workflows/docker !!!
-version = "3.0.0"
+version = "4.0.0"
 
 description = "Sphinx needs extension for managing needs/requirements and specifications"
 authors = ["team useblocks <info@useblocks.com>"]
@@ -69,7 +69,7 @@ sphinx-design = { version="^0.6", optional = true }
 # [project.optional-dependencies.theme-im]
 sphinx-immaterial = { version="^0.11.11", optional = true }
 # [project.optional-dependencies.theme-furo]
-furo = { version="^2024.5.4", optional = true }
+furo = { version="^2024.8.6", optional = true }
 # [project.optional-dependencies.theme-pds]
 pydata-sphinx-theme = { version="^0.15.2", optional = true }
 # [project.optional-dependencies.theme-rtd]
