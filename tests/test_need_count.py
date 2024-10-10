@@ -15,3 +15,5 @@ def test_doc_need_count(test_app):
     assert "result_1-3" in html
     assert "result_2-2" in html
     assert "result_3-4" in html
+    assert "result_4-1" in html
+    assert "result_5-inf" in html

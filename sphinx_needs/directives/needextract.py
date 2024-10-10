@@ -174,12 +174,11 @@ def _build_needextract(
     env = app.env
 
     if (need_node := SphinxNeedsData(env).get_need_node(need_data["id"])) is None:
-        log_warning(
-            LOGGER,
-            f"Content for requested need {need_data['id']!r} not found.",
-            "needextract",
-            location=extract_node,
-        )
+        if need_data["is_external"]:
+            message = f"External needs cannot be used as targets by needextract (ID {need_data['id']!r})."
+        else:
+            message = f"Content for requested need {need_data['id']!r} not found."
+        log_warning(LOGGER, message, "needextract", location=extract_node)
         return None
 
     dummy_need = nodes.container()
