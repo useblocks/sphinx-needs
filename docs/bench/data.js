@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728551089636,
+  "lastUpdate": 1728551188406,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -10908,6 +10908,42 @@ window.BENCHMARK_DATA = {
             "value": 80.00521307900001,
             "unit": "s",
             "extra": "Commit: fa2f32c94df1565bfe799e7ce4e62ce49cde8852\nBranch: master\nTime: 2024-10-10T11:02:33+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "067009e3b424216b2d172dfe6b94ba2e13e829ff",
+          "message": "👌 Improve warning for needextract incompatibility with external needs (#1325)",
+          "timestamp": "2024-10-10T11:04:30+02:00",
+          "tree_id": "01198a8d2d051b3202a0e3fbfa65b52d49b01a6e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/067009e3b424216b2d172dfe6b94ba2e13e829ff"
+        },
+        "date": 1728551177011,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.19860437700000944,
+            "unit": "s",
+            "extra": "Commit: 067009e3b424216b2d172dfe6b94ba2e13e829ff\nBranch: master\nTime: 2024-10-10T11:04:30+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.66760659699997,
+            "unit": "s",
+            "extra": "Commit: 067009e3b424216b2d172dfe6b94ba2e13e829ff\nBranch: master\nTime: 2024-10-10T11:04:30+02:00"
           }
         ]
       }
