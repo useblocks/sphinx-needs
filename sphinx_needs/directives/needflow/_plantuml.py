@@ -7,9 +7,6 @@ from functools import lru_cache
 from docutils import nodes
 from jinja2 import Template
 from sphinx.application import Sphinx
-from sphinxcontrib.plantuml import (
-    generate_name,  # Need for plantuml filename calculation
-)
 
 from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
 from sphinx_needs.data import NeedsFlowType, NeedsInfoType, SphinxNeedsData
@@ -244,7 +241,7 @@ def process_needflow_plantuml(
         try:
             if "sphinxcontrib.plantuml" not in app.config.extensions:
                 raise ImportError
-            from sphinxcontrib.plantuml import plantuml
+            from sphinxcontrib.plantuml import generate_name, plantuml
         except ImportError:
             error_node = nodes.error()
             para = nodes.paragraph()
