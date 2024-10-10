@@ -33,7 +33,7 @@ This change has required changes to the internal API and stricter control on the
   - ``needs-before-post-processing``: callbacks ``func(app, needs)`` are called just before the needs are post-processed (e.g. processing dynamic functions and back links)
   - ``needs-before-sealing``: callbacks ``func(app, needs)`` just after post-processing, and before the needs are changed to read-only
 
-Additionally, to identify any log running filters,
+Additionally, to identify any long running filters,
 the :ref:`needs_uml_process_max_time`, :ref:`needs_filter_max_time` and :ref:`needs_debug_filters` configuration options have been added.
 
 Key changes were made in: 
@@ -90,7 +90,7 @@ New and improved features
 
 - ✨ add ``tags`` option for ``list2need`` directive in :pr:`1296`
 - ✨ Add ``ids`` option for ``needimport`` in :pr:`1292`
-- 👌 Allow ``ref`` in ``neeuml`` to handle need parts in :pr:`1222`
+- 👌 Allow ``ref`` in ``needuml`` to handle need parts in :pr:`1222`
 - 👌 Improve parsing of need option lists with dynamic functions in :pr:`1272`
 - 🔧 Set ``env_version`` for sphinx extension in :pr:`1313`
 
