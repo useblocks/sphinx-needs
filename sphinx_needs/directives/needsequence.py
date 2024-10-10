@@ -7,9 +7,6 @@ from typing import Any, Sequence
 from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
-from sphinxcontrib.plantuml import (
-    generate_name,  # Need for plantuml filename calculation
-)
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, NeedsSequenceType, SphinxNeedsData
@@ -124,7 +121,7 @@ def process_needsequence(
         try:
             if "sphinxcontrib.plantuml" not in app.config.extensions:
                 raise ImportError
-            from sphinxcontrib.plantuml import plantuml
+            from sphinxcontrib.plantuml import generate_name, plantuml
         except ImportError:
             no_plantuml(node)
             continue
