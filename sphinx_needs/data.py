@@ -126,7 +126,6 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "delete": {
         "description": "If true, the need is deleted entirely.",
         "schema": {"type": "boolean", "default": False},
-        "show_in_layout": True,
         "exclude_external": True,
         "exclude_import": True,
     },
@@ -247,25 +246,21 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "jinja_content": {
         "description": "Whether the content should be pre-processed by jinja.",
         "schema": {"type": "boolean", "default": False},
-        "show_in_layout": True,
         "exclude_external": True,
     },
     "template": {
         "description": "Template of the need.",
         "schema": {"type": ["string", "null"], "default": None},
-        "show_in_layout": True,
         "exclude_external": True,
     },
     "pre_template": {
         "description": "Pre-template of the need.",
         "schema": {"type": ["string", "null"], "default": None},
-        "show_in_layout": True,
         "exclude_external": True,
     },
     "post_template": {
         "description": "Post-template of the need.",
         "schema": {"type": ["string", "null"], "default": None},
-        "show_in_layout": True,
         "exclude_external": True,
     },
     "content": {
@@ -319,7 +314,6 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "constraints_error": {
         "description": "An error message set if any constraint failed, and `error_message` field is set in config.",
         "schema": {"type": "string", "default": ""},
-        "show_in_layout": True,
         "exclude_external": True,
         "exclude_import": True,
     },
