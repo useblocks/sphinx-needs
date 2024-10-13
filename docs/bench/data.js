@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728574513087,
+  "lastUpdate": 1728838192237,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -11052,6 +11052,42 @@ window.BENCHMARK_DATA = {
             "value": 68.50708065799998,
             "unit": "s",
             "extra": "Commit: f59bcd66271d7f904d2dd1de664d54837df83251\nBranch: master\nTime: 2024-10-10T17:33:14+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b5ac8ff22514f9c00728cffa2d8238d8579f5db4",
+          "message": "🔧 Remove some internal fields from needs layout (#1330)\n\nIt should not be necessary to ever show these fields to users on the rendered need",
+          "timestamp": "2024-10-13T18:47:54+02:00",
+          "tree_id": "ab2838a8160bfd8e667d96a9732567c3329b81ea",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/b5ac8ff22514f9c00728cffa2d8238d8579f5db4"
+        },
+        "date": 1728838180397,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14698349399998278,
+            "unit": "s",
+            "extra": "Commit: b5ac8ff22514f9c00728cffa2d8238d8579f5db4\nBranch: master\nTime: 2024-10-13T18:47:54+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 66.887653167,
+            "unit": "s",
+            "extra": "Commit: b5ac8ff22514f9c00728cffa2d8238d8579f5db4\nBranch: master\nTime: 2024-10-13T18:47:54+02:00"
           }
         ]
       }
