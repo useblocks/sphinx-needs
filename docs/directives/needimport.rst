@@ -30,6 +30,11 @@ The directive also supports URL as argument to download ``needs.json`` from remo
 
    .. needimport:: https://my_company.com/docs/remote-needs.json
 
+.. seealso::
+
+    :ref:`needs_import_cache_size`,
+    to control the cache size for imported needs.
+
 Options
 -------
 
