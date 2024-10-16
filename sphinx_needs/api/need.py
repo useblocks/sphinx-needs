@@ -16,7 +16,7 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.api.exceptions import InvalidNeedException
-from sphinx_needs.config import NEEDS_CONFIG, GlobalOptionsType, NeedsSphinxConfig
+from sphinx_needs.config import GlobalOptionsType, NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, NeedsPartType, SphinxNeedsData
 from sphinx_needs.directives.needuml import Needuml, NeedumlException
 from sphinx_needs.filter_common import filter_single_need
@@ -118,7 +118,7 @@ def generate_need(
 
     # validate kwargs
     allowed_kwargs = {x["option"] for x in needs_config.extra_links} | set(
-        NEEDS_CONFIG.extra_options
+        needs_config.extra_options
     )
     unknown_kwargs = set(kwargs) - allowed_kwargs
     if unknown_kwargs:
@@ -235,7 +235,7 @@ def generate_need(
     }
 
     # add dynamic keys to needs_info
-    _merge_extra_options(needs_info, kwargs, NEEDS_CONFIG.extra_options)
+    _merge_extra_options(needs_info, kwargs, needs_config.extra_options)
     _merge_global_options(needs_config, needs_info, needs_config.global_options)
 
     # Merge links

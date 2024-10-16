@@ -9,6 +9,7 @@ from sphinx.config import Config as _SphinxConfig
 
 from sphinx_needs.data import GraphvizStyleType, NeedsCoreFields
 from sphinx_needs.defaults import DEFAULT_DIAGRAM_TEMPLATE
+from sphinx_needs.logging import get_logger, log_warning
 
 if TYPE_CHECKING:
     from sphinx.util.logging import SphinxLoggerAdapter
@@ -16,6 +17,9 @@ if TYPE_CHECKING:
 
     from sphinx_needs.data import NeedsInfoType
     from sphinx_needs.functions.functions import DynamicFunction
+
+
+LOGGER = get_logger(__name__)
 
 
 @dataclass
@@ -28,34 +32,37 @@ class ExtraOptionParams:
     """A function to validate the directive option value."""
 
 
-class Config:
-    """
-    Stores sphinx-needs specific configuration values.
+class NeedFunctionsType(TypedDict):
+    name: str
+    function: DynamicFunction
 
-    This is used to avoid the usage of the sphinx internal config option, as these can be reset or cleaned in
-    unspecific order during different events.
 
-    So this Config class somehow collects possible configurations and stores it in a save way.
+class _Config:
+    """Stores sphinx-needs configuration values that can be set both via the sphinx configuration,
+    and also via the API functions.
     """
 
     def __init__(self) -> None:
         self._extra_options: dict[str, ExtraOptionParams] = {}
+        self._functions: dict[str, NeedFunctionsType] = {}
         self._warnings: dict[
             str, str | Callable[[NeedsInfoType, SphinxLoggerAdapter], bool]
         ] = {}
 
     def clear(self) -> None:
         self._extra_options = {}
+        self._functions = {}
         self._warnings = {}
 
     @property
     def extra_options(self) -> Mapping[str, ExtraOptionParams]:
-        """Options that are dynamically added to `NeedDirective` & `NeedserviceDirective`,
-        after the config is initialized.
+        """Custom need fields.
 
-        These fields are also added to the each needs data item.
+        These fields can be added via sphinx configuration,
+        and also via the `add_extra_option` API function.
 
-        :returns: Mapping of name to validation function
+        They are added to the each needs data item,
+        and as directive options on `NeedDirective` and `NeedserviceDirective`.
         """
         return self._extra_options
 
@@ -68,27 +75,60 @@ class Config:
         override: bool = False,
     ) -> None:
         """Adds an extra option to the configuration."""
-        if not override and name in self._extra_options:
-            from sphinx_needs.api.exceptions import (
-                NeedsApiConfigWarning,  # avoid circular import
-            )
+        if name in self._extra_options:
+            if override:
+                log_warning(
+                    LOGGER,
+                    f'extra_option "{name}" already registered.',
+                    "config",
+                    None,
+                )
+            else:
+                from sphinx_needs.api.exceptions import (
+                    NeedsApiConfigWarning,  # avoid circular import
+                )
 
-            raise NeedsApiConfigWarning(f"Option {name} already registered.")
+                raise NeedsApiConfigWarning(f"Option {name} already registered.")
         self._extra_options[name] = ExtraOptionParams(
             description, directives.unchanged if validator is None else validator
         )
 
     @property
+    def functions(self) -> Mapping[str, NeedFunctionsType]:
+        """Dynamic functions that are added by the user."""
+        return self._functions
+
+    def add_function(self, function: DynamicFunction, name: str | None = None) -> None:
+        """Adds a dynamic function to the configuration."""
+        func_name = function.__name__ if name is None else name
+        if func_name in self._functions:
+            log_warning(
+                LOGGER,
+                f"Dynamic function {func_name} already registered.",
+                "config",
+                None,
+            )
+        self._functions[func_name] = {"name": func_name, "function": function}
+
+    @property
     def warnings(
         self,
-    ) -> dict[str, str | Callable[[NeedsInfoType, SphinxLoggerAdapter], bool]]:
+    ) -> Mapping[str, str | Callable[[NeedsInfoType, SphinxLoggerAdapter], bool]]:
         """Warning handlers that are added by the user,
         then called at the end of the build.
         """
         return self._warnings
 
+    def add_warning(
+        self,
+        name: str,
+        filter: str | Callable[[NeedsInfoType, SphinxLoggerAdapter], bool],
+    ) -> None:
+        """Adds a warning handler to the configuration."""
+        self._warnings[name] = filter
 
-NEEDS_CONFIG = Config()
+
+_NEEDS_CONFIG = _Config()
 
 
 class ConstraintFailedType(TypedDict):
@@ -199,17 +239,67 @@ class NeedsSphinxConfig:
     # such that we simply redirect all attribute access to the
     # Sphinx config object, but in a manner where type annotations will work
     # for static type analysis.
+    # Note also that we treat `extra_options`, `functions` and `warnings` as special-cases,
+    # since these configurations can also be added to dynamically via the API
 
     def __init__(self, config: _SphinxConfig) -> None:
         super().__setattr__("_config", config)
 
     def __getattribute__(self, name: str) -> Any:
-        if name.startswith("__"):
+        if name.startswith("__") or name in (
+            "_config",
+            "extra_options",
+            "functions",
+            "warnings",
+        ):
             return super().__getattribute__(name)
+        if name.startswith("_"):
+            name = name[1:]
         return getattr(super().__getattribute__("_config"), f"needs_{name}")
 
     def __setattr__(self, name: str, value: Any) -> None:
+        if name.startswith("__") or name in (
+            "_config",
+            "extra_options",
+            "functions",
+            "warnings",
+        ):
+            return super().__setattr__(name, value)
+        if name.startswith("_"):
+            name = name[1:]
         return setattr(super().__getattribute__("_config"), f"needs_{name}", value)
+
+    @classmethod
+    def add_config_values(cls, app: Sphinx) -> None:
+        """Add all config values to the Sphinx application."""
+        for item in fields(cls):
+            if item.default_factory is not MISSING:
+                default = item.default_factory()
+            elif item.default is not MISSING:
+                default = item.default
+            else:
+                raise Exception(
+                    f"Config item {item.name} has no default value or factory."
+                )
+            name = item.name
+            if name.startswith("_"):
+                name = name[1:]
+            app.add_config_value(
+                f"needs_{name}",
+                default,
+                item.metadata["rebuild"],
+                types=item.metadata["types"],
+            )
+
+    @classmethod
+    def get_default(cls, name: str) -> Any:
+        """Get the default value for a config item."""
+        _field = next(
+            field for field in fields(cls) if field.name in (name, f"_{name}")
+        )
+        if _field.default_factory is not MISSING:
+            return _field.default_factory()
+        return _field.default
 
     types: list[NeedType] = field(
         default_factory=lambda: [
@@ -301,10 +391,23 @@ class NeedsSphinxConfig:
         default=30, metadata={"rebuild": "html", "types": (int,)}
     )
     """Maximum length of the title in the need role output."""
-    extra_options: list[str] = field(
+    _extra_options: list[str] = field(
         default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )
     """List of extra options for needs, that get added as directive options and need fields."""
+
+    @property
+    def extra_options(self) -> Mapping[str, ExtraOptionParams]:
+        """Custom need fields.
+
+        These fields can be added via sphinx configuration,
+        but also via the `add_extra_option` API function.
+
+        They are added to the each needs data item,
+        and as directive options on `NeedDirective` and `NeedserviceDirective`.
+        """
+        return _NEEDS_CONFIG.extra_options
+
     title_optional: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
@@ -322,10 +425,20 @@ class NeedsSphinxConfig:
         metadata={"rebuild": "html", "types": (str,)},
     )
     """Template for node content in needflow diagrams (with plantuml engine)."""
-    functions: list[DynamicFunction] = field(
+    _functions: list[DynamicFunction] = field(
         default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )
     """List of dynamic functions."""
+
+    @property
+    def functions(self) -> Mapping[str, NeedFunctionsType]:
+        """Dynamic functions that are added by the user.
+
+        These functions can be added via sphinx configuration,
+        but also via the `add_dynamic_function` API function.
+        """
+        return _NEEDS_CONFIG.functions
+
     global_options: GlobalOptionsType = field(
         default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
     )
@@ -404,10 +517,22 @@ class NeedsSphinxConfig:
         default_factory=lambda: ["links"], metadata={"rebuild": "html", "types": ()}
     )
     """Defines the link_types to show in a needflow diagram."""
-    warnings: dict[str, Any] = field(
+    _warnings: dict[str, Any] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": ()}
     )
     """Defines warnings to be checked at the end of the build (name -> string filter / filter function)."""
+
+    @property
+    def warnings(
+        self,
+    ) -> Mapping[str, str | Callable[[NeedsInfoType, SphinxLoggerAdapter], bool]]:
+        """Defines warnings to be checked at the end of the build (name -> string filter / filter function).
+
+        These handlers can be added via sphinx configuration,
+        but also via the `add_warning` API function.
+        """
+        return _NEEDS_CONFIG.warnings
+
     warnings_always_warn: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
@@ -549,30 +674,3 @@ class NeedsSphinxConfig:
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
     """If True, log filter processing runtime information."""
-
-    @classmethod
-    def add_config_values(cls, app: Sphinx) -> None:
-        """Add all config values to the Sphinx application."""
-        for item in fields(cls):
-            if item.default_factory is not MISSING:
-                default = item.default_factory()
-            elif item.default is not MISSING:
-                default = item.default
-            else:
-                raise Exception(
-                    f"Config item {item.name} has no default value or factory."
-                )
-            app.add_config_value(
-                f"needs_{item.name}",
-                default,
-                item.metadata["rebuild"],
-                types=item.metadata["types"],
-            )
-
-    @classmethod
-    def get_default(cls, name: str) -> Any:
-        """Get the default value for a config item."""
-        _field = next(field for field in fields(cls) if field.name == name)
-        if _field.default_factory is not MISSING:
-            return _field.default_factory()
-        return _field.default

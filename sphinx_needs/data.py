@@ -478,7 +478,7 @@ class NeedsInfoType(TypedDict, total=False):
     """
 
     # Fields added dynamically by services:
-    # options from ``BaseService.options`` get added to ``NEEDS_CONFIG.extra_options``,
+    # options from ``BaseService.options`` get added to ``extra_options``,
     # via `ServiceManager.register`,
     # which in turn means they are added to every need via ``add_need``
     # ``GithubService.options``
@@ -503,7 +503,7 @@ class NeedsInfoType(TypedDict, total=False):
 
     # Note there are also these dynamic keys:
     # - items in ``needs_extra_options`` + ``needs_duration_option`` + ``needs_completion_option``,
-    #   which get added to ``NEEDS_CONFIG.extra_options``,
+    #   which get added to ``extra_options``,
     #   and in turn means they are added to every need via ``add_need`` (as strings)
     # - keys in ``needs_global_options`` config are added to every need via ``add_need``
 

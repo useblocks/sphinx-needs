@@ -41,7 +41,9 @@ class NeedReportDirective(SphinxDirective):
 
         report_info = {
             "types": needs_config.types if "types" in self.options else [],
-            "options": needs_config.extra_options if "options" in self.options else [],
+            "options": list(needs_config.extra_options)
+            if "options" in self.options
+            else [],
             "links": needs_config.extra_links if "links" in self.options else [],
             # note the usage dict format here is just to keep backwards compatibility,
             # but actually this is now post-processed so we only really need the need types

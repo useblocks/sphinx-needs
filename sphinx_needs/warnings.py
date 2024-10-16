@@ -8,7 +8,7 @@ from __future__ import annotations
 from sphinx.application import Sphinx
 from sphinx.util import logging
 
-from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.filter_common import filter_needs_view
 from sphinx_needs.logging import get_logger, log_warning
@@ -32,8 +32,10 @@ def process_warnings(app: Sphinx, exception: Exception | None) -> None:
     if exception:
         return
 
+    needs_config = NeedsSphinxConfig(app.config)
+
     # If no warnings were defined, we do not need to do anything
-    if not NEEDS_CONFIG.warnings:
+    if not needs_config.warnings:
         return
 
     env = app.env
@@ -59,7 +61,7 @@ def process_warnings(app: Sphinx, exception: Exception | None) -> None:
     with logging.pending_logging():
         logger.info("\nChecking sphinx-needs warnings")
         warning_raised = False
-        for warning_name, warning_filter in NEEDS_CONFIG.warnings.items():
+        for warning_name, warning_filter in needs_config.warnings.items():
             if isinstance(warning_filter, str):
                 # filter string used
                 result = filter_needs_view(
