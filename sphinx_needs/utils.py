@@ -22,26 +22,12 @@ from sphinx_needs.defaults import NEEDS_PROFILING
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.views import NeedsAndPartsListView, NeedsView
 
-try:
-    from typing import TypedDict
-except ImportError:
-    from typing_extensions import TypedDict
-
 if TYPE_CHECKING:
     import matplotlib
     from matplotlib.figure import FigureBase
 
-    from sphinx_needs.functions.functions import DynamicFunction
 
 logger = get_logger(__name__)
-
-
-class NeedFunctionsType(TypedDict):
-    name: str
-    function: DynamicFunction
-
-
-NEEDS_FUNCTIONS: dict[str, NeedFunctionsType] = {}
 
 
 MONTH_NAMES = [
