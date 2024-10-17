@@ -75,8 +75,8 @@ def process_warnings(app: Sphinx, exception: Exception | None) -> None:
                 result = []
                 for need in needs_view.values():
                     sig = signature(warning_filter)
-                    if len(sig.parameters) >= 3:  # type: ignore[call-arg]
-                        if warning_filter(need, logger, needs_view):
+                    if len(sig.parameters) >= 3:
+                        if warning_filter(need, logger, needs_view):  # type: ignore[call-arg]
                             result.append(need)
                     else:
                         if warning_filter(need, logger):
