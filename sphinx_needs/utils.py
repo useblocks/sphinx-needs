@@ -5,18 +5,22 @@ import importlib
 import operator
 import os
 import re
+from dataclasses import dataclass
 from functools import lru_cache, reduce, wraps
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Protocol, TypeVar
 from urllib.parse import urlparse
 
 from docutils import nodes
 from jinja2 import Environment, Template
-from sphinx.application import BuildEnvironment, Sphinx
+from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
 
+from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.defaults import NEEDS_PROFILING
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.views import NeedsAndPartsListView, NeedsView
 
 try:
     from typing import TypedDict
@@ -75,7 +79,7 @@ def split_need_id(need_id_full: str) -> tuple[str, str | None]:
 def row_col_maker(
     app: Sphinx,
     fromdocname: str,
-    all_needs: dict[str, NeedsInfoType],
+    all_needs: NeedsView,
     need_info: NeedsInfoType,
     need_key: str,
     make_ref: bool = False,
@@ -248,9 +252,9 @@ def import_prefix_link_edit(
                             need[extra_link["option"]][n] = f"{id_prefix}{id}"
             # Manipulate descriptions
             # ToDo: Use regex for better matches.
-            need["description"] = need["description"].replace(
-                id, "".join([id_prefix, id])
-            )
+            for key in ("content", "description"):
+                if key in need:
+                    need[key] = need[key].replace(id, "".join([id_prefix, id]))
 
 
 FuncT = TypeVar("FuncT")
@@ -308,43 +312,55 @@ def check_and_calc_base_url_rel_path(external_url: str, fromdocname: str) -> str
     return ref_uri
 
 
-def check_and_get_external_filter_func(filter_func_ref: str | None) -> tuple[Any, str]:
+class FilterFunc(Protocol):
+    def __call__(
+        self,
+        *,
+        needs: NeedsAndPartsListView,
+        results: list[Any],
+        **kwargs: str,
+    ) -> None: ...
+
+
+@dataclass
+class FilterFuncResult:
+    """Dataclass for filter function."""
+
+    sig: str
+    func: FilterFunc
+    args: str
+
+
+@lru_cache(maxsize=32)
+def check_and_get_external_filter_func(
+    filter_func_ref: str | None,
+) -> FilterFuncResult | None:
     """Check and import filter function from external python file."""
-    # Check if external filter code is defined
-    filter_func = None
-    filter_args = ""
+    if not filter_func_ref:
+        return None
 
-    if filter_func_ref:
-        try:
-            filter_module, filter_function = filter_func_ref.rsplit(".")
-        except ValueError:
-            log_warning(
-                logger,
-                f'Filter function not valid "{filter_func_ref}". Example: my_module:my_func',
-                None,
-                None,
-            )
-            return filter_func, filter_args
+    try:
+        filter_module, filter_function = filter_func_ref.rsplit(".")
+    except ValueError:
+        raise NeedsInvalidFilter("does not contain a dot")
 
-        result = re.search(r"^(\w+)(?:\((.*)\))*$", filter_function)
-        if not result:
-            return filter_func, filter_args
-        filter_function = result.group(1)
-        filter_args = result.group(2) or ""
+    result = re.search(r"^(\w+)(?:\((.*)\))*$", filter_function)
+    if not result:
+        raise NeedsInvalidFilter(f"malformed function signature: {filter_function!r}")
+    filter_function = result.group(1)
+    filter_args = result.group(2) or ""
 
-        try:
-            final_module = importlib.import_module(filter_module)
-            filter_func = getattr(final_module, filter_function)
-        except Exception:
-            log_warning(
-                logger,
-                f"Could not import filter function: {filter_func_ref}",
-                None,
-                None,
-            )
-            return filter_func, filter_args
+    try:
+        final_module = importlib.import_module(filter_module)
+    except Exception:
+        raise NeedsInvalidFilter(f"cannot import module: {filter_module}")
 
-    return filter_func, filter_args
+    try:
+        filter_func = getattr(final_module, filter_function)
+    except Exception:
+        raise NeedsInvalidFilter(f"module does not have function: {filter_function}")
+
+    return FilterFuncResult(filter_func_ref, filter_func, filter_args)
 
 
 def jinja_parse(context: dict[str, Any], jinja_string: str) -> str:
@@ -480,7 +496,7 @@ def match_string_link(
             logger,
             f'Problems dealing with string to link transformation for value "{data}" of '
             f'option "{need_key}". Error: {e}',
-            None,
+            "layout",
             None,
         )
     else:
@@ -633,24 +649,7 @@ def add_doc(env: BuildEnvironment, docname: str, category: str | None = None) ->
 
 def split_link_types(link_types: str, location: Any) -> list[str]:
     """Split link_types string into list of link_types."""
-
-    def _is_valid(link_type: str) -> bool:
-        if len(link_type) == 0 or link_type.isspace():
-            log_warning(
-                logger,
-                "Scruffy link_type definition found. Defined link_type contains spaces only.",
-                None,
-                location=location,
-            )
-            return False
-        return True
-
-    return list(
-        filter(
-            _is_valid,
-            (x.strip() for x in re.split(";|,", link_types)),
-        )
-    )
+    return [x.strip() for x in re.split(";|,", link_types) if x.strip()]
 
 
 def get_scale(options: dict[str, Any], location: Any) -> str:
@@ -660,7 +659,7 @@ def get_scale(options: dict[str, Any], location: Any) -> str:
         log_warning(
             logger,
             f'scale value must be a number. "{scale}" found',
-            None,
+            "diagram_scale",
             location=location,
         )
         return "100"
@@ -668,7 +667,7 @@ def get_scale(options: dict[str, Any], location: Any) -> str:
         log_warning(
             logger,
             f'scale value must be between 1 and 300. "{scale}" found',
-            None,
+            "diagram_scale",
             location=location,
         )
         return "100"

@@ -147,7 +147,7 @@ def process_needtables(
             link_type_list["OUTGOING"] = link_type
             link_type_list["INCOMING"] = link_type
 
-    all_needs = needs_data.get_or_create_needs()
+    all_needs = needs_data.get_needs_view()
 
     # for node in doctree.findall(Needtable):
     for node in found_nodes:
@@ -212,10 +212,10 @@ def process_needtables(
         # Perform filtering of needs
         filtered_needs = process_filters(
             app,
-            list(all_needs.values()),
+            all_needs,
             current_needtable,
             origin="needtable",
-            location=f"{node.source}:{node.line}",
+            location=node,
         )
 
         def get_sorter(key: str) -> Callable[[NeedsInfoType], Any]:
@@ -244,7 +244,7 @@ def process_needtables(
 
         for need_info in filtered_needs:
             style_row = check_and_get_content(
-                current_needtable["style_row"], need_info, env
+                current_needtable["style_row"], need_info, env, node
             )
             style_row = style_row.replace(
                 " ", "_"

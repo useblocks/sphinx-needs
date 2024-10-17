@@ -1,18 +1,194 @@
 .. _changelog:
 
-Changelog & License
-===================
+Changelog
+=========
 
-License
--------
+4.0.0
+-----
 
-.. include:: ../LICENSE
+:Released: 09.10.2024
+:Full Changelog: `v3.0.0...v4.0.0 <https://github.com/useblocks/sphinx-needs/compare/3.0.0...067009e3b424216b2d172dfe6b94ba2e13e829ff>`__
+
+Breaking Changes
+................
+
+This commit contains a number of breaking changes:
+
+Improvements to filtering at scale
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For large projects, the filtering of needs in analytical directives such as :ref:`needtable`, :ref:`needuml`, etc, can be slow due to
+requiring an ``O(N)`` scan of all needs to determine which to include.
+
+To address this, the storage of needs has been refactored to allow for pre-indexing of common need keys, such as ``id``, ``status``, ``tags``, etc, after the read/collection phase.
+Filter strings such as ``id == "my_id"`` are then pre-processed to take advantage of these indexes and allow for ``O(1)`` filtering of needs, see the :ref:`filter_string_performance` section for more information.
+
+This change has required changes to the internal API and stricter control on the access to and modification of need data, which may affect custom extensions that modified needs data directly:
+
+- Access to internal data from the Sphinx `env` object has been made private
+- Needs data during the write phase is exposed with either the read-only :class:`.NeedsView` or :class:`.NeedsAndPartsListView`, depending on the context.
+- Access to needs data, during the write phase, can now be achieved via :func:`.get_needs_view`
+- Access to mutable needs should generally be avoided outside of the formal means, but for back-compatibility the following :external+sphinx:ref:`Sphinx event callbacks <events>` are now available:
+
+  - ``needs-before-post-processing``: callbacks ``func(app, needs)`` are called just before the needs are post-processed (e.g. processing dynamic functions and back links)
+  - ``needs-before-sealing``: callbacks ``func(app, needs)`` just after post-processing, and before the needs are changed to read-only
+
+Additionally, to identify any long running filters,
+the :ref:`needs_uml_process_max_time`, :ref:`needs_filter_max_time` and :ref:`needs_debug_filters` configuration options have been added.
+
+Key changes were made in: 
+
+- ♻️ Replace need dicts/lists with views (with fast filtering) in :pr:`1281`
+- 🔧 split ``filter_needs`` func by needs type in :pr:`1276`
+- 🔧 Make direct access to ``env`` attributes private in :pr:`1310`
+- 👌 Move sorting to end of ``process_filters`` in :pr:`1257`
+- 🔧 Improve ``process_filters`` function in :pr:`1256`
+- 🔧 Improve internal API for needs access in :pr:`1255`
+- 👌 Add ``needs_uml_process_max_time`` configuration in :pr:`1314`
+- ♻️ Add ``needs_filter_max_time`` / ``needs_debug_filters``, deprecate ``export_id`` in :pr:`1309`
+
+Improved warnings
+~~~~~~~~~~~~~~~~~
+
+sphinx-needs is designed to be durable and only except when absolutely necessary.
+Any non-fatal issues during the build are logged as Sphinx warnings.
+The warnings types have been improved and stabilised to provide more information and context, see :ref:`config-warnings` for more information.
+
+Additionally, the :func:`.add_need` function will now only raise the singular exception :class:`.InvalidNeedException` for all need creation issues.
+
+Key changes were made in:
+
+- 👌 Warn on unknown need keys in external/import sources in :pr:`1316`
+- ♻️  Extract ``generate_need`` from ``add_need`` & consolidate warnings in :pr:`1318`
+
+Improved ``needs.json``
+~~~~~~~~~~~~~~~~~~~~~~~
+
+A  number of output need fields have been changed, to simplify the output.
+Key changes were made in:
+
+- 🔧  change type of need fields with ``bool | None`` to just ``bool`` in :pr:`1293`
+- ♻️ Remove ``target_id`` core need field in :pr:`1315`
+- ♻️ Output ``content`` in ``needs.json`` not ``description`` in :pr:`1312`
+- 👌 Add ``creator`` key to ``needs.json`` in :pr:`1311`
+
+Replacement of ``[[...]]`` and ``need_func`` in need content
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The parsing of the ``[[...]]`` dynamic function syntax in need content could cause confusion and unexpected behaviour.
+This has been deprecated in favour of the new, more explicit :ref:`ndf role <ndf>`, which also deprecates the ``need_func`` role.
+
+See :pr:`1269` and :pr:`1266` for more information.
+
+Removed deprecation
+~~~~~~~~~~~~~~~~~~~
+
+The deprecated ``needfilter`` directive is now removed (:pr:`1308`)
+
+New and improved features
+.........................
+
+- ✨ add ``tags`` option for ``list2need`` directive in :pr:`1296`
+- ✨ Add ``ids`` option for ``needimport`` in :pr:`1292`
+- 👌 Allow ``ref`` in ``needuml`` to handle need parts in :pr:`1222`
+- 👌 Improve parsing of need option lists with dynamic functions in :pr:`1272`
+- 👌 Improve warning for needextract incompatibility with external needs in :pr:`1325`
+- 🔧 Set ``env_version`` for sphinx extension in :pr:`1313`
+
+Bug Fixes
+.........
+
+- 🐛 Fix removal of ``Needextend`` nodes in :pr:`1298`
+- 🐛 Fix ``usage`` numbers  in ``needreport`` in :pr:`1285`
+- 🐛 Fix ``parent_need`` propagation from external/imported needs in :pr:`1286`
+- 🐛 Fix ``need_part`` with multi-line content in :pr:`1284`
+- 🐛 Fix dynamic functions in ``needextract`` need in :pr:`1273`
+- 🐛 Disallow dynamic functions ``[[..]]`` in literal content in :pr:`1263`
+- 🐛 fix parts defined in nested needs in :pr:`1265`
+- 🐛 Handle malformed ``filter-func`` option value in :pr:`1254`
+- 🐛 Pass ``needs`` to ``highlight`` filter of ``graphviz`` `needflow` in :pr:`1274`
+- 🐛 Fix parts title for ``needflow`` with ``graphviz`` engine in :pr:`1280`
+- 🐛 Fix ``need_count`` division by 0 in :pr:`1324`
+
+3.0.0
+-----
+
+:Released: 28.08.2024
+:Full Changelog: `v2.1.0...v3.0.0 <https://github.com/useblocks/sphinx-needs/compare/2.1.0...59cc6bf>`__
+
+This release includes a number of new features and improvements, as well as some bug fixes.
+
+Updated dependencies
+....................
+
+- sphinx: ``>=5.0,<8`` to ``>=6.0,<9``
+- requests: ``^2.25.1`` to ``^2.32``
+- requests-file: ``^1.5.1`` to ``^2.1``
+- sphinx-data-viewer: ``^0.1.1`` to ``^0.1.5``
+
+Documentation and CSS styling
+..............................
+
+The documentation theme has been completely updated, and a tutorial added.
+
+To improve ``sphinx-needs`` compatibility across different Sphinx HTML themes,
+the CSS for needs etc has been modified substantially, and so,
+if you have custom CSS for your needs, you may need to update it.
+
+See :ref:`install_theme` for more information on how to setup CSS for different themes,
+and :pr:`1178`, :pr:`1181`, :pr:`1182` and :pr:`1184` for the changes.
+
+``needflow`` improvements
+..........................
+
+The use of `Graphviz <https://graphviz.org/>`__ as the underlying engine for `needflow` diagrams, in addition to the default `PlantUML <http://plantuml.com>`__,
+is now allowed via the global :ref:`needs_flow_engine` configuration option, or the per-diagram :ref:`engine <needflow_engine>` option.
+
+The intention being to simplify and improve performance of graph builds, since ``plantuml`` has issues with JVM initialisation times and reliance on a third-party sphinx extension.
+
+See :ref:`needflow` for more information,
+and :pr:`1235` for the changes.
+
+additional improvements:
+
+- ✨ Allow setting an ``alt`` text for ``needflow`` images
+- ✨ Allow creating a ``needflow`` from a ``root_id`` in :pr:`1186`
+- ✨ Add ``border_color`` option for ``needflow`` in :pr:`1194`
+
+``needs.json`` improvements
+............................
+
+A ``needs_schema`` is now included in the ``needs.json`` file (per version), which is a JSON schema for the data structure of a single need.
+
+This includes defaults for each field, and can be used in combination with the :ref:`needs_json_remove_defaults` configuration option to remove these defaults from each individual need.
+
+Together with the new automatic minifying of the ``needs.json`` file, this can reduce the file size by down to 1/8th of its previous size.
+
+The :ref:`needs_json_exclude_fields` configuration option can also be used to modify the excluded need fields from the ``needs.json`` file,
+and backlinks are now included in the ``needs.json`` file by default.
+
+See :ref:`needs_builder_format` for more information,
+and :pr:`1230`, :pr:`1232`, :pr:`1233` for the changes.
+
+Additionally, the ``content_node``, ``content_id`` fields are removed from the internal need data structure (see :pr:`1241` and :pr:`1242`).
+
+Additional improvements
+.......................
+
+- 👌 Capture filter processing times when using ``needs_debug_measurement=True`` in :pr:`1240`
+- 👌 Allow ``style`` and ``color`` fields to be omitted for ``needs_types`` items and a default used in :pr:`1185`
+- 👌 Allow ``collapse`` / ``delete`` / ``jinja_content`` directive options to be flags in :pr:`1188`
+- 👌 Improve ``need-extend``; allow dynamic functions in lists in :pr:`1076`
+- 👌 Add collapse button to ``clean_xxx`` layouts in :pr:`1187`
+
+- 🐛 fix warnings for duplicate needs in parallel builds in :pr:`1223`
+- 🐛 Fix rendering of ``needextract`` needs and use warnings instead of exceptions in :pr:`1243` and :pr:`1249`
 
 2.1.0
 -----
 
 :Released: 08.05.2024
-:Full Changelog: `v2.0.0...v2.1.0 <https://github.com/useblocks/sphinx-needs/compare/2.0.0...d405fd1>`__
+:Full Changelog: `v2.0.0...v2.1.0 <https://github.com/useblocks/sphinx-needs/compare/2.0.0...2.1.0>`__
 
 Improvements
 ............
@@ -510,7 +686,7 @@ Released: 18.06.2021
   (:issue:`116`)
 * Improvement: Introducing :ref:`need_func` to execute :ref:`dynamic_functions` inline.
   (:issue:`133`)
-* Improvement: Support for :ref:`multiline_option` in templates.
+* Improvement: Support for :ref:`!multiline_option` in templates.
 * Bugfix: needflow: links  for need-parts get correctly calculated.
   (:issue:`205`)
 * Bugfix: CSS update for ReadTheDocsTheme to show tables correctly.
@@ -650,10 +826,10 @@ Released: 23.04.2021
 * Bugfix: No more exception raise if ``copy`` value not set inside :ref:`needs_extra_links`.
 * Improvement: Better log message, if required id is missing. (:issue:`112`)
 
-* Removed: Configuration option :ref:`needs_collapse_details`. This is now realized by :ref:`layouts`.
-* Removed: Configuration option :ref:`needs_hide_options`. This is now realized by :ref:`layouts`.
-* Removed: Need option :ref:`need_hide_status`. This is now realized by :ref:`layouts`.
-* Removed: Need option :ref:`need_hide_tags`. This is now realized by :ref:`layouts`.
+* Removed: Configuration option :ref:`!needs_collapse_details`. This is now realized by :ref:`layouts`.
+* Removed: Configuration option :ref:`!needs_hide_options`. This is now realized by :ref:`layouts`.
+* Removed: Need option :ref:`!need_hide_status`. This is now realized by :ref:`layouts`.
+* Removed: Need option :ref:`!need_hide_tags`. This is now realized by :ref:`layouts`.
 
 **WARNING**: This version changes a lot the html output and therefore the needed css selectors. So if you are using
 custom css definitions you need to update them.
@@ -719,7 +895,7 @@ custom css definitions you need to update them.
 ------
 * Improvement: Added config option :ref:`needs_extra_links` to define additional link types like *blocks*, *tested by* and more.
   Supports also style configuration and custom presentation names for links.
-* Improvement: Added :ref:`export_id` option for filter directives to export results of filters to ``needs.json``.
+* Improvement: Added :ref:`!export_id` option for filter directives to export results of filters to ``needs.json``.
 * Improvement: Added config option :ref:`needs_flow_show_links` and related needflow option :ref:`needflow_show_link_names`.
 * Improvement: Added config option :ref:`needs_flow_link_types` and related needflow option :ref:`needflow_link_types`.
 * Bugfix: Unicode handling for Python 2.7 fixed. (:issue:`86`)
@@ -792,9 +968,9 @@ custom css definitions you need to update them.
 * Improvement: :ref:`dynamic_functions` are now available to support calculation of need values.
 * Improvement: :ref:`needs_functions` can be used to register and use own dynamic functions.
 * Improvement: Added :ref:`needs_global_options` to set need values globally for all needs.
-* Improvement: Added :ref:`needs_hide_options` to hide specific options of all needs.
+* Improvement: Added :ref:`!needs_hide_options` to hide specific options of all needs.
 * Bugfix: Removed needs are now deleted from existing needs.json (:issue:`68`)
-* Removed: :ref:`needs_template` and :ref:`needs_template_collapse` are no longer supported.
+* Removed: :ref:`!needs_template` and :ref:`!needs_template_collapse` are no longer supported.
 
 0.2.5
 -----

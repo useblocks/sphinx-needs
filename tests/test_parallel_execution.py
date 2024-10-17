@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 from sphinx.util.console import strip_colors
+from sphinx.util.parallel import parallel_available
 
 
 @pytest.mark.parametrize(
@@ -17,6 +18,7 @@ from sphinx.util.console import strip_colors
     ],
     indirect=True,
 )
+@pytest.mark.skipif(not parallel_available, reason="Parallel execution not supported")
 def test_doc_build_html(test_app):
     app = test_app
     app.build()

@@ -5,7 +5,7 @@
       }),
       'avatar': '',
       'closed_at': '',
-      'collapse': None,
+      'collapse': False,
       'completion': '',
       'constraints': list([
       ]),
@@ -23,9 +23,8 @@
         
         comp --> int
       ''',
-      'content_id': 'COMP_001',
       'created_at': '',
-      'delete': None,
+      'delete': False,
       'docname': 'index',
       'doctype': '.rst',
       'duration': '',
@@ -43,7 +42,7 @@
       'is_modified': False,
       'is_need': True,
       'is_part': False,
-      'jinja_content': None,
+      'jinja_content': False,
       'layout': '',
       'lineno': 19,
       'lineno_content': 22,
@@ -77,7 +76,6 @@
       'style': None,
       'tags': list([
       ]),
-      'target_id': 'COMP_001',
       'template': None,
       'title': 'Test component',
       'type': 'comp',
@@ -95,7 +93,7 @@
       }),
       'avatar': '',
       'closed_at': '',
-      'collapse': None,
+      'collapse': False,
       'completion': '',
       'constraints': list([
       ]),
@@ -103,9 +101,8 @@
       'constraints_results': dict({
       }),
       'content': 'circle "Int_X" as int',
-      'content_id': 'INT_001',
       'created_at': '',
-      'delete': None,
+      'delete': False,
       'docname': 'index',
       'doctype': '.rst',
       'duration': '',
@@ -123,7 +120,7 @@
       'is_modified': False,
       'is_need': True,
       'is_part': False,
-      'jinja_content': None,
+      'jinja_content': False,
       'layout': '',
       'lineno': 14,
       'lineno_content': 17,
@@ -157,7 +154,6 @@
       'style': None,
       'tags': list([
       ]),
-      'target_id': 'INT_001',
       'template': None,
       'title': 'Test interface',
       'type': 'int',
@@ -187,7 +183,7 @@
       }),
       'avatar': '',
       'closed_at': '',
-      'collapse': None,
+      'collapse': False,
       'completion': '',
       'constraints': list([
       ]),
@@ -216,9 +212,8 @@
            Alice -> Bob: Hi Bob
            Bob --> Alice: Hi Alice
       ''',
-      'content_id': 'INT_002',
       'created_at': '',
-      'delete': None,
+      'delete': False,
       'docname': 'index',
       'doctype': '.rst',
       'duration': '',
@@ -236,7 +231,7 @@
       'is_modified': False,
       'is_need': True,
       'is_part': False,
-      'jinja_content': None,
+      'jinja_content': False,
       'layout': '',
       'lineno': 70,
       'lineno_content': 73,
@@ -270,7 +265,6 @@
       'style': None,
       'tags': list([
       ]),
-      'target_id': 'INT_002',
       'template': None,
       'title': 'Test interface2',
       'type': 'int',
@@ -302,7 +296,7 @@
       }),
       'avatar': '',
       'closed_at': '',
-      'collapse': None,
+      'collapse': False,
       'completion': '',
       'constraints': list([
       ]),
@@ -328,9 +322,8 @@
            Alice -> Bob: Hi Bob
            Bob --> Alice: Hi Alice
       ''',
-      'content_id': 'INT_003',
       'created_at': '',
-      'delete': None,
+      'delete': False,
       'docname': 'index',
       'doctype': '.rst',
       'duration': '',
@@ -348,7 +341,7 @@
       'is_modified': False,
       'is_need': True,
       'is_part': False,
-      'jinja_content': None,
+      'jinja_content': False,
       'layout': '',
       'lineno': 95,
       'lineno_content': 98,
@@ -382,7 +375,6 @@
       'style': None,
       'tags': list([
       ]),
-      'target_id': 'INT_003',
       'template': None,
       'title': 'Test interface3',
       'type': 'int',
@@ -418,7 +410,7 @@
       }),
       'avatar': '',
       'closed_at': '',
-      'collapse': None,
+      'collapse': False,
       'completion': '',
       'constraints': list([
       ]),
@@ -455,9 +447,8 @@
            Alice -> Bob: Hi Bob
            Bob --> Alice: Hi Alice
       ''',
-      'content_id': 'INT_004',
       'created_at': '',
-      'delete': None,
+      'delete': False,
       'docname': 'index',
       'doctype': '.rst',
       'duration': '',
@@ -475,7 +466,7 @@
       'is_modified': False,
       'is_need': True,
       'is_part': False,
-      'jinja_content': None,
+      'jinja_content': False,
       'layout': '',
       'lineno': 117,
       'lineno_content': 120,
@@ -509,7 +500,6 @@
       'style': None,
       'tags': list([
       ]),
-      'target_id': 'INT_004',
       'template': None,
       'title': 'Test interface4',
       'type': 'int',
@@ -527,7 +517,7 @@
       }),
       'avatar': '',
       'closed_at': '',
-      'collapse': None,
+      'collapse': False,
       'completion': '',
       'constraints': list([
       ]),
@@ -541,9 +531,8 @@
         node "System A" as sys_2
         sys_2 --> int
       ''',
-      'content_id': 'PROD_001',
       'created_at': '',
-      'delete': None,
+      'delete': False,
       'docname': 'index',
       'doctype': '.rst',
       'duration': '',
@@ -561,7 +550,7 @@
       'is_modified': False,
       'is_need': True,
       'is_part': False,
-      'jinja_content': None,
+      'jinja_content': False,
       'layout': '',
       'lineno': 46,
       'lineno_content': 49,
@@ -595,7 +584,6 @@
       'style': None,
       'tags': list([
       ]),
-      'target_id': 'PROD_001',
       'template': None,
       'title': 'Test Product',
       'type': 'prod',
@@ -613,7 +601,7 @@
       }),
       'avatar': '',
       'closed_at': '',
-      'collapse': None,
+      'collapse': False,
       'completion': '',
       'constraints': list([
       ]),
@@ -621,9 +609,8 @@
       'constraints_results': dict({
       }),
       'content': 'Some content',
-      'content_id': 'ST_001',
       'created_at': '',
-      'delete': None,
+      'delete': False,
       'docname': 'index',
       'doctype': '.rst',
       'duration': '',
@@ -641,7 +628,7 @@
       'is_modified': False,
       'is_need': True,
       'is_part': False,
-      'jinja_content': None,
+      'jinja_content': False,
       'layout': '',
       'lineno': 4,
       'lineno_content': 7,
@@ -675,7 +662,6 @@
       'style': None,
       'tags': list([
       ]),
-      'target_id': 'ST_001',
       'template': None,
       'title': 'Test story',
       'type': 'story',
@@ -693,7 +679,7 @@
       }),
       'avatar': '',
       'closed_at': '',
-      'collapse': None,
+      'collapse': False,
       'completion': '',
       'constraints': list([
       ]),
@@ -701,9 +687,8 @@
       'constraints_results': dict({
       }),
       'content': 'Some content 2',
-      'content_id': 'ST_002',
       'created_at': '',
-      'delete': None,
+      'delete': False,
       'docname': 'index',
       'doctype': '.rst',
       'duration': '',
@@ -721,7 +706,7 @@
       'is_modified': False,
       'is_need': True,
       'is_part': False,
-      'jinja_content': None,
+      'jinja_content': False,
       'layout': '',
       'lineno': 9,
       'lineno_content': 12,
@@ -755,7 +740,6 @@
       'style': None,
       'tags': list([
       ]),
-      'target_id': 'ST_002',
       'template': None,
       'title': 'Test story2',
       'type': 'story',
@@ -773,7 +757,7 @@
       }),
       'avatar': '',
       'closed_at': '',
-      'collapse': None,
+      'collapse': False,
       'completion': '',
       'constraints': list([
       ]),
@@ -790,9 +774,8 @@
         
         comp_2 --> int
       ''',
-      'content_id': 'SYS_001',
       'created_at': '',
-      'delete': None,
+      'delete': False,
       'docname': 'index',
       'doctype': '.rst',
       'duration': '',
@@ -810,7 +793,7 @@
       'is_modified': False,
       'is_need': True,
       'is_part': False,
-      'jinja_content': None,
+      'jinja_content': False,
       'layout': '',
       'lineno': 33,
       'lineno_content': 36,
@@ -844,7 +827,6 @@
       'style': None,
       'tags': list([
       ]),
-      'target_id': 'SYS_001',
       'template': None,
       'title': 'Test System',
       'type': 'sys',
@@ -1269,12 +1251,22 @@
       'content': '''
         DC -> Marvel: {{ref("ST_001", option="title")}}
         Marvel --> DC: {{ref("ST_002", text="Different text to explain the story")}}
+        
+        DC -> Marvel: {{ref("ST_001.np_id", option="id")}}
+        Marvel --> DC: {{ref("ST_001.np_id", option="content")}}
+        
+        DC -> Marvel: {{ref("ST_001.np_id", text="Different text to explain the story 2")}}
       ''',
       'content_calculated': '''
         @startuml
         
         DC -> Marvel: [[../index.html#ST_001 Test story]]
         Marvel --> DC: [[../index.html#ST_002 Different text to explain the story]]
+        
+        DC -> Marvel: [[../index.html#ST_001.np_id np_id]]
+        Marvel --> DC: [[../index.html#ST_001.np_id np_content]]
+        
+        DC -> Marvel: [[../index.html#ST_001.np_id Different text to explain the story 2]]
         @enduml
   
       ''',
@@ -1284,7 +1276,7 @@
       }),
       'is_arch': False,
       'key': None,
-      'lineno': 17,
+      'lineno': 19,
       'save': None,
       'scale': '',
       'target_id': 'needuml-index-0',

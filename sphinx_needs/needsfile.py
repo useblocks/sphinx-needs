@@ -9,20 +9,24 @@ from __future__ import annotations
 import json
 import os
 import sys
+from copy import deepcopy
 from datetime import datetime
-from typing import Any
+from functools import lru_cache
+from typing import Any, Iterable
 
 from jsonschema import Draft7Validator
 from sphinx.config import Config
 
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
-from sphinx_needs.data import NeedsCoreFields, NeedsFilterType, NeedsInfoType
+from sphinx_needs.data import NeedsCoreFields, NeedsInfoType
 from sphinx_needs.logging import get_logger, log_warning
 
 log = get_logger(__name__)
 
 
-def generate_needs_schema(config: Config) -> dict[str, Any]:
+def generate_needs_schema(
+    config: Config, exclude_properties: Iterable[str] = ()
+) -> dict[str, Any]:
     """Generate a JSON schema for all fields in each need item.
 
     It is based on:
@@ -46,9 +50,7 @@ def generate_needs_schema(config: Config) -> dict[str, Any]:
     # (this is the case for `type` added by the github service)
     # hence this is why we add the core options after the extra options
     for name, core_params in NeedsCoreFields.items():
-        if core_params.get("exclude_json"):
-            continue
-        properties[name] = core_params["schema"]
+        properties[name] = deepcopy(core_params["schema"])
         properties[name]["description"] = f"{core_params['description']}"
         properties[name]["field_type"] = "core"
 
@@ -62,6 +64,13 @@ def generate_needs_schema(config: Config) -> dict[str, Any]:
             "field_type": "links",
             "default": [],
         }
+        properties[link["option"] + "_back"] = {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Backlink field",
+            "field_type": "backlinks",
+            "default": [],
+        }
 
     for name in needs_config.global_options:
         if name not in properties:
@@ -72,6 +81,10 @@ def generate_needs_schema(config: Config) -> dict[str, Any]:
                 "default": "",
             }
 
+    for name in exclude_properties:
+        if name in properties:
+            del properties[name]
+
     return {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "object",
@@ -80,25 +93,6 @@ def generate_needs_schema(config: Config) -> dict[str, Any]:
 
 
 class NeedsList:
-    JSON_KEY_EXCLUSIONS_NEEDS = {
-        name for name, params in NeedsCoreFields.items() if params.get("exclude_json")
-    }
-
-    JSON_KEY_EXCLUSIONS_FILTERS = {
-        "links_back",
-        "type_color",
-        "hide_status",
-        "hide",
-        "type_prefix",
-        "lineno",
-        "lineno_content",
-        "collapse",
-        "type_style",
-        "hide_tags",
-        "content",
-        "content_node",
-    }
-
     def __init__(
         self, config: Config, outdir: str, confdir: str, add_schema: bool = True
     ) -> None:
@@ -106,16 +100,6 @@ class NeedsList:
         self.needs_config = NeedsSphinxConfig(config)
         self.outdir = outdir
         self.confdir = confdir
-        self._schema = generate_needs_schema(config) if add_schema else None
-        self._need_defaults = (
-            {
-                name: value["default"]
-                for name, value in self._schema["properties"].items()
-                if "default" in value
-            }
-            if self._schema
-            else {}
-        )
         self.current_version = config.version
         self.project = config.project
         self.needs_list = {
@@ -126,25 +110,44 @@ class NeedsList:
         if not self.needs_config.reproducible_json:
             self.needs_list["created"] = ""
         self.log = log
-        # also exclude back links for link types dynamically set by the user
-        back_link_keys = {x["option"] + "_back" for x in self.needs_config.extra_links}
-        self._exclude_need_keys = self.JSON_KEY_EXCLUSIONS_NEEDS | back_link_keys
-        self._exclude_filter_keys = self.JSON_KEY_EXCLUSIONS_FILTERS | back_link_keys
+
+        self._exclude_need_keys = set(self.needs_config.json_exclude_fields)
+
+        self._schema = (
+            generate_needs_schema(config, exclude_properties=self._exclude_need_keys)
+            if add_schema
+            else None
+        )
+        self._need_defaults = (
+            {
+                name: value["default"]
+                for name, value in self._schema["properties"].items()
+                if "default" in value
+            }
+            if self._schema
+            else {}
+        )
 
     def update_or_add_version(self, version: str) -> None:
-        if version not in self.needs_list["versions"].keys():
+        from sphinx_needs.needs import __version__
+
+        if version not in self.needs_list["versions"]:
             self.needs_list["versions"][version] = {
                 "needs_amount": 0,
                 "needs": {},
-                "filters_amount": 0,
-                "filters": {},
+                "creator": {
+                    "program": "sphinx_needs",
+                    "version": __version__,
+                },
             }
             if self._schema:
                 self.needs_list["versions"][version]["needs_schema"] = self._schema
+            if self.needs_config.json_remove_defaults:
+                self.needs_list["versions"][version]["needs_defaults_removed"] = True
             if not self.needs_config.reproducible_json:
                 self.needs_list["versions"][version]["created"] = ""
 
-        if "needs" not in self.needs_list["versions"][version].keys():
+        if "needs" not in self.needs_list["versions"][version]:
             self.needs_list["versions"][version]["needs"] = {}
 
         if not self.needs_config.reproducible_json:
@@ -165,52 +168,42 @@ class NeedsList:
                     key in self._need_defaults and value == self._need_defaults[key]
                 )
             }
-        writable_needs["description"] = need_info["content"]  # TODO why this?
         self.needs_list["versions"][version]["needs"][need_info["id"]] = writable_needs
         self.needs_list["versions"][version]["needs_amount"] = len(
             self.needs_list["versions"][version]["needs"]
-        )
-
-    def add_filter(self, version: str, need_filter: NeedsFilterType) -> None:
-        self.update_or_add_version(version)
-        writable_filters = {
-            key: need_filter[key]  # type: ignore[literal-required]
-            for key in need_filter
-            if key not in self._exclude_filter_keys
-        }
-        self.needs_list["versions"][version]["filters"][
-            need_filter["export_id"].upper()
-        ] = writable_filters
-        self.needs_list["versions"][version]["filters_amount"] = len(
-            self.needs_list["versions"][version]["filters"]
         )
 
     def wipe_version(self, version: str) -> None:
         if version in self.needs_list["versions"]:
             del self.needs_list["versions"][version]
 
-    def write_json(self, needs_file: str = "needs.json", needs_path: str = "") -> None:
-        # We need to rewrite some data, because this kind of data gets overwritten during needs.json import.
+    def _finalise(self) -> None:
+        # We need to rewrite some data, because this kind of data gets overwritten during needs.json import
         if not self.needs_config.reproducible_json:
             self.needs_list["created"] = datetime.now().isoformat()
         else:
             self.needs_list.pop("created", None)
         self.needs_list["current_version"] = self.current_version
         self.needs_list["project"] = self.project
-        if needs_path:
-            needs_dir = needs_path
-        else:
-            needs_dir = self.outdir
 
+    def write_json(self, needs_file: str = "needs.json", needs_path: str = "") -> None:
+        self._finalise()
+        needs_dir = needs_path if needs_path else self.outdir
         with open(os.path.join(needs_dir, needs_file), "w") as f:
             json.dump(self.needs_list, f, sort_keys=True)
+
+    def dump_json(self) -> str:
+        self._finalise()
+        return json.dumps(self.needs_list, sort_keys=True)
 
     def load_json(self, file: str) -> None:
         if not os.path.isabs(file):
             file = os.path.join(self.confdir, file)
 
         if not os.path.exists(file):
-            log_warning(self.log, f"Could not load needs json file {file}", None, None)
+            log_warning(
+                self.log, f"Could not load needs json file {file}", "json_load", None
+            )
         else:
             errors = check_needs_file(file)
             # We only care for schema errors here, all other possible errors
@@ -225,7 +218,10 @@ class NeedsList:
                     needs_list = json.load(needs_file)
                 except json.JSONDecodeError:
                     log_warning(
-                        self.log, f"Could not decode json file {file}", None, None
+                        self.log,
+                        f"Could not decode json file {file}",
+                        "json_load",
+                        None,
                     )
                 else:
                     self.needs_list = needs_list
@@ -248,21 +244,38 @@ def check_needs_file(path: str) -> Errors:
     :param path: File path to a needs.json file
     :return: Dict, with error reports
     """
-    schema_path = os.path.join(os.path.dirname(__file__), "needsfile.json")
-    with open(schema_path) as schema_file:
-        needs_schema = json.load(schema_file)
-
     with open(path) as needs_file:
         try:
-            needs_data = json.load(needs_file)
+            data = json.load(needs_file)
         except json.JSONDecodeError as e:
             raise SphinxNeedsFileException(
                 f'Problems loading json file "{path}". '
                 f"Maybe it is empty or has an invalid json format. Original exception: {e}"
             )
+    return check_needs_data(data)
+
+
+@lru_cache
+def _load_schema() -> dict[str, Any]:
+    schema_path = os.path.join(os.path.dirname(__file__), "needsfile.json")
+    with open(schema_path) as schema_file:
+        return json.load(schema_file)  # type: ignore[no-any-return]
+
+
+def check_needs_data(data: Any) -> Errors:
+    """
+    Checks a given json-file, if it passes our needs.json structure tests.
+
+    Current checks:
+    * Schema validation
+
+    :param data: Loaded needs.json file
+    :return: Dict, with error reports
+    """
+    needs_schema = _load_schema()
 
     validator = Draft7Validator(needs_schema)
-    schema_errors = list(validator.iter_errors(needs_data))
+    schema_errors = list(validator.iter_errors(data))
 
     # In future there may be additional types of validations.
     # So lets already use a class for all errors

@@ -24,6 +24,17 @@ TEST
    :id_prefix: test_
    :tags: imported; new_tag
 
+FILTERED
+--------
+.. needimport:: needs_test.json
+   :id_prefix: filter_
+   :tags: imported
+   :filter: id == 'IMPL_01'
+
+.. needimport:: needs_test.json
+   :id_prefix: ids_
+   :tags: imported
+   :ids: ROLES_REQ_1,ROLES_REQ_2
 
 
 

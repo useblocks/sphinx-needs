@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import contextlib
+from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
 from typing import Any, Callable, Dict, List, Type
 
@@ -20,7 +22,12 @@ from sphinx_needs.builder import (
     build_needumls_pumls,
 )
 from sphinx_needs.config import NEEDS_CONFIG, LinkOptionsType, NeedsSphinxConfig
-from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData, merge_data
+from sphinx_needs.data import (
+    ENV_DATA_VERSION,
+    NeedsCoreFields,
+    SphinxNeedsData,
+    merge_data,
+)
 from sphinx_needs.defaults import (
     GRAPHVIZ_STYLE_DEFAULTS,
     LAYOUTS,
@@ -30,7 +37,6 @@ from sphinx_needs.defaults import (
 )
 from sphinx_needs.directives.list2need import List2Need, List2NeedDirective
 from sphinx_needs.directives.need import (
-    Need,
     NeedDirective,
     analyse_need_locations,
     html_depart,
@@ -46,11 +52,6 @@ from sphinx_needs.directives.needextract import (
     Needextract,
     NeedextractDirective,
     process_needextract,
-)
-from sphinx_needs.directives.needfilter import (
-    Needfilter,
-    NeedfilterDirective,
-    process_needfilters,
 )
 from sphinx_needs.directives.needflow import (
     NeedflowDirective,
@@ -96,11 +97,13 @@ from sphinx_needs.environment import (
     install_styles_static_files,
 )
 from sphinx_needs.external_needs import load_external_needs
-from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS, register_func
+from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS
+from sphinx_needs.functions.functions import register_func
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.nodes import Need
 from sphinx_needs.roles import NeedsXRefRole
 from sphinx_needs.roles.need_count import NeedCount, process_need_count
-from sphinx_needs.roles.need_func import NeedFunc, process_need_func
+from sphinx_needs.roles.need_func import NeedFunc, NeedFuncRole, process_need_func
 from sphinx_needs.roles.need_incoming import NeedIncoming, process_need_incoming
 from sphinx_needs.roles.need_outgoing import NeedOutgoing, process_need_outgoing
 from sphinx_needs.roles.need_part import NeedPart, process_need_part
@@ -110,7 +113,7 @@ from sphinx_needs.services.open_needs import OpenNeedsService
 from sphinx_needs.utils import NEEDS_FUNCTIONS, node_match
 from sphinx_needs.warnings import process_warnings
 
-__version__ = VERSION = "2.1.0"
+__version__ = VERSION = "4.0.0"
 NEEDS_FUNCTIONS.clear()
 
 _NODE_TYPES_T = Dict[
@@ -125,7 +128,6 @@ NODE_TYPES_PRIO: _NODE_TYPES_T = {  # Node types to be checked before most other
 NODE_TYPES: _NODE_TYPES_T = {
     Needbar: process_needbar,
     # Needextract: process_needextract,
-    Needfilter: process_needfilters,
     Needlist: process_needlist,
     Needtable: process_needtables,
     NeedflowPlantuml: process_needflow_plantuml,
@@ -162,9 +164,6 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_node(
         Need, html=(html_visit, html_depart), latex=(latex_visit, latex_depart)
     )
-    app.add_node(
-        Needfilter,
-    )
     app.add_node(Needbar)
     app.add_node(Needimport)
     app.add_node(Needlist)
@@ -191,7 +190,6 @@ def setup(app: Sphinx) -> dict[str, Any]:
 
     # Define directives
     app.add_directive("needbar", NeedbarDirective)
-    app.add_directive("needfilter", NeedfilterDirective)
     app.add_directive("needlist", NeedlistDirective)
     app.add_directive("needtable", NeedtableDirective)
     app.add_directive("needflow", NeedflowDirective)
@@ -253,12 +251,8 @@ def setup(app: Sphinx) -> dict[str, Any]:
         ),
     )
 
-    app.add_role(
-        "need_func",
-        NeedsXRefRole(
-            nodeclass=NeedFunc, innernodeclass=nodes.inline, warn_dangling=True
-        ),
-    )
+    app.add_role("need_func", NeedFuncRole(with_brackets=True))  # deprecrated
+    app.add_role("ndf", NeedFuncRole(with_brackets=False))
 
     ########################################################################
     # EVENTS
@@ -280,6 +274,10 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("env-updated", install_permalink_file)
     # This should be called last, so that need-styles can override styles from used libraries
     app.connect("env-updated", install_styles_static_files)
+
+    # emitted during post_process_needs_data, both are passed the mutable needs dict
+    app.add_event("needs-before-post-processing")
+    app.add_event("needs-before-sealing")
 
     # There is also the event doctree-read.
     # But it looks like in this event no references are already solved, which
@@ -310,6 +308,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
         "version": VERSION,
         "parallel_read_safe": True,
         "parallel_write_safe": True,
+        "env_version": ENV_DATA_VERSION,
     }
 
 
@@ -500,18 +499,15 @@ def visitor_dummy(*_args: Any, **_kwargs: Any) -> None:
     pass
 
 
-def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
+def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> None:
     """
     Prepares the sphinx environment to store sphinx-needs internal data.
     """
     needs_config = NeedsSphinxConfig(app.config)
     data = SphinxNeedsData(env)
-    data.get_or_create_needs()
-    data.get_or_create_filters()
-    data.get_or_create_docs()
-    services = data.get_or_create_services()
 
     # Register embedded services
+    services = data.get_or_create_services()
     services.register("github-issues", GithubService, gh_type="issue")
     services.register("github-prs", GithubService, gh_type="pr")
     services.register("github-commits", GithubService, gh_type="commit")
@@ -588,6 +584,10 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docname: str) -> None:
         debug.START_TIME = timer()  # Store the rough start time of Sphinx build
         debug.EXECUTE_TIME_MEASUREMENTS = True
 
+    if needs_config.debug_filters:
+        with contextlib.suppress(FileNotFoundError):
+            Path(str(app.outdir), "debug_filters.jsonl").unlink()
+
 
 def check_configuration(_app: Sphinx, config: Config) -> None:
     """Checks the configuration for invalid options.
@@ -652,7 +652,7 @@ def check_configuration(_app: Sphinx, config: Config) -> None:
         if (
             option not in extra_options
             and option not in link_types
-            and option not in NEED_DEFAULT_OPTIONS.keys()
+            and option not in NEED_DEFAULT_OPTIONS
         ):
             raise NeedsConfigException(
                 f"Variant option `{option}` is not added in either extra options or extra links. "

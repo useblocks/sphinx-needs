@@ -38,4 +38,8 @@ def my_own_function(app, need, needs):
     return "Awesome"
 
 
-needs_functions = [my_own_function]
+def bad_function(app, need, needs):
+    return object()
+
+
+needs_functions = [my_own_function, bad_function]

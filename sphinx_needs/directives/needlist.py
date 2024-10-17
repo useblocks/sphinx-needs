@@ -85,13 +85,12 @@ def process_needlist(
 
         current_needfilter: NeedsListType = node.attributes
         content: list[nodes.Node] = []
-        all_needs = list(SphinxNeedsData(env).get_or_create_needs().values())
         found_needs = process_filters(
             app,
-            all_needs,
+            SphinxNeedsData(env).get_needs_view(),
             current_needfilter,
             origin="needlist",
-            location=f"{node.source}:{node.line}",
+            location=node,
         )
 
         if len(found_needs) > 0:
@@ -128,7 +127,7 @@ def process_needlist(
                     ref.append(title)
                     para += ref
                 elif _docname := need_info["docname"]:
-                    target_id = need_info["target_id"]
+                    target_id = need_info["id_parent"]
                     ref = nodes.reference("", "")
                     ref["refdocname"] = _docname
                     ref["refuri"] = builder.get_relative_uri(fromdocname, _docname)

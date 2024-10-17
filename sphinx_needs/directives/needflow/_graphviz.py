@@ -29,13 +29,14 @@ from sphinx_needs.utils import (
     match_variants,
     remove_node_from_tree,
 )
+from sphinx_needs.views import NeedsView
 
 from ._shared import create_filter_paragraph, filter_by_tree, get_root_needs
 
 try:
     from sphinx.writers.html5 import HTML5Translator
 except ImportError:
-    from sphinx.writers.html import HTML5Translator
+    from sphinx.writers.html import HTML5Translator  # type: ignore[attr-defined]
 
 LOGGER = getLogger(__name__)
 
@@ -49,7 +50,7 @@ def process_needflow_graphviz(
 ) -> None:
     needs_config = NeedsSphinxConfig(app.config)
     env_data = SphinxNeedsData(app.env)
-    all_needs = env_data.get_or_create_needs()
+    needs_view = env_data.get_needs_view()
 
     link_type_names = [link["option"].upper() for link in needs_config.extra_links]
     allowed_link_types_options = [link.upper() for link in needs_config.flow_link_types]
@@ -111,21 +112,21 @@ def process_needflow_graphviz(
 
         init_filtered_needs = (
             filter_by_tree(
-                all_needs,
+                needs_view,
                 root_id,
                 allowed_link_types,
                 attributes["root_direction"],
                 attributes["root_depth"],
-            ).values()
+            )
             if (root_id := attributes["root_id"])
-            else all_needs.values()
+            else needs_view
         )
         filtered_needs = process_filters(
             app,
             init_filtered_needs,
             node.attributes,
             origin="needflow",
-            location=f"{node.source}:{node.line}",
+            location=node,
         )
 
         if not filtered_needs:
@@ -156,6 +157,7 @@ def process_needflow_graphviz(
             content += _render_node(
                 root_need,
                 node,
+                needs_view,
                 needs_config,
                 lambda n: calculate_link(app, n, fromdocname, relative="."),
                 id_comp_to_need,
@@ -202,6 +204,7 @@ def _quote(text: str) -> str:
 def _render_node(
     need: NeedsInfoType,
     node: NeedflowGraphiz,
+    needs_view: NeedsView,
     config: NeedsSphinxConfig,
     calc_link: Callable[[NeedsInfoType], str],
     id_comp_to_need: dict[str, NeedsInfoType],
@@ -220,7 +223,7 @@ def _render_node(
         # graphviz cannot nest nodes,
         # so we have to create a subgraph to represent a need with parts/children
         return _render_subgraph(
-            need, node, config, calc_link, id_comp_to_need, rendered_nodes
+            need, node, needs_view, config, calc_link, id_comp_to_need, rendered_nodes
         )
 
     rendered_nodes[need["id_complete"]] = {"need": need, "cluster_id": None}
@@ -258,7 +261,9 @@ def _render_node(
         params.append(("fillcolor", _quote(need["type_color"])))
 
     # outline color
-    if node["highlight"] and filter_single_need(need, config, node["highlight"]):
+    if node["highlight"] and filter_single_need(
+        need, config, node["highlight"], needs_view.values()
+    ):
         params.append(("color", "red"))
     elif node["border_color"]:
         color = match_variants(
@@ -278,6 +283,7 @@ def _render_node(
 def _render_subgraph(
     need: NeedsInfoType,
     node: NeedflowGraphiz,
+    needs_view: NeedsView,
     config: NeedsSphinxConfig,
     calc_link: Callable[[NeedsInfoType], str],
     id_comp_to_need: dict[str, NeedsInfoType],
@@ -340,6 +346,7 @@ def _render_subgraph(
                     _render_node(
                         id_comp_to_need[need_part_id],
                         node,
+                        needs_view,
                         config,
                         calc_link,
                         id_comp_to_need,
@@ -356,6 +363,7 @@ def _render_subgraph(
                     _render_node(
                         id_comp_to_need[child_need_id],
                         node,
+                        needs_view,
                         config,
                         calc_link,
                         id_comp_to_need,
@@ -369,8 +377,11 @@ def _render_subgraph(
 
 def _label(need: NeedsInfoType, align: Literal["left", "right", "center"]) -> str:
     """Create the graphviz label for a need."""
+    # note this is based on the plantuml template DEFAULT_DIAGRAM_TEMPLATE
+
     br = f'<br align="{align}"/>'
     # note this text wrapping mimics the jinja wordwrap filter
+    need_title = need["title"] if need["is_need"] else need["content"]
     title = br.join(
         br.join(
             textwrap.wrap(
@@ -382,13 +393,13 @@ def _label(need: NeedsInfoType, align: Literal["left", "right", "center"]) -> st
                 break_on_hyphens=True,
             )
         )
-        for line in need["title"].splitlines()
+        for line in need_title.splitlines()
     )
-    name = html.escape(need["type_name"])
+    name = html.escape(need["type_name"] + (" (part)" if need["is_part"] else ""))
     if need["is_need"]:
         _id = html.escape(need["id"])
     else:
-        _id = f"{html.escape(need['id_parent'])}.<b>{html.escape(need['id'])}</b>"
+        _id = f'{html.escape(need["id_parent"])}.<b align="{align}">{html.escape(need["id"])}</b>'
     font_10 = '<font point-size="10">'
     font_12 = '<font point-size="12">'
     return f"<{font_12}{name}</font>{br}<b>{title}</b>{br}{font_10}{_id}</font>{br}>"

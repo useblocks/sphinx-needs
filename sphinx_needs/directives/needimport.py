@@ -12,15 +12,15 @@ from docutils.parsers.rst import directives
 from requests_file import FileAdapter
 from sphinx.util.docutils import SphinxDirective
 
-from sphinx_needs.api import add_need
+from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType
+from sphinx_needs.data import NeedsCoreFields, NeedsInfoType
 from sphinx_needs.debug import measure_time
 from sphinx_needs.defaults import string_to_boolean
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import log_warning
-from sphinx_needs.needsfile import check_needs_file
-from sphinx_needs.utils import add_doc, logger
+from sphinx_needs.needsfile import SphinxNeedsFileException, check_needs_data
+from sphinx_needs.utils import add_doc, import_prefix_link_edit, logger
 
 
 class Needimport(nodes.General, nodes.Element):
@@ -37,6 +37,7 @@ class NeedimportDirective(SphinxDirective):
         "version": directives.unchanged_required,
         "hide": directives.flag,
         "collapse": string_to_boolean,
+        "ids": directives.unchanged_required,
         "filter": directives.unchanged_required,
         "id_prefix": directives.unchanged_required,
         "tags": directives.unchanged_required,
@@ -55,10 +56,6 @@ class NeedimportDirective(SphinxDirective):
         version = self.options.get("version")
         filter_string = self.options.get("filter")
         id_prefix = self.options.get("id_prefix", "")
-
-        tags = self.options.get("tags", [])
-        if len(tags) > 0:
-            tags = [tag.strip() for tag in re.split("[;,]", tags)]
 
         need_import_path = self.arguments[0]
 
@@ -101,7 +98,7 @@ class NeedimportDirective(SphinxDirective):
                             "Deprecation warning: Relative path must be relative to the current document in future, "
                             "not to the conf.py location. Use a starting '/', like '/needs.json', to make the path "
                             "relative to conf.py.",
-                            None,
+                            "deprecated",
                             location=(self.env.docname, self.lineno),
                         )
             else:
@@ -115,20 +112,20 @@ class NeedimportDirective(SphinxDirective):
                     f"Could not load needs import file {correct_need_import_path}"
                 )
 
-            errors = check_needs_file(correct_need_import_path)
+            try:
+                with open(correct_need_import_path) as needs_file:
+                    needs_import_list = json.load(needs_file)
+            except (OSError, json.JSONDecodeError) as e:
+                # TODO: Add exception handling
+                raise SphinxNeedsFileException(correct_need_import_path) from e
+
+            errors = check_needs_data(needs_import_list)
             if errors.schema:
                 logger.info(
                     f"Schema validation errors detected in file {correct_need_import_path}:"
                 )
                 for error in errors.schema:
                     logger.info(f'  {error.message} -> {".".join(error.path)}')
-
-            try:
-                with open(correct_need_import_path) as needs_file:
-                    needs_import_list = json.load(needs_file)
-            except json.JSONDecodeError as e:
-                # TODO: Add exception handling
-                raise e
 
         if version is None:
             try:
@@ -139,13 +136,20 @@ class NeedimportDirective(SphinxDirective):
                 raise CorruptedNeedsFile(
                     f"Key 'current_version' missing or corrupted in {correct_need_import_path}"
                 )
-        if version not in needs_import_list["versions"].keys():
+        if version not in needs_import_list["versions"]:
             raise VersionNotFound(
                 f"Version {version} not found in needs import file {correct_need_import_path}"
             )
 
         needs_config = NeedsSphinxConfig(self.config)
         data = needs_import_list["versions"][version]
+
+        if ids := self.options.get("ids"):
+            id_list = [i.strip() for i in ids.split(",") if i.strip()]
+            data["needs"] = {
+                key: data["needs"][key] for key in id_list if key in data["needs"]
+            }
+
         # TODO this is not exactly NeedsInfoType, because the export removes/adds some keys
         needs_list: dict[str, NeedsInfoType] = data["needs"]
         if schema := data.get("needs_schema"):
@@ -167,9 +171,9 @@ class NeedimportDirective(SphinxDirective):
             else:
                 filter_context = need.copy()
 
-                # Support both ways of addressing the description, as "description" is used in json file, but
-                # "content" is the sphinx internal name for this kind of information
-                filter_context["content"] = need["description"]  # type: ignore[typeddict-item]
+                if "description" in need and not need.get("content"):
+                    # legacy versions of sphinx-needs changed "description" to "content" when outputting to json
+                    filter_context["content"] = need["description"]  # type: ignore[typeddict-item]
                 try:
                     if filter_single_need(filter_context, needs_config, filter_string):
                         needs_list_filtered[key] = need
@@ -177,93 +181,102 @@ class NeedimportDirective(SphinxDirective):
                     log_warning(
                         logger,
                         f"needimport: Filter {filter_string} not valid. Error: {e}. {self.docname}{self.lineno}",
-                        None,
+                        "needimport",
                         location=(self.env.docname, self.lineno),
                     )
 
         needs_list = needs_list_filtered
 
-        # If we need to set an id prefix, we also need to manipulate all used ids in the imported data.
-        extra_links = needs_config.extra_links
-        if id_prefix:
-            for need in needs_list.values():
-                for id in needs_list:
-                    # Manipulate links in all link types
-                    for extra_link in extra_links:
-                        if (
-                            extra_link["option"] in need
-                            and id in need[extra_link["option"]]  # type: ignore[literal-required]
-                        ):
-                            for n, link in enumerate(need[extra_link["option"]]):  # type: ignore[literal-required]
-                                if id == link:
-                                    need[extra_link["option"]][n] = "".join(  # type: ignore[literal-required]
-                                        [id_prefix, id]
-                                    )
-                    # Manipulate descriptions
-                    # ToDo: Use regex for better matches.
-                    need["description"] = need["description"].replace(  # type: ignore[typeddict-item]
-                        id, "".join([id_prefix, id])
-                    )
-
         # tags update
-        for need in needs_list.values():
-            need["tags"] = need["tags"] + tags
+        if tags := [
+            tag.strip()
+            for tag in re.split("[;,]", self.options.get("tags", ""))
+            if tag.strip()
+        ]:
+            for need in needs_list.values():
+                need["tags"] = need["tags"] + tags
 
-        known_options = (
-            "title",
-            "status",
-            "content",
-            "id",
-            "tags",
-            "hide",
-            "template",
-            "pre_template",
-            "post_template",
+        import_prefix_link_edit(needs_list, id_prefix, needs_config.extra_links)
+
+        # all known need fields in the project
+        known_keys = {
+            *NeedsCoreFields,
+            *(x["option"] for x in needs_config.extra_links),
+            *(x["option"] + "_back" for x in needs_config.extra_links),
+            *NEEDS_CONFIG.extra_options,
+        }
+        # all keys that should not be imported from external needs
+        omitted_keys = {
+            *(k for k, v in NeedsCoreFields.items() if v.get("exclude_import")),
+            *(x["option"] + "_back" for x in needs_config.extra_links),
+        }
+
+        # collect unknown keys to log them
+        unknown_keys: set[str] = set()
+
+        # directive options that can be override need fields
+        override_options = (
             "collapse",
             "style",
             "layout",
-            "need_type",
-            "constraints",
-            *[x["option"] for x in extra_links],
-            *NEEDS_CONFIG.extra_options,
+            "template",
+            "pre_template",
+            "post_template",
         )
+
         need_nodes = []
-        for need in needs_list.values():
-            # Set some values based on given option or value from imported need.
-            need["template"] = self.options.get("template", need.get("template"))
-            need["pre_template"] = self.options.get(
-                "pre_template", need.get("pre_template")
-            )
-            need["post_template"] = self.options.get(
-                "post_template", need.get("post_template")
-            )
-            need["layout"] = self.options.get("layout", need.get("layout"))
-            need["style"] = self.options.get("style", need.get("style"))
-
-            if "hide" in self.options:
-                need["hide"] = True
-            else:
-                need["hide"] = need.get("hide", False)
-            need["collapse"] = self.options.get("collapse", need.get("collapse"))
-
-            # The key needs to be different for add_need() api call.
-            need["need_type"] = need["type"]  # type: ignore[typeddict-unknown-key]
-
-            # Replace id, to get unique ids
-            need["id"] = id_prefix + need["id"]
-
-            need["content"] = need["description"]  # type: ignore[typeddict-item]
+        for need_params in needs_list.values():
+            if "description" in need_params and not need_params.get("content"):
+                # legacy versions of sphinx-needs changed "description" to "content" when outputting to json
+                need_params["content"] = need_params["description"]  # type: ignore[typeddict-item]
+                del need_params["description"]  # type: ignore[typeddict-item]
 
             # Remove unknown options, as they may be defined in source system, but not in this sphinx project
-            for option in list(need):
-                if option not in known_options:
-                    del need[option]  # type: ignore
+            for option in list(need_params):
+                if option not in known_keys:
+                    unknown_keys.add(option)
+                    del need_params[option]  # type: ignore[misc]
+                elif option in omitted_keys:
+                    del need_params[option]  # type: ignore[misc]
 
-            need["docname"] = self.docname
-            need["lineno"] = self.lineno
+            for override_option in override_options:
+                if override_option in self.options:
+                    need_params[override_option] = self.options[override_option]  # type: ignore[literal-required]
+            if "hide" in self.options:
+                need_params["hide"] = True
 
-            nodes = add_need(self.env.app, self.state, **need)  # type: ignore[call-arg]
-            need_nodes.extend(nodes)
+            # These keys need to be different for add_need() api call.
+            need_params["need_type"] = need_params.pop("type", "")  # type: ignore[misc,typeddict-unknown-key]
+            need_params["title"] = need_params.pop(
+                "full_title", need_params.get("title", "")
+            )  # type: ignore[misc]
+
+            # Replace id, to get unique ids
+            need_id = need_params["id"] = id_prefix + need_params["id"]
+
+            # override location
+            need_params["docname"] = self.docname
+            need_params["lineno"] = self.lineno
+
+            try:
+                nodes = add_need(self.env.app, self.state, **need_params)  # type: ignore[call-arg]
+            except InvalidNeedException as err:
+                log_warning(
+                    logger,
+                    f"Need {need_id!r} could not be imported: {err.message}",
+                    "import_need",
+                    location=self.get_location(),
+                )
+            else:
+                need_nodes.extend(nodes)
+
+        if unknown_keys:
+            log_warning(
+                logger,
+                f"Unknown keys in import need source: {sorted(unknown_keys)!r}",
+                "unknown_import_keys",
+                location=self.get_location(),
+            )
 
         add_doc(self.env, self.env.docname)
 

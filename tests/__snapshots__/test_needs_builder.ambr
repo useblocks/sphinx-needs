@@ -3,9 +3,6 @@
     'current_version': '1.0',
     'versions': dict({
       '1.0': dict({
-        'filters': dict({
-        }),
-        'filters_amount': 0,
         'needs': dict({
           'TC_001': dict({
             'arch': dict({
@@ -18,10 +15,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'TC_001',
+            'content': '',
             'created_at': '',
-            'delete': None,
-            'description': '',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -36,9 +32,11 @@
             'is_modified': False,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
             'links': list([
+            ]),
+            'links_back': list([
             ]),
             'max_amount': '',
             'max_content_lines': '',
@@ -46,6 +44,8 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -64,7 +64,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'TC_001',
             'template': None,
             'title': 'Test example',
             'type': 'test',
@@ -85,10 +84,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'TC_NEG_001',
+            'content': '',
             'created_at': '',
-            'delete': None,
-            'description': '',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -103,9 +101,11 @@
             'is_modified': False,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
             'links': list([
+            ]),
+            'links_back': list([
             ]),
             'max_amount': '',
             'max_content_lines': '',
@@ -113,6 +113,8 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -131,7 +133,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'TC_NEG_001',
             'template': None,
             'title': 'Negative test example',
             'type': 'test',
@@ -152,10 +153,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'US_63252',
+            'content': '',
             'created_at': '',
-            'delete': None,
-            'description': '',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -170,9 +170,11 @@
             'is_modified': False,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
             'links': list([
+            ]),
+            'links_back': list([
             ]),
             'max_amount': '',
             'max_content_lines': '',
@@ -180,6 +182,8 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -199,7 +203,6 @@
             'tags': list([
               '1',
             ]),
-            'target_id': 'US_63252',
             'template': None,
             'title': 'A story',
             'type': 'story',
@@ -262,10 +265,7 @@
               'default': True,
               'description': 'True if all constraints passed, False if any failed, None if not yet checked.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'constraints_results': dict({
               'additionalProperties': dict({
@@ -277,14 +277,11 @@
               'field_type': 'core',
               'type': 'object',
             }),
-            'content_id': dict({
-              'default': None,
-              'description': 'ID of the content node.',
+            'content': dict({
+              'default': '',
+              'description': 'Content of the need.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
+              'type': 'string',
             }),
             'created_at': dict({
               'default': '',
@@ -293,13 +290,10 @@
               'type': 'string',
             }),
             'delete': dict({
-              'default': None,
+              'default': False,
               'description': 'If true, the need is deleted entirely.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'docname': dict({
               'default': None,
@@ -391,13 +385,10 @@
               'type': 'boolean',
             }),
             'jinja_content': dict({
-              'default': None,
+              'default': False,
               'description': 'Whether the content should be pre-processed by jinja.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'layout': dict({
               'default': None,
@@ -413,6 +404,16 @@
               ]),
               'description': 'Link field',
               'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'links_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
               'items': dict({
                 'type': 'string',
               }),
@@ -453,6 +454,16 @@
               ]),
               'description': 'Link field',
               'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'parent_needs_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
               'items': dict({
                 'type': 'string',
               }),
@@ -571,11 +582,6 @@
                 'type': 'string',
               }),
               'type': 'array',
-            }),
-            'target_id': dict({
-              'description': 'ID of the data.',
-              'field_type': 'core',
-              'type': 'string',
             }),
             'template': dict({
               'default': None,
@@ -805,13 +811,8 @@
     'current_version': '1.0',
     'versions': dict({
       '1.0': dict({
-        'filters': dict({
-        }),
-        'filters_amount': 0,
         'needs': dict({
           'TC_001': dict({
-            'content_id': 'TC_001',
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Test example',
@@ -822,14 +823,11 @@
               'TEST DOCUMENT NEEDS Builder',
             ]),
             'status': 'open',
-            'target_id': 'TC_001',
             'title': 'Test example',
             'type': 'test',
             'type_name': 'Test Case',
           }),
           'TC_NEG_001': dict({
-            'content_id': 'TC_NEG_001',
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'Negative test example',
@@ -840,14 +838,11 @@
               'TEST DOCUMENT NEEDS Builder',
             ]),
             'status': 'closed',
-            'target_id': 'TC_NEG_001',
             'title': 'Negative test example',
             'type': 'test',
             'type_name': 'Test Case',
           }),
           'US_63252': dict({
-            'content_id': 'US_63252',
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'A story',
@@ -861,13 +856,13 @@
             'tags': list([
               '1',
             ]),
-            'target_id': 'US_63252',
             'title': 'A story',
             'type': 'story',
             'type_name': 'User Story',
           }),
         }),
         'needs_amount': 3,
+        'needs_defaults_removed': True,
         'needs_schema': dict({
           '$schema': 'http://json-schema.org/draft-07/schema#',
           'properties': dict({
@@ -919,10 +914,7 @@
               'default': True,
               'description': 'True if all constraints passed, False if any failed, None if not yet checked.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'constraints_results': dict({
               'additionalProperties': dict({
@@ -934,14 +926,11 @@
               'field_type': 'core',
               'type': 'object',
             }),
-            'content_id': dict({
-              'default': None,
-              'description': 'ID of the content node.',
+            'content': dict({
+              'default': '',
+              'description': 'Content of the need.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
+              'type': 'string',
             }),
             'created_at': dict({
               'default': '',
@@ -950,13 +939,10 @@
               'type': 'string',
             }),
             'delete': dict({
-              'default': None,
+              'default': False,
               'description': 'If true, the need is deleted entirely.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'docname': dict({
               'default': None,
@@ -1048,13 +1034,10 @@
               'type': 'boolean',
             }),
             'jinja_content': dict({
-              'default': None,
+              'default': False,
               'description': 'Whether the content should be pre-processed by jinja.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'layout': dict({
               'default': None,
@@ -1070,6 +1053,16 @@
               ]),
               'description': 'Link field',
               'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'links_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
               'items': dict({
                 'type': 'string',
               }),
@@ -1110,6 +1103,16 @@
               ]),
               'description': 'Link field',
               'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'parent_needs_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
               'items': dict({
                 'type': 'string',
               }),
@@ -1228,11 +1231,6 @@
                 'type': 'string',
               }),
               'type': 'array',
-            }),
-            'target_id': dict({
-              'description': 'ID of the data.',
-              'field_type': 'core',
-              'type': 'string',
             }),
             'template': dict({
               'default': None,
@@ -1462,9 +1460,6 @@
     'current_version': '1.0',
     'versions': dict({
       '1.0': dict({
-        'filters': dict({
-        }),
-        'filters_amount': 0,
         'needs': dict({
           'TC_001': dict({
             'arch': dict({
@@ -1477,10 +1472,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'TC_001',
+            'content': '',
             'created_at': '',
-            'delete': None,
-            'description': '',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -1495,9 +1489,11 @@
             'is_modified': False,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
             'links': list([
+            ]),
+            'links_back': list([
             ]),
             'max_amount': '',
             'max_content_lines': '',
@@ -1505,6 +1501,8 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -1523,7 +1521,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'TC_001',
             'template': None,
             'title': 'Test example',
             'type': 'test',
@@ -1544,10 +1541,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'TC_NEG_001',
+            'content': '',
             'created_at': '',
-            'delete': None,
-            'description': '',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -1562,9 +1558,11 @@
             'is_modified': False,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
             'links': list([
+            ]),
+            'links_back': list([
             ]),
             'max_amount': '',
             'max_content_lines': '',
@@ -1572,6 +1570,8 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -1590,7 +1590,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'TC_NEG_001',
             'template': None,
             'title': 'Negative test example',
             'type': 'test',
@@ -1611,10 +1610,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'US_63252',
+            'content': '',
             'created_at': '',
-            'delete': None,
-            'description': '',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -1629,9 +1627,11 @@
             'is_modified': False,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
             'links': list([
+            ]),
+            'links_back': list([
             ]),
             'max_amount': '',
             'max_content_lines': '',
@@ -1639,6 +1639,8 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -1658,7 +1660,6 @@
             'tags': list([
               '1',
             ]),
-            'target_id': 'US_63252',
             'template': None,
             'title': 'A story',
             'type': 'story',
@@ -1721,10 +1722,7 @@
               'default': True,
               'description': 'True if all constraints passed, False if any failed, None if not yet checked.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'constraints_results': dict({
               'additionalProperties': dict({
@@ -1736,14 +1734,11 @@
               'field_type': 'core',
               'type': 'object',
             }),
-            'content_id': dict({
-              'default': None,
-              'description': 'ID of the content node.',
+            'content': dict({
+              'default': '',
+              'description': 'Content of the need.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
+              'type': 'string',
             }),
             'created_at': dict({
               'default': '',
@@ -1752,13 +1747,10 @@
               'type': 'string',
             }),
             'delete': dict({
-              'default': None,
+              'default': False,
               'description': 'If true, the need is deleted entirely.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'docname': dict({
               'default': None,
@@ -1850,13 +1842,10 @@
               'type': 'boolean',
             }),
             'jinja_content': dict({
-              'default': None,
+              'default': False,
               'description': 'Whether the content should be pre-processed by jinja.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'layout': dict({
               'default': None,
@@ -1872,6 +1861,16 @@
               ]),
               'description': 'Link field',
               'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'links_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
               'items': dict({
                 'type': 'string',
               }),
@@ -1912,6 +1911,16 @@
               ]),
               'description': 'Link field',
               'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'parent_needs_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
               'items': dict({
                 'type': 'string',
               }),
@@ -2030,11 +2039,6 @@
                 'type': 'string',
               }),
               'type': 'array',
-            }),
-            'target_id': dict({
-              'description': 'ID of the data.',
-              'field_type': 'core',
-              'type': 'string',
             }),
             'template': dict({
               'default': None,

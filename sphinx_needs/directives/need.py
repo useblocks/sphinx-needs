@@ -1,31 +1,27 @@
 from __future__ import annotations
 
-import hashlib
 import re
 from typing import Any, Sequence
 
 from docutils import nodes
-from docutils.parsers.rst.states import RSTState, RSTStateMachine
-from docutils.statemachine import StringList
 from sphinx.addnodes import desc_name, desc_signature
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util.docutils import SphinxDirective
 
-from sphinx_needs.api import add_need
-from sphinx_needs.api.exceptions import NeedsInvalidException
+from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import NeedsMutable, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.defaults import NEED_DEFAULT_OPTIONS
 from sphinx_needs.directives.needextend import Needextend, extend_needs_data
-from sphinx_needs.functions import (
+from sphinx_needs.functions.functions import (
+    check_and_get_content,
     find_and_replace_node_content,
     resolve_dynamic_values,
     resolve_variants_options,
 )
-from sphinx_needs.functions.functions import check_and_get_content
-from sphinx_needs.layout import build_need
+from sphinx_needs.layout import build_need_repr
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_constraints import process_constraints
 from sphinx_needs.nodes import Need
@@ -57,39 +53,9 @@ class NeedDirective(SphinxDirective):
 
     final_argument_whitespace = True
 
-    def __init__(
-        self,
-        name: str,
-        arguments: list[str],
-        options: dict[str, Any],
-        content: StringList,
-        lineno: int,
-        content_offset: int,
-        block_text: str,
-        state: RSTState,
-        state_machine: RSTStateMachine,
-    ):
-        super().__init__(
-            name,
-            arguments,
-            options,
-            content,
-            lineno,
-            content_offset,
-            block_text,
-            state,
-            state_machine,
-        )
-        self.needs_config = NeedsSphinxConfig(self.env.config)
-        self.log = get_logger(__name__)
-        self.full_title = self._get_full_title()
-
     @measure_time("need")
     def run(self) -> Sequence[nodes.Node]:
-        #############################################################################################
-        # Get environment
-        #############################################################################################
-        env = self.env
+        needs_config = NeedsSphinxConfig(self.env.config)
 
         delete_opt = self.options.get("delete")
         collapse = self.options.get("collapse")
@@ -98,10 +64,6 @@ class NeedDirective(SphinxDirective):
 
         id = self.options.get("id")
         status = self.options.get("status")
-        if status:
-            status = status.replace(
-                "__", ""
-            )  # Support for multiline options, which must use __ for empty lines
         tags = self.options.get("tags", "")
         style = self.options.get("style")
         layout = self.options.get("layout", "")
@@ -110,8 +72,10 @@ class NeedDirective(SphinxDirective):
         post_template = self.options.get("post_template")
         constraints = self.options.get("constraints", [])
 
+        title = self._get_title(needs_config)
+
         need_extra_options = {}
-        for extra_link in self.needs_config.extra_links:
+        for extra_link in needs_config.extra_links:
             need_extra_options[extra_link["option"]] = self.options.get(
                 extra_link["option"], ""
             )
@@ -119,115 +83,66 @@ class NeedDirective(SphinxDirective):
         for extra_option in NEEDS_CONFIG.extra_options:
             need_extra_options[extra_option] = self.options.get(extra_option, "")
 
-        need_nodes = add_need(
-            env.app,
-            self.state,
-            self.docname,
-            self.lineno,
-            need_type=self.name,
-            title=self.trimmed_title,
-            id=id,
-            content=self.content,
-            lineno_content=self.content_offset + 1,
-            status=status,
-            tags=tags,
-            hide=hide,
-            template=template,
-            pre_template=pre_template,
-            post_template=post_template,
-            collapse=collapse,
-            style=style,
-            layout=layout,
-            delete=delete_opt,
-            jinja_content=jinja_content,
-            constraints=constraints,
-            **need_extra_options,
-        )
-        add_doc(env, self.docname)
+        try:
+            need_nodes = add_need(
+                self.env.app,
+                self.state,
+                self.env.docname,
+                self.lineno,
+                need_type=self.name,
+                title=title,
+                id=id,
+                content=self.content,
+                lineno_content=self.content_offset + 1,
+                status=status,
+                tags=tags,
+                hide=hide,
+                template=template,
+                pre_template=pre_template,
+                post_template=post_template,
+                collapse=collapse,
+                style=style,
+                layout=layout,
+                delete=delete_opt,
+                jinja_content=jinja_content,
+                constraints=constraints,
+                **need_extra_options,
+            )
+        except InvalidNeedException as err:
+            log_warning(
+                LOGGER,
+                f"Need could not be created: {err.message}",
+                "create_need",
+                location=self.get_location(),
+            )
+            return []
+        add_doc(self.env, self.env.docname)
         return need_nodes
 
-    def read_in_links(self, name: str) -> list[str]:
-        # Get links
-        links_string = self.options.get(name)
-        links = []
-        if links_string:
-            for link in re.split(r";|,", links_string):
-                if link.isspace():
-                    log_warning(
-                        LOGGER,
-                        f"Grubby link definition found in need '{self.trimmed_title}'. "
-                        "Defined link contains spaces only.",
-                        None,
-                        location=(self.env.docname, self.lineno),
-                    )
-                else:
-                    links.append(link.strip())
-
-            # This may have cut also dynamic function strings, as they can contain , as well.
-            # So let put them together again
-            # ToDo: There may be a smart regex for the splitting. This would avoid this mess of code...
-        return _fix_list_dyn_func(links)
-
-    def make_hashed_id(self, type_prefix: str, id_length: int) -> str:
-        hashable_content = self.full_title or "\n".join(self.content)
-        return "{}{}".format(
-            type_prefix,
-            hashlib.sha1(hashable_content.encode("UTF-8"))
-            .hexdigest()
-            .upper()[:id_length],
-        )
-
-    @property
-    def title_from_content(self) -> bool:
-        return (
-            "title_from_content" in self.options or self.needs_config.title_from_content
-        )
-
-    @property
-    def docname(self) -> str:
-        return self.env.docname
-
-    @property
-    def trimmed_title(self) -> str:
-        title = self.full_title
-        max_length = self.max_title_length
-        if max_length == -1 or len(title) <= max_length:
-            return title
-        elif max_length <= 3:
-            return title[: self.max_title_length]
-        else:
-            return title[: self.max_title_length - 3] + "..."
-
-    @property
-    def max_title_length(self) -> int:
-        max_title_length: int = self.needs_config.max_title_length
-        return max_title_length
-
-    # ToDo. Keep this in directive
-    def _get_full_title(self) -> str:
+    def _get_title(self, config: NeedsSphinxConfig) -> str:
+        """Determines the title for the need in order of precedence:
+        directive argument, first sentence of requirement
+        (if `:title_from_content:` was set, and '' if no title is to be derived).
         """
-        Determines the title for the need in order of precedence:
-        directive argument, first sentence of requirement (if
-        `:title_from_content:` was set, and '' if no title is to be derived)."""
         if len(self.arguments) > 0:  # a title was passed
             if "title_from_content" in self.options:
                 log_warning(
-                    self.log,
-                    f'need "{self.arguments[0]}" has :title_from_content: set, '
-                    f"but a title was provided. (see file {self.docname})",
-                    None,
-                    location=(self.env.docname, self.lineno),
+                    LOGGER,
+                    "need directive has :title_from_content: set, but a title was provided.",
+                    "title",
+                    location=self.get_location(),
                 )
             return self.arguments[0]  # type: ignore[no-any-return]
-        elif self.title_from_content:
+        elif "title_from_content" in self.options or config.title_from_content:
             first_sentence = re.split(r"[.\n]", "\n".join(self.content))[0]
             if not first_sentence:
-                raise NeedsInvalidException(
-                    ":title_from_content: set, but "
-                    "no content provided. "
-                    f"(Line {self.lineno} of file {self.docname}"
+                log_warning(
+                    LOGGER,
+                    ":title_from_content: set, but no content provided.",
+                    "title",
+                    location=self.get_location(),
                 )
-            return first_sentence
+            return first_sentence or ""
         else:
             return ""
 
@@ -284,10 +199,7 @@ def purge_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> None:
     Gets executed, if a doc file needs to be purged/ read in again.
     So this code delete all found needs for the given docname.
     """
-    needs = SphinxNeedsData(env).get_or_create_needs()
-    for need_id in list(needs):
-        if needs[need_id]["docname"] == docname:
-            del needs[need_id]
+    SphinxNeedsData(env).remove_doc(docname)
 
 
 def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
@@ -303,7 +215,7 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
     """
     env = app.env
 
-    needs = SphinxNeedsData(env).get_or_create_needs()
+    needs = SphinxNeedsData(env).get_needs_mutable()
 
     hidden_needs: list[Need] = []
     for need_node in doctree.findall(Need):
@@ -376,16 +288,18 @@ def post_process_needs_data(app: Sphinx) -> None:
     After this function has been run, one should assume that the needs data is finalised,
     and so in principle should be treated as read-only.
     """
-    needs_config = NeedsSphinxConfig(app.config)
     needs_data = SphinxNeedsData(app.env)
-    needs = needs_data.get_or_create_needs()
-    if needs and not needs_data.needs_is_post_processed:
+    if not needs_data.needs_is_post_processed:
+        needs_config = NeedsSphinxConfig(app.config)
+        needs = needs_data.get_needs_mutable()
+        app.emit("needs-before-post-processing", needs)
         extend_needs_data(needs, needs_data.get_or_create_extends(), needs_config)
         resolve_dynamic_values(needs, app)
-        resolve_variants_options(needs, needs_config, app.builder.tags.tags)
+        resolve_variants_options(needs, needs_config, app.builder.tags)
         check_links(needs, needs_config)
         create_back_links(needs, needs_config)
         process_constraints(needs, needs_config)
+        app.emit("needs-before-sealing", needs)
         needs_data.needs_is_post_processed = True
 
 
@@ -404,12 +318,10 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     needs_data = SphinxNeedsData(app.env)
 
     # If no needs were defined, we do not need to do anything
-    if not needs_data.get_or_create_needs():
+    if not needs_data.get_needs_view():
         return
 
-    post_process_needs_data(app)
-
-    for extend_node in doctree.findall(Needextend):
+    for extend_node in list(doctree.findall(Needextend)):
         remove_node_from_tree(extend_node)
 
     format_need_nodes(app, doctree, fromdocname, list(doctree.findall(Need)))
@@ -424,7 +336,7 @@ def format_need_nodes(
 ) -> None:
     """Replace need nodes in the document with node trees suitable for output"""
     env = app.env
-    needs = SphinxNeedsData(env).get_or_create_needs()
+    needs = SphinxNeedsData(env).get_needs_view()
 
     # We try to avoid findall as much as possibles. so we reuse the already found need nodes in the current document.
     # for node_need in doctree.findall(Need):
@@ -432,18 +344,21 @@ def format_need_nodes(
         need_id = node_need.attributes["ids"][0]
         need_data = needs[need_id]
 
+        if need_data["hide"]:
+            remove_node_from_tree(node_need)
+            continue
+
         find_and_replace_node_content(node_need, env, need_data)
         for index, attribute in enumerate(node_need.attributes["classes"]):
             node_need.attributes["classes"][index] = check_and_get_content(
-                attribute, need_data, env
+                attribute, need_data, env, node_need
             )
 
-        layout = need_data["layout"] or NeedsSphinxConfig(app.config).default_layout
+        rendered_node = build_need_repr(node_need, need_data, app, docname=fromdocname)
+        node_need.parent.replace(node_need, rendered_node)
 
-        build_need(layout, node_need, app, fromdocname=fromdocname)
 
-
-def check_links(needs: dict[str, NeedsInfoType], config: NeedsSphinxConfig) -> None:
+def check_links(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
     """Checks if set links are valid or are dead (referenced need does not exist.)
 
     For needs with dead links, an extra ``has_dead_links`` field is added and,
@@ -488,9 +403,7 @@ def check_links(needs: dict[str, NeedsInfoType], config: NeedsSphinxConfig) -> N
                                 )
 
 
-def create_back_links(
-    needs: dict[str, NeedsInfoType], config: NeedsSphinxConfig
-) -> None:
+def create_back_links(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
     """Create back-links in all found needs.
 
     These are fields for each link type, ``<link_name>_back``,
@@ -515,7 +428,7 @@ def create_back_links(
                     if need_id_part and need_id_part in needs[need_id_main]["parts"]:
                         if (
                             option_back
-                            not in needs[need_id_main]["parts"][need_id_part].keys()
+                            not in needs[need_id_main]["parts"][need_id_part]
                         ):
                             needs[need_id_main]["parts"][need_id_part][option_back] = []  # type: ignore[literal-required]
                         needs[need_id_main]["parts"][need_id_part][option_back].append(  # type: ignore[literal-required]

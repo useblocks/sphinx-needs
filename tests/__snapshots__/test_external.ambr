@@ -3,46 +3,38 @@
     'current_version': '1.3',
     'versions': dict({
       '1.3': dict({
-        'filters': dict({
-        }),
-        'filters_amount': 0,
         'needs': dict({
           'EXT_REQ_01': dict({
-            'delete': False,
-            'description': '',
-            'doctype': '',
             'external_css': 'external_link',
             'external_url': 'http://my_company.com/docs/v1/index.html#REQ_01',
             'full_title': 'REQ_01',
             'id': 'EXT_REQ_01',
             'is_external': True,
-            'jinja_content': False,
-            'target_id': 'EXT_REQ_01',
+            'section_name': 'Title',
+            'sections': list([
+              'Title',
+            ]),
             'title': 'REQ_01',
             'type': 'req',
             'type_name': 'Requirement',
           }),
           'IMP_REQ_01': dict({
-            'content_id': 'IMP_REQ_01',
-            'delete': False,
-            'description': '',
             'docname': 'index',
             'external_css': 'external_link',
             'full_title': 'REQ_01',
             'id': 'IMP_REQ_01',
-            'jinja_content': False,
             'layout': '',
             'section_name': 'Title',
             'sections': list([
               'Title',
             ]),
-            'target_id': 'IMP_REQ_01',
             'title': 'REQ_01',
             'type': 'req',
             'type_name': 'Requirement',
           }),
         }),
         'needs_amount': 2,
+        'needs_defaults_removed': True,
         'needs_schema': dict({
           '$schema': 'http://json-schema.org/draft-07/schema#',
           'properties': dict({
@@ -94,10 +86,7 @@
               'default': True,
               'description': 'True if all constraints passed, False if any failed, None if not yet checked.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'constraints_results': dict({
               'additionalProperties': dict({
@@ -109,14 +98,11 @@
               'field_type': 'core',
               'type': 'object',
             }),
-            'content_id': dict({
-              'default': None,
-              'description': 'ID of the content node.',
+            'content': dict({
+              'default': '',
+              'description': 'Content of the need.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
+              'type': 'string',
             }),
             'created_at': dict({
               'default': '',
@@ -125,13 +111,10 @@
               'type': 'string',
             }),
             'delete': dict({
-              'default': None,
+              'default': False,
               'description': 'If true, the need is deleted entirely.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'docname': dict({
               'default': None,
@@ -223,13 +206,10 @@
               'type': 'boolean',
             }),
             'jinja_content': dict({
-              'default': None,
+              'default': False,
               'description': 'Whether the content should be pre-processed by jinja.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'layout': dict({
               'default': None,
@@ -245,6 +225,16 @@
               ]),
               'description': 'Link field',
               'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'links_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
               'items': dict({
                 'type': 'string',
               }),
@@ -285,6 +275,16 @@
               ]),
               'description': 'Link field',
               'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'parent_needs_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
               'items': dict({
                 'type': 'string',
               }),
@@ -403,11 +403,6 @@
                 'type': 'string',
               }),
               'type': 'array',
-            }),
-            'target_id': dict({
-              'description': 'ID of the data.',
-              'field_type': 'core',
-              'type': 'string',
             }),
             'template': dict({
               'default': None,
@@ -471,9 +466,6 @@
     'current_version': '1.0',
     'versions': dict({
       '1.0': dict({
-        'filters': dict({
-        }),
-        'filters_amount': 0,
         'needs': dict({
           'EXT_TEST_01': dict({
             'arch': dict({
@@ -486,10 +478,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': None,
+            'content': 'EXT_TEST_01',
             'created_at': '',
             'delete': False,
-            'description': 'EXT_TEST_01',
             'docname': None,
             'doctype': '',
             'duration': '',
@@ -509,12 +500,19 @@
             'links': list([
               'SPEC_1',
             ]),
+            'links_back': list([
+              'EXT_TEST_02',
+              'SPEC_1',
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
+              'EXT_TEST_02',
             ]),
             'parts': dict({
             }),
@@ -532,7 +530,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'EXT_TEST_01',
             'template': None,
             'title': 'TEST_01 DESCRIPTION',
             'type': 'impl',
@@ -553,10 +550,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': None,
+            'content': 'EXT_TEST_02',
             'created_at': '',
             'delete': False,
-            'description': 'EXT_TEST_02',
             'docname': None,
             'doctype': '',
             'duration': '',
@@ -577,12 +573,17 @@
               'EXT_TEST_01',
               'REQ_1',
             ]),
+            'links_back': list([
+            ]),
             'max_amount': '',
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
-            'parent_need': '',
+            'parent_need': 'EXT_TEST_01',
             'parent_needs': list([
+              'EXT_TEST_01',
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -590,11 +591,13 @@
             'pre_template': None,
             'prefix': '',
             'query': '',
-            'section_name': '',
+            'section_name': 'Heading',
             'sections': list([
+              'Heading',
+              'Sub-heading',
             ]),
             'service': '',
-            'signature': '',
+            'signature': 'a signature',
             'specific': '',
             'status': 'open',
             'style': None,
@@ -602,7 +605,6 @@
               'test_02',
               'test',
             ]),
-            'target_id': 'EXT_TEST_02',
             'template': None,
             'title': 'TEST_02 DESCRIPTION',
             'type': 'req',
@@ -623,10 +625,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'REQ_1',
+            'content': '',
             'created_at': '',
-            'delete': None,
-            'description': '',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -641,9 +642,13 @@
             'is_modified': False,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
             'links': list([
+            ]),
+            'links_back': list([
+              'EXT_TEST_02',
+              'SPEC_1',
             ]),
             'max_amount': '',
             'max_content_lines': '',
@@ -651,6 +656,8 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -669,7 +676,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'REQ_1',
             'template': None,
             'title': 'Test requirement 1',
             'type': 'req',
@@ -690,10 +696,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'SPEC_1',
+            'content': '',
             'created_at': '',
-            'delete': None,
-            'description': '',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -708,10 +713,13 @@
             'is_modified': False,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
             'links': list([
               'REQ_1',
+              'EXT_TEST_01',
+            ]),
+            'links_back': list([
               'EXT_TEST_01',
             ]),
             'max_amount': '',
@@ -720,6 +728,8 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -738,7 +748,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'SPEC_1',
             'template': None,
             'title': 'Test specification 1',
             'type': 'spec',
@@ -759,10 +768,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'SUB_002',
+            'content': '',
             'created_at': '',
-            'delete': None,
-            'description': '',
+            'delete': False,
             'docname': 'subfolder_a/subfolder_b/subpage',
             'doctype': '.rst',
             'duration': '',
@@ -777,9 +785,11 @@
             'is_modified': False,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
             'links': list([
+            ]),
+            'links_back': list([
             ]),
             'max_amount': '',
             'max_content_lines': '',
@@ -787,6 +797,8 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -805,7 +817,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'SUB_002',
             'template': None,
             'title': 'Sub-Req',
             'type': 'req',
@@ -868,10 +879,7 @@
               'default': True,
               'description': 'True if all constraints passed, False if any failed, None if not yet checked.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'constraints_results': dict({
               'additionalProperties': dict({
@@ -883,14 +891,11 @@
               'field_type': 'core',
               'type': 'object',
             }),
-            'content_id': dict({
-              'default': None,
-              'description': 'ID of the content node.',
+            'content': dict({
+              'default': '',
+              'description': 'Content of the need.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
+              'type': 'string',
             }),
             'created_at': dict({
               'default': '',
@@ -899,13 +904,10 @@
               'type': 'string',
             }),
             'delete': dict({
-              'default': None,
+              'default': False,
               'description': 'If true, the need is deleted entirely.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'docname': dict({
               'default': None,
@@ -997,13 +999,10 @@
               'type': 'boolean',
             }),
             'jinja_content': dict({
-              'default': None,
+              'default': False,
               'description': 'Whether the content should be pre-processed by jinja.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'layout': dict({
               'default': None,
@@ -1019,6 +1018,16 @@
               ]),
               'description': 'Link field',
               'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'links_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
               'items': dict({
                 'type': 'string',
               }),
@@ -1059,6 +1068,16 @@
               ]),
               'description': 'Link field',
               'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'parent_needs_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
               'items': dict({
                 'type': 'string',
               }),
@@ -1177,11 +1196,6 @@
                 'type': 'string',
               }),
               'type': 'array',
-            }),
-            'target_id': dict({
-              'description': 'ID of the data.',
-              'field_type': 'core',
-              'type': 'string',
             }),
             'template': dict({
               'default': None,

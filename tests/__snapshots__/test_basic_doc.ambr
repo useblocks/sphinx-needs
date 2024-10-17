@@ -1,11 +1,8 @@
 # name: test_build_needs[test_app0]
   dict({
-    'current_version': '',
+    'current_version': '0.1.0',
     'versions': dict({
-      '': dict({
-        'filters': dict({
-        }),
-        'filters_amount': 0,
+      '0.1.0': dict({
         'needs': dict({
           'ST_001': dict({
             'arch': dict({
@@ -18,10 +15,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'ST_001',
+            'content': '',
             'created_at': '',
-            'delete': None,
-            'description': '',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -36,9 +32,11 @@
             'is_modified': False,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
             'links': list([
+            ]),
+            'links_back': list([
             ]),
             'max_amount': '',
             'max_content_lines': '',
@@ -47,15 +45,17 @@
             'parent_need': '',
             'parent_needs': list([
             ]),
+            'parent_needs_back': list([
+            ]),
             'parts': dict({
             }),
             'post_template': None,
             'pre_template': None,
             'prefix': '',
             'query': '',
-            'section_name': 'Welcome to basic test’s documentation!',
+            'section_name': 'TEST DOCUMENT',
             'sections': list([
-              'Welcome to basic test’s documentation!',
+              'TEST DOCUMENT',
             ]),
             'service': '',
             'signature': '',
@@ -64,7 +64,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'ST_001',
             'template': None,
             'title': 'Test story',
             'type': 'story',
@@ -85,10 +84,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'US_38823',
+            'content': '',
             'created_at': '',
-            'delete': None,
-            'description': '',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -103,9 +101,11 @@
             'is_modified': False,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
             'links': list([
+            ]),
+            'links_back': list([
             ]),
             'max_amount': '',
             'max_content_lines': '',
@@ -114,15 +114,17 @@
             'parent_need': '',
             'parent_needs': list([
             ]),
+            'parent_needs_back': list([
+            ]),
             'parts': dict({
             }),
             'post_template': None,
             'pre_template': None,
             'prefix': '',
             'query': '',
-            'section_name': 'Welcome to basic test’s documentation!',
+            'section_name': 'TEST DOCUMENT',
             'sections': list([
-              'Welcome to basic test’s documentation!',
+              'TEST DOCUMENT',
             ]),
             'service': '',
             'signature': '',
@@ -131,7 +133,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'US_38823',
             'template': None,
             'title': 'No ID',
             'type': 'story',
@@ -194,10 +195,7 @@
               'default': True,
               'description': 'True if all constraints passed, False if any failed, None if not yet checked.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'constraints_results': dict({
               'additionalProperties': dict({
@@ -209,14 +207,11 @@
               'field_type': 'core',
               'type': 'object',
             }),
-            'content_id': dict({
-              'default': None,
-              'description': 'ID of the content node.',
+            'content': dict({
+              'default': '',
+              'description': 'Content of the need.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
+              'type': 'string',
             }),
             'created_at': dict({
               'default': '',
@@ -225,13 +220,10 @@
               'type': 'string',
             }),
             'delete': dict({
-              'default': None,
+              'default': False,
               'description': 'If true, the need is deleted entirely.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'docname': dict({
               'default': None,
@@ -323,13 +315,10 @@
               'type': 'boolean',
             }),
             'jinja_content': dict({
-              'default': None,
+              'default': False,
               'description': 'Whether the content should be pre-processed by jinja.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'layout': dict({
               'default': None,
@@ -345,6 +334,16 @@
               ]),
               'description': 'Link field',
               'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'links_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
               'items': dict({
                 'type': 'string',
               }),
@@ -385,6 +384,16 @@
               ]),
               'description': 'Link field',
               'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'parent_needs_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
               'items': dict({
                 'type': 'string',
               }),
@@ -503,11 +512,6 @@
                 'type': 'string',
               }),
               'type': 'array',
-            }),
-            'target_id': dict({
-              'description': 'ID of the data.',
-              'field_type': 'core',
-              'type': 'string',
             }),
             'template': dict({
               'default': None,

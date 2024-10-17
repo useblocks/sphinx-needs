@@ -1,0 +1,10 @@
+<document source="<source>">
+    <section ids="test-document" names="test\ document">
+        <title>
+            TEST DOCUMENT
+        <target anonymous="" ids="ST_001" refid="ST_001">
+        <Need classes="need need-story" ids="ST_001" refid="ST_001">
+        <target anonymous="" ids="US_38823" refid="US_38823">
+        <Need classes="need need-story" ids="US_38823" refid="US_38823">
+        <target refid="needtable-index-0">
+        <Needtable caption="Table from sphinx-needs 'needtable' directive" classes="" columns="('ID',\ 'ID') ('TITLE',\ 'Title') ('STATUS',\ 'Status') ('TYPE',\ 'Type') ('OUTGOING',\ 'Outgoing') ('TAGS',\ 'Tags')" colwidths="" docname="index" filter="status == "open"" filter_code="[]" filter_func="True" filter_warning="True" ids="needtable-index-0" lineno="12" show_filters="False" show_parts="False" sort="id_complete" sort_by="True" status="" style="" style_col="" style_row="" tags="" target_id="needtable-index-0" types="">

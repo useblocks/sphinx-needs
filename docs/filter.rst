@@ -3,10 +3,8 @@
 Filtering needs
 ===============
 
-**Sphinx-Needs** supports the filtering of need and need_parts by using easy to use options or powerful filter string.
-
-Available options are specific to the used directive, whereas the filter string is supported by all directives and
-roles, which provide filter capabilities.
+The filtering of needs and need parts is supported consistently across numerous directives and roles,
+either by using filter options or by using a filter string.
 
 .. _filter_options:
 
@@ -19,9 +17,7 @@ The following filter options are supported by directives:
  * :ref:`needtable`
  * :ref:`needflow`
  * :ref:`needpie`
- * ``needfilter`` (deprecated!)
  * :ref:`needextend`
-
 
 Related to the used directive and its representation, the filter options create a list of needs, which match the
 filters for status, tags, types and filter.
@@ -44,13 +40,9 @@ You can easily filter for multiple statuses by separating them by ";". Example: 
 
 .. dropdown:: Show example
 
-   .. code-block:: rst
+   .. need-example::
 
       .. needlist::
-         :status: open
-         :show_status:
-
-   .. needlist::
          :status: open
          :show_status:
 
@@ -65,16 +57,11 @@ To search for multiple tags, simply separate them by using ";".
 
 .. dropdown:: Show example
 
-   .. code-block:: rst
+   .. need-example::
 
       .. needlist::
          :tags: main_example
          :show_tags:
-
-   .. needlist::
-         :tags: main_example
-         :show_tags:
-
 
 .. _option_types:
 
@@ -84,15 +71,10 @@ For **:types:** the type itself or the human-readable type-title can be used as 
 
 .. dropdown:: Show example
 
-   .. code-block:: rst
+   .. need-example::
 
       .. needtable::
          :types: test
-
-   .. needtable::
-      :types: test
-      :style: table
-
 
 .. _option_sort_by:
 
@@ -102,19 +84,11 @@ Sorts the result list. Allowed values are ``status`` or any alphanumerical prope
 
 .. dropdown:: Show example
 
-   .. code-block:: rst
+   .. need-example::
 
       .. needtable::
          :sort_by: id
          :status: open
-
-
-   .. needtable::
-      :sort_by: id
-      :status: open
-      :style: table
-
-
 
 .. _option_filter:
 
@@ -137,55 +111,32 @@ The usage of a filter string is supported/required by:
 * :ref:`needflow`
 * :ref:`needpie`
 * :ref:`needbar`
+* :ref:`needuml` / :ref:`needarch`
 
 
 The filter string must be a valid Python expression:
 
-.. code-block:: rst
+.. need-example::
 
-   :need_count:`type=='spec' and status.upper()!='OPEN'`
+   :need_count:`type=='spec' and status != 'open'`
 
 A filter string gets evaluated on needs and need_parts!
 A need_part inherits all options from its parent need, if the need_part has no own content for this option.
-E.g. the need_part *title* is kept, but the *status* attribute is taken from its parent need.
+E.g. the need_part *content* is kept, but the *status* attribute is taken from its parent need.
 
 .. note::
 
-   Following attributes are kept inside a need_part: id, title, links_back
+   The following attributes are kept inside a need_part: id, title, links_back
 
 This allows to perform searches for need_parts, where search options are based on parent attributes.
 
 The following filter will find all need_parts, which are part of a need, which has a tag called *important*.
 
-.. code-block:: rst
+.. need-example::
 
-   :need_count:`is_part and 'important' in tags`
+   :need_count:`is_part and 'car' in tags`
 
-Inside a filter string the following variables/functions can be used:
-
-* **tags** as Python list (compare like ``"B" in tags``)
-* **type** as Python string (compare like ``"story" == type``)
-* **status** as Python string (compare like ``"opened" != status``)
-* **sections** as Python list with the hierarchy of sections with lowest-level
-  section first.  (compare like ``"Section Header" in sections``)
-* **id** as Python string (compare like ``"MY_ID_" in id``)
-* **title** as Python string (compare like ``len(title.split(" ")) > 5``)
-* **links** as Python list (compare like ``"ID_123" not in links``)
-* **links_back** as Python list (compare like ``"ID_123" not in links_back``)
-* **content** as Python string (compare like ``len(content) == 0``)
-* **is_need** as Python boolean. (compare like ``is_need``)
-* **is_part** as Python boolean. (compare like ``is_part``)
-* **parts** as Python list with :ref:`need_part` of the current need. (compare like ``len(parts)>0``)
-* :ref:`re_search`, as Python function for performing searches with a regular expression
-* **needs** as Python dict. Contains all needs. Helpful to perform complex filters on links (added 0.3.15).
-* **sections** as list of sections names, th which the need belongs to.
-* **section_name** as string, which defines the last/lowest section a need belongs to.
-* **docname** as string, which defines the name of the document in which a need is defined, without the extension (similar to Sphinx' ``:doc:`` role)
-* **signature** as string, which contains a function-name, possible set by
-  `sphinx-autodoc <https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html>`_ above the need.
-* **parent_need** as string, which is an id of the need, which has the current need defined in its content
-  (added 0.6.2).
-* **parent_needs** as string, which is a list of need ids (added 0.6.2).
+Inside a filter string all the fields of :py:class:`.NeedsInfoType` can be used, including.
 
 Additional variables for :ref:`need_part`:
 
@@ -193,67 +144,85 @@ Additional variables for :ref:`need_part`:
 * **id_complete** as Python string. Contains the concatenated ids of parent need and need_part.
   (compare like ``id_complete != 'ABC_01.03'``)
 
-
 .. note:: If extra options were specified using :ref:`needs_extra_options` then
           those will be available for use in filter expressions as well.
+
+Finally, the following are available:
+
+* :ref:`re_search`, as Python function for performing searches with a regular expression
+* **needs** as :class:`.NeedsAndPartsListView` object, which contains all needs and need_parts.
 
 If your expression is valid and it's True, the related need is added to the filter result list.
 If it is invalid or returns False, the related need is not taken into account for the current filter.
 
 .. dropdown:: Show example
 
-   .. code-block:: rst
+   .. need-example:: ``filter`` option
 
-       .. req:: Requirement A
-          :tags: A; filter_example
-          :status: open
+      needs:
 
-       .. req:: Requirement B
-          :tags: B; filter_example
-          :status: closed
+      .. req:: Requirement A
+         :tags: A; filter_example
+         :status: open
+         :hide:
 
-       .. spec:: Specification A
-          :tags: A; filter_example
-          :status: closed
+      .. req:: Requirement B
+         :tags: B; filter_example
+         :status: closed
+         :hide:
 
-       .. spec:: Specification B
-          :tags: B; filter_example
-          :status: open
+      .. spec:: Specification A
+         :tags: A; filter_example
+         :status: closed
+         :hide:
 
-       .. test:: Test 1
-          :tags: filter_example
+      .. spec:: Specification B
+         :tags: B; filter_example
+         :status: open
+         :hide:
 
-       .. needtable::
-          :filter: "filter_example" in tags and ("B" in tags or ("spec" == type and "closed" == status)) or "test" == type
+      .. test:: Test 1
+         :tags: filter_example
+         :hide:
 
-   This will have the following result:
+      .. needlist::
+         :filter: "filter_example" in tags and (("B" in tags or ("spec" == type and "closed" == status)) or "test" == type)
 
-   .. req:: Requirement A
-      :tags: A; filter_example
-      :status: open
-      :hide:
+.. _filter_string_performance:
 
-   .. req:: Requirement B
-      :tags: B; filter_example
-      :status: closed
-      :hide:
+Filter string performance
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   .. spec:: Specification A
-      :tags: A; filter_example
-      :status: closed
-      :hide:
+.. versionadded:: 4.0.0
 
-   .. spec:: Specification B
-      :tags: B; filter_example
-      :status: open
-      :hide:
+The filter string is evaluated by default for each need and need part
+and, therefore, can be become a performance bottleneck for projects with large numbers of needs.
 
-   .. test:: Test 1
-      :tags: filter_example
-      :hide:
+To improve performance, certain common patterns are identified and optimized by the filter engine, and so using such patterns is recommended:
 
-   .. needfilter::
-      :filter: "filter_example" in tags and (("B" in tags or ("spec" == type and "closed" == status)) or "test" == type)
+- ``is_external`` / ``is_external == True`` / ``is_external == False``
+- ``id == 'value'`` / ``id == "value"`` / ``'value' == id`` / ``"value" == id``
+- ``id in ['value1', 'value2', ...]`` / ``id in ("value1", "value2", ...)``
+- ``type == 'value'`` / ``type == "value"`` / ``'value' == type`` / ``"value" == type``
+- ``type in ['value1', 'value2', ...]`` / ``type in ("value1", "value2", ...)``
+- ``status == 'value'`` / ``status == "value"`` / ``'value' == status`` / ``"value" == status``
+- ``status in ['value1', 'value2', ...]`` / ``status in ("value1", "value2", ...)``
+- ``'value' in tags`` / ``"value" in tags``
+
+Also filters containing ``and`` will be split into multiple filters and evaluated separately for the above patterns.
+For example, ``type == 'spec' and other == 'value'`` will first be filtered performantly by ``type == 'spec'`` and then the remaining needs will be filtered by ``other == 'value'``.
+
+To guard against long running filters, the :ref:`needs_filter_max_time` configuration option can be used to set a maximum time limit for filter evaluation.
+Also see :ref:`needs_uml_process_max_time`, to guard against long running ``needuml`` / ``needarch`` processes containing :ref:`filters <needuml_jinja_filter>`.
+
+To debug which filters are being used across your project and their run times, you can enable the :ref:`needs_debug_filters` configuration option.
+
+.. _export_id:
+.. deprecated:: 4.0.0
+
+   The directive option ``export_id`` was previously used to export filter information in the ``needs.json`` file.
+   This is deprecated and will be removed in a future version.
+   Instead use the above :ref:`needs_debug_filters` configuration option.
 
 .. _re_search:
 
@@ -270,34 +239,12 @@ The second parameter should be one of the above variables(status, id, content, .
 
    This example uses a regular expressions to find all needs with an e-mail address in title.
 
-   .. code-block:: rst
+   .. need-example::
 
       .. req:: Set admin e-mail to admin@mycompany.com
 
       .. needlist::
          :filter: search("([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", title)
-
-   .. req:: Set admin e-mail to admin@mycompany.com
-
-   .. needlist::
-      :filter: search("([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", title)
-
-.. _export_id:
-
-export_id
-~~~~~~~~~
-
-.. versionadded:: 0.3.11
-
-If set, the filter results get exported to needs.json, if the builder :ref:`needs_builder` is used::
-
-   .. needtable::
-      :status: open
-      :filter: "test" in tags
-      :export_id: filter_01
-
-See :ref:`filter_export` for more details.
-
 
 .. _filter_code:
 
@@ -311,7 +258,9 @@ with the help of Python.
 
 The used code must define a variable ``results``, which must be a list and contains the filtered needs.
 
-.. code-block:: rst
+The code also has access to a variable called ``needs``, which is a :class:`.NeedsAndPartsListView` instance.
+
+.. need-example::
 
    .. needtable::
       :columns: id, title, type, links, links_back
@@ -321,36 +270,13 @@ The used code must define a variable ``results``, which must be a list and conta
       # which are linked to each other.
 
       results = []
-      # Lets create a needs_dict to address needs by ids more easily.
-      needs_dict = {x['id']: x for x in needs}
-
-      for need in needs:
-         if need['type'] == 'req':
-            for links_id in need['links']:
-               if needs_dict[links_id]['type'] == 'spec':
-                  results.append(need)
-                  results.append(needs_dict[links_id])
-
-.. needtable::
-   :columns: id, title, type, links, links_back
-   :style: table
-
-   # Collect all requirements and specs,
-   # which are linked to each other.
-
-   results = []
-   # Lets create a needs_dict to address needs by ids more easily.
-   needs_dict = {x['id']: x for x in needs}
-
-   for need in needs:
-      if need['type'] == 'req':
+      
+      for need in needs.filter_types(["req"]):
          for links_id in need['links']:
-            if needs_dict[links_id]['type'] == 'spec':
+            linked_need = needs.get_need(links_id)
+            if linked_need and linked_need['type'] == 'spec':
                results.append(need)
-               results.append(needs_dict[links_id])
-
-The code has access to a variable called ``needs``, which contains a copy of all needs.
-So manipulations on the values in ``needs`` do not have any affects.
+               results.append(linked_need)
 
 This mechanism can also be a good alternative for complex filter strings to save performance.
 For example if a filter string is using list comprehensions to get access to linked needs.

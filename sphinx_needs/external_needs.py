@@ -10,9 +10,9 @@ from requests_file import FileAdapter
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
-from sphinx_needs.api import add_external_need, del_need
-from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.api import InvalidNeedException, add_external_need, del_need
+from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
+from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import clean_log, import_prefix_link_edit
 
@@ -29,7 +29,9 @@ def get_target_template(target_url: str) -> Template:
     return mem_template
 
 
-def load_external_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> None:
+def load_external_needs(
+    app: Sphinx, env: BuildEnvironment, _docnames: list[str]
+) -> None:
     """Load needs from configured external sources."""
     needs_config = NeedsSphinxConfig(app.config)
     for source in needs_config.external_needs:
@@ -114,31 +116,50 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> Non
             else {}
         )
 
-        prefix = source.get("id_prefix", "").upper()
-        import_prefix_link_edit(needs, prefix, needs_config.extra_links)
+        id_prefix = source.get("id_prefix", "").upper()
+        import_prefix_link_edit(needs, id_prefix, needs_config.extra_links)
+
+        # all known need fields in the project
+        known_keys = {
+            *NeedsCoreFields,
+            *(x["option"] for x in needs_config.extra_links),
+            *(x["option"] + "_back" for x in needs_config.extra_links),
+            *NEEDS_CONFIG.extra_options,
+        }
+        # all keys that should not be imported from external needs
+        omitted_keys = {
+            *(k for k, v in NeedsCoreFields.items() if v.get("exclude_external")),
+            *(x["option"] + "_back" for x in needs_config.extra_links),
+        }
+
+        # collect unknown keys to log them
+        unknown_keys: set[str] = set()
+
         for need in needs.values():
             need_params = {**defaults, **need}
 
-            extra_links = [x["option"] for x in needs_config.extra_links]
-            for key in list(need_params.keys()):
-                if (
-                    key not in needs_config.extra_options
-                    and key not in extra_links
-                    and key
-                    not in [
-                        "title",
-                        "type",
-                        "id",
-                        "description",
-                        "tags",
-                        "docname",
-                        "status",
-                    ]
-                ):
-                    del need_params[key]
+            if "description" in need_params and not need_params.get("content"):
+                # legacy versions of sphinx-needs changed "description" to "content" when outputting to json
+                need_params["content"] = need_params["description"]
+                del need_params["description"]
 
-            need_params["need_type"] = need["type"]
-            need_params["id"] = f'{prefix}{need["id"]}'
+            # Remove unknown options, as they may be defined in source system, but not in this sphinx project
+            for option in list(need_params):
+                if option not in known_keys:
+                    unknown_keys.add(option)
+                    del need_params[option]
+                elif option in omitted_keys:
+                    del need_params[option]
+
+            # These keys need to be different for add_need() api call.
+            need_params["need_type"] = need_params.pop("type", "")
+            need_params["title"] = need_params.pop(
+                "full_title", need_params.get("title", "")
+            )
+
+            # Replace id, to get unique ids
+            need_params["id"] = id_prefix + need["id"]
+
             need_params["external_css"] = source.get("css_class")
 
             if target_url:
@@ -151,35 +172,38 @@ def load_external_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> Non
                     f'{source["base_url"]}/{need.get("docname", "__error__")}.html#{need["id"]}'
                 )
 
-            need_params["content"] = need["description"]
-            need_params["links"] = need.get("links", [])
-            need_params["tags"] = ",".join(need.get("tags", []))
-            need_params["status"] = need.get("status")
-            need_params["constraints"] = need.get("constraints", [])
-
-            del need_params["description"]
-
             # check if external needs already exist
             ext_need_id = need_params["id"]
 
-            need = SphinxNeedsData(env).get_or_create_needs().get(ext_need_id)
+            need = SphinxNeedsData(env).get_needs_mutable().get(ext_need_id)
 
-            if need is not None:
-                # check need_params for more detail
-                if need["is_external"] and source["base_url"] in need["external_url"]:
-                    # delete the already existing external need from api need
-                    del_need(app, ext_need_id)
-                else:
-                    log_warning(
-                        log,
-                        f'During external needs handling, an identical ID was detected: {ext_need_id} '
-                        f'from needs_external_needs url: {source["base_url"]}',
-                        "duplicate_id",
-                        location=docname if docname else None,
-                    )
-                    return None
+            if (
+                need is not None
+                and need["is_external"]
+                and source["base_url"] in need["external_url"]
+            ):
+                # delete the already existing external need from api need
+                del_need(app, ext_need_id)
 
-            add_external_need(app, **need_params)
+            try:
+                add_external_need(app, **need_params)
+            except InvalidNeedException as err:
+                location = source.get("json_url", "") or source.get("json_path", "")
+                log_warning(
+                    log,
+                    f"External need {ext_need_id!r} in {location!r} could not be added: {err.message}",
+                    "load_external_need",
+                    location=None,
+                )
+
+        if unknown_keys:
+            location = source.get("json_url", "") or source.get("json_path", "")
+            log_warning(
+                log,
+                f"Unknown keys in external need source {location!r}: {sorted(unknown_keys)!r}",
+                "unknown_external_keys",
+                location=None,
+            )
 
 
 class NeedsExternalException(BaseException):

@@ -4,9 +4,6 @@
       'current_version': '1.0',
       'versions': dict({
         '1.0': dict({
-          'filters': dict({
-          }),
-          'filters_amount': 0,
           'needs': dict({
             'TC_001': dict({
               'arch': dict({
@@ -19,10 +16,9 @@
               'constraints_passed': True,
               'constraints_results': dict({
               }),
-              'content_id': 'TC_001',
+              'content': '',
               'created_at': '',
-              'delete': None,
-              'description': '',
+              'delete': False,
               'docname': 'index',
               'doctype': '.rst',
               'duration': '',
@@ -37,9 +33,11 @@
               'is_modified': False,
               'is_need': True,
               'is_part': False,
-              'jinja_content': None,
+              'jinja_content': False,
               'layout': '',
               'links': list([
+              ]),
+              'links_back': list([
               ]),
               'max_amount': '',
               'max_content_lines': '',
@@ -47,6 +45,8 @@
               'params': '',
               'parent_need': '',
               'parent_needs': list([
+              ]),
+              'parent_needs_back': list([
               ]),
               'parts': dict({
               }),
@@ -65,7 +65,6 @@
               'style': None,
               'tags': list([
               ]),
-              'target_id': 'TC_001',
               'template': None,
               'title': 'Test example',
               'type': 'test',
@@ -84,9 +83,6 @@
       'current_version': '1.0',
       'versions': dict({
         '1.0': dict({
-          'filters': dict({
-          }),
-          'filters_amount': 0,
           'needs': dict({
             'TC_NEG_001': dict({
               'arch': dict({
@@ -99,10 +95,9 @@
               'constraints_passed': True,
               'constraints_results': dict({
               }),
-              'content_id': 'TC_NEG_001',
+              'content': '',
               'created_at': '',
-              'delete': None,
-              'description': '',
+              'delete': False,
               'docname': 'index',
               'doctype': '.rst',
               'duration': '',
@@ -117,9 +112,11 @@
               'is_modified': False,
               'is_need': True,
               'is_part': False,
-              'jinja_content': None,
+              'jinja_content': False,
               'layout': '',
               'links': list([
+              ]),
+              'links_back': list([
               ]),
               'max_amount': '',
               'max_content_lines': '',
@@ -127,6 +124,8 @@
               'params': '',
               'parent_need': '',
               'parent_needs': list([
+              ]),
+              'parent_needs_back': list([
               ]),
               'parts': dict({
               }),
@@ -145,7 +144,6 @@
               'style': None,
               'tags': list([
               ]),
-              'target_id': 'TC_NEG_001',
               'template': None,
               'title': 'Negative test example',
               'type': 'test',
@@ -164,9 +162,6 @@
       'current_version': '1.0',
       'versions': dict({
         '1.0': dict({
-          'filters': dict({
-          }),
-          'filters_amount': 0,
           'needs': dict({
             'US_63252': dict({
               'arch': dict({
@@ -179,10 +174,9 @@
               'constraints_passed': True,
               'constraints_results': dict({
               }),
-              'content_id': 'US_63252',
+              'content': '',
               'created_at': '',
-              'delete': None,
-              'description': '',
+              'delete': False,
               'docname': 'index',
               'doctype': '.rst',
               'duration': '',
@@ -197,9 +191,11 @@
               'is_modified': False,
               'is_need': True,
               'is_part': False,
-              'jinja_content': None,
+              'jinja_content': False,
               'layout': '',
               'links': list([
+              ]),
+              'links_back': list([
               ]),
               'max_amount': '',
               'max_content_lines': '',
@@ -207,6 +203,8 @@
               'params': '',
               'parent_need': '',
               'parent_needs': list([
+              ]),
+              'parent_needs_back': list([
               ]),
               'parts': dict({
               }),
@@ -226,7 +224,6 @@
               'tags': list([
                 '1',
               ]),
-              'target_id': 'US_63252',
               'template': None,
               'title': 'A story',
               'type': 'story',

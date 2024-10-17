@@ -56,13 +56,25 @@ In most cases this should be the latest available version.
 tags
 ~~~~
 
-You can attach tags to existing tags of imported needs using the ``:tags:`` option.
+You can attach tags to existing tags of imported needs using the ``:tags:`` option
+(as a comma-separated list).
 This may be useful to mark easily imported needs and to create specialised filters for them.
+
+ids
+~~~
+
+.. versionadded:: 3.1.0
+
+You can use the ``:ids:`` option to import only the needs with the given ids
+(as a comma-separated list).
+This is useful if you want to import only a subset of the needs from the JSON file.
 
 filter
 ~~~~~~
 
 You can use the ``:filter:`` option to imports only the needs which pass the filter criteria.
+This is a string that is evaluated as a Python expression,
+it is less performant than the ``:ids:`` option, but more flexible.
 
 Please read :ref:`filter` for more information.
 
@@ -70,7 +82,7 @@ hide
 ~~~~
 
 You can use the ``:hide:`` option to set the **hide** tag for all imported needs.
-So they do not show up but are available in ``needfilter``.
+So they are not rendered on the page.
 
 collapse
 ~~~~~~~~

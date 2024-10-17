@@ -7,7 +7,7 @@ from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 from sphinx.config import Config as _SphinxConfig
 
-from sphinx_needs.data import GraphvizStyleType
+from sphinx_needs.data import GraphvizStyleType, NeedsCoreFields
 from sphinx_needs.defaults import DEFAULT_DIAGRAM_TEMPLATE
 
 if TYPE_CHECKING:
@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from typing_extensions import NotRequired, Required
 
     from sphinx_needs.data import NeedsInfoType
+    from sphinx_needs.functions.functions import DynamicFunction
 
 
 @dataclass
@@ -157,7 +158,7 @@ class LinkOptionsType(TypedDict, total=False):
     outgoing: str
     """The outgoing link title"""
     copy: bool
-    """Copy to common links data. Default: True"""
+    """Copy to common links data. Default: False"""
     color: str
     """Used for needflow. Default: #000000"""
     style: str
@@ -255,73 +256,76 @@ class NeedsSphinxConfig:
     include_needs: bool = field(
         default=True, metadata={"rebuild": "html", "types": (bool,)}
     )
-    need_name: str = field(
-        default="Need", metadata={"rebuild": "html", "types": (str,)}
-    )
-    spec_name: str = field(
-        default="Specification", metadata={"rebuild": "html", "types": (str,)}
-    )
-    id_prefix_needs: str = field(
-        default="", metadata={"rebuild": "html", "types": (str,)}
-    )
-    id_prefix_specs: str = field(
-        default="", metadata={"rebuild": "html", "types": (str,)}
-    )
     id_length: int = field(default=5, metadata={"rebuild": "html", "types": (int,)})
+    """Length of auto-generated IDs (without prefix)"""
     id_from_title: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
-    specs_show_needlist: bool = field(
-        default=False, metadata={"rebuild": "html", "types": (bool,)}
-    )
+    """Base auto-generated IDs on the title."""
     id_required: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
+    """Require an ID for each need."""
     id_regex: str = field(
         default="^[A-Z0-9_]{5,}", metadata={"rebuild": "html", "types": ()}
     )
+    """Regex to validate need IDs."""
     show_link_type: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
+    """Show the link type in the need incoming/outgoing roles."""
     show_link_title: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
+    """Show the link title in the need incoming/outgoing roles."""
     show_link_id: bool = field(
         default=True, metadata={"rebuild": "html", "types": (bool,)}
     )
+    """Show the link ID in the need incoming/outgoing roles."""
     file: None | str = field(default=None, metadata={"rebuild": "html", "types": ()})
+    """Path to the needs builder input file."""
     table_columns: str = field(
         default="ID;TITLE;STATUS;TYPE;OUTGOING;TAGS",
         metadata={"rebuild": "html", "types": (str,)},
     )
+    """Default columns to show in the needtable."""
     table_style: str = field(
         default="DATATABLES", metadata={"rebuild": "html", "types": (str,)}
     )
+    """Default style for the needtable."""
     role_need_template: str = field(
         default="{title} ({id})", metadata={"rebuild": "html", "types": (str,)}
     )
+    """Template for the need role output."""
     role_need_max_title_length: int = field(
         default=30, metadata={"rebuild": "html", "types": (int,)}
     )
+    """Maximum length of the title in the need role output."""
     extra_options: list[str] = field(
         default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )
+    """List of extra options for needs, that get added as directive options and need fields."""
     title_optional: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
+    """If True, the title of a need directive is optional."""
     max_title_length: int = field(
         default=-1, metadata={"rebuild": "html", "types": (int,)}
     )
+    """Maximum length of an auto-generated need title."""
     title_from_content: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
+    """Create auto-generated titles from the first sentence of content."""
     diagram_template: str = field(
         default=DEFAULT_DIAGRAM_TEMPLATE,
         metadata={"rebuild": "html", "types": (str,)},
     )
-    functions: list[Callable[..., Any]] = field(
+    """Template for node content in needflow diagrams (with plantuml engine)."""
+    functions: list[DynamicFunction] = field(
         default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )
+    """List of dynamic functions."""
     global_options: GlobalOptionsType = field(
         default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
     )
@@ -337,6 +341,7 @@ class NeedsSphinxConfig:
     needextend_strict: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
+    """Raise exceptions if a needextend filter does not match any needs."""
     statuses: list[dict[str, str]] = field(
         default_factory=list, metadata={"rebuild": "html", "types": ()}
     )
@@ -374,15 +379,27 @@ class NeedsSphinxConfig:
     filter_data: dict[str, Any] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": ()}
     )
+    """Additional context data for filters."""
     allow_unsafe_filters: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
+    """Allow filters to change the need data."""
+    filter_max_time: int | float | None = field(
+        default=None, metadata={"rebuild": "html", "types": (type(None), int, float)}
+    )
+    """Warn if process_filter runs for longer than this time (in seconds)."""
+    uml_process_max_time: int | float | None = field(
+        default=None, metadata={"rebuild": "html", "types": (type(None), int, float)}
+    )
+    """Warn if process_needuml runs for longer than this time (in seconds)."""
     flow_engine: Literal["plantuml", "graphviz"] = field(
         default="plantuml", metadata={"rebuild": "env", "types": (str,)}
     )
+    """The rendering engine to use for needflow diagrams."""
     flow_show_links: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
+    """If True, show links in needflow diagrams by default."""
     flow_link_types: list[str] = field(
         default_factory=lambda: ["links"], metadata={"rebuild": "html", "types": ()}
     )
@@ -390,36 +407,43 @@ class NeedsSphinxConfig:
     warnings: dict[str, Any] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": ()}
     )
+    """Defines warnings to be checked at the end of the build (name -> string filter / filter function)."""
     warnings_always_warn: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
+    """If True, log individual warnings per warning check failed."""
     layouts: dict[str, dict[str, Any]] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": ()}
     )
+    """Defines custom layouts for needs rendering."""
     default_layout: str = field(
         default="clean", metadata={"rebuild": "html", "types": (str,)}
     )
+    """The default layout to use for needs rendering."""
     default_style: None | str = field(
         default=None, metadata={"rebuild": "html", "types": ()}
     )
+    """The default style to use for needs rendering."""
     flow_configs: dict[str, str] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": ()}
     )
+    """Additional configuration for needflow diagrams (plantuml engine)."""
     graphviz_styles: dict[str, GraphvizStyleType] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": ()}
     )
+    """Additional configuration for needflow diagrams (graphviz engine)."""
     template_folder: str = field(
         default="needs_templates/", metadata={"rebuild": "html", "types": (str,)}
     )
+    """Path to the template folder for needs rendering templates."""
     services: dict[str, dict[str, Any]] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": ()}
     )
+    """Extra configuration options for services."""
     service_all_data: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
-    debug_no_external_calls: bool = field(
-        default=False, metadata={"rebuild": "html", "types": (bool,)}
-    )
+    """If True, unknown sevice option data is shown in the need content."""
     external_needs: list[ExternalSource] = field(
         default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )
@@ -427,6 +451,7 @@ class NeedsSphinxConfig:
     builder_filter: str = field(
         default="is_external==False", metadata={"rebuild": "html", "types": (str,)}
     )
+    """Filter string to use for the needs builder."""
     table_classes: list[str] = field(
         default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )
@@ -434,6 +459,7 @@ class NeedsSphinxConfig:
     string_links: dict[str, dict[str, Any]] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
     )
+    """In the need representation, find and render links in field values."""
     build_json: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
@@ -442,6 +468,15 @@ class NeedsSphinxConfig:
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
     """If True, the JSON needs file should be idempotent for multiple builds fo the same documentation."""
+    json_exclude_fields: list[str] = field(
+        default_factory=lambda: [
+            name
+            for name, params in NeedsCoreFields.items()
+            if params.get("exclude_json")
+        ],
+        metadata={"rebuild": "html", "types": (list,)},
+    )
+    """List of keys to exclude from the JSON needs file."""
     json_remove_defaults: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
@@ -486,9 +521,11 @@ class NeedsSphinxConfig:
     variants: dict[str, str] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
     )
+    """Mapping of variant name to filter string."""
     variant_options: list[str] = field(
         default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )
+    """List of need fields that may contain variants."""
 
     # add render context option
     render_context: dict[str, Any] = field(
@@ -496,9 +533,6 @@ class NeedsSphinxConfig:
     )
     """Jinja context for rendering templates"""
 
-    debug_measurement: bool = field(
-        default=False, metadata={"rebuild": "html", "types": (bool,)}
-    )
     # add config for needs_id_builder
     build_json_per_id: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
@@ -506,6 +540,15 @@ class NeedsSphinxConfig:
     build_json_per_id_path: str = field(
         default="needs_id", metadata={"rebuild": "html", "types": (str,)}
     )
+
+    debug_measurement: bool = field(
+        default=False, metadata={"rebuild": "html", "types": (bool,)}
+    )
+    """If True, log runtime information for various functions."""
+    debug_filters: bool = field(
+        default=False, metadata={"rebuild": "html", "types": (bool,)}
+    )
+    """If True, log filter processing runtime information."""
 
     @classmethod
     def add_config_values(cls, app: Sphinx) -> None:
@@ -525,3 +568,11 @@ class NeedsSphinxConfig:
                 item.metadata["rebuild"],
                 types=item.metadata["types"],
             )
+
+    @classmethod
+    def get_default(cls, name: str) -> Any:
+        """Get the default value for a config item."""
+        _field = next(field for field in fields(cls) if field.name == name)
+        if _field.default_factory is not MISSING:
+            return _field.default_factory()
+        return _field.default

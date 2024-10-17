@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 from collections.abc import Iterable
+from typing import Any
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -38,17 +39,21 @@ def transform_need_to_dict(need: NeedsInfoType) -> dict[str, str]:
     dict_need = {}
 
     for element, value in need.items():
-        if isinstance(value, str):
-            # As string are iterable, we have to handle strings first.
-            dict_need[element] = value
-        elif isinstance(value, dict):
-            dict_need[element] = ";".join([str(i) for i in value.items()])
-        elif isinstance(value, (Iterable, list, tuple)):
-            dict_need[element] = ";".join([str(i) for i in value])
-        else:
-            dict_need[element] = str(value)
+        dict_need[element] = value_to_string(value)
 
     return dict_need
+
+
+def value_to_string(value: Any) -> str:
+    if isinstance(value, str):
+        # As string are iterable, we have to handle strings first.
+        return value
+    elif isinstance(value, dict):
+        return ";".join([str(i) for i in value.items()])
+    elif isinstance(value, (Iterable, list, tuple)):
+        return ";".join([str(i) for i in value])
+
+    return str(value)
 
 
 def process_need_ref(
@@ -60,7 +65,7 @@ def process_need_ref(
     builder = app.builder
     env = app.env
     needs_config = NeedsSphinxConfig(env.config)
-    all_needs = SphinxNeedsData(env).get_or_create_needs()
+    all_needs = SphinxNeedsData(env).get_needs_view()
     # for node_need_ref in doctree.findall(NeedRef):
     for node_need_ref in found_nodes:
         # Let's create a dummy node, for the case we will not be able to create a real reference
@@ -106,6 +111,7 @@ def process_need_ref(
             if str(need_id_full) == str(ref_name):
                 ref_name = None
 
+            link_text = ""
             if ref_name and prefix in ref_name and postfix in ref_name:
                 # if ref_name is set and has prefix to process, we will do so.
                 ref_name = ref_name.replace(prefix, "{").replace(postfix, "}")
@@ -115,7 +121,7 @@ def process_need_ref(
                     log_warning(
                         log,
                         f"option placeholder {e} for need {node_need_ref['reftarget']} not found",
-                        None,
+                        "link_text",
                         location=node_need_ref,
                     )
             else:
@@ -125,8 +131,12 @@ def process_need_ref(
                 try:
                     link_text = needs_config.role_need_template.format(**dict_need)
                 except KeyError as e:
-                    link_text = f'"the config parameter needs_role_need_template uses not supported placeholders: {e} "'
-                    log_warning(log, link_text, None, None)
+                    log_warning(
+                        log,
+                        f"the config parameter needs_role_need_template uses unsupported placeholders: {e} ",
+                        "link_text",
+                        location=node_need_ref,
+                    )
 
             node_need_ref[0].children[0] = nodes.Text(link_text)  # type: ignore[index]
 

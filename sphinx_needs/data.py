@@ -4,39 +4,39 @@ which is stored in the Sphinx environment.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Final, Literal, Mapping, TypedDict
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Final,
+    Literal,
+    Mapping,
+    NewType,
+    TypedDict,
+)
 
 from sphinx.util.logging import getLogger
 
 from sphinx_needs.logging import log_warning
+from sphinx_needs.views import NeedsView
 
 if TYPE_CHECKING:
-    from docutils.nodes import Element, Text
+    from docutils.nodes import Text
     from sphinx.application import Sphinx
     from sphinx.environment import BuildEnvironment
     from typing_extensions import NotRequired, Required
 
+    from sphinx_needs.nodes import Need
     from sphinx_needs.services.manager import ServiceManager
 
 
 LOGGER = getLogger(__name__)
 
+ENV_DATA_VERSION: Final = 2
+"""Version of the data stored in the environment.
 
-class NeedsFilterType(TypedDict):
-    filter: str
-    """Filter string."""
-    status: list[str]
-    tags: list[str]
-    types: list[str]
-    amount: int
-    export_id: str
-    """If set, the filter is exported with this ID in the needs.json file."""
-    origin: str
-    """Origin of the request (e.g. needlist, needtable, needflow)."""
-    location: str
-    """Location of the request (e.g. "docname:lineno")"""
-    runtime: float
-    """Time take to run filter (seconds)."""
+See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
+"""
 
 
 class NeedsPartType(TypedDict):
@@ -51,6 +51,8 @@ class NeedsPartType(TypedDict):
     links_back: list[str]
     """List of need IDs, which are referencing this part."""
 
+    # note back links for each type are also set dynamically in post_process_needs_data (-> create_back_links)
+
 
 class CoreFieldParameters(TypedDict):
     """Parameters for core fields."""
@@ -61,26 +63,35 @@ class CoreFieldParameters(TypedDict):
     """JSON schema for the field."""
     show_in_layout: NotRequired[bool]
     """Whether to show the field in the rendered layout of the need by default (False if not present)."""
+    exclude_external: NotRequired[bool]
+    """Whether field should be excluded when loading external needs (False if not present)."""
+    exclude_import: NotRequired[bool]
+    """Whether field should be excluded when importing needs (False if not present)."""
     exclude_json: NotRequired[bool]
-    """Whether to exclude the field from the JSON representation (False if not present)."""
+    """Whether field should be part of the default exclusions from the JSON representation (False if not present)."""
 
 
 NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
-    "target_id": {"description": "ID of the data.", "schema": {"type": "string"}},
     "id": {"description": "ID of the data.", "schema": {"type": "string"}},
     "docname": {
         "description": "Name of the document where the need is defined (None if external).",
         "schema": {"type": ["string", "null"], "default": None},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "lineno": {
         "description": "Line number where the need is defined (None if external).",
         "schema": {"type": ["integer", "null"], "default": None},
         "exclude_json": True,
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "lineno_content": {
         "description": "Line number on which the need content starts (None if external).",
         "schema": {"type": ["integer", "null"], "default": None},
         "exclude_json": True,
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "full_title": {
         "description": "Title of the need, of unlimited length.",
@@ -102,28 +113,33 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     },
     "collapse": {
         "description": "Hide the meta-data information of the need.",
-        "schema": {"type": ["boolean", "null"], "default": None},
+        "schema": {"type": "boolean", "default": False},
         "exclude_json": True,
+        "exclude_external": True,
     },
     "hide": {
         "description": "If true, the need is not rendered.",
         "schema": {"type": "boolean", "default": False},
         "exclude_json": True,
+        "exclude_external": True,
     },
     "delete": {
         "description": "If true, the need is deleted entirely.",
-        "schema": {"type": ["boolean", "null"], "default": None},
-        "show_in_layout": True,
+        "schema": {"type": "boolean", "default": False},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "layout": {
         "description": "Key of the layout, which is used to render the need.",
         "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
+        "exclude_external": True,
     },
     "style": {
         "description": "Comma-separated list of CSS classes (all appended by `needs_style_`).",
         "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
+        "exclude_external": True,
     },
     "arch": {
         "description": "Mapping of uml key to uml content.",
@@ -136,15 +152,19 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "is_external": {
         "description": "If true, no node is created and need is referencing external url.",
         "schema": {"type": "boolean", "default": False},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "external_url": {
         "description": "URL of the need, if it is an external need.",
         "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
+        "exclude_import": True,
     },
     "external_css": {
         "description": "CSS class name, added to the external reference.",
         "schema": {"type": "string", "default": ""},
+        "exclude_import": True,
     },
     "type": {
         "description": "Type of the need.",
@@ -153,37 +173,53 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "type_name": {
         "description": "Name of the type.",
         "schema": {"type": "string", "default": ""},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "type_prefix": {
         "description": "Prefix of the type.",
         "schema": {"type": "string", "default": ""},
         "exclude_json": True,
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "type_color": {
         "description": "Hexadecimal color code of the type.",
         "schema": {"type": "string", "default": ""},
         "exclude_json": True,
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "type_style": {
         "description": "Style of the type.",
         "schema": {"type": "string", "default": ""},
         "exclude_json": True,
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "is_modified": {
         "description": "Whether the need was modified by needextend.",
         "schema": {"type": "boolean", "default": False},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "modifications": {
         "description": "Number of modifications by needextend.",
         "schema": {"type": "integer", "default": 0},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "is_need": {
         "description": "Whether the need is a need.",
         "schema": {"type": "boolean", "default": True},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "is_part": {
         "description": "Whether the need is a part.",
         "schema": {"type": "boolean", "default": False},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "parts": {
         "description": "Mapping of parts, a.k.a. sub-needs, IDs to data that overrides the need's data",
@@ -197,61 +233,63 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "description": "<parent ID>, or <self ID> if not a part.",
         "exclude_json": True,
         "schema": {"type": "string", "default": ""},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "id_complete": {
         "description": "<parent ID>.<self ID>, or <self ID> if not a part.",
         "exclude_json": True,
         "schema": {"type": "string", "default": ""},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "jinja_content": {
         "description": "Whether the content should be pre-processed by jinja.",
-        "schema": {"type": ["boolean", "null"], "default": None},
-        "show_in_layout": True,
+        "schema": {"type": "boolean", "default": False},
+        "exclude_external": True,
     },
     "template": {
         "description": "Template of the need.",
         "schema": {"type": ["string", "null"], "default": None},
-        "show_in_layout": True,
+        "exclude_external": True,
     },
     "pre_template": {
         "description": "Pre-template of the need.",
         "schema": {"type": ["string", "null"], "default": None},
-        "show_in_layout": True,
+        "exclude_external": True,
     },
     "post_template": {
         "description": "Post-template of the need.",
         "schema": {"type": ["string", "null"], "default": None},
-        "show_in_layout": True,
+        "exclude_external": True,
     },
     "content": {
         "description": "Content of the need.",
         "schema": {"type": "string", "default": ""},
-        "exclude_json": True,
     },
     "pre_content": {
         "description": "Pre-content of the need.",
         "schema": {"type": "string", "default": ""},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "post_content": {
         "description": "Post-content of the need.",
         "schema": {"type": "string", "default": ""},
-    },
-    "content_id": {
-        "description": "ID of the content node.",
-        "schema": {"type": ["string", "null"], "default": None},
-    },
-    "content_node": {
-        "description": "Deep copy of the content node.",
-        "schema": {},
-        "exclude_json": True,
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "has_dead_links": {
         "description": "True if any links reference need ids that are not found in the need list.",
         "schema": {"type": "boolean", "default": False},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "has_forbidden_dead_links": {
         "description": "True if any links reference need ids that are not found in the need list, and the link type does not allow dead links.",
         "schema": {"type": "boolean", "default": False},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "constraints": {
         "description": "List of constraint names, which are defined for this need.",
@@ -264,15 +302,20 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
             "additionalProperties": {"type": "object"},
             "default": {},
         },
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "constraints_passed": {
         "description": "True if all constraints passed, False if any failed, None if not yet checked.",
-        "schema": {"type": ["boolean", "null"], "default": True},
+        "schema": {"type": "boolean", "default": True},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "constraints_error": {
         "description": "An error message set if any constraint failed, and `error_message` field is set in config.",
         "schema": {"type": "string", "default": ""},
-        "show_in_layout": True,
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "doctype": {
         "description": "Type of the document where the need is defined, e.g. '.rst'.",
@@ -281,19 +324,25 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "sections": {
         "description": "Sections of the need.",
         "schema": {"type": "array", "items": {"type": "string"}, "default": []},
+        "exclude_import": True,
     },
     "section_name": {
         "description": "Simply the first section.",
         "schema": {"type": "string", "default": ""},
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "signature": {
         "description": "Derived from a docutils desc_name node.",
         "schema": {"type": "string", "default": ""},
         "show_in_layout": True,
+        "exclude_import": True,
     },
     "parent_need": {
         "description": "Simply the first parent id.",
         "schema": {"type": "string", "default": ""},
+        "exclude_external": True,
+        "exclude_import": True,
     },
 }
 
@@ -301,9 +350,6 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
 class NeedsInfoType(TypedDict, total=False):
     """Data for a single need."""
 
-    # TODO remove duplication target_id/id
-    target_id: Required[str]
-    """ID of the data."""
     id: Required[str]
     """ID of the data."""
 
@@ -323,11 +369,11 @@ class NeedsInfoType(TypedDict, total=False):
     tags: Required[list[str]]
 
     # rendering information
-    collapse: Required[None | bool]
+    collapse: Required[bool]
     """Hide the meta-data information of the need."""
     hide: Required[bool]
     """If true, the need is not rendered."""
-    delete: Required[None | bool]
+    delete: Required[bool]
     """If true, the need is deleted entirely."""
     layout: Required[None | str]
     """Key of the layout, which is used to render the need."""
@@ -371,17 +417,13 @@ class NeedsInfoType(TypedDict, total=False):
     """<parent ID>.<self ID>, or <self ID> if not a part."""
 
     # content creation information
-    jinja_content: Required[None | bool]
+    jinja_content: Required[bool]
     template: Required[None | str]
     pre_template: Required[None | str]
     post_template: Required[None | str]
     content: Required[str]
     pre_content: str
     post_content: str
-    content_id: Required[None | str]
-    """ID of the content node."""
-    content_node: Required[None | Element]
-    """Deep copy of the content node."""
 
     # these default to False and are updated in check_links post-process
     has_dead_links: Required[bool]
@@ -397,7 +439,7 @@ class NeedsInfoType(TypedDict, total=False):
     # set in process_need_nodes (-> process_constraints) transform
     constraints_results: Required[dict[str, dict[str, bool]]]
     """Mapping of constraint name, to check name, to result."""
-    constraints_passed: Required[None | bool]
+    constraints_passed: Required[bool]
     """True if all constraints passed, False if any failed, None if not yet checked."""
     constraints_error: str
     """An error message set if any constraint failed, and `error_message` field is set in config."""
@@ -529,7 +571,6 @@ class NeedsFilteredBaseType(NeedsBaseDataType):
     sort_by: None | str
     filter_code: list[str]
     filter_func: None | str
-    export_id: str
     filter_warning: str | None
     """If set, the filter is exported with this ID in the needs.json file."""
 
@@ -557,19 +598,6 @@ class NeedsExtractType(NeedsFilteredBaseType):
     style: str
     show_filters: bool
     filter_arg: None | str
-
-
-class _NeedsFilterType(NeedsFilteredBaseType):
-    """Data to present (filtered) needs inside a list, table or diagram
-
-    .. deprecated:: 0.2.0
-    """
-
-    show_tags: bool
-    show_status: bool
-    show_filters: bool
-    show_legend: bool
-    layout: Literal["list", "table", "diagram"]
 
 
 class GraphvizStyleType(TypedDict, total=False):
@@ -686,6 +714,13 @@ class NeedsUmlType(NeedsBaseDataType):
     is_arch: bool
     # set in process_needuml
     content_calculated: str
+    process_time: float
+    """Time taken to process the diagram."""
+
+
+NeedsMutable = NewType("NeedsMutable", Dict[str, NeedsInfoType])
+"""A mutable view of the needs, before resolution
+"""
 
 
 class SphinxNeedsData:
@@ -694,39 +729,95 @@ class SphinxNeedsData:
     def __init__(self, env: BuildEnvironment) -> None:
         self.env = env
 
-    def get_or_create_needs(self) -> dict[str, NeedsInfoType]:
+    @property
+    def _env_needs(self) -> dict[str, NeedsInfoType]:
+        try:
+            return self.env._needs_all_needs
+        except AttributeError:
+            self.env._needs_all_needs = {}
+        return self.env._needs_all_needs
+
+    def has_need(self, need_id: str) -> bool:
+        """Check if a need with the given ID exists."""
+        return need_id in self._env_needs
+
+    def add_need(self, need: NeedsInfoType) -> None:
+        """Add an unprocessed need to the cache.
+
+        This will overwrite any existing need with the same ID.
+
+        .. important:: this should only be called within the read phase,
+            before the needs have been fully collected and resolved.
+        """
+        if self.needs_is_post_processed:
+            raise RuntimeError("Needs have already been post-processed and frozen.")
+        self._env_needs[need["id"]] = need
+
+    def remove_need(self, need_id: str) -> None:
+        """Remove a single need from the cache, if it exists.
+
+        .. important:: this should only be called within the read phase,
+            before the needs have been fully collected and resolved.
+        """
+        if self.needs_is_post_processed:
+            raise RuntimeError("Needs have already been post-processed and frozen.")
+        if need_id in self._env_needs:
+            del self._env_needs[need_id]
+        self.remove_need_node(need_id)
+
+    def remove_doc(self, docname: str) -> None:
+        """Remove all data related to a document from the cache.
+
+        .. important:: this should only be called within the read phase,
+            before the needs have been fully collected and resolved.
+        """
+        if self.needs_is_post_processed:
+            raise RuntimeError("Needs have already been post-processed and frozen.")
+        for need_id in list(self._env_needs):
+            if self._env_needs[need_id]["docname"] == docname:
+                del self._env_needs[need_id]
+                self.remove_need_node(need_id)
+        docs = self.get_or_create_docs()
+        for key, value in docs.items():
+            docs[key] = [doc for doc in value if doc != docname]
+
+    def get_needs_mutable(self) -> NeedsMutable:
         """Get all needs, mapped by ID.
 
-        This is lazily created and cached in the environment.
+        .. important:: this should only be called within the read phase,
+            before the needs have been fully collected and resolved.
         """
-        try:
-            return self.env.needs_all_needs
-        except AttributeError:
-            self.env.needs_all_needs = {}
-        return self.env.needs_all_needs
+        if self.needs_is_post_processed:
+            raise RuntimeError("Needs have already been post-processed and frozen.")
+        return self._env_needs  # type: ignore[return-value]
 
-    @property
-    def has_export_filters(self) -> bool:
-        """Whether any filters have export IDs."""
-        try:
-            return self.env.needs_filters_export_id
-        except AttributeError:
-            return False
+    def get_needs_view(self) -> NeedsView:
+        """Return a read-only view of all resolved needs.
 
-    @has_export_filters.setter
-    def has_export_filters(self, value: bool) -> None:
-        self.env.needs_filters_export_id = value
-
-    def get_or_create_filters(self) -> dict[str, NeedsFilterType]:
-        """Get all filters, mapped by ID.
-
-        This is lazily created and cached in the environment.
+        .. important:: this should only be called within the write phase,
+            after the needs have been fully collected.
+            If not already done, this will ensure all needs are resolved
+            (e.g. back links have been computed etc),
+            and then lock the data to prevent further modification.
         """
+        if not self.needs_is_post_processed:
+            from sphinx_needs.directives.need import post_process_needs_data
+
+            # TODO the following code may be good to make access stricter, however,
+            # it fails on rebuilds, where e.g. `build-finished` events can be called without the phase having been updated
+            # from sphinx.util.build_phase import BuildPhase
+            # if self.env.app.phase in (BuildPhase.INITIALIZATION, BuildPhase.READING):
+            #     raise RuntimeError(
+            #         "Trying to retrieve needs view incorrectly in init/read phase."
+            #     )
+
+            post_process_needs_data(self.env.app)
+
         try:
-            return self.env.needs_all_filters
+            return self.env._needs_view
         except AttributeError:
-            self.env.needs_all_filters = {}
-        return self.env.needs_all_filters
+            self.env._needs_view = NeedsView._from_needs(self._env_needs)
+        return self.env._needs_view
 
     def get_or_create_docs(self) -> dict[str, list[str]]:
         """Get mapping of need category to docnames containing the need.
@@ -734,23 +825,23 @@ class SphinxNeedsData:
         This is lazily created and cached in the environment.
         """
         try:
-            return self.env.needs_all_docs
+            return self.env._needs_all_docs
         except AttributeError:
-            self.env.needs_all_docs = {"all": []}
-        return self.env.needs_all_docs
+            self.env._needs_all_docs = {"all": []}
+        return self.env._needs_all_docs
 
     @property
     def needs_is_post_processed(self) -> bool:
         """Whether needs have been post-processed."""
         try:
-            return self.env.needs_is_post_processed
+            return self.env._needs_is_post_processed
         except AttributeError:
-            self.env.needs_is_post_processed = False
-        return self.env.needs_is_post_processed
+            self.env._needs_is_post_processed = False
+        return self.env._needs_is_post_processed
 
     @needs_is_post_processed.setter
     def needs_is_post_processed(self, value: bool) -> None:
-        self.env.needs_is_post_processed = value
+        self.env._needs_is_post_processed = value
 
     def get_or_create_services(self) -> ServiceManager:
         """Get information about services.
@@ -760,10 +851,10 @@ class SphinxNeedsData:
         from sphinx_needs.services.manager import ServiceManager
 
         try:
-            return self.env.app.needs_services
+            return self.env.app._needs_services
         except AttributeError:
-            self.env.app.needs_services = ServiceManager(self.env.app)
-        return self.env.app.needs_services
+            self.env.app._needs_services = ServiceManager(self.env.app)
+        return self.env.app._needs_services
 
     def get_or_create_extends(self) -> dict[str, NeedsExtendType]:
         """Get all need modifications, mapped by ID.
@@ -771,10 +862,10 @@ class SphinxNeedsData:
         This is lazily created and cached in the environment.
         """
         try:
-            return self.env.need_all_needextend
+            return self.env._need_all_needextend
         except AttributeError:
-            self.env.need_all_needextend = {}
-        return self.env.need_all_needextend
+            self.env._need_all_needextend = {}
+        return self.env._need_all_needextend
 
     def get_or_create_umls(self) -> dict[str, NeedsUmlType]:
         """Get all need uml diagrams, mapped by ID.
@@ -782,10 +873,36 @@ class SphinxNeedsData:
         This is lazily created and cached in the environment.
         """
         try:
-            return self.env.needs_all_needumls
+            return self.env._needs_all_needumls
         except AttributeError:
-            self.env.needs_all_needumls = {}
-        return self.env.needs_all_needumls
+            self.env._needs_all_needumls = {}
+        return self.env._needs_all_needumls
+
+    @property
+    def _needs_all_nodes(self) -> dict[str, Need]:
+        try:
+            return self.env._needs_all_nodes
+        except AttributeError:
+            self.env._needs_all_nodes = {}
+        return self.env._needs_all_nodes
+
+    def set_need_node(self, need_id: str, node: Need) -> None:
+        """Set a need node in the cache."""
+        self._needs_all_nodes[need_id] = node.deepcopy()
+
+    def remove_need_node(self, need_id: str) -> None:
+        """Remove a need node from the cache, if it exists."""
+        if need_id in self._needs_all_nodes:
+            del self._needs_all_nodes[need_id]
+
+    def get_need_node(self, need_id: str) -> Need | None:
+        """Get a copy of a need node from the cache, if it exists."""
+        if need_id in self._needs_all_nodes:
+            # We must create a copy of the node, as it may be reused several time
+            # (multiple needextract for the same need) and the Sphinx ImageTransformator add location specific
+            # uri to some nodes, which are not valid for all locations.
+            return self._needs_all_nodes[need_id].deepcopy()
+        return None
 
 
 def merge_data(
@@ -800,16 +917,9 @@ def merge_data(
     this_data = SphinxNeedsData(env)
     other_data = SphinxNeedsData(other)
 
-    # update filters
-    if other_data.has_export_filters:
-        this_data.has_export_filters = True
-    # merge these just to be safe,
-    # although actually all should be added in the write phase
-    this_data.get_or_create_filters().update(other_data.get_or_create_filters())
-
     # Update needs
-    needs = this_data.get_or_create_needs()
-    other_needs = other_data.get_or_create_needs()
+    needs = this_data._env_needs
+    other_needs = other_data._env_needs
     for other_id, other_need in other_needs.items():
         if other_id in needs:
             # we only want to warn if the need comes from one of the docs parsed in this worker
@@ -857,6 +967,7 @@ def merge_data(
                     f"not {type(other_objects)} and {type(objects)}"
                 )
 
-    _merge("needs_all_docs", is_complex_dict=True)
-    _merge("need_all_needextend")
-    _merge("needs_all_needumls")
+    _merge("_needs_all_docs", is_complex_dict=True)
+    _merge("_needs_all_nodes")
+    _merge("_need_all_needextend")
+    _merge("_needs_all_needumls")

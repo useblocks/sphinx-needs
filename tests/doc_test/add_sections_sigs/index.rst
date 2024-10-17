@@ -26,6 +26,20 @@ Second Section
 
     The Tool **shall** have a command line interface.
 
+need in API
+-----------
+
+.. py:class:: TestClass
+
+    This is a test class.
+
+    .. py:method:: test_method(self)
+
+        This is a test method.
+
+        .. test:: test method
+            :id: T_001
+
 All Requirements
 ----------------
 
@@ -39,3 +53,4 @@ First Section Only
 .. needtable::
     :columns: id;title;sections
     :filter: 'First Section' in sections[0] and sections[0].startswith('1.1')
+    

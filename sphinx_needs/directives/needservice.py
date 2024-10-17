@@ -9,11 +9,11 @@ from docutils.statemachine import StringList
 from sphinx.util.docutils import SphinxDirective
 from sphinx_data_viewer.api import get_data_viewer_node
 
-from sphinx_needs.api import add_need
+from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.directives.need import NeedDirective
-from sphinx_needs.logging import get_logger
+from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import add_doc
 
 
@@ -86,14 +86,14 @@ class NeedserviceDirective(SphinxDirective):
 
                 content.extend(self.content)
 
-                if "type" not in datum.keys():
+                if "type" not in datum:
                     # Use the first defined type, if nothing got defined by service (should not be the case)
                     need_type = need_types[0]["directive"]
                 else:
                     need_type = datum["type"]
                     del datum["type"]
 
-                if "title" not in datum.keys():
+                if "title" not in datum:
                     need_title = ""
                 else:
                     need_title = datum["title"]
@@ -102,7 +102,7 @@ class NeedserviceDirective(SphinxDirective):
                 # We need to check if all given options from services are really available as configured
                 # extra_option or extra_link
                 missing_options = {}
-                for element in datum.keys():
+                for element in datum:
                     defined_options = list(self.__class__.option_spec.keys())
                     defined_options.append(
                         "content"
@@ -126,15 +126,23 @@ class NeedserviceDirective(SphinxDirective):
                 datum.update(options)
 
                 # ToDo: Tags and Status are not set (but exist in data)
-                section += add_need(
-                    self.env.app,
-                    self.state,
-                    docname,
-                    self.lineno,
-                    need_type,
-                    need_title,
-                    **datum,
-                )
+                try:
+                    section += add_need(
+                        self.env.app,
+                        self.state,
+                        docname,
+                        self.lineno,
+                        need_type,
+                        need_title,
+                        **datum,
+                    )
+                except InvalidNeedException as err:
+                    log_warning(
+                        self.log,
+                        f"Service need could not be created: {err.message}",
+                        "load_service_need",
+                        location=self.get_location(),
+                    )
         else:
             try:
                 service_debug_data = service.debug(self.options)

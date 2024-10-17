@@ -1,7 +1,7 @@
 """
 API to get or add specific sphinx needs configuration parameters.
 
-All functions here are available under ``sphinxcontrib.api``. So do not import this module directly.
+All functions here are available under ``sphinx_needs.api``.
 """
 
 from __future__ import annotations
@@ -14,8 +14,7 @@ from sphinx.util.logging import SphinxLoggerAdapter
 from sphinx_needs.api.exceptions import NeedsApiConfigException
 from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType
-from sphinx_needs.functions import register_func
-from sphinx_needs.functions.functions import DynamicFunction
+from sphinx_needs.functions.functions import DynamicFunction, register_func
 
 
 def get_need_types(app: Sphinx) -> list[str]:

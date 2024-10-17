@@ -602,54 +602,6 @@ the ``debug`` :ref:`layout <layouts>`.
 
 You can automatically assign templates to specific needs by using :ref:`needs_global_options`.
 
-.. _multiline_option:
-
-Multiline options
-+++++++++++++++++
-In Sphinx, options support multi-line content, which you can interpret like other RST input in Sphinx-Needs templates.
-
-But there is one important constraint: Don’t use empty lines, as we use them in defining the content end.
-Instead, you can use ``__`` (two underscores) to define the content end and can use ``|`` to force line breaks.
-
-.. dropdown:: *Template* ``content.need``
-
-   .. literalinclude:: /needs_templates/content.need
-
-.. need-example::
-
-    .. req:: A really strange example
-       :id: multiline_1234
-       :status:
-         | First line
-         | Second line
-         | Followed by an empty line
-         __
-         A list example:
-         __
-         * take *this*
-         * and **this**
-         __
-         __
-         __
-         3 new lines, but 1 is shown only
-         __
-         Included directives
-         __
-         .. req:: test req
-            :id: abc_432
-            __
-            This works!
-            __
-            An image: wow
-            __
-            .. image:: /_images/needs_logo.png
-               :width: 20%
-         __
-         .. image:: /_images/needs_logo.png
-            :width: 30%
-       :template: content
-       :collapse: true
-
 .. _need_pre_template:
 
 pre_template
@@ -727,28 +679,3 @@ Customized Options
 Sphinx-Needs supports the definition and filtering of customized options for needs.
 
 You can read :ref:`needs_extra_options` for detailed information and examples.
-
-
-Removed Options
----------------
-
-.. note::
-
-    To remove options from the **Sphinx-Needs** output in ``versions >= 0.5.0``, you must provide your own layout,
-    which does not include these options. See :ref:`layouts_styles` for more information.
-
-.. _need_hide_status:
-
-hide_status
-~~~~~~~~~~~
-*removed: 0.5.0*
-
-Hide the status information of a need.
-
-.. _need_hide_tags:
-
-hide_tags
-~~~~~~~~~
-*removed: 0.5.0*
-
-Hide the tags of a need.

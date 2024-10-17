@@ -21,3 +21,13 @@ Filter code test cases
 .. needpie:: Filter code func pie
     :labels: project_x, project_y
     :filter-func: filter_code_func.my_pie_filter_code
+
+
+.. needtable:: Malformed filter func table
+   :style: table
+   :filter-func: filter_code_func.own_filter_code(
+
+
+.. needpie:: Malformed filter func pie
+    :labels: project_x, project_y
+    :filter-func: filter_code_func.my_pie_filter_code(

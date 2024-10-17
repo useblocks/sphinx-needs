@@ -15,5 +15,5 @@ Testing filter with and or
    :tags: 1;2
    :duration: 1
 
-.. needfilter::
+.. needlist::
    :filter: "1" in tags or "2" in tags

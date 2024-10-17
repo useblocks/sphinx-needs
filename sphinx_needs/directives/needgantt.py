@@ -8,9 +8,6 @@ from typing import Sequence
 from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
-from sphinxcontrib.plantuml import (
-    generate_name,  # Need for plantuml filename calculation
-)
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsGanttType, SphinxNeedsData
@@ -170,13 +167,13 @@ def process_needgantt(
             continue
 
         current_needgantt: NeedsGanttType = node.attributes
-        all_needs_dict = SphinxNeedsData(env).get_or_create_needs()
+        all_needs_dict = SphinxNeedsData(env).get_needs_view()
 
         content = []
         try:
             if "sphinxcontrib.plantuml" not in app.config.extensions:
                 raise ImportError
-            from sphinxcontrib.plantuml import plantuml
+            from sphinxcontrib.plantuml import generate_name, plantuml
         except ImportError:
             no_plantuml(node)
             continue
@@ -194,13 +191,12 @@ def process_needgantt(
         config = current_needgantt["config"]
         puml_node["uml"] += add_config(config)
 
-        all_needs = list(all_needs_dict.values())
         found_needs = process_filters(
             app,
-            all_needs,
+            all_needs_dict,
             current_needgantt,
             origin="needgantt",
-            location=f"{node.source}:{node.line}",
+            location=node,
         )
 
         # Scale/timeline handling
@@ -260,7 +256,7 @@ def process_needgantt(
                         logger,
                         "Duration not set or invalid for needgantt chart. "
                         f"Need: {need['id']!r}{need_location}. Duration: {duration!r}",
-                        "gantt",
+                        "needgantt",
                         location=node,
                     )
                     duration = 1
