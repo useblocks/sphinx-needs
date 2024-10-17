@@ -58,10 +58,6 @@ def test_needs_warnings(test_app):
 
     assert warnings == expected
 
-    # Check Needs warning with use of all needs
-    assert "WARNING: depend_need_not_closed: failed" in warnings
-    assert "failed needs: 1 (TC_MULTI2)" in warnings
-
 
 @pytest.mark.parametrize(
     "test_app",
