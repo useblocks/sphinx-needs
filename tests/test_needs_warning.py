@@ -41,7 +41,7 @@ def test_needs_warnings(test_app):
         "\t\tfailed needs: 1 (TC_MULTI2)",
         "\t\tused filter: custom_warning_multi_needs [needs.warnings]",
         "WARNING: type_match: failed",
-        "\t\tfailed needs: 2 (TC_001, TC_MULTI1)"
+        "\t\tfailed needs: 2 (TC_001, TC_MULTI1)",
         "\t\tused filter: my_custom_warning_check [needs.warnings]",
     ]
 
