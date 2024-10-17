@@ -37,8 +37,11 @@ def test_needs_warnings(test_app):
         "WARNING: invalid_status: failed",
         "\t\tfailed needs: 2 (SP_TOO_001, US_63252)",
         "\t\tused filter: status not in ['open', 'closed', 'done', 'example_2', 'example_3'] [needs.warnings]",
+        'WARNING: depend_need_not_closed: failed',
+        '\t\tfailed needs: 1 (TC_MULTI2)',
+        '\t\tused filter: custom_warning_multi_needs [needs.warnings]',
         "WARNING: type_match: failed",
-        "\t\tfailed needs: 1 (TC_001)",
+        '\t\tfailed needs: 2 (TC_001, TC_MULTI1)'
         "\t\tused filter: my_custom_warning_check [needs.warnings]",
     ]
 
