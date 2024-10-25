@@ -3,7 +3,7 @@
 Configuration
 =============
 
-All configurations take place in your project's **conf.py** file.
+All root configurations take place in your project's :external+sphinx:ref:`conf.py file <build-config>`.
 
 Activation
 ----------
@@ -13,6 +13,13 @@ Add **sphinx_needs** to your extensions.
 .. code-block:: python
 
    extensions = ["sphinx_needs",]
+
+Available sphinx-needs options are then listed below, that can be added to your **conf.py** file.
+
+.. versionadded:: 4.1.0
+
+   Configuration can also be specified via a `toml file <https://toml.io>`__.
+   See :ref:`needs_from_toml` for more details.
 
 .. _config-warnings:
 
@@ -78,6 +85,41 @@ Options
 -------
 
 All configuration options starts with the prefix ``needs_`` for **Sphinx-Needs**.
+
+.. _needs_from_toml:
+
+needs_from_toml
+~~~~~~~~~~~~~~~
+
+.. versionadded:: 4.1.0
+
+This configuration takes the (relative) path to a `toml file <https://toml.io>`__ which contains some or all of the needs configuration (configuration in the toml will override that in the :file:`conf.py`).
+
+.. code-block:: python
+
+   needs_from_toml = "ubproject.toml"
+
+Configuration in the toml can contain any of the options below, under a ``[needs]`` section,
+but with the ``needs_`` prefix removed.
+For example:
+
+.. code-block:: toml
+
+   [needs]
+   id_required = true
+   id_length = 3
+   types = [
+      {directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"},
+      {directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="node"},
+   ]
+
+To specify a different section name to read from in the toml file, use the ``needs_from_toml_section`` option:
+
+.. code-block:: python
+
+   needs_from_toml_section = ["tool", "needs"]
+
+.. caution:: Any configuration specifying relative paths in the toml file will be resolved relative to the directory containing the :file:`conf.py` file.
 
 needs_include_needs
 ~~~~~~~~~~~~~~~~~~~

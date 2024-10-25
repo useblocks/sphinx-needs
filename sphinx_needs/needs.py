@@ -369,26 +369,11 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
     needs_config = NeedsSphinxConfig(config)
     if needs_config.from_toml is None:
         return
-    if isinstance(needs_config.from_toml, str):
-        toml_file = Path(needs_config.from_toml)
-        toml_path = ["needs"]
-    else:
-        try:
-            _toml_file, toml_path = needs_config.from_toml
-            assert isinstance(_toml_file, str), "First element must be a string"
-            assert isinstance(toml_path, (list, tuple)), "Second element must be a list"
-            toml_file = Path(_toml_file)
-        except Exception:
-            log_warning(
-                LOGGER,
-                "'needs_from_toml' is not a str or (str, list[str])",
-                "config",
-                None,
-            )
-            return
 
     # resolve relative to confdir
-    toml_file = Path(app.confdir, toml_file).resolve()
+    toml_file = Path(app.confdir, needs_config.from_toml).resolve()
+    toml_path = needs_config.from_toml_section
+
     if not toml_file.exists():
         log_warning(
             LOGGER,

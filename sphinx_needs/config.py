@@ -307,15 +307,15 @@ class NeedsSphinxConfig:
             return _field.default_factory()
         return _field.default
 
-    from_toml: str | tuple[str, list[str]] | None = field(
-        default=None, metadata={"rebuild": "env", "types": (str, tuple, list)}
+    from_toml: str | None = field(
+        default=None, metadata={"rebuild": "env", "types": (str, type(None))}
     )
-    """Path to a TOML file to load configuration from.
-    
-    Optionally, a tuple of a path and a path to the section in the toml,
-    e.g. ``("path/to/file.toml", ["tools", "needs"])``,
-    by default the config is read from ``["needs"]``
-    """
+    """Path to a TOML file to load configuration from."""
+
+    from_toml_section: list[str] = field(
+        default_factory=lambda: ["needs"], metadata={"rebuild": "env", "types": (list,)}
+    )
+    """Path to the section in the toml file to load configuration from."""
 
     types: list[NeedType] = field(
         default_factory=lambda: [
