@@ -115,7 +115,7 @@ from sphinx_needs.warnings import process_warnings
 try:
     import tomllib  # added in python 3.11
 except ImportError:
-    import tomli as tomllib  # type: ignore[no-redef]
+    import tomli as tomllib
 
 __version__ = VERSION = "4.0.0"
 
