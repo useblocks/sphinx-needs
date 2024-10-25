@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728838192237,
+  "lastUpdate": 1729859757559,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -11088,6 +11088,42 @@ window.BENCHMARK_DATA = {
             "value": 66.887653167,
             "unit": "s",
             "extra": "Commit: b5ac8ff22514f9c00728cffa2d8238d8579f5db4\nBranch: master\nTime: 2024-10-13T18:47:54+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7c05d596c4731e58f87d4333a8a34096a5528b72",
+          "message": "♻️ Improve access to dynamic configs: extra_options, functions, warnings (#1332)\n\nThese three configurations are complicated by the fact that they can be set both in the `conf.py` configuration, but also via functions from `sphinx_needs.api`.\r\n\r\nThis has lead to confusion, when to use `NEEDS_CONFIG` and when to use `NeedsSphinxConfig`, and indeed I have already had to fix numerous bugs when `NeedsSphinxConfig` was incorrectly used\r\n\r\nIn this PR we split access to these configs into:\r\n\r\n- `NeedsSphinxConfig._extra_options`, `NeedsSphinxConfig._functions`, `NeedsSphinxConfig._warnings`, which access the \"raw\" sphinx configuration\r\n- `NeedsSphinxConfig.extra_options`, `NeedsSphinxConfig.functions`, `NeedsSphinxConfig.warnings`, which access the \"combined\" sphinx config + API added values\r\n\r\nWe also make `NEEDS_CONFIG` private and merge in the use of `NEEDS_FUNCTIONS`.\r\nThis makes the code less prone to mistakes in the use of the wrong variable",
+          "timestamp": "2024-10-25T14:33:46+02:00",
+          "tree_id": "1b7e13a302ed4537fe7aa2ff1b0565a793c2318d",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/7c05d596c4731e58f87d4333a8a34096a5528b72"
+        },
+        "date": 1729859745415,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.172163390999998,
+            "unit": "s",
+            "extra": "Commit: 7c05d596c4731e58f87d4333a8a34096a5528b72\nBranch: master\nTime: 2024-10-25T14:33:46+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 74.42743430800002,
+            "unit": "s",
+            "extra": "Commit: 7c05d596c4731e58f87d4333a8a34096a5528b72\nBranch: master\nTime: 2024-10-25T14:33:46+02:00"
           }
         ]
       }
