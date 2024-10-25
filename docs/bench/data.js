@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729859757559,
+  "lastUpdate": 1729860506608,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -11124,6 +11124,42 @@ window.BENCHMARK_DATA = {
             "value": 74.42743430800002,
             "unit": "s",
             "extra": "Commit: 7c05d596c4731e58f87d4333a8a34096a5528b72\nBranch: master\nTime: 2024-10-25T14:33:46+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "66853113+pre-commit-ci[bot]@users.noreply.github.com",
+            "name": "pre-commit-ci[bot]",
+            "username": "pre-commit-ci[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6898f80cdd2e6d74360cfbd7c8d00c9a3f299759",
+          "message": "[pre-commit.ci] pre-commit autoupdate (#1333)\n\nCo-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>\r\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2024-10-25T14:46:20+02:00",
+          "tree_id": "21c13ed764af1e668d16479e3d433e6ca598e56c",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6898f80cdd2e6d74360cfbd7c8d00c9a3f299759"
+        },
+        "date": 1729860492487,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.17752495400000612,
+            "unit": "s",
+            "extra": "Commit: 6898f80cdd2e6d74360cfbd7c8d00c9a3f299759\nBranch: master\nTime: 2024-10-25T14:46:20+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 69.447090599,
+            "unit": "s",
+            "extra": "Commit: 6898f80cdd2e6d74360cfbd7c8d00c9a3f299759\nBranch: master\nTime: 2024-10-25T14:46:20+02:00"
           }
         ]
       }
