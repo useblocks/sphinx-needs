@@ -265,6 +265,7 @@ linkcheck_ignore = [
     r"http://localhost:\d+",
     r"http://127.0.0.1:\d+",
     r"../.*",
+    r"http://sourceforge.net/projects/plantuml.*",
     r"https?://useblocks.com/sphinx-needs/bench/index.html",
 ]
 
