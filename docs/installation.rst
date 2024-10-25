@@ -134,7 +134,7 @@ Install PlantUML
 ~~~~~~~~~~~~~~~~
 
 1. Download the latest version of the plantuml.jar file:
-   http://sourceforge.net/projects/plantuml
+   http://sourceforge.net/projects/plantuml/files/plantuml.jar/download
 2. Make a new folder called ``utils`` inside your docs folder. Copy the ``plantuml.jar`` file into the ``utils`` folder.
 3. Install the plantuml sphinx extension: ``pip install sphinxcontrib-plantuml``.
 4. Add ``sphinxcontrib.plantuml`` to the sphinx extension list in ``conf.py``

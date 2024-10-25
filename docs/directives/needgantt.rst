@@ -72,7 +72,7 @@ needgantt
    The Gantt function is quite new in `PlantUML <https://plantuml.com/gantt-diagram>`__ and some features are
    available in the `Beta version <http://beta.plantuml.net/plantuml.jar>`__ only.
    So if you get any syntax errors during the build, please download the
-   `latest PlantUML <http://sourceforge.net/projects/plantuml>`__ version.
+   `latest PlantUML <http://sourceforge.net/projects/plantuml/files/plantuml.jar/download>`__ version.
 
 If ``svg`` is set as output format for PlantUML, we link the tasks elements to their related need.
 
