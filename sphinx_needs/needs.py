@@ -21,7 +21,7 @@ from sphinx_needs.builder import (
     build_needs_json,
     build_needumls_pumls,
 )
-from sphinx_needs.config import NEEDS_CONFIG, LinkOptionsType, NeedsSphinxConfig
+from sphinx_needs.config import _NEEDS_CONFIG, LinkOptionsType, NeedsSphinxConfig
 from sphinx_needs.data import (
     ENV_DATA_VERSION,
     NeedsCoreFields,
@@ -98,7 +98,6 @@ from sphinx_needs.environment import (
 )
 from sphinx_needs.external_needs import load_external_needs
 from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS
-from sphinx_needs.functions.functions import register_func
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles import NeedsXRefRole
@@ -110,11 +109,10 @@ from sphinx_needs.roles.need_part import NeedPart, process_need_part
 from sphinx_needs.roles.need_ref import NeedRef, process_need_ref
 from sphinx_needs.services.github import GithubService
 from sphinx_needs.services.open_needs import OpenNeedsService
-from sphinx_needs.utils import NEEDS_FUNCTIONS, node_match
+from sphinx_needs.utils import node_match
 from sphinx_needs.warnings import process_warnings
 
 __version__ = VERSION = "4.0.0"
-NEEDS_FUNCTIONS.clear()
 
 _NODE_TYPES_T = Dict[
     Type[nodes.Element],
@@ -302,7 +300,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
 
     # Be sure Sphinx-Needs config gets erased before any events or external API calls get executed.
     # So never but this inside an event.
-    NEEDS_CONFIG.clear()
+    _NEEDS_CONFIG.clear()
 
     return {
         "version": VERSION,
@@ -364,28 +362,21 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     """
     needs_config = NeedsSphinxConfig(app.config)
 
-    if isinstance(needs_config.extra_options, dict):
+    if isinstance(needs_config._extra_options, dict):
         LOGGER.info(
             'Config option "needs_extra_options" supports list and dict. However new default type since '
             "Sphinx-Needs 0.7.2 is list. Please see docs for details."
         )
 
-    for option in needs_config.extra_options:
-        if option in NEEDS_CONFIG.extra_options:
-            log_warning(
-                LOGGER,
-                f'extra_option "{option}" already registered.',
-                "config",
-                None,
-            )
-        NEEDS_CONFIG.add_extra_option(
+    for option in needs_config._extra_options:
+        _NEEDS_CONFIG.add_extra_option(
             option, "Added by needs_extra_options config", override=True
         )
 
     # ensure options for ``needgantt`` functionality are added to the extra options
     for option in (needs_config.duration_option, needs_config.completion_option):
-        if option not in NEEDS_CONFIG.extra_options:
-            NEEDS_CONFIG.add_extra_option(
+        if option not in _NEEDS_CONFIG.extra_options:
+            _NEEDS_CONFIG.add_extra_option(
                 option,
                 "Added for needgantt functionality",
                 validator=directives.unchanged_required,
@@ -402,10 +393,10 @@ def load_config(app: Sphinx, *_args: Any) -> None:
 
     # Update NeedDirective to use customized options
     NeedDirective.option_spec.update(
-        {k: v.validator for k, v in NEEDS_CONFIG.extra_options.items()}
+        {k: v.validator for k, v in _NEEDS_CONFIG.extra_options.items()}
     )
     NeedserviceDirective.option_spec.update(
-        {k: v.validator for k, v in NEEDS_CONFIG.extra_options.items()}
+        {k: v.validator for k, v in _NEEDS_CONFIG.extra_options.items()}
     )
 
     # Update NeedDirective to use customized links
@@ -447,7 +438,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             "-links_back": directives.flag,
         }
     )
-    for key, value in NEEDS_CONFIG.extra_options.items():
+    for key, value in _NEEDS_CONFIG.extra_options.items():
         NeedextendDirective.option_spec.update(
             {
                 key: value.validator,
@@ -464,9 +455,9 @@ def load_config(app: Sphinx, *_args: Any) -> None:
         # Register requested types of needs
         app.add_directive(t["directive"], NeedDirective)
 
-    for name, check in needs_config.warnings.items():
-        if name not in NEEDS_CONFIG.warnings:
-            NEEDS_CONFIG.warnings[name] = check
+    for name, check in needs_config._warnings.items():
+        if name not in _NEEDS_CONFIG.warnings:
+            _NEEDS_CONFIG.add_warning(name, check)
         else:
             log_warning(
                 LOGGER,
@@ -527,11 +518,11 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> Non
 
     # Register built-in functions
     for need_common_func in NEEDS_COMMON_FUNCTIONS:
-        register_func(need_common_func)
+        _NEEDS_CONFIG.add_function(need_common_func)
 
     # Register functions configured by user
-    for needs_func in needs_config.functions:
-        register_func(needs_func)
+    for needs_func in needs_config._functions:
+        _NEEDS_CONFIG.add_function(needs_func)
 
     # The default link name. Must exist in all configurations. Therefore we set it here
     # for the user.

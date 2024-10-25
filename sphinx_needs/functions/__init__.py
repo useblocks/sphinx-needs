@@ -13,7 +13,6 @@ from sphinx_needs.functions.functions import (  # noqa: F401
     FunctionParsingException,
     execute_func,
     find_and_replace_node_content,
-    register_func,
     resolve_dynamic_values,
     resolve_variants_options,
 )
