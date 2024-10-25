@@ -12,9 +12,9 @@ from sphinx.application import Sphinx
 from sphinx.util.logging import SphinxLoggerAdapter
 
 from sphinx_needs.api.exceptions import NeedsApiConfigException
-from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
+from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType
-from sphinx_needs.functions.functions import DynamicFunction, register_func
+from sphinx_needs.functions.functions import DynamicFunction
 
 
 def get_need_types(app: Sphinx) -> list[str]:
@@ -101,7 +101,7 @@ def add_extra_option(
     :param name: Name as string of the extra option
     :return: None
     """
-    NEEDS_CONFIG.add_extra_option(name, description)
+    _NEEDS_CONFIG.add_extra_option(name, description)
 
 
 def add_dynamic_function(
@@ -130,7 +130,7 @@ def add_dynamic_function(
     :param name: Name of the dynamic function as string
     :return: None
     """
-    register_func(function, name)
+    _NEEDS_CONFIG.add_function(function, name)
 
 
 # 'Need' is untyped, so we temporarily use 'Any' here
@@ -170,7 +170,7 @@ def add_warning(
     if warning_check is None:
         raise NeedsApiConfigException("either function or filter_string must be given")
 
-    if name in NEEDS_CONFIG.warnings:
+    if name in _NEEDS_CONFIG.warnings:
         raise NeedsApiConfigException(f"Warning {name} already registered.")
 
-    NEEDS_CONFIG.warnings[name] = warning_check
+    _NEEDS_CONFIG.add_warning(name, warning_check)

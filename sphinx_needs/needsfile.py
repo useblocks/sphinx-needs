@@ -17,7 +17,7 @@ from typing import Any, Iterable
 from jsonschema import Draft7Validator
 from sphinx.config import Config
 
-from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, NeedsInfoType
 from sphinx_needs.logging import get_logger, log_warning
 
@@ -25,7 +25,7 @@ log = get_logger(__name__)
 
 
 def generate_needs_schema(
-    config: Config, exclude_properties: Iterable[str] = ()
+    needs_config: NeedsSphinxConfig, exclude_properties: Iterable[str] = ()
 ) -> dict[str, Any]:
     """Generate a JSON schema for all fields in each need item.
 
@@ -37,7 +37,7 @@ def generate_needs_schema(
     """
     properties: dict[str, Any] = {}
 
-    for name, extra_params in NEEDS_CONFIG.extra_options.items():
+    for name, extra_params in needs_config.extra_options.items():
         properties[name] = {
             "type": "string",
             "description": extra_params.description,
@@ -53,8 +53,6 @@ def generate_needs_schema(
         properties[name] = deepcopy(core_params["schema"])
         properties[name]["description"] = f"{core_params['description']}"
         properties[name]["field_type"] = "core"
-
-    needs_config = NeedsSphinxConfig(config)
 
     for link in needs_config.extra_links:
         properties[link["option"]] = {
@@ -114,7 +112,9 @@ class NeedsList:
         self._exclude_need_keys = set(self.needs_config.json_exclude_fields)
 
         self._schema = (
-            generate_needs_schema(config, exclude_properties=self._exclude_need_keys)
+            generate_needs_schema(
+                self.needs_config, exclude_properties=self._exclude_need_keys
+            )
             if add_schema
             else None
         )

@@ -13,7 +13,7 @@ from requests_file import FileAdapter
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api import InvalidNeedException, add_need
-from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, NeedsInfoType
 from sphinx_needs.debug import measure_time
 from sphinx_needs.defaults import string_to_boolean
@@ -203,7 +203,7 @@ class NeedimportDirective(SphinxDirective):
             *NeedsCoreFields,
             *(x["option"] for x in needs_config.extra_links),
             *(x["option"] + "_back" for x in needs_config.extra_links),
-            *NEEDS_CONFIG.extra_options,
+            *needs_config.extra_options,
         }
         # all keys that should not be imported from external needs
         omitted_keys = {

@@ -24,7 +24,7 @@ from sphinx_needs.debug import measure_time_func
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_func import NeedFunc
-from sphinx_needs.utils import NEEDS_FUNCTIONS, match_variants
+from sphinx_needs.utils import match_variants
 from sphinx_needs.views import NeedsView
 
 logger = get_logger(__name__)
@@ -47,32 +47,6 @@ class DynamicFunction(Protocol):
     ) -> str | int | float | list[str] | list[int] | list[float] | None: ...
 
 
-def register_func(need_function: DynamicFunction, name: str | None = None) -> None:
-    """
-    Registers a new sphinx-needs function for the given sphinx environment.
-    :param env: Sphinx environment
-    :param need_function: Python method
-    :param name: Name of the function as string
-    :return: None
-    """
-
-    global NEEDS_FUNCTIONS
-    if NEEDS_FUNCTIONS is None:
-        NEEDS_FUNCTIONS = {}
-
-    func_name = need_function.__name__ if name is None else name
-
-    if func_name in NEEDS_FUNCTIONS:
-        # We can not throw an exception here, as using sphinx-needs in different sphinx-projects with the
-        # same python interpreter session does not clean NEEDS_FUNCTIONS.
-        # This is mostly the case during tet runs.
-        logger.info(
-            f"sphinx-needs: Function name {func_name} already registered. Ignoring the new one!"
-        )
-
-    NEEDS_FUNCTIONS[func_name] = {"name": func_name, "function": need_function}
-
-
 def execute_func(
     app: Sphinx,
     need: NeedsInfoType | None,
@@ -88,7 +62,6 @@ def execute_func(
     :param location: source location of the function call
     :return: return value of executed function
     """
-    global NEEDS_FUNCTIONS
     try:
         func_name, func_args, func_kwargs = _analyze_func_string(func_string, need)
     except FunctionParsingException as err:
@@ -100,7 +73,9 @@ def execute_func(
         )
         return "??"
 
-    if func_name not in NEEDS_FUNCTIONS:
+    needs_config = NeedsSphinxConfig(app.config)
+
+    if func_name not in needs_config.functions:
         log_warning(
             logger,
             f"Unknown function {func_name!r}",
@@ -110,7 +85,9 @@ def execute_func(
         return "??"
 
     func = measure_time_func(
-        NEEDS_FUNCTIONS[func_name]["function"], category="dyn_func", source="user"
+        needs_config.functions[func_name]["function"],
+        category="dyn_func",
+        source="user",
     )
 
     try:

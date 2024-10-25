@@ -10,7 +10,7 @@ from sphinx.environment import BuildEnvironment
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api import InvalidNeedException, add_need
-from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.defaults import NEED_DEFAULT_OPTIONS
@@ -80,7 +80,7 @@ class NeedDirective(SphinxDirective):
                 extra_link["option"], ""
             )
 
-        for extra_option in NEEDS_CONFIG.extra_options:
+        for extra_option in needs_config.extra_options:
             need_extra_options[extra_option] = self.options.get(extra_option, "")
 
         try:

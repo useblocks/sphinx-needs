@@ -11,7 +11,7 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.api import InvalidNeedException, add_external_need, del_need
-from sphinx_needs.config import NEEDS_CONFIG, NeedsSphinxConfig
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import clean_log, import_prefix_link_edit
@@ -124,7 +124,7 @@ def load_external_needs(
             *NeedsCoreFields,
             *(x["option"] for x in needs_config.extra_links),
             *(x["option"] + "_back" for x in needs_config.extra_links),
-            *NEEDS_CONFIG.extra_options,
+            *needs_config.extra_options,
         }
         # all keys that should not be imported from external needs
         omitted_keys = {
