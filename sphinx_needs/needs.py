@@ -112,6 +112,11 @@ from sphinx_needs.services.open_needs import OpenNeedsService
 from sphinx_needs.utils import node_match
 from sphinx_needs.warnings import process_warnings
 
+try:
+    import tomllib  # added in python 3.11
+except ImportError:
+    import tomli as tomllib  # type: ignore[no-redef]
+
 __version__ = VERSION = "4.0.0"
 
 _NODE_TYPES_T = Dict[
@@ -256,6 +261,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
     # EVENTS
     ########################################################################
     # Make connections to events
+    app.connect("config-inited", load_config_from_toml, priority=10)  # runs early
     app.connect("config-inited", load_config)
     app.connect("config-inited", check_configuration)
 
@@ -354,6 +360,63 @@ def process_creator(
                 check_func(app, doctree, fromdocname, current_nodes[check_node])
 
     return process_caller
+
+
+def load_config_from_toml(app: Sphinx, config: Config) -> None:
+    """
+    Load config from toml file, if defined in conf.py
+    """
+    needs_config = NeedsSphinxConfig(config)
+    if needs_config.from_toml is None:
+        return
+    if isinstance(needs_config.from_toml, str):
+        toml_file = Path(needs_config.from_toml)
+        toml_path = ["needs"]
+    else:
+        try:
+            _toml_file, toml_path = needs_config.from_toml
+            assert isinstance(_toml_file, str), "First element must be a string"
+            assert isinstance(toml_path, (list, tuple)), "Second element must be a list"
+            toml_file = Path(_toml_file)
+        except Exception:
+            log_warning(
+                LOGGER,
+                "'needs_from_toml' is not a str or (str, list[str])",
+                "config",
+                None,
+            )
+            return
+
+    # resolve relative to confdir
+    toml_file = Path(app.confdir, toml_file).resolve()
+    if not toml_file.exists():
+        log_warning(
+            LOGGER,
+            f"'needs_from_toml' file does not exist: {toml_file}",
+            "config",
+            None,
+        )
+        return
+    try:
+        with toml_file.open("rb") as f:
+            toml_data = tomllib.load(f)
+        for key in toml_path:
+            toml_data = toml_data[key]
+        assert isinstance(toml_data, dict), "Data must be a dict"
+    except Exception as e:
+        log_warning(
+            LOGGER,
+            f"Error loading 'needs_from_toml' file: {e}",
+            "config",
+            None,
+        )
+        return
+
+    allowed_keys = NeedsSphinxConfig.field_names()
+    for key, value in toml_data.items():
+        if key not in allowed_keys:
+            continue
+        config["needs_" + key] = value
 
 
 def load_config(app: Sphinx, *_args: Any) -> None:

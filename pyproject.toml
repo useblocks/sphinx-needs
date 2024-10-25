@@ -39,6 +39,7 @@ requests = "^2.32"  # external_links
 jsonschema = ">=3.2.0"  # needsimport schema validation
 sphinx-data-viewer = "^0.1.5"  # needservice debug output
 sphinxcontrib-jquery = "^4"  # needed for datatables in sphinx>=6
+tomli = { version = "*", python = "<3.11" }
 
 # [project.optional-dependencies.plotting]
 # for needpie / needbar
@@ -149,6 +150,8 @@ module = [
   "requests_file",
   "sphinx_data_viewer.*",
   "sphinxcontrib.plantuml.*",
+  "tomllib.*",
+  "tomli.*",
 ]
 ignore_missing_imports = true
 

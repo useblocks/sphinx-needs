@@ -292,6 +292,12 @@ class NeedsSphinxConfig:
             )
 
     @classmethod
+    def field_names(cls) -> set[str]:
+        """Get all config fields (without ``needs_`` prefix)"""
+        names = [field.name for field in fields(cls)]
+        return {name[1:] if name.startswith("_") else name for name in names}
+
+    @classmethod
     def get_default(cls, name: str) -> Any:
         """Get the default value for a config item."""
         _field = next(
@@ -300,6 +306,16 @@ class NeedsSphinxConfig:
         if _field.default_factory is not MISSING:
             return _field.default_factory()
         return _field.default
+
+    from_toml: str | tuple[str, list[str]] | None = field(
+        default=None, metadata={"rebuild": "env", "types": (str, tuple, list)}
+    )
+    """Path to a TOML file to load configuration from.
+    
+    Optionally, a tuple of a path and a path to the section in the toml,
+    e.g. ``("path/to/file.toml", ["tools", "needs"])``,
+    by default the config is read from ``["needs"]``
+    """
 
     types: list[NeedType] = field(
         default_factory=lambda: [
