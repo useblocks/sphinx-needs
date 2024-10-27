@@ -421,11 +421,16 @@ def load_config(app: Sphinx, *_args: Any) -> None:
         if isinstance(option, str):
             name = option
         elif isinstance(option, dict):
-            name = option["name"]
+            try:
+                name = option["name"]
+            except KeyError:
+                raise NeedsConfigException(
+                    f"Extra option is a dict, but does not contain a 'name' key: {option}"
+                )
             description = option.get("description", description)
         else:
             raise NeedsConfigException(
-                f"Extra option {option} is not a string or dict."
+                f"Extra option is not a string or dict: {option}"
             )
 
         _NEEDS_CONFIG.add_extra_option(name, description, override=True)
