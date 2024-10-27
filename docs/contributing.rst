@@ -117,7 +117,7 @@ Running JS Testcases with PyTest
 **Setup Cypress Locally**
 
 * Install Node JS on your computer and ensure it can be accessed through the CMD.
-* Install Cypress using the npm package manager by running ``npm install cypress``. Visit this link for more information on `how to install Cypress <https://docs.cypress.io/guides/getting-started/installing-cypress#npm-install>`_.
+* Install Cypress using the npm package manager by running ``npm install cypress``. Visit this link for more information on `how to install Cypress <https://docs.cypress.io/guides/getting-started/installing-cypress>`_.
 * Verify if Cypress is installed correctly and is executable by running: ``npx cypress verify``. Get out this page for more information about `Cypress commandline <https://docs.cypress.io/guides/guides/command-line>`_.
 * If everything is successful then we can use Cypress.
 
