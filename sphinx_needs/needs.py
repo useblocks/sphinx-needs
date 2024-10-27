@@ -411,9 +411,12 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     needs_config = NeedsSphinxConfig(app.config)
 
     if isinstance(needs_config._extra_options, dict):
-        LOGGER.info(
+        log_warning(
+            LOGGER,
             'Config option "needs_extra_options" supports list and dict. However new default type since '
-            "Sphinx-Needs 0.7.2 is list. Please see docs for details."
+            "Sphinx-Needs 0.7.2 is list. Please see docs for details.",
+            "config",
+            None,
         )
 
     for option in needs_config._extra_options:
@@ -424,14 +427,22 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             try:
                 name = option["name"]
             except KeyError:
-                raise NeedsConfigException(
-                    f"Extra option is a dict, but does not contain a 'name' key: {option}"
+                log_warning(
+                    LOGGER,
+                    f"Extra option is a dict, but does not contain a 'name' key: {option}",
+                    "config",
+                    None,
                 )
+                continue
             description = option.get("description", description)
         else:
-            raise NeedsConfigException(
-                f"Extra option is not a string or dict: {option}"
+            log_warning(
+                LOGGER,
+                f"Extra option is not a string or dict: {option}",
+                "config",
+                None,
             )
+            continue
 
         _NEEDS_CONFIG.add_extra_option(name, description, override=True)
 
