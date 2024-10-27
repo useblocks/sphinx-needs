@@ -4,6 +4,8 @@ needs_extra_options = [
     "introduced",
     "updated",
     {"name": "impacts", "description": "What is the impact of this need?"},
+    {},
+    1,
 ]
 
 needs_build_json = True

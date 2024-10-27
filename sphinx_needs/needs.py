@@ -429,7 +429,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             except KeyError:
                 log_warning(
                     LOGGER,
-                    f"Extra option is a dict, but does not contain a 'name' key: {option}",
+                    f"extra_option is a dict, but does not contain a 'name' key: {option}",
                     "config",
                     None,
                 )
@@ -438,7 +438,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
         else:
             log_warning(
                 LOGGER,
-                f"Extra option is not a string or dict: {option}",
+                f"extra_option is not a string or dict: {option}",
                 "config",
                 None,
             )
