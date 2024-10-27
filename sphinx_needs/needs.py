@@ -417,9 +417,18 @@ def load_config(app: Sphinx, *_args: Any) -> None:
         )
 
     for option in needs_config._extra_options:
-        _NEEDS_CONFIG.add_extra_option(
-            option, "Added by needs_extra_options config", override=True
-        )
+        description = "Added by needs_extra_options config"
+        if isinstance(option, str):
+            name = option
+        elif isinstance(option, dict):
+            name = option["name"]
+            description = option.get("description", description)
+        else:
+            raise NeedsConfigException(
+                f"Extra option {option} is not a string or dict."
+            )
+
+        _NEEDS_CONFIG.add_extra_option(name, description, override=True)
 
     # ensure options for ``needgantt`` functionality are added to the extra options
     for option in (needs_config.duration_option, needs_config.completion_option):

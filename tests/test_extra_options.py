@@ -1,26 +1,30 @@
+import json
 import re
 from pathlib import Path
 
 import pytest
+from sphinx.util.console import strip_colors
+from syrupy.filters import props
 
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/extra_options"}],
+    [{"buildername": "html", "srcdir": "doc_test/extra_options", "no_plantuml": True}],
     indirect=True,
 )
-def test_custom_attributes_appear(test_app):
+def test_custom_attributes_appear(test_app, snapshot):
     app = test_app
     app.build()
 
+    warnings = strip_colors(app._warning.getvalue()).splitlines()
+    assert warnings == [
+        'WARNING: extra_option "introduced" already registered. [needs.config]'
+    ]
+
+    needs = json.loads(Path(app.outdir, "needs.json").read_text("utf8"))
+    assert needs == snapshot(exclude=props("created", "project", "creator"))
+
     html = Path(app.outdir, "index.html").read_text()
-
-    warning = app._warning
-    # stdout warnings
-    warnings = warning.getvalue()
-
-    # Check for multiple registered names
-    assert 'extra_option "introduced" already registered.' in warnings
 
     # Custom options should appear
     # assert 'introduced: <cite>1.0.0</cite>' in html

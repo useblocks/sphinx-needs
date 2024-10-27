@@ -256,6 +256,20 @@ And use it like:
    .. needlist::
       :filter: "filter_me" in another_option
 
+.. versionadded:: 4.1.0
+
+    Values in the list can also be dictionaries, allowing for setting a description of an option
+    that will be output in the schema of the :ref:`needs.json <needs_builder_format>`.
+
+    For example:
+
+    .. code-block:: python
+
+       needs_extra_options = [
+           "my_extra_option",
+           {"name": "my_other_option", "description": "This is a description of the option"}
+       ]
+
 .. _needs_global_options:
 
 needs_global_options

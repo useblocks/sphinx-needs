@@ -228,6 +228,14 @@ class NeedType(TypedDict):
     """The default node style to use in diagrams (default: "node")."""
 
 
+class NeedExtraOption(TypedDict):
+    """Defines an extra option for needs"""
+
+    name: str
+    description: NotRequired[str]
+    """A description of the option."""
+
+
 @dataclass
 class NeedsSphinxConfig:
     """A wrapper around the Sphinx configuration,
@@ -407,7 +415,7 @@ class NeedsSphinxConfig:
         default=30, metadata={"rebuild": "html", "types": (int,)}
     )
     """Maximum length of the title in the need role output."""
-    _extra_options: list[str] = field(
+    _extra_options: list[str | NeedExtraOption] = field(
         default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )
     """List of extra options for needs, that get added as directive options and need fields."""
