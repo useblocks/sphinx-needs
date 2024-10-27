@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1729860506608,
+  "lastUpdate": 1730037877344,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -11160,6 +11160,42 @@ window.BENCHMARK_DATA = {
             "value": 69.447090599,
             "unit": "s",
             "extra": "Commit: 6898f80cdd2e6d74360cfbd7c8d00c9a3f299759\nBranch: master\nTime: 2024-10-25T14:46:20+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "43a43b8c8409ebbf85c7641bfa602cf353e89c74",
+          "message": "✨ Add `needs_from_toml` configuration (#1337)\n\nThis configuration allows for a path to a [toml file](https://toml.io) to be specified.\r\nIn this case, needs configuration will be read from it and merged into the config from the `conf.py`.\r\nAn additional `needs_from_toml_table` config controls the toml table to read from.",
+          "timestamp": "2024-10-27T15:02:26+01:00",
+          "tree_id": "c8b2613900dd99a47a83380365fb4a63c5368593",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/43a43b8c8409ebbf85c7641bfa602cf353e89c74"
+        },
+        "date": 1730037863695,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1477132759999904,
+            "unit": "s",
+            "extra": "Commit: 43a43b8c8409ebbf85c7641bfa602cf353e89c74\nBranch: master\nTime: 2024-10-27T15:02:26+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 66.96344994399999,
+            "unit": "s",
+            "extra": "Commit: 43a43b8c8409ebbf85c7641bfa602cf353e89c74\nBranch: master\nTime: 2024-10-27T15:02:26+01:00"
           }
         ]
       }
