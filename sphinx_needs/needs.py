@@ -372,7 +372,7 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
 
     # resolve relative to confdir
     toml_file = Path(app.confdir, needs_config.from_toml).resolve()
-    toml_path = needs_config.from_toml_section
+    toml_path = needs_config.from_toml_table
 
     if not toml_file.exists():
         log_warning(

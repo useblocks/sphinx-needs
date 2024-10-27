@@ -312,10 +312,10 @@ class NeedsSphinxConfig:
     )
     """Path to a TOML file to load configuration from."""
 
-    from_toml_section: list[str] = field(
+    from_toml_table: list[str] = field(
         default_factory=lambda: ["needs"], metadata={"rebuild": "env", "types": (list,)}
     )
-    """Path to the section in the toml file to load configuration from."""
+    """Path to the table in the toml file to load configuration from."""
 
     types: list[NeedType] = field(
         default_factory=lambda: [

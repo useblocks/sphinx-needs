@@ -113,11 +113,12 @@ For example:
       {directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="node"},
    ]
 
-To specify a different section name to read from in the toml file, use the ``needs_from_toml_section`` option:
+To specify a different `table path <https://toml.io/en/v1.0.0#table>`__ to read from in the toml file, use the ``needs_from_toml_table`` option.
+For example to read from a ``[tool.needs]`` table:
 
 .. code-block:: python
 
-   needs_from_toml_section = ["tool", "needs"]
+   needs_from_toml_table = ["tool", "needs"]
 
 .. caution:: Any configuration specifying relative paths in the toml file will be resolved relative to the directory containing the :file:`conf.py` file.
 
