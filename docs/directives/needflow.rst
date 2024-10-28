@@ -517,3 +517,12 @@ common filters
 * :ref:`option_types`
 * :ref:`option_filter`
 
+.. needflow:: Engineering plan to develop a car
+    :alt: Engineering plan to develop a car
+    :root_id: T_CAR
+    :config: tutorial
+    :show_link_names:
+    :border_color:
+        [status == 'open']:FF0000, 
+        [status == 'in progress']:0000FF, 
+        [status == 'closed']:00FF00
