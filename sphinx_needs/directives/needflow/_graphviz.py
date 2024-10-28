@@ -207,13 +207,13 @@ def _get_link_to_need(
             return need_info["external_url"]
     elif need_info["docname"]:
         try:
-            return (
-                app.builder.get_relative_uri(docname, need_info["docname"])
-                + "#"
-                + need_info["id_complete"]
-            )
+            rel_uri = app.builder.get_relative_uri(docname, need_info["docname"])
+            if not rel_uri:
+                # svg relative path fix cannot yet handle empty paths https://github.com/sphinx-doc/sphinx/issues/13078
+                rel_uri = app.builder.get_target_uri(docname.split("/")[-1])
         except NoUri:
             return None
+        return rel_uri + "#" + need_info["id_complete"]
     return None
 
 
