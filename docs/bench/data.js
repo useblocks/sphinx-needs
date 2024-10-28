@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730140778117,
+  "lastUpdate": 1730144193729,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -11268,6 +11268,42 @@ window.BENCHMARK_DATA = {
             "value": 66.74852273000002,
             "unit": "s",
             "extra": "Commit: 8aa192b357befc1273861e291996750ea902c9b9\nBranch: master\nTime: 2024-10-28T19:37:36+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "94b0273fbf51ac467f9cfb829b3ef476667f01b2",
+          "message": "🔧 Merge defaults into config earlier (#1341)",
+          "timestamp": "2024-10-28T20:34:27+01:00",
+          "tree_id": "5508bd96e76262b0813128f86df2a0528bb01789",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/94b0273fbf51ac467f9cfb829b3ef476667f01b2"
+        },
+        "date": 1730144179063,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14879341400001067,
+            "unit": "s",
+            "extra": "Commit: 94b0273fbf51ac467f9cfb829b3ef476667f01b2\nBranch: master\nTime: 2024-10-28T20:34:27+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 69.00258052499998,
+            "unit": "s",
+            "extra": "Commit: 94b0273fbf51ac467f9cfb829b3ef476667f01b2\nBranch: master\nTime: 2024-10-28T20:34:27+01:00"
           }
         ]
       }
