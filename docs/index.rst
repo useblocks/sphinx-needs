@@ -4,13 +4,6 @@
 Introduction
 ============
 
-.. spec:: blah blah
-   :id: SPEC_1234
-
-.. needflow::
-   :engine: graphviz
-   :root_id: SPEC_1234
-
 .. grid::
    :gutter: 2 3 3 3
    :margin: 4 4 1 2
