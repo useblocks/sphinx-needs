@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730037877344,
+  "lastUpdate": 1730123221739,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -11196,6 +11196,42 @@ window.BENCHMARK_DATA = {
             "value": 66.96344994399999,
             "unit": "s",
             "extra": "Commit: 43a43b8c8409ebbf85c7641bfa602cf353e89c74\nBranch: master\nTime: 2024-10-27T15:02:26+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7a3e9efaa8fdf8940801488093b1fd686b0ffce9",
+          "message": "✨ Allow configuring description of extra option (#1338)\n\nThis commit allows for using a dict to define a `needs_extra_options` item, that can have both a `name` and (optional) `description` key, e.g.:\r\n\r\n```python\r\nneeds_extra_options = [\r\n    \"introduced\",\r\n    {\"name\": \"impacts\", \"description\": \"What is the impact of this need?\"},\r\n]\r\n```\r\n\r\nThis also allows for future addition of more optional keys",
+          "timestamp": "2024-10-28T14:44:49+01:00",
+          "tree_id": "4fb13f2a315878f4da4f29521688a82a500b590f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/7a3e9efaa8fdf8940801488093b1fd686b0ffce9"
+        },
+        "date": 1730123208694,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.175313908999982,
+            "unit": "s",
+            "extra": "Commit: 7a3e9efaa8fdf8940801488093b1fd686b0ffce9\nBranch: master\nTime: 2024-10-28T14:44:49+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 72.889659849,
+            "unit": "s",
+            "extra": "Commit: 7a3e9efaa8fdf8940801488093b1fd686b0ffce9\nBranch: master\nTime: 2024-10-28T14:44:49+01:00"
           }
         ]
       }
