@@ -17,7 +17,6 @@ from sphinx.util.logging import getLogger
 from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
-from sphinx_needs.diagrams_common import calculate_link
 from sphinx_needs.directives.needflow._directive import NeedflowGraphiz
 from sphinx_needs.directives.utils import no_needs_found_paragraph
 from sphinx_needs.errors import NoUri
