@@ -36,6 +36,7 @@ def _get_svg(config: Config, outdir: Path, file: str, id: str) -> str:
             },
         },
     ],
+    ids=["plantuml", "graphviz"],
     indirect=True,
 )
 def test_doc_build_html(test_app):
@@ -52,28 +53,28 @@ def test_doc_build_html(test_app):
     outdir = Path(app.outdir)
     svg = _get_svg(app.config, outdir, "index.html", "needflow-index-0")
     for link in (
-        "./index.html#SPEC_1",
-        "./index.html#SPEC_2",
-        "./index.html#STORY_1",
-        "./index.html#STORY_1.1",
-        "./index.html#STORY_1.2",
-        "./index.html#STORY_1.subspec",
-        "./index.html#STORY_2",
-        "./index.html#STORY_2.another_one",
+        '"../index.html#SPEC_1"',
+        '"../index.html#SPEC_2"',
+        '"../index.html#STORY_1"',
+        '"../index.html#STORY_1.1"',
+        '"../index.html#STORY_1.2"',
+        '"../index.html#STORY_1.subspec"',
+        '"../index.html#STORY_2"',
+        '"../index.html#STORY_2.another_one"',
     ):
         assert link in svg
     assert "No needs passed the filters" in Path(app.outdir, "index.html").read_text()
 
     svg = _get_svg(app.config, outdir, "page.html", "needflow-page-0")
     for link in (
-        "./index.html#SPEC_1",
-        "./index.html#SPEC_2",
-        "./index.html#STORY_1",
-        "./index.html#STORY_1.1",
-        "./index.html#STORY_1.2",
-        "./index.html#STORY_1.subspec",
-        "./index.html#STORY_2",
-        "./index.html#STORY_2.another_one",
+        '"../index.html#SPEC_1"',
+        '"../index.html#SPEC_2"',
+        '"../index.html#STORY_1"',
+        '"../index.html#STORY_1.1"',
+        '"../index.html#STORY_1.2"',
+        '"../index.html#STORY_1.subspec"',
+        '"../index.html#STORY_2"',
+        '"../index.html#STORY_2.another_one"',
     ):
         assert link in svg
 
@@ -112,6 +113,7 @@ def test_doc_build_html(test_app):
             },
         },
     ],
+    ids=["plantuml", "graphviz"],
     indirect=True,
 )
 def test_doc_build_needflow_incl_child_needs(test_app):
@@ -129,17 +131,17 @@ def test_doc_build_needflow_incl_child_needs(test_app):
 
     svg = _get_svg(app.config, outdir, "index.html", "needflow-index-0")
     for link in (
-        "./index.html#STORY_1",
-        "./index.html#STORY_1.1",
-        "./index.html#STORY_1.2",
-        "./index.html#STORY_2",
-        "./index.html#STORY_2.3",
-        "./index.html#SPEC_1",
-        "./index.html#SPEC_2",
-        "./index.html#SPEC_3",
-        "./index.html#SPEC_4",
-        "./index.html#STORY_3",
-        "./index.html#SPEC_5",
+        '"../index.html#STORY_1"',
+        '"../index.html#STORY_1.1"',
+        '"../index.html#STORY_1.2"',
+        '"../index.html#STORY_2"',
+        '"../index.html#STORY_2.3"',
+        '"../index.html#SPEC_1"',
+        '"../index.html#SPEC_2"',
+        '"../index.html#SPEC_3"',
+        '"../index.html#SPEC_4"',
+        '"../index.html#STORY_3"',
+        '"../index.html#SPEC_5"',
     ):
         assert link in svg
 
@@ -149,18 +151,18 @@ def test_doc_build_needflow_incl_child_needs(test_app):
         "single_parent_need_filer.html",
         "needflow-single_parent_need_filer-0",
     )
-    assert "./index.html#STORY_3" in svg
+    assert '"../index.html#STORY_3"' in svg
     for link in (
-        "./index.html#STORY_1",
-        "./index.html#STORY_1.1",
-        "./index.html#STORY_1.2",
-        "./index.html#STORY_2",
-        "./index.html#STORY_2.3",
-        "./index.html#SPEC_1",
-        "./index.html#SPEC_2",
-        "./index.html#SPEC_3",
-        "./index.html#SPEC_4",
-        "./index.html#SPEC_5",
+        '"../index.html#STORY_1"',
+        '"../index.html#STORY_1.1"',
+        '"../index.html#STORY_1.2"',
+        '"../index.html#STORY_2"',
+        '"../index.html#STORY_2.3"',
+        '"../index.html#SPEC_1"',
+        '"../index.html#SPEC_2"',
+        '"../index.html#SPEC_3"',
+        '"../index.html#SPEC_4"',
+        '"../index.html#SPEC_5"',
     ):
         assert link not in svg
 
@@ -170,18 +172,18 @@ def test_doc_build_needflow_incl_child_needs(test_app):
         "single_child_with_child_need_filter.html",
         "needflow-single_child_with_child_need_filter-0",
     )
-    assert "./index.html#STORY_2" in svg
+    assert '"../index.html#STORY_2"' in svg
     for link in (
-        "./index.html#STORY_1",
-        "./index.html#STORY_1.1",
-        "./index.html#STORY_1.2",
-        "./index.html#STORY_2.3",
-        "./index.html#SPEC_1",
-        "./index.html#SPEC_2",
-        "./index.html#SPEC_3",
-        "./index.html#SPEC_4",
-        "./index.html#STORY_3",
-        "./index.html#SPEC_5",
+        '"../index.html#STORY_1"',
+        '"../index.html#STORY_1.1"',
+        '"../index.html#STORY_1.2"',
+        '"../index.html#STORY_2.3"',
+        '"../index.html#SPEC_1"',
+        '"../index.html#SPEC_2"',
+        '"../index.html#SPEC_3"',
+        '"../index.html#SPEC_4"',
+        '"../index.html#STORY_3"',
+        '"../index.html#SPEC_5"',
     ):
         assert link not in svg
 
@@ -191,34 +193,38 @@ def test_doc_build_needflow_incl_child_needs(test_app):
         "single_child_need_filter.html",
         "needflow-single_child_need_filter-0",
     )
-    assert "./index.html#SPEC_1" in svg
+    assert '"../index.html#SPEC_1"' in svg
     for link in (
-        "./index.html#STORY_1",
-        "./index.html#STORY_1.1",
-        "./index.html#STORY_1.2",
-        "./index.html#STORY_2",
-        "./index.html#STORY_2.3",
-        "./index.html#SPEC_2",
-        "./index.html#SPEC_3",
-        "./index.html#SPEC_4",
-        "./index.html#STORY_3",
-        "./index.html#SPEC_5",
+        '"../index.html#STORY_1"',
+        '"../index.html#STORY_1.1"',
+        '"../index.html#STORY_1.2"',
+        '"../index.html#STORY_2"',
+        '"../index.html#STORY_2.3"',
+        '"../index.html#SPEC_2"',
+        '"../index.html#SPEC_3"',
+        '"../index.html#SPEC_4"',
+        '"../index.html#STORY_3"',
+        '"../index.html#SPEC_5"',
     ):
         assert link not in svg
 
     svg = _get_svg(
         app.config, outdir, "grandy_and_child.html", "needflow-grandy_and_child-0"
     )
-    for link in ("./index.html#STORY_1", "./index.html#SPEC_1", "./index.html#SPEC_2"):
+    for link in (
+        '"../index.html#STORY_1"',
+        '"../index.html#SPEC_1"',
+        '"../index.html#SPEC_2"',
+    ):
         assert link in svg
     for link in (
-        "./index.html#STORY_1.1",
-        "./index.html#STORY_1.2",
-        "./index.html#STORY_2",
-        "./index.html#STORY_2.3",
-        "./index.html#SPEC_3",
-        "./index.html#SPEC_4",
-        "./index.html#STORY_3",
-        "./index.html#SPEC_5",
+        '"../index.html#STORY_1.1"',
+        '"../index.html#STORY_1.2"',
+        '"../index.html#STORY_2"',
+        '"../index.html#STORY_2.3"',
+        '"../index.html#SPEC_3"',
+        '"../index.html#SPEC_4"',
+        '"../index.html#STORY_3"',
+        '"../index.html#SPEC_5"',
     ):
         assert link not in svg
