@@ -263,7 +263,8 @@ def setup(app: Sphinx) -> dict[str, Any]:
     # Make connections to events
     app.connect("config-inited", load_config_from_toml, priority=10)  # runs early
     app.connect("config-inited", load_config)
-    app.connect("config-inited", check_configuration)
+    app.connect("config-inited", merge_default_configs)
+    app.connect("config-inited", check_configuration, priority=600)  # runs late
 
     app.connect("env-before-read-docs", prepare_env)
     app.connect("env-before-read-docs", load_external_needs)
@@ -589,6 +590,31 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> Non
             # Otherwise, the service may get registered later by an external sphinx-needs extension
             services.register(name, service["class"], **service["class_init"])
 
+    # Set time measurement flag
+    if needs_config.debug_measurement:
+        debug.START_TIME = timer()  # Store the rough start time of Sphinx build
+        debug.EXECUTE_TIME_MEASUREMENTS = True
+
+    if needs_config.debug_filters:
+        with contextlib.suppress(FileNotFoundError):
+            Path(str(app.outdir), "debug_filters.jsonl").unlink()
+
+
+def merge_default_configs(_app: Sphinx, config: Config) -> None:
+    """Merge built-in defaults with user configuration."""
+    needs_config = NeedsSphinxConfig(config)
+
+    needs_config.layouts = {**LAYOUTS, **needs_config.layouts}
+
+    needs_config.flow_configs = {
+        **NEEDFLOW_CONFIG_DEFAULTS,
+        **needs_config.flow_configs,
+    }
+    needs_config.graphviz_styles = {
+        **GRAPHVIZ_STYLE_DEFAULTS,
+        **needs_config.graphviz_styles,
+    }
+
     # Register built-in functions
     for need_common_func in NEEDS_COMMON_FUNCTIONS:
         _NEEDS_CONFIG.add_function(need_common_func)
@@ -632,28 +658,9 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> Non
         )
 
     needs_config.extra_links = common_links + needs_config.extra_links
-    needs_config.layouts = {**LAYOUTS, **needs_config.layouts}
-
-    needs_config.flow_configs = {
-        **NEEDFLOW_CONFIG_DEFAULTS,
-        **needs_config.flow_configs,
-    }
-    needs_config.graphviz_styles = {
-        **GRAPHVIZ_STYLE_DEFAULTS,
-        **needs_config.graphviz_styles,
-    }
-
-    # Set time measurement flag
-    if needs_config.debug_measurement:
-        debug.START_TIME = timer()  # Store the rough start time of Sphinx build
-        debug.EXECUTE_TIME_MEASUREMENTS = True
-
-    if needs_config.debug_filters:
-        with contextlib.suppress(FileNotFoundError):
-            Path(str(app.outdir), "debug_filters.jsonl").unlink()
 
 
-def check_configuration(_app: Sphinx, config: Config) -> None:
+def check_configuration(app: Sphinx, config: Config) -> None:
     """Checks the configuration for invalid options.
 
     E.g. defined need-option, which is already defined internally
