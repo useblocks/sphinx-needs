@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730123221739,
+  "lastUpdate": 1730140778117,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -11232,6 +11232,42 @@ window.BENCHMARK_DATA = {
             "value": 72.889659849,
             "unit": "s",
             "extra": "Commit: 7a3e9efaa8fdf8940801488093b1fd686b0ffce9\nBranch: master\nTime: 2024-10-28T14:44:49+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8aa192b357befc1273861e291996750ea902c9b9",
+          "message": "🐛 FIX needflow graphviz links (#1339)\n\nLinks are now initially calculated relative to the containing document.    \r\n\r\nFor PNGs, the links are defined as https://developer.mozilla.org/en-US/docs/Web/HTML/Element/map in the document, so this is correct.\r\n\r\nFor SVGs, the graphs are extracted to external files, and in this case the links are modified by sphinx to be relative to the SVG file\r\n(from sphinx 7.2 onwards, see: https://github.com/sphinx-doc/sphinx/pull/11078)",
+          "timestamp": "2024-10-28T19:37:36+01:00",
+          "tree_id": "2ef763f438804d35abd15a411fcf02b078d05602",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8aa192b357befc1273861e291996750ea902c9b9"
+        },
+        "date": 1730140765138,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14405349300000125,
+            "unit": "s",
+            "extra": "Commit: 8aa192b357befc1273861e291996750ea902c9b9\nBranch: master\nTime: 2024-10-28T19:37:36+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 66.74852273000002,
+            "unit": "s",
+            "extra": "Commit: 8aa192b357befc1273861e291996750ea902c9b9\nBranch: master\nTime: 2024-10-28T19:37:36+01:00"
           }
         ]
       }
