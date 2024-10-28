@@ -228,6 +228,14 @@ class NeedType(TypedDict):
     """The default node style to use in diagrams (default: "node")."""
 
 
+class NeedExtraOption(TypedDict):
+    """Defines an extra option for needs"""
+
+    name: str
+    description: NotRequired[str]
+    """A description of the option."""
+
+
 @dataclass
 class NeedsSphinxConfig:
     """A wrapper around the Sphinx configuration,
@@ -313,9 +321,9 @@ class NeedsSphinxConfig:
     """Path to a TOML file to load configuration from."""
 
     from_toml_table: list[str] = field(
-        default_factory=lambda: ["needs"], metadata={"rebuild": "env", "types": (list,)}
+        default_factory=list, metadata={"rebuild": "env", "types": (list,)}
     )
-    """Path to the table in the toml file to load configuration from."""
+    """Path to the root table in the toml file to load configuration from."""
 
     types: list[NeedType] = field(
         default_factory=lambda: [
@@ -407,7 +415,7 @@ class NeedsSphinxConfig:
         default=30, metadata={"rebuild": "html", "types": (int,)}
     )
     """Maximum length of the title in the need role output."""
-    _extra_options: list[str] = field(
+    _extra_options: list[str | NeedExtraOption] = field(
         default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )
     """List of extra options for needs, that get added as directive options and need fields."""
