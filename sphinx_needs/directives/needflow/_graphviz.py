@@ -20,6 +20,7 @@ from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link
 from sphinx_needs.directives.needflow._directive import NeedflowGraphiz
 from sphinx_needs.directives.utils import no_needs_found_paragraph
+from sphinx_needs.errors import NoUri
 from sphinx_needs.filter_common import (
     filter_single_need,
     process_filters,
@@ -159,7 +160,7 @@ def process_needflow_graphviz(
                 node,
                 needs_view,
                 needs_config,
-                lambda n: calculate_link(app, n, fromdocname, relative="."),
+                lambda n: _get_link_to_need(app, fromdocname, n),
                 id_comp_to_need,
                 rendered_nodes,
             )
@@ -191,6 +192,24 @@ def process_needflow_graphviz(
             node.parent.parent.insert(node.parent.parent.index(node.parent) + 1, code)
 
 
+def _get_link_to_need(
+    app: Sphinx, docname: str, need_info: NeedsInfoType
+) -> str | None:
+    """Compute the link to a need, relative to a document."""
+    if need_info["is_external"]:
+        return None  # TODO: external links
+    elif to_docname := need_info["docname"]:
+        try:
+            return (
+                app.builder.get_relative_uri(docname, to_docname)
+                + "#"
+                + need_info["id_complete"]
+            )
+        except NoUri:
+            return None
+    return None
+
+
 class _RenderedNode(TypedDict):
     cluster_id: str | None
     need: NeedsInfoType
@@ -206,7 +225,7 @@ def _render_node(
     node: NeedflowGraphiz,
     needs_view: NeedsView,
     config: NeedsSphinxConfig,
-    calc_link: Callable[[NeedsInfoType], str],
+    calc_link: Callable[[NeedsInfoType], str | None],
     id_comp_to_need: dict[str, NeedsInfoType],
     rendered_nodes: dict[str, _RenderedNode],
     subgraph: bool = True,
@@ -285,7 +304,7 @@ def _render_subgraph(
     node: NeedflowGraphiz,
     needs_view: NeedsView,
     config: NeedsSphinxConfig,
-    calc_link: Callable[[NeedsInfoType], str],
+    calc_link: Callable[[NeedsInfoType], str | None],
     id_comp_to_need: dict[str, NeedsInfoType],
     rendered_nodes: dict[str, _RenderedNode],
 ) -> str:
@@ -606,7 +625,7 @@ def html_visit_needflow_graphviz(self: HTML5Translator, node: NeedflowGraphiz) -
         log_warning(LOGGER, "Content has not been resolved", "needflow", location=node)
         raise nodes.SkipNode
     attrributes = node.attributes
-    format = self.builder.config.graphviz_output_format
+    format: Literal["png", "svg"] = self.builder.config.graphviz_output_format
     if format not in ("png", "svg"):
         log_warning(
             LOGGER,
