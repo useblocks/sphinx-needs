@@ -4,6 +4,7 @@ import html
 import textwrap
 from functools import lru_cache
 from typing import Callable, Literal, TypedDict
+from urllib.parse import urlparse
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -196,11 +197,12 @@ def _get_link_to_need(
 ) -> str | None:
     """Compute the link to a need, relative to a document."""
     if need_info["is_external"]:
-        return None  # TODO: external links
-    elif to_docname := need_info["docname"]:
+        if need_info["external_url"] and urlparse(need_info["external_url"]).scheme:
+            return need_info["external_url"]
+    elif need_info["docname"]:
         try:
             return (
-                app.builder.get_relative_uri(docname, to_docname)
+                app.builder.get_relative_uri(docname, need_info["docname"])
                 + "#"
                 + need_info["id_complete"]
             )
