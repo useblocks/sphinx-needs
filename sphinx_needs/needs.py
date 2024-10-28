@@ -385,7 +385,7 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
     try:
         with toml_file.open("rb") as f:
             toml_data = tomllib.load(f)
-        for key in toml_path:
+        for key in (*toml_path, "needs"):
             toml_data = toml_data[key]
         assert isinstance(toml_data, dict), "Data must be a dict"
     except Exception as e:
@@ -411,15 +411,40 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     needs_config = NeedsSphinxConfig(app.config)
 
     if isinstance(needs_config._extra_options, dict):
-        LOGGER.info(
+        log_warning(
+            LOGGER,
             'Config option "needs_extra_options" supports list and dict. However new default type since '
-            "Sphinx-Needs 0.7.2 is list. Please see docs for details."
+            "Sphinx-Needs 0.7.2 is list. Please see docs for details.",
+            "config",
+            None,
         )
 
     for option in needs_config._extra_options:
-        _NEEDS_CONFIG.add_extra_option(
-            option, "Added by needs_extra_options config", override=True
-        )
+        description = "Added by needs_extra_options config"
+        if isinstance(option, str):
+            name = option
+        elif isinstance(option, dict):
+            try:
+                name = option["name"]
+            except KeyError:
+                log_warning(
+                    LOGGER,
+                    f"extra_option is a dict, but does not contain a 'name' key: {option}",
+                    "config",
+                    None,
+                )
+                continue
+            description = option.get("description", description)
+        else:
+            log_warning(
+                LOGGER,
+                f"extra_option is not a string or dict: {option}",
+                "config",
+                None,
+            )
+            continue
+
+        _NEEDS_CONFIG.add_extra_option(name, description, override=True)
 
     # ensure options for ``needgantt`` functionality are added to the extra options
     for option in (needs_config.duration_option, needs_config.completion_option):
