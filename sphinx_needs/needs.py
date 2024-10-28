@@ -117,7 +117,7 @@ try:
 except ImportError:
     import tomli as tomllib
 
-__version__ = VERSION = "4.0.0"
+__version__ = VERSION = "4.1.0"
 
 _NODE_TYPES_T = Dict[
     Type[nodes.Element],

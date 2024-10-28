@@ -3,11 +3,39 @@
 Changelog
 =========
 
+4.1.0
+-----
+
+:Released: 28.10.2024
+:Full Changelog: `v4.0.0...v4.1.0 <https://github.com/useblocks/sphinx-needs/compare/4.0.0...94b0273fbf51ac467f9cfb829b3ef476667f01b2>`__
+
+New
+...
+
+- ✨ Add `needs_from_toml` configuration :pr:`1337`
+
+  Configuration can now be loaded from a TOML file, using the `needs_from_toml` configuration option.
+  See :ref:`needs_from_toml` for more information.
+
+- ✨ Allow configuring description of extra options in ``needs_extra_options`` :pr:`1338`
+
+  The ``needs_extra_options`` configuration option now supports dict items with a ``name`` and ``description`` key,
+  See :ref:`needs_extra_options` for more information.
+
+Fixes
+.....
+
+- 🐛 Fix clickable links to needs in ``needflow``, when using the ``graphviz`` engine :pr:`1339`
+- 🐛 Allow sphinx-needs to run without ``sphinxcontrib.plantuml`` installed :pr:`1328`
+- 🔧 Remove some internal fields from needs layout :pr:`1330`
+- 🔧 Merge defaults into user-defined configuration earlier (to avoid sphinx warnings) :pr:`1341`
+
+
 4.0.0
 -----
 
 :Released: 09.10.2024
-:Full Changelog: `v3.0.0...v4.0.0 <https://github.com/useblocks/sphinx-needs/compare/3.0.0...067009e3b424216b2d172dfe6b94ba2e13e829ff>`__
+:Full Changelog: `v3.0.0...v4.0.0 <https://github.com/useblocks/sphinx-needs/compare/3.0.0...4.0.0>`__
 
 Breaking Changes
 ................
