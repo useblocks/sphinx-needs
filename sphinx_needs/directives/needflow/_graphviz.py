@@ -195,7 +195,13 @@ def process_needflow_graphviz(
 def _get_link_to_need(
     app: Sphinx, docname: str, need_info: NeedsInfoType
 ) -> str | None:
-    """Compute the link to a need, relative to a document."""
+    """Compute the link to a need, relative to a document.
+
+    It is of note that the links are computed relative to the document that the graph is in.
+    For PNGs, the links are defined as https://developer.mozilla.org/en-US/docs/Web/HTML/Element/map in the document, so this correct.
+    For SVGs, the graphs are extracted to external files, and in this case the links are modified to be relative to the SVG file
+    (from sphinx 7.2 onwards, see: https://github.com/sphinx-doc/sphinx/pull/11078)
+    """
     if need_info["is_external"]:
         if need_info["external_url"] and urlparse(need_info["external_url"]).scheme:
             return need_info["external_url"]
