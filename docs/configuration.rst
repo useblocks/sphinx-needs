@@ -113,12 +113,12 @@ For example:
       {directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="node"},
    ]
 
-To specify a different `table path <https://toml.io/en/v1.0.0#table>`__ to read from in the toml file, use the ``needs_from_toml_table`` option.
+To specify a different `root table path <https://toml.io/en/v1.0.0#table>`__ to read from in the toml file, use the ``needs_from_toml_table`` option.
 For example to read from a ``[tool.needs]`` table:
 
 .. code-block:: python
 
-   needs_from_toml_table = ["tool", "needs"]
+   needs_from_toml_table = ["tool"]
 
 .. caution:: Any configuration specifying relative paths in the toml file will be resolved relative to the directory containing the :file:`conf.py` file.
 
@@ -258,8 +258,12 @@ And use it like:
 
 .. versionadded:: 4.1.0
 
-    Values in the list can also be dictionaries, allowing for setting a description of an option
-    that will be output in the schema of the :ref:`needs.json <needs_builder_format>`.
+    Values in the list can also be dictionaries, with keys:
+
+    * ``name``: The name of the option (required).
+    * ``description``: A description of the option (optional).
+        This will be output in the schema of the :ref:`needs.json <needs_builder_format>`,
+        and can be used by other tools.
 
     For example:
 

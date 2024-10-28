@@ -385,7 +385,7 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
     try:
         with toml_file.open("rb") as f:
             toml_data = tomllib.load(f)
-        for key in toml_path:
+        for key in (*toml_path, "needs"):
             toml_data = toml_data[key]
         assert isinstance(toml_data, dict), "Data must be a dict"
     except Exception as e:
