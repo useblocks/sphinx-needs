@@ -13,12 +13,6 @@ from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.config import NeedsSphinxConfig
 
-
-from sphinx_needs.logging import get_logger, log_warning
-
-logger = get_logger(__name__)
-
-
 NEED_TEMPLATE = """.. {{type}}:: {{title}}
    {% if need_id is not none %}:id: {{need_id}}{%endif%}
    {% if set_links_down %}:{{links_down_type}}: {{ links_down|join(', ') }}{%endif%}
@@ -120,15 +114,6 @@ class List2NeedDirective(SphinxDirective):
         tags = self.options.get("tags", "")
         hide = self.options.get("hide", "")
         metadata = self.options.get("meta-data", "")
-
-        if metadata:
-             log_warning(
-                    logger,
-                    metadata,
-                    "needsequence",
-                    location=None,
-                    
-                )
 
         list_needs = []
         # Storing the data in a sorted list
