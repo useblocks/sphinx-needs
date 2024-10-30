@@ -59,7 +59,7 @@ class List2NeedDirective(SphinxDirective):
         "links-down": directives.unchanged,
         "tags": directives.unchanged,
         "hide": directives.unchanged,
-        "meta-data": directives.unchanged
+        "meta-data": directives.unchanged,
     }
 
     def run(self) -> Sequence[nodes.Node]:
@@ -215,23 +215,20 @@ class List2NeedDirective(SphinxDirective):
                 hide_option = list_need["options"].get("hide", "")
                 list_need["options"]["hide"] = hide_option
 
-
             if metadata:
                 if "options" not in list_need:
                     list_need["options"] = {}
                 metadata_items = re.findall(r'([^=,]+)=["\']([^"\']+)["\']', metadata)
-                                                           
+
                 for key, value in metadata_items:
                     current_options = list_need["options"].get(key.strip(), "")
 
-
-
                     if current_options:
-                        list_need["options"][key.strip()] = current_options + "," + value
+                        list_need["options"][key.strip()] = (
+                            current_options + "," + value
+                        )
                     else:
                         list_need["options"][key.strip()] = value
-                
-
 
             template = Template(NEED_TEMPLATE, autoescape=True)
 
