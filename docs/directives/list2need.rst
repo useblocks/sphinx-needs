@@ -169,6 +169,62 @@ tags
 The tags ``A`` and ``B`` are attached to all ``NEED-A``, ``NEED-B``, ``NEED-C`` and ``NEED-D``.
 
 
+
+hide
+~~~~
+
+``hide`` sets the hide-option globally to all items in the list.
+
+.. code-block:: rst
+
+   .. list2need::
+      :types: req
+      :tags: A
+      :hide: True
+
+      * (NEED-A) Login user
+      * (NEED-B) Provide login screen
+      * (NEED-C) Create password hash
+      * (NEED-D) Recalculate hash and compare
+
+All ``NEED-A``, ``NEED-B``, ``NEED-C`` and ``NEED-D`` requirements will be marked as hidden. This allows to easily create a list of requirements and presenting them as a table in the final output.
+
+.. code-block:: rst
+
+   .. list2need::
+      :types: req
+      :tags: A
+      :hide: True
+
+      * (NEED-A) Login user
+      * (NEED-B) Provide login screen
+      * (NEED-C) Create password hash
+      * (NEED-D) Recalculate hash and compare
+  
+   .. needtable::
+      :types: req
+      :tags: A
+      :style: table
+      :columns: id, title, content, links
+
+
+meta-data
+~~~~~~~~~
+
+Meta-data can be set directly in the related line via, for example: ``((status="open"))``. This meta-data option allows to define meta-data that will be affected to all needs in the list, including extra custom options.
+
+.. code-block:: rst
+
+   .. list2need::
+      :types: req
+      :tags: A
+      :meta-data: validation="Test, Review of Design", status="open"
+
+      * (NEED-A) Login user
+      * (NEED-B) Provide login screen
+      * (NEED-C) Create password hash
+      * (NEED-D) Recalculate hash and compare
+
 List examples
 -------------
 
