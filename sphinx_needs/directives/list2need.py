@@ -13,6 +13,12 @@ from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.config import NeedsSphinxConfig
 
+
+from sphinx_needs.logging import get_logger, log_warning
+
+logger = get_logger(__name__)
+
+
 NEED_TEMPLATE = """.. {{type}}:: {{title}}
    {% if need_id is not none %}:id: {{need_id}}{%endif%}
    {% if set_links_down %}:{{links_down_type}}: {{ links_down|join(', ') }}{%endif%}
@@ -58,6 +64,8 @@ class List2NeedDirective(SphinxDirective):
         "presentation": directives.unchanged,
         "links-down": directives.unchanged,
         "tags": directives.unchanged,
+        "hide": directives.unchanged,
+        "meta-data": directives.unchanged
     }
 
     def run(self) -> Sequence[nodes.Node]:
@@ -110,6 +118,17 @@ class List2NeedDirective(SphinxDirective):
 
         # Retrieve tags defined at list level
         tags = self.options.get("tags", "")
+        hide = self.options.get("hide", "")
+        metadata = self.options.get("meta-data", "")
+
+        if metadata:
+             log_warning(
+                    logger,
+                    metadata,
+                    "needsequence",
+                    location=None,
+                    
+                )
 
         list_needs = []
         # Storing the data in a sorted list
@@ -204,6 +223,30 @@ class List2NeedDirective(SphinxDirective):
                     list_need["options"]["tags"] = current_tags + "," + tags
                 else:
                     list_need["options"]["tags"] = tags
+
+            if hide:
+                if "options" not in list_need:
+                    list_need["options"] = {}
+                hide_option = list_need["options"].get("hide", "")
+                list_need["options"]["hide"] = hide_option
+
+
+            if metadata:
+                if "options" not in list_need:
+                    list_need["options"] = {}
+                metadata_items = re.findall(r'([^=,]+)=["\']([^"\']+)["\']', metadata)
+                                                           
+                for key, value in metadata_items:
+                    current_options = list_need["options"].get(key.strip(), "")
+
+
+
+                    if current_options:
+                        list_need["options"][key.strip()] = current_options + "," + value
+                    else:
+                        list_need["options"][key.strip()] = value
+                
+
 
             template = Template(NEED_TEMPLATE, autoescape=True)
 
