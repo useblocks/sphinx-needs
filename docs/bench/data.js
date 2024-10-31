@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730145353996,
+  "lastUpdate": 1730373454535,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -11340,6 +11340,42 @@ window.BENCHMARK_DATA = {
             "value": 68.786805383,
             "unit": "s",
             "extra": "Commit: a3255dee651fc3e94592b9f6bf6f0fb619ec9b1b\nBranch: master\nTime: 2024-10-28T20:53:50+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d5e84653d971fbccf8b9cb2a7dbcba23d1cda77a",
+          "message": "🔧 Add `lineno` to default output of `needs.json` (#1346)",
+          "timestamp": "2024-10-31T12:15:24+01:00",
+          "tree_id": "de09a0fd3b36cd8f489a780b51d6f9cfb3b174f7",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/d5e84653d971fbccf8b9cb2a7dbcba23d1cda77a"
+        },
+        "date": 1730373439443,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14674408799999128,
+            "unit": "s",
+            "extra": "Commit: d5e84653d971fbccf8b9cb2a7dbcba23d1cda77a\nBranch: master\nTime: 2024-10-31T12:15:24+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 68.264618746,
+            "unit": "s",
+            "extra": "Commit: d5e84653d971fbccf8b9cb2a7dbcba23d1cda77a\nBranch: master\nTime: 2024-10-31T12:15:24+01:00"
           }
         ]
       }
