@@ -34,6 +34,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': '',
+            'lineno': 20,
             'links': list([
             ]),
             'links_back': list([
@@ -109,6 +110,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': '',
+            'lineno': 25,
             'links': list([
               'SECURITY_REQ',
             ]),
@@ -185,6 +187,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': 'debug',
+            'lineno': 32,
             'links': list([
               'SECURITY_REQ',
             ]),
@@ -259,6 +262,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': '',
+            'lineno': 39,
             'links': list([
             ]),
             'links_back': list([
@@ -328,6 +332,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': '',
+            'lineno': 4,
             'links': list([
             ]),
             'links_back': list([
@@ -404,6 +409,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': '',
+            'lineno': 11,
             'links': list([
             ]),
             'links_back': list([
@@ -480,6 +486,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': '',
+            'lineno': 4,
             'links': list([
             ]),
             'links_back': list([
@@ -553,6 +560,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': '',
+            'lineno': 11,
             'links': list([
             ]),
             'links_back': list([
@@ -776,6 +784,15 @@
               'field_type': 'core',
               'type': list([
                 'string',
+                'null',
+              ]),
+            }),
+            'lineno': dict({
+              'default': None,
+              'description': 'Line number where the need is defined (None if external).',
+              'field_type': 'core',
+              'type': list([
+                'integer',
                 'null',
               ]),
             }),

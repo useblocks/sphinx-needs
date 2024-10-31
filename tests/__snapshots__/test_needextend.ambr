@@ -34,6 +34,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': '',
+            'lineno': 4,
             'links': list([
               'REQ_A_1',
               'REQ_D_1',
@@ -106,6 +107,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': '',
+            'lineno': 7,
             'links': list([
             ]),
             'links_back': list([
@@ -176,6 +178,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': '',
+            'lineno': 10,
             'links': list([
             ]),
             'links_back': list([
@@ -246,6 +249,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': '',
+            'lineno': 13,
             'links': list([
             ]),
             'links_back': list([
@@ -315,6 +319,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': '',
+            'lineno': 16,
             'links': list([
             ]),
             'links_back': list([
@@ -539,6 +544,15 @@
               'field_type': 'core',
               'type': list([
                 'string',
+                'null',
+              ]),
+            }),
+            'lineno': dict({
+              'default': None,
+              'description': 'Line number where the need is defined (None if external).',
+              'field_type': 'core',
+              'type': list([
+                'integer',
                 'null',
               ]),
             }),
@@ -822,6 +836,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': '',
+            'lineno': 9,
             'links': list([
               'extend_test_004',
             ]),
@@ -897,6 +912,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': '',
+            'lineno': 15,
             'links': list([
             ]),
             'links_back': list([
@@ -972,6 +988,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': '',
+            'lineno': 21,
             'links': list([
             ]),
             'links_back': list([
@@ -1042,6 +1059,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': '',
+            'lineno': 28,
             'links': list([
               'extend_test_003',
               'extend_test_004',
@@ -1113,6 +1131,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': '',
+            'lineno': 34,
             'links': list([
               'extend_test_003',
               'extend_test_004',
@@ -1185,6 +1204,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': '',
+            'lineno': 5,
             'links': list([
             ]),
             'links_back': list([
@@ -1411,6 +1431,15 @@
               'field_type': 'core',
               'type': list([
                 'string',
+                'null',
+              ]),
+            }),
+            'lineno': dict({
+              'default': None,
+              'description': 'Line number where the need is defined (None if external).',
+              'field_type': 'core',
+              'type': list([
+                'integer',
                 'null',
               ]),
             }),

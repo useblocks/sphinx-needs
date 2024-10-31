@@ -13,6 +13,7 @@
             'impacts': 'component_a',
             'introduced': '1.0.0',
             'layout': '',
+            'lineno': 7,
             'section_name': 'Section 1',
             'sections': list([
               'Section 1',
@@ -36,6 +37,7 @@
             'impacts': 'component_b',
             'introduced': '1.1.1',
             'layout': '',
+            'lineno': 16,
             'section_name': 'Section 1',
             'sections': list([
               'Section 1',
@@ -247,6 +249,15 @@
               'field_type': 'core',
               'type': list([
                 'string',
+                'null',
+              ]),
+            }),
+            'lineno': dict({
+              'default': None,
+              'description': 'Line number where the need is defined (None if external).',
+              'field_type': 'core',
+              'type': list([
+                'integer',
                 'null',
               ]),
             }),

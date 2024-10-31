@@ -37,6 +37,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': 'github',
+            'lineno': 19,
             'links': list([
             ]),
             'links_back': list([
@@ -113,6 +114,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': 'github',
+            'lineno': 6,
             'links': list([
             ]),
             'links_back': list([
@@ -212,6 +214,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': 'github',
+            'lineno': 11,
             'links': list([
             ]),
             'links_back': list([
@@ -295,6 +298,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': 'github',
+            'lineno': 15,
             'links': list([
             ]),
             'links_back': list([
@@ -512,6 +516,15 @@
               'field_type': 'core',
               'type': list([
                 'string',
+                'null',
+              ]),
+            }),
+            'lineno': dict({
+              'default': None,
+              'description': 'Line number where the need is defined (None if external).',
+              'field_type': 'core',
+              'type': list([
+                'integer',
                 'null',
               ]),
             }),

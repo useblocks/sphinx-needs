@@ -34,6 +34,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': '',
+            'lineno': 4,
             'links': list([
             ]),
             'links_back': list([
@@ -103,6 +104,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': '',
+            'lineno': 8,
             'links': list([
             ]),
             'links_back': list([
@@ -326,6 +328,15 @@
               'field_type': 'core',
               'type': list([
                 'string',
+                'null',
+              ]),
+            }),
+            'lineno': dict({
+              'default': None,
+              'description': 'Line number where the need is defined (None if external).',
+              'field_type': 'core',
+              'type': list([
+                'integer',
                 'null',
               ]),
             }),

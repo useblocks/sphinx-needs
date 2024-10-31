@@ -82,7 +82,6 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "lineno": {
         "description": "Line number where the need is defined (None if external).",
         "schema": {"type": ["integer", "null"], "default": None},
-        "exclude_json": True,
         "exclude_external": True,
         "exclude_import": True,
     },

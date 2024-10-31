@@ -1,3 +1,12 @@
+"$schema" = "https://ubcode.useblocks.com/ubproject.schema.json"
+
+[parse.extend_directives.need-example]
+argument = true
+options = true
+content = true
+parse_content = true
+content_required = true
+
 [needs]
 extra_options = [
     "my_extra_option",
@@ -17,7 +26,7 @@ show_link_type = false
 show_link_title = false
 title_optional = true
 max_title_length = 75
-id_regex = "^[A-Za-z0-9_]*"
+id_regex = "^[A-Za-z0-9_]+"
 id_required = false
 table_style = "datatables"
 table_columns = "ID;TITLE;STATUS;OUTGOING"
