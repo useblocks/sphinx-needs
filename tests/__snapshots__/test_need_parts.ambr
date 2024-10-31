@@ -24,6 +24,7 @@
       'full_title': 'Command line interface',
       'id': 'SP_TOO_001',
       'layout': '',
+      'lineno': 4,
       'parent_needs_back': list([
         'TEST_2',
       ]),
@@ -100,6 +101,7 @@
       'full_title': 'TEST_2',
       'id': 'TEST_2',
       'layout': '',
+      'lineno': 21,
       'parent_need': 'SP_TOO_001',
       'parent_needs': list([
         'SP_TOO_001',

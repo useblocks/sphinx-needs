@@ -35,6 +35,7 @@
               'is_part': False,
               'jinja_content': False,
               'layout': '',
+              'lineno': 8,
               'links': list([
               ]),
               'links_back': list([
@@ -114,6 +115,7 @@
               'is_part': False,
               'jinja_content': False,
               'layout': '',
+              'lineno': 12,
               'links': list([
               ]),
               'links_back': list([
@@ -193,6 +195,7 @@
               'is_part': False,
               'jinja_content': False,
               'layout': '',
+              'lineno': 4,
               'links': list([
               ]),
               'links_back': list([

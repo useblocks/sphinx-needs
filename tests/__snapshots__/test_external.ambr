@@ -24,6 +24,7 @@
             'full_title': 'REQ_01',
             'id': 'IMP_REQ_01',
             'layout': '',
+            'lineno': 4,
             'section_name': 'Title',
             'sections': list([
               'Title',
@@ -217,6 +218,15 @@
               'field_type': 'core',
               'type': list([
                 'string',
+                'null',
+              ]),
+            }),
+            'lineno': dict({
+              'default': None,
+              'description': 'Line number where the need is defined (None if external).',
+              'field_type': 'core',
+              'type': list([
+                'integer',
                 'null',
               ]),
             }),
@@ -497,6 +507,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': None,
+            'lineno': None,
             'links': list([
               'SPEC_1',
             ]),
@@ -569,6 +580,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': None,
+            'lineno': None,
             'links': list([
               'EXT_TEST_01',
               'REQ_1',
@@ -644,6 +656,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': '',
+            'lineno': 9,
             'links': list([
             ]),
             'links_back': list([
@@ -715,6 +728,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': '',
+            'lineno': 12,
             'links': list([
               'REQ_1',
               'EXT_TEST_01',
@@ -787,6 +801,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': '',
+            'lineno': 4,
             'links': list([
             ]),
             'links_back': list([
@@ -1010,6 +1025,15 @@
               'field_type': 'core',
               'type': list([
                 'string',
+                'null',
+              ]),
+            }),
+            'lineno': dict({
+              'default': None,
+              'description': 'Line number where the need is defined (None if external).',
+              'field_type': 'core',
+              'type': list([
+                'integer',
                 'null',
               ]),
             }),
