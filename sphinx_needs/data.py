@@ -126,6 +126,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "schema": {"type": "boolean", "default": False},
         "exclude_external": True,
         "exclude_import": True,
+        "exclude_json": True,
     },
     "layout": {
         "description": "Key of the layout, which is used to render the need.",

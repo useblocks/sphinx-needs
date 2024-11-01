@@ -18,7 +18,6 @@
             }),
             'content': '',
             'created_at': '',
-            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -88,7 +87,6 @@
             }),
             'content': '',
             'created_at': '',
-            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -221,12 +219,6 @@
               'description': 'Added by service github-issues',
               'field_type': 'extra',
               'type': 'string',
-            }),
-            'delete': dict({
-              'default': False,
-              'description': 'If true, the need is deleted entirely.',
-              'field_type': 'core',
-              'type': 'boolean',
             }),
             'docname': dict({
               'default': None,
