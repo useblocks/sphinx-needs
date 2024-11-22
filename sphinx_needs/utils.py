@@ -462,9 +462,7 @@ def match_string_link(
             match = lc["regex_compiled"].search(data)
             if match:
                 render_content = match.groupdict()
-                link_url = lc["url_template"].render(
-                    **render_content, **render_context
-                )
+                link_url = lc["url_template"].render(**render_content, **render_context)
                 link_name = lc["name_template"].render(
                     **render_content, **render_context
                 )
