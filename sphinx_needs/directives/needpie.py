@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-from typing import Iterable, Sequence
+from collections.abc import Iterable, Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives

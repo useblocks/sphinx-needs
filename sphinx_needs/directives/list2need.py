@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import hashlib
 import re
+from collections.abc import Sequence
 from contextlib import suppress
-from typing import Any, Sequence
+from typing import Any
 
 from docutils import nodes
 from docutils.parsers.rst import directives

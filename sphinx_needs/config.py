@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import MISSING, dataclass, field, fields
-from typing import TYPE_CHECKING, Any, Callable, Dict, Literal, Mapping, TypedDict
+from typing import TYPE_CHECKING, Any, Callable, Dict, Literal, TypedDict
 
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx

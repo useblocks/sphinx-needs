@@ -9,10 +9,11 @@ from __future__ import annotations
 import json
 import os
 import sys
+from collections.abc import Iterable
 from copy import deepcopy
 from datetime import datetime
 from functools import lru_cache
-from typing import Any, Iterable
+from typing import Any
 
 from jsonschema import Draft7Validator
 from sphinx.config import Config
