@@ -32,53 +32,44 @@ To develop **Sphinx-Needs**  it can be installed, with development extras, into 
 
    pip install sphinx-needs[test,benchmark,docs]
 
-or using `Poetry <https://python-poetry.org/>`__ to install the dependencies into an isolated environment:
+or using `uv <https://docs.astral.sh/uv/>`__ to install the dependencies into an isolated environment:
 
-1. `Install Poetry <https://python-poetry.org/docs/#installation>`__
+.. code-block:: bash
 
-2. Install project dependencies
+   uv sync
 
-   .. code-block:: bash
+To run the formatting and linting suite, `pre-commit <https://pre-commit.com/>`__ is used:
 
-      poetry install --all-extras
+.. code-block:: bash
 
-To run the formatting and linting suite, pre-commit is used:
+   pre-commit install  # to auto-run on every commit
+   pre-commit run --all-files  # to run manually
 
-1. `Install Pre-Commit <https://pre-commit.com/>`__
+To run testing and documentation building, `tox <https://tox.readthedocs.io/>`__ is used:
 
-2. Install the Pre-Commit hooks
+.. code-block:: bash
 
-   .. code-block:: bash
+   tox -av  # to see all environments
 
-      pre-commit install
-
+Note, it is recommended to also install the `tox-uv <https://github.com/tox-dev/tox-uv>`__ plugin, which will use `uv` to create isolated environments faster, and to use `pyenv <https://github.com/pyenv/pyenv>`__ to manage multiple Python versions.
 
 Build docs
 ----------
+
 To build the **Sphinx-Needs** documentation stored under ``/docs``, run:
 
 .. code-block:: bash
 
-   # Build HTML pages
-   make docs-html
+   # Build HTML pages with the furo theme,
+   # and first remove all old build files
+   CLEAN=true tox -e docs-furo
 
-or
-
-.. code-block:: bash
-
-   # Build PDF pages
-   make docs-pdf
-
-It will always perform a **clean** build (calls ``make clean`` before the build).
-If you want to avoid this, run the related sphinx-commands directly under ``/docs`` (e.g. ``make docs``).
-
-Check links in docs
-~~~~~~~~~~~~~~~~~~~~
-To check if all used links in the documentation are still valid, run:
+or to build with a different builder:
 
 .. code-block:: bash
 
-    make docs-linkcheck
+   # Check links in the documentation
+   CLEAN=true BUILDER=linkcheck tox -e docs-furo
 
 
 Running Tests
@@ -90,11 +81,11 @@ You can either run the tests directly using ``pytest``, in an existing environme
 
    pytest tests/
 
-Or you can use the provided Makefile:
+Or use tox (recommended):
 
 .. code-block:: bash
 
-   make test
+   tox -e py38
 
 Note some tests use `syrupy <https://github.com/tophat/syrupy>`__ to perform snapshot testing.
 These snapshots can be updated by running:
@@ -208,89 +199,19 @@ You can run the ``make test-js`` command to check all JS testcases.
     The ``http_server`` process invoked by the ``make test-js`` command may not terminate properly in some instances.
     Kindly check your system's monitoring app to end the process if not terminated automatically.
 
-Linting & Formatting
---------------------
-
-**Sphinx-Needs** uses `pre-commit <https://pre-commit.com/>`__ to run formatting and checking of source code.
-This can be run directly using:
-
-.. code-block:: bash
-
-    pre-commit run --all-files
-
-or via the provided Makefile:
-
-.. code-block:: bash
-
-    make lint
-
 Benchmarks
 ----------
+
 **Sphinx-Needs** own documentation is used for creating a benchmark for each PR.
 If the runtime takes 10% longer as the previous ones, the benchmark test will fail.
 
 Benchmark test cases are available under ``tests/benchmarks``.
-And they can be locally executed via ``make benchmark``.
 
 The results for each PR/commit get added to a chart, which is available under
 http://useblocks.com/sphinx-needs/bench/index.html.
 
 The benchmark data is stored on the `benchmarks` branch, which is also used by github-pages as
 source.
-
-
-Running Test Matrix
--------------------
-
-This project provides a test matrix for running the tests across a range
-of Python and Sphinx versions. This is used primarily for continuous integration.
-
-`Nox <https://nox.thea.codes/en/stable/>`__ is used as a test runner.
-
-Running the matrix tests requires additional system-wide dependencies
-
-1. `Install
-   Nox <https://nox.thea.codes/en/stable/tutorial.html#installation>`__
-2. `Install Nox-Poetry <https://pypi.org/project/nox-poetry/>`__
-3. You will also need multiple Python versions available. You can manage
-   these using `Pyenv <https://github.com/pyenv/pyenv>`__
-
-You can run the test matrix by using the ``nox`` command
-
-.. code-block:: bash
-
-    nox
-
-or using the provided Makefile
-
-.. code-block:: bash
-
-    make test-matrix
-
-For a full list of available options, refer to the Nox documentation,
-and the local :download:`noxfile <../noxfile.py>`.
-
-.. dropdown:: Our noxfile.py
-
-   .. literalinclude:: ../noxfile.py
-
-
-Running Commands
-----------------
-
-See the Poetry documentation for a list of commands.
-
-In order to run custom commands inside the isolated environment, they
-should be prefixed with ``poetry run`` (ie. ``poetry run <command>``).
-
-List make targets
------------------
-
-**Sphinx-Needs** uses ``make`` to invoke most development related actions.
-
-Use ``make list`` to get a list of available targets.
-
-.. program-output:: make --no-print-directory --directory ../ list
 
 Publishing a new release
 ------------------------
@@ -299,8 +220,7 @@ There is a release pipeline installed for the CI.
 This gets triggered automatically, if a tag is created and pushed.
 The tag must follow the format: ``[0-9].[0-9]+.[0-9]``. Otherwise the release jobs won't trigger.
 
-The release jobs will build the source and wheel distribution and try to upload them
-to ``test.pypi.org`` and ``pypy.org``.
+The release jobs will build the source and wheel distribution and try to upload them.
 
 
 Structure of the extension's logic
