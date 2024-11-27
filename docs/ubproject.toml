@@ -9,17 +9,17 @@ content_required = true
 
 [needs]
 extra_options = [
-    "my_extra_option",
-    "another_option",
-    "author",
-    "comment",
-    "amount",
-    "hours",
-    "image",
-    "config",
-    "github",
-    "value",
-    "unit",
+  "my_extra_option",
+  "another_option",
+  "author",
+  "comment",
+  "amount",
+  "hours",
+  "image",
+  "config",
+  "github",
+  "value",
+  "unit",
 ]
 variant_options = ["status"]
 show_link_type = false
@@ -310,7 +310,7 @@ grid = "simple"
 
 [needs.layouts.permalink_example.layout]
 head = [
-    "<<meta(\"type_name\")>>: **<<meta(\"title\")>>** <<meta_id()>> <<permalink()>> <<collapse_button(\"meta\", collapsed=\"icon:arrow-down-circle\", visible=\"icon:arrow-right-circle\", initial=False)>> ",
+  "<<meta(\"type_name\")>>: **<<meta(\"title\")>>** <<meta_id()>> <<permalink()>> <<collapse_button(\"meta\", collapsed=\"icon:arrow-down-circle\", visible=\"icon:arrow-right-circle\", initial=False)>> ",
 ]
 meta = ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"]
 
@@ -319,7 +319,7 @@ grid = "simple"
 
 [needs.layouts.detail_view.layout]
 head = [
-    "<<meta(\"type_name\")>>: **<<meta(\"title\")>>** <<meta_id()>> <<permalink()>> <<collapse_button(\"meta\", collapsed=\"icon:arrow-down-circle\", visible=\"icon:arrow-right-circle\", initial=False)>> <<sidebar(\"\")>>",
+  "<<meta(\"type_name\")>>: **<<meta(\"title\")>>** <<meta_id()>> <<permalink()>> <<collapse_button(\"meta\", collapsed=\"icon:arrow-down-circle\", visible=\"icon:arrow-right-circle\", initial=False)>> <<sidebar(\"\")>>",
 ]
 meta = ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"]
 

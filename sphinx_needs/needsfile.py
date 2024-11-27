@@ -129,7 +129,7 @@ class NeedsList:
         )
 
     def update_or_add_version(self, version: str) -> None:
-        from sphinx_needs.needs import __version__
+        from sphinx_needs import __version__
 
         if version not in self.needs_list["versions"]:
             self.needs_list["versions"][version] = {

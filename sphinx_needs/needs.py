@@ -13,6 +13,7 @@ from sphinx.environment import BuildEnvironment
 from sphinx.errors import SphinxError
 
 import sphinx_needs.debug as debug  # Need to set global var in it for timeing measurements
+from sphinx_needs import __version__
 from sphinx_needs.builder import (
     NeedsBuilder,
     NeedsIdBuilder,
@@ -117,7 +118,7 @@ try:
 except ImportError:
     import tomli as tomllib
 
-__version__ = VERSION = "4.1.0"
+VERSION = __version__
 
 _NODE_TYPES_T = Dict[
     Type[nodes.Element],
