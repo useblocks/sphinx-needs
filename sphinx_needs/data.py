@@ -4,13 +4,12 @@ which is stored in the Sphinx environment.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
     Final,
     Literal,
-    Mapping,
     NewType,
     TypedDict,
 )
@@ -717,7 +716,7 @@ class NeedsUmlType(NeedsBaseDataType):
     """Time taken to process the diagram."""
 
 
-NeedsMutable = NewType("NeedsMutable", Dict[str, NeedsInfoType])
+NeedsMutable = NewType("NeedsMutable", dict[str, NeedsInfoType])
 """A mutable view of the needs, before resolution
 """
 

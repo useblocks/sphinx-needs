@@ -17,17 +17,17 @@ classifiers = [
   'Operating System :: OS Independent',
   'Programming Language :: Python',
   'Programming Language :: Python :: 3',
-  'Programming Language :: Python :: 3.8',
   'Programming Language :: Python :: 3.9',
   'Programming Language :: Python :: 3.10',
   'Programming Language :: Python :: 3.11',
+  'Programming Language :: Python :: 3.12',
   'Topic :: Documentation',
   'Topic :: Utilities',
   'Framework :: Sphinx :: Extension',
 ]
-requires-python = ">=3.8,<4"
+requires-python = ">=3.9,<4"
 dependencies = [
-  "sphinx>=6.0,<9",
+  "sphinx>=7.0,<9",
   "requests-file~=2.1",             # external links
   "requests~=2.32",                 # external links
   "jsonschema>=3.2.0",              # needsimport schema validation
@@ -141,12 +141,12 @@ disable_error_code = ["no-redef"]
 
 legacy_tox_ini = """
 [tox]
-envlist = py38
+envlist = py39
 
 [testenv]
 usedevelop = true
 
-[testenv:py{38,39,310,311,312}]
+[testenv:py{39,310,311,312,313}]
 extras =
   test
   test-parallel

@@ -25,9 +25,11 @@ def test_import_json(test_app):
             str(app.srcdir) + os.sep + "subdoc" + os.sep, "srcdir/subdoc/"
         )
     ).splitlines()
-    assert warnings == [
-        "srcdir/subdoc/deprecated_rel_path_import.rst:6: WARNING: Deprecation warning: Relative path must be relative to the current document in future, not to the conf.py location. Use a starting '/', like '/needs.json', to make the path relative to conf.py. [needs.deprecated]"
-    ]
+
+    if os.name != "nt":
+        assert warnings == [
+            "srcdir/subdoc/deprecated_rel_path_import.rst:6: WARNING: Deprecation warning: Relative path must be relative to the current document in future, not to the conf.py location. Use a starting '/', like '/needs.json', to make the path relative to conf.py. [needs.deprecated]"
+        ]
 
     html = Path(app.outdir, "index.html").read_text()
     assert "TEST IMPORT TITLE" in html

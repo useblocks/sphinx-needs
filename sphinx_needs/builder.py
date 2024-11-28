@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Iterable, Sequence
+from collections.abc import Iterable, Sequence
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -37,7 +37,7 @@ class NeedsBuilder(Builder):
 
     def write(
         self,
-        build_docnames: Iterable[str],
+        build_docnames: Iterable[str] | None,
         updated_docnames: Sequence[str],
         method: str = "update",
     ) -> None:
@@ -143,7 +143,7 @@ class NeedsIdBuilder(Builder):
 
     def write(
         self,
-        build_docnames: Iterable[str],
+        build_docnames: Iterable[str] | None,
         updated_docnames: Sequence[str],
         method: str = "update",
     ) -> None:
@@ -254,6 +254,6 @@ def build_needumls_pumls(app: Sphinx, _exception: Exception) -> None:
 
     # if other builder like html used together with config: needs_build_needumls
     needs_builder = NeedumlsBuilder(app, env)
-    needs_builder.outdir = os.path.join(needs_builder.outdir, config.build_needumls)
+    needs_builder.outdir = os.path.join(needs_builder.outdir, config.build_needumls)  # type: ignore[assignment]
 
     needs_builder.finish()

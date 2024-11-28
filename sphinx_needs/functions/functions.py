@@ -146,10 +146,8 @@ def find_and_replace_node_content(
     new_children = []
     if isinstance(node, NeedFunc):
         return node.get_text(env, need)
-    elif (
-        not node.children
-        and isinstance(node, nodes.Text)
-        or isinstance(node, nodes.reference)
+    elif (not node.children and isinstance(node, nodes.Text)) or isinstance(
+        node, nodes.reference
     ):
         if isinstance(node, nodes.reference):
             try:

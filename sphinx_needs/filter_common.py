@@ -8,10 +8,11 @@ from __future__ import annotations
 import ast
 import json
 import re
+from collections.abc import Iterable
 from pathlib import Path
 from timeit import default_timer as timer
 from types import CodeType
-from typing import Any, Iterable, TypedDict, overload
+from typing import Any, TypedDict, overload
 
 from docutils import nodes
 from docutils.parsers.rst import directives

@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 import responses
 from docutils import __version__ as doc_ver
+from sphinx.util.console import strip_colors
 
 
 @pytest.mark.parametrize(
@@ -26,7 +27,7 @@ def test_doc_build_html(test_app, sphinx_test_tempdir):
         ["sphinx-build", "-b", "html", "-D", rf"plantuml={plantuml}", src_dir, out_dir],
         capture_output=True,
     )
-    assert output.stderr.decode("utf-8").splitlines() == [
+    assert strip_colors(output.stderr.decode("utf-8")).splitlines() == [
         "WARNING: http://my_company.com/docs/v1/index.html#TEST_01: Need 'EXT_TEST_01' has unknown outgoing link 'SPEC_1' in field 'links' [needs.external_link_outgoing]",
         "WARNING: ../../_build/html/index.html#TEST_01: Need 'EXT_REL_PATH_TEST_01' has unknown outgoing link 'SPEC_1' in field 'links' [needs.external_link_outgoing]",
     ]
@@ -42,17 +43,16 @@ def test_doc_build_html(test_app, sphinx_test_tempdir):
     # first build output
     assert (
         "updating environment: [new config] 3 added, 0 changed, 0 removed"
-        in output.stdout.decode("utf-8")
+        in strip_colors(output.stdout.decode("utf-8"))
     )
     # second build output
     assert "loading pickled environment" in output_second.stdout.decode("utf-8")
     assert (
         "updating environment: [new config] 3 added, 0 changed, 0 removed"
-        not in output_second.stdout.decode("utf-8")
+        not in strip_colors(output_second.stdout.decode("utf-8"))
     )
-    assert (
-        "updating environment: 0 added, 0 changed, 0 removed"
-        in output_second.stdout.decode("utf-8")
+    assert "updating environment: 0 added, 0 changed, 0 removed" in strip_colors(
+        output_second.stdout.decode("utf-8")
     )
 
 

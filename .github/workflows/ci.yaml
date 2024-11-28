@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python 3.8
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.8'
+        python-version: '3.9'
     - uses: pre-commit/action@v3.0.1
 
   tests-core:
@@ -23,17 +23,18 @@ jobs:
       fail-fast: false  # Set on "false" to get the results of ALL builds
       matrix:
         os: ["ubuntu-latest"]
-        # 3.9.8 seems to be broken with type_ast
-        # https://www.mail-archive.com/debian-bugs-dist@lists.debian.org/msg1829077.html
-        python-version: ["3.8", "3.11"]
-        sphinx-version: ["6.0", "7.0"]
+        python-version: ["3.10", "3.12"]
+        sphinx-version: ["7.0", "8.0"]
         include:
           - os: "ubuntu-latest"
-            python-version: "3.10"
-            sphinx-version: "8.0"
+            python-version: "3.9"
+            sphinx-version: "7.0"
           - os: "windows-latest"
-            python-version: "3.8"
-            sphinx-version: "6.0"
+            python-version: "3.9"
+            sphinx-version: "7.0"
+          - os: "windows-latest"
+            python-version: "3.12"
+            sphinx-version: "8.0"
     steps:
       - uses: actions/checkout@v4
       - name: Install graphviz (linux)
@@ -73,10 +74,10 @@ jobs:
       matrix:
         include:
           - os: "ubuntu-latest"
-            python-version: "3.8"
-            sphinx-version: "6.0"
+            python-version: "3.9"
+            sphinx-version: "7.0"
           - os: "ubuntu-latest"
-            python-version: "3.11"
+            python-version: "3.12"
             sphinx-version: "8.0"
     steps:
       - uses: actions/checkout@v4

@@ -3,7 +3,7 @@ from __future__ import annotations
 import contextlib
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
-from typing import Any, Callable, Dict, List, Type
+from typing import Any, Callable
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -120,9 +120,9 @@ except ImportError:
 
 VERSION = __version__
 
-_NODE_TYPES_T = Dict[
-    Type[nodes.Element],
-    Callable[[Sphinx, nodes.document, str, List[nodes.Element]], None],
+_NODE_TYPES_T = dict[
+    type[nodes.Element],
+    Callable[[Sphinx, nodes.document, str, list[nodes.Element]], None],
 ]
 
 NODE_TYPES_PRIO: _NODE_TYPES_T = {  # Node types to be checked before most others

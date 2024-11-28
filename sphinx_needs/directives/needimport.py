@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
-from typing import Sequence
+from collections.abc import Sequence
 from urllib.parse import urlparse
 
 import requests

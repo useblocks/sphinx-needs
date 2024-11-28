@@ -9,10 +9,11 @@ from __future__ import annotations
 import json
 import os
 import sys
+from collections.abc import Iterable
 from copy import deepcopy
 from datetime import datetime
 from functools import lru_cache
-from typing import Any, Iterable
+from typing import Any
 
 from jsonschema import Draft7Validator
 from sphinx.config import Config
@@ -92,7 +93,11 @@ def generate_needs_schema(
 
 class NeedsList:
     def __init__(
-        self, config: Config, outdir: str, confdir: str, add_schema: bool = True
+        self,
+        config: Config,
+        outdir: str | os.PathLike[str],
+        confdir: str | os.PathLike[str],
+        add_schema: bool = True,
     ) -> None:
         self.config = config
         self.needs_config = NeedsSphinxConfig(config)
