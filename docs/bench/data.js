@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730373454535,
+  "lastUpdate": 1732803540859,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -11376,6 +11376,42 @@ window.BENCHMARK_DATA = {
             "value": 68.264618746,
             "unit": "s",
             "extra": "Commit: d5e84653d971fbccf8b9cb2a7dbcba23d1cda77a\nBranch: master\nTime: 2024-10-31T12:15:24+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "distinct": true,
+          "id": "c5acec616c76e8873520796e1b91c7d2e9e88cbc",
+          "message": "⬆️ Drop Python 3.8 and Sphinx 6",
+          "timestamp": "2024-11-28T14:16:56Z",
+          "tree_id": "a8d5ead9c01afd44679b7788e164a591afd65481",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c5acec616c76e8873520796e1b91c7d2e9e88cbc"
+        },
+        "date": 1732803526117,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14821506100000192,
+            "unit": "s",
+            "extra": "Commit: c5acec616c76e8873520796e1b91c7d2e9e88cbc\nBranch: master\nTime: 2024-11-28T14:16:56Z"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 68.352718847,
+            "unit": "s",
+            "extra": "Commit: c5acec616c76e8873520796e1b91c7d2e9e88cbc\nBranch: master\nTime: 2024-11-28T14:16:56Z"
           }
         ]
       }
