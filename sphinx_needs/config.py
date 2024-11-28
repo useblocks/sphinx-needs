@@ -236,6 +236,16 @@ class NeedExtraOption(TypedDict):
     """A description of the option."""
 
 
+class NeedStatusesOption(TypedDict):
+    name: str
+    description: NotRequired[str]
+
+
+class NeedTagsOption(TypedDict):
+    name: str
+    description: NotRequired[str]
+
+
 @dataclass
 class NeedsSphinxConfig:
     """A wrapper around the Sphinx configuration,
@@ -479,24 +489,14 @@ class NeedsSphinxConfig:
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
     """Raise exceptions if a needextend filter does not match any needs."""
-    statuses: list[dict[str, str]] = field(
+    statuses: list[NeedStatusesOption] = field(
         default_factory=list, metadata={"rebuild": "html", "types": ()}
     )
-    """If given, only the defined status are allowed.
-    Values needed for each status:
-    * name
-    * description
-    Example: [{"name": "open", "description": "open status"}, {...}, {...}]
-    """
-    tags: list[dict[str, str]] = field(
+    """If given, only the defined statuses are allowed."""
+    tags: list[NeedTagsOption] = field(
         default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )
-    """If given, only the defined tags are allowed.
-    Values needed for each tag:
-    * name
-    * description
-    Example: [{"name": "new", "description": "new needs"}, {...}, {...}]
-    """
+    """If given, only the defined tags are allowed."""
     css: str = field(
         default="modern.css", metadata={"rebuild": "html", "types": (str,)}
     )
