@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Callable, Sequence
+from collections.abc import Sequence
+from typing import Any, Callable
 
 from docutils import nodes
 from docutils.parsers.rst import directives

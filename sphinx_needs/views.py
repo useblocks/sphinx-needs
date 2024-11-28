@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+from collections.abc import Iterable, Iterator, Mapping
 from itertools import chain
-from typing import TYPE_CHECKING, Iterable, Iterator, List, Mapping, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from sphinx_needs.data import NeedsInfoType
 
 
-_IdSet = List[Tuple[str, Optional[str]]]
+_IdSet = list[tuple[str, Optional[str]]]
 """Set of (need, part) ids."""
 
 
@@ -16,11 +17,11 @@ class _Indexes:
 
     __slots__ = (
         "is_external",
+        "parts_to_needs",
         "status",
         "tags",
-        "types",
         "type_names",
-        "parts_to_needs",
+        "types",
     )
 
     def __init__(
@@ -50,7 +51,7 @@ class _Indexes:
 class _LazyIndexes:
     """A lazily computed view of indexes for needs."""
 
-    __slots__ = ("_needs", "_indexes")
+    __slots__ = ("_indexes", "_needs")
 
     def __init__(self, needs: Mapping[str, NeedsInfoType]) -> None:
         self._needs = needs
@@ -126,7 +127,7 @@ class NeedsView(Mapping[str, "NeedsInfoType"]):
     (e.g. dynamic values and back links have been computed etc)
     """
 
-    __slots__ = ("_indexes", "_selected_ids", "_maybe_len")
+    __slots__ = ("_indexes", "_maybe_len", "_selected_ids")
 
     @classmethod
     def _from_needs(cls, needs: Mapping[str, NeedsInfoType], /) -> NeedsView:
@@ -256,7 +257,7 @@ class NeedsAndPartsListView:
     and then overwriting a subset of fields with the values from the part.
     """
 
-    __slots__ = ("_indexes", "_selected_ids", "_maybe_len")
+    __slots__ = ("_indexes", "_maybe_len", "_selected_ids")
 
     def __init__(
         self,

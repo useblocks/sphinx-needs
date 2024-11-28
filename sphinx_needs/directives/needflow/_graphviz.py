@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import html
 import textwrap
-from functools import lru_cache
+from functools import cache
 from typing import Callable, Literal, TypedDict
 from urllib.parse import urlparse
 
@@ -476,7 +476,7 @@ def _render_edge(
     return f"{start_id} -> {end_id} [{param_str}];\n"
 
 
-@lru_cache(maxsize=None)
+@cache
 def _style_params_from_link_type(
     styles: str, style_start: str, style_end: str
 ) -> list[tuple[str, str]]:

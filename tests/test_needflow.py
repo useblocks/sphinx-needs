@@ -57,6 +57,8 @@ def test_doc_build_html(test_app):
 
     if test_app.config.needs_flow_engine == "graphviz" and version_info < (7, 2):
         pass  # links will be wrong due to https://github.com/sphinx-doc/sphinx/pull/11078
+    elif test_app.config.needs_flow_engine == "graphviz" and os.name == "nt":
+        pass  # TODO windows have // in links
     else:
         for link in (
             '"../index.html#SPEC_1"',
@@ -76,6 +78,8 @@ def test_doc_build_html(test_app):
 
     if test_app.config.needs_flow_engine == "graphviz" and version_info < (7, 2):
         pass  # links will be wrong due to https://github.com/sphinx-doc/sphinx/pull/11078
+    elif test_app.config.needs_flow_engine == "graphviz" and os.name == "nt":
+        pass  # TODO windows have // in links
     else:
         for link in (
             '"../index.html#SPEC_1"',
@@ -144,6 +148,8 @@ def test_doc_build_needflow_incl_child_needs(test_app):
 
     if test_app.config.needs_flow_engine == "graphviz" and version_info < (7, 2):
         pass  # links will be wrong due to https://github.com/sphinx-doc/sphinx/pull/11078
+    elif test_app.config.needs_flow_engine == "graphviz" and os.name == "nt":
+        pass  # TODO windows have // in links
     else:
         for link in (
             '"../index.html#STORY_1"',

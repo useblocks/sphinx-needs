@@ -3,7 +3,8 @@ from __future__ import annotations
 import html
 import os
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, TypedDict
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, TypedDict
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -32,7 +33,7 @@ class ProcessedDataType(TypedDict):
     arguments: dict[str, Any]
 
 
-ProcessedNeedsType = Dict[str, List[ProcessedDataType]]
+ProcessedNeedsType = dict[str, list[ProcessedDataType]]
 
 
 class Needuml(nodes.General, nodes.Element):

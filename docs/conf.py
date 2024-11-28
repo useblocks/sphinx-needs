@@ -3,7 +3,7 @@
 import datetime
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 from sphinx_needs import __version__
 
@@ -222,7 +222,7 @@ latex_documents = [
         "manual",
     ),
 ]
-latex_elements: Dict[str, Any] = {
+latex_elements: dict[str, Any] = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',

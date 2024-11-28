@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import os
 import re
+from collections.abc import Sequence
 from datetime import datetime
-from typing import Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives

@@ -11,7 +11,8 @@ from __future__ import annotations
 
 import hashlib
 import re
-from typing import Iterable, cast
+from collections.abc import Iterable
+from typing import cast
 
 from docutils import nodes
 from sphinx.application import Sphinx

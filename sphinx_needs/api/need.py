@@ -4,9 +4,10 @@ import hashlib
 import os
 import re
 import warnings
+from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Iterable, Iterator
+from typing import Any
 
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState

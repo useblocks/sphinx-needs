@@ -1,5 +1,3 @@
-from typing import List
-
 from sphinx_needs.functions.common import (
     calc_sum,
     check_linked_values,
@@ -17,7 +15,7 @@ from sphinx_needs.functions.functions import (  # noqa: F401
     resolve_variants_options,
 )
 
-NEEDS_COMMON_FUNCTIONS: List[DynamicFunction] = [
+NEEDS_COMMON_FUNCTIONS: list[DynamicFunction] = [
     test,
     echo,
     copy,
