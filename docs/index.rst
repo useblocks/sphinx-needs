@@ -209,6 +209,7 @@ Contents
    layout_styles
    api
    utils
+   extensions
 
 .. toctree::
    :caption: Development
