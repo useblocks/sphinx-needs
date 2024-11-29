@@ -305,7 +305,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("build-finished", build_needs_id_json)
     app.connect("build-finished", build_needumls_pumls)
     app.connect("build-finished", debug.process_timing)
-    app.connect("build-finished", release_data_lock, priority=9999)
+    app.connect("build-finished", release_data_locks, priority=9999)
 
     # Be sure Sphinx-Needs config gets erased before any events or external API calls get executed.
     # So never but this inside an event.
@@ -737,7 +737,7 @@ class NeedsConfigException(SphinxError):
     pass
 
 
-def release_data_lock(app: Sphinx, _exception: Exception) -> None:
+def release_data_locks(app: Sphinx, _exception: Exception) -> None:
     """Release the lock on needs data mutations.
 
     This should ONLY be used at the very end of the sphinx processing.
@@ -745,3 +745,4 @@ def release_data_lock(app: Sphinx, _exception: Exception) -> None:
     such that this would be re-set.
     """
     SphinxNeedsData(app.env).needs_is_post_processed = False
+    app.env._needs_warnings_executed = False  # type: ignore[attr-defined]
