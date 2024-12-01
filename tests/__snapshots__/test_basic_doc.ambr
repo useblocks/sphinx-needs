@@ -1,3 +1,4 @@
+# serializer version: 1
 # name: test_build_needs[test_app0]
   dict({
     'current_version': '0.1.0',

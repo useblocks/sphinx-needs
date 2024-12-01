@@ -1,3 +1,4 @@
+# serializer version: 1
 # name: test_doc_need_parts[test_app0]
   dict({
     'SP_TOO_001': dict({

@@ -1,3 +1,4 @@
+# serializer version: 1
 # name: test_api_add_type[test_app0]
   list([
     dict({
