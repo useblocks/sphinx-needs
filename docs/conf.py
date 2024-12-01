@@ -3,7 +3,7 @@
 import datetime
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 from sphinx_needs import __version__
 
@@ -47,9 +47,9 @@ nitpick_ignore = [
     ("py:class", "docutils.nodes.Node"),
     ("py:class", "docutils.parsers.rst.states.RSTState"),
     ("py:class", "docutils.statemachine.StringList"),
-    ("py:class", "T"),
     ("py:class", "sphinx_needs.debug.T"),
-    ("py:class", "sphinx_needs.data.NeedsInfoType"),
+    ("py:class", "sphinx_needs.views._LazyIndexes"),
+    ("py:class", "sphinx_needs.config.NeedsSphinxConfig"),
 ]
 
 rst_epilog = """
@@ -222,7 +222,7 @@ latex_documents = [
         "manual",
     ),
 ]
-latex_elements: Dict[str, Any] = {
+latex_elements: dict[str, Any] = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
@@ -265,6 +265,7 @@ linkcheck_ignore = [
     r"http://localhost:\d+",
     r"http://127.0.0.1:\d+",
     r"../.*",
+    r"http://sourceforge.net/projects/plantuml.*",
     r"https?://useblocks.com/sphinx-needs/bench/index.html",
 ]
 
@@ -288,337 +289,10 @@ plantuml_output_format = "svg_img"
 
 # -- Options for Needs extension ---------------------------------------
 
+needs_from_toml = "ubproject.toml"
+
 needs_debug_measurement = "READTHEDOCS" in os.environ  # run on CI
-
-needs_types = [
-    # Architecture types
-    {
-        "directive": "int",
-        "title": "Interface",
-        "content": "plantuml",
-        "prefix": "I_",
-        "color": "#BFD8D2",
-        "style": "card",
-    },
-    {
-        "directive": "comp",
-        "title": "Component",
-        "content": "plantuml",
-        "prefix": "C_",
-        "color": "#BFD8D2",
-        "style": "card",
-    },
-    {
-        "directive": "sys",
-        "title": "System",
-        "content": "plantuml",
-        "prefix": "S_",
-        "color": "#BFD8D2",
-        "style": "card",
-    },
-    # Normal types
-    {
-        "directive": "req",
-        "title": "Requirement",
-        "prefix": "R_",
-        "color": "#BFD8D2",
-        "style": "node",
-    },
-    {
-        "directive": "spec",
-        "title": "Specification",
-        "prefix": "S_",
-        "color": "#FEDCD2",
-        "style": "node",
-    },
-    {
-        "directive": "impl",
-        "title": "Implementation",
-        "prefix": "I_",
-        "color": "#DF744A",
-        "style": "node",
-    },
-    {
-        "directive": "test",
-        "title": "Test Case",
-        "prefix": "T_",
-        "color": "#DCB239",
-        "style": "node",
-    },
-    {
-        "directive": "feature",
-        "title": "Feature",
-        "prefix": "F_",
-        "color": "#FFCC00",
-        "style": "node",
-    },
-    {
-        "directive": "user",
-        "title": "User",
-        "prefix": "U_",
-        "color": "#777777",
-        "style": "node",
-    },
-    {
-        "directive": "action",
-        "title": "Action",
-        "prefix": "A_",
-        "color": "#FFCC00",
-        "style": "node",
-    },
-    {
-        "directive": "milestone",
-        "title": "Milestone",
-        "prefix": "M_",
-        "color": "#FF3333",
-        "style": "node",
-    },
-    # for tutorial
-    {
-        "directive": "tutorial-project",
-        "title": "Project",
-        "prefix": "P_",
-        "color": "#BFD8D2",
-        "style": "rectangle",
-    },
-    {
-        "directive": "tutorial-req",
-        "title": "Requirement",
-        "prefix": "R_",
-        "color": "#BFD8D2",
-        "style": "rectangle",
-    },
-    {
-        "directive": "tutorial-spec",
-        "title": "Specification",
-        "prefix": "S_",
-        "color": "#FEDCD2",
-        "style": "rectangle",
-    },
-    {
-        "directive": "tutorial-test",
-        "title": "Test Case",
-        "prefix": "T_",
-        "color": "#f9e79f",
-        "style": "rectangle",
-    },
-]
-
-needs_extra_links = [
-    {
-        "option": "blocks",
-        "incoming": "is blocked by",
-        "outgoing": "blocks",
-        "copy": True,
-        "style": "#AA0000",
-        "style_part": "dotted,#AA0000",
-        "style_start": "-",
-        "style_end": "-o",
-        "allow_dead_links": True,
-    },
-    {
-        "option": "tests",
-        "incoming": "is tested by",
-        "outgoing": "tests",
-        "copy": True,
-        "style": "#00AA00",
-        "style_part": "dotted,#00AA00",
-    },
-    {
-        "option": "checks",
-        "incoming": "is checked by",
-        "outgoing": "checks",
-        "copy": False,
-        "style": "#00AA00",
-        "style_part": "dotted,#00AA00",
-    },
-    {
-        "option": "triggers",
-        "incoming": "triggered by",
-        "outgoing": "triggers",
-        "copy": False,
-        "style": "#00AA00",
-        "style_part": "solid,#777777",
-        "allow_dead_links": True,
-    },
-    {
-        "option": "starts_with",
-        "incoming": "triggers directly",
-        "outgoing": "starts with",
-        "copy": False,
-        "style": "#00AA00",
-        "style_part": "solid,#777777",
-    },
-    {
-        "option": "starts_after",
-        "incoming": "triggers at end",
-        "outgoing": "starts after",
-        "copy": False,
-        "style": "#00AA00",
-        "style_part": "solid,#777777",
-    },
-    {
-        "option": "ends_with",
-        "incoming": "triggers to end with",
-        "outgoing": "ends with",
-        "copy": False,
-        "style": "#00AA00",
-        "style_part": "solid,#777777",
-    },
-    # for tutorial
-    {
-        "option": "tutorial_required_by",
-        "incoming": "requires",
-        "outgoing": "required by",
-        "style": "#00AA00",
-    },
-    {
-        "option": "tutorial_specifies",
-        "incoming": "specified by",
-        "outgoing": "specifies",
-    },
-    {
-        "option": "tutorial_tests",
-        "incoming": "tested by",
-        "outgoing": "tests",
-    },
-]
-
-needs_variant_options = ["status"]
-
-needs_flow_configs = {
-    "my_config": """
-       skinparam monochrome true
-       skinparam componentStyle uml2
-   """,
-    "another_config": """
-       skinparam class {
-           BackgroundColor PaleGreen
-           ArrowColor SeaGreen
-           BorderColor SpringGreen
-       }
-   """,
-    "tutorial": """
-    left to right direction
-    skinparam backgroundcolor transparent
-    skinparam Arrow {
-      Color #57ACDC
-      FontColor #808080
-      FontStyle Bold
-    }
-    skinparam rectangleBorderThickness 2
-   """,
-}
-
-needs_graphviz_styles = {
-    "tutorial": {
-        "graph": {
-            "rankdir": "LR",
-            "bgcolor": "transparent",
-        },
-        "node": {
-            "fontname": "sans-serif",
-            "fontsize": 12,
-            "penwidth": 2,
-            "margin": "0.11,0.11",
-            "style": "rounded",
-        },
-        "edge": {
-            "color": "#57ACDC",
-            "fontsize": 10,
-            "fontcolor": "#808080",
-        },
-    }
-}
-
-needs_show_link_type = False
-needs_show_link_title = False
-needs_title_optional = True
-needs_max_title_length = 75
-
-needs_id_regex = "^[A-Za-z0-9_]*"
-needs_id_required = False
-# needs_css = "dark.css"
-
-needs_table_style = "datatables"
-needs_table_columns = "ID;TITLE;STATUS;OUTGOING"
-
-needs_extra_options = [
-    "my_extra_option",
-    "another_option",
-    "author",
-    "comment",
-    "amount",
-    "hours",
-    "image",
-    "config",
-    "github",
-    "value",
-    "unit",
-]
-
-_names = [t["directive"] for t in needs_types] + ["issue", "pr", "commit"]
-needs_warnings = {
-    "type_check": f"type not in {_names}",
-    # 'valid_status': 'status not in ["open", "in progress", "closed", "done", "implemented"] and status is not None'
-}
-
-needs_default_layout = "clean"
-needs_default_style = None
-
-needs_layouts = {
-    "example": {
-        "grid": "simple_side_right_partial",
-        "layout": {
-            "head": ['**<<meta("title")>>** for *<<meta("author")>>*'],
-            "meta": [
-                '**status**: <<meta("status")>>',
-                '**author**: <<meta("author")>>',
-            ],
-            "side": ['<<image("_images/{{author}}.png", align="center")>>'],
-        },
-    },
-    "permalink_example": {
-        "grid": "simple",
-        "layout": {
-            "head": [
-                '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>> <<permalink()>> <<collapse_button("meta", '
-                'collapsed="icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=False)>> '
-            ],
-            "meta": ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"],
-        },
-    },
-    "detail_view": {
-        "grid": "simple",
-        "layout": {
-            "head": [
-                '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>> <<permalink()>> <<collapse_button("meta", '
-                'collapsed="icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=False)>> '
-                '<<sidebar("")>>'
-            ],
-            "meta": ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"],
-        },
-    },
-}
-
-needs_service_all_data = True
-
-needs_services = {}
-
-needs_string_links = {
-    "config_link": {
-        "regex": r"^(?P<value>\w+)$",
-        "link_url": 'https://sphinxcontrib-needs.readthedocs.io/en/latest/configuration.html#{{value | replace("_", "-")}}',
-        "link_name": 'Sphinx-Needs docs for {{value | replace("_", "-") }}',
-        "options": ["config"],
-    },
-    "github_link": {
-        "regex": r"^(?P<value>\w+)$",
-        "link_url": "https://github.com/useblocks/sphinxcontrib-needs/issues/{{value}}",
-        "link_name": "GitHub #{{value}}",
-        "options": ["github"],
-    },
-}
+needs_debug_filters = True
 
 
 def custom_defined_func():
@@ -641,71 +315,42 @@ needs_render_context = {
 #     },
 # ]
 
-# build needs.json to make permalinks work
-needs_build_json = True
-
-# build needs_json for every needs-id to make detail panel
-needs_build_json_per_id = False
-
-# contains different constraints
-needs_constraints = {
-    "critical": {
-        "check_0": "'critical' in tags",
-        "check_1": "'SECURITY_REQ' in links",
-        "severity": "CRITICAL",
-    },
-    "security": {"check_0": "'security' in tags", "severity": "HIGH"},
-    "team": {"check_0": 'author == "Bob"', "severity": "LOW"},
-}
-
-# defines what to do if a constraint is not met
-needs_constraint_failed_options = {
-    "CRITICAL": {"on_fail": ["warn"], "style": ["red_bar"], "force_style": True},
-    "HIGH": {"on_fail": ["warn"], "style": ["orange_bar"], "force_style": True},
-    "MEDIUM": {"on_fail": ["warn"], "style": ["yellow_bar"], "force_style": False},
-    "LOW": {"on_fail": [], "style": ["yellow_bar"], "force_style": False},
-}
-
-NOTE_TEMPLATE = """
-.. _{{id}}:
-
-.. note:: {{title}} ({{id}})
-
-   {{content|indent(4) }}
-
-   {% if status -%}
-   **status**: {{status}}
-   {% endif %}
-
-   {% if tags -%}
-   **tags**: {{"; ".join(tags)}}
-   {% endif %}
-
-   {% if links -%}
-   **links**:
-   {% for link in links -%}
-       :ref:`{{link}} <{{link}}>` {%if loop.index < links|length -%}; {% endif -%}
-   {% endfor -%}
-   {% endif %}
-"""
-
-DEFAULT_DIAGRAM_TEMPLATE = "<size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>"
-
 # You can uncomment some of the following lines to override the default configuration for Sphinx-Needs.
+# DEFAULT_DIAGRAM_TEMPLATE = "<size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>"
 # needs_diagram_template = DEFAULT_DIAGRAM_TEMPLATE
 
 # Absolute path to the needs_report_template_file based on the conf.py directory
 # needs_report_template = "/needs_templates/report_template.need"   # Use custom report template
 
 # -- custom extensions ---------------------------------------
+from typing import get_args  # noqa: E402
 
 from docutils import nodes  # noqa: E402
+from docutils.statemachine import StringList  # noqa: E402
 from sphinx.application import Sphinx  # noqa: E402
 from sphinx.directives import SphinxDirective  # noqa: E402
+from sphinx.roles import SphinxRole  # noqa: E402
 
-from sphinx_needs.api.need import add_external_need  # noqa: E402
-from sphinx_needs.data import SphinxNeedsData  # noqa: E402
+from sphinx_needs.api import generate_need  # noqa: E402
+from sphinx_needs.config import NeedsSphinxConfig  # noqa: E402
+from sphinx_needs.logging import (  # noqa: E402
+    WarningSubTypeDescription,
+    WarningSubTypes,
+)
 from sphinx_needs.needsfile import NeedsList  # noqa: E402
+
+
+class NeedsWarningsDirective(SphinxDirective):
+    """Directive to list all extension warning subtypes."""
+
+    def run(self):
+        parsed = nodes.container(classes=["needs-warnings"])
+        content = [
+            f"- ``needs.{name}`` {WarningSubTypeDescription.get(name, '')}"
+            for name in get_args(WarningSubTypes)
+        ]
+        self.state.nested_parse(StringList(content), self.content_offset, parsed)
+        return [parsed]
 
 
 class NeedExampleDirective(SphinxDirective):
@@ -741,34 +386,39 @@ class NeedExampleDirective(SphinxDirective):
         return [root]
 
 
+class NeedConfigDefaultRole(SphinxRole):
+    """Role to add a default configuration value to the documentation."""
+
+    def run(self):
+        default = NeedsSphinxConfig.get_default(self.text)
+        return [[nodes.literal("", repr(default), language="python")], []]
+
+
 def create_tutorial_needs(app: Sphinx, _env, _docnames):
     """Create a JSON to import in the tutorial.
 
     We do this dynamically, to avoid having to maintain the JSON file manually.
     """
-    all_data = SphinxNeedsData(app.env).get_or_create_needs()
+    needs_config = NeedsSphinxConfig(app.config)
     writer = NeedsList(app.config, outdir=app.confdir, confdir=app.confdir)
     for i in range(1, 5):
-        test_id = f"T_00{i}"
-        # TODO really here we don't want to create the data, without actually adding it to the needs
-        if test_id in all_data:
-            data = all_data[test_id]
-        else:
-            add_external_need(
-                app,
-                "tutorial-test",
-                id=test_id,
-                title=f"Unit test {i}",
-                content=f"Test case {i}",
-            )
-            data = all_data.pop(test_id)
-        writer.add_need(version, data)
-    # TODO ideally we would only write this file if it has changed (also needimport should add dependency on file)
-    writer.write_json(
-        needs_file="tutorial_needs.json", needs_path=str(Path(app.confdir, "_static"))
-    )
+        need_item = generate_need(
+            needs_config,
+            need_type="tutorial-test",
+            id=f"T_00{i}",
+            title=f"Unit test {i}",
+            content=f"Test case {i}",
+        )
+        writer.add_need(version, need_item)
+    json_str = writer.dump_json()
+    outpath = Path(app.confdir, "_static", "tutorial_needs.json")
+    if outpath.is_file() and outpath.read_text() == json_str:
+        return  # only write this file if it has changed
+    outpath.write_text(json_str)
 
 
 def setup(app: Sphinx):
     app.add_directive("need-example", NeedExampleDirective)
+    app.add_directive("need-warnings", NeedsWarningsDirective)
+    app.add_role("need_config_default", NeedConfigDefaultRole())
     app.connect("env-before-read-docs", create_tutorial_needs, priority=600)

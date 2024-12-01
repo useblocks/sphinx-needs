@@ -24,7 +24,7 @@ def process_need_incoming(
     builder = app.builder
     env = app.env
     needs_config = NeedsSphinxConfig(env.config)
-    all_needs = SphinxNeedsData(env).get_or_create_needs()
+    all_needs = SphinxNeedsData(env).get_needs_view()
 
     # for node_need_backref in doctree.findall(NeedIncoming):
     for node_need_backref in found_nodes:
@@ -65,7 +65,7 @@ def process_need_incoming(
                             builder,
                             fromdocname,
                             _docname,
-                            target_need["target_id"],
+                            target_need["id_parent"],
                             node_need_backref[0].deepcopy(),
                             node_need_backref["reftarget"],
                         )
@@ -95,7 +95,7 @@ def process_need_incoming(
                 log_warning(
                     logger,
                     f"need {node_need_backref['reftarget']} not found",
-                    None,
+                    "link_ref",
                     location=node_need_backref,
                 )
 

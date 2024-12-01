@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from syrupy.filters import props
 
 
 @pytest.mark.parametrize(
@@ -51,8 +52,8 @@ def test_doc_needarch_jinja_import(test_app, snapshot):
     assert html
 
     # check needarch
-    all_needumls = app.env.needs_all_needumls
-    assert all_needumls == snapshot
+    all_needumls = app.env._needs_all_needumls
+    assert all_needumls == snapshot(exclude=props("process_time"))
 
 
 @pytest.mark.parametrize(
@@ -64,8 +65,8 @@ def test_needarch_jinja_func_need(test_app, snapshot):
     app = test_app
     app.build()
 
-    all_needumls = app.env.needs_all_needumls
-    assert all_needumls == snapshot
+    all_needumls = app.env._needs_all_needumls
+    assert all_needumls == snapshot(exclude=props("process_time"))
 
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     assert "as INT_001 [[../index.html#INT_001]]" in html

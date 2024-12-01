@@ -3,6 +3,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from sphinx.util.console import strip_colors
 
 
 @pytest.mark.parametrize(
@@ -33,7 +34,7 @@ def test_doc_github_44(test_app):
     assert "Test 2" in html
     assert "Test 3" in html
 
-    stderr = output.stderr.decode("utf-8")
+    stderr = strip_colors(output.stderr.decode("utf-8"))
 
     expected_warnings = [
         f"{Path(str(app.srcdir)) / 'index.rst'}:11: WARNING: Need 'test_3' has unknown outgoing link 'test_123_broken' in field 'links' [needs.link_outgoing]"

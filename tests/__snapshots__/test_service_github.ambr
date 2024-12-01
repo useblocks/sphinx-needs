@@ -1,11 +1,9 @@
+# serializer version: 1
 # name: test_build[test_app0]
   dict({
     'current_version': '1',
     'versions': dict({
       '1': dict({
-        'filters': dict({
-        }),
-        'filters_amount': 0,
         'needs': dict({
           'GITHUB_050bec': dict({
             'arch': dict({
@@ -17,14 +15,13 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'GITHUB_050bec',
-            'created_at': '2024-02-15T14:04:06Z',
-            'delete': False,
-            'description': '''
+            'content': '''
               Bump actions/cache from 3 to 4 (#1092)
               
               Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
             ''',
+            'created_at': '2024-02-15T14:04:06Z',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -41,7 +38,10 @@
             'is_part': False,
             'jinja_content': False,
             'layout': 'github',
+            'lineno': 19,
             'links': list([
+            ]),
+            'links_back': list([
             ]),
             'max_amount': '',
             'max_content_lines': '',
@@ -49,6 +49,8 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -67,7 +69,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'GITHUB_050bec',
             'template': None,
             'title': 'Bump actions/cache from 3 to 4 (#1092)',
             'type': 'commit',
@@ -87,10 +88,7 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'GITHUB_1110',
-            'created_at': '2024-02-15T12:19:11Z',
-            'delete': False,
-            'description': '''
+            'content': '''
               .. code-block:: text
               
                  I've also just realised there is a bug in this directive:
@@ -99,6 +97,8 @@
                  [...]
   
             ''',
+            'created_at': '2024-02-15T12:19:11Z',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -115,7 +115,10 @@
             'is_part': False,
             'jinja_content': False,
             'layout': 'github',
+            'lineno': 6,
             'links': list([
+            ]),
+            'links_back': list([
             ]),
             'max_amount': '1',
             'max_content_lines': '2',
@@ -123,6 +126,8 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -142,7 +147,6 @@
             'tags': list([
               'bug',
             ]),
-            'target_id': 'GITHUB_1110',
             'template': None,
             'title': 'needreport usage should count needs in post-process',
             'type': 'issue',
@@ -162,10 +166,7 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'GITHUB_1112',
-            'created_at': '2024-02-15T20:45:12Z',
-            'delete': False,
-            'description': '''
+            'content': '''
               .. code-block:: text
               
                  @David-Le-Nir and @danwos, as I explained in
@@ -196,6 +197,8 @@
               
                  closes #1103
             ''',
+            'created_at': '2024-02-15T20:45:12Z',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -212,7 +215,10 @@
             'is_part': False,
             'jinja_content': False,
             'layout': 'github',
+            'lineno': 11,
             'links': list([
+            ]),
+            'links_back': list([
             ]),
             'max_amount': '1',
             'max_content_lines': '',
@@ -220,6 +226,8 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -238,7 +246,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'GITHUB_1112',
             'template': None,
             'title': '👌 Capture `only` expressions for each need',
             'type': 'pr',
@@ -258,10 +265,7 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'GITHUB_6abd38',
-            'created_at': '2024-02-12T08:36:07.000Z',
-            'delete': False,
-            'description': '''
+            'content': '''
               🧪 Add test for `needreport` directive (#1105)
               
               Currently there is no test for this directive, this PR adds one.
@@ -277,6 +281,8 @@
               `needs_render_context = {"report_directive": "admonition"}` (I left the
               default as `dropdown`, so as not to introduce a breaking change)
             ''',
+            'created_at': '2024-02-12T08:36:07.000Z',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -293,7 +299,10 @@
             'is_part': False,
             'jinja_content': False,
             'layout': 'github',
+            'lineno': 15,
             'links': list([
+            ]),
+            'links_back': list([
             ]),
             'max_amount': '1',
             'max_content_lines': '',
@@ -301,6 +310,8 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -319,7 +330,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'GITHUB_6abd38',
             'template': None,
             'title': '🧪 Add test for `needreport` directive (#1105)',
             'type': 'commit',
@@ -376,10 +386,7 @@
               'default': True,
               'description': 'True if all constraints passed, False if any failed, None if not yet checked.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'constraints_results': dict({
               'additionalProperties': dict({
@@ -391,14 +398,11 @@
               'field_type': 'core',
               'type': 'object',
             }),
-            'content_id': dict({
-              'default': None,
-              'description': 'ID of the content node.',
+            'content': dict({
+              'default': '',
+              'description': 'Content of the need.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
+              'type': 'string',
             }),
             'created_at': dict({
               'default': '',
@@ -407,13 +411,10 @@
               'type': 'string',
             }),
             'delete': dict({
-              'default': None,
+              'default': False,
               'description': 'If true, the need is deleted entirely.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'docname': dict({
               'default': None,
@@ -505,13 +506,10 @@
               'type': 'boolean',
             }),
             'jinja_content': dict({
-              'default': None,
+              'default': False,
               'description': 'Whether the content should be pre-processed by jinja.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'layout': dict({
               'default': None,
@@ -522,11 +520,30 @@
                 'null',
               ]),
             }),
+            'lineno': dict({
+              'default': None,
+              'description': 'Line number where the need is defined (None if external).',
+              'field_type': 'core',
+              'type': list([
+                'integer',
+                'null',
+              ]),
+            }),
             'links': dict({
               'default': list([
               ]),
               'description': 'Link field',
               'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'links_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
               'items': dict({
                 'type': 'string',
               }),
@@ -567,6 +584,16 @@
               ]),
               'description': 'Link field',
               'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'parent_needs_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
               'items': dict({
                 'type': 'string',
               }),
@@ -685,11 +712,6 @@
                 'type': 'string',
               }),
               'type': 'array',
-            }),
-            'target_id': dict({
-              'description': 'ID of the data.',
-              'field_type': 'core',
-              'type': 'string',
             }),
             'template': dict({
               'default': None,

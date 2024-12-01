@@ -56,7 +56,7 @@
 {# Output for needs_options #}
 
 {# Output for needs metrics #}
-{% if usage|length != 0 %}
+{% if usage %}
 
 .. {{ report_directive }}:: Need Metrics
 
@@ -66,11 +66,11 @@
 
       * - NEEDS TYPES
         - NEEDS PER TYPE
-      {% for k, v in usage["needs_types"].items() %}
-      * - {{ k | capitalize }}
-        - {{ v }}
+      {% for type in usage["needs_types"] %}
+      * - {{ type | capitalize }}
+        - :need_count:`type=="{{ type }}"`
       {% endfor %}
       * - **Total Needs Amount**
-        - {{ usage.get("needs_amount") }}
+        - :need_count:`True`
 {% endif %}
 {# Output for needs metrics #}

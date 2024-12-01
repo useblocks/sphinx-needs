@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import html
 import os
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, TypedDict
+import time
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, TypedDict
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -15,8 +17,11 @@ from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link
 from sphinx_needs.directives.needflow._plantuml import make_entity_name
-from sphinx_needs.filter_common import filter_needs
-from sphinx_needs.utils import add_doc
+from sphinx_needs.filter_common import filter_needs_view
+from sphinx_needs.logging import log_warning
+from sphinx_needs.roles.need_part import create_need_from_part
+from sphinx_needs.roles.need_ref import value_to_string
+from sphinx_needs.utils import add_doc, logger, split_need_id
 
 if TYPE_CHECKING:
     from sphinxcontrib.plantuml import plantuml
@@ -28,7 +33,7 @@ class ProcessedDataType(TypedDict):
     arguments: dict[str, Any]
 
 
-ProcessedNeedsType = Dict[str, List[ProcessedDataType]]
+ProcessedNeedsType = dict[str, list[ProcessedDataType]]
 
 
 class Needuml(nodes.General, nodes.Element):
@@ -125,6 +130,7 @@ class NeedumlDirective(SphinxDirective):
             "save": plantuml_code_out_path,
             "is_arch": is_arch,
             "content_calculated": "",
+            "process_time": 0,
         }
 
         add_doc(env, env.docname)
@@ -271,7 +277,7 @@ class JinjaFunctions:
         parent_need_id: None | str,
         processed_need_ids: ProcessedNeedsType,
     ) -> None:
-        self.needs = SphinxNeedsData(app.env).get_or_create_needs()
+        self.needs = SphinxNeedsData(app.env).get_needs_view()
         self.app = app
         self.fromdocname = fromdocname
         self.parent_need_id = parent_need_id
@@ -398,24 +404,34 @@ class JinjaFunctions:
     def ref(
         self, need_id: str, option: None | str = None, text: None | str = None
     ) -> str:
-        if need_id not in self.needs:
+        need_id_main, need_id_part = split_need_id(need_id)
+
+        if need_id_main not in self.needs:
             raise NeedumlException(
-                f"Jinja function ref is called with undefined need_id: '{need_id}'."
+                f"Jinja function ref is called with undefined need_id: '{need_id_main}'."
             )
         if (option and text) and (not option and not text):
             raise NeedumlException(
                 "Jinja function ref requires exactly one entry 'option' or 'text'"
             )
 
-        need_info = self.needs[need_id]
+        need_info = self.needs[need_id_main]
+
+        if need_id_part:
+            if need_id_part not in need_info["parts"]:
+                raise NeedumlException(
+                    f"Jinja function ref is called with undefined need_id part: '{need_id}'."
+                )
+            need_info = create_need_from_part(
+                need_info, need_info["parts"][need_id_part]
+            )
+
         link = calculate_link(self.app, need_info, self.fromdocname)
+        link_text = (
+            value_to_string(need_info.get(option, "")) if option else str(text or "")
+        ).strip()
 
-        need_uml = "[[{link} {content}]]".format(
-            link=link,
-            content=need_info.get(option, "") if option else text,
-        )
-
-        return need_uml
+        return f"[[{link}{' ' if link_text else ''}{link_text}]]"
 
     def filter(self, filter_string: str) -> list[NeedsInfoType]:
         """
@@ -423,9 +439,7 @@ class JinjaFunctions:
         """
         needs_config = NeedsSphinxConfig(self.app.config)
 
-        return filter_needs(
-            list(self.needs.values()), needs_config, filter_string=filter_string
-        )
+        return filter_needs_view(self.needs, needs_config, filter_string=filter_string)
 
     def imports(self, *args: str) -> str:
         if not self.parent_need_id:
@@ -495,11 +509,13 @@ def process_needuml(
     found_nodes: list[nodes.Element],
 ) -> None:
     env = app.env
+    needs_config = NeedsSphinxConfig(app.config)
+    uml_data = SphinxNeedsData(env).get_or_create_umls()
 
     # for node in doctree.findall(Needuml):
     for node in found_nodes:
         id = node.attributes["ids"][0]
-        current_needuml = SphinxNeedsData(env).get_or_create_umls()[id]
+        current_needuml = uml_data[id]
 
         parent_need_id = None
         # Check if current needuml is needarch
@@ -520,6 +536,7 @@ def process_needuml(
                 [line.strip() for line in config.split("\n") if line.strip()]
             )
 
+        start = time.perf_counter()
         puml_node = transform_uml_to_plantuml_node(
             app=app,
             uml_content=current_needuml["content"],
@@ -528,6 +545,18 @@ def process_needuml(
             kwargs=current_needuml["extra"],
             config=config,
         )
+        duration = time.perf_counter() - start
+
+        if (
+            needs_config.uml_process_max_time is not None
+            and duration > needs_config.uml_process_max_time
+        ):
+            log_warning(
+                logger,
+                f"Uml processing took {duration:.3f}s, which is longer than the configured maximum of {needs_config.uml_process_max_time}s.",
+                "uml",
+                location=node,
+            )
 
         # Add source origin
         puml_node.line = current_needuml["lineno"]
@@ -535,6 +564,7 @@ def process_needuml(
 
         # Add calculated needuml content
         current_needuml["content_calculated"] = puml_node["uml"]
+        current_needuml["process_time"] = duration
 
         try:
             scale = int(current_needuml["scale"])

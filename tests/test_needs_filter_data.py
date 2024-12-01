@@ -1,7 +1,9 @@
+import os
 from pathlib import Path
 
 import pytest
 from docutils import __version__ as doc_ver
+from sphinx.util.console import strip_colors
 
 
 @pytest.mark.parametrize(
@@ -12,12 +14,20 @@ from docutils import __version__ as doc_ver
 def test_doc_needs_filter_data_html(test_app):
     app = test_app
     app.build()
+
+    warnings = strip_colors(
+        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
+    ).splitlines()
+    print(warnings)
+    assert warnings == [
+        "srcdir/filter_code.rst:26: WARNING: malformed function signature: 'own_filter_code(' [needs.filter_func]",
+        "srcdir/filter_code.rst:31: WARNING: malformed function signature: 'my_pie_filter_code(' [needs.filter_func]",
+        "WARNING: variant_not_equal_current_variant: failed",
+        "\t\tfailed needs: 1 (extern_filter_story_002)",
+        "\t\tused filter: variant != current_variant [needs.warnings]",
+    ]
+
     index_html = Path(app.outdir, "index.html").read_text()
-
-    import sphinx
-
-    if sphinx.__version__.startswith("3.5"):
-        return
 
     # Check need_count works
     assert "The amount of needs that belong to current variants: 6" in index_html
@@ -56,15 +66,6 @@ def test_doc_needs_filter_data_html(test_app):
         '<span class="needs_spacer">, </span><span class="needs_data">current_variant</span></span>'
         in index_html
     )
-
-    # check needs_warnings works
-    warning = app._warning
-    warnings = warning.getvalue()
-
-    # check warnings contents
-    assert "WARNING: variant_not_equal_current_variant: failed" in warnings
-    assert "failed needs: 1 (extern_filter_story_002)" in warnings
-    assert "used filter: variant != current_variant" in warnings
 
 
 @pytest.mark.parametrize(

@@ -61,3 +61,9 @@ Needflow example
 
 .. needflow:: My needflow
    :filter: variant == current_variant
+
+
+.. toctree::
+
+   filter_code
+   filter_code_args

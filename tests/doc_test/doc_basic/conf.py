@@ -1,7 +1,10 @@
-extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
+project = "needs"
+version = "0.1.0"
+copyright = "2024"
 
-# note, the plantuml executable command is set globally in the test suite
-plantuml_output_format = "svg"
+extensions = ["sphinx_needs"]
+
+suppress_warnings = ["epub.unknown_project_files"]
 
 needs_id_regex = "^[A-Za-z0-9_]"
 

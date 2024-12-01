@@ -14,16 +14,20 @@ from sphinx.application import Sphinx
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType
-from sphinx_needs.filter_common import filter_needs, filter_single_need
+from sphinx_needs.data import NeedsInfoType, NeedsMutable
+from sphinx_needs.filter_common import (
+    filter_needs,
+    filter_single_need,
+)
 from sphinx_needs.logging import log_warning
 from sphinx_needs.utils import logger
+from sphinx_needs.views import NeedsView
 
 
 def test(
     app: Sphinx,
-    need: NeedsInfoType,
-    needs: dict[str, NeedsInfoType],
+    need: NeedsInfoType | None,
+    needs: NeedsMutable | NeedsView,
     *args: Any,
     **kwargs: Any,
 ) -> str:
@@ -32,25 +36,22 @@ def test(
 
     Collects every given args and kwargs and returns a single string, which contains their values/keys.
 
-    .. code-block:: jinja
+    .. need-example::
 
         .. req:: test requirement
 
-            [[test('arg_1', [1,2,3], my_keyword='awesome')]]
-
-    .. req:: test requirement
-
-        [[test('arg_1', [1,2,3], my_keyword='awesome')]]
+            :ndf:`test('arg_1', [1,2,3], my_keyword='awesome')`
 
     :return: single test string
     """
-    return f"Test output of need {need['id']}. args: {args}. kwargs: {kwargs}"
+    need_id = "none" if need is None else need["id"]
+    return f"Test output of dynamic function; need: {need_id}; args: {args}; kwargs: {kwargs}"
 
 
 def echo(
     app: Sphinx,
-    need: NeedsInfoType,
-    needs: dict[str, NeedsInfoType],
+    need: NeedsInfoType | None,
+    needs: NeedsMutable | NeedsView,
     text: str,
     *args: Any,
     **kwargs: Any,
@@ -61,11 +62,9 @@ def echo(
     Just returns the given string back.
     Mostly useful for tests.
 
-    .. code-block:: jinja
+    .. need-example::
 
-       A nice :need_func:`[[echo("first")]] test` for need_func.
-
-    **Result**: A nice :need_func:`[[echo("first")]] test` for need_func.
+       A nice :ndf:`echo("first test")` for a dynamic function.
 
     """
     return text
@@ -73,8 +72,8 @@ def echo(
 
 def copy(
     app: Sphinx,
-    need: NeedsInfoType,
-    needs: dict[str, NeedsInfoType],
+    need: NeedsInfoType | None,
+    needs: NeedsMutable | NeedsView,
     option: str,
     need_id: str | None = None,
     lower: bool = False,
@@ -84,7 +83,7 @@ def copy(
     """
     Copies the value of one need option to another
 
-    .. code-block:: jinja
+    .. need-example::
 
         .. req:: copy-example
            :id: copy_1
@@ -109,29 +108,6 @@ def copy(
 
            Also copies all tags from copy_1.
 
-    .. req:: copy-example
-       :id: copy_1
-       :tags: tag_1, tag_2, tag_3
-       :status: open
-
-    .. spec:: copy-example implementation
-       :id: copy_2
-       :status: [[copy("status", "copy_1")]]
-       :links: copy_1
-       :comment: [[copy("id")]]
-
-       Copies status of ``copy_1`` to own status.
-       Sets also a comment, which copies the id of own need.
-
-    .. test:: test of specification and requirement
-       :id: copy_3
-       :links: copy_2; [[copy('links', 'copy_2')]]
-       :tags: [[copy('tags', 'copy_1')]]
-
-       Set own link to ``copy_2`` and also copies all links from it.
-
-       Also copies all tags from copy_1.
-
     If the filter_string needs to compare a value from the current need and the value is unknown yet,
     you can reference the valued field by using ``current_need["my_field"]`` inside the filter string.
     Small example::
@@ -139,10 +115,10 @@ def copy(
         .. test:: test of current_need value
            :id: copy_4
 
-           The es the title of the first need found under the same highest
+           The following copy command copies the title of the first need found under the same  highest
            section (headline):
 
-           [[copy('title', filter='current_need["sections"][-1]==sections[-1]')]]
+           :ndf:`copy('title', filter='current_need["sections"][-1]==sections[-1]')`
 
     .. test:: test of current_need value
        :id: copy_4
@@ -150,7 +126,7 @@ def copy(
        The following copy command copies the title of the first need found under the same  highest
        section (headline):
 
-            [[copy('title', filter='current_need["sections"][-1]==sections[-1]')]]
+       :ndf:`copy('title', filter='current_need["sections"][-1]==sections[-1]')`
 
     This filter possibilities get really powerful in combination with :ref:`needs_global_options`.
 
@@ -166,32 +142,39 @@ def copy(
         need = needs[need_id]
 
     if filter:
+        location = (
+            (need["docname"], need["lineno"]) if need and need["docname"] else None
+        )
         result = filter_needs(
             needs.values(),
             NeedsSphinxConfig(app.config),
             filter,
             need,
-            location=(need["docname"], need["lineno"]) if need["docname"] else None,
+            location=location,
         )
         if result:
             need = result[0]
 
+    if need is None:
+        raise ValueError("Need not found")
+
+    if option not in need:
+        raise ValueError(f"Option {option} not found in need {need['id']}")
+
     value = need[option]  # type: ignore[literal-required]
 
-    # TODO check if str?
-
     if lower:
-        return value.lower()
+        return str(value).lower()
     if upper:
-        return value.upper()
+        return str(value).upper()
 
     return value
 
 
 def check_linked_values(
     app: Sphinx,
-    need: NeedsInfoType,
-    needs: dict[str, NeedsInfoType],
+    need: NeedsInfoType | None,
+    needs: NeedsMutable | NeedsView,
     result: Any,
     search_option: str,
     search_value: Any,
@@ -209,7 +192,7 @@ def check_linked_values(
 
     **Needs used as input data**
 
-    .. code-block:: jinja
+    .. need-example::
 
         .. req:: Input A
            :id: clv_A
@@ -223,71 +206,38 @@ def check_linked_values(
            :id: clv_C
            :status: closed
 
-    .. req:: Input A
-       :id: clv_A
-       :status: in progress
-       :collapse: False
-
-    .. req:: Input B
-       :id: clv_B
-       :status: in progress
-       :collapse: False
-
-    .. spec:: Input C
-       :id: clv_C
-       :status: closed
-       :collapse: False
-
-
     **Example 1: Positive check**
 
     Status gets set to *progress*.
 
-    .. code-block:: jinja
+    .. need-example::
 
         .. spec:: result 1: Positive check
            :links: clv_A, clv_B
            :status: [[check_linked_values('progress', 'status', 'in progress' )]]
-
-    .. spec:: result 1: Positive check
-       :id: clv_1
-       :links: clv_A, clv_B
-       :status: [[check_linked_values('progress', 'status', 'in progress' )]]
-       :collapse: False
-
+           :collapse: False
 
     **Example 2: Negative check**
 
     Status gets not set to *progress*, because status of linked need *clv_C* does not match *"in progress"*.
 
-    .. code-block:: jinja
+    .. need-example::
 
         .. spec:: result 2: Negative check
            :links: clv_A, clv_B, clv_C
            :status: [[check_linked_values('progress', 'status', 'in progress' )]]
-
-    .. spec:: result 2: Negative check
-       :id: clv_2
-       :links: clv_A, clv_B, clv_C
-       :status: [[check_linked_values('progress', 'status', 'in progress' )]]
-       :collapse: False
-
+           :collapse: False
 
     **Example 3: Positive check thanks of used filter**
 
     status gets set to *progress*, because linked need *clv_C* is not part of the filter.
 
-    .. code-block:: jinja
+    .. need-example::
 
         .. spec:: result 3: Positive check thanks of used filter
            :links: clv_A, clv_B, clv_C
            :status: [[check_linked_values('progress', 'status', 'in progress', 'type == "req" ' )]]
-
-    .. spec:: result 3: Positive check thanks of used filter
-       :id: clv_3
-       :links: clv_A, clv_B, clv_C
-       :status: [[check_linked_values('progress', 'status', 'in progress', 'type == "req" ' )]]
-       :collapse: False
+           :collapse: False
 
     **Example 4: Positive check thanks of one_hit option**
 
@@ -295,32 +245,22 @@ def check_linked_values(
     That's because ``one_hit`` is used so that only one linked need must have the searched
     value.
 
-    .. code-block:: jinja
+    .. need-example::
 
         .. spec:: result 4: Positive check thanks of one_hit option
            :links: clv_A, clv_B, clv_C
            :status: [[check_linked_values('progress', 'status', 'in progress', one_hit=True )]]
-
-    .. spec:: result 4: Positive check thanks of one_hit option
-       :id: clv_4
-       :links: clv_A, clv_B, clv_C
-       :status: [[check_linked_values('progress', 'status', 'in progress', one_hit=True )]]
-       :collapse: False
+           :collapse: False
 
     **Result 5: Two checks and a joint status**
     Two checks are performed and both are positive. So their results get joined.
 
-    .. code-block:: jinja
+    .. need-example::
 
         .. spec:: result 5: Two checks and a joint status
            :links: clv_A, clv_B, clv_C
            :status: [[check_linked_values('progress', 'status', 'in progress', one_hit=True )]] [[check_linked_values('closed', 'status', 'closed', one_hit=True )]]
-
-    .. spec:: result 5: Two checks and a joint status
-       :id: clv_5
-       :links: clv_A, clv_B, clv_C
-       :status: [[check_linked_values('progress', 'status', 'in progress', one_hit=True )]] [[check_linked_values('closed', 'status', 'closed', one_hit=True )]]
-       :collapse: False
+           :collapse: False
 
     :param result: value, which gets returned if all linked needs have parsed the checks
     :param search_option: option name, which is used n linked needs for the search
@@ -329,6 +269,9 @@ def check_linked_values(
     :param one_hit: If True, only one linked need must have a positive check
     :return: result, if all checks are positive
     """
+    if need is None:
+        raise ValueError("No need given for check_linked_values")
+
     needs_config = NeedsSphinxConfig(app.config)
     links = need["links"]
     if not isinstance(search_value, list):
@@ -344,7 +287,7 @@ def check_linked_values(
                 log_warning(
                     logger,
                     f"CheckLinkedValues: Filter {filter_string} not valid: Error: {e}",
-                    None,
+                    "filter",
                     None,
                 )
 
@@ -359,8 +302,8 @@ def check_linked_values(
 
 def calc_sum(
     app: Sphinx,
-    need: NeedsInfoType,
-    needs: dict[str, NeedsInfoType],
+    need: NeedsInfoType | None,
+    needs: NeedsMutable | NeedsView,
     option: str,
     filter: str | None = None,
     links_only: bool = False,
@@ -391,52 +334,38 @@ def calc_sum(
 
     **Example 2**
 
-    .. code-block:: jinja
+    .. need-example::
 
        .. req:: Result 1
           :amount: [[calc_sum("hours")]]
-
-    .. req:: Result 1
-       :amount: [[calc_sum("hours")]]
-       :collapse: False
+          :collapse: False
 
 
     **Example 2**
 
-    .. code-block:: jinja
+    .. need-example::
 
        .. req:: Result 2
           :amount: [[calc_sum("hours", "hours.isdigit() and float(hours) > 10")]]
-
-    .. req:: Result 2
-       :amount: [[calc_sum("hours", "hours.isdigit() and float(hours) > 10")]]
-       :collapse: False
+          :collapse: False
 
     **Example 3**
 
-    .. code-block:: jinja
+    .. need-example::
 
        .. req:: Result 3
           :links: sum_input_1; sum_input_3
           :amount: [[calc_sum("hours", links_only="True")]]
-
-    .. req:: Result 3
-       :links: sum_input_1; sum_input_3
-       :amount: [[calc_sum("hours", links_only="True")]]
-       :collapse: False
+          :collapse: False
 
     **Example 4**
 
-    .. code-block:: jinja
+    .. need-example::
 
        .. req:: Result 4
           :links: sum_input_1; sum_input_3
           :amount: [[calc_sum("hours", "hours.isdigit() and float(hours) > 10", "True")]]
-
-    .. req:: Result 4
-       :links: sum_input_1; sum_input_3
-       :amount: [[calc_sum("hours", "hours.isdigit() and float(hours) > 10", "True")]]
-       :collapse: False
+          :collapse: False
 
     :param option: Options, from which the numbers shall be taken
     :param filter: Filter string, which all needs must passed to get their value added.
@@ -444,6 +373,9 @@ def calc_sum(
 
     :return: A float number
     """
+    if need is None:
+        raise ValueError("No need given for check_linked_values")
+
     needs_config = NeedsSphinxConfig(app.config)
     check_needs = (
         [needs[link] for link in need["links"]] if links_only else needs.values()
@@ -460,7 +392,10 @@ def calc_sum(
                 pass
             except NeedsInvalidFilter as ex:
                 log_warning(
-                    logger, f"Given filter is not valid. Error: {ex}", None, None
+                    logger,
+                    f"Given filter is not valid. Error: {ex}",
+                    "filter",
+                    None,
                 )
 
         with contextlib.suppress(ValueError):
@@ -471,8 +406,8 @@ def calc_sum(
 
 def links_from_content(
     app: Sphinx,
-    need: NeedsInfoType,
-    needs: dict[str, NeedsInfoType],
+    need: NeedsInfoType | None,
+    needs: NeedsMutable | NeedsView,
     need_id: str | None = None,
     filter: str | None = None,
 ) -> list[str]:
@@ -528,6 +463,9 @@ def links_from_content(
     :return: List of linked need-ids in content
     """
     source_need = needs[need_id] if need_id else need
+
+    if source_need is None:
+        raise ValueError("No need found for links_from_content")
 
     links = re.findall(r":need:`(\w+)`|:need:`.+\<(.+)\>`", source_need["content"])
     raw_links = []

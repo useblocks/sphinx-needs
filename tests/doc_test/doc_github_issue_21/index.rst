@@ -35,13 +35,13 @@ As :need:IMPL_01 shows, the linked :need:OWN_ID_123 is realisable.
 
 **Filter result as list**
 
-.. needfilter::
+.. needlist::
    :tags: test
    :show_filters:
 
 **Filter result as table**
 
-  .. needfilter::
+  .. needlist::
      :tags: test
      :status: implemented
      :show_filters:
@@ -49,5 +49,5 @@ As :need:IMPL_01 shows, the linked :need:OWN_ID_123 is realisable.
 
 **Filter result as diagram**
 
-.. needfilter::
+.. needlist::
   :layout: diagram

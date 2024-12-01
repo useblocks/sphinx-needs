@@ -10,7 +10,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from docutils.nodes import document
@@ -131,7 +131,7 @@ def test_server(xprocess, sphinx_test_tempdir):
     xprocess.getinfo("http_server").terminate()
 
 
-def test_js(self) -> Dict[str, Any]:
+def test_js(self) -> dict[str, Any]:
     """
     Executes Cypress tests using the specified `spec_pattern`.
 

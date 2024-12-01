@@ -1,5 +1,5 @@
-Welcome to basic test's documentation!
-======================================
+TEST DOCUMENT
+=============
 
 .. story:: Test story
    :id: ST_001
@@ -9,5 +9,5 @@ Welcome to basic test's documentation!
    :status: open
 
 
-.. needtable::
+.. needtable:: Table from sphinx-needs 'needtable' directive
    :filter: status == "open"

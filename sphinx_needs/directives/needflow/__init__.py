@@ -5,8 +5,8 @@ from ._plantuml import process_needflow_plantuml
 __all__ = (
     "NeedflowDirective",
     "NeedflowGraphiz",
-    "process_needflow_graphviz",
-    "html_visit_needflow_graphviz",
-    "process_needflow_plantuml",
     "NeedflowPlantuml",
+    "html_visit_needflow_graphviz",
+    "process_needflow_graphviz",
+    "process_needflow_plantuml",
 )

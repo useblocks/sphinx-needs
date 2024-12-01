@@ -19,5 +19,5 @@ Tags:
 {# by using dynamic_functions #}
 Links:
 {% for link in links %}
-| **{{link}}**: [[copy('title', '{{link}}')]] ([[copy('type_name', '{{link}}')]])
+| **{{link}}**: :ndf:`copy('title', '{{link}}')` (:ndf:`copy('type_name', '{{link}}')`)
 {%- endfor %}

@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import hashlib
 import re
+from collections.abc import Sequence
 from contextlib import suppress
-from typing import Any, Sequence
+from typing import Any
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -57,6 +58,7 @@ class List2NeedDirective(SphinxDirective):
         "delimiter": directives.unchanged,
         "presentation": directives.unchanged,
         "links-down": directives.unchanged,
+        "tags": directives.unchanged,
     }
 
     def run(self) -> Sequence[nodes.Node]:
@@ -106,6 +108,10 @@ class List2NeedDirective(SphinxDirective):
                     f"Unknown link configured: {down_link_raw}. "
                     f"Allowed are {', '.join(link_types)}"
                 )
+
+        # Retrieve tags defined at list level
+        tags = self.options.get("tags", "")
+
         list_needs = []
         # Storing the data in a sorted list
         for content_line in content_raw.split("\n"):
@@ -189,6 +195,16 @@ class List2NeedDirective(SphinxDirective):
                 # Remove possible option-strings from title and content
                 list_need["title"] = OPTION_AREA_REGEX.sub("", list_need["title"])
                 list_need["content"] = OPTION_AREA_REGEX.sub("", list_need["content"])
+
+            # Add tags defined at list level (if exists) to the ones potentially defined in the content
+            if tags:
+                if "options" not in list_need:
+                    list_need["options"] = {}
+                current_tags = list_need["options"].get("tags", "")
+                if current_tags:
+                    list_need["options"]["tags"] = current_tags + "," + tags
+                else:
+                    list_need["options"]["tags"] = tags
 
             template = Template(NEED_TEMPLATE, autoescape=True)
 

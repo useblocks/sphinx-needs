@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import os
 import re
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
-from sphinxcontrib.plantuml import (
-    generate_name,  # Need for plantuml filename calculation
-)
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, NeedsSequenceType, SphinxNeedsData
@@ -25,6 +23,7 @@ from sphinx_needs.directives.utils import no_needs_found_paragraph
 from sphinx_needs.filter_common import FilterBase
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import add_doc, remove_node_from_tree
+from sphinx_needs.views import NeedsView
 
 logger = get_logger(__name__)
 
@@ -86,7 +85,7 @@ def process_needsequence(
     # Replace all needsequence nodes with a list of the collected needs.
     env = app.env
     needs_data = SphinxNeedsData(env)
-    all_needs_dict = needs_data.get_or_create_needs()
+    all_needs_dict = needs_data.get_needs_view()
 
     needs_config = NeedsSphinxConfig(env.config)
     include_needs = needs_config.include_needs
@@ -115,15 +114,15 @@ def process_needsequence(
                         flow=current_needsequence["target_id"],
                         link_types=",".join(link_type_names),
                     ),
-                    None,
-                    None,
+                    "needsequence",
+                    location=node,
                 )
 
         content = []
         try:
             if "sphinxcontrib.plantuml" not in app.config.extensions:
                 raise ImportError
-            from sphinxcontrib.plantuml import plantuml
+            from sphinxcontrib.plantuml import generate_name, plantuml
         except ImportError:
             no_plantuml(node)
             continue
@@ -251,7 +250,7 @@ def get_message_needs(
     app: Sphinx,
     sender: NeedsInfoType,
     link_types: list[str],
-    all_needs_dict: dict[str, NeedsInfoType],
+    all_needs_dict: NeedsView,
     tracked_receivers: list[str] | None = None,
     filter: str | None = None,
 ) -> tuple[dict[str, dict[str, Any]], str, str]:

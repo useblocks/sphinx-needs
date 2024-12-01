@@ -1,5 +1,3 @@
-from typing import Any, Callable, List
-
 from sphinx_needs.functions.common import (
     calc_sum,
     check_linked_values,
@@ -9,16 +7,15 @@ from sphinx_needs.functions.common import (
     test,
 )
 from sphinx_needs.functions.functions import (  # noqa: F401
+    DynamicFunction,
     FunctionParsingException,
     execute_func,
     find_and_replace_node_content,
-    register_func,
     resolve_dynamic_values,
     resolve_variants_options,
 )
 
-# TODO better type signature (Sphinx, NeedsInfoType, Dict[str, NeedsInfoType], *args, **kwargs)
-NEEDS_COMMON_FUNCTIONS: List[Callable[..., Any]] = [
+NEEDS_COMMON_FUNCTIONS: list[DynamicFunction] = [
     test,
     echo,
     copy,

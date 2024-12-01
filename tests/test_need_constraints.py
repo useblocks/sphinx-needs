@@ -1,11 +1,11 @@
 import json
+import os
 import subprocess
 from pathlib import Path
 
 import pytest
+from sphinx.util.console import strip_colors
 from syrupy.filters import props
-
-from sphinx_needs.api.exceptions import NeedsConstraintNotAllowed
 
 
 @pytest.mark.parametrize(
@@ -19,7 +19,7 @@ def test_need_constraints(test_app, snapshot):
 
     json_text = Path(app.outdir, "needs.json").read_text()
     needs_data = json.loads(json_text)
-    assert needs_data == snapshot(exclude=props("created", "project"))
+    assert needs_data == snapshot(exclude=props("created", "project", "creator"))
 
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"
@@ -55,12 +55,22 @@ def test_need_constraints(test_app, snapshot):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/need_constraints_failed"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/need_constraints_failed",
+            "no_plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_need_constraints_config(test_app):
-    app = test_app
-
-    # check that correct exception is raised
-    with pytest.raises(NeedsConstraintNotAllowed):
-        app.build()
+    test_app.build()
+    warnings = (
+        strip_colors(test_app._warning.getvalue())
+        .replace(str(test_app.srcdir) + os.path.sep, "<srcdir>/")
+        .splitlines()
+    )
+    assert warnings == [
+        "<srcdir>/index.rst:4: WARNING: Need could not be created: Constraints {'non_existing'} not in 'needs_constraints'. [needs.create_need]"
+    ]

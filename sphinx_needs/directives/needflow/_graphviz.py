@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import html
 import textwrap
-from functools import lru_cache
+from functools import cache
 from typing import Callable, Literal, TypedDict
+from urllib.parse import urlparse
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -17,9 +18,9 @@ from sphinx.util.logging import getLogger
 from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
-from sphinx_needs.diagrams_common import calculate_link
 from sphinx_needs.directives.needflow._directive import NeedflowGraphiz
 from sphinx_needs.directives.utils import no_needs_found_paragraph
+from sphinx_needs.errors import NoUri
 from sphinx_needs.filter_common import (
     filter_single_need,
     process_filters,
@@ -29,13 +30,14 @@ from sphinx_needs.utils import (
     match_variants,
     remove_node_from_tree,
 )
+from sphinx_needs.views import NeedsView
 
 from ._shared import create_filter_paragraph, filter_by_tree, get_root_needs
 
 try:
     from sphinx.writers.html5 import HTML5Translator
 except ImportError:
-    from sphinx.writers.html import HTML5Translator
+    from sphinx.writers.html import HTML5Translator  # type: ignore[attr-defined]
 
 LOGGER = getLogger(__name__)
 
@@ -49,7 +51,7 @@ def process_needflow_graphviz(
 ) -> None:
     needs_config = NeedsSphinxConfig(app.config)
     env_data = SphinxNeedsData(app.env)
-    all_needs = env_data.get_or_create_needs()
+    needs_view = env_data.get_needs_view()
 
     link_type_names = [link["option"].upper() for link in needs_config.extra_links]
     allowed_link_types_options = [link.upper() for link in needs_config.flow_link_types]
@@ -111,21 +113,21 @@ def process_needflow_graphviz(
 
         init_filtered_needs = (
             filter_by_tree(
-                all_needs,
+                needs_view,
                 root_id,
                 allowed_link_types,
                 attributes["root_direction"],
                 attributes["root_depth"],
-            ).values()
+            )
             if (root_id := attributes["root_id"])
-            else all_needs.values()
+            else needs_view
         )
         filtered_needs = process_filters(
             app,
             init_filtered_needs,
             node.attributes,
             origin="needflow",
-            location=f"{node.source}:{node.line}",
+            location=node,
         )
 
         if not filtered_needs:
@@ -156,8 +158,9 @@ def process_needflow_graphviz(
             content += _render_node(
                 root_need,
                 node,
+                needs_view,
                 needs_config,
-                lambda n: calculate_link(app, n, fromdocname, relative="."),
+                lambda n: _get_link_to_need(app, fromdocname, n),
                 id_comp_to_need,
                 rendered_nodes,
             )
@@ -189,6 +192,31 @@ def process_needflow_graphviz(
             node.parent.parent.insert(node.parent.parent.index(node.parent) + 1, code)
 
 
+def _get_link_to_need(
+    app: Sphinx, docname: str, need_info: NeedsInfoType
+) -> str | None:
+    """Compute the link to a need, relative to a document.
+
+    It is of note that the links are computed relative to the document that the graph is in.
+    For PNGs, the links are defined as https://developer.mozilla.org/en-US/docs/Web/HTML/Element/map in the document, so this correct.
+    For SVGs, the graphs are extracted to external files, and in this case the links are modified to be relative to the SVG file
+    (from sphinx 7.2 onwards, see: https://github.com/sphinx-doc/sphinx/pull/11078)
+    """
+    if need_info["is_external"]:
+        if need_info["external_url"] and urlparse(need_info["external_url"]).scheme:
+            return need_info["external_url"]
+    elif need_info["docname"]:
+        try:
+            rel_uri = app.builder.get_relative_uri(docname, need_info["docname"])
+            if not rel_uri:
+                # svg relative path fix cannot yet handle empty paths https://github.com/sphinx-doc/sphinx/issues/13078
+                rel_uri = app.builder.get_target_uri(docname.split("/")[-1])
+        except NoUri:
+            return None
+        return rel_uri + "#" + need_info["id_complete"]
+    return None
+
+
 class _RenderedNode(TypedDict):
     cluster_id: str | None
     need: NeedsInfoType
@@ -202,8 +230,9 @@ def _quote(text: str) -> str:
 def _render_node(
     need: NeedsInfoType,
     node: NeedflowGraphiz,
+    needs_view: NeedsView,
     config: NeedsSphinxConfig,
-    calc_link: Callable[[NeedsInfoType], str],
+    calc_link: Callable[[NeedsInfoType], str | None],
     id_comp_to_need: dict[str, NeedsInfoType],
     rendered_nodes: dict[str, _RenderedNode],
     subgraph: bool = True,
@@ -220,7 +249,7 @@ def _render_node(
         # graphviz cannot nest nodes,
         # so we have to create a subgraph to represent a need with parts/children
         return _render_subgraph(
-            need, node, config, calc_link, id_comp_to_need, rendered_nodes
+            need, node, needs_view, config, calc_link, id_comp_to_need, rendered_nodes
         )
 
     rendered_nodes[need["id_complete"]] = {"need": need, "cluster_id": None}
@@ -258,7 +287,9 @@ def _render_node(
         params.append(("fillcolor", _quote(need["type_color"])))
 
     # outline color
-    if node["highlight"] and filter_single_need(need, config, node["highlight"]):
+    if node["highlight"] and filter_single_need(
+        need, config, node["highlight"], needs_view.values()
+    ):
         params.append(("color", "red"))
     elif node["border_color"]:
         color = match_variants(
@@ -278,8 +309,9 @@ def _render_node(
 def _render_subgraph(
     need: NeedsInfoType,
     node: NeedflowGraphiz,
+    needs_view: NeedsView,
     config: NeedsSphinxConfig,
-    calc_link: Callable[[NeedsInfoType], str],
+    calc_link: Callable[[NeedsInfoType], str | None],
     id_comp_to_need: dict[str, NeedsInfoType],
     rendered_nodes: dict[str, _RenderedNode],
 ) -> str:
@@ -340,6 +372,7 @@ def _render_subgraph(
                     _render_node(
                         id_comp_to_need[need_part_id],
                         node,
+                        needs_view,
                         config,
                         calc_link,
                         id_comp_to_need,
@@ -356,6 +389,7 @@ def _render_subgraph(
                     _render_node(
                         id_comp_to_need[child_need_id],
                         node,
+                        needs_view,
                         config,
                         calc_link,
                         id_comp_to_need,
@@ -369,8 +403,11 @@ def _render_subgraph(
 
 def _label(need: NeedsInfoType, align: Literal["left", "right", "center"]) -> str:
     """Create the graphviz label for a need."""
+    # note this is based on the plantuml template DEFAULT_DIAGRAM_TEMPLATE
+
     br = f'<br align="{align}"/>'
     # note this text wrapping mimics the jinja wordwrap filter
+    need_title = need["title"] if need["is_need"] else need["content"]
     title = br.join(
         br.join(
             textwrap.wrap(
@@ -382,13 +419,13 @@ def _label(need: NeedsInfoType, align: Literal["left", "right", "center"]) -> st
                 break_on_hyphens=True,
             )
         )
-        for line in need["title"].splitlines()
+        for line in need_title.splitlines()
     )
-    name = html.escape(need["type_name"])
+    name = html.escape(need["type_name"] + (" (part)" if need["is_part"] else ""))
     if need["is_need"]:
         _id = html.escape(need["id"])
     else:
-        _id = f"{html.escape(need['id_parent'])}.<b>{html.escape(need['id'])}</b>"
+        _id = f'{html.escape(need["id_parent"])}.<b align="{align}">{html.escape(need["id"])}</b>'
     font_10 = '<font point-size="10">'
     font_12 = '<font point-size="12">'
     return f"<{font_12}{name}</font>{br}<b>{title}</b>{br}{font_10}{_id}</font>{br}>"
@@ -439,7 +476,7 @@ def _render_edge(
     return f"{start_id} -> {end_id} [{param_str}];\n"
 
 
-@lru_cache(maxsize=None)
+@cache
 def _style_params_from_link_type(
     styles: str, style_start: str, style_end: str
 ) -> list[tuple[str, str]]:
@@ -595,7 +632,7 @@ def html_visit_needflow_graphviz(self: HTML5Translator, node: NeedflowGraphiz) -
         log_warning(LOGGER, "Content has not been resolved", "needflow", location=node)
         raise nodes.SkipNode
     attrributes = node.attributes
-    format = self.builder.config.graphviz_output_format
+    format: Literal["png", "svg"] = self.builder.config.graphviz_output_format
     if format not in ("png", "svg"):
         log_warning(
             LOGGER,

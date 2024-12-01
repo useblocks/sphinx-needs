@@ -1,5 +1,3 @@
-from typing import List, Tuple
-
 from docutils.nodes import Node, system_message
 from sphinx.roles import XRefRole
 
@@ -12,7 +10,7 @@ class NeedsXRefRole(XRefRole):
     and store the files, in which the role is used.
     """
 
-    def run(self) -> Tuple[List[Node], List[system_message]]:
+    def run(self) -> tuple[list[Node], list[system_message]]:
         # Stores the doc, in which the role got found
         add_doc(self.env, self.env.docname)
         return super().run()

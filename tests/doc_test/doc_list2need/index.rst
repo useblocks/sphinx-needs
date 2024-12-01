@@ -28,3 +28,4 @@ Foo Bar.
 
    options
    links_down
+   global_tags

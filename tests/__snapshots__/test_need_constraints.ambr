@@ -1,11 +1,9 @@
+# serializer version: 1
 # name: test_need_constraints[test_app0]
   dict({
     'current_version': '',
     'versions': dict({
       '': dict({
-        'filters': dict({
-        }),
-        'filters_amount': 0,
         'needs': dict({
           'SECURITY_REQ': dict({
             'arch': dict({
@@ -18,10 +16,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'SECURITY_REQ',
+            'content': 'This is a requirement describing OPSEC processes.',
             'created_at': '',
-            'delete': None,
-            'description': 'This is a requirement describing OPSEC processes.',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -36,9 +33,14 @@
             'is_modified': False,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
+            'lineno': 20,
             'links': list([
+            ]),
+            'links_back': list([
+              'SP_109F4',
+              'SP_3EBFA',
             ]),
             'max_amount': '',
             'max_content_lines': '',
@@ -46,6 +48,8 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -64,7 +68,6 @@
             'style': None,
             'tags': list([
             ]),
-            'target_id': 'SECURITY_REQ',
             'template': None,
             'title': 'test1',
             'type': 'spec',
@@ -89,10 +92,9 @@
                 'check_0': True,
               }),
             }),
-            'content_id': 'SP_109F4',
+            'content': 'Example of a successful constraint.',
             'created_at': '',
-            'delete': None,
-            'description': 'Example of a successful constraint.',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -107,10 +109,13 @@
             'is_modified': False,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
+            'lineno': 25,
             'links': list([
               'SECURITY_REQ',
+            ]),
+            'links_back': list([
             ]),
             'max_amount': '',
             'max_content_lines': '',
@@ -118,6 +123,8 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -137,7 +144,6 @@
             'tags': list([
               'critical',
             ]),
-            'target_id': 'SP_109F4',
             'template': None,
             'title': 'test2',
             'type': 'spec',
@@ -163,10 +169,9 @@
                 'check_0': False,
               }),
             }),
-            'content_id': 'SP_3EBFA',
+            'content': 'Example of a failed constraint.',
             'created_at': '',
-            'delete': None,
-            'description': 'Example of a failed constraint.',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -181,10 +186,13 @@
             'is_modified': False,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': 'debug',
+            'lineno': 32,
             'links': list([
               'SECURITY_REQ',
+            ]),
+            'links_back': list([
             ]),
             'max_amount': '',
             'max_content_lines': '',
@@ -192,6 +200,8 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -210,7 +220,6 @@
             'style': 'red_bar',
             'tags': list([
             ]),
-            'target_id': 'SP_3EBFA',
             'template': None,
             'title': 'test3',
             'type': 'spec',
@@ -235,10 +244,9 @@
                 'check_0': False,
               }),
             }),
-            'content_id': 'SP_CA3FB',
+            'content': 'Example of a failed constraint with medium severity. Note the style from :ref:`needs_constraint_failed_options`',
             'created_at': '',
-            'delete': None,
-            'description': 'Example of a failed constraint with medium severity. Note the style from :ref:`needs_constraint_failed_options`',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -253,9 +261,12 @@
             'is_modified': False,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
+            'lineno': 39,
             'links': list([
+            ]),
+            'links_back': list([
             ]),
             'max_amount': '',
             'max_content_lines': '',
@@ -263,6 +274,8 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -281,7 +294,6 @@
             'style': 'yellow_bar,',
             'tags': list([
             ]),
-            'target_id': 'SP_CA3FB',
             'template': None,
             'title': 'FAIL_01',
             'type': 'spec',
@@ -302,10 +314,9 @@
             'constraints_passed': True,
             'constraints_results': dict({
             }),
-            'content_id': 'SP_TOO_001',
+            'content': 'The Tool awesome shall have a command line interface.',
             'created_at': '',
-            'delete': None,
-            'description': 'The Tool awesome shall have a command line interface.',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -320,9 +331,12 @@
             'is_modified': False,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
+            'lineno': 4,
             'links': list([
+            ]),
+            'links_back': list([
             ]),
             'max_amount': '',
             'max_content_lines': '',
@@ -330,6 +344,8 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -350,7 +366,6 @@
               'test',
               'test2',
             ]),
-            'target_id': 'SP_TOO_001',
             'template': None,
             'title': 'Command line interface',
             'type': 'spec',
@@ -376,10 +391,9 @@
                 'check_0': False,
               }),
             }),
-            'content_id': 'SP_TOO_002',
+            'content': 'asdf',
             'created_at': '',
-            'delete': None,
-            'description': 'asdf',
+            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -394,9 +408,12 @@
             'is_modified': False,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
+            'lineno': 11,
             'links': list([
+            ]),
+            'links_back': list([
             ]),
             'max_amount': '',
             'max_content_lines': '',
@@ -404,6 +421,8 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -424,7 +443,6 @@
               'hello',
               'there',
             ]),
-            'target_id': 'SP_TOO_002',
             'template': None,
             'title': 'CLI',
             'type': 'spec',
@@ -450,10 +468,9 @@
                 'check_0': False,
               }),
             }),
-            'content_id': 'TEST_STYLE',
+            'content': '',
             'created_at': '',
-            'delete': None,
-            'description': '',
+            'delete': False,
             'docname': 'style_test',
             'doctype': '.rst',
             'duration': '',
@@ -468,9 +485,12 @@
             'is_modified': False,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
+            'lineno': 4,
             'links': list([
+            ]),
+            'links_back': list([
             ]),
             'max_amount': '',
             'max_content_lines': '',
@@ -478,6 +498,8 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -496,7 +518,6 @@
             'style': 'red_bar',
             'tags': list([
             ]),
-            'target_id': 'TEST_STYLE',
             'template': None,
             'title': 'CLI',
             'type': 'spec',
@@ -521,10 +542,9 @@
                 'check_0': False,
               }),
             }),
-            'content_id': 'TEST_STYLE2',
+            'content': '',
             'created_at': '',
-            'delete': None,
-            'description': '',
+            'delete': False,
             'docname': 'style_test',
             'doctype': '.rst',
             'duration': '',
@@ -539,9 +559,12 @@
             'is_modified': False,
             'is_need': True,
             'is_part': False,
-            'jinja_content': None,
+            'jinja_content': False,
             'layout': '',
+            'lineno': 11,
             'links': list([
+            ]),
+            'links_back': list([
             ]),
             'max_amount': '',
             'max_content_lines': '',
@@ -549,6 +572,8 @@
             'params': '',
             'parent_need': '',
             'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
@@ -567,7 +592,6 @@
             'style': 'blue_border, yellow_bar',
             'tags': list([
             ]),
-            'target_id': 'TEST_STYLE2',
             'template': None,
             'title': 'CLI2',
             'type': 'spec',
@@ -630,10 +654,7 @@
               'default': True,
               'description': 'True if all constraints passed, False if any failed, None if not yet checked.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'constraints_results': dict({
               'additionalProperties': dict({
@@ -645,14 +666,11 @@
               'field_type': 'core',
               'type': 'object',
             }),
-            'content_id': dict({
-              'default': None,
-              'description': 'ID of the content node.',
+            'content': dict({
+              'default': '',
+              'description': 'Content of the need.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
+              'type': 'string',
             }),
             'created_at': dict({
               'default': '',
@@ -661,13 +679,10 @@
               'type': 'string',
             }),
             'delete': dict({
-              'default': None,
+              'default': False,
               'description': 'If true, the need is deleted entirely.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'docname': dict({
               'default': None,
@@ -759,13 +774,10 @@
               'type': 'boolean',
             }),
             'jinja_content': dict({
-              'default': None,
+              'default': False,
               'description': 'Whether the content should be pre-processed by jinja.',
               'field_type': 'core',
-              'type': list([
-                'boolean',
-                'null',
-              ]),
+              'type': 'boolean',
             }),
             'layout': dict({
               'default': None,
@@ -776,11 +788,30 @@
                 'null',
               ]),
             }),
+            'lineno': dict({
+              'default': None,
+              'description': 'Line number where the need is defined (None if external).',
+              'field_type': 'core',
+              'type': list([
+                'integer',
+                'null',
+              ]),
+            }),
             'links': dict({
               'default': list([
               ]),
               'description': 'Link field',
               'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'links_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
               'items': dict({
                 'type': 'string',
               }),
@@ -821,6 +852,16 @@
               ]),
               'description': 'Link field',
               'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'parent_needs_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
               'items': dict({
                 'type': 'string',
               }),
@@ -939,11 +980,6 @@
                 'type': 'string',
               }),
               'type': 'array',
-            }),
-            'target_id': dict({
-              'description': 'ID of the data.',
-              'field_type': 'core',
-              'type': 'string',
             }),
             'template': dict({
               'default': None,

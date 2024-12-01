@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import math
-from typing import Sequence
+from collections.abc import Sequence
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -10,7 +10,7 @@ from sphinx.application import Sphinx
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsBarType, SphinxNeedsData
-from sphinx_needs.filter_common import FilterBase, filter_needs, prepare_need_list
+from sphinx_needs.filter_common import FilterBase, filter_needs_parts
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import (
     add_doc,
@@ -291,9 +291,8 @@ def process_needbar(
 
         # 5. process content
         local_data_number = []
-        need_list = list(
-            prepare_need_list(needs_data.get_or_create_needs().values())
-        )  # adds parts to need_list
+        # adds parts to need_list
+        need_list = needs_data.get_needs_view().to_list_with_parts()
 
         for line in local_data:
             line_number = []
@@ -303,7 +302,9 @@ def process_needbar(
                     line_number.append(float(element))
                 else:
                     result = len(
-                        filter_needs(need_list, needs_config, element, location=node)
+                        filter_needs_parts(
+                            need_list, needs_config, element, location=node
+                        )
                     )
                     line_number.append(float(result))
             local_data_number.append(line_number)

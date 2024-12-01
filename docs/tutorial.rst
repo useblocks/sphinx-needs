@@ -11,7 +11,6 @@ We will create need items, link them together, visualize the relationships betwe
     :root_id: T_CAR
     :config: tutorial
     :show_link_names:
-    :show_filters:
     :border_color:
         [status == 'open']:FF0000, 
         [status == 'in progress']:0000FF, 
@@ -21,6 +20,17 @@ We will create need items, link them together, visualize the relationships betwe
 
     This tutorial assumes that you have already :ref:`installed sphinx-needs <installation>`,
     and that you have a basic understanding of how to use :external+sphinx:doc:`Sphinx <index>` and :external+sphinx:ref:`reStructuredText <rst-primer>`.
+
+Need Lifecycle
+--------------
+
+Within a sphinx build, a primary role of sphinx-needs is to manage the lifecycle of need items:
+
+1. **Collect**: During the read phase, need items are collected from the source files and configured external sources.
+2. **Resolve**: After the read phase, the need items are post-processed to resolve dynamic fields and links, etc, then frozen.
+3. **Analyse**: During the write phase, various directives/roles are available to reference, query, and output analysis of the needs.
+4. **Render**: During the write phase, the need items are rendered into the output format, such as HTML or PDF.
+5. **Validate**: During the final phase, the need items can be validated against configured checks.
 
 Creating need items
 -------------------

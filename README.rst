@@ -47,13 +47,6 @@ For filtering and analyzing needs, ``Sphinx-Needs`` provides different, powerful
 Installation
 ============
 
-Using poetry
-------------
-
-.. code-block:: bash
-
-    poetry add sphinx-needs
-
 Using pip
 ---------
 
@@ -79,8 +72,6 @@ Using sources
     git clone https://github.com/useblocks/sphinx-needs
     cd sphinx-needs
     pip install .
-    # or
-    poetry install
 
 
 Activation

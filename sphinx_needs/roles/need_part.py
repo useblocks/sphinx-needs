@@ -11,15 +11,17 @@ from __future__ import annotations
 
 import hashlib
 import re
-from typing import Iterable, cast
+from collections.abc import Iterable
+from typing import cast
 
 from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util.nodes import make_refnode
 
-from sphinx_needs.data import NeedsInfoType
+from sphinx_needs.data import NeedsInfoType, NeedsPartType
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.nodes import Need
 
 log = get_logger(__name__)
 
@@ -37,7 +39,17 @@ def process_need_part(
     pass
 
 
-part_pattern = re.compile(r"\(([\w-]+)\)(.*)")
+part_pattern = re.compile(r"\(([\w-]+)\)(.*)", re.DOTALL)
+
+
+def create_need_from_part(need: NeedsInfoType, part: NeedsPartType) -> NeedsInfoType:
+    """Create a full need from a part and its parent need."""
+    full_part: NeedsInfoType = {**need, **part}
+    full_part["id_complete"] = f"{need['id']}.{part['id']}"
+    full_part["id_parent"] = need["id"]
+    full_part["is_need"] = False
+    full_part["is_part"] = True
+    return full_part
 
 
 def iter_need_parts(need: NeedsInfoType) -> Iterable[NeedsInfoType]:
@@ -47,13 +59,7 @@ def iter_need_parts(need: NeedsInfoType) -> Iterable[NeedsInfoType]:
     and overrides the content of the parent need.
     """
     for part in need["parts"].values():
-        full_part: NeedsInfoType = {**need, **part}
-        full_part["id_complete"] = f"{need['id']}.{part['id']}"
-        full_part["id_parent"] = need["id"]
-        full_part["is_need"] = False
-        full_part["is_part"] = True
-
-        yield full_part
+        yield create_need_from_part(need, part)
 
 
 def update_need_with_parts(
@@ -81,8 +87,8 @@ def update_need_with_parts(
                 "part_need id {} in need {} is already taken. need_part may get overridden.".format(
                     inline_id, need["id"]
                 ),
-                None,
-                None,
+                "duplicate_part_id",
+                part_node,
             )
 
         need["parts"][inline_id] = {
@@ -121,6 +127,6 @@ def find_parts(node: nodes.Node) -> list[NeedPart]:
     for child in node.children:
         if isinstance(child, NeedPart):
             found_nodes.append(child)
-        else:
+        elif not isinstance(child, Need):  # parts in nested needs should be ignored
             found_nodes += find_parts(child)
     return found_nodes

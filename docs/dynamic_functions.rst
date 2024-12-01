@@ -3,41 +3,35 @@
 Dynamic functions
 =================
 
-**Sphinx-Needs** provides a mechanism to set dynamic data for need-options during generation.
-We do this by giving an author the possibility to set a function call to a predefined function, which calculates
-the final result/value for the option.
+Dynamic functions provide a mechanism to specify need fields or content that are calculated at build time, based on other fields or needs.
+
+We do this by giving an author the possibility to set a function call to a predefined function, which calculates the final value **after all needs have been collected**.
 
 For instance, you can use the feature if the status of a requirement depends on linked test cases and their status.
 Or if you will request specific data from an external server like JIRA.
 
-**needtable**
+To refer to a dynamic function, you can use the following syntax:
 
-The options :ref:`needtable_style_row` of :ref:`needtable` also support
-dynamic function execution. In this case, the function gets executed with the found need for each row.
+- In a need directive option, wrap the function call in double square brackets: ``function_name(arg)``
+- In a need content, use the :ref:`ndf` role: ``:ndf:\`function_name(arg)\```
 
-This allows you to set row and column specific styles such as, set a row background to red, if a need-status is *failed*.
-
-
-Example
--------
-
-.. code-block:: rst
+.. need-example:: Dynamic function example
 
    .. req:: my test requirement
       :id: df_1
       :status: open
+      :tags: test;[[copy("status")]]
 
-      This need has the id **[[copy("id")]]** and status **[[copy("status")]]**.
+      This need has id :ndf:`copy("id")` and status :ndf:`copy("status")`.
 
-.. req:: my test requirement
-   :id: df_1
-   :status: open
+.. deprecated:: 3.1.0
 
-   This need has id **[[copy("id")]]** and status **[[copy("status")]]**.
+   The :ref:`ndf` role replaces the use of the ``[[...]]`` syntax in need content.
 
 Built-in functions
 -------------------
-The following functions are available in all **Sphinx-Needs** installations.
+
+The following functions are available by default.
 
 .. note::
 
@@ -87,8 +81,8 @@ Develop own functions
 Registration
 ~~~~~~~~~~~~
 
-You must register every dynamic function by using the :ref:`needs_functions` configuration parameter
-inside your **conf.py** file:
+You must register every dynamic function by using the :ref:`needs_functions` configuration parameter,
+inside your **conf.py** file, to add a :py:class:`.DynamicFunction`:
 
 .. code-block:: python
 
@@ -114,61 +108,6 @@ inside your **conf.py** file:
 
             def setup(app):
                   add_dynamic_function(app, my_function)
-
-Reference function
-~~~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-   def test(app, need, needs, *args, **kwargs):
-       """
-       :param app: sphinx app
-       :param need: current need
-       :param needs: dictionary of all needs. Key is the need id
-       :return: str,int,float or list of elements of type str,int,float
-       """
-       # where the magic happens
-       return "awesome"
-
-You can call the defined function via:
-
-.. code-block:: rst
-
-   .. req:: test requirement
-      :status: [[test()]]
-
-The parameters ``app``, ``need`` and ``needs`` are set automatically. You are free to add other parameters, which
-must be of type str, int, float and list.
-
-
-need structure
-~~~~~~~~~~~~~~
-
-.. code-block:: text
-
-   need = {
-      'docname': str: document name,
-      'lineno': int: linenumber,
-      'links_back': list: list of incoming links (see restrictions),
-      'target_node': node: sphinx target node for internal references,
-      'type': str: short name of type,
-      'type_name': str: long name of type,
-      'type_prefix': str: name of type prefix,
-      'type_color': str: type color,
-      'type_style': str: type style,
-      'status': str: status,
-      'tags': list: list of tags,
-      'id': str: id,
-      'links': list: list of outgoing links,
-      'title': str: trimmed title of need,
-      'full_title': str: full title of string,
-      'content': str: unparsed need content,
-      'collapse': bool: true if meta data shall be collapsed,
-      'hide': bool: true if complete need shall be hidden,
-   }
-
-Adding new keywords to need object will be treated as extra_option in need meta area.
-
 
 Restrictions
 ~~~~~~~~~~~~

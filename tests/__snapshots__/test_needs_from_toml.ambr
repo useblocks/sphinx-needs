@@ -1,0 +1,31 @@
+# serializer version: 1
+# name: test_needs_from_toml[test_app0]
+  dict({
+    'current_version': '0.1.0',
+    'versions': dict({
+      '0.1.0': dict({
+        'needs': dict({
+          'O_001': dict({
+            'custom': 'custom value',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'full_title': 'Test need',
+            'id': 'O_001',
+            'layout': '',
+            'lineno': 4,
+            'section_name': 'TEST DOCUMENT',
+            'sections': list([
+              'TEST DOCUMENT',
+            ]),
+            'status': 'open',
+            'title': 'Test need',
+            'type': 'other',
+            'type_name': 'Another need type',
+          }),
+        }),
+        'needs_amount': 1,
+        'needs_defaults_removed': True,
+      }),
+    }),
+  })
+# ---

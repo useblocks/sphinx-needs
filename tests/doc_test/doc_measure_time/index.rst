@@ -47,6 +47,7 @@ Filtering
 ---------
 
 .. needtable::
+   :export_id: needtable_1
    :filter: status == "open"
 
 .. needtable::

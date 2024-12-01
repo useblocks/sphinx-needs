@@ -21,8 +21,7 @@ def test_external_html(test_app: SphinxTestApp):
     app = test_app
     app.build()
     assert strip_colors(app._warning.getvalue()).strip() == (
-        "WARNING: Couldn't create need EXT_TEST_03. "
-        "Reason: The need-type (i.e. `ask`) is not set in the project's 'need_types' configuration in conf.py. [needs.add]"
+        "WARNING: External need 'EXT_TEST_03' in 'needs_test_small.json' could not be added: Unknown need type 'ask'. [needs.load_external_need]"
     )
     html = Path(app.outdir, "index.html").read_text()
     assert (
@@ -47,7 +46,7 @@ def test_external_json(test_app: SphinxTestApp, snapshot):
     app.build()
     json_data = Path(app.outdir, "needs.json").read_text()
     needs = json.loads(json_data)
-    assert needs == snapshot(exclude=props("created", "project"))
+    assert needs == snapshot(exclude=props("created", "project", "creator"))
 
 
 def test_export_import_round_trip(tmp_path: Path, snapshot):
@@ -136,4 +135,4 @@ def test_export_import_round_trip(tmp_path: Path, snapshot):
 
     json_data = json.loads(Path(str(app.outdir), "needs.json").read_text("utf8"))
 
-    assert json_data == snapshot(exclude=props("created", "project"))
+    assert json_data == snapshot(exclude=props("created", "project", "creator"))

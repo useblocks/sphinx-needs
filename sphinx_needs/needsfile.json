@@ -14,8 +14,7 @@
                      "type": "object",
                      "properties": {
                          "created": {"type": "string"},
-                         "filters": {"type": "object"},
-                         "filters_amount": {"type": "number"},
+                         "creator": {"type": "object"},
                          "needs": {
                              "patternProperties": {
                                  "^.*$": {
@@ -23,7 +22,7 @@
                                      "properties": {
                                          "title": {"type": "string"},
                                          "id": {"type": "string"},
-                                         "description": {"type": "string"}
+                                         "content": {"type": "string"}
                                      }
                                  }
                              }

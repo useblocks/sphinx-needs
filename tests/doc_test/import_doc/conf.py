@@ -60,3 +60,5 @@ needs_template = """
 
 {% endif -%}
 """
+
+needs_json_remove_defaults = True

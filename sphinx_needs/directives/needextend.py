@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Callable, Sequence
+from collections.abc import Sequence
+from typing import Any, Callable
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -9,8 +10,12 @@ from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsExtendType, NeedsInfoType, SphinxNeedsData
-from sphinx_needs.filter_common import filter_needs
+from sphinx_needs.data import (
+    NeedsExtendType,
+    NeedsMutable,
+    SphinxNeedsData,
+)
+from sphinx_needs.filter_common import filter_needs_mutable
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import add_doc
 
@@ -67,7 +72,10 @@ class NeedextendDirective(SphinxDirective):
 
         add_doc(env, env.docname)
 
-        return [targetnode, Needextend("")]
+        node = Needextend("")
+        self.set_source_info(node)
+
+        return [targetnode, node]
 
 
 RE_ID_FUNC = re.compile(r"\s*((?P<function>\[\[[^\]]*\]\])|(?P<id>[^;,]+))\s*([;,]|$)")
@@ -94,7 +102,7 @@ def _split_value(value: str) -> Sequence[tuple[str, bool]]:
 
 
 def extend_needs_data(
-    all_needs: dict[str, NeedsInfoType],
+    all_needs: NeedsMutable,
     extends: dict[str, NeedsExtendType],
     needs_config: NeedsSphinxConfig,
 ) -> None:
@@ -105,7 +113,7 @@ def extend_needs_data(
 
     for current_needextend in extends.values():
         need_filter = current_needextend["filter"]
-        if need_filter in all_needs:
+        if need_filter and need_filter in all_needs:
             # a single known ID
             found_needs = [all_needs[need_filter]]
         elif need_filter is not None and re.fullmatch(
@@ -119,7 +127,7 @@ def extend_needs_data(
                 log_warning(
                     logger,
                     error,
-                    "extend",
+                    "needextend",
                     location=(
                         current_needextend["docname"],
                         current_needextend["lineno"],
@@ -129,8 +137,8 @@ def extend_needs_data(
         else:
             # a filter string
             try:
-                found_needs = filter_needs(
-                    all_needs.values(),
+                found_needs = filter_needs_mutable(
+                    all_needs,
                     needs_config,
                     need_filter,
                     location=(
@@ -142,7 +150,7 @@ def extend_needs_data(
                 log_warning(
                     logger,
                     f"Invalid filter {need_filter!r}: {e}",
-                    "extend",
+                    "needextend",
                     location=(
                         current_needextend["docname"],
                         current_needextend["lineno"],
@@ -165,7 +173,7 @@ def extend_needs_data(
                                 log_warning(
                                     logger,
                                     f"Provided link id {item} for needextend does not exist.",
-                                    None,
+                                    "needextend",
                                     location=(
                                         current_needextend["docname"],
                                         current_needextend["lineno"],
@@ -200,7 +208,7 @@ def extend_needs_data(
                                 log_warning(
                                     logger,
                                     f"Provided link id {item} for needextend does not exist.",
-                                    None,
+                                    "needextend",
                                     location=(
                                         current_needextend["docname"],
                                         current_needextend["lineno"],

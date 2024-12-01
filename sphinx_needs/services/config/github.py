@@ -11,9 +11,13 @@ CONFIG_OPTIONS = [
     "max_content_lines",
     "id_prefix",
 ]
-GITHUB_DATA = (
-    ["status", "tags"] + EXTRA_DATA_OPTIONS + EXTRA_LINK_OPTIONS + EXTRA_IMAGE_OPTIONS
-)
+GITHUB_DATA = [
+    "status",
+    "tags",
+    *EXTRA_DATA_OPTIONS,
+    *EXTRA_LINK_OPTIONS,
+    *EXTRA_IMAGE_OPTIONS,
+]
 GITHUB_DATA_STR = (
     '"'
     + '","'.join(EXTRA_DATA_OPTIONS + EXTRA_LINK_OPTIONS + EXTRA_IMAGE_OPTIONS)

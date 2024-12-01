@@ -1,0 +1,340 @@
+"$schema" = "https://ubcode.useblocks.com/ubproject.schema.json"
+
+[parse.extend_directives.need-example]
+argument = true
+options = true
+content = true
+parse_content = true
+content_required = true
+
+[needs]
+extra_options = [
+  "my_extra_option",
+  "another_option",
+  "author",
+  "comment",
+  "amount",
+  "hours",
+  "image",
+  "config",
+  "github",
+  "value",
+  "unit",
+]
+variant_options = ["status"]
+show_link_type = false
+show_link_title = false
+title_optional = true
+max_title_length = 75
+id_regex = "^[A-Za-z0-9_]+"
+id_required = false
+table_style = "datatables"
+table_columns = "ID;TITLE;STATUS;OUTGOING"
+default_layout = "clean"
+service_all_data = true
+# needs.json build options
+build_json = true
+reproducible_json = true
+json_remove_defaults = true
+build_json_per_id = false
+
+[[needs.types]]
+directive = "int"
+title = "Interface"
+content = "plantuml"
+prefix = "I_"
+color = "#BFD8D2"
+style = "card"
+
+[[needs.types]]
+directive = "comp"
+title = "Component"
+content = "plantuml"
+prefix = "C_"
+color = "#BFD8D2"
+style = "card"
+
+[[needs.types]]
+directive = "sys"
+title = "System"
+content = "plantuml"
+prefix = "S_"
+color = "#BFD8D2"
+style = "card"
+
+[[needs.types]]
+directive = "req"
+title = "Requirement"
+prefix = "R_"
+color = "#BFD8D2"
+style = "node"
+
+[[needs.types]]
+directive = "spec"
+title = "Specification"
+prefix = "S_"
+color = "#FEDCD2"
+style = "node"
+
+[[needs.types]]
+directive = "impl"
+title = "Implementation"
+prefix = "I_"
+color = "#DF744A"
+style = "node"
+
+[[needs.types]]
+directive = "test"
+title = "Test Case"
+prefix = "T_"
+color = "#DCB239"
+style = "node"
+
+[[needs.types]]
+directive = "feature"
+title = "Feature"
+prefix = "F_"
+color = "#FFCC00"
+style = "node"
+
+[[needs.types]]
+directive = "user"
+title = "User"
+prefix = "U_"
+color = "#777777"
+style = "node"
+
+[[needs.types]]
+directive = "action"
+title = "Action"
+prefix = "A_"
+color = "#FFCC00"
+style = "node"
+
+[[needs.types]]
+directive = "milestone"
+title = "Milestone"
+prefix = "M_"
+color = "#FF3333"
+style = "node"
+
+[[needs.types]]
+directive = "tutorial-project"
+title = "Project"
+prefix = "P_"
+color = "#BFD8D2"
+style = "rectangle"
+
+[[needs.types]]
+directive = "tutorial-req"
+title = "Requirement"
+prefix = "R_"
+color = "#BFD8D2"
+style = "rectangle"
+
+[[needs.types]]
+directive = "tutorial-spec"
+title = "Specification"
+prefix = "S_"
+color = "#FEDCD2"
+style = "rectangle"
+
+[[needs.types]]
+directive = "tutorial-test"
+title = "Test Case"
+prefix = "T_"
+color = "#f9e79f"
+style = "rectangle"
+
+[[needs.extra_links]]
+option = "blocks"
+incoming = "is blocked by"
+outgoing = "blocks"
+copy = true
+style = "#AA0000"
+style_part = "dotted,#AA0000"
+style_start = "-"
+style_end = "-o"
+allow_dead_links = true
+
+[[needs.extra_links]]
+option = "tests"
+incoming = "is tested by"
+outgoing = "tests"
+copy = true
+style = "#00AA00"
+style_part = "dotted,#00AA00"
+
+[[needs.extra_links]]
+option = "checks"
+incoming = "is checked by"
+outgoing = "checks"
+copy = false
+style = "#00AA00"
+style_part = "dotted,#00AA00"
+
+[[needs.extra_links]]
+option = "triggers"
+incoming = "triggered by"
+outgoing = "triggers"
+copy = false
+style = "#00AA00"
+style_part = "solid,#777777"
+allow_dead_links = true
+
+[[needs.extra_links]]
+option = "starts_with"
+incoming = "triggers directly"
+outgoing = "starts with"
+copy = false
+style = "#00AA00"
+style_part = "solid,#777777"
+
+[[needs.extra_links]]
+option = "starts_after"
+incoming = "triggers at end"
+outgoing = "starts after"
+copy = false
+style = "#00AA00"
+style_part = "solid,#777777"
+
+[[needs.extra_links]]
+option = "ends_with"
+incoming = "triggers to end with"
+outgoing = "ends with"
+copy = false
+style = "#00AA00"
+style_part = "solid,#777777"
+
+[[needs.extra_links]]
+option = "tutorial_required_by"
+incoming = "requires"
+outgoing = "required by"
+style = "#00AA00"
+
+[[needs.extra_links]]
+option = "tutorial_specifies"
+incoming = "specified by"
+outgoing = "specifies"
+
+[[needs.extra_links]]
+option = "tutorial_tests"
+incoming = "tested by"
+outgoing = "tests"
+
+[needs.warnings]
+type_check = "type not in ['int', 'comp', 'sys', 'req', 'spec', 'impl', 'test', 'feature', 'user', 'action', 'milestone', 'tutorial-project', 'tutorial-req', 'tutorial-spec', 'tutorial-test', 'issue', 'pr', 'commit']"
+
+[needs.constraints.critical]
+check_0 = "'critical' in tags"
+check_1 = "'SECURITY_REQ' in links"
+severity = "CRITICAL"
+
+[needs.constraints.security]
+check_0 = "'security' in tags"
+severity = "HIGH"
+
+[needs.constraints.team]
+check_0 = "author == \"Bob\""
+severity = "LOW"
+
+[needs.constraint_failed_options.CRITICAL]
+on_fail = ["warn"]
+style = ["red_bar"]
+force_style = true
+
+[needs.constraint_failed_options.HIGH]
+on_fail = ["warn"]
+style = ["orange_bar"]
+force_style = true
+
+[needs.constraint_failed_options.MEDIUM]
+on_fail = ["warn"]
+style = ["yellow_bar"]
+force_style = false
+
+[needs.constraint_failed_options.LOW]
+on_fail = []
+style = ["yellow_bar"]
+force_style = false
+
+[needs.flow_configs]
+my_config = """
+skinparam monochrome true
+skinparam componentStyle uml2
+"""
+another_config = """
+skinparam class {
+    BackgroundColor PaleGreen
+    ArrowColor SeaGreen
+    BorderColor SpringGreen
+}
+"""
+tutorial = """
+left to right direction
+skinparam backgroundcolor transparent
+skinparam Arrow {
+    Color #57ACDC
+    FontColor #808080
+    FontStyle Bold
+}
+skinparam rectangleBorderThickness 2
+"""
+
+[needs.graphviz_styles.tutorial.graph]
+rankdir = "LR"
+bgcolor = "transparent"
+
+[needs.graphviz_styles.tutorial.node]
+fontname = "sans-serif"
+fontsize = 12
+penwidth = 2
+margin = "0.11,0.11"
+style = "rounded"
+
+[needs.graphviz_styles.tutorial.edge]
+color = "#57ACDC"
+fontsize = 10
+fontcolor = "#808080"
+
+[needs.layouts.example]
+grid = "simple_side_right_partial"
+
+[needs.layouts.example.layout]
+head = ["**<<meta(\"title\")>>** for *<<meta(\"author\")>>*"]
+meta = ["**status**: <<meta(\"status\")>>", "**author**: <<meta(\"author\")>>"]
+side = ["<<image(\"_images/{{author}}.png\", align=\"center\")>>"]
+
+[needs.layouts.permalink_example]
+grid = "simple"
+
+[needs.layouts.permalink_example.layout]
+head = [
+  "<<meta(\"type_name\")>>: **<<meta(\"title\")>>** <<meta_id()>> <<permalink()>> <<collapse_button(\"meta\", collapsed=\"icon:arrow-down-circle\", visible=\"icon:arrow-right-circle\", initial=False)>> ",
+]
+meta = ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"]
+
+[needs.layouts.detail_view]
+grid = "simple"
+
+[needs.layouts.detail_view.layout]
+head = [
+  "<<meta(\"type_name\")>>: **<<meta(\"title\")>>** <<meta_id()>> <<permalink()>> <<collapse_button(\"meta\", collapsed=\"icon:arrow-down-circle\", visible=\"icon:arrow-right-circle\", initial=False)>> <<sidebar(\"\")>>",
+]
+meta = ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"]
+
+[needs.string_links.config_link]
+regex = "^(?P<value>\\w+)$"
+link_url = "https://sphinxcontrib-needs.readthedocs.io/en/latest/configuration.html#{{value | replace(\"_\", \"-\")}}"
+link_name = "Sphinx-Needs docs for {{value | replace(\"_\", \"-\") }}"
+options = ["config"]
+
+[needs.string_links.github_link]
+regex = "^(?P<value>\\w+)$"
+link_url = "https://github.com/useblocks/sphinxcontrib-needs/issues/{{value}}"
+link_name = "GitHub #{{value}}"
+options = ["github"]
+
+[needs_json]
+path = "_build/html/furo/needs.json"
+src = "."
