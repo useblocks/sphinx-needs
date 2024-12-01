@@ -61,7 +61,7 @@ docs = [
 theme-im = ["sphinx-immaterial~=0.11.11"]
 theme-furo = ["furo~=2024.8.6"]
 theme-pds = ["pydata-sphinx-theme~=0.15.2"]
-theme-rtd = ["sphinx_rtd_theme~=2.0"]
+theme-rtd = ["sphinx_rtd_theme~=3.0"]
 
 [dependency-groups]
 dev = ["pre-commit~=3.0", "tox~=4.23", "tox-uv~=1.15"]
