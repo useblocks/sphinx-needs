@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1732884517105,
+  "lastUpdate": 1733042356963,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -11448,6 +11448,42 @@ window.BENCHMARK_DATA = {
             "value": 66.9617912,
             "unit": "s",
             "extra": "Commit: ccce14f5eefcab514d86d99ef8017ecfc43e6a91\nBranch: master\nTime: 2024-11-29T13:46:33+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7b844b19be0458c4415efb22087d67c50ba8628f",
+          "message": "🧪 Update pytest from ~=7.0 to ~=8.0 (and plugins) (#1361)\n\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\r\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2024-12-01T09:37:21+01:00",
+          "tree_id": "7f739ff557e853e1001dd07f3798b2dab728dbfc",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/7b844b19be0458c4415efb22087d67c50ba8628f"
+        },
+        "date": 1733042345283,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14522257199999444,
+            "unit": "s",
+            "extra": "Commit: 7b844b19be0458c4415efb22087d67c50ba8628f\nBranch: master\nTime: 2024-12-01T09:37:21+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.29381184500002,
+            "unit": "s",
+            "extra": "Commit: 7b844b19be0458c4415efb22087d67c50ba8628f\nBranch: master\nTime: 2024-12-01T09:37:21+01:00"
           }
         ]
       }
