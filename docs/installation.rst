@@ -176,6 +176,6 @@ See :ref:`docker` for the documentation and hints how to use it.
 VS Code Extension
 -----------------
 
-VsCode extension `Sphinx-Needs-VsCode <https://marketplace.visualstudio.com/items?itemName=useblocks.sphinx-needs-vscode>`_ provides 
-support for Sphinx-Needs. 
-See more details in the `Documentation <https://sphinx-needs-vscode.useblocks.com/>`_.
+The VS Code extension `ubCode <https://marketplace.visualstudio.com/items?itemName=useblocks.ubcode>`_ provides 
+support for Sphinx-Needs.
+See more details in the `Documentation <https://docs.useblocks.com/ubcode/>`_.
