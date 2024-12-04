@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1733173537962,
+  "lastUpdate": 1733349659356,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -11520,6 +11520,42 @@ window.BENCHMARK_DATA = {
             "value": 70.954720364,
             "unit": "s",
             "extra": "Commit: 5dbd46aaf19a1871e325b4ec7333400d10f74116\nBranch: master\nTime: 2024-12-02T22:03:32+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4e52ed213415e70837b9283ddd4d9308a7bee41a",
+          "message": "⬆️ Update sphinx-rtd-theme requirement from ~=2.0 to ~=3.0 (#1364)\n\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\r\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2024-12-04T22:58:59+01:00",
+          "tree_id": "361ecb323bf30214bff3ceb9d7f79a1d1cf0771c",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/4e52ed213415e70837b9283ddd4d9308a7bee41a"
+        },
+        "date": 1733349647800,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.17371543000001566,
+            "unit": "s",
+            "extra": "Commit: 4e52ed213415e70837b9283ddd4d9308a7bee41a\nBranch: master\nTime: 2024-12-04T22:58:59+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 70.46910069700002,
+            "unit": "s",
+            "extra": "Commit: 4e52ed213415e70837b9283ddd4d9308a7bee41a\nBranch: master\nTime: 2024-12-04T22:58:59+01:00"
           }
         ]
       }
