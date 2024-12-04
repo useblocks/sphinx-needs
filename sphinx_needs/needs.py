@@ -33,7 +33,6 @@ from sphinx_needs.defaults import (
     GRAPHVIZ_STYLE_DEFAULTS,
     LAYOUTS,
     NEED_DEFAULT_OPTIONS,
-    NEEDEXTEND_NOT_ALLOWED_OPTIONS,
     NEEDFLOW_CONFIG_DEFAULTS,
 )
 from sphinx_needs.directives.list2need import List2Need, List2NeedDirective
@@ -480,9 +479,11 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     NeedserviceDirective.option_spec.update(extra_links)
 
     # Update NeedextendDirective with option modifiers.
+    exclude_extend = {
+        k for k, v in NeedsCoreFields.items() if v.get("exclude_extend", False)
+    }
     for key, value in NEED_DEFAULT_OPTIONS.items():
-        # Ignore options like "id"
-        if key in NEEDEXTEND_NOT_ALLOWED_OPTIONS:
+        if key in exclude_extend:
             continue
 
         NeedextendDirective.option_spec.update(
@@ -553,7 +554,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     if needs_config.report_dead_links is not True:
         log_warning(
             LOGGER,
-            'Config option "needs_constraints_failed_color" is deprecated. Please use `suppress_warnings = ["needs.link_outgoing"]` instead.',
+            'Config option "needs_report_dead_links" is deprecated. Please use `suppress_warnings = ["needs.link_outgoing"]` instead.',
             "config",
             None,
         )

@@ -131,12 +131,6 @@
               'field_type': 'extra',
               'type': 'string',
             }),
-            'delete': dict({
-              'default': False,
-              'description': 'If true, the need is deleted entirely.',
-              'field_type': 'core',
-              'type': 'boolean',
-            }),
             'docname': dict({
               'default': None,
               'description': 'Name of the document where the need is defined (None if external).',
