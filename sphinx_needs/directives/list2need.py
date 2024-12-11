@@ -217,7 +217,9 @@ class List2NeedDirective(SphinxDirective):
             if global_options:
                 if "options" not in list_need:
                     list_need["options"] = {}
-                global_options_items = re.findall(r'([^=,]+)=["\']([^"\']+)["\']', global_options)
+                global_options_items = re.findall(
+                    r'([^=,]+)=["\']([^"\']+)["\']', global_options
+                )
 
                 for key, value in global_options_items:
                     current_options = list_need["options"].get(key.strip(), "")
