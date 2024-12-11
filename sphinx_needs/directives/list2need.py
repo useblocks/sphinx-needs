@@ -59,6 +59,8 @@ class List2NeedDirective(SphinxDirective):
         "presentation": directives.unchanged,
         "links-down": directives.unchanged,
         "tags": directives.unchanged,
+        "hide": directives.unchanged,
+        "list_global_options": directives.unchanged,
     }
 
     def run(self) -> Sequence[nodes.Node]:
@@ -111,6 +113,8 @@ class List2NeedDirective(SphinxDirective):
 
         # Retrieve tags defined at list level
         tags = self.options.get("tags", "")
+        hide = self.options.get("hide", "")
+        global_options = self.options.get("list_global_options", "")
 
         list_needs = []
         # Storing the data in a sorted list
@@ -205,6 +209,28 @@ class List2NeedDirective(SphinxDirective):
                     list_need["options"]["tags"] = current_tags + "," + tags
                 else:
                     list_need["options"]["tags"] = tags
+
+            if hide:
+                if "options" not in list_need:
+                    list_need["options"] = {}
+                list_need["options"]["hide"] = hide
+
+            if global_options:
+                if "options" not in list_need:
+                    list_need["options"] = {}
+                global_options_items = re.findall(
+                    r'([^=,]+)=["\']([^"\']+)["\']', global_options
+                )
+
+                for key, value in global_options_items:
+                    current_options = list_need["options"].get(key.strip(), "")
+
+                    if current_options:
+                        list_need["options"][key.strip()] = (
+                            current_options + "," + value
+                        )
+                    else:
+                        list_need["options"][key.strip()] = value
 
             template = Template(NEED_TEMPLATE, autoescape=True)
 
