@@ -2,7 +2,10 @@ from pathlib import Path
 
 import pytest
 
+
 from sphinx_needs.api import get_needs_view
+
+
 
 
 @pytest.mark.parametrize(
@@ -68,3 +71,4 @@ def test_doc_list2need_html(test_app, snapshot):
         'href="#NEED-B" title="NEED-C">NEED-B</a></span></span></div>'
         in links_down_html
     )
+

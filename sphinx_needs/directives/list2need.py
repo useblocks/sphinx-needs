@@ -17,8 +17,9 @@ NEED_TEMPLATE = """.. {{type}}:: {{title}}
    {% if need_id is not none %}:id: {{need_id}}{%endif%}
    {% if set_links_down %}:{{links_down_type}}: {{ links_down|join(', ') }}{%endif%}
    {%- for name, value in options.items() %}:{{name}}: {{value}}
-   {% endfor %}
-
+   {% endfor %}{% if need_hide %}:hide:{%endif%}
+   
+   
    {{content}}
 
 """
@@ -63,6 +64,13 @@ class List2NeedDirective(SphinxDirective):
     }
 
     def run(self) -> Sequence[nodes.Node]:
+        """_Implementation details_
+
+        The directive is used to create a list of needs (list_needs). Each list entry is used to create a single need using
+        a jinja2 template (Template). The template is defined in the NEED_TEMPLATE variable. The template is rendered for each list entry
+        
+        """
+        
         env = self.env
         needs_config = NeedsSphinxConfig(env.config)
 
@@ -112,7 +120,12 @@ class List2NeedDirective(SphinxDirective):
 
         # Retrieve tags defined at list level
         tags = self.options.get("tags", "")
-        hide = self.options.get("hide", "")
+        
+        if "hide" in self.options:
+            hide = True
+        else:
+            hide = False
+            
         global_options = self.options.get("list_global_options", "")
 
         list_needs = []
@@ -209,11 +222,8 @@ class List2NeedDirective(SphinxDirective):
                 else:
                     list_need["options"]["tags"] = tags
 
-            if hide:
-                if "options" not in list_need:
-                    list_need["options"] = {}
-                list_need["options"]["hide"] = hide
-
+            list_need["need_hide"] = hide
+                
             if global_options:
                 if "options" not in list_need:
                     list_need["options"] = {}
