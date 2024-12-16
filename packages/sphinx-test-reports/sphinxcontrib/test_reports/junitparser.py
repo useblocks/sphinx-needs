@@ -20,9 +20,7 @@ class JUnitParser:
         self.valid_xml = None
 
         if not os.path.exists(self.junit_xml_path):
-            raise JUnitFileMissing(
-                f"The given file does not exist: {self.junit_xml_path}"
-            )
+            raise JUnitFileMissing(f"The given file does not exist: {self.junit_xml_path}")
         self.junit_xml_doc = etree.parse(self.junit_xml_path)
 
         self.junit_xml_string = etree.tostring(self.junit_xml_doc)

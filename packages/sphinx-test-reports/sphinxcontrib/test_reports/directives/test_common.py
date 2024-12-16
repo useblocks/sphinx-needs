@@ -1,17 +1,27 @@
 """
 A Common directive, from which all other test directives inherit the shared functions.
 """
+
 # fmt: off
 import os
+from importlib.metadata import version
 
 from docutils.parsers.rst import Directive
 from sphinx.util import logging
-from sphinx_needs.api import make_hashed_id
+from sphinx_needs.config import NeedsSphinxConfig
 
 from sphinxcontrib.test_reports.exceptions import (
     SphinxError, TestReportFileNotSetException)
 from sphinxcontrib.test_reports.jsonparser import JsonParser
 from sphinxcontrib.test_reports.junitparser import JUnitParser
+
+sn_major_version = int(version("sphinx-needs").split('.')[0])
+
+if sn_major_version >= 4:
+    from sphinx_needs.api.need import _make_hashed_id
+else:
+    from sphinx_needs.api import make_hashed_id
+
 
 # fmt: on
 
@@ -59,11 +69,7 @@ class TestCommonDirective(Directive):
             self.test_file = os.path.join(root_path, self.test_file)
         if not os.path.exists(self.test_file):
             # raise TestReportFileInvalidException('Given test_file path invalid: {}'.format(self.test_file))
-            self.log.warning(
-                "Given test_file path invalid: {} in {} (Line: {})".format(
-                    self.test_file, self.docname, self.lineno
-                )
-            )
+            self.log.warning(f"Given test_file path invalid: {self.test_file} in {self.docname} (Line: {self.lineno})")
             return None
 
         if self.test_file not in self.app.testreport_data.keys():
@@ -88,11 +94,19 @@ class TestCommonDirective(Directive):
         self.test_content = "\n".join(self.content)
         if self.name != "test-report":
             self.need_type = self.app.tr_types[self.name][0]
+            if sn_major_version >= 4:
+                hashed_id = _make_hashed_id(
+                    self.need_type,
+                    self.test_name,
+                    self.test_content,
+                    NeedsSphinxConfig(self.app.config),
+                )
+            else:  # Sphinx-Needs < 4
+                hashed_id = make_hashed_id(self.app, self.need_type, self.test_name, self.test_content)
+
             self.test_id = self.options.get(
                 "id",
-                make_hashed_id(
-                    self.app, self.need_type, self.test_name, self.test_content
-                ),
+                hashed_id,
             )
         else:
             self.test_id = self.options.get("id")

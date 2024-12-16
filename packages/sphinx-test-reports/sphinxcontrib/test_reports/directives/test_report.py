@@ -54,14 +54,10 @@ class TestReportDirective(TestCommonDirective):
 
         if not os.path.isfile(template_path):
             raise InvalidConfigurationError(
-                "could not find a template file with name {} in conf.py directory".format(
-                    template_path
-                )
+                f"could not find a template file with name {template_path} in conf.py directory"
             )
 
-        with open(
-            template_path, encoding=self.app.config.tr_import_encoding
-        ) as template_file:
+        with open(template_path, encoding=self.app.config.tr_import_encoding) as template_file:
             template = "".join(template_file.readlines())
 
         if self.test_links is not None and len(self.test_links) > 0:
@@ -75,9 +71,7 @@ class TestReportDirective(TestCommonDirective):
             "file_type": self.app.config.tr_file[0],
             "suite_need": self.app.config.tr_suite[1],
             "case_need": self.app.config.tr_case[1],
-            "tags": ";".join([self.test_tags, self.test_id])
-            if len(self.test_tags) > 0
-            else self.test_id,
+            "tags": (";".join([self.test_tags, self.test_id]) if len(self.test_tags) > 0 else self.test_id),
             "links_string": links_string,
             "title": self.test_name,
             "content": self.content,
@@ -85,8 +79,6 @@ class TestReportDirective(TestCommonDirective):
         }
 
         template_ready = template.format(**template_data)
-        self.state_machine.insert_input(
-            template_ready.split("\n"), self.state_machine.document.attributes["source"]
-        )
+        self.state_machine.insert_input(template_ready.split("\n"), self.state_machine.document.attributes["source"])
 
         return []

@@ -5,9 +5,7 @@ from subprocess import STDOUT, check_output
 import pytest
 import sphinx
 
-sphinx_version = int(
-    sphinx.__version__.split(".")[0] + sphinx.__version__.split(".")[1]
-)
+sphinx_version = int(sphinx.__version__.split(".")[0] + sphinx.__version__.split(".")[1])
 
 
 @pytest.mark.parametrize(

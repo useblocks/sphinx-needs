@@ -2,7 +2,6 @@ import os
 
 import sphinx
 from packaging.version import Version
-
 from sphinx.util.console import brown
 from sphinx.util.osutil import copyfile, ensuredir
 
@@ -30,21 +29,13 @@ def safe_add_file(filename, app):
     static_data_file = os.path.join("_static", data_file)
 
     if data_file.split(".")[-1] == "js":
-        if (
-            hasattr(app.builder, "script_files")
-            and static_data_file not in app.builder.script_files  # noqa: W503
-        ):
+        if hasattr(app.builder, "script_files") and static_data_file not in app.builder.script_files:  # noqa: W503
             app.add_js_file(data_file)
     elif data_file.split(".")[-1] == "css":
-        if (
-            hasattr(app.builder, "css_files")
-            and static_data_file not in app.builder.css_files  # noqa: W503
-        ):
+        if hasattr(app.builder, "css_files") and static_data_file not in app.builder.css_files:  # noqa: W503
             app.add_css_file(data_file)
     else:
-        raise NotImplementedError(
-            "File type {} not support by save_add_file".format(data_file.split(".")[-1])
-        )
+        raise NotImplementedError("File type {} not support by save_add_file".format(data_file.split(".")[-1]))
 
 
 def safe_remove_file(filename, app):
@@ -61,14 +52,10 @@ def safe_remove_file(filename, app):
     static_data_file = os.path.join("_static", data_file)
 
     if data_file.split(".")[-1] == "js":
-        if (
-            hasattr(app.builder, "script_files")
-            and static_data_file in app.builder.script_files  # noqa: W503
-        ):
+        if hasattr(app.builder, "script_files") and static_data_file in app.builder.script_files:  # noqa: W503
             app.builder.script_files.remove(static_data_file)
     elif data_file.split(".")[-1] == "css" and (
-        hasattr(app.builder, "css_files")
-        and static_data_file in app.builder.css_files  # noqa: W503
+        hasattr(app.builder, "css_files") and static_data_file in app.builder.css_files  # noqa: W503
     ):
         app.builder.css_files.remove(static_data_file)
 
@@ -95,19 +82,11 @@ def install_styles_static_files(app, env):
         len(files_to_copy),
     ):
         if not os.path.isabs(source_file_path):
-            source_file_path = os.path.join(
-                os.path.dirname(__file__), "css", source_file_path
-            )
+            source_file_path = os.path.join(os.path.dirname(__file__), "css", source_file_path)
 
         if not os.path.exists(source_file_path):
-            source_file_path = os.path.join(
-                os.path.dirname(__file__), "css", "blank.css"
-            )
-            print(
-                "{} not found. Copying sphinx-internal blank.css".format(
-                    source_file_path
-                )
-            )
+            source_file_path = os.path.join(os.path.dirname(__file__), "css", "blank.css")
+            print(f"{source_file_path} not found. Copying sphinx-internal blank.css")
 
         dest_file_path = os.path.join(dest_path, os.path.basename(source_file_path))
 

@@ -28,9 +28,7 @@ def test_test_file_needs_extra_options_no_warning(test_app):
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"
 
-    out = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
-    )
+    out = subprocess.run(["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True)
 
     assert out.returncode == 0
 

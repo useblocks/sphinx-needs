@@ -87,13 +87,9 @@ class TestFileDirective(TestCommonDirective):
             errors=errors,
         )
 
-        if (
-            "auto_cases" in self.options.keys()
-            and "auto_suites" not in self.options.keys()  # noqa W 503
-        ):
+        if "auto_cases" in self.options.keys() and "auto_suites" not in self.options.keys():  # noqa W 503
             raise TestReportIncompleteConfiguration(
-                "option auto_cases must be used together with "
-                "auto_suites for test-file directives."
+                "option auto_cases must be used together with " "auto_suites for test-file directives."
             )
 
         if "auto_suites" in self.options.keys():
@@ -123,18 +119,16 @@ class TestFileDirective(TestCommonDirective):
                     options["links"] = options["links"] + ";" + self.test_id
 
                 arguments = [suite["name"]]
-                suite_directive = (
-                    sphinxcontrib.test_reports.directives.test_suite.TestSuiteDirective(
-                        self.app.config.tr_suite[0],
-                        arguments,
-                        options,
-                        "",
-                        self.lineno,  # no content
-                        self.content_offset,
-                        self.block_text,
-                        self.state,
-                        self.state_machine,
-                    )
+                suite_directive = sphinxcontrib.test_reports.directives.test_suite.TestSuiteDirective(
+                    self.app.config.tr_suite[0],
+                    arguments,
+                    options,
+                    "",
+                    self.lineno,  # no content
+                    self.content_offset,
+                    self.block_text,
+                    self.state,
+                    self.state_machine,
                 )
 
                 main_section += suite_directive.run()

@@ -22,9 +22,7 @@ import os
 
 project = "sphinx-test-reports"
 now = datetime.datetime.now()
-copyright = '2017-{year}, <a href="http://useblocks.com">team useblocks</a>'.format(
-    year=now.year
-)
+copyright = f'2017-{now.year}, <a href="http://useblocks.com">team useblocks</a>'
 author = "team useblocks"
 
 # The short X.Y version
@@ -135,9 +133,9 @@ html_theme_options = {
 # default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
 # 'searchbox.html']``.
 #
-html_sidebars = {
-    "**": ["about.html", "navigation.html"],
-}
+# html_sidebars = {
+#     "**": ["about.html", "navigation.html"],
+# }
 
 
 # -- Options for HTMLHelp output ---------------------------------------------

@@ -62,9 +62,7 @@ def setup(app):
     )
 
     # adds option for custom template
-    template_dir = os.path.join(
-        os.path.dirname(__file__), "directives/test_report_template.txt"
-    )
+    template_dir = os.path.join(os.path.dirname(__file__), "directives/test_report_template.txt")
     app.add_config_value("tr_report_template", template_dir, "html")
 
     app.add_config_value("tr_suite_id_length", 3, "html")

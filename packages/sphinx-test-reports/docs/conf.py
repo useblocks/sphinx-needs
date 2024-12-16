@@ -33,6 +33,8 @@ version = "1.0"
 # The full version, including alpha/beta/rc tags
 release = "1.0.2"
 
+needs_id_regex = ".*"
+needs_css = "dark.css"
 
 # -- General configuration ---------------------------------------------------
 
@@ -111,6 +113,7 @@ html_title = "Sphinx-Test-Reports"
 other_options = {
     "repo_url": "https://github.com/useblocks/sphinx-test-reports",
     "repo_name": "sphinx-test-reports",
+    "font": False,
 }
 html_theme_options.update(other_options)
 html_theme_options["features"].extend(["navigation.tabs", "navigation.tabs.sticky"])
@@ -195,6 +198,7 @@ texinfo_documents = [
 linkcheck_ignore = [
     r"http://localhost:\d+",
     r"http://127.0.0.1:\d+",
+    r"https://fonts.googleapis.com",
 ]
 
 linkcheck_request_headers = {

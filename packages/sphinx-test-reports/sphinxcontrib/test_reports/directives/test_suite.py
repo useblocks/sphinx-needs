@@ -62,9 +62,7 @@ class TestSuiteDirective(TestCommonDirective):
                 break
 
         if suite is None:
-            raise TestReportInvalidOption(
-                f"Suite {suite_name} not found in test file {self.test_file}"
-            )
+            raise TestReportInvalidOption(f"Suite {suite_name} not found in test file {self.test_file}")
 
         cases = suite["tests"]
 
@@ -120,18 +118,16 @@ class TestSuiteDirective(TestCommonDirective):
                     options["links"] = options["links"] + ";" + self.test_id
 
                 arguments = [suite["name"]]
-                suite_directive = (
-                    sphinxcontrib.test_reports.directives.test_suite.TestSuiteDirective(
-                        self.app.config.tr_suite[0],
-                        arguments,
-                        options,
-                        "",
-                        self.lineno,  # no content
-                        self.content_offset,
-                        self.block_text,
-                        self.state,
-                        self.state_machine,
-                    )
+                suite_directive = sphinxcontrib.test_reports.directives.test_suite.TestSuiteDirective(
+                    self.app.config.tr_suite[0],
+                    arguments,
+                    options,
+                    "",
+                    self.lineno,  # no content
+                    self.content_offset,
+                    self.block_text,
+                    self.state,
+                    self.state_machine,
                 )
 
                 is_nested = len(suite_obj["testsuites"]) > 0
@@ -149,9 +145,7 @@ class TestSuiteDirective(TestCommonDirective):
                 case_id = self.test_id
                 case_id += (
                     "_"
-                    + hashlib.sha1(  # noqa: W503
-                        case["classname"].encode("UTF-8") + case["name"].encode("UTF-8")
-                    )
+                    + hashlib.sha1(case["classname"].encode("UTF-8") + case["name"].encode("UTF-8"))  # noqa: W503
                     .hexdigest()
                     .upper()[: self.app.config.tr_case_id_length]
                 )
@@ -175,18 +169,16 @@ class TestSuiteDirective(TestCommonDirective):
                     options["links"] = options["links"] + ";" + self.test_id
 
                 arguments = [case["name"]]
-                case_directive = (
-                    sphinxcontrib.test_reports.directives.test_case.TestCaseDirective(
-                        self.app.config.tr_case[0],
-                        arguments,
-                        options,
-                        "",
-                        self.lineno,  # no content
-                        self.content_offset,
-                        self.block_text,
-                        self.state,
-                        self.state_machine,
-                    )
+                case_directive = sphinxcontrib.test_reports.directives.test_case.TestCaseDirective(
+                    self.app.config.tr_case[0],
+                    arguments,
+                    options,
+                    "",
+                    self.lineno,  # no content
+                    self.content_offset,
+                    self.block_text,
+                    self.state,
+                    self.state_machine,
                 )
 
                 is_nested = len(suite_obj["testsuite_nested"]) > 0 or nested

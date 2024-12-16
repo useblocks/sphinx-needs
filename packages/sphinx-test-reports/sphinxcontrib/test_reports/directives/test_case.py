@@ -65,31 +65,20 @@ class TestCaseDirective(TestCommonDirective):
                 break
 
         if suite is None:
-            raise TestReportInvalidOption(
-                f"Suite {suite_name} not found in test file {self.test_file}"
-            )
+            raise TestReportInvalidOption(f"Suite {suite_name} not found in test file {self.test_file}")
 
         case = None
 
         for case_obj in suite["testcases"]:
-            if (
-                case_obj["name"] == case_full_name  # noqa: SIM114
-                and class_name is None  # noqa: W503
-            ):
+            if case_obj["name"] == case_full_name and class_name is None:  # noqa: SIM114  # noqa: W503
                 case = case_obj
                 break
 
-            elif (
-                case_obj["classname"] == class_name  # noqa: SIM114
-                and case_full_name is None  # noqa: W503
-            ):
+            elif case_obj["classname"] == class_name and case_full_name is None:  # noqa: SIM114  # noqa: W503
                 case = case_obj
                 break
 
-            elif (
-                case_obj["name"] == case_full_name
-                and case_obj["classname"] == class_name  # noqa: W503
-            ):
+            elif case_obj["name"] == case_full_name and case_obj["classname"] == class_name:  # noqa: W503
                 case = case_obj
                 break
 
@@ -105,9 +94,7 @@ class TestCaseDirective(TestCommonDirective):
         if case is None:
             raise TestReportInvalidOption(
                 "Case {} with classname {} not found in test file {} "
-                "and testsuite {}".format(
-                    case_full_name, class_name, self.test_file, suite_name
-                )
+                "and testsuite {}".format(case_full_name, class_name, self.test_file, suite_name)
             )
 
         result = case["result"]

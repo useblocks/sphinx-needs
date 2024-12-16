@@ -52,9 +52,7 @@ class TestResultsDirective(Directive):
                     skips=testsuite["skips"],
                 )
             )
-            section += nodes.paragraph(
-                text="Time: {time}".format(time=testsuite["time"])
-            )
+            section += nodes.paragraph(text="Time: {time}".format(time=testsuite["time"]))
 
             table = nodes.table()
             section += table
@@ -92,9 +90,7 @@ class TestResultsDirective(Directive):
 
         row = nodes.row(classes=["tr_" + testcase["result"]])
         for index, cell in enumerate(row_cells):
-            entry = nodes.entry(
-                classes=["tr_" + testcase["result"], self.header[index]]
-            )
+            entry = nodes.entry(classes=["tr_" + testcase["result"], self.header[index]])
             row += entry
             entry += nodes.paragraph(text=cell, classes=["tr_" + testcase["result"]])
         return row
