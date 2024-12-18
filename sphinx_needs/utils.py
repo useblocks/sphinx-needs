@@ -326,7 +326,7 @@ def check_and_get_external_filter_func(
         return None
 
     try:
-        filter_module, filter_function = filter_func_ref.rsplit(".")
+        filter_module, filter_function = filter_func_ref.rsplit(".", 1)
     except ValueError:
         raise NeedsInvalidFilter("does not contain a dot")
 
