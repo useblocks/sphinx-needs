@@ -538,7 +538,7 @@ By setting a style to ``None``, no style is set and the normal Sphinx-Needs styl
 Own style configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you need to customize the css definitions, there are twi ways of doing it:
+If you need to customize the css definitions, there are two ways of doing it:
 
 * Provide a css file by using :ref:`needs_css`
 * Set own css on sphinx level
@@ -588,7 +588,7 @@ HTML output
 For **html output** the used layout and style names are added as css-class to the need table object.
 Beside this also the used grid system is added::
 
-   <table class="need needs_grid_simple needs_layout_complex needes_style_blue docutils" id="SPEC_1">
+   <table class="need needs_grid_simple needs_layout_complex needs_style_blue docutils" id="SPEC_1">
 
 The above line contains the following css classes:
 
