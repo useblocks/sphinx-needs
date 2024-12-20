@@ -538,7 +538,7 @@ By setting a style to ``None``, no style is set and the normal Sphinx-Needs styl
 Own style configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you need to customize the css definitions, there are twi ways of doing it:
+If you need to customize the css definitions, there are two ways of doing it:
 
 * Provide a css file by using :ref:`needs_css`
 * Set own css on sphinx level
