@@ -48,7 +48,10 @@ def test_doc_needs_filter_data_html(test_app):
         '<td class="needs_tags"><p>my_tag<em>; </em>current_variant</p></td>'
         in index_html
     )
-    assert '<span class="caption-text">Filter code func table with multiple dots filter function path</span>' in filter_code
+    assert (
+        '<span class="caption-text">Filter code func table with multiple dots filter function path</span>'
+        in filter_code
+    )
 
     # check needflow works
     if int(doc_ver.split(".")[1]) >= 18:
@@ -62,8 +65,14 @@ def test_doc_needs_filter_data_html(test_app):
 
     # check needpie works
     assert '<img alt="_images/need_pie_dba00.svg" id="needpie-index-0"' in index_html
-    assert '<img alt="_images/need_pie_446e9.svg" id="needpie-filter_code-0"' in filter_code
-    assert '<img alt="_images/need_pie_fac86.svg" id="needpie-filter_code-1"' in filter_code
+    assert (
+        '<img alt="_images/need_pie_446e9.svg" id="needpie-filter_code-0"'
+        in filter_code
+    )
+    assert (
+        '<img alt="_images/need_pie_fac86.svg" id="needpie-filter_code-1"'
+        in filter_code
+    )
     # check needextend works
     assert (
         '<span class="needs_tags"><span class="needs_label">tags: </span>'
@@ -71,7 +80,7 @@ def test_doc_needs_filter_data_html(test_app):
         '<span class="needs_spacer">, </span><span class="needs_data">current_variant</span></span>'
         in index_html
     )
-    
+
 
 @pytest.mark.parametrize(
     "test_app",
