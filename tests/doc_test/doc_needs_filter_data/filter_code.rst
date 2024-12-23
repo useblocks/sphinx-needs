@@ -22,6 +22,14 @@ Filter code test cases
     :labels: project_x, project_y
     :filter-func: filter_code_func.my_pie_filter_code
 
+.. needtable:: Filter code func table with multiple dots filter function path 
+   :style: table
+   :filter-func: module.filter_code_func.own_filter_code
+
+
+.. needpie:: Filter code func pie with multiple dots filter function path 
+    :labels: project_x, project_y
+    :filter-func: module.filter_code_func.my_pie_filter_code
 
 .. needtable:: Malformed filter func table
    :style: table
@@ -31,3 +39,12 @@ Filter code test cases
 .. needpie:: Malformed filter func pie
     :labels: project_x, project_y
     :filter-func: filter_code_func.my_pie_filter_code(
+
+.. needtable:: Malformed filter func table with multiple dots filter function path 
+   :style: table
+   :filter-func: module.filter_code_func.own_filter_code(
+
+
+.. needpie:: Malformed filter func pie with multiple dots filter function path 
+    :labels: project_x, project_y
+    :filter-func: module.filter_code_func.my_pie_filter_code(

@@ -20,14 +20,17 @@ def test_doc_needs_filter_data_html(test_app):
     ).splitlines()
     print(warnings)
     assert warnings == [
-        "srcdir/filter_code.rst:26: WARNING: malformed function signature: 'own_filter_code(' [needs.filter_func]",
-        "srcdir/filter_code.rst:31: WARNING: malformed function signature: 'my_pie_filter_code(' [needs.filter_func]",
+        "srcdir/filter_code.rst:34: WARNING: malformed function signature: 'own_filter_code(' [needs.filter_func]",
+        "srcdir/filter_code.rst:43: WARNING: malformed function signature: 'own_filter_code(' [needs.filter_func]",
+        "srcdir/filter_code.rst:39: WARNING: malformed function signature: 'my_pie_filter_code(' [needs.filter_func]",
+        "srcdir/filter_code.rst:48: WARNING: malformed function signature: 'my_pie_filter_code(' [needs.filter_func]",
         "WARNING: variant_not_equal_current_variant: failed",
         "\t\tfailed needs: 1 (extern_filter_story_002)",
         "\t\tused filter: variant != current_variant [needs.warnings]",
     ]
 
     index_html = Path(app.outdir, "index.html").read_text()
+    filter_code = Path(app.outdir, "filter_code.html").read_text()
 
     # Check need_count works
     assert "The amount of needs that belong to current variants: 6" in index_html
@@ -45,6 +48,10 @@ def test_doc_needs_filter_data_html(test_app):
         '<td class="needs_tags"><p>my_tag<em>; </em>current_variant</p></td>'
         in index_html
     )
+    assert (
+        '<span class="caption-text">Filter code func table with multiple dots filter function path</span>'
+        in filter_code
+    )
 
     # check needflow works
     if int(doc_ver.split(".")[1]) >= 18:
@@ -58,7 +65,14 @@ def test_doc_needs_filter_data_html(test_app):
 
     # check needpie works
     assert '<img alt="_images/need_pie_dba00.svg" id="needpie-index-0"' in index_html
-
+    assert (
+        '<img alt="_images/need_pie_446e9.svg" id="needpie-filter_code-0"'
+        in filter_code
+    )
+    assert (
+        '<img alt="_images/need_pie_fac86.svg" id="needpie-filter_code-1"'
+        in filter_code
+    )
     # check needextend works
     assert (
         '<span class="needs_tags"><span class="needs_label">tags: </span>'
