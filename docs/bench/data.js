@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1734975538553,
+  "lastUpdate": 1734975614538,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -11592,6 +11592,42 @@ window.BENCHMARK_DATA = {
             "value": 66.89771267500001,
             "unit": "s",
             "extra": "Commit: 3ba2d9e4f369613f8cde53a99d188736d216c400\nBranch: master\nTime: 2024-12-23T18:37:00+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "zachary@interift.com",
+            "name": "Zachary",
+            "username": "interifter"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9c5a6db522cb06d7a47eaf9f42352de66c95e8fd",
+          "message": "Fix typo in layout_styles.rst (#1374)\n\nCaught a couple typos while reading the docs.\r\n\r\n1:\r\n\r\nTake this line:\r\n\r\n```\r\nIf you need to customize the css definitions, there are twi ways of doing it:\r\n```\r\n\r\nand correct it:\r\n\r\n```\r\nIf you need to customize the css definitions, there are two ways of doing it:\r\n```\r\n\r\n2:\r\n\r\nCorrect this line:\r\n\r\n```\r\n<table class=\"need needs_grid_simple needs_layout_complex needes_style_blue docutils\" id=\"SPEC_1\">\r\n```\r\n\r\nto this:\r\n\r\n```\r\n<table class=\"need needs_grid_simple needs_layout_complex needs_style_blue docutils\" id=\"SPEC_1\">\r\n```",
+          "timestamp": "2024-12-23T18:38:12+01:00",
+          "tree_id": "a8fa3205a29d69cc416600454307db30a5f1f6db",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/9c5a6db522cb06d7a47eaf9f42352de66c95e8fd"
+        },
+        "date": 1734975601695,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18596631999997726,
+            "unit": "s",
+            "extra": "Commit: 9c5a6db522cb06d7a47eaf9f42352de66c95e8fd\nBranch: master\nTime: 2024-12-23T18:38:12+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 70.40116307900007,
+            "unit": "s",
+            "extra": "Commit: 9c5a6db522cb06d7a47eaf9f42352de66c95e8fd\nBranch: master\nTime: 2024-12-23T18:38:12+01:00"
           }
         ]
       }
