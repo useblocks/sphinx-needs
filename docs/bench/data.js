@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1733349659356,
+  "lastUpdate": 1734975538553,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -11556,6 +11556,42 @@ window.BENCHMARK_DATA = {
             "value": 70.46910069700002,
             "unit": "s",
             "extra": "Commit: 4e52ed213415e70837b9283ddd4d9308a7bee41a\nBranch: master\nTime: 2024-12-04T22:58:59+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "aymen.soussi@expleogroup.com",
+            "name": "Aymen-Soussi-01",
+            "username": "Aymen-Soussi-01"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3ba2d9e4f369613f8cde53a99d188736d216c400",
+          "message": "Allow filter-func in need-pie to have multiple dots in the import path.  (#1373)\n\nI just changed the split of the path of filter-func to split on the\r\nfirst dot starting from the right.\r\nThis means anything to the right will be the function name and anything\r\nto the left will be the module import path\r\nThis Fix will close the issue #1372\r\n\r\n---------\r\n\r\nCo-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>",
+          "timestamp": "2024-12-23T18:37:00+01:00",
+          "tree_id": "9928a061756442c1c504240e9930391b12b76e5e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/3ba2d9e4f369613f8cde53a99d188736d216c400"
+        },
+        "date": 1734975526076,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1459278000000097,
+            "unit": "s",
+            "extra": "Commit: 3ba2d9e4f369613f8cde53a99d188736d216c400\nBranch: master\nTime: 2024-12-23T18:37:00+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 66.89771267500001,
+            "unit": "s",
+            "extra": "Commit: 3ba2d9e4f369613f8cde53a99d188736d216c400\nBranch: master\nTime: 2024-12-23T18:37:00+01:00"
           }
         ]
       }
