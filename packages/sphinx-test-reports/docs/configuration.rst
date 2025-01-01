@@ -33,7 +33,7 @@ All of the following arguments must be set:
 2. **need directive name**
 3. **need print name**
 4. **need id prefix**
-5. **need collor**
+5. **need color**
 6. **need plantuml style**
 
 The parameters **2-6** are used to configure the underlying Sphinx-needs.
