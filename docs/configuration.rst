@@ -1664,7 +1664,14 @@ Default: ``False``.
     needs_service_all_data = True
 
 
+.. _needs_import_keys:
 
+needs_import_keys
+~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 4.2.0
+
+For use with the :ref:`needimport` directive, mapping keys to file paths, see :ref:`needimport-keys`.
 
 .. _needs_external_needs:
 

@@ -20,7 +20,7 @@ COLLAPSED
 
 TEST
 ----
-.. needimport:: needs_test.json
+.. needimport:: key
    :id_prefix: test_
    :tags: imported; new_tag
 
