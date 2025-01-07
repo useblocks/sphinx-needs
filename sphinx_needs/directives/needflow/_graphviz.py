@@ -146,7 +146,7 @@ def process_needflow_graphviz(
         for etype in ("graph", "node", "edge"):
             if etype in attributes["graphviz_style"]:
                 content += f"{etype} [\n"
-                for key, value in attributes["graphviz_style"][etype].items():  # type: ignore[literal-required]
+                for key, value in attributes["graphviz_style"][etype].items():
                     content += f"  {key}={_quote(str(value))};\n"
                 content += "]\n"
 
