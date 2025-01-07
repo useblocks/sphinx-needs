@@ -52,14 +52,17 @@ class NeedimportDirective(SphinxDirective):
 
     @measure_time("needimport")
     def run(self) -> Sequence[nodes.Node]:
-        # needs_list = {}
+        needs_config = NeedsSphinxConfig(self.config)
+
         version = self.options.get("version")
         filter_string = self.options.get("filter")
         id_prefix = self.options.get("id_prefix", "")
 
-        need_import_path = self.arguments[0]
+        need_import_path = needs_config.import_keys.get(
+            self.arguments[0], self.arguments[0]
+        )
 
-        # check if given arguemnt is downloadable needs.json path
+        # check if given argument is downloadable needs.json path
         url = urlparse(need_import_path)
         if url.scheme and url.netloc:
             # download needs.json
@@ -141,7 +144,6 @@ class NeedimportDirective(SphinxDirective):
                 f"Version {version} not found in needs import file {correct_need_import_path}"
             )
 
-        needs_config = NeedsSphinxConfig(self.config)
         data = needs_import_list["versions"][version]
 
         if ids := self.options.get("ids"):

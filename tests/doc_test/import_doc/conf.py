@@ -42,6 +42,8 @@ needs_types = [
     },
 ]
 
+needs_import_keys = {"key": "needs_test.json"}
+
 needs_template = """
 .. _{{id}}:
 
