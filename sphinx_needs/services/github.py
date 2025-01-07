@@ -243,7 +243,7 @@ class GithubService(BaseService):
                         line, 60, break_long_words=True, replace_whitespace=False
                     )
                 )
-                for line in item["body"].splitlines()  # type: ignore
+                for line in item["body"].splitlines()
                 if line.strip()
             ]
 

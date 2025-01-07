@@ -317,7 +317,7 @@ def process_needgantt(
                 else:
                     start_end_sync = "start"
 
-                for link_type in current_needgantt[con_type]:  # type: ignore[literal-required]
+                for link_type in current_needgantt[con_type]:
                     start_with_links = need[link_type]  # type: ignore[literal-required]
                     for start_with_link in start_with_links:
                         start_need = all_needs_dict[start_with_link]
