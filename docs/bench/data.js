@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1736238560904,
+  "lastUpdate": 1736238571625,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -11664,6 +11664,42 @@ window.BENCHMARK_DATA = {
             "value": 56.26942227900001,
             "unit": "s",
             "extra": "Commit: 65c9f4da1920abb0cdbde352cd85234c6c1307ca\nBranch: master\nTime: 2025-01-07T09:27:34+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "77514a211a6f319ebc759c6f647abf366bd0a6bd",
+          "message": "✨ Add `needs_import_keys` configuration (#1379)\n\n```python\nneeds_import_keys = {\"my_key\": \"path/to/needs.json\"}\n```\n\nAllows for the use of:\n\n```restructuredtext\n.. needimport:: my_key\n```\n\nAs discussed with @arwedus",
+          "timestamp": "2025-01-07T09:27:51+01:00",
+          "tree_id": "e005d87dfb175c6ffa45cd0e131173a07a0a766a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/77514a211a6f319ebc759c6f647abf366bd0a6bd"
+        },
+        "date": 1736238559569,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1392624740000059,
+            "unit": "s",
+            "extra": "Commit: 77514a211a6f319ebc759c6f647abf366bd0a6bd\nBranch: master\nTime: 2025-01-07T09:27:51+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 55.67693766800001,
+            "unit": "s",
+            "extra": "Commit: 77514a211a6f319ebc759c6f647abf366bd0a6bd\nBranch: master\nTime: 2025-01-07T09:27:51+01:00"
           }
         ]
       }
