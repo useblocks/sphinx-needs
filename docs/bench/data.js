@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1736239246846,
+  "lastUpdate": 1736240203263,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -11736,6 +11736,42 @@ window.BENCHMARK_DATA = {
             "value": 59.707422408,
             "unit": "s",
             "extra": "Commit: 1114e72c011e77524f332eddcc9621fefd4ddbdf\nBranch: master\nTime: 2025-01-07T09:38:55+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "35ed42a02da6b128608910936f558cd686ffba08",
+          "message": "⬆️ Update lxml requirement from <5.0,>=4.6.5 to >=4.6.5,<6.0 (#1365)",
+          "timestamp": "2025-01-07T09:55:00+01:00",
+          "tree_id": "c817a8ffc92b3ad131e895cd85e0dfb59190601e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/35ed42a02da6b128608910936f558cd686ffba08"
+        },
+        "date": 1736240190849,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.13999666999998794,
+            "unit": "s",
+            "extra": "Commit: 35ed42a02da6b128608910936f558cd686ffba08\nBranch: master\nTime: 2025-01-07T09:55:00+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.02898231399999,
+            "unit": "s",
+            "extra": "Commit: 35ed42a02da6b128608910936f558cd686ffba08\nBranch: master\nTime: 2025-01-07T09:55:00+01:00"
           }
         ]
       }
