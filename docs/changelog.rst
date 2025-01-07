@@ -3,11 +3,24 @@
 Changelog
 =========
 
+4.2.0
+-----
+
+:Released: 07.01.2025
+:Full Changelog: `v4.1.0...v4.2.0 <https://github.com/useblocks/sphinx-needs/compare/4.1.0...1114e72c011e77524f332eddcc9621fefd4ddbdf>`__
+
+- ⬆️ Drop Python 3.8 and Sphinx 6
+- ✨ Add :ref:`needs_import_keys`` configuration :pr:`1379`
+- 👌 Allow ``filter-func`` in ``needpie`` to have multiple dots in the import path :pr:`1350`
+- 🐛 Make external paths relative to ``confdir``, not ``srcdir`` :pr:`1378`
+- 🔧 Release needs data mutation lock at end of process :pr:`1359`
+- 🔧 Add ``lineno`` to default output of ``needs.json`` :pr:`1346`
+
 4.1.0
 -----
 
 :Released: 28.10.2024
-:Full Changelog: `v4.0.0...v4.1.0 <https://github.com/useblocks/sphinx-needs/compare/4.0.0...94b0273fbf51ac467f9cfb829b3ef476667f01b2>`__
+:Full Changelog: `v4.0.0...v4.1.0 <https://github.com/useblocks/sphinx-needs/compare/4.0.0...4.1.0>`__
 
 New
 ...
