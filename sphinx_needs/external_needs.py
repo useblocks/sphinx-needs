@@ -77,7 +77,7 @@ def load_external_needs(
             if os.path.isabs(source["json_path"]):
                 json_path = source["json_path"]
             else:
-                json_path = os.path.join(app.srcdir, source["json_path"])
+                json_path = os.path.join(app.confdir, source["json_path"])
 
             if not os.path.exists(json_path):
                 raise NeedsExternalException(
