@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1734975614538,
+  "lastUpdate": 1736238560904,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -11628,6 +11628,42 @@ window.BENCHMARK_DATA = {
             "value": 70.40116307900007,
             "unit": "s",
             "extra": "Commit: 9c5a6db522cb06d7a47eaf9f42352de66c95e8fd\nBranch: master\nTime: 2024-12-23T18:38:12+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "65c9f4da1920abb0cdbde352cd85234c6c1307ca",
+          "message": "🐛 Fix: make external paths relative to `confdir`, not `srcdir` (#1378)\n\nPaths set in the `conf.py` should be relative to it, not to the\n`srcdir`.\nNote, often `confdir` and `srcdir` are equivalent, but this is not\nalways the case.",
+          "timestamp": "2025-01-07T09:27:34+01:00",
+          "tree_id": "dc8e7f75390e246534d764f1e6baa76e27b057c5",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/65c9f4da1920abb0cdbde352cd85234c6c1307ca"
+        },
+        "date": 1736238548791,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14095132100000285,
+            "unit": "s",
+            "extra": "Commit: 65c9f4da1920abb0cdbde352cd85234c6c1307ca\nBranch: master\nTime: 2025-01-07T09:27:34+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.26942227900001,
+            "unit": "s",
+            "extra": "Commit: 65c9f4da1920abb0cdbde352cd85234c6c1307ca\nBranch: master\nTime: 2025-01-07T09:27:34+01:00"
           }
         ]
       }
