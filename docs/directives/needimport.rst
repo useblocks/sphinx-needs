@@ -107,3 +107,23 @@ So you can decide what kind of layout or style to use during import.
 * template
 * pre_template
 * post_template
+
+.. _needimport-keys:
+
+Global keys
+-----------
+.. versionadded:: 4.2.0
+
+The :ref:`needs_import_keys` configuration can be used to set global keys for use as the directive arguments.
+
+For example:
+
+.. code-block:: python
+
+    needs_import_keys = {"my_key": "path/to/needs.json"}
+
+Allows for the use of:
+
+.. code-block:: restructuredtext
+
+    .. needimport:: my_key

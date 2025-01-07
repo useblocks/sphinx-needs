@@ -594,6 +594,10 @@ class NeedsSphinxConfig:
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
     """If True, unknown sevice option data is shown in the need content."""
+    import_keys: dict[str, str] = field(
+        default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
+    )
+    """Mapping of keys that can be used as needimport arguments and replaced by the value."""
     external_needs: list[ExternalSource] = field(
         default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )
