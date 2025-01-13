@@ -85,7 +85,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
         timeline_options = ["daily", "weekly", "monthly"]
         if timeline and timeline not in timeline_options:
             raise NeedGanttException(
-                "Given scale value {} is invalid. Please use: " "{}".format(
+                "Given scale value {} is invalid. Please use: {}".format(
                     timeline, ",".join(timeline_options)
                 )
             )
@@ -178,7 +178,7 @@ def process_needgantt(
             no_plantuml(node)
             continue
 
-        plantuml_block_text = ".. plantuml::\n" "\n" "   @startgantt" "   @endgantt"
+        plantuml_block_text = ".. plantuml::\n\n   @startgantt   @endgantt"
         puml_node = plantuml(plantuml_block_text)
 
         # Add source origin
@@ -321,7 +321,7 @@ def process_needgantt(
                     start_with_links = need[link_type]  # type: ignore[literal-required]
                     for start_with_link in start_with_links:
                         start_need = all_needs_dict[start_with_link]
-                        gantt_constraint = "[{}] {} at [{}]'s " "{}\n".format(
+                        gantt_constraint = "[{}] {} at [{}]'s {}\n".format(
                             need["id"], keyword, start_need["id"], start_end_sync
                         )
                         puml_node["uml"] += gantt_constraint
