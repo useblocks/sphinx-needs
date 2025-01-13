@@ -723,7 +723,7 @@ def _make_hashed_id(
     hashed = hashlib.sha1(hashable_content.encode("UTF-8")).hexdigest().upper()
     if config.id_from_title:
         hashed = full_title.upper().replace(" ", "_") + "_" + hashed
-    return f"{type_prefix}{hashed[:config.id_length]}"
+    return f"{type_prefix}{hashed[: config.id_length]}"
 
 
 def _split_list_with_dyn_funcs(
@@ -740,9 +740,9 @@ def _split_list_with_dyn_funcs(
         return []
 
     if not isinstance(text, str):
-        assert isinstance(text, list) and all(
-            isinstance(x, str) for x in text
-        ), "text must be a string or a list of strings"
+        assert isinstance(text, list) and all(isinstance(x, str) for x in text), (
+            "text must be a string or a list of strings"
+        )
         return text
 
     result: list[str] = []

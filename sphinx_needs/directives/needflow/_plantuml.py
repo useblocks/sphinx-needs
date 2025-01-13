@@ -274,7 +274,7 @@ def process_needflow_plantuml(
         )
 
         if found_needs:
-            plantuml_block_text = ".. plantuml::\n" "\n" "   @startuml" "   @enduml"
+            plantuml_block_text = ".. plantuml::\n\n   @startuml   @enduml"
             puml_node = plantuml(plantuml_block_text)
             # TODO if an alt is not set then sphinxcontrib.plantuml uses the plantuml source code as alt text.
             # I think this is not great, but currently setting a more sensible default breaks some tests
