@@ -62,6 +62,8 @@ class CoreFieldParameters(TypedDict):
     """JSON schema for the field."""
     show_in_layout: NotRequired[bool]
     """Whether to show the field in the rendered layout of the need by default (False if not present)."""
+    exclude_extend: NotRequired[bool]
+    """Whether field should be excluded from needextend options (False if not present)."""
     exclude_external: NotRequired[bool]
     """Whether field should be excluded when loading external needs (False if not present)."""
     exclude_import: NotRequired[bool]
@@ -71,7 +73,11 @@ class CoreFieldParameters(TypedDict):
 
 
 NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
-    "id": {"description": "ID of the data.", "schema": {"type": "string"}},
+    "id": {
+        "description": "ID of the data.",
+        "schema": {"type": "string"},
+        "exclude_extend": True,
+    },
     "docname": {
         "description": "Name of the document where the need is defined (None if external).",
         "schema": {"type": ["string", "null"], "default": None},
@@ -126,6 +132,8 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "schema": {"type": "boolean", "default": False},
         "exclude_external": True,
         "exclude_import": True,
+        "exclude_json": True,
+        "exclude_extend": True,
     },
     "layout": {
         "description": "Key of the layout, which is used to render the need.",
