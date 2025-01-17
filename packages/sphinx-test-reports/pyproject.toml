@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sphinx-test-reports"
+version = "1.0.2"
+description = "Sphinx extension for showing test results and test environment information inside sphinx documentations"
+readme = "README.rst"
+requires-python = ">=3.6"
+license = {text = "MIT"}
+authors = [
+    {name = "team useblocks", email = "info@useblocks.com"}
+]
+
+dependencies = [
+  "sphinx>4.0",
+  "lxml",
+  "sphinx-needs>=1.0.1"  
+]
+
+classifiers = [
+    "Framework :: Sphinx",
+    "Framework :: Sphinx :: Extension",
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Documentation",
+]
+keywords = ["sphinx", "documentation", "test-reports"]
+
+[project.urls]
+
+Homepage = "https://github.com/useblocks/sphinx-test-reports"
+Repository = "https://github.com/useblocks/sphinx-test-reports.git"
+Documentation = "https://sphinx-test-reports.readthedocs.io/en/latest/"
+download-url = "http://pypi.python.org/pypi/sphinx-test-reports"
+
+[tool.setuptools.packages.find]
+include = ["*"]
+
+[project.optional-dependencies]
+development = ["wheel"]
