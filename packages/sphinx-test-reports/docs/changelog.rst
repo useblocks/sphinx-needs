@@ -3,12 +3,18 @@
 Changelog
 =========
 
-1.0.3
+1.1.1
 -----
 :Released: under development
 
-* Added testcases for the :ref:`json_parser` and updated docs.
-* Updated project documentation to use the Useblocks theme customization.
+1.1.0
+-----
+:Released: 17.01.2025
+
+* Bugfix: Compatible with Sphinx-Needs >= 4.0.
+* Bugfix: Path handling is os independent.
+* Improvement: Referenced target_option in `tr_link` can contain a comma separated list.
+* Improvement: The new :ref:`json_parser` is introduced.
 * Improvement: Template file encoding could be configured. See :ref:`tr_import_encoding`.
   `#60 <https://github.com/useblocks/sphinx-test-reports/issues/60>`_
 *  Improvement: Supporting JSON files containing test results: :ref:`json_parser`.

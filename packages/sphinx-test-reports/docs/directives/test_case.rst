@@ -35,12 +35,12 @@ to specify only ``case`` or ``classname``. It depends on the loaded test-data, i
 or if it selects only the first found test case. The best case is to always try to specify both values, ``case`` and
 ``classname``.
 
-``test-suite`` creates a need of type ``Test-Suite`` and adds the following options automatically:
+``test-suite`` creates a need of type ``test-suite`` and adds the following options automatically:
 
 * **result**: Result of the test case run. E.g passed or failed.
 * **time**: Needed time for running the test case
 
-These options can also be used to :ref:`filter for certain Test-Files <filter>`.
+These options can also be used to :ref:`filter for certain test-files <filter>`.
 
 Example
 -------

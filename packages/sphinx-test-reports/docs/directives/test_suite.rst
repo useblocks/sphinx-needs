@@ -26,7 +26,7 @@ The following options can be set:
 * **links**: A comma-separated list of IDs to other documented test_files / needs-objects.
 * **collapse**: If set to "TRUE", meta data is collapsed. Can also be set to "FALSE".
 
-``test-suite`` creates a need of type ``Test-Suite`` and adds the following options automatically:
+``test-suite`` creates a need of type ``test-suite`` and adds the following options automatically:
 
 * **cases**: Amount of found cases in test file.
 * **passed**: Amount of passed test cases.
@@ -35,7 +35,7 @@ The following options can be set:
 * **errors**: Amount of test cases which have errors during tet execution.
 * **time**: Needed time for running all test cases in suite.
 
-These options can also be used to :ref:`filter for certain Test-Files <filter>`.
+These options can also be used to :ref:`filter for certain test-files <filter>`.
 
 Example
 -------

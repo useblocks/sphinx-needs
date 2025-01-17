@@ -25,7 +25,7 @@ It may get also important to solve directive name conflicts with other Sphinx ex
 
 By default ``tr_file`` is set to::
 
-   ['test-file', 'testfile', 'Test-File', 'TF_', '#ffffff', 'node']
+   ['test-file', 'testfile', 'test-file', 'TF_', '#ffffff', 'node']
 
 All of the following arguments must be set:
 
@@ -52,7 +52,7 @@ Instead of using ``.. test-suite::`` you may want to use ``.. test-container::``
 
 By default ``tr_suite`` is set to::
 
-   ['test-suite', 'testsuite', 'Test-Suite', 'TS_', '#cccccc', 'node']
+   ['test-suite', 'testsuite', 'test-suite', 'TS_', '#cccccc', 'node']
 
 Please read :ref:`tr_file` for more details.
 
@@ -67,7 +67,7 @@ Instead of using ``.. test-case::`` you may want to use ``.. test-run::``.
 
 By default ``tr_case`` is set to::
 
-   ['test-case', 'testcase', 'Test-Case', 'TC_', '#999999', 'node']
+   ['test-case', 'testcase', 'test-case', 'TC_', '#999999', 'node']
 
 Please read :ref:`tr_file` for more details.
 
