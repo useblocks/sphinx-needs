@@ -75,7 +75,7 @@ source_suffix = ".rst"
 # The master toctree document.
 master_doc = "index"
 
-needs_extra_options = ["asil", "uses_secure"]
+needs_extra_options = ["asil", "uses_secure", "references"]
 
 # General information about the project.
 project = "test-report test docs"

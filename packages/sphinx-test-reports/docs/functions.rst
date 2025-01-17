@@ -33,6 +33,9 @@ Then it goes through **all** other needs and checks if the value of their ``sour
 the ``target_option``.
 If this is the case, their IDs get stored and finally returned.
 
+``source_option`` can also reference an option with comma separated values. 
+In this case a comparions is performed for each value, which may lead to multiple links.  
+
 **Example**::
 
    .. spec:: sphinxcontrib.test_reports.test_reports

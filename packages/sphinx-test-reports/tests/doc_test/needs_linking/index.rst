@@ -14,11 +14,15 @@ Basic Document FOR TEST FILE
    :id: TEST_3
    :tags: A, B
    :uses_secure: True
+   :references: TEST_4
+   :links: [[tr_link('references', 'id')]]
 
 .. spec:: TEST_4
    :id: TEST_4
    :tags: B
    :uses_secure: True
+   :references: TEST_1, TEST_2
+   :links: [[tr_link('references', 'id')]]
 
 Need number with extra options: :need_count:`asil=='D'`
 
