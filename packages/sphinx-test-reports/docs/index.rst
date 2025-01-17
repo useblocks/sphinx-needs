@@ -47,7 +47,7 @@ A single documented test-case looks like this:
    :case: test_add_source_parser
    :collapse: FALSE
 
-   Custom Message: The result is **[[copy('result')]]** with an execution time of **[[copy('time')]]**.
+   Custom Message: The result is :ndf:`copy('result')` with an execution time of :ndf:`copy('time')`.
 
    Now follows automatically generated output like system-out, messages and text of the test-case.
 

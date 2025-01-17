@@ -4,3 +4,4 @@ sphinx-test-reports>=0.3.3
 sphinxcontrib-plantuml
 sphinx-design
 sphinx-immaterial
+pillow
