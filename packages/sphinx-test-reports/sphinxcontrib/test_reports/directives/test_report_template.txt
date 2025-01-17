@@ -1,6 +1,6 @@
-**Test file**: {file}
+**Test file**: ``{file}``
 
-**Template used**: {template_path}
+**Template used**: ``{template_path}``
 
 **Statistics**
 
