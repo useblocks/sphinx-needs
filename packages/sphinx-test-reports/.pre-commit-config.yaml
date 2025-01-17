@@ -13,7 +13,7 @@ repos:
           - flake8-bugbear
           - flake8-comprehensions
           - flake8-simplify
-          - flake8-isort
+          # - flake8-isort
           - pep8-naming
 
         # ignore sim118 ("do not use dict.keys()") for clarity

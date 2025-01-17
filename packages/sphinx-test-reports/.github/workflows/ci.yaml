@@ -2,13 +2,14 @@ name: CI
 on: [pull_request]
 jobs:
   tests:
-    name: "Test (python: ${{ matrix.python-version }}, sphinx: ${{ matrix.sphinx-version }})"
+    name: "Test (python: ${{ matrix.python-version }}, sphinx: ${{ matrix.sphinx-version }}, sphinx-needs: ${{ matrix.sphinx_needs-version }})"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-20.04]
-        python-version: [ "3.8", "3.9"]  # No "3.10", as nose seem to have problems with it
-        sphinx-version: ['5.0']
+        python-version: [ "3.10", "3.12"]  # No "3.10", as nose seem to have problems with it
+        sphinx-version: ["5.0", "8.1.3"]
+        sphinx_needs-version: ["2.1", "4.2"]
     steps:
       - uses: actions/checkout@v2
       - name: Set Up Python ${{ matrix.python-version }}
@@ -19,7 +20,7 @@ jobs:
         run: |
           python -m pip install poetry nox nox-poetry
       - name: Run Tests
-        run: nox --non-interactive --session "tests-${{ matrix.python-version }}(sphinx='${{ matrix.sphinx-version }}')" -- --full-trace
+        run: nox --non-interactive --session "tests-${{ matrix.python-version }}(sphinx='${{ matrix.sphinx-version }}', sphinx_needs='${{ matrix.sphinx_needs-version }}')" -- --full-trace
 
   lint:
     name: Lint

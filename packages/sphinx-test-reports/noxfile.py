@@ -1,8 +1,9 @@
 import nox
 from nox import session
 
-PYTHON_VERSIONS = ["3.8", "3.9", "3.10"]
-SPHINX_VERSIONS = ["5.0", "6.2.1", "7.1.2", "7.2.5"]
+PYTHON_VERSIONS = ["3.10", "3.12"]
+SPHINX_VERSIONS = ["5.0", "7.2.5", "8.1.3"]
+SPHINX_NEEDS_VERSIONS = ["2.1", "4.2"]
 TEST_DEPENDENCIES = [
     "pytest",
     "pytest-xdist",
@@ -19,19 +20,21 @@ def is_supported(python: str, sphinx: str) -> bool:
     return not (python == "3.6" and float(sphinx) > 3.0)  # fmt: skip
 
 
-def run_tests(session, sphinx):
+def run_tests(session, sphinx, sphinx_needs):
     session.install(".")
     session.install(*TEST_DEPENDENCIES)
     session.run("pip", "install", f"sphinx=={sphinx}", silent=True)
+    session.run("pip", "install", f"sphinx_needs=={sphinx_needs}", silent=True)
     session.run("pip", "install", "-r", "doc-requirements.txt", silent=True)
     session.run("make", "test", external=True)
 
 
 @session(python=PYTHON_VERSIONS)
+@nox.parametrize("sphinx_needs", SPHINX_NEEDS_VERSIONS)
 @nox.parametrize("sphinx", SPHINX_VERSIONS)
-def tests(session, sphinx):
+def tests(session, sphinx_needs, sphinx):
     if is_supported(session.python, sphinx):
-        run_tests(session, sphinx)
+        run_tests(session, sphinx, sphinx_needs)
     else:
         session.skip("unsupported combination")
 
