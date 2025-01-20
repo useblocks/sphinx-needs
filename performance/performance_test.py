@@ -141,7 +141,7 @@ def start(
         print(f"  Project = {source_tmp_path}")
         print(f"  Build   = {project_path}")
     if debug:
-        print(f'  Call: {" ".join(params)} ')
+        print(f"  Call: {' '.join(params)} ")
 
     if debug:
         subprocess.run(params)
@@ -298,7 +298,7 @@ def series(
             proc = subprocess.Popen(["snakeviz", f"profile/{p}.prof"])
             procs.append(proc)
 
-        print(f"\nKilling snakeviz server in {len(procs)*5} secs.")
+        print(f"\nKilling snakeviz server in {len(procs) * 5} secs.")
         time.sleep(len(procs) * 5)
         for proc in procs:
             proc.kill()

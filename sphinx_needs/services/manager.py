@@ -45,7 +45,7 @@ class ServiceManager:
             return self.services[name]
         else:
             raise NeedsServiceException(
-                "Service {} could not be found. " "Available services are {}".format(
+                "Service {} could not be found. Available services are {}".format(
                     name, ", ".join(self.services)
                 )
             )

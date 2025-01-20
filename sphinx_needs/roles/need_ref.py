@@ -153,9 +153,9 @@ def process_need_ref(
                         node_need_ref["reftarget"],
                     )
                 else:
-                    assert (
-                        target_need["external_url"] is not None
-                    ), "external_url must be set for external needs"
+                    assert target_need["external_url"] is not None, (
+                        "external_url must be set for external needs"
+                    )
                     new_node_ref = nodes.reference(target_need["id"], target_need["id"])
                     new_node_ref["refuri"] = check_and_calc_base_url_rel_path(
                         target_need["external_url"], fromdocname
