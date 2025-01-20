@@ -1136,7 +1136,7 @@ custom css definitions you need to update them.
 0.1.33
 ------
 * New feature: Directive :ref:`needimport` implemented
-* Improvement: needs-builder stores needs.json for all cases in the build directory (like _build/needs/needs.json) (See `issue comment <https://github.com/useblocks/sphinx-needs/issues/9#issuecomment-325010790>`_)
+* Improvement: needs-builder stores needs.json for all cases in the build directory (like _build/needs/needs.json) (See `issue <https://github.com/useblocks/sphinx-needs/issues/9>`_)
 * Bugfix: Wrong version in needs.json, if an existing needs.json got imported
 * Bugfix: Wrong need amount in initial needs.json fixed
 
