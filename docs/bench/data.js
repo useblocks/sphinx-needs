@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1736407155336,
+  "lastUpdate": 1737410961818,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -11808,6 +11808,42 @@ window.BENCHMARK_DATA = {
             "value": 57.062096948999994,
             "unit": "s",
             "extra": "Commit: 61bbf085cfa30e5fee1581f7075751e6edb7cf06\nBranch: master\nTime: 2025-01-09T08:17:29+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "92b47b129047df1b7aa9f40332d48deb369dc0c2",
+          "message": "📚 Fix markup for dynamic functions (#1382)\n\nFix RST syntax in\r\nhttps://sphinx-needs.readthedocs.io/en/latest/dynamic_functions.html\r\n\r\nThe linkcheck builder fails with a certain anchor. I removed it and just\r\nreferred to the issue.",
+          "timestamp": "2025-01-20T23:07:33+01:00",
+          "tree_id": "56264d79a071dfb08a422c1fbd29b9df1703effb",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/92b47b129047df1b7aa9f40332d48deb369dc0c2"
+        },
+        "date": 1737410948554,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14163708900001382,
+            "unit": "s",
+            "extra": "Commit: 92b47b129047df1b7aa9f40332d48deb369dc0c2\nBranch: master\nTime: 2025-01-20T23:07:33+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.67704917500001,
+            "unit": "s",
+            "extra": "Commit: 92b47b129047df1b7aa9f40332d48deb369dc0c2\nBranch: master\nTime: 2025-01-20T23:07:33+01:00"
           }
         ]
       }
