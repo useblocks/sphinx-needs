@@ -162,7 +162,7 @@ def generate_need(
         )
 
     # validate tags
-    tags = _split_list_with_dyn_funcs(tags, location)
+    tags = [v for v, _ in _split_list_with_dyn_funcs(tags, location)]
     if needs_config.tags and (
         unknown_tags := set(tags) - {t["name"] for t in needs_config.tags}
     ):
@@ -171,7 +171,7 @@ def generate_need(
         )
 
     # validate constraints
-    constraints = _split_list_with_dyn_funcs(constraints, location)
+    constraints = [v for v, _ in _split_list_with_dyn_funcs(constraints, location)]
     if unknown_constraints := set(constraints) - set(needs_config.constraints):
         raise InvalidNeedException(
             "invalid_constraints",
@@ -255,12 +255,20 @@ def generate_need(
             or len(str(kwargs[link_type["option"]])) == 0
         ):
             # If it is in global option, value got already set during prior handling of them
-            links = _split_list_with_dyn_funcs(
-                needs_info[link_type["option"]], location
-            )
+            links = [
+                v
+                for v, _ in _split_list_with_dyn_funcs(
+                    needs_info[link_type["option"]], location
+                )
+            ]
         else:
             # if it is set in kwargs, take this value and maybe override set value from global_options
-            links = _split_list_with_dyn_funcs(kwargs[link_type["option"]], location)
+            links = [
+                v
+                for v, _ in _split_list_with_dyn_funcs(
+                    kwargs[link_type["option"]], location
+                )
+            ]
 
         needs_info[link_type["option"]] = links
         needs_info["{}_back".format(link_type["option"])] = []
@@ -728,27 +736,34 @@ def _make_hashed_id(
 
 def _split_list_with_dyn_funcs(
     text: None | str | list[str], location: tuple[str, int | None] | None
-) -> list[str]:
+) -> Iterable[tuple[str, bool]]:
     """Split a ``;|,`` delimited string that may contain ``[[...]]`` dynamic functions.
 
-    Remove any empty strings from the result.
+    :param text: The string to split.
+        If the input is a list of strings, yield the list unchanged,
+        or if the input is None, yield nothing.
+    :param location: A location to use for emitting warnings about badly formatted strings.
 
-    If the input is a list of strings, return the list unchanged,
-    or if the input is None, return an empty list.
+    :yields: A tuple of the string and a boolean indicating if the string contains one or more dynamic function.
+        Each string is stripped of leading and trailing whitespace,
+        and only yielded if it is not empty.
+
     """
     if text is None:
-        return []
+        return
 
     if not isinstance(text, str):
         assert isinstance(text, list) and all(
             isinstance(x, str) for x in text
         ), "text must be a string or a list of strings"
-        return text
+        yield from ((x, False) for x in text)
+        return
 
-    result: list[str] = []
     _current_element = ""
+    _has_dynamic_function = False
     while text:
         if text.startswith("[["):
+            _has_dynamic_function = True
             _current_element += text[:2]
             text = text[2:]
             while text and not text.startswith("]]"):
@@ -767,15 +782,19 @@ def _split_list_with_dyn_funcs(
                 )
             text = text[2:]
         elif text[0] in ";|,":
-            result.append(_current_element)
+            _current_element = _current_element.strip()
+            if _current_element:
+                yield _current_element, _has_dynamic_function
             _current_element = ""
+            _has_dynamic_function = False
             text = text[1:]
         else:
             _current_element += text[0]
             text = text[1:]
-    result.append(_current_element)
-    result = [element.strip() for element in result if element.strip()]
-    return result
+
+    _current_element = _current_element.strip()
+    if _current_element:
+        yield _current_element, _has_dynamic_function
 
 
 def _merge_extra_options(

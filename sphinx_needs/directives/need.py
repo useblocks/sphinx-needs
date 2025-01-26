@@ -437,43 +437,6 @@ def create_back_links(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
                         )
 
 
-def _fix_list_dyn_func(list: list[str]) -> list[str]:
-    """
-    This searches a list for dynamic function fragments, which may have been cut by generic searches for ",|;".
-
-    Example:
-    `link_a, [[copy('links', need_id)]]` this will be split in list of 3 parts:
-
-    #. link_a
-    #. [[copy('links'
-    #. need_id)]]
-
-    This function fixes the above list to the following:
-
-    #. link_a
-    #. [[copy('links', need_id)]]
-
-    :param list: list which may contain split function calls
-    :return: list of fixed elements
-    """
-    open_func_string = False
-    new_list = []
-    for element in list:
-        if "[[" in element:
-            open_func_string = True
-            new_link = [element]
-        elif "]]" in element:
-            new_link.append(element)
-            open_func_string = False
-            element = ",".join(new_link)
-            new_list.append(element)
-        elif open_func_string:
-            new_link.append(element)
-        else:
-            new_list.append(element)
-    return new_list
-
-
 #####################
 # Visitor functions #
 #####################
