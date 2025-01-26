@@ -20,16 +20,17 @@ from sphinx_needs.needsfile import SphinxNeedsFileException
 def test_import_json(test_app):
     app = test_app
     app.build()
-    warnings = strip_colors(
-        app._warning.getvalue().replace(
-            str(app.srcdir) + os.sep + "subdoc" + os.sep, "srcdir/subdoc/"
-        )
+    warnings = app._warning.getvalue()
+    warnings_list = strip_colors(
+        warnings.replace(str(app.srcdir) + os.sep + "subdoc" + os.sep, "srcdir/subdoc/")
     ).splitlines()
 
     if os.name != "nt":
-        assert warnings == [
+        assert warnings_list == [
             "srcdir/subdoc/deprecated_rel_path_import.rst:6: WARNING: Deprecation warning: Relative path must be relative to the current document in future, not to the conf.py location. Use a starting '/', like '/needs.json', to make the path relative to conf.py. [needs.deprecated]"
         ]
+    else:
+        assert "Deprecation" in warnings
 
     html = Path(app.outdir, "index.html").read_text()
     assert "TEST IMPORT TITLE" in html
@@ -66,10 +67,6 @@ def test_import_json(test_app):
     ).read_text()
     assert "small_depr_rel_path_TEST_01" in deprec_rel_path_import_html
 
-    warning = app._warning
-    warnings = warning.getvalue()
-    assert "Deprecation warning:" in warnings
-
 
 @pytest.mark.parametrize(
     "test_app",
@@ -91,6 +88,29 @@ def test_json_schema_check(test_app):
     assert "TEST_01" in html
     assert "test_TEST_01" in html
     assert "new_tag" in html
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/import_doc_warnings",
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+def test_need_schema_warnings(test_app):
+    """Test warnings are emitted when there are schema validation issues of individual needs."""
+    test_app.build()
+    warnings = strip_colors(
+        test_app._warning.getvalue().replace(str(test_app.srcdir) + os.sep, "srcdir/")
+    ).splitlines()
+    assert warnings == [
+        "srcdir/index.rst:4: WARNING: Unknown keys in import need source: ['unknown_key'] [needs.unknown_import_keys]",
+        "srcdir/index.rst:4: WARNING: Non-string values in extra options of import need source: ['extra2'] [needs.mistyped_import_values]",
+    ]
 
 
 @pytest.mark.parametrize(
