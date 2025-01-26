@@ -68,6 +68,8 @@ class CoreFieldParameters(TypedDict):
     """Whether field should be excluded when importing needs (False if not present)."""
     exclude_json: NotRequired[bool]
     """Whether field should be part of the default exclusions from the JSON representation (False if not present)."""
+    allow_df: NotRequired[bool]
+    """Whether dynamic functions are allowed for this field (False if not present)."""
 
 
 NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
@@ -94,20 +96,24 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "full_title": {
         "description": "Title of the need, of unlimited length.",
         "schema": {"type": "string", "default": ""},
+        "allow_df": True,
     },
     "title": {
         "description": "Title of the need, trimmed to a maximum length.",
         "schema": {"type": "string"},
+        "allow_df": True,
     },
     "status": {
         "description": "Status of the need.",
         "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
+        "allow_df": True,
     },
     "tags": {
         "description": "List of tags.",
         "schema": {"type": "array", "items": {"type": "string"}, "default": []},
         "show_in_layout": True,
+        "allow_df": True,
     },
     "collapse": {
         "description": "Hide the meta-data information of the need.",
@@ -138,6 +144,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
         "exclude_external": True,
+        "allow_df": True,
     },
     "arch": {
         "description": "Mapping of uml key to uml content.",
@@ -167,12 +174,14 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "type": {
         "description": "Type of the need.",
         "schema": {"type": "string", "default": ""},
+        "allow_df": True,
     },
     "type_name": {
         "description": "Name of the type.",
         "schema": {"type": "string", "default": ""},
         "exclude_external": True,
         "exclude_import": True,
+        "allow_df": True,
     },
     "type_prefix": {
         "description": "Prefix of the type.",
@@ -180,6 +189,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "exclude_json": True,
         "exclude_external": True,
         "exclude_import": True,
+        "allow_df": True,
     },
     "type_color": {
         "description": "Hexadecimal color code of the type.",
@@ -187,6 +197,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "exclude_json": True,
         "exclude_external": True,
         "exclude_import": True,
+        "allow_df": True,
     },
     "type_style": {
         "description": "Style of the type.",
@@ -194,6 +205,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "exclude_json": True,
         "exclude_external": True,
         "exclude_import": True,
+        "allow_df": True,
     },
     "is_modified": {
         "description": "Whether the need was modified by needextend.",
@@ -292,6 +304,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "constraints": {
         "description": "List of constraint names, which are defined for this need.",
         "schema": {"type": "array", "items": {"type": "string"}, "default": []},
+        "allow_df": True,
     },
     "constraints_results": {
         "description": "Mapping of constraint name, to check name, to result.",
