@@ -101,7 +101,7 @@ def test_json_schema_check(test_app):
     ],
     indirect=True,
 )
-def test_need_schema_warnings(test_app):
+def test_need_schema_warnings(test_app, snapshot):
     """Test warnings are emitted when there are schema validation issues of individual needs."""
     test_app.build()
     warnings = strip_colors(
@@ -111,6 +111,11 @@ def test_need_schema_warnings(test_app):
         "srcdir/index.rst:4: WARNING: Unknown keys in import need source: ['unknown_key'] [needs.unknown_import_keys]",
         "srcdir/index.rst:4: WARNING: Non-string values in extra options of import need source: ['extra2'] [needs.mistyped_import_values]",
     ]
+    json_data = Path(test_app.outdir, "needs.json").read_text()
+    needs = json.loads(json_data)
+    assert needs == snapshot(
+        exclude=props("created", "project", "creator", "needs_schema")
+    )
 
 
 @pytest.mark.parametrize(
