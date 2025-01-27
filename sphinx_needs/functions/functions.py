@@ -240,6 +240,7 @@ def resolve_dynamic_values(needs: NeedsMutable, app: Sphinx) -> None:
         *(k for k, v in NeedsCoreFields.items() if v.get("allow_df", False)),
         *config.extra_options,
         *(link["option"] for link in config.extra_links),
+        *config.global_options,
     }
 
     for need in needs.values():
