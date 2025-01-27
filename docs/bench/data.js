@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1737970419240,
+  "lastUpdate": 1737983130348,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -12024,6 +12024,42 @@ window.BENCHMARK_DATA = {
             "value": 57.762165905,
             "unit": "s",
             "extra": "Commit: 9117b947712246ec5fb96b5eb6020c1b6830af16\nBranch: master\nTime: 2025-01-27T10:31:48+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "663d8d4d496cb44a42d4ef801d4ca9ff1426e9bc",
+          "message": "♻️ Don't process dynamic functions on internal need fields (#1387)\n\nFor most \"internal\" need fields it does not make sense that these would\nbe dynamic, and anyway this would fail since their values are not string\ntypes.\n\nIn this PR, we skip dynamic function processing, for core fields that\nshould not be altered by the user.",
+          "timestamp": "2025-01-27T14:03:31+01:00",
+          "tree_id": "e04d8ca1aef5d82c50d687c4953bdcab5ab9e655",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/663d8d4d496cb44a42d4ef801d4ca9ff1426e9bc"
+        },
+        "date": 1737983115716,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22613041999998984,
+            "unit": "s",
+            "extra": "Commit: 663d8d4d496cb44a42d4ef801d4ca9ff1426e9bc\nBranch: master\nTime: 2025-01-27T14:03:31+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.515949391999996,
+            "unit": "s",
+            "extra": "Commit: 663d8d4d496cb44a42d4ef801d4ca9ff1426e9bc\nBranch: master\nTime: 2025-01-27T14:03:31+01:00"
           }
         ]
       }
