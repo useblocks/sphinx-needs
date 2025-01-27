@@ -566,9 +566,11 @@ class NeedsBarType(NeedsBaseDataType):
 class NeedsExtendType(NeedsBaseDataType):
     """Data to modify existing need(s)."""
 
-    filter: None | str
-    """Single need ID or filter string to select multiple needs."""
-    modifications: dict[str, str]
+    filter: str
+    """Filter string to select needs to extend."""
+    filter_is_id: bool
+    """Whether the filter is a single need ID."""
+    modifications: dict[str, Any]
     """Mapping of field name to new value.
     If the field name starts with a ``+``, the new value is appended to the existing value.
     If the field name starts with a ``-``, the existing value is cleared (new value is ignored).

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from collections.abc import Sequence
 from typing import Any, Callable
 
@@ -11,11 +10,7 @@ from sphinx.util.docutils import SphinxDirective
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.api.need import _split_list_with_dyn_funcs
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import (
-    NeedsExtendType,
-    NeedsMutable,
-    SphinxNeedsData,
-)
+from sphinx_needs.data import NeedsExtendType, NeedsMutable, SphinxNeedsData
 from sphinx_needs.filter_common import filter_needs_mutable
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import add_doc
@@ -44,30 +39,50 @@ class NeedextendDirective(SphinxDirective):
     def run(self) -> Sequence[nodes.Node]:
         env = self.env
 
-        id = env.new_serialno("needextend")
-        targetid = f"needextend-{env.docname}-{id}"
-        targetnode = nodes.target("", "", ids=[targetid])
-
-        extend_filter = self.arguments[0] if self.arguments else None
-        if not extend_filter:
-            raise NeedsInvalidFilter(
-                f"Filter of needextend must be set. See {env.docname}:{self.lineno}"
-            )
-
-        strict = NeedsSphinxConfig(self.env.app.config).needextend_strict
+        needs_config = NeedsSphinxConfig(self.env.app.config)
+        strict = needs_config.needextend_strict
         strict_option: str = self.options.get("strict", "").upper()
         if strict_option == "TRUE":
             strict = True
         elif strict_option == "FALSE":
             strict = False
 
+        modifications = self.options.copy()
+        modifications.pop("strict", None)
+
+        extend_filter = (self.arguments[0] if self.arguments else "").strip()
+        if extend_filter.startswith("<") and extend_filter.endswith(">"):
+            filter_is_id = True
+            extend_filter = extend_filter[1:-1]
+        elif extend_filter.startswith('"') and extend_filter.endswith('"'):
+            filter_is_id = False
+            extend_filter = extend_filter[1:-1]
+        elif len(extend_filter.split()) == 1:
+            filter_is_id = True
+        else:
+            filter_is_id = False
+
+        if not extend_filter:
+            log_warning(
+                logger,
+                "Empty ID/filter argument in needextend directive.",
+                "needextend",
+                location=self.get_location(),
+            )
+            return []
+
+        id = env.new_serialno("needextend")
+        targetid = f"needextend-{env.docname}-{id}"
+        targetnode = nodes.target("", "", ids=[targetid])
+
         data = SphinxNeedsData(env).get_or_create_extends()
         data[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
-            "filter": self.arguments[0] if self.arguments else None,
-            "modifications": self.options,
+            "filter": extend_filter,
+            "filter_is_id": filter_is_id,
+            "modifications": modifications,
             "strict": strict,
         }
 
@@ -91,48 +106,28 @@ def extend_needs_data(
 
     for current_needextend in extends.values():
         need_filter = current_needextend["filter"]
-        if need_filter and need_filter in all_needs:
-            # a single known ID
-            found_needs = [all_needs[need_filter]]
-        elif need_filter is not None and re.fullmatch(
-            needs_config.id_regex, need_filter
-        ):
-            # an unknown ID
-            error = f"Provided id {need_filter!r} for needextend does not exist."
-            if current_needextend["strict"]:
-                raise NeedsInvalidFilter(error)
-            else:
-                log_warning(
-                    logger,
-                    error,
-                    "needextend",
-                    location=(
-                        current_needextend["docname"],
-                        current_needextend["lineno"],
-                    ),
-                )
-            continue
+        location = (current_needextend["docname"], current_needextend["lineno"])
+        if current_needextend["filter_is_id"]:
+            try:
+                found_needs = [all_needs[need_filter]]
+            except KeyError:
+                error = f"Provided id {need_filter!r} for needextend does not exist."
+                if current_needextend["strict"]:
+                    raise NeedsInvalidFilter(error)
+                else:
+                    log_warning(logger, error, "needextend", location=location)
+                continue
         else:
-            # a filter string
             try:
                 found_needs = filter_needs_mutable(
-                    all_needs,
-                    needs_config,
-                    need_filter,
-                    location=(
-                        current_needextend["docname"],
-                        current_needextend["lineno"],
-                    ),
+                    all_needs, needs_config, need_filter, location=location
                 )
-            except NeedsInvalidFilter as e:
+            except Exception as e:
                 log_warning(
                     logger,
                     f"Invalid filter {need_filter!r}: {e}",
                     "needextend",
-                    location=(
-                        current_needextend["docname"],
-                        current_needextend["lineno"],
-                    ),
+                    location=location,
                 )
                 continue
 
