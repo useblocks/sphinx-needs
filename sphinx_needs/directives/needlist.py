@@ -114,9 +114,9 @@ def process_needlist(
                 if need_info["hide"]:
                     para += title
                 elif need_info["is_external"]:
-                    assert (
-                        need_info["external_url"] is not None
-                    ), "External need without URL"
+                    assert need_info["external_url"] is not None, (
+                        "External need without URL"
+                    )
                     ref = nodes.reference("", "")
 
                     ref["refuri"] = check_and_calc_base_url_rel_path(
