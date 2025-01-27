@@ -567,7 +567,7 @@ class NeedsExtendType(NeedsBaseDataType):
     """Data to modify existing need(s)."""
 
     filter: str
-    """Filter string to select needs to extebd."""
+    """Filter string to select needs to extend."""
     filter_is_id: bool
     """Whether the filter is a single need ID."""
     modifications: dict[str, Any]
