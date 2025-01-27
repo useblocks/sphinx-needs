@@ -9,6 +9,7 @@ from docutils.parsers.rst import directives
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
+from sphinx_needs.api.need import _split_list_with_dyn_funcs
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import (
     NeedsExtendType,
@@ -78,29 +79,6 @@ class NeedextendDirective(SphinxDirective):
         return [targetnode, node]
 
 
-RE_ID_FUNC = re.compile(r"\s*((?P<function>\[\[[^\]]*\]\])|(?P<id>[^;,]+))\s*([;,]|$)")
-"""Regex to find IDs or functions, delimited by one of `;|,`."""
-
-
-def _split_value(value: str) -> Sequence[tuple[str, bool]]:
-    """Split a string into a list of values.
-
-    The string is split on `;`/`,` and whitespace is removed from the start and end of each value.
-    If a value starts with `[[` and ends with `]]`, it is considered a function.
-
-    :return: A list of tuples, where the first item is the value and the second is True if the value is a function.
-    """
-    if "[[" in value:
-        # may contain dynamic functions
-        return [
-            (m.group("function"), True)
-            if m.group("function")
-            else (m.group("id").strip(), False)
-            for m in RE_ID_FUNC.finditer(value)
-        ]
-    return [(i.strip(), False) for i in re.split(";|,", value) if i.strip()]
-
-
 def extend_needs_data(
     all_needs: NeedsMutable,
     extends: dict[str, NeedsExtendType],
@@ -164,26 +142,30 @@ def extend_needs_data(
             need["is_modified"] = True
             need["modifications"] += 1
 
+            location = (
+                current_needextend["docname"],
+                current_needextend["lineno"],
+            )
+
             for option, value in current_needextend["modifications"].items():
                 if option.startswith("+"):
                     option_name = option[1:]
                     if option_name in link_names:
-                        for item, is_function in _split_value(value):
-                            if (not is_function) and (item not in all_needs):
+                        for item, has_function in _split_list_with_dyn_funcs(
+                            value, location
+                        ):
+                            if (not has_function) and (item not in all_needs):
                                 log_warning(
                                     logger,
                                     f"Provided link id {item} for needextend does not exist.",
                                     "needextend",
-                                    location=(
-                                        current_needextend["docname"],
-                                        current_needextend["lineno"],
-                                    ),
+                                    location=location,
                                 )
                                 continue
                             if item not in need[option_name]:
                                 need[option_name].append(item)
                     elif option_name in list_values:
-                        for item, _is_function in _split_value(value):
+                        for item, _ in _split_list_with_dyn_funcs(value, location):
                             if item not in need[option_name]:
                                 need[option_name].append(item)
                     else:
@@ -203,21 +185,20 @@ def extend_needs_data(
                 else:
                     if option in link_names:
                         need[option] = []
-                        for item, is_function in _split_value(value):
-                            if (not is_function) and (item not in all_needs):
+                        for item, has_function in _split_list_with_dyn_funcs(
+                            value, location
+                        ):
+                            if (not has_function) and (item not in all_needs):
                                 log_warning(
                                     logger,
                                     f"Provided link id {item} for needextend does not exist.",
                                     "needextend",
-                                    location=(
-                                        current_needextend["docname"],
-                                        current_needextend["lineno"],
-                                    ),
+                                    location=location,
                                 )
                                 continue
                             need[option].append(item)
                     elif option in list_values:
-                        for item, _is_function in _split_value(value):
+                        for item, _ in _split_list_with_dyn_funcs(value, location):
                             need[option].append(item)
                     else:
                         need[option] = value

@@ -6,8 +6,6 @@ from sphinx.application import Sphinx
 from sphinx.util.console import strip_colors
 from syrupy.filters import props
 
-from sphinx_needs.directives.needextend import _split_value
-
 
 @pytest.mark.parametrize(
     "test_app",
@@ -64,29 +62,6 @@ def test_doc_needextend_unknown_id(test_app: Sphinx):
     assert warnings == [
         f"{Path(str(app.srcdir)) / 'index.rst'}:19: WARNING: Provided id 'unknown_id' for needextend does not exist. [needs.needextend]"
     ]
-
-
-@pytest.mark.parametrize(
-    "value,expected",
-    [
-        ("a", [("a", False)]),
-        ("a,", [("a", False)]),
-        ("[[a]]", [("[[a]]", True)]),
-        ("[[a]]b", [("[[a]]b", False)]),
-        ("[[a;]],", [("[[a;]]", True)]),
-        ("a,b;c", [("a", False), ("b", False), ("c", False)]),
-        ("[[a]],[[b]];[[c]]", [("[[a]]", True), ("[[b]]", True), ("[[c]]", True)]),
-        (" a ,, b; c ", [("a", False), ("b", False), ("c", False)]),
-        (
-            " [[a]] ,, [[b]] ; [[c]] ",
-            [("[[a]]", True), ("[[b]]", True), ("[[c]]", True)],
-        ),
-        ("a,[[b]];c", [("a", False), ("[[b]]", True), ("c", False)]),
-        (" a ,, [[b;]] ; c ", [("a", False), ("[[b;]]", True), ("c", False)]),
-    ],
-)
-def test_split_value(value, expected):
-    assert _split_value(value) == expected
 
 
 @pytest.mark.parametrize(
