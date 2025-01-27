@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from collections.abc import Sequence
 from typing import Any, Callable
 
@@ -54,20 +53,37 @@ class NeedextendDirective(SphinxDirective):
                 f"Filter of needextend must be set. See {env.docname}:{self.lineno}"
             )
 
-        strict = NeedsSphinxConfig(self.env.app.config).needextend_strict
+        needs_config = NeedsSphinxConfig(self.env.app.config)
+        strict = needs_config.needextend_strict
         strict_option: str = self.options.get("strict", "").upper()
         if strict_option == "TRUE":
             strict = True
         elif strict_option == "FALSE":
             strict = False
 
+        modifications = self.options.copy()
+        modifications.pop("strict", None)
+
+        extend_filter = extend_filter.strip()
+        if extend_filter.startswith("<") and extend_filter.endswith(">"):
+            filter_is_id = True
+            extend_filter = extend_filter[1:-1]
+        elif extend_filter.startswith('"') and extend_filter.endswith('"'):
+            filter_is_id = False
+            extend_filter = extend_filter[1:-1]
+        elif len(extend_filter.split()) == 1:
+            filter_is_id = True
+        else:
+            filter_is_id = False
+
         data = SphinxNeedsData(env).get_or_create_extends()
         data[targetid] = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
-            "filter": self.arguments[0] if self.arguments else None,
-            "modifications": self.options,
+            "filter": extend_filter,
+            "filter_is_id": filter_is_id,
+            "modifications": modifications,
             "strict": strict,
         }
 
@@ -91,48 +107,28 @@ def extend_needs_data(
 
     for current_needextend in extends.values():
         need_filter = current_needextend["filter"]
-        if need_filter and need_filter in all_needs:
-            # a single known ID
-            found_needs = [all_needs[need_filter]]
-        elif need_filter is not None and re.fullmatch(
-            needs_config.id_regex, need_filter
-        ):
-            # an unknown ID
-            error = f"Provided id {need_filter!r} for needextend does not exist."
-            if current_needextend["strict"]:
-                raise NeedsInvalidFilter(error)
-            else:
-                log_warning(
-                    logger,
-                    error,
-                    "needextend",
-                    location=(
-                        current_needextend["docname"],
-                        current_needextend["lineno"],
-                    ),
-                )
-            continue
+        location = (current_needextend["docname"], current_needextend["lineno"])
+        if current_needextend["filter_is_id"]:
+            try:
+                found_needs = [all_needs[need_filter]]
+            except KeyError:
+                error = f"Provided id {need_filter!r} for needextend does not exist."
+                if current_needextend["strict"]:
+                    raise NeedsInvalidFilter(error)
+                else:
+                    log_warning(logger, error, "needextend", location=location)
+                continue
         else:
-            # a filter string
             try:
                 found_needs = filter_needs_mutable(
-                    all_needs,
-                    needs_config,
-                    need_filter,
-                    location=(
-                        current_needextend["docname"],
-                        current_needextend["lineno"],
-                    ),
+                    all_needs, needs_config, need_filter, location=location
                 )
             except NeedsInvalidFilter as e:
                 log_warning(
                     logger,
                     f"Invalid filter {need_filter!r}: {e}",
                     "needextend",
-                    location=(
-                        current_needextend["docname"],
-                        current_needextend["lineno"],
-                    ),
+                    location=location,
                 )
                 continue
 

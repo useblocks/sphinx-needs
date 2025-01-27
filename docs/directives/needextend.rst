@@ -4,7 +4,7 @@ needextend
 ==========
 .. versionadded:: 0.7.0
 
-``needextend`` allows to modify existing needs. It doesn’t provide any output, as the modifications
+``needextend`` allows to modify existing needs. It doesn't provide any output, as the modifications
 get presented at the original location of the changing need, for example:
 
 .. code-block:: rst
@@ -20,7 +20,12 @@ The following modifications are supported:
 * ``+option``: add new value to an existing value of an option.
 * ``-option``: delete a complete option.
 
-The argument of ``needextend`` must be a :ref:`filter_string` which defines the needs to modify.
+The argument of ``needextend`` will be taken as, by order of priority:
+
+- a single need ID, if it is enclosed by ``<>``,
+- a :ref:`filter_string` if it is enclosed by ``""``,
+- a single need ID, if it is a single word (no spaces),
+- a :ref:`filter_string` otherwise.
 
 ``needextend`` can modify all string-based and list-based options.
 Also, you can add links or delete tags.
@@ -40,10 +45,25 @@ Also, you can add links or delete tags.
       | And a tag was added.
       | Finally all links got removed.
 
-   .. needextend:: id == "extend_test_001"
+   .. req:: needextend Example 2
+      :id: extend_test_002
+      :tags: extend_example
+      :status: open
+
+      Contents
+
+   .. needextend:: extend_test_001
       :status: closed
       :+author: and me
+
+   .. needextend:: <extend_test_001>
       :+tags: new_tag
+
+   .. needextend:: id == "extend_test_002"
+      :status: New status
+
+   .. needextend:: ""extend_example" in tags"
+      :+tags: other
 
 Options
 -------
@@ -71,26 +91,6 @@ Default: false
 
     We have a configuration (conf.py) option called :ref:`needs_needextend_strict`
     that deactivates or activates the ``:strict:`` option behaviour for all ``needextend`` directives in a project.
-
-
-Single need modification
-------------------------
-If only one single need shall get modified, the argument of ``needextend`` can just be the need-id.
-
-.. need-example::
-
-    .. req:: needextend Example 2
-       :id: extend_test_002
-       :status: open
-
-    .. needextend:: extend_test_002
-       :status: New status
-
-.. attention::
-
-    The given argument must fully match the regular expression defined in
-    :ref:`needs_id_regex` and a need with this ID must exist!
-    Otherwise the argument is taken as normal filter string.
 
 Setting default option values
 -----------------------------
