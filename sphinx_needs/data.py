@@ -138,7 +138,6 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
         "exclude_external": True,
-        "allow_extend": True,
     },
     "style": {
         "description": "Comma-separated list of CSS classes (all appended by `needs_style_`).",
