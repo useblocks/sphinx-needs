@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1737983130348,
+  "lastUpdate": 1737988992354,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -12060,6 +12060,42 @@ window.BENCHMARK_DATA = {
             "value": 61.515949391999996,
             "unit": "s",
             "extra": "Commit: 663d8d4d496cb44a42d4ef801d4ca9ff1426e9bc\nBranch: master\nTime: 2025-01-27T14:03:31+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ba2497a1fbbe56dea91935ab4c9041c19ac93c03",
+          "message": "♻️ Make `needextend` argument declarative (#1391)\n\nThe argument for `needextend` can refer to either a single need ID or\nfilter function.\nCurrently, the format cannot be known until all needs have been\nprocessed, and it is resolved during post-processing.\nThis is problematic for (a) user readability, (b) improving processing\nperformance and issue feedback\n\nThis PR slightly modifies the argument processing to allow for two\n\"explicit\" formats:\n\n- `<ID>`, if the argument is enclosed in `<>` it is always processed as\na single ID\n- `\"filter string\"`, if the argument is enclosed in `\"\"` it is always\nprocessed as a filter string\n\nIf the string is not enclosed, then the logic is relatively similar to\nthe existing:\n\n- `ID`, if the argument is a single word (no spaces) then it is\nprocessed as a single ID\n- otherwise, it is processed as a filter string\n\nThis change should not break most uses of `needextend`, but there are\nsome corner-cases that would need to be adapted, e.g. a single\n`is_external` would now be processed as an ID, unless it was enclosed or\nexpanded:\n\n```restructuredtext\n.. needextend:: \"is_external\"\n.. needextend:: is_external is True\n```",
+          "timestamp": "2025-01-27T15:41:25+01:00",
+          "tree_id": "3c02f6e48f165aae7c1f376d3477a345f61a4abc",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/ba2497a1fbbe56dea91935ab4c9041c19ac93c03"
+        },
+        "date": 1737988978531,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14064997100000198,
+            "unit": "s",
+            "extra": "Commit: ba2497a1fbbe56dea91935ab4c9041c19ac93c03\nBranch: master\nTime: 2025-01-27T15:41:25+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.66246219200001,
+            "unit": "s",
+            "extra": "Commit: ba2497a1fbbe56dea91935ab4c9041c19ac93c03\nBranch: master\nTime: 2025-01-27T15:41:25+01:00"
           }
         ]
       }
