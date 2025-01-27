@@ -213,8 +213,9 @@ class NeedimportDirective(SphinxDirective):
             *(x["option"] + "_back" for x in needs_config.extra_links),
         }
 
-        # collect unknown keys to log them
+        # collect keys for warning logs, so that we only log one warning per key
         unknown_keys: set[str] = set()
+        non_string_extra_keys: set[str] = set()
 
         # directive options that can be override need fields
         override_options = (
@@ -240,6 +241,11 @@ class NeedimportDirective(SphinxDirective):
                     del need_params[option]  # type: ignore[misc]
                 elif option in omitted_keys:
                     del need_params[option]  # type: ignore[misc]
+                if option in needs_config.extra_options and not isinstance(
+                    need_params[option],  # type: ignore[literal-required]
+                    str,
+                ):
+                    non_string_extra_keys.add(option)
 
             for override_option in override_options:
                 if override_option in self.options:
@@ -277,6 +283,13 @@ class NeedimportDirective(SphinxDirective):
                 logger,
                 f"Unknown keys in import need source: {sorted(unknown_keys)!r}",
                 "unknown_import_keys",
+                location=self.get_location(),
+            )
+        if non_string_extra_keys:
+            log_warning(
+                logger,
+                f"Non-string values in extra options of import need source: {sorted(non_string_extra_keys)!r}",
+                "mistyped_import_values",
                 location=self.get_location(),
             )
 

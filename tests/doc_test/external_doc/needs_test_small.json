@@ -51,7 +51,10 @@
                     "type_name": "Implementation",
                     "updated_at": "",
                     "url": "",
-                    "user": ""
+                    "user": "",
+                    "unknown_key": "unknown_value",
+                    "extra1": "value1",
+                    "extra2": 1
                 },
                 "TEST_02": {
                     "avatar": "",

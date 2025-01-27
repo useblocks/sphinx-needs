@@ -132,8 +132,9 @@ def load_external_needs(
             *(x["option"] + "_back" for x in needs_config.extra_links),
         }
 
-        # collect unknown keys to log them
+        # collect keys for warning logs, so that we only log one warning per key
         unknown_keys: set[str] = set()
+        non_string_extra_keys: set[str] = set()
 
         for need in needs.values():
             need_params = {**defaults, **need}
@@ -150,6 +151,10 @@ def load_external_needs(
                     del need_params[option]
                 elif option in omitted_keys:
                     del need_params[option]
+                if option in needs_config.extra_options and not isinstance(
+                    need_params[option], str
+                ):
+                    non_string_extra_keys.add(option)
 
             # These keys need to be different for add_need() api call.
             need_params["need_type"] = need_params.pop("type", "")
@@ -196,12 +201,19 @@ def load_external_needs(
                     location=None,
                 )
 
+        source_str = source.get("json_url", "") or source.get("json_path", "")
         if unknown_keys:
-            location = source.get("json_url", "") or source.get("json_path", "")
             log_warning(
                 log,
-                f"Unknown keys in external need source {location!r}: {sorted(unknown_keys)!r}",
+                f"Unknown keys in external need source {source_str!r}: {sorted(unknown_keys)!r}",
                 "unknown_external_keys",
+                location=None,
+            )
+        if non_string_extra_keys:
+            log_warning(
+                log,
+                f"Non-string values in extra options of external need source {source_str!r}: {sorted(non_string_extra_keys)!r}",
+                "mistyped_external_values",
                 location=None,
             )
 

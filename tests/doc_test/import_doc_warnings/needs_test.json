@@ -1,0 +1,24 @@
+{
+    "current_version": "0.1",
+    "project": "Sphinx-Needs",
+    "versions": {
+        "0.1": {
+            "needs": {
+                "TEST_01": {
+                    "description": "TEST IMPORT TITLE",
+                    "id": "TEST_01",
+                    "links": [],
+                    "status": null,
+                    "tags": [],
+                    "title": "TEST IMPORT DESCRIPTION",
+                    "type": "impl",
+                    "type_name": "Implementation",
+                    "extra1": "value1",
+                    "extra2": 1,
+                    "unknown_key": "unknown_value"
+                }
+            },
+            "needs_amount": 1
+        }
+    }
+}

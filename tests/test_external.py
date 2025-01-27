@@ -20,9 +20,11 @@ from syrupy.filters import props
 def test_external_html(test_app: SphinxTestApp):
     app = test_app
     app.build()
-    assert strip_colors(app._warning.getvalue()).strip() == (
-        "WARNING: External need 'EXT_TEST_03' in 'needs_test_small.json' could not be added: Unknown need type 'ask'. [needs.load_external_need]"
-    )
+    assert strip_colors(app._warning.getvalue()).strip().splitlines() == [
+        "WARNING: External need 'EXT_TEST_03' in 'needs_test_small.json' could not be added: Unknown need type 'ask'. [needs.load_external_need]",
+        "WARNING: Unknown keys in external need source 'needs_test_small.json': ['unknown_key'] [needs.unknown_external_keys]",
+        "WARNING: Non-string values in extra options of external need source 'needs_test_small.json': ['extra2'] [needs.mistyped_external_values]",
+    ]
     html = Path(app.outdir, "index.html").read_text()
     assert (
         '<a class="external_link reference external" href="http://my_company.com/docs/v1/index.html#TEST_02">'
