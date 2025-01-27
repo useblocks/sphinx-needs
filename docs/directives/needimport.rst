@@ -21,14 +21,31 @@ You can generate a valid file using the builder :ref:`needs_builder`, for exampl
       :pre_template: pre_template.rst
       :post_template: post_template.rst
 
-The directive needs an absolute or relative path as argument.
-If the path is relative, we derive an absolute path based on the location of the document being compiled.
+The directive argument can be one of the following formats:
 
-The directive also supports URL as argument to download ``needs.json`` from remote, for example:
+- A remote URL from which to download the ``needs.json``:
 
-.. code-block:: rst
+  .. code-block:: rst
+   
+     .. needimport:: https://my_company.com/docs/remote-needs.json
 
-   .. needimport:: https://my_company.com/docs/remote-needs.json
+- A local path relative to the containing document:
+
+  .. code-block:: rst
+   
+     .. needimport:: needs.json
+
+- A local path starting with ``/`` is relative to the Sphinx source directory:
+
+  .. code-block:: rst
+   
+     .. needimport:: /path/to/needs.json
+
+- For an absolute path, make sure to start with two ``//`` (on Linux/OSX):
+
+  .. code-block:: rst
+   
+     .. needimport:: //absoulte/path/to/needs.json
 
 Options
 -------

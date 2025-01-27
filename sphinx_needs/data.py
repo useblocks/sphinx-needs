@@ -60,6 +60,10 @@ class CoreFieldParameters(TypedDict):
     """Description of the field."""
     schema: dict[str, Any]
     """JSON schema for the field."""
+    allow_extend: NotRequired[bool]
+    """Whether field can be modified by needextend (False if not present)."""
+    allow_df: NotRequired[bool]
+    """Whether dynamic functions are allowed for this field (False if not present)."""
     show_in_layout: NotRequired[bool]
     """Whether to show the field in the rendered layout of the need by default (False if not present)."""
     exclude_external: NotRequired[bool]
@@ -68,8 +72,6 @@ class CoreFieldParameters(TypedDict):
     """Whether field should be excluded when importing needs (False if not present)."""
     exclude_json: NotRequired[bool]
     """Whether field should be part of the default exclusions from the JSON representation (False if not present)."""
-    allow_df: NotRequired[bool]
-    """Whether dynamic functions are allowed for this field (False if not present)."""
 
 
 NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
@@ -108,24 +110,28 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
         "allow_df": True,
+        "allow_extend": True,
     },
     "tags": {
         "description": "List of tags.",
         "schema": {"type": "array", "items": {"type": "string"}, "default": []},
         "show_in_layout": True,
         "allow_df": True,
+        "allow_extend": True,
     },
     "collapse": {
         "description": "Hide the meta-data information of the need.",
         "schema": {"type": "boolean", "default": False},
         "exclude_json": True,
         "exclude_external": True,
+        "allow_extend": True,
     },
     "hide": {
         "description": "If true, the need is not rendered.",
         "schema": {"type": "boolean", "default": False},
         "exclude_json": True,
         "exclude_external": True,
+        "allow_extend": True,
     },
     "delete": {
         "description": "If true, the need is deleted entirely.",
@@ -145,6 +151,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "show_in_layout": True,
         "exclude_external": True,
         "allow_df": True,
+        "allow_extend": True,
     },
     "arch": {
         "description": "Mapping of uml key to uml content.",
@@ -305,6 +312,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "description": "List of constraint names, which are defined for this need.",
         "schema": {"type": "array", "items": {"type": "string"}, "default": []},
         "allow_df": True,
+        "allow_extend": True,
     },
     "constraints_results": {
         "description": "Mapping of constraint name, to check name, to result.",

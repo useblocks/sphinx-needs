@@ -273,6 +273,4 @@ NEED_DEFAULT_OPTIONS: dict[str, Any] = {
     "constraints_results": directives.unchanged_required,
 }
 
-NEEDEXTEND_NOT_ALLOWED_OPTIONS = ["id"]
-
 NEEDS_PROFILING = [x.upper() for x in os.environ.get("NEEDS_PROFILING", "").split(",")]
