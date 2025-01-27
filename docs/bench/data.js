@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1737968216531,
+  "lastUpdate": 1737970381644,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -11952,6 +11952,42 @@ window.BENCHMARK_DATA = {
             "value": 58.65956219099999,
             "unit": "s",
             "extra": "Commit: 540a32132a51f33ae676a1ab3f8c63ff614fa412\nBranch: master\nTime: 2025-01-27T09:55:10+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f5e62bfc036dde2f1acb6554e7012e3eb5c2d37f",
+          "message": "📚 clarify `needimport` argument format (#1384)\n\nExplain the difference between local paths that are; relative to the\ndocument, relative to the source directory, absolute",
+          "timestamp": "2025-01-27T10:31:12+01:00",
+          "tree_id": "ce18aa7ab8e0d56e68eb70cb08827a064eeb51bb",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f5e62bfc036dde2f1acb6554e7012e3eb5c2d37f"
+        },
+        "date": 1737970367053,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16311119800000995,
+            "unit": "s",
+            "extra": "Commit: f5e62bfc036dde2f1acb6554e7012e3eb5c2d37f\nBranch: master\nTime: 2025-01-27T10:31:12+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.40691492399999,
+            "unit": "s",
+            "extra": "Commit: f5e62bfc036dde2f1acb6554e7012e3eb5c2d37f\nBranch: master\nTime: 2025-01-27T10:31:12+01:00"
           }
         ]
       }
