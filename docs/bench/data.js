@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1737967414340,
+  "lastUpdate": 1737967935605,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -11880,6 +11880,42 @@ window.BENCHMARK_DATA = {
             "value": 58.16281189899999,
             "unit": "s",
             "extra": "Commit: af3c8bfdf7879b375c210ef4afd86538bf8ab28f\nBranch: master\nTime: 2025-01-27T09:41:44+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5db85af3c01cb6bb4dd804feec5d64eb8324d73b",
+          "message": "🔧 Synchronize list splitting behaviour in need and needextend directives (#1385)\n\n`NeedextendDirective` had a different function than `NeedDirective`, for\nsplitting lists from directive options.\n\nThis PR combines the two, to make the behaviour consistent.",
+          "timestamp": "2025-01-27T09:50:22+01:00",
+          "tree_id": "7667608c1076ebdebdb9abfd5b67614a887ff900",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/5db85af3c01cb6bb4dd804feec5d64eb8324d73b"
+        },
+        "date": 1737967920603,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.196830599000009,
+            "unit": "s",
+            "extra": "Commit: 5db85af3c01cb6bb4dd804feec5d64eb8324d73b\nBranch: master\nTime: 2025-01-27T09:50:22+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.174730657,
+            "unit": "s",
+            "extra": "Commit: 5db85af3c01cb6bb4dd804feec5d64eb8324d73b\nBranch: master\nTime: 2025-01-27T09:50:22+01:00"
           }
         ]
       }
