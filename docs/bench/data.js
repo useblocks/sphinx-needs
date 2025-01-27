@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1737970381644,
+  "lastUpdate": 1737970419240,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -11988,6 +11988,42 @@ window.BENCHMARK_DATA = {
             "value": 59.40691492399999,
             "unit": "s",
             "extra": "Commit: f5e62bfc036dde2f1acb6554e7012e3eb5c2d37f\nBranch: master\nTime: 2025-01-27T10:31:12+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9117b947712246ec5fb96b5eb6020c1b6830af16",
+          "message": "🔧 Centralise extendable core need fields (#1388)",
+          "timestamp": "2025-01-27T10:31:48+01:00",
+          "tree_id": "615ad4290d82b311ca146e909520e1c9b4b496f7",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/9117b947712246ec5fb96b5eb6020c1b6830af16"
+        },
+        "date": 1737970403589,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2967602800000009,
+            "unit": "s",
+            "extra": "Commit: 9117b947712246ec5fb96b5eb6020c1b6830af16\nBranch: master\nTime: 2025-01-27T10:31:48+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.762165905,
+            "unit": "s",
+            "extra": "Commit: 9117b947712246ec5fb96b5eb6020c1b6830af16\nBranch: master\nTime: 2025-01-27T10:31:48+01:00"
           }
         ]
       }
