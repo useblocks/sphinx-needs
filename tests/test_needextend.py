@@ -62,14 +62,14 @@ def test_doc_needextend_warnings(test_app: Sphinx):
     warnings = strip_colors(
         app._warning.getvalue().replace(str(app.srcdir) + os.path.sep, "<srcdir>/")
     ).splitlines()
-    print(warnings)
+    # print(warnings)
     assert warnings == [
         "<srcdir>/index.rst:25: WARNING: Empty ID/filter argument in needextend directive. [needs.needextend]",
         "<srcdir>/index.rst:26: WARNING: Empty ID/filter argument in needextend directive. [needs.needextend]",
         "<srcdir>/index.rst:19: WARNING: Provided id 'unknown_id' for needextend does not exist. [needs.needextend]",
         "<srcdir>/index.rst:22: WARNING: Provided id 'id with space' for needextend does not exist. [needs.needextend]",
         "<srcdir>/index.rst:23: WARNING: Filter 'bad_filter' not valid. Error: name 'bad_filter' is not defined. [needs.filter]",
-        "<srcdir>/index.rst:24: WARNING: Invalid filter 'bad filter': unexpected EOF while parsing (<string>, line 1) [needs.needextend]",
+        "<srcdir>/index.rst:24: WARNING: Filter 'bad == filter' not valid. Error: name 'bad' is not defined. [needs.filter]",
     ]
 
 

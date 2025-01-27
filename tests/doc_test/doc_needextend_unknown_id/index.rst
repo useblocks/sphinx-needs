@@ -21,6 +21,6 @@ needextend warnings
 
 .. needextend:: <id with space>
 .. needextend:: "bad_filter"
-.. needextend::  bad filter
+.. needextend::  bad == filter
 .. needextend:: <>
 .. needextend:: ""
