@@ -10,11 +10,7 @@ from sphinx.util.docutils import SphinxDirective
 from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.api.need import _split_list_with_dyn_funcs
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import (
-    NeedsExtendType,
-    NeedsMutable,
-    SphinxNeedsData,
-)
+from sphinx_needs.data import NeedsExtendType, NeedsMutable, SphinxNeedsData
 from sphinx_needs.filter_common import filter_needs_mutable
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import add_doc
@@ -43,16 +39,6 @@ class NeedextendDirective(SphinxDirective):
     def run(self) -> Sequence[nodes.Node]:
         env = self.env
 
-        id = env.new_serialno("needextend")
-        targetid = f"needextend-{env.docname}-{id}"
-        targetnode = nodes.target("", "", ids=[targetid])
-
-        extend_filter = self.arguments[0] if self.arguments else None
-        if not extend_filter:
-            raise NeedsInvalidFilter(
-                f"Filter of needextend must be set. See {env.docname}:{self.lineno}"
-            )
-
         needs_config = NeedsSphinxConfig(self.env.app.config)
         strict = needs_config.needextend_strict
         strict_option: str = self.options.get("strict", "").upper()
@@ -64,7 +50,7 @@ class NeedextendDirective(SphinxDirective):
         modifications = self.options.copy()
         modifications.pop("strict", None)
 
-        extend_filter = extend_filter.strip()
+        extend_filter = (self.arguments[0] if self.arguments else "").strip()
         if extend_filter.startswith("<") and extend_filter.endswith(">"):
             filter_is_id = True
             extend_filter = extend_filter[1:-1]
@@ -75,6 +61,19 @@ class NeedextendDirective(SphinxDirective):
             filter_is_id = True
         else:
             filter_is_id = False
+
+        if not extend_filter:
+            log_warning(
+                logger,
+                "Empty ID/filter argument in needextend directive.",
+                "needextend",
+                location=self.get_location(),
+            )
+            return []
+
+        id = env.new_serialno("needextend")
+        targetid = f"needextend-{env.docname}-{id}"
+        targetnode = nodes.target("", "", ids=[targetid])
 
         data = SphinxNeedsData(env).get_or_create_extends()
         data[targetid] = {
@@ -123,7 +122,7 @@ def extend_needs_data(
                 found_needs = filter_needs_mutable(
                     all_needs, needs_config, need_filter, location=location
                 )
-            except NeedsInvalidFilter as e:
+            except Exception as e:
                 log_warning(
                     logger,
                     f"Invalid filter {need_filter!r}: {e}",
