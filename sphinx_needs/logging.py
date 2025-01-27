@@ -45,7 +45,9 @@ WarningSubTypes = Literal[
     "title",
     "uml",
     "unknown_external_keys",
+    "mistyped_external_values",
     "unknown_import_keys",
+    "mistyped_import_values",
     "variant",
     "warnings",
 ]
@@ -82,7 +84,9 @@ WarningSubTypeDescription: dict[WarningSubTypes, str] = {
     "title": "Error creating need title",
     "uml": "Error in processing of UML diagram",
     "unknown_external_keys": "Unknown keys found in external need data",
+    "mistyped_external_values": "Unexpected value types found in external need data",
     "unknown_import_keys": "Unknown keys found in imported need data",
+    "mistyped_import_values": "Unexpected value types found in imported need data",
     "variant": "Error processing variant in need field",
     "warnings": "Need warning check failed for one or more needs",
 }

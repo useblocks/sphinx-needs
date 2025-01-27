@@ -47,6 +47,8 @@ needs_types = [
     },
 ]
 
+needs_extra_options = ["extra1", "extra2"]
+
 test_dir = os.path.dirname(__file__)
 test_json = os.path.join(test_dir, "needs_test_small.json")
 # test_json = os.path.join(test_dir, 'needs_test_invalid.json')
@@ -62,3 +64,4 @@ needs_external_needs = [
 
 # Needed to export really ALL needs. The default entry would filter out all needs coming from external
 needs_builder_filter = "True"
+needs_json_remove_defaults = True

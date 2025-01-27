@@ -499,21 +499,9 @@ def load_config(app: Sphinx, *_args: Any) -> None:
                 key: value,
                 f"+{key}": value,
                 f"-{key}": directives.flag,
-                f"{key}_back": value,
-                f"+{key}_back": value,
-                f"-{key}_back": directives.flag,
             }
         )
 
-    # "links" is not part of the extra_links-dict, so we need
-    # to set the links_back values by hand
-    NeedextendDirective.option_spec.update(
-        {
-            "links_back": NEED_DEFAULT_OPTIONS["links"],
-            "+links_back": NEED_DEFAULT_OPTIONS["links"],
-            "-links_back": directives.flag,
-        }
-    )
     for key, value in _NEEDS_CONFIG.extra_options.items():
         NeedextendDirective.option_spec.update(
             {
