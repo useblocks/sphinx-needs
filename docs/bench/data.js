@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1737410961818,
+  "lastUpdate": 1737967414340,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -11844,6 +11844,42 @@ window.BENCHMARK_DATA = {
             "value": 56.67704917500001,
             "unit": "s",
             "extra": "Commit: 92b47b129047df1b7aa9f40332d48deb369dc0c2\nBranch: master\nTime: 2025-01-20T23:07:33+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "af3c8bfdf7879b375c210ef4afd86538bf8ab28f",
+          "message": "♻️ Remove back link manipulation from `needextend` (#1386)\n\nBack links are computed at the end of the need post-processing, after\n`needextend` have been applied.\n\nBack links should always be in-sync with forward links, therefore it\ndoesn't make sense to modify back links in this way.\n\nThankfully, the current availability of back link options in\n`needextend` directives is not documented, and so are unlikely to have\nbeen actually used.",
+          "timestamp": "2025-01-27T09:41:44+01:00",
+          "tree_id": "b3082f9229d4d66a65ba6096ddb2e1c401557bd8",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/af3c8bfdf7879b375c210ef4afd86538bf8ab28f"
+        },
+        "date": 1737967401037,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1801855970000048,
+            "unit": "s",
+            "extra": "Commit: af3c8bfdf7879b375c210ef4afd86538bf8ab28f\nBranch: master\nTime: 2025-01-27T09:41:44+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.16281189899999,
+            "unit": "s",
+            "extra": "Commit: af3c8bfdf7879b375c210ef4afd86538bf8ab28f\nBranch: master\nTime: 2025-01-27T09:41:44+01:00"
           }
         ]
       }
