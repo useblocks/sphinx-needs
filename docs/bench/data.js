@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1737967935605,
+  "lastUpdate": 1737968216531,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -11916,6 +11916,42 @@ window.BENCHMARK_DATA = {
             "value": 59.174730657,
             "unit": "s",
             "extra": "Commit: 5db85af3c01cb6bb4dd804feec5d64eb8324d73b\nBranch: master\nTime: 2025-01-27T09:50:22+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "540a32132a51f33ae676a1ab3f8c63ff614fa412",
+          "message": "👌 Add type warnings of extra options in external/import reads (#1389)\n\nCurrently, the value of all extra options is expected to be a string;\nother types are not supported in various aspects of sphinx-needs (such\nas `needextend`, dynamic functions and filtering), and in-fact are\nalready silently converted to strings during processing,\nsee:\nhttps://github.com/useblocks/sphinx-needs/blob/92b47b129047df1b7aa9f40332d48deb369dc0c2/sphinx_needs/api/need.py#L791\n\nThis PR adds the `needs.mistyped_external_values ` and\n`needs.mistyped_import_values` warnings for non-string values, for\n`needs_external_needs` and `needimport` sources respectively. The\nwarning is only emitted once per source, to avoid creating too many\nwarnings.\n\nNote, in the future it is hoped that more types will be supported via\nconfiguration in `needs_extra_options` (see\nhttps://github.com/useblocks/sphinx-needs/pull/1338)",
+          "timestamp": "2025-01-27T09:55:10+01:00",
+          "tree_id": "01b48b9ca84af0ea76c7876abcc93860aa6372cd",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/540a32132a51f33ae676a1ab3f8c63ff614fa412"
+        },
+        "date": 1737968202936,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14243533900000216,
+            "unit": "s",
+            "extra": "Commit: 540a32132a51f33ae676a1ab3f8c63ff614fa412\nBranch: master\nTime: 2025-01-27T09:55:10+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.65956219099999,
+            "unit": "s",
+            "extra": "Commit: 540a32132a51f33ae676a1ab3f8c63ff614fa412\nBranch: master\nTime: 2025-01-27T09:55:10+01:00"
           }
         ]
       }
