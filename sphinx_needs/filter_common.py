@@ -283,6 +283,7 @@ def filter_needs_mutable(
     *,
     location: tuple[str, int | None] | nodes.Node | None = None,
     append_warning: str = "",
+    add_context: dict[str, Any] | None = None,
 ) -> list[NeedsInfoType]:
     return filter_needs(
         needs.values(),
@@ -291,6 +292,7 @@ def filter_needs_mutable(
         current_need,
         location=location,
         append_warning=append_warning,
+        add_context=add_context,
     )
 
 
@@ -489,6 +491,7 @@ def filter_needs(
     *,
     location: tuple[str, int | None] | nodes.Node | None = None,
     append_warning: str = "",
+    add_context: dict[str, Any] | None = None,
 ) -> list[NeedsInfoType]:
     """
     Filters given needs based on a given filter string.
@@ -520,6 +523,7 @@ def filter_needs(
                 needs,
                 current_need,
                 filter_compiled=filter_compiled,
+                add_context=add_context,
             ):
                 found_needs.append(filter_need)
         except Exception as e:
@@ -549,6 +553,8 @@ def filter_single_need(
     needs: Iterable[NeedsInfoType] | None = None,
     current_need: NeedsInfoType | None = None,
     filter_compiled: CodeType | None = None,
+    *,
+    add_context: dict[str, Any] | None = None,
 ) -> bool:
     """
     Checks if a single need/need_part passes a filter_string
@@ -562,6 +568,8 @@ def filter_single_need(
     :return: True, if need passes the filter_string, else False
     """
     filter_context: dict[str, Any] = need.copy()  # type: ignore
+    if add_context:
+        filter_context.update(add_context)
     if needs:
         filter_context["needs"] = needs
     if current_need:

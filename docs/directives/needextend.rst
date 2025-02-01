@@ -94,14 +94,18 @@ Default: false
 
 Setting default option values
 -----------------------------
+
 You can use ``needextend``'s filter string to set default option values for a group of needs.
 
-The following example would set the status of all needs in the document
-``docs/directives/needextend.rst``, which do not have the status set explicitly, to ``open``.
+Additionally, to common :ref:`filter_string` variables, the ``current_docname`` variable is made available,
+to filter for needs only in the same document as the ``needextend``.
 
-.. code-block:: rst
+The following example would set the status of all needs in the current document,
+which do not have the status set explicitly, to ``open``.
 
-   .. needextend:: (docname == "docs/directives/needextend") and (status is None)
+.. need-example::
+
+   .. needextend:: docname == current_docname and status is None
       :status: open
 
 See also: :ref:`needs_global_options` for setting a default option value for all needs.

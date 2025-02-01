@@ -120,7 +120,11 @@ def extend_needs_data(
         else:
             try:
                 found_needs = filter_needs_mutable(
-                    all_needs, needs_config, need_filter, location=location
+                    all_needs,
+                    needs_config,
+                    need_filter,
+                    location=location,
+                    add_context={"current_docname": current_needextend["docname"]},
                 )
             except Exception as e:
                 log_warning(
