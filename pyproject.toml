@@ -58,7 +58,7 @@ docs = [
   "sphinxcontrib-programoutput~=0.17",
   "sphinx-design~=0.6",
 ]
-theme-im = ["sphinx-immaterial~=0.11.11"]
+theme-im = ["sphinx-immaterial~=0.12.5"]
 theme-furo = ["furo~=2024.8.6"]
 theme-pds = ["pydata-sphinx-theme~=0.15.2"]
 theme-rtd = ["sphinx_rtd_theme>=3.0.2,<4"]
