@@ -21,7 +21,6 @@
               Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
             ''',
             'created_at': '2024-02-15T14:04:06Z',
-            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -98,7 +97,6 @@
   
             ''',
             'created_at': '2024-02-15T12:19:11Z',
-            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -198,7 +196,6 @@
                  closes #1103
             ''',
             'created_at': '2024-02-15T20:45:12Z',
-            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -282,7 +279,6 @@
               default as `dropdown`, so as not to introduce a breaking change)
             ''',
             'created_at': '2024-02-12T08:36:07.000Z',
-            'delete': False,
             'docname': 'index',
             'doctype': '.rst',
             'duration': '',
@@ -409,12 +405,6 @@
               'description': 'Added by service github-issues',
               'field_type': 'extra',
               'type': 'string',
-            }),
-            'delete': dict({
-              'default': False,
-              'description': 'If true, the need is deleted entirely.',
-              'field_type': 'core',
-              'type': 'boolean',
             }),
             'docname': dict({
               'default': None,

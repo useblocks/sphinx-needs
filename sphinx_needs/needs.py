@@ -547,7 +547,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     if needs_config.report_dead_links is not True:
         log_warning(
             LOGGER,
-            'Config option "needs_constraints_failed_color" is deprecated. Please use `suppress_warnings = ["needs.link_outgoing"]` instead.',
+            'Config option "needs_report_dead_links" is deprecated. Please use `suppress_warnings = ["needs.link_outgoing"]` instead.',
             "config",
             None,
         )
