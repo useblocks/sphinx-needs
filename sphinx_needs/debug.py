@@ -146,11 +146,11 @@ def measure_time_func(
 def _print_timing_results(app: Sphinx) -> None:
     for value in TIME_MEASUREMENTS.values():
         print(value["name"])
-        print(f' amount:  {value["amount"]}')
-        print(f' overall: {value["overall"]:2f}')
-        print(f' avg:     {value["avg"]:2f}')
-        print(f' max:     {value["max"]:2f}')
-        print(f' min:     {value["min"]:2f} \n')
+        print(f" amount:  {value['amount']}")
+        print(f" overall: {value['overall']:2f}")
+        print(f" avg:     {value['avg']:2f}")
+        print(f" max:     {value['max']:2f}")
+        print(f" min:     {value['min']:2f} \n")
 
 
 def _store_timing_results_json(app: Sphinx, build_data: dict[str, Any]) -> None:

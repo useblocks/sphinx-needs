@@ -208,7 +208,7 @@ class GithubService(BaseService):
             if "errors" in response:
                 create_warning(
                     directive,
-                    "GitHub service query error: {}\n" "Used query: {}".format(
+                    "GitHub service query error: {}\nUsed query: {}".format(
                         response["errors"][0]["message"], query
                     ),
                 )

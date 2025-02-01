@@ -127,7 +127,7 @@ def process_needsequence(
             no_plantuml(node)
             continue
 
-        plantuml_block_text = ".. plantuml::\n" "\n" "   @startuml" "   @enduml"
+        plantuml_block_text = ".. plantuml::\n\n   @startuml   @enduml"
         puml_node = plantuml(plantuml_block_text)
 
         # Add source origin
@@ -161,7 +161,7 @@ def process_needsequence(
                 need = all_needs_dict[need_id.strip()]
             except KeyError:
                 raise NeedSequenceException(
-                    "Given {} in needsequence unknown." " File {}" ":{}".format(
+                    "Given {} in needsequence unknown. File {}:{}".format(
                         need_id,
                         current_needsequence["docname"],
                         current_needsequence["lineno"],
