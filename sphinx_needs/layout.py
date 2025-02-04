@@ -79,7 +79,7 @@ def build_need_repr(
 
 
 @lru_cache(1)
-def _generate_parsers() -> Tuple[Values, Inliner, Parser]:
+def _generate_parsers() -> tuple[Values, Inliner, Parser]:
     doc_settings = OptionParser(components=(Parser,)).get_default_values()
     inline_parser = Inliner()
     inline_parser.init_customizations(doc_settings)  # type: ignore
@@ -288,7 +288,7 @@ class LayoutHandler:
             "meta_links": self.meta_links,
             "meta_links_all": self.meta_links_all,  # type: ignore[dict-item]
             "meta_id": self.meta_id,
-            "meta_rst": self.meta_rst,
+            "meta_rst": self.meta_rst,  # type: ignore[dict-item]
             "image": self.image,  # type: ignore[dict-item]
             "link": self.link,
             "collapse_button": self.collapse_button,
@@ -728,8 +728,8 @@ class LayoutHandler:
         return data_container
 
     def meta_rst(
-        self, name: str, prefix: Optional[str] = None, show_empty: bool = False
-    ) -> nodes.paragraph:
+        self, name: str, prefix: str | None = None, show_empty: bool = False
+    ) -> nodes.paragraph | list[nodes.Element]:
         """
         Returns the specific metadata of a need inside docutils nodes, parsed as multiline rst.
         Usage::
