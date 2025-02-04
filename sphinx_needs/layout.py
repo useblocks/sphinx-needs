@@ -725,7 +725,7 @@ class LayoutHandler:
 
         return data_container
 
-def meta_rst(self, name: str, prefix: Optional[str] = None, show_empty: bool = False) -> nodes.paragraph:
+    def meta_rst(self, name: str, prefix: Optional[str] = None, show_empty: bool = False) -> nodes.paragraph:
         """
         Returns the specific metadata of a need inside docutils nodes.
         Usage::
