@@ -263,7 +263,9 @@ class LayoutHandler:
         }
 
         # Dummy Document setup
-        self.doc_settings,  self.inline_parser, self.multiline_parser = _generate_parsers()
+        self.doc_settings, self.inline_parser, self.multiline_parser = (
+            _generate_parsers()
+        )
         self.dummy_doc = new_document("dummy", self.doc_settings)
         self.doc_language = languages.get_language(
             self.dummy_doc.settings.language_code
@@ -725,7 +727,9 @@ class LayoutHandler:
 
         return data_container
 
-    def meta_rst(self, name: str, prefix: Optional[str] = None, show_empty: bool = False) -> nodes.paragraph:
+    def meta_rst(
+        self, name: str, prefix: Optional[str] = None, show_empty: bool = False
+    ) -> nodes.paragraph:
         """
         Returns the specific metadata of a need inside docutils nodes.
         Usage::
@@ -762,7 +766,7 @@ class LayoutHandler:
                 return []
 
             dummy_doc = self.dummy_doc.deepcopy()
-            self.multiline_parser.parse(data,dummy_doc)
+            self.multiline_parser.parse(data, dummy_doc)
             data_node = dummy_doc.children
 
             data_container += data_node
@@ -771,7 +775,7 @@ class LayoutHandler:
             data_container.append(nodes.Text(data))
 
         return data_container
-    
+
     def image(
         self,
         url: str,
