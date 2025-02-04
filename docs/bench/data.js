@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1738320324939,
+  "lastUpdate": 1738674738014,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -12132,6 +12132,42 @@ window.BENCHMARK_DATA = {
             "value": 55.69852875000001,
             "unit": "s",
             "extra": "Commit: 0d4cdb1050d7eeab15c3386f2073835effe27f5b\nBranch: master\nTime: 2025-01-31T11:43:41+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "476d0816f42b47fdff7b80bf4dbe92cc5a04a53c",
+          "message": "🔧 Remove `constraints_passed`/`constraints_results` directive options (#1396)\n\nThese are post-processed internal fields, and so the directive options\ndo not make sense and are in fact not used",
+          "timestamp": "2025-02-04T14:10:18+01:00",
+          "tree_id": "0a661f0bee24ec866b00cf9b24f65f1e5e46cf07",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/476d0816f42b47fdff7b80bf4dbe92cc5a04a53c"
+        },
+        "date": 1738674722229,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21395810500001744,
+            "unit": "s",
+            "extra": "Commit: 476d0816f42b47fdff7b80bf4dbe92cc5a04a53c\nBranch: master\nTime: 2025-02-04T14:10:18+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.559533329000004,
+            "unit": "s",
+            "extra": "Commit: 476d0816f42b47fdff7b80bf4dbe92cc5a04a53c\nBranch: master\nTime: 2025-02-04T14:10:18+01:00"
           }
         ]
       }
