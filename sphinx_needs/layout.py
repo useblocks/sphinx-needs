@@ -731,7 +731,7 @@ class LayoutHandler:
         self, name: str, prefix: Optional[str] = None, show_empty: bool = False
     ) -> nodes.paragraph:
         """
-        Returns the specific metadata of a need inside docutils nodes.
+        Returns the specific metadata of a need inside docutils nodes, parsed as multiline rst.
         Usage::
 
             <<meta_rst('status', prefix='\\*\\*status\\*\\*: ', show_empty=True)>>
