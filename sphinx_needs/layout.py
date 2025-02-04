@@ -79,11 +79,12 @@ def build_need_repr(
 
 
 @lru_cache(1)
-def _generate_inline_parser() -> tuple[Values, Inliner]:
+def _generate_parsers() -> Tuple[Values, Inliner, Parser]:
     doc_settings = OptionParser(components=(Parser,)).get_default_values()
     inline_parser = Inliner()
     inline_parser.init_customizations(doc_settings)  # type: ignore
-    return doc_settings, inline_parser
+    multiline_parser = Parser()
+    return doc_settings, inline_parser, multiline_parser
 
 
 class LayoutHandler:
@@ -262,7 +263,7 @@ class LayoutHandler:
         }
 
         # Dummy Document setup
-        self.doc_settings, self.inline_parser = _generate_inline_parser()
+        self.doc_settings,  self.inline_parser, self.multiline_parser = _generate_parsers()
         self.dummy_doc = new_document("dummy", self.doc_settings)
         self.doc_language = languages.get_language(
             self.dummy_doc.settings.language_code
@@ -285,6 +286,7 @@ class LayoutHandler:
             "meta_links": self.meta_links,
             "meta_links_all": self.meta_links_all,  # type: ignore[dict-item]
             "meta_id": self.meta_id,
+            "meta_rst": self.meta_rst,
             "image": self.image,  # type: ignore[dict-item]
             "link": self.link,
             "collapse_button": self.collapse_button,
@@ -339,14 +341,14 @@ class LayoutHandler:
             # line_block_node = nodes.line_block()
             line_node = nodes.line()
 
-            line_parsed = self._parse(line)
+            line_parsed = self._parse_inline(line)
             line_ready = self._func_replace(line_parsed)
             line_node += line_ready
             lines_container.append(line_node)
 
         return lines_container
 
-    def _parse(self, line: str) -> list[nodes.Node]:
+    def _parse_inline(self, line: str) -> list[nodes.Node]:
         """
         Parses a single line/string for inline rst statements, like strong, emphasis, literal, ...
 
@@ -485,7 +487,7 @@ class LayoutHandler:
         """
         data_container = nodes.inline(classes=["needs_" + name])
         if prefix:
-            prefix_node = self._parse(prefix)
+            prefix_node = self._parse_inline(prefix)
             label_node = nodes.inline(classes=["needs_label"])
             label_node += prefix_node
             data_container.append(label_node)
@@ -707,7 +709,7 @@ class LayoutHandler:
                 outgoing_label = (
                     prefix + "{}:".format(link_type["outgoing"]) + postfix + " "
                 )
-                outgoing_line += self._parse(outgoing_label)
+                outgoing_line += self._parse_inline(outgoing_label)
                 outgoing_line += self.meta_links(link_type["option"], incoming=False)
                 data_container.append(outgoing_line)
 
@@ -717,12 +719,59 @@ class LayoutHandler:
                 incoming_label = (
                     prefix + "{}:".format(link_type["incoming"]) + postfix + " "
                 )
-                incoming_line += self._parse(incoming_label)
+                incoming_line += self._parse_inline(incoming_label)
                 incoming_line += self.meta_links(link_type["option"], incoming=True)
                 data_container.append(incoming_line)
 
         return data_container
 
+def meta_rst(self, name: str, prefix: Optional[str] = None, show_empty: bool = False) -> nodes.paragraph:
+        """
+        Returns the specific metadata of a need inside docutils nodes.
+        Usage::
+
+            <<meta_rst('status', prefix='\\*\\*status\\*\\*: ', show_empty=True)>>
+
+        .. note::
+
+           You must escape all rst_content in your function strings! E.g. to get `**` one must use `\\\\*\\\\*`.
+
+        :param name: name of the need item
+        :param prefix: string as rst-code, will be added infront of the value output
+        :param show_empty: If false and requested need-value is None or '', no output is returned. Default: false
+        :return: docutils node
+        """
+        data_container = nodes.paragraph(classes=["needs_" + name])
+        if prefix:
+            prefix_node = self._parse_inline(prefix)
+            label_node = nodes.inline(classes=["needs_label"])
+            label_node += prefix_node
+            data_container.append(label_node)
+        try:
+            data = self.need[name]  # type: ignore[literal-required]
+        except KeyError:
+            data = ""
+
+        if data is None and not show_empty:
+            return []
+        elif data is None and show_empty:
+            data = ""
+
+        if isinstance(data, str):
+            if len(data) == 0 and not show_empty:
+                return []
+
+            dummy_doc = self.dummy_doc.deepcopy()
+            self.multiline_parser.parse(data,dummy_doc)
+            data_node = dummy_doc.children
+
+            data_container += data_node
+
+        else:
+            data_container.append(nodes.Text(data))
+
+        return data_container
+    
     def image(
         self,
         url: str,
@@ -776,7 +825,7 @@ class LayoutHandler:
 
         data_container = nodes.inline()
         if prefix:
-            prefix_node = self._parse(prefix)
+            prefix_node = self._parse_inline(prefix)
             label_node = nodes.inline(classes=["needs_label"])
             label_node += prefix_node
             data_container.append(label_node)
@@ -901,7 +950,7 @@ class LayoutHandler:
         """
         data_container = nodes.inline()
         if prefix:
-            prefix_node = self._parse(prefix)
+            prefix_node = self._parse_inline(prefix)
             label_node = nodes.inline(classes=["needs_label"])
             label_node += prefix_node
             data_container.append(label_node)
