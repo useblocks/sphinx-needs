@@ -171,10 +171,10 @@ def load_external_needs(
                 # render jinja content
                 mem_template = get_target_template(target_url)
                 cal_target_url = mem_template.render(**{"need": need})
-                need_params["external_url"] = f'{source["base_url"]}/{cal_target_url}'
+                need_params["external_url"] = f"{source['base_url']}/{cal_target_url}"
             else:
                 need_params["external_url"] = (
-                    f'{source["base_url"]}/{need.get("docname", "__error__")}.html#{need["id"]}'
+                    f"{source['base_url']}/{need.get('docname', '__error__')}.html#{need['id']}"
                 )
 
             # check if external needs already exist

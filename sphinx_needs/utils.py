@@ -153,9 +153,9 @@ def row_col_maker(
 
                     if make_ref:
                         if need_info["is_external"]:
-                            assert (
-                                need_info["external_url"] is not None
-                            ), "external_url must be set for external needs"
+                            assert need_info["external_url"] is not None, (
+                                "external_url must be set for external needs"
+                            )
                             ref_col["refuri"] = check_and_calc_base_url_rel_path(
                                 need_info["external_url"], fromdocname
                             )
@@ -169,9 +169,9 @@ def row_col_maker(
                     elif ref_lookup:
                         temp_need = all_needs[link_id]
                         if temp_need["is_external"]:
-                            assert (
-                                temp_need["external_url"] is not None
-                            ), "external_url must be set for external needs"
+                            assert temp_need["external_url"] is not None, (
+                                "external_url must be set for external needs"
+                            )
                             ref_col["refuri"] = check_and_calc_base_url_rel_path(
                                 temp_need["external_url"], fromdocname
                             )

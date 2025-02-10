@@ -44,10 +44,10 @@ def process_need_incoming(
                 try:
                     target_need = all_needs[back_link]
                     if needs_config.show_link_title:
-                        link_text = f'{target_need["title"]}'
+                        link_text = f"{target_need['title']}"
 
                         if needs_config.show_link_id:
-                            link_text += f' ({target_need["id"]})'
+                            link_text += f" ({target_need['id']})"
                     else:
                         link_text = target_need["id"]
 
@@ -70,9 +70,9 @@ def process_need_incoming(
                             node_need_backref["reftarget"],
                         )
                     else:
-                        assert (
-                            target_need["external_url"] is not None
-                        ), "External URL must not be set"
+                        assert target_need["external_url"] is not None, (
+                            "External URL must not be set"
+                        )
                         new_node_ref = nodes.reference(
                             target_need["id"], target_need["id"]
                         )
