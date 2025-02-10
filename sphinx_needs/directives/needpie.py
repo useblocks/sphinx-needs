@@ -187,7 +187,9 @@ def process_needpie(
             # execute filter_func code
             if ff_result:
                 args = ff_result.args.split(",") if ff_result.args else []
-                args_context = {f"arg{index+1}": arg for index, arg in enumerate(args)}
+                args_context = {
+                    f"arg{index + 1}": arg for index, arg in enumerate(args)
+                }
 
                 sizes = []
                 ff_result.func(needs=need_list, results=sizes, **args_context)
