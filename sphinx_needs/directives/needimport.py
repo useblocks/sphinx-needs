@@ -128,7 +128,7 @@ class NeedimportDirective(SphinxDirective):
                     f"Schema validation errors detected in file {correct_need_import_path}:"
                 )
                 for error in errors.schema:
-                    logger.info(f'  {error.message} -> {".".join(error.path)}')
+                    logger.info(f"  {error.message} -> {'.'.join(error.path)}")
 
         if version is None:
             try:
