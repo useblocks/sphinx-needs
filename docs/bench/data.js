@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1738674738014,
+  "lastUpdate": 1739308740381,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -12168,6 +12168,42 @@ window.BENCHMARK_DATA = {
             "value": 60.559533329000004,
             "unit": "s",
             "extra": "Commit: 476d0816f42b47fdff7b80bf4dbe92cc5a04a53c\nBranch: master\nTime: 2025-02-04T14:10:18+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "702469bbac156917f793df08dd423aa917048282",
+          "message": "✨ Add `c.this_doc()` check for `needextend` filters (#1393)\n\nThis allows for filtering of needs only in the same document as the\n`needextend` itself, e.g.\n\n```restructuredtext\n.. needextend:: c.this_doc() and status is None\n   :status: open\n```\n\nPutting this under the `c` (for check) namespace allows for the\npossibility to add future special checks, without polluting the global\nnamespace.",
+          "timestamp": "2025-02-11T22:17:07+01:00",
+          "tree_id": "d23e58ffb4d3e116e838c0481c0b476e18b9b97a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/702469bbac156917f793df08dd423aa917048282"
+        },
+        "date": 1739308723776,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15893938299998922,
+            "unit": "s",
+            "extra": "Commit: 702469bbac156917f793df08dd423aa917048282\nBranch: master\nTime: 2025-02-11T22:17:07+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.74356436100001,
+            "unit": "s",
+            "extra": "Commit: 702469bbac156917f793df08dd423aa917048282\nBranch: master\nTime: 2025-02-11T22:17:07+01:00"
           }
         ]
       }
