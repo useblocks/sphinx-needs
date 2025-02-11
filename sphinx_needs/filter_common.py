@@ -564,8 +564,8 @@ def filter_single_need(
     :param filter_string: string, which is used as input for eval()
     :param needs: list of all needs
     :param current_need: set the current_need in the filter context as this, otherwise the need itself
-    :param filter_compiled: An already compiled filter_string to safe time
-    :param origin_docname: The origin docname that the filter was used called from, is any
+    :param filter_compiled: An already compiled filter_string to save time
+    :param origin_docname: The origin docname that the filter was called from, if any
 
     :return: True, if need passes the filter_string, else False
     """
