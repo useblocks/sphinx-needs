@@ -95,6 +95,8 @@ Default: false
 Extending needs in current page
 -------------------------------
 
+.. versionadded:: 4.3.0
+
 Additionally, to common :ref:`filter_string` variables, the ``c.this_doc()`` function is made available,
 to filter for needs only in the same document as the ``needextend``.
 
