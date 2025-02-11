@@ -283,6 +283,7 @@ def filter_needs_mutable(
     *,
     location: tuple[str, int | None] | nodes.Node | None = None,
     append_warning: str = "",
+    origin_docname: str | None = None,
 ) -> list[NeedsInfoType]:
     return filter_needs(
         needs.values(),
@@ -291,6 +292,7 @@ def filter_needs_mutable(
         current_need,
         location=location,
         append_warning=append_warning,
+        origin_docname=origin_docname,
     )
 
 
@@ -489,6 +491,7 @@ def filter_needs(
     *,
     location: tuple[str, int | None] | nodes.Node | None = None,
     append_warning: str = "",
+    origin_docname: str | None = None,
 ) -> list[NeedsInfoType]:
     """
     Filters given needs based on a given filter string.
@@ -520,6 +523,7 @@ def filter_needs(
                 needs,
                 current_need,
                 filter_compiled=filter_compiled,
+                origin_docname=origin_docname,
             ):
                 found_needs.append(filter_need)
         except Exception as e:
@@ -549,16 +553,20 @@ def filter_single_need(
     needs: Iterable[NeedsInfoType] | None = None,
     current_need: NeedsInfoType | None = None,
     filter_compiled: CodeType | None = None,
+    *,
+    origin_docname: str | None = None,
 ) -> bool:
     """
     Checks if a single need/need_part passes a filter_string
 
     :param need: the data for a single need
     :param config: NeedsSphinxConfig object
-    :param filter_compiled: An already compiled filter_string to safe time
-    :param need: need or need_part
     :param filter_string: string, which is used as input for eval()
     :param needs: list of all needs
+    :param current_need: set the current_need in the filter context as this, otherwise the need itself
+    :param filter_compiled: An already compiled filter_string to save time
+    :param origin_docname: The origin docname that the filter was called from, if any
+
     :return: True, if need passes the filter_string, else False
     """
     filter_context: dict[str, Any] = need.copy()  # type: ignore
@@ -573,6 +581,9 @@ def filter_single_need(
     filter_context.update(config.filter_data)
 
     filter_context["search"] = need_search
+
+    filter_context["c"] = NeedCheckContext(need, origin_docname)
+
     result = False
     try:
         # Set filter_context as globals and not only locals in eval()!
@@ -588,3 +599,18 @@ def filter_single_need(
     except Exception as e:
         raise NeedsInvalidFilter(f"Filter {filter_string!r} not valid. Error: {e}.")
     return result
+
+
+class NeedCheckContext:
+    """A namespace for filter checks of the current need."""
+
+    __slots__ = ("_need", "_origin_docname")
+
+    def __init__(self, need: NeedsInfoType, origin_docname: str | None) -> None:
+        self._need = need
+        self._origin_docname = origin_docname
+
+    def this_doc(self) -> bool:
+        if self._origin_docname is None:
+            raise ValueError("`this_doc` can not be used in this context")
+        return self._need["docname"] == self._origin_docname

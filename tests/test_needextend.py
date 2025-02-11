@@ -10,12 +10,14 @@ from syrupy.filters import props
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_needextend"}],
+    [{"buildername": "html", "srcdir": "doc_test/doc_needextend", "no_plantuml": True}],
     indirect=True,
 )
 def test_doc_needextend_html(test_app: Sphinx, snapshot):
     app = test_app
     app.build()
+
+    assert not app._warning.getvalue()
 
     needs_data = json.loads(Path(app.outdir, "needs.json").read_text())
     assert needs_data == snapshot(exclude=props("created", "project", "creator"))

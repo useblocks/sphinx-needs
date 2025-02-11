@@ -92,16 +92,22 @@ Default: false
     We have a configuration (conf.py) option called :ref:`needs_needextend_strict`
     that deactivates or activates the ``:strict:`` option behaviour for all ``needextend`` directives in a project.
 
-Setting default option values
------------------------------
+Extending needs in current page
+-------------------------------
+
+.. versionadded:: 4.3.0
+
+Additionally, to common :ref:`filter_string` variables, the ``c.this_doc()`` function is made available,
+to filter for needs only in the same document as the ``needextend``.
+
 You can use ``needextend``'s filter string to set default option values for a group of needs.
 
-The following example would set the status of all needs in the document
-``docs/directives/needextend.rst``, which do not have the status set explicitly, to ``open``.
+The following example would set the status of all needs in the current document,
+which do not have the status set explicitly, to ``open``.
 
-.. code-block:: rst
+.. need-example::
 
-   .. needextend:: (docname == "docs/directives/needextend") and (status is None)
+   .. needextend:: c.this_doc() and status is None
       :status: open
 
 See also: :ref:`needs_global_options` for setting a default option value for all needs.
@@ -177,5 +183,5 @@ Also filtering for these values is supported:
 
    .. needtable::
       :filter: "needextend" in title
-      :columns: id, title, is_modified, modifications
+      :columns: id, title, status, is_modified, modifications
       :style: table
