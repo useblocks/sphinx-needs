@@ -95,7 +95,7 @@ Default: false
 Extending needs in current page
 -------------------------------
 
-Additionally, to common :ref:`filter_string` variables, the ``n.this_doc()`` function is made available,
+Additionally, to common :ref:`filter_string` variables, the ``c.this_doc()`` function is made available,
 to filter for needs only in the same document as the ``needextend``.
 
 You can use ``needextend``'s filter string to set default option values for a group of needs.
@@ -105,7 +105,7 @@ which do not have the status set explicitly, to ``open``.
 
 .. need-example::
 
-   .. needextend:: n.this_doc() and status is None
+   .. needextend:: c.this_doc() and status is None
       :status: open
 
 See also: :ref:`needs_global_options` for setting a default option value for all needs.

@@ -582,7 +582,7 @@ def filter_single_need(
 
     filter_context["search"] = need_search
 
-    filter_context["n"] = NeedContext(need, origin_docname)
+    filter_context["c"] = NeedCheckContext(need, origin_docname)
 
     result = False
     try:
@@ -601,17 +601,14 @@ def filter_single_need(
     return result
 
 
-class NeedContext:
-    """A namespace for need filters to access the current need."""
+class NeedCheckContext:
+    """A namespace for filter checks of the current need."""
 
     __slots__ = ("_need", "_origin_docname")
 
     def __init__(self, need: NeedsInfoType, origin_docname: str | None) -> None:
         self._need = need
         self._origin_docname = origin_docname
-
-    def __getattr__(self, name: str) -> Any:
-        return self._need[name]  # type: ignore[literal-required]
 
     def this_doc(self) -> bool:
         if self._origin_docname is None:
