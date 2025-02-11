@@ -7,6 +7,6 @@ need objects
    :status: open
    :tags: tag_1
 
-.. needextend:: "this_doc(current_need)"
+.. needextend:: "n.this_doc()"
    :status: closed
 

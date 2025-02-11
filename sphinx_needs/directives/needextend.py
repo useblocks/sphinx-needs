@@ -124,11 +124,7 @@ def extend_needs_data(
                     needs_config,
                     need_filter,
                     location=location,
-                    add_context={
-                        "this_doc": lambda need,
-                        current_doc=current_needextend["docname"]: need["docname"]
-                        == current_doc
-                    },
+                    origin_docname=current_needextend["docname"],
                 )
             except Exception as e:
                 log_warning(
