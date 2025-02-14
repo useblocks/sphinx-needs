@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1739308740381,
+  "lastUpdate": 1739524971845,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -12204,6 +12204,42 @@ window.BENCHMARK_DATA = {
             "value": 57.74356436100001,
             "unit": "s",
             "extra": "Commit: 702469bbac156917f793df08dd423aa917048282\nBranch: master\nTime: 2025-02-11T22:17:07+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "19998ba6c19bec78bc2ce974b7f7c3d26e269a9b",
+          "message": "🐛 Fix CSS for need table colors (#1403)",
+          "timestamp": "2025-02-14T10:21:06+01:00",
+          "tree_id": "ced471c9aa46803656af6576f85aebd7a83d3159",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/19998ba6c19bec78bc2ce974b7f7c3d26e269a9b"
+        },
+        "date": 1739524955887,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.13824094599999626,
+            "unit": "s",
+            "extra": "Commit: 19998ba6c19bec78bc2ce974b7f7c3d26e269a9b\nBranch: master\nTime: 2025-02-14T10:21:06+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 55.36893914500001,
+            "unit": "s",
+            "extra": "Commit: 19998ba6c19bec78bc2ce974b7f7c3d26e269a9b\nBranch: master\nTime: 2025-02-14T10:21:06+01:00"
           }
         ]
       }
