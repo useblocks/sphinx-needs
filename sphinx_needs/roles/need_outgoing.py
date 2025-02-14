@@ -93,9 +93,9 @@ def process_need_outgoing(
                             node_need_ref["reftarget"],
                         )
                     else:
-                        assert (
-                            target_need["external_url"] is not None
-                        ), "External URL must be set"
+                        assert target_need["external_url"] is not None, (
+                            "External URL must be set"
+                        )
                         new_node_ref = nodes.reference(
                             target_need["id"], target_need["id"]
                         )
