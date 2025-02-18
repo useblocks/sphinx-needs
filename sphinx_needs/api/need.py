@@ -29,7 +29,13 @@ from sphinx_needs.views import NeedsView
 
 logger = get_logger(__name__)
 
-_deprecated_kwargs = {"constraints_passed", "links_string", "hide_tags", "hide_status"}
+_deprecated_kwargs = {
+    "constraints_passed",
+    "links_string",
+    "hide_tags",
+    "hide_status",
+    "delete",
+}
 
 
 def generate_need(
@@ -50,7 +56,6 @@ def generate_need(
     arch: dict[str, str] | None = None,
     signature: str = "",
     sections: list[str] | None = None,
-    delete: None | bool = False,
     jinja_content: None | bool = False,
     hide: bool = False,
     collapse: None | bool = None,
@@ -104,7 +109,6 @@ def generate_need(
     :param tags: A list of tags, or a comma separated string.
     :param constraints: Constraints as single, comma separated, string.
     :param constraints_passed: Contains bool describing if all constraints have passed
-    :param delete: boolean value (Remove the complete need).
     :param hide: boolean value.
     :param collapse: boolean value.
     :param style: String value of class attribute of node.
@@ -215,7 +219,6 @@ def generate_need(
         "pre_template": pre_template,
         "post_template": post_template,
         "hide": hide,
-        "delete": delete or False,
         "jinja_content": jinja_content or False,
         "parts": parts or {},
         "is_part": False,
@@ -333,7 +336,6 @@ def add_need(
     arch: dict[str, str] | None = None,
     signature: str = "",
     sections: list[str] | None = None,
-    delete: None | bool = False,
     jinja_content: None | bool = False,
     hide: bool = False,
     collapse: None | bool = None,
@@ -389,7 +391,6 @@ def add_need(
     :param tags: A list of tags, or a comma separated string.
     :param constraints: Constraints as single, comma separated, string.
     :param constraints_passed: Contains bool describing if all constraints have passed
-    :param delete: boolean value (Remove the complete need).
     :param hide: boolean value.
     :param collapse: boolean value.
     :param style: String value of class attribute of node.
@@ -406,10 +407,6 @@ def add_need(
             "deprecated key found in kwargs", DeprecationWarning, stacklevel=1
         )
         kwargs = {k: v for k, v in kwargs.items() if k not in _deprecated_kwargs}
-
-    if delete:
-        # Don't generate a need object if the :delete: option is enabled.
-        return []
 
     if doctype is None and not is_external and docname:
         doctype = os.path.splitext(app.env.doc2path(docname))[1]
@@ -431,7 +428,6 @@ def add_need(
         arch=arch,
         signature=signature,
         sections=sections,
-        delete=delete,
         jinja_content=jinja_content,
         hide=hide,
         collapse=collapse,
