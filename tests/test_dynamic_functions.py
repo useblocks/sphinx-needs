@@ -140,6 +140,8 @@ def test_doc_df_user_functions(test_app):
         warn = "WARNING: cannot cache unpickable configuration value: 'needs_functions' (because it contains a function, class, or module object)"
         if version_info >= (8, 0):
             warn += " [config.cache]"
+        if version_info >= (8, 2):
+            warn = warn.replace("unpickable", "unpickleable")
         expected.insert(0, warn)
     assert warnings == expected
 
