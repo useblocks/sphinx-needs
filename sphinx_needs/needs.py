@@ -33,7 +33,6 @@ from sphinx_needs.defaults import (
     GRAPHVIZ_STYLE_DEFAULTS,
     LAYOUTS,
     NEED_DEFAULT_OPTIONS,
-    NEEDEXTEND_NOT_ALLOWED_OPTIONS,
     NEEDFLOW_CONFIG_DEFAULTS,
 )
 from sphinx_needs.directives.list2need import List2Need, List2NeedDirective
@@ -480,18 +479,16 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     NeedserviceDirective.option_spec.update(extra_links)
 
     # Update NeedextendDirective with option modifiers.
-    for key, value in NEED_DEFAULT_OPTIONS.items():
-        # Ignore options like "id"
-        if key in NEEDEXTEND_NOT_ALLOWED_OPTIONS:
-            continue
-
-        NeedextendDirective.option_spec.update(
-            {
-                key: value,
-                f"+{key}": value,
-                f"-{key}": directives.flag,
-            }
-        )
+    for key, _options in NeedsCoreFields.items():
+        if _options.get("allow_extend"):
+            value = NEED_DEFAULT_OPTIONS[key]
+            NeedextendDirective.option_spec.update(
+                {
+                    key: value,
+                    f"+{key}": value,  # TODO this doesn't make sense for non- str/list[str] fields
+                    f"-{key}": directives.flag,
+                }
+            )
 
     for key, value in extra_links.items():
         NeedextendDirective.option_spec.update(
@@ -501,6 +498,15 @@ def load_config(app: Sphinx, *_args: Any) -> None:
                 f"-{key}": directives.flag,
             }
         )
+
+    # "links" is not part of the extra_links
+    NeedextendDirective.option_spec.update(
+        {
+            "links": NEED_DEFAULT_OPTIONS["links"],
+            "+links": NEED_DEFAULT_OPTIONS["links"],
+            "-links": directives.flag,
+        }
+    )
 
     for key, value in _NEEDS_CONFIG.extra_options.items():
         NeedextendDirective.option_spec.update(

@@ -4,7 +4,7 @@ needextend
 ==========
 .. versionadded:: 0.7.0
 
-``needextend`` allows to modify existing needs. It doesn’t provide any output, as the modifications
+``needextend`` allows to modify existing needs. It doesn't provide any output, as the modifications
 get presented at the original location of the changing need, for example:
 
 .. code-block:: rst
@@ -20,7 +20,12 @@ The following modifications are supported:
 * ``+option``: add new value to an existing value of an option.
 * ``-option``: delete a complete option.
 
-The argument of ``needextend`` must be a :ref:`filter_string` which defines the needs to modify.
+The argument of ``needextend`` will be taken as, by order of priority:
+
+- a single need ID, if it is enclosed by ``<>``,
+- a :ref:`filter_string` if it is enclosed by ``""``,
+- a single need ID, if it is a single word (no spaces),
+- a :ref:`filter_string` otherwise.
 
 ``needextend`` can modify all string-based and list-based options.
 Also, you can add links or delete tags.
@@ -40,10 +45,25 @@ Also, you can add links or delete tags.
       | And a tag was added.
       | Finally all links got removed.
 
-   .. needextend:: id == "extend_test_001"
+   .. req:: needextend Example 2
+      :id: extend_test_002
+      :tags: extend_example
+      :status: open
+
+      Contents
+
+   .. needextend:: extend_test_001
       :status: closed
       :+author: and me
+
+   .. needextend:: <extend_test_001>
       :+tags: new_tag
+
+   .. needextend:: id == "extend_test_002"
+      :status: New status
+
+   .. needextend:: ""extend_example" in tags"
+      :+tags: other
 
 Options
 -------
@@ -72,36 +92,22 @@ Default: false
     We have a configuration (conf.py) option called :ref:`needs_needextend_strict`
     that deactivates or activates the ``:strict:`` option behaviour for all ``needextend`` directives in a project.
 
+Extending needs in current page
+-------------------------------
 
-Single need modification
-------------------------
-If only one single need shall get modified, the argument of ``needextend`` can just be the need-id.
+.. versionadded:: 4.3.0
+
+Additionally, to common :ref:`filter_string` variables, the ``c.this_doc()`` function is made available,
+to filter for needs only in the same document as the ``needextend``.
+
+You can use ``needextend``'s filter string to set default option values for a group of needs.
+
+The following example would set the status of all needs in the current document,
+which do not have the status set explicitly, to ``open``.
 
 .. need-example::
 
-    .. req:: needextend Example 2
-       :id: extend_test_002
-       :status: open
-
-    .. needextend:: extend_test_002
-       :status: New status
-
-.. attention::
-
-    The given argument must fully match the regular expression defined in
-    :ref:`needs_id_regex` and a need with this ID must exist!
-    Otherwise the argument is taken as normal filter string.
-
-Setting default option values
------------------------------
-You can use ``needextend``'s filter string to set default option values for a group of needs.
-
-The following example would set the status of all needs in the document
-``docs/directives/needextend.rst``, which do not have the status set explicitly, to ``open``.
-
-.. code-block:: rst
-
-   .. needextend:: (docname == "docs/directives/needextend") and (status is None)
+   .. needextend:: c.this_doc() and status is None
       :status: open
 
 See also: :ref:`needs_global_options` for setting a default option value for all needs.
@@ -177,5 +183,5 @@ Also filtering for these values is supported:
 
    .. needtable::
       :filter: "needextend" in title
-      :columns: id, title, is_modified, modifications
+      :columns: id, title, status, is_modified, modifications
       :style: table

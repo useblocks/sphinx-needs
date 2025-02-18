@@ -1,5 +1,5 @@
-needextend unknown id
-=====================
+needextend warnings
+===================
 
 .. story:: needextend Example 3
    :id: extend_test_003
@@ -18,3 +18,9 @@ needextend unknown id
 
 .. needextend:: unknown_id
    :status: open
+
+.. needextend:: <id with space>
+.. needextend:: "bad_filter"
+.. needextend::  bad == filter
+.. needextend:: <>
+.. needextend:: ""

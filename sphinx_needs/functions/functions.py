@@ -19,7 +19,12 @@ from sphinx.errors import SphinxError
 from sphinx.util.tags import Tags
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, NeedsMutable, SphinxNeedsData
+from sphinx_needs.data import (
+    NeedsCoreFields,
+    NeedsInfoType,
+    NeedsMutable,
+    SphinxNeedsData,
+)
 from sphinx_needs.debug import measure_time_func
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.nodes import Need
@@ -228,14 +233,19 @@ def resolve_dynamic_values(needs: NeedsMutable, app: Sphinx) -> None:
     - ``*args``: optional arguments (specified in the function string)
     - ``**kwargs``: optional keyword arguments (specified in the function string)
     """
+
+    config = NeedsSphinxConfig(app.config)
+
+    allowed_fields: set[str] = {
+        *(k for k, v in NeedsCoreFields.items() if v.get("allow_df", False)),
+        *config.extra_options,
+        *(link["option"] for link in config.extra_links),
+        *config.global_options,
+    }
+
     for need in needs.values():
         for need_option in need:
-            if need_option in [
-                "docname",
-                "lineno",
-                "content",
-            ]:
-                # dynamic values in this data are not allowed.
+            if need_option not in allowed_fields:
                 continue
             if not isinstance(need[need_option], (list, set)):
                 func_call: str | None = "init"
@@ -288,18 +298,10 @@ def resolve_dynamic_values(needs: NeedsMutable, app: Sphinx) -> None:
                         )
                     if func_call is None:
                         new_values.append(element)
+                    elif isinstance(func_return, (list, set)):
+                        new_values += func_return
                     else:
-                        # Replace original function string with return value of function call
-                        if isinstance(need[need_option], (str, int, float)):
-                            new_values.append(
-                                element.replace(f"[[{func_call}]]", str(func_return))
-                            )
-                        else:
-                            if isinstance(need[need_option], (list, set)):
-                                if isinstance(func_return, (list, set)):
-                                    new_values += func_return
-                                else:
-                                    new_values += [func_return]
+                        new_values += [func_return]
 
                 need[need_option] = new_values
 
