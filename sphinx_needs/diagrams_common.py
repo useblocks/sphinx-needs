@@ -189,9 +189,9 @@ def calculate_link(
     builder = app.builder
     try:
         if need_info["is_external"]:
-            assert (
-                need_info["external_url"] is not None
-            ), "external_url must be set for external needs"
+            assert need_info["external_url"] is not None, (
+                "external_url must be set for external needs"
+            )
             link = need_info["external_url"]
             # check if need_info["external_url"] is relative path
             parsed_url = urlparse(need_info["external_url"])

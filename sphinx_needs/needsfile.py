@@ -216,7 +216,7 @@ class NeedsList:
             if errors.schema:
                 self.log.info(f"Schema validation errors detected in file {file}:")
                 for error in errors.schema:
-                    self.log.info(f'  {error.message} -> {".".join(error.path)}')
+                    self.log.info(f"  {error.message} -> {'.'.join(error.path)}")
 
             with open(file) as needs_file:
                 try:

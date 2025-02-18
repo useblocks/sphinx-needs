@@ -128,7 +128,7 @@ class NeedimportDirective(SphinxDirective):
                     f"Schema validation errors detected in file {correct_need_import_path}:"
                 )
                 for error in errors.schema:
-                    logger.info(f'  {error.message} -> {".".join(error.path)}')
+                    logger.info(f"  {error.message} -> {'.'.join(error.path)}")
 
         if version is None:
             try:
@@ -256,8 +256,9 @@ class NeedimportDirective(SphinxDirective):
             # These keys need to be different for add_need() api call.
             need_params["need_type"] = need_params.pop("type", "")  # type: ignore[misc,typeddict-unknown-key]
             need_params["title"] = need_params.pop(
-                "full_title", need_params.get("title", "")
-            )  # type: ignore[misc]
+                "full_title",  # type: ignore[misc]
+                need_params.get("title", ""),
+            )
 
             # Replace id, to get unique ids
             need_id = need_params["id"] = id_prefix + need_params["id"]

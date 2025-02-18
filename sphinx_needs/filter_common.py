@@ -200,7 +200,7 @@ def process_filters(
             args = []
             if ff_result.args:
                 args = ff_result.args.split(",")
-            args_context = {f"arg{index+1}": arg for index, arg in enumerate(args)}
+            args_context = {f"arg{index + 1}": arg for index, arg in enumerate(args)}
 
             # Decorate function to allow time measurments
             filter_func = measure_time_func(
