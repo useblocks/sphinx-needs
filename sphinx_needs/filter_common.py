@@ -180,6 +180,7 @@ def process_filters(
             needs_config,
             filter_data["filter"],
             location=location,
+            origin_docname=filter_data["docname"],
         )
     else:
         # The filter results may be dirty, as it may continue manipulated needs.
@@ -413,6 +414,7 @@ def filter_needs_view(
     location: tuple[str, int | None] | nodes.Node | None = None,
     append_warning: str = "",
     strict_eval: bool = False,
+    origin_docname: str | None = None,
 ) -> list[NeedsInfoType]:
     if not filter_string:
         return list(needs.values())
@@ -440,6 +442,7 @@ def filter_needs_view(
         current_need,
         location=location,
         append_warning=append_warning,
+        origin_docname=origin_docname,
     )
 
 
@@ -452,6 +455,7 @@ def filter_needs_parts(
     location: tuple[str, int | None] | nodes.Node | None = None,
     append_warning: str = "",
     strict_eval: bool = False,
+    origin_docname: str | None = None,
 ) -> list[NeedsInfoType]:
     if not filter_string:
         return list(needs)
@@ -479,6 +483,7 @@ def filter_needs_parts(
         current_need,
         location=location,
         append_warning=append_warning,
+        origin_docname=origin_docname,
     )
 
 

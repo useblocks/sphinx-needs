@@ -188,6 +188,45 @@ If it is invalid or returns False, the related need is not taken into account fo
       .. needlist::
          :filter: "filter_example" in tags and (("B" in tags or ("spec" == type and "closed" == status)) or "test" == type)
 
+.. _filter_current_page:
+
+Filtering for needs on the current page
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.0.0
+
+Additionally, to common :ref:`filter_string` variables,
+the ``c.this_doc()`` function is for most directives,
+to filter for needs only in the same document as the directive.
+
+.. need-example::
+
+   .. needtable::
+      :filter: c.this_doc()
+      :style: datatables
+
+.. _re_search:
+
+search
+~~~~~~
+
+search(pattern, variable) is based on
+`Pythons re.search() function <https://docs.python.org/3/library/re.html#re.search>`_
+
+The first parameter must be a regular expression pattern.
+The second parameter should be one of the above variables(status, id, content, ..)
+
+.. dropdown:: Show example
+
+   This example uses a regular expressions to find all needs with an e-mail address in title.
+
+   .. need-example::
+
+      .. req:: Set admin e-mail to admin@mycompany.com
+
+      .. needlist::
+         :filter: search("([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", title)
+
 .. _filter_string_performance:
 
 Filter string performance
@@ -223,28 +262,6 @@ To debug which filters are being used across your project and their run times, y
    The directive option ``export_id`` was previously used to export filter information in the ``needs.json`` file.
    This is deprecated and will be removed in a future version.
    Instead use the above :ref:`needs_debug_filters` configuration option.
-
-.. _re_search:
-
-search
-~~~~~~
-
-search(pattern, variable) is based on
-`Pythons re.search() function <https://docs.python.org/3/library/re.html#re.search>`_
-
-The first parameter must be a regular expression pattern.
-The second parameter should be one of the above variables(status, id, content, ..)
-
-.. dropdown:: Show example
-
-   This example uses a regular expressions to find all needs with an e-mail address in title.
-
-   .. need-example::
-
-      .. req:: Set admin e-mail to admin@mycompany.com
-
-      .. needlist::
-         :filter: search("([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", title)
 
 .. _filter_code:
 
