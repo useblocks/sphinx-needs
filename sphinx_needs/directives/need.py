@@ -56,9 +56,11 @@ class NeedDirective(SphinxDirective):
 
     @measure_time("need")
     def run(self) -> Sequence[nodes.Node]:
+        if self.options.get("delete"):
+            return []
+
         needs_config = NeedsSphinxConfig(self.env.config)
 
-        delete_opt = self.options.get("delete")
         collapse = self.options.get("collapse")
         jinja_content = self.options.get("jinja_content")
         hide = "hide" in self.options
@@ -104,7 +106,6 @@ class NeedDirective(SphinxDirective):
                 collapse=collapse,
                 style=style,
                 layout=layout,
-                delete=delete_opt,
                 jinja_content=jinja_content,
                 constraints=constraints,
                 **need_extra_options,

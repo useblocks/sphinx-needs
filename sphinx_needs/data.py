@@ -133,12 +133,6 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "exclude_external": True,
         "allow_extend": True,
     },
-    "delete": {
-        "description": "If true, the need is deleted entirely.",
-        "schema": {"type": "boolean", "default": False},
-        "exclude_external": True,
-        "exclude_import": True,
-    },
     "layout": {
         "description": "Key of the layout, which is used to render the need.",
         "schema": {"type": ["string", "null"], "default": None},
@@ -392,8 +386,6 @@ class NeedsInfoType(TypedDict, total=False):
     """Hide the meta-data information of the need."""
     hide: Required[bool]
     """If true, the need is not rendered."""
-    delete: Required[bool]
-    """If true, the need is deleted entirely."""
     layout: Required[None | str]
     """Key of the layout, which is used to render the need."""
     style: Required[None | str]

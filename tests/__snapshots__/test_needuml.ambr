@@ -25,7 +25,6 @@
         comp --> int
       ''',
       'created_at': '',
-      'delete': False,
       'docname': 'index',
       'doctype': '.rst',
       'duration': '',
@@ -103,7 +102,6 @@
       }),
       'content': 'circle "Int_X" as int',
       'created_at': '',
-      'delete': False,
       'docname': 'index',
       'doctype': '.rst',
       'duration': '',
@@ -214,7 +212,6 @@
            Bob --> Alice: Hi Alice
       ''',
       'created_at': '',
-      'delete': False,
       'docname': 'index',
       'doctype': '.rst',
       'duration': '',
@@ -324,7 +321,6 @@
            Bob --> Alice: Hi Alice
       ''',
       'created_at': '',
-      'delete': False,
       'docname': 'index',
       'doctype': '.rst',
       'duration': '',
@@ -449,7 +445,6 @@
            Bob --> Alice: Hi Alice
       ''',
       'created_at': '',
-      'delete': False,
       'docname': 'index',
       'doctype': '.rst',
       'duration': '',
@@ -533,7 +528,6 @@
         sys_2 --> int
       ''',
       'created_at': '',
-      'delete': False,
       'docname': 'index',
       'doctype': '.rst',
       'duration': '',
@@ -611,7 +605,6 @@
       }),
       'content': 'Some content',
       'created_at': '',
-      'delete': False,
       'docname': 'index',
       'doctype': '.rst',
       'duration': '',
@@ -689,7 +682,6 @@
       }),
       'content': 'Some content 2',
       'created_at': '',
-      'delete': False,
       'docname': 'index',
       'doctype': '.rst',
       'duration': '',
@@ -776,7 +768,6 @@
         comp_2 --> int
       ''',
       'created_at': '',
-      'delete': False,
       'docname': 'index',
       'doctype': '.rst',
       'duration': '',
