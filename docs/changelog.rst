@@ -33,7 +33,7 @@ but may be in some corner cases.
   This is problematic for (a) user readability, (b) improving processing
   performance and issue feedback
 
-  This PR the argument processing  now slightly modified to allow for two
+  This PR slightly modifies the argument processing to allow for two
   "explicit" formats:
 
   - ``<ID>``, if the argument is enclosed in ``<>`` it is always processed as a single ID
