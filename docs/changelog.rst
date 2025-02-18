@@ -14,15 +14,17 @@ to bring more clarity to the needs data structure and post-processing steps.
 In most cases it should not be breaking,
 but may be in some corner cases.
 
-- ✨ Add ``c.this_doc()`` check for ``needextend`` filters :pr:`1393`
+- ✨ Add ``c.this_doc()`` check for use in directive ``:filter:`` option :pr:`1393` and :pr:`1405`
 
   This allows for filtering of needs only in the same document as the
-  ``needextend`` itself, e.g.
+  directive itself, e.g.
 
   .. code-block:: rst
 
     .. needextend:: c.this_doc() and status is None
        :status: open
+
+  This works for all common filtered directives, see :ref:`filter_current_page`
 
 - ♻️ Make ``needextend`` argument declarative :pr:`1391`
 
