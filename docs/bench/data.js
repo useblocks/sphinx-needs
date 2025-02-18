@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1739524971845,
+  "lastUpdate": 1739859783445,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -12240,6 +12240,42 @@ window.BENCHMARK_DATA = {
             "value": 55.36893914500001,
             "unit": "s",
             "extra": "Commit: 19998ba6c19bec78bc2ce974b7f7c3d26e269a9b\nBranch: master\nTime: 2025-02-14T10:21:06+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8ae2918501576a72a51b2407c7c2dc2cf9415d33",
+          "message": "♻️ Remove `delete` from internal needs and `needs.json` (#1347)\n\nThe `:delete:` option on a need directive deletes a need before\ncreating/storing it, therefore it is literally impossible for it to be\nanything other than `False`.\nStoring the field on a need is misleading, because it suggests that the\nneed will be deleted (see e.g. #1383),\nwhich is not possible with the current sphinx-needs logic.",
+          "timestamp": "2025-02-18T07:21:08+01:00",
+          "tree_id": "8f616d3d195fb9c89bf8e8667aae2c289ee80d09",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8ae2918501576a72a51b2407c7c2dc2cf9415d33"
+        },
+        "date": 1739859768412,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.17805527900000584,
+            "unit": "s",
+            "extra": "Commit: 8ae2918501576a72a51b2407c7c2dc2cf9415d33\nBranch: master\nTime: 2025-02-18T07:21:08+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 62.406205492,
+            "unit": "s",
+            "extra": "Commit: 8ae2918501576a72a51b2407c7c2dc2cf9415d33\nBranch: master\nTime: 2025-02-18T07:21:08+01:00"
           }
         ]
       }
