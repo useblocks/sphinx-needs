@@ -121,6 +121,7 @@ def load_external_needs(
 
         # all known need fields in the project
         known_keys = {
+            "full_title",  # legacy
             *NeedsCoreFields,
             *(x["option"] for x in needs_config.extra_links),
             *(x["option"] + "_back" for x in needs_config.extra_links),
@@ -128,6 +129,7 @@ def load_external_needs(
         }
         # all keys that should not be imported from external needs
         omitted_keys = {
+            "full_title",  # legacy
             *(k for k, v in NeedsCoreFields.items() if v.get("exclude_external")),
             *(x["option"] + "_back" for x in needs_config.extra_links),
         }
@@ -158,9 +160,6 @@ def load_external_needs(
 
             # These keys need to be different for add_need() api call.
             need_params["need_type"] = need_params.pop("type", "")
-            need_params["title"] = need_params.pop(
-                "full_title", need_params.get("title", "")
-            )
 
             # Replace id, to get unique ids
             need_params["id"] = id_prefix + need["id"]

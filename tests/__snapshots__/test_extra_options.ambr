@@ -9,7 +9,6 @@
             'content': 'The Tool **shall** have a command line interface.',
             'docname': 'index',
             'external_css': 'external_link',
-            'full_title': 'Command line interface',
             'id': 'R_12345',
             'impacts': 'component_a',
             'introduced': '1.0.0',
@@ -33,7 +32,6 @@
             'content': 'The Tool **shall** have a command line interface.',
             'docname': 'index',
             'external_css': 'external_link',
-            'full_title': 'Another Requirement',
             'id': 'R_12346',
             'impacts': 'component_b',
             'introduced': '1.1.1',
@@ -166,12 +164,6 @@
                 'string',
                 'null',
               ]),
-            }),
-            'full_title': dict({
-              'default': '',
-              'description': 'Title of the need, of unlimited length.',
-              'field_type': 'core',
-              'type': 'string',
             }),
             'has_dead_links': dict({
               'default': False,
@@ -456,7 +448,7 @@
               ]),
             }),
             'title': dict({
-              'description': 'Title of the need, trimmed to a maximum length.',
+              'description': 'Title of the need.',
               'field_type': 'core',
               'type': 'string',
             }),
