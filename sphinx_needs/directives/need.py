@@ -75,7 +75,7 @@ class NeedDirective(SphinxDirective):
         post_template = self.options.get("post_template")
         constraints = self.options.get("constraints", [])
 
-        title = self._get_title(needs_config)
+        title, full_title = self._get_title(needs_config)
 
         need_extra_options = {}
         for extra_link in needs_config.extra_links:
@@ -94,6 +94,7 @@ class NeedDirective(SphinxDirective):
                 self.lineno,
                 need_type=self.name,
                 title=title,
+                full_title=full_title,
                 id=id,
                 content=self.content,
                 lineno_content=self.content_offset + 1,
@@ -121,10 +122,12 @@ class NeedDirective(SphinxDirective):
         add_doc(self.env, self.env.docname)
         return need_nodes
 
-    def _get_title(self, config: NeedsSphinxConfig) -> str:
+    def _get_title(self, config: NeedsSphinxConfig) -> tuple[str, str | None]:
         """Determines the title for the need in order of precedence:
         directive argument, first sentence of requirement
         (if `:title_from_content:` was set, and '' if no title is to be derived).
+
+        :return: The title and the full title (if title was trimmed)
         """
         if len(self.arguments) > 0:  # a title was passed
             if "title_from_content" in self.options:
@@ -134,7 +137,7 @@ class NeedDirective(SphinxDirective):
                     "title",
                     location=self.get_location(),
                 )
-            return self.arguments[0]  # type: ignore[no-any-return]
+            return self.arguments[0], None
         elif "title_from_content" in self.options or config.title_from_content:
             first_sentence = re.split(r"[.\n]", "\n".join(self.content))[0]
             if not first_sentence:
@@ -144,9 +147,17 @@ class NeedDirective(SphinxDirective):
                     "title",
                     location=self.get_location(),
                 )
-            return first_sentence or ""
+            title = first_sentence or ""
+            # Trim title if it is too long
+            max_length = config.max_title_length
+            if max_length == -1 or len(title) <= max_length:
+                return title, None
+            elif max_length <= 3:
+                return title[:max_length], title
+            else:
+                return title[: max_length - 3] + "...", title
         else:
-            return ""
+            return "", None
 
 
 def get_sections_and_signature_and_needs(

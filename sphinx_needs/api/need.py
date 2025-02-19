@@ -68,6 +68,7 @@ def generate_need(
     is_external: bool = False,
     external_url: str | None = None,
     external_css: str = "external_link",
+    full_title: str | None = None,
     **kwargs: str,
 ) -> NeedsInfoType:
     """Creates a validated need data entry, without adding it to the project.
@@ -103,6 +104,8 @@ def generate_need(
     :param state: Current state object.
     :param need_type: Name of the need type to create.
     :param title: String as title.
+    :param full_title: This is given, if an auto-generated title was trimmed.
+        It is used to auto-generate the ID, if required.
     :param id: ID as string. If not given, an id will get generated.
     :param content: Content of the need
     :param status: Status as string.
@@ -143,7 +146,12 @@ def generate_need(
             "missing_id", "No ID defined, but 'needs_id_required' is set to True."
         )
     need_id = (
-        _make_hashed_id(need_type_data["prefix"], title, content, needs_config)
+        _make_hashed_id(
+            need_type_data["prefix"],
+            title if full_title is None else full_title,
+            content,
+            needs_config,
+        )
         if id is None
         else id
     )
@@ -182,15 +190,6 @@ def generate_need(
             f"Constraints {unknown_constraints!r} not in 'needs_constraints'.",
         )
 
-    # Trim title if it is too long
-    max_length = needs_config.max_title_length
-    if max_length == -1 or len(title) <= max_length:
-        trimmed_title = title
-    elif max_length <= 3:
-        trimmed_title = title[:max_length]
-    else:
-        trimmed_title = title[: max_length - 3] + "..."
-
     # Add the need and all needed information
     needs_info: NeedsInfoType = {
         "docname": docname,
@@ -209,8 +208,7 @@ def generate_need(
         "constraints_passed": True,
         "constraints_results": {},
         "id": need_id,
-        "title": trimmed_title,
-        "full_title": title,
+        "title": title,
         "collapse": collapse or False,
         "arch": arch or {},
         "style": style,
@@ -347,6 +345,7 @@ def add_need(
     is_external: bool = False,
     external_url: str | None = None,
     external_css: str = "external_link",
+    full_title: str | None = None,
     **kwargs: Any,
 ) -> list[nodes.Node]:
     """
@@ -384,6 +383,8 @@ def add_need(
     :param state: Current state object.
     :param need_type: Name of the need type to create.
     :param title: String as title.
+    :param full_title: This is given, if an auto-generated title was trimmed.
+        It is used to auto-generate the ID, if required.
     :param id: ID as string. If not given, an id will get generated.
     :param content: Content of the need, either as a ``str``
         or a ``StringList`` (a string with mapping to the source text).
@@ -415,6 +416,7 @@ def add_need(
         needs_config=NeedsSphinxConfig(app.config),
         need_type=need_type,
         title=title,
+        full_title=full_title,
         docname=docname,
         lineno=lineno,
         id=id,
@@ -446,7 +448,7 @@ def add_need(
     if SphinxNeedsData(app.env).has_need(needs_info["id"]):
         if id is None:
             # this is a generated ID
-            message = f"Unique ID could not be generated for need with title {needs_info['full_title']!r}."
+            message = f"Unique ID could not be generated for need with title {needs_info['title']!r}."
         else:
             message = f"A need with ID {needs_info['id']!r} already exists."
         raise InvalidNeedException("duplicate_id", message)

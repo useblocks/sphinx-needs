@@ -202,6 +202,7 @@ class NeedimportDirective(SphinxDirective):
 
         # all known need fields in the project
         known_keys = {
+            "full_title",  # legacy
             *NeedsCoreFields,
             *(x["option"] for x in needs_config.extra_links),
             *(x["option"] + "_back" for x in needs_config.extra_links),
@@ -209,6 +210,7 @@ class NeedimportDirective(SphinxDirective):
         }
         # all keys that should not be imported from external needs
         omitted_keys = {
+            "full_title",  # legacy
             *(k for k, v in NeedsCoreFields.items() if v.get("exclude_import")),
             *(x["option"] + "_back" for x in needs_config.extra_links),
         }
@@ -255,10 +257,6 @@ class NeedimportDirective(SphinxDirective):
 
             # These keys need to be different for add_need() api call.
             need_params["need_type"] = need_params.pop("type", "")  # type: ignore[misc,typeddict-unknown-key]
-            need_params["title"] = need_params.pop(
-                "full_title",  # type: ignore[misc]
-                need_params.get("title", ""),
-            )
 
             # Replace id, to get unique ids
             need_id = need_params["id"] = id_prefix + need_params["id"]

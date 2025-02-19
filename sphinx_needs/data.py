@@ -95,13 +95,8 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "exclude_external": True,
         "exclude_import": True,
     },
-    "full_title": {
-        "description": "Title of the need, of unlimited length.",
-        "schema": {"type": "string", "default": ""},
-        "allow_df": True,
-    },
     "title": {
-        "description": "Title of the need, trimmed to a maximum length.",
+        "description": "Title of the need.",
         "schema": {"type": "string"},
         "allow_df": True,
     },
@@ -374,10 +369,8 @@ class NeedsInfoType(TypedDict, total=False):
     """Line number on which the need content starts (None if external)."""
 
     # meta information
-    full_title: Required[str]
-    """Title of the need, of unlimited length."""
     title: Required[str]
-    """Title of the need, trimmed to a maximum length."""
+    """Title of the need."""
     status: Required[None | str]
     tags: Required[list[str]]
 

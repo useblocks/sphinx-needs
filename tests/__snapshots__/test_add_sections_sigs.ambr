@@ -5,7 +5,6 @@
       'content': 'The Tool **shall** have a command line interface.',
       'docname': 'index',
       'external_css': 'external_link',
-      'full_title': 'Command line interface',
       'id': 'R_12345',
       'impacts': 'component_a',
       'introduced': '1.0.0',
@@ -29,7 +28,6 @@
       'content': 'The Tool **shall** have a command line interface.',
       'docname': 'index',
       'external_css': 'external_link',
-      'full_title': 'Another Requirement',
       'id': 'R_12346',
       'impacts': 'component_b',
       'introduced': '1.1.1',
@@ -52,7 +50,6 @@
     'T_001': dict({
       'docname': 'index',
       'external_css': 'external_link',
-      'full_title': 'test method',
       'id': 'T_001',
       'layout': '',
       'lineno': 40,

@@ -23,7 +23,6 @@
             'duration': '',
             'external_css': 'external_link',
             'external_url': None,
-            'full_title': 'Test example',
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'TC_001',
@@ -92,7 +91,6 @@
             'duration': '',
             'external_css': 'external_link',
             'external_url': None,
-            'full_title': 'Negative test example',
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'TC_NEG_001',
@@ -161,7 +159,6 @@
             'duration': '',
             'external_css': 'external_link',
             'external_url': None,
-            'full_title': 'A story',
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'US_63252',
@@ -325,12 +322,6 @@
                 'string',
                 'null',
               ]),
-            }),
-            'full_title': dict({
-              'default': '',
-              'description': 'Title of the need, of unlimited length.',
-              'field_type': 'core',
-              'type': 'string',
             }),
             'has_dead_links': dict({
               'default': False,
@@ -597,7 +588,7 @@
               ]),
             }),
             'title': dict({
-              'description': 'Title of the need, trimmed to a maximum length.',
+              'description': 'Title of the need.',
               'field_type': 'core',
               'type': 'string',
             }),
@@ -819,7 +810,6 @@
           'TC_001': dict({
             'docname': 'index',
             'external_css': 'external_link',
-            'full_title': 'Test example',
             'id': 'TC_001',
             'layout': '',
             'lineno': 8,
@@ -835,7 +825,6 @@
           'TC_NEG_001': dict({
             'docname': 'index',
             'external_css': 'external_link',
-            'full_title': 'Negative test example',
             'id': 'TC_NEG_001',
             'layout': '',
             'lineno': 12,
@@ -851,7 +840,6 @@
           'US_63252': dict({
             'docname': 'index',
             'external_css': 'external_link',
-            'full_title': 'A story',
             'id': 'US_63252',
             'layout': '',
             'lineno': 4,
@@ -980,12 +968,6 @@
                 'string',
                 'null',
               ]),
-            }),
-            'full_title': dict({
-              'default': '',
-              'description': 'Title of the need, of unlimited length.',
-              'field_type': 'core',
-              'type': 'string',
             }),
             'has_dead_links': dict({
               'default': False,
@@ -1252,7 +1234,7 @@
               ]),
             }),
             'title': dict({
-              'description': 'Title of the need, trimmed to a maximum length.',
+              'description': 'Title of the need.',
               'field_type': 'core',
               'type': 'string',
             }),
@@ -1489,7 +1471,6 @@
             'duration': '',
             'external_css': 'external_link',
             'external_url': None,
-            'full_title': 'Test example',
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'TC_001',
@@ -1558,7 +1539,6 @@
             'duration': '',
             'external_css': 'external_link',
             'external_url': None,
-            'full_title': 'Negative test example',
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'TC_NEG_001',
@@ -1627,7 +1607,6 @@
             'duration': '',
             'external_css': 'external_link',
             'external_url': None,
-            'full_title': 'A story',
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'US_63252',
@@ -1791,12 +1770,6 @@
                 'string',
                 'null',
               ]),
-            }),
-            'full_title': dict({
-              'default': '',
-              'description': 'Title of the need, of unlimited length.',
-              'field_type': 'core',
-              'type': 'string',
             }),
             'has_dead_links': dict({
               'default': False,
@@ -2063,7 +2036,7 @@
               ]),
             }),
             'title': dict({
-              'description': 'Title of the need, trimmed to a maximum length.',
+              'description': 'Title of the need.',
               'field_type': 'core',
               'type': 'string',
             }),

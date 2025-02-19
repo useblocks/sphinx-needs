@@ -8,7 +8,6 @@
           'EXT_REQ_01': dict({
             'external_css': 'external_link',
             'external_url': 'http://my_company.com/docs/v1/index.html#REQ_01',
-            'full_title': 'REQ_01',
             'id': 'EXT_REQ_01',
             'is_external': True,
             'section_name': 'Title',
@@ -22,7 +21,6 @@
           'IMP_REQ_01': dict({
             'docname': 'index',
             'external_css': 'external_link',
-            'full_title': 'REQ_01',
             'id': 'IMP_REQ_01',
             'layout': '',
             'lineno': 4,
@@ -147,12 +145,6 @@
                 'string',
                 'null',
               ]),
-            }),
-            'full_title': dict({
-              'default': '',
-              'description': 'Title of the need, of unlimited length.',
-              'field_type': 'core',
-              'type': 'string',
             }),
             'has_dead_links': dict({
               'default': False,
@@ -419,7 +411,7 @@
               ]),
             }),
             'title': dict({
-              'description': 'Title of the need, trimmed to a maximum length.',
+              'description': 'Title of the need.',
               'field_type': 'core',
               'type': 'string',
             }),
@@ -479,7 +471,6 @@
             'external_url': 'http://my_company.com/docs/v1/index.html#TEST_01',
             'extra1': 'value1',
             'extra2': '1',
-            'full_title': 'TEST_01 DESCRIPTION',
             'id': 'EXT_TEST_01',
             'is_external': True,
             'links': list([
@@ -501,7 +492,6 @@
             'doctype': '',
             'external_css': 'external_link',
             'external_url': 'http://my_company.com/docs/v1/index.html#TEST_02',
-            'full_title': 'TEST_02 DESCRIPTION',
             'id': 'EXT_TEST_02',
             'is_external': True,
             'links': list([
@@ -530,7 +520,6 @@
           'REQ_1': dict({
             'docname': 'index',
             'external_css': 'external_link',
-            'full_title': 'Test requirement 1',
             'id': 'REQ_1',
             'layout': '',
             'lineno': 9,
@@ -549,7 +538,6 @@
           'SPEC_1': dict({
             'docname': 'index',
             'external_css': 'external_link',
-            'full_title': 'Test specification 1',
             'id': 'SPEC_1',
             'layout': '',
             'lineno': 12,
@@ -571,7 +559,6 @@
           'SUB_002': dict({
             'docname': 'subfolder_a/subfolder_b/subpage',
             'external_css': 'external_link',
-            'full_title': 'Sub-Req',
             'id': 'SUB_002',
             'layout': '',
             'lineno': 4,
@@ -709,12 +696,6 @@
               'field_type': 'extra',
               'type': 'string',
             }),
-            'full_title': dict({
-              'default': '',
-              'description': 'Title of the need, of unlimited length.',
-              'field_type': 'core',
-              'type': 'string',
-            }),
             'has_dead_links': dict({
               'default': False,
               'description': 'True if any links reference need ids that are not found in the need list.',
@@ -980,7 +961,7 @@
               ]),
             }),
             'title': dict({
-              'description': 'Title of the need, trimmed to a maximum length.',
+              'description': 'Title of the need.',
               'field_type': 'core',
               'type': 'string',
             }),
