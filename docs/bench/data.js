@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1739920726914,
+  "lastUpdate": 1739951638562,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -12348,6 +12348,42 @@ window.BENCHMARK_DATA = {
             "value": 57.01011637399998,
             "unit": "s",
             "extra": "Commit: 19759a893f4a314b440844137d75fe087c250a7b\nBranch: master\nTime: 2025-02-19T00:17:00+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "81442210368eacc210135f18c5ec00ef5fca03e1",
+          "message": "♻️ Remove `full_title` need field and only trim generated titles (#1407)\n\nIn the documentation for `needs_max_title_length`, it states:\n\n> This option is used in conjunction with auto-generated titles as\ncontrolled by `needs_title_from_content`\n\nHowever, this was not the case; it was being trimmed for all titles,\nirrespective of if they were auto-generated.\n\nTrimming is now only applied to auto-generated titles (and the untrimmed\ntitle is still used for ID generation),\n\nThe existence of both `title` and `full_title` is confusing and\nunnecessary (in most cases these are equal), and so `full_title` is\nremoved.",
+          "timestamp": "2025-02-19T08:52:08+01:00",
+          "tree_id": "00c2f18a4812246fa9aec818009a02218569f40b",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/81442210368eacc210135f18c5ec00ef5fca03e1"
+        },
+        "date": 1739951622747,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1654882320000013,
+            "unit": "s",
+            "extra": "Commit: 81442210368eacc210135f18c5ec00ef5fca03e1\nBranch: master\nTime: 2025-02-19T08:52:08+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.158013899,
+            "unit": "s",
+            "extra": "Commit: 81442210368eacc210135f18c5ec00ef5fca03e1\nBranch: master\nTime: 2025-02-19T08:52:08+01:00"
           }
         ]
       }
