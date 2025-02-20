@@ -237,10 +237,17 @@ def resolve_dynamic_values(needs: NeedsMutable, app: Sphinx) -> None:
     config = NeedsSphinxConfig(app.config)
 
     allowed_fields: set[str] = {
-        *(k for k, v in NeedsCoreFields.items() if v.get("allow_df", False)),
+        *(
+            k
+            for k, v in NeedsCoreFields.items()
+            if v.get("allow_df", False) or v.get("deprecate_df", False)
+        ),
         *config.extra_options,
         *(link["option"] for link in config.extra_links),
         *config.global_options,
+    }
+    deprecated_fields: set[str] = {
+        *(k for k, v in NeedsCoreFields.items() if v.get("deprecate_df", False)),
     }
 
     for need in needs.values():
@@ -267,6 +274,16 @@ def resolve_dynamic_values(needs: NeedsMutable, app: Sphinx) -> None:
 
                     if func_call is None:
                         continue
+                    if need_option in deprecated_fields:
+                        log_warning(
+                            logger,
+                            f"Usage of dynamic functions is deprecated in field {need_option!r}, found in need {need['id']!r}",
+                            "deprecated",
+                            location=(need["docname"], need["lineno"])
+                            if need.get("docname")
+                            else None,
+                        )
+
                     # Replace original function string with return value of function call
                     if func_return is None:
                         need[need_option] = need[need_option].replace(

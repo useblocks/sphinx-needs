@@ -24,6 +24,16 @@ To refer to a dynamic function, you can use the following syntax:
 
       This need has id :ndf:`copy("id")` and status :ndf:`copy("status")`.
 
+Dynamic functions can be used for the following directive options:
+
+- ``status``
+- ``tags``
+- ``style``
+- ``constraints``
+- :ref:`needs_extra_options`
+- :ref:`needs_extra_links`
+- :ref:`needs_global_options`
+
 .. deprecated:: 3.1.0
 
    The :ref:`ndf` role replaces the use of the ``[[...]]`` syntax in need content.
