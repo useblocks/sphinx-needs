@@ -26,6 +26,13 @@ but may be in some corner cases.
 
   This works for all common filtered directives, see :ref:`filter_current_page`
 
+- ♻️ Remove ``full_title`` need field and only trim generated titles :pr:`1407`
+
+  The existence of both ``title`` and ``full_title`` is confusing and unnecessary (in most cases these are equal), and so ``full_title`` is removed.
+
+  Trimming (when :ref:`needs_max_title_length` is set) is now only applied to auto-generated titles,
+  as per the documentation in :ref:`needs_title_from_content`
+
 - ♻️ Make ``needextend`` argument declarative :pr:`1391`
 
   The argument for ``needextend`` can refer to either a single need ID or
@@ -51,7 +58,7 @@ but may be in some corner cases.
   Back links should always be in-sync with forward links, therefore it
   doesn't make sense to modify back links in this way.
 
-- ♻️ Do not process dynamic functions on internal need fields :pr:`1387`
+- ♻️ Do not process dynamic functions on internal need fields :pr:`1387` and :pr:`1406`
 
   For most "internal" need fields it does not make sense that these would
   be dynamic, and anyway this would fail since their values are not string
@@ -59,6 +66,15 @@ but may be in some corner cases.
 
   Dynamic function processing is now skipped, for core fields that
   should not be altered by the user.
+  The following fields are allowed to contain dynamic functions:
+
+  - ``status``
+  - ``tags``
+  - ``style``
+  - ``constraints``
+  - all ``needs_extra_options``
+  - all ``needs_extra_links``
+  - all ``needs_global_options``
 
 - ♻️ Remove ``delete`` from internal needs and ``needs.json`` :pr:`1347`
 
