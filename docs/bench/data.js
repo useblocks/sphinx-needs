@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1739951638562,
+  "lastUpdate": 1740047645841,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -12384,6 +12384,42 @@ window.BENCHMARK_DATA = {
             "value": 58.158013899,
             "unit": "s",
             "extra": "Commit: 81442210368eacc210135f18c5ec00ef5fca03e1\nBranch: master\nTime: 2025-02-19T08:52:08+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "98c630fca17f9575d86b6b1df7714263ae731425",
+          "message": "🔧 Deprecate use of dynamic functions in need type fields (#1406)\n\nIt is unintended and unlikely the dynamic functions would have been used\nin there fields, but just in case we issue a warning of the deprecation,\nso that we can remove them in the future\n\nfields affected: `type`, `type_name`, `type_prefix`, `type_color`,\n`type_style`.\n\nthis follows on from #1387 and the fields now allowed are:\n\n- ``status``\n- ``tags``\n- ``style``\n- ``constraints``\n- all `needs_extra_options`\n- all `needs_extra_links`\n- all `needs_global_options`",
+          "timestamp": "2025-02-20T11:32:18+01:00",
+          "tree_id": "ba2c9dd8b8ceb6a8dc037da1f15f381dee529946",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/98c630fca17f9575d86b6b1df7714263ae731425"
+        },
+        "date": 1740047630672,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14277546200000302,
+            "unit": "s",
+            "extra": "Commit: 98c630fca17f9575d86b6b1df7714263ae731425\nBranch: master\nTime: 2025-02-20T11:32:18+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.673547049999996,
+            "unit": "s",
+            "extra": "Commit: 98c630fca17f9575d86b6b1df7714263ae731425\nBranch: master\nTime: 2025-02-20T11:32:18+01:00"
           }
         ]
       }
