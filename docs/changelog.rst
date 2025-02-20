@@ -3,11 +3,104 @@
 Changelog
 =========
 
+5.0.0
+-----
+
+:Released: 18.02.2025
+:Full Changelog: `v4.1.0...v5.0.0 <https://github.com/useblocks/sphinx-needs/compare/4.2.0...98c630fca17f9575d86b6b1df7714263ae731425>`__
+
+This release includes a number of changes,
+to bring more clarity to the needs data structure and post-processing steps.
+In most cases it should not be breaking,
+but may be in some corner cases.
+
+- ✨ Add ``c.this_doc()`` check for use in directive ``:filter:`` option :pr:`1393` and :pr:`1405`
+
+  This allows for filtering of needs only in the same document as the
+  directive itself, e.g.
+
+  .. code-block:: rst
+
+    .. needextend:: c.this_doc() and status is None
+       :status: open
+
+  This works for all common filtered directives, see :ref:`filter_current_page`
+
+- ♻️ Remove ``full_title`` need field and only trim generated titles :pr:`1407`
+
+  The existence of both ``title`` and ``full_title`` is confusing and unnecessary (in most cases these are equal), and so ``full_title`` is removed.
+
+  Trimming (when :ref:`needs_max_title_length` is set) is now only applied to auto-generated titles,
+  as per the documentation in :ref:`needs_title_from_content`
+
+- ♻️ Make ``needextend`` argument declarative :pr:`1391`
+
+  The argument for ``needextend`` can refer to either a single need ID or
+  filter function.
+  Currently, the format cannot be known until all needs have been
+  processed, and it is resolved during post-processing.
+  This is problematic for (a) user readability, (b) improving processing
+  performance and issue feedback
+
+  This PR slightly modifies the argument processing to allow for two
+  "explicit" formats:
+
+  - ``<ID>``, if the argument is enclosed in ``<>`` it is always processed as a single ID
+  - ``"filter string"``, if the argument is enclosed in ``""`` it is always processed as a filter string
+
+  See :ref:`needextend` for more information.
+
+- ♻️ Remove back link manipulation from ``needextend`` :pr:`1386`
+
+  Back links are computed at the end of the need post-processing, after
+  ``needextend`` have been applied.
+
+  Back links should always be in-sync with forward links, therefore it
+  doesn't make sense to modify back links in this way.
+
+- ♻️ Do not process dynamic functions on internal need fields :pr:`1387` and :pr:`1406`
+
+  For most "internal" need fields it does not make sense that these would
+  be dynamic, and anyway this would fail since their values are not string
+  types.
+
+  Dynamic function processing is now skipped, for core fields that
+  should not be altered by the user.
+  The following fields are allowed to contain dynamic functions:
+
+  - ``status``
+  - ``tags``
+  - ``style``
+  - ``constraints``
+  - all ``needs_extra_options``
+  - all ``needs_extra_links``
+  - all ``needs_global_options``
+
+- ♻️ Remove ``delete`` from internal needs and ``needs.json`` :pr:`1347`
+
+  The ``:delete:`` option on a need directive deletes a need before
+  creating/storing it, therefore it is impossible for it to be
+  anything other than ``False``.
+  Storing the field on a need is misleading, because it suggests that the
+  need will be deleted, which is not possible with the current sphinx-needs logic.
+
+- 👌 Add type warnings of extra options in external/import reads :pr:`1389`
+
+  Currently, the value of all extra options is expected to be a string;
+  other types are not supported in various aspects of sphinx-needs (such
+  as ``needextend``, dynamic functions and filtering), and in-fact are
+  already silently converted to strings during the reads.
+
+  The warnings ``needs.mistyped_external_values`` and ``needs.mistyped_import_values`` are added for non-string values,
+  for ``needs_external_needs`` and ``needimport`` sources respectively.
+
+- 🔧 Synchronize list splitting behaviour in ``need`` and ``needextend`` directives :pr:`1385`
+
 4.2.0
 -----
 
 :Released: 07.01.2025
-:Full Changelog: `v4.1.0...v4.2.0 <https://github.com/useblocks/sphinx-needs/compare/4.1.0...1114e72c011e77524f332eddcc9621fefd4ddbdf>`__
+:Full Changelog: `v4.1.0...v4.2.0 <https://github.com/useblocks/sphinx-needs/compare/4.1.0...4.2.0>`__
 
 - ⬆️ Drop Python 3.8 and Sphinx 6
 - ✨ Add :ref:`needs_import_keys` configuration :pr:`1379`
