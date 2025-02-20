@@ -7,7 +7,7 @@ Changelog
 -----
 
 :Released: 18.02.2025
-:Full Changelog: `v4.1.0...v5.0.0 <https://github.com/useblocks/sphinx-needs/compare/4.2.0...8ae2918501576a72a51b2407c7c2dc2cf9415d33>`__
+:Full Changelog: `v4.1.0...v5.0.0 <https://github.com/useblocks/sphinx-needs/compare/4.2.0...98c630fca17f9575d86b6b1df7714263ae731425>`__
 
 This release includes a number of changes,
 to bring more clarity to the needs data structure and post-processing steps.
