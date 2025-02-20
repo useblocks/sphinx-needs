@@ -24,7 +24,7 @@ To refer to a dynamic function, you can use the following syntax:
 
       This need has id :ndf:`copy("id")` and status :ndf:`copy("status")`.
 
-Dynamic functions can be used for the directive title, and the following directive options:
+Dynamic functions can be used for the following directive options:
 
 - ``status``
 - ``tags``
