@@ -31,6 +31,8 @@ needs_types = [
     },
 ]
 
+needs_extra_options = ["global_1", "global_2", "global_3", "global_4"]
+
 needs_global_options = {
     "global_1": "test_global",
     "global_2": 1.27,
@@ -38,3 +40,6 @@ needs_global_options = {
     "global_4": ("STATUS_IMPL", 'status == "implemented"'),
     "global_5": ("STATUS_CLOSED", 'status == "closed"', "STATUS_UNKNOWN"),
 }
+
+needs_build_json = True
+needs_json_remove_defaults = True

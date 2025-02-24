@@ -726,6 +726,23 @@ def check_configuration(app: Sphinx, config: Config) -> None:
                 "This is not allowed."
             )
 
+    # check all global option keys are valid
+    allowed_internal_defaults = {
+        k for k, v in NeedsCoreFields.items() if v.get("allow_default") is True
+    }
+    for key in needs_config.global_options:
+        if not (
+            key in extra_options
+            or key in link_types
+            or key in allowed_internal_defaults
+        ):
+            log_warning(
+                LOGGER,
+                f"needs_global_options key {key!r} must also exist in needs_extra_options, needs_extra_links, or {sorted(allowed_internal_defaults)}",
+                "deprecated",
+                None,
+            )
+
 
 class NeedsConfigException(SphinxError):
     pass
