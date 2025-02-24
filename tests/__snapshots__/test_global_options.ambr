@@ -1,0 +1,38 @@
+# serializer version: 1
+# name: test_doc_global_option[test_app0]
+  dict({
+    'current_version': '',
+    'versions': dict({
+      '': dict({
+        'needs': dict({
+          'GLOBAL_ID_1': dict({
+            'docname': 'index',
+            'external_css': 'external_link',
+            'global_1': 'other',
+            'global_2': 1.27,
+            'global_3': 'Test output of dynamic function; need: GLOBAL_ID_1; args: (); kwargs: {}',
+            'global_4': 'STATUS_IMPL',
+            'global_5': 'STATUS_UNKNOWN',
+            'id': 'GLOBAL_ID_1',
+            'layout': '',
+            'lineno': 4,
+            'section_name': 'GLOBAL OPTIONS',
+            'sections': list([
+              'GLOBAL OPTIONS',
+            ]),
+            'status': 'implemented',
+            'tags': list([
+              'test',
+              'test2',
+            ]),
+            'title': 'Command line interface',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+        }),
+        'needs_amount': 1,
+        'needs_defaults_removed': True,
+      }),
+    }),
+  })
+# ---

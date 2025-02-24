@@ -279,13 +279,29 @@ And use it like:
 needs_global_options
 ~~~~~~~~~~~~~~~~~~~~
 .. versionadded:: 0.3.0
+.. versionchanged:: 5.1.0
 
-Global options are set on global level for all needs, so that all needs get the same value for the configured option.
+    Unknown keys are no longer accepted,
+    these should also be set in the :ref:`needs_extra_options` list.
+
+This configuration allows for global defaults to be set for all needs,
+for any of the following fields:
+
+- any ``needs_extra_options`` item
+- any ``needs_extra_links`` item
+- ``collapse``
+- ``constraints``
+- ``hide``
+- ``layout``
+- ``status``
+- ``style``
+- ``tags``
 
 .. code-block:: python
 
+   needs_extra_options = ["option1"]
    needs_global_options = {
-      'global_option': 'Fix value'
+      'option1': 'Fix value'
    }
 
 Default value: ``{}``
@@ -294,8 +310,9 @@ You can combine global options with :ref:`dynamic_functions` to automate data ha
 
 .. code-block:: python
 
+   needs_extra_options = ["option1"]
    needs_global_options = {
-         'global_option': '[[copy("id")]]'
+        'option1': '[[copy("id")]]'
    }
 
 .. _global_option_filters:
@@ -316,6 +333,7 @@ To use filters for global_options, the given value must be a tuple containing th
 
 .. code-block:: python
 
+   needs_extra_options = ["author", "req_id"]
    needs_global_options = {
       # Without default value
       'status': ('closed', 'status.lower() in ["done", "resolved", "closed"]')
