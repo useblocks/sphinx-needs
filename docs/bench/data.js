@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1740048656751,
+  "lastUpdate": 1740607060975,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -12456,6 +12456,42 @@ window.BENCHMARK_DATA = {
             "value": 58.90982189500002,
             "unit": "s",
             "extra": "Commit: 3b8a280ead7787cdc5f50177e2d7c8d8bf1801f3\nBranch: master\nTime: 2025-02-20T11:49:06+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "18af26f1dbb0827ad914b967455acffc664e1fce",
+          "message": "♻️ Improve validation and docs for `needs_global_options` (#1410)\n\nAs discussed in #1409,\n`needs_global_options` has overlapping functionality with\n`needs_extra_options`.\nIt makes more sense that `needs_global_options` is only used to define\ndefaults for fields,\nwhereas `needs_extra_options` is for specifying new fields.\n\nThis PR restricts the keys allowed to:\n\n- any ``needs_extra_options`` item\n- any ``needs_extra_links`` item\n- ``layout``\n- ``status``\n- ``style``\n- ``tags``\n- ``constraints``\n\nThis means that projects with unknown keys will need to add them to\n`needs_extra_options`, e.g.\n\n```python\n   needs_extra_options = [\"option1\"]\n   needs_global_options = {\n      'option1': 'Fix value'\n   }\n```\n\ndefault values are also properly type checked and, for delimited string\nlists, converted to lists of strings.",
+          "timestamp": "2025-02-26T22:55:44+01:00",
+          "tree_id": "331d7f55d8097018d50b3c1b2efcc1ce11171274",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/18af26f1dbb0827ad914b967455acffc664e1fce"
+        },
+        "date": 1740607043786,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.19772124200000007,
+            "unit": "s",
+            "extra": "Commit: 18af26f1dbb0827ad914b967455acffc664e1fce\nBranch: master\nTime: 2025-02-26T22:55:44+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 63.97748259800002,
+            "unit": "s",
+            "extra": "Commit: 18af26f1dbb0827ad914b967455acffc664e1fce\nBranch: master\nTime: 2025-02-26T22:55:44+01:00"
           }
         ]
       }
