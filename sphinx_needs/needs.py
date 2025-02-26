@@ -776,7 +776,7 @@ def _gather_field_defaults(
                 else:
                     log_warning(
                         LOGGER,
-                        f"needs_global_options key {key!r}, item {sub_idx} has wrong amount of parameters",
+                        f"needs_global_options key {key!r}, item {sub_idx} has an unknown format",
                         "config",
                         None,
                     )
@@ -795,7 +795,7 @@ def _gather_field_defaults(
             else:
                 log_warning(
                     LOGGER,
-                    f"needs_global_options key {key!r} has wrong amount of parameters",
+                    f"needs_global_options key {key!r} has an unknown format",
                     "config",
                     None,
                 )
