@@ -65,6 +65,26 @@
         ),
       ]),
     }),
+    'tags': dict({
+      'default': list([
+        'd',
+      ]),
+      'predicate_defaults': list([
+        tuple(
+          'status == "implemented"',
+          list([
+            'a',
+            'b',
+          ]),
+        ),
+        tuple(
+          'status == "closed"',
+          list([
+            'c',
+          ]),
+        ),
+      ]),
+    }),
   })
 # ---
 # name: test_doc_global_option[test_app0].1
@@ -105,6 +125,10 @@
               'GLOBAL OPTIONS',
             ]),
             'status': 'implemented',
+            'tags': list([
+              'a',
+              'b',
+            ]),
             'title': 'Specification 1',
             'type': 'spec',
             'type_name': 'Specification',
@@ -133,6 +157,9 @@
               'GLOBAL OPTIONS',
             ]),
             'status': 'closed',
+            'tags': list([
+              'c',
+            ]),
             'title': 'Specification 2',
             'type': 'spec',
             'type_name': 'Specification',
@@ -161,6 +188,9 @@
               'GLOBAL OPTIONS',
             ]),
             'status': 'other',
+            'tags': list([
+              'd',
+            ]),
             'title': 'Specification 3',
             'type': 'spec',
             'type_name': 'Specification',

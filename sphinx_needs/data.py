@@ -60,7 +60,7 @@ class CoreFieldParameters(TypedDict):
     """Description of the field."""
     schema: dict[str, Any]
     """JSON schema for the field."""
-    allow_default: NotRequired[type]
+    allow_default: NotRequired[Literal["str", "str_list"]]
     """Whether the field allows custom default values to be set, and their type,
     via needs_global_options (False if not present).
     """
@@ -110,7 +110,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "description": "Status of the need.",
         "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
-        "allow_default": str,
+        "allow_default": "str",
         "allow_df": True,
         "allow_extend": True,
     },
@@ -118,6 +118,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "description": "List of tags.",
         "schema": {"type": "array", "items": {"type": "string"}, "default": []},
         "show_in_layout": True,
+        "allow_default": "str_list",
         "allow_df": True,
         "allow_extend": True,
     },
@@ -139,7 +140,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "description": "Key of the layout, which is used to render the need.",
         "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
-        "allow_default": str,
+        "allow_default": "str",
         "exclude_external": True,
     },
     "style": {
@@ -147,7 +148,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
         "exclude_external": True,
-        "allow_default": str,
+        "allow_default": "str",
         "allow_df": True,
         "allow_extend": True,
     },
@@ -309,6 +310,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "constraints": {
         "description": "List of constraint names, which are defined for this need.",
         "schema": {"type": "array", "items": {"type": "string"}, "default": []},
+        "allow_default": "str_list",
         "allow_df": True,
         "allow_extend": True,
     },

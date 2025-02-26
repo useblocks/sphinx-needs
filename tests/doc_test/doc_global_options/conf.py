@@ -52,6 +52,10 @@ needs_global_options = {
         ("SPEC_3", 'status == "closed"', ["SPEC_1"]),
     ],
     "link3": 1,
+    "tags": [
+        ("a,b", 'status == "implemented"'),
+        ("c", 'status == "closed"', ["d"]),
+    ],
     "bad_value_type": 1.27,
     "too_many_params": ("a", "b", "c", "d"),
     "unknown": "unknown",

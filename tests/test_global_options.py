@@ -28,10 +28,10 @@ def test_doc_global_option(test_app, snapshot):
     print(warnings)
     assert warnings == [
         "WARNING: Dynamic function not closed correctly:  (in needs_global_options) [needs.dynamic_function]",
-        "WARNING: needs_global_options key 'link3' has a default value that is not of type 'str or list' [needs.config]",
+        "WARNING: needs_global_options key 'link3' has a default value that is not of type 'str_list' [needs.config]",
         "WARNING: needs_global_options key 'bad_value_type' has a default value that is not of type 'str' [needs.config]",
         "WARNING: needs_global_options key 'too_many_params' has an unknown format [needs.config]",
-        "WARNING: needs_global_options key 'unknown' must also exist in needs_extra_options, needs_extra_links, or ['layout', 'status', 'style'] [needs.config]",
+        "WARNING: needs_global_options key 'unknown' must also exist in needs_extra_options, needs_extra_links, or ['constraints', 'layout', 'status', 'style', 'tags'] [needs.config]",
     ]
 
     needs_config = NeedsSphinxConfig(test_app.config)

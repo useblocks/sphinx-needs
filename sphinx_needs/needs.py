@@ -3,7 +3,7 @@ from __future__ import annotations
 import contextlib
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
-from typing import Any, Callable
+from typing import Any, Callable, Literal
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -739,7 +739,7 @@ def _gather_field_defaults(
     needs_config: NeedsSphinxConfig, link_types: set[str]
 ) -> None:
     """gather defaults from needs_global_options and set on config"""
-    allowed_internal_defaults = {
+    allowed_internal_defaults: dict[str, Literal["str", "str_list"]] = {
         k: v["allow_default"]
         for k, v in NeedsCoreFields.items()
         if "allow_default" in v
@@ -805,20 +805,10 @@ def _gather_field_defaults(
             single_default = {"default": value}
 
         if key in needs_config.extra_options:
-            if _check_type(key, single_default, str):
+            if _check_type(key, single_default, "str"):
                 field_defaults[key] = single_default
         elif key in link_types:
-            if _check_type(
-                key,
-                single_default,
-                (str, list),
-                lambda x: [
-                    v
-                    for v, _ in _split_list_with_dyn_funcs(
-                        x, None, " (in needs_global_options)"
-                    )
-                ],
-            ):
+            if _check_type(key, single_default, "str_list"):
                 field_defaults[key] = single_default
         elif key in allowed_internal_defaults:
             if _check_type(key, single_default, allowed_internal_defaults[key]):
@@ -837,39 +827,48 @@ def _gather_field_defaults(
 def _check_type(
     key: str,
     default: FieldDefault,
-    type_: type | tuple[type, ...],
-    coersce: None | Callable[[Any], Any] = None,
+    type_name: Literal["str", "str_list"],
 ) -> bool:
     """Check the values in a FieldDefault are the given type."""
-    t_string = (
-        " or ".join(t.__name__ for t in type_)
-        if isinstance(type_, tuple)
-        else type_.__name__
-    )
+    assert type_name in ("str", "str_list")
+    type_ = str if type_name == "str" else (str, list)
     if "default" in default:
         if not isinstance(default["default"], type_):
             log_warning(
                 LOGGER,
-                f"needs_global_options key {key!r} has a default value that is not of type {t_string!r}",
+                f"needs_global_options key {key!r} has a default value that is not of type {type_name!r}",
                 "config",
                 None,
             )
             return False
-        if coersce is not None:
-            default["default"] = coersce(default["default"])
+        if type_name == "str_list":
+            default["default"] = [
+                v
+                for v, _ in _split_list_with_dyn_funcs(
+                    default["default"], None, " (in needs_global_options)"
+                )
+            ]
     if "predicate_defaults" in default:
         for _, value in default["predicate_defaults"]:
             if not isinstance(value, type_):
                 log_warning(
                     LOGGER,
-                    f"needs_global_options key {key!r} has a predicate default value that is not of type {t_string!r}",
+                    f"needs_global_options key {key!r} has a predicate default value that is not of type {type_name!r}",
                     "config",
                     None,
                 )
                 return False
-        if coersce is not None:
+        if type_name == "str_list":
             default["predicate_defaults"] = [
-                (predicate, coersce(value))
+                (
+                    predicate,
+                    [
+                        v
+                        for v, _ in _split_list_with_dyn_funcs(
+                            value, None, " (in needs_global_options)"
+                        )
+                    ],
+                )
                 for predicate, value in default["predicate_defaults"]
             ]
     return True

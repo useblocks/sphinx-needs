@@ -292,6 +292,8 @@ for any of the following fields:
 - ``status``
 - ``layout``
 - ``style``
+- ``tags``
+- ``constraints``
 
 .. code-block:: python
 
@@ -302,12 +304,12 @@ for any of the following fields:
 
 .. tip::
 
-    To set link defaults, use a string based representation, e.g.
+    To set list based defaults, for links, tags and constraints, use a string based representation, e.g.
 
     .. code-block:: python
 
         needs_global_options = {
-            'link1': 'id1,id2,id3'
+            'tags': 'id1,id2,id3'
         }
 
 You can combine global options with :ref:`dynamic_functions` to automate data handling.
