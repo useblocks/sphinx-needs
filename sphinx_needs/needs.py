@@ -757,11 +757,11 @@ def _gather_field_defaults(
             last_idx = len(value) - 1
             for sub_idx, sub_value in enumerate(value):
                 if len(sub_value) == 2:
-                    # single (value, predicate) pair
+                    # (value, predicate) pair
                     v, predicate = sub_value
                     single_default["predicate_defaults"].append((predicate, v))
                 elif len(sub_value) == 3:
-                    # single (value, predicate, default) triple
+                    # (value, predicate, default) triple
                     v, predicate, default = sub_value
                     single_default["predicate_defaults"].append((predicate, v))
                     if sub_idx == last_idx:

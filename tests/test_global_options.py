@@ -27,6 +27,7 @@ def test_doc_global_option(test_app, snapshot):
     ).splitlines()
     print(warnings)
     assert warnings == [
+        "WARNING: needs_global_options key 'option_5', item 0 has default value but is not the last item [needs.config]",
         "WARNING: Dynamic function not closed correctly:  (in needs_global_options) [needs.dynamic_function]",
         "WARNING: needs_global_options key 'link3' has a default value that is not of type 'str_list' [needs.config]",
         "WARNING: needs_global_options key 'bad_value_type' has a default value that is not of type 'str' [needs.config]",

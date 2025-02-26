@@ -43,7 +43,7 @@ needs_global_options = {
     "option_3": ("STATUS_IMPL", 'status == "implemented"'),
     "option_4": ("STATUS_CLOSED", 'status == "closed"', "STATUS_UNKNOWN"),
     "option_5": [
-        ("STATUS_IMPL", 'status == "implemented"'),
+        ("STATUS_IMPL", 'status == "implemented"', "bad"),
         ("STATUS_CLOSED", 'status == "closed"', "final"),
     ],
     "link1": "SPEC_1",
