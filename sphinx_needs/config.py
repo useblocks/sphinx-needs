@@ -33,6 +33,23 @@ class ExtraOptionParams:
     """A function to validate the directive option value."""
 
 
+class FieldDefault(TypedDict):
+    """Defines a default value for a field."""
+
+    predicate_defaults: NotRequired[list[tuple[str, Any]]]
+    """List of (need filter, value) pairs for default predicate values.
+
+    Used if the field has not been specifically set.
+
+    The value from the first matching filter will be used, if any.
+    """
+    default: NotRequired[Any]
+    """Default value for the field.
+    
+    Used if the field has not been specifically set, and no predicate matches.
+    """
+
+
 class NeedFunctionsType(TypedDict):
     name: str
     function: DynamicFunction
@@ -45,6 +62,7 @@ class _Config:
 
     def __init__(self) -> None:
         self._extra_options: dict[str, ExtraOptionParams] = {}
+        self._field_defaults: dict[str, FieldDefault] = {}
         self._functions: dict[str, NeedFunctionsType] = {}
         self._warnings: dict[
             str, str | Callable[[NeedsInfoType, SphinxLoggerAdapter], bool]
@@ -52,6 +70,7 @@ class _Config:
 
     def clear(self) -> None:
         self._extra_options = {}
+        self._field_defaults = {}
         self._functions = {}
         self._warnings = {}
 
@@ -93,6 +112,15 @@ class _Config:
         self._extra_options[name] = ExtraOptionParams(
             description, directives.unchanged if validator is None else validator
         )
+
+    @property
+    def field_defaults(self) -> Mapping[str, FieldDefault]:
+        """Default values for need fields."""
+        return self._field_defaults
+
+    @field_defaults.setter
+    def field_defaults(self, value: dict[str, FieldDefault]) -> None:
+        self._field_defaults = value
 
     @property
     def functions(self) -> Mapping[str, NeedFunctionsType]:
@@ -268,6 +296,7 @@ class NeedsSphinxConfig:
         if name.startswith("__") or name in (
             "_config",
             "extra_options",
+            "field_defaults",
             "functions",
             "warnings",
         ):
@@ -280,6 +309,7 @@ class NeedsSphinxConfig:
         if name.startswith("__") or name in (
             "_config",
             "extra_options",
+            "field_defaults",
             "functions",
             "warnings",
         ):
@@ -474,10 +504,16 @@ class NeedsSphinxConfig:
         """
         return _NEEDS_CONFIG.functions
 
-    global_options: GlobalOptionsType = field(
+    _global_options: GlobalOptionsType = field(
         default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
     )
     """Default values given to specified fields of needs"""
+
+    @property
+    def field_defaults(self) -> Mapping[str, FieldDefault]:
+        """Default values for need fields."""
+        return _NEEDS_CONFIG.field_defaults
+
     duration_option: str = field(
         default="duration", metadata={"rebuild": "html", "types": (str,)}
     )

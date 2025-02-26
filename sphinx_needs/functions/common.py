@@ -128,9 +128,6 @@ def copy(
 
        :ndf:`copy('title', filter='current_need["sections"][-1]==sections[-1]')`
 
-    This filter possibilities get really powerful in combination with :ref:`needs_global_options`.
-
-
     :param option: Name of the option to copy
     :param need_id: id of the need, which contains the source option. If None, current need is taken
     :param upper: Is set to True, copied value will be uppercase

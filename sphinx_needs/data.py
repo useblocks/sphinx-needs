@@ -60,8 +60,10 @@ class CoreFieldParameters(TypedDict):
     """Description of the field."""
     schema: dict[str, Any]
     """JSON schema for the field."""
-    allow_default: NotRequired[bool]
-    """Whether the field allows custom default values to be set, via needs_global_options (False if not present)."""
+    allow_default: NotRequired[type]
+    """Whether the field allows custom default values to be set, and their type,
+    via needs_global_options (False if not present).
+    """
     allow_extend: NotRequired[bool]
     """Whether field can be modified by needextend (False if not present)."""
     allow_df: NotRequired[bool]
@@ -108,7 +110,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "description": "Status of the need.",
         "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
-        "allow_default": True,
+        "allow_default": str,
         "allow_df": True,
         "allow_extend": True,
     },
@@ -116,7 +118,6 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "description": "List of tags.",
         "schema": {"type": "array", "items": {"type": "string"}, "default": []},
         "show_in_layout": True,
-        "allow_default": True,
         "allow_df": True,
         "allow_extend": True,
     },
@@ -125,7 +126,6 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "schema": {"type": "boolean", "default": False},
         "exclude_json": True,
         "exclude_external": True,
-        "allow_default": True,
         "allow_extend": True,
     },
     "hide": {
@@ -133,14 +133,13 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "schema": {"type": "boolean", "default": False},
         "exclude_json": True,
         "exclude_external": True,
-        "allow_default": True,
         "allow_extend": True,
     },
     "layout": {
         "description": "Key of the layout, which is used to render the need.",
         "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
-        "allow_default": True,
+        "allow_default": str,
         "exclude_external": True,
     },
     "style": {
@@ -148,7 +147,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
         "exclude_external": True,
-        "allow_default": True,
+        "allow_default": str,
         "allow_df": True,
         "allow_extend": True,
     },
@@ -310,7 +309,6 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "constraints": {
         "description": "List of constraint names, which are defined for this need.",
         "schema": {"type": "array", "items": {"type": "string"}, "default": []},
-        "allow_default": True,
         "allow_df": True,
         "allow_extend": True,
     },
@@ -520,7 +518,6 @@ class NeedsInfoType(TypedDict, total=False):
     # - items in ``needs_extra_options`` + ``needs_duration_option`` + ``needs_completion_option``,
     #   which get added to ``extra_options``,
     #   and in turn means they are added to every need via ``add_need`` (as strings)
-    # - keys in ``needs_global_options`` config are added to every need via ``add_need``
 
 
 class NeedsBaseDataType(TypedDict):

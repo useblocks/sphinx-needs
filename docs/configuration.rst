@@ -287,15 +287,11 @@ needs_global_options
 This configuration allows for global defaults to be set for all needs,
 for any of the following fields:
 
-- any ``needs_extra_options`` item
-- any ``needs_extra_links`` item
-- ``collapse``
-- ``constraints``
-- ``hide``
-- ``layout``
+- any ``needs_extra_options`` field
+- any ``needs_extra_links`` field
 - ``status``
+- ``layout``
 - ``style``
-- ``tags``
 
 .. code-block:: python
 
@@ -304,7 +300,15 @@ for any of the following fields:
       'option1': 'Fix value'
    }
 
-Default value: ``{}``
+.. tip::
+
+    To set link defaults, use a string based representation, e.g.
+
+    .. code-block:: python
+
+        needs_global_options = {
+            'link1': 'id1,id2,id3'
+        }
 
 You can combine global options with :ref:`dynamic_functions` to automate data handling.
 
@@ -317,58 +321,59 @@ You can combine global options with :ref:`dynamic_functions` to automate data ha
 
 .. _global_option_filters:
 
-Filter based global options
-+++++++++++++++++++++++++++
+Predicate based defaults
+++++++++++++++++++++++++
 .. versionadded:: 0.4.3
+
+Defaults can also be set based :ref:`filter_string` predicates.
+This is useful when you want to set a default value based on the value of another field.
 
 You can set the value of a global_option if only a given :ref:`filter_string` passes.
 If the filter string does not pass, the option is not set or a given default value is set.
 
-To use filters for global_options, the given value must be a tuple containing the following elements:
-
-#. value to set (required)
-#. filter string, which must pass (required)
-#. default value, if filter string does not pass (optional)
-
+This can be provided in a few ways:
 
 .. code-block:: python
 
-   needs_extra_options = ["author", "req_id"]
+   needs_extra_options = ["field1"]
    needs_global_options = {
-      # Without default value
-      'status': ('closed', 'status.lower() in ["done", "resolved", "closed"]')
-
-      # Set Marco as author if security tag is used. In all other cases set Daniel as author.
-      'author': ('Marco', '"security" in tags', 'Daniel)
-
-      # Dynamic functions are allowed as well
-      'req_id': ('[[copy("id")]]', 'id.startswith("REQ_")')
-   }
-
-There are use cases, for which an option needs to get different values based on different filter.
-In this cases, you can provide a list of tuples.
+      # if field1 is unset and status is "done", set field1 to "a"
+      'field1': ('a', 'status == "done"')
 
 .. code-block:: python
 
-      needs_global_options = {
-            # Without default value
-            'status': [
-                  ('fulfilled', 'status.lower() in ["done", "resolved", "closed"]', 'type=="req"'),
-                  ('done', 'status.lower() in ["done", "resolved", "closed"]', 'type=="task"'),
-                  ('implemented', 'status.lower() in ["done", "resolved", "closed"]', 'type=="spec"')
-            ]
-         }
+   needs_extra_options = ["field1"]
+   needs_global_options = {
+      # if field1 is unset:
+      #     if status is "done", set to "a",
+      #     else, set to "b"
+      'field1': ('a', 'status == "done"', 'b')
+
+.. code-block:: python
+
+   needs_extra_options = ["field1"]
+   needs_global_options = {
+      # if field1 is unset:
+      #     if status is "done", set to "a",
+      #     else if status is "ongoing", set to "b",
+      #     else if status is "other", set to "c",
+      #     else, set to "d"
+      'field1': [
+            ('a', 'status == "done"'),
+            ('b', 'status == "ongoing"'),
+            ('c', 'status == "other"', 'd')
+        ]
 
 .. warning::
 
    The filter string gets executed against the current need only and has no access to other needs.
-   That's because the global_options get set during initialisation of the document and during this phase not every
-   document has been already read by Sphinx.
-
    So avoid any references to other needs in the filter string.
 
    If you need access to other needs for complex filtering, you can maybe provide your own :ref:`dynamic_functions`
    and perform the filtering there.
+
+   Default replacements are done, for each field, in the order they are defined in the configuration,
+   so a filter string should not depend on the value of a field below it in the configuration.
 
 .. _needs_report_dead_links:
 

@@ -1,36 +1,172 @@
 # serializer version: 1
 # name: test_doc_global_option[test_app0]
   dict({
+    'layout': dict({
+      'default': 'clean_l',
+    }),
+    'link1': dict({
+      'default': list([
+        'SPEC_1',
+      ]),
+    }),
+    'link2': dict({
+      'default': list([
+        'SPEC_1',
+      ]),
+      'predicate_defaults': list([
+        tuple(
+          'status == "implemented"',
+          list([
+            'SPEC_2',
+            "[[copy('link1')]]",
+          ]),
+        ),
+        tuple(
+          'status == "closed"',
+          list([
+            'SPEC_3',
+          ]),
+        ),
+      ]),
+    }),
+    'option_1': dict({
+      'default': 'test_global',
+    }),
+    'option_2': dict({
+      'default': "[[copy('id')]]",
+    }),
+    'option_3': dict({
+      'predicate_defaults': list([
+        tuple(
+          'status == "implemented"',
+          'STATUS_IMPL',
+        ),
+      ]),
+    }),
+    'option_4': dict({
+      'default': 'STATUS_UNKNOWN',
+      'predicate_defaults': list([
+        tuple(
+          'status == "closed"',
+          'STATUS_CLOSED',
+        ),
+      ]),
+    }),
+    'option_5': dict({
+      'default': 'final',
+      'predicate_defaults': list([
+        tuple(
+          'status == "implemented"',
+          'STATUS_IMPL',
+        ),
+        tuple(
+          'status == "closed"',
+          'STATUS_CLOSED',
+        ),
+      ]),
+    }),
+  })
+# ---
+# name: test_doc_global_option[test_app0].1
+  dict({
     'current_version': '',
     'versions': dict({
       '': dict({
         'needs': dict({
-          'GLOBAL_ID_1': dict({
+          'SPEC_1': dict({
             'docname': 'index',
             'external_css': 'external_link',
-            'global_1': 'other',
-            'global_2': 1.27,
-            'global_3': 'Test output of dynamic function; need: GLOBAL_ID_1; args: (); kwargs: {}',
-            'global_4': 'STATUS_IMPL',
-            'global_5': 'STATUS_UNKNOWN',
-            'id': 'GLOBAL_ID_1',
-            'layout': '',
+            'id': 'SPEC_1',
+            'layout': 'clean_l',
             'lineno': 4,
+            'link1': list([
+              'SPEC_1',
+            ]),
+            'link1_back': list([
+              'SPEC_1',
+              'SPEC_2',
+              'SPEC_3',
+            ]),
+            'link2': list([
+              'SPEC_2',
+              'SPEC_1',
+            ]),
+            'link2_back': list([
+              'SPEC_1',
+              'SPEC_3',
+            ]),
+            'option_1': 'other',
+            'option_2': 'SPEC_1',
+            'option_3': 'STATUS_IMPL',
+            'option_4': 'STATUS_UNKNOWN',
+            'option_5': 'STATUS_IMPL',
             'section_name': 'GLOBAL OPTIONS',
             'sections': list([
               'GLOBAL OPTIONS',
             ]),
             'status': 'implemented',
-            'tags': list([
-              'test',
-              'test2',
+            'title': 'Specification 1',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+          'SPEC_2': dict({
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'SPEC_2',
+            'layout': 'clean_l',
+            'lineno': 9,
+            'link1': list([
+              'SPEC_1',
             ]),
-            'title': 'Command line interface',
+            'link2': list([
+              'SPEC_3',
+            ]),
+            'link2_back': list([
+              'SPEC_1',
+            ]),
+            'option_1': 'test_global',
+            'option_2': 'SPEC_2',
+            'option_4': 'STATUS_CLOSED',
+            'option_5': 'STATUS_CLOSED',
+            'section_name': 'GLOBAL OPTIONS',
+            'sections': list([
+              'GLOBAL OPTIONS',
+            ]),
+            'status': 'closed',
+            'title': 'Specification 2',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+          'SPEC_3': dict({
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'SPEC_3',
+            'layout': 'clean_l',
+            'lineno': 13,
+            'link1': list([
+              'SPEC_1',
+            ]),
+            'link2': list([
+              'SPEC_1',
+            ]),
+            'link2_back': list([
+              'SPEC_2',
+            ]),
+            'option_1': 'test_global',
+            'option_2': 'SPEC_3',
+            'option_4': 'STATUS_UNKNOWN',
+            'option_5': 'final',
+            'section_name': 'GLOBAL OPTIONS',
+            'sections': list([
+              'GLOBAL OPTIONS',
+            ]),
+            'status': 'other',
+            'title': 'Specification 3',
             'type': 'spec',
             'type_name': 'Specification',
           }),
         }),
-        'needs_amount': 1,
+        'needs_amount': 3,
         'needs_defaults_removed': True,
       }),
     }),

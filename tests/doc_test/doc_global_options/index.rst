@@ -1,8 +1,15 @@
 GLOBAL OPTIONS
 ==============
 
-.. spec:: Command line interface
-    :id: GLOBAL_ID_1
+.. spec:: Specification 1
+    :id: SPEC_1
     :status: implemented
-    :tags: test;test2
-    :global_1: other
+    :option_1: other
+
+.. spec:: Specification 2
+    :id: SPEC_2
+    :status: closed
+
+.. spec:: Specification 3
+    :id: SPEC_3
+    :status: other
