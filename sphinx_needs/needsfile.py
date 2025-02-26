@@ -71,15 +71,6 @@ def generate_needs_schema(
             "default": [],
         }
 
-    for name in needs_config.global_options:
-        if name not in properties:
-            properties[name] = {
-                "type": "string",
-                "description": "Added by needs_global_options configuration",
-                "field_type": "global",
-                "default": "",
-            }
-
     for name in exclude_properties:
         if name in properties:
             del properties[name]

@@ -244,7 +244,6 @@ def resolve_dynamic_values(needs: NeedsMutable, app: Sphinx) -> None:
         ),
         *config.extra_options,
         *(link["option"] for link in config.extra_links),
-        *config.global_options,
     }
     deprecated_fields: set[str] = {
         *(k for k, v in NeedsCoreFields.items() if v.get("deprecate_df", False)),

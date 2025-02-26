@@ -3,7 +3,7 @@ from __future__ import annotations
 import contextlib
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
-from typing import Any, Callable
+from typing import Any, Callable, Literal
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -14,6 +14,7 @@ from sphinx.errors import SphinxError
 
 import sphinx_needs.debug as debug  # Need to set global var in it for timeing measurements
 from sphinx_needs import __version__
+from sphinx_needs.api.need import _split_list_with_dyn_funcs
 from sphinx_needs.builder import (
     NeedsBuilder,
     NeedsIdBuilder,
@@ -22,7 +23,12 @@ from sphinx_needs.builder import (
     build_needs_json,
     build_needumls_pumls,
 )
-from sphinx_needs.config import _NEEDS_CONFIG, LinkOptionsType, NeedsSphinxConfig
+from sphinx_needs.config import (
+    _NEEDS_CONFIG,
+    FieldDefault,
+    LinkOptionsType,
+    NeedsSphinxConfig,
+)
 from sphinx_needs.data import (
     ENV_DATA_VERSION,
     NeedsCoreFields,
@@ -725,6 +731,147 @@ def check_configuration(app: Sphinx, config: Config) -> None:
                 f"Variant option `{option}` is not added in either extra options or extra links. "
                 "This is not allowed."
             )
+
+    _gather_field_defaults(needs_config, set(link_types))
+
+
+def _gather_field_defaults(
+    needs_config: NeedsSphinxConfig, link_types: set[str]
+) -> None:
+    """gather defaults from needs_global_options and set on config"""
+    allowed_internal_defaults: dict[str, Literal["str", "str_list"]] = {
+        k: v["allow_default"]
+        for k, v in NeedsCoreFields.items()
+        if "allow_default" in v
+    }
+    field_defaults: dict[str, FieldDefault] = {}
+    for key, value in needs_config._global_options.items():
+        single_default: FieldDefault = {}
+
+        if (
+            isinstance(value, (list, tuple))
+            and len(value) > 0
+            and all(isinstance(x, (list, tuple)) for x in value)
+        ):
+            single_default = {"predicate_defaults": []}
+            last_idx = len(value) - 1
+            for sub_idx, sub_value in enumerate(value):
+                if len(sub_value) == 2:
+                    # (value, predicate) pair
+                    v, predicate = sub_value
+                    single_default["predicate_defaults"].append((predicate, v))
+                elif len(sub_value) == 3:
+                    # (value, predicate, default) triple
+                    v, predicate, default = sub_value
+                    single_default["predicate_defaults"].append((predicate, v))
+                    if sub_idx == last_idx:
+                        single_default["default"] = default
+                    else:
+                        log_warning(
+                            LOGGER,
+                            f"needs_global_options key {key!r}, item {sub_idx} has default value but is not the last item",
+                            "config",
+                            None,
+                        )
+                else:
+                    log_warning(
+                        LOGGER,
+                        f"needs_global_options key {key!r}, item {sub_idx} has an unknown format",
+                        "config",
+                        None,
+                    )
+        elif isinstance(value, (list, tuple)):
+            if len(value) == 2:
+                # single (value, predicate) pair
+                v, predicate = value
+                single_default = {"predicate_defaults": [(predicate, v)]}
+            elif len(value) == 3:
+                # single (value, predicate, default) triple
+                v, predicate, default = value
+                single_default = {
+                    "predicate_defaults": [(predicate, v)],
+                    "default": default,
+                }
+            else:
+                log_warning(
+                    LOGGER,
+                    f"needs_global_options key {key!r} has an unknown format",
+                    "config",
+                    None,
+                )
+                continue
+        else:
+            # single value
+            single_default = {"default": value}
+
+        if key in needs_config.extra_options:
+            if _check_type(key, single_default, "str"):
+                field_defaults[key] = single_default
+        elif key in link_types:
+            if _check_type(key, single_default, "str_list"):
+                field_defaults[key] = single_default
+        elif key in allowed_internal_defaults:
+            if _check_type(key, single_default, allowed_internal_defaults[key]):
+                field_defaults[key] = single_default
+        else:
+            log_warning(
+                LOGGER,
+                f"needs_global_options key {key!r} must also exist in needs_extra_options, needs_extra_links, or {sorted(allowed_internal_defaults)}",
+                "config",
+                None,
+            )
+
+    _NEEDS_CONFIG.field_defaults = field_defaults
+
+
+def _check_type(
+    key: str,
+    default: FieldDefault,
+    type_name: Literal["str", "str_list"],
+) -> bool:
+    """Check the values in a FieldDefault are the given type."""
+    assert type_name in ("str", "str_list")
+    type_ = str if type_name == "str" else (str, list)
+    if "default" in default:
+        if not isinstance(default["default"], type_):
+            log_warning(
+                LOGGER,
+                f"needs_global_options key {key!r} has a default value that is not of type {type_name!r}",
+                "config",
+                None,
+            )
+            return False
+        if type_name == "str_list":
+            default["default"] = [
+                v
+                for v, _ in _split_list_with_dyn_funcs(
+                    default["default"], None, " (in needs_global_options)"
+                )
+            ]
+    if "predicate_defaults" in default:
+        for _, value in default["predicate_defaults"]:
+            if not isinstance(value, type_):
+                log_warning(
+                    LOGGER,
+                    f"needs_global_options key {key!r} has a predicate default value that is not of type {type_name!r}",
+                    "config",
+                    None,
+                )
+                return False
+        if type_name == "str_list":
+            default["predicate_defaults"] = [
+                (
+                    predicate,
+                    [
+                        v
+                        for v, _ in _split_list_with_dyn_funcs(
+                            value, None, " (in needs_global_options)"
+                        )
+                    ],
+                )
+                for predicate, value in default["predicate_defaults"]
+            ]
+    return True
 
 
 class NeedsConfigException(SphinxError):

@@ -1,28 +1,45 @@
+import json
+import os
 from pathlib import Path
 
 import pytest
+from sphinx.util.console import strip_colors
+from syrupy.filters import props
+
+from sphinx_needs.config import NeedsSphinxConfig
 
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_global_options"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_global_options",
+            "no_plantuml": True,
+        }
+    ],
     indirect=True,
 )
-def test_doc_global_option(test_app):
-    app = test_app
-    app.build()
-    html = Path(app.outdir, "index.html").read_text()
+def test_doc_global_option(test_app, snapshot):
+    test_app.build()
+    warnings = strip_colors(
+        test_app._warning.getvalue().replace(str(test_app.srcdir) + os.sep, "srcdir/")
+    ).splitlines()
+    print(warnings)
+    assert warnings == [
+        "WARNING: needs_global_options key 'option_5', item 0 has default value but is not the last item [needs.config]",
+        "WARNING: Dynamic function not closed correctly:  (in needs_global_options) [needs.dynamic_function]",
+        "WARNING: needs_global_options key 'link3' has a default value that is not of type 'str_list' [needs.config]",
+        "WARNING: needs_global_options key 'bad_value_type' has a default value that is not of type 'str' [needs.config]",
+        "WARNING: needs_global_options key 'too_many_params' has an unknown format [needs.config]",
+        "WARNING: needs_global_options key 'unknown' must also exist in needs_extra_options, needs_extra_links, or ['constraints', 'layout', 'status', 'style', 'tags'] [needs.config]",
+    ]
 
-    assert "global_1" in html
-    assert "global_2" in html
-    assert "global_3" in html
-    assert "global_4" in html
-    assert "global_5" in html
+    needs_config = NeedsSphinxConfig(test_app.config)
+    assert needs_config.field_defaults == snapshot
 
-    assert "test_global" in html
-    assert "1.27" in html
-    assert "Test output of dynamic function; need: GLOBAL_ID" in html
-
-    assert "STATUS_IMPL" in html
-    assert "STATUS_UNKNOWN" in html
-    assert "STATUS_CLOSED" not in html
+    json_data = Path(test_app.outdir, "needs.json").read_text()
+    needs = json.loads(json_data)
+    assert needs == snapshot(
+        exclude=props("created", "project", "creator", "needs_schema")
+    )

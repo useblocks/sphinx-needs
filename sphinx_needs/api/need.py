@@ -17,7 +17,7 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.api.exceptions import InvalidNeedException
-from sphinx_needs.config import GlobalOptionsType, NeedsSphinxConfig
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, NeedsPartType, SphinxNeedsData
 from sphinx_needs.directives.needuml import Needuml, NeedumlException
 from sphinx_needs.filter_common import filter_single_need
@@ -236,48 +236,10 @@ def generate_need(
         "parent_need": "",
     }
 
-    # add dynamic keys to needs_info
-    _merge_extra_options(needs_info, kwargs, needs_config.extra_options)
-    _merge_global_options(needs_config, needs_info, needs_config.global_options)
-
-    # Merge links
-    copy_links: list[str] = []
-
-    for link_type in needs_config.extra_links:
-        # Check, if specific link-type got some arguments during method call
-        if (
-            link_type["option"] not in kwargs
-            and link_type["option"] not in needs_config.global_options
-        ):
-            # if not we set no links, but entry in needS_info must be there
-            links = []
-        elif link_type["option"] in needs_config.global_options and (
-            link_type["option"] not in kwargs
-            or len(str(kwargs[link_type["option"]])) == 0
-        ):
-            # If it is in global option, value got already set during prior handling of them
-            links = [
-                v
-                for v, _ in _split_list_with_dyn_funcs(
-                    needs_info[link_type["option"]], location
-                )
-            ]
-        else:
-            # if it is set in kwargs, take this value and maybe override set value from global_options
-            links = [
-                v
-                for v, _ in _split_list_with_dyn_funcs(
-                    kwargs[link_type["option"]], location
-                )
-            ]
-
-        needs_info[link_type["option"]] = links
-        needs_info["{}_back".format(link_type["option"])] = []
-
-        if link_type.get("copy", False) and link_type["option"] != "links":
-            copy_links += links  # Save extra links for main-links
-
-    needs_info["links"] += copy_links  # Set copied links to main-links
+    _add_extra_fields(needs_info, kwargs, needs_config)
+    _add_link_fields(needs_info, kwargs, needs_config, location)
+    _set_field_defaults(needs_info, needs_config)
+    _copy_links(needs_info, needs_config)
 
     if parent_needs := needs_info.get("parent_needs"):
         # ensure parent_need is consistent with parent_needs
@@ -733,7 +695,9 @@ def _make_hashed_id(
 
 
 def _split_list_with_dyn_funcs(
-    text: None | str | list[str], location: tuple[str, int | None] | None
+    text: None | str | list[str],
+    location: tuple[str, int | None] | None,
+    warn_prefix: str = "",
 ) -> Iterable[tuple[str, bool]]:
     """Split a ``;|,`` delimited string that may contain ``[[...]]`` dynamic functions.
 
@@ -774,7 +738,7 @@ def _split_list_with_dyn_funcs(
             if not text.startswith("]]"):
                 log_warning(
                     logger,
-                    f"Dynamic function not closed correctly: {text}",
+                    f"Dynamic function not closed correctly: {text}{warn_prefix}",
                     "dynamic_function",
                     location=location,
                 )
@@ -795,67 +759,66 @@ def _split_list_with_dyn_funcs(
         yield _current_element, _has_dynamic_function
 
 
-def _merge_extra_options(
-    needs_info: NeedsInfoType,
-    needs_kwargs: dict[str, Any],
-    needs_extra_options: Iterable[str],
-) -> set[str]:
-    """Add any extra options introduced via options_ext to needs_info"""
-    extra_keys = set(needs_kwargs.keys()).difference(set(needs_info.keys()))
-
-    for key in needs_extra_options:
+def _add_extra_fields(
+    needs_info: NeedsInfoType, kwargs: dict[str, Any], config: NeedsSphinxConfig
+) -> None:
+    """Add extra option fields to the needs_info dictionary."""
+    extra_keys = set(kwargs).difference(set(needs_info))
+    for key in config.extra_options:
         if key in extra_keys:
-            needs_info[key] = str(needs_kwargs[key])
+            # TODO really we should not need to do this,
+            # but the `add_extra_option` function does not guard against the keys clashing with existing internal fields,
+            # this occurs in the core code with the github service adding `type` as an extra option
+
+            # note we already warn if value not string in external/import code
+            needs_info[key] = str(kwargs.get(key, ""))
         elif key not in needs_info:
-            # Finally add all not used extra options with empty value to need_info.
-            # Needed for filters, which need to access these empty/not used options.
             needs_info[key] = ""
 
-    return extra_keys
 
-
-def _merge_global_options(
-    config: NeedsSphinxConfig,
+def _add_link_fields(
     needs_info: NeedsInfoType,
-    global_options: GlobalOptionsType,
+    kwargs: dict[str, Any],
+    config: NeedsSphinxConfig,
+    location: tuple[str, int | None] | None,
 ) -> None:
-    """Add all global defined options to needs_info"""
-    if global_options is None:
-        return
-    for key, value in global_options.items():
-        # If key already exists in needs_info, this global_option got overwritten manually in current need
-        if needs_info.get(key):
-            continue
+    """Add extra link fields to the needs_info dictionary."""
+    for link_type in config.extra_links:
+        name = link_type["option"]
+        # ensure the link type is in the needs_info dictionary,
+        # and also ensure the back link is present
+        needs_info[name] = []
+        needs_info[f"{name}_back"] = []
+        if name in kwargs:
+            needs_info[name] = [
+                v for v, _ in _split_list_with_dyn_funcs(kwargs[name], location)
+            ]
 
-        if isinstance(value, tuple):
-            values = [value]
-        elif isinstance(value, list):
-            values = value
+
+def _copy_links(needs_info: NeedsInfoType, config: NeedsSphinxConfig) -> None:
+    """Implement 'copy' logic for links."""
+    copy_links: list[str] = []
+    for link_type in config.extra_links:
+        if link_type.get("copy", False) and (name := link_type["option"]) != "links":
+            copy_links += needs_info[name]  # Save extra links for main-links
+    needs_info["links"] += copy_links  # Set copied links to main-links
+
+
+def _set_field_defaults(needs_info: NeedsInfoType, config: NeedsSphinxConfig) -> None:
+    """Set default values."""
+    # TODO should defaults be applied to external/import needs?
+    # currently any "falsy" value will be replaced by the default, even if it was explicitly set
+    for key, defaults in config.field_defaults.items():
+        if key not in needs_info or needs_info[key]:
+            continue
+        for predicate, v in defaults.get("predicate_defaults", []):
+            # use the first predicate that is satisfied
+            if filter_single_need(needs_info, config, predicate):
+                needs_info[key] = v
+                break
         else:
-            needs_info[key] = value
-            continue
-
-        for single_value in values:
-            # TODO should first match break loop?
-            if len(single_value) < 2 or len(single_value) > 3:
-                # TODO this should be validated earlier at the "config" level
-                raise InvalidNeedException(
-                    "global_option",
-                    f"global option tuple has wrong amount of parameters: {key!r}",
-                )
-            if filter_single_need(needs_info, config, single_value[1]):
-                # Set value, if filter has matched
-                needs_info[key] = single_value[0]
-            elif len(single_value) == 3 and (
-                key not in needs_info or len(str(needs_info[key])) > 0
-            ):
-                # Otherwise set default, but only if no value was set before or value is "" and a default is defined
-                needs_info[key] = single_value[2]
-            else:
-                # If not value was set until now, we have to set an empty value, so that we are sure that each need
-                # has at least the key.
-                if key not in needs_info:
-                    needs_info[key] = ""
+            if "default" in defaults:
+                needs_info[key] = defaults["default"]
 
 
 def get_needs_view(app: Sphinx) -> NeedsView:
