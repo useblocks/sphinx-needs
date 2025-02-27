@@ -341,6 +341,7 @@ This can be provided in a few ways:
    needs_global_options = {
       # if field1 is unset and status is "done", set field1 to "a"
       'field1': ('a', 'status == "done"')
+   }
 
 .. code-block:: python
 
@@ -350,6 +351,7 @@ This can be provided in a few ways:
       #     if status is "done", set to "a",
       #     else, set to "b"
       'field1': ('a', 'status == "done"', 'b')
+   }
 
 .. code-block:: python
 
@@ -365,6 +367,7 @@ This can be provided in a few ways:
             ('b', 'status == "ongoing"'),
             ('c', 'status == "other"', 'd')
         ]
+   }
 
 .. warning::
 

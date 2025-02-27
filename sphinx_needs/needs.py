@@ -745,63 +745,94 @@ def _gather_field_defaults(
         if "allow_default" in v
     }
     field_defaults: dict[str, FieldDefault] = {}
+    old_format = False
     for key, value in needs_config._global_options.items():
         single_default: FieldDefault = {}
 
-        if (
+        if isinstance(value, dict):
+            if unknown := set(value).difference({"predicates", "default"}):
+                log_warning(
+                    LOGGER,
+                    f"needs_global_options {key!r} value contains unknown keys: {unknown}",
+                    "config",
+                    None,
+                )
+            single_default = {  # type: ignore[assignment]
+                k: v for k, v in value.items() if k in {"predicates", "default"}
+            }
+            if "predicates" in single_default and (
+                not isinstance(single_default["predicates"], (list, tuple))
+                or not all(
+                    isinstance(x, (list, tuple))
+                    and len(x) == 2
+                    and isinstance(x[0], str)
+                    for x in single_default["predicates"]
+                )
+            ):
+                log_warning(
+                    LOGGER,
+                    f"needs_global_options {key!r}, 'predicates', must be a list of (filter string, value) pairs",
+                    "config",
+                    None,
+                )
+                continue
+        elif (
             isinstance(value, (list, tuple))
             and len(value) > 0
             and all(isinstance(x, (list, tuple)) for x in value)
         ):
-            single_default = {"predicate_defaults": []}
+            old_format = True
+            single_default = {"predicates": []}
             last_idx = len(value) - 1
             for sub_idx, sub_value in enumerate(value):
                 if len(sub_value) == 2:
                     # (value, predicate) pair
                     v, predicate = sub_value
-                    single_default["predicate_defaults"].append((predicate, v))
+                    single_default["predicates"].append((predicate, v))
                 elif len(sub_value) == 3:
                     # (value, predicate, default) triple
                     v, predicate, default = sub_value
-                    single_default["predicate_defaults"].append((predicate, v))
+                    single_default["predicates"].append((predicate, v))
                     if sub_idx == last_idx:
                         single_default["default"] = default
                     else:
                         log_warning(
                             LOGGER,
-                            f"needs_global_options key {key!r}, item {sub_idx} has default value but is not the last item",
+                            f"needs_global_options {key!r}, item {sub_idx}, has default value but is not the last item",
                             "config",
                             None,
                         )
                 else:
                     log_warning(
                         LOGGER,
-                        f"needs_global_options key {key!r}, item {sub_idx} has an unknown format",
+                        f"needs_global_options {key!r}, item {sub_idx}, has an unknown value format",
                         "config",
                         None,
                     )
         elif isinstance(value, (list, tuple)):
+            old_format = True
             if len(value) == 2:
                 # single (value, predicate) pair
                 v, predicate = value
-                single_default = {"predicate_defaults": [(predicate, v)]}
+                single_default = {"predicates": [(predicate, v)]}
             elif len(value) == 3:
                 # single (value, predicate, default) triple
                 v, predicate, default = value
                 single_default = {
-                    "predicate_defaults": [(predicate, v)],
+                    "predicates": [(predicate, v)],
                     "default": default,
                 }
             else:
                 log_warning(
                     LOGGER,
-                    f"needs_global_options key {key!r} has an unknown format",
+                    f"needs_global_options {key!r} has an unknown value format",
                     "config",
                     None,
                 )
                 continue
         else:
             # single value
+            old_format = True
             single_default = {"default": value}
 
         if key in needs_config.extra_options:
@@ -816,10 +847,19 @@ def _gather_field_defaults(
         else:
             log_warning(
                 LOGGER,
-                f"needs_global_options key {key!r} must also exist in needs_extra_options, needs_extra_links, or {sorted(allowed_internal_defaults)}",
+                f"needs_global_options {key!r} must also exist in needs_extra_options, needs_extra_links, or {sorted(allowed_internal_defaults)}",
                 "config",
                 None,
             )
+
+    if old_format:
+        log_warning(
+            LOGGER,
+            "needs_global_options uses old, non-dict, format. "
+            f"please update to new format: {field_defaults}",
+            "deprecated",
+            None,
+        )
 
     _NEEDS_CONFIG.field_defaults = field_defaults
 
@@ -836,7 +876,7 @@ def _check_type(
         if not isinstance(default["default"], type_):
             log_warning(
                 LOGGER,
-                f"needs_global_options key {key!r} has a default value that is not of type {type_name!r}",
+                f"needs_global_options {key!r} has a default value that is not of type {type_name!r}",
                 "config",
                 None,
             )
@@ -848,18 +888,18 @@ def _check_type(
                     default["default"], None, " (in needs_global_options)"
                 )
             ]
-    if "predicate_defaults" in default:
-        for _, value in default["predicate_defaults"]:
+    if "predicates" in default:
+        for _, value in default["predicates"]:
             if not isinstance(value, type_):
                 log_warning(
                     LOGGER,
-                    f"needs_global_options key {key!r} has a predicate default value that is not of type {type_name!r}",
+                    f"needs_global_options {key!r} has a predicate default value that is not of type {type_name!r}",
                     "config",
                     None,
                 )
                 return False
         if type_name == "str_list":
-            default["predicate_defaults"] = [
+            default["predicates"] = [
                 (
                     predicate,
                     [
@@ -869,7 +909,7 @@ def _check_type(
                         )
                     ],
                 )
-                for predicate, value in default["predicate_defaults"]
+                for predicate, value in default["predicates"]
             ]
     return True
 

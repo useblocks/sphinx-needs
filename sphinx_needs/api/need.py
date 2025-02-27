@@ -811,7 +811,7 @@ def _set_field_defaults(needs_info: NeedsInfoType, config: NeedsSphinxConfig) ->
     for key, defaults in config.field_defaults.items():
         if key not in needs_info or needs_info[key]:
             continue
-        for predicate, v in defaults.get("predicate_defaults", []):
+        for predicate, v in defaults.get("predicates", []):
             # use the first predicate that is satisfied
             if filter_single_need(needs_info, config, predicate):
                 needs_info[key] = v
