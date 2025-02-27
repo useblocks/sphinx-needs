@@ -36,7 +36,7 @@ class ExtraOptionParams:
 class FieldDefault(TypedDict):
     """Defines a default value for a field."""
 
-    predicate_defaults: NotRequired[list[tuple[str, Any]]]
+    predicates: NotRequired[list[tuple[str, Any]]]
     """List of (need filter, value) pairs for default predicate values.
 
     Used if the field has not been specifically set.
