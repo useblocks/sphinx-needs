@@ -1,6 +1,6 @@
 extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
 project = "test for list2need list_global_options"
-author = 'Christophe SEYLER'
+author = "Christophe SEYLER"
 
 needs_table_style = "TABLE"
 
@@ -41,6 +41,4 @@ needs_extra_links = [
     {"option": "checks", "incoming": "is checked by", "outgoing": "checks"},
     {"option": "triggers", "incoming": "is triggered by", "outgoing": "triggers"},
 ]
-needs_extra_options = [
-    "aggregateoption"
-]
+needs_extra_options = ["aggregateoption"]
