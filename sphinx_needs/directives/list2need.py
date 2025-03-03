@@ -58,6 +58,7 @@ class List2NeedDirective(SphinxDirective):
         "presentation": directives.unchanged,
         "links-down": directives.unchanged,
         "tags": directives.unchanged,
+        "list-options": directives.unchanged,
     }
 
     def run(self) -> Sequence[nodes.Node]:
@@ -110,6 +111,7 @@ class List2NeedDirective(SphinxDirective):
 
         # Retrieve tags defined at list level
         tags = self.options.get("tags", "")
+        list_options = self.options.get("list-options", "")
 
         list_needs = []
         # Storing the data in a sorted list
@@ -204,6 +206,16 @@ class List2NeedDirective(SphinxDirective):
                     list_need["options"]["tags"] = current_tags + "," + tags
                 else:
                     list_need["options"]["tags"] = tags
+
+
+            if list_options:
+                if "options" not in list_need:
+                    list_need["options"] = {}
+                current_list_options = list_need["options"]
+                if current_list_options:
+                    list_need["options"] = current_list_options + "," + list_options
+                else:
+                    list_need["options"] = list_options
 
             template = Template(NEED_TEMPLATE, autoescape=True)
 
