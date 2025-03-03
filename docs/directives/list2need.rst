@@ -168,6 +168,27 @@ tags
 
 The tags ``A`` and ``B`` are attached to all ``NEED-A``, ``NEED-B``, ``NEED-C`` and ``NEED-D``.
 
+list-options
+~~~~~~~~~~~~
+
+``list-options`` allows to set common options for all needs in the list.
+
+.. code-block:: rst
+
+   .. list2need::
+      :types: req, spec
+      :list-options: 
+         :hide:
+         :status: open
+         :validated_by: TEST-005
+
+      * (NEED-A)Login user
+      * (NEED-B)Provide login screen
+      * (NEED-C)Create password hash ((validated_by="TEST-006"))
+      * (NEED-D)Recalculate hash and compare
+
+All the ``hide``, ``status=open`` and ``validated_by=TEST-005-A`` and  are attached to all ``NEED-A``, ``NEED-B``, ``NEED-C`` and ``NEED-D``.
+Same options are aggregate: the ``NEED-C`` has a ``validated_by`` option set to ``TEST-005,TEST-006``.
 
 List examples
 -------------

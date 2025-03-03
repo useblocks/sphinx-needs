@@ -172,6 +172,7 @@ class List2NeedDirective(SphinxDirective):
                     "content": content.lstrip(),
                     "level": level,
                     "options": {},
+                    "list_options": {},
                 }
                 list_needs.append(need)
             else:
@@ -209,13 +210,28 @@ class List2NeedDirective(SphinxDirective):
 
 
             if list_options:
-                if "options" not in list_need:
-                    list_need["options"] = {}
-                current_list_options = list_need["options"]
-                if current_list_options:
-                    list_need["options"] = current_list_options + "," + list_options
-                else:
-                    list_need["options"] = list_options
+                pattern = r":(\w+):\s*([^\n:]*)"
+                matches = re.findall(pattern, list_options)
+                for key, value in matches:
+                    if "options" not in list_need:
+                        list_need["options"] = {}
+                    current_key = list_need["options"].get(key, "")
+                    if current_key:
+                        list_need["options"][key] = current_key + "," + value.strip()
+                    else:
+                        list_need["options"][key] = value.strip()
+                    
+                
+                
+                
+#                if "options" not in list_need:
+#                    list_need["options"] = {}
+#                current_list_options = list_need["options"]
+#                
+#                if current_list_options:
+#                    list_need["options"] = current_list_options + "," + list_options
+#                else:
+#                    list_need["options"] = list_options
 
             template = Template(NEED_TEMPLATE, autoescape=True)
 
