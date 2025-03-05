@@ -19,3 +19,5 @@ def test_doc_need_delete(test_app):
     assert "DELID126" not in html
     assert "Second Spec Need" not in html
     assert "Nested Implemented Need" not in html
+
+    assert "DELVAR" not in html

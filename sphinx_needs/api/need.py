@@ -7,7 +7,7 @@ import warnings
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState
@@ -18,13 +18,19 @@ from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.api.exceptions import InvalidNeedException
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, NeedsPartType, SphinxNeedsData
+from sphinx_needs.data import (
+    NeedsInfoType,
+    NeedsInfoTypeDelete,
+    NeedsPartType,
+    SphinxNeedsData,
+)
+from sphinx_needs.defaults import string_to_boolean
 from sphinx_needs.directives.needuml import Needuml, NeedumlException
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
-from sphinx_needs.utils import jinja_parse
+from sphinx_needs.utils import jinja_parse, match_variants
 from sphinx_needs.views import NeedsView
 
 logger = get_logger(__name__)
@@ -58,6 +64,7 @@ def generate_need(
     sections: list[str] | None = None,
     jinja_content: None | bool = False,
     hide: bool = False,
+    delete: None | str = None,
     collapse: None | bool = None,
     style: None | str = None,
     layout: None | str = None,
@@ -70,7 +77,7 @@ def generate_need(
     external_css: str = "external_link",
     full_title: str | None = None,
     **kwargs: str,
-) -> NeedsInfoType:
+) -> NeedsInfoTypeDelete:
     """Creates a validated need data entry, without adding it to the project.
 
     .. important:: This function does not parse or analyse the content,
@@ -113,6 +120,7 @@ def generate_need(
     :param constraints: Constraints as single, comma separated, string.
     :param constraints_passed: Contains bool describing if all constraints have passed
     :param hide: boolean value.
+    :param delete: String value of delete option.
     :param collapse: boolean value.
     :param style: String value of class attribute of node.
     :param layout: String value of layout definition to use
@@ -191,7 +199,7 @@ def generate_need(
         )
 
     # Add the need and all needed information
-    needs_info: NeedsInfoType = {
+    needs_info: NeedsInfoTypeDelete = {
         "docname": docname,
         "lineno": lineno,
         "lineno_content": lineno_content,
@@ -217,6 +225,8 @@ def generate_need(
         "pre_template": pre_template,
         "post_template": post_template,
         "hide": hide,
+        "delete": delete,
+        "deleted": False,
         "jinja_content": jinja_content or False,
         "parts": parts or {},
         "is_part": False,
@@ -235,6 +245,25 @@ def generate_need(
         "signature": signature,
         "parent_need": "",
     }
+
+    # validate delete
+    if delete is None:
+        delete = "false"
+    else:
+        # Check for variant logic
+        need_context: dict[str, Any] = {**needs_info}
+        need_context.update(
+            **needs_config.filter_data
+        )  # Add needs_filter_data to filter context
+        need_context.update(
+            **{tag: True for tag in tags}
+        )  # Add sphinx tags to filter context
+        delete_var = match_variants(delete, need_context, needs_config.variants)
+        if delete_var is not None:
+            delete = delete_var
+
+    # Finally get a boolean out of a set string
+    needs_info["deleted"] = string_to_boolean(delete) or False
 
     _add_extra_fields(needs_info, kwargs, needs_config)
     _add_link_fields(needs_info, kwargs, needs_config, location)
@@ -298,6 +327,7 @@ def add_need(
     sections: list[str] | None = None,
     jinja_content: None | bool = False,
     hide: bool = False,
+    delete: None | str = None,
     collapse: None | bool = None,
     style: None | str = None,
     layout: None | str = None,
@@ -355,6 +385,7 @@ def add_need(
     :param constraints: Constraints as single, comma separated, string.
     :param constraints_passed: Contains bool describing if all constraints have passed
     :param hide: boolean value.
+    :param delete: String value of delete option.
     :param collapse: boolean value.
     :param style: String value of class attribute of node.
     :param layout: String value of layout definition to use
@@ -374,7 +405,7 @@ def add_need(
     if doctype is None and not is_external and docname:
         doctype = os.path.splitext(app.env.doc2path(docname))[1]
 
-    needs_info = generate_need(
+    needs_info_deleted = generate_need(
         needs_config=NeedsSphinxConfig(app.config),
         need_type=need_type,
         title=title,
@@ -394,6 +425,7 @@ def add_need(
         sections=sections,
         jinja_content=jinja_content,
         hide=hide,
+        delete=delete,
         collapse=collapse,
         style=style,
         layout=layout,
@@ -405,6 +437,16 @@ def add_need(
         external_url=external_url,
         external_css=external_css,
         **kwargs,
+    )
+
+    if needs_info_deleted["deleted"]:
+        # needs_info gets not set to SphinxNeedsData
+        return []
+
+    # Remove 'delete' and 'deleted'  info, as from here on it is always "false"
+    needs_info: NeedsInfoType = cast(
+        NeedsInfoType,
+        {k: v for k, v in needs_info_deleted.items() if k not in ["delete", "deleted"]},
     )
 
     if SphinxNeedsData(app.env).has_need(needs_info["id"]):
