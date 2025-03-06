@@ -275,14 +275,53 @@ And use it like:
        ]
 
 .. _needs_global_options:
+.. _global_option_filters:
 
 needs_global_options
 ~~~~~~~~~~~~~~~~~~~~
 .. versionadded:: 0.3.0
 .. versionchanged:: 5.1.0
 
-    Unknown keys are no longer accepted,
+    The format of the global options was change to be more explicit.
+
+    Unknown keys are also no longer accepted,
     these should also be set in the :ref:`needs_extra_options` list.
+
+    .. dropdown:: Comparison to old format
+
+        .. code-block:: python
+            :caption: Old format
+
+            needs_global_options = {
+                "field1": "a",
+                "field2": ("a", 'status == "done"'),
+                "field3": ("a", 'status == "done"', "b"),
+                "field4": [
+                    ("a", 'status == "done"'),
+                    ("b", 'status == "ongoing"'),
+                    ("c", 'status == "other"', "d"),
+                ],
+            }
+
+        .. code-block:: python
+            :caption: New format
+
+            needs_global_options = {
+                "field1": {"default": "a"},
+                "field2": {"predicates": [('status == "done"', "a")]},
+                "field3": {
+                    "predicates": [('status == "done"', "a")],
+                    "default": "b",
+                },
+                "field4": {
+                    "predicates": [
+                        ('status == "done"', "a"),
+                        ('status == "ongoing"', "b"),
+                        ('status == "other"', "c"),
+                    ],
+                    "default": "d",
+                },
+            }
 
 This configuration allows for global defaults to be set for all needs,
 for any of the following fields:
@@ -295,76 +334,47 @@ for any of the following fields:
 - ``tags``
 - ``constraints``
 
+Defaults will be used if the field is not set specifically by the user and thus has a "empty" value.
+
 .. code-block:: python
 
    needs_extra_options = ["option1"]
    needs_global_options = {
-      'option1': 'Fix value'
+      "tags": {"default": ["tag1", "tag2"]},
+      "option1": {"default": "new value"},
+   }
+
+To set a default based on a one or more predicates, use the ``predicates`` key.
+These predicates are a list of (:ref:`filter string <filter_string>`, value), evaluated in order, with the first match set as the default value.
+If no predicates match, the ``default`` value is used (if present).
+
+.. code-block:: python
+
+   needs_extra_options = ["option1"]
+   needs_global_options = {
+      "option1": {
+      # if field is unset:
+         "predicates": [
+            # if status is "done", set to "value1"
+            ("status == 'done'", "value1"),
+            # else if status is "ongoing", set to "value2"
+            ("status == 'ongoing'", "value2"),
+         ]
+         # else, set to "value3"
+         "default": "value3",
+      }
    }
 
 .. tip::
-
-    To set list based defaults, for links, tags and constraints, use a string based representation, e.g.
+    
+    You can combine global options with :ref:`dynamic_functions` to automate data handling.
 
     .. code-block:: python
 
+        needs_extra_options = ["option1"]
         needs_global_options = {
-            'tags': 'id1,id2,id3'
+                "option1": {"default": '[[copy("id")]]'}
         }
-
-You can combine global options with :ref:`dynamic_functions` to automate data handling.
-
-.. code-block:: python
-
-   needs_extra_options = ["option1"]
-   needs_global_options = {
-        'option1': '[[copy("id")]]'
-   }
-
-.. _global_option_filters:
-
-Predicate based defaults
-++++++++++++++++++++++++
-.. versionadded:: 0.4.3
-
-Defaults can also be set based :ref:`filter_string` predicates.
-This is useful when you want to set a default value based on the value of another field.
-
-You can set the value of a global_option if only a given :ref:`filter_string` passes.
-If the filter string does not pass, the option is not set or a given default value is set.
-
-This can be provided in a few ways:
-
-.. code-block:: python
-
-   needs_extra_options = ["field1"]
-   needs_global_options = {
-      # if field1 is unset and status is "done", set field1 to "a"
-      'field1': ('a', 'status == "done"')
-
-.. code-block:: python
-
-   needs_extra_options = ["field1"]
-   needs_global_options = {
-      # if field1 is unset:
-      #     if status is "done", set to "a",
-      #     else, set to "b"
-      'field1': ('a', 'status == "done"', 'b')
-
-.. code-block:: python
-
-   needs_extra_options = ["field1"]
-   needs_global_options = {
-      # if field1 is unset:
-      #     if status is "done", set to "a",
-      #     else if status is "ongoing", set to "b",
-      #     else if status is "other", set to "c",
-      #     else, set to "d"
-      'field1': [
-            ('a', 'status == "done"'),
-            ('b', 'status == "ongoing"'),
-            ('c', 'status == "other"', 'd')
-        ]
 
 .. warning::
 
