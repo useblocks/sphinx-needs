@@ -37,28 +37,40 @@ needs_extra_options = [
 ]
 
 needs_global_options = {
-    "layout": "clean_l",
-    "option_1": "test_global",
-    "option_2": "[[copy('id')]]",
-    "option_3": ("STATUS_IMPL", 'status == "implemented"'),
-    "option_4": ("STATUS_CLOSED", 'status == "closed"', "STATUS_UNKNOWN"),
-    "option_5": [
-        ("STATUS_IMPL", 'status == "implemented"', "bad"),
-        ("STATUS_CLOSED", 'status == "closed"', "final"),
-    ],
-    "link1": "SPEC_1",
-    "link2": [
-        ("SPEC_2,[[copy('link1')", 'status == "implemented"'),
-        ("SPEC_3", 'status == "closed"', ["SPEC_1"]),
-    ],
-    "link3": 1,
-    "tags": [
-        ("a,b", 'status == "implemented"'),
-        ("c", 'status == "closed"', ["d"]),
-    ],
-    "bad_value_type": 1.27,
-    "too_many_params": ("a", "b", "c", "d"),
-    "unknown": "unknown",
+    "layout": {"default": "clean_l"},
+    "option_1": {"default": "test_global"},
+    "option_2": {"default": "[[copy('id')]]"},
+    "option_3": {"predicates": [('status == "implemented"', "STATUS_IMPL")]},
+    "option_4": {
+        "default": "STATUS_UNKNOWN",
+        "predicates": [('status == "closed"', "STATUS_CLOSED")],
+    },
+    "option_5": {
+        "predicates": [
+            ('status == "implemented"', "STATUS_IMPL"),
+            ('status == "closed"', "STATUS_CLOSED"),
+        ],
+        "default": "final",
+    },
+    "link1": {"default": ["SPEC_1"]},
+    "link2": {
+        "predicates": [
+            ('status == "implemented"', ["SPEC_2", "[[copy('link1')]]"]),
+            ('status == "closed"', ["SPEC_3"]),
+        ],
+        "default": ["SPEC_1"],
+    },
+    "tags": {
+        "predicates": [
+            ('status == "implemented"', ["a", "b"]),
+            ('status == "closed"', ["c"]),
+        ],
+        "default": ["d"],
+    },
+    "link3": {"default": 1},
+    "bad_value_type": {"default": 1.27},
+    "too_many_params": {"predicates": [("a", "b", "c", "d")]},
+    "unknown": {"default": "unknown"},
 }
 
 needs_build_json = True
