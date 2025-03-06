@@ -23,38 +23,38 @@ Additionally, checks are put in place to ensure that the keys used are from the 
 - ``constraints``
 
 .. code-block:: python
-    :caption: Old format
+   :caption: Old format
 
-    needs_global_options = {
-        "field1": "a",
-        "field2": ("a", 'status == "done"'),
-        "field3": ("a", 'status == "done"', "b"),
-        "field4": [
-            ("a", 'status == "done"'),
-            ("b", 'status == "ongoing"'),
-            ("c", 'status == "other"', "d"),
-        ],
-    }
+   needs_global_options = {
+      "field1": "a",
+      "field2": ("a", 'status == "done"'),
+      "field3": ("a", 'status == "done"', "b"),
+      "field4": [
+         ("a", 'status == "done"'),
+         ("b", 'status == "ongoing"'),
+         ("c", 'status == "other"', "d"),
+      ],
+   }
 
 .. code-block:: python
-    :caption: New format
+   :caption: New format
 
-    needs_global_options = {
-        "field1": {"default": "a"},
-        "field2": {"predicates": [('status == "done"', "a")]},
-        "field3": {
-            "predicates": [('status == "done"', "a")],
-            "default": "b",
-        },
-        "field4": {
-            "predicates": [
-                ('status == "done"', "a"),
-                ('status == "ongoing"', "b"),
-                ('status == "other"', "c"),
-            ],
-            "default": "d",
-        },
-    }
+   needs_global_options = {
+      "field1": {"default": "a"},
+      "field2": {"predicates": [('status == "done"', "a")]},
+      "field3": {
+         "predicates": [('status == "done"', "a")],
+         "default": "b",
+      },
+      "field4": {
+         "predicates": [
+               ('status == "done"', "a"),
+               ('status == "ongoing"', "b"),
+               ('status == "other"', "c"),
+         ],
+         "default": "d",
+      },
+   }
 
 5.0.0
 -----
