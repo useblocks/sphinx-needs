@@ -55,7 +55,7 @@ This would allow Sphinx to perform incremental builds which are much faster as c
    # conf.py
 
    # Defining one or more functions in conf.py is fine
-   def my_custom_warning(need, log):
+   def my_custom_warning(need, log, needs):
        # some checks
        return False
 
@@ -1461,30 +1461,64 @@ This will handle **all warnings** as exceptions.
 
 .. code-block:: python
 
+   # conf.py
+
+   # Defining one or more functions in conf.py is fine
    def my_custom_warning_check(need, log):
        if need["status"] == "open":
            log.info(f"{need['id']} status must not be 'open'.")
            return True
        return False
 
+   def custom_warning_multi_needs(need, log, needs):
+       # need is closed, but linked need is still open.
+       # This is not allowed by this rule.
+       return_code: bool = False
+       if need["status"] in [
+           "closed",
+           "done",
+       ]:
+           for linked_need in need["depend"]:
+               if needs[linked_need]["status"] not in [
+                  "closed",
+                   "done",
+               ]:
+                   return_code = True
+
+       return return_code
 
    needs_warnings = {
-     # req need must not have an empty status field
-     'req_with_no_status': "type == 'req' and not status",
+       # req need must not have an empty status field
+       'req_with_no_status': "type == 'req' and not status",
 
-     # status must be open or closed
-     'invalid_status' : "status not in ['open', 'closed']",
+       # status must be open or closed
+       'invalid_status' : "status not in ['open', 'closed']",
 
-     # user defined filter code function
-     'type_match': my_custom_warning_check,
+       # This assignment will deactivate incremental build support inside Sphinx and
+       # can create an unpickable configuration warning.
+       # user defined filter code function
+       'type_match': my_custom_warning_check,
    }
+
+   # Better, register all warnings via Sphinx-Needs API. In all cases avoid to double definition of filters.
+   from sphinx_needs.api.configuration import add_warning
+   def setup(app):
+       #add_warning(app, "req_with_no_status", "type == 'req' and not status"
+       #add_warning(app, "invalid_status", "status not in ['open', 'closed']"
+       #add_warning(app, "type_match", my_custom_warning_check
+       add_warning(app, "depend_need_not_closed", custom_warning_multi_needs)
 
 ``needs_warnings`` must be a dictionary.
 The **dictionary key** is used as identifier and gets printed in log outputs.
 The **value** must be a valid filter string or a custom defined filter code function and defines a *not allowed behavior*.
 
 So use the filter string or filter code function to define how needs are not allowed to be configured/used.
-The defined filter code function must return ``True`` or ``False``.
+The defined filter string and filter code function must return:
+
+* ``True`` - Warning shall be raised
+* ``False`` - No warning needed
+
+
 
 .. warning::
 
@@ -1495,22 +1529,27 @@ Example output:
 
 .. code-block:: text
 
-  ...
-  looking for now-outdated files... none found
-  pickling environment... done
-  checking consistency... WARNING: Sphinx-Needs warnings were raised. See console / log output for details.
+   ...
+   looking for now-outdated files... none found
+   pickling environment... done
+   checking consistency... WARNING: Sphinx-Needs warnings were raised. See console / log output for details.
 
-  Checking Sphinx-Needs warnings
-    type_check: passed
-    invalid_status: failed
-        failed needs: 11 (STYLE_005, EX_ROW_1, EX_ROW_3, copy_2, clv_1, clv_2, clv_3, clv_4, clv_5, T_C3893, R_AD4A0)
-        used filter: status not in ["open", "in progress", "closed", "done"] and status is not None
+   Checking Sphinx-Needs warnings
+     type_check: passed
+     invalid_status: failed
+       failed needs: 11 (STYLE_005, EX_ROW_1, EX_ROW_3, copy_2, clv_1, clv_2, clv_3, clv_4, clv_5, T_C3893, R_AD4A0)
+       used filter: status not in ["open", "in progress", "closed", "done"] and status is not None
 
-    type_match: failed
-        failed needs: 1 (TC_001)
-        used filter: <function my_custom_warning_check at 0x7faf3fbcd1f0>
-  done
-  ...
+     type_match: failed
+       failed needs: 1 (TC_001)
+       used filter: <function my_custom_warning_check at 0x7faf3fbcd1f0>
+
+     depend_need_not_closed: failed
+       failed needs: 1 (TC_MULTI2)
+       used filter: <function custom_warning_multi_needs at 0x7faf3fbcd6f0>
+
+   done
+   ...
 
 Due to the nature of Sphinx logging, a sphinx-warning may be printed wherever in the log.
 
