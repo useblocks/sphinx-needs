@@ -60,7 +60,7 @@ Additionally, checks are put in place to ensure that the keys used are from the 
 -----
 
 :Released: 18.02.2025
-:Full Changelog: `v4.1.0...v5.0.0 <https://github.com/useblocks/sphinx-needs/compare/4.2.0...5.0.0>`__
+:Full Changelog: `v4.2.0...v5.0.0 <https://github.com/useblocks/sphinx-needs/compare/4.2.0...5.0.0>`__
 
 This release includes a number of changes,
 to bring more clarity to the needs data structure and post-processing steps.
