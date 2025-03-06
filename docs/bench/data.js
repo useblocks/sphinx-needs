@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1740607060975,
+  "lastUpdate": 1741272317572,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -12492,6 +12492,42 @@ window.BENCHMARK_DATA = {
             "value": 63.97748259800002,
             "unit": "s",
             "extra": "Commit: 18af26f1dbb0827ad914b967455acffc664e1fce\nBranch: master\nTime: 2025-02-26T22:55:44+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2aa4c0dfab5aa8f71b52126206d7f05c06ab09d3",
+          "message": "♻️ Change `needs_global_options` format (#1413)\n\nIn the current format each key value can be in multiple different\nformats, which makes it difficult to understand, parse, validate, and\nprovide a JSON schema for in `ubproject.toml`\n\nIn this PR we deprecate the old format (it can still be used for now but\nwill emit a warning with the new format),\nand replace it with a slightly more verbose, but consistent format:\n\nold:\n\n```python\nneeds_global_options = {\n    \"field1\": \"a\",\n    \"field2\": (\"a\", 'status == \"done\"'),\n    \"field3\": (\"a\", 'status == \"done\"', \"b\"),\n    \"field4\": [\n        (\"a\", 'status == \"done\"'),\n        (\"b\", 'status == \"ongoing\"'),\n        (\"c\", 'status == \"other\"', \"d\"),\n    ],\n}\n```\n\nnew:\n\n```python\nneeds_global_options = {\n    \"field1\": {\"default\": \"a\"},\n    \"field2\": {\"predicates\": [('status == \"done\"', \"a\")]},\n    \"field3\": {\n        \"predicates\": [('status == \"done\"', \"a\")],\n        \"default\": \"b\",\n    },\n    \"field4\": {\n        \"predicates\": [\n            ('status == \"done\"', \"a\"),\n            ('status == \"ongoing\"', \"b\"),\n            ('status == \"other\"', \"c\"),\n        ],\n        \"default\": \"d\",\n    },\n}\n```\n\nnew, in `ubproject.toml` format:\n\n```toml\n[needs.global_options]\nfield1.default = \"a\"\nfield2.predicates = [['status == \"done\"', \"a\"]]\nfield3.predicates = [['status == \"done\"', \"a\"]]\nfield3.default = \"b\"\nfield4.predicates = [\n    ['status == \"done\"', \"a\"],\n    ['status == \"ongoing\"', \"b\"],\n    ['status == \"other\"', \"c\"]\n]\nfield4.default = \"d\"\n```",
+          "timestamp": "2025-03-06T15:43:27+01:00",
+          "tree_id": "42289be3f5c93ed21599b7d985de4f9b7d5f9cf8",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/2aa4c0dfab5aa8f71b52126206d7f05c06ab09d3"
+        },
+        "date": 1741272300924,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1432483540000078,
+            "unit": "s",
+            "extra": "Commit: 2aa4c0dfab5aa8f71b52126206d7f05c06ab09d3\nBranch: master\nTime: 2025-03-06T15:43:27+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.26314987399999,
+            "unit": "s",
+            "extra": "Commit: 2aa4c0dfab5aa8f71b52126206d7f05c06ab09d3\nBranch: master\nTime: 2025-03-06T15:43:27+01:00"
           }
         ]
       }
