@@ -7,7 +7,7 @@ Changelog
 -----
 
 :Released: 06.03.2025
-:Full Changelog: `v5.0.0...v5.1.0 <https://github.com/useblocks/sphinx-needs/compare/5.0.0...2aa4c0dfab5aa8f71b52126206d7f05c06ab09d3>`__
+:Full Changelog: `v5.0.0...v5.1.0 <https://github.com/useblocks/sphinx-needs/compare/5.0.0...9ad91a92c68899f750081f6d683473080a567cad>`__
 
 The :ref:`needs_global_options` configuration option has been updated to a new format,
 to be more explicit and to allow for future improvements :pr:`1413`.
