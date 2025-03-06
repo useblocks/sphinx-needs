@@ -522,6 +522,13 @@ class NeedsInfoType(TypedDict, total=False):
     #   and in turn means they are added to every need via ``add_need`` (as strings)
 
 
+class NeedsInfoTypeDelete(NeedsInfoType, total=False):
+    """Holds temporary 'delete' related data"""
+
+    delete: Required[None | str]
+    deleted: Required[bool]
+
+
 class NeedsBaseDataType(TypedDict):
     """A base type for data items collected from directives."""
 

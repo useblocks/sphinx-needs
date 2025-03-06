@@ -42,3 +42,9 @@ Need Delete Option
 
    Need with ``:delete:`` equal to ``true``.
 
+
+.. spec:: Test variants
+      :id: DELVAR
+      :status: open
+      :tags: user;login
+      :delete: ['var_a' in tags]:false, true
