@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1741272317572,
+  "lastUpdate": 1741273522544,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -12528,6 +12528,42 @@ window.BENCHMARK_DATA = {
             "value": 56.26314987399999,
             "unit": "s",
             "extra": "Commit: 2aa4c0dfab5aa8f71b52126206d7f05c06ab09d3\nBranch: master\nTime: 2025-03-06T15:43:27+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "66853113+pre-commit-ci[bot]@users.noreply.github.com",
+            "name": "pre-commit-ci[bot]",
+            "username": "pre-commit-ci[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9ad91a92c68899f750081f6d683473080a567cad",
+          "message": "[pre-commit.ci] pre-commit autoupdate (#1411)\n\n<!--pre-commit.ci start-->\nupdates:\n- [github.com/astral-sh/ruff-pre-commit: v0.9.6 →\nv0.9.9](https://github.com/astral-sh/ruff-pre-commit/compare/v0.9.6...v0.9.9)\n<!--pre-commit.ci end-->\n\nCo-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2025-03-06T16:03:31+01:00",
+          "tree_id": "7c8c60fbea9e8878fcf7367531c5a2c90e8140c5",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/9ad91a92c68899f750081f6d683473080a567cad"
+        },
+        "date": 1741273505382,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.17986237300002017,
+            "unit": "s",
+            "extra": "Commit: 9ad91a92c68899f750081f6d683473080a567cad\nBranch: master\nTime: 2025-03-06T16:03:31+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.445914208999994,
+            "unit": "s",
+            "extra": "Commit: 9ad91a92c68899f750081f6d683473080a567cad\nBranch: master\nTime: 2025-03-06T16:03:31+01:00"
           }
         ]
       }
