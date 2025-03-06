@@ -3,11 +3,64 @@
 Changelog
 =========
 
+5.1.0
+-----
+
+:Released: 06.03.2025
+:Full Changelog: `v5.0.0...v5.1.0 <https://github.com/useblocks/sphinx-needs/compare/5.0.0...9ad91a92c68899f750081f6d683473080a567cad>`__
+
+The :ref:`needs_global_options` configuration option has been updated to a new format,
+to be more explicit and to allow for future improvements :pr:`1413`.
+The old format is currently still supported, but will emit a warning.
+Additionally, checks are put in place to ensure that the keys used are from the allowed set (:pr:`1410`).:
+
+- any ``needs_extra_options`` field
+- any ``needs_extra_links`` field
+- ``status``
+- ``layout``
+- ``style``
+- ``tags``
+- ``constraints``
+
+.. code-block:: python
+   :caption: Old format
+
+   needs_global_options = {
+      "field1": "a",
+      "field2": ("a", 'status == "done"'),
+      "field3": ("a", 'status == "done"', "b"),
+      "field4": [
+         ("a", 'status == "done"'),
+         ("b", 'status == "ongoing"'),
+         ("c", 'status == "other"', "d"),
+      ],
+   }
+
+.. code-block:: python
+   :caption: New format
+
+   needs_global_options = {
+      "field1": {"default": "a"},
+      "field2": {"predicates": [('status == "done"', "a")]},
+      "field3": {
+         "predicates": [('status == "done"', "a")],
+         "default": "b",
+      },
+      "field4": {
+         "predicates": [
+               ('status == "done"', "a"),
+               ('status == "ongoing"', "b"),
+               ('status == "other"', "c"),
+         ],
+         "default": "d",
+      },
+   }
+
 5.0.0
 -----
 
 :Released: 18.02.2025
-:Full Changelog: `v4.1.0...v5.0.0 <https://github.com/useblocks/sphinx-needs/compare/4.2.0...98c630fca17f9575d86b6b1df7714263ae731425>`__
+:Full Changelog: `v4.2.0...v5.0.0 <https://github.com/useblocks/sphinx-needs/compare/4.2.0...5.0.0>`__
 
 This release includes a number of changes,
 to bring more clarity to the needs data structure and post-processing steps.
