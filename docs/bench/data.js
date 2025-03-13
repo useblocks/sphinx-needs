@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1741274780080,
+  "lastUpdate": 1741867128184,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -12600,6 +12600,42 @@ window.BENCHMARK_DATA = {
             "value": 57.81189724999999,
             "unit": "s",
             "extra": "Commit: 490603d833bafcd87383ec2de88fab0066b01558\nBranch: master\nTime: 2025-03-06T16:24:28+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a60d39772be8c740e808fc3a00d30fdca3f10281",
+          "message": "👌 Re-allow dynamic functions for `layout` field (#1423)",
+          "timestamp": "2025-03-13T12:56:57+01:00",
+          "tree_id": "530bf94c79750882793e03c8957e40e150f8bdb5",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a60d39772be8c740e808fc3a00d30fdca3f10281"
+        },
+        "date": 1741867111448,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1793982400000118,
+            "unit": "s",
+            "extra": "Commit: a60d39772be8c740e808fc3a00d30fdca3f10281\nBranch: master\nTime: 2025-03-13T12:56:57+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.74299999899998,
+            "unit": "s",
+            "extra": "Commit: a60d39772be8c740e808fc3a00d30fdca3f10281\nBranch: master\nTime: 2025-03-13T12:56:57+01:00"
           }
         ]
       }
