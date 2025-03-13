@@ -141,6 +141,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
         "allow_default": "str",
+        "allow_df": True,
         "exclude_external": True,
     },
     "style": {

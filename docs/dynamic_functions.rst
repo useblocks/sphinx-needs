@@ -29,6 +29,7 @@ Dynamic functions can be used for the following directive options:
 - ``status``
 - ``tags``
 - ``style``
+- ``layout``
 - ``constraints``
 - :ref:`needs_extra_options`
 - :ref:`needs_extra_links`
