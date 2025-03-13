@@ -720,12 +720,15 @@ def check_configuration(app: Sphinx, config: Config) -> None:
                 f"Variant filter value: {value} from needs_variants {external_variants} is not a string."
             )
 
+    allowed_internal_variants = {
+        k for k, v in NeedsCoreFields.items() if v.get("allow_variants")
+    }
     for option in external_variant_options:
         # Check variant option is added in either extra options or extra links or NEED_DEFAULT_OPTIONS
         if (
             option not in extra_options
             and option not in link_types
-            and option not in NEED_DEFAULT_OPTIONS
+            and option not in allowed_internal_variants
         ):
             raise NeedsConfigException(
                 f"Variant option `{option}` is not added in either extra options or extra links. "

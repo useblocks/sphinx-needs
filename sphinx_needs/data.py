@@ -68,6 +68,8 @@ class CoreFieldParameters(TypedDict):
     """Whether field can be modified by needextend (False if not present)."""
     allow_df: NotRequired[bool]
     """Whether dynamic functions are allowed for this field (False if not present)."""
+    allow_variants: NotRequired[bool]
+    """Whether variant options are allowed for this field (False if not present)."""
     deprecate_df: NotRequired[bool]
     """Whether dynamic functions are deprecated for this field (False if not present)."""
     show_in_layout: NotRequired[bool]
@@ -112,6 +114,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "show_in_layout": True,
         "allow_default": "str",
         "allow_df": True,
+        "allow_variants": True,
         "allow_extend": True,
     },
     "tags": {
@@ -120,6 +123,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "show_in_layout": True,
         "allow_default": "str_list",
         "allow_df": True,
+        "allow_variants": True,
         "allow_extend": True,
     },
     "collapse": {
@@ -142,6 +146,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "show_in_layout": True,
         "allow_default": "str",
         "allow_df": True,
+        "allow_variants": True,
         "exclude_external": True,
     },
     "style": {
@@ -151,6 +156,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "exclude_external": True,
         "allow_default": "str",
         "allow_df": True,
+        "allow_variants": True,
         "allow_extend": True,
     },
     "arch": {
@@ -313,6 +319,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "schema": {"type": "array", "items": {"type": "string"}, "default": []},
         "allow_default": "str_list",
         "allow_df": True,
+        "allow_variants": True,
         "allow_extend": True,
     },
     "constraints_results": {

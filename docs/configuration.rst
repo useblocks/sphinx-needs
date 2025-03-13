@@ -2249,8 +2249,14 @@ Default: ``[]``
 
 .. note::
 
-   1. You must ensure the options in ``needs_variant_options`` are either default need options or specified in
-      :ref:`extra options <needs_extra_options>` or :ref:`extra links <needs_extra_links>`.
+   1. You must ensure the options in ``needs_variant_options`` in:
+      - ``status``
+      - ``tags``
+      - ``layout``
+      - ``style``
+      - ``constraints``
+      - :ref:`extra options <needs_extra_options>`
+      - :ref:`extra links <needs_extra_links>`.
    2. By default, if ``needs_variant_options`` is empty, we deactivate variants handling for need options.
 
 .. _needs_render_context:
