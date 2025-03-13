@@ -2249,7 +2249,7 @@ Default: ``[]``
 
 .. note::
 
-   1. You must ensure the options in ``needs_variant_options`` in:
+   1. You must ensure the options in ``needs_variant_options`` are specified in:
       - ``status``
       - ``tags``
       - ``layout``
