@@ -33,6 +33,14 @@ needs_types = [
     },
 ]
 
+needs_extra_links = [
+    {
+        "option": "depend",
+        "incoming": "depended",
+        "outgoing": "depends on",
+    },
+]
+
 needs_external_needs = [
     {
         "base_url": "http://my_company.com/docs/v1/",
@@ -59,6 +67,24 @@ def custom_warning_func(need, log):
     return need["status"] == "example_3"
 
 
+def custom_warning_multi_needs(need, log, needs):
+    # need is closed, but linked need is still open.
+    # This is not allowed by this rule.
+    return_code: bool = False
+    if need["status"] in [
+        "closed",
+        "done",
+    ]:
+        for linked_need in need["depend"]:
+            if needs[linked_need]["status"] not in [
+                "closed",
+                "done",
+            ]:
+                return_code = True
+
+    return return_code
+
+
 def setup(app):
     from sphinx_needs.api.configuration import add_warning
 
@@ -69,6 +95,7 @@ def setup(app):
         "invalid_status",
         "status not in ['open', 'closed', 'done', 'example_2', 'example_3']",
     )
+    add_warning(app, "depend_need_not_closed", custom_warning_multi_needs)
 
 
 # Needs option to set True or False to raise sphinx-warning for each not passed warning check
