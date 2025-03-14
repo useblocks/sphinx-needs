@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1741867128184,
+  "lastUpdate": 1741935624537,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -12636,6 +12636,42 @@ window.BENCHMARK_DATA = {
             "value": 57.74299999899998,
             "unit": "s",
             "extra": "Commit: a60d39772be8c740e808fc3a00d30fdca3f10281\nBranch: master\nTime: 2025-03-13T12:56:57+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f7e2410d5375b21e3c218360193e612a8b5f707f",
+          "message": "🔧 Centralise allowed variant core need fields (#1424)\n\nSimilar to #1388 for `needs_variant_options`\n\n---------\n\nCo-authored-by: Marco Heinemann <marco.heinemann@useblocks.com>",
+          "timestamp": "2025-03-14T07:58:35+01:00",
+          "tree_id": "925131d6300a6ac4f96f25dbf3a523c1b540b39a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f7e2410d5375b21e3c218360193e612a8b5f707f"
+        },
+        "date": 1741935607096,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14322946799998704,
+            "unit": "s",
+            "extra": "Commit: f7e2410d5375b21e3c218360193e612a8b5f707f\nBranch: master\nTime: 2025-03-14T07:58:35+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.01753993899996,
+            "unit": "s",
+            "extra": "Commit: f7e2410d5375b21e3c218360193e612a8b5f707f\nBranch: master\nTime: 2025-03-14T07:58:35+01:00"
           }
         ]
       }
