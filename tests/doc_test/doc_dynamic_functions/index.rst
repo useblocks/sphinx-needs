@@ -22,7 +22,7 @@ DYNAMIC FUNCTIONS
 
 .. spec:: TEST_4
     :id: TEST_4
-    :tags: test_4a;test_4b;[[copy('title')]]
+    :tags: test_4a;test_4b;[[copy('title')]]omitted
 
     Test dynamic func in tags: [[copy("tags")]]
 

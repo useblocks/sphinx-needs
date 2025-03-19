@@ -318,6 +318,18 @@ def resolve_dynamic_values(needs: NeedsMutable, app: Sphinx) -> None:
                         new_values += func_return
                     else:
                         new_values += [func_return]
+                    if func_call is not None and not (
+                        str(element).strip().startswith("[[")
+                        and str(element).strip().endswith("]]")
+                    ):
+                        log_warning(
+                            logger,
+                            f"Dynamic function in list field {need_option!r} is surrounded by text that will be omitted: {element!r}",
+                            "dynamic_function",
+                            location=(need["docname"], need["lineno"])
+                            if need.get("docname")
+                            else None,
+                        )
 
                 need[need_option] = new_values
 
