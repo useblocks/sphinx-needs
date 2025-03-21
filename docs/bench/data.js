@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1741935624537,
+  "lastUpdate": 1742550432595,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -12672,6 +12672,42 @@ window.BENCHMARK_DATA = {
             "value": 56.01753993899996,
             "unit": "s",
             "extra": "Commit: f7e2410d5375b21e3c218360193e612a8b5f707f\nBranch: master\nTime: 2025-03-14T07:58:35+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e4c16c8ff6052c72fb2557cf49a7939025aed80e",
+          "message": "🐛 Warn on dynamic function with surrounding text (#1426)\n\nCurrently, for an item in a list field, with a dynamic function plus\nother text, the other text will be silently omitted, e.g.\n\n```restructuredtext\n.. spec:: TEST_1\n    :id: TEST_1\n    :tags: test_1a;test_1b;[[copy('title')]]omitted\n```\n\nA warning is now emitted about this",
+          "timestamp": "2025-03-21T10:45:22+01:00",
+          "tree_id": "c2e8fddfe6d6d3058763fe86ffe1fa979a10bc03",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e4c16c8ff6052c72fb2557cf49a7939025aed80e"
+        },
+        "date": 1742550415034,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1591704420000042,
+            "unit": "s",
+            "extra": "Commit: e4c16c8ff6052c72fb2557cf49a7939025aed80e\nBranch: master\nTime: 2025-03-21T10:45:22+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.925250369,
+            "unit": "s",
+            "extra": "Commit: e4c16c8ff6052c72fb2557cf49a7939025aed80e\nBranch: master\nTime: 2025-03-21T10:45:22+01:00"
           }
         ]
       }
