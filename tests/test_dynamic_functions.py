@@ -1,10 +1,11 @@
+import json
 import os
-import re
 from pathlib import Path
 
 import pytest
 from sphinx import version_info
 from sphinx.util.console import strip_colors
+from syrupy.filters import props
 
 
 @pytest.mark.parametrize(
@@ -18,7 +19,7 @@ from sphinx.util.console import strip_colors
     ],
     indirect=True,
 )
-def test_doc_dynamic_functions(test_app):
+def test_doc_dynamic_functions(test_app, snapshot):
     app = test_app
     app.build()
 
@@ -29,6 +30,7 @@ def test_doc_dynamic_functions(test_app):
         'srcdir/index.rst:11: WARNING: The `need_func` role is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
         'srcdir/index.rst:40: WARNING: The `need_func` role is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
         'srcdir/index.rst:44: WARNING: The `need_func` role is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
+        "srcdir/index.rst:23: WARNING: Dynamic function in list field 'tags' is surrounded by text that will be omitted: \"[[copy('title')]]omitted\" [needs.dynamic_function]",
         'srcdir/index.rst:9: WARNING: The [[copy("id")]] syntax in need content is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
         'srcdir/index.rst:27: WARNING: The [[copy("tags")]] syntax in need content is deprecated. Replace with :ndf:`copy("tags")` instead. [needs.deprecated]',
         "srcdir/index.rst:33: WARNING: The [[copy('id')]] syntax in need content is deprecated. Replace with :ndf:`copy('id')` instead. [needs.deprecated]",
@@ -37,46 +39,9 @@ def test_doc_dynamic_functions(test_app):
         "srcdir/index.rst:44: WARNING: Error while executing function 'copy': Need not found [needs.dynamic_function]",
     ]
 
-    html = Path(app.outdir, "index.html").read_text()
-    assert "This is id SP_TOO_001" in html
-    assert "This is also id SP_TOO_001" in html
-    assert "This is the best id SP_TOO_001" in html
-
-    assert (
-        sum(1 for _ in re.finditer('<span class="needs_data">test2</span>', html)) == 2
-    )
-    assert (
-        sum(1 for _ in re.finditer('<span class="needs_data">test</span>', html)) == 2
-    )
-    assert (
-        sum(1 for _ in re.finditer('<span class="needs_data">my_tag</span>', html)) == 1
-    )
-
-    assert (
-        sum(1 for _ in re.finditer('<span class="needs_data">test_4a</span>', html))
-        == 1
-    )
-    assert (
-        sum(1 for _ in re.finditer('<span class="needs_data">test_4b</span>', html))
-        == 1
-    )
-    assert (
-        sum(1 for _ in re.finditer('<span class="needs_data">TEST_4</span>', html)) == 2
-    )
-
-    assert (
-        sum(1 for _ in re.finditer('<span class="needs_data">TEST_5</span>', html)) == 2
-    )
-
-    assert "Test output of dynamic function; need: TEST_3" in html
-
-    assert "Test dynamic func in tags: test_4a, test_4b, TEST_4" in html
-
-    assert '<a class="reference external" href="http://www.TEST_5">link</a>' in html
-
-    assert "nested id TEST_6" in html
-    assert "nested id also TEST_6" in html
-    assert "nested id best TEST_6" in html
+    json_data = Path(app.outdir, "needs.json").read_text()
+    needs = json.loads(json_data)
+    assert needs == snapshot(exclude=props("created", "project", "creator"))
 
 
 @pytest.mark.parametrize(
