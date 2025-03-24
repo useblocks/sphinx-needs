@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1742824052494,
+  "lastUpdate": 1742841628493,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -12744,6 +12744,42 @@ window.BENCHMARK_DATA = {
             "value": 57.164007423000015,
             "unit": "s",
             "extra": "Commit: 1148e2b6f85319009e039424fbf9790dd16d5ed4\nBranch: master\nTime: 2025-03-24T14:45:43+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cd5327c5260404be94a07c9a7339b033915a0987",
+          "message": "✨ Add `is_import` need field (#1429)\n\nThis field records whether a need originated from a `needimport` source,\nsimilar to `is_external`",
+          "timestamp": "2025-03-24T19:38:26+01:00",
+          "tree_id": "4e6244b06464dee3febcbe5a726bd11bf95b5622",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/cd5327c5260404be94a07c9a7339b033915a0987"
+        },
+        "date": 1742841611046,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.20381156999999916,
+            "unit": "s",
+            "extra": "Commit: cd5327c5260404be94a07c9a7339b033915a0987\nBranch: master\nTime: 2025-03-24T19:38:26+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.35858905499998,
+            "unit": "s",
+            "extra": "Commit: cd5327c5260404be94a07c9a7339b033915a0987\nBranch: master\nTime: 2025-03-24T19:38:26+01:00"
           }
         ]
       }
