@@ -27,3 +27,12 @@ TEST DOCUMENT NEEDS WARNINGS
 .. test:: Test example 3
    :id: TC_003
    :status: example_3
+
+.. test:: Multi needs 1
+   :id: TC_MULTI1
+   :status: open
+
+.. test:: Multi needs 2
+   :id: TC_MULTI2
+   :status: closed
+   :depend: TC_MULTI1
