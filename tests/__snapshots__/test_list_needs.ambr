@@ -1,0 +1,934 @@
+# serializer version: 1
+# name: test_list_needs[test_app0]
+  dict({
+    'current_version': '',
+    'versions': dict({
+      '': dict({
+        'needs': dict({
+          'LIST-1a': dict({
+            'content': '''
+              Need example title
+              
+              Need example on level 1.
+            ''',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'LIST-1a',
+            'lineno': 6,
+            'section_name': 'list-needs',
+            'sections': list([
+              'list-needs',
+            ]),
+            'title': 'Need example title',
+            'type': 'req',
+            'type_name': 'Requirement',
+          }),
+          'LIST-1b': dict({
+            'content': '''
+              Another Need example with nested needs.
+              
+              :spec id=LIST-s2a status=open tags=list-tag1,list-tag2 author="John Doe":
+                  Sub-Need on level 2 with other options set
+              :spec id=LIST-s2b title="Another Sub-Need on level 2.":
+                  With the title given in the parameters.
+              
+                  :test id=LIST-s3 collapse: Sub-Need on level 3.
+              
+                      Content can contain standard *syntax*.
+            ''',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'LIST-1b',
+            'lineno': 9,
+            'parent_needs_back': list([
+              'LIST-s2a',
+              'LIST-s2b',
+            ]),
+            'section_name': 'list-needs',
+            'sections': list([
+              'list-needs',
+            ]),
+            'title': 'Another Need example with nested needs.',
+            'type': 'req',
+            'type_name': 'Requirement',
+          }),
+          'LIST-d1': dict({
+            'content': '''
+              Need level 1
+              
+              :spec id=LIST-d2 status=closed: Sub-Need level 2
+            ''',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'LIST-d1',
+            'lineno': 29,
+            'parent_needs_back': list([
+              'LIST-d2',
+            ]),
+            'section_name': 'defaults',
+            'sections': list([
+              'defaults',
+              'list-needs',
+            ]),
+            'status': 'open',
+            'tags': list([
+              'list-tag1',
+              'list-tag2',
+            ]),
+            'title': 'Need level 1',
+            'type': 'req',
+            'type_name': 'Requirement',
+          }),
+          'LIST-d2': dict({
+            'content': 'Sub-Need level 2',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'LIST-d2',
+            'lineno': 31,
+            'parent_need': 'LIST-d1',
+            'parent_needs': list([
+              'LIST-d1',
+            ]),
+            'section_name': 'defaults',
+            'sections': list([
+              'defaults',
+              'list-needs',
+            ]),
+            'status': 'closed',
+            'tags': list([
+              'list-tag1',
+              'list-tag2',
+            ]),
+            'title': 'Sub-Need level 2',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+          'LIST-f1': dict({
+            'blocks': list([
+              'LIST-f2a',
+              'LIST-f2b',
+            ]),
+            'content': '''
+              Need level 1
+              
+              :spec id=LIST-f2a: Sub-Need level 2a
+              :spec id=LIST-f2b: Sub-Need level 2b
+              
+                  :test id=LIST-f3: Sub-Need level 3
+            ''',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'LIST-f1',
+            'lineno': 65,
+            'section_name': 'flatten',
+            'sections': list([
+              'flatten',
+              'list-needs',
+            ]),
+            'tests_back': list([
+              'LIST-f2a',
+              'LIST-f2b',
+            ]),
+            'title': 'Need level 1',
+            'type': 'req',
+            'type_name': 'Requirement',
+          }),
+          'LIST-f2a': dict({
+            'blocks_back': list([
+              'LIST-f1',
+            ]),
+            'content': 'Sub-Need level 2a',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'LIST-f2a',
+            'lineno': 67,
+            'section_name': 'flatten',
+            'sections': list([
+              'flatten',
+              'list-needs',
+            ]),
+            'tests': list([
+              'LIST-f1',
+            ]),
+            'title': 'Sub-Need level 2a',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+          'LIST-f2b': dict({
+            'blocks_back': list([
+              'LIST-f1',
+            ]),
+            'checks_back': list([
+              'LIST-f3',
+            ]),
+            'content': '''
+              Sub-Need level 2b
+              
+              :test id=LIST-f3: Sub-Need level 3
+            ''',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'LIST-f2b',
+            'lineno': 68,
+            'section_name': 'flatten',
+            'sections': list([
+              'flatten',
+              'list-needs',
+            ]),
+            'tests': list([
+              'LIST-f1',
+            ]),
+            'title': 'Sub-Need level 2b',
+            'triggers': list([
+              'LIST-f3',
+            ]),
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+          'LIST-f3': dict({
+            'checks': list([
+              'LIST-f2b',
+            ]),
+            'content': 'Sub-Need level 3',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'LIST-f3',
+            'lineno': 70,
+            'section_name': 'flatten',
+            'sections': list([
+              'flatten',
+              'list-needs',
+            ]),
+            'title': 'Sub-Need level 3',
+            'triggers_back': list([
+              'LIST-f2b',
+            ]),
+            'type': 'test',
+            'type_name': 'Test Case',
+          }),
+          'LIST-l1': dict({
+            'blocks': list([
+              'LIST-l2a',
+              'LIST-l2b',
+            ]),
+            'content': '''
+              Need level 1
+              
+              :spec id=LIST-l2a: Sub-Need level 2a
+              :spec id=LIST-l2b: Sub-Need level 2b
+              
+                  :test id=LIST-l3: Sub-Need level 3
+            ''',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'LIST-l1',
+            'lineno': 50,
+            'parent_needs_back': list([
+              'LIST-l2a',
+              'LIST-l2b',
+            ]),
+            'section_name': 'links-up and links-down',
+            'sections': list([
+              'links-up and links-down',
+              'list-needs',
+            ]),
+            'tests_back': list([
+              'LIST-l2a',
+              'LIST-l2b',
+            ]),
+            'title': 'Need level 1',
+            'type': 'req',
+            'type_name': 'Requirement',
+          }),
+          'LIST-l2a': dict({
+            'blocks_back': list([
+              'LIST-l1',
+            ]),
+            'content': 'Sub-Need level 2a',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'LIST-l2a',
+            'lineno': 52,
+            'parent_need': 'LIST-l1',
+            'parent_needs': list([
+              'LIST-l1',
+            ]),
+            'section_name': 'links-up and links-down',
+            'sections': list([
+              'links-up and links-down',
+              'list-needs',
+            ]),
+            'tests': list([
+              'LIST-l1',
+            ]),
+            'title': 'Sub-Need level 2a',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+          'LIST-l2b': dict({
+            'blocks_back': list([
+              'LIST-l1',
+            ]),
+            'checks_back': list([
+              'LIST-l3',
+            ]),
+            'content': '''
+              Sub-Need level 2b
+              
+              :test id=LIST-l3: Sub-Need level 3
+            ''',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'LIST-l2b',
+            'lineno': 53,
+            'parent_need': 'LIST-l1',
+            'parent_needs': list([
+              'LIST-l1',
+            ]),
+            'parent_needs_back': list([
+              'LIST-l3',
+            ]),
+            'section_name': 'links-up and links-down',
+            'sections': list([
+              'links-up and links-down',
+              'list-needs',
+            ]),
+            'tests': list([
+              'LIST-l1',
+            ]),
+            'title': 'Sub-Need level 2b',
+            'triggers': list([
+              'LIST-l3',
+            ]),
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+          'LIST-l3': dict({
+            'checks': list([
+              'LIST-l2b',
+            ]),
+            'content': 'Sub-Need level 3',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'LIST-l3',
+            'lineno': 55,
+            'parent_need': 'LIST-l2b',
+            'parent_needs': list([
+              'LIST-l2b',
+            ]),
+            'section_name': 'links-up and links-down',
+            'sections': list([
+              'links-up and links-down',
+              'list-needs',
+            ]),
+            'title': 'Sub-Need level 3',
+            'triggers_back': list([
+              'LIST-l2b',
+            ]),
+            'type': 'test',
+            'type_name': 'Test Case',
+          }),
+          'LIST-m1': dict({
+            'content': '''
+              Need level 1
+              
+              :normal: field list
+            ''',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'LIST-m1',
+            'lineno': 39,
+            'section_name': 'maxdepth',
+            'sections': list([
+              'maxdepth',
+              'list-needs',
+            ]),
+            'title': 'Need level 1',
+            'type': 'req',
+            'type_name': 'Requirement',
+          }),
+          'LIST-s2a': dict({
+            'author': 'John Doe',
+            'content': 'Sub-Need on level 2 with other options set',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'LIST-s2a',
+            'lineno': 12,
+            'parent_need': 'LIST-1b',
+            'parent_needs': list([
+              'LIST-1b',
+            ]),
+            'section_name': 'list-needs',
+            'sections': list([
+              'list-needs',
+            ]),
+            'status': 'open',
+            'tags': list([
+              'list-tag1',
+              'list-tag2',
+            ]),
+            'title': 'Sub-Need on level 2 with other options set',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+          'LIST-s2b': dict({
+            'content': '''
+              With the title given in the parameters.
+              
+              :test id=LIST-s3 collapse: Sub-Need on level 3.
+              
+                  Content can contain standard *syntax*.
+            ''',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'LIST-s2b',
+            'lineno': 14,
+            'parent_need': 'LIST-1b',
+            'parent_needs': list([
+              'LIST-1b',
+            ]),
+            'parent_needs_back': list([
+              'LIST-s3',
+            ]),
+            'section_name': 'list-needs',
+            'sections': list([
+              'list-needs',
+            ]),
+            'title': 'Another Sub-Need on level 2.',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+          'LIST-s3': dict({
+            'content': '''
+              Sub-Need on level 3.
+              
+              Content can contain standard *syntax*.
+            ''',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'LIST-s3',
+            'lineno': 17,
+            'parent_need': 'LIST-s2b',
+            'parent_needs': list([
+              'LIST-s2b',
+            ]),
+            'section_name': 'list-needs',
+            'sections': list([
+              'list-needs',
+            ]),
+            'title': 'Sub-Need on level 3.',
+            'type': 'test',
+            'type_name': 'Test Case',
+          }),
+        }),
+        'needs_amount': 16,
+        'needs_defaults_removed': True,
+        'needs_schema': dict({
+          '$schema': 'http://json-schema.org/draft-07/schema#',
+          'properties': dict({
+            'arch': dict({
+              'additionalProperties': dict({
+                'type': 'string',
+              }),
+              'default': dict({
+              }),
+              'description': 'Mapping of uml key to uml content.',
+              'field_type': 'core',
+              'type': 'object',
+            }),
+            'author': dict({
+              'default': '',
+              'description': 'Added by needs_extra_options config',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'avatar': dict({
+              'default': '',
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'blocks': dict({
+              'default': list([
+              ]),
+              'description': 'Link field',
+              'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'blocks_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'checks': dict({
+              'default': list([
+              ]),
+              'description': 'Link field',
+              'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'checks_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'closed_at': dict({
+              'default': '',
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'completion': dict({
+              'default': '',
+              'description': 'Added for needgantt functionality',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'constraints': dict({
+              'default': list([
+              ]),
+              'description': 'List of constraint names, which are defined for this need.',
+              'field_type': 'core',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'constraints_error': dict({
+              'default': '',
+              'description': 'An error message set if any constraint failed, and `error_message` field is set in config.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'constraints_passed': dict({
+              'default': True,
+              'description': 'True if all constraints passed, False if any failed, None if not yet checked.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'constraints_results': dict({
+              'additionalProperties': dict({
+                'type': 'object',
+              }),
+              'default': dict({
+              }),
+              'description': 'Mapping of constraint name, to check name, to result.',
+              'field_type': 'core',
+              'type': 'object',
+            }),
+            'content': dict({
+              'default': '',
+              'description': 'Content of the need.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'created_at': dict({
+              'default': '',
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'docname': dict({
+              'default': None,
+              'description': 'Name of the document where the need is defined (None if external).',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'doctype': dict({
+              'default': '.rst',
+              'description': "Type of the document where the need is defined, e.g. '.rst'.",
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'duration': dict({
+              'default': '',
+              'description': 'Added for needgantt functionality',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'external_css': dict({
+              'default': '',
+              'description': 'CSS class name, added to the external reference.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'external_url': dict({
+              'default': None,
+              'description': 'URL of the need, if it is an external need.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'has_dead_links': dict({
+              'default': False,
+              'description': 'True if any links reference need ids that are not found in the need list.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'has_forbidden_dead_links': dict({
+              'default': False,
+              'description': 'True if any links reference need ids that are not found in the need list, and the link type does not allow dead links.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'id': dict({
+              'description': 'ID of the data.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'id_prefix': dict({
+              'default': '',
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'is_external': dict({
+              'default': False,
+              'description': 'If true, no node is created and need is referencing external url.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'is_modified': dict({
+              'default': False,
+              'description': 'Whether the need was modified by needextend.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'is_need': dict({
+              'default': True,
+              'description': 'Whether the need is a need.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'is_part': dict({
+              'default': False,
+              'description': 'Whether the need is a part.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'jinja_content': dict({
+              'default': False,
+              'description': 'Whether the content should be pre-processed by jinja.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'layout': dict({
+              'default': None,
+              'description': 'Key of the layout, which is used to render the need.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'lineno': dict({
+              'default': None,
+              'description': 'Line number where the need is defined (None if external).',
+              'field_type': 'core',
+              'type': list([
+                'integer',
+                'null',
+              ]),
+            }),
+            'links': dict({
+              'default': list([
+              ]),
+              'description': 'Link field',
+              'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'links_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'max_amount': dict({
+              'default': '',
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'max_content_lines': dict({
+              'default': '',
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'modifications': dict({
+              'default': 0,
+              'description': 'Number of modifications by needextend.',
+              'field_type': 'core',
+              'type': 'integer',
+            }),
+            'params': dict({
+              'default': '',
+              'description': 'Added by service open-needs',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'parent_need': dict({
+              'default': '',
+              'description': 'Simply the first parent id.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'parent_needs': dict({
+              'default': list([
+              ]),
+              'description': 'Link field',
+              'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'parent_needs_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'parts': dict({
+              'additionalProperties': dict({
+                'type': 'object',
+              }),
+              'default': dict({
+              }),
+              'description': "Mapping of parts, a.k.a. sub-needs, IDs to data that overrides the need's data",
+              'field_type': 'core',
+              'type': 'object',
+            }),
+            'post_content': dict({
+              'default': '',
+              'description': 'Post-content of the need.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'post_template': dict({
+              'default': None,
+              'description': 'Post-template of the need.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'pre_content': dict({
+              'default': '',
+              'description': 'Pre-content of the need.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'pre_template': dict({
+              'default': None,
+              'description': 'Pre-template of the need.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'prefix': dict({
+              'default': '',
+              'description': 'Added by service open-needs',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'query': dict({
+              'default': '',
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'section_name': dict({
+              'default': '',
+              'description': 'Simply the first section.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'sections': dict({
+              'default': list([
+              ]),
+              'description': 'Sections of the need.',
+              'field_type': 'core',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'service': dict({
+              'default': '',
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'signature': dict({
+              'default': '',
+              'description': 'Derived from a docutils desc_name node.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'specific': dict({
+              'default': '',
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'status': dict({
+              'default': None,
+              'description': 'Status of the need.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'style': dict({
+              'default': None,
+              'description': 'Comma-separated list of CSS classes (all appended by `needs_style_`).',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'tags': dict({
+              'default': list([
+              ]),
+              'description': 'List of tags.',
+              'field_type': 'core',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'template': dict({
+              'default': None,
+              'description': 'Template of the need.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'tests': dict({
+              'default': list([
+              ]),
+              'description': 'Link field',
+              'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'tests_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'title': dict({
+              'description': 'Title of the need.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'triggers': dict({
+              'default': list([
+              ]),
+              'description': 'Link field',
+              'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'triggers_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'type': dict({
+              'default': '',
+              'description': 'Type of the need.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'type_name': dict({
+              'default': '',
+              'description': 'Name of the type.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'updated_at': dict({
+              'default': '',
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'url': dict({
+              'default': '',
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'url_postfix': dict({
+              'default': '',
+              'description': 'Added by service open-needs',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+            'user': dict({
+              'default': '',
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': 'string',
+            }),
+          }),
+          'type': 'object',
+        }),
+      }),
+    }),
+  })
+# ---
